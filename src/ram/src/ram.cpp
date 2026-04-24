@@ -424,55 +424,6 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
   return cell_inv_layout;
 }
 
-std::unique_ptr<Cell> RamGen::makeDecoder(
-    const std::string& prefix,
-    const int num_word,
-    const int read_ports,
-    const std::vector<odb::dbNet*>& selects,
-    const std::vector<odb::dbNet*>& addr_nets)
-{
-  auto word_cell = std::make_unique<Cell>();
-
-  // can make this an AND gate layer method
-  // places appropriate number of AND gates for each word
-
-  // calculates number of and gate layers needed
-  int layers = std::log2(num_word) - 1;
-
-  dbNet* decoder_out_net = makeNet(prefix, "decoder_out");
-  dbNet* prev_net = decoder_out_net;
-
-  for (int i = 0; i < layers; ++i) {
-    dbNet* input_net = nullptr;
-    if (i == layers - 1) {
-      input_net = addr_nets[i + 1];
-    } else {
-      input_net = makeNet(prefix, fmt::format("layer_in{}", i));
-    }
-
-    makeInst(word_cell.get(),
-             prefix,
-             fmt::format("and_layer{}", i),
-             and2_cell_,
-             {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[i]},
-              {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
-              {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
-
-    prev_net = input_net;
-  }
-
-  for (int port = 0; port < read_ports; ++port) {
-    makeInst(word_cell.get(),
-             prefix,
-             fmt::format("buf_port{}", port),
-             buffer_cell_,
-             {{buffer_ports_[{PortRoleType::DataIn, 0}], decoder_out_net},
-              {buffer_ports_[{PortRoleType::DataOut, 0}], selects[port]}});
-  }
-
-  return word_cell;
-}
-
 std::vector<dbNet*> RamGen::selectNets(const std::string& prefix,
                                        const int read_ports)
 {
@@ -1132,43 +1083,7 @@ void RamGen::generate(const int mask_size,
                       num_words,
                       decoder_input_nets[p],
                       decoder_output_nets[p]);
-
-    // // inverter layout
-    // auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
-    // if (num_inputs > 1) {
-    //   for (int i = num_inputs - 1; i >= 0; --i) {
-    //     auto inv_grid_cell = std::make_unique<Cell>();
-    //     makeInst(
-    //         inv_grid_cell.get(),
-    //         fmt::format("decoder_p{}", p),
-    //         fmt::format("inv_{}", i),
-    //         inv_cell_,
-    //         {{inv_ports_[{PortRoleType::DataIn, 0}],
-    //           addr_inputs_[p][i]->getNet()},
-    //          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][i]}});
-    //     cell_inv_layout->addCell(std::move(inv_grid_cell));
-    //     for (int filler_count = 0; filler_count < num_inputs - 1;
-    //          ++filler_count) {
-    //       cell_inv_layout->addCell(nullptr);
-    //     }
-    //   }
-    // } else {
-    //   auto inv_grid_cell = std::make_unique<Cell>();
-    //   makeInst(inv_grid_cell.get(),
-    //            fmt::format("decoder_p{}", p),
-    //            fmt::format("inv_{}", 0),
-    //            inv_cell_,
-    //            {{inv_ports_[{PortRoleType::DataIn, 0}],
-    //              addr_inputs_[p][0]->getNet()},
-    //             {inv_ports_[{PortRoleType::DataOut, 0}],
-    //             inv_addr_nets[p][0]}});
-    //   cell_inv_layout->addCell(std::move(inv_grid_cell));
-    // }
-    // ram_grid_.addLayout(std::move(cell_inv_layout));
   }
-  // int total_inv_cells = total_ports * num_inputs;
-  // int inv_col_count = std::ceil((float)(total_ports * num_inputs) /
-  // num_words);
 
   // determining how many inverters can fit in one column
   int ports_per_col = num_words / num_inputs;
@@ -1181,22 +1096,6 @@ void RamGen::generate(const int mask_size,
     ram_grid_.addLayout(makeInverterColumn(
         num_words, num_inputs, start_port, end_port, inv_addr_nets));
   }
-  // // inverter column
-  // for (int p = 0; p < total_ports; ++p) {
-  //   for (int bit = num_inputs - 1; bit >= 0; --bit) {
-  //     auto inv_grid_cell = std::make_unique<Cell>();
-  //     makeInst(inv_grid_cell.get(),
-  //             fmt::format("decoder_p{}", p),
-  //             fmt::format("inv_p{}_a{}", p, bit),
-  //             inv_cell_,
-  //             {{inv_ports_[{PortRoleType::DataIn, 0}],
-  //               addr_inputs_[p][bit]->getNet()},
-  //               {inv_ports_[{PortRoleType::DataOut, 0}],
-  //               inv_addr_nets[p][bit]}});
-  //     cell_inv_layout->addCell(std::move(inv_grid_cell));
-  //   }
-  // }
-  // ram_grid_.addLayout(std::move(cell_inv_layout));
 
   auto ram_origin(odb::Point(0, 0));
 

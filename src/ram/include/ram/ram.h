@@ -199,12 +199,6 @@ class RamGen
       const int end_port,
       const std::vector<std::vector<odb::dbNet*>>& inv_addr_nets);
 
-  std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
-                                    int num_word,
-                                    int read_port,
-                                    const std::vector<odb::dbNet*>& selects,
-                                    const std::vector<odb::dbNet*>& addr_nets);
-
   std::vector<odb::dbNet*> selectNets(const std::string& prefix,
                                       int read_ports);
 
