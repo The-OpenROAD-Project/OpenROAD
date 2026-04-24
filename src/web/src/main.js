@@ -693,6 +693,12 @@ app.websocketManager.onPush = (msg) => {
         // Use the debounced version so that a debug_refresh arriving
         // in the same event-loop turn is coalesced (avoids 2x tiles).
         scheduleRedrawAllLayers();
+        // Fetch debug charts (e.g. GPL HPWL vs iteration).
+        if (app.chartsWidget) {
+            app.websocketManager.request({ type: 'debug_charts' })
+                .then(data => app.chartsWidget.setDebugCharts(data.charts || []))
+                .catch(() => {});
+        }
     } else if (msg.type === 'debug_resumed') {
         const btn = document.getElementById('debug-continue-btn');
         if (btn) btn.style.display = 'none';

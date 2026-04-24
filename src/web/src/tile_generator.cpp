@@ -2088,7 +2088,7 @@ void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
 static int penWidthPx(const PenState& pen, double scale)
 {
   if (pen.cosmetic) {
-    return 1;
+    return std::max(1, pen.width);
   }
   return std::max(1, static_cast<int>(pen.width * scale));
 }
