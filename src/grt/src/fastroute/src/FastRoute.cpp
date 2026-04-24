@@ -2217,6 +2217,10 @@ void FastRouteCore::setDebugTree3D(bool tree3D)
 {
   debug_->tree3D = tree3D;
 }
+void FastRouteCore::setDebugEdges3D(bool edges3D)
+{
+  debug_->edges3D = edges3D;
+}
 void FastRouteCore::setDebugNet(const odb::dbNet* net)
 {
   debug_->net = net;
