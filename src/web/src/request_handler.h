@@ -96,6 +96,8 @@ struct WebSocketRequest
     kDrcUpdateMarker,
     kDrcUpdateCategoryVisibility,
     kDrcHighlight,
+    kDebugContinue,
+    kDebugCharts,
     kUnknown
   };
 

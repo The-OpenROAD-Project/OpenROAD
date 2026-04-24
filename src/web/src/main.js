@@ -21,16 +21,38 @@ import './theme.js';
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
 const statusDiv = document.getElementById('websocket-status');
+let disconnectTimeout = null;
+const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
 
 function updateStatus() {
-    const n = app.websocketManager ? app.websocketManager.pending.size : 0;
-    if (n === 0) {
-        statusDiv.textContent = '';
-        statusDiv.style.display = 'none';
+    const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    
+    if (!isConnected) {
+        // Only show banner after a delay to avoid flashing on page load
+        if (!disconnectTimeout) {
+            disconnectTimeout = setTimeout(() => {
+                if (!app.websocketManager?.isConnected) {
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected</div>';
+                    statusDiv.style.display = 'block';
+                }
+            }, DISCONNECT_DELAY_MS);
+        }
     } else {
-        statusDiv.textContent = `pending: ${n}`;
-        statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
+        // Connected - clear timeout and show pending indicator if needed
+        if (disconnectTimeout) {
+            clearTimeout(disconnectTimeout);
+            disconnectTimeout = null;
+        }
+        
+        if (pendingCount === 0) {
+            statusDiv.style.display = 'none';
+        } else {
+            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+            statusDiv.style.display = 'block';
+            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+            statusDiv.querySelector('.pending-indicator').style.color = color;
+        }
     }
 }
 
@@ -255,6 +277,16 @@ function redrawAllLayers() {
     }
 }
 
+// Debounced wrapper: coalesces back-to-back server pushes (e.g.
+// debug_refresh + debug_paused) into a single redrawAllLayers() call.
+let _redrawRAF = null;
+function scheduleRedrawAllLayers() {
+    if (_redrawRAF !== null) return;
+    _redrawRAF = requestAnimationFrame(() => {
+        _redrawRAF = null;
+        redrawAllLayers();
+    });
+}
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -330,7 +362,7 @@ function createTclConsole(container) {
         '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
-        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
+        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." spellcheck="false" autocomplete="off" autocapitalize="none" autocorrect="off"/>' +
         '</div>';
     container.element.appendChild(el);
 
@@ -548,6 +580,9 @@ if (staticCache) {
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 }
 
+// Check initial connection status
+updateStatus();
+
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
 const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
@@ -626,11 +661,62 @@ app.toggleTheme = function() {
 
 createMenuBar(app);
 
+// Debug-graphics pause affordance: appended lazily when the first
+// debug_paused push arrives.  Clicking "Continue" tells the server to
+// release the placer thread.
+function ensureDebugContinueButton() {
+    let btn = document.getElementById('debug-continue-btn');
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.id = 'debug-continue-btn';
+    btn.className = 'debug-continue-btn';
+    btn.textContent = 'Continue';
+    btn.title = 'Advance the debugger (gpl, cts, ...)';
+    btn.addEventListener('click', () => {
+        // Fire-and-forget; server's broadcast tells us when the placer
+        // actually resumed.
+        app.websocketManager.request({ type: 'debug_continue' })
+            .catch(() => {});
+    });
+    document.body.appendChild(btn);
+    return btn;
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+    } else if (msg.type === 'debug_paused') {
+        ensureDebugContinueButton().style.display = 'block';
+        // Refetch tiles so the user sees the current paused state.
+        // Use the debounced version so that a debug_refresh arriving
+        // in the same event-loop turn is coalesced (avoids 2x tiles).
+        scheduleRedrawAllLayers();
+        // Fetch debug charts (e.g. GPL HPWL vs iteration).
+        if (app.chartsWidget) {
+            app.websocketManager.request({ type: 'debug_charts' })
+                .then(data => app.chartsWidget.setDebugCharts(data.charts || []))
+                .catch(() => {});
+        }
+    } else if (msg.type === 'debug_resumed') {
+        const btn = document.getElementById('debug-continue-btn');
+        if (btn) btn.style.display = 'none';
+    } else if (msg.type === 'debug_refresh') {
+        // Instance positions changed — clear the stale Leaflet highlight
+        // outline (the tile-based highlight updates automatically).
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRedrawAllLayers();
+    } else if (msg.type === 'log') {
+        // Logger output from the main Tcl thread (e.g. global_placement).
+        // The text already contains \n between lines from the batch; strip
+        // any trailing newline to avoid a blank line at the end.
+        let text = msg.text;
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text) tclAppend(text + '\n', '');
     }
 };
 

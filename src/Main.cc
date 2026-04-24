@@ -450,7 +450,10 @@ static int tclAppInit(int& argc,
     }
   }
 #ifdef ENABLE_READLINE
-  if (!gui::Gui::enabled() && !exit_after_cmd_file) {
+  // Initialize readline unless the Qt GUI is active (it has its own
+  // script widget).  The web viewer's headless mode still needs the
+  // terminal prompt.
+  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
     return tclOrdReadlineInit(interp);
   }
 #endif

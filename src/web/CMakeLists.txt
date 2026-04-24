@@ -72,6 +72,10 @@ target_sources(web
     src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
+    src/web_serve.cpp
+    src/web_chart.cpp
+    src/web_painter.cpp
+    src/web_viewer_hook.cpp
     src/MakeWeb.cpp
     ${REPORT_ASSETS_CPP}
 )
