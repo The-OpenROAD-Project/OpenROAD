@@ -161,6 +161,7 @@ class NegotiationLegalizer
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
+  [[nodiscard]] std::vector<Node*> getIllegalNodes() const;
 
  private:
   // Initialisation

@@ -1432,4 +1432,17 @@ int NegotiationLegalizer::numViolations() const
   return count;
 }
 
+std::vector<Node*> NegotiationLegalizer::getIllegalNodes() const
+{
+  std::vector<Node*> illegal;
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed && !isCellLegal(i)) {
+      if (Node* node = network_->getNode(cells_[i].db_inst)) {
+        illegal.push_back(node);
+      }
+    }
+  }
+  return illegal;
+}
+
 }  // namespace dpl
