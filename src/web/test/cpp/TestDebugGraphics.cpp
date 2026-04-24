@@ -109,6 +109,35 @@ static std::size_t registerDummyClient(WebViewerHook& hook)
   return hook.sessions().add([](const std::string&) {});
 }
 
+TEST(SessionRegistryTest, WaitForClientCanBeInterrupted)
+{
+  SessionRegistry registry;
+  std::atomic<bool> interrupted{false};
+  std::atomic<bool> waiting{false};
+  bool got_client = true;
+
+  std::thread waiter([&]() {
+    got_client = registry.waitForClient(/*timeout_seconds=*/30, [&]() {
+      waiting.store(true);
+      return interrupted.load();
+    });
+  });
+
+  for (int i = 0; i < 200 && !waiting.load(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(waiting.load());
+
+  const auto t0 = std::chrono::steady_clock::now();
+  interrupted.store(true);
+  registry.notifyClientWaiters();
+  waiter.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_FALSE(got_client);
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
+}
+
 TEST(WebViewerHookTest, PauseUnblocksOnContinue)
 {
   WebViewerHook hook;
@@ -162,6 +191,35 @@ TEST(WebViewerHookTest, PauseReturnsWhenNoClientsConnect)
   pauser.join();
   EXPECT_TRUE(done.load());
   EXPECT_FALSE(hook.isPaused());
+  hook.sessions().remove(token);
+}
+
+TEST(WebViewerHookTest, ContinueInterruptsWaitForClient)
+{
+  WebViewerHook hook;
+  std::atomic<bool> done{false};
+  std::thread pauser([&]() {
+    hook.pause(/*timeout_ms=*/0);
+    done.store(true);
+  });
+
+  // Give pause() a chance to enter the no-client wait.  continueExecution()
+  // must wake that path instead of relying on the 30s client-connect timeout.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  const auto t0 = std::chrono::steady_clock::now();
+  hook.continueExecution();
+  pauser.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_TRUE(done.load());
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
+  EXPECT_FALSE(hook.isPaused());
+
+  const auto token = registerDummyClient(hook);
+  const auto t1 = std::chrono::steady_clock::now();
+  hook.pause(/*timeout_ms=*/50);
+  const auto next_elapsed = std::chrono::steady_clock::now() - t1;
+  EXPECT_GE(next_elapsed, std::chrono::milliseconds(40));
   hook.sessions().remove(token);
 }
 
