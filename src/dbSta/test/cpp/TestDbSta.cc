@@ -104,7 +104,7 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
 
 // Regression for #10210 (stale Path* dereference in rsz).
 //
-// Topology (TestDbSta_StalePath.v):
+// Topology (TestDbSta_StalePrevPath.v):
 //   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
 //                                   nd1/A2 <- in2
 //
@@ -115,9 +115,12 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
 //   4. Assert the captured Path's prev slot has been recycled: pin()
 //      decodes to data that belongs to a different instance than nd1's
 //      real input.
-TEST_F(TestDbSta, StalePrevPathAfterUpdateTiming)
+TEST_F(TestDbSta, StalePrevPath)
 {
-  readVerilogAndSetup("TestDbSta_StalePath.v");
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+  readVerilogAndSetup(test_name + ".v");
   sta_->updateTiming(true);
 
   Network* network = sta_->network();
