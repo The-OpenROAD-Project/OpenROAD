@@ -8,7 +8,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sta.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -95,6 +100,89 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(bterm_clk, nullptr);
   // There is no related dbITerm for a dbBTerm
   ASSERT_EQ(bterm_clk->getITerm(), nullptr);
+}
+
+// Regression for #10210 (stale Path* dereference in rsz).
+//
+// Topology (TestDbSta_StalePath.v):
+//   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
+//                                   nd1/A2 <- in2
+//
+// Flow:
+//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin.
+//   2. Delete upstream b1 + updateTiming -> free b1/inv1 Path[] slots.
+//   3. Add a fresh BUF + clock + updateTiming -> recycle freed slots.
+//   4. Assert the captured Path's prev slot has been recycled: pin()
+//      decodes to data that belongs to a different instance than nd1's
+//      real input.  When the drvr slot itself is preserved, also assert
+//      the strict stale-pointer signature (same raw address, different
+//      content).
+TEST_F(TestDbSta, StalePrevPathAfterUpdateTiming)
+{
+  readVerilogAndSetup("TestDbSta_StalePath.v");
+  sta_->updateTiming(true);
+
+  Network* network = sta_->network();
+
+  Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
+  Path* drvr_path = sta_->vertexWorstArrivalPath(
+      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
+      MinMax::max());
+  ASSERT_NE(drvr_path, nullptr);
+  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
+  const Path* prev_before = drvr_path->prevPath();
+  ASSERT_NE(prev_before, nullptr);
+  const std::string prev_pin_before
+      = network->pathName(prev_before->pin(sta_.get()));
+
+  // 2. Free upstream Path[] slots.
+  sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
+  sta_->updateTiming(true);
+
+  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
+  odb::dbNet* in3_net = odb::dbNet::create(block_, "in3");
+  odb::dbBTerm* new_bt = odb::dbBTerm::create(in3_net, "in3");
+  new_bt->setIoType(odb::dbIoType::INPUT);
+  odb::dbNet* nfan_net = odb::dbNet::create(block_, "nfan");
+  odb::dbInst* bnew
+      = odb::dbInst::create(block_, db_->findMaster("BUF_X1"), "bnew");
+  bnew->findITerm("A")->connect(in3_net);
+  bnew->findITerm("Z")->connect(nfan_net);
+
+  PinSet clk2_pins(db_network_);
+  clk2_pins.insert(db_network_->dbToSta(new_bt));
+  FloatSeq clk2_waveform = {0.0f, 0.1f};
+  sta_->makeClock(
+      "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
+  sta_->updateTiming(true);
+
+  // 4. Staleness evidence.  Allocator behaviour decides which slot lands
+  // on the recycled memory:
+  //   (a) drvr slot preserved + prev slot recycled (glibc in our CI) --
+  //       strict stale-pointer signature: same raw prev address, but
+  //       pin() decodes to content from an unrelated instance.
+  //   (b) drvr slot itself recycled (other allocators) -- drvr pin decodes
+  //       to something other than nd1/ZN.
+  // Either case proves the captured raw Path* outlived the slot.
+  const std::string drvr_pin_after
+      = network->pathName(drvr_path->pin(sta_.get()));
+  const Path* prev_after = drvr_path->prevPath();
+  const std::string prev_pin_after
+      = prev_after ? network->pathName(prev_after->pin(sta_.get()))
+                   : std::string("<null>");
+  const bool drvr_recycled = drvr_pin_after != "nd1/ZN";
+  const bool prev_recycled = prev_after != nullptr && prev_pin_after != "nd1/A1"
+                             && prev_pin_after != "nd1/A2";
+  EXPECT_TRUE(drvr_recycled || prev_recycled)
+      << "expected slot reuse to be demonstrable; drvr=" << drvr_pin_after
+      << " prev=" << prev_pin_after;
+  if (!drvr_recycled && prev_after != nullptr) {
+    EXPECT_EQ(prev_after, prev_before)
+        << "stale-pointer signature: prev_path_ address unchanged";
+    EXPECT_NE(prev_pin_after, prev_pin_before)
+        << "but slot content should differ after free+reuse. before="
+        << prev_pin_before << " after=" << prev_pin_after;
+  }
 }
 
 }  // namespace sta

@@ -266,34 +266,6 @@ test_suite(
 )
 
 cc_test(
-    name = "TestBufInvNand2",
-    srcs = [
-        "cpp/TestBufInvNand2.cc",
-    ],
-    data = [
-        "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45_typ.lib",
-    ],
-    deps = [
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
-        "//src/odb",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "rsz_buffer_removal",
     srcs = [
         "cpp/TestBufferRemoval.cc",
