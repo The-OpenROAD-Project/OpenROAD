@@ -15,10 +15,12 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "color.h"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "json_builder.h"
 #include "lodepng.h"
@@ -32,6 +34,7 @@
 #include "search.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web_painter.h"
 
 namespace web {
 
@@ -221,6 +224,8 @@ void TileVisibility::parseFromJson(const std::string& json)
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
     {"debug",                  &TileVisibility::debug,                  false},
+    {"debug_renderers",        &TileVisibility::debug_renderers,        false},
+    {"debug_live",             &TileVisibility::debug_live,             false},
   };
   // NOLINTEND(modernize-use-designated-initializers)
   // clang-format on
@@ -1564,6 +1569,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       drawRouteGuides(
           image_buffer, *route_guide_net_ids, layer, color, dbu_tile, scale);
     }
+    if (vis.debug_renderers) {
+      // The callback (installed by WebServer at startup) decides
+      // whether to draw (honoring pause/live semantics) and handles
+      // the gui::Gui::get() access itself.  Keeping Gui:: references
+      // out of tile_generator means test executables that link libweb
+      // don't transitively need gui.a / ord.a.
+      drawRendererOverlay(image_buffer, dbu_tile, scale, vis.debug_live);
+    }
   }
 
   if (vis.debug) {
@@ -2013,6 +2026,225 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                             + "/" + std::to_string(y);
 
   drawBitmapText(image, 4, 4, label, 3, yellow);
+}
+
+namespace {
+
+// Process-wide debug-overlay callback installed by WebServer at serve()
+// time.  Nullable; when not set, drawRendererOverlay is a no-op.  This
+// indirection keeps gui::Gui::get() out of tile_generator.cpp so that
+// libweb.a has no undefined references to the full gui/SWIG library —
+// test binaries can link libweb without pulling in ord::OpenRoad::openRoad.
+TileGenerator::DebugOverlayCallback& getDebugOverlayCallback()
+{
+  static TileGenerator::DebugOverlayCallback callback;
+  return callback;
+}
+
+// Convert a gui::Painter::Color to our internal Color (same RGBA layout).
+Color toTileColor(const gui::Painter::Color& c)
+{
+  return Color{
+      .r = static_cast<unsigned char>(c.r),
+      .g = static_cast<unsigned char>(c.g),
+      .b = static_cast<unsigned char>(c.b),
+      .a = static_cast<unsigned char>(c.a),
+  };
+}
+
+inline int toPxX(int dbu_x, const odb::Rect& tile, double scale)
+{
+  return static_cast<int>((dbu_x - tile.xMin()) * scale);
+}
+
+// Y is flipped: DBU grows up, pixel rows grow down.
+inline int toPxY(int dbu_y, const odb::Rect& tile, double scale)
+{
+  return 255 - static_cast<int>((dbu_y - tile.yMin()) * scale);
+}
+
+}  // namespace
+
+/* static */
+void TileGenerator::setDebugOverlayCallback(DebugOverlayCallback callback)
+{
+  getDebugOverlayCallback() = std::move(callback);
+}
+
+void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
+                                        const odb::Rect& dbu_tile,
+                                        const double scale,
+                                        const bool debug_live) const
+{
+  auto& callback = getDebugOverlayCallback();
+  if (!callback) {
+    return;
+  }
+  callback(image, dbu_tile, scale, debug_live);
+}
+
+// Rasterize a single WebPainter's recorded DrawOps into a pixel buffer.
+// Exposed so that the WebServer-installed debug-overlay callback can
+// reuse tile_generator's line / polygon / bitmap primitives.
+void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
+                                           const std::vector<DrawOp>& ops,
+                                           const odb::Rect& dbu_tile,
+                                           const double scale) const
+{
+  {
+    for (const DrawOp& op : ops) {
+      if (const auto* r = std::get_if<DrawRectOp>(&op)) {
+        const odb::Rect px = toPixels(scale, r->rect, dbu_tile);
+        // Fill first (if the brush paints), outline on top.
+        if (r->brush.style != gui::Painter::Brush::kNone
+            && r->brush.color.a > 0) {
+          const Color fill = toTileColor(r->brush.color);
+          for (int iy = px.yMin(); iy < px.yMax(); ++iy) {
+            for (int ix = px.xMin(); ix < px.xMax(); ++ix) {
+              blendPixel(image, ix, 255 - iy, fill);
+            }
+          }
+        }
+        if (r->pen.color.a > 0) {
+          const Color pen = toTileColor(r->pen.color);
+          const int x0 = px.xMin();
+          const int x1 = px.xMax() - 1;
+          const int y0 = 255 - px.yMin();
+          const int y1 = 255 - (px.yMax() - 1);
+          drawLine(image, x0, y0, x1, y0, pen);
+          drawLine(image, x1, y0, x1, y1, pen);
+          drawLine(image, x1, y1, x0, y1, pen);
+          drawLine(image, x0, y1, x0, y0, pen);
+        }
+      } else if (const auto* l = std::get_if<DrawLineOp>(&op)) {
+        if (l->pen.color.a == 0) {
+          continue;
+        }
+        const int x0 = toPxX(l->p1.x(), dbu_tile, scale);
+        const int y0 = toPxY(l->p1.y(), dbu_tile, scale);
+        const int x1 = toPxX(l->p2.x(), dbu_tile, scale);
+        const int y1 = toPxY(l->p2.y(), dbu_tile, scale);
+        drawLine(image, x0, y0, x1, y1, toTileColor(l->pen.color));
+      } else if (const auto* c = std::get_if<DrawCircleOp>(&op)) {
+        // Simple midpoint circle (outline only).
+        const int cx = toPxX(c->cx, dbu_tile, scale);
+        const int cy = toPxY(c->cy, dbu_tile, scale);
+        const int pr = std::max(1, static_cast<int>(c->r * scale));
+        if (c->pen.color.a == 0) {
+          continue;
+        }
+        const Color pen = toTileColor(c->pen.color);
+        int dx = pr;
+        int dy = 0;
+        int err = 1 - dx;
+        while (dx >= dy) {
+          blendPixel(image, cx + dx, cy + dy, pen);
+          blendPixel(image, cx + dy, cy + dx, pen);
+          blendPixel(image, cx - dy, cy + dx, pen);
+          blendPixel(image, cx - dx, cy + dy, pen);
+          blendPixel(image, cx - dx, cy - dy, pen);
+          blendPixel(image, cx - dy, cy - dx, pen);
+          blendPixel(image, cx + dy, cy - dx, pen);
+          blendPixel(image, cx + dx, cy - dy, pen);
+          ++dy;
+          if (err < 0) {
+            err += 2 * dy + 1;
+          } else {
+            --dx;
+            err += 2 * (dy - dx) + 1;
+          }
+        }
+      } else if (const auto* xop = std::get_if<DrawXOp>(&op)) {
+        if (xop->pen.color.a == 0) {
+          continue;
+        }
+        const int cx = toPxX(xop->cx, dbu_tile, scale);
+        const int cy = toPxY(xop->cy, dbu_tile, scale);
+        const int half = std::max(1, static_cast<int>(xop->size * scale / 2));
+        const Color pen = toTileColor(xop->pen.color);
+        drawLine(image, cx - half, cy - half, cx + half, cy + half, pen);
+        drawLine(image, cx - half, cy + half, cx + half, cy - half, pen);
+      } else if (const auto* p = std::get_if<DrawPolygonOp>(&op)) {
+        if (p->brush.style != gui::Painter::Brush::kNone
+            && p->brush.color.a > 0) {
+          odb::Polygon poly;
+          poly.setPoints(p->points);
+          fillPolygon(image,
+                      poly,
+                      dbu_tile,
+                      scale,
+                      toTileColor(p->brush.color),
+                      /*blend=*/true);
+        }
+        if (p->pen.color.a > 0) {
+          const Color pen = toTileColor(p->pen.color);
+          const int n = static_cast<int>(p->points.size());
+          for (int i = 0; i < n; ++i) {
+            const odb::Point& a = p->points[i];
+            const odb::Point& b = p->points[(i + 1) % n];
+            drawLine(image,
+                     toPxX(a.x(), dbu_tile, scale),
+                     toPxY(a.y(), dbu_tile, scale),
+                     toPxX(b.x(), dbu_tile, scale),
+                     toPxY(b.y(), dbu_tile, scale),
+                     pen);
+          }
+        }
+      } else if (const auto* s = std::get_if<DrawStringOp>(&op)) {
+        if (s->pen.color.a == 0 || s->text.empty()) {
+          continue;
+        }
+        // Approximate the requested font size with a bitmap-font scale.
+        // Each glyph is 5 DBU-independent px tall; pick scale so total
+        // height ≈ requested font size.
+        const int scale_px
+            = std::max(1, s->font.size / (kBitmapGlyphHeight / 2));
+        const int tw = getBitmapTextWidth(s->text, scale_px);
+        const int th = getBitmapTextHeight(scale_px);
+        int ax = toPxX(s->x, dbu_tile, scale);
+        int ay = toPxY(s->y, dbu_tile, scale);
+        // Adjust anchor: default bitmap text renders with top-left at (ax, ay).
+        switch (s->anchor) {
+          case gui::Painter::kBottomLeft:
+            ay -= th;
+            break;
+          case gui::Painter::kBottomRight:
+            ax -= tw;
+            ay -= th;
+            break;
+          case gui::Painter::kTopLeft:
+            break;
+          case gui::Painter::kTopRight:
+            ax -= tw;
+            break;
+          case gui::Painter::kCenter:
+            ax -= tw / 2;
+            ay -= th / 2;
+            break;
+          case gui::Painter::kBottomCenter:
+            ax -= tw / 2;
+            ay -= th;
+            break;
+          case gui::Painter::kTopCenter:
+            ax -= tw / 2;
+            break;
+          case gui::Painter::kLeftCenter:
+            ay -= th / 2;
+            break;
+          case gui::Painter::kRightCenter:
+            ax -= tw;
+            ay -= th / 2;
+            break;
+        }
+        const Color pen = toTileColor(s->pen.color);
+        if (s->rotate_90) {
+          drawBitmapTextRotated(image, ax, ay, s->text, scale_px, pen);
+        } else {
+          drawBitmapText(image, ax, ay, s->text, scale_px, pen);
+        }
+      }
+    }
+  }
 }
 
 /* static */
