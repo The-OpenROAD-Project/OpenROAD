@@ -1003,7 +1003,7 @@ std::string RepairSetup::wnsStagnationReport(const int iteration) const
   }
   const int digits = 3;
   return fmt::format(
-      "repair_timing: obviously futile — WNS stuck at {} after {} passes "
+      "repair_timing: obviously futile - WNS stuck at {} after {} passes "
       "(initial {}). This is probably an exploration run, not a timing "
       "closure run. Aborting with best-effort result.",
       delayAsString(wns_stagnation_last_wns_, digits, sta_),
