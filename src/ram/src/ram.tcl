@@ -55,7 +55,7 @@ proc generate_ram_netlist { args } {
     set inv_cell $keys(-inv_cell)
   }
 
-  set rw_ports 1
+  set rw_ports 0
   if { [info exists keys(-rw_ports)] } {
     set rw_ports $keys(-rw_ports)
   }

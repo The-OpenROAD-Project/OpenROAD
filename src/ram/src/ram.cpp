@@ -1019,7 +1019,8 @@ void RamGen::generate(const int mask_size,
   }
 
   for (int row = 0; row < num_words; ++row) {
-    // size of row_selects is total number of read ports plus the write port needed
+    // size of row_selects is total number of read ports plus the write port
+    // needed
     vector<dbNet*> row_selects(r_total + 1);
     for (int p = 0; p < rw_ports + w_ports; ++p) {
       row_selects[p] = write_select_nets[p][row];
@@ -1067,7 +1068,7 @@ void RamGen::generate(const int mask_size,
                        num_words,
                        decoder_output_nets[p],
                        write_select_nets[w_buf_idx++]);
-      ++r_buf_idx; // so that next read port doesn't use the rw_select
+      ++r_buf_idx;  // so that next read port doesn't use the rw_select
     } else if (p < w_ports) {
       makeBufferColumn(fmt::format("sel_buf_w_p{}", p),
                        num_words,
@@ -1191,11 +1192,13 @@ void RamGen::generate(const int mask_size,
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
 
-  // writeBehavioralVerilog(behavioral_verilog_filename_,
-  //                        slices_per_word,
-  //                        mask_size,
-  //                        num_words,
-  //                        read_ports);
+  writeBehavioralVerilog(behavioral_verilog_filename_,
+                         slices_per_word,
+                         mask_size,
+                         num_words,
+                         rw_ports,
+                         r_ports,
+                         w_ports);
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)
@@ -1258,12 +1261,12 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   std::string addr_declarations;
   if (rw_ports > 0) {
     addr_declarations
-      += fmt::format("  input [{}:0] addr_rw;\n", address_width - 1);
+        += fmt::format("  input [{}:0] addr_rw;\n", address_width - 1);
   } else if (w_ports > 0) {
     addr_declarations
-      += fmt::format("  input [{}:0] addr_w;\n", address_width - 1);
+        += fmt::format("  input [{}:0] addr_w;\n", address_width - 1);
   }
-  for (int i = 1; i < r_total; i++) {
+  for (int i = 0; i < r_ports; i++) {
     addr_declarations
         += fmt::format("  input [{}:0] addr_r{};\n", address_width - 1, i);
   }
@@ -1272,7 +1275,14 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   std::string read_port_logic;
   for (int i = 0; i < r_total; i++) {
     std::string port_name = (r_total == 1) ? "Q" : fmt::format("Q{}", i);
-    std::string addr_name = (i == 0) ? "addr_rw" : fmt::format("addr_r{}", i);
+    std::string addr_name;
+    if (i == 0 && rw_ports > 0) {
+      addr_name = "addr_rw";
+    } else if (rw_ports > 0) {
+      addr_name = fmt::format("addr_r{}", i - 1);
+    } else {
+      addr_name = fmt::format("addr_r{}", i);
+    }
     if (i > 0) {
       read_port_logic += "\n";
     }
@@ -1283,6 +1293,8 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
                                    port_name,
                                    addr_name);
   }
+
+  std::string write_addr = (rw_ports > 0) ? "addr_rw" : "addr_w";
 
   std::string verilog_code = fmt::format(R"(module {} ({}
 );
@@ -1298,7 +1310,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   always @(posedge clk) begin
     for (i = 0; i < {}; i = i + 1) begin
       if (we[i]) begin
-        mem[addr_rw][i*{} +:{}] <= D[i*{} +:{}];
+        mem[{}][i*{} +:{}] <= D[i*{} +:{}];
       end
     end
   end
@@ -1316,6 +1328,7 @@ endmodule
                                          word_size_bit - 1,
                                          num_words - 1,
                                          slices_per_word,
+                                         write_addr,
                                          mask_size,
                                          mask_size,
                                          mask_size,
