@@ -376,15 +376,13 @@ def mock_array(name, config):
             } | ({
                 "IO_CONSTRAINTS": [":write_pin_placement"],
             } if variant == "4x4_flat" else {}),
-            stage_arguments = {
-                "floorplan": {
-                    "ARRAY_COLS": str(config["cols"]),
-                    "ARRAY_ROWS": str(config["rows"]),
-                },
-            },
             tags = ["manual"],
             test_kwargs = {
                 "tags": ["orfs"],
+            },
+            user_arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
