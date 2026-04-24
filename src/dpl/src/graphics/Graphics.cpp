@@ -7,6 +7,7 @@
 #include <any>
 #include <cstdlib>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -168,10 +169,11 @@ void Graphics::drawObjects(gui::Painter& painter)
     } else if (current_iter_movers_.empty()
                || current_iter_movers_.contains(cell->getDbInst())) {
       // Moved in the current iteration (or no iteration info yet).
-      line_color
-          = (std::abs(dx) > std::abs(dy))
-                ? ((dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed)
-                : ((dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue);
+      if (std::abs(dx) > std::abs(dy)) {
+        line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+      } else {
+        line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      }
     } else {
       // Moved in a previous iteration — grey to reduce visual noise.
       line_color = gui::Painter::kGray;
