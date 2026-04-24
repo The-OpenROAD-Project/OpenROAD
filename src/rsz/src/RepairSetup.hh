@@ -2,7 +2,6 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include <cstddef>
 #include <map>
 #include <memory>
 #include <set>
@@ -253,32 +252,34 @@ class RepairSetup : public sta::dbStaState
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;
 
-  // WNS-stagnation gate. If best-so-far WNS has not improved by at least
-  // max(wns_stagnation_abs_tol_, wns_stagnation_rel_tol_ * |initial_wns|)
-  // over the last wns_stagnation_window_passes_ passes, terminateProgress()
-  // returns true. Combined with the existing two-consecutive-termination rule
-  // this aborts the phase after 2*window passes of no WNS movement.
-  // Deterministic (iteration-count based, no wallclock). Conservative enough
-  // that tape-out flows near closure are dominated by the TNS fix-rate gate
-  // instead.
-  static constexpr int wns_stagnation_window_passes_ = 200;
+  // WNS-stagnation gate. Compares the best-so-far WNS against the WNS
+  // captured at the start of repair_timing (initial_wns_). If after the
+  // warmup the best WNS has improved by less than
+  // max(wns_stagnation_abs_tol_, wns_stagnation_rel_tol_ * |initial_wns_|),
+  // terminateProgress() returns true. "No improvement from initial" is the
+  // real signature of an obviously-futile design; plateaus on legitimate
+  // designs (WNS bottoms out at a topology limit while TNS keeps
+  // improving) are *not* caught, because best_wns_ has already moved far
+  // from initial_wns_. Deterministic (iteration-count based, no wallclock).
   static constexpr float wns_stagnation_abs_tol_ = 1.0e-12f;  // 1 ps
-  static constexpr float wns_stagnation_rel_tol_ = 0.005f;    // 0.5% of |init|
+  // 5% of |initial_wns|. Empirically: aes improves WNS by ~50%, clone_flat
+  // by ~95%, repair_fanout by ~90% of initial; the hopeless.v synthetic only
+  // moves WNS by ~2% because buffer insertion on a grossly-over-clocked
+  // design still chips off a little. 5% sits safely in that gap.
+  static constexpr float wns_stagnation_rel_tol_ = 0.05f;
   // Warmup: skip the gate until this many passes have elapsed, so normal
   // repair progress on ordinary designs is not short-circuited.
   static constexpr int wns_stagnation_warmup_iterations_ = 1000;
 
-  // Per-phase WNS history (ring buffer).
-  std::vector<sta::Slack> wns_history_;
-  size_t wns_history_head_ = 0;
-  size_t wns_history_count_ = 0;
   sta::Slack initial_wns_ = 0;
+  // Best (largest / least-negative) WNS observed since the most recent
+  // resetStagnationTracking(). Reset at the start of each repair phase.
+  sta::Slack best_wns_ = 0;
   // Set by terminateProgress() when the WNS-stagnation gate fires. Consumed
   // by the phase-level abort sites to emit a loud info log. Reset by
   // resetStagnationTracking().
   bool wns_stagnation_tripped_ = false;
   int wns_stagnation_iteration_ = 0;
-  sta::Slack wns_stagnation_last_wns_ = 0;
 };
 
 }  // namespace rsz

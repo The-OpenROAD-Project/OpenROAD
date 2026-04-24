@@ -988,12 +988,11 @@ void RepairSetup::printProgressFooter() const
 
 void RepairSetup::resetStagnationTracking()
 {
-  wns_history_.assign(wns_stagnation_window_passes_, 0.0f);
-  wns_history_head_ = 0;
-  wns_history_count_ = 0;
+  // Initialize best_wns_ to the most-negative finite float so the very first
+  // worstSlack() sample always wins the max().
+  best_wns_ = std::numeric_limits<float>::lowest();
   wns_stagnation_tripped_ = false;
   wns_stagnation_iteration_ = 0;
-  wns_stagnation_last_wns_ = 0;
 }
 
 std::string RepairSetup::wnsStagnationReport(const int iteration) const
@@ -1003,21 +1002,26 @@ std::string RepairSetup::wnsStagnationReport(const int iteration) const
   }
   const int digits = 3;
   return fmt::format(
-      "repair_timing: obviously futile - WNS stuck at {} after {} passes "
-      "(initial {}). This is probably an exploration run, not a timing "
-      "closure run. Aborting with best-effort result.",
-      delayAsString(wns_stagnation_last_wns_, digits, sta_),
+      "repair_timing: obviously futile - WNS only reached {} after {} passes "
+      "(initial {}, improvement {}). This is probably an exploration run, "
+      "not a timing closure run. Aborting with best-effort result.",
+      delayAsString(best_wns_, digits, sta_),
       wns_stagnation_iteration_,
-      delayAsString(initial_wns_, digits, sta_));
+      delayAsString(initial_wns_, digits, sta_),
+      delayAsString(best_wns_ - initial_wns_, digits, sta_));
 }
 
 // Terminate progress if incremental fix rate within an opto interval falls
 // below the threshold.   Bump up the threshold after each large opto
 // interval.
-// A second, independent "WNS-stagnation" gate also returns true when the
-// best-so-far WNS has failed to improve by a deterministic threshold over
-// the last wns_stagnation_window_passes_ passes. This catches
-// "obviously futile" designs where TNS keeps twitching but WNS is pinned.
+// A second, independent "WNS-stagnation" gate also returns true when, after
+// the warmup, the best-so-far WNS has failed to improve by a deterministic
+// threshold relative to the initial WNS. That detects designs where WNS
+// essentially never moves from its starting value — the real signature of
+// an "obviously futile" run. Plateaus on legitimate designs (WNS drops by
+// orders of magnitude early, then flat-lines while TNS keeps improving) do
+// not trip this gate, because best_wns_ has already moved far from
+// initial_wns_ by the time the plateau starts.
 bool RepairSetup::terminateProgress(const int iteration,
                                     const float initial_tns,
                                     float& prev_tns,
@@ -1028,48 +1032,33 @@ bool RepairSetup::terminateProgress(const int iteration,
                                     const char* phase_name,
                                     const char phase_marker)
 {
-  // WNS-stagnation gate. Sampled every call so the ring buffer advances at
-  // the same rate as the caller's inner loop (deterministic).
-  const sta::Slack wns_now = sta_->worstSlack(max_);
-  if (!wns_history_.empty()) {
-    const size_t window = wns_history_.size();
-    wns_history_[wns_history_head_] = wns_now;
-    wns_history_head_ = (wns_history_head_ + 1) % window;
-    if (wns_history_count_ < window) {
-      wns_history_count_++;
-    } else if (iteration > wns_stagnation_warmup_iterations_) {
-      // Window is full; compare oldest sample (the one we are about to
-      // overwrite on the next call) to the best (largest, i.e. least
-      // negative) slack observed in the window.
-      sta::Slack window_best
-          = *std::max_element(wns_history_.begin(), wns_history_.end());
-      const sta::Slack window_oldest = wns_history_[wns_history_head_];
-      const float threshold
-          = std::max(wns_stagnation_abs_tol_,
-                     wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
-      if (window_best - window_oldest < threshold) {
-        debugPrint(
-            logger_,
-            RSZ,
-            "repair_setup",
-            1,
-            "{}{} Phase: Exiting at iteration {} because WNS best-in-window "
-            "{} only improved {} over last {} passes (threshold {}) "
-            "[endpoint {}/{}]",
-            phase_name,
-            phase_marker,
-            iteration,
-            delayAsString(window_best, 3, sta_),
-            delayAsString(window_best - window_oldest, 3, sta_),
-            window,
-            delayAsString(threshold, 3, sta_),
-            endpt_index,
-            num_endpts);
-        wns_stagnation_tripped_ = true;
-        wns_stagnation_iteration_ = iteration;
-        wns_stagnation_last_wns_ = wns_now;
-        return true;
-      }
+  // WNS-stagnation gate. Sampled every call so the "best so far" tracker
+  // advances at the same rate as the caller's inner loop (deterministic).
+  best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
+  if (iteration > wns_stagnation_warmup_iterations_) {
+    const float threshold
+        = std::max(wns_stagnation_abs_tol_,
+                   wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
+    if (best_wns_ - initial_wns_ < threshold) {
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_setup",
+                 1,
+                 "{}{} Phase: Exiting at iteration {} because WNS best-so-far "
+                 "{} only improved {} from initial {} (threshold {}) "
+                 "[endpoint {}/{}]",
+                 phase_name,
+                 phase_marker,
+                 iteration,
+                 delayAsString(best_wns_, 3, sta_),
+                 delayAsString(best_wns_ - initial_wns_, 3, sta_),
+                 delayAsString(initial_wns_, 3, sta_),
+                 delayAsString(threshold, 3, sta_),
+                 endpt_index,
+                 num_endpts);
+      wns_stagnation_tripped_ = true;
+      wns_stagnation_iteration_ = iteration;
+      return true;
     }
   }
 
