@@ -280,7 +280,8 @@ class NegotiationLegalizer
 
   // Cells that actually changed position during the current negotiation
   // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional colors.
+  // are rendered in grey while current-iteration movers keep directional
+  // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
   int adj_window_{kAdjWindow};
   int num_threads_{1};

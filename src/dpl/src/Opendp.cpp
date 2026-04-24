@@ -167,11 +167,11 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
-    const double total_utilization
-        = core_area > 0 ? (static_cast<double>(total_inst_area)
-                           / static_cast<double>(core_area))
-                              * 100.0
-                        : 0.0;
+    const double total_utilization = core_area > 0
+                                         ? (static_cast<double>(total_inst_area)
+                                            / static_cast<double>(core_area))
+                                               * 100.0
+                                         : 0.0;
     logger_->info(DPL,
                   6,
                   "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "

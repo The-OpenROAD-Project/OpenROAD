@@ -81,7 +81,8 @@ class DplObserver
 
   // Inform the observer which cells moved in the current negotiation iteration.
   // Cells in the set are drawn with directional colors; others are greyed out.
-  // Pass an empty set to revert to the default (all movers use directional colors).
+  // Pass an empty set to revert to the default (all movers use directional
+  // colors).
   virtual void setCurrentIterMovers(
       const std::unordered_set<odb::dbInst*>& movers)
   {

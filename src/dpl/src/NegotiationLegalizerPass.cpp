@@ -142,8 +142,8 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
     const int actual_iter = iter + max_iter_neg_;
     const bool print_row = actual_iter < 10 || actual_iter % 10 == 0;
-    const int phase_2_violations
-        = negotiationIter(active, actual_iter, /*updateHistory=*/true, print_row);
+    const int phase_2_violations = negotiationIter(
+        active, actual_iter, /*updateHistory=*/true, print_row);
     if (print_row) {
       last_printed_iter_ = actual_iter;
     }
@@ -414,7 +414,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                     illegalSiteCount);
   }
   if (debug_observer_) {
-    debug_observer_->addNegotiationViolationsPoint(iter, totalViolations, illegalCellCount, illegalSiteCount);
+    debug_observer_->addNegotiationViolationsPoint(
+        iter, totalViolations, illegalCellCount, illegalSiteCount);
   }
   if (opendp_->iterative_debug_ && debug_observer_
       && iter >= opendp_->negotiation_debug_start_
@@ -441,8 +442,7 @@ void NegotiationLegalizer::ripUp(int cell_idx)
 
 void NegotiationLegalizer::place(int cell_idx, int x, int y)
 {
-  const bool did_move
-      = (x != cells_[cell_idx].x || y != cells_[cell_idx].y);
+  const bool did_move = (x != cells_[cell_idx].x || y != cells_[cell_idx].y);
   cells_[cell_idx].x = x;
   cells_[cell_idx].y = y;
   addUsage(cell_idx, 1);

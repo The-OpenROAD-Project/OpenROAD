@@ -34,8 +34,10 @@ Graphics::Graphics(Opendp* dp,
 
   gui::Gui* gui = gui::Gui::get();
   if (violations_chart_ == nullptr) {
-    violations_chart_ = gui->addChart(
-        "DPL Negotiation", "Iteration", {"Violations", "Illegal Cells", "Illegal Sites"});
+    violations_chart_
+        = gui->addChart("DPL Negotiation",
+                        "Iteration",
+                        {"Violations", "Illegal Cells", "Illegal Sites"});
     violations_chart_->setXAxisFormat("%d");
     violations_chart_->setYAxisFormats({"%.0f", "%.0f", "%.0f"});
     violations_chart_->setYAxisMin({0.0, 0.0, 0.0});
@@ -166,9 +168,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     } else if (current_iter_movers_.empty()
                || current_iter_movers_.contains(cell->getDbInst())) {
       // Moved in the current iteration (or no iteration info yet).
-      line_color = (std::abs(dx) > std::abs(dy))
-                       ? ((dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed)
-                       : ((dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue);
+      line_color
+          = (std::abs(dx) > std::abs(dy))
+                ? ((dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed)
+                : ((dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue);
     } else {
       // Moved in a previous iteration — grey to reduce visual noise.
       line_color = gui::Painter::kGray;
