@@ -254,6 +254,7 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
+    env = {"DISABLE_SOURCE_LINES": "1"},
     deps = [
         "//src/mpl:snapper",
         "//src/odb",
@@ -262,7 +263,6 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
-    env = {"DISABLE_SOURCE_LINES":"1"},
 )
 
 cc_test(
