@@ -66,8 +66,8 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
-  // if the pattern is a glob with no * or ? wildcards, and is not in regex
-  // mode, return immediately without walking the hierarchy.
+  // If the pattern is a literal (no wildcards and not a regex), return
+  // immediately as the literal lookup has already failed in the caller.
   if (!pattern->isRegexp() && !pattern->hasWildcards()) {
     return;
   }
