@@ -141,6 +141,11 @@ class RepairSetup : public sta::dbStaState
                          int num_endpts,
                          const char* phase_name,
                          char phase_marker);
+  // Reset the per-phase WNS-stagnation ring buffer.
+  void resetStagnationTracking();
+  // Return the info-log message for a phase-level abort caused by the
+  // WNS-stagnation gate (empty if that gate did not fire).
+  std::string wnsStagnationReport(int iteration) const;
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
   void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,
@@ -245,6 +250,30 @@ class RepairSetup : public sta::dbStaState
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;
+
+  // WNS-stagnation gate. If best-so-far WNS has not improved by at least
+  // max(wns_stagnation_abs_tol_, wns_stagnation_rel_tol_ * |initial_wns|)
+  // over the last wns_stagnation_window_passes_ passes, terminateProgress()
+  // returns true. Combined with the existing two-consecutive-termination rule
+  // this aborts the phase after 2*window passes of no WNS movement.
+  // Deterministic (iteration-count based, no wallclock). Conservative enough
+  // that tape-out flows near closure are dominated by the TNS fix-rate gate
+  // instead.
+  static constexpr int wns_stagnation_window_passes_ = 200;
+  static constexpr float wns_stagnation_abs_tol_ = 1.0e-12f;  // 1 ps
+  static constexpr float wns_stagnation_rel_tol_ = 0.005f;    // 0.5% of |init|
+
+  // Per-phase WNS history (ring buffer).
+  std::vector<sta::Slack> wns_history_;
+  size_t wns_history_head_ = 0;
+  size_t wns_history_count_ = 0;
+  sta::Slack initial_wns_ = 0;
+  // Set by terminateProgress() when the WNS-stagnation gate fires. Consumed
+  // by the phase-level abort sites to emit a loud info log. Reset by
+  // resetStagnationTracking().
+  bool wns_stagnation_tripped_ = false;
+  int wns_stagnation_iteration_ = 0;
+  sta::Slack wns_stagnation_last_wns_ = 0;
 };
 
 }  // namespace rsz

@@ -1,0 +1,22 @@
+{
+    "constraints__clocks__count": {
+        "value": 1,
+        "compare": "=="
+    },
+    "detailedplace__design__violations": {
+        "value": 0,
+        "compare": "=="
+    },
+    "finish__timing__setup__ws": {
+        "value": -1000000.0,
+        "compare": ">="
+    },
+    "finish__timing__setup__tns": {
+        "value": -1000000000.0,
+        "compare": ">="
+    },
+    "finish__timing__hold__ws": {
+        "value": -1000000.0,
+        "compare": ">="
+    }
+}
