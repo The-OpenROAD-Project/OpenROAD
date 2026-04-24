@@ -21,6 +21,24 @@ const kPositiveBorder = '#006400';  // darkgreen
 // Line chart series colors (Tableau 10)
 const kLineColors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
                       '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
+const kNegativeHighlight = 'rgba(240,128,128,0.12)';
+const kPositiveHighlight = 'rgba(144,238,144,0.12)';
+const kNegativeHover = '#ff9999';
+const kPositiveHover = '#b0ffb0';
+
+// Pure hit-test — returns the bar whose column contains (mx, my), or null.
+// Uses the full column height (chartArea top to bottom) so that buckets with
+// few paths are easy to click.
+export function hitTestColumn(bars, chartArea, mx, my) {
+    if (!bars || !chartArea) return null;
+    if (my < chartArea.top || my > chartArea.bottom) return null;
+    for (const bar of bars) {
+        if (mx >= bar.x && mx <= bar.x + bar.width) {
+            return bar;
+        }
+    }
+    return null;
+}
 
 // Pure layout computation — extracted for testability.
 export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight) {
@@ -436,16 +454,24 @@ export class ChartsWidget {
     }
 
     _drawBars(ctx) {
+        const ca = this._chartArea;
         for (const bar of this._bars) {
-            if (bar.height <= 0) continue;
-
             const isHovered = (this._hoveredBar === bar);
+
+            // Draw a subtle column highlight on hover so the full clickable
+            // area is visible, even for buckets with very short bars.
+            if (isHovered && ca) {
+                ctx.fillStyle = bar.negative
+                    ? kNegativeHighlight : kPositiveHighlight;
+                ctx.fillRect(bar.x, ca.top, bar.width, ca.bottom - ca.top);
+            }
+
+            if (bar.height <= 0) continue;
 
             // Fill
             ctx.fillStyle = bar.negative ? kNegativeFill : kPositiveFill;
             if (isHovered) {
-                // Lighten on hover
-                ctx.fillStyle = bar.negative ? '#ff9999' : '#b0ffb0';
+                ctx.fillStyle = bar.negative ? kNegativeHover : kPositiveHover;
             }
             ctx.fillRect(bar.x, bar.y, bar.width, bar.height);
 
@@ -466,17 +492,10 @@ export class ChartsWidget {
     }
 
     _hitTestBar(e) {
-        if (this._activeDebugChart >= 0 || !this._bars) return null;
         const rect = this._canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        for (const bar of this._bars) {
-            if (mx >= bar.x && mx <= bar.x + bar.width &&
-                my >= bar.y && my <= bar.y + bar.height) {
-                return bar;
-            }
-        }
-        return null;
+        return hitTestColumn(this._bars, this._chartArea, mx, my);
     }
 
     _handleHover(e) {
