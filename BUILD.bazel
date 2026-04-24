@@ -512,6 +512,7 @@ sh_test(
     srcs = ["//bazel:bzl_lint_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -525,6 +526,7 @@ sh_test(
     srcs = ["//bazel:bzl_fmt_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -571,6 +573,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
     ],
     data = [
+        "MODULE.bazel",
         "tclint.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
