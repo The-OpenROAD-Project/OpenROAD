@@ -266,16 +266,14 @@ test_suite(
 )
 
 cc_test(
-    name = "TestPathExpandedStaleness",
+    name = "TestBufInvNand2",
     srcs = [
-        "cpp/TestPathExpandedStaleness.cc",
+        "cpp/TestBufInvNand2.cc",
     ],
-    copts = ["-Isrc/rsz/src"],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/ant",
         "//src/dbSta",

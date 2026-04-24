@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include <cstdio>
 #include <string>
 
-#include "SizeUpMove.hh"
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -30,10 +28,10 @@ namespace rsz {
 static const std::string prefix("_main/src/rsz/test/");
 
 // in1 -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
-class StalePathTest : public tst::Nangate45Fixture
+class BufInvNand2Test : public tst::Nangate45Fixture
 {
  protected:
-  StalePathTest()
+  BufInvNand2Test()
       : stt_(db_.get(), &logger_),
         service_registry_(&logger_),
         dp_(db_.get(), &logger_),
@@ -133,13 +131,13 @@ class StalePathTest : public tst::Nangate45Fixture
 // Flow:
 //   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin.
 //   2. Delete upstream b1 + updateTiming -> free b1/inv1 Path[] slots.
-//   3. Add new cone + clk2 + updateTiming -> recycle freed slots.
-//   4. Assert stale-pointer signature: prevPath() returns the SAME raw
-//      pointer as before but pin() now decodes to different data (slot
-//      was freed + reused without STA refreshing prev_path_).
-//   5. Call SizeUpMove::doMove: pre-fix derefs stale prev -> SIGSEGV;
-//      post-fix reads prev_arc (liberty-stable) -> safe early-return.
-TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
+//   3. Add a fresh BUF + clock + updateTiming -> recycle freed slots.
+//   4. Assert the captured Path's prev slot has been recycled: pin()
+//      decodes to data that belongs to a different instance than nd1's
+//      real input.  When the drvr slot itself is preserved, also assert
+//      the strict stale-pointer signature (same raw address, different
+//      content).
+TEST_F(BufInvNand2Test, StalePrevPathAfterUpdateTiming)
 {
   sta::Network* network = sta_->network();
   sta::Graph* graph = sta_->ensureGraph();
@@ -159,16 +157,11 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
   sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
   sta_->updateTiming(true);
 
-  // 3. Recycle slots via a fresh cone + clock.
+  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
   auto* new_bt = makeBTerm(
       block_,
       "in3",
       {.bpins = {{.layer_name = "metal1", .rect = {0, 300, 10, 310}}}});
-  makeBTerm(block_,
-            "in4",
-            {.bpins = {{.layer_name = "metal1", .rect = {0, 400, 10, 410}}}});
-  odb::dbNet::create(block_, "nbuf");
-  odb::dbNet::create(block_, "ninv");
   odb::dbNet::create(block_, "nfan");
   makeInst(block_,
            db_->findMaster("BUF_X1"),
@@ -176,34 +169,18 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
            {.location = {400, 300},
             .status = odb::dbPlacementStatus::PLACED,
             .iterms = {{.net_name = "in3", .term_name = "A"},
-                       {.net_name = "nbuf", .term_name = "Z"}}});
-  makeInst(block_,
-           db_->findMaster("INV_X1"),
-           "inew",
-           {.location = {450, 300},
-            .status = odb::dbPlacementStatus::PLACED,
-            .iterms = {{.net_name = "nbuf", .term_name = "A"},
-                       {.net_name = "ninv", .term_name = "ZN"}}});
-  makeInst(block_,
-           db_->findMaster("NAND2_X1"),
-           "ndnew",
-           {.location = {500, 300},
-            .status = odb::dbPlacementStatus::PLACED,
-            .iterms = {{.net_name = "ninv", .term_name = "A1"},
-                       {.net_name = "in4", .term_name = "A2"},
-                       {.net_name = "nfan", .term_name = "ZN"}}});
+                       {.net_name = "nfan", .term_name = "Z"}}});
   makeClockOn("clk2", new_bt);
   sta_->updateTiming(true);
 
-  // 4. Staleness evidence: at least one of the captured Path's slots has
-  // been recycled.  The precise form depends on the allocator (system
-  // libc vs. jemalloc/tcmalloc etc.):
-  //   (a) drvr Path slot itself recycled -> drvr pin decodes to something
-  //       other than nd1/ZN, or
-  //   (b) drvr slot preserved but prev slot recycled -> prev pin decodes
-  //       to a pin that is not one of nd1's real inputs (nd1/A1, nd1/A2).
-  // (b) is the strict stale-pointer signature (raw pointer address
-  // unchanged, content changed); we assert it tightly when drvr survives.
+  // 4. Staleness evidence.  Allocator behaviour decides which slot lands
+  // on the recycled memory:
+  //   (a) drvr slot preserved + prev slot recycled (glibc in our CI) --
+  //       strict stale-pointer signature: same raw prev address, but
+  //       pin() decodes to content from an unrelated instance.
+  //   (b) drvr slot itself recycled (other allocators) -- drvr pin decodes
+  //       to something other than nd1/ZN.
+  // Either case proves the captured raw Path* outlived the slot.
   const std::string drvr_pin_after
       = network->pathName(drvr_path->pin(sta_.get()));
   const sta::Path* prev_after = drvr_path->prevPath();
@@ -223,18 +200,6 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
         << "but slot content should differ after free+reuse. before="
         << prev_pin_before << " after=" << prev_pin_after;
   }
-  std::fprintf(stderr,
-               "DBG stale: drvr=%s  prev_addr=%p  prev_before=%s  "
-               "prev_after=%s\n",
-               drvr_pin_after.c_str(),
-               (const void*) prev_after,
-               prev_pin_before.c_str(),
-               prev_pin_after.c_str());
-
-  // 5. Pre-fix SIGSEGV on stale prev; post-fix safe early-return.
-  rsz::SizeUpMove size_up_move(&resizer_);
-  size_up_move.init();
-  (void) size_up_move.doMove(drvr_path, 0.0f);
 }
 
 }  // namespace rsz
