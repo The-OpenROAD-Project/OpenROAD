@@ -1,55 +1,41 @@
-# Netlist-based regression for issue #10213: repair_timing -hold must not pass
-# internal output pins from multi-output cells to insertBufferBeforeLoads.
+# Targeted regression for issue #10213. A tiny ASAP7 design contains one
+# FAx1_ASAP7_75t_R whose CON output drives the repaired endpoint and whose
+# SN output is on a different net. The launch net is marked dont_touch so
+# repair_timing -hold must attempt repair on the FA CON net itself.
 source "helpers.tcl"
 source asap7/asap7.vars
 
-foreach lib [concat [list $liberty_file] $extra_liberty] {
-  read_liberty $lib
-}
-read_lef $tech_lef
-read_lef $std_cell_lef
-foreach lef $extra_lef { read_lef $lef }
+read_liberty asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz
+read_liberty asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz
+read_liberty asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib
+read_lef asap7/asap7_tech_1x_201209.lef
+read_lef asap7/asap7sc7p5t_28_R_1x_220121a.lef
 
 read_verilog repair_hold_multi_output_load.v
-link_design gcd
-
-set clk_period 77.5
-create_clock -name core_clock -period $clk_period [get_ports clk]
-set non_clock_inputs [all_inputs -no_clocks]
-set_input_delay [expr $clk_period * 0.2] -clock core_clock $non_clock_inputs
-set_output_delay [expr $clk_period * 0.2] -clock core_clock [all_outputs]
-set_clock_uncertainty -hold 62 [all_clocks]
-
-source asap7/setRC.tcl
+link_design repair_hold_multi_output_load
 
 initialize_floorplan \
   -site $site \
-  -die_area {0 0 8.977 8.977} \
-  -core_area {0.540 0.540 8.424 8.370}
-source asap7/asap7.tracks.tcl
-set_dont_use $dont_use
+  -die_area {0 0 20 4} \
+  -core_area {0 0 20 4}
 
-global_placement -skip_io -density 0.35 -pad_left 0 -pad_right 0
-place_pins -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
-global_placement -density 0.35 -pad_left 0 -pad_right 0 \
-  -routability_driven \
-  -timing_driven \
-  -force_center_initial_place \
-  -min_phi_coef 0.95 \
-  -max_phi_coef 1.05
-repair_design -verbose
+place_inst -name u_launch -location {1 0.5}
+place_inst -name u_fa -location {4 0.5}
+place_inst -name u_capture_con -location {8 0.5}
+place_inst -name u_capture_sn -location {12 0.5}
 detailed_placement
+
+create_clock -name clk -period 10 [get_ports clk]
+set_min_delay 80 -from [get_clocks clk] -to [get_clocks clk]
+
+source asap7/setRC.tcl
 estimate_parasitics -placement
 
-clock_tree_synthesis -sink_clustering_enable -repair_clock_nets
-estimate_parasitics -placement
-detailed_placement
-estimate_parasitics -placement
+set_dont_touch launch_qn
 
-repair_timing -hold -allow_setup_violations \
-  -hold_margin 124 \
-  -setup_margin -1000 \
-  -max_buffer_percent 80 \
-  -max_passes 3 \
-  -max_iterations 3 \
-  -verbose
+report_checks -path_delay min -to [get_pins u_capture_con/D]
+report_checks -path_delay min -to [get_pins u_capture_sn/D]
+
+repair_timing -hold -allow_setup_violations
+
+report_checks -path_delay min -to [get_pins u_capture_con/D]
