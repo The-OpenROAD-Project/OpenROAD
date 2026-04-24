@@ -109,14 +109,12 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
 //                                   nd1/A2 <- in2
 //
 // Flow:
-//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin.
-//   2. Delete upstream b1 + updateTiming -> free b1/inv1 Path[] slots.
-//   3. Add a fresh BUF + clock + updateTiming -> recycle freed slots.
+//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin name
+//   2. Delete upstream b1 + updateTiming -> free
+//   3. Add a fresh BUF + clock + updateTiming -> recycle
 //   4. Assert the captured Path's prev slot has been recycled: pin()
 //      decodes to data that belongs to a different instance than nd1's
-//      real input.  When the drvr slot itself is preserved, also assert
-//      the strict stale-pointer signature (same raw address, different
-//      content).
+//      real input.
 TEST_F(TestDbSta, StalePrevPathAfterUpdateTiming)
 {
   readVerilogAndSetup("TestDbSta_StalePath.v");
@@ -130,10 +128,9 @@ TEST_F(TestDbSta, StalePrevPathAfterUpdateTiming)
       MinMax::max());
   ASSERT_NE(drvr_path, nullptr);
   ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
-  const Path* prev_before = drvr_path->prevPath();
-  ASSERT_NE(prev_before, nullptr);
-  const std::string prev_pin_before
-      = network->pathName(prev_before->pin(sta_.get()));
+  const Path* pre_addr = drvr_path->prevPath();
+  ASSERT_NE(pre_addr, nullptr);
+  const std::string pre_pin_name = network->pathName(pre_addr->pin(sta_.get()));
 
   // 2. Free upstream Path[] slots.
   sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
@@ -156,33 +153,17 @@ TEST_F(TestDbSta, StalePrevPathAfterUpdateTiming)
       "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
   sta_->updateTiming(true);
 
-  // 4. Staleness evidence.  Allocator behaviour decides which slot lands
-  // on the recycled memory:
-  //   (a) drvr slot preserved + prev slot recycled (glibc in our CI) --
-  //       strict stale-pointer signature: same raw prev address, but
-  //       pin() decodes to content from an unrelated instance.
-  //   (b) drvr slot itself recycled (other allocators) -- drvr pin decodes
-  //       to something other than nd1/ZN.
-  // Either case proves the captured raw Path* outlived the slot.
-  const std::string drvr_pin_after
-      = network->pathName(drvr_path->pin(sta_.get()));
-  const Path* prev_after = drvr_path->prevPath();
-  const std::string prev_pin_after
-      = prev_after ? network->pathName(prev_after->pin(sta_.get()))
-                   : std::string("<null>");
-  const bool drvr_recycled = drvr_pin_after != "nd1/ZN";
-  const bool prev_recycled = prev_after != nullptr && prev_pin_after != "nd1/A1"
-                             && prev_pin_after != "nd1/A2";
-  EXPECT_TRUE(drvr_recycled || prev_recycled)
-      << "expected slot reuse to be demonstrable; drvr=" << drvr_pin_after
-      << " prev=" << prev_pin_after;
-  if (!drvr_recycled && prev_after != nullptr) {
-    EXPECT_EQ(prev_after, prev_before)
-        << "stale-pointer signature: prev_path_ address unchanged";
-    EXPECT_NE(prev_pin_after, prev_pin_before)
-        << "but slot content should differ after free+reuse. before="
-        << prev_pin_before << " after=" << prev_pin_after;
-  }
+  // 4. Staleness evidence. Pointer address is same but pin name has changed.
+  const Path* post_addr = drvr_path->prevPath();
+  const std::string post_pin_name
+      = post_addr ? network->pathName(post_addr->pin(sta_.get()))
+                  : std::string("<null>");
+
+  EXPECT_EQ(pre_addr, post_addr)
+      << "stale-pointer signature: prev_path_ address unchanged";
+  EXPECT_NE(pre_pin_name, post_pin_name)
+      << "but slot content should differ after free+reuse. before="
+      << pre_pin_name << " after=" << post_pin_name;
 }
 
 }  // namespace sta
