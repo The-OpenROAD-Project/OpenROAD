@@ -30,8 +30,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
-      - name: Install Bazelisk and pandoc
-        run: brew install bazelisk pandoc
+      - name: Install Bazelisk
+        run: brew install bazelisk
 
       - name: Build OpenROAD
         run: |

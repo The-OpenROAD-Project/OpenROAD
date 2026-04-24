@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Bazel rule to generate man pages (cat/ and html/) from module READMEs.
+"""Bazel rule that invokes docs/Makefile to produce cat/ and html/ man pages.
 
-Runs the existing docs Makefile to produce cat/ and html/ outputs.
-Requires pandoc, nroff, and python3 (>= 3.10) on the system.
+The output filenames aren't known at analysis time (they depend on which
+modules exist under src/*/), so outputs are declared as TreeArtifacts and
+the real work is delegated to the `bazel-manpages` Makefile target.
+
+Host requirements: pandoc, nroff (groff), col (bsdextrautils), python3>=3.10.
 """
 
 def _man_pages_impl(ctx):
@@ -13,30 +16,9 @@ def _man_pages_impl(ctx):
 
     command = """
 set -euo pipefail
-
-# Ensure homebrew tools (pandoc, python3 >= 3.10) are available on macOS
-if [ -d /opt/homebrew/bin ]; then
-    export PATH="/opt/homebrew/bin:$PATH"
-elif [ -d /usr/local/bin ]; then
-    export PATH="/usr/local/bin:$PATH"
-fi
-
-cd docs
-
-# Symlink module READMEs into md/man2/
-bash src/scripts/link_readmes.sh 2>/dev/null || true
-
-# Run preprocessing
-python3 src/scripts/md_roff_compat.py
-
-# Generate cat and html pages via Makefile
-make -f Makefile cat web
-
-cd ..
-
-# Copy outputs to declared Bazel directories
-cp -r docs/cat/* {cat_out}/
-cp -r docs/html/* {html_out}/
+(cd docs && make --no-print-directory -f Makefile bazel-manpages)
+cp -R docs/cat/. {cat_out}/
+cp -R docs/html/. {html_out}/
 """.format(
         cat_out = cat_dir.path,
         html_out = html_dir.path,
