@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <concepts>
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
-#include <concepts>
 
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
@@ -98,8 +98,7 @@ class LogicExtractorFactory
       std::vector<sta::Vertex*>& cut_vertices,
       T& library);
   template <std::predicate<sta::Pin*> T>
-  std::vector<sta::Pin*> AddMisingTopIO(
-      std::vector<sta::Pin*>& pins, T pred);
+  std::vector<sta::Pin*> AddMisingTopIO(std::vector<sta::Pin*>& pins, T pred);
   std::vector<sta::Pin*> AddMisingPrimaryInputs(
       std::vector<sta::Pin*>& primary_inputs);
   std::vector<sta::Pin*> AddMisingPrimaryOutputs(
@@ -180,7 +179,6 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
 
   std::set<std::string> supported_cells;
   if constexpr (is_mockturtle_library_v<T>) {
-    // supported.reserve(library.get_gates().size());
     for (auto const& g : library.get_gates()) {
       supported_cells.insert(g.name);
     }
@@ -198,11 +196,11 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
       = GetCutInstances(cut_vertices, supported_cells);
 
   if constexpr (is_mockturtle_library_v<T>) {
-    // sometimes part of top I/O is missing, causing errors when mockturtle is used
+    // sometimes part of top I/O is missing, causing errors when mockturtle is
+    // used
     primary_inputs = AddMisingPrimaryInputs(primary_inputs);
     primary_outputs = AddMisingPrimaryOutputs(primary_outputs);
   }
-  
 
   // Remove primary outputs who are undriven. This can happen when a flop
   // feeds into another flop where the logic cone is essentially just a wire.
@@ -306,7 +304,8 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
 
 template <std::predicate<sta::Pin*> T>
 std::vector<sta::Pin*> LogicExtractorFactory::AddMisingTopIO(
-    std::vector<sta::Pin*>& pins, T pred)
+    std::vector<sta::Pin*>& pins,
+    T pred)
 {
   std::vector<sta::Pin*> result(pins.begin(), pins.end());
   std::unordered_set<sta::Pin*> used_pins(pins.begin(), pins.end());

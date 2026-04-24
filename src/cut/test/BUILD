@@ -34,15 +34,18 @@ cc_test(
     ],
     deps = [
         "//src/cut",
+        "//src/cut/test/cpp/helper",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
-        "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        # TODO Don't export main in @abc
+        # buildifier: leave-alone
+        "@abc",
     ],
 )
 
@@ -72,6 +75,7 @@ cc_test(
     ],
     deps = [
         "//src/cut",
+        "//src/cut/test/cpp/helper",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb",
@@ -79,15 +83,20 @@ cc_test(
         "//src/tst",
         "//src/utl",
         "//third-party:mockturtle",
-        "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        # TODO Don't export main in @abc
+        # buildifier: leave-alone
+        "@abc",
     ],
 )
 
 cc_test(
     name = "CutGTests",
-    srcs = ["cpp/TestAbc.cc", "cpp/TestMockturtle.cc"],
+    srcs = [
+        "cpp/TestAbc.cc",
+        "cpp/TestMockturtle.cc",
+    ],
     data = [
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
@@ -111,6 +120,7 @@ cc_test(
     ],
     deps = [
         "//src/cut",
+        "//src/cut/test/cpp/helper",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb",
@@ -118,8 +128,10 @@ cc_test(
         "//src/tst",
         "//src/utl",
         "//third-party:mockturtle",
-        "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+        # TODO Don't export main in @abc
+        # buildifier: leave-alone
+        "@abc",
     ],
 )

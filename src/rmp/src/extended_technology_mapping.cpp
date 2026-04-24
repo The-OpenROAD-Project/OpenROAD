@@ -52,7 +52,7 @@ Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
 namespace rmp {
 
 std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
-ExtendedTechnologyMapping::extractLogicToMockturtle(
+ExtendedTechnologyMapping::ExtractLogicToMockturtle(
     sta::dbSta* sta,
     sta::Scene* scene,
     rsz::Resizer* resizer,
@@ -86,7 +86,7 @@ ExtendedTechnologyMapping::extractLogicToMockturtle(
   return {ntk, cut};
 }
 
-std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::getSignalOutputs(
+std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::GetSignalOutputs(
     odb::dbMaster* master)
 {
   std::vector<odb::dbMTerm*> outs;
@@ -114,7 +114,7 @@ std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::getSignalOutputs(
 }
 
 ExtendedTechnologyMapping::CellMapping
-ExtendedTechnologyMapping::mapCellFromStdCell(const BlockNtk& ntk,
+ExtendedTechnologyMapping::MapCellFromStdCell(const BlockNtk& ntk,
                                               const BlockNtk::node& n,
                                               utl::Logger* logger)
 {
@@ -140,7 +140,7 @@ ExtendedTechnologyMapping::mapCellFromStdCell(const BlockNtk& ntk,
 }
 
 std::optional<const sta::LibertyCell*>
-ExtendedTechnologyMapping::findLibertyCellByMasterName(
+ExtendedTechnologyMapping::FindLibertyCellByMasterName(
     sta::Sta* sta,
     const std::string& cell_name)
 {
@@ -155,7 +155,7 @@ ExtendedTechnologyMapping::findLibertyCellByMasterName(
 }
 
 std::optional<ExtendedTechnologyMapping::TieMaster>
-ExtendedTechnologyMapping::findTieMaster(const odb::dbSet<odb::dbLib>& libs,
+ExtendedTechnologyMapping::FindTieMaster(const odb::dbSet<odb::dbLib>& libs,
                                          sta::dbSta* sta,
                                          bool value)
 {
@@ -192,7 +192,7 @@ ExtendedTechnologyMapping::findTieMaster(const odb::dbSet<odb::dbLib>& libs,
       // likely a constant cell
       TieMaster tm = {.master = master, .out_pin = out_name};
 
-      auto lib_cell = findLibertyCellByMasterName(sta, master->getName());
+      auto lib_cell = FindLibertyCellByMasterName(sta, master->getName());
       if (!lib_cell.has_value()) {
         continue;
       }
@@ -214,7 +214,7 @@ ExtendedTechnologyMapping::findTieMaster(const odb::dbSet<odb::dbLib>& libs,
   return std::nullopt;
 }
 
-odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
+odb::dbNet* ExtendedTechnologyMapping::EnsureConstNet(
     bool value,
     odb::dbBlock* block,
     const odb::dbSet<odb::dbLib>& libs,
@@ -237,7 +237,7 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
     logger->error(utl::RMP, 87, "Failed to create const net");
   }
 
-  auto tie = findTieMaster(libs, sta, value);
+  auto tie = FindTieMaster(libs, sta, value);
   if (!tie) {
     logger->error(
         utl::RMP,
@@ -269,7 +269,7 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
   return net;
 }
 
-void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
+void ExtendedTechnologyMapping::ImportMockturtleMappedNetwork(
     sta::dbSta* sta,
     const BlockNtk& ntk,
     const odb::dbSet<odb::dbLib>& libs,
@@ -343,7 +343,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = topo_ntk.node_to_index(n);
 
-    CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
+    CellMapping mapping = MapCellFromStdCell(topo_ntk, n, logger);
     odb::dbMaster* master = nullptr;
     for (const auto& lib : libs) {
       master = lib->findMaster(mapping.master_name.c_str());
@@ -365,7 +365,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
                     mapping.master_name);
     }
 
-    const auto out_mterms = getSignalOutputs(master);
+    const auto out_mterms = GetSignalOutputs(master);
     const uint32_t num_cell_outputs = static_cast<uint32_t>(out_mterms.size());
     const uint32_t num_node_outputs = topo_ntk.num_outputs(n);
 
@@ -429,7 +429,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = topo_ntk.node_to_index(n);
 
-    CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
+    CellMapping mapping = MapCellFromStdCell(topo_ntk, n, logger);
 
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
@@ -450,7 +450,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
                           mapping.input_pins.size());
           }
 
-          odb::dbNet* src_net = getDriverNet(
+          odb::dbNet* src_net = GetDriverNet(
               topo_ntk, block, libs, sta, logger, node_out_nets, f);
           const std::string& pin_name = mapping.input_pins[fanin_idx];
           odb::dbITerm* it = inst->findITerm(pin_name.c_str());
@@ -487,7 +487,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     odb::dbNet* boundary_net = it->second;
     ;
     odb::dbNet* driver_net
-        = getDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
+        = GetDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
     if (driver_net && boundary_net && driver_net != boundary_net) {
       driver_net->mergeNet(boundary_net);
     }
@@ -495,7 +495,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
 }
 
 template <typename Ntk>
-odb::dbNet* ExtendedTechnologyMapping::getDriverNet(
+odb::dbNet* ExtendedTechnologyMapping::GetDriverNet(
     mockturtle::topo_view<Ntk, false>& topo_ntk,
     odb::dbBlock* block,
     const odb::dbSet<odb::dbLib>& libs,
@@ -523,7 +523,7 @@ odb::dbNet* ExtendedTechnologyMapping::getDriverNet(
     };
 
     bool value = get_constant_value(src_node, f);
-    return ensureConstNet(value, block, libs, sta, logger);
+    return EnsureConstNet(value, block, libs, sta, logger);
   }
   const uint32_t src_idx = topo_ntk.node_to_index(src_node);
   const uint32_t out_pin_idx
@@ -541,7 +541,7 @@ odb::dbNet* ExtendedTechnologyMapping::getDriverNet(
   return node_out_nets[src_idx][out_pin_idx];
 }
 
-static void filterDriverResistance(std::vector<mockturtle::gate>& gates,
+static void FilterDriverResistance(std::vector<mockturtle::gate>& gates,
                                    sta::dbSta* sta,
                                    utl::Logger* logger,
                                    double min_drive_resistance)
@@ -590,7 +590,7 @@ static void filterDriverResistance(std::vector<mockturtle::gate>& gates,
   }
 }
 
-static void filterDriverResistanceMax(std::vector<mockturtle::gate>& gates,
+static void FilterDriverResistanceMax(std::vector<mockturtle::gate>& gates,
                                       sta::dbSta* sta,
                                       utl::Logger* logger,
                                       double max_drive_resistance)
@@ -654,11 +654,11 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
   // Configure emap parameters
   mockturtle::emap_params ps;
 
-  ps.map_multioutput = map_multioutput_;
-  ps.verbose = true;
+  ps.area_oriented_mapping = true;
   ps.create_po_buffers = create_po_buffers_;
   ps.insert_buffers = insert_buffers_;
-  ps.area_oriented_mapping = true;
+  ps.map_multioutput = map_multioutput_;
+  ps.verbose = verbose_;
 
   // Read genlib
   std::vector<mockturtle::gate> gates;
@@ -724,16 +724,16 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
     }
   }
   if (min_drive_resistance_ != 0) {
-    filterDriverResistance(gates, sta, logger, min_drive_resistance_);
+    FilterDriverResistance(gates, sta, logger, min_drive_resistance_);
   } else if (max_drive_resistance_ != 0) {
-    filterDriverResistanceMax(gates, sta, logger, max_drive_resistance_);
+    FilterDriverResistanceMax(gates, sta, logger, max_drive_resistance_);
   }
 
   mockturtle::tech_library<9u> tech_lib(gates);
 
   // Create mockturtle AIG network
   auto [ntk, cut]
-      = extractLogicToMockturtle(sta, scene_, resizer, tech_lib, logger);
+      = ExtractLogicToMockturtle(sta, scene_, resizer, tech_lib, logger);
 
   // Extended technology mapping statistics
   mockturtle::emap_stats st;
@@ -765,7 +765,7 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
   net0_cache_ = nullptr;
   net1_cache_ = nullptr;
 
-  importMockturtleMappedNetwork(sta, mapped_ntk, libs, cut, logger);
+  ImportMockturtleMappedNetwork(sta, mapped_ntk, libs, cut, logger);
 
   db->triggerPostReadDb();
 }

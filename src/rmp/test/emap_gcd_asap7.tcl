@@ -50,8 +50,6 @@ resynth_emap -scene fast \
 suppress_message RSZ 75
 repair_timing
 
-write_verilog ./emap_out.v
-
 report_cell_usage
 report_timing_histogram
 report_checks

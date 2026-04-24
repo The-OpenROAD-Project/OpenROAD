@@ -5098,7 +5098,20 @@ private:
       topo_ok = multi_topo_sort_rec( choice_ntk, ntk.get_node( f ) );
     } );
 
-    assert(topo_ok);
+    if (!topo_ok) {
+      std::cerr << "[i] WARNING: failed to compute topological order for multi-output matching, falling back to non-topological order\n";
+      topo_order.clear();
+      multi_node_match.clear();
+      std::memset( node_tuple_match.data(), 0, sizeof( multioutput_info ) * ntk.size() );
+      for ( auto& data : node_match )
+      {
+        data.multioutput_match[0] = false;
+        data.multioutput_match[1] = false;
+      }
+      topo_view<Ntk>( ntk ).foreach_node( [this]( auto n ) {
+        topo_order.push_back( n );
+      } );
+    }
   }
 
   /* Experimental code resticted to only half adders and full adders */

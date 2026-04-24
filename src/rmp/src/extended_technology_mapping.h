@@ -58,14 +58,14 @@ class ExtendedTechnologyMapping
   };
 
   std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
-  extractLogicToMockturtle(sta::dbSta* sta,
+  ExtractLogicToMockturtle(sta::dbSta* sta,
                            sta::Scene* scene,
                            rsz::Resizer* resizer,
                            mockturtle::tech_library<9u>& tech_lib,
                            utl::Logger* logger);
 
   template <typename Ntk>
-  odb::dbNet* getDriverNet(mockturtle::topo_view<Ntk, false>& topo_ntk,
+  odb::dbNet* GetDriverNet(mockturtle::topo_view<Ntk, false>& topo_ntk,
                            odb::dbBlock* block,
                            const odb::dbSet<odb::dbLib>& libs,
                            sta::dbSta* sta,
@@ -73,27 +73,27 @@ class ExtendedTechnologyMapping
                            std::vector<std::vector<odb::dbNet*>>& node_out_nets,
                            const BlockNtk::signal& f);
 
-  std::vector<odb::dbMTerm*> getSignalOutputs(odb::dbMaster* master);
+  std::vector<odb::dbMTerm*> GetSignalOutputs(odb::dbMaster* master);
 
-  CellMapping mapCellFromStdCell(const BlockNtk& ntk,
+  CellMapping MapCellFromStdCell(const BlockNtk& ntk,
                                  const BlockNtk::node& n,
                                  utl::Logger* logger);
 
-  std::optional<const sta::LibertyCell*> findLibertyCellByMasterName(
+  std::optional<const sta::LibertyCell*> FindLibertyCellByMasterName(
       sta::Sta* sta,
       const std::string& cell_name);
 
-  std::optional<TieMaster> findTieMaster(const odb::dbSet<odb::dbLib>& libs,
+  std::optional<TieMaster> FindTieMaster(const odb::dbSet<odb::dbLib>& libs,
                                          sta::dbSta* sta,
                                          bool value);
 
-  odb::dbNet* ensureConstNet(bool value,
+  odb::dbNet* EnsureConstNet(bool value,
                              odb::dbBlock* block,
                              const odb::dbSet<odb::dbLib>& libs,
                              sta::dbSta* sta,
                              utl::Logger* logger);
 
-  void importMockturtleMappedNetwork(sta::dbSta* sta,
+  void ImportMockturtleMappedNetwork(sta::dbSta* sta,
                                      const BlockNtk& ntk,
                                      const odb::dbSet<odb::dbLib>& libs,
                                      cut::LogicCut& cut,
@@ -102,8 +102,8 @@ class ExtendedTechnologyMapping
   sta::Scene* scene_;
   bool map_multioutput_;
   bool verbose_;
-  bool insert_buffers_;
   bool create_po_buffers_;
+  bool insert_buffers_;
   double min_drive_resistance_;
   double max_drive_resistance_;
 

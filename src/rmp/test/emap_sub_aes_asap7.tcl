@@ -45,17 +45,11 @@ write_verilog_for_eqy $test_name before "None"
 
 puts "-- After --\n"
 
-write_verilog ./aes_before_emap.v
-
 resynth_emap -scene fast \
   -map_multioutput
 
-write_verilog ./aes_after_emap.v
-
 suppress_message RSZ 75
 repair_timing
-
-write_verilog ./aes_after_emap_repair.v
 
 report_cell_usage
 report_timing_histogram
@@ -64,7 +58,7 @@ report_wns
 report_tns
 
 # Skipping eqy check as is takes a lot of time to complete
-# 
+#
 set liberty_files [concat $lib_files_slow $lib_files_fast]
 run_equivalence_test $test_name \
   -liberty_files $liberty_files \

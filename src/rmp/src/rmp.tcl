@@ -191,7 +191,16 @@ proc resynth_emap { args } {
     set max_drive_resistance 0
   }
 
-  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $create_po_buffers $insert_buffers $min_drive_resistance $max_drive_resistance $workdir_name
+  rmp::resynth_emap_cmd \
+    $scene \
+    $target \
+    $map_multioutput \
+    $verbose \
+    $create_po_buffers \
+    $insert_buffers \
+    $min_drive_resistance \
+    $max_drive_resistance \
+    $workdir_name
 }
 
 sta::define_cmd_args "resynth_genetic" {
