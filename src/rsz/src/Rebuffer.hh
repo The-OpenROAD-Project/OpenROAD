@@ -33,7 +33,8 @@ namespace rsz {
 
 class Resizer;
 class BufferedNet;
-class RepairSetup;
+class BufferCandidate;
+class SetupLegacyPolicy;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
@@ -43,6 +44,7 @@ class Rebuffer : public sta::dbStaState
  public:
   Rebuffer(Resizer* resizer);
   void fullyRebuffer(sta::Pin* user_pin = nullptr);
+  void rebufferNet(const sta::Pin* drvr_pin);
 
  protected:
   void init();
@@ -173,8 +175,9 @@ class Rebuffer : public sta::dbStaState
 
   double long_wire_stepping_runtime_ = 0;
 
-  friend class RepairSetup;
-  friend class BufferMove;
+  friend class rsz::BufferCandidate;
+  friend class rsz::SetupLegacyPolicy;
+  friend class Resizer;
 };
 
 };  // namespace rsz

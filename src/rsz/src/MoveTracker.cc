@@ -16,8 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
@@ -49,23 +51,32 @@ using std::tuple;
 using std::vector;
 using utl::RSZ;
 
-MoveTracker::MoveTracker(utl::Logger* logger,
-                         sta::Sta* sta,
-                         sta::dbNetwork* db_network,
-                         odb::dbBlock* block)
-    : logger_(logger),
-      sta_(sta),
+namespace {
+
+std::string histogramBar(const int count, const int count_per_hash)
+{
+  const int bar_len = count / count_per_hash;
+  return bar_len > 0 ? " " + string(bar_len, '#') : "";
+}
+
+}  // namespace
+
+MoveTracker::MoveTracker(Resizer& resizer, const bool report_enabled)
+    : resizer_(resizer),
+      logger_(resizer.logger()),
+      sta_(resizer.sta()),
+      db_network_(resizer.dbNetwork()),
+      report_enabled_(report_enabled),
       current_endpoint_(nullptr),
       move_count_(0),
       total_move_count_(0),
       total_no_attempt_count_(0),
       total_attempt_count_(0),
       total_reject_count_(0),
-      total_commit_count_(0),
-      db_network_(db_network)
+      total_commit_count_(0)
 {
-  if (block) {
-    addOwner(block);
+  if (report_enabled_ && resizer.block() != nullptr) {
+    addOwner(resizer.block());
   }
 }
 
@@ -153,6 +164,15 @@ void MoveTracker::trackCriticalPins(
         // Only track pins with negative slack
         if (slack_ps < 0.0) {
           all_critical_pins_.insert(pin);
+          if (!pin_info_.contains(pin)) {
+            pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
+                                     "",
+                                     "unknown",
+                                     0.0,
+                                     0.0,
+                                     0.0,
+                                     0.0);
+          }
         }
       }
     }
@@ -177,6 +197,15 @@ void MoveTracker::clearMoveSummary()
   visit_count_.clear();
 }
 
+std::string MoveTracker::pinPathName(const sta::Pin* pin) const
+{
+  const auto info_it = pin_info_.find(pin);
+  if (info_it != pin_info_.end()) {
+    return info_it->second.pin_name;
+  }
+  return sta_->network()->pathName(pin);
+}
+
 void MoveTracker::trackViolator(const sta::Pin* pin)
 {
   if (!visit_count_.contains(pin)) {
@@ -188,8 +217,17 @@ void MoveTracker::trackViolator(const sta::Pin* pin)
   all_visited_pins_.insert(pin);
 
   // Track which endpoint this pin was visited on (basic info only)
-  if (current_endpoint_ && !pin_info_.contains(pin)) {
-    pin_info_[pin] = PinInfo(current_endpoint_, "unknown", 0.0, 0.0, 0.0, 0.0);
+  auto info_it = pin_info_.find(pin);
+  if (current_endpoint_
+      && (info_it == pin_info_.end()
+          || info_it->second.endpoint_name.empty())) {
+    pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
+                             sta_->network()->pathName(current_endpoint_),
+                             "unknown",
+                             0.0,
+                             0.0,
+                             0.0,
+                             0.0);
   }
 }
 
@@ -209,7 +247,8 @@ void MoveTracker::trackViolatorWithInfo(const sta::Pin* pin,
 
   // Store detailed information
   if (current_endpoint_) {
-    pin_info_[pin] = PinInfo(current_endpoint_,
+    pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
+                             sta_->network()->pathName(current_endpoint_),
                              gate_type,
                              load_delay,
                              intrinsic_delay,
@@ -235,8 +274,8 @@ void MoveTracker::commitMoves()
                         pending_move.move_type,
                         MoveStateType::ATTEMPT_COMMIT);
 
-    // Store in move history for detailed reports
-    pin_move_history_[pending_move.pin].emplace_back(
+    // Store in move event list for detailed reports
+    pin_move_events_[pending_move.pin].emplace_back(
         pending_move.move_type, MoveStateType::ATTEMPT_COMMIT);
   }
 
@@ -258,8 +297,8 @@ void MoveTracker::rejectMoves()
                         pending_move.move_type,
                         MoveStateType::ATTEMPT_REJECT);
 
-    // Store in move history for detailed reports
-    pin_move_history_[pending_move.pin].emplace_back(
+    // Store in move event list for detailed reports
+    pin_move_events_[pending_move.pin].emplace_back(
         pending_move.move_type, MoveStateType::ATTEMPT_REJECT);
   }
 
@@ -488,13 +527,13 @@ void MoveTracker::printMoveSummary(const std::string& title)
 
 void MoveTracker::printEndpointSummary(const std::string& title)
 {
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
   if (endpoint_move_counts_.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{}: No endpoint statistics collected",
-               title);
+    logger_->debug(
+        RSZ, "move_tracker", "{}: No endpoint statistics collected", title);
     return;
   }
 
@@ -542,29 +581,25 @@ void MoveTracker::printEndpointSummary(const std::string& title)
     return slack_a < slack_b;
   });
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Per-Endpoint Optimization Effort (sorted by WNS):");
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
+  logger_->debug(
+      RSZ, "move_tracker", "Per-Endpoint Optimization Effort (sorted by WNS):");
 
   // Print header
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11} | {:>11} | "
-             "{:>11} | {:>11}",
-             "Endpoint",
-             "Attempts",
-             "Rejects",
-             "Commits",
-             "Commit%",
-             "OrigSlk(ns)",
-             "PreSlk(ns)",
-             "PostSlk(ns)",
-             "Delta(ns)");
+  logger_->debug(
+      RSZ,
+      "move_tracker",
+      "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11} | {:>11} | "
+      "{:>11} | {:>11}",
+      "Endpoint",
+      "Attempts",
+      "Rejects",
+      "Commits",
+      "Commit%",
+      "OrigSlk(ns)",
+      "PreSlk(ns)",
+      "PostSlk(ns)",
+      "Delta(ns)");
 
   // Print top endpoints: WNS phase shows top 20, TNS phase shows up to 1000
   int max_endpoints_to_print = is_tns_phase ? 1000 : 20;
@@ -663,21 +698,20 @@ void MoveTracker::printEndpointSummary(const std::string& title)
     commits_str << std::right << std::setw(6) << commits << " " << std::setw(5)
                 << std::fixed << std::setprecision(1) << commit_pct << "%";
 
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<40} | {:>13} | {:>13} | {:>13} | {:>5.1f}% | {:>11.3f} | "
-               "{:>11.3f} | {:>11.3f} | {:>11.3f}",
-               endpoint_name,
-               attempts_str.str(),
-               rejects_str.str(),
-               commits_str.str(),
-               commit_rate,
-               original_slack_ns,
-               pre_phase_slack_ns,
-               post_phase_slack_ns,
-               delta_ns);
+    logger_->debug(
+        RSZ,
+        "move_tracker",
+        "{:<40} | {:>13} | {:>13} | {:>13} | {:>5.1f}% | {:>11.3f} | "
+        "{:>11.3f} | {:>11.3f} | {:>11.3f}",
+        endpoint_name,
+        attempts_str.str(),
+        rejects_str.str(),
+        commits_str.str(),
+        commit_rate,
+        original_slack_ns,
+        pre_phase_slack_ns,
+        post_phase_slack_ns,
+        delta_ns);
 
     count++;
   }
@@ -685,12 +719,10 @@ void MoveTracker::printEndpointSummary(const std::string& title)
   // Print summary line
   if (endpoint_stats.size() > max_endpoints_to_print) {
     int remaining_endpoints = endpoint_stats.size() - max_endpoints_to_print;
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "... ({} more endpoints not shown)",
-               remaining_endpoints);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "... ({} more endpoints not shown)",
+                   remaining_endpoints);
   }
 
   float total_commit_rate
@@ -738,57 +770,51 @@ void MoveTracker::printEndpointSummary(const std::string& title)
                     << total_commit_pct << "%";
 
   // Print Total (shown) line with move counts only
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<40} | {:>13} | {:>13} | {:>13} | {:>5.1f}% | {:>11} | "
-             "{:>11} | {:>11} | {:>11}",
-             "Total (shown)",
-             total_attempts_str.str(),
-             total_rejects_str.str(),
-             total_commits_str.str(),
-             total_commit_rate,
-             "",
-             "",
-             "",
-             "");
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<40} | {:>13} | {:>13} | {:>13} | {:>5.1f}% | {:>11} | "
+                 "{:>11} | {:>11} | {:>11}",
+                 "Total (shown)",
+                 total_attempts_str.str(),
+                 total_rejects_str.str(),
+                 total_commits_str.str(),
+                 total_commit_rate,
+                 "",
+                 "",
+                 "",
+                 "");
 
   // Print Maximum (WNS) summary line
   float wns_delta_ns = wns_final_ns - wns_post_endpoint_ns;
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11.3f} | "
-             "{:>11.3f} | {:>11.3f} | {:>11.3f}",
-             "Maximum (WNS)",
-             "",
-             "",
-             "",
-             "",
-             wns_original_ns,
-             wns_post_endpoint_ns,
-             wns_final_ns,
-             wns_delta_ns);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11.3f} | "
+                 "{:>11.3f} | {:>11.3f} | {:>11.3f}",
+                 "Maximum (WNS)",
+                 "",
+                 "",
+                 "",
+                 "",
+                 wns_original_ns,
+                 wns_post_endpoint_ns,
+                 wns_final_ns,
+                 wns_delta_ns);
 
   // Print Total (TNS) summary line
   float tns_delta_ns = tns_final_ns - tns_post_endpoint_ns;
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11.3f} | "
-             "{:>11.3f} | {:>11.3f} | {:>11.3f}",
-             "Total (TNS)",
-             "",
-             "",
-             "",
-             "",
-             tns_original_ns,
-             tns_post_endpoint_ns,
-             tns_final_ns,
-             tns_delta_ns);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<40} | {:>13} | {:>13} | {:>13} | {:>6} | {:>11.3f} | "
+                 "{:>11.3f} | {:>11.3f} | {:>11.3f}",
+                 "Total (TNS)",
+                 "",
+                 "",
+                 "",
+                 "",
+                 tns_original_ns,
+                 tns_post_endpoint_ns,
+                 tns_final_ns,
+                 tns_delta_ns);
 
   // Count endpoints by effort
   int low_effort = 0;   // 1-10 attempts
@@ -806,23 +832,26 @@ void MoveTracker::printEndpointSummary(const std::string& title)
     }
   }
 
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Endpoint effort distribution: {} low (1-10), {} medium (11-50), "
-             "{} high (51+)",
-             low_effort,
-             med_effort,
-             high_effort);
+  logger_->debug(
+      RSZ,
+      "move_tracker",
+      "Endpoint effort distribution: {} low (1-10), {} medium (11-50), "
+      "{} high (51+)",
+      low_effort,
+      med_effort,
+      high_effort);
 }
 
 void MoveTracker::printSuccessReport(const std::string& title)
 {
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
   // Collect pins with committed moves
   map<const sta::Pin*, vector<string>> successful_pins;
-  for (const auto& [pin, history] : pin_move_history_) {
-    for (const auto& [move_type, state] : history) {
+  for (const auto& [pin, events] : pin_move_events_) {
+    for (const auto& [move_type, state] : events) {
       if (state == MoveStateType::ATTEMPT_COMMIT) {
         successful_pins[pin].push_back(move_type);
       }
@@ -830,22 +859,16 @@ void MoveTracker::printSuccessReport(const std::string& title)
   }
 
   if (successful_pins.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{}: No successful optimizations",
-               title);
+    logger_->debug(
+        RSZ, "move_tracker", "{}: No successful optimizations", title);
     return;
   }
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Successfully optimized {} pins with committed moves",
-             successful_pins.size());
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Successfully optimized {} pins with committed moves",
+                 successful_pins.size());
 
   // Count move types
   map<string, int> move_type_success_count;
@@ -862,15 +885,10 @@ void MoveTracker::printSuccessReport(const std::string& title)
     return a.second > b.second;
   });
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "Successful moves by type:");
+  logger_->debug(RSZ, "move_tracker", "Successful moves by type:");
   for (const auto& [move_type, count] : sorted_success_types) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  {:<20}: {:>5} commits",
-               move_type,
-               count);
+    logger_->debug(
+        RSZ, "move_tracker", "  {:<20}: {:>5} commits", move_type, count);
   }
 
   // Show top successful pins (most commits)
@@ -886,19 +904,17 @@ void MoveTracker::printSuccessReport(const std::string& title)
   constexpr int max_pins_to_show = 20;
   constexpr int max_move_columns = 6;
 
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Top {} pins by successful moves:",
-             std::min(max_pins_to_show, (int) pin_commit_counts.size()));
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Top {} pins by successful moves:",
+                 std::min(max_pins_to_show, (int) pin_commit_counts.size()));
 
   int shown = 0;
   for (const auto& [pin, count] : pin_commit_counts) {
     if (shown >= max_pins_to_show) {
       break;
     }
-    string pin_name = sta_->network()->pathName(pin);
+    string pin_name = pinPathName(pin);
     const auto& moves = successful_pins[pin];
 
     // Count move types for this pin and sort by frequency
@@ -944,26 +960,28 @@ void MoveTracker::printSuccessReport(const std::string& title)
       col++;
     }
 
-    debugPrint(logger_, RSZ, "move_tracker", 1, "{}", oss.str());
+    logger_->debug(RSZ, "move_tracker", "{}", oss.str());
     shown++;
   }
 
   if (pin_commit_counts.size() > max_pins_to_show) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  ... ({} more pins not shown)",
-               pin_commit_counts.size() - max_pins_to_show);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "  ... ({} more pins not shown)",
+                   pin_commit_counts.size() - max_pins_to_show);
   }
 }
 
 void MoveTracker::printFailureReport(const std::string& title)
 {
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
   // Collect pins with rejected moves
   map<const sta::Pin*, vector<string>> failed_pins;
-  for (const auto& [pin, history] : pin_move_history_) {
-    for (const auto& [move_type, state] : history) {
+  for (const auto& [pin, events] : pin_move_events_) {
+    for (const auto& [move_type, state] : events) {
       if (state == MoveStateType::ATTEMPT_REJECT) {
         failed_pins[pin].push_back(move_type);
       }
@@ -971,22 +989,15 @@ void MoveTracker::printFailureReport(const std::string& title)
   }
 
   if (failed_pins.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{}: No rejected optimizations",
-               title);
+    logger_->debug(RSZ, "move_tracker", "{}: No rejected optimizations", title);
     return;
   }
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{} pins had rejected moves (timing did not improve)",
-             failed_pins.size());
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{} pins had rejected moves (timing did not improve)",
+                 failed_pins.size());
 
   // Count move types
   map<string, int> move_type_reject_count;
@@ -1003,15 +1014,10 @@ void MoveTracker::printFailureReport(const std::string& title)
     return a.second > b.second;
   });
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "Rejected moves by type:");
+  logger_->debug(RSZ, "move_tracker", "Rejected moves by type:");
   for (const auto& [move_type, count] : sorted_reject_types) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  {:<20}: {:>5} rejects",
-               move_type,
-               count);
+    logger_->debug(
+        RSZ, "move_tracker", "  {:<20}: {:>5} rejects", move_type, count);
   }
 
   // Show top failed pins (most rejects)
@@ -1027,19 +1033,17 @@ void MoveTracker::printFailureReport(const std::string& title)
   constexpr int max_pins_to_show = 20;
   constexpr int max_move_columns = 6;
 
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Top {} pins by rejected moves:",
-             std::min(max_pins_to_show, (int) pin_reject_counts.size()));
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Top {} pins by rejected moves:",
+                 std::min(max_pins_to_show, (int) pin_reject_counts.size()));
 
   int shown = 0;
   for (const auto& [pin, count] : pin_reject_counts) {
     if (shown >= max_pins_to_show) {
       break;
     }
-    string pin_name = sta_->network()->pathName(pin);
+    string pin_name = pinPathName(pin);
     const auto& moves = failed_pins[pin];
 
     // Count move types for this pin and sort by frequency
@@ -1085,23 +1089,25 @@ void MoveTracker::printFailureReport(const std::string& title)
       col++;
     }
 
-    debugPrint(logger_, RSZ, "move_tracker", 1, "{}", oss.str());
+    logger_->debug(RSZ, "move_tracker", "{}", oss.str());
     shown++;
   }
 
   if (pin_reject_counts.size() > max_pins_to_show) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  ... ({} more pins not shown)",
-               pin_reject_counts.size() - max_pins_to_show);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "  ... ({} more pins not shown)",
+                   pin_reject_counts.size() - max_pins_to_show);
   }
 }
 
 void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
 {
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
 
   // Category 1: Pins visited but no moves attempted
   // Only include pins with negative pin slack or negative endpoint slack
@@ -1109,8 +1115,8 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
   constexpr float slack_threshold = -0.001;  // -1 fs threshold
   vector<const sta::Pin*> visited_no_attempt;
   for (const sta::Pin* pin : all_visited_pins_) {
-    // Check if this pin has any moves in history
-    if (!pin_move_history_.contains(pin) || pin_move_history_[pin].empty()) {
+    // Check if this pin has any tracked moves.
+    if (!pin_move_events_.contains(pin) || pin_move_events_[pin].empty()) {
       // Only include if pin has meaningful negative slack
       auto it = pin_info_.find(pin);
       if (it != pin_info_.end()) {
@@ -1144,31 +1150,23 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
           return info_a.pin_slack < info_b.pin_slack;
         });
 
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Category 1: {} pins with negative slack visited but NO moves "
-               "attempted",
-               visited_no_attempt.size());
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  (These pins have timing violations but no optimization "
-               "moves were tried)");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  (Sorted by most critical endpoint first)");
-
-    // Print table header
-    debugPrint(
-        logger_,
+    logger_->debug(
         RSZ,
         "move_tracker",
-        1,
+        "Category 1: {} pins with negative slack visited but NO moves "
+        "attempted",
+        visited_no_attempt.size());
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "  (These pins have timing violations but no optimization "
+                   "moves were tried)");
+    logger_->debug(
+        RSZ, "move_tracker", "  (Sorted by most critical endpoint first)");
+
+    // Print table header
+    logger_->debug(
+        RSZ,
+        "move_tracker",
         "  {:<38} | {:<30} | {:<26} | {:>10} | {:>10} | {:>9} | {:>9} | {:>6}",
         "Pin",
         "Gate Type",
@@ -1185,7 +1183,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
       if (shown >= max_pins_to_show) {
         break;
       }
-      string pin_name = sta_->network()->pathName(pin);
+      string pin_name = pinPathName(pin);
       if (pin_name.length() > 38) {
         pin_name = pin_name.substr(0, 35) + "...";
       }
@@ -1206,8 +1204,8 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
         if (gate_type.length() > 30) {
           gate_type = gate_type.substr(0, 27) + "...";
         }
-        if (info.endpoint) {
-          endpoint_name = sta_->network()->pathName(info.endpoint);
+        if (!info.endpoint_name.empty()) {
+          endpoint_name = info.endpoint_name;
           if (endpoint_name.length() > 26) {
             endpoint_name = endpoint_name.substr(0, 23) + "...";
           }
@@ -1230,38 +1228,32 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
         }
       }
 
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "  {:<38} | {:<30} | {:<26} | {:>10.2f} | {:>10.2f} | "
-                 "{:>9.2f} | {:>9.2f} | {:>6}",
-                 pin_name,
-                 gate_type,
-                 endpoint_name,
-                 pin_slack * 1e12,        // Convert seconds to ps
-                 endpoint_slack * 1e12,   // Convert seconds to ps
-                 load_delay * 1e12,       // Convert seconds to ps
-                 intrinsic_delay * 1e12,  // Convert seconds to ps
-                 fanout);
+      logger_->debug(RSZ,
+                     "move_tracker",
+                     "  {:<38} | {:<30} | {:<26} | {:>10.2f} | {:>10.2f} | "
+                     "{:>9.2f} | {:>9.2f} | {:>6}",
+                     pin_name,
+                     gate_type,
+                     endpoint_name,
+                     pin_slack * 1e12,        // Convert seconds to ps
+                     endpoint_slack * 1e12,   // Convert seconds to ps
+                     load_delay * 1e12,       // Convert seconds to ps
+                     intrinsic_delay * 1e12,  // Convert seconds to ps
+                     fanout);
       shown++;
     }
 
     if (visited_no_attempt.size() > max_pins_to_show) {
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "  ... ({} more pins not shown)",
-                 visited_no_attempt.size() - max_pins_to_show);
+      logger_->debug(RSZ,
+                     "move_tracker",
+                     "  ... ({} more pins not shown)",
+                     visited_no_attempt.size() - max_pins_to_show);
     }
   } else {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Category 1: All visited pins with negative slack had moves "
-               "attempted (good!)");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Category 1: All visited pins with negative slack had moves "
+                   "attempted (good!)");
   }
 
   // Category 2: Critical pins never visited
@@ -1289,31 +1281,25 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
                     });
 
   if (!critical_never_visited.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Category 2: {} critical pins NEVER visited",
-               critical_never_visited.size());
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  (These pins are on critical paths but were never "
-               "considered for optimization)");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Category 2: {} critical pins NEVER visited",
+                   critical_never_visited.size());
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "  (These pins are on critical paths but were never "
+                   "considered for optimization)");
 
     // Print table header
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "  {:<38} | {:<30} | {:>10} | {:>9} | {:>9} | {:>6}",
-               "Pin",
-               "Gate Type",
-               "PinSlk(ps)",
-               "Load(ps)",
-               "Intr(ps)",
-               "Fanout");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "  {:<38} | {:<30} | {:>10} | {:>9} | {:>9} | {:>6}",
+                   "Pin",
+                   "Gate Type",
+                   "PinSlk(ps)",
+                   "Load(ps)",
+                   "Intr(ps)",
+                   "Fanout");
 
     constexpr int max_pins_to_show = 20;
     int shown = 0;
@@ -1321,7 +1307,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
       if (shown >= max_pins_to_show) {
         break;
       }
-      string pin_name = sta_->network()->pathName(pin);
+      string pin_name = pinPathName(pin);
       if (pin_name.length() > 38) {
         pin_name = pin_name.substr(0, 35) + "...";
       }
@@ -1347,7 +1333,8 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
                         sta::MinMax::max());
       float pin_slack_ps = sta::delayAsFloat(pin_slack) * 1e12;
 
-      // Calculate effort delays (similar to ViolatorCollector::getEffortDelays)
+      // Calculate effort delays (similar to
+      // RepairTargetCollector::getEffortDelays)
       float load_delay_ps = 0.0;
       float intrinsic_delay_ps = 0.0;
       sta::Vertex* vertex = sta_->graph()->pinDrvrVertex(pin);
@@ -1419,54 +1406,46 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
         }
       }
 
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "  {:<38} | {:<30} | {:>10.2f} | {:>9.2f} | {:>9.2f} | {:>6}",
-                 pin_name,
-                 gate_type,
-                 pin_slack_ps,
-                 load_delay_ps,
-                 intrinsic_delay_ps,
-                 fanout);
+      logger_->debug(
+          RSZ,
+          "move_tracker",
+          "  {:<38} | {:<30} | {:>10.2f} | {:>9.2f} | {:>9.2f} | {:>6}",
+          pin_name,
+          gate_type,
+          pin_slack_ps,
+          load_delay_ps,
+          intrinsic_delay_ps,
+          fanout);
       shown++;
     }
 
     if (critical_never_visited.size() > max_pins_to_show) {
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "    ... ({} more pins not shown)",
-                 critical_never_visited.size() - max_pins_to_show);
+      logger_->debug(RSZ,
+                     "move_tracker",
+                     "    ... ({} more pins not shown)",
+                     critical_never_visited.size() - max_pins_to_show);
     }
   } else {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Category 2: All critical pins were visited (good!)");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Category 2: All critical pins were visited (good!)");
   }
 
   // Summary
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Summary: {} critical pins identified, {} visited, {} had moves "
-             "attempted",
-             all_critical_pins_.size(),
-             all_visited_pins_.size(),
-             pin_move_history_.size());
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "  Missed opportunities: {} visited but no moves, {} never "
-             "visited",
-             visited_no_attempt.size(),
-             critical_never_visited.size());
+  logger_->debug(
+      RSZ,
+      "move_tracker",
+      "Summary: {} critical pins identified, {} visited, {} had moves "
+      "attempted",
+      all_critical_pins_.size(),
+      all_visited_pins_.size(),
+      pin_move_events_.size());
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "  Missed opportunities: {} visited but no moves, {} never "
+                 "visited",
+                 visited_no_attempt.size(),
+                 critical_never_visited.size());
 }
 
 void MoveTracker::captureOriginalEndpointSlack()
@@ -1600,17 +1579,17 @@ void MoveTracker::captureInitialSlackDistribution()
 
 void MoveTracker::printSlackDistribution(const std::string& title)
 {
-  if (initial_pin_slack_.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{}: No initial slack data captured",
-               title);
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
     return;
   }
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
+  if (initial_pin_slack_.empty()) {
+    logger_->debug(
+        RSZ, "move_tracker", "{}: No initial slack data captured", title);
+    return;
+  }
+
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
 
   // First pass: find min and max slack values to determine bin range
   // All values in nanoseconds
@@ -1634,13 +1613,11 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   // Cap max at 0 since we're tracking violations (negative slack)
   max_slack_ns = std::min(max_slack_ns, 0.0f);
 
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Slack range: min={:.3f} ns, max={:.3f} ns",
-             min_slack_ns,
-             max_slack_ns);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Slack range: min={:.3f} ns, max={:.3f} ns",
+                 min_slack_ns,
+                 max_slack_ns);
 
   // Create approximately 10 bins dynamically (values in nanoseconds)
   constexpr int target_num_bins = 10;
@@ -1732,63 +1709,39 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   bin_labels.push_back(last_label.str());
 
   // Print Pre-Optimization Histogram
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Pre-Optimization Gate Slack Distribution:");
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<18} | {:>6} | {}",
-             "Slack (ns)",
-             "Count",
-             "Distribution");
+  logger_->debug(RSZ, "move_tracker", "");
+  logger_->debug(
+      RSZ, "move_tracker", "Pre-Optimization Gate Slack Distribution:");
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<18} | {:>6} | {}",
+                 "Slack (ns)",
+                 "Count",
+                 "Distribution");
 
   for (size_t i = 0; i < pre_counts.size(); i++) {
     int count = pre_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<18} | {:>6} | {}",
-               bin_labels[i],
-               count,
-               bar);
+    const string bar = histogramBar(count, gates_per_hash);
+    logger_->debug(
+        RSZ, "move_tracker", "{:<18} | {:>6} |{}", bin_labels[i], count, bar);
   }
 
   // Print Post-Optimization Histogram
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Post-Optimization Gate Slack Distribution:");
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<18} | {:>6} | {}",
-             "Slack (ns)",
-             "Count",
-             "Distribution");
+  logger_->debug(RSZ, "move_tracker", "");
+  logger_->debug(
+      RSZ, "move_tracker", "Post-Optimization Gate Slack Distribution:");
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<18} | {:>6} | {}",
+                 "Slack (ns)",
+                 "Count",
+                 "Distribution");
 
   for (size_t i = 0; i < post_counts.size(); i++) {
     int count = post_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<18} | {:>6} | {}",
-               bin_labels[i],
-               count,
-               bar);
+    const string bar = histogramBar(count, gates_per_hash);
+    logger_->debug(
+        RSZ, "move_tracker", "{:<18} | {:>6} |{}", bin_labels[i], count, bar);
   }
 
   // Print summary statistics
@@ -1797,28 +1750,25 @@ void MoveTracker::printSlackDistribution(const std::string& title)
     total_pre += count;
   }
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
+  logger_->debug(RSZ, "move_tracker", "");
 
   // Display scale key with integral value
   int num_pins_destroyed = backup_pin_slack_.size();
   string scale_label = (gates_per_hash == 1) ? "gate" : "gates";
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Summary: {} driver pins tracked ({} destroyed), "
-             "max bin count: {} (# = {} {})",
-             total_pre,
-             num_pins_destroyed,
-             max_count,
-             gates_per_hash,
-             scale_label);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Summary: {} driver pins tracked ({} destroyed), "
+                 "max bin count: {} (# = {} {})",
+                 total_pre,
+                 num_pins_destroyed,
+                 max_count,
+                 gates_per_hash,
+                 scale_label);
 
   // Now print endpoint histograms using the same bins
   if (!initial_endpoint_slack_.empty()) {
-    debugPrint(logger_, RSZ, "move_tracker", 1, "");
-    debugPrint(
-        logger_, RSZ, "move_tracker", 1, "=== Endpoint Slack Distribution ===");
+    logger_->debug(RSZ, "move_tracker", "");
+    logger_->debug(RSZ, "move_tracker", "=== Endpoint Slack Distribution ===");
 
     // Count endpoint distributions using the same bins
     vector<int> endpoint_pre_counts(bin_edges.size() + 1, 0);
@@ -1874,63 +1824,39 @@ void MoveTracker::printSlackDistribution(const std::string& title)
     }
 
     // Print Pre-Optimization Endpoint Histogram
-    debugPrint(logger_, RSZ, "move_tracker", 1, "");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Pre-Optimization Endpoint Slack Distribution:");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<18} | {:>6} | {}",
-               "Slack (ns)",
-               "Count",
-               "Distribution");
+    logger_->debug(RSZ, "move_tracker", "");
+    logger_->debug(
+        RSZ, "move_tracker", "Pre-Optimization Endpoint Slack Distribution:");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "{:<18} | {:>6} | {}",
+                   "Slack (ns)",
+                   "Count",
+                   "Distribution");
 
     for (size_t i = 0; i < endpoint_pre_counts.size(); i++) {
       int count = endpoint_pre_counts[i];
-      int bar_len = count / endpoints_per_hash;
-      string bar(bar_len, '#');
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "{:<18} | {:>6} | {}",
-                 bin_labels[i],
-                 count,
-                 bar);
+      const string bar = histogramBar(count, endpoints_per_hash);
+      logger_->debug(
+          RSZ, "move_tracker", "{:<18} | {:>6} |{}", bin_labels[i], count, bar);
     }
 
     // Print Post-Optimization Endpoint Histogram
-    debugPrint(logger_, RSZ, "move_tracker", 1, "");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Post-Optimization Endpoint Slack Distribution:");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<18} | {:>6} | {}",
-               "Slack (ns)",
-               "Count",
-               "Distribution");
+    logger_->debug(RSZ, "move_tracker", "");
+    logger_->debug(
+        RSZ, "move_tracker", "Post-Optimization Endpoint Slack Distribution:");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "{:<18} | {:>6} | {}",
+                   "Slack (ns)",
+                   "Count",
+                   "Distribution");
 
     for (size_t i = 0; i < endpoint_post_counts.size(); i++) {
       int count = endpoint_post_counts[i];
-      int bar_len = count / endpoints_per_hash;
-      string bar(bar_len, '#');
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "{:<18} | {:>6} | {}",
-                 bin_labels[i],
-                 count,
-                 bar);
+      const string bar = histogramBar(count, endpoints_per_hash);
+      logger_->debug(
+          RSZ, "move_tracker", "{:<18} | {:>6} |{}", bin_labels[i], count, bar);
     }
 
     // Print endpoint summary statistics
@@ -1939,30 +1865,32 @@ void MoveTracker::printSlackDistribution(const std::string& title)
       total_endpoint_pre += count;
     }
 
-    debugPrint(logger_, RSZ, "move_tracker", 1, "");
+    logger_->debug(RSZ, "move_tracker", "");
 
     // Display scale key with integral value
     int num_endpoints_destroyed = backup_endpoint_slack_.size();
     string endpoint_scale_label
         = (endpoints_per_hash == 1) ? "endpoint" : "endpoints";
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Summary: {} endpoints tracked ({} destroyed), "
-               "max bin count: {} (# = {} {})",
-               total_endpoint_pre,
-               num_endpoints_destroyed,
-               endpoint_max_count,
-               endpoints_per_hash,
-               endpoint_scale_label);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Summary: {} endpoints tracked ({} destroyed), "
+                   "max bin count: {} (# = {} {})",
+                   total_endpoint_pre,
+                   num_endpoints_destroyed,
+                   endpoint_max_count,
+                   endpoints_per_hash,
+                   endpoint_scale_label);
   }
 }
 
 void MoveTracker::printTopBinEndpoints(const std::string& title,
                                        int max_endpoints)
 {
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}:", title);
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
+  logger_->debug(RSZ, "move_tracker", "{}:", title);
 
   // Collect all violating endpoints (negative slack) after optimization
   vector<pair<const sta::Pin*, sta::Slack>> violating_endpoints;
@@ -1981,11 +1909,10 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
   }
 
   if (violating_endpoints.empty()) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "No violating endpoints after optimization (all meet timing!)");
+    logger_->debug(
+        RSZ,
+        "move_tracker",
+        "No violating endpoints after optimization (all meet timing!)");
     return;
   }
 
@@ -1994,39 +1921,34 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
     return a.second < b.second;
   });
 
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Found {} violating endpoints after optimization",
-             violating_endpoints.size());
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Analyzing top {} most critical endpoints:",
-             std::min(max_endpoints, (int) violating_endpoints.size()));
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Found {} violating endpoints after optimization",
+                 violating_endpoints.size());
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "Analyzing top {} most critical endpoints:",
+                 std::min(max_endpoints, (int) violating_endpoints.size()));
+  logger_->debug(RSZ, "move_tracker", "");
 
   // Print header
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<40} | {:<40} | {:>10} | {:>10} | {:>7} | {:>6} | {:<40} | "
-             "{:>8} | {:>8} | {:>8} | {:>6}",
-             "Endpoint",
-             "Startpoint",
-             "Slack(ns)",
-             "EpTNS(ns)",  // Endpoint-local TNS (sum of negative slacks through
-                           // this EP)
-             "NegPath",  // Number of negative slack paths through this endpoint
-             "Levels",
-             "Worst Delay Pin (Gate)",
-             "Arc(ps)",
-             "Load(ps)",
-             "Intr(ps)",
-             "Fanout");
+  logger_->debug(
+      RSZ,
+      "move_tracker",
+      "{:<40} | {:<40} | {:>10} | {:>10} | {:>7} | {:>6} | {:<40} | "
+      "{:>8} | {:>8} | {:>8} | {:>6}",
+      "Endpoint",
+      "Startpoint",
+      "Slack(ns)",
+      "EpTNS(ns)",  // Endpoint-local TNS (sum of negative slacks through
+                    // this EP)
+      "NegPath",    // Number of negative slack paths through this endpoint
+      "Levels",
+      "Worst Delay Pin (Gate)",
+      "Arc(ps)",
+      "Load(ps)",
+      "Intr(ps)",
+      "Fanout");
 
   int count = 0;
   for (const auto& [endpoint_pin, endpoint_slack] : violating_endpoints) {
@@ -2203,34 +2125,30 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
     float local_tns_ns = sta::delayAsFloat(local_tns) * 1e9;
     float worst_delay_ps = sta::delayAsFloat(worst_delay) * 1e12;
 
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<40} | {:<40} | {:>10.3f} | {:>10.3f} | {:>7} | {:>6} | "
-               "{:<40} | {:>8.1f} | {:>8.1f} | {:>8.1f} | {:>6}",
-               endpoint_name,
-               startpoint_name,
-               slack_ns,
-               local_tns_ns,
-               neg_path_count,
-               num_levels,
-               worst_delay_pin_name,
-               worst_delay_ps,
-               load_delay_ps,
-               intrinsic_delay_ps,
-               fanout);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "{:<40} | {:<40} | {:>10.3f} | {:>10.3f} | {:>7} | {:>6} | "
+                   "{:<40} | {:>8.1f} | {:>8.1f} | {:>8.1f} | {:>6}",
+                   endpoint_name,
+                   startpoint_name,
+                   slack_ns,
+                   local_tns_ns,
+                   neg_path_count,
+                   num_levels,
+                   worst_delay_pin_name,
+                   worst_delay_ps,
+                   load_delay_ps,
+                   intrinsic_delay_ps,
+                   fanout);
 
     count++;
   }
 
   if (violating_endpoints.size() > max_endpoints) {
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "... ({} more violating endpoints not shown)",
-               violating_endpoints.size() - max_endpoints);
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "... ({} more violating endpoints not shown)",
+                   violating_endpoints.size() - max_endpoints);
   }
 
   // Print summary statistics
@@ -2244,16 +2162,15 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
   }
   float tns_ns = sta::delayAsFloat(total_negative_slack) * 1e9;
 
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "Post-Optimization Summary: WNS = {:.3f} ns, TNS = {:.3f} ns, {} "
-             "violating endpoints",
-             wns_ns,
-             tns_ns,
-             violating_endpoints.size());
+  logger_->debug(RSZ, "move_tracker", "");
+  logger_->debug(
+      RSZ,
+      "move_tracker",
+      "Post-Optimization Summary: WNS = {:.3f} ns, TNS = {:.3f} ns, {} "
+      "violating endpoints",
+      wns_ns,
+      tns_ns,
+      violating_endpoints.size());
 }
 
 // Helper function to enumerate paths to an endpoint
@@ -2331,37 +2248,32 @@ void MoveTracker::drawHistogram(const string& title,
   }
 
   // Print histogram
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
-  debugPrint(logger_, RSZ, "move_tracker", 1, "{}", title);
-  debugPrint(logger_,
-             RSZ,
-             "move_tracker",
-             1,
-             "{:<18} | {:>6} | {}",
-             value_label,
-             count_label,
-             "Distribution");
+  logger_->debug(RSZ, "move_tracker", "");
+  logger_->debug(RSZ, "move_tracker", "{}", title);
+  logger_->debug(RSZ,
+                 "move_tracker",
+                 "{:<18} | {:>6} | {}",
+                 value_label,
+                 count_label,
+                 "Distribution");
 
   for (size_t i = 0; i < bin_counts.size(); i++) {
     int count = bin_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "{:<18} | {:>6} | {}",
-               bin_labels[i],
-               count,
-               bar);
+    const string bar = histogramBar(count, gates_per_hash);
+    logger_->debug(
+        RSZ, "move_tracker", "{:<18} | {:>6} |{}", bin_labels[i], count, bar);
   }
 }
 
 // Print histogram of path slacks for the most critical endpoint
 void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
 {
-  debugPrint(logger_, RSZ, "move_tracker", 1, "");
-  debugPrint(logger_, RSZ, "move_tracker", 1, "=== {} ===", title);
+  if (!logger_->debugCheck(RSZ, "move_tracker", 1)) {
+    return;
+  }
+
+  logger_->debug(RSZ, "move_tracker", "");
+  logger_->debug(RSZ, "move_tracker", "=== {} ===", title);
 
   // Find the top 3 most critical endpoints
   sta::Network* network = sta_->network();
@@ -2379,8 +2291,7 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
   }
 
   if (endpoint_slacks.empty()) {
-    debugPrint(
-        logger_, RSZ, "move_tracker", 1, "No violating endpoints found.");
+    logger_->debug(RSZ, "move_tracker", "No violating endpoints found.");
     return;
   }
 
@@ -2467,36 +2378,29 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
     const vector<float>& path_slacks_ns = all_endpoint_path_slacks[ep_idx];
 
     if (path_slacks_ns.empty()) {
-      debugPrint(logger_, RSZ, "move_tracker", 1, "");
-      debugPrint(logger_,
-                 RSZ,
-                 "move_tracker",
-                 1,
-                 "Endpoint #{}: {} (slack = {:.3f} ns)",
-                 ep_idx + 1,
-                 endpoint_name,
-                 endpoint_slack_ns);
-      debugPrint(
-          logger_, RSZ, "move_tracker", 1, "No paths found to endpoint.");
+      logger_->debug(RSZ, "move_tracker", "");
+      logger_->debug(RSZ,
+                     "move_tracker",
+                     "Endpoint #{}: {} (slack = {:.3f} ns)",
+                     ep_idx + 1,
+                     endpoint_name,
+                     endpoint_slack_ns);
+      logger_->debug(RSZ, "move_tracker", "No paths found to endpoint.");
       continue;
     }
 
-    debugPrint(logger_, RSZ, "move_tracker", 1, "");
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Endpoint #{}: {} (slack = {:.3f} ns)",
-               ep_idx + 1,
-               endpoint_name,
-               endpoint_slack_ns);
+    logger_->debug(RSZ, "move_tracker", "");
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Endpoint #{}: {} (slack = {:.3f} ns)",
+                   ep_idx + 1,
+                   endpoint_name,
+                   endpoint_slack_ns);
 
-    debugPrint(logger_,
-               RSZ,
-               "move_tracker",
-               1,
-               "Found {} paths to this endpoint",
-               path_slacks_ns.size());
+    logger_->debug(RSZ,
+                   "move_tracker",
+                   "Found {} paths to this endpoint",
+                   path_slacks_ns.size());
 
     // Count paths in each bin using common bin edges
     vector<int> bin_counts(num_bins + 1, 0);

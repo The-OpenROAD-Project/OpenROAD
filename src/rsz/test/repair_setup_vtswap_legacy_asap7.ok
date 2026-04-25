@@ -1,0 +1,132 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[INFO RSZ-0100] Repair move sequence: VtSwapMove 
+[INFO RSZ-0094] Found 46 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 46 out of 46 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1407.4 |    -1781.1 |     46 | resp_msg[13]
+     147* |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -465.4 |     -162.6 |     46 | resp_msg[13]
+    final |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -465.4 |     -162.6 |     18 | resp_msg[13]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 60 instances: 0 up, 0 up match, 0 down, 60 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: dpath.a_reg.out[6]$_DFFE_PP_
+            (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[13] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ dpath.a_reg.out[6]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  24.52   24.52 ^ dpath.a_reg.out[6]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   9.20   33.73 v _353_/Y (INVx1_ASAP7_75t_SL)
+  17.29   51.01 ^ _570_/CON (HAxp5_ASAP7_75t_SL)
+  28.58   79.60 v _570_/SN (HAxp5_ASAP7_75t_SL)
+  26.94  106.54 v _315_/Y (OR3x1_ASAP7_75t_SL)
+  13.46  120.00 v _396_/Y (OR2x2_ASAP7_75t_SL)
+  15.42  135.43 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.46  151.89 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  16.79  168.68 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.90  188.58 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  11.59  200.18 ^ output41/Y (BUFx2_ASAP7_75t_SL)
+   0.42  200.59 ^ resp_msg[13] (out)
+         200.59   data arrival time
+
+ 220.00  220.00   clock core_clock (rise edge)
+   0.00  220.00   clock network delay (ideal)
+   0.00  220.00   clock reconvergence pessimism
+ -44.00  176.00   output external delay
+         176.00   data required time
+---------------------------------------------------------
+         176.00   data required time
+        -200.59   data arrival time
+---------------------------------------------------------
+         -24.59   slack (VIOLATED)
+
+
+Startpoint: dpath.a_reg.out[6]$_DFFE_PP_
+            (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[13] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ dpath.a_reg.out[6]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  24.52   24.52 ^ dpath.a_reg.out[6]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   9.20   33.73 v _353_/Y (INVx1_ASAP7_75t_SL)
+  17.29   51.01 ^ _570_/CON (HAxp5_ASAP7_75t_SL)
+  28.58   79.60 v _570_/SN (HAxp5_ASAP7_75t_SL)
+  26.94  106.54 v _315_/Y (OR3x1_ASAP7_75t_SL)
+  13.46  120.00 v _396_/Y (OR2x2_ASAP7_75t_SL)
+  15.42  135.43 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.46  151.89 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  16.79  168.68 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.90  188.58 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  11.59  200.18 ^ output41/Y (BUFx2_ASAP7_75t_SL)
+   0.42  200.59 ^ resp_msg[13] (out)
+         200.59   data arrival time
+
+ 220.00  220.00   clock core_clock (rise edge)
+   0.00  220.00   clock network delay (ideal)
+   0.00  220.00   clock reconvergence pessimism
+ -44.00  176.00   output external delay
+         176.00   data required time
+---------------------------------------------------------
+         176.00   data required time
+        -200.59   data arrival time
+---------------------------------------------------------
+         -24.59   slack (VIOLATED)
+
+
+Startpoint: dpath.b_reg.out[6]$_DFFE_PP_
+            (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[13] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ dpath.b_reg.out[6]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  30.41   30.41 v dpath.b_reg.out[6]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+  19.99   50.41 ^ _570_/CON (HAxp5_ASAP7_75t_SL)
+  28.58   78.99 v _570_/SN (HAxp5_ASAP7_75t_SL)
+  26.94  105.93 v _315_/Y (OR3x1_ASAP7_75t_SL)
+  13.46  119.40 v _396_/Y (OR2x2_ASAP7_75t_SL)
+  15.42  134.82 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.46  151.28 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  16.79  168.08 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.90  187.98 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  11.59  199.57 ^ output41/Y (BUFx2_ASAP7_75t_SL)
+   0.42  199.99 ^ resp_msg[13] (out)
+         199.99   data arrival time
+
+ 220.00  220.00   clock core_clock (rise edge)
+   0.00  220.00   clock network delay (ideal)
+   0.00  220.00   clock reconvergence pessimism
+ -44.00  176.00   output external delay
+         176.00   data required time
+---------------------------------------------------------
+         176.00   data required time
+        -199.99   data arrival time
+---------------------------------------------------------
+         -23.99   slack (VIOLATED)
+
+

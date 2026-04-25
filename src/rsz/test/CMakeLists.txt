@@ -84,8 +84,34 @@ or_integration_tests(
     repair_hold13
     repair_hold14
     repair_hold15
+    repair_setup_buffer_legacy_basic
+    repair_setup_clone_legacy_flat
+    repair_setup_clone_high_fanout
+    repair_setup_crit_vt_asap7
+    repair_setup_default_nangate45
+    repair_setup_endpoint_fanin_only
+    repair_setup_gcd
+    repair_setup_invalid_phase
+    repair_setup_move_tracker_level1
+    repair_setup_pin_command
+    repair_setup_sizedown_only
+    repair_setup_sizeup_match_only
+    repair_setup_split_load_hier_only
+    repair_setup_startpoint_fanout_only
+    repair_setup_swap_pins_dont_touch_sequence
+    repair_setup_tns
+    repair_setup_wns_guard
+    repair_setup_wns_last_gasp_noop
     repair_setup_sizedown
+    repair_setup_sizedown_legacy_basic
     repair_setup_sizeup_match
+    repair_setup_sizeup_legacy_basic
+    repair_setup_sizeup_match_inverter
+    repair_setup_sizeup_match_prev_fanout
+    repair_setup_splitload_legacy_basic
+    repair_setup_swappins_legacy_flat
+    repair_setup_unbuffer_legacy_bufx2
+    repair_setup_unbuffer_legacy_bufx8
     repair_setup1
     repair_setup2
     repair_setup3
@@ -101,6 +127,12 @@ or_integration_tests(
     repair_setup8
     repair_setup9
     repair_setup9_hier
+    repair_setup_phase_endpoint_fanin
+    repair_setup_phase_startpoint_fanout
+    repair_setup_phase_tns
+    repair_setup_phase_wns_cone
+    repair_setup_phase_wns_path
+    repair_setup_phases_order
     repair_setup_undo1
     repair_setup_undo2
     repair_slew1
@@ -152,6 +184,7 @@ or_integration_tests(
     report_floating_nets2
     report_floating_nets3
     report_move_tracker
+    repair_setup_legacy_mt_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3
@@ -191,12 +224,26 @@ or_integration_tests(
     report_buffers_gf180
     report_buffers_no_lef
     repair_setup_vt_swap
+    repair_setup_vtswap_legacy_asap7
     repair_setup_vt_swap2
+    measured_vt_swap
     repair_fanout7_skip_pin_swap
   PASSFAIL_TESTS
+    repair_setup_legacy_mt
+    repair_setup_mt1
     cpp_tests
 )
 
-#repair_setup2
+# Keep the slowest rsz regressions out of the default ctest -R rsz path.
+# Measured locally in tools/OpenROAD/build:
+# - rsz.repair_fanout6.tcl: ~52s
+# - rsz.repair_design3.tcl: ~27s
+# - rsz.repair_design3_verbose.tcl: ~27s
+set_tests_properties(
+  rsz.repair_fanout6.tcl
+  rsz.repair_design3.tcl
+  rsz.repair_design3_verbose.tcl
+  PROPERTIES DISABLED TRUE
+)
 
 add_subdirectory(cpp)

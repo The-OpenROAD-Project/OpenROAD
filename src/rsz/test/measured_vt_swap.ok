@@ -1,0 +1,92 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 1 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 2 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 3 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 4 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 5 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 6 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 7 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 8 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 9 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 10 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 11 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 12 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 13 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 14 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 15 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 16 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 17 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 18 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 19 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 20 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 21 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 22 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 23 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 24 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 25 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 26 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 27 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 28 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 29 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 30 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 31 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 32 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 33 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 34 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 35 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 36 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 37 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 38 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 39 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 40 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 41 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 42 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 43 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 44 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 45 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 46 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 47 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 48 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 49 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 50 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 51 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 52 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 53 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 54 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 55 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 56 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 57 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 58 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 59 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 60 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 61 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 62 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 63 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 64 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 65 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 66 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 67 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 68 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 69 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 70 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 71 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 72 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 73 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 74 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 75 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 76 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 77 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 78 / 100 moves.
+[INFO RSZ-2023] MeasuredVtSwapPolicy committed 79 / 100 moves.
+Pre-ECO:   WNS= -66.849   TNS=-1781.146   Area=      45 um^2   Power= 1.273356e-03 W
+Post-ECO:  WNS= -25.473   TNS= -81.100   Area=      45 um^2   Power= 1.356441e-03 W
+Delta:     WNS=  41.376   TNS=1700.046   Area=      +0 um^2   Power=+8.308527e-05 W

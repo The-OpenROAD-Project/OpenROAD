@@ -1,0 +1,114 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[INFO RSZ-2023] SetupMt1Policy committed 1 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 2 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 3 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 4 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 5 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 6 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 7 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 8 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 9 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 10 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 11 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 12 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 13 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 14 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 15 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 16 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 17 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 18 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 19 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 20 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 21 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 22 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 23 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 24 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 25 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 26 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 27 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 28 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 29 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 30 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 31 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 32 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 33 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 34 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 35 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 36 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 37 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 38 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 39 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 40 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 41 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 42 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 43 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 44 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 45 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 46 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 47 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 48 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 49 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 50 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 51 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 52 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 53 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 54 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 55 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 56 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 57 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 58 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 59 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 60 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 61 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 62 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 63 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 64 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 65 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 66 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 67 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 68 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 69 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 70 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 71 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 72 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 73 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 74 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 75 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 76 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 77 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 78 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 79 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 80 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 81 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 82 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 83 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 84 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 85 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 86 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 87 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 88 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 89 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 90 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 91 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 92 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 93 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 94 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 95 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 96 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 97 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 98 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 99 / 100 moves.
+[INFO RSZ-2023] SetupMt1Policy committed 100 / 100 moves.
+Pre-ECO:   WNS= -66.849   TNS=-1781.146   Area=      45 um^2   Power= 1.273356e-03 W
+Post-ECO:  WNS= -44.102   TNS=-527.721   Area=      47 um^2   Power= 1.475839e-03 W
+Delta:     WNS=  22.748   TNS=1253.426   Area=      +2 um^2   Power=+2.024830e-04 W
+pass

@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0027] Inserted 0 BUF_X1 input buffers.
+[INFO RSZ-0028] Inserted 18 BUF_X1 output buffers.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 32 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.162 |       -4.3 |       -4.1 |     32 | _869_/D
+     783* |      28 |      56 |       33 |      1 |    17 |    +8.2% |   -0.079 |       -2.3 |       -2.0 |     32 | _880_/D
+    final |      28 |      56 |       33 |      1 |    17 |    +8.2% |   -0.079 |       -2.3 |       -2.0 |     32 | _880_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 28 buffers.
+[INFO RSZ-0040] Inserted 33 buffers.
+[INFO RSZ-0051] Resized 56 instances: 56 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 17 instances.
+[INFO RSZ-0049] Cloned 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 2.784889e-03 W
+Post-ECO: WNS=  -0.079   TNS=  -2.001   Area=     740 um^2   Power= 3.192110e-03 W
+Delta:    WNS=   0.083   TNS=   2.060   Area=     +56 um^2   Power=+4.072208e-04 W
+pass

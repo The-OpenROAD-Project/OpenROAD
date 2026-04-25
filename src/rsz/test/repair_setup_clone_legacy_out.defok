@@ -1,0 +1,570 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN hi_fanout ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 3900000 3900000 ) ;
+COMPONENTS 160 ;
+    - clone1 NAND2_X2 + SOURCE TIMING + PLACED ( 794329 1563791 ) N ;
+    - clone2 NAND2_X2 + SOURCE TIMING + PLACED ( 1871978 1737493 ) N ;
+    - clone243 NAND2_X1 + SOURCE TIMING + PLACED ( 592036 1722613 ) N ;
+    - clone244 NAND2_X1 + SOURCE TIMING + PLACED ( 704069 1292411 ) N ;
+    - clone245 NAND2_X1 + SOURCE TIMING + PLACED ( 922855 1753609 ) N ;
+    - clone246 NAND2_X1 + SOURCE TIMING + PLACED ( 861600 979072 ) N ;
+    - clone3 NAND2_X1 + SOURCE TIMING + PLACED ( 732305 1818086 ) N ;
+    - drvr_1 DFF_X1 + PLACED ( 1000 1000 ) N ;
+    - drvr_2 DFF_X1 + PLACED ( 1500 1500 ) N ;
+    - load0 DFF_X1 + PLACED ( 0 0 ) N ;
+    - load1 DFF_X1 + PLACED ( 300000 0 ) N ;
+    - load10 DFF_X1 + PLACED ( 3000000 0 ) N ;
+    - load100 DFF_X1 + PLACED ( 1200000 2400000 ) N ;
+    - load101 DFF_X1 + PLACED ( 1500000 2400000 ) N ;
+    - load102 DFF_X1 + PLACED ( 1800000 2400000 ) N ;
+    - load103 DFF_X1 + PLACED ( 2100000 2400000 ) N ;
+    - load104 DFF_X1 + PLACED ( 2400000 2400000 ) N ;
+    - load105 DFF_X1 + PLACED ( 2700000 2400000 ) N ;
+    - load106 DFF_X1 + PLACED ( 3000000 2400000 ) N ;
+    - load107 DFF_X1 + PLACED ( 3300000 2400000 ) N ;
+    - load108 DFF_X1 + PLACED ( 0 2700000 ) N ;
+    - load109 DFF_X1 + PLACED ( 300000 2700000 ) N ;
+    - load11 DFF_X1 + PLACED ( 3300000 0 ) N ;
+    - load110 DFF_X1 + PLACED ( 600000 2700000 ) N ;
+    - load111 DFF_X1 + PLACED ( 900000 2700000 ) N ;
+    - load112 DFF_X1 + PLACED ( 1200000 2700000 ) N ;
+    - load113 DFF_X1 + PLACED ( 1500000 2700000 ) N ;
+    - load114 DFF_X1 + PLACED ( 1800000 2700000 ) N ;
+    - load115 DFF_X1 + PLACED ( 2100000 2700000 ) N ;
+    - load116 DFF_X1 + PLACED ( 2400000 2700000 ) N ;
+    - load117 DFF_X1 + PLACED ( 2700000 2700000 ) N ;
+    - load118 DFF_X1 + PLACED ( 3000000 2700000 ) N ;
+    - load119 DFF_X1 + PLACED ( 3300000 2700000 ) N ;
+    - load12 DFF_X1 + PLACED ( 0 300000 ) N ;
+    - load120 DFF_X1 + PLACED ( 0 3000000 ) N ;
+    - load121 DFF_X1 + PLACED ( 300000 3000000 ) N ;
+    - load122 DFF_X1 + PLACED ( 600000 3000000 ) N ;
+    - load123 DFF_X1 + PLACED ( 900000 3000000 ) N ;
+    - load124 DFF_X1 + PLACED ( 1200000 3000000 ) N ;
+    - load125 DFF_X1 + PLACED ( 1500000 3000000 ) N ;
+    - load126 DFF_X1 + PLACED ( 1800000 3000000 ) N ;
+    - load127 DFF_X1 + PLACED ( 2100000 3000000 ) N ;
+    - load128 DFF_X1 + PLACED ( 2400000 3000000 ) N ;
+    - load129 DFF_X1 + PLACED ( 2700000 3000000 ) N ;
+    - load13 DFF_X1 + PLACED ( 300000 300000 ) N ;
+    - load130 DFF_X1 + PLACED ( 3000000 3000000 ) N ;
+    - load131 DFF_X1 + PLACED ( 3300000 3000000 ) N ;
+    - load132 DFF_X1 + PLACED ( 0 3300000 ) N ;
+    - load133 DFF_X1 + PLACED ( 300000 3300000 ) N ;
+    - load134 DFF_X1 + PLACED ( 600000 3300000 ) N ;
+    - load135 DFF_X1 + PLACED ( 900000 3300000 ) N ;
+    - load136 DFF_X1 + PLACED ( 1200000 3300000 ) N ;
+    - load137 DFF_X1 + PLACED ( 1500000 3300000 ) N ;
+    - load138 DFF_X1 + PLACED ( 1800000 3300000 ) N ;
+    - load139 DFF_X1 + PLACED ( 2100000 3300000 ) N ;
+    - load14 DFF_X1 + PLACED ( 600000 300000 ) N ;
+    - load140 DFF_X1 + PLACED ( 2400000 3300000 ) N ;
+    - load141 DFF_X1 + PLACED ( 2700000 3300000 ) N ;
+    - load142 DFF_X1 + PLACED ( 3000000 3300000 ) N ;
+    - load143 DFF_X1 + PLACED ( 3300000 3300000 ) N ;
+    - load144 DFF_X1 + PLACED ( 0 3600000 ) N ;
+    - load145 DFF_X1 + PLACED ( 300000 3600000 ) N ;
+    - load146 DFF_X1 + PLACED ( 600000 3600000 ) N ;
+    - load147 DFF_X1 + PLACED ( 900000 3600000 ) N ;
+    - load148 DFF_X1 + PLACED ( 1200000 3600000 ) N ;
+    - load149 DFF_X1 + PLACED ( 1500000 3600000 ) N ;
+    - load15 DFF_X1 + PLACED ( 900000 300000 ) N ;
+    - load16 DFF_X1 + PLACED ( 1200000 300000 ) N ;
+    - load17 DFF_X1 + PLACED ( 1500000 300000 ) N ;
+    - load18 DFF_X1 + PLACED ( 1800000 300000 ) N ;
+    - load19 DFF_X1 + PLACED ( 2100000 300000 ) N ;
+    - load2 DFF_X1 + PLACED ( 600000 0 ) N ;
+    - load20 DFF_X1 + PLACED ( 2400000 300000 ) N ;
+    - load21 DFF_X1 + PLACED ( 2700000 300000 ) N ;
+    - load22 DFF_X1 + PLACED ( 3000000 300000 ) N ;
+    - load23 DFF_X1 + PLACED ( 3300000 300000 ) N ;
+    - load24 DFF_X1 + PLACED ( 0 600000 ) N ;
+    - load25 DFF_X1 + PLACED ( 300000 600000 ) N ;
+    - load26 DFF_X1 + PLACED ( 600000 600000 ) N ;
+    - load27 DFF_X1 + PLACED ( 900000 600000 ) N ;
+    - load28 DFF_X1 + PLACED ( 1200000 600000 ) N ;
+    - load29 DFF_X1 + PLACED ( 1500000 600000 ) N ;
+    - load3 DFF_X1 + PLACED ( 900000 0 ) N ;
+    - load30 DFF_X1 + PLACED ( 1800000 600000 ) N ;
+    - load31 DFF_X1 + PLACED ( 2100000 600000 ) N ;
+    - load32 DFF_X1 + PLACED ( 2400000 600000 ) N ;
+    - load33 DFF_X1 + PLACED ( 2700000 600000 ) N ;
+    - load34 DFF_X1 + PLACED ( 3000000 600000 ) N ;
+    - load35 DFF_X1 + PLACED ( 3300000 600000 ) N ;
+    - load36 DFF_X1 + PLACED ( 0 900000 ) N ;
+    - load37 DFF_X1 + PLACED ( 300000 900000 ) N ;
+    - load38 DFF_X1 + PLACED ( 600000 900000 ) N ;
+    - load39 DFF_X1 + PLACED ( 900000 900000 ) N ;
+    - load4 DFF_X1 + PLACED ( 1200000 0 ) N ;
+    - load40 DFF_X1 + PLACED ( 1200000 900000 ) N ;
+    - load41 DFF_X1 + PLACED ( 1500000 900000 ) N ;
+    - load42 DFF_X1 + PLACED ( 1800000 900000 ) N ;
+    - load43 DFF_X1 + PLACED ( 2100000 900000 ) N ;
+    - load44 DFF_X1 + PLACED ( 2400000 900000 ) N ;
+    - load45 DFF_X1 + PLACED ( 2700000 900000 ) N ;
+    - load46 DFF_X1 + PLACED ( 3000000 900000 ) N ;
+    - load47 DFF_X1 + PLACED ( 3300000 900000 ) N ;
+    - load48 DFF_X1 + PLACED ( 0 1200000 ) N ;
+    - load49 DFF_X1 + PLACED ( 300000 1200000 ) N ;
+    - load5 DFF_X1 + PLACED ( 1500000 0 ) N ;
+    - load50 DFF_X1 + PLACED ( 600000 1200000 ) N ;
+    - load51 DFF_X1 + PLACED ( 900000 1200000 ) N ;
+    - load52 DFF_X1 + PLACED ( 1200000 1200000 ) N ;
+    - load53 DFF_X1 + PLACED ( 1500000 1200000 ) N ;
+    - load54 DFF_X1 + PLACED ( 1800000 1200000 ) N ;
+    - load55 DFF_X1 + PLACED ( 2100000 1200000 ) N ;
+    - load56 DFF_X1 + PLACED ( 2400000 1200000 ) N ;
+    - load57 DFF_X1 + PLACED ( 2700000 1200000 ) N ;
+    - load58 DFF_X1 + PLACED ( 3000000 1200000 ) N ;
+    - load59 DFF_X1 + PLACED ( 3300000 1200000 ) N ;
+    - load6 DFF_X1 + PLACED ( 1800000 0 ) N ;
+    - load60 DFF_X1 + PLACED ( 0 1500000 ) N ;
+    - load61 DFF_X1 + PLACED ( 300000 1500000 ) N ;
+    - load62 DFF_X1 + PLACED ( 600000 1500000 ) N ;
+    - load63 DFF_X1 + PLACED ( 900000 1500000 ) N ;
+    - load64 DFF_X1 + PLACED ( 1200000 1500000 ) N ;
+    - load65 DFF_X1 + PLACED ( 1500000 1500000 ) N ;
+    - load66 DFF_X1 + PLACED ( 1800000 1500000 ) N ;
+    - load67 DFF_X1 + PLACED ( 2100000 1500000 ) N ;
+    - load68 DFF_X1 + PLACED ( 2400000 1500000 ) N ;
+    - load69 DFF_X1 + PLACED ( 2700000 1500000 ) N ;
+    - load7 DFF_X1 + PLACED ( 2100000 0 ) N ;
+    - load70 DFF_X1 + PLACED ( 3000000 1500000 ) N ;
+    - load71 DFF_X1 + PLACED ( 3300000 1500000 ) N ;
+    - load72 DFF_X1 + PLACED ( 0 1800000 ) N ;
+    - load73 DFF_X1 + PLACED ( 300000 1800000 ) N ;
+    - load74 DFF_X1 + PLACED ( 600000 1800000 ) N ;
+    - load75 DFF_X1 + PLACED ( 900000 1800000 ) N ;
+    - load76 DFF_X1 + PLACED ( 1200000 1800000 ) N ;
+    - load77 DFF_X1 + PLACED ( 1500000 1800000 ) N ;
+    - load78 DFF_X1 + PLACED ( 1800000 1800000 ) N ;
+    - load79 DFF_X1 + PLACED ( 2100000 1800000 ) N ;
+    - load8 DFF_X1 + PLACED ( 2400000 0 ) N ;
+    - load80 DFF_X1 + PLACED ( 2400000 1800000 ) N ;
+    - load81 DFF_X1 + PLACED ( 2700000 1800000 ) N ;
+    - load82 DFF_X1 + PLACED ( 3000000 1800000 ) N ;
+    - load83 DFF_X1 + PLACED ( 3300000 1800000 ) N ;
+    - load84 DFF_X1 + PLACED ( 0 2100000 ) N ;
+    - load85 DFF_X1 + PLACED ( 300000 2100000 ) N ;
+    - load86 DFF_X1 + PLACED ( 600000 2100000 ) N ;
+    - load87 DFF_X1 + PLACED ( 900000 2100000 ) N ;
+    - load88 DFF_X1 + PLACED ( 1200000 2100000 ) N ;
+    - load89 DFF_X1 + PLACED ( 1500000 2100000 ) N ;
+    - load9 DFF_X1 + PLACED ( 2700000 0 ) N ;
+    - load90 DFF_X1 + PLACED ( 1800000 2100000 ) N ;
+    - load91 DFF_X1 + PLACED ( 2100000 2100000 ) N ;
+    - load92 DFF_X1 + PLACED ( 2400000 2100000 ) N ;
+    - load93 DFF_X1 + PLACED ( 2700000 2100000 ) N ;
+    - load94 DFF_X1 + PLACED ( 3000000 2100000 ) N ;
+    - load95 DFF_X1 + PLACED ( 3300000 2100000 ) N ;
+    - load96 DFF_X1 + PLACED ( 0 2400000 ) N ;
+    - load97 DFF_X1 + PLACED ( 300000 2400000 ) N ;
+    - load98 DFF_X1 + PLACED ( 600000 2400000 ) N ;
+    - load99 DFF_X1 + PLACED ( 900000 2400000 ) N ;
+    - nand_inst_0 NAND2_X4 + PLACED ( 1250 1250 ) N ;
+END COMPONENTS
+PINS 152 ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -50 -50 ) ( 50 50 )
+        + FIXED ( 1050 1050 ) N ;
+    - data + NET data + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -50 -50 ) ( 50 50 )
+        + FIXED ( 1050 1050 ) N ;
+    - output0 + NET output0 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output1 + NET output1 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output10 + NET output10 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output100 + NET output100 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output101 + NET output101 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output102 + NET output102 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output103 + NET output103 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output104 + NET output104 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output105 + NET output105 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output106 + NET output106 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output107 + NET output107 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output108 + NET output108 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output109 + NET output109 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output11 + NET output11 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output110 + NET output110 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output111 + NET output111 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output112 + NET output112 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output113 + NET output113 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output114 + NET output114 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output115 + NET output115 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output116 + NET output116 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output117 + NET output117 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output118 + NET output118 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output119 + NET output119 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output12 + NET output12 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output120 + NET output120 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output121 + NET output121 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output122 + NET output122 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output123 + NET output123 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output124 + NET output124 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output125 + NET output125 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output126 + NET output126 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output127 + NET output127 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output128 + NET output128 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output129 + NET output129 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output13 + NET output13 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output130 + NET output130 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output131 + NET output131 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output132 + NET output132 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output133 + NET output133 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output134 + NET output134 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output135 + NET output135 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output136 + NET output136 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output137 + NET output137 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output138 + NET output138 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output139 + NET output139 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output14 + NET output14 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output140 + NET output140 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output141 + NET output141 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output142 + NET output142 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output143 + NET output143 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output144 + NET output144 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output145 + NET output145 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output146 + NET output146 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output147 + NET output147 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output148 + NET output148 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output149 + NET output149 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output15 + NET output15 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output16 + NET output16 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output17 + NET output17 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output18 + NET output18 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output19 + NET output19 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output2 + NET output2 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output20 + NET output20 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output21 + NET output21 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output22 + NET output22 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output23 + NET output23 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output24 + NET output24 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output25 + NET output25 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output26 + NET output26 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output27 + NET output27 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output28 + NET output28 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output29 + NET output29 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output3 + NET output3 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output30 + NET output30 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output31 + NET output31 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output32 + NET output32 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output33 + NET output33 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output34 + NET output34 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output35 + NET output35 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output36 + NET output36 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output37 + NET output37 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output38 + NET output38 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output39 + NET output39 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output4 + NET output4 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output40 + NET output40 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output41 + NET output41 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output42 + NET output42 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output43 + NET output43 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output44 + NET output44 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output45 + NET output45 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output46 + NET output46 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output47 + NET output47 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output48 + NET output48 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output49 + NET output49 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output5 + NET output5 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output50 + NET output50 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output51 + NET output51 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output52 + NET output52 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output53 + NET output53 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output54 + NET output54 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output55 + NET output55 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output56 + NET output56 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output57 + NET output57 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output58 + NET output58 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output59 + NET output59 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output6 + NET output6 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output60 + NET output60 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output61 + NET output61 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output62 + NET output62 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output63 + NET output63 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output64 + NET output64 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output65 + NET output65 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output66 + NET output66 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output67 + NET output67 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output68 + NET output68 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output69 + NET output69 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output7 + NET output7 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output70 + NET output70 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output71 + NET output71 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output72 + NET output72 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output73 + NET output73 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output74 + NET output74 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output75 + NET output75 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output76 + NET output76 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output77 + NET output77 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output78 + NET output78 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output79 + NET output79 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output8 + NET output8 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output80 + NET output80 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output81 + NET output81 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output82 + NET output82 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output83 + NET output83 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output84 + NET output84 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output85 + NET output85 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output86 + NET output86 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output87 + NET output87 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output88 + NET output88 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output89 + NET output89 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output9 + NET output9 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output90 + NET output90 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output91 + NET output91 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output92 + NET output92 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output93 + NET output93 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output94 + NET output94 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output95 + NET output95 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output96 + NET output96 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output97 + NET output97 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output98 + NET output98 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output99 + NET output99 + DIRECTION OUTPUT + USE SIGNAL ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD ( drvr_1 VDD ) ( drvr_2 VDD ) ( nand_inst_0 VDD ) ( load0 VDD ) ( load1 VDD ) ( load2 VDD ) ( load3 VDD )
+      ( load4 VDD ) ( load5 VDD ) ( load6 VDD ) ( load7 VDD ) ( load8 VDD ) ( load9 VDD ) ( load10 VDD ) ( load11 VDD )
+      ( load12 VDD ) ( load13 VDD ) ( load14 VDD ) ( load15 VDD ) ( load16 VDD ) ( load17 VDD ) ( load18 VDD ) ( load19 VDD )
+      ( load20 VDD ) ( load21 VDD ) ( load22 VDD ) ( load23 VDD ) ( load24 VDD ) ( load25 VDD ) ( load26 VDD ) ( load27 VDD )
+      ( load28 VDD ) ( load29 VDD ) ( load30 VDD ) ( load31 VDD ) ( load32 VDD ) ( load33 VDD ) ( load34 VDD ) ( load35 VDD )
+      ( load36 VDD ) ( load37 VDD ) ( load38 VDD ) ( load39 VDD ) ( load40 VDD ) ( load41 VDD ) ( load42 VDD ) ( load43 VDD )
+      ( load44 VDD ) ( load45 VDD ) ( load46 VDD ) ( load47 VDD ) ( load48 VDD ) ( load49 VDD ) ( load50 VDD ) ( load51 VDD )
+      ( load52 VDD ) ( load53 VDD ) ( load54 VDD ) ( load55 VDD ) ( load56 VDD ) ( load57 VDD ) ( load58 VDD ) ( load59 VDD )
+      ( load60 VDD ) ( load61 VDD ) ( load62 VDD ) ( load63 VDD ) ( load64 VDD ) ( load65 VDD ) ( load66 VDD ) ( load67 VDD )
+      ( load68 VDD ) ( load69 VDD ) ( load70 VDD ) ( load71 VDD ) ( load72 VDD ) ( load73 VDD ) ( load74 VDD ) ( load75 VDD )
+      ( load76 VDD ) ( load77 VDD ) ( load78 VDD ) ( load79 VDD ) ( load80 VDD ) ( load81 VDD ) ( load82 VDD ) ( load83 VDD )
+      ( load84 VDD ) ( load85 VDD ) ( load86 VDD ) ( load87 VDD ) ( load88 VDD ) ( load89 VDD ) ( load90 VDD ) ( load91 VDD )
+      ( load92 VDD ) ( load93 VDD ) ( load94 VDD ) ( load95 VDD ) ( load96 VDD ) ( load97 VDD ) ( load98 VDD ) ( load99 VDD )
+      ( load100 VDD ) ( load101 VDD ) ( load102 VDD ) ( load103 VDD ) ( load104 VDD ) ( load105 VDD ) ( load106 VDD ) ( load107 VDD )
+      ( load108 VDD ) ( load109 VDD ) ( load110 VDD ) ( load111 VDD ) ( load112 VDD ) ( load113 VDD ) ( load114 VDD ) ( load115 VDD )
+      ( load116 VDD ) ( load117 VDD ) ( load118 VDD ) ( load119 VDD ) ( load120 VDD ) ( load121 VDD ) ( load122 VDD ) ( load123 VDD )
+      ( load124 VDD ) ( load125 VDD ) ( load126 VDD ) ( load127 VDD ) ( load128 VDD ) ( load129 VDD ) ( load130 VDD ) ( load131 VDD )
+      ( load132 VDD ) ( load133 VDD ) ( load134 VDD ) ( load135 VDD ) ( load136 VDD ) ( load137 VDD ) ( load138 VDD ) ( load139 VDD )
+      ( load140 VDD ) ( load141 VDD ) ( load142 VDD ) ( load143 VDD ) ( load144 VDD ) ( load145 VDD ) ( load146 VDD ) ( load147 VDD )
+      ( load148 VDD ) ( load149 VDD ) + USE POWER ;
+    - VSS ( drvr_1 VSS ) ( drvr_2 VSS ) ( nand_inst_0 VSS ) ( load0 VSS ) ( load1 VSS ) ( load2 VSS ) ( load3 VSS )
+      ( load4 VSS ) ( load5 VSS ) ( load6 VSS ) ( load7 VSS ) ( load8 VSS ) ( load9 VSS ) ( load10 VSS ) ( load11 VSS )
+      ( load12 VSS ) ( load13 VSS ) ( load14 VSS ) ( load15 VSS ) ( load16 VSS ) ( load17 VSS ) ( load18 VSS ) ( load19 VSS )
+      ( load20 VSS ) ( load21 VSS ) ( load22 VSS ) ( load23 VSS ) ( load24 VSS ) ( load25 VSS ) ( load26 VSS ) ( load27 VSS )
+      ( load28 VSS ) ( load29 VSS ) ( load30 VSS ) ( load31 VSS ) ( load32 VSS ) ( load33 VSS ) ( load34 VSS ) ( load35 VSS )
+      ( load36 VSS ) ( load37 VSS ) ( load38 VSS ) ( load39 VSS ) ( load40 VSS ) ( load41 VSS ) ( load42 VSS ) ( load43 VSS )
+      ( load44 VSS ) ( load45 VSS ) ( load46 VSS ) ( load47 VSS ) ( load48 VSS ) ( load49 VSS ) ( load50 VSS ) ( load51 VSS )
+      ( load52 VSS ) ( load53 VSS ) ( load54 VSS ) ( load55 VSS ) ( load56 VSS ) ( load57 VSS ) ( load58 VSS ) ( load59 VSS )
+      ( load60 VSS ) ( load61 VSS ) ( load62 VSS ) ( load63 VSS ) ( load64 VSS ) ( load65 VSS ) ( load66 VSS ) ( load67 VSS )
+      ( load68 VSS ) ( load69 VSS ) ( load70 VSS ) ( load71 VSS ) ( load72 VSS ) ( load73 VSS ) ( load74 VSS ) ( load75 VSS )
+      ( load76 VSS ) ( load77 VSS ) ( load78 VSS ) ( load79 VSS ) ( load80 VSS ) ( load81 VSS ) ( load82 VSS ) ( load83 VSS )
+      ( load84 VSS ) ( load85 VSS ) ( load86 VSS ) ( load87 VSS ) ( load88 VSS ) ( load89 VSS ) ( load90 VSS ) ( load91 VSS )
+      ( load92 VSS ) ( load93 VSS ) ( load94 VSS ) ( load95 VSS ) ( load96 VSS ) ( load97 VSS ) ( load98 VSS ) ( load99 VSS )
+      ( load100 VSS ) ( load101 VSS ) ( load102 VSS ) ( load103 VSS ) ( load104 VSS ) ( load105 VSS ) ( load106 VSS ) ( load107 VSS )
+      ( load108 VSS ) ( load109 VSS ) ( load110 VSS ) ( load111 VSS ) ( load112 VSS ) ( load113 VSS ) ( load114 VSS ) ( load115 VSS )
+      ( load116 VSS ) ( load117 VSS ) ( load118 VSS ) ( load119 VSS ) ( load120 VSS ) ( load121 VSS ) ( load122 VSS ) ( load123 VSS )
+      ( load124 VSS ) ( load125 VSS ) ( load126 VSS ) ( load127 VSS ) ( load128 VSS ) ( load129 VSS ) ( load130 VSS ) ( load131 VSS )
+      ( load132 VSS ) ( load133 VSS ) ( load134 VSS ) ( load135 VSS ) ( load136 VSS ) ( load137 VSS ) ( load138 VSS ) ( load139 VSS )
+      ( load140 VSS ) ( load141 VSS ) ( load142 VSS ) ( load143 VSS ) ( load144 VSS ) ( load145 VSS ) ( load146 VSS ) ( load147 VSS )
+      ( load148 VSS ) ( load149 VSS ) + USE GROUND ;
+END SPECIALNETS
+NETS 162 ;
+    - clk1 ( PIN clk1 ) ( drvr_1 CK ) ( drvr_2 CK ) ( load0 CK ) ( load1 CK ) ( load2 CK ) ( load3 CK )
+      ( load4 CK ) ( load5 CK ) ( load6 CK ) ( load7 CK ) ( load8 CK ) ( load9 CK ) ( load10 CK ) ( load11 CK )
+      ( load12 CK ) ( load13 CK ) ( load14 CK ) ( load15 CK ) ( load16 CK ) ( load17 CK ) ( load18 CK ) ( load19 CK )
+      ( load20 CK ) ( load21 CK ) ( load22 CK ) ( load23 CK ) ( load24 CK ) ( load25 CK ) ( load26 CK ) ( load27 CK )
+      ( load28 CK ) ( load29 CK ) ( load30 CK ) ( load31 CK ) ( load32 CK ) ( load33 CK ) ( load34 CK ) ( load35 CK )
+      ( load36 CK ) ( load37 CK ) ( load38 CK ) ( load39 CK ) ( load40 CK ) ( load41 CK ) ( load42 CK ) ( load43 CK )
+      ( load44 CK ) ( load45 CK ) ( load46 CK ) ( load47 CK ) ( load48 CK ) ( load49 CK ) ( load50 CK ) ( load51 CK )
+      ( load52 CK ) ( load53 CK ) ( load54 CK ) ( load55 CK ) ( load56 CK ) ( load57 CK ) ( load58 CK ) ( load59 CK )
+      ( load60 CK ) ( load61 CK ) ( load62 CK ) ( load63 CK ) ( load64 CK ) ( load65 CK ) ( load66 CK ) ( load67 CK )
+      ( load68 CK ) ( load69 CK ) ( load70 CK ) ( load71 CK ) ( load72 CK ) ( load73 CK ) ( load74 CK ) ( load75 CK )
+      ( load76 CK ) ( load77 CK ) ( load78 CK ) ( load79 CK ) ( load80 CK ) ( load81 CK ) ( load82 CK ) ( load83 CK )
+      ( load84 CK ) ( load85 CK ) ( load86 CK ) ( load87 CK ) ( load88 CK ) ( load89 CK ) ( load90 CK ) ( load91 CK )
+      ( load92 CK ) ( load93 CK ) ( load94 CK ) ( load95 CK ) ( load96 CK ) ( load97 CK ) ( load98 CK ) ( load99 CK )
+      ( load100 CK ) ( load101 CK ) ( load102 CK ) ( load103 CK ) ( load104 CK ) ( load105 CK ) ( load106 CK ) ( load107 CK )
+      ( load108 CK ) ( load109 CK ) ( load110 CK ) ( load111 CK ) ( load112 CK ) ( load113 CK ) ( load114 CK ) ( load115 CK )
+      ( load116 CK ) ( load117 CK ) ( load118 CK ) ( load119 CK ) ( load120 CK ) ( load121 CK ) ( load122 CK ) ( load123 CK )
+      ( load124 CK ) ( load125 CK ) ( load126 CK ) ( load127 CK ) ( load128 CK ) ( load129 CK ) ( load130 CK ) ( load131 CK )
+      ( load132 CK ) ( load133 CK ) ( load134 CK ) ( load135 CK ) ( load136 CK ) ( load137 CK ) ( load138 CK ) ( load139 CK )
+      ( load140 CK ) ( load141 CK ) ( load142 CK ) ( load143 CK ) ( load144 CK ) ( load145 CK ) ( load146 CK ) ( load147 CK )
+      ( load148 CK ) ( load149 CK ) + USE SIGNAL ;
+    - clk_to_nand0 ( clone246 A1 ) ( clone245 A1 ) ( clone244 A1 ) ( clone243 A1 ) ( clone3 A1 ) ( clone2 A1 ) ( clone1 A1 )
+      ( drvr_1 Q ) ( nand_inst_0 A1 ) + USE SIGNAL ;
+    - clk_to_nand1 ( clone246 A2 ) ( clone245 A2 ) ( clone244 A2 ) ( clone243 A2 ) ( clone3 A2 ) ( clone2 A2 ) ( clone1 A2 )
+      ( drvr_2 Q ) ( nand_inst_0 A2 ) + USE SIGNAL ;
+    - data ( PIN data ) ( drvr_1 D ) ( drvr_2 D ) + USE SIGNAL ;
+    - net0 ( load33 D ) ( load45 D ) ( load34 D ) ( load22 D ) ( load57 D ) ( load46 D ) ( load35 D )
+      ( load23 D ) ( load58 D ) ( load69 D ) ( load47 D ) ( load70 D ) ( load59 D ) ( load82 D ) ( load81 D )
+      ( load80 D ) ( load94 D ) ( load71 D ) ( load106 D ) ( load92 D ) ( load104 D ) ( load116 D ) ( load128 D )
+      ( load140 D ) ( load93 D ) ( load95 D ) ( load107 D ) ( load83 D ) ( load105 D ) ( load117 D ) ( load129 D )
+      ( load141 D ) ( load118 D ) ( nand_inst_0 ZN ) ( load119 D ) ( load130 D ) ( load131 D ) ( load142 D ) ( load143 D ) + USE SIGNAL ;
+    - net1 ( load98 D ) ( load97 D ) ( load96 D ) ( load110 D ) ( load109 D ) ( load108 D ) ( load122 D )
+      ( load121 D ) ( load120 D ) ( load134 D ) ( load133 D ) ( load132 D ) ( load146 D ) ( load145 D ) ( load144 D )
+      ( load40 D ) ( load41 D ) ( load28 D ) ( load16 D ) ( load26 D ) ( load25 D ) ( load24 D ) ( load14 D )
+      ( load13 D ) ( load12 D ) ( load2 D ) ( load1 D ) ( load0 D ) ( load29 D ) ( load17 D ) ( load5 D )
+      ( load4 D ) ( load6 D ) ( load11 D ) ( load10 D ) ( load9 D ) ( load8 D ) ( load7 D ) ( clone1 ZN ) + USE SIGNAL ;
+    - net2 ( load78 D ) ( load77 D ) ( load66 D ) ( load65 D ) ( load79 D ) ( load54 D ) ( load53 D )
+      ( load42 D ) ( load90 D ) ( load91 D ) ( load89 D ) ( load30 D ) ( load18 D ) ( load67 D ) ( load103 D )
+      ( load115 D ) ( load55 D ) ( load127 D ) ( load68 D ) ( load102 D ) ( load101 D ) ( load56 D ) ( load114 D )
+      ( load113 D ) ( load44 D ) ( load126 D ) ( load43 D ) ( load31 D ) ( load19 D ) ( load32 D ) ( load20 D )
+      ( load21 D ) ( load149 D ) ( load137 D ) ( load138 D ) ( load125 D ) ( load139 D ) ( clone2 ZN ) + USE SIGNAL ;
+    - net243 ( load74 D ) ( load73 D ) ( load72 D ) ( load86 D ) ( load62 D ) ( load75 D ) ( load76 D )
+      ( load85 D ) ( load84 D ) ( load50 D ) ( load63 D ) ( load51 D ) ( load64 D ) ( load49 D ) ( load99 D )
+      ( load60 D ) ( load87 D ) ( load61 D ) ( clone243 ZN ) + USE SIGNAL ;
+    - net244 ( load48 D ) ( load36 D ) ( load37 D ) ( load100 D ) ( load88 D ) ( clone244 ZN ) + USE SIGNAL ;
+    - net245 ( load112 D ) ( load123 D ) ( load111 D ) ( load3 D ) ( load15 D ) ( clone245 ZN ) + USE SIGNAL ;
+    - net246 ( load27 D ) ( load38 D ) ( load39 D ) ( load52 D ) ( clone246 ZN ) + USE SIGNAL ;
+    - net3 ( load148 D ) ( load136 D ) ( load124 D ) ( load147 D ) ( load135 D ) ( clone3 ZN ) + USE SIGNAL ;
+    - output0 ( PIN output0 ) ( load0 Q ) + USE SIGNAL ;
+    - output1 ( PIN output1 ) ( load1 Q ) + USE SIGNAL ;
+    - output10 ( PIN output10 ) ( load10 Q ) + USE SIGNAL ;
+    - output100 ( PIN output100 ) ( load100 Q ) + USE SIGNAL ;
+    - output101 ( PIN output101 ) ( load101 Q ) + USE SIGNAL ;
+    - output102 ( PIN output102 ) ( load102 Q ) + USE SIGNAL ;
+    - output103 ( PIN output103 ) ( load103 Q ) + USE SIGNAL ;
+    - output104 ( PIN output104 ) ( load104 Q ) + USE SIGNAL ;
+    - output105 ( PIN output105 ) ( load105 Q ) + USE SIGNAL ;
+    - output106 ( PIN output106 ) ( load106 Q ) + USE SIGNAL ;
+    - output107 ( PIN output107 ) ( load107 Q ) + USE SIGNAL ;
+    - output108 ( PIN output108 ) ( load108 Q ) + USE SIGNAL ;
+    - output109 ( PIN output109 ) ( load109 Q ) + USE SIGNAL ;
+    - output11 ( PIN output11 ) ( load11 Q ) + USE SIGNAL ;
+    - output110 ( PIN output110 ) ( load110 Q ) + USE SIGNAL ;
+    - output111 ( PIN output111 ) ( load111 Q ) + USE SIGNAL ;
+    - output112 ( PIN output112 ) ( load112 Q ) + USE SIGNAL ;
+    - output113 ( PIN output113 ) ( load113 Q ) + USE SIGNAL ;
+    - output114 ( PIN output114 ) ( load114 Q ) + USE SIGNAL ;
+    - output115 ( PIN output115 ) ( load115 Q ) + USE SIGNAL ;
+    - output116 ( PIN output116 ) ( load116 Q ) + USE SIGNAL ;
+    - output117 ( PIN output117 ) ( load117 Q ) + USE SIGNAL ;
+    - output118 ( PIN output118 ) ( load118 Q ) + USE SIGNAL ;
+    - output119 ( PIN output119 ) ( load119 Q ) + USE SIGNAL ;
+    - output12 ( PIN output12 ) ( load12 Q ) + USE SIGNAL ;
+    - output120 ( PIN output120 ) ( load120 Q ) + USE SIGNAL ;
+    - output121 ( PIN output121 ) ( load121 Q ) + USE SIGNAL ;
+    - output122 ( PIN output122 ) ( load122 Q ) + USE SIGNAL ;
+    - output123 ( PIN output123 ) ( load123 Q ) + USE SIGNAL ;
+    - output124 ( PIN output124 ) ( load124 Q ) + USE SIGNAL ;
+    - output125 ( PIN output125 ) ( load125 Q ) + USE SIGNAL ;
+    - output126 ( PIN output126 ) ( load126 Q ) + USE SIGNAL ;
+    - output127 ( PIN output127 ) ( load127 Q ) + USE SIGNAL ;
+    - output128 ( PIN output128 ) ( load128 Q ) + USE SIGNAL ;
+    - output129 ( PIN output129 ) ( load129 Q ) + USE SIGNAL ;
+    - output13 ( PIN output13 ) ( load13 Q ) + USE SIGNAL ;
+    - output130 ( PIN output130 ) ( load130 Q ) + USE SIGNAL ;
+    - output131 ( PIN output131 ) ( load131 Q ) + USE SIGNAL ;
+    - output132 ( PIN output132 ) ( load132 Q ) + USE SIGNAL ;
+    - output133 ( PIN output133 ) ( load133 Q ) + USE SIGNAL ;
+    - output134 ( PIN output134 ) ( load134 Q ) + USE SIGNAL ;
+    - output135 ( PIN output135 ) ( load135 Q ) + USE SIGNAL ;
+    - output136 ( PIN output136 ) ( load136 Q ) + USE SIGNAL ;
+    - output137 ( PIN output137 ) ( load137 Q ) + USE SIGNAL ;
+    - output138 ( PIN output138 ) ( load138 Q ) + USE SIGNAL ;
+    - output139 ( PIN output139 ) ( load139 Q ) + USE SIGNAL ;
+    - output14 ( PIN output14 ) ( load14 Q ) + USE SIGNAL ;
+    - output140 ( PIN output140 ) ( load140 Q ) + USE SIGNAL ;
+    - output141 ( PIN output141 ) ( load141 Q ) + USE SIGNAL ;
+    - output142 ( PIN output142 ) ( load142 Q ) + USE SIGNAL ;
+    - output143 ( PIN output143 ) ( load143 Q ) + USE SIGNAL ;
+    - output144 ( PIN output144 ) ( load144 Q ) + USE SIGNAL ;
+    - output145 ( PIN output145 ) ( load145 Q ) + USE SIGNAL ;
+    - output146 ( PIN output146 ) ( load146 Q ) + USE SIGNAL ;
+    - output147 ( PIN output147 ) ( load147 Q ) + USE SIGNAL ;
+    - output148 ( PIN output148 ) ( load148 Q ) + USE SIGNAL ;
+    - output149 ( PIN output149 ) ( load149 Q ) + USE SIGNAL ;
+    - output15 ( PIN output15 ) ( load15 Q ) + USE SIGNAL ;
+    - output16 ( PIN output16 ) ( load16 Q ) + USE SIGNAL ;
+    - output17 ( PIN output17 ) ( load17 Q ) + USE SIGNAL ;
+    - output18 ( PIN output18 ) ( load18 Q ) + USE SIGNAL ;
+    - output19 ( PIN output19 ) ( load19 Q ) + USE SIGNAL ;
+    - output2 ( PIN output2 ) ( load2 Q ) + USE SIGNAL ;
+    - output20 ( PIN output20 ) ( load20 Q ) + USE SIGNAL ;
+    - output21 ( PIN output21 ) ( load21 Q ) + USE SIGNAL ;
+    - output22 ( PIN output22 ) ( load22 Q ) + USE SIGNAL ;
+    - output23 ( PIN output23 ) ( load23 Q ) + USE SIGNAL ;
+    - output24 ( PIN output24 ) ( load24 Q ) + USE SIGNAL ;
+    - output25 ( PIN output25 ) ( load25 Q ) + USE SIGNAL ;
+    - output26 ( PIN output26 ) ( load26 Q ) + USE SIGNAL ;
+    - output27 ( PIN output27 ) ( load27 Q ) + USE SIGNAL ;
+    - output28 ( PIN output28 ) ( load28 Q ) + USE SIGNAL ;
+    - output29 ( PIN output29 ) ( load29 Q ) + USE SIGNAL ;
+    - output3 ( PIN output3 ) ( load3 Q ) + USE SIGNAL ;
+    - output30 ( PIN output30 ) ( load30 Q ) + USE SIGNAL ;
+    - output31 ( PIN output31 ) ( load31 Q ) + USE SIGNAL ;
+    - output32 ( PIN output32 ) ( load32 Q ) + USE SIGNAL ;
+    - output33 ( PIN output33 ) ( load33 Q ) + USE SIGNAL ;
+    - output34 ( PIN output34 ) ( load34 Q ) + USE SIGNAL ;
+    - output35 ( PIN output35 ) ( load35 Q ) + USE SIGNAL ;
+    - output36 ( PIN output36 ) ( load36 Q ) + USE SIGNAL ;
+    - output37 ( PIN output37 ) ( load37 Q ) + USE SIGNAL ;
+    - output38 ( PIN output38 ) ( load38 Q ) + USE SIGNAL ;
+    - output39 ( PIN output39 ) ( load39 Q ) + USE SIGNAL ;
+    - output4 ( PIN output4 ) ( load4 Q ) + USE SIGNAL ;
+    - output40 ( PIN output40 ) ( load40 Q ) + USE SIGNAL ;
+    - output41 ( PIN output41 ) ( load41 Q ) + USE SIGNAL ;
+    - output42 ( PIN output42 ) ( load42 Q ) + USE SIGNAL ;
+    - output43 ( PIN output43 ) ( load43 Q ) + USE SIGNAL ;
+    - output44 ( PIN output44 ) ( load44 Q ) + USE SIGNAL ;
+    - output45 ( PIN output45 ) ( load45 Q ) + USE SIGNAL ;
+    - output46 ( PIN output46 ) ( load46 Q ) + USE SIGNAL ;
+    - output47 ( PIN output47 ) ( load47 Q ) + USE SIGNAL ;
+    - output48 ( PIN output48 ) ( load48 Q ) + USE SIGNAL ;
+    - output49 ( PIN output49 ) ( load49 Q ) + USE SIGNAL ;
+    - output5 ( PIN output5 ) ( load5 Q ) + USE SIGNAL ;
+    - output50 ( PIN output50 ) ( load50 Q ) + USE SIGNAL ;
+    - output51 ( PIN output51 ) ( load51 Q ) + USE SIGNAL ;
+    - output52 ( PIN output52 ) ( load52 Q ) + USE SIGNAL ;
+    - output53 ( PIN output53 ) ( load53 Q ) + USE SIGNAL ;
+    - output54 ( PIN output54 ) ( load54 Q ) + USE SIGNAL ;
+    - output55 ( PIN output55 ) ( load55 Q ) + USE SIGNAL ;
+    - output56 ( PIN output56 ) ( load56 Q ) + USE SIGNAL ;
+    - output57 ( PIN output57 ) ( load57 Q ) + USE SIGNAL ;
+    - output58 ( PIN output58 ) ( load58 Q ) + USE SIGNAL ;
+    - output59 ( PIN output59 ) ( load59 Q ) + USE SIGNAL ;
+    - output6 ( PIN output6 ) ( load6 Q ) + USE SIGNAL ;
+    - output60 ( PIN output60 ) ( load60 Q ) + USE SIGNAL ;
+    - output61 ( PIN output61 ) ( load61 Q ) + USE SIGNAL ;
+    - output62 ( PIN output62 ) ( load62 Q ) + USE SIGNAL ;
+    - output63 ( PIN output63 ) ( load63 Q ) + USE SIGNAL ;
+    - output64 ( PIN output64 ) ( load64 Q ) + USE SIGNAL ;
+    - output65 ( PIN output65 ) ( load65 Q ) + USE SIGNAL ;
+    - output66 ( PIN output66 ) ( load66 Q ) + USE SIGNAL ;
+    - output67 ( PIN output67 ) ( load67 Q ) + USE SIGNAL ;
+    - output68 ( PIN output68 ) ( load68 Q ) + USE SIGNAL ;
+    - output69 ( PIN output69 ) ( load69 Q ) + USE SIGNAL ;
+    - output7 ( PIN output7 ) ( load7 Q ) + USE SIGNAL ;
+    - output70 ( PIN output70 ) ( load70 Q ) + USE SIGNAL ;
+    - output71 ( PIN output71 ) ( load71 Q ) + USE SIGNAL ;
+    - output72 ( PIN output72 ) ( load72 Q ) + USE SIGNAL ;
+    - output73 ( PIN output73 ) ( load73 Q ) + USE SIGNAL ;
+    - output74 ( PIN output74 ) ( load74 Q ) + USE SIGNAL ;
+    - output75 ( PIN output75 ) ( load75 Q ) + USE SIGNAL ;
+    - output76 ( PIN output76 ) ( load76 Q ) + USE SIGNAL ;
+    - output77 ( PIN output77 ) ( load77 Q ) + USE SIGNAL ;
+    - output78 ( PIN output78 ) ( load78 Q ) + USE SIGNAL ;
+    - output79 ( PIN output79 ) ( load79 Q ) + USE SIGNAL ;
+    - output8 ( PIN output8 ) ( load8 Q ) + USE SIGNAL ;
+    - output80 ( PIN output80 ) ( load80 Q ) + USE SIGNAL ;
+    - output81 ( PIN output81 ) ( load81 Q ) + USE SIGNAL ;
+    - output82 ( PIN output82 ) ( load82 Q ) + USE SIGNAL ;
+    - output83 ( PIN output83 ) ( load83 Q ) + USE SIGNAL ;
+    - output84 ( PIN output84 ) ( load84 Q ) + USE SIGNAL ;
+    - output85 ( PIN output85 ) ( load85 Q ) + USE SIGNAL ;
+    - output86 ( PIN output86 ) ( load86 Q ) + USE SIGNAL ;
+    - output87 ( PIN output87 ) ( load87 Q ) + USE SIGNAL ;
+    - output88 ( PIN output88 ) ( load88 Q ) + USE SIGNAL ;
+    - output89 ( PIN output89 ) ( load89 Q ) + USE SIGNAL ;
+    - output9 ( PIN output9 ) ( load9 Q ) + USE SIGNAL ;
+    - output90 ( PIN output90 ) ( load90 Q ) + USE SIGNAL ;
+    - output91 ( PIN output91 ) ( load91 Q ) + USE SIGNAL ;
+    - output92 ( PIN output92 ) ( load92 Q ) + USE SIGNAL ;
+    - output93 ( PIN output93 ) ( load93 Q ) + USE SIGNAL ;
+    - output94 ( PIN output94 ) ( load94 Q ) + USE SIGNAL ;
+    - output95 ( PIN output95 ) ( load95 Q ) + USE SIGNAL ;
+    - output96 ( PIN output96 ) ( load96 Q ) + USE SIGNAL ;
+    - output97 ( PIN output97 ) ( load97 Q ) + USE SIGNAL ;
+    - output98 ( PIN output98 ) ( load98 Q ) + USE SIGNAL ;
+    - output99 ( PIN output99 ) ( load99 Q ) + USE SIGNAL ;
+END NETS
+END DESIGN
