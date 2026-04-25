@@ -1,0 +1,88 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+Test net: resp_msg\[9\]
+PASS: set_net_weight resp_msg\[9\] 5.0
+PASS: property value = 5.0
+PASS: unset_net_weight
+PASS: multiple nets weighted
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0036] Movable instances area:        569.772 um^2
+[INFO GPL-0037] Total instances area:          569.772 um^2
+[INFO GPL-0035] Pin density area adjust:        49.963 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        619.735 um^2
+[INFO GPL-0019] Utilization:                    64.970 %
+[INFO GPL-0020] Standard cells area:           619.735 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 294	Region center = 0
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      2.108 um^2
+[INFO GPL-0025] Ideal bin area:                  3.011 um^2
+[INFO GPL-0026] Ideal bin count:                   316
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.8993 |  1.826026e+03 |   +0.00% |  1.07e-11 |      
+       10 |   0.7518 |  2.159992e+03 |  +18.29% |  1.75e-11 |      
+       20 |   0.7369 |  2.161174e+03 |   +0.05% |  2.85e-11 |      
+       30 |   0.7377 |  2.156581e+03 |   -0.21% |  4.64e-11 |      
+       40 |   0.7357 |  2.162750e+03 |   +0.29% |  7.55e-11 |      
+       50 |   0.7314 |  2.171305e+03 |   +0.40% |  1.23e-10 |      
+       60 |   0.7253 |  2.183808e+03 |   +0.58% |  2.00e-10 |      
+       70 |   0.7136 |  2.201126e+03 |   +0.79% |  3.26e-10 |      
+       80 |   0.6966 |  2.225340e+03 |   +1.10% |  5.32e-10 |      
+       90 |   0.6779 |  2.257155e+03 |   +1.43% |  8.66e-10 |      
+      100 |   0.6536 |  2.299164e+03 |   +1.86% |  1.41e-09 |      
+      110 |   0.6209 |  2.347675e+03 |   +2.11% |  2.30e-09 |      
+      120 |   0.5828 |  2.390463e+03 |   +1.82% |  3.74e-09 |      
+      130 |   0.5399 |  2.441236e+03 |   +2.12% |  6.10e-09 |      
+      140 |   0.4867 |  2.460689e+03 |   +0.80% |  9.93e-09 |      
+      150 |   0.4299 |  2.462688e+03 |   +0.08% |  1.62e-08 |      
+      160 |   0.3764 |  2.479178e+03 |   +0.67% |  2.63e-08 |      
+      170 |   0.3303 |  2.488403e+03 |   +0.37% |  4.12e-08 |      
+      180 |   0.2954 |  2.509546e+03 |   +0.85% |  6.07e-08 |      
+      190 |   0.2662 |  2.539786e+03 |   +1.20% |  8.95e-08 |      
+      200 |   0.2373 |  2.560392e+03 |   +0.81% |  1.32e-07 |      
+      210 |   0.2109 |  2.580240e+03 |   +0.78% |  1.94e-07 |      
+      220 |   0.1782 |  2.599993e+03 |   +0.77% |  2.86e-07 |      
+      230 |   0.1425 |  2.613456e+03 |   +0.52% |  4.21e-07 |      
+      240 |   0.1186 |  2.629106e+03 |   +0.60% |  6.21e-07 |      
+      247 |   0.0998 |  2.637883e+03 |          |  8.46e-07 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 247
+[INFO GPL-1002] Placed Cell Area              619.7347
+[INFO GPL-1003] Available Free Area           953.8760
+[INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.7219
+[INFO GPL-1008]     - For 80% usage of free space: 0.8121
+[INFO GPL-1014] Final placement area: 619.73 (+0.00%)
+PASS: global_placement with net weights
+PASS: overwrite weight
+PASS: all tests passed

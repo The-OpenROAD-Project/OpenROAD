@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+=== Test 1: non-existent net ===
+[ERROR GPL-0500] Net 'nonexistent_net' not found.
+PASS: caught error: GPL-0500
+=== Test 2: zero weight ===
+[ERROR GPL-0502] weight '0.0' must be a finite positive number > 0.
+PASS: caught error for zero weight: GPL-0502
+=== Test 3: negative weight ===
+[ERROR GPL-0502] weight '-1.0' must be a finite positive number > 0.
+PASS: caught error for negative weight: GPL-0502
+=== Test 4: unset non-existent net ===
+[ERROR GPL-0501] Net 'nonexistent_net' not found.
+PASS: caught error: GPL-0501
+=== Test 5: wrong arg count ===
+[ERROR STA-0567] set_net_weight requires two positional arguments.
+PASS: caught error for no args: STA-0567
+[ERROR STA-0567] set_net_weight requires two positional arguments.
+PASS: caught error for 3 args: STA-0567
+=== Test 6: non-numeric weight ===
+[ERROR GPL-0502] weight 'abc' must be a finite positive number > 0.
+PASS: caught error for non-numeric: GPL-0502
+=== Test 7: unset net without weight ===
+PASS: unset on net without weight (no-op)
+=== All negative tests passed ===

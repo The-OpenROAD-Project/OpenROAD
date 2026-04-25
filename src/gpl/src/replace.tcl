@@ -256,3 +256,29 @@ proc parse_inst_names { cmd names } {
   return $inst_list
 }
 }
+
+sta::define_cmd_args "set_net_weight" {net_name weight}
+
+proc set_net_weight { args } {
+  sta::check_argc_eq2 "set_net_weight" $args
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 503 "No design block found."
+  }
+  set net_name [lindex $args 0]
+  set weight [lindex $args 1]
+  if {![string is double -strict $weight] || $weight <= 0.0 || $weight != $weight} {
+    utl::error GPL 502 "Weight '$weight' must be a finite positive number > 0."
+  }
+  gpl::set_net_weight_cmd $net_name $weight
+}
+
+sta::define_cmd_args "unset_net_weight" {net_name}
+
+proc unset_net_weight { args } {
+  sta::check_argc_eq1 "unset_net_weight" $args
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 504 "No design block found."
+  }
+  set net_name [lindex $args 0]
+  gpl::unset_net_weight_cmd $net_name
+}

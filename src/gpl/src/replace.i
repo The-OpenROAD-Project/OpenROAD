@@ -198,4 +198,36 @@ set_debug_cmd(int pause_iterations,
                     generate_images, resolved_path);
 }
 
+void
+set_net_weight_cmd(const char* net_name, float weight)
+{
+  auto* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  auto* net = block->findNet(net_name);
+  if (!net) {
+    ord::OpenRoad::openRoad()->getLogger()->error(
+        utl::GPL, 500, "Net '{}' not found.", net_name);
+  }
+  // Store as persistent ODB property so it survives write_db/read_db
+  auto* existing = odb::dbDoubleProperty::find(net, "gpl_weight");
+  if (existing) {
+    odb::dbDoubleProperty::destroy(existing);
+  }
+  odb::dbDoubleProperty::create(net, "gpl_weight", weight);
+}
+
+void
+unset_net_weight_cmd(const char* net_name)
+{
+  auto* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  auto* net = block->findNet(net_name);
+  if (!net) {
+    ord::OpenRoad::openRoad()->getLogger()->error(
+        utl::GPL, 501, "Net '{}' not found.", net_name);
+  }
+  auto* existing = odb::dbDoubleProperty::find(net, "gpl_weight");
+  if (existing) {
+    odb::dbDoubleProperty::destroy(existing);
+  }
+}
+
 %} // inline
