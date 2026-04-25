@@ -3,6 +3,7 @@
 
 #include "ram/ram.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <fstream>
@@ -274,7 +275,7 @@ void RamGen::makeDecoderColumn(
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
 
-  int layers = std::log2(num_words) - 1;
+  int layers = std::ceil(std::log2(num_words)) - 1;
 
   for (int word = 0; word < num_words; ++word) {
     auto word_cell = std::make_unique<Cell>();
@@ -1085,16 +1086,18 @@ void RamGen::generate(const int mask_size,
                       decoder_output_nets[p]);
   }
 
-  // determining how many inverters can fit in one column
-  int ports_per_col = num_words / num_inputs;
-  int inv_col_count = std::ceil((float) total_ports / ports_per_col);
+  if (num_inputs > 0) {
+    // determining how many inverters can fit in one column
+    int ports_per_col = num_words / num_inputs;
+    int inv_col_count = std::ceil((float) total_ports / ports_per_col);
 
-  // building out inverter columns
-  for (int col = 0; col < inv_col_count; ++col) {
-    int start_port = col * ports_per_col;
-    int end_port = std::min(start_port + ports_per_col, total_ports);
-    ram_grid_.addLayout(makeInverterColumn(
-        num_words, num_inputs, start_port, end_port, inv_addr_nets));
+    // building out inverter columns
+    for (int col = 0; col < inv_col_count; ++col) {
+      int start_port = col * ports_per_col;
+      int end_port = std::min(start_port + ports_per_col, total_ports);
+      ram_grid_.addLayout(makeInverterColumn(
+          num_words, num_inputs, start_port, end_port, inv_addr_nets));
+    }
   }
 
   auto ram_origin(odb::Point(0, 0));

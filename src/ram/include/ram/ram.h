@@ -176,16 +176,16 @@ class RamGen
   std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
 
   void makeDecoderColumn(const std::string& prefix,
-                         const int num_words,
+                         int num_words,
                          const std::vector<std::vector<odb::dbNet*>>& addr_nets,
                          const std::vector<odb::dbNet*>& decoder_output_nets);
   void makeBufferColumn(const std::string& prefix,
-                        const int num_words,
+                        int num_words,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
 
   void makeSelectColumn(const std::string& prefix,
-                        const int num_words,
+                        int num_words,
                         RamPortType port_type,
                         odb::dbNet* write_enable,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
@@ -193,20 +193,20 @@ class RamGen
                         const std::vector<odb::dbNet*>& write_select_nets);
 
   std::unique_ptr<Layout> makeInverterColumn(
-      const int num_words,
-      const int num_inputs,
-      const int start_port,
-      const int end_port,
+      int num_words,
+      int num_inputs,
+      int start_port,
+      int end_port,
       const std::vector<std::vector<odb::dbNet*>>& inv_addr_nets);
 
   std::vector<odb::dbNet*> selectNets(const std::string& prefix,
                                       int read_ports);
 
   std::vector<odb::dbNet*> makeDecoderOutputNets(const std::string& prefix,
-                                                 const int num_words);
+                                                 int num_words);
 
   std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix,
-                                          const int num_words,
+                                          int num_words,
                                           RamPortType port_type);
 
   sta::dbNetwork* network_;
