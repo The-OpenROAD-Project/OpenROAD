@@ -52,8 +52,10 @@ COMPULSORY_TESTS = [
     "rdl_route_assignments_overlapping_iterms",
     "rdl_route_bump_to_bump_only",
     "rdl_route_bump_via",
+    "rdl_route_failed",
     "rdl_route_invalid",
     "rdl_route_keep_existing",
+    "rdl_route_max_iterations",
     "rdl_route_ports",
     "rdl_route_probe",
     "rdl_route_single_target",
@@ -64,12 +66,12 @@ COMPULSORY_TESTS = [
     "skywater130_overlapping_filler",
 ]
 
-PASSFAIL_TESTS = [
-    "rdl_route_failed",
-    "rdl_route_max_iterations",
+# TODO: Enable once difference between bazel and ctest is resolved.
+MANUAL_FOR_BAZEL_TESTS = [
+    "rdl_route_single_target",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -216,9 +218,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
-        check_log = False if test_name in PASSFAIL_TESTS else True,
-        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
