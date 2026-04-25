@@ -1883,13 +1883,13 @@ void FlexDRWorker::initMazeCost_ap_planarGrid_helper(const FlexMazeIdx& mi,
       break;
     }
     if (isAddPathCost) {
-      gridGraph_.setGridCost(x, y, z, dir);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.setGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.setApCost(x, y, z, dir);
+      gridGraph_.setApCost(x, y, z, frDirEnum::D);
+      gridGraph_.setApCost(x, y, z, frDirEnum::U);
     } else {
-      gridGraph_.resetGridCost(x, y, z, dir);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::D);
-      gridGraph_.resetGridCost(x, y, z, frDirEnum::U);
+      gridGraph_.resetApCost(x, y, z, dir);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::D);
+      gridGraph_.resetApCost(x, y, z, frDirEnum::U);
     }
     switch (dir) {
       case frDirEnum::W:
