@@ -150,6 +150,12 @@ void PrometheusMetricsServer::WorkerFunction()
     } catch (const std::exception& e) {
       logger_.load()->warn(
           utl::UTL, 103, "Prometheus Server Exception: {}", e.what());
+      // Startup failures like EPERM when opening a socket are unrecoverable in
+      // the current process. Stop retrying so callers can observe the failure.
+      if (!is_ready_) {
+        startup_failed_ = true;
+        shutdown_ = true;
+      }
     }
   }
 }

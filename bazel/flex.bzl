@@ -26,7 +26,7 @@ def _correct_flex_env_for_action(env, flex):
         flex.owner.workspace_name,
     )
 
-    actual = "{}/external/{}".format(flex.root.path, flex.owner.workspace_name)
+    actual = "{}/external/{}".format(flex.root.path, flex.owner.workspace_name)  # buildifier: disable=external-path
 
     for key, value in flex_env.items():
         flex_env[key] = value.replace(flex_runfiles_dir, actual)
