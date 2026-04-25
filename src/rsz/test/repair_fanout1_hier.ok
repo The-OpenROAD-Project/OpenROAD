@@ -87,6 +87,4 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 hi_fanout_inst/fanout1/Z                 10     10      0 (MET)
 
-Differences found at line 24.
- BUF_X1 fanout1 (.A(net2),
- BUF_X1 fanout1 (.A(net0),
+No differences found.

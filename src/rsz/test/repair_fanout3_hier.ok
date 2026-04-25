@@ -91,6 +91,4 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout1/Z                                10     10      0 (MET)
 
-Differences found at line 8.
- wire net19;
- wire net20;
+No differences found.

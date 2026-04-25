@@ -22,6 +22,4 @@ original HPWL          636814.0 u
 legalized HPWL         666956.8 u
 delta HPWL                    5 %
 
-Differences found at line 5437.
-    - _27735_ OR3_X1 + PLACED ( 882620 669200 ) N ;
-    - _27735_ OR3_X1 + PLACED ( 881860 658000 ) N ;
+No differences found.

@@ -42,6 +42,4 @@ original HPWL         1353118.6 u
 legalized HPWL        1392453.0 u
 delta HPWL                    3 %
 
-Differences found at line 10114.
-    - _1694_ sky130_fd_sc_hd__or2_2 + PLACED ( 59800 1305600 ) N ;
-    - _1694_ sky130_fd_sc_hd__or2_2 + PLACED ( 74060 1270240 ) FS ;
+No differences found.

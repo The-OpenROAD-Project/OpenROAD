@@ -150,6 +150,4 @@ delta HPWL                    3 %
 [INFO CTS-0036]  inserted 2 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 2
 Found 0 unconnected buffers.
-Differences found at line 4.
- wire clknet_leaf_24_clk_regs_3;
- wire clknet_leaf_3_clk_regs_3;
+No differences found.

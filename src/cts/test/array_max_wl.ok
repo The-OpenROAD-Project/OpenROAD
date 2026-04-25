@@ -812,6 +812,4 @@ Path Type: max
            4.73   slack (MET)
 
 
-Differences found at line 52423.
-    - clkbuf_2_3_8_clk BUF_X4 + SOURCE TIMING + PLACED ( 7629260 5905200 ) FS ;
-    - clkbuf_2_3_8_clk BUF_X4 + SOURCE TIMING + PLACED ( 7629260 5902400 ) N ;
+No differences found.

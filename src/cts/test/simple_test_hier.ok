@@ -103,6 +103,4 @@ delta HPWL                    0 %
 [INFO CTS-0101]  Average sink wire length 15.75 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 1
-Differences found at line 8.
- flop_pair U1 (.clknet_1_1__leaf_clk_2_i(clknet_1_1__leaf_clk_2),
- flop_pair U1 (.clknet_1_1__leaf_clk_2_i(clknet_1_1__leaf_clk_2));
+No differences found.

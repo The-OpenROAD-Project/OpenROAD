@@ -22,6 +22,4 @@ original HPWL          363775.2 u
 legalized HPWL         386620.2 u
 delta HPWL                    6 %
 
-Differences found at line 2836.
-    - _18498_ BUF_X4 + PLACED ( 597240 607600 ) N ;
-    - _18498_ BUF_X4 + PLACED ( 598000 613200 ) N ;
+No differences found.

@@ -32,7 +32,5 @@ original HPWL             100.7 u
 legalized HPWL             94.4 u
 delta HPWL                   -6 %
 
-Differences found at line 35.
-    - f0/_282_ NOR2_X1 + PLACED ( 28000 30800 ) N ;
-    - f0/_282_ NOR2_X1 + PLACED ( 29140 30800 ) N ;
+No differences found.
 No differences found.
