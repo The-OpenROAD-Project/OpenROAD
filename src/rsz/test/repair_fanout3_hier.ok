@@ -56,18 +56,20 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |       2693 |        71 |      1174
-        1 |        369 |        19 |       299
-        2 |        102 |         6 |        96
-        3 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 3.
+        1 |        465 |        25 |       389
+        2 |        138 |         8 |       130
+        3 |         36 |         2 |        34
+        4 |         36 |         2 |        34
+        5 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 5.
 Placement Analysis
 ---------------------------------
 total displacement         49.0 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL               3.6 u
-legalized HPWL            106.7 u
-delta HPWL                 2841 %
+legalized HPWL             92.8 u
+delta HPWL                 2460 %
 
 max fanout
 
@@ -89,4 +91,6 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 fanout1/Z                                10     10      0 (MET)
 
-No differences found.
+Differences found at line 8.
+ wire net19;
+ wire net20;

@@ -12,29 +12,36 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |      10153 |       719 |      7561
-        1 |       8689 |       568 |      6376
-        2 |       7100 |       494 |      5443
-        3 |       5081 |       411 |      4154
-        4 |       3678 |       341 |      3259
-        5 |       2994 |       261 |      2485
-        6 |       2279 |       222 |      2021
-        7 |       1931 |       179 |      1710
-        8 |       1512 |       142 |      1364
-        9 |       1240 |       132 |      1075
-       10 |       1060 |       108 |       925
-       20 |         96 |        14 |        82
-       30 |         48 |         6 |        42
-       40 |          4 |         2 |         2
-       47 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 47.
+        0 |      10158 |       718 |      7549
+        1 |       8523 |       577 |      6443
+        2 |       6988 |       493 |      5431
+        3 |       4798 |       406 |      4179
+        4 |       3565 |       314 |      3152
+        5 |       2877 |       264 |      2490
+        6 |       2405 |       231 |      2114
+        7 |       1837 |       179 |      1652
+        8 |       1555 |       149 |      1370
+        9 |       1170 |       118 |      1052
+       10 |        883 |        84 |       799
+       20 |        206 |        24 |       182
+       30 |         70 |         8 |        62
+       40 |         16 |         2 |        14
+       41 |         16 |         2 |        14
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 16 for 3 consecutive iterations.
+Using old diamond search for 2 remaining illegal cells.
+diamond recovery: recovered 1/2 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          0 |         0 |         0
+Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement       7073.3 u
+total displacement       7062.4 u
 average displacement        0.6 u
 max displacement           12.4 u
 original HPWL         1353118.6 u
-legalized HPWL        1392996.0 u
+legalized HPWL        1392453.0 u
 delta HPWL                    3 %
 
-No differences found.
+Differences found at line 10114.
+    - _1694_ sky130_fd_sc_hd__or2_2 + PLACED ( 59800 1305600 ) N ;
+    - _1694_ sky130_fd_sc_hd__or2_2 + PLACED ( 74060 1270240 ) FS ;

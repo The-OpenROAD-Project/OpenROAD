@@ -65,8 +65,8 @@ total displacement         25.2 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL               3.4 u
-legalized HPWL             66.7 u
-delta HPWL                 1877 %
+legalized HPWL             70.5 u
+delta HPWL                 1991 %
 
 max fanout
 
@@ -87,4 +87,6 @@ Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
 hi_fanout_inst/fanout1/Z                 10     10      0 (MET)
 
-No differences found.
+Differences found at line 24.
+ BUF_X1 fanout1 (.A(net2),
+ BUF_X1 fanout1 (.A(net0),

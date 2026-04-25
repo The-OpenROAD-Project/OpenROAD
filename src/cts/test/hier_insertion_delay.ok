@@ -58,25 +58,24 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |      99529 |       279 |      4743
-        1 |      44176 |       272 |      4624
-        2 |      26461 |       271 |      4402
-        3 |      17385 |       237 |      3814
-        4 |      11894 |       200 |      3120
-        5 |       7652 |       132 |      2002
-        6 |       5345 |        87 |      1406
-        7 |       3296 |        54 |       892
-        8 |       1357 |        31 |       527
-        9 |        318 |        12 |       204
-       10 |         36 |         2 |        34
-       11 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 11.
+        1 |      44268 |       272 |      4618
+        2 |      26187 |       267 |      4396
+        3 |      17504 |       242 |      3830
+        4 |      11986 |       194 |      3075
+        5 |       7913 |       123 |      1996
+        6 |       5321 |        81 |      1290
+        7 |       3318 |        56 |       900
+        8 |       1256 |        30 |       478
+        9 |        385 |        11 |       187
+       10 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 10.
 Placement Analysis
 ---------------------------------
-total displacement        190.4 u
+total displacement        187.6 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL             605.0 u
-legalized HPWL            626.0 u
+legalized HPWL            625.4 u
 delta HPWL                    3 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
@@ -117,13 +116,13 @@ delta HPWL                    3 %
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 28.
-[INFO CTS-0024]  Normalized sink region: [(0.236143, 0.497571), (3.49871, 10.0576)].
-[INFO CTS-0025]     Width:  3.2626.
-[INFO CTS-0026]     Height: 9.5600.
+[INFO CTS-0024]  Normalized sink region: [(0.230714, 0.68), (3.48243, 10.1776)].
+[INFO CTS-0025]     Width:  3.2517.
+[INFO CTS-0026]     Height: 9.4976.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
-    Sub-region size: 3.2626 X 4.7800
+    Sub-region size: 3.2517 X 4.7488
 [INFO CTS-0034]     Segment length (rounded): 2.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
@@ -144,11 +143,13 @@ delta HPWL                    3 %
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 280
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 37.56 um
+[INFO CTS-0101]  Average sink wire length 36.33 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core
 [INFO CTS-0036]  inserted 2 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 2
 Found 0 unconnected buffers.
-No differences found.
+Differences found at line 4.
+ wire clknet_leaf_24_clk_regs_3;
+ wire clknet_leaf_3_clk_regs_3;

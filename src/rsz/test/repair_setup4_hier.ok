@@ -63,22 +63,24 @@ total displacement         11.2 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL               5.5 u
-legalized HPWL             58.5 u
-delta HPWL                  955 %
+legalized HPWL             65.9 u
+delta HPWL                 1089 %
 
 worst slack max -0.56
-tns max -2.575
+tns max -2.563
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 11 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 11 out of 11 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.557 |       -0.6 |       -2.6 |     11 | u1/r2/D
-      31* |       0 |      17 |        5 |      0 |     0 |   +22.4% |   -0.467 |       -0.5 |       -4.5 |     11 | u1/r2/D
-    final |       0 |      17 |        5 |      0 |     0 |   +22.4% |   -0.467 |       -0.5 |       -4.5 |     11 | u1/r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.558 |       -0.6 |       -2.6 |     11 | u1/r2/D
+      75* |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.464 |       -0.5 |       -3.3 |     11 | u1/r2/D
+    final |       0 |       9 |        1 |      0 |     0 |    +9.1% |   -0.464 |       -0.5 |       -3.3 |     11 | u1/r2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 5 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 17 instances: 17 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-No differences found.
+Differences found at line 25.
+
+ wire net;

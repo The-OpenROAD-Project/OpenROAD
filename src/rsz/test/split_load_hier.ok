@@ -56,31 +56,33 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |        355 |        37 |       252
-        1 |         37 |         3 |        34
+        1 |         36 |         2 |        34
         2 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 2.
 Placement Analysis
 ---------------------------------
-total displacement         33.6 u
+total displacement         32.2 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL               6.9 u
-legalized HPWL            218.6 u
-delta HPWL                 3084 %
+legalized HPWL            246.1 u
+delta HPWL                 3484 %
 
-worst slack max -0.65
-tns max -10.615
+worst slack max -0.66
+tns max -10.633
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.654 |       -0.7 |      -10.6 |     26 | u1/r21/D
-     169* |       0 |      17 |        6 |      0 |     0 |   +14.5% |   -0.501 |       -0.5 |      -11.8 |     26 | u1/r21/D
-    final |       0 |      17 |        6 |      0 |     0 |   +14.5% |   -0.501 |       -0.5 |      -11.8 |     26 | u1/r21/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.660 |       -0.7 |      -10.6 |     26 | u1/r21/D
+      99* |       0 |      45 |        7 |      0 |     0 |   +28.9% |   -0.507 |       -0.5 |      -11.3 |     26 | u1/r21/D
+    final |       0 |      45 |        7 |      0 |     0 |   +28.9% |   -0.507 |       -0.5 |      -11.3 |     26 | u1/r21/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 6 buffers, 2 to split loads.
-[INFO RSZ-0051] Resized 17 instances: 17 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 7 buffers, 3 to split loads.
+[INFO RSZ-0051] Resized 45 instances: 45 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-No differences found.
+Differences found at line 41.
+ wire net2;
+ wire net29;

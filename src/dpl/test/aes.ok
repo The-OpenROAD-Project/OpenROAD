@@ -15,11 +15,13 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement      13227.2 u
+total displacement      13230.0 u
 average displacement        0.6 u
 max displacement            1.4 u
 original HPWL          363775.2 u
-legalized HPWL         386491.5 u
+legalized HPWL         386620.2 u
 delta HPWL                    6 %
 
-No differences found.
+Differences found at line 2836.
+    - _18498_ BUF_X4 + PLACED ( 597240 607600 ) N ;
+    - _18498_ BUF_X4 + PLACED ( 598000 613200 ) N ;

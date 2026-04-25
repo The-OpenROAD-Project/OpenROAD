@@ -29,8 +29,10 @@ total displacement         12.6 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL             100.7 u
-legalized HPWL             93.7 u
-delta HPWL                   -7 %
+legalized HPWL             94.4 u
+delta HPWL                   -6 %
 
-No differences found.
+Differences found at line 35.
+    - f0/_282_ NOR2_X1 + PLACED ( 28000 30800 ) N ;
+    - f0/_282_ NOR2_X1 + PLACED ( 29140 30800 ) N ;
 No differences found.
