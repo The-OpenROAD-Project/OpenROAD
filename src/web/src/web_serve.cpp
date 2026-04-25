@@ -6,8 +6,6 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
-#include <stdio.h>
-
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -290,6 +288,7 @@ void WebServer::stop()
   // from another thread, so without this the user would have to press
   // Enter to see a live prompt. Purely visual — readline's input state
   // is untouched.
+  // NOLINTNEXTLINE(misc-include-cleaner)
   if (isatty(fileno(stdout))) {
     std::fputs("openroad> ", stdout);
     std::fflush(stdout);
