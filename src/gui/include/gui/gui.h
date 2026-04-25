@@ -983,6 +983,8 @@ class Gui
   Renderer::Setting getHeatMapSetting(const std::string& name,
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
+  // Add an external heat map from a CSV file; returns short name for lookup.
+  std::string loadExternalHeatMap(const std::string& file_path);
 
   void setMainWindowTitle(const std::string& title);
   std::string getMainWindowTitle();

@@ -727,6 +727,15 @@ void dump_heatmap(const std::string& name, const std::string& file)
   gui->dumpHeatMap(name, file);
 }
 
+std::string load_external_heatmap(const std::string& file_path)
+{
+  if (!check_gui("load_external_heatmap")) {
+    return "";
+  }
+  auto gui = gui::Gui::get();
+  return gui->loadExternalHeatMap(file_path);
+}
+
 void timing_cone(odb::dbITerm* iterm, bool fanin, bool fanout)
 {
   if (!check_gui("timing_cone")) {

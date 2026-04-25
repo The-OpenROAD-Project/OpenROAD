@@ -223,4 +223,35 @@ sta::Scene* PowerDensityDataSource::getScene() const
   return nullptr;
 }
 
+//////////
+
+ExternalHeatMapDataSource::ExternalHeatMapDataSource(
+    utl::Logger* /* logger */,
+    const std::string& /* name */,
+    const std::string& unique_short_name,
+    std::vector<Entry> /* data */)
+    : HeatMapDataSource(nullptr, "", unique_short_name, "")
+{
+}
+
+bool ExternalHeatMapDataSource::populateMap()
+{
+  return false;
+}
+
+odb::Rect ExternalHeatMapDataSource::getBounds() const
+{
+  return HeatMapDataSource::getBounds();
+}
+
+void ExternalHeatMapDataSource::combineMapData(
+    bool /* base_has_value */,
+    double& /* base */,
+    const double /* new_data */,
+    const double /* data_area */,
+    const double /* intersection_area */,
+    const double /* rect_area */)
+{
+}
+
 }  // namespace gui

@@ -39,6 +39,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "gif.h"
+#include "gui/heatMap.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -48,10 +49,12 @@
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
+#include "odb/unfoldedModel.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "timingWidget.h"
+#include "utl/CsvParser.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
 #include "utl/exception.h"
@@ -1548,6 +1551,88 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
     registerHeatMap(instance.get());
     owned_heat_maps_.push_back(std::move(instance));
   }
+}
+
+std::string Gui::loadExternalHeatMap(const std::string& file_path)
+{
+  // Parse CSV:
+  // row 0 = chiplet_name, heatmap_name;
+  // rows 1+ = x0,y0,x1,y1,value.
+  const auto csv_rows = utl::readCsv(file_path, logger_);
+  if (csv_rows.empty()) {
+    logger_->error(utl::GUI, 113, "No data in CSV file: {}", file_path);
+  }
+  if (csv_rows[0].size() != 2) {
+    logger_->error(utl::GUI,
+                   114,
+                   "Invalid CSV file: {} - expected 2 columns in first row; "
+                   "(chiplet_name, heatmap_name), got {}",
+                   file_path,
+                   csv_rows[0].size());
+  }
+  const std::string chiplet_name = csv_rows[0][0];
+  const std::string heatmap_name = csv_rows[0][1];
+  std::vector<ExternalHeatMapDataSource::Entry> data;
+  for (size_t i = 1; i < csv_rows.size(); ++i) {
+    const auto& row = csv_rows[i];
+    if (row.size() != 5) {
+      logger_->error(
+          utl::GUI,
+          115,
+          "Invalid CSV file: {} - expected 5 columns in row {}, got {}",
+          file_path,
+          i,
+          row.size());
+    }
+    try {
+      data.push_back({std::stod(row[0]),
+                      std::stod(row[1]),
+                      std::stod(row[2]),
+                      std::stod(row[3]),
+                      std::stod(row[4])});
+    } catch (const std::exception& e) {
+      logger_->error(utl::GUI,
+                     116,
+                     "Invalid CSV file: {} - exception in row {}: {}",
+                     file_path,
+                     i,
+                     std::string(e.what()));
+    }
+  }
+  odb::dbChip* chip = nullptr;
+  odb::dbTransform transform;
+
+  if (db_->getUnfoldedModel() != nullptr) {
+    auto* unfolded_chip
+        = db_->getUnfoldedModel()->findUnfoldedChip(chiplet_name);
+    if (unfolded_chip != nullptr) {
+      chip = unfolded_chip->chip_inst_path.back()->getMasterChip();
+      transform = unfolded_chip->transform;
+    } else {
+      logger_->error(utl::GUI,
+                     117,
+                     "Chiplet {} not found in the loaded design",
+                     chiplet_name);
+    }
+  } else {
+    if (db_->getChip() == nullptr
+        || db_->getChip()->getName() != chiplet_name) {
+      logger_->error(utl::GUI,
+                     118,
+                     "Chiplet {} not found in the loaded design",
+                     chiplet_name);
+    }
+    chip = db_->getChip();
+  }
+  std::string short_name
+      = "External_" + std::to_string(owned_heat_maps_.size() + 1);
+  auto source = std::make_shared<ExternalHeatMapDataSource>(
+      logger_, heatmap_name, short_name, std::move(data));
+  source->setChip(chip);
+  source->setTransform(transform);
+  registerHeatMap(source.get());
+  owned_heat_maps_.push_back(std::move(source));
+  return short_name;
 }
 
 void Gui::selectHelp(const std::string& item)

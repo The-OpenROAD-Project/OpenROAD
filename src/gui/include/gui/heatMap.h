@@ -19,6 +19,7 @@
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 
 namespace odb {
 class dbBlock;
@@ -368,6 +369,40 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   std::string scene_;
 
   sta::Scene* getScene() const;
+};
+
+// Data source that loads heatmap data from a CSV file.
+class ExternalHeatMapDataSource : public HeatMapDataSource
+{
+ public:
+  struct Entry
+  {
+    double x0, y0, x1, y1, value;
+  };
+
+  ExternalHeatMapDataSource(utl::Logger* logger,
+                            const std::string& name,
+                            const std::string& short_name,
+                            std::vector<Entry> data);
+
+  void setTransform(const odb::dbTransform& transform)
+  {
+    transform_ = transform;
+  }
+
+ protected:
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+  odb::Rect getBounds() const override;
+
+ private:
+  std::vector<Entry> data_entries_;
+  odb::dbTransform transform_;
 };
 
 class HeatMapSourceRegistration
