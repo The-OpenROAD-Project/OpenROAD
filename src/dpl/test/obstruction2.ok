@@ -6,5 +6,6 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 137 connections.
 [INFO DPL-0006] Core area: 1851.36 um^2, Instances area: 3069.11 um^2, Utilization: 165.8%
+[INFO DPL-0007] Total instances area (incl. excluded): 3069.11 um^2, Utilization: 165.8%
 [ERROR DPL-0038] Utilization greater than 100%, impossible to legalize
 DPL-0038

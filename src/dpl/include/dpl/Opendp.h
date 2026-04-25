@@ -108,7 +108,7 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool use_negotiation = false,
+                         bool use_old_diamond = false,
                          bool run_abacus = false);
   void reportLegalizationStats() const;
 
@@ -119,6 +119,8 @@ class Opendp
   void setJumpMoves(int jump_moves);
   void setIterativePlacement(bool iterative);
   void setDeepIterativePlacement(bool deep_iterative);
+  void setNegotiationDebugInterval(int iterative_jump);
+  void setNegotiationDebugStart(int iterative_start);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -397,8 +399,10 @@ class Opendp
   int move_count_ = 1;
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
+  int negotiation_debug_interval_ = 1;
+  int negotiation_debug_start_ = 0;
   bool incremental_ = false;
-  bool use_negotiation_ = false;
+  bool use_old_diamond_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

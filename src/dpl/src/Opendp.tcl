@@ -6,13 +6,13 @@ sta::define_cmd_args "detailed_placement" { \
                            [-disallow_one_site_gaps] \
                            [-incremental] \
                            [-report_file_name file_name] \
-                           [-use_negotiation] \
+                           [-use_old_diamond] \
                            [-abacus]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} \
-    flags {-disallow_one_site_gaps -incremental -use_negotiation -abacus}
+    flags {-disallow_one_site_gaps -incremental -use_old_diamond -abacus}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -52,7 +52,7 @@ proc detailed_placement { args } {
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
-      [info exists flags(-use_negotiation)] \
+      [info exists flags(-use_old_diamond)] \
       [info exists flags(-abacus)]
     dpl::report_legalization_stats
   } else {
@@ -303,7 +303,7 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-    keys {-instance -min_displacement -jump_moves} \
+    keys {-instance -min_displacement -jump_moves -iterative_jump -iterative_start} \
     flags {-iterative -deep_iterative -paint_pixels -paint_negotiation_pixels} ;# checker off
 
 
@@ -330,9 +330,23 @@ proc detailed_placement_debug { args } {
     set debug_instance "NULL"
   }
 
+  set iterative_jump 1
+  if { [info exists keys(-iterative_jump)] } {
+    set iterative_jump $keys(-iterative_jump)
+    sta::check_positive_integer "-iterative_jump" $iterative_jump
+  }
+
+  set iterative_start 0
+  if { [info exists keys(-iterative_start)] } {
+    set iterative_start $keys(-iterative_start)
+    sta::check_positive_integer "-iterative_start" $iterative_start
+  }
+
   dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves \
     [info exists flags(-iterative)] [info exists flags(-deep_iterative)] \
     [info exists flags(-paint_pixels)] [info exists flags(-paint_negotiation_pixels)]
+  dpl::set_negotiation_debug_interval_cmd $iterative_jump
+  dpl::set_negotiation_debug_start_cmd $iterative_start
 }
 
 proc get_masters_arg { arg_name arg } {

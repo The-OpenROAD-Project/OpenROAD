@@ -28,12 +28,12 @@ detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
                        bool incremental,
-                       bool use_negotiation,
+                       bool use_old_diamond,
                        bool run_abacus){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, use_negotiation, run_abacus);
+                            incremental, use_old_diamond, run_abacus);
 }
 
 void
@@ -118,6 +118,18 @@ set_debug_cmd(float min_displacement,
           opendp, debug_instance, paint_pixels, paint_negotiation_pixels);
       opendp->setDebug(graphics);
   }
+}
+
+void set_negotiation_debug_interval_cmd(int iterative_jump)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugInterval(iterative_jump);
+}
+
+void set_negotiation_debug_start_cmd(int iterative_start)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugStart(iterative_start);
 }
 
 void improve_placement_cmd(int seed,

@@ -112,7 +112,6 @@ void NegotiationLegalizer::legalize()
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-    debugPause("Pause after initFromDb.");
   }
 
   {
@@ -134,6 +133,8 @@ void NegotiationLegalizer::legalize()
                             "initFenceRegions: {}");
     initFenceRegions();
   }
+
+  debugPause("Pause after initialization.");
 
   debugPrint(logger_,
              utl::DPL,
@@ -367,6 +368,8 @@ void NegotiationLegalizer::legalize()
              pct(flush_s),
              to_ms(orient_s),
              pct(orient_s));
+
+  debugPause("Pause after legalization complete.");
 }
 
 // ===========================================================================
@@ -1092,7 +1095,7 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   debugPrint(
       logger_,
       utl::DPL,
-      "negotiation",
+      "rail_align",
       1,
       "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
       "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
@@ -1427,6 +1430,19 @@ int NegotiationLegalizer::numViolations() const
     }
   }
   return count;
+}
+
+std::vector<Node*> NegotiationLegalizer::getIllegalNodes() const
+{
+  std::vector<Node*> illegal;
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed && !isCellLegal(i)) {
+      if (Node* node = network_->getNode(cells_[i].db_inst)) {
+        illegal.push_back(node);
+      }
+    }
+  }
+  return illegal;
 }
 
 }  // namespace dpl

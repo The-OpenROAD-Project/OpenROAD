@@ -5,22 +5,14 @@
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO DPL-0006] Core area: 16.49 um^2, Instances area: 1.86 um^2, Utilization: 11.3%
+[INFO DPL-0007] Total instances area (incl. excluded): 1.86 um^2, Utilization: 11.3%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       1
-Diamond Move Success:              1 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
 ---------------------------------
-total displacement         28.0 u
-average displacement       28.0 u
-max displacement           28.0 u
+total displacement          1.4 u
+average displacement        1.4 u
+max displacement            1.4 u
 original HPWL               2.3 u
 legalized HPWL             58.5 u
 delta HPWL                 2462 %

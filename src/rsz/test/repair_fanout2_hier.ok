@@ -49,25 +49,27 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 34236
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34076
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 321.06 um^2, Utilization: 0.7%
+[INFO DPL-0007] Total instances area (incl. excluded): 321.06 um^2, Utilization: 0.7%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      71
-Diamond Move Success:             71 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       2693 |        71 |      1174
+        1 |        465 |        25 |       389
+        2 |        138 |         8 |       130
+        3 |         36 |         2 |        34
+        4 |         36 |         2 |        34
+        5 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 5.
 Placement Analysis
 ---------------------------------
-total displacement        741.5 u
-average displacement       10.4 u
-max displacement           18.0 u
+total displacement         49.0 u
+average displacement        0.7 u
+max displacement            1.4 u
 original HPWL               3.4 u
-legalized HPWL            112.7 u
-delta HPWL                 3251 %
+legalized HPWL             92.0 u
+delta HPWL                 2634 %
 
 max fanout
 
@@ -78,11 +80,11 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       144
-    final |     +2.0% |       0 |       8 |             1 |         0
+    final |     +2.2% |       0 |       9 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 8 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack

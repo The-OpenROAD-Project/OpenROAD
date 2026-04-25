@@ -133,24 +133,21 @@ Dummys used:
 [INFO RSZ-0047] Found 40 long wires.
 [INFO RSZ-0048] Inserted 88 buffers in 40 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261654.79 um^2, Utilization: 83.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 20261654.79 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2902
-Diamond Move Success:           2902 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement       3742.1 u
-average displacement        1.2 u
-max displacement          140.5 u
+total displacement       1978.2 u
+average displacement        0.6 u
+max displacement            1.4 u
 original HPWL          192183.9 u
-legalized HPWL         193028.3 u
+legalized HPWL         193103.9 u
 delta HPWL                    0 %
 
 Clock clk

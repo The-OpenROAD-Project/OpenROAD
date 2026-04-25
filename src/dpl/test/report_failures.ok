@@ -4,21 +4,33 @@
 [INFO ODB-0131]     Created 18 components and 81 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
 [INFO DPL-0006] Core area: 16.49 um^2, Instances area: 14.36 um^2, Utilization: 87.1%
+[INFO DPL-0007] Total instances area (incl. excluded): 14.36 um^2, Utilization: 87.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       3
-Diamond Move Success:              0 (  0.00%)
-Diamond Move Failure:              3
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        3
-Total Placement Failures:          3
----------------------------------------
-[INFO DPL-0034] Detailed placement failed on the following 3 instances:
-[INFO DPL-0035]  f2/_285_
-[INFO DPL-0035]  f2/_289_
-[INFO DPL-0035]  f2/_293_
-[ERROR DPL-0036] Detailed placement failed inside DPL.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         17 |         3 |         8
+        1 |         17 |         3 |         8
+        2 |         17 |         3 |         8
+        3 |         17 |         3 |         8
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 17 for 3 consecutive iterations.
+Using old diamond search for 3 remaining illegal cells.
+diamond recovery: recovered 0/3 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |         17 |         3 |         8
+      403 |         17 |         3 |         8
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 17 for 3 consecutive iterations. Using diamond search for 3 remaining illegal cells.
+diamond recovery: recovered 0/3 stuck cells.
+[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 3
+Placement Analysis
+---------------------------------
+total displacement         12.6 u
+average displacement        0.7 u
+max displacement            1.4 u
+original HPWL             100.7 u
+legalized HPWL             94.4 u
+delta HPWL                   -6 %
+
 No differences found.
 No differences found.

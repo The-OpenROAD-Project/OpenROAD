@@ -122,30 +122,38 @@
 [INFO RSZ-0047] Found 42 long wires.
 [INFO RSZ-0048] Inserted 92 buffers in 42 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261660.91 um^2, Utilization: 83.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 20261660.91 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2907
-Diamond Move Success:           2907 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       1574 |        32 |       771
+        1 |       1574 |        32 |       771
+        2 |       1574 |        32 |       771
+        3 |       1574 |        32 |       771
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 1574 for 3 consecutive iterations.
+Using old diamond search for 32 remaining illegal cells.
+diamond recovery: recovered 30/32 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |         86 |         2 |        42
+      403 |         86 |         2 |        42
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 86 for 3 consecutive iterations. Using diamond search for 2 remaining illegal cells.
+diamond recovery: recovered 0/2 stuck cells.
+[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 2
 Placement Analysis
 ---------------------------------
-total displacement       3754.4 u
-average displacement        1.2 u
-max displacement          141.1 u
+total displacement       2059.4 u
+average displacement        0.7 u
+max displacement            1.4 u
 original HPWL          193681.5 u
-legalized HPWL         194510.2 u
+legalized HPWL         194594.2 u
 delta HPWL                    0 %
 
 Clock clk
-   1.25 source latency inst_3_13/clk ^
+   1.26 source latency inst_3_13/clk ^
   -1.13 target latency inst_5_13/clk ^
    0.00 CRPR
 --------------
-   0.12 setup skew
+   0.13 setup skew
 
