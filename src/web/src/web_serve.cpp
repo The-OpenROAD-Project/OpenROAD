@@ -6,6 +6,8 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <stdio.h>
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +16,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #ifndef _WIN32

@@ -37,6 +37,7 @@
 #include "odb/geom.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/Logger.h"
 
 namespace web {
 

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <spdlog/common.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -11,7 +13,6 @@
 
 #include "boost/asio/ip/tcp.hpp"
 #include "odb/db.h"
-#include "spdlog/spdlog.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 
