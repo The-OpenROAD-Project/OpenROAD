@@ -430,11 +430,9 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     auto* marker = dbMarker::create(cat);
     marker->addSource(m.inst);
     marker->addSource(m.parent_chip->chip_inst_path.back());
-    const Point& p = m.global_position;
-    marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
-                          p.y() - kBumpMarkerHalfSize,
-                          p.x() + kBumpMarkerHalfSize,
-                          p.y() + kBumpMarkerHalfSize));
+    Rect bbox = m.inst->getBBox()->getBox();
+    m.parent_chip->transform.apply(bbox);
+    marker->addShape(bbox);
     marker->setComment(msg);
     violation_count++;
   };
