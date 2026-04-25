@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -12,7 +13,9 @@
 
 #include "gtest/gtest.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/geom.h"
+#include "tile_generator.h"
 #include "web_chart.h"
 #include "web_painter.h"
 #include "web_viewer_hook.h"
@@ -50,6 +53,36 @@ TEST(WebPainterTest, RecordsLine)
   EXPECT_EQ(line->pen.width, 3);
 }
 
+TEST(WebPainterTest, KeepsWideStrokeRectNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawRect(odb::Rect(-2, 10, -1, 20));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawRectOp>(painter.ops().data()), nullptr);
+}
+
+TEST(WebPainterTest, KeepsWideStrokeLineNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawLine(odb::Point(-10, 101), odb::Point(110, 101));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawLineOp>(painter.ops().data()), nullptr);
+}
+
+TEST(WebPainterTest, KeepsWideStrokeCircleNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawCircle(102, 50, 1);
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawCircleOp>(painter.ops().data()), nullptr);
+}
+
 TEST(WebPainterTest, SaveRestoreState)
 {
   WebPainter painter(odb::Rect(0, 0, 1000, 1000), 1.0);
@@ -74,6 +107,35 @@ TEST(WebPainterTest, SaveRestoreState)
 static std::size_t registerDummyClient(WebViewerHook& hook)
 {
   return hook.sessions().add([](const std::string&) {});
+}
+
+TEST(SessionRegistryTest, WaitForClientCanBeInterrupted)
+{
+  SessionRegistry registry;
+  std::atomic<bool> interrupted{false};
+  std::atomic<bool> waiting{false};
+  bool got_client = true;
+
+  std::thread waiter([&]() {
+    got_client = registry.waitForClient(/*timeout_seconds=*/30, [&]() {
+      waiting.store(true);
+      return interrupted.load();
+    });
+  });
+
+  for (int i = 0; i < 200 && !waiting.load(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(waiting.load());
+
+  const auto t0 = std::chrono::steady_clock::now();
+  interrupted.store(true);
+  registry.notifyClientWaiters();
+  waiter.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_FALSE(got_client);
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
 }
 
 TEST(WebViewerHookTest, PauseUnblocksOnContinue)
@@ -129,6 +191,35 @@ TEST(WebViewerHookTest, PauseReturnsWhenNoClientsConnect)
   pauser.join();
   EXPECT_TRUE(done.load());
   EXPECT_FALSE(hook.isPaused());
+  hook.sessions().remove(token);
+}
+
+TEST(WebViewerHookTest, ContinueInterruptsWaitForClient)
+{
+  WebViewerHook hook;
+  std::atomic<bool> done{false};
+  std::thread pauser([&]() {
+    hook.pause(/*timeout_ms=*/0);
+    done.store(true);
+  });
+
+  // Give pause() a chance to enter the no-client wait.  continueExecution()
+  // must wake that path instead of relying on the 30s client-connect timeout.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  const auto t0 = std::chrono::steady_clock::now();
+  hook.continueExecution();
+  pauser.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_TRUE(done.load());
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
+  EXPECT_FALSE(hook.isPaused());
+
+  const auto token = registerDummyClient(hook);
+  const auto t1 = std::chrono::steady_clock::now();
+  hook.pause(/*timeout_ms=*/50);
+  const auto next_elapsed = std::chrono::steady_clock::now() - t1;
+  EXPECT_GE(next_elapsed, std::chrono::milliseconds(40));
   hook.sessions().remove(token);
 }
 
@@ -201,6 +292,36 @@ TEST(WebViewerHookTest, CreatesChartAndTracksIt)
   ASSERT_EQ(pts.size(), 2u);
   EXPECT_EQ(pts[1].x, 1);
   EXPECT_EQ(pts[1].ys[1], 4.0);
+}
+
+TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  TileGenerator gen(db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
+  const odb::Rect dbu_tile(0, 0, 256, 256);
+
+  WebPainter narrow(dbu_tile, 1.0);
+  narrow.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
+  narrow.drawLine(odb::Point(10, 128), odb::Point(40, 128));
+
+  WebPainter wide(dbu_tile, 1.0);
+  wide.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  wide.drawLine(odb::Point(10, 128), odb::Point(40, 128));
+
+  const int image_bytes = 256 * 256 * 4;
+  std::vector<unsigned char> narrow_image(image_bytes, 0);
+  std::vector<unsigned char> wide_image(image_bytes, 0);
+  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), dbu_tile, 1.0);
+  gen.rasterizeWebPainterOps(wide_image, wide.ops(), dbu_tile, 1.0);
+
+  const auto alpha_at
+      = [](const std::vector<unsigned char>& image, int x, int y) {
+          return image[(y * 256 + x) * 4 + 3];
+        };
+  const int screen_y = 255 - 128;
+  EXPECT_EQ(alpha_at(narrow_image, 20, screen_y - 1), 0);
+  EXPECT_GT(alpha_at(wide_image, 20, screen_y - 1), 0);
 }
 
 }  // namespace

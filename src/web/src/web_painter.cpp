@@ -3,6 +3,8 @@
 
 #include "web_painter.h"
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -11,6 +13,27 @@
 #include "odb/geom.h"
 
 namespace web {
+
+namespace {
+
+int penWidthPx(const PenState& pen, double pixels_per_dbu)
+{
+  if (pen.cosmetic) {
+    return std::max(1, pen.width);
+  }
+  return std::max(1, static_cast<int>(pen.width * pixels_per_dbu));
+}
+
+int penCullMarginDbu(const PenState& pen, double pixels_per_dbu)
+{
+  if (pixels_per_dbu <= 0.0) {
+    return 0;
+  }
+  return static_cast<int>(
+      std::ceil(0.5 * penWidthPx(pen, pixels_per_dbu) / pixels_per_dbu));
+}
+
+}  // namespace
 
 WebPainter::WebPainter(const odb::Rect& bounds, double pixels_per_dbu)
     : gui::Painter(nullptr, bounds, pixels_per_dbu)
@@ -83,6 +106,21 @@ void WebPainter::drawOctagon(const odb::Oct& oct)
 
 void WebPainter::drawRect(const odb::Rect& rect, int round_x, int round_y)
 {
+  // Skip shapes outside the tile or sub-pixel at current zoom.
+  const double ppd = getPixelsPerDBU();
+  const int margin = penCullMarginDbu(pen_, ppd);
+  const odb::Rect bounds = getBounds();
+  const odb::Rect expanded_bounds(bounds.xMin() - margin,
+                                  bounds.yMin() - margin,
+                                  bounds.xMax() + margin,
+                                  bounds.yMax() + margin);
+  if (!rect.overlaps(expanded_bounds)) {
+    return;
+  }
+  if (rect.dx() * ppd < 1.0 && rect.dy() * ppd < 1.0
+      && penWidthPx(pen_, ppd) <= 1) {
+    return;
+  }
   ops_.emplace_back(DrawRectOp{.rect = rect,
                                .round_x = round_x,
                                .round_y = round_y,
@@ -92,11 +130,32 @@ void WebPainter::drawRect(const odb::Rect& rect, int round_x, int round_y)
 
 void WebPainter::drawLine(const odb::Point& p1, const odb::Point& p2)
 {
+  // Skip lines completely outside the tile bounds.
+  const odb::Rect& bounds = getBounds();
+  const int margin = penCullMarginDbu(pen_, getPixelsPerDBU());
+  const int lx = std::min(p1.x(), p2.x());
+  const int ly = std::min(p1.y(), p2.y());
+  const int ux = std::max(p1.x(), p2.x());
+  const int uy = std::max(p1.y(), p2.y());
+  if (ux < bounds.xMin() - margin || lx > bounds.xMax() + margin
+      || uy < bounds.yMin() - margin || ly > bounds.yMax() + margin) {
+    return;
+  }
   ops_.emplace_back(DrawLineOp{.p1 = p1, .p2 = p2, .pen = pen_});
 }
 
 void WebPainter::drawCircle(int x, int y, int r)
 {
+  const odb::Rect& bounds = getBounds();
+  const double ppd = getPixelsPerDBU();
+  const int margin = penCullMarginDbu(pen_, ppd);
+  if (x + r < bounds.xMin() - margin || x - r > bounds.xMax() + margin
+      || y + r < bounds.yMin() - margin || y - r > bounds.yMax() + margin) {
+    return;
+  }
+  if (r * ppd < 0.5 && penWidthPx(pen_, ppd) <= 1) {
+    return;
+  }
   ops_.emplace_back(
       DrawCircleOp{.cx = x, .cy = y, .r = r, .pen = pen_, .brush = brush_});
 }
