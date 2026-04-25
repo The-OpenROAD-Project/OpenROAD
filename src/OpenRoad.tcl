@@ -236,6 +236,21 @@ proc check_3dblox { args } {
   ord::check_3dblox_cmd
 }
 
+sta::define_cmd_args "clear_3dbx" {}
+
+proc clear_3dbx { args } {
+  sta::parse_key_args "clear_3dbx" args keys {} flags {}
+  sta::check_argc_eq0 "clear_3dbx" $args
+  # read_3dbx creates one dbChip per chiplet (CPU/MEM/…) plus one HIER
+  # chip for the assembly. Destroying only the top chip leaves the
+  # chiplet defs behind and the next read_3dbx errors with "Chiplet X
+  # already exists". Snapshot the set first because destroy mutates it.
+  set db [ord::get_db]
+  set chips [list]
+  foreach c [$db getChips] { lappend chips $c }
+  foreach c $chips { odb::dbChip_destroy $c }
+}
+
 sta::define_cmd_args "write_db" {filename}
 
 sta::define_cmd_args "read_db" {[-hier] filename}

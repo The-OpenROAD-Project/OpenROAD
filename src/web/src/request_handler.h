@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <map>
 #include <memory>
@@ -32,6 +33,10 @@ struct TclEvaluator
   Tcl_Interp* interp;
   utl::Logger* logger;
   std::mutex mutex;
+  // Callback wired up by WebServer::serve() that stops the web server
+  // without killing the OpenROAD process. Invoked by the Tcl handler
+  // when the browser sends `exit`/`quit` (see handleTclEval).
+  std::function<void()> close_session;
 
   struct Result
   {

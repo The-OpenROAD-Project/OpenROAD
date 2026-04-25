@@ -7,6 +7,7 @@
 // SWIG wrappers and ord::OpenRoad symbols).
 
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <functional>
@@ -14,6 +15,10 @@
 #include <mutex>
 #include <string>
 #include <vector>
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
@@ -112,6 +117,9 @@ void WebServer::serve(int port, const std::string& doc_root)
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
+    // The Tcl handler calls this when the browser sends `exit`/`quit`, so
+    // the web server shuts down while the OpenROAD process keeps running.
+    tcl_eval->close_session = [this] { stop(); };
 
     viewer_hook_ = std::make_unique<WebViewerHook>();
     gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
@@ -125,6 +133,7 @@ void WebServer::serve(int port, const std::string& doc_root)
     auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
     logger_->addSink(log_sink);
     viewer_hook_->setDrainLogsFn([log_sink]() { log_sink->drainToClients(); });
+    log_sink_ = log_sink;
 
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
@@ -176,15 +185,44 @@ void WebServer::serve(int port, const std::string& doc_root)
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
+    // Prefer Chromium app mode: --app=URL opens a standalone window
+    // that JS can close via window.close(). A regular xdg-open tab
+    // cannot be closed from JS, so `exit` in the web console would
+    // leave the tab orphaned.
+    bool launched = false;
 #if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null 2>&1";
-#elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul 2>&1";
-#else
-    std::string open_cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
+    launched = std::system(("open -na 'Google Chrome' --args --app=" + url
+                            + " > /dev/null 2>&1")
+                               .c_str())
+               == 0;
+#elif !defined(_WIN32)
+    static const char* kAppBrowsers[] = {"google-chrome",
+                                         "google-chrome-stable",
+                                         "chromium",
+                                         "chromium-browser",
+                                         "microsoft-edge",
+                                         "brave-browser"};
+    for (const char* browser : kAppBrowsers) {
+      const std::string check
+          = std::string("command -v ") + browser + " > /dev/null 2>&1";
+      if (std::system(check.c_str()) == 0) {
+        std::system(
+            (std::string(browser) + " --app=" + url + " > /dev/null 2>&1 &")
+                .c_str());
+        launched = true;
+        break;
+      }
+    }
 #endif
-    int ret = std::system(open_cmd.c_str());
-    (void) ret;
+    if (!launched) {
+#if defined(__APPLE__)
+      std::system(("open " + url + " > /dev/null 2>&1").c_str());
+#elif defined(_WIN32)
+      std::system(("start " + url + " > nul 2>&1").c_str());
+#else
+      std::system(("xdg-open " + url + " > /dev/null 2>&1 &").c_str());
+#endif
+    }
 
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 
@@ -192,6 +230,28 @@ void WebServer::serve(int port, const std::string& doc_root)
     stop();
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());
   }
+}
+
+void WebServer::stopAndJoinIoThreads()
+{
+  if (ioc_) {
+    ioc_->stop();
+  }
+  const auto self_id = std::this_thread::get_id();
+  for (auto& t : threads_) {
+    if (!t.joinable()) {
+      continue;
+    }
+    if (t.get_id() == self_id) {
+      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
+      // worker so detaching is safe — the thread runs to completion on
+      // its own.
+      t.detach();
+    } else {
+      t.join();
+    }
+  }
+  threads_.clear();
 }
 
 void WebServer::stop()
@@ -208,18 +268,29 @@ void WebServer::stop()
     shutdown_listener_();
     shutdown_listener_ = {};
   }
-  if (ioc_) {
-    ioc_->stop();
-  }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
+  stopAndJoinIoThreads();
+  // Release without destroying — destroying io_context can crash on
+  // residual async handlers. Leak is bounded (at most one io_context
+  // per serve/stop cycle).
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
   generator_.reset();
+  // Remove the log sink before destroying viewer_hook_ — the sink
+  // stores a raw pointer into it and the CLI thread may emit a log
+  // line at any moment.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   viewer_hook_.reset();
+  logger_->info(utl::WEB, 41, "Web session closed.");
+  // Re-emit the prompt: tclreadline does not redraw on async output
+  // from another thread, so without this the user would have to press
+  // Enter to see a live prompt. Purely visual — readline's input state
+  // is untouched.
+  if (isatty(fileno(stdout))) {
+    std::fputs("openroad> ", stdout);
+    std::fflush(stdout);
+  }
 }
 
 }  // namespace web

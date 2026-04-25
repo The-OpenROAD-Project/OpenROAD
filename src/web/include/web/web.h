@@ -11,6 +11,7 @@
 
 #include "boost/asio/ip/tcp.hpp"
 #include "odb/db.h"
+#include "spdlog/spdlog.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 
@@ -82,10 +83,16 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
- private:
-  // Tears down the I/O threads and cleans up hooks.  Called by the
-  // destructor; safe to call multiple times.
+  // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
+  // times and from any thread; after it returns, isRunning() is false and
+  // serve() may be called again to restart the server.
   void stop();
+
+ private:
+  // Stops ioc_, joins every worker thread except the current one, and
+  // clears threads_. Detaches the current thread if it happens to be a
+  // worker (would otherwise raise EDEADLK on self-join).
+  void stopAndJoinIoThreads();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -99,10 +106,14 @@ class WebServer
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::vector<std::thread> threads_;
 
-  // Type-erased callback that closes the Listener's acceptor before the
-  // io_context is destroyed — prevents a crash where the acceptor's
-  // destructor references the io_context that's mid-destruction.
+  // Closes the Listener's acceptor before the io_context is destroyed,
+  // avoiding a crash where the acceptor references a half-destroyed
+  // io_context.
   std::function<void()> shutdown_listener_;
+
+  // Held so stop() can remove it from the Logger before viewer_hook_ is
+  // destroyed — the sink stores a raw pointer into the hook.
+  spdlog::sink_ptr log_sink_;
 };
 
 }  // namespace web

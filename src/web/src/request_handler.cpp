@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <any>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -18,6 +19,7 @@
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -1334,12 +1336,58 @@ TclHandler::TclHandler(std::shared_ptr<TclEvaluator> tcl_eval)
 {
 }
 
+// Returns true if cmd is `exit` or `quit` (with optional surrounding
+// whitespace). Evaluating these on a boost::asio worker thread would
+// trigger ~WebServer from inside that worker and cause a self-join
+// deadlock; they need special handling.
+static bool isTerminalCommand(const std::string& cmd)
+{
+  const auto first = cmd.find_first_not_of(" \t\r\n");
+  if (first == std::string::npos) {
+    return false;
+  }
+  const auto last = cmd.find_last_not_of(" \t\r\n");
+  const std::string trimmed = cmd.substr(first, last - first + 1);
+  return trimmed == "exit" || trimmed == "quit";
+}
+
 WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = 0;
   try {
+    if (isTerminalCommand(req.tcl_cmd)) {
+      tcl_eval_->logger->info(
+          utl::WEB, 40, "Exit requested from web GUI; shutting down.");
+      // Respond immediately with an `action: shutdown` marker so the
+      // browser can close its tab, then tear down the web server on a
+      // detached thread after a short delay. The delay lets this
+      // response flush before the WebSocket is closed, and the detached
+      // thread avoids a self-join inside stop() (the current worker is
+      // in threads_). The OpenROAD Tcl prompt keeps running — only the
+      // web session ends.
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.field("output", "");
+      builder.field(
+          "result",
+          "Web session closed. OpenROAD is still running in the terminal.");
+      builder.field("is_error", false);
+      builder.field("action", "shutdown");
+      builder.endObject();
+      const std::string& json = builder.str();
+      resp.payload.assign(json.begin(), json.end());
+
+      if (tcl_eval_->close_session) {
+        auto close_session = tcl_eval_->close_session;
+        std::thread([close_session] {
+          std::this_thread::sleep_for(std::chrono::milliseconds(300));
+          close_session();
+        }).detach();
+      }
+      return resp;
+    }
     auto result = tcl_eval_->eval(req.tcl_cmd);
     JsonBuilder builder;
     builder.beginObject();
