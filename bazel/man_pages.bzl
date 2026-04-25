@@ -16,9 +16,10 @@ def _man_pages_impl(ctx):
 
     command = """
 set -euo pipefail
-(cd docs && make --no-print-directory -f Makefile bazel-manpages)
-cp -R docs/cat/. {cat_out}/
-cp -R docs/html/. {html_out}/
+CAT_OUT="$PWD/{cat_out}"
+HTML_OUT="$PWD/{html_out}"
+make --no-print-directory -C docs -f Makefile bazel-manpages \\
+    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
 """.format(
         cat_out = cat_dir.path,
         html_out = html_dir.path,
