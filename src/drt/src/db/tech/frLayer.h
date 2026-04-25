@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <set>
@@ -621,7 +622,16 @@ class frLayer
   }
   void addLef58AreaConstraint(frLef58AreaConstraint* in)
   {
-    lef58AreaConstraints_.push_back(in);
+    // This vector should be sorted by area in a descending order
+    auto area = in->getODBRule()->getArea();
+    auto it = std::ranges::lower_bound(lef58AreaConstraints_.begin(),
+                                       lef58AreaConstraints_.end(),
+                                       area,
+                                       std::ranges::greater{},
+                                       [](const frLef58AreaConstraint* a) {
+                                         return a->getODBRule()->getArea();
+                                       });
+    lef58AreaConstraints_.insert(it, in);
   }
 
   const std::vector<frLef58AreaConstraint*>& getLef58AreaConstraints() const
@@ -629,7 +639,31 @@ class frLayer
     return lef58AreaConstraints_;
   }
 
-  bool hasLef58AreaConstraint() const { return !lef58AreaConstraints_.empty(); }
+  bool hasLef58AreaConstraint() const
+  {
+    return !lef58AreaConstraints_.empty()
+           || !lef58AreaConstraintsRectWidth_.empty();
+  }
+
+  void addLef58AreaConstraintRectWidth(frLef58AreaConstraint* in)
+  {
+    // This vector should be sorted by rectwidth in an ascending order
+    auto rectwidth = in->getODBRule()->getRectWidth();
+    auto it = std::ranges::lower_bound(lef58AreaConstraintsRectWidth_.begin(),
+                                       lef58AreaConstraintsRectWidth_.end(),
+                                       rectwidth,
+                                       std::ranges::less{},
+                                       [](const frLef58AreaConstraint* a) {
+                                         return a->getODBRule()->getRectWidth();
+                                       });
+    lef58AreaConstraintsRectWidth_.insert(it, in);
+  }
+
+  const std::vector<frLef58AreaConstraint*>& getLef58AreaConstraintsRectWidth()
+      const
+  {
+    return lef58AreaConstraintsRectWidth_;
+  }
 
   void addKeepOutZoneConstraint(frLef58KeepOutZoneConstraint* in)
   {
@@ -929,6 +963,7 @@ class frLayer
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints_;
   std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints_;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints_;
+  std::vector<frLef58AreaConstraint*> lef58AreaConstraintsRectWidth_;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints_;
   std::vector<frSpacingRangeConstraint*> spacingRangeConstraints_;
   std::vector<frLef58TwoWiresForbiddenSpcConstraint*>
