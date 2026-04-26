@@ -186,44 +186,15 @@ void WebServer::serve(int port, const std::string& doc_root)
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
-    // Prefer Chromium app mode: --app=URL opens a standalone window
-    // that JS can close via window.close(). A regular xdg-open tab
-    // cannot be closed from JS, so `exit` in the web console would
-    // leave the tab orphaned.
-    bool launched = false;
 #if defined(__APPLE__)
-    launched = std::system(("open -na 'Google Chrome' --args --app=" + url
-                            + " > /dev/null 2>&1")
-                               .c_str())
-               == 0;
-#elif !defined(_WIN32)
-    static const char* kAppBrowsers[] = {"google-chrome",
-                                         "google-chrome-stable",
-                                         "chromium",
-                                         "chromium-browser",
-                                         "microsoft-edge",
-                                         "brave-browser"};
-    for (const char* browser : kAppBrowsers) {
-      const std::string check
-          = std::string("command -v ") + browser + " > /dev/null 2>&1";
-      if (std::system(check.c_str()) == 0) {
-        std::system(
-            (std::string(browser) + " --app=" + url + " > /dev/null 2>&1 &")
-                .c_str());
-        launched = true;
-        break;
-      }
-    }
-#endif
-    if (!launched) {
-#if defined(__APPLE__)
-      std::system(("open " + url + " > /dev/null 2>&1").c_str());
+    std::string open_cmd = "open " + url + " > /dev/null 2>&1";
 #elif defined(_WIN32)
-      std::system(("start " + url + " > nul 2>&1").c_str());
+    std::string open_cmd = "start " + url + " > nul 2>&1";
 #else
-      std::system(("xdg-open " + url + " > /dev/null 2>&1 &").c_str());
+    std::string open_cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
 #endif
-    }
+    int ret = std::system(open_cmd.c_str());
+    (void) ret;
 
     logger_->info(utl::WEB, 1, "Server started on {}.", url);
 

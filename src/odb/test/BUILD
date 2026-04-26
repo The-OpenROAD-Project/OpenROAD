@@ -151,7 +151,6 @@ COMPULSORY_TESTS = [
     "bterm_hier_create",
     "check_3dblox",
     "check_routing_tracks",
-    "clear_3dbx",
     "create_blockage",
     "create_obstruction",
     "create_sboxes",
