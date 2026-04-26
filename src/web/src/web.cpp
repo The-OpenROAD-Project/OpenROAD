@@ -35,6 +35,8 @@
 #include "gui/heatMap.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "request_handler.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -135,6 +137,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "schematic_inspect") {
     req.type = WebSocketRequest::kSchematicInspect;
     req.schematic_inst_name = extract_string(msg, "inst_name");
+  } else if (type_str == "get_3d_data") {
+    req.type = WebSocketRequest::kGet3DData;
   } else if (type_str == "select") {
     req.type = WebSocketRequest::kSelect;
     req.select_x = extract_int(msg, "dbu_x");
@@ -327,7 +331,9 @@ static http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
+                         public odb::dbChipCallBackObj,
+                         public odb::dbBlockCallBackObj
 {
   websocket::stream<beast::tcp_stream> websocket_;
   beast::flat_buffer buffer_;
@@ -374,6 +380,42 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void on_read(beast::error_code ec);
   void queue_response(const WebSocketResponse& resp);
   void do_write();
+
+  void inDbMarkerCategoryCreate(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCategoryDestroy(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCreate(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerDestroy(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
 };
 
 WebSocketSession::WebSocketSession(
@@ -398,6 +440,17 @@ WebSocketSession::WebSocketSession(
       generator_(std::move(generator)),
       viewer_hook_(viewer_hook)
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::addOwner(chip);
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::addOwner(block);
+      }
+    }
+  }
+
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
@@ -405,6 +458,16 @@ WebSocketSession::WebSocketSession(
 
 WebSocketSession::~WebSocketSession()
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::removeOwner();
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::removeOwner();
+      }
+    }
+  }
   if (viewer_hook_ != nullptr && viewer_token_ != 0) {
     viewer_hook_->sessions().remove(viewer_token_);
   }
@@ -479,6 +542,20 @@ void WebSocketSession::on_accept(beast::error_code ec)
     if (!self->generator_->getBlock()) {
       return;
     }
+
+    // Re-register chip/block observer if the chip was created after session
+    // construction (e.g. read_def ran after browser connected).
+    if (!self->odb::dbChipCallBackObj::hasOwner()) {
+      odb::dbChip* chip = self->generator_->getChip();
+      if (chip) {
+        self->odb::dbChipCallBackObj::addOwner(chip);
+        odb::dbBlock* block = chip->getBlock();
+        if (block && !self->odb::dbBlockCallBackObj::hasOwner()) {
+          self->odb::dbBlockCallBackObj::addOwner(block);
+        }
+      }
+    }
+
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
     resp.id = 0;
@@ -568,6 +645,11 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSchematicInspect(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::kGet3DData:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleGet3DData(req));
       });
       break;
     case WebSocketRequest::kTclEval:
@@ -1202,7 +1284,16 @@ WebServer::~WebServer()
     ioc_->stop();
   }
   for (auto& t : threads_) {
-    if (t.joinable()) {
+    if (!t.joinable()) {
+      continue;
+    }
+    // Guard against self-join: if Tcl_Exit was triggered from a worker
+    // thread (handleTclEval → Tcl_Eval "exit"), that worker is itself in
+    // threads_; pthread_join on self returns EDEADLK and abort()s.
+    // Detach the offender — the process is on the way out anyway.
+    if (t.get_id() == std::this_thread::get_id()) {
+      t.detach();
+    } else {
       t.join();
     }
   }

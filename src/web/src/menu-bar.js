@@ -28,6 +28,7 @@ export function createMenuBar(app) {
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
+            { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },

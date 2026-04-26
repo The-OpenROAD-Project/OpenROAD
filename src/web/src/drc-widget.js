@@ -16,7 +16,7 @@ export class DrcWidget {
         this._expandedNodes = new Set();
 
         this._build();
-        this._loadCategories();
+        this._app.websocketManager.readyPromise.then(() => this.refresh());
     }
 
     _build() {
@@ -34,11 +34,6 @@ export class DrcWidget {
         this._loadBtn.className = 'drc-btn';
         this._loadBtn.textContent = 'Load...';
         toolbar.appendChild(this._loadBtn);
-
-        this._refreshBtn = document.createElement('button');
-        this._refreshBtn.className = 'drc-btn';
-        this._refreshBtn.textContent = 'Refresh';
-        toolbar.appendChild(this._refreshBtn);
 
         el.appendChild(toolbar);
 
@@ -63,10 +58,6 @@ export class DrcWidget {
         this._loadBtn.addEventListener('click', () => {
             this._showLoadDialog();
         });
-
-        this._refreshBtn.addEventListener('click', () => {
-            this._loadCategories();
-        });
     }
 
     _loadCategories() {
@@ -78,6 +69,19 @@ export class DrcWidget {
             .catch(err => {
                 console.error('Failed to load DRC categories:', err);
             });
+    }
+
+    refresh() {
+        this._loadCategories().then(() => {
+            // Auto-select first category if none is active
+            if (!this._activeCategory && this._categories.length > 0) {
+                this._activeCategory = this._categories[0].name;
+                this._categorySelect.value = this._activeCategory;
+            }
+            if (this._activeCategory) {
+                this._loadMarkers();
+            }
+        });
     }
 
     _renderCategorySelect() {
@@ -190,7 +194,7 @@ export class DrcWidget {
         checkbox.className = 'drc-visibility-check';
         checkbox.addEventListener('change', (e) => {
             e.stopPropagation();
-            this._toggleCategoryVisibility(category, checkbox.checked, node);
+            this._toggleCategoryVisibility(category, checkbox.checked);
         });
         header.appendChild(checkbox);
 
@@ -256,6 +260,7 @@ export class DrcWidget {
         checkbox.className = 'drc-visibility-check';
         checkbox.addEventListener('change', (e) => {
             e.stopPropagation();
+            marker.visible = checkbox.checked;
             this._updateMarker(marker.id, 'visible', checkbox.checked);
         });
         row.appendChild(checkbox);
@@ -327,7 +332,7 @@ export class DrcWidget {
         //   zoomout_dist = 10 microns
         //   zoomout_box  = 2 * max(bbox width, bbox height)
         //   margin       = min(zoomout_dist, zoomout_box)
-        const dbuPerMicron = this._app.techData?.dbu_per_micron || 1000;
+        const dbuPerMicron = this._app.getDbuPerMicron();
         const zoomoutDist = 10 * dbuPerMicron;
         const zoomoutBox = 2 * Math.max(dx, dy);
         const margin = Math.min(zoomoutDist, zoomoutBox);
@@ -348,9 +353,102 @@ export class DrcWidget {
             value: value ? 1 : 0
         }).then(() => {
             this._redrawAllLayers();
+            if (field === 'visible') {
+                this._update3DHighlights();
+                if (value) {
+                    this._flashHighlight();
+                }
+            }
         }).catch(err => {
             console.error('Failed to update DRC marker:', err);
         });
+    }
+
+    _flashHighlight() {
+        const container = this._app.map?.getContainer();
+        if (!container) return;
+        container.classList.remove('drc-flashing');
+        // Force reflow so re-adding the class restarts the animation.
+        void container.offsetWidth;
+        container.classList.add('drc-flashing');
+        container.addEventListener('animationend', () => {
+            container.classList.remove('drc-flashing');
+        }, { once: true });
+    }
+
+    _update3DHighlights() {
+        const viewer = this._app.threeDViewerWidget;
+        if (!viewer) return;
+
+        const visible = [];
+        this._collectVisibleMarkers(this._markerTree, visible);
+
+        if (visible.length > 0) {
+            viewer.highlightDRC(visible);
+        } else {
+            viewer.clearHighlightDRC();
+        }
+    }
+
+    _collectVisibleMarkers(node, out) {
+        if (!node) return;
+        if (node.markers) {
+            for (const m of node.markers) {
+                if (m.visible) {
+                    out.push(m);
+                }
+            }
+        }
+        if (node.subcategories) {
+            for (const sub of node.subcategories) {
+                this._collectVisibleMarkers(sub, out);
+            }
+        }
+    }
+
+    _setMarkersVisible(node, visible) {
+        if (!node) return;
+        if (node.markers) {
+            for (const m of node.markers) {
+                m.visible = visible;
+            }
+        }
+        if (node.subcategories) {
+            for (const sub of node.subcategories) {
+                this._setMarkersVisible(sub, visible);
+            }
+        }
+    }
+
+    _snapshotMarkerVisibility(node, out = new Map()) {
+        if (!node) return out;
+        if (node.markers) {
+            for (const m of node.markers) {
+                out.set(m.id, m.visible);
+            }
+        }
+        if (node.subcategories) {
+            for (const sub of node.subcategories) {
+                this._snapshotMarkerVisibility(sub, out);
+            }
+        }
+        return out;
+    }
+
+    _restoreMarkerVisibility(node, snapshot) {
+        if (!node) return;
+        if (node.markers) {
+            for (const m of node.markers) {
+                if (snapshot.has(m.id)) {
+                    m.visible = snapshot.get(m.id);
+                }
+            }
+        }
+        if (node.subcategories) {
+            for (const sub of node.subcategories) {
+                this._restoreMarkerVisibility(sub, snapshot);
+            }
+        }
     }
 
     _allMarkersVisible(category) {
@@ -367,33 +465,62 @@ export class DrcWidget {
         return true;
     }
 
-    _toggleCategoryVisibility(category, visible, nodeEl) {
+    _toggleCategoryVisibility(category, visible) {
+        const snapshot = this._snapshotMarkerVisibility(category);
+        this._setMarkersVisible(category, visible);
+        this._renderTree();
+
         this._app.websocketManager.request({
             type: 'drc_update_category_visibility',
             category: category.name,
             visible: visible ? 1 : 0
         }).then(() => {
-            const checks = nodeEl.querySelectorAll(
-                '.drc-marker-row > .drc-visibility-check');
-            for (const cb of checks) {
-                cb.checked = visible;
-            }
-            const catChecks = nodeEl.querySelectorAll(
-                '.drc-tree-header > .drc-visibility-check');
-            for (const cb of catChecks) {
-                cb.checked = visible;
-            }
             this._redrawAllLayers();
+            this._update3DHighlights();
+            if (visible) {
+                this._flashHighlight();
+            }
         }).catch(err => {
             console.error('Failed to update category visibility:', err);
+            this._restoreMarkerVisibility(category, snapshot);
+            this._renderTree();
         });
     }
 
     _showLoadDialog() {
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
+        const dialog = new DrcFileDialog(this._app, (category) => {
+            this._activeCategory = category;
+            this._loadCategories().then(() => {
+                this._categorySelect.value = this._activeCategory;
+                this._loadMarkers();
+            });
+        });
+        dialog.open();
+    }
 
-        overlay.innerHTML = `
+    // Called externally to select a specific category (e.g. from inspector)
+    selectCategory(name) {
+        this._activeCategory = name;
+        this._categorySelect.value = name;
+        this._loadMarkers();
+    }
+}
+
+// Modal file browser for selecting a DRC report on the server. The dialog owns
+// its DOM overlay and tracks listeners so that `close()` fully tears down.
+class DrcFileDialog {
+    constructor(app, onLoaded) {
+        this._app = app;
+        this._onLoaded = onLoaded;
+        this._currentPath = '';
+        this._disposers = [];
+        this._closed = false;
+    }
+
+    open() {
+        this._overlay = document.createElement('div');
+        this._overlay.className = 'modal-overlay';
+        this._overlay.innerHTML = `
             <div class="modal-dialog file-browser-dialog">
                 <h3>Load DRC Report</h3>
                 <div class="fb-breadcrumb"></div>
@@ -406,176 +533,183 @@ export class DrcWidget {
                     <button class="primary ok" disabled>Load</button>
                 </div>
             </div>`;
+        document.body.appendChild(this._overlay);
 
-        document.body.appendChild(overlay);
+        this._breadcrumb = this._overlay.querySelector('.fb-breadcrumb');
+        this._fileList = this._overlay.querySelector('.fb-file-list');
+        this._pathInput = this._overlay.querySelector('.fb-path-input');
+        this._errorDiv = this._overlay.querySelector('.modal-error');
+        this._okBtn = this._overlay.querySelector('.ok');
+        this._cancelBtn = this._overlay.querySelector('.cancel');
 
-        const breadcrumb = overlay.querySelector('.fb-breadcrumb');
-        const fileList = overlay.querySelector('.fb-file-list');
-        const pathInput = overlay.querySelector('.fb-path-input');
-        const errorDiv = overlay.querySelector('.modal-error');
-        const okBtn = overlay.querySelector('.ok');
-        const cancelBtn = overlay.querySelector('.cancel');
-        let currentPath = '';
-
-        const close = () => overlay.remove();
-
-        const updateOkState = () => {
-            const val = pathInput.value.trim();
-            okBtn.disabled = !val;
-        };
-
-        const renderBreadcrumb = (dirPath) => {
-            breadcrumb.innerHTML = '';
-            const parts = dirPath.split('/').filter(Boolean);
-            const rootSpan = document.createElement('span');
-            rootSpan.className = 'fb-crumb';
-            rootSpan.textContent = '/';
-            rootSpan.addEventListener('click', () => navigate('/'));
-            breadcrumb.appendChild(rootSpan);
-
-            let accumulated = '';
-            for (const part of parts) {
-                accumulated += '/' + part;
-                const sep = document.createElement('span');
-                sep.className = 'fb-crumb-sep';
-                sep.textContent = ' / ';
-                breadcrumb.appendChild(sep);
-
-                const crumb = document.createElement('span');
-                crumb.className = 'fb-crumb';
-                crumb.textContent = part;
-                const target = accumulated;
-                crumb.addEventListener('click', () => navigate(target));
-                breadcrumb.appendChild(crumb);
-            }
-        };
-
-        const renderEntries = (entries) => {
-            fileList.innerHTML = '';
-            if (!entries || entries.length === 0) {
-                const empty = document.createElement('div');
-                empty.className = 'fb-empty';
-                empty.textContent = '(empty directory)';
-                fileList.appendChild(empty);
-                return;
-            }
-
-            for (const entry of entries) {
-                const row = document.createElement('div');
-                row.className = 'fb-entry';
-                if (entry.is_dir) row.classList.add('fb-dir');
-
-                const icon = document.createElement('span');
-                icon.className = 'fb-icon';
-                icon.textContent = entry.is_dir ? '\u{1F4C1}' : '\u{1F4C4}';
-                row.appendChild(icon);
-
-                const name = document.createElement('span');
-                name.className = 'fb-name';
-                name.textContent = entry.name;
-                row.appendChild(name);
-
-                if (entry.is_dir) {
-                    row.addEventListener('click', () => {
-                        navigate(currentPath + '/' + entry.name);
-                    });
-                } else {
-                    row.addEventListener('click', () => {
-                        const prev = fileList.querySelector('.fb-selected');
-                        if (prev) prev.classList.remove('fb-selected');
-                        row.classList.add('fb-selected');
-                        pathInput.value = currentPath + '/' + entry.name;
-                        updateOkState();
-                    });
-                    row.addEventListener('dblclick', () => {
-                        pathInput.value = currentPath + '/' + entry.name;
-                        updateOkState();
-                        submit();
-                    });
-                }
-
-                fileList.appendChild(row);
-            }
-        };
-
-        const navigate = async (dirPath) => {
-            errorDiv.style.display = 'none';
-            fileList.innerHTML = '<div class="fb-loading">Loading...</div>';
-            try {
-                const resp = await this._app.websocketManager.request({
-                    type: 'list_dir',
-                    path: dirPath || '',
-                });
-                currentPath = resp.path;
-                renderBreadcrumb(resp.path);
-                renderEntries(resp.entries);
-                pathInput.value = '';
-                updateOkState();
-            } catch (err) {
-                fileList.innerHTML = '';
-                errorDiv.textContent = err.message || String(err);
-                errorDiv.style.display = '';
-            }
-        };
-
-        const submit = async () => {
-            const path = pathInput.value.trim();
-            if (!path) return;
-
-            okBtn.disabled = true;
-            okBtn.textContent = 'Loading...';
-            errorDiv.style.display = 'none';
-
-            try {
-                const resp = await this._app.websocketManager.request({
-                    type: 'drc_load_report',
-                    path: path,
-                });
-
-                if (resp.ok) {
-                    close();
-                    this._activeCategory = resp.category;
-                    this._loadCategories().then(() => {
-                        this._categorySelect.value = this._activeCategory;
-                        this._loadMarkers();
-                    });
-                } else {
-                    errorDiv.textContent = resp.error || 'Failed to load report';
-                    errorDiv.style.display = '';
-                    okBtn.disabled = false;
-                    okBtn.textContent = 'Load';
-                }
-            } catch (err) {
-                errorDiv.textContent = err.message || 'Request failed';
-                errorDiv.style.display = '';
-                okBtn.disabled = false;
-                okBtn.textContent = 'Load';
-            }
-        };
-
-        pathInput.addEventListener('input', updateOkState);
-        pathInput.addEventListener('keydown', (e) => {
+        this._listen(this._pathInput, 'input', () => this._updateOkState());
+        this._listen(this._pathInput, 'keydown', (e) => {
             if (e.key === 'Enter') {
-                const val = pathInput.value.trim();
+                const val = this._pathInput.value.trim();
                 if (val.endsWith('/')) {
-                    navigate(val.replace(/\/+$/, '') || '/');
+                    this._navigate(val.replace(/\/+$/, '') || '/');
                 } else {
-                    submit();
+                    this._submit();
                 }
+            } else if (e.key === 'Escape') {
+                this.close();
             }
-            if (e.key === 'Escape') close();
         });
-        okBtn.addEventListener('click', submit);
-        cancelBtn.addEventListener('click', close);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        this._listen(this._okBtn, 'click', () => this._submit());
+        this._listen(this._cancelBtn, 'click', () => this.close());
+        this._listen(this._overlay, 'click', (e) => {
+            if (e.target === this._overlay) this.close();
+        });
 
-        navigate('');
+        this._navigate('');
     }
 
-    // Called externally to select a specific category (e.g. from inspector)
-    selectCategory(name) {
-        this._activeCategory = name;
-        this._categorySelect.value = name;
-        this._loadMarkers();
+    close() {
+        if (this._closed) return;
+        this._closed = true;
+        for (const off of this._disposers) off();
+        this._disposers.length = 0;
+        if (this._overlay) {
+            this._overlay.remove();
+            this._overlay = null;
+        }
+    }
+
+    _listen(target, event, handler) {
+        target.addEventListener(event, handler);
+        this._disposers.push(() => target.removeEventListener(event, handler));
+    }
+
+    _updateOkState() {
+        this._okBtn.disabled = !this._pathInput.value.trim();
+    }
+
+    _renderBreadcrumb(dirPath) {
+        this._breadcrumb.innerHTML = '';
+        const parts = dirPath.split('/').filter(Boolean);
+
+        const rootSpan = document.createElement('span');
+        rootSpan.className = 'fb-crumb';
+        rootSpan.textContent = '/';
+        this._listen(rootSpan, 'click', () => this._navigate('/'));
+        this._breadcrumb.appendChild(rootSpan);
+
+        let accumulated = '';
+        for (const part of parts) {
+            accumulated += '/' + part;
+            const sep = document.createElement('span');
+            sep.className = 'fb-crumb-sep';
+            sep.textContent = ' / ';
+            this._breadcrumb.appendChild(sep);
+
+            const crumb = document.createElement('span');
+            crumb.className = 'fb-crumb';
+            crumb.textContent = part;
+            const target = accumulated;
+            this._listen(crumb, 'click', () => this._navigate(target));
+            this._breadcrumb.appendChild(crumb);
+        }
+    }
+
+    _renderEntries(entries) {
+        this._fileList.innerHTML = '';
+        if (!entries || entries.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'fb-empty';
+            empty.textContent = '(empty directory)';
+            this._fileList.appendChild(empty);
+            return;
+        }
+
+        for (const entry of entries) {
+            const row = document.createElement('div');
+            row.className = 'fb-entry';
+            if (entry.is_dir) row.classList.add('fb-dir');
+
+            const icon = document.createElement('span');
+            icon.className = 'fb-icon';
+            icon.textContent = entry.is_dir ? '\u{1F4C1}' : '\u{1F4C4}';
+            row.appendChild(icon);
+
+            const name = document.createElement('span');
+            name.className = 'fb-name';
+            name.textContent = entry.name;
+            row.appendChild(name);
+
+            if (entry.is_dir) {
+                this._listen(row, 'click',
+                    () => this._navigate(this._currentPath + '/' + entry.name));
+            } else {
+                this._listen(row, 'click', () => {
+                    const prev = this._fileList.querySelector('.fb-selected');
+                    if (prev) prev.classList.remove('fb-selected');
+                    row.classList.add('fb-selected');
+                    this._pathInput.value = this._currentPath + '/' + entry.name;
+                    this._updateOkState();
+                });
+                this._listen(row, 'dblclick', () => {
+                    this._pathInput.value = this._currentPath + '/' + entry.name;
+                    this._updateOkState();
+                    this._submit();
+                });
+            }
+
+            this._fileList.appendChild(row);
+        }
+    }
+
+    async _navigate(dirPath) {
+        this._errorDiv.style.display = 'none';
+        this._fileList.innerHTML = '<div class="fb-loading">Loading...</div>';
+        try {
+            const resp = await this._app.websocketManager.request({
+                type: 'list_dir',
+                path: dirPath || '',
+            });
+            if (this._closed) return;
+            this._currentPath = resp.path;
+            this._renderBreadcrumb(resp.path);
+            this._renderEntries(resp.entries);
+            this._pathInput.value = '';
+            this._updateOkState();
+        } catch (err) {
+            if (this._closed) return;
+            this._fileList.innerHTML = '';
+            this._errorDiv.textContent = err.message || String(err);
+            this._errorDiv.style.display = '';
+        }
+    }
+
+    async _submit() {
+        const path = this._pathInput.value.trim();
+        if (!path) return;
+
+        this._okBtn.disabled = true;
+        this._okBtn.textContent = 'Loading...';
+        this._errorDiv.style.display = 'none';
+
+        try {
+            const resp = await this._app.websocketManager.request({
+                type: 'drc_load_report',
+                path,
+            });
+            if (this._closed) return;
+            if (resp.ok) {
+                const category = resp.category;
+                this.close();
+                this._onLoaded(category);
+            } else {
+                this._errorDiv.textContent = resp.error || 'Failed to load report';
+                this._errorDiv.style.display = '';
+                this._okBtn.disabled = false;
+                this._okBtn.textContent = 'Load';
+            }
+        } catch (err) {
+            if (this._closed) return;
+            this._errorDiv.textContent = err.message || 'Request failed';
+            this._errorDiv.style.display = '';
+            this._okBtn.disabled = false;
+            this._okBtn.textContent = 'Load';
+        }
     }
 }
