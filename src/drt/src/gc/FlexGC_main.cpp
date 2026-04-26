@@ -2115,7 +2115,10 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
           auto a_rule = a->getODBRule();
           auto b_rule = b->getODBRule();
 
-          return a_rule->getRectWidth() < b_rule->getRectWidth();
+          if (a_rule->getRectWidth() != b_rule->getRectWidth()) {
+            return a_rule->getRectWidth() < b_rule->getRectWidth();
+          }
+          return a_rule->getArea() < b_rule->getArea();
         };
 
   // sort constraints to ensure the smallest rect width will have

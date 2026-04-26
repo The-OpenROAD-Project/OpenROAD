@@ -374,6 +374,15 @@ bool Logger::isPrometheusServerReadyToServe()
   return prometheus_metrics_->is_ready() && prometheus_metrics_->port() != 0;
 }
 
+bool Logger::hasPrometheusServerStartupFailed()
+{
+  if (!prometheus_metrics_) {
+    return false;
+  }
+
+  return prometheus_metrics_->has_startup_failed();
+}
+
 uint16_t Logger::getPrometheusPort()
 {
   if (!prometheus_metrics_) {

@@ -43,6 +43,14 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":request_handler_test",
+        ":tile_generator_test",
+    ],
+)
+
 js_test(
     name = "coordinates_test",
     data = JS_FILES,
