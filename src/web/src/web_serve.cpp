@@ -210,12 +210,13 @@ void WebServer::waitForStop()
   lock.unlock();
 
   // Notify connected browsers so they can show "Server stopped" and
-  // disable auto-reconnect.  broadcast() posts async writes via
-  // net::post() on each session's strand, so we sleep briefly to
-  // let the ASIO threads flush them before stop() tears everything down.
+  // disable auto-reconnect.  broadcastAndWait() posts the message and
+  // then waits for a strand-fence on each session, guaranteeing the
+  // write is queued before stop() tears down the io_context.
   if (viewer_hook_) {
-    viewer_hook_->sessions().broadcast(R"({"type":"shutdown"})");
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    constexpr auto kShutdownFlushTimeout = std::chrono::seconds(2);
+    viewer_hook_->sessions().broadcastAndWait(R"({"type":"shutdown"})",
+                                              kShutdownFlushTimeout);
   }
 
   stop();

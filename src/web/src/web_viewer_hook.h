@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
@@ -26,11 +27,14 @@ class SessionRegistry
 {
  public:
   using SendFn = std::function<void(const std::string& json)>;
+  // Posts an arbitrary callable onto the session's strand.
+  using PostFn = std::function<void(std::function<void()>)>;
   using WaitInterruptFn = std::function<bool()>;
 
   // Register a send callback.  Returns a token the caller must pass to
-  // remove() during teardown.
-  std::size_t add(SendFn send);
+  // remove() during teardown.  The optional PostFn lets broadcastAndWait()
+  // post a fence lambda onto the session's strand.
+  std::size_t add(SendFn send, PostFn post = {});
   void remove(std::size_t token);
 
   // True if at least one session is registered.
@@ -47,11 +51,23 @@ class SessionRegistry
   // Deliver the JSON string to every currently-registered session.
   void broadcast(const std::string& json);
 
+  // Like broadcast(), but waits until every session's strand has executed
+  // the queued write (or timeout expires).  Returns true if all fences
+  // completed, false on timeout.
+  bool broadcastAndWait(const std::string& json,
+                        std::chrono::milliseconds timeout);
+
  private:
+  struct SessionCallbacks
+  {
+    SendFn send;
+    PostFn post;  // may be empty for legacy callers
+  };
+
   mutable std::mutex mutex_;
   mutable std::condition_variable client_cv_;
   std::size_t next_token_ = 1;
-  std::unordered_map<std::size_t, SendFn> senders_;
+  std::unordered_map<std::size_t, SessionCallbacks> senders_;
 };
 
 // The web viewer's bridge to gui::Gui.  Installed as the Gui's

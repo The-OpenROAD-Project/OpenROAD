@@ -422,18 +422,29 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // browsers reject with "A server must not mask any frames".
   if (viewer_hook_ != nullptr) {
     auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
-    viewer_token_
-        = viewer_hook_->sessions().add([weak_self](const std::string& json) {
-            auto self = weak_self.lock();
-            if (!self) {
-              return;
-            }
-            WebSocketResponse resp;
-            resp.id = 0;
-            resp.type = 0;  // JSON
-            resp.payload.assign(json.begin(), json.end());
-            self->queue_response(resp);
-          });
+    viewer_token_ = viewer_hook_->sessions().add(
+        // SendFn — queue a JSON push message on this session's write queue.
+        [weak_self](const std::string& json) {
+          auto self = weak_self.lock();
+          if (!self) {
+            return;
+          }
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = 0;  // JSON
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp);
+        },
+        // PostFn — post an arbitrary callable onto this session's strand.
+        // Used by broadcastAndWait() to fence after the write is queued.
+        [weak_self](std::function<void()> fn) {
+          auto self = weak_self.lock();
+          if (!self) {
+            fn();  // session gone — signal fence immediately
+            return;
+          }
+          net::post(self->strand_, std::move(fn));
+        });
   }
 
   // Build search indices in the background; tiles render without shapes

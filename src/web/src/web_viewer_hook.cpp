@@ -30,13 +30,13 @@ constexpr auto kMaxPauseTimeout = std::chrono::minutes(10);
 // SessionRegistry
 //------------------------------------------------------------------------------
 
-std::size_t SessionRegistry::add(SendFn send)
+std::size_t SessionRegistry::add(SendFn send, PostFn post)
 {
   std::size_t token;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     token = next_token_++;
-    senders_.emplace(token, std::move(send));
+    senders_.emplace(token, SessionCallbacks{std::move(send), std::move(post)});
   }
   client_cv_.notify_all();
   return token;
@@ -75,19 +75,76 @@ void SessionRegistry::notifyClientWaiters()
 
 void SessionRegistry::broadcast(const std::string& json)
 {
-  // Copy the senders out under the lock so we don't hold it while
-  // invoking callbacks (which may take session-level locks of their own).
-  std::vector<SendFn> to_send;
+  // Copy the callbacks out under the lock so we don't hold it while
+  // invoking them (which may take session-level locks of their own).
+  std::vector<SessionCallbacks> to_send;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     to_send.reserve(senders_.size());
-    for (const auto& [_, fn] : senders_) {
-      to_send.push_back(fn);
+    for (const auto& [_, cb] : senders_) {
+      to_send.push_back(cb);
     }
   }
-  for (const auto& fn : to_send) {
-    fn(json);
+  for (const auto& cb : to_send) {
+    cb.send(json);
   }
+}
+
+bool SessionRegistry::broadcastAndWait(const std::string& json,
+                                       std::chrono::milliseconds timeout)
+{
+  // Copy the callbacks out under the lock.
+  std::vector<SessionCallbacks> to_send;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    to_send.reserve(senders_.size());
+    for (const auto& [_, cb] : senders_) {
+      to_send.push_back(cb);
+    }
+  }
+
+  // Count sessions that support fencing (have a PostFn).
+  std::size_t fence_count = 0;
+  for (const auto& cb : to_send) {
+    if (cb.post) {
+      ++fence_count;
+    }
+  }
+
+  if (fence_count == 0) {
+    // No fenceable sessions — fire-and-forget like broadcast().
+    for (const auto& cb : to_send) {
+      cb.send(json);
+    }
+    return true;
+  }
+
+  // Shared state for the fence: each session's PostFn decrements the
+  // counter and notifies when all fences have fired.
+  struct FenceState
+  {
+    std::mutex mutex;
+    std::condition_variable cv;
+    std::size_t remaining;
+  };
+  auto state = std::make_shared<FenceState>();
+  state->remaining = fence_count;
+
+  for (const auto& cb : to_send) {
+    cb.send(json);
+    if (cb.post) {
+      cb.post([state]() {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        if (--state->remaining == 0) {
+          state->cv.notify_one();
+        }
+      });
+    }
+  }
+
+  std::unique_lock<std::mutex> lock(state->mutex);
+  return state->cv.wait_for(
+      lock, timeout, [&state]() { return state->remaining == 0; });
 }
 
 //------------------------------------------------------------------------------
