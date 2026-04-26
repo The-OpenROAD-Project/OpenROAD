@@ -78,6 +78,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"
@@ -395,7 +396,6 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   }
   unbuffer_move_->commitMoves();
   estimate_parasitics_->updateParasitics();
-  invalidateVertexOrdering();
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
@@ -432,22 +432,6 @@ void Resizer::unbufferNet(sta::Net* net)
   }
 
   removeBuffers(insts);
-}
-
-void Resizer::ensureLevelDrvrVertices()
-{
-  if (!level_drvr_vertices_valid_) {
-    level_drvr_vertices_.clear();
-    sta::VertexIterator vertex_iter(graph_);
-    while (vertex_iter.hasNext()) {
-      sta::Vertex* vertex = vertex_iter.next();
-      if (vertex->isDriver(network_)) {
-        level_drvr_vertices_.emplace_back(vertex);
-      }
-    }
-    sort(level_drvr_vertices_, VertexLevelLess(network_));
-    level_drvr_vertices_valid_ = true;
-  }
 }
 
 void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
@@ -1043,10 +1027,6 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
                 "Inserted {} {} input buffers.",
                 inserted_buffer_count_,
                 selected_buffer_cell->name());
-
-  if (inserted_buffer_count_ > 0) {
-    invalidateVertexOrdering();
-  }
 }
 
 bool Resizer::hasPins(sta::Net* net)
@@ -1186,10 +1166,6 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
                 "Inserted {} {} output buffers.",
                 inserted_buffer_count_,
                 selected_buffer_cell->name());
-
-  if (inserted_buffer_count_ > 0) {
-    invalidateVertexOrdering();
-  }
 }
 
 bool Resizer::hasTristateOrDontTouchDriver(const sta::Net* net)
@@ -1250,7 +1226,7 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
         for (auto rf : sta::RiseFall::range()) {
           const sta::LibertyCell* cell;
           const sta::LibertyPort* from_port;
-          float* from_slews;
+          const sta::DriveCellSlews* from_slews;
           const sta::LibertyPort* to_port;
           drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
           if (to_port) {
@@ -1464,7 +1440,6 @@ void Resizer::resizeDrvrToTargetSlew(const sta::Pin* drvr_pin)
 void Resizer::resizePreamble()
 {
   init();
-  ensureLevelDrvrVertices();
   for (auto mode : sta_->modes()) {
     sta_->ensureClkNetwork(mode);
   }
@@ -2481,9 +2456,9 @@ bool Resizer::replaceCell(sta::Instance* inst,
 
     // Legalize the position of the instance in case it leaves the die
     if (estimate_parasitics_->getParasiticsSrc()
-            == est::ParasiticsSrc::global_routing
+            == est::ParasiticsSrc::kGlobalRouting
         || estimate_parasitics_->getParasiticsSrc()
-               == est::ParasiticsSrc::detailed_routing) {
+               == est::ParasiticsSrc::kDetailedRouting) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
     return true;
@@ -2526,21 +2501,20 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
   initBlock();
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
-                                          ? est::ParasiticsSrc::global_routing
-                                          : est::ParasiticsSrc::placement;
+                                          ? est::ParasiticsSrc::kGlobalRouting
+                                          : est::ParasiticsSrc::kPlacement;
   estimate_parasitics_->setParasiticsSrc(parasitics_src);
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {
     journalBegin();
   }
-  ensureLevelDrvrVertices();
   estimate_parasitics_->estimateParasitics(parasitics_src);
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
 
   // Start incremental global routing if global routing parasitics are being
   // used.
-  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+  if (parasitics_src == est::ParasiticsSrc::kGlobalRouting) {
     global_router_->startIncremental();
   }
 
@@ -2562,7 +2536,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
                                           repaired_net_count);
 
   // End incremental global routing if global routing parasitics were used.
-  if (parasitics_src == est::ParasiticsSrc::global_routing) {
+  if (parasitics_src == est::ParasiticsSrc::kGlobalRouting) {
     global_router_->endIncremental();
   } else {
     // Fully rebuffer doesn't work with global routing parasitics.
@@ -2570,14 +2544,12 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     // routing.
     fullyRebuffer(nullptr);
   }
-  ensureLevelDrvrVertices();
 
   findResizeSlacks1();
   if (run_journal_restore) {
     db_cbk_->addOwner(block_);
     journalRestore();
     db_cbk_->removeOwner();
-    invalidateVertexOrdering();
   }
 }
 
@@ -2586,8 +2558,9 @@ void Resizer::findResizeSlacks1()
   // Use driver pin slacks rather than Sta::netSlack to save visiting
   // the net pins and min'ing the slack.
   net_slack_map_.clear();
-  for (int i = level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    sta::Vertex* drvr = level_drvr_vertices_[i];
+  const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
+  for (int i = drvrs.size() - 1; i >= 0; i--) {
+    sta::Vertex* drvr = drvrs[i];
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -3290,7 +3263,6 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
   if (tie_count > 0) {
     logger_->info(
         RSZ, 42, "Inserted {} tie {} instances.", tie_count, tie_cell->name());
-    invalidateVertexOrdering();
   }
 }
 
@@ -3474,8 +3446,6 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
   if (!has_other_fanout) {
     sta_->deleteInstance(const_cast<sta::Instance*>(tie_inst));
-    // Invalidate vertex level ordering
-    invalidateVertexOrdering();
   }
 }
 
@@ -4229,9 +4199,9 @@ void Resizer::repairDesign(double max_wire_length,
                                          match_cell_footprint);
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(
@@ -4387,9 +4357,6 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       sta_->deleteInstance(inv);
     }
   }
-
-  // Invalidate vertex level ordering
-  invalidateVertexOrdering();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4416,9 +4383,9 @@ bool Resizer::repairSetup(double setup_margin,
                                          match_cell_footprint);
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
   return repair_setup_->repairSetup(setup_margin,
@@ -4483,9 +4450,9 @@ bool Resizer::repairHold(
 
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
   return repair_hold_->repairHold(setup_margin,
@@ -4531,9 +4498,9 @@ bool Resizer::recoverPower(float recover_power_percent,
                                          match_cell_footprint);
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
   return recover_power_->recoverPower(recover_power_percent, verbose);
@@ -4545,9 +4512,9 @@ void Resizer::swapArithModules(int path_count,
 {
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -4739,9 +4706,6 @@ void Resizer::journalRestore()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
-
-  // Invalidate vertex level ordering
-  invalidateVertexOrdering();
 
   debugPrint(logger_,
              RSZ,
@@ -5148,9 +5112,9 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
   setLocation(db_inst, loc);
   // Legalize the position of the instance in case it leaves the die
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->legalCellPos(db_inst);
   }
   designAreaIncr(area(db_inst->getMaster()));
@@ -5161,9 +5125,9 @@ void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
   // Legalize the cell position for accurate parasitic estimation
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->legalCellPos(buffer_inst);
   }
 
@@ -5452,10 +5416,6 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   }
 
-  if (remove_inst_count > 0 || remove_net_count > 0) {
-    // Invalidate vertex level ordering
-    invalidateVertexOrdering();
-  }
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
@@ -5975,7 +5935,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const sta::Scene* corner,
     std::map<const sta::Pin*, float>& load_pin_slew)
 {
-  ensureLevelDrvrVertices();
   repair_design_->init();
 
   using BnetPtr = BufferedNetPtr;

@@ -218,12 +218,8 @@ bool UnbufferMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
              "ACCEPT UnbufferMove {}: Removed buffer {}",
              network_->pathName(drvr_pin),
              network_->pathName(drvr));
-  bool removed = removeBuffer(drvr);
-  if (removed) {
-    // Invalidate vertex level ordering
-    resizer_->invalidateVertexOrdering();
-  }
-  return removed;
+
+  return removeBuffer(drvr);
 }
 
 bool UnbufferMove::removeBufferIfPossible(sta::Instance* buffer,

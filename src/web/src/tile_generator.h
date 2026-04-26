@@ -5,6 +5,7 @@
 
 #include <any>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,8 +15,10 @@
 #include <vector>
 
 #include "color.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web_painter.h"
 
 namespace sta {
 class dbSta;
@@ -37,7 +40,9 @@ struct ColoredRect
 {
   odb::Rect rect;
   Color color;
-  std::string layer;  // empty = draw on all layers
+  std::string layer;    // empty = draw on all layers
+  bool filled = false;  // true = filled rect + outline (DRC markers)
+                        // false = centerline (timing paths)
 };
 
 struct FlightLine
@@ -111,7 +116,7 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json_;  // stored for dynamic per-site lookups
+  std::string raw_json;  // stored for dynamic per-site lookups
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)
@@ -120,6 +125,18 @@ struct TileVisibility
 
   // Debug
   bool debug = false;
+
+  // When true the tile renderer iterates gui::Gui::renderers() and
+  // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
+  // graphics overlay.  Off by default so tiles stay cheap.
+  bool debug_renderers = false;
+
+  // When debug_renderers is on, normally the overlay only renders while
+  // the placer is paused (avoids racing against mutating renderer state).
+  // Setting debug_live=true opts in to non-blocking streaming: the
+  // overlay renders every frame even when not paused, accepting the
+  // occasional inconsistency for smoother visualization.
+  bool debug_live = false;
 
   void parseFromJson(const std::string& json);
 
@@ -197,6 +214,40 @@ class TileGenerator
                  double dbu_per_pixel,
                  const TileVisibility& vis) const;
 
+  // Render timing path overlay (colored rects + flight lines) to PNG bytes.
+  std::vector<unsigned char> renderOverlayPng(
+      int width_px,
+      const std::vector<ColoredRect>& rects,
+      const std::vector<FlightLine>& lines) const;
+
+  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  //
+  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
+  // installed DebugOverlayCallback (if any).  The callback is
+  // responsible for iterating any registered gui::Renderer instances
+  // and drawing their output onto the image buffer.  Kept as a
+  // callback rather than a direct gui::Gui::get() call so that
+  // libweb.a has no undefined references to the gui/SWIG library —
+  // test executables that link libweb don't need to pull in ord.
+  using DebugOverlayCallback
+      = std::function<void(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double pixels_per_dbu,
+                           bool debug_live)>;
+  // Install (or clear with `{}`) the debug-overlay callback.  Global
+  // process state; installed by WebServer on serve() and cleared on
+  // shutdown.
+  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+
+  // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
+  // buffer.  Public so that the debug-overlay callback (living in
+  // web.cpp, which is only in the main openroad binary) can reuse
+  // TileGenerator's line/polygon/bitmap primitives.
+  void rasterizeWebPainterOps(std::vector<unsigned char>& image,
+                              const std::vector<DrawOp>& ops,
+                              const odb::Rect& dbu_tile,
+                              double scale) const;
+
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
@@ -257,6 +308,14 @@ class TileGenerator
                        const odb::Rect& dbu_tile,
                        double scale) const;
 
+  // Private counterpart of setDebugOverlayCallback: invokes the
+  // installed callback (if any) for this tile.  See the public API
+  // above for rationale.
+  void drawRendererOverlay(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double scale,
+                           bool debug_live) const;
+
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
                        const std::string& layer,
@@ -289,7 +348,8 @@ class TileGenerator
                        int y0,
                        int x1,
                        int y1,
-                       const Color& c);
+                       const Color& c,
+                       int width = 3);
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
@@ -316,5 +376,12 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// ── JSON serialization helpers for TileGenerator responses ──
+
+void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen);
+void serializeBoundsResponse(JsonBuilder& b,
+                             const TileGenerator& gen,
+                             bool shapes_ready);
 
 }  // namespace web

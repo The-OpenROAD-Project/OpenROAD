@@ -26,7 +26,7 @@ rtl_macro_placer
     [-max_num_level max_num_level] 
     [-coarsening_ratio coarsening_ratio]
     [-large_net_threshold large_net_threshold]
-    [-halo_width halo_width] 
+    [-halo_width halo_width]
     [-halo_height halo_height]
     [-fence_lx fence_lx] 
     [-fence_ly fence_ly]
@@ -57,7 +57,8 @@ rtl_macro_placer
 | `-max_num_level` | Maximum depth of physical hierarchical tree. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-coarsening_ratio` | The larger the coarsening_ratio, the faster the convergence process. The allowed values are floats, and the default value is `10.0`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-halo_width` | Horizontal/vertical halo around macros (microns). The allowed values are floats, and the default value is `0.0`. |
+| `-halo_width` | **Deprecated: use `set_macro_base_halo` instead.** Horizontal halo around macros (microns). The default value is `0.0`. |
+| `-halo_height` | **Deprecated: use `set_macro_base_halo` instead.** Vertical halo around macros (microns). The default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
 | `-target_util` | Specifies the target utilization. The allowed values are floats and the default value is `0.25`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
@@ -122,9 +123,22 @@ set_macro_guidance_region
 | `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
 
 
+### Set Macro Base Halo
+
+Command for setting the base halo around all macros. Per-macro halos set with `set_macro_halo` take precedence.
+
+```tcl
+set_macro_base_halo left bottom right top
+set_macro_base_halo width height
+```
+
+#### Arguments
+
+The left, bottom, right and top halo, or the width (sets both left and right) and height (sets both bottom and top), in microns.
+
 ### Set Macro Halo
 
-Command for setting a halo for specific macros. If unset, the macro will use the default values specified in MACRO_PLACE_HALO.
+Command for setting a halo for specific macros. If unset, the macro will use the default halo.
 
 ```tcl
 set_macro_halo
@@ -138,6 +152,21 @@ set_macro_halo
 | ----- | ----- |
 | `-macro_name` | The name of a macro of the design. |
 | `-halo` | The left, bottom, right and top halo or the width (sets both left and right) and height (sets both bottom and top), in microns. Consider the macro orientation as R0 when setting the halo. |
+
+### Block Macro Channels
+
+Creates soft placement blockages around all fixed macros in the design, based on their halos.
+Macros with soft DEF halos are skipped, as other placement-aware tools already honor them.
+
+For each macro, the halo used is resolved by this priority:
+
+1. The per-macro halo set with `set_macro_halo`, if defined.
+2. The DEF halo, floored by the base halo set with `set_macro_base_halo`.
+3. The base halo.
+
+```tcl
+block_macro_channels
+```
 
 ## Example scripts
 

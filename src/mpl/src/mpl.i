@@ -34,8 +34,6 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const int max_num_level,
                           const float coarsening_ratio,
                           const int large_net_threshold,
-                          const float halo_width,
-                          const float halo_height,
                           const float fence_lx,
                           const float fence_ly,
                           const float fence_ux,
@@ -69,8 +67,6 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              max_num_level,
                              coarsening_ratio,
                              large_net_threshold,
-                             block->micronsToDbu(halo_width),
-                             block->micronsToDbu(halo_height),
                              global_fence,
                              area_weight,
                              outline_weight,
@@ -136,8 +132,21 @@ add_guidance_region(odb::dbInst* macro,
 }
 
 void
-set_macro_halo(odb::dbInst* macro, 
-               float left, 
+set_base_halo(float left,
+              float bottom,
+              float right,
+              float top)
+{
+  odb::dbBlock* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  getMacroPlacer()->setBaseHalo(block->micronsToDbu(left),
+                                block->micronsToDbu(bottom),
+                                block->micronsToDbu(right),
+                                block->micronsToDbu(top));
+}
+
+void
+set_macro_halo(odb::dbInst* macro,
+               float left,
                float bottom,
                float right,
                float top) 
@@ -156,6 +165,12 @@ void
 set_macro_placement_file(std::string file_name)
 {
   getMacroPlacer()->setMacroPlacementFile(file_name);
+}
+
+void
+block_macro_channels()
+{
+  getMacroPlacer()->blockMacroChannels();
 }
 
 } // namespace

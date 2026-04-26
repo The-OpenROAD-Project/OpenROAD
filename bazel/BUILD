@@ -12,10 +12,13 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "bzl_fmt_test.sh",
+        "bzl_lint_test.sh",
+        "bzl_tidy.sh",
         "fix_lint.sh",
         "install.sh",
-        "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
+        "tcl_lint_test.sh",
         "tcl_tidy.sh",
     ],
     visibility = ["//visibility:public"],
@@ -87,7 +90,7 @@ cc_binary(
 # As long as we support tcl8 (using runfiles) we need this flag.
 bool_flag(
     name = "use_zipfs",
-    build_setting_default = False,  # False until we can use tcl9
+    build_setting_default = True,  # True as we use tcl9 with zipfs feature
 )
 
 config_setting(

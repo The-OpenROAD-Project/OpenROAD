@@ -7,7 +7,7 @@ module(
 
 # --- Regular dependencies (propagated to downstream consumers via MVS) ---
 
-bazel_dep(name = "abc", version = "0.62-yosyshq")
+bazel_dep(name = "abc", version = "0.64-yosyshq.bcr.1")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
@@ -61,11 +61,10 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
-bazel_dep(name = "openmp", version = "21.1.5")
+bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
-bazel_dep(name = "readline", version = "8.2.bcr.3")
 bazel_dep(name = "spdlog", version = "1.15.1")
-bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
+bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
 bazel_dep(name = "tclreadline", version = "2.4.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -94,20 +93,10 @@ bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
-
-# Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
-bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
-bazel_dep(name = "rules_chisel", version = "0.2.0", dev_dependency = True)
-single_version_override(
-    module_name = "rules_chisel",
-    patch_strip = 1,
-    patches = ["//:rules-chisel-dev-dep.patch"],
-)
-
-bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
@@ -193,69 +182,6 @@ orfs.default(
     sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
 )
 use_repo(orfs, "docker_orfs")
-
-SCALA_VERSION = "2.13.17"
-
-CHISEL_VERSION = "7.2.0"
-
-FIRTOOL_RESOLVER_VERSION = "2.0.1"
-
-scala_config = use_extension(
-    "@rules_scala//scala/extensions:config.bzl",
-    "scala_config",
-    dev_dependency = True,
-)
-scala_config.settings(
-    scala_version = SCALA_VERSION,
-)
-use_repo(scala_config, "rules_scala_config")
-
-scala_deps = use_extension(
-    "@rules_scala//scala/extensions:deps.bzl",
-    "scala_deps",
-    dev_dependency = True,
-)
-scala_deps.settings(
-    fetch_sources = True,
-)
-scala_deps.scala()
-
-chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel", dev_dependency = True)
-chisel.toolchain(
-    chisel_version = CHISEL_VERSION,
-    firtool_resolver_version = FIRTOOL_RESOLVER_VERSION,
-    scala_version = SCALA_VERSION,
-)
-use_repo(chisel, "chisel_maven")
-
-maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven", dev_dependency = True)
-maven.install(
-    name = "maven",
-    artifacts = [
-    ],
-    # Update by running: bazelisk run @maven//:pin
-    lock_file = "//bazel:maven_install.json",
-    repositories = [
-        "https://repo1.maven.org/maven2",
-        "https://s01.oss.sonatype.org/content/repositories/releases",
-        "https://s01.oss.sonatype.org/content/repositories/snapshots",
-    ],
-)
-use_repo(maven, "maven")
-
-# --- External archives ---
-
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "circt",
-    build_file_content = """
-exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
-""",
-    sha256 = "b1b57d1b76ceba2bb37229dab53839d5db6d61394149708c71f6265565991ce6",
-    strip_prefix = "firtool-1.108.0",
-    url = "https://github.com/llvm/circt/releases/download/firtool-1.108.0/firrtl-bin-linux-x64.tar.gz",
-)
 
 # --- Overrides ---
 

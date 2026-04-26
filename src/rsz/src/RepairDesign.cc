@@ -174,8 +174,9 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   std::set<std::pair<sta::Vertex*, int>> slew_user_annotated;
 
   // We need to override slews in order to get good required time estimates.
-  for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
+  const sta::VertexSeq drvrs = sta_->levelizedDrvrVertices();
+  for (int i = drvrs.size() - 1; i >= 0; i--) {
+    sta::Vertex* drvr = drvrs[i];
     debugPrint(logger_,
                RSZ,
                "early_sizing",
@@ -199,8 +200,8 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   sta_->searchPreamble();
   search_->findAllArrivals();
 
-  for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
+  for (int i = drvrs.size() - 1; i >= 0; i--) {
+    sta::Vertex* drvr = drvrs[i];
     sta::Pin* drvr_pin = drvr->pin();
     debugPrint(logger_,
                RSZ,
@@ -275,9 +276,6 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     }
   }
   debugPrint(logger_, RSZ, "early_sizing", 1, "Early sizing round finished.");
-
-  resizer_->invalidateVertexOrdering();
-  resizer_->ensureLevelDrvrVertices();
 }
 
 void RepairDesign::repairDesign(
@@ -377,23 +375,31 @@ void RepairDesign::repairDesign(
              annotations_to_clean_up.size());
 
   int print_iteration = 0;
+  const sta::VertexSeq driver_vertices = sta_->levelizedDrvrVertices();
   {
     // Fix violations from outputs to inputs
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-    if (resizer_->level_drvr_vertices_.size()
-        > size_t(5) * max_print_interval_) {
+    if (driver_vertices.size() > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
     } else {
       print_interval_ = min_print_interval_;
     }
-    printProgress(print_iteration, false, false, repaired_net_count);
+    printProgress(print_iteration,
+                  false,
+                  false,
+                  repaired_net_count,
+                  static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
-    for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    for (int i = driver_vertices.size() - 1; i >= 0; i--) {
       print_iteration++;
       if (verbose || (print_iteration == 1)) {
-        printProgress(print_iteration, false, false, repaired_net_count);
+        printProgress(print_iteration,
+                      false,
+                      false,
+                      repaired_net_count,
+                      static_cast<int>(driver_vertices.size()));
       }
-      sta::Vertex* drvr = resizer_->level_drvr_vertices_[i];
+      sta::Vertex* drvr = driver_vertices[i];
       repairDriver(drvr,
                    true /* check_slew */,
                    true /* check_cap */,
@@ -424,10 +430,11 @@ void RepairDesign::repairDesign(
     sta_->delaysInvalid();
   }
 
-  printProgress(print_iteration, true, true, repaired_net_count);
-  if (inserted_buffer_count_ > 0) {
-    resizer_->invalidateVertexOrdering();
-  }
+  printProgress(print_iteration,
+                true,
+                true,
+                repaired_net_count,
+                static_cast<int>(driver_vertices.size()));
   db_network_->removeUnusedPortsAndPinsOnModuleInstances();
 }
 
@@ -508,7 +515,6 @@ void RepairDesign::repairClkNets(double max_wire_length)
                   "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repaired_net_count);
-    resizer_->invalidateVertexOrdering();
   }
 
   // Restore previous sizing restrictions when area_limit and leakage_limit go
@@ -2273,7 +2279,8 @@ int RepairDesign::metersToDbu(double dist) const
 void RepairDesign::printProgress(int iteration,
                                  bool force,
                                  bool end,
-                                 int repaired_net_count) const
+                                 int repaired_net_count,
+                                 int total_vertices) const
 {
   const bool start = iteration == 0;
 
@@ -2287,7 +2294,7 @@ void RepairDesign::printProgress(int iteration,
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    const int nets_left = resizer_->level_drvr_vertices_.size() - iteration;
+    const int nets_left = total_vertices - iteration;
 
     std::string itr_field = fmt::format("{}", iteration);
     if (end) {
@@ -2345,9 +2352,6 @@ void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
                   "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repaired_net_count);
-    if (invalidate_driver_vertices) {
-      resizer_->invalidateVertexOrdering();
-    }
   }
 }
 

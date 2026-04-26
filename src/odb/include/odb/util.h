@@ -49,18 +49,19 @@ void set_bterm_top_layer_grid(dbBlock* block,
 
 bool dbHasCoreRows(dbDatabase* db);
 
+void blockMetrics(dbBlock* block, utl::Logger* logger);
+
 class WireLengthEvaluator
 {
  public:
   WireLengthEvaluator(dbBlock* block) : block_(block) {}
   int64_t hpwl() const;
   int64_t hpwl(int64_t& hpwl_x, int64_t& hpwl_y) const;
+  int64_t hpwl(dbNet* net, int64_t& hpwl_x, int64_t& hpwl_y) const;
   void reportEachNetHpwl(utl::Logger* logger) const;
   void reportHpwl(utl::Logger* logger) const;
 
  private:
-  int64_t hpwl(dbNet* net, int64_t& hpwl_x, int64_t& hpwl_y) const;
-
   dbBlock* block_;
 };
 

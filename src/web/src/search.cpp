@@ -12,7 +12,7 @@
 #include <limits>
 #include <mutex>
 #include <set>
-#include <thread>
+#include <shared_mutex>
 #include <utility>
 #include <vector>
 
@@ -34,7 +34,7 @@ class CountdownLatch
 
   void count_down()
   {
-    std::lock_guard<std::mutex> lock(mu_);
+    std::unique_lock<std::mutex> lock(mu_);
     if (--count_ <= 0) {
       cv_.notify_all();
     }
@@ -311,7 +311,7 @@ Search::BlockData& Search::getData(odb::dbBlock* block)
 void Search::updateShapes(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.shapes_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   if (data.shapes_init) {
     return;  // already done by another thread
   }
@@ -344,7 +344,7 @@ void Search::updateShapes(odb::dbBlock* block)
           continue;
         }
         odb::dbTechLayer* layer = box->getTechLayer();
-        net_shapes[layer].emplace_back(box->getBox(), BTERM, term->getNet());
+        net_shapes[layer].emplace_back(box->getBox(), kBterm, term->getNet());
       }
     }
   }
@@ -423,7 +423,7 @@ void Search::updateShapes(odb::dbBlock* block)
 void Search::updateFills(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.fills_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.fills_init_mutex);
   if (data.fills_init) {
     return;  // already done by another thread
   }
@@ -456,14 +456,15 @@ void Search::updateFills(odb::dbBlock* block)
   const auto ms
       = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   if (ms > 10) {
-    logger_->info(utl::WEB, 12, "Search::updateFills took {}ms", ms);
+    debugPrint(
+        logger_, utl::WEB, "search", 1, "Search::updateFills took {}ms", ms);
   }
 }
 
 void Search::updateInsts(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.insts_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.insts_init_mutex);
   if (data.insts_init) {
     return;  // already done by another thread
   }
@@ -485,13 +486,14 @@ void Search::updateInsts(odb::dbBlock* block)
   const auto t1 = std::chrono::steady_clock::now();
   const auto ms
       = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
-  logger_->info(utl::WEB, 13, "Search::updateInsts took {}ms", ms);
+  debugPrint(
+      logger_, utl::WEB, "search", 1, "Search::updateInsts took {}ms", ms);
 }
 
 void Search::updateBlockages(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.blockages_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.blockages_init_mutex);
   if (data.blockages_init) {
     return;  // already done by another thread
   }
@@ -516,14 +518,19 @@ void Search::updateBlockages(odb::dbBlock* block)
   const auto ms
       = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   if (ms > 10) {
-    logger_->info(utl::WEB, 14, "Search::updateBlockages took {}ms", ms);
+    debugPrint(logger_,
+               utl::WEB,
+               "search",
+               1,
+               "Search::updateBlockages took {}ms",
+               ms);
   }
 }
 
 void Search::updateObstructions(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.obstructions_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
   if (data.obstructions_init) {
     return;  // already done by another thread
   }
@@ -560,14 +567,19 @@ void Search::updateObstructions(odb::dbBlock* block)
   const auto ms
       = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   if (ms > 10) {
-    logger_->info(utl::WEB, 15, "Search::updateObstructions took {}ms", ms);
+    debugPrint(logger_,
+               utl::WEB,
+               "search",
+               1,
+               "Search::updateObstructions took {}ms",
+               ms);
   }
 }
 
 void Search::updateRows(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  std::lock_guard<std::mutex> lock(data.rows_init_mutex);
+  std::unique_lock<std::shared_mutex> lock(data.rows_init_mutex);
   if (data.rows_init) {
     return;  // already done by another thread
   }
@@ -588,7 +600,8 @@ void Search::updateRows(odb::dbBlock* block)
   const auto ms
       = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
   if (ms > 10) {
-    logger_->info(utl::WEB, 16, "Search::updateRows took {}ms", ms);
+    debugPrint(
+        logger_, utl::WEB, "search", 1, "Search::updateRows took {}ms", ms);
   }
 }
 
@@ -604,14 +617,14 @@ void Search::addVia(
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, kVia, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, kVia, net);
     }
   }
 }
@@ -660,7 +673,7 @@ void Search::addNet(
     if (s.isVia()) {
       addVia(net, &s, itr.prev_x_, itr.prev_y_, tree_shapes);
     } else {
-      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), WIRE, net);
+      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), kWire, net);
     }
   }
 }
@@ -881,6 +894,7 @@ Search::FillRange Search::searchFills(odb::dbBlock* block,
     updateFills(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.fills_init_mutex);
   auto it = data.fills.find(layer);
   if (it == data.fills.end()) {
     return FillRange();
@@ -888,15 +902,22 @@ Search::FillRange Search::searchFills(odb::dbBlock* block,
 
   auto& rtree = it->second;
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  FillRange results;
   if (min_size > 0) {
-    return FillRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbFill*>(min_size))),
-        rtree.qend());
+    for (auto qit = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbFill*>(min_size)));
+         qit != rtree.qend();
+         ++qit) {
+      results.push_back(*qit);
+    }
+  } else {
+    for (auto qit = rtree.qbegin(bgi::intersects(query)); qit != rtree.qend();
+         ++qit) {
+      results.push_back(*qit);
+    }
   }
-
-  return FillRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::InstRange Search::searchInsts(odb::dbBlock* block,
@@ -911,17 +932,28 @@ Search::InstRange Search::searchInsts(odb::dbBlock* block,
     updateInsts(block);
   }
 
+  // Eagerly collect results so we don't hold a lazy iterator into the
+  // R-tree — another thread may rebuild it (via ODB callbacks from the
+  // placer) between the query and the caller's iteration.
+  std::shared_lock<std::shared_mutex> lock(data.insts_init_mutex);
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  InstRange results;
   if (min_height > 0) {
-    return InstRange(
-        data.insts.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinHeightPredicate<odb::dbInst*>(min_height))),
-        data.insts.qend());
+    for (auto it = data.insts.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinHeightPredicate<odb::dbInst*>(min_height)));
+         it != data.insts.qend();
+         ++it) {
+      results.push_back(*it);
+    }
+  } else {
+    for (auto it = data.insts.qbegin(bgi::intersects(query));
+         it != data.insts.qend();
+         ++it) {
+      results.push_back(*it);
+    }
   }
-
-  return InstRange(data.insts.qbegin(bgi::intersects(query)),
-                   data.insts.qend());
+  return results;
 }
 
 Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
@@ -1128,13 +1160,13 @@ Search::SnapResult Search::searchNearestEdge(
                              search_box.yMin(),
                              search_box.xMax(),
                              search_box.yMax())) {
-          if (!vis.routing && type == WIRE) {
+          if (!vis.routing && type == kWire) {
             continue;
           }
-          if (!vis.routing && type == VIA) {
+          if (!vis.routing && type == kVia) {
             continue;
           }
-          if (!vis.pins && type == BTERM) {
+          if (!vis.pins && type == kBterm) {
             continue;
           }
           if (vis.isNetVisible(net)) {

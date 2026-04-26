@@ -38,6 +38,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
@@ -56,8 +57,8 @@
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -66,14 +67,14 @@ using boost::icl::interval;
 using utl::GRT;
 
 GlobalRouter::GlobalRouter(utl::Logger* logger,
-                           utl::CallBackHandler* callback_handler,
+                           utl::ServiceRegistry* service_registry,
                            stt::SteinerTreeBuilder* stt_builder,
                            odb::dbDatabase* db,
                            sta::dbSta* sta,
                            ant::AntennaChecker* antenna_checker,
                            dpl::Opendp* opendp)
     : logger_(logger),
-      callback_handler_(callback_handler),
+      service_registry_(service_registry),
       stt_builder_(stt_builder),
       antenna_checker_(antenna_checker),
       opendp_(opendp),
@@ -105,8 +106,8 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       is_incremental_(false)
 {
   fastroute_
-      = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
+      = new FastRouteCore(db_, logger_, service_registry_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, service_registry_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(
@@ -5800,6 +5801,10 @@ void GlobalRouter::setDebugTree3D(bool tree3D)
 {
   fastroute_->setDebugTree3D(tree3D);
 }
+void GlobalRouter::setDebugEdges3D(bool edges3D)
+{
+  fastroute_->setDebugEdges3D(edges3D);
+}
 void GlobalRouter::setSttInputFilename(const char* file_name)
 {
   fastroute_->setSttInputFilename(file_name);
@@ -5902,7 +5907,9 @@ void GlobalRouter::updateCUGRNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
-  callback_handler_->triggerOnPinAccessUpdateRequired();
+  if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
+    pa->updateDirtyPinAccess();
+  }
   std::vector<Net*> dirty_nets;
 
   if (!initialized_) {

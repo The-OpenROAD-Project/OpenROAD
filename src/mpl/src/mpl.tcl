@@ -63,8 +63,6 @@ proc rtl_macro_placer { args } {
   set max_num_level 2
   set coarsening_ratio 10.0
   set large_net_threshold 50
-  set halo_width 0.0
-  set halo_height 0.0
   set fence_lx 0.0
   set fence_ly 0.0
   set fence_ux 0.0
@@ -109,15 +107,25 @@ proc rtl_macro_placer { args } {
     set large_net_threshold $keys(-large_net_threshold)
   }
 
-  if { [info exists keys(-halo_width)] && [info exists keys(-halo_height)] } {
-    set halo_width $keys(-halo_width)
-    set halo_height $keys(-halo_height)
-  } elseif { [info exists keys(-halo_width)] } {
-    set halo_width $keys(-halo_width)
-    set halo_height $keys(-halo_width)
-  } elseif { [info exists keys(-halo_height)] } {
-    set halo_width $keys(-halo_height)
-    set halo_height $keys(-halo_height)
+  if { [info exists keys(-halo_width)] || [info exists keys(-halo_height)] } {
+    utl::warn MPL 74 "-halo_width/-halo_height are deprecated, use\
+                      the set_macro_base_halo command instead."
+    set halo_width 0.0
+    set halo_height 0.0
+
+    if { [info exists keys(-halo_width)] } {
+      set halo_width $keys(-halo_width)
+      set halo_height $halo_width
+    }
+
+    if { [info exists keys(-halo_height)] } {
+      set halo_height $keys(-halo_height)
+      if { ![info exists keys(-halo_width)] } {
+        set halo_width $halo_height
+      }
+    }
+
+    mpl::set_base_halo $halo_width $halo_height $halo_width $halo_height
   }
 
   if { [info exists keys(-fence_lx)] } {
@@ -191,8 +199,6 @@ proc rtl_macro_placer { args } {
       $max_num_level \
       $coarsening_ratio \
       $large_net_threshold \
-      $halo_width \
-      $halo_height \
       $fence_lx $fence_ly $fence_ux $fence_uy \
       $area_weight $outline_weight $wirelength_weight \
       $guidance_weight $fence_weight $boundary_weight \
@@ -292,6 +298,21 @@ proc set_macro_guidance_region { args } {
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
+sta::define_cmd_args "set_macro_base_halo" { halo }
+proc set_macro_base_halo { args } {
+  sta::parse_key_args "set_macro_base_halo" args \
+    keys {} flags {}
+
+  lassign [mpl::parse_halo $args] left bottom right top
+  mpl::set_base_halo $left $bottom $right $top
+}
+
+proc set_macro_default_halo { args } {
+  utl::warn MPL 75 "set_macro_default_halo is deprecated, use\
+                    set_macro_base_halo instead."
+  set_macro_base_halo {*}$args
+}
+
 sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
                                         -halo halo }
 proc set_macro_halo { args } {
@@ -314,10 +335,30 @@ proc set_macro_halo { args } {
     utl::error MPL 38 "-halo is required."
   }
 
+  lassign [mpl::parse_halo $halo] left bottom right top
+  mpl::set_macro_halo $macro $left $bottom $right $top
+}
+
+sta::define_cmd_args "block_macro_channels" {}
+proc block_macro_channels { args } {
+  sta::parse_key_args "block_macro_channels" args \
+    keys {} flags {}
+
+  sta::check_argc_eq0 "block_macro_channels" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 77 "Could not block macro channels. No block found."
+  }
+
+  mpl::block_macro_channels
+}
+
+namespace eval mpl {
+proc parse_halo { halo } {
   set length [llength $halo]
 
   if { $length != 2 && $length != 4 } {
-    utl::error MPL 54 "-halo must be a list of 2 or 4 values."
+    utl::error MPL 72 "Halo must have 2 or 4 values."
   }
 
   if { $length == 2 } {
@@ -330,10 +371,15 @@ proc set_macro_halo { args } {
     lassign $halo left bottom right top
   }
 
-  mpl::set_macro_halo $macro $left $bottom $right $top
+  foreach value [list $left $bottom $right $top] {
+    if { $value < 0 } {
+      utl::error MPL 73 "Halo values must be non-negative."
+    }
+  }
+
+  return [list $left $bottom $right $top]
 }
 
-namespace eval mpl {
 proc parse_macro_name { cmd macro_name } {
   set block [ord::get_db_block]
   set inst [$block findInst "$macro_name"]

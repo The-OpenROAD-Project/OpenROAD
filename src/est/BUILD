@@ -14,7 +14,6 @@ cc_library(
     name = "private_hdrs",
     hdrs = [
         "src/AbstractSteinerRenderer.h",
-        "src/EstimateParasiticsCallBack.h",
         "src/MakeWireParasitics.h",
         "src/OdbCallBack.h",
         "src/SteinerRenderer.h",
@@ -26,11 +25,19 @@ cc_library(
     ],
 )
 
+# Abstract service interface published through utl::ServiceRegistry.
+# Consumers depend only on this target, not on //src/est, which keeps
+# them free of the full est implementation surface.
+cc_library(
+    name = "parasitics_service",
+    hdrs = ["include/est/ParasiticsService.h"],
+    includes = ["include"],
+)
+
 cc_library(
     name = "est",
     srcs = [
         "src/EstimateParasitics.cpp",
-        "src/EstimateParasiticsCallBack.cpp",
         "src/MakeWireParasitics.cpp",
         "src/OdbCallBack.cpp",
         "src/SteinerTree.cpp",
@@ -43,6 +50,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":parasitics_service",
         ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",

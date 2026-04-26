@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "json_builder.h"
+
 namespace sta {
 class dbSta;
 class Path;
@@ -93,5 +95,14 @@ class TimingReport
 
   sta::dbSta* sta_;
 };
+
+// ── JSON serialization helpers (shared by request_handler and saveReport) ──
+
+void serializeTimingNode(JsonBuilder& b, const TimingNode& n);
+void serializeTimingPath(JsonBuilder& b, const TimingPathSummary& p);
+void serializeTimingPaths(JsonBuilder& b,
+                          const std::vector<TimingPathSummary>& paths);
+void serializeSlackHistogram(JsonBuilder& b, const SlackHistogramResult& h);
+void serializeChartFilters(JsonBuilder& b, const ChartFilters& f);
 
 }  // namespace web

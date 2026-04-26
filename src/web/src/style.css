@@ -426,16 +426,60 @@ html, body {
 /* Status overlay */
 #websocket-status {
     position: fixed;
+    pointer-events: none;
+    z-index: 10005;
+    display: none;
+}
+
+#websocket-status .disconnected-banner {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--error) 0%, #cc3333 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: slideDown 0.3s ease-out, pulse 2s ease-in-out infinite 0.5s;
+    letter-spacing: 0.5px;
+}
+
+#websocket-status .pending-indicator {
+    position: fixed;
     top: 8px;
     right: 8px;
-    z-index: 10000;
     background: var(--bg-status);
     color: var(--fg-secondary);
     padding: 4px 10px;
     font: 12px monospace;
     border-radius: 4px;
-    pointer-events: none;
-    display: none;
+    display: inline-block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        opacity: 0.8;
+        box-shadow: 0 12px 32px rgba(255, 100, 100, 0.5);
+    }
 }
 
 /* Coordinate readout (bottom-left of layout viewer) */
@@ -794,6 +838,21 @@ html, body {
     cursor: default;
     background: var(--bg-context);
     color: var(--fg-muted);
+}
+
+/* Debug-graphics Continue button (fixed bottom-right, hidden until paused) */
+.debug-continue-btn {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    z-index: 10000;
+    padding: 8px 16px;
+    background: #fc0;
+    color: #000;
+    border: 1px solid #000;
+    font-weight: bold;
+    display: none;
+    cursor: pointer;
 }
 
 /* Hover highlight pulse animation */
@@ -1213,4 +1272,169 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+/* ─── Schematic Widget ────────────────────────────────────────────────────── */
+
+/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
+html[data-theme="dark"] .schematic-widget svg {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* ─── DRC Widget ─────────────────────────────────────────────────────────── */
+
+.drc-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: 12px;
+}
+
+.drc-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+}
+
+.drc-category-select {
+    flex: 1;
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 4px;
+    font-size: 12px;
+}
+
+.drc-btn {
+    background: var(--bg-input);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.drc-btn:hover { background: var(--border); color: var(--fg-bright); }
+
+.drc-info-bar {
+    padding: 2px 6px;
+    color: var(--fg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    min-height: 16px;
+}
+
+.drc-tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 2px;
+}
+
+.drc-tree {
+    user-select: none;
+}
+
+.drc-tree-node {
+    margin-left: 4px;
+}
+
+.drc-tree-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+.drc-tree-header:hover {
+    background: var(--bg-hover);
+}
+
+.drc-toggle {
+    width: 12px;
+    font-size: 10px;
+    color: var(--fg-secondary);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.drc-visibility-check {
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.drc-category-label {
+    color: var(--fg-primary);
+    font-weight: 600;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drc-count {
+    color: var(--fg-secondary);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.drc-tree-children {
+    margin-left: 12px;
+}
+
+.drc-marker-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+    cursor: pointer;
+}
+.drc-marker-row:hover {
+    background: var(--bg-hover);
+}
+
+.drc-marker-row.drc-unvisited .drc-marker-index,
+.drc-marker-row.drc-unvisited .drc-marker-name {
+    font-weight: 700;
+}
+
+.drc-marker-index {
+    width: 28px;
+    text-align: right;
+    color: var(--fg-secondary);
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+.drc-marker-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fg-primary);
+}
+
+.drc-layer-badge {
+    background: var(--bg-input);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 0 4px;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.drc-loading, .drc-error, .drc-empty {
+    padding: 12px;
+    color: var(--fg-secondary);
+    text-align: center;
+}
+.drc-error {
+    color: var(--error);
 }

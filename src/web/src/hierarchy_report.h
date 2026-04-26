@@ -19,10 +19,10 @@ namespace web {
 // Node types in the hierarchy tree
 enum class HierarchyNodeKind
 {
-  MODULE = 0,      // Module (default)
-  LEAF_GROUP = 1,  // "Leaf instances" folder
-  TYPE_GROUP = 2,  // Instance type sub-group (e.g. "Standard cell", "Macro")
-  INSTANCE = 3,    // Individual instance row (only for macros)
+  kModule = 0,     // Module (default)
+  kLeafGroup = 1,  // "Leaf instances" folder
+  kTypeGroup = 2,  // Instance type sub-group (e.g. "Standard cell", "Macro")
+  kInstance = 3,   // Individual instance row (only for macros)
 };
 
 struct HierarchyNode
@@ -38,7 +38,7 @@ struct HierarchyNode
   int local_insts = 0;      // direct stdcell count
   int local_macros = 0;     // direct macro count
   int local_modules = 0;    // direct child module count
-  HierarchyNodeKind node_kind = HierarchyNodeKind::MODULE;
+  HierarchyNodeKind node_kind = HierarchyNodeKind::kModule;
   unsigned int odb_id = 0;  // dbModule::getId() for MODULE nodes
 };
 

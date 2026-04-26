@@ -70,13 +70,9 @@ void detailed_route_cmd(const char* outputMazeFile,
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
-  std::optional<int> drcReportIterStepOpt;
-  if (drcReportIterStep > 0) {
-    drcReportIterStepOpt = drcReportIterStep;
-  }
   router->setParams({outputMazeFile,
                     outputDrcFile,
-                    drcReportIterStepOpt,
+                    drcReportIterStep,
                     outputGuideCoverageFile,
                     dbProcessNode,
                     enableViaGen,

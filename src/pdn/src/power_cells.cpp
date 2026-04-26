@@ -101,21 +101,21 @@ GridSwitchedPower::GridSwitchedPower(Grid* grid,
                                      PowerSwitchNetworkType network)
     : grid_(grid), cell_(cell), control_(control), network_(network)
 {
-  if (network_ == PowerSwitchNetworkType::DAISY && !cell->hasAcknowledge()) {
+  if (network_ == PowerSwitchNetworkType::kDaisy && !cell->hasAcknowledge()) {
     grid->getLogger()->error(
         utl::PDN,
         198,
         "{} requires the power cell to have an acknowledge pin.",
-        toString(DAISY));
+        toString(kDaisy));
   }
 }
 
 std::string GridSwitchedPower::toString(PowerSwitchNetworkType type)
 {
   switch (type) {
-    case STAR:
+    case kStar:
       return "STAR";
-    case DAISY:
+    case kDaisy:
       return "DAISY";
   }
   return "unknown";
@@ -125,14 +125,14 @@ PowerSwitchNetworkType GridSwitchedPower::fromString(const std::string& type,
                                                      utl::Logger* logger)
 {
   if (type == "STAR") {
-    return STAR;
+    return kStar;
   }
   if (type == "DAISY") {
-    return DAISY;
+    return kDaisy;
   }
 
   logger->error(utl::PDN, 197, "Unrecognized network type: {}", type);
-  return STAR;
+  return kStar;
 }
 
 void GridSwitchedPower::report() const
@@ -246,7 +246,7 @@ void GridSwitchedPower::build()
 
     const int site_width = row->getSite()->getWidth();
     cell_->populateAlwaysOnPinPositions(site_width);
-    const std::string inst_prefix = inst_prefix_ + row->getName() + "_";
+    const std::string inst_prefix = kInstPrefix + row->getName() + "_";
     int idx = 0;
 
     debugPrint(grid_->getLogger(),
@@ -343,10 +343,10 @@ void GridSwitchedPower::build()
 void GridSwitchedPower::updateControlNetwork()
 {
   switch (network_) {
-    case STAR:
+    case kStar:
       updateControlNetworkSTAR();
       break;
-    case DAISY:
+    case kDaisy:
       updateControlNetworkDAISY(true);
       break;
   }
@@ -566,7 +566,7 @@ Straps* GridSwitchedPower::getLowestStrap() const
   Straps* target = nullptr;
 
   for (const auto& strap : grid_->getStraps()) {
-    if (strap->type() != GridComponent::Strap) {
+    if (strap->type() != GridComponent::kStrap) {
       continue;
     }
 

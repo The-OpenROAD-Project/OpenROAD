@@ -138,17 +138,16 @@ OPENROAD_LIBRARY_DEPS = [
     },
 )
 
+# Flags applied to top-level OpenROAD targets only. Flags that apply
+# globally to every cc_* target (-Wall, -Wextra, -Wno-sign-compare,
+# -Wno-unused-parameter, etc.) live in .bazelrc — do not repeat them here.
 OPENROAD_COPTS = [
     "-Wno-error",
-    "-Wall",
-    "-Wextra",
     "-pedantic",
     "-Wno-cast-qual",  # typically from TCL swigging
     "-Wno-missing-braces",  # typically from TCL swigging
     "-Wredundant-decls",
     "-Wformat-security",
-    "-Wno-sign-compare",
-    "-Wno-unused-parameter",
     "-Wmismatched-tags",
     "-fopenmp",
 ]
@@ -307,8 +306,6 @@ tcl_wrap_cc(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
 cc_binary(
     name = "_openroadpy.so",
     srcs = [":openroad_swig-py"],
@@ -316,7 +313,7 @@ cc_binary(
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
-        ":openroad_lib",  # Depends on the core odb C++ library
+        ":openroad_lib",
         ":ord",
         "//src/ant",
         "//src/cgt",
@@ -344,14 +341,10 @@ cc_binary(
     ],
 )
 
-# This packages the SWIG-generated Python wrapper (odb.py) and the
-# compiled C++ extension (_odb.so) together.
 py_library(
     name = "openroad_py",
-    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
+    srcs = [":openroad_swig-py"],
     data = [":_openroadpy.so"],
-    # This allows imports relative to the workspace root.
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
@@ -431,6 +424,25 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
+# ---------------------------------------------------------------------------
+# Packaging aliases
+#
+# The implementation lives in //packaging/ to isolate @rules_pkg loads from
+# downstream consumers, but the user-facing targets stay at the top level.
+# ---------------------------------------------------------------------------
+
+alias(
+    name = "install",
+    actual = "//packaging:install",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "tarfile",
+    actual = "//packaging:tarfile",
+    visibility = ["//visibility:public"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
@@ -492,12 +504,54 @@ sh_binary(
     ],
 )
 
+# --- Bazel linting (buildifier -lint=warn) --------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "lint_bzl_test",
+    srcs = ["//bazel:bzl_lint_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "MODULE.bazel",
+        "@buildifier_prebuilt//:buildifier",
+    ],
+    tags = ["local"],
+)
+
+# --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_bzl_test",
+    srcs = ["//bazel:bzl_fmt_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "MODULE.bazel",
+        "@buildifier_prebuilt//:buildifier",
+    ],
+    tags = ["local"],
+)
+
+# --- Bazel auto-format only (buildifier -mode=fix) ------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_bzl",
+    srcs = ["//bazel:bzl_tidy.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "@buildifier_prebuilt//:buildifier",
+    ],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
+        ":fmt_bzl_test",
         ":fmt_tcl_test",
+        ":lint_bzl_test",
         ":lint_tcl_test",
     ],
 )
@@ -513,12 +567,20 @@ sh_binary(
         "$(rootpath //bazel:tclfmt)",
         "$(rootpath //bazel:tcl_lint_test.sh)",
         "$(rootpath //bazel:tclint)",
+        "$(rootpath //bazel:bzl_tidy.sh)",
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath //bazel:bzl_lint_test.sh)",
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
     ],
     data = [
+        "MODULE.bazel",
         "tclint.toml",
+        "//bazel:bzl_lint_test.sh",
+        "//bazel:bzl_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
         "//bazel:tclint",
+        "@buildifier_prebuilt//:buildifier",
     ],
 )

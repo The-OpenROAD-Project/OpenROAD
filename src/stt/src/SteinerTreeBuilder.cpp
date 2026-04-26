@@ -79,7 +79,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
     }
     // Fall back to flute if PD fails.
   }
-  return flute_->flute(x, y, flute_accuracy);
+  return flute_->flute(x, y, kFluteAccuracy);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
