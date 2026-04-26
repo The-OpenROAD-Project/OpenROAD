@@ -20,6 +20,7 @@
 #include <random>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -654,10 +655,10 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
                               std::vector<int>& vertices) const
 {
   switch (vertex_order_choice_) {
-    case CoarsenOrder::kRandom:
-      shuffle(vertices.begin(),
-              vertices.end(),
-              std::default_random_engine(random_seed_));
+    case CoarsenOrder::kRandom: {
+      std::mt19937 generator(random_seed_);
+      DeterministicShuffle(vertices.begin(), vertices.end(), generator);
+    }
       return;
 
     case CoarsenOrder::kDefault:
@@ -672,7 +673,7 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
       }
       // define the sort function
       auto lambda_sort_size = [&](int& x, int& y) -> bool {
-        return average_sizes[x] < average_sizes[y];
+        return std::tie(average_sizes[x], x) < std::tie(average_sizes[y], y);
       };
       std::ranges::sort(vertices, lambda_sort_size);
     }
@@ -693,8 +694,12 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
         }
         degrees[v] = static_cast<int>(nbr_vertices.size());
       }
-      auto lambda_sort_degree
-          = [&](int& x, int& y) -> bool { return degrees[x] > degrees[y]; };
+      auto lambda_sort_degree = [&](int& x, int& y) -> bool {
+        if (degrees[x] != degrees[y]) {
+          return degrees[x] > degrees[y];
+        }
+        return x < y;
+      };
       std::ranges::sort(vertices, lambda_sort_degree);
     }
       return;
