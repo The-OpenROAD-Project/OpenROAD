@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
