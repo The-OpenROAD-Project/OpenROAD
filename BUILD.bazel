@@ -197,6 +197,7 @@ cc_binary(
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",

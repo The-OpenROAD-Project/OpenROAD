@@ -6,6 +6,7 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
@@ -13,6 +14,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
+#include <utility>
 #include <vector>
 
 #include "boost/asio/io_context.hpp"
@@ -106,6 +109,15 @@ void WebServer::serve(int port, const std::string& doc_root)
     return;
   }
 
+  // Clear any stale stop request left over from a previous session.
+  // Without this, a requestStop() that arrives during teardown (after
+  // waitForStop() cleared the flag but before stop() finishes) would
+  // cause the next waitForStop() to return immediately.
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = false;
+  }
+
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
     auto timing_report = std::make_shared<TimingReport>(sta_);
@@ -157,19 +169,20 @@ void WebServer::serve(int port, const std::string& doc_root)
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
 
-    const std::string url = "http://localhost:" + std::to_string(port);
-
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
-    shutdown_listener_ = createAndRunListener(*ioc_,
-                                              Tcp::endpoint{address, u_port},
-                                              generator_,
-                                              tcl_eval,
-                                              timing_report,
-                                              clock_report,
-                                              doc_root,
-                                              logger_,
-                                              viewer_hook_.get());
+    auto handle = createAndRunListener(*ioc_,
+                                       Tcp::endpoint{address, u_port},
+                                       generator_,
+                                       tcl_eval,
+                                       timing_report,
+                                       clock_report,
+                                       doc_root,
+                                       logger_,
+                                       viewer_hook_.get());
+    shutdown_listener_ = std::move(handle.shutdown);
+
+    const std::string url = "http://localhost:" + std::to_string(handle.port);
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
@@ -192,6 +205,38 @@ void WebServer::serve(int port, const std::string& doc_root)
     stop();
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());
   }
+}
+
+void WebServer::waitForStop()
+{
+  std::unique_lock<std::mutex> lock(stop_mutex_);
+  stop_cv_.wait(lock, [this] { return stop_requested_; });
+  stop_requested_ = false;
+  lock.unlock();
+
+  // Notify connected browsers so they can show "Server stopped" and
+  // disable auto-reconnect.  broadcast() posts async writes via
+  // net::post() on each session's strand, so we sleep briefly to
+  // let the ASIO threads flush them before stop() tears everything down.
+  if (viewer_hook_) {
+    viewer_hook_->sessions().broadcast(R"({"type":"shutdown"})");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  stop();
+}
+
+void WebServer::requestStop()
+{
+  if (!isRunning()) {
+    logger_->warn(utl::WEB, 36, "Web server is not running.");
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
 }
 
 void WebServer::stop()

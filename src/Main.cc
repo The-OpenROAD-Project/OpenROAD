@@ -37,6 +37,7 @@
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 #include "utl/decode.h"
+#include "web/web.h"
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "bazel/tcl_library_init.h"
@@ -93,6 +94,8 @@ static const char* metrics_filename = nullptr;
 static const char* read_odb_filename = nullptr;
 static bool no_settings = false;
 static bool minimize = false;
+static bool web_enabled = false;
+static const char* web_port_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
@@ -249,6 +252,8 @@ int main(int argc, char* argv[])
   read_odb_filename = findCmdLineKey(argc, argv, "-db");
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
   minimize = findCmdLineFlag(argc, argv, "-minimize");
+  web_enabled = findCmdLineFlag(argc, argv, "-web");
+  web_port_arg = findCmdLineKey(argc, argv, "-web_port");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -389,7 +394,18 @@ static int tclAppInit(int& argc,
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    const bool gui_enabled = gui::Gui::enabled();
+    // Start the web server before sourcing the script so the user can
+    // watch execution in real-time (analogous to -gui).
+    if (web_enabled) {
+      int port = web_port_arg ? std::atoi(web_port_arg) : 0;
+      ord::OpenRoad::openRoad()->getWebServer()->serve(port, "");
+    }
+
+    // gui::Gui::enabled() is true when a HeadlessViewer is installed
+    // (which the web server does).  But addRestoreStateCommand() only
+    // works with the Qt event loop — the web server executes scripts
+    // directly on the main thread, like the non-GUI path.
+    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
@@ -448,6 +464,12 @@ static int tclAppInit(int& argc,
         }
       }
     }
+
+    // Block until the web server is stopped (like QApplication::exec()
+    // for the GUI).  After this returns, fall through to readline.
+    if (web_enabled) {
+      ord::OpenRoad::openRoad()->getWebServer()->waitForStop();
+    }
   }
 #ifdef ENABLE_READLINE
   // Initialize readline unless the Qt GUI is active (it has its own
@@ -484,8 +506,9 @@ int ord::tclInit(Tcl_Interp* interp)
 static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
-  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-db file_name] [-no_settings] [-minimize] cmd_file\n");
+  printf("[-gui] [-web] [-threads count|max] [-log file_name] ");
+  printf("[-metrics file_name] [-db file_name] [-no_settings] [-minimize] ");
+  printf("cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
@@ -493,6 +516,8 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
+  printf("  -web                  start in web viewer mode\n");
+  printf("  -web_port port        web server port (default auto-assigned)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

@@ -20,6 +20,20 @@ web_server_cmd(int port, const char* doc_root)
 }
 
 void
+web_server_wait_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->waitForStop();
+}
+
+void
+web_server_stop_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->requestStop();
+}
+
+void
 save_image_cmd(const char* filename,
                int x0, int y0, int x1, int y1,
                int width, double resolution,

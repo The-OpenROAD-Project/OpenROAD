@@ -40,6 +40,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web_assets.h"
 #include "web_chart.h"
 #include "web_viewer_hook.h"
 
@@ -291,14 +292,18 @@ static http::response<http::string_body> handle_request(
     res.body() = std::string(websocket_resp.payload.begin(),
                              websocket_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
-  } else if (req.method() == http::verb::get && !doc_root.empty()) {
-    // Serve static files from doc_root
+  } else if (req.method() == http::verb::get) {
     std::string file_path = std::move(target_path);
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Reject paths with ".." to preventd irectory traversal
-    if (file_path.find("..") == std::string::npos) {
+    // Try embedded assets first (compiled into the binary).
+    const auto* asset = findEmbeddedAsset(file_path);
+    if (asset) {
+      res.set(http::field::content_type, asset->content_type);
+      res.body() = std::string(asset->content());
+    } else if (!doc_root.empty() && file_path.find("..") == std::string::npos) {
+      // Fall back to on-disk files for development override.
       auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
       std::ifstream file(full_path, std::ios::binary);
       if (file) {
@@ -311,8 +316,8 @@ static http::response<http::string_body> handle_request(
         res.body() = "File not found.";
       }
     } else {
-      res.result(http::status::bad_request);
-      res.body() = "Invalid path.";
+      res.result(http::status::not_found);
+      res.body() = "Resource not found.";
     }
   } else {
     res.result(http::status::not_found);
@@ -1082,6 +1087,10 @@ class Listener : public std::enable_shared_from_this<Listener>
 
   void run() { do_accept(); }
 
+  // The actual port the acceptor bound to (useful when port 0 was
+  // requested and the OS assigned a free port).
+  uint16_t port() const { return acceptor_.local_endpoint().port(); }
+
   // Close the acceptor so its destructor doesn't touch a dying
   // io_context.  Called from WebServer::stop() before ioc_.reset().
   void close()
@@ -1189,6 +1198,14 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer()
 {
+  // Wake any thread blocked in waitForStop() so it can return before
+  // we tear down the io_context.
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
+
   // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
   // By this point the Tcl interpreter is partially torn down and static
   // objects may be destroyed.  Calling stop() (which joins 32 threads
@@ -1505,7 +1522,7 @@ void WebServer::saveImage(const std::string& filename,
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
 }
 
-std::function<void()> createAndRunListener(
+ListenerHandle createAndRunListener(
     net::io_context& ioc,
     const Tcp::endpoint& endpoint,
     std::shared_ptr<TileGenerator> generator,
@@ -1526,7 +1543,8 @@ std::function<void()> createAndRunListener(
                                              logger,
                                              viewer_hook);
   listener->run();
-  return [listener]() { listener->close(); };
+  return {.shutdown = [listener]() { listener->close(); },
+          .port = listener->port()};
 }
 
 }  // namespace web
