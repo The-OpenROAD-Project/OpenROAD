@@ -262,6 +262,13 @@ bool WebViewerHook::isPaused() const
   return paused_.load(std::memory_order_acquire);
 }
 
+void WebViewerHook::drainLogs()
+{
+  if (drain_logs_) {
+    drain_logs_();
+  }
+}
+
 void WebViewerHook::setDrainLogsFn(DrainLogsFn fn)
 {
   drain_logs_ = std::move(fn);

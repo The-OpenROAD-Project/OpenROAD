@@ -86,6 +86,11 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
     if (pending_.empty()) {
       return;
     }
+    // Keep accumulating when nobody is listening so the first
+    // client that connects receives the full startup output.
+    if (!hook_->sessions().hasClients()) {
+      return;
+    }
     while (!pending_.empty()
            && (pending_.back() == '\n' || pending_.back() == '\r')) {
       pending_.pop_back();

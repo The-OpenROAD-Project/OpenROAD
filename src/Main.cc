@@ -381,22 +381,8 @@ static int tclAppInit(int& argc,
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
 
-    bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
-    if (!no_splash) {
-      showSplash();
-    }
-
-    const char* threads = findCmdLineKey(argc, argv, "-threads");
-    if (threads) {
-      ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
-    } else {
-      // set to default number of threads
-      ord::OpenRoad::openRoad()->setThreadCount(
-          ord::OpenRoad::openRoad()->getThreadCount(), false);
-    }
-
-    // Start the web server before sourcing the script so the user can
-    // watch execution in real-time (analogous to -gui).
+    // Start the web server before splash/thread output so the
+    // WebLogSink captures all startup messages for the browser console.
     if (web_enabled) {
       int port = 0;
       if (web_port_arg) {
@@ -409,6 +395,20 @@ static int tclAppInit(int& argc,
         }
       }
       ord::OpenRoad::openRoad()->getWebServer()->serve(port);
+    }
+
+    bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
+    if (!no_splash) {
+      showSplash();
+    }
+
+    const char* threads = findCmdLineKey(argc, argv, "-threads");
+    if (threads) {
+      ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
+    } else {
+      // set to default number of threads
+      ord::OpenRoad::openRoad()->setThreadCount(
+          ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
     // gui::Gui::enabled() is true when a HeadlessViewer is installed

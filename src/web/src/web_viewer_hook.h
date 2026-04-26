@@ -86,6 +86,9 @@ class WebViewerHook : public gui::HeadlessViewer
 
   SessionRegistry& sessions() { return sessions_; }
 
+  // Flush accumulated log output to all connected clients.
+  void drainLogs();
+
   // --- gui::HeadlessViewer ---
   void redraw() override;
   void pause(int timeout_ms) override;

@@ -445,6 +445,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
           }
           net::post(self->strand_, std::move(fn));
         });
+
+    // Flush any log output that accumulated before this client
+    // connected (splash screen, script output, etc.).
+    viewer_hook_->drainLogs();
   }
 
   // Build search indices in the background; tiles render without shapes
