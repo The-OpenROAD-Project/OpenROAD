@@ -145,11 +145,11 @@ TEST(SessionRegistryTest, BroadcastAndWaitTimesOut)
   SessionRegistry registry;
 
   // Register a session whose SendAndWaitFn silently drops the fence.
-  auto token
-      = registry.add([](const std::string&) {},
-                     [](const std::string&, std::function<void()> /*fence*/) {
-                       /* never called */
-                     });
+  auto token = registry.add(
+      [](const std::string&) {},
+      [](const std::string&, const std::function<void()>& /*fence*/) {
+        /* never called */
+      });
 
   const auto t0 = std::chrono::steady_clock::now();
   EXPECT_FALSE(registry.broadcastAndWait("{}", std::chrono::milliseconds(200)));
@@ -170,7 +170,7 @@ TEST(SessionRegistryTest, BroadcastAndWaitDeadSession)
   // (simulating a dead session that signals right away).
   auto token = registry.add(
       [&send_called](const std::string&) { send_called = true; },
-      [&send_called](const std::string&, std::function<void()> fence) {
+      [&send_called](const std::string&, const std::function<void()>& fence) {
         send_called = true;
         fence();
       });
