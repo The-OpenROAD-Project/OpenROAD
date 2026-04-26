@@ -19,12 +19,11 @@ proc web_server { args } {
     set port $keys(-port)
   }
 
-  set dir ""
   if { [info exists keys(-dir)] } {
-    set dir $keys(-dir)
+    utl::warn WEB 37 "-dir is deprecated and ignored; assets are embedded in the binary."
   }
 
-  web::web_server_cmd $port $dir
+  web::web_server_cmd $port
   web::web_server_wait_cmd
 }
 

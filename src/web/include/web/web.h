@@ -53,7 +53,6 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TclEvaluator> tcl_eval,
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    const std::string& doc_root,
     utl::Logger* logger,
     WebViewerHook* viewer_hook);
 
@@ -74,7 +73,7 @@ class WebServer
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if
   // the server is already running.
-  void serve(int port, const std::string& doc_root);
+  void serve(int port);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }

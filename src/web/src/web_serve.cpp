@@ -102,7 +102,7 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
   std::string pending_;
 };
 
-void WebServer::serve(int port, const std::string& doc_root)
+void WebServer::serve(int port)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -165,10 +165,6 @@ void WebServer::serve(int port, const std::string& doc_root)
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
-    if (!doc_root.empty()) {
-      logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
-    }
-
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
     auto handle = createAndRunListener(*ioc_,
@@ -177,7 +173,6 @@ void WebServer::serve(int port, const std::string& doc_root)
                                        tcl_eval,
                                        timing_report,
                                        clock_report,
-                                       doc_root,
                                        logger_,
                                        viewer_hook_.get());
     shutdown_listener_ = std::move(handle.shutdown);

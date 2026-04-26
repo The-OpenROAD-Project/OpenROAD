@@ -5,6 +5,7 @@
 #include <strings.h>
 
 #include <array>
+#include <charconv>
 #include <climits>
 #include <clocale>
 #include <csignal>
@@ -397,8 +398,17 @@ static int tclAppInit(int& argc,
     // Start the web server before sourcing the script so the user can
     // watch execution in real-time (analogous to -gui).
     if (web_enabled) {
-      int port = web_port_arg ? std::atoi(web_port_arg) : 0;
-      ord::OpenRoad::openRoad()->getWebServer()->serve(port, "");
+      int port = 0;
+      if (web_port_arg) {
+        const char* end = web_port_arg + std::strlen(web_port_arg);
+        auto [ptr, ec] = std::from_chars(web_port_arg, end, port);
+        if (ec != std::errc{} || ptr != end || port < 0 || port > 65535) {
+          fprintf(
+              stderr, "Error: invalid -web_port value '%s'\n", web_port_arg);
+          exit(EXIT_FAILURE);
+        }
+      }
+      ord::OpenRoad::openRoad()->getWebServer()->serve(port);
     }
 
     // gui::Gui::enabled() is true when a HeadlessViewer is installed

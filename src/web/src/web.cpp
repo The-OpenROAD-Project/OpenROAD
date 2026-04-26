@@ -10,11 +10,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
-#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -225,31 +223,9 @@ static std::vector<unsigned char> serialize_response(
 // HTTP request handler (wraps dispatch_request for HTTP transport)
 //------------------------------------------------------------------------------
 
-static std::string content_type_for(const std::string& path)
-{
-  auto ext = std::filesystem::path(path).extension().string();
-  if (ext == ".html") {
-    return "text/html";
-  }
-  if (ext == ".js") {
-    return "application/javascript";
-  }
-  if (ext == ".css") {
-    return "text/css";
-  }
-  if (ext == ".png") {
-    return "image/png";
-  }
-  if (ext == ".json") {
-    return "application/json";
-  }
-  return "application/octet-stream";
-}
-
 static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    const TileGenerator& generator,
-    const std::string& doc_root)
+    const TileGenerator& generator)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -297,24 +273,10 @@ static http::response<http::string_body> handle_request(
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Try embedded assets first (compiled into the binary).
     const auto* asset = findEmbeddedAsset(file_path);
     if (asset) {
       res.set(http::field::content_type, asset->content_type);
       res.body() = std::string(asset->content());
-    } else if (!doc_root.empty() && file_path.find("..") == std::string::npos) {
-      // Fall back to on-disk files for development override.
-      auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
-      std::ifstream file(full_path, std::ios::binary);
-      if (file) {
-        std::string content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
-        res.set(http::field::content_type, content_type_for(file_path));
-        res.body() = std::move(content);
-      } else {
-        res.result(http::status::not_found);
-        res.body() = "File not found.";
-      }
     } else {
       res.result(http::status::not_found);
       res.body() = "Resource not found.";
@@ -864,13 +826,11 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
-              std::string doc_root,
               utl::Logger* logger);
 
   void run() { do_read(); }
@@ -888,11 +848,9 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 
 HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
-                         std::string doc_root,
                          utl::Logger* logger)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
-      doc_root_(std::move(doc_root)),
       logger_(logger)
 {
 }
@@ -930,7 +888,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), *generator_, doc_root_));
+      handle_request(std::move(req_), *generator_));
   do_write();
 }
 
@@ -981,7 +939,6 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
 
@@ -991,7 +948,6 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
-                std::string doc_root,
                 utl::Logger* logger,
                 WebViewerHook* viewer_hook);
 
@@ -1006,7 +962,6 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
-                             std::string doc_root,
                              utl::Logger* logger,
                              WebViewerHook* viewer_hook)
     : stream_(std::move(socket)),
@@ -1014,7 +969,6 @@ DetectSession::DetectSession(Tcp::socket&& socket,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
       logger_(logger),
       viewer_hook_(viewer_hook)
 {
@@ -1053,7 +1007,7 @@ void DetectSession::on_read(beast::error_code ec)
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, doc_root_, logger_);
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1070,7 +1024,6 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
-  std::string doc_root_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
 
@@ -1081,7 +1034,6 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
-           std::string doc_root,
            utl::Logger* logger,
            WebViewerHook* viewer_hook);
 
@@ -1110,7 +1062,6 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
-                   std::string doc_root,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook)
     : ioc_(ioc),
@@ -1119,7 +1070,6 @@ Listener::Listener(net::io_context& ioc,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
       logger_(logger),
       viewer_hook_(viewer_hook)
 {
@@ -1171,7 +1121,6 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     tcl_eval_,
                                     timing_report_,
                                     clock_report_,
-                                    doc_root_,
                                     logger_,
                                     viewer_hook_)
         ->run();
@@ -1529,7 +1478,6 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TclEvaluator> tcl_eval,
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    const std::string& doc_root,
     utl::Logger* logger,
     WebViewerHook* viewer_hook)
 {
@@ -1539,7 +1487,6 @@ ListenerHandle createAndRunListener(
                                              std::move(tcl_eval),
                                              std::move(timing_report),
                                              std::move(clock_report),
-                                             doc_root,
                                              logger,
                                              viewer_hook);
   listener->run();
