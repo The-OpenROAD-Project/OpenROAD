@@ -310,8 +310,13 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   DRCHandler drc_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
+  struct PendingWrite
+  {
+    std::vector<unsigned char> frame;
+    std::function<void()> on_complete;
+  };
   net::strand<net::any_io_executor> strand_;
-  std::deque<std::vector<unsigned char>> write_queue_;
+  std::deque<PendingWrite> write_queue_;
   bool writing_ = false;
 
   // Background search index initialization
@@ -339,7 +344,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void on_accept(beast::error_code ec);
   void do_read();
   void on_read(beast::error_code ec);
-  void queue_response(const WebSocketResponse& resp);
+  void queue_response(const WebSocketResponse& resp,
+                      std::function<void()> on_complete = {});
   void do_write();
 };
 
@@ -435,15 +441,19 @@ void WebSocketSession::on_accept(beast::error_code ec)
           resp.payload.assign(json.begin(), json.end());
           self->queue_response(resp);
         },
-        // PostFn — post an arbitrary callable onto this session's strand.
-        // Used by broadcastAndWait() to fence after the write is queued.
-        [weak_self](std::function<void()> fn) {
+        // SendAndWaitFn — queue a JSON push message and invoke the callback
+        // after async_write completes.
+        [weak_self](const std::string& json, std::function<void()> fn) {
           auto self = weak_self.lock();
           if (!self) {
             fn();  // session gone — signal fence immediately
             return;
           }
-          net::post(self->strand_, std::move(fn));
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = 0;  // JSON
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp, std::move(fn));
         });
 
     // Flush any log output that accumulated before this client
@@ -789,18 +799,23 @@ void WebSocketSession::on_read(beast::error_code ec)
   do_read();
 }
 
-void WebSocketSession::queue_response(const WebSocketResponse& resp)
+void WebSocketSession::queue_response(const WebSocketResponse& resp,
+                                      std::function<void()> on_complete)
 {
   std::vector<unsigned char> frame = serialize_response(resp);
 
   // Post to the strand to serialize write queue access
-  net::post(strand_,
-            [self = shared_from_this(), frame = std::move(frame)]() mutable {
-              self->write_queue_.push_back(std::move(frame));
-              if (!self->writing_) {
-                self->do_write();
-              }
-            });
+  net::post(
+      strand_,
+      [self = shared_from_this(),
+       frame = std::move(frame),
+       on_complete = std::move(on_complete)]() mutable {
+        self->write_queue_.push_back(PendingWrite{
+            .frame = std::move(frame), .on_complete = std::move(on_complete)});
+        if (!self->writing_) {
+          self->do_write();
+        }
+      });
 }
 
 void WebSocketSession::do_write()
@@ -812,9 +827,14 @@ void WebSocketSession::do_write()
   writing_ = true;
   websocket_.binary(true);
   websocket_.async_write(
-      net::buffer(write_queue_.front()),
+      net::buffer(write_queue_.front().frame),
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
         net::post(self->strand_, [self, ec]() {
+          auto on_complete = std::move(self->write_queue_.front().on_complete);
+          self->write_queue_.pop_front();
+          if (on_complete) {
+            on_complete();
+          }
           if (ec) {
             debugPrint(self->logger_,
                        utl::WEB,
@@ -822,9 +842,9 @@ void WebSocketSession::do_write()
                        1,
                        "websocket write error: {}",
                        ec.message());
+            self->writing_ = false;
             return;
           }
-          self->write_queue_.pop_front();
           self->do_write();
         });
       });

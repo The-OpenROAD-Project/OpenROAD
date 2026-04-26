@@ -27,14 +27,15 @@ class SessionRegistry
 {
  public:
   using SendFn = std::function<void(const std::string& json)>;
-  // Posts an arbitrary callable onto the session's strand.
-  using PostFn = std::function<void(std::function<void()>)>;
+  // Sends JSON and invokes the callback after the session write completes.
+  using SendAndWaitFn
+      = std::function<void(const std::string& json, std::function<void()>)>;
   using WaitInterruptFn = std::function<bool()>;
 
   // Register a send callback.  Returns a token the caller must pass to
-  // remove() during teardown.  The optional PostFn lets broadcastAndWait()
-  // post a fence lambda onto the session's strand.
-  std::size_t add(SendFn send, PostFn post = {});
+  // remove() during teardown.  The optional SendAndWaitFn lets
+  // broadcastAndWait() wait until a write has completed.
+  std::size_t add(SendFn send, SendAndWaitFn send_and_wait = {});
   void remove(std::size_t token);
 
   // True if at least one session is registered.
@@ -51,9 +52,8 @@ class SessionRegistry
   // Deliver the JSON string to every currently-registered session.
   void broadcast(const std::string& json);
 
-  // Like broadcast(), but waits until every session's strand has executed
-  // the queued write (or timeout expires).  Returns true if all fences
-  // completed, false on timeout.
+  // Like broadcast(), but waits until every fenceable session has completed
+  // the queued write (or timeout expires).
   bool broadcastAndWait(const std::string& json,
                         std::chrono::milliseconds timeout);
 
@@ -61,7 +61,7 @@ class SessionRegistry
   struct SessionCallbacks
   {
     SendFn send;
-    PostFn post;  // may be empty for legacy callers
+    SendAndWaitFn send_and_wait;  // may be empty for legacy callers
   };
 
   mutable std::mutex mutex_;

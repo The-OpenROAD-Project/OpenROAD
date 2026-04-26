@@ -4,10 +4,12 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -121,12 +123,15 @@ TEST(SessionRegistryTest, BroadcastAndWaitFencesComplete)
   SessionRegistry registry;
   std::string received;
 
-  // Register a session whose PostFn invokes the fence on a background thread
-  // (simulating a real strand dispatch).
+  // Register a session whose SendAndWaitFn invokes the fence only after
+  // the simulated write has completed.
   auto token = registry.add(
       [&received](const std::string& json) { received = json; },
-      [](std::function<void()> fence) {
-        std::thread([fence = std::move(fence)]() { fence(); }).detach();
+      [&received](const std::string& json, std::function<void()> fence) {
+        std::thread([&received, json, fence = std::move(fence)]() {
+          received = json;
+          fence();
+        }).detach();
       });
 
   EXPECT_TRUE(registry.broadcastAndWait(R"({"type":"shutdown"})",
@@ -139,10 +144,12 @@ TEST(SessionRegistryTest, BroadcastAndWaitTimesOut)
 {
   SessionRegistry registry;
 
-  // Register a session whose PostFn silently drops the fence.
-  auto token = registry.add(
-      [](const std::string&) {},
-      [](std::function<void()> /*fence*/) { /* never called */ });
+  // Register a session whose SendAndWaitFn silently drops the fence.
+  auto token
+      = registry.add([](const std::string&) {},
+                     [](const std::string&, std::function<void()> /*fence*/) {
+                       /* never called */
+                     });
 
   const auto t0 = std::chrono::steady_clock::now();
   EXPECT_FALSE(registry.broadcastAndWait("{}", std::chrono::milliseconds(200)));
@@ -159,11 +166,14 @@ TEST(SessionRegistryTest, BroadcastAndWaitDeadSession)
   SessionRegistry registry;
   std::atomic<bool> send_called{false};
 
-  // Register a session whose PostFn calls the fence immediately
+  // Register a session whose SendAndWaitFn calls the fence immediately
   // (simulating a dead session that signals right away).
-  auto token
-      = registry.add([&send_called](const std::string&) { send_called = true; },
-                     [](std::function<void()> fence) { fence(); });
+  auto token = registry.add(
+      [&send_called](const std::string&) { send_called = true; },
+      [&send_called](const std::string&, std::function<void()> fence) {
+        send_called = true;
+        fence();
+      });
 
   EXPECT_TRUE(registry.broadcastAndWait("{}", std::chrono::milliseconds(100)));
   EXPECT_TRUE(send_called);
@@ -175,7 +185,7 @@ TEST(SessionRegistryTest, BroadcastAndWaitLegacySendOnly)
   SessionRegistry registry;
   std::string received;
 
-  // Register with SendFn only (no PostFn) — legacy path.
+  // Register with SendFn only (no SendAndWaitFn) — legacy path.
   auto token
       = registry.add([&received](const std::string& json) { received = json; });
 

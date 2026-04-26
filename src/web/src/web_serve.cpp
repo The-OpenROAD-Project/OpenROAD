@@ -140,8 +140,10 @@ void WebServer::serve(int port)
         });
 
     auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
-    logger_->addSink(log_sink);
-    viewer_hook_->setDrainLogsFn([log_sink]() { log_sink->drainToClients(); });
+    log_sink_ = log_sink;
+    logger_->addSink(log_sink_);
+    viewer_hook_->setDrainLogsFn(
+        [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
 
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
@@ -215,9 +217,8 @@ void WebServer::waitForStop()
   lock.unlock();
 
   // Notify connected browsers so they can show "Server stopped" and
-  // disable auto-reconnect.  broadcastAndWait() posts the message and
-  // then waits for a strand-fence on each session, guaranteeing the
-  // write is queued before stop() tears down the io_context.
+  // disable auto-reconnect.  broadcastAndWait() waits for the write to
+  // complete before stop() tears down the io_context.
   if (viewer_hook_) {
     constexpr auto kShutdownFlushTimeout = std::chrono::seconds(2);
     viewer_hook_->sessions().broadcastAndWait(R"({"type":"shutdown"})",
@@ -248,6 +249,10 @@ void WebServer::stop()
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }
     gui::Gui::get()->setChartFactory({});
+  }
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
   }
 
   if (shutdown_listener_) {

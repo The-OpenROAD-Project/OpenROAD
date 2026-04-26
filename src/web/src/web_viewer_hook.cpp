@@ -30,13 +30,17 @@ constexpr auto kMaxPauseTimeout = std::chrono::minutes(10);
 // SessionRegistry
 //------------------------------------------------------------------------------
 
-std::size_t SessionRegistry::add(SendFn send, PostFn post)
+std::size_t SessionRegistry::add(SendFn send, SendAndWaitFn send_and_wait)
 {
   std::size_t token;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     token = next_token_++;
-    senders_.emplace(token, SessionCallbacks{std::move(send), std::move(post)});
+    senders_.emplace(token,
+                     SessionCallbacks{
+                         .send = std::move(send),
+                         .send_and_wait = std::move(send_and_wait),
+                     });
   }
   client_cv_.notify_all();
   return token;
@@ -103,10 +107,10 @@ bool SessionRegistry::broadcastAndWait(const std::string& json,
     }
   }
 
-  // Count sessions that support fencing (have a PostFn).
+  // Count sessions that support write-completion fencing.
   std::size_t fence_count = 0;
   for (const auto& cb : to_send) {
-    if (cb.post) {
+    if (cb.send_and_wait) {
       ++fence_count;
     }
   }
@@ -119,8 +123,8 @@ bool SessionRegistry::broadcastAndWait(const std::string& json,
     return true;
   }
 
-  // Shared state for the fence: each session's PostFn decrements the
-  // counter and notifies when all fences have fired.
+  // Shared state for the fence: each session's SendAndWaitFn decrements
+  // the counter and notifies when all writes have completed.
   struct FenceState
   {
     std::mutex mutex;
@@ -131,14 +135,15 @@ bool SessionRegistry::broadcastAndWait(const std::string& json,
   state->remaining = fence_count;
 
   for (const auto& cb : to_send) {
-    cb.send(json);
-    if (cb.post) {
-      cb.post([state]() {
+    if (cb.send_and_wait) {
+      cb.send_and_wait(json, [state]() {
         std::lock_guard<std::mutex> lock(state->mutex);
         if (--state->remaining == 0) {
           state->cv.notify_one();
         }
       });
+    } else {
+      cb.send(json);
     }
   }
 
