@@ -10,6 +10,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -96,6 +97,15 @@ static bool minimize = false;
 
 static const char* init_filename = ".openroad";
 
+static int logCommandCallback(ClientData client_data,
+                              Tcl_Interp* interp,
+                              int level,
+                              const char* command,
+                              Tcl_Command command_info,
+                              int objc,
+                              Tcl_Obj* const objv[]);
+static void deleteCommandTrace(ClientData client_data);
+
 static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
@@ -173,6 +183,65 @@ static void initPython()
 #endif
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
+
+static int logCommandCallback(ClientData client_data,
+                              Tcl_Interp* interp,
+                              int level,
+                              const char* command,
+                              Tcl_Command command_info,
+                              int objc,
+                              Tcl_Obj* const objv[])
+{
+  (void) interp;
+  (void) command_info;
+  (void) level;
+  if (command == nullptr || objc <= 0 || objv == nullptr) {
+    return TCL_OK;
+  }
+
+  // Skip internal implementation commands that aren't user-visible
+  const char* cmd_name = Tcl_GetString(objv[0]);
+  if (cmd_name == nullptr) {
+    return TCL_OK;
+  }
+  const std::string name(cmd_name);
+  if (name == "sta::include_file" || name == "::sta::include_file") {
+    return TCL_OK;
+  }
+
+  auto* logger = static_cast<utl::Logger*>(client_data);
+  if (logger != nullptr && log_filename != nullptr) {
+    // Reconstruct command with expanded variables from objv[]
+    std::string expanded_cmd;
+    for (int i = 0; i < objc; i++) {
+      if (i > 0) {
+        expanded_cmd += " ";
+      }
+      const char* arg = Tcl_GetString(objv[i]);
+      if (arg == nullptr) {
+        continue;
+      }
+      if (strchr(arg, ' ') != nullptr || strchr(arg, '\t') != nullptr
+          || strchr(arg, '\n') != nullptr) {
+        expanded_cmd += "{";
+        expanded_cmd += arg;
+        expanded_cmd += "}";
+      } else {
+        expanded_cmd += arg;
+      }
+    }
+    logger->redirectFileAppendBegin(log_filename);
+    logger->report("cmd: {}", expanded_cmd);
+    logger->redirectFileEnd();
+  }
+
+  return TCL_OK;
+}
+
+static void deleteCommandTrace(ClientData client_data)
+{
+  (void) client_data;
+}
 
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
@@ -374,6 +443,13 @@ static int tclAppInit(int& argc,
 
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
+
+    Tcl_CreateObjTrace(interp,  // NOLINT(misc-include-cleaner)
+                       0,
+                       1,
+                       logCommandCallback,
+                       ord::OpenRoad::openRoad()->getLogger(),
+                       deleteCommandTrace);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
