@@ -450,6 +450,14 @@ html[data-theme="light"] .lm_header .lm_tab .lm_close_tab {
     width: auto;
     flex: 1;
     color: inherit;
+    /* min-width: 0 is required so the flex item can shrink below its
+     * intrinsic content width — without it, white-space: nowrap +
+     * overflow: hidden + text-overflow: ellipsis don't trigger and
+     * long titles blow past the dropdown's max-width. */
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Leaflet map cursor */
