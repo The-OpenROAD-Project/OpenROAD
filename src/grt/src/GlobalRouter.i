@@ -245,7 +245,8 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
                                 bool steinerTree,
                                 bool rectilinearSTree,
                                 bool tree2D,
-                                bool tree3D)
+                                bool tree3D,
+                                bool edges3D)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -261,6 +262,7 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
+  getGlobalRouter()->setDebugEdges3D(edges3D);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)

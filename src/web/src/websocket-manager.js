@@ -17,7 +17,13 @@ export class WebSocketManager {
         this.onStatusChange = onStatusChange || (() => {});
         this.onPush = null; // callback for server-push notifications
         this._cache = null;
+        this._isConnected = false;
+        this._shutdown = false; // set by server "shutdown" message
         this.connect();
+    }
+
+    get isConnected() {
+        return this._isConnected || (this.socket && this.socket.readyState === WebSocket.OPEN);
     }
 
     // Create a cache-backed instance (no WebSocket connection).
@@ -31,6 +37,7 @@ export class WebSocketManager {
         mgr.onStatusChange = onStatusChange || (() => {});
         mgr.onPush = null;
         mgr._cache = cache;
+        mgr._isConnected = true; // cache is always "connected"
         mgr.readyPromise = Promise.resolve();
         mgr.readyResolve = null;
         return mgr;
@@ -50,8 +57,10 @@ export class WebSocketManager {
 
         this.socket.onopen = () => {
             console.log('WebSocket connected');
+            this._isConnected = true;
             this.reconnectDelay = 1000;
             this.readyResolve();
+            this.onStatusChange();
         };
 
         this.socket.onmessage = (event) => {
@@ -59,11 +68,17 @@ export class WebSocketManager {
         };
 
         this.socket.onclose = () => {
-            console.log('WebSocket closed, reconnecting...');
+            this._isConnected = false;
+            this.onStatusChange();
             for (const [id, handler] of this.pending) {
                 handler.reject(new Error('WebSocket closed'));
             }
             this.pending.clear();
+            if (this._shutdown) {
+                console.log('WebSocket closed (server stopped)');
+                return; // don't reconnect after intentional shutdown
+            }
+            console.log('WebSocket closed, reconnecting...');
             setTimeout(() => this.connect(), this.reconnectDelay);
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
         };

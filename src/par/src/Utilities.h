@@ -6,6 +6,10 @@
 // This file includes the basic utility functions for operations
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <iterator>
 #include <map>
 #include <string>
 #include <vector>
@@ -102,6 +106,47 @@ std::vector<float> abs(const std::vector<float>& a);
 float norm2(const std::vector<float>& a);
 
 float norm2(const std::vector<float>& a, const std::vector<float>& factor);
+
+// Stable comparator for ODB objects ordered first by name, then by id. Uses
+// getConstName() to avoid std::string allocation. The id tiebreaker ensures a
+// strict weak ordering when two objects share a name.
+template <typename T>
+bool compareDbObjectsByNameAndId(T* lhs, T* rhs)
+{
+  const int name_cmp = std::strcmp(lhs->getConstName(), rhs->getConstName());
+  if (name_cmp != 0) {
+    return name_cmp < 0;
+  }
+  return lhs->getId() < rhs->getId();
+}
+
+// A fully specified Fisher-Yates shuffle so Bazel and CMake do not depend on
+// implementation-defined std::shuffle behavior across standard libraries.
+template <typename RandomIt, typename URBG>
+void DeterministicShuffle(RandomIt first, RandomIt last, URBG& gen)
+{
+  using diff_t = typename std::iterator_traits<RandomIt>::difference_type;
+  const diff_t count = last - first;
+  if (count <= 1) {
+    return;
+  }
+
+  constexpr std::uint64_t range = static_cast<std::uint64_t>(URBG::max())
+                                  - static_cast<std::uint64_t>(URBG::min())
+                                  + 1ULL;
+
+  for (diff_t i = count - 1; i > 0; --i) {
+    const std::uint64_t bound = static_cast<std::uint64_t>(i) + 1ULL;
+    const std::uint64_t limit = range - (range % bound);
+    std::uint64_t value = 0;
+    do {
+      value = static_cast<std::uint64_t>(gen())
+              - static_cast<std::uint64_t>(URBG::min());
+    } while (value >= limit);
+    const diff_t j = static_cast<diff_t>(value % bound);
+    std::iter_swap(first + i, first + j);
+  }
+}
 
 // ILP-based Partitioning Instance
 // Call ILP Solver to partition the design
