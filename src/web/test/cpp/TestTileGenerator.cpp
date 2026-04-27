@@ -95,6 +95,35 @@ TEST_F(TileGeneratorTest, GetBoundsReflectsInstances)
   EXPECT_LE(bounds.yMin(), 10000);
 }
 
+TEST_F(TileGeneratorTest, BoundsIncludeLabelMargin)
+{
+  // Place instances to fill the BBox across the die.
+  placeInst("BUF_X16", "buf_ll", 0, 0);
+  placeInst("BUF_X16", "buf_ur", 90000, 90000);
+
+  // Create a BTerm pin at the right die edge.
+  const char* pin_name = "my_long_pin_name";
+  odb::dbNet* net = odb::dbNet::create(block_, pin_name);
+  odb::dbBTerm* bterm = odb::dbBTerm::create(net, pin_name);
+  bterm->setIoType(odb::dbIoType::INPUT);
+  odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+  odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(m1, nullptr);
+  // Place at right die edge (x=99800..100000).
+  odb::dbBox::create(bpin, m1, 99800, 50000, 100000, 50200);
+  bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  makeTileGen();
+  const odb::Rect die = block_->getDieArea();
+  const odb::Rect bounds = tile_gen_->getBounds();
+
+  // The margin should be larger than just the pin marker size,
+  // because it now accounts for the label text width.
+  const int pin_max = tile_gen_->getPinMaxSize();
+  const int margin = bounds.xMax() - die.xMax();
+  EXPECT_GT(margin, pin_max);
+}
+
 TEST_F(TileGeneratorTest, GetLayers)
 {
   makeTileGen();
