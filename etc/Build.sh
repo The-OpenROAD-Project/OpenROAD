@@ -355,11 +355,5 @@ if [[ "$useBazel" == "yes" ]]; then
     "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
     exit 0
 fi
-if [[ "$isNinja" == "yes" ]]; then
-    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
-    cd "${buildDir}"
-    CLICOLOR_FORCE=1 ninja build_and_test
-    exit 0
-fi
 cmake "${cmakeOptions[@]}" -B "${buildDir}" .
 time cmake --build "${buildDir}" -j "${numThreads}"
