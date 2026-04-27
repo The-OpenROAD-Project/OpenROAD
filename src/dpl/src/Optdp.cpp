@@ -68,36 +68,32 @@ void Opendp::improvePlacement(const int seed,
   // Get needed information from DB.
   importDb();
 
-  if (use_negotiation_) {
-    // importDb() rebuilds the network from scratch; fresh Node objects have
-    // placed_=false.  After negotiation-based detailedPlacement, cells are
-    // PLACED in ODB.  Without this, ShiftLegalizer treats every movable cell
-    // as unplaced and re-legalizes from scratch, ignoring the negotiation
-    // result.
-    // The negotiation legalizer writes row-correct orientations to dbInst in
-    // its post-flush orient loop.  Fresh nodes carry the constructor-default
-    // orient, so DetailedMgr DRC checks run with the wrong orientation.
-    for (const auto& node : network_->getNodes()) {
-      if (node->getType() == Node::CELL && !node->isFixed()) {
-        odb::dbInst* inst = node->getDbInst();
-        if (inst && inst->getPlacementStatus().isPlaced()) {
-          node->setPlaced(true);
-          node->adjustCurrOrient(inst->getOrient());
-        }
+  // importDb() rebuilds the network from scratch; fresh Node objects have
+  // placed_=false.  After negotiation-based detailedPlacement, cells are
+  // PLACED in ODB.  Without this, ShiftLegalizer treats every movable cell
+  // as unplaced and re-legalizes from scratch, ignoring the negotiation
+  // result.
+  // The negotiation legalizer writes row-correct orientations to dbInst in
+  // its post-flush orient loop.  Fresh nodes carry the constructor-default
+  // orient, so DetailedMgr DRC checks run with the wrong orientation.
+  for (const auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed()) {
+      odb::dbInst* inst = node->getDbInst();
+      if (inst && inst->getPlacementStatus().isPlaced()) {
+        node->setPlaced(true);
+        node->adjustCurrOrient(inst->getOrient());
       }
     }
   }
 
   initGrid();
 
-  if (use_negotiation_) {
-    // Paint fixed cells into the grid before ShiftLegalizer runs.
-    // initGrid() resets all pixels.  Without setFixedGridCells(), fixed cells
-    // (endcaps, tapcells, macros) are invisible to canBePlaced() and DRC
-    // edge-spacing checks, so the DetailedMgr places movable cells into
-    // positions that create violations against fixed neighbours.
-    setFixedGridCells();
-  }
+  // Paint fixed cells into the grid before ShiftLegalizer runs.
+  // initGrid() resets all pixels.  Without setFixedGridCells(), fixed cells
+  // (endcaps, tapcells, macros) are invisible to canBePlaced() and DRC
+  // edge-spacing checks, so the DetailedMgr places movable cells into
+  // positions that create violations against fixed neighbours.
+  setFixedGridCells();
 
   const bool disallow_one_site_gaps = !odb::hasOneSiteMaster(db_);
 
@@ -118,7 +114,6 @@ void Opendp::improvePlacement(const int seed,
   // a bug in my code somewhere.
   ShiftLegalizer lg;
   lg.legalize(mgr);
-  setFixedGridCells();
 
   // Detailed improvement.  Runs through a number of different
   // optimizations aimed at wirelength improvement.  The last
