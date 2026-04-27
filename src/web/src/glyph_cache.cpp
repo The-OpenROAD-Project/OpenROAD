@@ -5,6 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <mutex>
+#include <string_view>
+#include <vector>
 
 #include "font_data.h"
 #include "third-party/stb_truetype/stb_truetype.h"
@@ -143,17 +147,22 @@ GlyphCache::GlyphInfo GlyphCache::glyph(int font_height, char ch) const
   const int idx = static_cast<unsigned char>(ch) - kFirstChar;
   const auto& slot = getSlot(font_height);
   if (idx < 0 || idx >= kNumGlyphs) {
-    return {nullptr, 0, 0, 0, 0, 0};
+    return {.alpha = nullptr,
+            .bmp_width = 0,
+            .bmp_height = 0,
+            .x_offset = 0,
+            .y_offset = 0,
+            .advance = 0};
   }
   const auto& cg = slot.glyphs[idx];
   const unsigned char* alpha_ptr
       = cg.bmp_width > 0 ? slot.alpha.data() + cg.alpha_offset : nullptr;
-  return {alpha_ptr,
-          cg.bmp_width,
-          cg.bmp_height,
-          cg.x_offset,
-          cg.y_offset,
-          cg.advance};
+  return {.alpha = alpha_ptr,
+          .bmp_width = cg.bmp_width,
+          .bmp_height = cg.bmp_height,
+          .x_offset = cg.x_offset,
+          .y_offset = cg.y_offset,
+          .advance = cg.advance};
 }
 
 int GlyphCache::kern(int font_height, char ch1, char ch2) const

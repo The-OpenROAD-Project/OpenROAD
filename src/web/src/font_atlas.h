@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "glyph_cache.h"
 
 namespace web {

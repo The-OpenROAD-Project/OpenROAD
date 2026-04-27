@@ -405,9 +405,7 @@ odb::Rect TileGenerator::getBounds() const
       int max_text_px = 0;
       for (odb::dbBTerm* term : block->getBTerms()) {
         const int w = fontAtlasTextWidth(term->getName(), kPinLabelFontHeight);
-        if (w > max_text_px) {
-          max_text_px = w;
-        }
+        max_text_px = std::max(w, max_text_px);
       }
       const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
       const int margin = label_px * pin_size / kMinPinNameSizePixels;
