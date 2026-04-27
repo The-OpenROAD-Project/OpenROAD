@@ -1332,6 +1332,108 @@ WebSocketResponse SelectHandler::handleSchematicFull(
   return resp;
 }
 
+WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbChip* chip = gen_->getChip();
+    if (!chip) {
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.field("info",
+                    "No 3D chip data available. Load a multi-die design to "
+                    "use this view.");
+      builder.endObject();
+      const std::string& msg = builder.str();
+      resp.payload.assign(msg.begin(), msg.end());
+      return resp;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("chiplets");
+
+    auto processInst = [&](auto& self,
+                           odb::dbChipInst* inst,
+                           int offset_x,
+                           int offset_y,
+                           int offset_z,
+                           const std::string& parent_name) -> void {
+      odb::dbChip* master_chip = inst->getMasterChip();
+      if (master_chip && !master_chip->getChipInsts().empty()) {
+        for (odb::dbChipInst* child : master_chip->getChipInsts()) {
+          odb::Point3D loc = inst->getLoc();
+          self(self,
+               child,
+               offset_x + loc.x(),
+               offset_y + loc.y(),
+               offset_z + loc.z(),
+               parent_name + std::string(inst->getName()) + "/");
+        }
+      } else {
+        builder.beginObject();
+        builder.field("name", parent_name + std::string(inst->getName()));
+
+        odb::Point3D loc = inst->getLoc();
+        builder.field("x", offset_x + loc.x());
+        builder.field("y", offset_y + loc.y());
+        builder.field("z", offset_z + loc.z());
+
+        int w = 0;
+        int h = 0;
+        int thickness = 0;
+        if (master_chip) {
+          w = master_chip->getWidth();
+          h = master_chip->getHeight();
+          thickness = master_chip->getThickness();
+          // Fallback: use block bbox if chip has no explicit dimensions
+          if (w == 0 || h == 0) {
+            if (odb::dbBlock* block = master_chip->getBlock()) {
+              if (odb::dbBox* block_bbox = block->getBBox()) {
+                const odb::Rect bbox = block_bbox->getBox();
+                if (w == 0) {
+                  w = bbox.dx();
+                }
+                if (h == 0) {
+                  h = bbox.dy();
+                }
+              }
+            }
+          }
+        }
+        constexpr int kDefaultChipWidth = 100000;
+        constexpr int kDefaultChipHeight = 100000;
+        constexpr int kDefaultChipThickness = 10000;
+        builder.field("width", w > 0 ? w : kDefaultChipWidth);
+        builder.field("height", h > 0 ? h : kDefaultChipHeight);
+        builder.field("thickness",
+                      thickness > 0 ? thickness : kDefaultChipThickness);
+        builder.endObject();
+      }
+    };
+
+    for (odb::dbChipInst* inst : chip->getChipInsts()) {
+      processInst(processInst, inst, 0, 0, 0, "");
+    }
+    builder.endArray();
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("error", e.what());
+    builder.endObject();
+    const std::string& err = builder.str();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 WebSocketResponse SelectHandler::handleSchematicInspect(
     const WebSocketRequest& req,
     SessionState& state)
@@ -2441,14 +2543,11 @@ void DRCHandler::registerRequests(RequestDispatcher& d)
 
 std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
 {
-  odb::dbBlock* block = gen_->getBlock();
-  if (!block) {
-    throw std::runtime_error("No block loaded");
-  }
-  odb::dbChip* chip = block->getChip();
+  odb::dbChip* chip = gen_->getChip();
   if (!chip) {
     throw std::runtime_error("No chip loaded");
   }
+  odb::dbBlock* block = chip->getBlock();
   return {block, chip};
 }
 
@@ -2479,14 +2578,11 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
   state.drc_rects.clear();
   state.drc_lines.clear();
 
-  odb::dbBlock* block = gen_->getBlock();
-  if (!block) {
-    return;
-  }
-  odb::dbChip* chip = block->getChip();
+  odb::dbChip* chip = gen_->getChip();
   if (!chip || state.active_drc_category.empty()) {
     return;
   }
+  odb::dbBlock* block = chip->getBlock();
 
   odb::dbMarkerCategory* category
       = chip->findMarkerCategory(state.active_drc_category.c_str());
@@ -2501,21 +2597,25 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
   // with solid outline.  Line → drawn as a line.  Point → drawn as X.
   // When the marker bbox is too small (< min_box DBU), draw an X at
   // the center instead, matching the GUI's min_box fallback.
-  const Color white_fill{.r = 255, .g = 255, .b = 255, .a = 50};
-  const Color white_line{.r = 255, .g = 255, .b = 255, .a = 255};
+  // Color matches Qt GUI's Painter::kHighlight (yellow).
+  const Color yellow_fill{.r = 255, .g = 255, .b = 0, .a = 100};
+  const Color yellow_line{.r = 255, .g = 255, .b = 0, .a = 255};
 
   // min_box: cached tech pitch as "minimum visible size" threshold.
   // Default to 200 DBU (0.2um at 1000 dbu/um) if no routing layer available.
   if (min_box_ < 0) {
-    min_box_ = 200;
-    odb::dbTech* tech = block->getDb()->getTech();
-    if (tech) {
-      for (odb::dbTechLayer* layer : tech->getLayers()) {
-        if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-          const int pitch = layer->getPitch();
-          if (pitch > 0) {
-            min_box_ = pitch;
-            break;
+    constexpr int kDefaultMinBox = 200;
+    min_box_ = kDefaultMinBox;
+    if (block) {
+      odb::dbTech* tech = block->getDb()->getTech();
+      if (tech) {
+        for (odb::dbTechLayer* layer : tech->getLayers()) {
+          if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+            const int pitch = layer->getPitch();
+            if (pitch > 0) {
+              min_box_ = pitch;
+              break;
+            }
           }
         }
       }
@@ -2527,10 +2627,10 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     // Two diagonal lines forming an X, matching GUI's painter.drawX().
     state.drc_lines.push_back({odb::Point(cx - half, cy - half),
                                odb::Point(cx + half, cy + half),
-                               white_line});
+                               yellow_line});
     state.drc_lines.push_back({odb::Point(cx - half, cy + half),
                                odb::Point(cx + half, cy - half),
-                               white_line});
+                               yellow_line});
   };
 
   for (odb::dbMarker* marker : category->getAllMarkers()) {
@@ -2554,7 +2654,7 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     // Fallback: if no shapes, use the bounding box.
     if (shapes.empty()) {
       if (bbox.area() > 0) {
-        state.drc_rects.push_back({bbox, white_fill, "", /*filled=*/true});
+        state.drc_rects.push_back({bbox, yellow_fill, "", /*filled=*/true});
       }
       continue;
     }
@@ -2562,21 +2662,21 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     for (const auto& shape : shapes) {
       if (std::holds_alternative<odb::Rect>(shape)) {
         state.drc_rects.push_back(
-            {std::get<odb::Rect>(shape), white_fill, "", /*filled=*/true});
+            {std::get<odb::Rect>(shape), yellow_fill, "", /*filled=*/true});
       } else if (std::holds_alternative<odb::Line>(shape)) {
         const odb::Line& line = std::get<odb::Line>(shape);
-        state.drc_lines.push_back({line.pt0(), line.pt1(), white_line});
+        state.drc_lines.push_back({line.pt0(), line.pt1(), yellow_line});
       } else if (std::holds_alternative<odb::Point>(shape)) {
         const odb::Point& pt = std::get<odb::Point>(shape);
         emitX(pt.x(), pt.y(), min_box / 2);
       } else if (std::holds_alternative<odb::Polygon>(shape)) {
         const odb::Polygon& poly = std::get<odb::Polygon>(shape);
         state.drc_rects.push_back(
-            {poly.getEnclosingRect(), white_fill, "", /*filled=*/true});
+            {poly.getEnclosingRect(), yellow_fill, "", /*filled=*/true});
       } else if (std::holds_alternative<odb::Cuboid>(shape)) {
         state.drc_rects.push_back(
             {std::get<odb::Cuboid>(shape).getEnclosingRect(),
-             white_fill,
+             yellow_fill,
              "",
              /*filled=*/true});
       }
@@ -2658,6 +2758,44 @@ static void serializeMarkerCategory(JsonBuilder& builder,
       odb::Rect bbox = marker->getBBox();
       writeBBox(builder, "bbox", bbox);
 
+      // Serialize individual shapes so the 3D viewer can highlight
+      // the actual cuboids instead of the full bounding box.
+      const auto& shapes = marker->getShapes();
+      if (!shapes.empty()) {
+        builder.beginArray("rects");
+        for (const auto& shape : shapes) {
+          if (std::holds_alternative<odb::Rect>(shape)) {
+            const odb::Rect& r = std::get<odb::Rect>(shape);
+            builder.beginArray();
+            builder.value(r.xMin());
+            builder.value(r.yMin());
+            builder.value(r.xMax());
+            builder.value(r.yMax());
+            builder.endArray();
+          } else if (std::holds_alternative<odb::Polygon>(shape)) {
+            const odb::Rect r
+                = std::get<odb::Polygon>(shape).getEnclosingRect();
+            builder.beginArray();
+            builder.value(r.xMin());
+            builder.value(r.yMin());
+            builder.value(r.xMax());
+            builder.value(r.yMax());
+            builder.endArray();
+          } else if (std::holds_alternative<odb::Cuboid>(shape)) {
+            const odb::Cuboid& c = std::get<odb::Cuboid>(shape);
+            builder.beginArray();
+            builder.value(c.xMin());
+            builder.value(c.yMin());
+            builder.value(c.xMax());
+            builder.value(c.yMax());
+            builder.value(c.zMin());
+            builder.value(c.zMax());
+            builder.endArray();
+          }
+        }
+        builder.endArray();
+      }
+
       odb::dbTechLayer* layer = marker->getTechLayer();
       if (layer) {
         builder.field("layer", std::string(layer->getName()));
@@ -2729,7 +2867,19 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
 
     const std::string cat_name = extract_string(req.raw_json, "category");
 
-    // Update active category and overlay
+    // Clear all markers' visibility so highlights start off.
+    // The user explicitly checks individual markers to see them.
+    odb::dbMarkerCategory* category = nullptr;
+    if (!cat_name.empty()) {
+      category = chip->findMarkerCategory(cat_name.c_str());
+      if (category) {
+        for (odb::dbMarker* marker : category->getAllMarkers()) {
+          marker->setVisible(false);
+        }
+      }
+    }
+
+    // Update active category and overlay (now empty since all invisible)
     {
       std::lock_guard<std::mutex> lock(state.drc_mutex);
       state.active_drc_category = cat_name;
@@ -2743,8 +2893,6 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
       builder.beginArray("subcategories");
       builder.endArray();
     } else {
-      odb::dbMarkerCategory* category
-          = chip->findMarkerCategory(cat_name.c_str());
       if (!category) {
         builder.field("error", "Category not found: " + cat_name);
       } else {

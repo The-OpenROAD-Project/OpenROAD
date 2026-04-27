@@ -66,9 +66,31 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
+    src/style.css
+    src/theme.js
+    src/coordinates.js
+    src/ui-utils.js
+    src/checkbox-tree-model.js
+    src/vis-tree.js
+    src/websocket-manager.js
+    src/websocket-tile-layer.js
+    src/display-controls.js
+    src/inspector.js
+    src/ruler.js
+    src/tcl-completer.js
+    src/hierarchy-browser.js
+    src/menu-bar.js
+    src/clock-tree-widget.js
+    src/schematic-widget.js
+    src/charts-widget.js
+    src/timing-widget.js
+    src/drc-widget.js
+    src/3d-viewer-widget.js
+    src/main.js
     ${WEB_ASSET_FILES}
   COMMENT "Generating report_assets.cpp"
 )

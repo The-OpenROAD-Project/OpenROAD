@@ -90,6 +90,7 @@ struct WebSocketRequest
     kSchematicCone,
     kSchematicFull,
     kSchematicInspect,
+    kGet3DData,
     kDrcCategories,
     kDrcMarkers,
     kDrcLoadReport,
@@ -193,6 +194,7 @@ class SelectHandler
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
+  WebSocketResponse handleGet3DData(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

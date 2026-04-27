@@ -130,13 +130,13 @@ export class WebSocketManager {
         if (this._cache) {
             return this._cacheRequest(msg);
         }
+        // If the socket is not open, wait for reconnection then retry.
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            return this.readyPromise.then(() => this.request(msg));
+        }
         const id = this.nextId++;
         msg.id = id;
         const promise = new Promise((resolve, reject) => {
-            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-                reject(new Error('WebSocket not connected'));
-                return;
-            }
             this.pending.set(id, { resolve, reject });
             this.socket.send(JSON.stringify(msg));
             this.onStatusChange();

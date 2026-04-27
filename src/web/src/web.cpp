@@ -31,6 +31,8 @@
 #include "gui/heatMap.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
@@ -51,6 +53,155 @@ using Tcp = net::ip::tcp;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+
+static WebSocketRequest parse_web_socket_request(const std::string& msg)
+{
+  WebSocketRequest req;
+  req.id = static_cast<uint32_t>(extract_int(msg, "id"));
+  req.raw_json = msg;
+
+  std::string type_str = extract_string(msg, "type");
+  if (type_str == "tile") {
+    req.type = WebSocketRequest::kTile;
+    req.layer = extract_string(msg, "layer");
+    req.z = extract_int(msg, "z");
+    req.x = extract_int(msg, "x");
+    req.y = extract_int(msg, "y");
+    req.vis.parseFromJson(msg);
+  } else if (type_str == "bounds") {
+    req.type = WebSocketRequest::kBounds;
+  } else if (type_str == "tech") {
+    req.type = WebSocketRequest::kTech;
+  } else if (type_str == "inspect") {
+    req.type = WebSocketRequest::kInspect;
+    req.select_id = extract_int(msg, "select_id");
+  } else if (type_str == "inspect_back") {
+    req.type = WebSocketRequest::kInspectBack;
+  } else if (type_str == "hover") {
+    req.type = WebSocketRequest::kHover;
+    req.select_id = extract_int(msg, "select_id");
+  } else if (type_str == "tcl_eval") {
+    req.type = WebSocketRequest::kTclEval;
+    req.tcl_cmd = extract_string(msg, "cmd");
+  } else if (type_str == "tcl_complete") {
+    req.type = WebSocketRequest::kTclComplete;
+    req.tcl_complete_line = extract_string(msg, "line");
+    req.tcl_complete_cursor_pos = extract_int_or(msg, "cursor_pos", -1);
+  } else if (type_str == "timing_report") {
+    req.type = WebSocketRequest::kTimingReport;
+    req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
+    req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
+    req.timing_slack_min = extract_float_or(
+        msg, "slack_min", -std::numeric_limits<float>::max());
+    req.timing_slack_max
+        = extract_float_or(msg, "slack_max", std::numeric_limits<float>::max());
+  } else if (type_str == "timing_highlight") {
+    req.type = WebSocketRequest::kTimingHighlight;
+    req.timing_path_index = extract_int_or(msg, "path_index", -1);
+    req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
+    req.timing_pin_name = extract_string(msg, "pin_name");
+  } else if (type_str == "clock_tree") {
+    req.type = WebSocketRequest::kClockTree;
+  } else if (type_str == "clock_tree_highlight") {
+    req.type = WebSocketRequest::kClockTreeHighlight;
+    req.clock_tree_inst_name = extract_string(msg, "inst_name");
+  } else if (type_str == "slack_histogram") {
+    req.type = WebSocketRequest::kSlackHistogram;
+    req.histogram_is_setup = extract_int_or(msg, "is_setup", 1);
+    req.histogram_path_group = extract_string(msg, "path_group");
+    req.histogram_clock = extract_string(msg, "clock_name");
+  } else if (type_str == "chart_filters") {
+    req.type = WebSocketRequest::kChartFilters;
+  } else if (type_str == "module_hierarchy") {
+    req.type = WebSocketRequest::kModuleHierarchy;
+  } else if (type_str == "set_module_colors") {
+    req.type = WebSocketRequest::kSetModuleColors;
+    req.vis.parseFromJson(msg);
+  } else if (type_str == "set_focus_nets") {
+    req.type = WebSocketRequest::kSetFocusNets;
+    req.focus_action = extract_string(msg, "action");
+    req.focus_net_name = extract_string(msg, "net_name");
+  } else if (type_str == "set_route_guides") {
+    req.type = WebSocketRequest::kSetRouteGuides;
+    req.route_guide_action = extract_string(msg, "action");
+    req.route_guide_net_name = extract_string(msg, "net_name");
+  } else if (type_str == "schematic_cone") {
+    req.type = WebSocketRequest::kSchematicCone;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
+    req.schematic_fanin_depth = extract_int_or(msg, "fanin_depth", 1);
+    req.schematic_fanout_depth = extract_int_or(msg, "fanout_depth", 1);
+  } else if (type_str == "schematic_full") {
+    req.type = WebSocketRequest::kSchematicFull;
+  } else if (type_str == "schematic_inspect") {
+    req.type = WebSocketRequest::kSchematicInspect;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
+  } else if (type_str == "get_3d_data") {
+    req.type = WebSocketRequest::kGet3DData;
+  } else if (type_str == "select") {
+    req.type = WebSocketRequest::kSelect;
+    req.select_x = extract_int(msg, "dbu_x");
+    req.select_y = extract_int(msg, "dbu_y");
+    req.select_zoom = extract_int_or(msg, "zoom", 0);
+    req.visible_layers = extract_string_array(msg, "visible_layers");
+    req.vis.parseFromJson(msg);
+  } else if (type_str == "snap") {
+    req.type = WebSocketRequest::kSnap;
+    req.snap_x = extract_int(msg, "dbu_x");
+    req.snap_y = extract_int(msg, "dbu_y");
+    req.snap_radius = extract_int(msg, "radius");
+    req.snap_point_threshold = extract_int_or(msg, "point_threshold", 10);
+    req.snap_horizontal = extract_int_or(msg, "horizontal", 1) != 0;
+    req.snap_vertical = extract_int_or(msg, "vertical", 1) != 0;
+    req.visible_layers = extract_string_array(msg, "visible_layers");
+    req.vis.parseFromJson(msg);
+  } else if (type_str == "heatmaps") {
+    req.type = WebSocketRequest::kHeatmaps;
+  } else if (type_str == "set_active_heatmap") {
+    req.type = WebSocketRequest::kSetActiveHeatmap;
+    req.heatmap_name = extract_string(msg, "name");
+  } else if (type_str == "set_heatmap") {
+    req.type = WebSocketRequest::kSetHeatmap;
+    req.heatmap_name = extract_string(msg, "name");
+    req.heatmap_option = extract_string(msg, "option");
+    req.heatmap_string_value = extract_string(msg, "value");
+  } else if (type_str == "heatmap_tile") {
+    req.type = WebSocketRequest::kHeatmapTile;
+    req.heatmap_name = extract_string(msg, "name");
+    req.z = extract_int(msg, "z");
+    req.x = extract_int(msg, "x");
+    req.y = extract_int(msg, "y");
+  } else if (type_str == "drc_categories") {
+    req.type = WebSocketRequest::kDrcCategories;
+  } else if (type_str == "drc_markers") {
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.drc_category_name = extract_string(msg, "category");
+  } else if (type_str == "drc_load_report") {
+    req.type = WebSocketRequest::kDrcLoadReport;
+    req.drc_file_path = extract_string(msg, "path");
+  } else if (type_str == "drc_update_marker") {
+    req.type = WebSocketRequest::kDrcUpdateMarker;
+    req.drc_marker_id = extract_int(msg, "marker_id");
+    req.drc_field = extract_string(msg, "field");
+    req.drc_field_value = extract_int_or(msg, "value", 0) != 0;
+  } else if (type_str == "drc_update_category_visibility") {
+    req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+    req.drc_category_name = extract_string(msg, "category");
+    req.drc_field_value = extract_int_or(msg, "visible", 1) != 0;
+  } else if (type_str == "drc_highlight") {
+    req.type = WebSocketRequest::kDrcHighlight;
+    req.drc_marker_id = extract_int_or(msg, "marker_id", -1);
+  } else if (type_str == "list_dir") {
+    req.type = WebSocketRequest::kListDir;
+    req.dir_path = extract_string(msg, "path");
+  } else if (type_str == "debug_continue") {
+    req.type = WebSocketRequest::kDebugContinue;
+  } else if (type_str == "debug_charts") {
+    req.type = WebSocketRequest::kDebugCharts;
+  } else {
+    req.type = WebSocketRequest::kUnknown;
+  }
+  return req;
+}
 
 // Serialize a WebSocketResponse into the binary wire format:
 //   [0..3] uint32_t id (big-endian)
@@ -110,7 +261,9 @@ static http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
+                         public odb::dbChipCallBackObj,
+                         public odb::dbBlockCallBackObj
 {
   websocket::stream<beast::tcp_stream> websocket_;
   beast::flat_buffer buffer_;
@@ -166,6 +319,42 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void queue_response(const WebSocketResponse& resp,
                       std::function<void()> on_complete = {});
   void do_write();
+
+  void inDbMarkerCategoryCreate(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCategoryDestroy(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCreate(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerDestroy(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = 0;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
 };
 
 WebSocketSession::WebSocketSession(
@@ -190,6 +379,17 @@ WebSocketSession::WebSocketSession(
       generator_(std::move(generator)),
       viewer_hook_(viewer_hook)
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::addOwner(chip);
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::addOwner(block);
+      }
+    }
+  }
+
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
@@ -278,6 +478,16 @@ WebSocketSession::WebSocketSession(
 
 WebSocketSession::~WebSocketSession()
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::removeOwner();
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::removeOwner();
+      }
+    }
+  }
   if (viewer_hook_ != nullptr && viewer_token_ != 0) {
     viewer_hook_->sessions().remove(viewer_token_);
   }
@@ -371,6 +581,20 @@ void WebSocketSession::on_accept(beast::error_code ec)
     if (!self->generator_->getBlock()) {
       return;
     }
+
+    // Re-register chip/block observer if the chip was created after session
+    // construction (e.g. read_def ran after browser connected).
+    if (!self->odb::dbChipCallBackObj::hasOwner()) {
+      odb::dbChip* chip = self->generator_->getChip();
+      if (chip) {
+        self->odb::dbChipCallBackObj::addOwner(chip);
+        odb::dbBlock* block = chip->getBlock();
+        if (block && !self->odb::dbBlockCallBackObj::hasOwner()) {
+          self->odb::dbBlockCallBackObj::addOwner(block);
+        }
+      }
+    }
+
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
     resp.id = 0;
@@ -411,6 +635,221 @@ void WebSocketSession::on_read(beast::error_code ec)
   WebSocketRequest req = dispatcher_.parse(msg);
   auto self = shared_from_this();
 
+  switch (req.type) {
+    case WebSocketRequest::kSelect:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleSelect(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kSnap:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleSnap(req));
+                });
+      break;
+    case WebSocketRequest::kInspect:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleInspect(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kInspectBack:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleInspectBack(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kHover:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleHover(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kSchematicCone:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicCone(req));
+      });
+      break;
+    case WebSocketRequest::kSchematicFull:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicFull(req));
+      });
+      break;
+    case WebSocketRequest::kSchematicInspect:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleSchematicInspect(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::kGet3DData:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleGet3DData(req));
+      });
+      break;
+    case WebSocketRequest::kTclEval:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->tcl_handler_.handleTclEval(req));
+                });
+      break;
+    case WebSocketRequest::kTclComplete:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->tcl_handler_.handleTclComplete(req));
+          });
+      break;
+    case WebSocketRequest::kTimingReport:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->timing_handler_.handleTimingReport(req));
+          });
+      break;
+    case WebSocketRequest::kTimingHighlight:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->timing_handler_.handleTimingHighlight(req, self->state_));
+          });
+      break;
+    case WebSocketRequest::kClockTree:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->clock_tree_handler_.handleClockTree(req));
+                });
+      break;
+    case WebSocketRequest::kClockTreeHighlight:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->clock_tree_handler_.handleClockTreeHighlight(
+                          req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kSlackHistogram:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->timing_handler_.handleSlackHistogram(req));
+                });
+      break;
+    case WebSocketRequest::kChartFilters:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->timing_handler_.handleChartFilters(req));
+          });
+      break;
+    case WebSocketRequest::kModuleHierarchy:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleModuleHierarchy(req));
+                });
+      break;
+    case WebSocketRequest::kSetModuleColors:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->tile_handler_.handleSetModuleColors(req, self->state_));
+          });
+      break;
+    case WebSocketRequest::kSetFocusNets:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleSetFocusNets(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kSetRouteGuides:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->select_handler_.handleSetRouteGuides(req, self->state_));
+          });
+      break;
+    case WebSocketRequest::kHeatmaps:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleHeatMaps(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kSetActiveHeatmap:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->tile_handler_.handleSetActiveHeatMap(req, self->state_));
+          });
+      break;
+    case WebSocketRequest::kSetHeatmap:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleSetHeatMap(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kHeatmapTile:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleHeatMapTile(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kListDir:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(handleListDir(req));
+                });
+      break;
+    case WebSocketRequest::kDrcCategories:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->drc_handler_.handleDRCCategories(req));
+          });
+      break;
+    case WebSocketRequest::kDrcMarkers:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCMarkers(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kDrcLoadReport:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->drc_handler_.handleDRCLoadReport(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kDrcUpdateMarker:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->drc_handler_.handleDRCUpdateMarker(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kDrcUpdateCategoryVisibility:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCUpdateCategoryVisibility(
+                          req, self->state_));
+                });
+      break;
+    case WebSocketRequest::kDrcHighlight:
   const auto* entry = dispatcher_.find(req.type);
   if (entry != nullptr) {
     if (entry->run_inline) {
@@ -834,7 +1273,16 @@ WebServer::~WebServer()
     ioc_->stop();
   }
   for (auto& t : threads_) {
-    if (t.joinable()) {
+    if (!t.joinable()) {
+      continue;
+    }
+    // Guard against self-join: if Tcl_Exit was triggered from a worker
+    // thread (handleTclEval → Tcl_Eval "exit"), that worker is itself in
+    // threads_; pthread_join on self returns EDEADLK and abort()s.
+    // Detach the offender — the process is on the way out anyway.
+    if (t.get_id() == std::this_thread::get_id()) {
+      t.detach();
+    } else {
       t.join();
     }
   }
