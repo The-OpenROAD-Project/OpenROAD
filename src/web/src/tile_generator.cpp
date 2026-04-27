@@ -2842,6 +2842,9 @@ void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
   b.field("has_liberty", gen.hasSta());
   if (gen.getBlock()) {
     b.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+    b.field("block_name", gen.getBlock()->getName());
+  } else {
+    b.field("block_name", std::string());
   }
   b.endObject();
 }
