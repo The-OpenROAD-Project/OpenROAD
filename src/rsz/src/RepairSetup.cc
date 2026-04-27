@@ -1257,12 +1257,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
         resizer_->journalEnd();
-        if (pass < max_passes) {
-          // Progress, Save checkpoint so we can back up to here
-          resizer_->journalBegin();
-        } else {
-          journal_open = false;
-        }
+        resizer_->journalBegin();
       } else {
         fallback_ = true;
         // Allow slack to increase to get out of local minima.
@@ -3020,11 +3015,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
           --num_viols;
         }
         resizer_->journalEnd();
-        if (pass < max_last_gasp_passes_) {
-          resizer_->journalBegin();
-        } else {
-          journal_open = false;
-        }
+        resizer_->journalBegin();
       } else {
         debugPrint(logger_,
                    RSZ,
