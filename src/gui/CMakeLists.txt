@@ -174,7 +174,7 @@ else()
   )
   target_include_directories(gui
     PRIVATE
-      ${OPENROAD_HOME}/third-party/gif-h
+      ${OPENROAD_HOME}
   )
 endif()
 
@@ -184,7 +184,7 @@ target_include_directories(gui
   PRIVATE
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
-    ${OPENROAD_HOME}/third-party/gif-h
+    ${OPENROAD_HOME}
 )
 
 add_subdirectory(test)

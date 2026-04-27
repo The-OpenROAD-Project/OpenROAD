@@ -10,11 +10,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
-#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -42,6 +40,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web_assets.h"
 #include "web_chart.h"
 #include "web_viewer_hook.h"
 
@@ -228,31 +227,9 @@ static std::vector<unsigned char> serialize_response(
 // HTTP request handler (wraps dispatch_request for HTTP transport)
 //------------------------------------------------------------------------------
 
-static std::string content_type_for(const std::string& path)
-{
-  auto ext = std::filesystem::path(path).extension().string();
-  if (ext == ".html") {
-    return "text/html";
-  }
-  if (ext == ".js") {
-    return "application/javascript";
-  }
-  if (ext == ".css") {
-    return "text/css";
-  }
-  if (ext == ".png") {
-    return "image/png";
-  }
-  if (ext == ".json") {
-    return "application/json";
-  }
-  return "application/octet-stream";
-}
-
 static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    const TileGenerator& generator,
-    const std::string& doc_root)
+    const TileGenerator& generator)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -295,28 +272,18 @@ static http::response<http::string_body> handle_request(
     res.body() = std::string(websocket_resp.payload.begin(),
                              websocket_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
-  } else if (req.method() == http::verb::get && !doc_root.empty()) {
-    // Serve static files from doc_root
+  } else if (req.method() == http::verb::get) {
     std::string file_path = std::move(target_path);
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Reject paths with ".." to preventd irectory traversal
-    if (file_path.find("..") == std::string::npos) {
-      auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
-      std::ifstream file(full_path, std::ios::binary);
-      if (file) {
-        std::string content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
-        res.set(http::field::content_type, content_type_for(file_path));
-        res.body() = std::move(content);
-      } else {
-        res.result(http::status::not_found);
-        res.body() = "File not found.";
-      }
+    const auto* asset = findEmbeddedAsset(file_path);
+    if (asset) {
+      res.set(http::field::content_type, asset->content_type);
+      res.body() = std::string(asset->content());
     } else {
-      res.result(http::status::bad_request);
-      res.body() = "Invalid path.";
+      res.result(http::status::not_found);
+      res.body() = "Resource not found.";
     }
   } else {
     res.result(http::status::not_found);
@@ -349,8 +316,13 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   DRCHandler drc_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
+  struct PendingWrite
+  {
+    std::vector<unsigned char> frame;
+    std::function<void()> on_complete;
+  };
   net::strand<net::any_io_executor> strand_;
-  std::deque<std::vector<unsigned char>> write_queue_;
+  std::deque<PendingWrite> write_queue_;
   bool writing_ = false;
 
   // Background search index initialization
@@ -378,7 +350,8 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   void on_accept(beast::error_code ec);
   void do_read();
   void on_read(beast::error_code ec);
-  void queue_response(const WebSocketResponse& resp);
+  void queue_response(const WebSocketResponse& resp,
+                      std::function<void()> on_complete = {});
   void do_write();
 
   void inDbMarkerCategoryCreate(odb::dbMarkerCategory*) override
@@ -518,18 +491,37 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // browsers reject with "A server must not mask any frames".
   if (viewer_hook_ != nullptr) {
     auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
-    viewer_token_
-        = viewer_hook_->sessions().add([weak_self](const std::string& json) {
-            auto self = weak_self.lock();
-            if (!self) {
-              return;
-            }
-            WebSocketResponse resp;
-            resp.id = 0;
-            resp.type = 0;  // JSON
-            resp.payload.assign(json.begin(), json.end());
-            self->queue_response(resp);
-          });
+    viewer_token_ = viewer_hook_->sessions().add(
+        // SendFn — queue a JSON push message on this session's write queue.
+        [weak_self](const std::string& json) {
+          auto self = weak_self.lock();
+          if (!self) {
+            return;
+          }
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = 0;  // JSON
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp);
+        },
+        // SendAndWaitFn — queue a JSON push message and invoke the callback
+        // after async_write completes.
+        [weak_self](const std::string& json, std::function<void()> fn) {
+          auto self = weak_self.lock();
+          if (!self) {
+            fn();  // session gone — signal fence immediately
+            return;
+          }
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = 0;  // JSON
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp, std::move(fn));
+        });
+
+    // Flush any log output that accumulated before this client
+    // connected (splash screen, script output, etc.).
+    viewer_hook_->drainLogs();
   }
 
   // Build search indices in the background; tiles render without shapes
@@ -889,18 +881,23 @@ void WebSocketSession::on_read(beast::error_code ec)
   do_read();
 }
 
-void WebSocketSession::queue_response(const WebSocketResponse& resp)
+void WebSocketSession::queue_response(const WebSocketResponse& resp,
+                                      std::function<void()> on_complete)
 {
   std::vector<unsigned char> frame = serialize_response(resp);
 
   // Post to the strand to serialize write queue access
-  net::post(strand_,
-            [self = shared_from_this(), frame = std::move(frame)]() mutable {
-              self->write_queue_.push_back(std::move(frame));
-              if (!self->writing_) {
-                self->do_write();
-              }
-            });
+  net::post(
+      strand_,
+      [self = shared_from_this(),
+       frame = std::move(frame),
+       on_complete = std::move(on_complete)]() mutable {
+        self->write_queue_.push_back(PendingWrite{
+            .frame = std::move(frame), .on_complete = std::move(on_complete)});
+        if (!self->writing_) {
+          self->do_write();
+        }
+      });
 }
 
 void WebSocketSession::do_write()
@@ -912,9 +909,14 @@ void WebSocketSession::do_write()
   writing_ = true;
   websocket_.binary(true);
   websocket_.async_write(
-      net::buffer(write_queue_.front()),
+      net::buffer(write_queue_.front().frame),
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
         net::post(self->strand_, [self, ec]() {
+          auto on_complete = std::move(self->write_queue_.front().on_complete);
+          self->write_queue_.pop_front();
+          if (on_complete) {
+            on_complete();
+          }
           if (ec) {
             debugPrint(self->logger_,
                        utl::WEB,
@@ -922,9 +924,9 @@ void WebSocketSession::do_write()
                        1,
                        "websocket write error: {}",
                        ec.message());
+            self->writing_ = false;
             return;
           }
-          self->write_queue_.pop_front();
           self->do_write();
         });
       });
@@ -941,13 +943,11 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
-              std::string doc_root,
               utl::Logger* logger);
 
   void run() { do_read(); }
@@ -965,11 +965,9 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 
 HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
-                         std::string doc_root,
                          utl::Logger* logger)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
-      doc_root_(std::move(doc_root)),
       logger_(logger)
 {
 }
@@ -1007,7 +1005,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), *generator_, doc_root_));
+      handle_request(std::move(req_), *generator_));
   do_write();
 }
 
@@ -1058,7 +1056,6 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
 
@@ -1068,7 +1065,6 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
-                std::string doc_root,
                 utl::Logger* logger,
                 WebViewerHook* viewer_hook);
 
@@ -1083,7 +1079,6 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
-                             std::string doc_root,
                              utl::Logger* logger,
                              WebViewerHook* viewer_hook)
     : stream_(std::move(socket)),
@@ -1091,7 +1086,6 @@ DetectSession::DetectSession(Tcp::socket&& socket,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
       logger_(logger),
       viewer_hook_(viewer_hook)
 {
@@ -1130,7 +1124,7 @@ void DetectSession::on_read(beast::error_code ec)
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, doc_root_, logger_);
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1147,7 +1141,6 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
-  std::string doc_root_;
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
 
@@ -1158,11 +1151,14 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
-           std::string doc_root,
            utl::Logger* logger,
            WebViewerHook* viewer_hook);
 
   void run() { do_accept(); }
+
+  // The actual port the acceptor bound to (useful when port 0 was
+  // requested and the OS assigned a free port).
+  uint16_t port() const { return acceptor_.local_endpoint().port(); }
 
   // Close the acceptor so its destructor doesn't touch a dying
   // io_context.  Called from WebServer::stop() before ioc_.reset().
@@ -1183,7 +1179,6 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
-                   std::string doc_root,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook)
     : ioc_(ioc),
@@ -1192,7 +1187,6 @@ Listener::Listener(net::io_context& ioc,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
       logger_(logger),
       viewer_hook_(viewer_hook)
 {
@@ -1244,7 +1238,6 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     tcl_eval_,
                                     timing_report_,
                                     clock_report_,
-                                    doc_root_,
                                     logger_,
                                     viewer_hook_)
         ->run();
@@ -1271,6 +1264,14 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer()
 {
+  // Wake any thread blocked in waitForStop() so it can return before
+  // we tear down the io_context.
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
+
   // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
   // By this point the Tcl interpreter is partially torn down and static
   // objects may be destroyed.  Calling stop() (which joins 32 threads
@@ -1596,14 +1597,13 @@ void WebServer::saveImage(const std::string& filename,
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
 }
 
-std::function<void()> createAndRunListener(
+ListenerHandle createAndRunListener(
     net::io_context& ioc,
     const Tcp::endpoint& endpoint,
     std::shared_ptr<TileGenerator> generator,
     std::shared_ptr<TclEvaluator> tcl_eval,
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    const std::string& doc_root,
     utl::Logger* logger,
     WebViewerHook* viewer_hook)
 {
@@ -1613,11 +1613,11 @@ std::function<void()> createAndRunListener(
                                              std::move(tcl_eval),
                                              std::move(timing_report),
                                              std::move(clock_report),
-                                             doc_root,
                                              logger,
                                              viewer_hook);
   listener->run();
-  return [listener]() { listener->close(); };
+  return {.shutdown = [listener]() { listener->close(); },
+          .port = listener->port()};
 }
 
 }  // namespace web

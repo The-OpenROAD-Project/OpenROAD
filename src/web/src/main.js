@@ -2,6 +2,22 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import './theme.js';
+import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import { latLngToDbu } from './coordinates.js';
+import { WebSocketManager } from './websocket-manager.js';
+import { createWebSocketTileLayer } from './websocket-tile-layer.js';
+import { TimingWidget } from './timing-widget.js';
+import { ClockTreeWidget } from './clock-tree-widget.js';
+import { ChartsWidget } from './charts-widget.js';
+import { HierarchyBrowser } from './hierarchy-browser.js';
+import { createInspectorPanel } from './inspector.js';
+import { populateDisplayControls } from './display-controls.js';
+import { createMenuBar } from './menu-bar.js';
+import { RulerManager } from './ruler.js';
+import { SchematicWidget } from './schematic-widget.js';
+import { DrcWidget } from './drc-widget.js';
+import { TclCompleter } from './tcl-completer.js';
+import { setCookie } from './theme.js';
 
 import {GoldenLayout, LayoutConfig} from 'https://esm.sh/golden-layout@2.6.0';
 
@@ -29,18 +45,23 @@ const DISCONNECT_DELAY_MS =
     2000;  // Show banner after 2 seconds of disconnection
 
 function updateStatus() {
-  const isConnected = app.websocketManager && app.websocketManager.isConnected;
-  const pendingCount =
-      app.websocketManager ? app.websocketManager.pending.size : 0;
-
-  if (!isConnected) {
-    // Only show banner after a delay to avoid flashing on page load
-    if (!disconnectTimeout) {
-      disconnectTimeout = setTimeout(() => {
-        if (!app.websocketManager?.isConnected) {
-          statusDiv.innerHTML =
-              '<div class="disconnected-banner">⚠ OpenROAD disconnected</div>';
-          statusDiv.style.display = 'block';
+    const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    
+    if (!isConnected) {
+        // After an intentional shutdown the "Server stopped" banner is
+        // already showing — don't overwrite it with the generic message.
+        if (app.websocketManager?._shutdown) {
+            return;
+        }
+        // Only show banner after a delay to avoid flashing on page load
+        if (!disconnectTimeout) {
+            disconnectTimeout = setTimeout(() => {
+                if (!app.websocketManager?.isConnected) {
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
+                    statusDiv.style.display = 'block';
+                }
+            }, DISCONNECT_DELAY_MS);
         }
       }, DISCONNECT_DELAY_MS);
     }
@@ -683,13 +704,16 @@ function focusComponent(componentType) {
 app.focusComponent = focusComponent;
 
 app.toggleTheme = function() {
-  const next =
-      document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next;
-  localStorage.setItem('theme', next);
-  // Re-render canvas-based widgets that read theme colors.
-  if (app.chartsWidget) app.chartsWidget.render();
-  if (app.clockTreeWidget) app.clockTreeWidget.render();
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    setCookie('or_theme', next);
+    // Also write to localStorage for standalone file:// reports.
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('or_theme', next);
+    }
+    // Re-render canvas-based widgets that read theme colors.
+    if (app.chartsWidget) app.chartsWidget.render();
+    if (app.clockTreeWidget) app.clockTreeWidget.render();
 };
 
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
@@ -724,6 +748,45 @@ app.websocketManager.onPush = (msg) => {
   } else if (msg.type === 'drcUpdated') {
     if (app._drcUpdateTimeout) {
       clearTimeout(app._drcUpdateTimeout);
+    if (msg.type === 'refresh') {
+        document.getElementById('loading-overlay').style.display = 'none';
+        redrawAllLayers();
+    } else if (msg.type === 'debug_paused') {
+        ensureDebugContinueButton().style.display = 'block';
+        // Refetch tiles so the user sees the current paused state.
+        // Use the debounced version so that a debug_refresh arriving
+        // in the same event-loop turn is coalesced (avoids 2x tiles).
+        scheduleRedrawAllLayers();
+        // Fetch debug charts (e.g. GPL HPWL vs iteration).
+        if (app.chartsWidget) {
+            app.websocketManager.request({ type: 'debug_charts' })
+                .then(data => app.chartsWidget.setDebugCharts(data.charts || []))
+                .catch(() => {});
+        }
+    } else if (msg.type === 'debug_resumed') {
+        const btn = document.getElementById('debug-continue-btn');
+        if (btn) btn.style.display = 'none';
+    } else if (msg.type === 'debug_refresh') {
+        // Instance positions changed — clear the stale Leaflet highlight
+        // outline (the tile-based highlight updates automatically).
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRedrawAllLayers();
+    } else if (msg.type === 'log') {
+        // Logger output from the main Tcl thread (e.g. global_placement).
+        // The text already contains \n between lines from the batch; strip
+        // any trailing newline to avoid a blank line at the end.
+        let text = msg.text;
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'shutdown') {
+        // Server is stopping intentionally (web_server -stop).
+        // Disable auto-reconnect and show a clear message.
+        app.websocketManager._shutdown = true;
+        statusDiv.innerHTML = '<div class="disconnected-banner">Server stopped</div>';
+        statusDiv.style.display = 'block';
     }
     app._drcUpdateTimeout = setTimeout(() => {
       if (app.drcWidget) {
