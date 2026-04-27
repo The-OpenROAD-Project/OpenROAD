@@ -275,26 +275,37 @@ void RamGen::makeDecoderColumn(
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
 
-  int layers = std::ceil(std::log2(num_words)) - 1;
+  const int layers = std::ceil(std::log2(num_words)) - 1;
 
   for (int word = 0; word < num_words; ++word) {
     auto word_cell = std::make_unique<Cell>();
     dbNet* prev_net = decoder_output_nets[word];
-    for (int i = 0; i < layers; ++i) {
-      dbNet* input_net = nullptr;
-      if (i == layers - 1) {
-        input_net = addr_nets[word][i + 1];
-      } else {
-        input_net = makeNet(prefix, fmt::format("layer_in{}_word{}", i, word));
-      }
+    if (layers == 0) {
+      // 2-word RAM: single address bit drives output net directly via buffer
       makeInst(word_cell.get(),
                prefix,
-               fmt::format("and_layer{}_word{}", i, word),
-               and2_cell_,
-               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][i]},
-                {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
-                {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
-      prev_net = input_net;
+               fmt::format("buf_word{}", word),
+               buffer_cell_,
+               {{buffer_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][0]},
+                {buffer_ports_[{PortRoleType::DataOut, 0}], prev_net}});
+    } else {
+      for (int i = 0; i < layers; ++i) {
+        dbNet* input_net = nullptr;
+        if (i == layers - 1) {
+          input_net = addr_nets[word][i + 1];
+        } else {
+          input_net
+              = makeNet(prefix, fmt::format("layer_in{}_word{}", i, word));
+        }
+        makeInst(word_cell.get(),
+                 prefix,
+                 fmt::format("and_layer{}_word{}", i, word),
+                 and2_cell_,
+                 {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][i]},
+                  {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
+                  {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
+        prev_net = input_net;
+      }
     }
     decoder_layout->addCell(std::move(word_cell));
   }
@@ -330,7 +341,7 @@ void RamGen::makeSelectColumn(const std::string& prefix,
                               const std::vector<dbNet*>& write_select_nets)
 {
   auto select_layout = std::make_unique<Layout>(odb::vertical);
-  if (port_type == RamPortType::ReadOnly) {
+  if (port_type == RamPortType::Read) {
     for (int word = 0; word < num_words; ++word) {
       auto sel_cell = std::make_unique<Cell>();
       makeInst(
@@ -342,7 +353,7 @@ void RamGen::makeSelectColumn(const std::string& prefix,
            {inv_ports_[{PortRoleType::DataOut, 0}], read_select_nets[word]}});
       select_layout->addCell(std::move(sel_cell));
     }
-  } else if (port_type == RamPortType::WriteOnly) {
+  } else if (port_type == RamPortType::Write) {
     for (int word = 0; word < num_words; ++word) {
       auto sel_cell = std::make_unique<Cell>();
       makeInst(
@@ -453,7 +464,7 @@ std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix,
   std::string net_prefix;
   if (port_type == RamPortType::ReadWrite) {
     net_prefix = "select_wr";
-  } else if (port_type == RamPortType::WriteOnly) {
+  } else if (port_type == RamPortType::Write) {
     net_prefix = "select_w";
   } else {
     net_prefix = "select_r";
@@ -904,9 +915,15 @@ void RamGen::generate(const int mask_size,
   }
 
   // One column per bit plus one select/control column per slice,
-  // Each read/write port needs a buffer col, decoder col, and inv col
+  // Each read/write port gets a buffer col and decoder col,
+  // plus inverter columns shared across ports
   int total_ports = rw_ports + r_ports + w_ports;
-  int col_cell_count = slices_per_word * (mask_size + 1) + (total_ports * 3);
+  const int num_inputs = std::ceil(std::log2(num_words));
+  const int ports_per_col
+      = (num_inputs > 0) ? (num_words / num_inputs) : total_ports;
+  const int inv_col_count = std::ceil((float) total_ports / ports_per_col);
+  int col_cell_count
+      = slices_per_word * (mask_size + 1) + 2 * total_ports + inv_col_count;
   ram_grid_.setNumLayouts(col_cell_count);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
@@ -916,9 +933,6 @@ void RamGen::generate(const int mask_size,
     auto in_name = fmt::format("we[{}]", slice);
     write_enable[slice] = makeBTerm(in_name, dbIoType::INPUT);
   }
-
-  // input bterms
-  int num_inputs = std::ceil(std::log2(num_words));
 
   // indices for creating BTerms
   int rw_idx = 0;
@@ -983,14 +997,14 @@ void RamGen::generate(const int mask_size,
           fmt::format("rw_sel_p{}", p), num_words, RamPortType::ReadWrite);
       read_select_nets[r_sel_idx++] = write_select_nets[w_sel_idx];
       ++w_sel_idx;
-    } else if (p < w_ports) {
+    } else if (p < rw_ports + w_ports) {
       write_select_nets[w_sel_idx] = makeSelectNets(
-          fmt::format("w_sel_p{}", p), num_words, RamPortType::WriteOnly);
+          fmt::format("w_sel_p{}", p), num_words, RamPortType::Write);
       ++w_sel_idx;
     }
     if (p >= rw_ports + w_ports) {
       read_select_nets[r_sel_idx++] = makeSelectNets(
-          fmt::format("r_sel_p{}", p), num_words, RamPortType::ReadOnly);
+          fmt::format("r_sel_p{}", p), num_words, RamPortType::Read);
     }
   }
 
@@ -1066,7 +1080,7 @@ void RamGen::generate(const int mask_size,
                        decoder_output_nets[p],
                        write_select_nets[w_buf_idx++]);
       ++r_buf_idx;  // so that next read port doesn't use the rw_select
-    } else if (p < w_ports) {
+    } else if (p < rw_ports + w_ports) {
       makeBufferColumn(fmt::format("sel_buf_w_p{}", p),
                        num_words,
                        decoder_output_nets[p],
@@ -1079,7 +1093,7 @@ void RamGen::generate(const int mask_size,
                        read_select_nets[r_buf_idx++]);
     }
 
-    // decoder column
+    // decoder column creation
     makeDecoderColumn(fmt::format("decoder_p{}", p),
                       num_words,
                       decoder_input_nets[p],
@@ -1087,10 +1101,6 @@ void RamGen::generate(const int mask_size,
   }
 
   if (num_inputs > 0) {
-    // determining how many inverters can fit in one column
-    int ports_per_col = num_words / num_inputs;
-    int inv_col_count = std::ceil((float) total_ports / ports_per_col);
-
     // building out inverter columns
     for (int col = 0; col < inv_col_count; ++col) {
       int start_port = col * ports_per_col;
@@ -1258,7 +1268,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     if (i == 0 && rw_ports > 0) {
       addr_name = "addr_rw";
     } else if (rw_ports > 0) {
-      addr_name = fmt::format("addr_r{}", i - 1);
+      addr_name = fmt::format("addr_rw{}", i - 1);
     } else {
       addr_name = fmt::format("addr_r{}", i);
     }

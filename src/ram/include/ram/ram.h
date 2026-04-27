@@ -65,8 +65,8 @@ enum class PortRoleType
 
 enum class RamPortType
 {
-  ReadOnly,
-  WriteOnly,
+  Read,
+  Write,
   ReadWrite
 };
 
