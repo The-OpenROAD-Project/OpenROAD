@@ -5,8 +5,11 @@
 
 #include <spdlog/common.h>
 
+#include <condition_variable>
+#include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -24,6 +27,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace spdlog::sinks {
+class sink;
+}
+
 namespace web {
 
 struct Color;
@@ -35,23 +42,29 @@ struct TclEvaluator;
 class TimingReport;
 class WebViewerHook;
 
-// Factory that creates, starts, and returns a shutdown callback for a
-// Listener.  Defined in web.cpp (where Listener is local); called from
-// web_serve.cpp.
-std::function<void()> createAndRunListener(
+// Returned by createAndRunListener: a shutdown callback and the actual
+// port the listener bound to (useful when the caller passes port 0).
+struct ListenerHandle
+{
+  std::function<void()> shutdown;
+  uint16_t port;
+};
+
+// Factory that creates, starts, and returns a handle for a Listener.
+// Defined in web.cpp (where Listener is local); called from web_serve.cpp.
+ListenerHandle createAndRunListener(
     boost::asio::io_context& ioc,
     const boost::asio::ip::tcp::endpoint& endpoint,
     std::shared_ptr<TileGenerator> generator,
     std::shared_ptr<TclEvaluator> tcl_eval,
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    const std::string& doc_root,
     utl::Logger* logger,
     WebViewerHook* viewer_hook);
 
-// A layout web server.  serve() starts the server in background threads
-// and returns immediately so the Tcl interpreter remains interactive
-// (analogous to -gui for the Qt frontend).
+// A layout web server.  serve() starts the server in background I/O
+// threads; waitForStop() blocks the calling thread until requestStop()
+// is called, mirroring gui::show / gui::hide.
 
 class WebServer
 {
@@ -66,10 +79,18 @@ class WebServer
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if
   // the server is already running.
-  void serve(int port, const std::string& doc_root);
+  void serve(int port);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
+
+  // Block the calling thread until requestStop() is called, then
+  // tear down the server.  Typically called on the main/Tcl thread.
+  void waitForStop();
+
+  // Signal waitForStop() to return.  Safe to call from any thread
+  // (e.g. an ASIO worker thread executing a Tcl command).
+  void requestStop();
 
   void saveReport(const std::string& filename,
                   int max_setup_paths,
@@ -102,6 +123,7 @@ class WebServer
   int num_threads_ = 0;
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
+  std::shared_ptr<spdlog::sinks::sink> log_sink_;
 
   // Background I/O context and worker threads (non-null while running).
   std::unique_ptr<boost::asio::io_context> ioc_;
@@ -115,6 +137,11 @@ class WebServer
   // Held so stop() can remove it from the Logger before viewer_hook_ is
   // destroyed — the sink stores a raw pointer into the hook.
   spdlog::sink_ptr log_sink_;
+  // Blocking support: waitForStop() sleeps on stop_cv_ until
+  // requestStop() sets stop_requested_.
+  std::mutex stop_mutex_;
+  std::condition_variable stop_cv_;
+  bool stop_requested_ = false;
 };
 
 }  // namespace web

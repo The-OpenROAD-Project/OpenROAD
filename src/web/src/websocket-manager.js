@@ -18,6 +18,7 @@ export class WebSocketManager {
         this.onPush = null; // callback for server-push notifications
         this._cache = null;
         this._isConnected = false;
+        this._shutdown = false; // set by server "shutdown" message
         this.connect();
     }
 
@@ -67,13 +68,17 @@ export class WebSocketManager {
         };
 
         this.socket.onclose = () => {
-            console.log('WebSocket closed, reconnecting...');
             this._isConnected = false;
             this.onStatusChange();
             for (const [id, handler] of this.pending) {
                 handler.reject(new Error('WebSocket closed'));
             }
             this.pending.clear();
+            if (this._shutdown) {
+                console.log('WebSocket closed (server stopped)');
+                return; // don't reconnect after intentional shutdown
+            }
+            console.log('WebSocket closed, reconnecting...');
             setTimeout(() => this.connect(), this.reconnectDelay);
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
         };

@@ -6,6 +6,7 @@
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -15,6 +16,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #ifndef _WIN32
@@ -89,6 +91,11 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
     if (pending_.empty()) {
       return;
     }
+    // Keep accumulating when nobody is listening so the first
+    // client that connects receives the full startup output.
+    if (!hook_->sessions().hasClients()) {
+      return;
+    }
     while (!pending_.empty()
            && (pending_.back() == '\n' || pending_.back() == '\r')) {
       pending_.pop_back();
@@ -105,11 +112,20 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
   std::string pending_;
 };
 
-void WebServer::serve(int port, const std::string& doc_root)
+void WebServer::serve(int port)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
     return;
+  }
+
+  // Clear any stale stop request left over from a previous session.
+  // Without this, a requestStop() that arrives during teardown (after
+  // waitForStop() cleared the flag but before stop() finishes) would
+  // cause the next waitForStop() to return immediately.
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = false;
   }
 
   try {
@@ -132,9 +148,10 @@ void WebServer::serve(int port, const std::string& doc_root)
         });
 
     auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
-    logger_->addSink(log_sink);
-    viewer_hook_->setDrainLogsFn([log_sink]() { log_sink->drainToClients(); });
     log_sink_ = log_sink;
+    logger_->addSink(log_sink_);
+    viewer_hook_->setDrainLogsFn(
+        [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
 
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
@@ -163,23 +180,19 @@ void WebServer::serve(int port, const std::string& doc_root)
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
-    if (!doc_root.empty()) {
-      logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
-    }
-
-    const std::string url = "http://localhost:" + std::to_string(port);
-
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
-    shutdown_listener_ = createAndRunListener(*ioc_,
-                                              Tcp::endpoint{address, u_port},
-                                              generator_,
-                                              tcl_eval,
-                                              timing_report,
-                                              clock_report,
-                                              doc_root,
-                                              logger_,
-                                              viewer_hook_.get());
+    auto handle = createAndRunListener(*ioc_,
+                                       Tcp::endpoint{address, u_port},
+                                       generator_,
+                                       tcl_eval,
+                                       timing_report,
+                                       clock_report,
+                                       logger_,
+                                       viewer_hook_.get());
+    shutdown_listener_ = std::move(handle.shutdown);
+
+    const std::string url = "http://localhost:" + std::to_string(handle.port);
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
@@ -224,6 +237,36 @@ void WebServer::stopAndJoinIoThreads()
     }
   }
   threads_.clear();
+void WebServer::waitForStop()
+{
+  std::unique_lock<std::mutex> lock(stop_mutex_);
+  stop_cv_.wait(lock, [this] { return stop_requested_; });
+  stop_requested_ = false;
+  lock.unlock();
+
+  // Notify connected browsers so they can show "Server stopped" and
+  // disable auto-reconnect.  broadcastAndWait() waits for the write to
+  // complete before stop() tears down the io_context.
+  if (viewer_hook_) {
+    constexpr auto kShutdownFlushTimeout = std::chrono::seconds(2);
+    viewer_hook_->sessions().broadcastAndWait(R"({"type":"shutdown"})",
+                                              kShutdownFlushTimeout);
+  }
+
+  stop();
+}
+
+void WebServer::requestStop()
+{
+  if (!isRunning()) {
+    logger_->warn(utl::WEB, 36, "Web server is not running.");
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
 }
 
 void WebServer::stop()
@@ -234,6 +277,10 @@ void WebServer::stop()
       gui::Gui::get()->setHeadlessViewer(nullptr);
     }
     gui::Gui::get()->setChartFactory({});
+  }
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
   }
 
   if (shutdown_listener_) {
