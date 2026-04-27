@@ -116,6 +116,7 @@ cc_library(
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
         "src/json_builder.h",
+        "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
         "src/search.cpp",
