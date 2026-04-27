@@ -75,7 +75,7 @@ proc generate_ram_netlist { args } {
   }
 
   if { $rw_ports + $r_ports < 1 } {
-    utl::error RAM:33 "Must specify at least one read output port"
+    utl::error RAM 33 "Must specify at least one read output port"
   }
 
   set tapcell ""

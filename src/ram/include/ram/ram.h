@@ -184,14 +184,6 @@ class RamGen
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
 
-  void makeSelectColumn(const std::string& prefix,
-                        int num_words,
-                        RamPortType port_type,
-                        odb::dbNet* write_enable,
-                        const std::vector<odb::dbNet*>& decoder_output_nets,
-                        const std::vector<odb::dbNet*>& read_select_nets,
-                        const std::vector<odb::dbNet*>& write_select_nets);
-
   std::unique_ptr<Layout> makeInverterColumn(
       int num_words,
       int num_inputs,
