@@ -274,22 +274,24 @@ class TileGenerator
                         int x,
                         int y) const;
 
-  static int getBitmapTextWidth(std::string_view text, int scale);
-  static int getBitmapTextHeight(int scale);
-  static void drawBitmapText(std::vector<unsigned char>& image,
-                             int x,
-                             int y,
-                             std::string_view text,
-                             int scale,
-                             const Color& color);
-  // Draw text rotated 90° CCW (reads bottom-to-top).
-  // (x, y) is the bottom-left corner of the rotated text block.
-  static void drawBitmapTextRotated(std::vector<unsigned char>& image,
-                                    int x,
-                                    int y,
-                                    std::string_view text,
-                                    int scale,
-                                    const Color& color);
+  // Anti-aliased text rendering using pre-baked font atlas.
+  // |font_height| is the desired pixel height; snapped to nearest pre-baked
+  // size internally.
+  static int getTextWidth(std::string_view text, int font_height);
+  static int getTextHeight(int font_height);
+  static void drawText(std::vector<unsigned char>& image,
+                       int x,
+                       int y,
+                       std::string_view text,
+                       int font_height,
+                       const Color& color);
+  // Draw text rotated 90° CW (reads top-to-bottom).
+  static void drawTextRotated(std::vector<unsigned char>& image,
+                              int x,
+                              int y,
+                              std::string_view text,
+                              int font_height,
+                              const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,

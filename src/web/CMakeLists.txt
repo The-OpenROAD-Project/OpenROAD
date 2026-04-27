@@ -92,6 +92,8 @@ target_sources(web
     src/hierarchy_report.cpp
     src/request_handler.cpp
     src/search.cpp
+    src/font_data.cpp
+    src/glyph_cache.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
@@ -112,6 +114,7 @@ target_link_libraries(web
     gui_heatmap_core
     dbSta_lib
     lodepng
+    stb_truetype
     utl_lib
 )
 
