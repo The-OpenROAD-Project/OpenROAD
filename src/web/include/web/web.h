@@ -123,7 +123,6 @@ class WebServer
   int num_threads_ = 0;
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
-  std::shared_ptr<spdlog::sinks::sink> log_sink_;
 
   // Background I/O context and worker threads (non-null while running).
   std::unique_ptr<boost::asio::io_context> ioc_;
