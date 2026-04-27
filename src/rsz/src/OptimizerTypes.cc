@@ -63,10 +63,33 @@ const char* failReasonName(const FailReason reason)
   return "unknown_fail_reason";
 }
 
-bool ArcDelayState::isValid() const
+namespace {
+
+bool selectedArcIsValid(const SelectedArc& arc)
 {
   return arc.scene != nullptr && arc.min_max != nullptr
-         && arc.input_port != nullptr && arc.output_port != nullptr;
+         && arc.input_port != nullptr && arc.output_port != nullptr
+         && arc.in_rf != nullptr && arc.out_rf != nullptr;
+}
+
+}  // namespace
+
+bool DelayStageState::isValid() const
+{
+  return selectedArcIsValid(arc) && path_index >= 0;
+}
+
+bool ArcDelayState::isValid() const
+{
+  if (!selectedArcIsValid(arc)) {
+    return false;
+  }
+  if (path_stages.empty()) {
+    return true;
+  }
+  return target_stage_index >= 0
+         && target_stage_index < static_cast<int>(path_stages.size())
+         && path_stages[target_stage_index].isValid();
 }
 
 bool Target::canBePathDriver() const

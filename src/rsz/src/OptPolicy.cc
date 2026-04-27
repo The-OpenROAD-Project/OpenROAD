@@ -33,6 +33,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/StaState.hh"
 #include "utl/ThreadPool.h"
+#include "utl/env.h"
 
 namespace rsz {
 
@@ -53,6 +54,22 @@ void OptPolicy::start(const OptimizerRunConfig& config)
   estimate_parasitics_ = resizer_.estimateParasitics();
   max_ = resizer_.maxAnalysisMode();
   resetRun();
+  // Single source of truth for all policy-tunable envars.
+  loadPolicyEnvars();
+}
+
+void OptPolicy::loadPolicyEnvars()
+{
+  // VtSwap candidate cap (per target, per generator).
+  policy_config_.max_candidate_generation
+      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 10);
+  // Hard cap on accepted moves; 0 means unlimited (per OptPolicyConfig docs).
+  policy_config_.max_committed_moves
+      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 100);
+  // Number of fanin/fanout stages included in MT delay estimation; 0 keeps
+  // target-stage-only scoring.
+  policy_config_.delay_estimation_levels
+      = utl::readEnvarNonNegativeInt("RSZ_MT_DELAY_LEVELS", 0);
 }
 
 GeneratorContext OptPolicy::makeGeneratorContext(
@@ -183,8 +200,8 @@ void OptPolicy::prepareArcDelayState(Target& target) const
   }
 
   FailReason fail_reason = FailReason::kNone;
-  target.arc_delay
-      = DelayEstimator::buildContext(resizer_, target, &fail_reason);
+  target.arc_delay = DelayEstimator::buildContext(
+      resizer_, target, policy_config_.delay_estimation_levels, &fail_reason);
 }
 
 void OptPolicy::prewarmTargetLibertyCaches(

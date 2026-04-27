@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <cstdint>
 #include <optional>
 
 #include "OptimizerTypes.hh"
@@ -46,11 +45,15 @@ class DelayEstimator
                            float& delay);
 
   // === Context construction =================================================
+  // delay_levels=0 captures the target stage only; N>0 also captures up to N
+  // valid fanin and N valid fanout stages from the selected path.
   static std::optional<ArcDelayState> buildContext(const Resizer& resizer,
                                                    const Target& target,
+                                                   int delay_levels,
                                                    FailReason* fail_reason
                                                    = nullptr);
 
+  // Lower-level overload used by tests and policy prepare code.
   static std::optional<ArcDelayState> buildContext(
       const Resizer& resizer,
       sta::Instance* inst,
@@ -59,6 +62,7 @@ class DelayEstimator
       int path_index,
       const sta::Scene* scene,
       const sta::MinMax* min_max,
+      int delay_levels,
       FailReason* fail_reason = nullptr);
 
   // === Delay estimation =====================================================

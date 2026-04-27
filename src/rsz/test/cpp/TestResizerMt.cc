@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <cstdlib>
 #include <iomanip>
 #include <ios>
 #include <memory>
@@ -287,6 +288,32 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
   return oss.str();
 }
 
+class ScopedEnv
+{
+ public:
+  ScopedEnv(const char* name, const char* value) : name_(name)
+  {
+    const char* old_value = std::getenv(name_);
+    if (old_value != nullptr) {
+      old_value_ = old_value;
+    }
+    setenv(name_, value, 1);
+  }
+
+  ~ScopedEnv()
+  {
+    if (old_value_.has_value()) {
+      setenv(name_, old_value_->c_str(), 1);
+    } else {
+      unsetenv(name_);
+    }
+  }
+
+ private:
+  const char* name_;
+  std::optional<std::string> old_value_;
+};
+
 TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
 {
   Resizer& resizer = resizer_;
@@ -295,7 +322,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   const Target target = makeTarget("out0", "target", "Z");
 
   FailReason fail_reason = FailReason::kNone;
-  auto context = DelayEstimator::buildContext(resizer, target, &fail_reason);
+  auto context = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
   if (!context.has_value()) {
     return;
@@ -305,6 +332,8 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   ASSERT_NE(arc_delay.arc.output_port, nullptr);
   EXPECT_EQ(arc_delay.arc.input_port->name(), "A");
   EXPECT_EQ(arc_delay.arc.output_port->name(), "Z");
+  EXPECT_TRUE(arc_delay.path_stages.empty());
+  EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
   EXPECT_GT(arc_delay.load_cap, 0.0f);
   EXPECT_GT(arc_delay.current_delay, 0.0f);
 
@@ -319,6 +348,77 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
+TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
+{
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  const Target target = makeTarget("path_out", "path_target", "ZN");
+
+  FailReason fail_reason = FailReason::kNone;
+  const std::optional<ArcDelayState> context
+      = DelayEstimator::buildContext(resizer, target, 1, &fail_reason);
+  ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
+  if (!context.has_value()) {
+    return;
+  }
+
+  const ArcDelayState& arc_delay = context.value();
+  EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
+  ASSERT_EQ(arc_delay.path_stages.size(), 3);
+  ASSERT_EQ(arc_delay.target_stage_index, 1);
+  EXPECT_EQ(arc_delay.path_stages[arc_delay.target_stage_index].path_index,
+            arc_delay.path_index);
+  EXPECT_EQ(arc_delay.path_stages[0].arc.output_port->name(), "Z");
+  EXPECT_EQ(arc_delay.path_stages[1].arc.output_port->name(), "ZN");
+  EXPECT_EQ(arc_delay.path_stages[2].arc.output_port->name(), "Z");
+  for (const DelayStageState& stage : arc_delay.path_stages) {
+    EXPECT_GT(stage.current_delay, 0.0f);
+    EXPECT_GT(stage.current_slew, 0.0f);
+  }
+
+  sta::LibertyCell* candidate_cell
+      = sta_->network()->findLibertyCell("NAND2_X1_L");
+  ASSERT_NE(candidate_cell, nullptr);
+
+  const DelayEstimate estimate
+      = DelayEstimator::estimate(arc_delay, candidate_cell);
+  EXPECT_TRUE(estimate.legal);
+  EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
+}
+
+TEST_F(TestResizerMt, SetupLegacyMtPolicyRejectsNegativeDelayEstimationLevels)
+{
+  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
+  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
+
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  MoveCommitter committer(resizer);
+  SetupLegacyMtPolicy policy(resizer, committer);
+
+  OptimizerRunConfig config;
+  config.setup_slack_margin = 1.0;
+  // Negative envar values are rejected by readEnvarNonNegativeInt.
+  EXPECT_THROW(policy.start(config), std::runtime_error);
+}
+
+TEST_F(TestResizerMt, SetupMt1PolicyRejectsNegativeDelayEstimationLevels)
+{
+  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
+  ScopedEnv max_moves("RSZ_VTSWAP_MAX_MOVES", "100");
+  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
+
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  MoveCommitter committer(resizer);
+  SetupMt1Policy policy(resizer, committer);
+
+  OptimizerRunConfig config;
+  config.setup_slack_margin = 1.0;
+  // Negative envar values are rejected by readEnvarNonNegativeInt.
+  EXPECT_THROW(policy.start(config), std::runtime_error);
+}
+
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
 {
   Resizer& resizer = resizer_;
@@ -326,7 +426,7 @@ TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
   const Target target = makeTarget("out0", "target", "Z");
 
   FailReason fail_reason = FailReason::kNone;
-  auto context = DelayEstimator::buildContext(resizer, target, &fail_reason);
+  auto context = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
   if (!context.has_value()) {
     return;
@@ -350,7 +450,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateSamplesOnlyPathArcOnMultiArcCell)
   const Target target = makeTarget("path_out", "path_target", "ZN");
 
   FailReason fail_reason = FailReason::kNone;
-  auto context = DelayEstimator::buildContext(resizer, target, &fail_reason);
+  auto context = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
   if (!context.has_value()) {
     return;
@@ -379,7 +479,7 @@ TEST_F(TestResizerMt, Mt1CandidateEstimateUsesSelectedArcAndCachedState)
 
   FailReason fail_reason = FailReason::kNone;
   const std::optional<ArcDelayState> arc_delay
-      = DelayEstimator::buildContext(resizer, target, &fail_reason);
+      = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
   ASSERT_TRUE(arc_delay.has_value()) << failReasonName(fail_reason);
   if (!arc_delay.has_value()) {
     return;

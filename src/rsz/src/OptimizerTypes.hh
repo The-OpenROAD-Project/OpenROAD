@@ -99,9 +99,23 @@ struct SelectedArc
   const sta::RiseFall* out_rf{nullptr};
 };
 
-// Snapshot of one timing arc's electrical state needed for table-model delay
+// Snapshot of one timing stage's electrical state needed for table-model delay
 // estimation.  MT policies prepare this on the main thread and then worker
 // threads read it from Target without touching STA analysis state.
+struct DelayStageState
+{
+  bool isValid() const;
+
+  SelectedArc arc;
+  float input_slew{0.0f};
+  float load_cap{0.0f};
+  float current_delay{0.0f};  // Original delay before optimization
+  float current_slew{0.0f};
+  int path_index{-1};
+};
+
+// Prepared delay-estimator context for a target stage and its optional
+// N-level fanin/fanout timing window.
 struct ArcDelayState
 {
   bool isValid() const;
@@ -110,6 +124,12 @@ struct ArcDelayState
   float input_slew{0.0f};
   float load_cap{0.0f};
   float current_delay{0.0f};  // Original delay before optimization
+  float current_slew{0.0f};
+  int path_index{-1};
+
+  std::vector<DelayStageState> path_stages;
+  int target_stage_index{-1};
+  int delay_estimation_levels{0};
 };
 
 // Raw delay-estimator result before a candidate converts it into a
@@ -345,6 +365,10 @@ struct OptPolicyConfig
   // Experimental. Hard cap on accepted moves for policies that support bounded
   // commits. A value of 0 means unlimited.
   int max_committed_moves{0};
+
+  // Number of timing stages to include before and after the target stage in MT
+  // delay estimation. 0 preserves target-stage-only scoring.
+  int delay_estimation_levels{0};
 };
 
 // === Move type labels ======================================================

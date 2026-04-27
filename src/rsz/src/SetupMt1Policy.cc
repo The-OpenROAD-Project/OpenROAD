@@ -27,7 +27,6 @@
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
-#include "utl/env.h"
 
 namespace rsz {
 
@@ -41,10 +40,6 @@ SetupMt1Policy::~SetupMt1Policy() = default;
 void SetupMt1Policy::start(const OptimizerRunConfig& config)
 {
   OptPolicy::start(config);
-  policy_config_.max_candidate_generation
-      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
-  policy_config_.max_committed_moves
-      = utl::readEnvarInt("RSZ_VTSWAP_MAX_MOVES", 100);
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);

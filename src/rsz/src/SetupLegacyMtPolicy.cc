@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -26,7 +27,6 @@
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
-#include "utl/env.h"
 
 namespace rsz {
 
@@ -43,8 +43,6 @@ SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config)
 {
   SetupLegacyPolicy::start(config);
-  policy_config_.max_candidate_generation
-      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
   thread_pool_ = makeWorkerThreadPool();
 }
 

@@ -107,6 +107,11 @@ class OptPolicy
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
 
+  // Load every policy-tunable envar into policy_config_ once at start time.
+  // Each subclass reads only the fields it actually consumes from
+  // policy_config_; loading unused fields is harmless.
+  void loadPolicyEnvars();
+
   // Reset run state at the beginning of start(); call once per run.
   void resetRun()
   {

@@ -26,7 +26,6 @@
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
-#include "utl/env.h"
 
 namespace rsz {
 
@@ -42,12 +41,7 @@ MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
 
 void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config)
 {
-  // Reset the one-move-per-target policy state before the first pass begins.
   OptPolicy::start(config);
-  policy_config_.max_candidate_generation
-      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
-  policy_config_.max_committed_moves
-      = utl::readEnvarInt("RSZ_VTSWAP_MAX_MOVES", 100);
   generator_ = std::make_unique<MeasuredVtSwapGenerator>(
       makeGeneratorContext(config_));
   target_collector_ = std::make_unique<rsz::RepairTargetCollector>(&resizer_);
