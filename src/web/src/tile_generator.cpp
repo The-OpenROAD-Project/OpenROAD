@@ -21,6 +21,7 @@
 #include "color.h"
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
+#include "glyph_cache.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "json_builder.h"
@@ -280,6 +281,7 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
   if (chip) {
     search_->setTopChip(chip);
   }
+  computePinLabelMargin();
 }
 
 TileGenerator::~TileGenerator() = default;
@@ -294,6 +296,29 @@ void TileGenerator::eagerInit()
   if (block) {
     search_->eagerInit(block);
   }
+  computePinLabelMargin();
+}
+
+void TileGenerator::computePinLabelMargin()
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    pin_label_margin_dbu_ = 0;
+    return;
+  }
+  const int pin_size = getPinMaxSize();
+  if (pin_size <= 0) {
+    pin_label_margin_dbu_ = 0;
+    return;
+  }
+  int max_text_px = 0;
+  const auto pin_font = fontAtlasGetFont(kPinLabelFontHeight);
+  for (odb::dbBTerm* term : block->getBTerms()) {
+    const int w = pin_font.textWidth(term->getName());
+    max_text_px = std::max(w, max_text_px);
+  }
+  const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
+  pin_label_margin_dbu_ = label_px * pin_size / kMinPinNameSizePixels;
 }
 
 bool TileGenerator::shapesReady() const
@@ -395,25 +420,11 @@ odb::Rect TileGenerator::getBounds() const
   odb::Rect bounds;
   if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
-    // Expand for pin markers AND labels that extend outside the die edge.
-    // At the zoom where labels first appear, the label extends
-    //   marker_px + text_margin + text_width  pixels
-    // past the pin anchor.  Convert to DBU by dividing by the critical
-    // scale (= kMinPinNameSizePixels / pin_size).
-    const int pin_size = getPinMaxSize();
-    if (pin_size > 0) {
-      int max_text_px = 0;
-      const auto pin_font = fontAtlasGetFont(kPinLabelFontHeight);
-      for (odb::dbBTerm* term : block->getBTerms()) {
-        const int w = pin_font.textWidth(term->getName());
-        max_text_px = std::max(w, max_text_px);
-      }
-      const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
-      const int margin = label_px * pin_size / kMinPinNameSizePixels;
-      bounds.set_xlo(bounds.xMin() - margin);
-      bounds.set_ylo(bounds.yMin() - margin);
-      bounds.set_xhi(bounds.xMax() + margin);
-      bounds.set_yhi(bounds.yMax() + margin);
+    if (pin_label_margin_dbu_ > 0) {
+      bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
+      bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
+      bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
+      bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
     }
   }
   return bounds;

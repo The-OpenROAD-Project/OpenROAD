@@ -355,10 +355,13 @@ class TileGenerator
                        const Color& c,
                        int width = 3);
 
+  void computePinLabelMargin();
+
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
+  int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
   static constexpr int kTileSizeInPixel = 256;
 };
 
