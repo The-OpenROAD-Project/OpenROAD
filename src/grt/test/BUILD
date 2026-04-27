@@ -137,7 +137,10 @@ regression_test(
     name = "snapshot_batched_bus_route",
     check_log = False,
     check_passfail = True,
-    data = [":test_resources"],
+    data = [
+        "bus_route.tcl",
+        ":test_resources",
+    ],
 )
 
 regression_test(

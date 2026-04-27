@@ -1161,7 +1161,7 @@ int FastRouteCore::resolveSnapshotNetsForBatch(const int iter,
 std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
 {
   auto worker = std::make_unique<FastRouteCore>(
-      db_, logger_, callback_handler_, stt_builder_, sta_);
+      db_, logger_, service_registry_, stt_builder_, sta_);
 
   worker->owns_nets_ = false;
   worker->snapshot_batched_width_ = 0;
