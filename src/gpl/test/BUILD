@@ -17,7 +17,7 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
-    "incremental02",
+    "mbff_orig_name",
     "nograd01",
     "simple01",
     "simple01-obs",
@@ -41,6 +41,12 @@ TESTS = [
     "simple10",
     "region01",
 ]
+
+PASSFAIL_TESTS = [
+    "incremental02",
+]
+
+ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 py_library(
     name = "helpers",
@@ -79,16 +85,12 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "incremental02",
-]
-
 [regression_test(
     name = test_name,
+    check_log = False if test_name in PASSFAIL_TESTS else True,
+    check_passfail = True if test_name in PASSFAIL_TESTS else False,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
-) for test_name in TESTS]
+) for test_name in ALL_TESTS]
 
 PY_TESTS = [
     "ar01",

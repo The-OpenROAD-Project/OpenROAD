@@ -16,7 +16,7 @@ import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import './theme.js';
+import { setCookie } from './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -29,11 +29,16 @@ function updateStatus() {
     const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
     
     if (!isConnected) {
+        // After an intentional shutdown the "Server stopped" banner is
+        // already showing — don't overwrite it with the generic message.
+        if (app.websocketManager?._shutdown) {
+            return;
+        }
         // Only show banner after a delay to avoid flashing on page load
         if (!disconnectTimeout) {
             disconnectTimeout = setTimeout(() => {
                 if (!app.websocketManager?.isConnected) {
-                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected</div>';
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
                     statusDiv.style.display = 'block';
                 }
             }, DISCONNECT_DELAY_MS);
@@ -651,7 +656,11 @@ app.focusComponent = focusComponent;
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    localStorage.setItem('theme', next);
+    setCookie('or_theme', next);
+    // Also write to localStorage for standalone file:// reports.
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('or_theme', next);
+    }
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
@@ -717,6 +726,12 @@ app.websocketManager.onPush = (msg) => {
         let text = msg.text;
         if (text.endsWith('\n')) text = text.slice(0, -1);
         if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'shutdown') {
+        // Server is stopping intentionally (web_server -stop).
+        // Disable auto-reconnect and show a clear message.
+        app.websocketManager._shutdown = true;
+        statusDiv.innerHTML = '<div class="disconnected-banner">Server stopped</div>';
+        statusDiv.style.display = 'block';
     }
 };
 

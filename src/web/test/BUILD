@@ -43,6 +43,14 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":request_handler_test",
+        ":tile_generator_test",
+    ],
+)
+
 js_test(
     name = "coordinates_test",
     data = JS_FILES,
@@ -131,6 +139,13 @@ js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "theme_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-theme.js",
     no_copy_to_bin = JS_FILES,
 )
 

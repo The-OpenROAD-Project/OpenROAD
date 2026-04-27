@@ -29,6 +29,7 @@ ALL_TESTS = [
     "make_port",
     "network_edit1",
     "power1",
+    "read_def_bus_port",
     "read_liberty1",
     "read_vcd",
     "read_verilog1",
