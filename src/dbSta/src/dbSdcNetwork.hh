@@ -27,6 +27,11 @@ class dbSdcNetwork : public SdcNetwork
   PinSeq findPinsMatching(const Instance* instance,
                           const PatternMatch* pattern) const override;
 
+  // Drop the cached full-path -> Instance map. Must be called when the
+  // hierarchy changes (instances created/destroyed/renamed) so that
+  // subsequent literal SDC lookups don't return stale or dangling pointers.
+  void invalidateSdcPathToInstMap() { sdc_path_to_inst_.reset(); }
+
  protected:
   void findInstancesMatching1(const PatternMatch* pattern,
                               InstanceSeq& insts) const;

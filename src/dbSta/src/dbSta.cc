@@ -1097,13 +1097,25 @@ void dbStaCbk::setNetwork(dbNetwork* network)
   network_ = network;
 }
 
+// Drop the dbSdcNetwork's lazy full-path -> Instance map whenever the
+// hierarchy changes; without this, cached entries can outlive their
+// instances and turn subsequent literal SDC lookups into use-after-frees.
+static void invalidateSdcPathCache(dbSta* sta)
+{
+  if (auto* sdc = dynamic_cast<dbSdcNetwork*>(sta->sdcNetwork())) {
+    sdc->invalidateSdcPathToInstMap();
+  }
+}
+
 void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 {
+  invalidateSdcPathCache(sta_);
   sta_->makeInstanceAfter(network_->dbToSta(inst));
 }
 
 void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
 {
+  invalidateSdcPathCache(sta_);
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
@@ -1253,11 +1265,13 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)
 {
+  invalidateSdcPathCache(sta_);
   sta_->makeInstanceAfter(network_->dbToSta(modinst));
 }
 
 void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 {
+  invalidateSdcPathCache(sta_);
   sta_->deleteInstanceBefore(network_->dbToSta(modinst));
 }
 

@@ -27,3 +27,12 @@ foreach p $pins {
 # Apply a real SDC constraint and confirm it sticks (no STA-0363 warning).
 set_disable_timing [get_pins i/sub/buf1/A]
 report_disabled_edges
+
+# After the cache has been built, mutate the hierarchy and confirm that
+# subsequent literal lookups see the new instance.  Without invalidation
+# on inDbInstCreate, the stale cache would miss the freshly added cell.
+set master [[ord::get_db] findMaster snl_bufx1]
+odb::dbInst_create $block $master new_buf
+foreach p [get_pins new_buf/A] {
+  puts "after-create get_pins -> [get_property $p full_name]"
+}
