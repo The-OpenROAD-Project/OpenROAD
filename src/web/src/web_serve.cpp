@@ -269,6 +269,38 @@ void WebServer::requestStop()
   stop_cv_.notify_one();
 }
 
+void WebServer::waitForStop()
+{
+  std::unique_lock<std::mutex> lock(stop_mutex_);
+  stop_cv_.wait(lock, [this] { return stop_requested_; });
+  stop_requested_ = false;
+  lock.unlock();
+
+  // Notify connected browsers so they can show "Server stopped" and
+  // disable auto-reconnect.  broadcastAndWait() waits for the write to
+  // complete before stop() tears down the io_context.
+  if (viewer_hook_) {
+    constexpr auto kShutdownFlushTimeout = std::chrono::seconds(2);
+    viewer_hook_->sessions().broadcastAndWait(R"({"type":"shutdown"})",
+                                              kShutdownFlushTimeout);
+  }
+
+  stop();
+}
+
+void WebServer::requestStop()
+{
+  if (!isRunning()) {
+    logger_->warn(utl::WEB, 36, "Web server is not running.");
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
+}
+
 void WebServer::stop()
 {
   if (viewer_hook_) {
