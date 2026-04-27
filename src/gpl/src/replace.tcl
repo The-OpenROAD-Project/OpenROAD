@@ -32,6 +32,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -55,6 +56,7 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
       -pad_left -pad_right} \
     flags {-skip_initial_place \

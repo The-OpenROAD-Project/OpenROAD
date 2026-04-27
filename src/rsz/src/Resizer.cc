@@ -2980,7 +2980,9 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
+void Resizer::findResizeSlacks(bool run_journal_restore,
+                               bool run_repair_timing,
+                               float repair_tns_end_percent)
 {
   initBlock();
 
@@ -3033,7 +3035,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
     // Conservative repair_timing: only fix worst setup violations.
     repair_setup_->repairSetup(
         /*setup_slack_margin=*/0.0,
-        /*repair_tns_end_percent=*/0.0,  // TODO: Change value
+        repair_tns_end_percent,
         /*max_passes=*/1,
         /*max_iterations=*/0,
         /*max_repairs_per_pass=*/1,

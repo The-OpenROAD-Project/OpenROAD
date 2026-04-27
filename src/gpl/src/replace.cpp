@@ -274,6 +274,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
     tb_->setTimingNetsPercentage(options.timingDrivenNetsPercentage);
     tb_->setRepairTiming(options.timingDrivenRepairTiming);
+    tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
   }
 
   if (!np_) {

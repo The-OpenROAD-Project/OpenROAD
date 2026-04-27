@@ -44,6 +44,7 @@ class TimingBase
   void setTimingNetWeightMax(float max);
   void setTimingNetsPercentage(float percentage);
   void setRepairTiming(bool run_repair_timing) { repair_timing_ = run_repair_timing; }
+  void setRepairTnsEndPercent(float percent) { repair_tns_end_percent_ = percent; }
 
   // updateNetWeight.
   // True: successfully reweighted gnets
@@ -61,6 +62,7 @@ class TimingBase
   float net_weight_max_ = 5;
   float nets_percentage_ = 10;
   bool repair_timing_ = false;
+  float repair_tns_end_percent_ = 0.01;
   void initTimingOverflowChk();
 };
 
