@@ -44,6 +44,11 @@ namespace web {
 namespace net = boost::asio;
 using Tcp = net::ip::tcp;
 
+// Tcl command name used to stash the original `exit` while our override
+// is installed.  Mirrors gui::TclCmdInputWidget's kCommandRenamePrefix.
+static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
+static constexpr const char* kExitResultMsg = "_WEB_EXITING_";
+
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
 // rather than on every spdlog flush — sending per-line would overwhelm
@@ -129,6 +134,20 @@ void WebServer::serve(int port)
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
+
+    // Override Tcl's `exit` so a user typing `exit` in the browser tcl
+    // widget doesn't run Tcl_Exit on the worker thread (which triggers
+    // ~WebServer's self-join → std::terminate).  Same pattern as
+    // gui::TclCmdInputWidget.  The handler signals waitForStop() and
+    // sets exit_requested_; the main thread does the real exit.
+    exit_requested_ = false;
+    {
+      const std::string rename_orig
+          = std::string("rename exit ") + kRenamedExitCmd;
+      Tcl_Eval(interp_, rename_orig.c_str());
+      Tcl_CreateCommand(
+          interp_, "exit", &WebServer::tclExitHandler, this, nullptr);
+    }
 
     viewer_hook_ = std::make_unique<WebViewerHook>();
     gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
@@ -228,6 +247,21 @@ void WebServer::waitForStop()
   stop();
 }
 
+int WebServer::tclExitHandler(ClientData clientData,
+                              Tcl_Interp* interp,
+                              int /*argc*/,
+                              const char* /*argv*/[])
+{
+  auto* self = static_cast<WebServer*>(clientData);
+  self->exit_requested_ = true;
+  // Wake waitForStop() on the main thread so it can join the worker
+  // threads (including the one currently executing this handler) and
+  // exit cleanly via std::exit() from the main thread.
+  self->requestStop();
+  Tcl_SetResult(interp, const_cast<char*>(kExitResultMsg), TCL_STATIC);
+  return TCL_ERROR;
+}
+
 void WebServer::requestStop()
 {
   if (!isRunning()) {
@@ -243,6 +277,16 @@ void WebServer::requestStop()
 
 void WebServer::stop()
 {
+  // Restore the original Tcl `exit` command before tearing down — pairs
+  // with the rename in serve().  Skip if not installed (stop() is safe
+  // to call multiple times).
+  if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
+    Tcl_DeleteCommand(interp_, "exit");
+    const std::string restore
+        = std::string("rename ") + kRenamedExitCmd + " exit";
+    Tcl_Eval(interp_, restore.c_str());
+  }
+
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
