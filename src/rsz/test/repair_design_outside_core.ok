@@ -1,21 +1,16 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
-[INFO IFP-0001] Added 56 rows of 420 site FreePDK45_38x28_10R_NP_162NW_34O.
-[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 200.000 200.000 ) um
-[INFO IFP-0101] Core BBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
-[INFO IFP-0102] Core area:                         6256.320 um^2
-[INFO IFP-0103] Total instances area:                49.742 um^2
-[INFO IFP-0104] Effective utilization:                0.008
-[INFO IFP-0105] Number of instances:                     11
+[INFO ODB-0128] Design: outside_core
+[INFO ODB-0252]     Updated 8 pins.
+[INFO ODB-0253]     Updated 7 components.
+[INFO ODB-0254]     Updated 9 nets and 21 connections.
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
-        0 |     +0.0% |       0 |       0 |             0 |        24
-[DEBUG RSZ-buffer_clamp] fanout1 clamped to core (51780, 1230) -> (51780, 22400)
-[DEBUG RSZ-buffer_clamp] fanout2 clamped to core (1780, 101230) -> (20140, 101230)
-[DEBUG RSZ-buffer_clamp] wire3 clamped to core (1780, 191480) -> (20140, 176400)
-    final |     +7.5% |       0 |       4 |             1 |         0
+        0 |     +0.0% |       0 |       0 |             0 |        16
+[DEBUG RSZ-buffer_clamp] fanout1 clamped to core (101780, 1230) -> (101780, 22400)
+[DEBUG RSZ-buffer_clamp] wire2 clamped to core (101780, 1230) -> (101780, 22400)
+[DEBUG RSZ-buffer_clamp] wire3 clamped to core (192030, 1230) -> (178220, 22400)
+    final |     +9.2% |       0 |       3 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 4 buffers in 1 nets.
-PASS: all inserted buffers are within core area.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.
