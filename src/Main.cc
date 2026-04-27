@@ -479,7 +479,14 @@ static int tclAppInit(int& argc,
     // Block until the web server is stopped (like QApplication::exec()
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
-      ord::OpenRoad::openRoad()->getWebServer()->waitForStop();
+      auto* server = ord::OpenRoad::openRoad()->getWebServer();
+      server->waitForStop();
+      // `exit` typed in the browser Tcl widget signalled stop; do the
+      // real process exit now from the main thread (worker threads are
+      // already joined by stop()).
+      if (server->exitRequested()) {
+        exit(EXIT_SUCCESS);
+      }
     }
   }
 #ifdef ENABLE_READLINE

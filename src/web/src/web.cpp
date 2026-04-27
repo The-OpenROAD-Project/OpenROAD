@@ -13,10 +13,8 @@
 #include <fstream>
 #include <functional>
 #include <ios>
-#include <limits>
 #include <memory>
 #include <mutex>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -35,6 +33,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -224,12 +223,11 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (wraps dispatch_request for HTTP transport)
+// HTTP request handler (serves embedded static assets)
 //------------------------------------------------------------------------------
 
 static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req,
-    const TileGenerator& generator)
+    http::request<http::string_body>&& req)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -237,43 +235,8 @@ static http::response<http::string_body> handle_request(
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
 
-  std::regex tile_regex(R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
-  std::smatch match_pieces;
-  std::string target_path(req.target());
-
-  if (req.method() == http::verb::get && req.target() == "/bounds") {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::kBounds;
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-    res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-  } else if (req.method() == http::verb::get && req.target() == "/tech") {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::kTech;
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-    res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-  } else if (req.method() == http::verb::get
-             && std::regex_match(target_path, match_pieces, tile_regex)) {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::kTile;
-    websocket_req.layer = match_pieces[1].str();
-    websocket_req.z = std::stoi(match_pieces[2].str());
-    websocket_req.x = std::stoi(match_pieces[3].str());
-    websocket_req.y = std::stoi(match_pieces[4].str());
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-
-    res.set(http::field::content_type, "image/png");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-    res.set(http::field::cache_control, "public, max-age=604800");
-  } else if (req.method() == http::verb::get) {
-    std::string file_path = std::move(target_path);
+  if (req.method() == http::verb::get) {
+    std::string file_path(req.target());
     if (file_path == "/") {
       file_path = "/index.html";
     }
@@ -314,6 +277,9 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
   DRCHandler drc_handler_;
+
+  // Registration-based request dispatcher (replaces parse/dispatch switches)
+  RequestDispatcher dispatcher_;
 
   // Write serialization: strand + queue ensures one async_write at a time
   struct PendingWrite
@@ -427,6 +393,87 @@ WebSocketSession::WebSocketSession(
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
+
+  // Register all handler request types with the dispatcher.
+  select_handler_.registerRequests(dispatcher_);
+  tcl_handler_.registerRequests(dispatcher_);
+  timing_handler_.registerRequests(dispatcher_);
+  clock_tree_handler_.registerRequests(dispatcher_);
+  tile_handler_.registerRequests(dispatcher_);
+  drc_handler_.registerRequests(dispatcher_);
+
+  // Free function handler
+  dispatcher_.add("list_dir",
+                  WebSocketRequest::kListDir,
+                  [](const WebSocketRequest& req, SessionState&) {
+                    return handleListDir(req);
+                  });
+
+  // Session-specific debug handlers (need viewer_hook_, run inline)
+  dispatcher_.add(
+      "debug_continue",
+      WebSocketRequest::kDebugContinue,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        if (viewer_hook_ != nullptr) {
+          viewer_hook_->continueExecution();
+        }
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  dispatcher_.add(
+      "debug_charts",
+      WebSocketRequest::kDebugCharts,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        JsonBuilder builder;
+        builder.beginObject();
+        builder.beginArray("charts");
+        if (viewer_hook_ != nullptr) {
+          for (WebChart* chart : viewer_hook_->charts()) {
+            builder.beginObject();
+            builder.field("name", chart->name());
+            builder.field("x_label", chart->xLabel());
+            builder.beginArray("y_labels");
+            for (const auto& lbl : chart->yLabels()) {
+              builder.value(lbl);
+            }
+            builder.endArray();
+            builder.field("x_format", chart->xAxisFormat());
+            builder.beginArray("y_formats");
+            for (const auto& f : chart->yAxisFormats()) {
+              builder.value(f);
+            }
+            builder.endArray();
+            builder.beginArray("points");
+            for (const auto& pt : chart->points()) {
+              builder.beginObject();
+              builder.field("x", pt.x);
+              builder.beginArray("ys");
+              for (double v : pt.ys) {
+                builder.value(v);
+              }
+              builder.endArray();
+              builder.endObject();
+            }
+            builder.endArray();
+            builder.endObject();
+          }
+        }
+        builder.endArray();
+        builder.endObject();
+        const std::string& json = builder.str();
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
 }
 
 WebSocketSession::~WebSocketSession()
@@ -500,7 +547,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
           }
           WebSocketResponse resp;
           resp.id = 0;
-          resp.type = 0;  // JSON
+          resp.type = WebSocketResponse::kJson;
           resp.payload.assign(json.begin(), json.end());
           self->queue_response(resp);
         },
@@ -514,7 +561,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
           }
           WebSocketResponse resp;
           resp.id = 0;
-          resp.type = 0;  // JSON
+          resp.type = WebSocketResponse::kJson;
           resp.payload.assign(json.begin(), json.end());
           self->queue_response(resp, std::move(fn));
         });
@@ -551,7 +598,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
     resp.id = 0;
-    resp.type = 0;  // JSON
+    resp.type = WebSocketResponse::kJson;
     const std::string json = R"({"type":"refresh"})";
     resp.payload.assign(json.begin(), json.end());
     self->queue_response(resp);
@@ -585,7 +632,7 @@ void WebSocketSession::on_read(beast::error_code ec)
   const std::string msg = beast::buffers_to_string(buffer_.data());
   buffer_.consume(buffer_.size());
 
-  WebSocketRequest req = parse_web_socket_request(msg);
+  WebSocketRequest req = dispatcher_.parse(msg);
   auto self = shared_from_this();
 
   switch (req.type) {
@@ -803,79 +850,28 @@ void WebSocketSession::on_read(beast::error_code ec)
                 });
       break;
     case WebSocketRequest::kDrcHighlight:
+  const auto* entry = dispatcher_.find(req.type);
+  if (entry != nullptr) {
+    if (entry->run_inline) {
+      queue_response(entry->handle(req, state_));
+    } else {
+      auto handle = entry->handle;
       net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCHighlight(req, self->state_));
+                [self = std::move(self),
+                 req = std::move(req),
+                 handle = std::move(handle)]() {
+                  self->queue_response(handle(req, self->state_));
                 });
-      break;
-    case WebSocketRequest::kDebugContinue: {
-      if (viewer_hook_ != nullptr) {
-        viewer_hook_->continueExecution();
-      }
-      // Send a minimal ack so the client's pending-request map doesn't
-      // leak.  The real state change is broadcast separately via
-      // debug_resumed / debug_refresh push messages.
-      WebSocketResponse resp;
-      resp.id = req.id;
-      resp.type = 0;
-      const std::string json = R"({"ok":1})";
-      resp.payload.assign(json.begin(), json.end());
-      queue_response(resp);
-      break;
     }
-    case WebSocketRequest::kDebugCharts: {
-      WebSocketResponse resp;
-      resp.id = req.id;
-      resp.type = 0;
-      JsonBuilder builder;
-      builder.beginObject();
-      builder.beginArray("charts");
-      if (viewer_hook_ != nullptr) {
-        for (WebChart* chart : viewer_hook_->charts()) {
-          builder.beginObject();
-          builder.field("name", chart->name());
-          builder.field("x_label", chart->xLabel());
-          builder.beginArray("y_labels");
-          for (const auto& lbl : chart->yLabels()) {
-            builder.value(lbl);
-          }
-          builder.endArray();
-          builder.field("x_format", chart->xAxisFormat());
-          builder.beginArray("y_formats");
-          for (const auto& f : chart->yAxisFormats()) {
-            builder.value(f);
-          }
-          builder.endArray();
-          builder.beginArray("points");
-          for (const auto& pt : chart->points()) {
-            builder.beginObject();
-            builder.field("x", pt.x);
-            builder.beginArray("ys");
-            for (double v : pt.ys) {
-              builder.value(v);
-            }
-            builder.endArray();
-            builder.endObject();
-          }
-          builder.endArray();
-          builder.endObject();
-        }
-      }
-      builder.endArray();
-      builder.endObject();
-      const std::string& json = builder.str();
-      resp.payload.assign(json.begin(), json.end());
-      queue_response(resp);
-      break;
-    }
-    default:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleTile(req, self->state_));
-                });
-      break;
+  } else {
+    // Unknown type -- return an error so the client knows the request
+    // was not understood (e.g. typo or client/server version mismatch).
+    WebSocketResponse resp;
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kError;
+    const std::string err = "Unknown request type";
+    resp.payload.assign(err.begin(), err.end());
+    queue_response(resp);
   }
 
   do_read();
@@ -940,15 +936,12 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 {
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
-  std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(Tcp::socket&& socket,
-              std::shared_ptr<TileGenerator> generator,
-              utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -963,12 +956,8 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_close();
 };
 
-HttpSession::HttpSession(Tcp::socket&& socket,
-                         std::shared_ptr<TileGenerator> generator,
-                         utl::Logger* logger)
-    : stream_(std::move(socket)),
-      generator_(std::move(generator)),
-      logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
+    : stream_(std::move(socket)), logger_(logger)
 {
 }
 
@@ -1005,7 +994,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), *generator_));
+      handle_request(std::move(req_)));
   do_write();
 }
 
@@ -1123,8 +1112,7 @@ void DetectSession::on_read(beast::error_code ec)
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, logger_);
+    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
