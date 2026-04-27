@@ -20,7 +20,7 @@ foreach child [$top_mod getChildren] {
   set master [$child getMaster]
   puts "modinst '[$child getName]' master '[$master getName]':"
   set mbt [$master getHeadDbModBTerm]
-  if {$mbt != "NULL"} {
+  if { $mbt != "NULL" } {
     puts "  head modbterm: '[$mbt getName]'"
   }
 }

@@ -552,14 +552,12 @@ dbModBTerm* dbModule::findModBTerm(const char* name) const
   // Compiler), so unconditionally truncating at the last '/' would miss
   // them.  Fall back to the trailing segment for callers that pass a
   // hierarchical path to a non-hierarchical port name.
-  auto it = obj->modbterm_hash_.find(std::string(name));
+  auto it = obj->modbterm_hash_.find(name);
   if (it == obj->modbterm_hash_.end()) {
-    std::string leaf(name);
     const char hier_delimiter = getOwner()->getHierarchyDelimiter();
-    size_t last_idx = leaf.find_last_of(hier_delimiter);
-    if (last_idx != std::string::npos) {
-      leaf = leaf.substr(last_idx + 1);
-      it = obj->modbterm_hash_.find(leaf);
+    const char* last_delim = strrchr(name, hier_delimiter);
+    if (last_delim != nullptr) {
+      it = obj->modbterm_hash_.find(last_delim + 1);
     }
   }
   if (it != obj->modbterm_hash_.end()) {
