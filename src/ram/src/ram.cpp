@@ -767,6 +767,13 @@ void RamGen::findMasters()
             return false;
           }
 
+          // sort ports by name for deterministic ordering across builds
+          std::sort(inputs.begin(),
+                    inputs.end(),
+                    [](sta::LibertyPort* a, sta::LibertyPort* b) {
+                      return std::string(a->name()) < std::string(b->name());
+                    });
+
           // try each pairing, if truth table matches, record port names
           for (auto& pairing : kPairings) {
             std::vector<sta::LibertyPort*> ordered = {inputs[pairing[0]],
