@@ -30,6 +30,7 @@
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
+#include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
