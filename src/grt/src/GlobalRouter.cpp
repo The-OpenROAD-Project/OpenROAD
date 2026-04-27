@@ -4419,6 +4419,7 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       // Remove usage from the preserved net.
       fastroute_->clearNetRoute(preserved_net->getDbNet());
       fastroute_->clearNetRoute(db_net);
+      // Remove usage from the deleted net.
       updateNetResources(deleted_net, true);
       fastroute_->deleteNet(db_net);
       preserved_net->setAreSegmentsRestored(true);
