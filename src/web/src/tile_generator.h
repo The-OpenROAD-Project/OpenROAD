@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "color.h"
+#include "glyph_cache.h"
 #include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -274,23 +275,24 @@ class TileGenerator
                         int x,
                         int y) const;
 
-  // Anti-aliased text rendering using pre-baked font atlas.
-  // |font_height| is the desired pixel height; snapped to nearest pre-baked
-  // size internally.
-  static int getTextWidth(std::string_view text, int font_height);
-  static int getTextHeight(int font_height);
+  // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
+  // handle so callers lock the glyph cache once per rendering context rather
+  // than once per character.
+  static int getTextWidth(std::string_view text,
+                          const GlyphCache::FontSize& font);
+  static int getTextHeight(const GlyphCache::FontSize& font);
   static void drawText(std::vector<unsigned char>& image,
                        int x,
                        int y,
                        std::string_view text,
-                       int font_height,
+                       const GlyphCache::FontSize& font,
                        const Color& color);
   // Draw text rotated 90° CW (reads top-to-bottom).
   static void drawTextRotated(std::vector<unsigned char>& image,
                               int x,
                               int y,
                               std::string_view text,
-                              int font_height,
+                              const GlyphCache::FontSize& font,
                               const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,

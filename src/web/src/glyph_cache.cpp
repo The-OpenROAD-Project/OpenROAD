@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -22,15 +24,14 @@ constexpr int kNumGlyphs = kLastChar - kFirstChar + 1;
 }  // namespace
 
 GlyphCache::GlyphCache(const unsigned char* ttf_data, unsigned int /*ttf_size*/)
+    : font_info_(std::make_unique<stbtt_fontinfo>())
 {
-  font_info_ = new stbtt_fontinfo;
-  stbtt_InitFont(font_info_, ttf_data, 0);
+  if (!stbtt_InitFont(font_info_.get(), ttf_data, 0)) {
+    throw std::runtime_error("Failed to initialize font from TTF data");
+  }
 }
 
-GlyphCache::~GlyphCache()
-{
-  delete font_info_;
-}
+GlyphCache::~GlyphCache() = default;
 
 const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
 {
@@ -41,10 +42,10 @@ const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
   }
 
   SizeSlot& slot = cache_[font_height];
-  slot.scale = stbtt_ScaleForPixelHeight(font_info_, font_height);
+  slot.scale = stbtt_ScaleForPixelHeight(font_info_.get(), font_height);
 
   int ascent, descent, line_gap;
-  stbtt_GetFontVMetrics(font_info_, &ascent, &descent, &line_gap);
+  stbtt_GetFontVMetrics(font_info_.get(), &ascent, &descent, &line_gap);
   slot.ascent = static_cast<int>(std::round(ascent * slot.scale));
   const int desc_px = static_cast<int>(std::round(descent * slot.scale));
   slot.cell_height = slot.ascent - desc_px;
@@ -67,11 +68,11 @@ const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
     auto& t = temps[i];
 
     int advance_raw, lsb_raw;
-    stbtt_GetCodepointHMetrics(font_info_, cp, &advance_raw, &lsb_raw);
+    stbtt_GetCodepointHMetrics(font_info_.get(), cp, &advance_raw, &lsb_raw);
     t.advance = static_cast<int>(std::round(advance_raw * slot.scale));
 
     unsigned char* bmp = stbtt_GetCodepointBitmap(
-        font_info_, 0, slot.scale, cp, &t.gw, &t.gh, &t.xoff, &t.yoff);
+        font_info_.get(), 0, slot.scale, cp, &t.gw, &t.gh, &t.xoff, &t.yoff);
     if (bmp && t.gw > 0 && t.gh > 0) {
       const size_t n = static_cast<size_t>(t.gw) * t.gh;
       t.bitmap.assign(bmp, bmp + n);
@@ -112,40 +113,17 @@ const GlyphCache::SizeSlot& GlyphCache::getSlot(int font_height) const
   return slot;
 }
 
-int GlyphCache::textWidth(std::string_view text, int font_height) const
+// --- FontSize (lock-free handle) -------------------------------------------
+
+GlyphCache::FontSize::FontSize(const SizeSlot& slot,
+                               const stbtt_fontinfo* font_info)
+    : slot_(slot), font_info_(font_info)
 {
-  if (text.empty()) {
-    return 0;
-  }
-  const auto& slot = getSlot(font_height);
-  int width = 0;
-  for (size_t i = 0; i < text.size(); ++i) {
-    const int idx = static_cast<unsigned char>(text[i]) - kFirstChar;
-    if (idx >= 0 && idx < kNumGlyphs) {
-      width += slot.glyphs[idx].advance;
-    }
-    // Add kerning with next character.
-    if (i + 1 < text.size()) {
-      width += kern(font_height, text[i], text[i + 1]);
-    }
-  }
-  return width;
 }
 
-int GlyphCache::textHeight(int font_height) const
-{
-  return getSlot(font_height).cell_height;
-}
-
-int GlyphCache::cellHeight(int font_height) const
-{
-  return getSlot(font_height).cell_height;
-}
-
-GlyphCache::GlyphInfo GlyphCache::glyph(int font_height, char ch) const
+GlyphCache::GlyphInfo GlyphCache::FontSize::glyph(char ch) const
 {
   const int idx = static_cast<unsigned char>(ch) - kFirstChar;
-  const auto& slot = getSlot(font_height);
   if (idx < 0 || idx >= kNumGlyphs) {
     return {.alpha = nullptr,
             .bmp_width = 0,
@@ -154,9 +132,9 @@ GlyphCache::GlyphInfo GlyphCache::glyph(int font_height, char ch) const
             .y_offset = 0,
             .advance = 0};
   }
-  const auto& cg = slot.glyphs[idx];
+  const auto& cg = slot_.glyphs[idx];
   const unsigned char* alpha_ptr
-      = cg.bmp_width > 0 ? slot.alpha.data() + cg.alpha_offset : nullptr;
+      = cg.bmp_width > 0 ? slot_.alpha.data() + cg.alpha_offset : nullptr;
   return {.alpha = alpha_ptr,
           .bmp_width = cg.bmp_width,
           .bmp_height = cg.bmp_height,
@@ -165,11 +143,65 @@ GlyphCache::GlyphInfo GlyphCache::glyph(int font_height, char ch) const
           .advance = cg.advance};
 }
 
+int GlyphCache::FontSize::kern(char ch1, char ch2) const
+{
+  const int raw = stbtt_GetCodepointKernAdvance(font_info_, ch1, ch2);
+  return static_cast<int>(std::round(raw * slot_.scale));
+}
+
+int GlyphCache::FontSize::textWidth(std::string_view text) const
+{
+  if (text.empty()) {
+    return 0;
+  }
+  int width = 0;
+  for (size_t i = 0; i < text.size(); ++i) {
+    const int idx = static_cast<unsigned char>(text[i]) - kFirstChar;
+    if (idx >= 0 && idx < kNumGlyphs) {
+      width += slot_.glyphs[idx].advance;
+    }
+    if (i + 1 < text.size()) {
+      width += kern(text[i], text[i + 1]);
+    }
+  }
+  return width;
+}
+
+int GlyphCache::FontSize::cellHeight() const
+{
+  return slot_.cell_height;
+}
+
+// --- GlyphCache public API (convenience, locks per call) -------------------
+
+GlyphCache::FontSize GlyphCache::getFont(int font_height) const
+{
+  return FontSize(getSlot(font_height), font_info_.get());
+}
+
+int GlyphCache::textWidth(std::string_view text, int font_height) const
+{
+  return getFont(font_height).textWidth(text);
+}
+
+int GlyphCache::textHeight(int font_height) const
+{
+  return getFont(font_height).cellHeight();
+}
+
+int GlyphCache::cellHeight(int font_height) const
+{
+  return getFont(font_height).cellHeight();
+}
+
+GlyphCache::GlyphInfo GlyphCache::glyph(int font_height, char ch) const
+{
+  return getFont(font_height).glyph(ch);
+}
+
 int GlyphCache::kern(int font_height, char ch1, char ch2) const
 {
-  const auto& slot = getSlot(font_height);
-  const int raw = stbtt_GetCodepointKernAdvance(font_info_, ch1, ch2);
-  return static_cast<int>(std::round(raw * slot.scale));
+  return getFont(font_height).kern(ch1, ch2);
 }
 
 const GlyphCache& glyphCache()

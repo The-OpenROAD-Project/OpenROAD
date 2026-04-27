@@ -9,6 +9,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string_view>
 #include <vector>
@@ -21,17 +22,8 @@ struct Color;
 
 class GlyphCache
 {
- public:
-  // Initialize from raw TTF data (must remain valid for the cache lifetime).
-  GlyphCache(const unsigned char* ttf_data, unsigned int ttf_size);
-  ~GlyphCache();
-
-  // Total pixel width of a rendered string (includes kerning).
-  int textWidth(std::string_view text, int font_height) const;
-  // Line height in pixels.
-  int textHeight(int font_height) const;
-
   // Per-glyph rendering info.
+ public:
   struct GlyphInfo
   {
     const unsigned char* alpha;  // bitmap, bmp_width * bmp_height bytes
@@ -41,15 +33,6 @@ class GlyphCache
     int y_offset;                // y offset from line top to bitmap top
     int advance;                 // horizontal advance in pixels
   };
-
-  // Cell height (line height, same for all glyphs at a given size).
-  int cellHeight(int font_height) const;
-
-  // Look up a glyph.  Returns {nullptr,...} for space / unknown.
-  GlyphInfo glyph(int font_height, char ch) const;
-
-  // Kerning adjustment between two characters (in pixels).
-  int kern(int font_height, char ch1, char ch2) const;
 
  private:
   struct CachedGlyph
@@ -71,9 +54,42 @@ class GlyphCache
     std::vector<unsigned char> alpha;  // packed glyph bitmaps
   };
 
+ public:
+  // Lock-free handle to a resolved font size.  Retrieve via getFont()
+  // and use for batch glyph/text operations without per-call locking.
+  class FontSize
+  {
+   public:
+    GlyphInfo glyph(char ch) const;
+    int kern(char ch1, char ch2) const;
+    int textWidth(std::string_view text) const;
+    int cellHeight() const;
+
+   private:
+    friend class GlyphCache;
+    FontSize(const SizeSlot& slot, const stbtt_fontinfo* font_info);
+    const SizeSlot& slot_;
+    const stbtt_fontinfo* font_info_;
+  };
+
+  // Initialize from raw TTF data (must remain valid for the cache lifetime).
+  GlyphCache(const unsigned char* ttf_data, unsigned int ttf_size);
+  ~GlyphCache();
+
+  // Acquire a FontSize handle (locks once, then all lookups are lock-free).
+  FontSize getFont(int font_height) const;
+
+  // Convenience methods — each locks internally per call.
+  int textWidth(std::string_view text, int font_height) const;
+  int textHeight(int font_height) const;
+  int cellHeight(int font_height) const;
+  GlyphInfo glyph(int font_height, char ch) const;
+  int kern(int font_height, char ch1, char ch2) const;
+
+ private:
   const SizeSlot& getSlot(int font_height) const;
 
-  stbtt_fontinfo* font_info_;
+  std::unique_ptr<stbtt_fontinfo> font_info_;
   mutable std::mutex mutex_;
   mutable std::map<int, SizeSlot> cache_;
 };

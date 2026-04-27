@@ -403,8 +403,9 @@ odb::Rect TileGenerator::getBounds() const
     const int pin_size = getPinMaxSize();
     if (pin_size > 0) {
       int max_text_px = 0;
+      const auto pin_font = fontAtlasGetFont(kPinLabelFontHeight);
       for (odb::dbBTerm* term : block->getBTerms()) {
-        const int w = fontAtlasTextWidth(term->getName(), kPinLabelFontHeight);
+        const int w = pin_font.textWidth(term->getName());
         max_text_px = std::max(w, max_text_px);
       }
       const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
@@ -793,6 +794,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                      kMinPinMarkerSize);
       const bool draw_pin_names
           = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
+      const auto pin_label_font = fontAtlasGetFont(kPinLabelFontHeight);
 
       // Marker templates (same as GUI renderThread.cpp).
       // Defined for "top edge" orientation; rotated per actual edge.
@@ -919,8 +921,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             if (draw_pin_names) {
               const std::string name = term->getName();
               const odb::Point anchor_pt = xfm.getOffset();
-              const int text_w = getTextWidth(name, kPinLabelFontHeight);
-              const int text_h = getTextHeight(kPinLabelFontHeight);
+              const int text_w = getTextWidth(name, pin_label_font);
+              const int text_h = getTextHeight(pin_label_font);
               const int text_margin_px = 3;
               const bool rotated = (arg_min == 2 || arg_min == 3);
 
@@ -961,19 +963,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                        .b = marker_color.b,
                                        .a = 255};
                 if (rotated) {
-                  drawTextRotated(image_buffer,
-                                  px,
-                                  py,
-                                  name,
-                                  kPinLabelFontHeight,
-                                  text_color);
+                  drawTextRotated(
+                      image_buffer, px, py, name, pin_label_font, text_color);
                 } else {
-                  drawText(image_buffer,
-                           px,
-                           py,
-                           name,
-                           kPinLabelFontHeight,
-                           text_color);
+                  drawText(
+                      image_buffer, px, py, name, pin_label_font, text_color);
                 }
               }
             }
@@ -1509,6 +1503,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   const double scale = kTileSizeInPixel / tile_dbu_size;
   constexpr double kTextRectMargin = 0.8;
   constexpr int kHeatmapFontHeight = 14;
+  const auto heatmap_font = fontAtlasGetFont(kHeatmapFontHeight);
   const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
@@ -1533,8 +1528,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     }
 
     const std::string text = source.formatValue(map_point.value, false);
-    const int text_width = getTextWidth(text, kHeatmapFontHeight);
-    const int text_height = getTextHeight(kHeatmapFontHeight);
+    const int text_width = getTextWidth(text, heatmap_font);
+    const int text_height = getTextHeight(heatmap_font);
     const double rect_width = map_point.rect.dx() * scale;
     const double rect_height = map_point.rect.dy() * scale;
     if (text_width >= kTextRectMargin * rect_width
@@ -1557,7 +1552,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
              pixel_x - text_width / 2,
              pixel_y - text_height / 2,
              text,
-             kHeatmapFontHeight,
+             heatmap_font,
              text_color);
   }
 
@@ -1923,7 +1918,7 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
                             + "/" + std::to_string(y);
 
-  drawText(image, 4, 4, label, 20, yellow);
+  drawText(image, 4, 4, label, fontAtlasGetFont(20), yellow);
 }
 
 namespace {
@@ -2112,9 +2107,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         if (s->pen.color.a == 0 || s->text.empty()) {
           continue;
         }
-        const int font_h = std::max(10, s->font.size);
-        const int tw = getTextWidth(s->text, font_h);
-        const int th = getTextHeight(font_h);
+        const auto str_font = fontAtlasGetFont(std::max(10, s->font.size));
+        const int tw = getTextWidth(s->text, str_font);
+        const int th = getTextHeight(str_font);
         int ax = toPxX(s->x, dbu_tile, scale);
         int ay = toPxY(s->y, dbu_tile, scale);
         // Adjust anchor: text renders with top-left at (ax, ay).
@@ -2152,9 +2147,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         }
         const Color pen = toTileColor(s->pen.color);
         if (s->rotate_90) {
-          drawTextRotated(image, ax, ay, s->text, font_h, pen);
+          drawTextRotated(image, ax, ay, s->text, str_font, pen);
         } else {
-          drawText(image, ax, ay, s->text, font_h, pen);
+          drawText(image, ax, ay, s->text, str_font, pen);
         }
       }
     }
@@ -2163,18 +2158,15 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
 
 /* static */
 int TileGenerator::getTextWidth(const std::string_view text,
-                                const int font_height)
+                                const GlyphCache::FontSize& font)
 {
-  if (text.empty()) {
-    return 0;
-  }
-  return fontAtlasTextWidth(text, font_height);
+  return font.textWidth(text);
 }
 
 /* static */
-int TileGenerator::getTextHeight(const int font_height)
+int TileGenerator::getTextHeight(const GlyphCache::FontSize& font)
 {
-  return fontAtlasTextHeight(font_height);
+  return font.cellHeight();
 }
 
 /* static */
@@ -2182,12 +2174,12 @@ void TileGenerator::drawText(std::vector<unsigned char>& image,
                              const int x,
                              const int y,
                              const std::string_view text,
-                             const int font_height,
+                             const GlyphCache::FontSize& font,
                              const Color& color)
 {
   int cursor_x = x;
   for (size_t i = 0; i < text.size(); ++i) {
-    const auto gi = fontAtlasGlyph(font_height, text[i]);
+    const auto gi = font.glyph(text[i]);
     if (gi.alpha != nullptr) {
       for (int row = 0; row < gi.bmp_height; ++row) {
         for (int col = 0; col < gi.bmp_width; ++col) {
@@ -2205,7 +2197,7 @@ void TileGenerator::drawText(std::vector<unsigned char>& image,
     }
     cursor_x += gi.advance;
     if (i + 1 < text.size()) {
-      cursor_x += fontAtlasKern(font_height, text[i], text[i + 1]);
+      cursor_x += font.kern(text[i], text[i + 1]);
     }
   }
 }
@@ -2215,14 +2207,14 @@ void TileGenerator::drawTextRotated(std::vector<unsigned char>& image,
                                     const int x,
                                     const int y,
                                     const std::string_view text,
-                                    const int font_height,
+                                    const GlyphCache::FontSize& font,
                                     const Color& color)
 {
   // 90° CW rotation: characters stack downward (y increasing).
-  const int ch_h = fontAtlasCellHeight(font_height);
+  const int ch_h = font.cellHeight();
   int cursor_y = y;
   for (size_t i = 0; i < text.size(); ++i) {
-    const auto gi = fontAtlasGlyph(font_height, text[i]);
+    const auto gi = font.glyph(text[i]);
     if (gi.alpha != nullptr) {
       for (int row = 0; row < gi.bmp_height; ++row) {
         for (int col = 0; col < gi.bmp_width; ++col) {
@@ -2243,7 +2235,7 @@ void TileGenerator::drawTextRotated(std::vector<unsigned char>& image,
     }
     cursor_y += gi.advance;
     if (i + 1 < text.size()) {
-      cursor_y += fontAtlasKern(font_height, text[i], text[i + 1]);
+      cursor_y += font.kern(text[i], text[i + 1]);
     }
   }
 }

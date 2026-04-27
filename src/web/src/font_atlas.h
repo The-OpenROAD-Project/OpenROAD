@@ -11,6 +11,11 @@
 
 namespace web {
 
+inline GlyphCache::FontSize fontAtlasGetFont(int height_px)
+{
+  return glyphCache().getFont(height_px);
+}
+
 inline int fontAtlasTextWidth(std::string_view text, int height_px)
 {
   return glyphCache().textWidth(text, height_px);
