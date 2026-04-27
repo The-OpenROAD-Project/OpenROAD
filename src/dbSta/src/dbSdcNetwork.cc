@@ -66,52 +66,22 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
-  // If the pattern is a literal (no wildcards and not a regex), return
-  // immediately as the literal lookup has already failed in the caller.
+  // Literal pattern: serve from the precomputed full-path map so each
+  // miss in the hierarchy walker stays O(1) instead of O(N) DFS.
   if (!pattern->isRegexp() && !pattern->hasWildcards()) {
+    const SdcPathToInstMap& map = sdcPathToInstMap();
+    auto it = map.find(pattern->pattern());
+    if (it != map.end()) {
+      insts.push_back(it->second);
+    }
     return;
   }
-  // A recursive lambda to traverse the design hierarchy with a depth-first
-  // search (DFS).
-  // It builds the hierarchical path incrementally using fmt::memory_buffer to
-  // avoid expensive std::string allocations and copies at each step.
-  std::function<void(Instance*, fmt::memory_buffer&)> dfs_search
-      = [&, this](Instance* instance, fmt::memory_buffer& path_buffer) -> void {
-    // Iterate over the children of the current instance.
-    std::unique_ptr<InstanceChildIterator> child_iter{childIterator(instance)};
-    while (child_iter->hasNext()) {
-      Instance* child = child_iter->next();
-
-      // Save the current size of the buffer to restore it later.
-      const size_t original_size = path_buffer.size();
-
-      // Build the child's full path name incrementally.
-      if (original_size > 0) {
-        path_buffer.push_back(pathDivider());
-      }
-      path_buffer.append(std::string_view(name(child)));
-
-      // Check if the child instance name matches the pattern.
-      // Add a null terminator for C-style string compatibility.
-      path_buffer.push_back('\0');
-      if (pattern->match(staToSdc(path_buffer.data()))) {
-        insts.push_back(child);
-      }
-      path_buffer.resize(path_buffer.size() - 1);  // Remove the null terminator
-
-      // Recurse into the child's hierarchy if it's not a leaf.
-      if (!isLeaf(child)) {
-        dfs_search(child, path_buffer);
-      }
-
-      // Restore the buffer to its original state for the next sibling.
-      path_buffer.resize(original_size);
-    }
-  };
-
-  // Start the search from the top-level instance.
-  fmt::memory_buffer path_buffer;
-  dfs_search(topInstance(), path_buffer);
+  visitAllInstancesSdcPath(
+      [&](Instance* child, const std::string& sdc_path) {
+        if (pattern->match(sdc_path)) {
+          insts.push_back(child);
+        }
+      });
 }
 
 NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
@@ -241,6 +211,46 @@ Pin* dbSdcNetwork::findPin(std::string_view path_name) const
     pin = findPin(topInstance(), path_name);
   }
   return pin;
+}
+
+void dbSdcNetwork::visitAllInstancesSdcPath(
+    const SdcPathVisitor& visitor) const
+{
+  // Build paths incrementally in a fmt::memory_buffer to avoid the
+  // per-step std::string allocations a naive DFS would incur.
+  std::function<void(Instance*, fmt::memory_buffer&)> dfs
+      = [&, this](Instance* parent, fmt::memory_buffer& buf) -> void {
+    std::unique_ptr<InstanceChildIterator> it{childIterator(parent)};
+    while (it->hasNext()) {
+      Instance* child = it->next();
+      const size_t orig_size = buf.size();
+      if (orig_size > 0) {
+        buf.push_back(pathDivider());
+      }
+      buf.append(std::string_view(name(child)));
+      buf.push_back('\0');  // null-terminate for staToSdc's C-string input
+      visitor(child, staToSdc(buf.data()));
+      buf.resize(buf.size() - 1);
+      if (!isLeaf(child)) {
+        dfs(child, buf);
+      }
+      buf.resize(orig_size);
+    }
+  };
+  fmt::memory_buffer buf;
+  dfs(topInstance(), buf);
+}
+
+const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
+{
+  if (!sdc_path_to_inst_) {
+    sdc_path_to_inst_.emplace();
+    visitAllInstancesSdcPath(
+        [&](Instance* inst, const std::string& sdc_path) {
+          sdc_path_to_inst_->emplace(sdc_path, inst);
+        });
+  }
+  return *sdc_path_to_inst_;
 }
 
 }  // namespace sta
