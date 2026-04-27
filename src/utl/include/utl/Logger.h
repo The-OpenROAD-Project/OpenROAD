@@ -105,20 +105,24 @@ struct LogMessage
 {
   std::string message;
   std::source_location loc;
+  bool source_lines_disabled;
 
   LogMessage(const char* msg,
-             const std::source_location& l = std::source_location::current())
-      : message(msg), loc(l)
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
   {
   }
   LogMessage(const std::string& msg,
-             const std::source_location& l = std::source_location::current())
-      : message(msg), loc(l)
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
   {
   }
   LogMessage(std::string_view msg,
-             const std::source_location& l = std::source_location::current())
-      : message(msg), loc(l)
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
   {
   }
 };
@@ -178,6 +182,7 @@ class Logger
         id,
         log_message.loc,
         log_message.message,
+        log_message.source_lines_disabled,
         args...);
   }
 
@@ -193,6 +198,7 @@ class Logger
         id,
         log_message.loc,
         log_message.message,
+        log_message.source_lines_disabled,
         args...);
   }
 
@@ -208,6 +214,7 @@ class Logger
         id,
         log_message.loc,
         log_message.message,
+        log_message.source_lines_disabled,
         args...);
     // Exception should be caught by swig error handler.
     throw std::runtime_error(fmt::format("{}-{:04}", tool_names_[tool], id));
@@ -224,6 +231,7 @@ class Logger
         id,
         log_message.loc,
         log_message.message,
+        log_message.source_lines_disabled,
         args...);
     exit(EXIT_FAILURE);
   }
@@ -325,6 +333,7 @@ class Logger
            int id,
            std::source_location loc,
            const std::string& message,
+           bool source_lines_disabled,
            const Args&... args)
   {
     assert(id >= 0 && id <= max_message_id);
@@ -332,7 +341,8 @@ class Logger
     auto& counter = message_counters_[tool][id];
     auto count = counter++;
     if (count < max_message_print) {
-      if (source_lines_enabled_ && level >= spdlog::level::warn) {
+      if (source_lines_enabled_ && !source_lines_disabled
+          && level >= spdlog::level::warn) {
         logger_->log(level,
                      FMT_RUNTIME("[{} {}-{:04d}] [{}:{}] " + message
                                  + spdlog::details::os::default_eol),

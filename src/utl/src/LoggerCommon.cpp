@@ -42,13 +42,15 @@ void info(utl::ToolId tool, int id, const char* msg)
 void warn(utl::ToolId tool, int id, const char* msg, std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->warn(tool, id, utl::LogMessage{"{}", loc}, msg);
+  logger->warn(
+      tool, id, utl::LogMessage{"{}", loc, /*source_lines_off=*/true}, msg);
 }
 
 void error(utl::ToolId tool, int id, const char* msg, std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->error(tool, id, utl::LogMessage{"{}", loc}, msg);
+  logger->error(
+      tool, id, utl::LogMessage{"{}", loc, /*source_lines_off=*/true}, msg);
 }
 
 void critical(utl::ToolId tool,
@@ -57,7 +59,8 @@ void critical(utl::ToolId tool,
               std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->critical(tool, id, utl::LogMessage{"{}", loc}, msg);
+  logger->critical(
+      tool, id, utl::LogMessage{"{}", loc, /*source_lines_off=*/true}, msg);
 }
 
 void open_metrics(const char* metrics_filename)
