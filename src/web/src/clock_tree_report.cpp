@@ -339,7 +339,7 @@ void flattenNode(const TreeNode* tree,
       leaf.name = getInstName(leaf_pin, network);
       leaf.pin_name = getPinName(leaf_pin, network);
       leaf.type = classifyLeaf(leaf_pin, network);
-      leaf.arrival = static_cast<float>(leaf_arrival / time_scale);
+      leaf.arrival = leaf_arrival / time_scale;
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);
@@ -369,14 +369,14 @@ void flattenNode(const TreeNode* tree,
     // Position the node at its INPUT arrival (from parent's child_sinks)
     // and compute delay as the cell delay (output - input).
     // For the root (no parent), use the driver arrival directly.
-    node.arrival = static_cast<float>(arrival / time_scale);
+    node.arrival = arrival / time_scale;
     if (tree->parent) {
       sta::Instance* inst = network->instance(pin);
       if (inst) {
         for (const auto& [sink_pin, sink_arr] : tree->parent->child_sinks) {
           if (network->instance(sink_pin) == inst) {
-            node.arrival = static_cast<float>(sink_arr / time_scale);
-            node.delay = static_cast<float>((arrival - sink_arr) / time_scale);
+            node.arrival = sink_arr / time_scale;
+            node.delay = (arrival - sink_arr) / time_scale;
             break;
           }
         }
@@ -399,7 +399,7 @@ void flattenNode(const TreeNode* tree,
       leaf.name = getInstName(leaf_pin, network);
       leaf.pin_name = getPinName(leaf_pin, network);
       leaf.type = classifyLeaf(leaf_pin, network);
-      leaf.arrival = static_cast<float>(leaf_arrival / time_scale);
+      leaf.arrival = leaf_arrival / time_scale;
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);

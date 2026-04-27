@@ -272,6 +272,7 @@ class Logger
   void startPrometheusEndpoint(uint16_t port);
   std::shared_ptr<PrometheusRegistry> getRegistry();
   bool isPrometheusServerReadyToServe();
+  bool hasPrometheusServerStartupFailed();
   uint16_t getPrometheusPort();
 
   void suppressMessage(ToolId tool, int id);
