@@ -1,35 +1,9 @@
 [INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
-[INFO IFP-0001] Added 14 rows of 370 site asap7sc7p5t.
-[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 20.000  4.000 ) um
-[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 19.980  3.780 ) um
-[INFO IFP-0102] Core area:                           75.524 um^2
-[INFO IFP-0103] Total instances area:                 1.079 um^2
-[INFO IFP-0104] Effective utilization:                0.014
-[INFO IFP-0105] Number of instances:                      4
-[WARNING DPL-0387] BTerm clk is unplaced.
-[WARNING DPL-0387] BTerm d_in is unplaced.
-[INFO DPL-0006] Core area: 75.52 um^2, Instances area: 1.08 um^2, Utilization: 1.4%
-[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       4
-Diamond Move Success:              4 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
-Placement Analysis
----------------------------------
-total displacement          0.2 u
-average displacement        0.1 u
-max displacement            0.1 u
-original HPWL              25.1 u
-legalized HPWL             25.1 u
-delta HPWL                    0 %
-
+[INFO ODB-0128] Design: repair_hold_multi_output_load
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 4 components and 22 component-terminals.
+[INFO ODB-0133]     Created 9 nets and 14 connections.
 Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
 Endpoint: u_capture_con (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
