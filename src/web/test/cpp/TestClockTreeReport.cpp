@@ -136,11 +136,11 @@ TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "clkbuf1";
+  req.raw_json = R"({"inst_name":"clkbuf1"})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.id, 1u);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"ok\""), std::string::npos);
@@ -157,10 +157,10 @@ TEST_F(ClockTreeHighlightTest, HighlightNonExistentInstance)
   WebSocketRequest req;
   req.id = 2;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "does_not_exist";
+  req.raw_json = R"({"inst_name":"does_not_exist"})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // No instance found → no highlight rects
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -182,10 +182,10 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
   WebSocketRequest req;
   req.id = 3;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "";
+  req.raw_json = R"({"inst_name":""})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // All state should be cleared
   std::lock_guard<std::mutex> lock(state_.selection_mutex);

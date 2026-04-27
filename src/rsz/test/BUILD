@@ -43,6 +43,7 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "swap_pins_dont_touch",
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
@@ -208,9 +209,6 @@ TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -261,6 +259,11 @@ BIG_TESTS = [
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [":TestBufRem1"],
+)
 
 cc_test(
     name = "rsz_buffer_removal",
