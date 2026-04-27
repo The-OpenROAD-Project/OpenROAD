@@ -39,7 +39,7 @@ Best practice reference: `src/rsz/test/repair_tie12_hier.tcl`
 
 #### Issue Reproduction Tests
 
-For issue reproductions, keep the testcase minimal and focused on the failing tool behavior. When floorplanning or placement is not part of the bug, encode the small problem design directly in DEF and use `read_def` instead of running floorplan/global placement. This keeps the test simpler and more stable across unrelated OpenROAD behavior changes. Use floorplanning or placement steps when those stages are part of the behavior under test.
+For issue reproductions, keep the test case minimal and focused on the failing tool behavior. When floorplanning or placement is not part of the bug, encode the small problem design directly in DEF and use `read_def` after loading the necessary LEF and Liberty files instead of running floorplanning or global placement. This keeps the test simpler and more stable across unrelated OpenROAD behavior changes. Use floorplanning or placement steps when those stages are part of the behavior under test.
 
 #### Checklist
 
