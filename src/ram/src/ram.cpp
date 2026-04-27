@@ -829,6 +829,9 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tapcell,
                       int max_tap_dist)
 {
+  if (num_words == 1) {
+    logger_->error(RAM, 34, "1-word RAMs are not supported.");
+  }
   const int slices_per_word = word_size / mask_size;
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
 
