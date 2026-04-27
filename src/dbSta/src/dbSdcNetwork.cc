@@ -76,12 +76,11 @@ void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
     }
     return;
   }
-  visitAllInstancesSdcPath(
-      [&](Instance* child, const std::string& sdc_path) {
-        if (pattern->match(sdc_path)) {
-          insts.push_back(child);
-        }
-      });
+  visitAllInstancesSdcPath([&](Instance* child, const std::string& sdc_path) {
+    if (pattern->match(sdc_path)) {
+      insts.push_back(child);
+    }
+  });
 }
 
 NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
@@ -213,8 +212,7 @@ Pin* dbSdcNetwork::findPin(std::string_view path_name) const
   return pin;
 }
 
-void dbSdcNetwork::visitAllInstancesSdcPath(
-    const SdcPathVisitor& visitor) const
+void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
 {
   // Build paths incrementally in a fmt::memory_buffer to avoid the
   // per-step std::string allocations a naive DFS would incur.
@@ -245,10 +243,9 @@ const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
 {
   if (!sdc_path_to_inst_) {
     sdc_path_to_inst_.emplace();
-    visitAllInstancesSdcPath(
-        [&](Instance* inst, const std::string& sdc_path) {
-          sdc_path_to_inst_->emplace(sdc_path, inst);
-        });
+    visitAllInstancesSdcPath([&](Instance* inst, const std::string& sdc_path) {
+      sdc_path_to_inst_->emplace(sdc_path, inst);
+    });
   }
   return *sdc_path_to_inst_;
 }
