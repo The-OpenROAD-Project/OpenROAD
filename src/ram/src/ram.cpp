@@ -3,6 +3,7 @@
 
 #include "ram/ram.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -768,11 +769,10 @@ void RamGen::findMasters()
           }
 
           // sort ports by name for deterministic ordering across builds
-          std::sort(inputs.begin(),
-                    inputs.end(),
-                    [](sta::LibertyPort* a, sta::LibertyPort* b) {
-                      return std::string(a->name()) < std::string(b->name());
-                    });
+          std::ranges::sort(
+              inputs, [](sta::LibertyPort* a, sta::LibertyPort* b) {
+                return std::string(a->name()) < std::string(b->name());
+              });
 
           // try each pairing, if truth table matches, record port names
           for (auto& pairing : kPairings) {
