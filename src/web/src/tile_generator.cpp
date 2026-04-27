@@ -395,9 +395,22 @@ odb::Rect TileGenerator::getBounds() const
   odb::Rect bounds;
   if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
-    // Expand for pin markers that extend outside the die edge.
-    const int margin = getPinMaxSize();
-    if (margin > 0) {
+    // Expand for pin markers AND labels that extend outside the die edge.
+    // At the zoom where labels first appear, the label extends
+    //   marker_px + text_margin + text_width  pixels
+    // past the pin anchor.  Convert to DBU by dividing by the critical
+    // scale (= kMinPinNameSizePixels / pin_size).
+    const int pin_size = getPinMaxSize();
+    if (pin_size > 0) {
+      int max_text_px = 0;
+      for (odb::dbBTerm* term : block->getBTerms()) {
+        const int w = fontAtlasTextWidth(term->getName(), kPinLabelFontHeight);
+        if (w > max_text_px) {
+          max_text_px = w;
+        }
+      }
+      const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
+      const int margin = label_px * pin_size / kMinPinNameSizePixels;
       bounds.set_xlo(bounds.xMin() - margin);
       bounds.set_ylo(bounds.yMin() - margin);
       bounds.set_xhi(bounds.xMax() + margin);
