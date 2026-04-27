@@ -1,6 +1,5 @@
-# Regression: repair_timing -setup must not crash when -max_passes and
-# -max_iterations are small enough to exit the inner loop on a pass where the
-# `better` branch would otherwise leave the journal double-closed.
+# Regression for journal stack invariant at pass==max and LastGasp
+# num_viols double-decrement after accept-crosses-margin.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -12,3 +11,4 @@ set_wire_rc -layer metal3
 estimate_parasitics -placement
 
 repair_timing -setup -max_passes 1 -max_iterations 1
+repair_timing -setup -phases LAST_GASP -setup_margin -0.15 -verbose

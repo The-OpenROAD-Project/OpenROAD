@@ -3013,6 +3013,9 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
         prev_tns = curr_tns;
         if (sta::fuzzyGreaterEqual(end_slack, params.setup_slack_margin)) {
           --num_viols;
+          resizer_->journalEnd();
+          journal_open = false;
+          break;
         }
         resizer_->journalEnd();
         resizer_->journalBegin();
