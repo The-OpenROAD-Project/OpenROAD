@@ -92,6 +92,11 @@ class WebServer
   // (e.g. an ASIO worker thread executing a Tcl command).
   void requestStop();
 
+  // True if `exit` was invoked from a Tcl command running on a worker
+  // thread.  Main.cc / web.i checks this after waitForStop() returns
+  // and exits the process cleanly from the main thread.
+  bool exitRequested() const { return exit_requested_; }
+
   void saveReport(const std::string& filename,
                   int max_setup_paths,
                   int max_hold_paths);
@@ -141,6 +146,17 @@ class WebServer
   std::mutex stop_mutex_;
   std::condition_variable stop_cv_;
   bool stop_requested_ = false;
+
+  // Set by tclExitHandler when `exit` is run on a worker thread.
+  bool exit_requested_ = false;
+
+  // Tcl command override: replaces `exit` while the server is running
+  // so a worker-thread `exit` doesn't run Tcl_Exit (which would self-join
+  // the worker thread inside ~WebServer).
+  static int tclExitHandler(ClientData clientData,
+                            Tcl_Interp* interp,
+                            int argc,
+                            const char* argv[]);
 };
 
 }  // namespace web
