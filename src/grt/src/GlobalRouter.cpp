@@ -121,6 +121,7 @@ void GlobalRouter::initGui(
 void GlobalRouter::clear()
 {
   routes_.clear();
+  partial_routes_.clear();
   for (auto [ignored, net] : db_net_map_) {
     delete net;
   }
@@ -131,7 +132,49 @@ void GlobalRouter::clear()
   fastroute_->clear();
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
+
+  pad_pins_connections_.clear();
+  h_nets_in_pos_.clear();
+  v_nets_in_pos_.clear();
+
+  block_ = nullptr;
+  delete repair_antennas_;
+  repair_antennas_ = nullptr;
+  delete grouter_cbk_;
+  grouter_cbk_ = nullptr;
+
   initialized_ = false;
+  is_incremental_ = false;
+  total_diodes_count_ = 0;
+}
+
+void GlobalRouter::clearForReload()
+{
+  clear();
+  clearRudy();
+  region_adjustments_.clear();
+  dirty_nets_.clear();
+  nets_to_route_.clear();
+
+  // Reset Tcl-settable configuration to constructor defaults
+  adjustment_ = 0.0;
+  congestion_iterations_ = 50;
+  congestion_report_iter_step_ = 0;
+  allow_congestion_ = false;
+  resistance_aware_ = false;
+  macro_extension_ = 0;
+  infinite_capacity_ = false;
+  grid_origin_ = odb::Point(0, 0);
+  verbose_ = false;
+  seed_ = 0;
+  caps_perturbation_percentage_ = 0;
+  perturbation_amount_ = 1;
+  use_cugr_ = false;
+  skip_large_fanout_ = std::numeric_limits<int>::max();
+  congestion_file_name_ = nullptr;
+  is_congested_ = false;
+  has_macros_or_pads_ = false;
+  check_pin_placement_ = true;
 }
 
 GlobalRouter::~GlobalRouter()

@@ -570,8 +570,9 @@ void OpenRoad::readDb(std::istream& stream)
     db_->triggerPreDbClear();
 
     // Clear tool-specific cached state to ensure reproducibility
-    global_router_->clear();
-    detailed_router_->clearDesign();
+    global_router_->clearForReload();
+    opendp_->clearForReload();
+    detailed_router_->clearForReload();
     replace_->reset();
     tritonCts_->clear();
     macro_placer_->clear();
@@ -580,6 +581,10 @@ void OpenRoad::readDb(std::istream& stream)
     pdngen_->reset();
     pdnsim_->clearSolvers();
     antenna_checker_->clear();
+    resizer_->clear();
+    extractor_->clear();
+    estimate_parasitics_->clear();
+    verilog_network_->clear();
 
     db_->clear();
   }

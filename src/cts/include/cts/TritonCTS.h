@@ -221,6 +221,7 @@ class TritonCTS
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  stt::SteinerTreeBuilder* st_builder_ = nullptr;
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;

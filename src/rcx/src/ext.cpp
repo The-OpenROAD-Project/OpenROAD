@@ -34,6 +34,13 @@ Ext::~Ext()
   delete _ext;
 }
 
+void Ext::clear()
+{
+  delete _ext;
+  _ext = new extMain();
+  _ext->init(_db, logger_);
+}
+
 void Ext::setLogger(Logger* logger)
 {
   if (!logger_) {

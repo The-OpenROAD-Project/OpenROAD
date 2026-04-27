@@ -71,10 +71,11 @@ TritonCTS::TritonCTS(utl::Logger* logger,
   db_ = db;
   network_ = network;
   openSta_ = sta;
+  st_builder_ = st_builder;
   resizer_ = resizer;
   estimate_parasitics_ = estimate_parasitics;
 
-  options_ = new CtsOptions(logger_, st_builder);
+  options_ = new CtsOptions(logger_, st_builder_);
 }
 
 TritonCTS::~TritonCTS()
@@ -84,12 +85,19 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::clear()
 {
+  techChar_.reset();
   builders_.clear();
   staClockNets_.clear();
   visitedClockNets_.clear();
   inst2clkbuf_.clear();
   driver2subnet_.clear();
   net2builder_.clear();
+  rootBuffers_.clear();
+  sinkBuffers_.clear();
+  // Recreate options to reset all Tcl-settable CTS configuration
+  // (buffer list, cap/slew ranges, clustering, etc.)
+  delete options_;
+  options_ = new CtsOptions(logger_, st_builder_);
   block_ = nullptr;
   numberOfClocks_ = 0;
   numClkNets_ = 0;

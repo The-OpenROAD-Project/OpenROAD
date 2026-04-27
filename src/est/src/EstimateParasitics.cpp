@@ -90,6 +90,23 @@ EstimateParasitics::~EstimateParasitics()
   service_registry_->withdraw<ParasiticsService>(this);
 }
 
+void EstimateParasitics::clear()
+{
+  block_ = nullptr;
+  signal_layers_.clear();
+  clk_layers_.clear();
+  layer_res_.clear();
+  layer_cap_.clear();
+  wire_signal_res_.clear();
+  wire_signal_cap_.clear();
+  wire_clk_res_.clear();
+  wire_clk_cap_.clear();
+  parasitics_src_ = ParasiticsSrc::kNone;
+  parasitics_invalid_.clear();
+  dbu_ = 0;
+  incremental_parasitics_enabled_ = false;
+}
+
 void EstimateParasitics::estimateAllGlobalRouteParasitics()
 {
   clearParasitics();

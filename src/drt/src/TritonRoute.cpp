@@ -371,6 +371,25 @@ void TritonRoute::clearDesign()
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
 }
 
+void TritonRoute::clearForReload()
+{
+  router_cfg_ = std::make_unique<RouterConfiguration>();
+  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
+  dr_.reset();
+  pa_.reset();
+  // Block destructor will remove this callback; just detach so it can
+  // re-register on the new block via initDesign().
+  db_callback_->removeOwner();
+  num_drvs_ = -1;
+  distributed_ = false;
+  dist_ip_.clear();
+  dist_port_ = 0;
+  shared_volume_.clear();
+  workers_results_.clear();
+  results_sz_ = 0;
+  cloud_sz_ = 0;
+}
+
 static void deserializeUpdate(frDesign* design,
                               const std::string& updateStr,
                               std::vector<drUpdate>& updates)

@@ -2467,7 +2467,13 @@ void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 
 void HierRTLMP::clear()
 {
-  tree_.reset();
+  tree_ = std::make_unique<PhysicalHierarchy>();
+  clustering_engine_.reset();
+  fences_.clear();
+  guides_.clear();
+  macro_to_halo_.clear();
+  placement_blockages_.clear();
+  io_blockages_.clear();
 
   if (graphics_) {
     graphics_->eraseDrawing();

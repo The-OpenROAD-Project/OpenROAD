@@ -80,6 +80,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                      stt::SteinerTreeBuilder* stt_builder,
                      grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
+  void clear();
 
   void estimateAllGlobalRouteParasitics() override;
   void initSteinerRenderer(

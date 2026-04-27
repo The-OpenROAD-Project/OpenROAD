@@ -23,6 +23,7 @@ class Ext
  public:
   Ext(odb::dbDatabase* db, utl::Logger* logger, const char* spef_version);
   ~Ext();
+  void clear();
 
   void setLogger(utl::Logger* logger);
 

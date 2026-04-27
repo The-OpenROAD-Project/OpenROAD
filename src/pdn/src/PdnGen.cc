@@ -50,6 +50,8 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
+  switched_power_cells_.clear();
+  sroute_.reset();
   updateRenderer(true);
 }
 
