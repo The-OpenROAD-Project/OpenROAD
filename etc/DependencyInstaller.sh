@@ -74,6 +74,7 @@ OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
 INSTALL_BAZEL="no"
 INSTALL_BAZEL_DEV="no"
+NO_GUI="no"
 BAZELISK_VERSION="1.28.1"
 BAZELISK_CHECKSUM_AMD64="2dc74b7ad6bdd6b6b08f6802d14fc1fd"
 BAZELISK_CHECKSUM_ARM64="94415d08ed2f86a49375f25a7f2f9cca"
@@ -820,18 +821,20 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
-        # Install xcb libraries needed for GUI support with Bazel builds
-        if _command_exists "apt-get"; then
-            _execute "Installing xcb libraries for GUI support..." \
-                apt-get -y install --no-install-recommends \
-                libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
-                libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-                libxcb-xinerama0-dev libxcb-xkb-dev
-        elif _command_exists "yum"; then
-            _execute "Installing xcb libraries for GUI support..." \
-                yum install -y \
-                libxcb-devel xcb-util-devel xcb-util-image-devel \
-                xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel
+        if [[ "${NO_GUI}" != "yes" ]]; then
+            # Install xcb libraries needed for GUI support with Bazel builds
+            if _command_exists "apt-get"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    apt-get -y install --no-install-recommends \
+                    libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
+                    libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
+                    libxcb-xinerama0-dev libxcb-xkb-dev
+            elif _command_exists "yum"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    yum install -y \
+                    libxcb-devel xcb-util-devel xcb-util-image-devel \
+                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel
+            fi
         fi
     fi
     INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
@@ -1134,6 +1137,7 @@ Options:
   -eqy                        Install equivalence dependencies (yosys, eqy, sby).
   -bazel                      Download and install bazel (via bazelisk).
   -bazel-dev                  Download and install bazel developer tools (buildifier, etc.).
+  -no-gui                     Skip GUI-only dependencies (e.g. xcb libraries) when used with -bazel.
   -prefix=DIR                 Install common dependencies in a user-specified directory.
   -local                      Install common dependencies in \${HOME}/.local.
   -ci                         Install dependencies required for CI.
@@ -1161,6 +1165,7 @@ main() {
             -eqy) EQUIVALENCE_DEPS="yes" ;;
             -bazel) INSTALL_BAZEL="yes" ;;
             -bazel-dev) INSTALL_BAZEL_DEV="yes" ;;
+            -no-gui) NO_GUI="yes" ;;
             -ci) CI="yes" ;;
             -verbose) VERBOSE_MODE="yes" ;;
             -local)
