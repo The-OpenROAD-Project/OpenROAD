@@ -871,17 +871,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              const BufferedNetPtr& inner_tree);
 
   ////////////////////////////////////////////////////////////////
-  // Pure ECO transactions for speculative changes outside the legacy
-  // setup-repair move-accounting flow.
-  // - Do not update ECO move counts
-  void ecoBegin();
-  void ecoCommit();
-  void ecoRestore();
-
-  ////////////////////////////////////////////////////////////////
-  // Jounalling support for checkpointing and backing out changes
-  // during repair timing.
-  // - Update ECO move counts
+  // Move-undo journal: open an OpenDB ECO transaction, commit it on
+  // success, or roll it back via undoEco() on regret.  journalEnd()
+  // and journalRestore() additionally refresh parasitics, run
+  // findRequireds(), and (on restore) invalidate vertex ordering.
   void journalBegin();
   void journalEnd();
   void journalRestore();

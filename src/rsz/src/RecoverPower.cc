@@ -105,7 +105,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   int failed_move_threshold = 0;
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   for (sta::Vertex* end : ends_with_slack) {
-    resizer_->ecoBegin();
+    resizer_->journalBegin();
     const sta::Slack end_slack_before = sta_->slack(end, max_);
     sta::Slack worst_slack_after;
     //=====================================================================
@@ -123,7 +123,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     }
 
     if (end_index > max_end_count) {
-      resizer_->ecoCommit();
+      resizer_->journalEnd();
       break;
     }
     //=====================================================================
@@ -154,7 +154,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
 
       if (better) {
         failed_move_threshold = 0;
-        resizer_->ecoCommit();
+        resizer_->journalEnd();
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -178,10 +178,10 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                         "{} successive tries yielded negative slack. Ending "
                         "power recovery",
                         failed_move_threshold_limit_);
-          resizer_->ecoCommit();
+          resizer_->journalEnd();
           break;
         }
-        resizer_->ecoRestore();
+        resizer_->journalRestore();
         debugPrint(logger_,
                    RSZ,
                    "recover_power",
@@ -193,7 +193,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    sta::delayAsString(worst_slack_after, digits, sta_));
       }
     } else {
-      resizer_->ecoCommit();
+      resizer_->journalEnd();
     }
   }
 

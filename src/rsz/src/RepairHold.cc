@@ -642,9 +642,9 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               // Despite checking for setup slack to insert the bufffer,
               // increased slews downstream can increase delays and
               // reduce setup slack in ways that are too expensive to
-              // predict. Use a pure ECO transaction so failed hold fixes
-              // can be backed out without touching setup-move bookkeeping.
-              resizer_->ecoBegin();
+              // predict. Open a journal so a failed hold fix can be
+              // rolled back via journalRestore().
+              resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
               sta::Slew slew_before = sta_->slew(path_vertex,
                                                  sta::RiseFallBoth::riseFall(),
@@ -667,10 +667,10 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                   || (!allow_setup_violations
                       && sta::fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
-                resizer_->ecoRestore();
+                resizer_->journalRestore();
                 inserted_buffer_count_ = 0;
               } else {
-                resizer_->ecoCommit();
+                resizer_->journalEnd();
               }
             }
           }

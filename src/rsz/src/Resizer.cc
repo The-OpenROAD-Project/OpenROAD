@@ -5021,48 +5021,6 @@ void Resizer::swapArithModules(int path_count,
 
 ////////////////////////////////////////////////////////////////
 // Journal to roll back changes
-void Resizer::ecoBegin()
-{
-  debugPrint(logger_, RSZ, "journal", 1, "journal begin");
-  odb::dbDatabase::beginEco(block_);
-}
-
-void Resizer::ecoCommit()
-{
-  debugPrint(logger_, RSZ, "journal", 1, "journal end");
-  if (!odb::dbDatabase::ecoEmpty(block_)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
-  }
-  odb::dbDatabase::commitEco(block_);
-}
-
-void Resizer::ecoRestore()
-{
-  debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
-  init();
-
-  if (odb::dbDatabase::ecoEmpty(block_)) {
-    odb::dbDatabase::undoEco(block_);
-    debugPrint(logger_,
-               RSZ,
-               "journal",
-               1,
-               "journal restore ends due to empty ECO >>>");
-    return;
-  }
-
-  // Odb callbacks invalidate parasitics on the touched nets during undo.
-  odb::dbDatabase::undoEco(block_);
-  estimate_parasitics_->updateParasitics();
-  sta_->findRequireds();
-
-  // ECO undo can change the graph topology seen by later passes.
-  invalidateVertexOrdering();
-
-  debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
-}
-
 void Resizer::initForJournalRestore()
 {
   init();
@@ -5106,12 +5064,18 @@ int Resizer::rejectedLegacyMoveCount() const
 
 void Resizer::journalBegin()
 {
-  ecoBegin();
+  debugPrint(logger_, RSZ, "journal", 1, "journal begin");
+  odb::dbDatabase::beginEco(block_);
 }
 
 void Resizer::journalEnd()
 {
-  ecoCommit();
+  debugPrint(logger_, RSZ, "journal", 1, "journal end");
+  if (!odb::dbDatabase::ecoEmpty(block_)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
+  odb::dbDatabase::commitEco(block_);
 }
 
 void Resizer::journalMakeBuffer(sta::Instance* buffer)
@@ -5130,7 +5094,28 @@ void Resizer::journalMakeBuffer(sta::Instance* buffer)
 // STA findRequireds() is performed also.
 void Resizer::journalRestore()
 {
-  ecoRestore();
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
+  init();
+
+  if (odb::dbDatabase::ecoEmpty(block_)) {
+    odb::dbDatabase::undoEco(block_);
+    debugPrint(logger_,
+               RSZ,
+               "journal",
+               1,
+               "journal restore ends due to empty ECO >>>");
+    return;
+  }
+
+  // Odb callbacks invalidate parasitics on the touched nets during undo.
+  odb::dbDatabase::undoEco(block_);
+  estimate_parasitics_->updateParasitics();
+  sta_->findRequireds();
+
+  // ECO undo can change the graph topology seen by later passes.
+  invalidateVertexOrdering();
+
+  debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
 
 ////////////////////////////////////////////////////////////////
