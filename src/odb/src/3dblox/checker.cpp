@@ -118,7 +118,7 @@ void matchMarkersBetweenChips(
     std::vector<AlignmentMarkerIndex::Value> list_b,
     const UnfoldedChip* c_a,
     const UnfoldedChip* c_b,
-    uint tolerance_dbu,
+    uint32_t tolerance_dbu,
     const AlignmentViolationReporter& report)
 {
   const int64_t tol_sq = static_cast<int64_t>(tolerance_dbu) * tolerance_dbu;
@@ -415,7 +415,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     return;
   }
 
-  const uint tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
+  const uint32_t tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
 
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;

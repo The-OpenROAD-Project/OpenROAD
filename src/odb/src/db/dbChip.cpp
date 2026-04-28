@@ -96,6 +96,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (tsv_ != rhs.tsv_) {
     return false;
   }
+  if (alignment_marker_tolerance_ != rhs.alignment_marker_tolerance_) {
+    return false;
+  }
   if (top_ != rhs.top_) {
     return false;
   }
@@ -582,14 +585,14 @@ bool dbChip::isTsv() const
   return obj->tsv_;
 }
 
-void dbChip::setAlignmentMarkerTolerance(uint alignment_marker_tolerance)
+void dbChip::setAlignmentMarkerTolerance(uint32_t alignment_marker_tolerance)
 {
   _dbChip* obj = (_dbChip*) this;
 
   obj->alignment_marker_tolerance_ = alignment_marker_tolerance;
 }
 
-uint dbChip::getAlignmentMarkerTolerance() const
+uint32_t dbChip::getAlignmentMarkerTolerance() const
 {
   _dbChip* obj = (_dbChip*) this;
   return obj->alignment_marker_tolerance_;

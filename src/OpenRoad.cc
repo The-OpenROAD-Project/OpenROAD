@@ -3,6 +3,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -558,7 +559,8 @@ void OpenRoad::setAlignmentMarkers(const std::vector<std::string>& master_names,
     found->setAlignmentMarker(true);
   }
 
-  const uint tol_dbu = static_cast<uint>(tolerance_um * db_->getDbuPerMicron());
+  const uint32_t tol_dbu
+      = static_cast<uint32_t>(tolerance_um * db_->getDbuPerMicron());
   chip->setAlignmentMarkerTolerance(tol_dbu);
 }
 

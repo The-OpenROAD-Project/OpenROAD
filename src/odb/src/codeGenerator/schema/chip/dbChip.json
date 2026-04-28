@@ -119,7 +119,7 @@
     },
     {
       "name": "alignment_marker_tolerance_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "schema": "kSchemaChipAlignmentMarker"
     },

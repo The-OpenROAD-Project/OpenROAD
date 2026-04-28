@@ -7269,9 +7269,9 @@ class dbChip : public dbObject
 
   bool isTsv() const;
 
-  void setAlignmentMarkerTolerance(uint alignment_marker_tolerance);
+  void setAlignmentMarkerTolerance(uint32_t alignment_marker_tolerance);
 
-  uint getAlignmentMarkerTolerance() const;
+  uint32_t getAlignmentMarkerTolerance() const;
 
   dbSet<dbChipRegion> getChipRegions() const;
 
