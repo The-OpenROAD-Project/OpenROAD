@@ -23,3 +23,8 @@ after-rename get_pins i/sub/buf_renamed/A -> i/sub/buf_renamed/A
 after-reparent get_pins i/sub/buf_renamed/A ->  
 after-reparent get_pins buf_renamed/A -> buf_renamed/A
 after-destroy get_pins new_buf/A -> 
+loop 0 get_pins loop_buf_0/A -> loop_buf_0/A
+loop 1 get_pins loop_buf_1/A -> loop_buf_1/A
+loop 2 get_pins loop_buf_2/A -> loop_buf_2/A
+loop 3 get_pins loop_buf_3/A -> loop_buf_3/A
+loop 4 get_pins loop_buf_4/A -> loop_buf_4/A

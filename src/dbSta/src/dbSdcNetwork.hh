@@ -27,10 +27,23 @@ class dbSdcNetwork : public SdcNetwork
   PinSeq findPinsMatching(const Instance* instance,
                           const PatternMatch* pattern) const override;
 
-  // Drop the cached full-path -> Instance map. Must be called when the
-  // hierarchy changes (instances created/destroyed/renamed) so that
-  // subsequent literal SDC lookups don't return stale or dangling pointers.
-  void invalidateSdcPathToInstMap() { sdc_path_to_inst_.reset(); }
+  // Drop the cache. Used on subtree-wide edits (parent change, modInst
+  // destroy) where surgical fix-up would be more error-prone than letting
+  // the next literal lookup rebuild lazily.
+  void invalidateSdcPathToInstMap()
+  {
+    sdc_path_to_inst_.reset();
+    inst_to_sdc_path_.reset();
+  }
+
+  // Incremental cache maintenance for hierarchy edits. Each is a no-op
+  // when the cache hasn't been built yet (lazy property preserved) or
+  // when the affected instance has no path component containing the
+  // divider — the cache only ever holds the small set of "pathological"
+  // entries that findInstance's recursive splitter cannot resolve.
+  void onInstCreated(Instance* inst);
+  void onInstDestroyed(Instance* inst);
+  void onInstRenamed(Instance* inst);
 
  protected:
   void findInstancesMatching1(const PatternMatch* pattern,
@@ -57,20 +70,33 @@ class dbSdcNetwork : public SdcNetwork
                                               Instance*,
                                               TransparentStringHash,
                                               std::equal_to<>>;
-  // sdc_path is passed by value so the visitor can move it into a long-
-  // lived store (e.g. the full-path map) without an extra copy.
-  using SdcPathVisitor = std::function<void(Instance*, std::string sdc_path)>;
+  // Reverse map for O(1) erase-by-instance during destroy/rename.
+  using InstToSdcPathMap = std::unordered_map<const Instance*, std::string>;
+  using SdcPathVisitor
+      = std::function<void(Instance*, std::string sdc_path, bool any_div)>;
 
-  // DFS the hierarchy, invoking visitor(child, sdc_path) once per instance.
+  // DFS the hierarchy, invoking visitor(child, sdc_path, any_div) once per
+  // instance. any_div is true when sdc_path or any ancestor's leaf name
+  // contains the divider — i.e. findInstance cannot resolve sdc_path.
   void visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const;
 
+  // True iff inst itself or any ancestor has a STA-form leaf name
+  // containing the path divider (an escaped Verilog identifier such as
+  // "\foo/bar"). These are the only entries we cache.
+  bool hasPathologicalPath(const Instance* inst) const;
+
+  // Insert / erase keep both maps consistent. Callers must have ensured
+  // the cache is built; insertEntry additionally requires inst pathological.
+  void insertEntry(Instance* inst) const;
+  void eraseEntry(const Instance* inst) const;
+
   // Lazy full-path -> Instance lookup, used by findInstancesMatching1 to
-  // resolve literal SDC patterns that the hierarchy walker missed (which
-  // happens when an instance name contains the path divider, e.g. a
-  // Verilog escaped identifier "\foo/bar"). Without this, each literal
-  // miss would do an O(N) DFS — the original O(patterns × N) hang.
+  // resolve literal SDC patterns that the hierarchy walker missed (e.g. a
+  // Verilog escaped identifier "\foo/bar"). Only pathological entries are
+  // stored, so memory is O(escaped-identifier-count), not O(N).
   const SdcPathToInstMap& sdcPathToInstMap() const;
   mutable std::optional<SdcPathToInstMap> sdc_path_to_inst_;
+  mutable std::optional<InstToSdcPathMap> inst_to_sdc_path_;
 };
 
 }  // namespace sta
