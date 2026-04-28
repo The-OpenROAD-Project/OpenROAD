@@ -123,6 +123,7 @@ cc_library(
         "src/glyph_cache.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
+        "src/module_color_palette.h",
         "src/json_builder.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
