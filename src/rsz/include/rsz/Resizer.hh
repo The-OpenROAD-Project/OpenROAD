@@ -214,6 +214,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDontUse(sta::LibertyCell* cell, bool dont_use);
   void resetDontUse();
   bool dontUse(const sta::LibertyCell* cell);
+  bool isLinkCell(sta::LibertyCell* cell) const;
   void reportDontUse() const;
   void setDontTouch(const sta::Instance* inst, bool dont_touch);
   bool dontTouch(const sta::Instance* inst) const;
@@ -586,7 +587,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findFastBuffers();
   static MoveType moveTypeFromString(const std::string& str);
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
-  bool isLinkCell(sta::LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);

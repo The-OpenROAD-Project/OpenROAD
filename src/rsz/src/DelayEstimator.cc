@@ -316,7 +316,7 @@ const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
     return nullptr;
   }
 
-  const sta::TimingArcSetSeq arc_sets
+  const sta::TimingArcSetSeq& arc_sets
       = scene_cell->timingArcSets(input_port, output_port);
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
@@ -778,29 +778,58 @@ std::optional<float> candidateInputCap(const DelayStageState& target_stage,
 float maxTargetInputCapDelta(Resizer& resizer,
                              const DelayStageState& target_stage)
 {
-  sta::LibertyCell* current_cell = target_stage.arc.currentCell();
+  // Stage arcs use scene/corner cells for timing lookup, while Resizer
+  // replacement queries require the canonical link cell mapped to OpenDB.
+  sta::LibertyCell* current_scene_cell = target_stage.arc.currentCell();
+  sta::LibertyCell* current_link_cell
+      = resizer.network()->findLibertyCell(current_scene_cell->name());
+  if (current_link_cell == nullptr) {
+    debugPrint(resizer.logger(),
+               utl::RSZ,
+               "delay_estimator",
+               3,
+               "DMP slew-bias cap range missing link cell for {}",
+               current_scene_cell->name());
+    return 0.0f;
+  }
+
   const float current_input_cap = target_stage.arc.inputPort()->capacitance();
   float max_input_cap = current_input_cap;
+  size_t scanned_cell_count = 0;
 
-  // These Resizer queries may populate equivalence caches but do not mutate the
-  // design or timing graph.
-  sta::LibertyCellSeq swappable_cells = resizer.getSwappableCells(current_cell);
-  for (sta::LibertyCell* cell : swappable_cells) {
+  auto update_max_cap_from_cell = [&](sta::LibertyCell* cell) {
+    scanned_cell_count++;
     const std::optional<float> input_cap
         = candidateInputCap(target_stage, cell);
     if (input_cap.has_value()) {
       max_input_cap = std::max(max_input_cap, *input_cap);
     }
-  }
+  };
 
-  sta::LibertyCellSeq vt_equiv_cells = resizer.getVTEquivCells(current_cell);
-  for (sta::LibertyCell* cell : vt_equiv_cells) {
-    const std::optional<float> input_cap
-        = candidateInputCap(target_stage, cell);
-    if (input_cap.has_value()) {
-      max_input_cap = std::max(max_input_cap, *input_cap);
+  // Cover the full equivalent-cell envelope beyond today's policy filters, so
+  // future composed size/VT moves stay inside the sampled cap range.
+  sta::LibertyCellSeq* equiv_cells
+      = resizer.sta()->equivCells(current_link_cell);
+  if (equiv_cells != nullptr) {
+    for (sta::LibertyCell* cell : *equiv_cells) {
+      if (resizer.dontUse(cell) || !resizer.isLinkCell(cell)) {
+        continue;
+      }
+      update_max_cap_from_cell(cell);
     }
   }
+
+  debugPrint(resizer.logger(),
+             utl::RSZ,
+             "delay_estimator",
+             3,
+             "DMP slew-bias cap range for {} input {}: current {:.3e}, max "
+             "{:.3e}, scanned {} cells",
+             current_link_cell->name(),
+             target_stage.arc.inputPort()->name(),
+             current_input_cap,
+             max_input_cap,
+             scanned_cell_count);
 
   return std::max(max_input_cap - current_input_cap, 0.0f);
 }
@@ -816,6 +845,8 @@ void prepareFaninNeighborDmpSlewBias(Resizer& resizer, ArcDelayState& context)
   const float max_input_cap_delta
       = maxTargetInputCapDelta(resizer, target_stage);
   if (max_input_cap_delta <= 0.0f) {
+    logDmpSlewBiasSkip(
+        resizer, target_stage, "no target input capacitance growth");
     return;
   }
 
