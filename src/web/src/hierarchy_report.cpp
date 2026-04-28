@@ -372,7 +372,7 @@ std::map<uint32_t, Color> computeDefaultModuleColors(
       }
     }
     if (n.node_kind == HierarchyNodeKind::kModule) {
-      mod_state[n.odb_id] = {n.color, n.color};
+      mod_state[n.odb_id] = {.color = n.color, .effective_color = n.color};
     }
   }
 
@@ -385,7 +385,7 @@ std::map<uint32_t, Color> computeDefaultModuleColors(
     if (it == mod_state.end()) {
       continue;
     }
-    Color inherited = {0, 0, 0, 0};
+    Color inherited;
     bool found_ancestor = false;
     int pid = n.parent_id;
     while (pid >= 0) {
