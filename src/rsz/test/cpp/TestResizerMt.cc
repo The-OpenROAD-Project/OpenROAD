@@ -328,14 +328,16 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
     return;
   }
   const ArcDelayState& arc_delay = context.value();
-  ASSERT_NE(arc_delay.arc.input_port, nullptr);
-  ASSERT_NE(arc_delay.arc.output_port, nullptr);
-  EXPECT_EQ(arc_delay.arc.input_port->name(), "A");
-  EXPECT_EQ(arc_delay.arc.output_port->name(), "Z");
-  EXPECT_TRUE(arc_delay.path_stages.empty());
+  const DelayStageState& target_stage = arc_delay.target();
+  ASSERT_NE(target_stage.arc.input_port, nullptr);
+  ASSERT_NE(target_stage.arc.output_port, nullptr);
+  EXPECT_EQ(target_stage.arc.input_port->name(), "A");
+  EXPECT_EQ(target_stage.arc.output_port->name(), "Z");
+  ASSERT_EQ(arc_delay.path_stages.size(), 1);
+  EXPECT_EQ(arc_delay.target_stage_index, 0);
   EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
-  EXPECT_GT(arc_delay.load_cap, 0.0f);
-  EXPECT_GT(arc_delay.current_delay, 0.0f);
+  EXPECT_GT(target_stage.load_cap, 0.0f);
+  EXPECT_GT(target_stage.current_delay, 0.0f);
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("BUF_X1_L");
@@ -366,8 +368,6 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
   ASSERT_EQ(arc_delay.path_stages.size(), 3);
   ASSERT_EQ(arc_delay.target_stage_index, 1);
-  EXPECT_EQ(arc_delay.path_stages[arc_delay.target_stage_index].path_index,
-            arc_delay.path_index);
   EXPECT_EQ(arc_delay.path_stages[0].arc.output_port->name(), "Z");
   EXPECT_EQ(arc_delay.path_stages[1].arc.output_port->name(), "ZN");
   EXPECT_EQ(arc_delay.path_stages[2].arc.output_port->name(), "Z");
@@ -456,10 +456,11 @@ TEST_F(TestResizerMt, BuildArcDelayStateSamplesOnlyPathArcOnMultiArcCell)
     return;
   }
   const ArcDelayState& arc_delay = context.value();
-  ASSERT_NE(arc_delay.arc.input_port, nullptr);
-  ASSERT_NE(arc_delay.arc.output_port, nullptr);
-  EXPECT_EQ(arc_delay.arc.input_port->name(), "A1");
-  EXPECT_EQ(arc_delay.arc.output_port->name(), "ZN");
+  const SelectedArc& target_arc = arc_delay.target().arc;
+  ASSERT_NE(target_arc.input_port, nullptr);
+  ASSERT_NE(target_arc.output_port, nullptr);
+  EXPECT_EQ(target_arc.input_port->name(), "A1");
+  EXPECT_EQ(target_arc.output_port->name(), "ZN");
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1_L");

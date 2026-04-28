@@ -30,6 +30,7 @@
 
 #include "BufferedNet.hh"
 #include "ConcreteSwapArithModules.hh"
+#include "DelayEstimatorReporter.hh"
 #include "Optimizer.hh"
 #include "OptimizerTypes.hh"
 #include "PreChecks.hh"
@@ -1994,6 +1995,16 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("{} is the buffer chosen for hold fixing",
                   (hold_buffer ? hold_buffer->name() : "-"));
   logger_->report("{:*>80}", "");
+}
+
+void Resizer::reportDelayEstimatorAccuracyForSizing(
+    sta::Instance* inst,
+    sta::LibertyCell* replacement,
+    const std::string& estimator,
+    const int delay_levels)
+{
+  DelayEstimatorReporter reporter(*this);
+  reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);
 }
 
 void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)

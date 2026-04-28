@@ -27,6 +27,7 @@ add_library(rsz_lib
     OptimizerTypes.cc
     MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
+    DelayEstimatorReporter.cc
     SetupMt1Policy.cc
     Resizer.cc
     OdbCallBack.cc

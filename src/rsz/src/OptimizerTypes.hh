@@ -115,21 +115,22 @@ struct DelayStageState
 };
 
 // Prepared delay-estimator context for a target stage and its optional
-// N-level fanin/fanout timing window.
+// N-level fanin/fanout timing window.  path_stages always contains at least
+// one entry (the target stage) after a successful buildContext; consumers
+// access electrical state via target() rather than duplicated top-level
+// fields.
 struct ArcDelayState
 {
   bool isValid() const;
 
-  SelectedArc arc;
-  float input_slew{0.0f};
-  float load_cap{0.0f};
-  float current_delay{0.0f};  // Original delay before optimization
-  float current_slew{0.0f};
-  int path_index{-1};
-
   std::vector<DelayStageState> path_stages;
-  int target_stage_index{-1};
+  int target_stage_index{0};
   int delay_estimation_levels{0};
+
+  const DelayStageState& target() const
+  {
+    return path_stages[target_stage_index];
+  }
 };
 
 // Raw delay-estimator result before a candidate converts it into a

@@ -511,6 +511,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
+  void reportDelayEstimatorAccuracyForSizing(sta::Instance* inst,
+                                             sta::LibertyCell* replacement,
+                                             const std::string& estimator,
+                                             int delay_levels);
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
@@ -1027,6 +1031,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class OdbCallBack;
   friend class SetupLegacyPolicy;
   friend class RepairTargetCollector;
+  friend class DelayEstimatorReporter;
 };
 
 }  // namespace rsz

@@ -246,12 +246,12 @@ bool findCandidatePorts(const SelectedArc& arc,
   return candidate_input != nullptr && candidate_output != nullptr;
 }
 
-bool findArcDelayAndSlew(const SelectedArc& arc,
-                         const float input_slew,
-                         const float load_cap,
-                         const sta::LibertyCell* cell,
-                         float& delay,
-                         float& output_slew)
+bool lookupArcDelayAndSlew(const SelectedArc& arc,
+                           const float input_slew,
+                           const float load_cap,
+                           const sta::LibertyCell* cell,
+                           float& delay,
+                           float& output_slew)
 {
   delay = -sta::INF;
   output_slew = 0.0f;
@@ -315,12 +315,12 @@ std::optional<DelayStageState> buildDelayStageState(
   const sta::LibertyCell* current_cell = currentCell(*selected_arc);
   float current_delay = 0.0f;
   float current_slew = 0.0f;
-  if (!findArcDelayAndSlew(*selected_arc,
-                           input_slew,
-                           load_cap,
-                           current_cell,
-                           current_delay,
-                           current_slew)) {
+  if (!lookupArcDelayAndSlew(*selected_arc,
+                             input_slew,
+                             load_cap,
+                             current_cell,
+                             current_delay,
+                             current_slew)) {
     setFailReason(fail_reason, FailReason::kMissingCurrentTimingArc);
     return std::nullopt;
   }
@@ -369,29 +369,25 @@ std::optional<DelayStageState> buildDelayStageStateFromPath(
                               fail_reason);
 }
 
-ArcDelayState makeArcDelayState(const DelayStageState& target_stage,
-                                const int delay_levels)
+// Build an ArcDelayState that always contains the target stage; with
+// delay_levels > 0, additionally captures up to N valid fanin/fanout
+// stages.  target_stage_index points to the target stage in path_stages.
+ArcDelayState collectPathStages(const Resizer& resizer,
+                                const sta::PathExpanded& expanded,
+                                const int target_path_index,
+                                const sta::Scene* scene,
+                                const sta::MinMax* min_max,
+                                const int delay_levels,
+                                const DelayStageState& target_stage)
 {
   ArcDelayState context;
-  context.arc = target_stage.arc;
-  context.input_slew = target_stage.input_slew;
-  context.load_cap = target_stage.load_cap;
-  context.current_delay = target_stage.current_delay;
-  context.current_slew = target_stage.current_slew;
-  context.path_index = target_stage.path_index;
   context.delay_estimation_levels = delay_levels;
-  return context;
-}
+  if (delay_levels == 0) {
+    context.path_stages = {target_stage};
+    context.target_stage_index = 0;
+    return context;
+  }
 
-void collectDelayWindow(const Resizer& resizer,
-                        const sta::PathExpanded& expanded,
-                        const int target_path_index,
-                        const sta::Scene* scene,
-                        const sta::MinMax* min_max,
-                        const int delay_levels,
-                        ArcDelayState& context,
-                        const DelayStageState& target_stage)
-{
   std::vector<DelayStageState> fanin_stages;
   fanin_stages.reserve(delay_levels);
   int found_fanin_stages = 0;
@@ -427,6 +423,7 @@ void collectDelayWindow(const Resizer& resizer,
     context.path_stages.push_back(*stage);
     ++found_fanout_stages;
   }
+  return context;
 }
 
 DelayEstimate makeEstimate(const float current_delay,
@@ -450,7 +447,8 @@ float totalCurrentDelay(const std::vector<DelayStageState>& stages)
 }
 
 // Score a candidate over a path-local fanin/fanout window using cached delay
-// state.
+// state.  When `trace` is non-null, populates one StageEvaluation per
+// evaluated stage so diagnostic callers can present per-stage detail.
 //
 // Approximation note: from the fanin neighbor onward, each stage feeds the
 // previous stage's table-model gate output slew (propagated_slew) into the
@@ -461,7 +459,8 @@ float totalCurrentDelay(const std::vector<DelayStageState>& stages)
 // look slightly faster than reality (optimistic).  This is an intentional
 // speed/accuracy trade-off for candidate ranking.
 DelayEstimate estimateWindow(const ArcDelayState& context,
-                             const sta::LibertyCell* candidate_cell)
+                             const sta::LibertyCell* candidate_cell,
+                             std::vector<StageEvaluation>* trace = nullptr)
 {
   const std::vector<DelayStageState>& stages = context.path_stages;
   const int target_index = context.target_stage_index;
@@ -489,14 +488,27 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
   float propagated_slew = 0.0f;
   bool has_propagated_slew = false;
 
+  if (trace != nullptr) {
+    trace->reserve(stages.size());
+  }
+
   for (int stage_index = 0; stage_index < static_cast<int>(stages.size());
        ++stage_index) {
     const DelayStageState& stage = stages[stage_index];
 
     // Stages before the fanin neighbor are unaffected by the swap since
-    // load cap cannot be changed.
+    // load cap cannot be changed.  Reuse the cached pre-swap stage values
+    // for the trace, which would be identical to a fresh table-model lookup
+    // with the same inputs.
     if (stage_index < target_index - 1) {
       candidate_total_delay += stage.current_delay;
+      if (trace != nullptr) {
+        trace->push_back({.path_index = stage.path_index,
+                          .cell = currentCell(stage.arc),
+                          .input_slew = stage.input_slew,
+                          .load_cap = stage.load_cap,
+                          .stage_delay = stage.current_delay});
+      }
       continue;
     }
 
@@ -520,13 +532,21 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
 
     float stage_delay = 0.0f;
     float stage_slew = 0.0f;
-    if (!findArcDelayAndSlew(
+    if (!lookupArcDelayAndSlew(
             stage.arc, input_slew, load_cap, cell, stage_delay, stage_slew)) {
       return {.legal = false, .reason = fail_reason};
     }
     candidate_total_delay += stage_delay;
     propagated_slew = stage_slew;
     has_propagated_slew = true;
+
+    if (trace != nullptr) {
+      trace->push_back({.path_index = stage.path_index,
+                        .cell = cell,
+                        .input_slew = input_slew,
+                        .load_cap = load_cap,
+                        .stage_delay = stage_delay});
+    }
   }
 
   return makeEstimate(current_total_delay, candidate_total_delay);
@@ -541,7 +561,7 @@ bool DelayEstimator::findArcDelay(const SelectedArc& arc,
                                   float& delay)
 {
   float output_slew = 0.0f;
-  return findArcDelayAndSlew(
+  return lookupArcDelayAndSlew(
       arc, input_slew, load_cap, cell, delay, output_slew);
 }
 
@@ -607,54 +627,25 @@ std::optional<ArcDelayState> DelayEstimator::buildContext(
   }
 
   const int normalized_delay_levels = delay_levels > 0 ? delay_levels : 0;
-  ArcDelayState context
-      = makeArcDelayState(*target_stage, normalized_delay_levels);
-  if (normalized_delay_levels == 0) {
-    return context;
-  }
-
-  collectDelayWindow(resizer,
-                     expanded,
-                     path_index,
-                     scene,
-                     min_max,
-                     normalized_delay_levels,
-                     context,
-                     *target_stage);
-  return context;
-}
-
-DelayEstimate DelayEstimator::estimate(const ArcDelayState& context,
-                                       const sta::LibertyCell* candidate_cell)
-{
-  if (!context.path_stages.empty()) {
-    return estimateWindow(context, candidate_cell);
-  }
-  return estimate(context, candidate_cell, context.load_cap);
+  return collectPathStages(resizer,
+                           expanded,
+                           path_index,
+                           scene,
+                           min_max,
+                           normalized_delay_levels,
+                           *target_stage);
 }
 
 DelayEstimate DelayEstimator::estimate(const ArcDelayState& context,
                                        const sta::LibertyCell* candidate_cell,
-                                       const float load_cap)
+                                       std::vector<StageEvaluation>* trace)
 {
-  // Replay the same path arc on the candidate cell without touching shared
-  // timing state.  Resolve candidate ports first so a port-mismatch failure
-  // is reported distinctly from a missing timing arc.
-  sta::LibertyCell* scene_cell = nullptr;
-  sta::LibertyPort* candidate_input = nullptr;
-  sta::LibertyPort* candidate_output = nullptr;
-  if (!findCandidatePorts(context.arc,
-                          candidate_cell,
-                          scene_cell,
-                          candidate_input,
-                          candidate_output)) {
-    return {.legal = false, .reason = FailReason::kMissingCandidatePort};
+  // path_stages always contains at least the target stage by construction,
+  // so estimateWindow handles delay_levels=0 (size 1) and >0 uniformly.
+  if (trace != nullptr) {
+    trace->clear();
   }
-  return estimate(context.arc,
-                  context.input_slew,
-                  load_cap,
-                  context.current_delay,
-                  candidate_cell);
+  return estimateWindow(context, candidate_cell, trace);
 }
 
 DelayEstimate DelayEstimator::estimate(const SelectedArc& arc,

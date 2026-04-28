@@ -57,8 +57,9 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::generate(
         target, std::nullopt, -std::numeric_limits<double>::infinity());
   }
 
-  const ArcDelayState& arc_delay = target.arc_delay.value();
-  return buildCandidates(target, arc_delay.load_cap, arc_delay.current_delay);
+  const DelayStageState& target_stage = target.arc_delay.value().target();
+  return buildCandidates(
+      target, target_stage.load_cap, target_stage.current_delay);
 }
 
 bool SwapPinsGenerator::resolveDriverContext(const Target& target,

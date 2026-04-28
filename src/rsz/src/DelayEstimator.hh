@@ -4,6 +4,7 @@
 #pragma once
 
 #include <optional>
+#include <vector>
 
 #include "OptimizerTypes.hh"
 #include "rsz/Resizer.hh"
@@ -22,6 +23,20 @@ class Scene;
 
 namespace rsz {
 struct Target;
+
+// Per-stage trace entry produced by the trace overload of
+// DelayEstimator::estimate.  Captures the inputs and outputs of the
+// table-model lookup that was applied (with the candidate at the target
+// stage) so diagnostic tools can present per-stage detail without
+// re-implementing the estimator's stage walk.
+struct StageEvaluation
+{
+  int path_index{-1};
+  const sta::LibertyCell* cell{nullptr};
+  float input_slew{0.0f};
+  float load_cap{0.0f};
+  float stage_delay{0.0f};
+};
 
 // === Delay estimator API ====================================================
 
@@ -66,11 +81,12 @@ class DelayEstimator
       FailReason* fail_reason = nullptr);
 
   // === Delay estimation =====================================================
-  static DelayEstimate estimate(const ArcDelayState& context,
-                                const sta::LibertyCell* candidate_cell);
+  // When `trace` is non-null it is cleared and one StageEvaluation per
+  // evaluated stage is appended; pass nullptr (the default) for normal
+  // candidate ranking.
   static DelayEstimate estimate(const ArcDelayState& context,
                                 const sta::LibertyCell* candidate_cell,
-                                float load_cap);
+                                std::vector<StageEvaluation>* trace = nullptr);
   static DelayEstimate estimate(const SelectedArc& arc,
                                 float input_slew,
                                 float load_cap,

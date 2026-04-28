@@ -81,13 +81,9 @@ bool DelayStageState::isValid() const
 
 bool ArcDelayState::isValid() const
 {
-  if (!selectedArcIsValid(arc)) {
-    return false;
-  }
-  if (path_stages.empty()) {
-    return true;
-  }
-  return target_stage_index >= 0
+  // Invariant: path_stages always contains at least the target stage after
+  // a successful buildContext.  target_stage_index points to that stage.
+  return !path_stages.empty() && target_stage_index >= 0
          && target_stage_index < static_cast<int>(path_stages.size())
          && path_stages[target_stage_index].isValid();
 }

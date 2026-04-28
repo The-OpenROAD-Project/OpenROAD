@@ -43,8 +43,9 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
 
   sta::Instance* target_inst = target.inst(resizer_);
   const ArcDelayState& arc_delay = target.arc_delay.value();
+  const SelectedArc& target_arc = arc_delay.target().arc;
   const std::vector<sta::LibertyCell*> replacements = findSizeUpOptions(
-      arc_delay.arc.output_port, arc_delay.arc.scene, arc_delay.arc.min_max);
+      target_arc.output_port, target_arc.scene, target_arc.min_max);
   candidates.reserve(replacements.size());
   for (sta::LibertyCell* replacement : replacements) {
     if (!resizer_.replacementPreservesMaxCap(target_inst, replacement)) {

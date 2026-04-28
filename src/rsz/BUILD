@@ -21,6 +21,8 @@ cc_library(
         "src/ConcreteSwapArithModules.hh",
         "src/DelayEstimator.cc",
         "src/DelayEstimator.hh",
+        "src/DelayEstimatorReporter.cc",
+        "src/DelayEstimatorReporter.hh",
         "src/MeasuredVtSwapPolicy.cc",
         "src/MeasuredVtSwapPolicy.hh",
         "src/MoveCommitter.cc",
