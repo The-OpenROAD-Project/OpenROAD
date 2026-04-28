@@ -27,6 +27,7 @@ ALL_TESTS = [
     "hierclock",
     "hierwrite",
     "hier_deep",
+    "hier_weird_port",
     "make_port",
     "network_edit1",
     "power1",
