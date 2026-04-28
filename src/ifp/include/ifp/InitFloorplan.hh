@@ -24,9 +24,9 @@ namespace ifp {
 
 enum class RowParity
 {
-  NONE,
-  EVEN,
-  ODD
+  kNone,
+  kEven,
+  kOdd
 };
 
 class InitFloorplan
@@ -50,7 +50,7 @@ class InitFloorplan
                      int core_space_right,
                      odb::dbSite* base_site,
                      const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::NONE,
+                     RowParity row_parity = RowParity::kNone,
                      const std::set<odb::dbSite*>& flipped_sites = {},
                      int gap = std::numeric_limits<std::int32_t>::min());
 
@@ -60,7 +60,7 @@ class InitFloorplan
                      const odb::Rect& core,
                      odb::dbSite* base_site,
                      const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::NONE,
+                     RowParity row_parity = RowParity::kNone,
                      const std::set<odb::dbSite*>& flipped_sites = {},
                      int gap = std::numeric_limits<std::int32_t>::min());
 
@@ -91,7 +91,7 @@ class InitFloorplan
                            odb::dbSite* base_site,
                            const std::vector<odb::dbSite*>& additional_sites
                            = {},
-                           RowParity row_parity = RowParity::NONE,
+                           RowParity row_parity = RowParity::kNone,
                            const std::set<odb::dbSite*>& flipped_sites = {},
                            int gap = std::numeric_limits<std::int32_t>::min());
 
@@ -100,7 +100,7 @@ class InitFloorplan
   void makeRows(const odb::Rect& core,
                 odb::dbSite* base_site,
                 const std::vector<odb::dbSite*>& additional_sites = {},
-                RowParity row_parity = RowParity::NONE,
+                RowParity row_parity = RowParity::kNone,
                 const std::set<odb::dbSite*>& flipped_sites = {},
                 int gap = std::numeric_limits<std::int32_t>::min());
 
@@ -108,7 +108,7 @@ class InitFloorplan
   void makePolygonRows(const odb::Polygon& core_polygon,
                        odb::dbSite* base_site,
                        const std::vector<odb::dbSite*>& additional_sites = {},
-                       RowParity row_parity = RowParity::NONE,
+                       RowParity row_parity = RowParity::kNone,
                        const std::set<odb::dbSite*>& flipped_sites = {},
                        int gap = std::numeric_limits<std::int32_t>::min());
 

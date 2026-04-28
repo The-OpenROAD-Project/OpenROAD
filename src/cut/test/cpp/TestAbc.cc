@@ -59,7 +59,7 @@ using ::testing::Contains;
 
 static std::once_flag init_abc_flag;
 
-static const std::string prefix("_main/src/cut/test/");
+static const std::string kPrefix("_main/src/cut/test/");
 
 class AbcTest : public tst::Fixture
 {
@@ -67,12 +67,12 @@ class AbcTest : public tst::Fixture
   void SetUp() override
   {
     std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
-    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+    library_ = readLiberty(kPrefix + "Nangate45/Nangate45_typ.lib");
 
     odb::dbTech* tech
-        = loadTechLef("nangate45", prefix + "Nangate45/Nangate45_tech.lef");
+        = loadTechLef("nangate45", kPrefix + "Nangate45/Nangate45_tech.lef");
     loadLibaryLef(
-        tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
+        tech, "nangate45", kPrefix + "Nangate45/Nangate45_stdcell.lef");
 
     sta::Units* units = library_->units();
     power_unit_ = units->powerUnit();
@@ -99,14 +99,14 @@ class AbcTest : public tst::Fixture
     sta::Port* clk_port = network->findPort(top_cell, "clk");
     sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
 
-    sta::PinSet* pinset = new sta::PinSet(network);
-    pinset->insert(clk_pin);
+    sta::PinSet pinset(network);
+    pinset.insert(clk_pin);
 
     // 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("core_clock",
                     pinset,
@@ -142,11 +142,12 @@ class AbcTestSky130 : public AbcTest
   {
     std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
 
-    library_ = readLiberty(prefix + "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
+    library_
+        = readLiberty(kPrefix + "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib");
 
-    odb::dbTech* tech = loadTechLef("sky130", prefix + "sky130/sky130hd.tlef");
+    odb::dbTech* tech = loadTechLef("sky130", kPrefix + "sky130/sky130hd.tlef");
     odb::dbLib* lib = loadLibaryLef(
-        tech, "sky130", prefix + "sky130/sky130hd_std_cell.lef");
+        tech, "sky130", kPrefix + "sky130/sky130hd_std_cell.lef");
 
     sta_->postReadLef(tech, lib);
 
@@ -169,13 +170,13 @@ class AbcTestAsap7 : public AbcTest
            "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz"};
 
     for (const char* liberty_path : liberty_paths) {
-      library_ = readLiberty(prefix + liberty_path);
+      library_ = readLiberty(kPrefix + liberty_path);
     }
 
     odb::dbTech* tech
-        = loadTechLef("asap7", prefix + "asap7/asap7_tech_1x_201209.lef");
+        = loadTechLef("asap7", kPrefix + "asap7/asap7_tech_1x_201209.lef");
     odb::dbLib* lib = loadLibaryLef(
-        tech, "asap7", prefix + "asap7/asap7sc7p5t_28_R_1x_220121a.lef");
+        tech, "asap7", kPrefix + "asap7/asap7sc7p5t_28_R_1x_220121a.lef");
 
     sta_->postReadLef(tech, lib);
 
@@ -352,7 +353,7 @@ TEST_F(AbcTest, ExtractsAndGateCorrectly)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "simple_and_gate_extract.v");
+  LoadVerilog(kPrefix + "simple_and_gate_extract.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -377,7 +378,7 @@ TEST_F(AbcTest, ExtractsEmptyCutSetCorrectly)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "empty_cut_set.v");
+  LoadVerilog(kPrefix + "empty_cut_set.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -401,7 +402,7 @@ TEST_F(AbcTest, ExtractSideOutputsCorrectly)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "side_outputs_extract.v");
+  LoadVerilog(kPrefix + "side_outputs_extract.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -432,7 +433,7 @@ TEST_F(AbcTest, BuildAbcMappedNetworkFromLogicCut)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "side_outputs_extract_logic_depth.v");
+  LoadVerilog(kPrefix + "side_outputs_extract_logic_depth.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -478,7 +479,7 @@ TEST_F(AbcTest, BuildComplexLogicCone)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(kPrefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -502,7 +503,7 @@ TEST_F(AbcTest, InsertingMappedLogicCutDoesNotThrow)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
+  LoadVerilog(kPrefix + "aes_nangate45.v", /*top=*/"aes_cipher_top");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -532,7 +533,7 @@ TEST_F(AbcTest,
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "side_outputs_extract_logic_depth.v");
+  LoadVerilog(kPrefix + "side_outputs_extract_logic_depth.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
@@ -594,7 +595,7 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(prefix + "sky130_const_cell.v");
+  LoadVerilog(kPrefix + "sky130_const_cell.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Instance* flop_input_instance = network->findInstance("_403_");

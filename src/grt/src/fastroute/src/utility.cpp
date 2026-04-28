@@ -20,13 +20,14 @@
 #include "FastRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -95,14 +96,13 @@ void FastRouteCore::ConvertToFull3DType2()
 // Resistance-aware score calculation to order critical nets
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  const float kResistanceWeight = 2.0f;
+  const float kResistanceWeight = 1.0f;
   const float kSlackWeight = 4.0f;
-  const float kFanoutWeight = 1.0f;
-  const float kNetLengthWeight = 1.0f;
+  const float kFanoutWeight = 3.0f;
+  const float kNetLengthWeight = 2.0f;
 
   return net->getResistance() / worst_net_resistance_ * kResistanceWeight
-         + (!is_incremental_grt_ ? kSlackWeight * net->getSlack() / worst_slack_
-                                 : 0)
+         + net->getSlack() / worst_slack_ * kSlackWeight
          + static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight
          + static_cast<float>(net->getNetLength()) / worst_net_length_
                * kNetLengthWeight;
@@ -672,7 +672,9 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
-    callback_handler_->triggerOnEstimateParasiticsRequired();
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+      estimator->estimateAllGlobalRouteParasitics();
+    }
   }
 
   resetWorstMetrics();
@@ -1576,7 +1578,9 @@ float FastRouteCore::CalculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  callback_handler_->triggerOnEstimateParasiticsRequired();
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    estimator->estimateAllGlobalRouteParasitics();
+  }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();

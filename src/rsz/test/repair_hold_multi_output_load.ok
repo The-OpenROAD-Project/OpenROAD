@@ -1,0 +1,87 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: repair_hold_multi_output_load
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 4 components and 22 component-terminals.
+[INFO ODB-0133]     Created 9 nets and 14 connections.
+Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
+Endpoint: u_capture_con (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ u_launch/CLK (DFFHQNx1_ASAP7_75t_R)
+  38.23   38.23 ^ u_launch/QN (DFFHQNx1_ASAP7_75t_R)
+  18.85   57.08 v u_fa/CON (FAx1_ASAP7_75t_R)
+   0.14   57.22 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
+          57.22   data arrival time
+
+  80.00   80.00   min_delay
+   0.00   80.00   clock reconvergence pessimism
+   5.89   85.89   library hold time
+          85.89   data required time
+---------------------------------------------------------
+          85.89   data required time
+         -57.22   data arrival time
+---------------------------------------------------------
+         -28.67   slack (VIOLATED)
+
+
+Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
+Endpoint: u_capture_sn (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ u_launch/CLK (DFFHQNx1_ASAP7_75t_R)
+  37.06   37.06 v u_launch/QN (DFFHQNx1_ASAP7_75t_R)
+  24.47   61.53 ^ u_fa/CON (FAx1_ASAP7_75t_R)
+  20.68   82.21 v u_fa/SN (FAx1_ASAP7_75t_R)
+   0.35   82.56 v u_capture_sn/D (DFFHQNx1_ASAP7_75t_R)
+          82.56   data arrival time
+
+  80.00   80.00   min_delay
+   0.00   80.00   clock reconvergence pessimism
+   5.71   85.71   library hold time
+          85.71   data required time
+---------------------------------------------------------
+          85.71   data required time
+         -82.56   data arrival time
+---------------------------------------------------------
+          -3.16   slack (VIOLATED)
+
+
+[INFO RSZ-0046] Found 2 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% | -28.672 | -31.828 | u_capture_con/D
+    final |       0 |       2 |            0 |   +18.9% |  16.822 |   0.000 | u_capture_con/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 2 hold buffers.
+Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
+Endpoint: u_capture_con (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00 ^ u_launch/CLK (DFFHQNx1_ASAP7_75t_R)
+  38.23   38.23 ^ u_launch/QN (DFFHQNx1_ASAP7_75t_R)
+  17.19   55.42 v u_fa/CON (FAx1_ASAP7_75t_R)
+  49.11  104.53 v hold1/Y (HB4xp67_ASAP7_75t_R)
+   0.06  104.59 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
+         104.59   data arrival time
+
+  80.00   80.00   min_delay
+   0.00   80.00   clock reconvergence pessimism
+   7.77   87.77   library hold time
+          87.77   data required time
+---------------------------------------------------------
+          87.77   data required time
+        -104.59   data arrival time
+---------------------------------------------------------
+          16.82   slack (MET)
+
+

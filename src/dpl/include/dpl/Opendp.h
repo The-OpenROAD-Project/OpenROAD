@@ -238,6 +238,7 @@ class Opendp
                    GridX x_end,
                    GridY y_end) const;
   bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
+  bool checkRowPowerCompatible(const Node* cell, GridY y) const;
   bool ripUpAndReplace(Node* cell);
   bool diamondMove(Node* cell);
   bool diamondMove(Node* cell, const GridPt& grid_pt);

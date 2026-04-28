@@ -100,6 +100,7 @@ class RamGen
                 int rw_ports,
                 int r_ports,
                 int w_ports,
+                int column_mux_ratio,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
@@ -153,11 +154,16 @@ class RamGen
                  int rw_ports,
                  int r_ports,
                  int w_ports,
+                 int word_idx,
+                 int column_mux_ratio,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
+                 odb::dbNet* word_select,
                  const std::vector<odb::dbNet*>& selects,
+                 const std::vector<odb::dbNet*>& shared_select_b_nets,
+                 bool create_select_inv,
                  const std::vector<odb::dbNet*>& data_input,
-                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                 const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   void makeWord(int slices_per_word,
                 int mask_size,
@@ -165,40 +171,42 @@ class RamGen
                 int rw_ports,
                 int r_ports,
                 int w_ports,
+                int word_idx,
+                int column_mux_ratio,
                 odb::dbNet* clock,
+                odb::dbNet* word_select,
                 std::vector<odb::dbBTerm*>& write_enable,
                 const std::vector<odb::dbNet*>& selects,
+                const std::vector<odb::dbNet*>& shared_select_b_nets,
+                bool create_select_inv,
                 const std::vector<odb::dbNet*>& data_input,
-                const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
-  std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
+  std::unique_ptr<Layout> generateTapColumn(int num_rows, int tapcell_col);
 
   void makeDecoderColumn(const std::string& prefix,
-                         int num_words,
+                         int num_rows,
                          const std::vector<std::vector<odb::dbNet*>>& addr_nets,
                          const std::vector<odb::dbNet*>& decoder_output_nets);
   void makeBufferColumn(const std::string& prefix,
-                        int num_words,
+                        int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
 
   std::unique_ptr<Layout> makeInverterColumn(
-      int num_words,
-      int num_inputs,
+      int num_rows,
+      int num_row_bits,
       int start_port,
       int end_port,
       const std::vector<std::vector<odb::dbNet*>>& inv_addr_nets);
 
-  std::vector<odb::dbNet*> selectNets(const std::string& prefix,
-                                      int read_ports);
-
   std::vector<odb::dbNet*> makeDecoderOutputNets(const std::string& prefix,
-                                                 int num_words);
+                                                 int num_rows);
 
   std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix,
-                                          int num_words,
+                                          int num_rows,
                                           RamPortType port_type);
 
   sta::dbNetwork* network_;
@@ -217,6 +225,7 @@ class RamGen
   odb::dbMaster* and2_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
+  odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
   std::map<PortRole, std::string> storage_ports_;
@@ -230,6 +239,8 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
+      aoi22_out_;
   Grid ram_grid_;
 };
 

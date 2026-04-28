@@ -350,7 +350,8 @@ bool Opendp::checkInRows(const Node& cell) const
       }
     }
   }
-  return true;
+  return !cell.getMaster()->isMultiRow()
+         || checkRowPowerCompatible(&cell, grid_rect.ylo);
 }
 
 // Return the cell this cell overlaps.

@@ -26,7 +26,7 @@ using AdjacencyList = std::vector<std::vector<int>>;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace odb {
@@ -118,7 +118,7 @@ class GlobalRouter
 {
  public:
   GlobalRouter(utl::Logger* logger,
-               utl::CallBackHandler* callback_handler,
+               utl::ServiceRegistry* service_registry,
                stt::SteinerTreeBuilder* stt_builder,
                odb::dbDatabase* db,
                sta::dbSta* sta,
@@ -276,6 +276,7 @@ class GlobalRouter
   void setDebugRectilinearSTree(bool rectilinearSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
   void saveSttInputFile(Net* net);
@@ -506,7 +507,7 @@ class GlobalRouter
   void configFastRoute();
 
   utl::Logger* logger_;
-  utl::CallBackHandler* callback_handler_;
+  utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;

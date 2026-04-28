@@ -29,7 +29,7 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
-                             utl::CallBackHandler* callback_handler,
+                             utl::ServiceRegistry* service_registry,
                              stt::SteinerTreeBuilder* stt_builder,
                              sta::dbSta* sta)
     : max_degree_(0),
@@ -64,7 +64,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       regular_x_(false),
       regular_y_(false),
-      callback_handler_(callback_handler),
+      service_registry_(service_registry),
       logger_(log),
       stt_builder_(stt_builder),
       sta_(sta),
@@ -821,6 +821,11 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   int net_id;
   bool exists;
   getNetId(db_net, net_id, exists);
+
+  if (!exists) {
+    logger_->error(
+        GRT, 127, "net_id for db_net {} not found", db_net->getConstName());
+  }
 
   net = nets_[net_id];
 
@@ -2216,6 +2221,10 @@ void FastRouteCore::setDebugTree2D(bool tree2D)
 void FastRouteCore::setDebugTree3D(bool tree3D)
 {
   debug_->tree3D = tree3D;
+}
+void FastRouteCore::setDebugEdges3D(bool edges3D)
+{
+  debug_->edges3D = edges3D;
 }
 void FastRouteCore::setDebugNet(const odb::dbNet* net)
 {
