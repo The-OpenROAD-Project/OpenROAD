@@ -548,8 +548,8 @@ dbModBTerm* dbModule::findModBTerm(const char* name) const
   const _dbBlock* par = (const _dbBlock*) obj->getOwner();
 
   // Try the full name first.  modbterm names may legitimately contain the
-  // hierarchy delimiter (e.g. escaped-identifier ports emitted by Fusion
-  // Compiler), so unconditionally truncating at the last '/' would miss
+  // hierarchy delimiter (e.g. escaped-identifier ports emitted by other
+  // EDA tools), so unconditionally truncating at the last '/' would miss
   // them.  Fall back to the trailing segment for callers that pass a
   // hierarchical path to a non-hierarchical port name.
   auto it = obj->modbterm_hash_.find(name);
