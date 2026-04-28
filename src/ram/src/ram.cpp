@@ -684,14 +684,15 @@ void RamGen::findMasters()
           bool has_gate = false;
           auto port_iter = cell->portIterator();
           while (port_iter->hasNext()) {
-            auto p = static_cast<sta::ConcretePort*>(port_iter->next());
-            auto lp = p->libertyPort();
-            if (lp && lp->isLatchData()) {
-              has_latch_data = true;
-            }
-            if (std::string(p->name()) == "GATE"
-                || std::string(p->name()) == "G") {
-              has_gate = true;
+            auto lp = port_iter->next()->libertyPort();
+            if (lp) {
+              if (lp->isLatchData()) {
+                has_latch_data = true;
+              }
+              if (std::string(lp->name()) == "GATE"
+                  || std::string(lp->name()) == "G") {
+                has_gate = true;
+              }
             }
           }
           delete port_iter;
@@ -700,7 +701,9 @@ void RamGen::findMasters()
         "latch");
   }
 
-  latch_ports_ = buildPortMap(latch_cell_);
+  if (use_latch_ && latch_cell_) {
+    latch_ports_ = buildPortMap(latch_cell_);
+  }
 
   // aoi cells used for column mux functionality when column_mux_ratio > 1
   // uses truth table simulation to identify AOI22 and discover port names
@@ -1515,7 +1518,6 @@ void RamGen::generate(const int mask_size,
         ram_grid_.addCell(nullptr, sel_col);
       }
     }
-    ram_grid_.addCell(nullptr, col_cell_count);
   }
 
   for (int slice = 0; slice < slices_per_word; ++slice) {
