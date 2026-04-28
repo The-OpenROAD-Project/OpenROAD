@@ -34,7 +34,8 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
 
   const ArcDelayState& arc_delay = target.arc_delay.value();
   sta::LibertyCell* current_cell
-      = const_cast<sta::LibertyPort*>(arc_delay.target().arc.output_port)
+      = const_cast<sta::LibertyPort*>(
+            selectedArcOutputPort(arc_delay.target().arc))
             ->libertyCell();
   const std::vector<sta::LibertyCell*> candidate_cells
       = selectCandidateCells(current_cell);

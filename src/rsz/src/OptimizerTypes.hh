@@ -26,6 +26,8 @@ class Pin;
 class Pvt;
 class RiseFall;
 class Scene;
+class TimingArc;
+class TimingArcSet;
 class Vertex;
 }  // namespace sta
 
@@ -85,19 +87,23 @@ inline constexpr PrepareCacheMask kArcDelayStateCache = 1u << 0;
 
 // === Prepared timing data ===================================================
 
-// Identifies one Liberty timing arc (input->output, rise/fall) on the current
-// worst path, together with the analysis corner, PVT condition, and min/max
-// sense needed to evaluate the NLDM/CCS delay table.
+// Identifies one Liberty timing arc on the current worst path, together with
+// the analysis corner, PVT condition, and min/max sense needed to evaluate the
+// NLDM/CCS delay table.
 struct SelectedArc
 {
   const sta::Scene* scene{nullptr};
   const sta::MinMax* min_max{nullptr};
   const sta::Pvt* pvt{nullptr};
-  const sta::LibertyPort* input_port{nullptr};
-  const sta::LibertyPort* output_port{nullptr};
-  const sta::RiseFall* in_rf{nullptr};
-  const sta::RiseFall* out_rf{nullptr};
+  const sta::TimingArc* ref_arc{nullptr};
 };
+
+const sta::LibertyPort* selectedArcInputPort(const SelectedArc& arc);
+const sta::LibertyPort* selectedArcOutputPort(const SelectedArc& arc);
+const sta::RiseFall* selectedArcInputRiseFall(const SelectedArc& arc);
+const sta::RiseFall* selectedArcOutputRiseFall(const SelectedArc& arc);
+const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
+                                            const sta::TimingArcSet* candidate);
 
 // Snapshot of one timing stage's electrical state needed for table-model delay
 // estimation.  MT policies prepare this on the main thread and then worker

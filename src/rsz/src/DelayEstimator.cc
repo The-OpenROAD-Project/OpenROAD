@@ -54,14 +54,6 @@ bool gateDelayAndSlewFromTableModel(const sta::Pvt* pvt,
   return true;
 }
 
-struct SelectedPathArc
-{
-  std::string from_port_name;
-  std::string to_port_name;
-  const sta::RiseFall* in_rf{nullptr};
-  const sta::RiseFall* out_rf{nullptr};
-};
-
 const sta::Pvt* findPvt(const sta::Scene* scene,
                         sta::Instance* inst,
                         const sta::MinMax* min_max)
@@ -77,15 +69,14 @@ const sta::Pvt* findPvt(const sta::Scene* scene,
   return pvt;
 }
 
-std::optional<SelectedPathArc> selectedPathArc(
-    const sta::PathExpanded& expanded,
-    const int path_index,
-    const sta::StaState* sta,
-    FailReason* fail_reason)
+const sta::TimingArc* selectedPathArc(const sta::PathExpanded& expanded,
+                                      const int path_index,
+                                      const sta::StaState* sta,
+                                      FailReason* fail_reason)
 {
   if (path_index < expanded.startIndex() || path_index >= expanded.size()) {
     setFailReason(fail_reason, FailReason::kPathIndexOutOfRange);
-    return std::nullopt;
+    return nullptr;
   }
 
   const sta::Path* driver_path = expanded.path(path_index);
@@ -95,20 +86,17 @@ std::optional<SelectedPathArc> selectedPathArc(
       || arc->to() == nullptr || arc->fromEdge() == nullptr
       || arc->toEdge() == nullptr) {
     setFailReason(fail_reason, FailReason::kMissingPrevTimingArc);
-    return std::nullopt;
+    return nullptr;
   }
 
   const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
   const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
   if (in_rf == nullptr || out_rf == nullptr) {
     setFailReason(fail_reason, FailReason::kMissingArcTransition);
-    return std::nullopt;
+    return nullptr;
   }
 
-  return SelectedPathArc{.from_port_name = arc->from()->name(),
-                         .to_port_name = arc->to()->name(),
-                         .in_rf = in_rf,
-                         .out_rf = out_rf};
+  return arc;
 }
 
 std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
@@ -153,34 +141,47 @@ std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
     return std::nullopt;
   }
 
-  const std::optional<SelectedPathArc> path_arc
+  const sta::TimingArc* path_arc
       = selectedPathArc(expanded, path_index, resizer.staState(), fail_reason);
-  if (!path_arc.has_value()) {
+  if (path_arc == nullptr) {
     return std::nullopt;
   }
 
   const sta::LibertyPort* input_port
-      = current_cell->findLibertyPort(path_arc->from_port_name);
+      = current_cell->findLibertyPort(path_arc->from()->name());
   const sta::LibertyPort* current_output_port
       = current_cell->findLibertyPort(output_port->name());
   if (input_port == nullptr || current_output_port == nullptr
-      || path_arc->to_port_name != current_output_port->name()) {
+      || path_arc->to()->name() != current_output_port->name()) {
     setFailReason(fail_reason, FailReason::kMissingCurrentPortMap);
+    return std::nullopt;
+  }
+
+  const sta::TimingArcSetSeq current_sets = current_cell->timingArcSets(
+      const_cast<sta::LibertyPort*>(input_port),
+      const_cast<sta::LibertyPort*>(current_output_port));
+  const sta::TimingArc* ref_arc = nullptr;
+  for (const sta::TimingArcSet* arc_set : current_sets) {
+    ref_arc = findMatchingTimingArc(path_arc, arc_set);
+    if (ref_arc != nullptr) {
+      break;
+    }
+  }
+  if (ref_arc == nullptr) {
+    setFailReason(fail_reason, FailReason::kMissingCurrentTimingArc);
     return std::nullopt;
   }
 
   return SelectedArc{.scene = scene,
                      .min_max = actual_min_max,
                      .pvt = findPvt(scene, inst, actual_min_max),
-                     .input_port = input_port,
-                     .output_port = current_output_port,
-                     .in_rf = path_arc->in_rf,
-                     .out_rf = path_arc->out_rf};
+                     .ref_arc = ref_arc};
 }
 
 sta::LibertyCell* currentCell(const SelectedArc& arc)
 {
-  return const_cast<sta::LibertyPort*>(arc.output_port)->libertyCell();
+  return const_cast<sta::LibertyPort*>(selectedArcOutputPort(arc))
+      ->libertyCell();
 }
 
 bool findInputSlew(const Resizer& resizer,
@@ -191,7 +192,7 @@ bool findInputSlew(const Resizer& resizer,
 {
   input_slew = 0.0f;
   const sta::Pin* input_pin
-      = resizer.network()->findPin(inst, arc.input_port->name());
+      = resizer.network()->findPin(inst, selectedArcInputPort(arc)->name());
   if (input_pin == nullptr) {
     return true;
   }
@@ -201,26 +202,13 @@ bool findInputSlew(const Resizer& resizer,
     return true;
   }
 
-  sta::LibertyCell* current_cell = currentCell(arc);
-  for (sta::TimingArcSet* arc_set : current_cell->timingArcSets(
-           nullptr, const_cast<sta::LibertyPort*>(arc.output_port))) {
-    if (arc_set->to() != arc.output_port || arc_set->role()->isTimingCheck()) {
-      continue;
-    }
-    for (sta::TimingArc* candidate_arc : arc_set->arcs()) {
-      if (candidate_arc->from() != arc.input_port
-          || candidate_arc->fromEdge()->asRiseFall() != arc.in_rf
-          || candidate_arc->toEdge()->asRiseFall() != arc.out_rf) {
-        continue;
-      }
-      input_slew = resizer.staState()->graphDelayCalc()->edgeFromSlew(
-          input_vertex, arc.in_rf, arc_set->role(), arc.scene, arc.min_max);
-      return true;
-    }
-  }
-
-  setFailReason(fail_reason, FailReason::kMissingInputSlewArc);
-  return false;
+  input_slew = resizer.staState()->graphDelayCalc()->edgeFromSlew(
+      input_vertex,
+      selectedArcInputRiseFall(arc),
+      arc.ref_arc->role(),
+      arc.scene,
+      arc.min_max);
+  return true;
 }
 
 bool findCandidatePorts(const SelectedArc& arc,
@@ -241,8 +229,10 @@ bool findCandidatePorts(const SelectedArc& arc,
   if (scene_cell == nullptr) {
     return false;
   }
-  candidate_input = scene_cell->findLibertyPort(arc.input_port->name());
-  candidate_output = scene_cell->findLibertyPort(arc.output_port->name());
+  candidate_input
+      = scene_cell->findLibertyPort(selectedArcInputPort(arc)->name());
+  candidate_output
+      = scene_cell->findLibertyPort(selectedArcOutputPort(arc)->name());
   return candidate_input != nullptr && candidate_output != nullptr;
 }
 
@@ -266,15 +256,13 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
 
   const sta::TimingArcSetSeq arc_sets
       = scene_cell->timingArcSets(candidate_input, candidate_output);
-  for (sta::TimingArcSet* arc_set : arc_sets) {
+  for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
       continue;
     }
-    for (sta::TimingArc* candidate_arc : arc_set->arcs()) {
-      if (candidate_arc->fromEdge()->asRiseFall() != arc.in_rf
-          || candidate_arc->toEdge()->asRiseFall() != arc.out_rf) {
-        continue;
-      }
+    const sta::TimingArc* candidate_arc
+        = findMatchingTimingArc(arc.ref_arc, arc_set);
+    if (candidate_arc != nullptr) {
       return gateDelayAndSlewFromTableModel(
           arc.pvt, candidate_arc, input_slew, load_cap, delay, output_slew);
     }
@@ -478,7 +466,7 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
   }
 
   const float current_target_input_cap
-      = target_stage.arc.input_port->capacitance();
+      = selectedArcInputPort(target_stage.arc)->capacitance();
   const float candidate_target_input_cap = candidate_input->capacitance();
   const float target_input_cap_delta
       = candidate_target_input_cap - current_target_input_cap;

@@ -79,7 +79,8 @@ std::string formatDelta(float estimated, float golden, float scale)
 // Liberty cell of the original (pre-swap) driver for a stage.
 sta::LibertyCell* currentCell(const SelectedArc& arc)
 {
-  return const_cast<sta::LibertyPort*>(arc.output_port)->libertyCell();
+  return const_cast<sta::LibertyPort*>(selectedArcOutputPort(arc))
+      ->libertyCell();
 }
 
 }  // namespace
@@ -804,28 +805,44 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
     row.cell_name = driver_port->libertyCell()->name();
   }
 
-  sta::Edge* gate_edge = nullptr;
-  const sta::TimingArc* gate_arc = nullptr;
-  graph_->gateEdgeArc(input_pin,
-                      fixed_stage.state.arc.in_rf,
-                      driver_pin,
-                      fixed_stage.state.arc.out_rf,
-                      gate_edge,
-                      gate_arc);
-  if (gate_edge == nullptr || gate_arc == nullptr
+  sta::Vertex* input_vertex = graph_->pinLoadVertex(input_pin);
+  sta::Vertex* driver_vertex = graph_->pinDrvrVertex(driver_pin);
+  if (input_vertex == nullptr || driver_vertex == nullptr
       || fixed_stage.state.arc.scene == nullptr
       || fixed_stage.state.arc.min_max == nullptr) {
     return row;
   }
 
+  // Resolve the same conditional/non-unate timing arc family captured before
+  // the ECO.  RF-only graph lookup can pick the wrong XOR/XNOR table.
+  sta::Edge* gate_edge = nullptr;
+  const sta::TimingArc* gate_arc = nullptr;
+  sta::VertexInEdgeIterator edge_iter(driver_vertex, graph_);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    if (edge->from(graph_) != input_vertex) {
+      continue;
+    }
+    const sta::TimingArc* matching_arc = findMatchingTimingArc(
+        fixed_stage.state.arc.ref_arc, edge->timingArcSet());
+    if (matching_arc != nullptr) {
+      gate_edge = edge;
+      gate_arc = matching_arc;
+      break;
+    }
+  }
+  if (gate_edge == nullptr || gate_arc == nullptr) {
+    return row;
+  }
+
   const int dcalc_ap = fixed_stage.state.arc.scene->dcalcAnalysisPtIndex(
       fixed_stage.state.arc.min_max);
-  row.input_slew
-      = sta_->graphDelayCalc()->edgeFromSlew(gate_edge->from(graph_),
-                                             fixed_stage.state.arc.in_rf,
-                                             gate_edge,
-                                             fixed_stage.state.arc.scene,
-                                             fixed_stage.state.arc.min_max);
+  row.input_slew = sta_->graphDelayCalc()->edgeFromSlew(
+      gate_edge->from(graph_),
+      selectedArcInputRiseFall(fixed_stage.state.arc),
+      gate_edge,
+      fixed_stage.state.arc.scene,
+      fixed_stage.state.arc.min_max);
   row.cell_delay
       = sta::delayAsFloat(graph_->arcDelay(gate_edge, gate_arc, dcalc_ap));
   row.load_cap = sta_->graphDelayCalc()->loadCap(
@@ -924,8 +941,8 @@ float DelayEstimatorReporter::fixedStageWireDelay(
   while (edge_iter.hasNext()) {
     sta::Edge* edge = edge_iter.next();
     if (edge->isWire() && edge->to(graph_) == next_vertex) {
-      return sta::delayAsFloat(
-          graph_->wireArcDelay(edge, fixed_stage.state.arc.out_rf, dcalc_ap));
+      return sta::delayAsFloat(graph_->wireArcDelay(
+          edge, selectedArcOutputRiseFall(fixed_stage.state.arc), dcalc_ap));
     }
   }
 

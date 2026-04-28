@@ -12,6 +12,7 @@
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/TimingArc.hh"
 
 namespace rsz {
 
@@ -65,14 +66,62 @@ const char* failReasonName(const FailReason reason)
 
 namespace {
 
+// ref_arc's from/to/fromEdge/toEdge are guaranteed non-null by selectedPathArc
+// validation in buildSelectedArc, so only the top-level pointers need checking.
 bool selectedArcIsValid(const SelectedArc& arc)
 {
   return arc.scene != nullptr && arc.min_max != nullptr
-         && arc.input_port != nullptr && arc.output_port != nullptr
-         && arc.in_rf != nullptr && arc.out_rf != nullptr;
+         && arc.ref_arc != nullptr;
 }
 
 }  // namespace
+
+// Precondition: arc.ref_arc is non-null (guaranteed by buildSelectedArc).
+const sta::LibertyPort* selectedArcInputPort(const SelectedArc& arc)
+{
+  return arc.ref_arc->from();
+}
+
+const sta::LibertyPort* selectedArcOutputPort(const SelectedArc& arc)
+{
+  return arc.ref_arc->to();
+}
+
+const sta::RiseFall* selectedArcInputRiseFall(const SelectedArc& arc)
+{
+  return arc.ref_arc->fromEdge()->asRiseFall();
+}
+
+const sta::RiseFall* selectedArcOutputRiseFall(const SelectedArc& arc)
+{
+  return arc.ref_arc->toEdge()->asRiseFall();
+}
+
+// Find the timing arc in `candidate` that matches the reference arc's
+// conditional/mode/sense.  Returns nullptr when no match exists.
+const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
+                                            const sta::TimingArcSet* candidate)
+{
+  if (reference == nullptr || candidate == nullptr) {
+    return nullptr;
+  }
+
+  // Compare arc-set identity: same condition, mode, and functional form.
+  const sta::TimingArcSet* ref_set = reference->set();
+  if (!sta::TimingArcSet::equiv(ref_set, candidate)
+      || ref_set->isCondDefault() != candidate->isCondDefault()
+      || ref_set->modeName() != candidate->modeName()
+      || ref_set->modeValue() != candidate->modeValue()) {
+    return nullptr;
+  }
+
+  for (const sta::TimingArc* arc : candidate->arcs()) {
+    if (sta::TimingArc::equiv(reference, arc)) {
+      return arc;
+    }
+  }
+  return nullptr;
+}
 
 bool DelayStageState::isValid() const
 {

@@ -329,10 +329,10 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   }
   const ArcDelayState& arc_delay = context.value();
   const DelayStageState& target_stage = arc_delay.target();
-  ASSERT_NE(target_stage.arc.input_port, nullptr);
-  ASSERT_NE(target_stage.arc.output_port, nullptr);
-  EXPECT_EQ(target_stage.arc.input_port->name(), "A");
-  EXPECT_EQ(target_stage.arc.output_port->name(), "Z");
+  ASSERT_NE(selectedArcInputPort(target_stage.arc), nullptr);
+  ASSERT_NE(selectedArcOutputPort(target_stage.arc), nullptr);
+  EXPECT_EQ(selectedArcInputPort(target_stage.arc)->name(), "A");
+  EXPECT_EQ(selectedArcOutputPort(target_stage.arc)->name(), "Z");
   ASSERT_EQ(arc_delay.path_stages.size(), 1);
   EXPECT_EQ(arc_delay.target_stage_index, 0);
   EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
@@ -368,9 +368,9 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
   ASSERT_EQ(arc_delay.path_stages.size(), 3);
   ASSERT_EQ(arc_delay.target_stage_index, 1);
-  EXPECT_EQ(arc_delay.path_stages[0].arc.output_port->name(), "Z");
-  EXPECT_EQ(arc_delay.path_stages[1].arc.output_port->name(), "ZN");
-  EXPECT_EQ(arc_delay.path_stages[2].arc.output_port->name(), "Z");
+  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[0].arc)->name(), "Z");
+  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[1].arc)->name(), "ZN");
+  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[2].arc)->name(), "Z");
   for (const DelayStageState& stage : arc_delay.path_stages) {
     EXPECT_GT(stage.current_delay, 0.0f);
     EXPECT_GT(stage.current_slew, 0.0f);
@@ -457,10 +457,10 @@ TEST_F(TestResizerMt, BuildArcDelayStateSamplesOnlyPathArcOnMultiArcCell)
   }
   const ArcDelayState& arc_delay = context.value();
   const SelectedArc& target_arc = arc_delay.target().arc;
-  ASSERT_NE(target_arc.input_port, nullptr);
-  ASSERT_NE(target_arc.output_port, nullptr);
-  EXPECT_EQ(target_arc.input_port->name(), "A1");
-  EXPECT_EQ(target_arc.output_port->name(), "ZN");
+  ASSERT_NE(selectedArcInputPort(target_arc), nullptr);
+  ASSERT_NE(selectedArcOutputPort(target_arc), nullptr);
+  EXPECT_EQ(selectedArcInputPort(target_arc)->name(), "A1");
+  EXPECT_EQ(selectedArcOutputPort(target_arc)->name(), "ZN");
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1_L");
