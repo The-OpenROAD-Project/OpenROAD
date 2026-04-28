@@ -1,0 +1,267 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 1000 ;
+END UNITS
+
+MACRO RAM8x8
+  FOREIGN RAM8x8 0 0 ;
+  CLASS BLOCK ;
+  SIZE 213.9 BY 13.6 ;
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met3 ;
+        RECT  213.1 1.55 213.9 1.85 ;
+    END
+  END clk
+  PIN we[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met3 ;
+        RECT  213.1 2.91 213.9 3.21 ;
+    END
+  END we[0]
+  PIN addr_rw[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met3 ;
+        RECT  213.1 4.27 213.9 4.57 ;
+    END
+  END addr_rw[0]
+  PIN addr_rw[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met3 ;
+        RECT  213.1 5.63 213.9 5.93 ;
+    END
+  END addr_rw[1]
+  PIN addr_rw[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met3 ;
+        RECT  213.1 6.99 213.9 7.29 ;
+    END
+  END addr_rw[2]
+  PIN D[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  1.08 13.115 1.22 13.6 ;
+    END
+  END D[0]
+  PIN Q[0]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  15.8 13.115 15.94 13.6 ;
+    END
+  END Q[0]
+  PIN D[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  24.08 13.115 24.22 13.6 ;
+    END
+  END D[1]
+  PIN Q[1]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  27.76 13.115 27.9 13.6 ;
+    END
+  END Q[1]
+  PIN D[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  28.68 13.115 28.82 13.6 ;
+    END
+  END D[2]
+  PIN Q[2]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  29.6 13.115 29.74 13.6 ;
+    END
+  END Q[2]
+  PIN D[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  69.16 13.115 69.3 13.6 ;
+    END
+  END D[3]
+  PIN Q[3]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  84.8 13.115 84.94 13.6 ;
+    END
+  END Q[3]
+  PIN D[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  93.08 13.115 93.22 13.6 ;
+    END
+  END D[4]
+  PIN Q[4]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  107.8 13.115 107.94 13.6 ;
+    END
+  END Q[4]
+  PIN D[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  116.08 13.115 116.22 13.6 ;
+    END
+  END D[5]
+  PIN Q[5]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  130.8 13.115 130.94 13.6 ;
+    END
+  END Q[5]
+  PIN D[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  139.08 13.115 139.22 13.6 ;
+    END
+  END D[6]
+  PIN Q[6]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  153.8 13.115 153.94 13.6 ;
+    END
+  END Q[6]
+  PIN D[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  162.08 13.115 162.22 13.6 ;
+    END
+  END D[7]
+  PIN Q[7]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT  176.8 13.115 176.94 13.6 ;
+    END
+  END Q[7]
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met3 ;
+        RECT  213.6 9.76 213.9 10.24 ;
+        RECT  0 9.76 0.3 10.24 ;
+      LAYER met2 ;
+        RECT  199.76 13.46 200.24 13.6 ;
+        RECT  199.76 0 200.24 0.14 ;
+        RECT  179.76 13.46 180.24 13.6 ;
+        RECT  179.76 0 180.24 0.14 ;
+        RECT  159.76 13.46 160.24 13.6 ;
+        RECT  159.76 0 160.24 0.14 ;
+        RECT  139.76 13.46 140.24 13.6 ;
+        RECT  139.76 0 140.24 0.14 ;
+        RECT  119.76 13.46 120.24 13.6 ;
+        RECT  119.76 0 120.24 0.14 ;
+        RECT  99.76 13.46 100.24 13.6 ;
+        RECT  99.76 0 100.24 0.14 ;
+        RECT  79.76 13.46 80.24 13.6 ;
+        RECT  79.76 0 80.24 0.14 ;
+        RECT  59.76 13.46 60.24 13.6 ;
+        RECT  59.76 0 60.24 0.14 ;
+        RECT  39.76 13.46 40.24 13.6 ;
+        RECT  39.76 0 40.24 0.14 ;
+        RECT  19.76 13.46 20.24 13.6 ;
+        RECT  19.76 0 20.24 0.14 ;
+      LAYER met1 ;
+        RECT  213.76 10.64 213.9 11.12 ;
+        RECT  0 10.64 0.14 11.12 ;
+        RECT  213.76 5.2 213.9 5.68 ;
+        RECT  0 5.2 0.14 5.68 ;
+        RECT  213.76 -0.24 213.9 0.24 ;
+        RECT  0 -0.24 0.14 0.24 ;
+    END
+  END VSS
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met3 ;
+        RECT  213.6 4.76 213.9 5.24 ;
+        RECT  0 4.76 0.3 5.24 ;
+      LAYER met2 ;
+        RECT  209.76 13.46 210.24 13.6 ;
+        RECT  209.76 0 210.24 0.14 ;
+        RECT  189.76 13.46 190.24 13.6 ;
+        RECT  189.76 0 190.24 0.14 ;
+        RECT  169.76 13.46 170.24 13.6 ;
+        RECT  169.76 0 170.24 0.14 ;
+        RECT  149.76 13.46 150.24 13.6 ;
+        RECT  149.76 0 150.24 0.14 ;
+        RECT  129.76 13.46 130.24 13.6 ;
+        RECT  129.76 0 130.24 0.14 ;
+        RECT  109.76 13.46 110.24 13.6 ;
+        RECT  109.76 0 110.24 0.14 ;
+        RECT  89.76 13.46 90.24 13.6 ;
+        RECT  89.76 0 90.24 0.14 ;
+        RECT  69.76 13.46 70.24 13.6 ;
+        RECT  69.76 0 70.24 0.14 ;
+        RECT  49.76 13.46 50.24 13.6 ;
+        RECT  49.76 0 50.24 0.14 ;
+        RECT  29.76 13.46 30.24 13.6 ;
+        RECT  29.76 0 30.24 0.14 ;
+        RECT  9.76 13.46 10.24 13.6 ;
+        RECT  9.76 0 10.24 0.14 ;
+      LAYER met1 ;
+        RECT  213.76 13.36 213.9 13.84 ;
+        RECT  0 13.36 0.14 13.84 ;
+        RECT  213.76 7.92 213.9 8.4 ;
+        RECT  0 7.92 0.14 8.4 ;
+        RECT  213.76 2.48 213.9 2.96 ;
+        RECT  0 2.48 0.14 2.96 ;
+    END
+  END VDD
+  OBS
+    LAYER li1 ;
+     RECT  0 -0.24 213.9 13.84 ;
+    LAYER met1 ;
+     RECT  0 -0.24 213.9 13.84 ;
+    LAYER met2 ;
+     RECT  0 -0.24 213.9 13.84 ;
+    LAYER met3 ;
+     RECT  0 -0.24 213.9 13.84 ;
+  END
+END RAM8x8
+END LIBRARY

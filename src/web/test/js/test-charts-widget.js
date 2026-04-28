@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     ChartsWidget,
-    computeHistogramLayout,
+    computeHistogramLayout, hitTestColumn,
     kLeftMargin, kRightMargin, kTopMargin, kBottomMargin,
 } from '../../src/charts-widget.js';
 
@@ -196,6 +196,60 @@ describe('computeHistogramLayout', () => {
         }, 500, 400);
         assert.ok(result.yMax >= 350);
         assert.ok(result.yTicks.length >= 2);
+    });
+});
+
+describe('hitTestColumn', () => {
+    // Build a two-bar layout: one tall bar, one very short bar.
+    const layout = computeHistogramLayout({
+        bins: [
+            { lower: -0.1, upper: 0.0, count: 100, negative: true },
+            { lower: 0.0, upper: 0.1, count: 2, negative: false },
+        ],
+        time_unit: 'ns',
+    }, 500, 400);
+    const { bars, chartArea } = layout;
+    // Sanity: the second bar is much shorter than the first.
+    assert.ok(bars[1].height < bars[0].height / 5);
+
+    it('hits a bar by clicking within its rendered area', () => {
+        const cx = bars[0].x + bars[0].width / 2;
+        const cy = bars[0].y + bars[0].height / 2;
+        assert.equal(hitTestColumn(bars, chartArea, cx, cy), bars[0]);
+    });
+
+    it('hits a short bar by clicking above it in the same column', () => {
+        // Click in the middle of the column, well above the tiny bar.
+        const cx = bars[1].x + bars[1].width / 2;
+        const cy = chartArea.top + 5;  // near the top of the chart
+        assert.equal(hitTestColumn(bars, chartArea, cx, cy), bars[1]);
+    });
+
+    it('returns null when clicking outside the chart area vertically', () => {
+        const cx = bars[0].x + bars[0].width / 2;
+        assert.equal(hitTestColumn(bars, chartArea, cx, chartArea.top - 1), null);
+        assert.equal(hitTestColumn(bars, chartArea, cx, chartArea.bottom + 1), null);
+    });
+
+    it('returns null when clicking between bars (gap region)', () => {
+        // The gap is between bar 0's right edge and bar 1's left edge.
+        const cx = bars[0].x + bars[0].width + 1;  // in the gap
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        // Only null if the point is truly outside both bars' x ranges.
+        const hit = hitTestColumn(bars, chartArea, cx, cy);
+        if (cx < bars[1].x) {
+            assert.equal(hit, null);
+        }
+    });
+
+    it('returns null for null bars or chartArea', () => {
+        assert.equal(hitTestColumn(null, chartArea, 100, 200), null);
+        assert.equal(hitTestColumn(bars, null, 100, 200), null);
+    });
+
+    it('returns null when clicking left of all bars', () => {
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        assert.equal(hitTestColumn(bars, chartArea, bars[0].x - 5, cy), null);
     });
 });
 

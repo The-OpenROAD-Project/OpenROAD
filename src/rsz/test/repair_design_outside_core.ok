@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: outside_core
+[INFO ODB-0252]     Updated 8 pins.
+[INFO ODB-0253]     Updated 7 components.
+[INFO ODB-0254]     Updated 9 nets and 21 connections.
+[WARNING RSZ-0065] max wire length less than 693u increases wire delays.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        16
+[DEBUG RSZ-buffer_clamp] fanout1 clamped to core (101780, 1230) -> (101780, 22400)
+[DEBUG RSZ-buffer_clamp] wire2 clamped to core (101780, 1230) -> (101780, 22400)
+[DEBUG RSZ-buffer_clamp] wire3 clamped to core (192030, 1230) -> (178220, 22400)
+    final |     +9.2% |       0 |       3 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0035] Found 1 fanout violations.
+[INFO RSZ-0038] Inserted 3 buffers in 1 nets.

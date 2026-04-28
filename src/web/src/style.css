@@ -393,6 +393,50 @@ html, body {
     background: var(--border-subtle);
 }
 
+/* Tab overflow dropdown — neither GL theme styles the dropdown list, so
+ * it's transparent and effectively unusable.  Style it so overflowed tabs
+ * are visible and clickable. */
+.lm_header .lm_tabdropdown_list {
+    background: var(--bg-context);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 4px 12px var(--shadow);
+    min-width: 160px;
+    max-width: 320px;
+    max-height: 60vh;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding: 2px 0;
+    border-radius: 0 0 4px 4px;
+}
+.lm_header .lm_tabdropdown_list .lm_tab {
+    display: flex;
+    align-items: center;
+    width: auto;
+    height: auto;
+    padding: 4px 12px;
+    margin: 0;
+    background: transparent;
+    color: var(--fg-primary);
+    float: none;
+}
+.lm_header .lm_tabdropdown_list .lm_tab:hover {
+    background: var(--bg-hover);
+    color: var(--fg-bright);
+}
+.lm_header .lm_tabdropdown_list .lm_tab.lm_active {
+    background: var(--bg-selected);
+    color: var(--fg-white);
+}
+.lm_header .lm_tabdropdown_list .lm_tab .lm_title {
+    width: auto;
+    flex: 1;
+    color: inherit;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Leaflet map cursor */
 .leaflet-container {
     cursor: default !important;

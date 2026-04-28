@@ -61,7 +61,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   init();
   constexpr int digits = 3;
   resize_count_ = 0;
-  resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
   sta::VertexSet& endpoints = sta_->endpoints();
