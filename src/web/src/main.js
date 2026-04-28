@@ -17,6 +17,7 @@ import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import { setCookie } from './theme.js';
+import { updateDocumentTitle } from './title.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -744,6 +745,7 @@ app.websocketManager.readyPromise.then(async () => {
         ]);
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
+        updateDocumentTitle(techData.block_name);
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;

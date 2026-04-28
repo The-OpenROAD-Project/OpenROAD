@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -572,6 +573,26 @@ TEST_F(RowRenderingTest, RowsDefaultOff)
 {
   TileVisibility vis;
   EXPECT_FALSE(vis.rows);
+}
+
+//------------------------------------------------------------------------------
+// serializeTechResponse — exercises the contract main.js relies on for the
+// document title (techData.block_name).
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)
+{
+  // Nangate45Fixture creates the block with name "top".
+  makeTileGen();
+  JsonBuilder b;
+  serializeTechResponse(b, *tile_gen_);
+  const std::string json = b.str();
+  // Field name and value should both appear.  Looser than a full JSON
+  // parse but sufficient: this is the contract main.js consumes.
+  EXPECT_NE(json.find("\"block_name\""), std::string::npos)
+      << "tech response missing block_name key; got: " << json;
+  EXPECT_NE(json.find("\"top\""), std::string::npos)
+      << "tech response missing block name value \"top\"; got: " << json;
 }
 
 }  // namespace
