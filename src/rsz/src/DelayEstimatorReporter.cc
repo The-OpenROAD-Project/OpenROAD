@@ -174,6 +174,9 @@ void DelayEstimatorReporter::reportAccuracyForSizing(
   const EstimatorKind kind = *kind_opt;
 
   resizer_.init();
+  // Standalone reporter runs outside repair_timing, so initialize equivalence
+  // data before DelayEstimator prepares candidate load ranges.
+  resizer_.resizePreamble();
   // init() populates the active OpenDB block; refresh the cached pointer before
   // opening the ECO journal.
   block_ = resizer_.block_;
