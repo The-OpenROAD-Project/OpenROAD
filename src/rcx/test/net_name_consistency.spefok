@@ -1,16 +1,9 @@
 *SPEF "ieee 1481-1999"
 *DESIGN "top"
-<<<<<<< HEAD
-*DATE "18:14:48 Thursday April 16, 2026"
+*DATE "21:21:51 Tuesday April 28, 2026"
 *VENDOR "The OpenROAD Project"
 *PROGRAM "OpenROAD"
-*VERSION "26Q2-295-ge9114de9ea"
-=======
-*DATE "00:32:25 Monday March 30, 2026"
-*VENDOR "The OpenROAD Project"
-*PROGRAM "OpenROAD"
-*VERSION "26Q1-2760-g03ca1c9590"
->>>>>>> origin/master
+*VERSION "26Q2-620-gda443a6e2c"
 *DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
 *DIVIDER /
 *DELIMITER :
@@ -32,13 +25,13 @@
 *11 load0
 *12 load1
 
-*D_NET *6 0.000182014
+*D_NET *6 0.000188728
 *CONN
 *I *8:A I *D INV_X1
 *I *14:Z O *D LOGIC0_X1
 *CAP
-1 *8:A 9.10068e-05
-2 *14:Z 9.10068e-05
+1 *8:A 9.4364e-05
+2 *14:Z 9.4364e-05
 *RES
 1 *14:Z *8:A 30.4286 
 *END
@@ -71,17 +64,3 @@
 *RES
 1 *13:Z *12:A 19.1964 
 *END
-<<<<<<< HEAD
-
-*D_NET *6 0.000188728
-*CONN
-*I *8:A I *D INV_X1
-*I *14:Z O *D LOGIC0_X1
-*CAP
-1 *8:A 9.4364e-05
-2 *14:Z 9.4364e-05
-*RES
-1 *14:Z *8:A 30.4286 
-*END
-=======
->>>>>>> origin/master
