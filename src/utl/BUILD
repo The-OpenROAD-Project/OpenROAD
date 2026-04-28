@@ -101,10 +101,14 @@ cc_library(
 cc_binary(
     name = "_utl.so",
     srcs = [
+        "src/LoggerCommon.cpp",
         "src/LoggerCommon.h",
         ":swig-py",
     ],
-    defines = [PYTHON_STABLE_API_DEFINE],
+    defines = [
+        "BAZEL=1",
+        PYTHON_STABLE_API_DEFINE,
+    ],
     includes = ["src"],
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,

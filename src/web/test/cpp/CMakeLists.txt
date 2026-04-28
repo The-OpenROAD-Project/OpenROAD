@@ -49,8 +49,36 @@ gtest_discover_tests(TestSaveReport
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestDebugGraphics TestDebugGraphics.cpp)
+
+target_link_libraries(TestDebugGraphics ${TEST_LIBS})
+
+target_include_directories(TestDebugGraphics
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestDebugGraphics
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_executable(TestGlyphCache TestGlyphCache.cpp)
+
+target_link_libraries(TestGlyphCache ${TEST_LIBS})
+
+target_include_directories(TestGlyphCache
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestGlyphCache
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
   TestSaveReport
+  TestDebugGraphics
+  TestGlyphCache
 )

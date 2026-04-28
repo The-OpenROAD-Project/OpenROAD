@@ -91,14 +91,14 @@ class AbcTest : public tst::Fixture
     sta::Port* clk_port = network->findPort(top_cell, "clk");
     sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
 
-    sta::PinSet* pinset = new sta::PinSet(network);
-    pinset->insert(clk_pin);
+    sta::PinSet pinset(network);
+    pinset.insert(clk_pin);
 
     // 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("core_clock",
                     pinset,

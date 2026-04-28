@@ -1,0 +1,29 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN repair_hold_multi_output_load ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 20000 1000 ) ;
+ROW ROW_0 asap7sc7p5t 0 0 N DO 370 BY 1 STEP 54 0 ;
+COMPONENTS 4 ;
+    - u_capture_con DFFHQNx1_ASAP7_75t_R + PLACED ( 7992 0 ) N ;
+    - u_capture_sn DFFHQNx1_ASAP7_75t_R + PLACED ( 11988 0 ) N ;
+    - u_fa FAx1_ASAP7_75t_R + PLACED ( 3996 0 ) N ;
+    - u_launch DFFHQNx1_ASAP7_75t_R + PLACED ( 1026 0 ) N ;
+END COMPONENTS
+PINS 2 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL ;
+    - d_in + NET d_in + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 9 ;
+    - capture_con_qn ( u_capture_con QN ) + USE SIGNAL ;
+    - capture_sn_qn ( u_capture_sn QN ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( u_launch CLK ) ( u_capture_sn CLK ) ( u_capture_con CLK ) + USE SIGNAL ;
+    - con_net ( u_fa CON ) ( u_capture_con D ) + USE SIGNAL ;
+    - d_in ( PIN d_in ) ( u_launch D ) + USE SIGNAL ;
+    - launch_qn ( u_launch QN ) ( u_fa A ) + USE SIGNAL ;
+    - one_ ( u_fa B ) + USE POWER ;
+    - sn_net ( u_fa SN ) ( u_capture_sn D ) + USE SIGNAL ;
+    - zero_ ( u_fa CI ) + USE GROUND ;
+END NETS
+END DESIGN

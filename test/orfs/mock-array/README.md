@@ -140,10 +140,6 @@ Hierarchical synthesis uses three separate Yosys runs stitched together:
 # Quick: analysis only (no build), checks for Bazel conflicts
 bazelisk build --nobuild //test/orfs/mock-array:all
 
-# Fast: interface comparison (SV vs Chisel reference)
-bazelisk test //test/orfs/mock-array:compare_interfaces_4x4
-bazelisk test //test/orfs/mock-array:compare_interfaces_8x8
-
 # Medium: synthesis only
 bazelisk build //test/orfs/mock-array:MockArray_4x4_slang_synth
 bazelisk build //test/orfs/mock-array:Element_4x4_slang_synth

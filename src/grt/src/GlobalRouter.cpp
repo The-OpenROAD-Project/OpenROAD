@@ -4394,8 +4394,13 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
     if (preserved_net->areSegmentsRestored()
         && deleted_net->areSegmentsRestored()) {
       // Both preserved and deleted nets have segments restored from ODB. Do
-      // nothing, as the resources used by the deleted net were included in
-      // the preserved net.
+      // nothing to 3D resources, as the resources used by the deleted net were
+      // included in the preserved net.
+      // clearNetRoute releases sttrees usage (no-op for restored nets) but
+      // keeps db_net in db_net_id_map_; deleteNet then removes the stale entry
+      // so future nets at the same pointer address find no mapping.
+      fastroute_->clearNetRoute(db_net);
+      fastroute_->deleteNet(db_net);
     } else if (preserved_net->areSegmentsRestored()) {
       // If preserved net has segments restored from ODB, it won't have routing
       // data inside FastRouteCore. Instead of merging the deleted net into
@@ -4413,8 +4418,10 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       // the capacities used by the deleted net.
       // Remove usage from the preserved net.
       fastroute_->clearNetRoute(preserved_net->getDbNet());
-      // Remove usage of the deleted net.
+      fastroute_->clearNetRoute(db_net);
+      // Remove usage from the deleted net.
       updateNetResources(deleted_net, true);
+      fastroute_->deleteNet(db_net);
       preserved_net->setAreSegmentsRestored(true);
       // Include usage of the merged net.
       updateNetResources(preserved_net, false);
@@ -4422,9 +4429,12 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       fastroute_->mergeNet(db_net, preserved_net->getDbNet());
     }
   } else {
-    fastroute_->removeNet(db_net);
     if (deleted_net->areSegmentsRestored()) {
+      fastroute_->clearNetRoute(db_net);
       updateNetResources(deleted_net, true);
+      fastroute_->deleteNet(db_net);
+    } else {
+      fastroute_->removeNet(db_net);
     }
   }
   delete deleted_net;
@@ -5800,6 +5810,10 @@ void GlobalRouter::setDebugTree2D(bool tree2D)
 void GlobalRouter::setDebugTree3D(bool tree3D)
 {
   fastroute_->setDebugTree3D(tree3D);
+}
+void GlobalRouter::setDebugEdges3D(bool edges3D)
+{
+  fastroute_->setDebugEdges3D(edges3D);
 }
 void GlobalRouter::setSttInputFilename(const char* file_name)
 {
