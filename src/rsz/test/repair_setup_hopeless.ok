@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 1200 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1200 out of 1200 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
+       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
+[INFO RSZ-0234] repair_timing: obviously futile - WNS only reached -0.142 after 1002 passes (initial -0.142, improvement 0.000). This is probably an exploration run, not a timing closure run. Aborting with best-effort result.
+    1002* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
+[INFO RSZ-0236] repair_timing: obviously futile - WNS only reached -0.142 after 1004 passes (initial -0.142, improvement 0.000). This is probably an exploration run, not a timing closure run. Aborting with best-effort result.
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.14
