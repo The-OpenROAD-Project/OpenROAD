@@ -28,6 +28,7 @@ set(WEB_ASSET_FILES
     src/tcl-completer.js
     src/hierarchy-browser.js
     src/menu-bar.js
+    src/title.js
     src/clock-tree-widget.js
     src/schematic-widget.js
     src/charts-widget.js
@@ -61,6 +62,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
@@ -92,6 +94,8 @@ target_sources(web
     src/hierarchy_report.cpp
     src/request_handler.cpp
     src/search.cpp
+    src/font_data.cpp
+    src/glyph_cache.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
@@ -112,6 +116,7 @@ target_link_libraries(web
     gui_heatmap_core
     dbSta_lib
     lodepng
+    stb_truetype
     utl_lib
 )
 

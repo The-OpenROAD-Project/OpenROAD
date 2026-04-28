@@ -40,6 +40,7 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
         "src/charts-widget.js",
@@ -64,6 +65,7 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
           " $(location src/charts-widget.js)" +
@@ -89,6 +91,7 @@ _WEB_ASSET_FILES = [
     "src/tcl-completer.js",
     "src/hierarchy-browser.js",
     "src/menu-bar.js",
+    "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",
     "src/charts-widget.js",
@@ -113,9 +116,15 @@ cc_library(
         "src/clock_tree_report.h",
         "src/color.cpp",
         "src/color.h",
+        "src/font_atlas.h",
+        "src/font_data.cpp",
+        "src/font_data.h",
+        "src/glyph_cache.cpp",
+        "src/glyph_cache.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
         "src/json_builder.h",
+        "src/module_color_palette.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
@@ -155,6 +164,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
+        "//third-party/stb_truetype",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",

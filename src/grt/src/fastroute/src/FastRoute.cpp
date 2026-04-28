@@ -822,6 +822,11 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   bool exists;
   getNetId(db_net, net_id, exists);
 
+  if (!exists) {
+    logger_->error(
+        GRT, 127, "net_id for db_net {} not found", db_net->getConstName());
+  }
+
   net = nets_[net_id];
 
   int8_t layer_edge_cost = net->getLayerEdgeCost(k);

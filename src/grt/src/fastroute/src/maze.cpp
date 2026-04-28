@@ -2192,7 +2192,7 @@ int FastRouteCore::getOverflow3D()
 
   total_overflow_ = H_overflow + V_overflow;
 
-  if (logger_->debugCheck(GRT, "checkRoute3D", 1)) {
+  if (logger_->debugCheck(GRT, "checkRoute3D", 1) && total_overflow_) {
     logger_->report("=== Total 3D Overflow Summary ===");
     logger_->report("Total H overflow: {}", H_overflow);
     logger_->report("Total V overflow: {}", V_overflow);

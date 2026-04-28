@@ -16,7 +16,8 @@ import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import { setCookie } from './theme.js';
+import { setCookie, applyGLTheme } from './theme.js';
+import { updateDocumentTitle } from './title.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -656,6 +657,7 @@ app.focusComponent = focusComponent;
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
+    applyGLTheme(next);
     setCookie('or_theme', next);
     // Also write to localStorage for standalone file:// reports.
     if (typeof localStorage !== 'undefined') {
@@ -744,6 +746,7 @@ app.websocketManager.readyPromise.then(async () => {
         ]);
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
+        updateDocumentTitle(techData.block_name);
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;

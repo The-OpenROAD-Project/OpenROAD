@@ -149,6 +149,13 @@ js_test(
     no_copy_to_bin = JS_FILES,
 )
 
+js_test(
+    name = "title_test",
+    data = JS_FILES,
+    entry_point = "js/test-title.js",
+    no_copy_to_bin = JS_FILES,
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
@@ -247,6 +254,18 @@ cc_test(
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "glyph_cache_test",
+    srcs = ["cpp/TestGlyphCache.cpp"],
+    copts = ["-Isrc/web/src"],
+    features = ["-layering_check"],
+    deps = [
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
