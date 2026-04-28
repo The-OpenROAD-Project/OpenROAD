@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -112,18 +113,38 @@ struct OutputSlewMergeArc
   float current_model_slew{0.0f};
 };
 
+// Three-point load-dependent DMP/Ceff driver waveform slew correction for one
+// table-worst output-slew arc.  This is prepared on the main thread and then
+// interpolated by worker threads.
+struct DmpSlewBiasSample
+{
+  float load_cap{0.0f};
+  float table_slew{0.0f};
+  float dmp_slew{0.0f};
+};
+
+struct DmpSlewBiasModel
+{
+  bool valid{false};
+  const sta::TimingArc* table_worst_arc{nullptr};
+  float input_slew{0.0f};
+  std::array<DmpSlewBiasSample, 3> samples;
+};
+
 // Snapshot of one timing stage's electrical state needed for table-model delay
 // estimation.  MT policies prepare this on the main thread and then worker
 // threads read it from Target without touching STA analysis state.
 struct DelayStageState
 {
   SelectedArc arc;
+  sta::Pin* driver_pin{nullptr};
   float input_slew{0.0f};
   float load_cap{0.0f};
   float current_delay{0.0f};       // Original delay before optimization
   float current_model_slew{0.0f};  // Table-model merged slew baseline
   float current_slew{0.0f};        // STA graph merged slew baseline
   std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
+  DmpSlewBiasModel dmp_slew_bias;
   int path_index{-1};
 };
 
@@ -381,6 +402,10 @@ struct OptPolicyConfig
   // Number of timing stages to include before and after the target stage in MT
   // delay estimation. 0 preserves target-stage-only scoring.
   int delay_estimation_levels{0};
+
+  // Experimental. Enable load-dependent DMP/Ceff output-slew bias sampling for
+  // the fanin neighbor stage in MT delay estimation.
+  bool delay_estimator_dmp_slew_bias{false};
 };
 
 // === Move type labels ======================================================

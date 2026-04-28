@@ -70,6 +70,10 @@ void OptPolicy::loadPolicyEnvars()
   // target-stage-only scoring.
   policy_config_.delay_estimation_levels
       = utl::readEnvarNonNegativeInt("RSZ_MT_DELAY_LEVELS", 0);
+  // Experimental DMP/Ceff slew-bias sampling. Negative values are treated the
+  // same as 0 so the consumer clamps the knob rather than the env reader.
+  policy_config_.delay_estimator_dmp_slew_bias
+      = utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 0) > 0;
 }
 
 GeneratorContext OptPolicy::makeGeneratorContext(
@@ -201,7 +205,11 @@ void OptPolicy::prepareArcDelayState(Target& target) const
 
   FailReason fail_reason = FailReason::kNone;
   target.arc_delay = DelayEstimator::buildContext(
-      resizer_, target, policy_config_.delay_estimation_levels, &fail_reason);
+      resizer_,
+      target,
+      policy_config_.delay_estimation_levels,
+      &fail_reason,
+      policy_config_.delay_estimator_dmp_slew_bias);
 }
 
 void OptPolicy::prewarmTargetLibertyCaches(

@@ -42,7 +42,9 @@ struct StageEvaluation
 // === Delay estimator API ====================================================
 
 // Stateless helper for building timing-arc contexts and comparing candidate
-// cell delays without mutating STA or OpenDB state.
+// cell delays.  The default buildContext() path only reads STA/OpenDB state.
+// The optional DMP/Ceff slew-bias path temporarily mutates and restores STA's
+// reduced Pi model during main-thread prepare.
 //
 // All methods are static.  buildContext() queries STA (main-thread only) to
 // capture arc, slew, and cap into a Target::arc_delay.  estimate()
@@ -63,15 +65,17 @@ class DelayEstimator
   // === Context construction =================================================
   // delay_levels=0 captures the target stage only; N>0 also captures up to N
   // valid fanin and N valid fanout stages from the selected path.
-  static std::optional<ArcDelayState> buildContext(const Resizer& resizer,
+  static std::optional<ArcDelayState> buildContext(Resizer& resizer,
                                                    const Target& target,
                                                    int delay_levels,
                                                    FailReason* fail_reason
-                                                   = nullptr);
+                                                   = nullptr,
+                                                   bool use_dmp_slew_bias
+                                                   = false);
 
   // Lower-level overload used by tests and policy prepare code.
   static std::optional<ArcDelayState> buildContext(
-      const Resizer& resizer,
+      Resizer& resizer,
       sta::Instance* inst,
       sta::Pin* driver_pin,
       const sta::PathExpanded& expanded,
@@ -79,7 +83,8 @@ class DelayEstimator
       const sta::Scene* scene,
       const sta::MinMax* min_max,
       int delay_levels,
-      FailReason* fail_reason = nullptr);
+      FailReason* fail_reason = nullptr,
+      bool use_dmp_slew_bias = false);
 
   // === Delay estimation =====================================================
   // When `trace` is non-null it is cleared and one StageEvaluation per

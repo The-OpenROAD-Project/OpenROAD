@@ -4,19 +4,25 @@
 #include "DelayEstimator.hh"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <optional>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "OptimizerTypes.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/Parasitics.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Scene.hh"
@@ -29,6 +35,11 @@
 namespace rsz {
 
 namespace {
+
+[[maybe_unused]] const std::thread::id kDelayEstimatorMainThread
+    = std::this_thread::get_id();
+constexpr float kSlewMatchAbsTolerance = 1.0e-15f;
+constexpr float kSlewMatchRelTolerance = 1.0e-6f;
 
 void setFailReason(FailReason* fail_reason, const FailReason reason)
 {
@@ -389,17 +400,458 @@ std::vector<OutputSlewMergeArc> collectOutputSlewMergeArcs(
   return merge_arcs;
 }
 
-// Estimate the post-ECO driver output slew for the selected transition.
-// First merge candidate table-model slews across all cached arcs that feed the
-// same output transition, then apply only that model delta to the current STA
-// graph slew.  This keeps STA's present graph/parasitic bias while using the
-// fast table model to capture the candidate/load change.
+struct OutputSlewArc
+{
+  const sta::TimingArc* ref_arc{nullptr};
+  float input_slew{0.0f};
+};
+
+class PiModelRestore
+{
+ public:
+  PiModelRestore(sta::Parasitics* parasitics,
+                 sta::Parasitic* parasitic,
+                 const float c2,
+                 const float rpi,
+                 const float c1)
+      : parasitics_(parasitics),
+        parasitic_(parasitic),
+        c2_(c2),
+        rpi_(rpi),
+        c1_(c1)
+  {
+  }
+
+  ~PiModelRestore() { parasitics_->setPiModel(parasitic_, c2_, rpi_, c1_); }
+
+ private:
+  sta::Parasitics* parasitics_;
+  sta::Parasitic* parasitic_;
+  const float c2_;
+  const float rpi_;
+  const float c1_;
+};
+
+float slewBias(const DmpSlewBiasSample& sample)
+{
+  return sample.dmp_slew - sample.table_slew;
+}
+
+float interpolate(const float x0,
+                  const float y0,
+                  const float x1,
+                  const float y1,
+                  const float x)
+{
+  if (x1 <= x0) {
+    return y0;
+  }
+  const float ratio = (x - x0) / (x1 - x0);
+  return y0 + ratio * (y1 - y0);
+}
+
+float interpolateDmpSlewBias(const DmpSlewBiasModel& model,
+                             const float load_cap)
+{
+  const DmpSlewBiasSample& low = model.samples[0];
+  const DmpSlewBiasSample& mid = model.samples[1];
+  const DmpSlewBiasSample& high = model.samples[2];
+  const float clamped_load = std::clamp(load_cap, low.load_cap, high.load_cap);
+  if (clamped_load <= mid.load_cap) {
+    return interpolate(
+        low.load_cap, slewBias(low), mid.load_cap, slewBias(mid), clamped_load);
+  }
+  return interpolate(
+      mid.load_cap, slewBias(mid), high.load_cap, slewBias(high), clamped_load);
+}
+
+std::vector<OutputSlewArc> outputSlewArcs(const DelayStageState& stage)
+{
+  std::vector<OutputSlewArc> arcs;
+  arcs.reserve(stage.output_slew_merge_arcs.size() + 1);
+  arcs.push_back(
+      {.ref_arc = stage.arc.ref_arc, .input_slew = stage.input_slew});
+  for (const OutputSlewMergeArc& merge_arc : stage.output_slew_merge_arcs) {
+    arcs.push_back(
+        {.ref_arc = merge_arc.ref_arc, .input_slew = merge_arc.input_slew});
+  }
+  return arcs;
+}
+
+bool findTableWorstArcAtLoad(const DelayStageState& stage,
+                             const float load_cap,
+                             OutputSlewArc& worst_arc,
+                             float& worst_slew)
+{
+  sta::LibertyCell* current_cell = stage.arc.currentCell();
+  bool found_worst = false;
+  worst_slew = 0.0f;
+
+  const std::vector<OutputSlewArc> arcs = outputSlewArcs(stage);
+  for (const OutputSlewArc& arc : arcs) {
+    float delay = 0.0f;
+    float output_slew = 0.0f;
+    if (!lookupArcDelayAndSlewForArc(stage.arc.scene,
+                                     stage.arc.min_max,
+                                     stage.arc.pvt,
+                                     arc.ref_arc,
+                                     arc.input_slew,
+                                     load_cap,
+                                     current_cell,
+                                     delay,
+                                     output_slew)) {
+      continue;
+    }
+
+    if (!found_worst || stage.arc.min_max->compare(output_slew, worst_slew)) {
+      worst_arc = arc;
+      worst_slew = output_slew;
+      found_worst = true;
+    }
+  }
+  return found_worst;
+}
+
+bool sameOutputSlewArc(const OutputSlewArc& lhs, const OutputSlewArc& rhs)
+{
+  return lhs.ref_arc == rhs.ref_arc && lhs.input_slew == rhs.input_slew;
+}
+
+bool slewsMatch(const float lhs, const float rhs)
+{
+  const float tolerance = std::max(
+      kSlewMatchAbsTolerance,
+      kSlewMatchRelTolerance * std::max(std::fabs(lhs), std::fabs(rhs)));
+  return std::fabs(lhs - rhs) <= tolerance;
+}
+
+void logDmpSlewBiasSkip(const Resizer& resizer,
+                        const DelayStageState& stage,
+                        const char* reason)
+{
+  const std::string pin_name
+      = stage.driver_pin != nullptr
+            ? resizer.network()->pathName(stage.driver_pin)
+            : "<unknown>";
+  debugPrint(resizer.logger(),
+             utl::RSZ,
+             "delay_estimator",
+             2,
+             "Skip DMP slew-bias model for {}: {}",
+             pin_name,
+             reason);
+}
+
+bool findStableTableWorstArc(const DelayStageState& stage,
+                             const std::array<float, 3>& sample_loads,
+                             OutputSlewArc& table_worst_arc)
+{
+  float ignored_slew = 0.0f;
+  if (!findTableWorstArcAtLoad(
+          stage, sample_loads[0], table_worst_arc, ignored_slew)) {
+    return false;
+  }
+
+  for (size_t index = 1; index < sample_loads.size(); ++index) {
+    OutputSlewArc sample_worst_arc;
+    if (!findTableWorstArcAtLoad(
+            stage, sample_loads[index], sample_worst_arc, ignored_slew)
+        || !sameOutputSlewArc(table_worst_arc, sample_worst_arc)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool syntheticPiForLoad(const float base_c2,
+                        const float base_rpi,
+                        const float base_c1,
+                        const float base_load_cap,
+                        const float sample_load_cap,
+                        float& sample_c2,
+                        float& sample_rpi,
+                        float& sample_c1)
+{
+  const float total_cap = base_c1 + base_c2;
+  if (total_cap <= 0.0f || base_load_cap <= 0.0f || sample_load_cap < 0.0f) {
+    return false;
+  }
+
+  const float c2_fraction = base_c2 / total_cap;
+  const float load_delta = sample_load_cap - base_load_cap;
+  sample_c2 = base_c2 + load_delta * c2_fraction;
+  sample_c1 = base_c1 + load_delta * (1.0f - c2_fraction);
+  sample_rpi = base_rpi;
+  return sample_c2 >= 0.0f && sample_c1 >= 0.0f && std::isfinite(sample_c2)
+         && std::isfinite(sample_rpi) && std::isfinite(sample_c1);
+}
+
+bool dmpDriverSlewForSyntheticPi(const Resizer& resizer,
+                                 const DelayStageState& stage,
+                                 const OutputSlewArc& table_worst_arc,
+                                 sta::Parasitics* parasitics,
+                                 sta::Parasitic* parasitic,
+                                 const float sample_c2,
+                                 const float sample_rpi,
+                                 const float sample_c1,
+                                 const float sample_load_cap,
+                                 float& dmp_slew)
+{
+  // Reuse OpenSTA's active delay calculator on a synthetic Pi sample.  The
+  // caller owns restoring the original Pi model before returning.
+  parasitics->setPiModel(parasitic, sample_c2, sample_rpi, sample_c1);
+
+  sta::LoadPinIndexMap load_pin_index_map(resizer.staState()->network());
+  sta::ArcDcalcResult result = resizer.staState()->arcDelayCalc()->gateDelay(
+      stage.driver_pin,
+      table_worst_arc.ref_arc,
+      table_worst_arc.input_slew,
+      sample_load_cap,
+      parasitic,
+      load_pin_index_map,
+      stage.arc.scene,
+      stage.arc.min_max);
+  resizer.staState()->arcDelayCalc()->finishDrvrPin();
+  dmp_slew = sta::delayAsFloat(result.drvrSlew());
+  return std::isfinite(dmp_slew) && dmp_slew >= 0.0f;
+}
+
+bool fillDmpSlewBiasSample(const Resizer& resizer,
+                           const DelayStageState& stage,
+                           const OutputSlewArc& table_worst_arc,
+                           sta::Parasitics* parasitics,
+                           sta::Parasitic* parasitic,
+                           const float base_c2,
+                           const float base_rpi,
+                           const float base_c1,
+                           const float sample_load_cap,
+                           DmpSlewBiasSample& sample)
+{
+  float table_delay = 0.0f;
+  float table_slew = 0.0f;
+  if (!lookupArcDelayAndSlewForArc(stage.arc.scene,
+                                   stage.arc.min_max,
+                                   stage.arc.pvt,
+                                   table_worst_arc.ref_arc,
+                                   table_worst_arc.input_slew,
+                                   sample_load_cap,
+                                   stage.arc.currentCell(),
+                                   table_delay,
+                                   table_slew)) {
+    return false;
+  }
+
+  float sample_c2 = 0.0f;
+  float sample_rpi = 0.0f;
+  float sample_c1 = 0.0f;
+  if (!syntheticPiForLoad(base_c2,
+                          base_rpi,
+                          base_c1,
+                          stage.load_cap,
+                          sample_load_cap,
+                          sample_c2,
+                          sample_rpi,
+                          sample_c1)) {
+    return false;
+  }
+
+  float dmp_slew = 0.0f;
+  if (!dmpDriverSlewForSyntheticPi(resizer,
+                                   stage,
+                                   table_worst_arc,
+                                   parasitics,
+                                   parasitic,
+                                   sample_c2,
+                                   sample_rpi,
+                                   sample_c1,
+                                   sample_load_cap,
+                                   dmp_slew)) {
+    return false;
+  }
+
+  sample.load_cap = sample_load_cap;
+  sample.table_slew = table_slew;
+  sample.dmp_slew = dmp_slew;
+  return std::isfinite(sample.table_slew) && std::isfinite(sample.dmp_slew);
+}
+
+DmpSlewBiasModel buildDmpSlewBiasModel(Resizer& resizer,
+                                       const DelayStageState& stage,
+                                       const float max_load_delta)
+{
+  // DMP sampling temporarily mutates the live reduced Pi model and calls the
+  // active ArcDelayCalc.  It must run only during single-threaded prepare,
+  // before candidate worker scoring or any concurrent STA update begins.
+  assert(std::this_thread::get_id() == kDelayEstimatorMainThread);
+
+  DmpSlewBiasModel model;
+  if (max_load_delta <= 0.0f || stage.driver_pin == nullptr) {
+    logDmpSlewBiasSkip(resizer, stage, "no load delta or driver pin");
+    return model;
+  }
+
+  const std::array<float, 3> sample_loads
+      = {stage.load_cap,
+         stage.load_cap + max_load_delta * 0.5f,
+         stage.load_cap + max_load_delta};
+
+  OutputSlewArc table_worst_arc;
+  if (!findStableTableWorstArc(stage, sample_loads, table_worst_arc)) {
+    logDmpSlewBiasSkip(resizer, stage, "unstable table-worst arc");
+    return model;
+  }
+
+  sta::Parasitics* parasitics = stage.arc.scene->parasitics(stage.arc.min_max);
+  sta::ArcDelayCalc* arc_delay_calc = resizer.staState()->arcDelayCalc();
+  if (parasitics == nullptr || arc_delay_calc == nullptr) {
+    logDmpSlewBiasSkip(resizer, stage, "missing parasitics or delay calc");
+    return model;
+  }
+
+  sta::Parasitic* parasitic
+      = arc_delay_calc->findParasitic(stage.driver_pin,
+                                      stage.arc.outputRiseFall(),
+                                      stage.arc.scene,
+                                      stage.arc.min_max);
+  if (parasitic == nullptr || !parasitics->isPiModel(parasitic)) {
+    logDmpSlewBiasSkip(resizer, stage, "missing Pi parasitic");
+    return model;
+  }
+
+  float base_c2 = 0.0f;
+  float base_rpi = 0.0f;
+  float base_c1 = 0.0f;
+  parasitics->piModel(parasitic, base_c2, base_rpi, base_c1);
+  PiModelRestore restore(parasitics, parasitic, base_c2, base_rpi, base_c1);
+
+  model.table_worst_arc = table_worst_arc.ref_arc;
+  model.input_slew = table_worst_arc.input_slew;
+  for (size_t index = 0; index < sample_loads.size(); ++index) {
+    if (!fillDmpSlewBiasSample(resizer,
+                               stage,
+                               table_worst_arc,
+                               parasitics,
+                               parasitic,
+                               base_c2,
+                               base_rpi,
+                               base_c1,
+                               sample_loads[index],
+                               model.samples[index])) {
+      logDmpSlewBiasSkip(resizer, stage, "invalid DMP sample");
+      return DmpSlewBiasModel{};
+    }
+  }
+
+  model.valid = true;
+  return model;
+}
+
+bool canUseDmpSlewBias(const DelayStageState& stage,
+                       const sta::LibertyCell* cell,
+                       const float input_slew)
+{
+  return stage.dmp_slew_bias.valid && cell == stage.arc.currentCell()
+         && slewsMatch(input_slew, stage.input_slew);
+}
+
+std::optional<float> candidateInputCap(const DelayStageState& target_stage,
+                                       sta::LibertyCell* candidate_cell)
+{
+  if (candidate_cell == nullptr) {
+    return std::nullopt;
+  }
+
+  sta::LibertyCell* scene_cell = candidate_cell->sceneCell(
+      target_stage.arc.scene, target_stage.arc.min_max);
+  if (scene_cell == nullptr) {
+    return std::nullopt;
+  }
+
+  sta::LibertyPort* input_port
+      = scene_cell->findLibertyPort(target_stage.arc.inputPort()->name());
+  if (input_port == nullptr) {
+    return std::nullopt;
+  }
+  return input_port->capacitance();
+}
+
+float maxTargetInputCapDelta(Resizer& resizer,
+                             const DelayStageState& target_stage)
+{
+  sta::LibertyCell* current_cell = target_stage.arc.currentCell();
+  const float current_input_cap = target_stage.arc.inputPort()->capacitance();
+  float max_input_cap = current_input_cap;
+
+  // These Resizer queries may populate equivalence caches but do not mutate the
+  // design or timing graph.
+  sta::LibertyCellSeq swappable_cells = resizer.getSwappableCells(current_cell);
+  for (sta::LibertyCell* cell : swappable_cells) {
+    const std::optional<float> input_cap
+        = candidateInputCap(target_stage, cell);
+    if (input_cap.has_value()) {
+      max_input_cap = std::max(max_input_cap, *input_cap);
+    }
+  }
+
+  sta::LibertyCellSeq vt_equiv_cells = resizer.getVTEquivCells(current_cell);
+  for (sta::LibertyCell* cell : vt_equiv_cells) {
+    const std::optional<float> input_cap
+        = candidateInputCap(target_stage, cell);
+    if (input_cap.has_value()) {
+      max_input_cap = std::max(max_input_cap, *input_cap);
+    }
+  }
+
+  return std::max(max_input_cap - current_input_cap, 0.0f);
+}
+
+void prepareFaninNeighborDmpSlewBias(Resizer& resizer, ArcDelayState& context)
+{
+  // DMP slew bias is applied only to the immediate fanin driver stage.
+  if (context.target_stage_index <= 0) {
+    return;
+  }
+
+  const DelayStageState& target_stage = context.target();
+  const float max_input_cap_delta
+      = maxTargetInputCapDelta(resizer, target_stage);
+  if (max_input_cap_delta <= 0.0f) {
+    return;
+  }
+
+  DelayStageState& fanin_stage
+      = context.path_stages[context.target_stage_index - 1];
+  fanin_stage.dmp_slew_bias
+      = buildDmpSlewBiasModel(resizer, fanin_stage, max_input_cap_delta);
+}
+
+// Estimate the post-ECO driver output slew for the selected transition.  When
+// a DMP/Ceff bias model is prepared for this stage, correct only the stable
+// table-worst arc.  Otherwise use the existing merged table-delta calibration.
 float estimateOutputSlew(const DelayStageState& stage,
                          const sta::LibertyCell* cell,
                          const float path_input_slew,
                          const float load_cap,
                          const float selected_output_slew)
 {
+  if (canUseDmpSlewBias(stage, cell, path_input_slew)) {
+    float table_delay = 0.0f;
+    float table_slew = 0.0f;
+    if (lookupArcDelayAndSlewForArc(stage.arc.scene,
+                                    stage.arc.min_max,
+                                    stage.arc.pvt,
+                                    stage.dmp_slew_bias.table_worst_arc,
+                                    stage.dmp_slew_bias.input_slew,
+                                    load_cap,
+                                    cell,
+                                    table_delay,
+                                    table_slew)) {
+      const float dmp_bias
+          = interpolateDmpSlewBias(stage.dmp_slew_bias, load_cap);
+      return std::max(table_slew + dmp_bias, 0.0f);
+    }
+  }
+
   // OpenSTA propagates GBA vertex slew, not the selected path arc's slew, so
   // merge all arc slews that share the selected output transition.
   float model_output_slew = selected_output_slew;
@@ -481,6 +933,7 @@ std::optional<DelayStageState> buildDelayStageState(
 
   DelayStageState stage;
   stage.arc = *selected_arc;
+  stage.driver_pin = driver_pin;
   stage.input_slew = input_slew;
   stage.load_cap = load_cap;
   stage.current_delay = current_delay;
@@ -745,10 +1198,11 @@ bool DelayEstimator::findArcDelay(const SelectedArc& arc,
 }
 
 std::optional<ArcDelayState> DelayEstimator::buildContext(
-    const Resizer& resizer,
+    Resizer& resizer,
     const Target& target,
     const int delay_levels,
-    FailReason* fail_reason)
+    FailReason* fail_reason,
+    const bool use_dmp_slew_bias)
 {
   // Capture one active path arc and its electrical state so candidates can be
   // scored without touching shared timing state.  Higher delay levels expand
@@ -776,11 +1230,12 @@ std::optional<ArcDelayState> DelayEstimator::buildContext(
                       scene,
                       min_max,
                       delay_levels,
-                      fail_reason);
+                      fail_reason,
+                      use_dmp_slew_bias);
 }
 
 std::optional<ArcDelayState> DelayEstimator::buildContext(
-    const Resizer& resizer,
+    Resizer& resizer,
     sta::Instance* inst,
     sta::Pin* driver_pin,
     const sta::PathExpanded& expanded,
@@ -788,7 +1243,8 @@ std::optional<ArcDelayState> DelayEstimator::buildContext(
     const sta::Scene* scene,
     const sta::MinMax* min_max,
     const int delay_levels,
-    FailReason* fail_reason)
+    FailReason* fail_reason,
+    const bool use_dmp_slew_bias)
 {
   // The target stage must be valid; surrounding stages are best-effort because
   // path endpoints and non-cell arcs are expected at window boundaries.
@@ -806,13 +1262,17 @@ std::optional<ArcDelayState> DelayEstimator::buildContext(
   }
 
   const int normalized_delay_levels = delay_levels > 0 ? delay_levels : 0;
-  return collectPathStages(resizer,
-                           expanded,
-                           path_index,
-                           scene,
-                           min_max,
-                           normalized_delay_levels,
-                           *target_stage);
+  ArcDelayState context = collectPathStages(resizer,
+                                            expanded,
+                                            path_index,
+                                            scene,
+                                            min_max,
+                                            normalized_delay_levels,
+                                            *target_stage);
+  if (use_dmp_slew_bias) {
+    prepareFaninNeighborDmpSlewBias(resizer, context);
+  }
+  return context;
 }
 
 DelayEstimate DelayEstimator::estimate(const ArcDelayState& context,

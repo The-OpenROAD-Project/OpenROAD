@@ -33,6 +33,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
+#include "utl/env.h"
 
 namespace rsz {
 
@@ -74,6 +75,11 @@ std::string formatDelta(float estimated, float golden, float scale)
     return "-";
   }
   return fmt::format("{:+.3f}", (estimated - golden) * scale);
+}
+
+bool dmpSlewBiasEnabled()
+{
+  return utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 0) > 0;
 }
 
 }  // namespace
@@ -868,7 +874,7 @@ std::optional<ArcDelayState> DelayEstimatorReporter::contextForTarget(
     return target.arc_delay;
   }
   return DelayEstimator::buildContext(
-      resizer_, target, delay_levels, fail_reason);
+      resizer_, target, delay_levels, fail_reason, dmpSlewBiasEnabled());
 }
 
 void DelayEstimatorReporter::prepareTargetContext(
@@ -901,7 +907,8 @@ void DelayEstimatorReporter::prepareTargetContext(
                                                   scene,
                                                   min_max,
                                                   delay_levels,
-                                                  &ignored_reason);
+                                                  &ignored_reason,
+                                                  dmpSlewBiasEnabled());
 }
 
 float DelayEstimatorReporter::pathWireDelay(const sta::PathExpanded& expanded,

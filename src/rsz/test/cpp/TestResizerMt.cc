@@ -387,6 +387,31 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
+TEST_F(TestResizerMt, DmpSlewBiasContextBuildLeavesTimingUpdateUsable)
+{
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  const Target target = makeTarget("path_out", "path_target", "ZN");
+
+  FailReason fail_reason = FailReason::kNone;
+  const std::optional<ArcDelayState> context
+      = DelayEstimator::buildContext(resizer, target, 1, &fail_reason, true);
+  ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
+
+  // DMP slew-bias sampling mutates and restores a live reduced Pi model during
+  // prepare; a fresh STA update after context construction must remain valid.
+  EXPECT_NO_THROW(sta_->updateTiming(true));
+
+  sta::LibertyCell* candidate_cell
+      = sta_->network()->findLibertyCell("NAND2_X1_L");
+  ASSERT_NE(candidate_cell, nullptr);
+
+  const DelayEstimate estimate
+      = DelayEstimator::estimate(*context, candidate_cell);
+  EXPECT_TRUE(estimate.legal);
+  EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
+}
+
 TEST_F(TestResizerMt, SetupLegacyMtPolicyRejectsNegativeDelayEstimationLevels)
 {
   ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
