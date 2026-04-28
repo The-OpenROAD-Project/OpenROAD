@@ -24,22 +24,9 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: rcx_unit_test excluded - CMake build directory wrapper that runs rcxUnitTest
-    # executable from build/src/rcx/src/. The underlying C++ test should be added directly.
-    # "rcx_unit_test",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "generate_rules",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "net_name_consistency",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -119,12 +106,15 @@ filegroup(
         name = test_name,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "rcx_unit_test",
+    tests = [":rcx_unittest"],
+)
 
 cc_test(
     name = "rcx_unittest",

@@ -310,7 +310,7 @@ class FlexGridGraph
         }
       }
     } else {
-      correctU(x, y, z, dir);
+      correct(x, y, z, dir);
       const Node& node = nodes_[getIdx(x, y, z)];
       if (isOverrideShapeCost(x, y, z, dir)) {
         sol = 0;
@@ -337,7 +337,7 @@ class FlexGridGraph
     if (dir != frDirEnum::D && dir != frDirEnum::U) {
       return false;
     }
-    correctU(x, y, z, dir);
+    correct(x, y, z, dir);
     auto idx = getIdx(x, y, z);
     return nodes_[idx].overrideShapeCostVia;
   }
@@ -359,7 +359,7 @@ class FlexGridGraph
         sol = nodes_[idx].routeShapeCostPlanar;
       }
     } else {
-      correctU(x, y, z, dir);
+      correct(x, y, z, dir);
       auto idx = getIdx(x, y, z);
       if (consider_ndr) {
         sol = std::max(nodes_[idx].routeShapeCostVia,
@@ -388,7 +388,7 @@ class FlexGridGraph
       auto idx = getIdx(x, y, z);
       sol += nodes_[idx].markerCostPlanar;
     } else {
-      correctU(x, y, z, dir);
+      correct(x, y, z, dir);
       auto idx = getIdx(x, y, z);
       sol += nodes_[idx].markerCostVia;
     }
@@ -1247,26 +1247,9 @@ class FlexGridGraph
   {
     switch (dir) {
       case frDirEnum::W:
-        x--;
-        dir = frDirEnum::E;
-        break;
       case frDirEnum::S:
-        y--;
-        dir = frDirEnum::N;
-        break;
       case frDirEnum::D:
-        z--;
-        dir = frDirEnum::U;
-        break;
-      default:;
-    }
-  }
-  void correctU(frMIdx& x, frMIdx& y, frMIdx& z, frDirEnum& dir) const
-  {
-    switch (dir) {
-      case frDirEnum::D:
-        z--;
-        dir = frDirEnum::U;
+        reverse(x, y, z, dir);
         break;
       default:;
     }

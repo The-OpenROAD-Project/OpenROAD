@@ -17,6 +17,12 @@ py_binary(
     main = "src/embed_report_assets.py",
 )
 
+py_binary(
+    name = "embed_web_assets",
+    srcs = ["src/embed_web_assets.py"],
+    main = "src/embed_web_assets.py",
+)
+
 genrule(
     name = "report_assets",
     srcs = [
@@ -34,6 +40,7 @@ genrule(
         "src/tcl-completer.js",
         "src/hierarchy-browser.js",
         "src/menu-bar.js",
+        "src/title.js",
         "src/clock-tree-widget.js",
         "src/schematic-widget.js",
         "src/charts-widget.js",
@@ -58,6 +65,7 @@ genrule(
           " $(location src/tcl-completer.js)" +
           " $(location src/hierarchy-browser.js)" +
           " $(location src/menu-bar.js)" +
+          " $(location src/title.js)" +
           " $(location src/clock-tree-widget.js)" +
           " $(location src/schematic-widget.js)" +
           " $(location src/charts-widget.js)" +
@@ -67,6 +75,40 @@ genrule(
     tools = [":embed_report_assets"],
 )
 
+_WEB_ASSET_FILES = [
+    "src/index.html",
+    "src/style.css",
+    "src/theme.js",
+    "src/coordinates.js",
+    "src/ui-utils.js",
+    "src/checkbox-tree-model.js",
+    "src/vis-tree.js",
+    "src/websocket-manager.js",
+    "src/websocket-tile-layer.js",
+    "src/display-controls.js",
+    "src/inspector.js",
+    "src/ruler.js",
+    "src/tcl-completer.js",
+    "src/hierarchy-browser.js",
+    "src/menu-bar.js",
+    "src/title.js",
+    "src/clock-tree-widget.js",
+    "src/schematic-widget.js",
+    "src/charts-widget.js",
+    "src/timing-widget.js",
+    "src/drc-widget.js",
+    "src/main.js",
+]
+
+genrule(
+    name = "web_assets",
+    srcs = _WEB_ASSET_FILES,
+    outs = ["src/web_assets.cpp"],
+    cmd = "$(execpath :embed_web_assets) --output $@ " +
+          " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
+    tools = [":embed_web_assets"],
+)
+
 cc_library(
     name = "web",
     srcs = [
@@ -74,9 +116,15 @@ cc_library(
         "src/clock_tree_report.h",
         "src/color.cpp",
         "src/color.h",
+        "src/font_atlas.h",
+        "src/font_data.cpp",
+        "src/font_data.h",
+        "src/glyph_cache.cpp",
+        "src/glyph_cache.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
         "src/json_builder.h",
+        "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
         "src/search.cpp",
@@ -86,7 +134,16 @@ cc_library(
         "src/timing_report.cpp",
         "src/timing_report.h",
         "src/web.cpp",
+        "src/web_assets.h",
+        "src/web_chart.cpp",
+        "src/web_chart.h",
+        "src/web_painter.cpp",
+        "src/web_painter.h",
+        "src/web_serve.cpp",
+        "src/web_viewer_hook.cpp",
+        "src/web_viewer_hook.h",
         ":report_assets",
+        ":web_assets",
     ],
     hdrs = [
         "include/web/web.h",
@@ -106,9 +163,11 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
+        "//third-party/stb_truetype",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
+        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )

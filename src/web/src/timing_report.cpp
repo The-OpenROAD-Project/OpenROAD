@@ -389,8 +389,7 @@ static void collectFilteredSlacks(sta::dbSta* sta,
   // Find the path group.
   sta::PathGroup* pg = nullptr;
   if (!path_group.empty()) {
-    pg = sta->cmdMode()->pathGroups()->findPathGroup(path_group.c_str(),
-                                                     min_max);
+    pg = sta->cmdMode()->pathGroups()->findPathGroup(path_group, min_max);
   } else if (clk) {
     pg = sta->cmdMode()->pathGroups()->findPathGroup(clk, min_max);
   }

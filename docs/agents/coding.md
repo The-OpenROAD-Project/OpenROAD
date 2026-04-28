@@ -25,6 +25,21 @@
 ### Null Safety
 - Avoid adding too defensive null checks if the object cannot be null
 
+## Service Interfaces
+
+Abstract interfaces published through `utl::ServiceRegistry` use the
+`Service` suffix (e.g. `est::ParasiticsService`, `drt::PinAccessService`).
+Each interface lives in its owning module's public `include/<module>/`
+directory and is exposed as a small header-only Bazel target that
+consumers can depend on without pulling in the full implementation
+library. This keeps module dependency graphs acyclic and the decoupling
+visible at the build layer.
+
+Note that this is distinct from the `Abstract*` prefix used for
+graphics/visualization mock-swappable classes (e.g.
+`AbstractSteinerRenderer`); those are inherited for test/headless modes
+rather than looked up through a registry.
+
 ## Common Coding Mistakes
 
 ### OpenROAD Message ID Duplicate Checker

@@ -44,13 +44,13 @@ namespace rmp {
 
 enum class Mode
 {
-  AREA_1 = 0,
-  AREA_2,
-  AREA_3,
-  DELAY_1,
-  DELAY_2,
-  DELAY_3,
-  DELAY_4
+  kArea1 = 0,
+  kArea2,
+  kArea3,
+  kDelay1,
+  kDelay2,
+  kDelay3,
+  kDelay4
 };
 
 class Restructure
@@ -165,7 +165,7 @@ class Restructure
   std::vector<std::string> lib_file_names_;
   std::set<odb::dbInst*> path_insts_;
 
-  Mode opt_mode_{Mode::DELAY_1};
+  Mode opt_mode_{Mode::kDelay1};
   bool is_area_mode_{false};
   int blif_call_id_{0};
 };

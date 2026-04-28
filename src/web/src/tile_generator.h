@@ -5,6 +5,7 @@
 
 #include <any>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -14,9 +15,11 @@
 #include <vector>
 
 #include "color.h"
+#include "glyph_cache.h"
 #include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web_painter.h"
 
 namespace sta {
 class dbSta;
@@ -114,7 +117,7 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json_;  // stored for dynamic per-site lookups
+  std::string raw_json;  // stored for dynamic per-site lookups
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)
@@ -123,6 +126,18 @@ struct TileVisibility
 
   // Debug
   bool debug = false;
+
+  // When true the tile renderer iterates gui::Gui::renderers() and
+  // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
+  // graphics overlay.  Off by default so tiles stay cheap.
+  bool debug_renderers = false;
+
+  // When debug_renderers is on, normally the overlay only renders while
+  // the placer is paused (avoids racing against mutating renderer state).
+  // Setting debug_live=true opts in to non-blocking streaming: the
+  // overlay renders every frame even when not paused, accepting the
+  // occasional inconsistency for smoother visualization.
+  bool debug_live = false;
 
   void parseFromJson(const std::string& json);
 
@@ -206,6 +221,34 @@ class TileGenerator
       const std::vector<ColoredRect>& rects,
       const std::vector<FlightLine>& lines) const;
 
+  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  //
+  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
+  // installed DebugOverlayCallback (if any).  The callback is
+  // responsible for iterating any registered gui::Renderer instances
+  // and drawing their output onto the image buffer.  Kept as a
+  // callback rather than a direct gui::Gui::get() call so that
+  // libweb.a has no undefined references to the gui/SWIG library —
+  // test executables that link libweb don't need to pull in ord.
+  using DebugOverlayCallback
+      = std::function<void(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double pixels_per_dbu,
+                           bool debug_live)>;
+  // Install (or clear with `{}`) the debug-overlay callback.  Global
+  // process state; installed by WebServer on serve() and cleared on
+  // shutdown.
+  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+
+  // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
+  // buffer.  Public so that the debug-overlay callback (living in
+  // web.cpp, which is only in the main openroad binary) can reuse
+  // TileGenerator's line/polygon/bitmap primitives.
+  void rasterizeWebPainterOps(std::vector<unsigned char>& image,
+                              const std::vector<DrawOp>& ops,
+                              const odb::Rect& dbu_tile,
+                              double scale) const;
+
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
@@ -232,22 +275,25 @@ class TileGenerator
                         int x,
                         int y) const;
 
-  static int getBitmapTextWidth(std::string_view text, int scale);
-  static int getBitmapTextHeight(int scale);
-  static void drawBitmapText(std::vector<unsigned char>& image,
-                             int x,
-                             int y,
-                             std::string_view text,
-                             int scale,
-                             const Color& color);
-  // Draw text rotated 90° CCW (reads bottom-to-top).
-  // (x, y) is the bottom-left corner of the rotated text block.
-  static void drawBitmapTextRotated(std::vector<unsigned char>& image,
-                                    int x,
-                                    int y,
-                                    std::string_view text,
-                                    int scale,
-                                    const Color& color);
+  // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
+  // handle so callers lock the glyph cache once per rendering context rather
+  // than once per character.
+  static int getTextWidth(std::string_view text,
+                          const GlyphCache::FontSize& font);
+  static int getTextHeight(const GlyphCache::FontSize& font);
+  static void drawText(std::vector<unsigned char>& image,
+                       int x,
+                       int y,
+                       std::string_view text,
+                       const GlyphCache::FontSize& font,
+                       const Color& color);
+  // Draw text rotated 90° CW (reads top-to-bottom).
+  static void drawTextRotated(std::vector<unsigned char>& image,
+                              int x,
+                              int y,
+                              std::string_view text,
+                              const GlyphCache::FontSize& font,
+                              const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -265,6 +311,14 @@ class TileGenerator
                        const std::vector<FlightLine>& lines,
                        const odb::Rect& dbu_tile,
                        double scale) const;
+
+  // Private counterpart of setDebugOverlayCallback: invokes the
+  // installed callback (if any) for this tile.  See the public API
+  // above for rationale.
+  void drawRendererOverlay(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double scale,
+                           bool debug_live) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
@@ -298,12 +352,16 @@ class TileGenerator
                        int y0,
                        int x1,
                        int y1,
-                       const Color& c);
+                       const Color& c,
+                       int width = 3);
+
+  void computePinLabelMargin();
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
+  int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
   static constexpr int kTileSizeInPixel = 256;
 };
 

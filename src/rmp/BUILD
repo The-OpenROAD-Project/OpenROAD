@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2026, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -92,6 +95,37 @@ cc_library(
     ],
 )
 
+cc_binary(
+    name = "_rmp_py.so",
+    srcs = [":swig-py"],
+    defines = [
+        "BAZEL=1",
+        PYTHON_STABLE_API_DEFINE,
+    ],
+    includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        ":rmp",
+        "//src/cut",
+        "//src/dbSta",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+py_library(
+    name = "rmp_py",
+    srcs = [":swig-py"],
+    data = [":_rmp_py.so"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
 tcl_encode(
     name = "tcl",
     srcs = [
@@ -117,6 +151,27 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "src/rmp-py.i",
+        "//:error_swig-py",
+    ],
+    module = "rmp_py",
+    root_swig_src = "src/rmp-py.i",
+    swig_includes = [
+        "../../include",
+        "../cut/include",
+        "../sta/include",
+        "include",
+        "src",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )
 

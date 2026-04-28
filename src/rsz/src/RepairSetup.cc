@@ -206,7 +206,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   // IMPROVE ME: rebuffering always looks at cmd corner
   resizer_->rebuffer_->initOnCorner(sta_->cmdScene());
   max_repairs_per_pass_ = max_repairs_per_pass;
-  resizer_->buffer_moved_into_core_ = false;
 
   violator_collector_->init(setup_slack_margin);
   violator_collector_->setMaxPassesPerEndpoint(max_passes);

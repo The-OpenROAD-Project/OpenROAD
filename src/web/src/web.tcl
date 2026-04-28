@@ -1,24 +1,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
-sta::define_cmd_args "web_server" { [-port port] -dir dir }
+sta::define_cmd_args "web_server" { [-port port] [-dir dir] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -dir} flags {}
+    keys {-port -dir} flags {-stop}
+
+  if { [info exists flags(-stop)] } {
+    web::web_server_stop_cmd
+    return
+  }
 
   sta::check_argc_eq0 "web_server" $args
 
-  set port 8080
+  set port 0
   if { [info exists keys(-port)] } {
     set port $keys(-port)
   }
 
-  if { ![info exists keys(-dir)] } {
-    utl::error WEB 19 "-dir is required: pass the path to the web assets directory."
+  if { [info exists keys(-dir)] } {
+    utl::warn WEB 37 "-dir is deprecated and ignored; assets are embedded in the binary."
   }
 
-  web::web_server_cmd $port $keys(-dir)
+  web::web_server_cmd $port
+  web::web_server_wait_cmd
 }
 
 sta::define_cmd_args "save_image" {[-web] \
