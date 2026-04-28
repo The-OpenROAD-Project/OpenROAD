@@ -38,4 +38,3 @@ clock_tree_synthesis -buf_list BUF_X1 \
   -distance_between_buffers 100 \
   -num_static_layers 1 \
   -repair_clock_nets
-
