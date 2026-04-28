@@ -220,7 +220,8 @@ void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
   // per-step std::string allocations a naive DFS would incur. Using a
   // generic recursive lambda (auto& self) instead of a std::function
   // skips type erasure and the heap allocation it can incur.
-  auto rec = [&](auto& self, Instance* parent, fmt::memory_buffer& buf) -> void {
+  auto rec
+      = [&](auto& self, Instance* parent, fmt::memory_buffer& buf) -> void {
     std::unique_ptr<InstanceChildIterator> it{childIterator(parent)};
     while (it->hasNext()) {
       Instance* child = it->next();
