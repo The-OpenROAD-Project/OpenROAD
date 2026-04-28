@@ -254,6 +254,10 @@ void dbModule::addInst(dbInst* inst)
     module->insts_ = _inst->getOID();
     cur_head->module_prev_ = _inst->getOID();
   }
+
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbPostInstParentChange(inst);
+  }
 }
 
 void _dbModule::removeInst(dbInst* inst)

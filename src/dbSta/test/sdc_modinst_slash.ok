@@ -20,4 +20,6 @@ after-create get_pins -> new_buf/A
 buf1 inst stored name: 'i\/sub/buf1'
 after-rename get_pins i/sub/buf1/A -> 
 after-rename get_pins i/sub/buf_renamed/A -> i/sub/buf_renamed/A
+after-reparent get_pins i/sub/buf_renamed/A ->  
+after-reparent get_pins buf_renamed/A -> buf_renamed/A
 after-destroy get_pins new_buf/A -> 

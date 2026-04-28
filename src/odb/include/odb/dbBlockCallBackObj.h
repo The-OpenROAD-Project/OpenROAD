@@ -58,6 +58,7 @@ class dbBlockCallBackObj
   virtual void inDbPreMoveInst(dbInst*) {}
   virtual void inDbPostMoveInst(dbInst*) {}
   virtual void inDbPostInstRename(dbInst*, const char* /* old_name */) {}
+  virtual void inDbPostInstParentChange(dbInst*) {}
   // dbInst End
 
   // dbModInst Start

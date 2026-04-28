@@ -154,6 +154,7 @@ class dbStaCbk : public odb::dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
   void inDbPostInstRename(odb::dbInst* inst, const char* old_name) override;
+  void inDbPostInstParentChange(odb::dbInst* inst) override;
   void inDbModuleCreate(odb::dbModule* module) override;
   void inDbModuleDestroy(odb::dbModule* module) override;
   void inDbInstSwapMasterBefore(odb::dbInst* inst,
@@ -1123,6 +1124,11 @@ void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
 }
 
 void dbStaCbk::inDbPostInstRename(odb::dbInst*, const char*)
+{
+  invalidateSdcPathCache(sta_);
+}
+
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
 {
   invalidateSdcPathCache(sta_);
 }

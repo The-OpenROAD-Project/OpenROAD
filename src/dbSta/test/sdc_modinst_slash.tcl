@@ -55,6 +55,19 @@ foreach p [get_pins i/sub/buf_renamed/A] {
   puts "after-rename get_pins i/sub/buf_renamed/A -> [get_property $p full_name]"
 }
 
+# Reparent the renamed leaf into a different module via dbModule::addInst.
+# The full hierarchical path of the inst changes from i/sub/buf_renamed to
+# buf_renamed (under the top module). Without invalidation on
+# inDbPostInstParentChange the cache would still resolve the old path and
+# silently miss the new one.
+set top_mod [$block getTopModule]
+$top_mod addInst $buf1_inst
+puts "after-reparent get_pins i/sub/buf_renamed/A -> \
+      [get_pins -quiet i/sub/buf_renamed/A]"
+foreach p [get_pins buf_renamed/A] {
+  puts "after-reparent get_pins buf_renamed/A -> [get_property $p full_name]"
+}
+
 # Destroy the new_buf created above. Without invalidation on
 # inDbInstDestroy the cache would still hand out a dangling Instance*.
 odb::dbInst_destroy [$block findInst new_buf]
