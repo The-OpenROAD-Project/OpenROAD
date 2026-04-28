@@ -79,7 +79,7 @@ puts "after-destroy get_pins new_buf/A -> [get_pins -quiet new_buf/A]"
 # pathological-only cache + onInstCreated fast path, no rebuild happens
 # here at all because the new insts have no embedded divider in their
 # names or ancestors, so the cache stays untouched.
-for {set i 0} {$i < 5} {incr i} {
+for { set i 0 } { $i < 5 } { incr i } {
   set n "loop_buf_$i"
   odb::dbInst_create $block $master $n
   puts "loop $i get_pins $n/A -> [get_property [lindex [get_pins $n/A] 0] full_name]"
