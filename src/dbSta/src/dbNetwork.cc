@@ -788,7 +788,6 @@ ObjectId dbNetwork::id(const Instance* instance) const
 
 std::string dbNetwork::stripParentPrefix(const std::string& name)
 {
-  size_t last_idx = std::string::npos;
   size_t pos = name.length();
   while ((pos = name.rfind('/', pos)) != std::string::npos) {
     if (pos > 0 && name[pos - 1] == '\\') {
@@ -796,12 +795,8 @@ std::string dbNetwork::stripParentPrefix(const std::string& name)
       // hierarchy separator.  Keep searching to the left.
       pos--;
     } else {
-      last_idx = pos;
-      break;
+      return name.substr(pos + 1);
     }
-  }
-  if (last_idx != std::string::npos) {
-    return name.substr(last_idx + 1);
   }
   return name;
 }

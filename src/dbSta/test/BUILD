@@ -23,6 +23,7 @@ ALL_TESTS = [
     "get_ports1_hier",
     "hier2",
     "hier3",
+    "hier_escape_port",
     "hierclock",
     "hierwrite",
     "hier_deep",
