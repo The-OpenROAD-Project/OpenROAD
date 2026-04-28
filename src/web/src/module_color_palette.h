@@ -13,6 +13,8 @@ namespace web {
 // The same palette is duplicated in the Qt GUI's ColorGenerator
 // (src/gui/src/colorGenerator.cpp).  Keep them in sync.
 constexpr int kModuleColorPaletteSize = 31;
+
+// NOLINTBEGIN(modernize-use-designated-initializers)
 constexpr Color kModuleColorPalette[kModuleColorPaletteSize] = {
     {255, 0, 0, 100},     {255, 140, 0, 100},   {255, 215, 0, 100},
     {0, 255, 0, 100},     {148, 0, 211, 100},   {0, 250, 154, 100},
@@ -26,5 +28,6 @@ constexpr Color kModuleColorPalette[kModuleColorPaletteSize] = {
     {0, 0, 139, 100},     {50, 205, 50, 100},   {128, 0, 128, 100},
     {176, 48, 96, 100},
 };
+// NOLINTEND(modernize-use-designated-initializers)
 
 }  // namespace web

@@ -44,7 +44,10 @@ struct HierarchyNode
   int local_modules = 0;    // direct child module count
   HierarchyNodeKind node_kind = HierarchyNodeKind::kModule;
   unsigned int odb_id = 0;  // dbModule::getId() for MODULE nodes
-  Color color{0, 0, 0, 0};  // palette color (set by getReport() for MODULEs)
+  Color color{.r = 0,
+              .g = 0,
+              .b = 0,
+              .a = 0};  // set by getReport() for MODULEs
 };
 
 struct HierarchyResult
