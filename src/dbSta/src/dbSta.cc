@@ -153,6 +153,7 @@ class dbStaCbk : public odb::dbBlockCallBackObj
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbPostInstRename(odb::dbInst* inst, const char* old_name) override;
   void inDbModuleCreate(odb::dbModule* module) override;
   void inDbModuleDestroy(odb::dbModule* module) override;
   void inDbInstSwapMasterBefore(odb::dbInst* inst,
@@ -1119,6 +1120,11 @@ void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+}
+
+void dbStaCbk::inDbPostInstRename(odb::dbInst*, const char*)
+{
+  invalidateSdcPathCache(sta_);
 }
 
 void dbStaCbk::inDbModuleCreate(odb::dbModule* module)

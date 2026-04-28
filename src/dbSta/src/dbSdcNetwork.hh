@@ -57,12 +57,11 @@ class dbSdcNetwork : public SdcNetwork
                                               Instance*,
                                               TransparentStringHash,
                                               std::equal_to<>>;
-  using SdcPathVisitor
-      = std::function<void(Instance*, const std::string& sdc_path)>;
+  // sdc_path is passed by value so the visitor can move it into a long-
+  // lived store (e.g. the full-path map) without an extra copy.
+  using SdcPathVisitor = std::function<void(Instance*, std::string sdc_path)>;
 
   // DFS the hierarchy, invoking visitor(child, sdc_path) once per instance.
-  // The path is built incrementally in a fmt::memory_buffer; the string
-  // passed to the visitor is valid only for the call.
   void visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const;
 
   // Lazy full-path -> Instance lookup, used by findInstancesMatching1 to

@@ -360,10 +360,15 @@ bool dbInst::rename(const char* name)
     block->journal_->updateField(this, _dbInst::kName, inst->name_, name);
   }
 
+  std::string old_name(inst->name_);
   block->inst_hash_.remove(inst);
   free((void*) inst->name_);
   inst->name_ = safe_strdup(name);
   block->inst_hash_.insert(inst);
+
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbPostInstRename(this, old_name.c_str());
+  }
 
   return true;
 }

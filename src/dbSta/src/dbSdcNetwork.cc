@@ -67,7 +67,9 @@ void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
   // Literal pattern: serve from the precomputed full-path map so each
-  // miss in the hierarchy walker stays O(1) instead of O(N) DFS.
+  // miss in the hierarchy walker stays O(1) instead of O(N) DFS. The map
+  // is invalidated by dbStaCbk on inst create/destroy/rename, so any entry
+  // we see here is current.
   if (!pattern->isRegexp() && !pattern->hasWildcards()) {
     const SdcPathToInstMap& map = sdcPathToInstMap();
     auto it = map.find(pattern->pattern());
@@ -215,9 +217,10 @@ Pin* dbSdcNetwork::findPin(std::string_view path_name) const
 void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
 {
   // Build paths incrementally in a fmt::memory_buffer to avoid the
-  // per-step std::string allocations a naive DFS would incur.
-  std::function<void(Instance*, fmt::memory_buffer&)> dfs
-      = [&, this](Instance* parent, fmt::memory_buffer& buf) -> void {
+  // per-step std::string allocations a naive DFS would incur. Using a
+  // generic recursive lambda (auto& self) instead of a std::function
+  // skips type erasure and the heap allocation it can incur.
+  auto rec = [&](auto& self, Instance* parent, fmt::memory_buffer& buf) -> void {
     std::unique_ptr<InstanceChildIterator> it{childIterator(parent)};
     while (it->hasNext()) {
       Instance* child = it->next();
@@ -230,21 +233,21 @@ void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
       visitor(child, staToSdc(buf.data()));
       buf.resize(buf.size() - 1);
       if (!isLeaf(child)) {
-        dfs(child, buf);
+        self(self, child, buf);
       }
       buf.resize(orig_size);
     }
   };
   fmt::memory_buffer buf;
-  dfs(topInstance(), buf);
+  rec(rec, topInstance(), buf);
 }
 
 const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
 {
   if (!sdc_path_to_inst_) {
     sdc_path_to_inst_.emplace();
-    visitAllInstancesSdcPath([&](Instance* inst, const std::string& sdc_path) {
-      sdc_path_to_inst_->emplace(sdc_path, inst);
+    visitAllInstancesSdcPath([&](Instance* inst, std::string sdc_path) {
+      sdc_path_to_inst_->emplace(std::move(sdc_path), inst);
     });
   }
   return *sdc_path_to_inst_;

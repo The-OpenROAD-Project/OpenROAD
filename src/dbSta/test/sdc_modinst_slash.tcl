@@ -36,3 +36,26 @@ odb::dbInst_create $block $master new_buf
 foreach p [get_pins new_buf/A] {
   puts "after-create get_pins -> [get_property $p full_name]"
 }
+
+# Rename the leaf inst behind the cache's back. Without invalidation on
+# inDbPostInstRename, get_pins of the old name returned the renamed
+# instance (wrong pin) and get_pins of the new name missed entirely.
+set buf1_inst {}
+foreach inst [$block getInsts] {
+  set n [$inst getName]
+  if { [string match "*buf1" $n] && $n != "new_buf" } {
+    set buf1_inst $inst
+    break
+  }
+}
+puts "buf1 inst stored name: '[$buf1_inst getName]'"
+$buf1_inst rename buf_renamed
+puts "after-rename get_pins i/sub/buf1/A -> [get_pins -quiet i/sub/buf1/A]"
+foreach p [get_pins i/sub/buf_renamed/A] {
+  puts "after-rename get_pins i/sub/buf_renamed/A -> [get_property $p full_name]"
+}
+
+# Destroy the new_buf created above. Without invalidation on
+# inDbInstDestroy the cache would still hand out a dangling Instance*.
+odb::dbInst_destroy [$block findInst new_buf]
+puts "after-destroy get_pins new_buf/A -> [get_pins -quiet new_buf/A]"
