@@ -19,7 +19,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "odb/geom_boost.h"  // IWYU pragma: keep
 #include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 #include "utl/spatialIndex.h"
