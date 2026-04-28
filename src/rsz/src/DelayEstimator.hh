@@ -36,6 +36,7 @@ struct StageEvaluation
   float input_slew{0.0f};
   float load_cap{0.0f};
   float stage_delay{0.0f};
+  float output_slew{0.0f};
 };
 
 // === Delay estimator API ====================================================

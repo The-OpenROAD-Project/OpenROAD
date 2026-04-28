@@ -96,6 +96,7 @@ class DelayEstimatorReporter
     float cell_delay{0.0f};
     float wire_delay{0.0f};
     float load_cap{0.0f};
+    float output_slew{0.0f};
     float extra_delay{0.0f};
   };
 

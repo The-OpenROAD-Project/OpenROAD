@@ -62,12 +62,7 @@ enum class FailReason : uint8_t
   kMissingSceneOrMinMax,
   kMissingOutputPort,
   kMissingCurrentPortMap,
-  kInvalidSelectedArc,
-  kMissingInputSlewArc,
   kMissingCurrentTimingArc,
-
-  // Prepared arc delay state.
-  kInvalidContext,
 
   // Candidate timing context.
   kMissingCandidatePort,
@@ -96,27 +91,39 @@ struct SelectedArc
   const sta::MinMax* min_max{nullptr};
   const sta::Pvt* pvt{nullptr};
   const sta::TimingArc* ref_arc{nullptr};
+
+  const sta::LibertyPort* inputPort() const;
+  const sta::LibertyPort* outputPort() const;
+  const sta::RiseFall* inputRiseFall() const;
+  const sta::RiseFall* outputRiseFall() const;
+  sta::LibertyCell* currentCell() const;
 };
 
-const sta::LibertyPort* selectedArcInputPort(const SelectedArc& arc);
-const sta::LibertyPort* selectedArcOutputPort(const SelectedArc& arc);
-const sta::RiseFall* selectedArcInputRiseFall(const SelectedArc& arc);
-const sta::RiseFall* selectedArcOutputRiseFall(const SelectedArc& arc);
 const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             const sta::TimingArcSet* candidate);
+
+// One timing arc that can contribute to the driver's output slew merge for the
+// selected output transition.  STA merges output slew across all such arcs
+// before the next stage consumes it.
+struct OutputSlewMergeArc
+{
+  const sta::TimingArc* ref_arc{nullptr};
+  float input_slew{0.0f};
+  float current_model_slew{0.0f};
+};
 
 // Snapshot of one timing stage's electrical state needed for table-model delay
 // estimation.  MT policies prepare this on the main thread and then worker
 // threads read it from Target without touching STA analysis state.
 struct DelayStageState
 {
-  bool isValid() const;
-
   SelectedArc arc;
   float input_slew{0.0f};
   float load_cap{0.0f};
-  float current_delay{0.0f};  // Original delay before optimization
-  float current_slew{0.0f};
+  float current_delay{0.0f};       // Original delay before optimization
+  float current_model_slew{0.0f};  // Table-model merged slew baseline
+  float current_slew{0.0f};        // STA graph merged slew baseline
+  std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
   int path_index{-1};
 };
 
@@ -127,8 +134,6 @@ struct DelayStageState
 // fields.
 struct ArcDelayState
 {
-  bool isValid() const;
-
   std::vector<DelayStageState> path_stages;
   int target_stage_index{0};
   int delay_estimation_levels{0};

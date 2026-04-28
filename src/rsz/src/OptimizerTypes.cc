@@ -8,6 +8,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
@@ -44,16 +45,8 @@ const char* failReasonName(const FailReason reason)
       return "missing_output_port";
     case FailReason::kMissingCurrentPortMap:
       return "missing_current_port_map";
-    case FailReason::kInvalidSelectedArc:
-      return "invalid_selected_arc";
-    case FailReason::kMissingInputSlewArc:
-      return "missing_input_slew_arc";
     case FailReason::kMissingCurrentTimingArc:
       return "missing_current_timing_arc";
-
-    // Prepared arc delay state.
-    case FailReason::kInvalidContext:
-      return "invalid_context";
 
     // Candidate timing context.
     case FailReason::kMissingCandidatePort:
@@ -64,37 +57,30 @@ const char* failReasonName(const FailReason reason)
   return "unknown_fail_reason";
 }
 
-namespace {
-
-// ref_arc's from/to/fromEdge/toEdge are guaranteed non-null by selectedPathArc
-// validation in buildSelectedArc, so only the top-level pointers need checking.
-bool selectedArcIsValid(const SelectedArc& arc)
+// Precondition: ref_arc is non-null (guaranteed by buildSelectedArc).
+const sta::LibertyPort* SelectedArc::inputPort() const
 {
-  return arc.scene != nullptr && arc.min_max != nullptr
-         && arc.ref_arc != nullptr;
+  return ref_arc->from();
 }
 
-}  // namespace
-
-// Precondition: arc.ref_arc is non-null (guaranteed by buildSelectedArc).
-const sta::LibertyPort* selectedArcInputPort(const SelectedArc& arc)
+const sta::LibertyPort* SelectedArc::outputPort() const
 {
-  return arc.ref_arc->from();
+  return ref_arc->to();
 }
 
-const sta::LibertyPort* selectedArcOutputPort(const SelectedArc& arc)
+const sta::RiseFall* SelectedArc::inputRiseFall() const
 {
-  return arc.ref_arc->to();
+  return ref_arc->fromEdge()->asRiseFall();
 }
 
-const sta::RiseFall* selectedArcInputRiseFall(const SelectedArc& arc)
+const sta::RiseFall* SelectedArc::outputRiseFall() const
 {
-  return arc.ref_arc->fromEdge()->asRiseFall();
+  return ref_arc->toEdge()->asRiseFall();
 }
 
-const sta::RiseFall* selectedArcOutputRiseFall(const SelectedArc& arc)
+sta::LibertyCell* SelectedArc::currentCell() const
 {
-  return arc.ref_arc->toEdge()->asRiseFall();
+  return const_cast<sta::LibertyPort*>(outputPort())->libertyCell();
 }
 
 // Find the timing arc in `candidate` that matches the reference arc's
@@ -121,20 +107,6 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
     }
   }
   return nullptr;
-}
-
-bool DelayStageState::isValid() const
-{
-  return selectedArcIsValid(arc) && path_index >= 0;
-}
-
-bool ArcDelayState::isValid() const
-{
-  // Invariant: path_stages always contains at least the target stage after
-  // a successful buildContext.  target_stage_index points to that stage.
-  return !path_stages.empty() && target_stage_index >= 0
-         && target_stage_index < static_cast<int>(path_stages.size())
-         && path_stages[target_stage_index].isValid();
 }
 
 bool Target::canBePathDriver() const
@@ -181,7 +153,7 @@ bool Target::isPrepared(const PrepareCacheMask mask) const
   if ((mask & kArcDelayStateCache) == 0) {
     return true;
   }
-  return arc_delay.has_value() && arc_delay->isValid();
+  return arc_delay.has_value();
 }
 
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const

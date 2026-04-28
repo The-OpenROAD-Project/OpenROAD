@@ -184,8 +184,7 @@ void MoveCommitter::trackPreparedViolator(const Target& target)
 
   const ArcDelayState& arc_delay = target.arc_delay.value();
   const DelayStageState& target_stage = arc_delay.target();
-  const sta::LibertyCell* current_cell
-      = selectedArcOutputPort(target_stage.arc)->libertyCell();
+  const sta::LibertyCell* current_cell = target_stage.arc.currentCell();
   trackViolatorWithInfo(target.driver_pin,
                         current_cell->name(),
                         target_stage.current_delay,

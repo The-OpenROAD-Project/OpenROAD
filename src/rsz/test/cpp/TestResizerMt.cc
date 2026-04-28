@@ -30,6 +30,7 @@
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -329,10 +330,10 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   }
   const ArcDelayState& arc_delay = context.value();
   const DelayStageState& target_stage = arc_delay.target();
-  ASSERT_NE(selectedArcInputPort(target_stage.arc), nullptr);
-  ASSERT_NE(selectedArcOutputPort(target_stage.arc), nullptr);
-  EXPECT_EQ(selectedArcInputPort(target_stage.arc)->name(), "A");
-  EXPECT_EQ(selectedArcOutputPort(target_stage.arc)->name(), "Z");
+  ASSERT_NE(target_stage.arc.inputPort(), nullptr);
+  ASSERT_NE(target_stage.arc.outputPort(), nullptr);
+  EXPECT_EQ(target_stage.arc.inputPort()->name(), "A");
+  EXPECT_EQ(target_stage.arc.outputPort()->name(), "Z");
   ASSERT_EQ(arc_delay.path_stages.size(), 1);
   EXPECT_EQ(arc_delay.target_stage_index, 0);
   EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
@@ -368,9 +369,9 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
   ASSERT_EQ(arc_delay.path_stages.size(), 3);
   ASSERT_EQ(arc_delay.target_stage_index, 1);
-  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[0].arc)->name(), "Z");
-  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[1].arc)->name(), "ZN");
-  EXPECT_EQ(selectedArcOutputPort(arc_delay.path_stages[2].arc)->name(), "Z");
+  EXPECT_EQ(arc_delay.path_stages[0].arc.outputPort()->name(), "Z");
+  EXPECT_EQ(arc_delay.path_stages[1].arc.outputPort()->name(), "ZN");
+  EXPECT_EQ(arc_delay.path_stages[2].arc.outputPort()->name(), "Z");
   for (const DelayStageState& stage : arc_delay.path_stages) {
     EXPECT_GT(stage.current_delay, 0.0f);
     EXPECT_GT(stage.current_slew, 0.0f);
@@ -443,7 +444,7 @@ TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
   EXPECT_EQ(estimate.reason, FailReason::kMissingCandidatePort);
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateSamplesOnlyPathArcOnMultiArcCell)
+TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -457,10 +458,20 @@ TEST_F(TestResizerMt, BuildArcDelayStateSamplesOnlyPathArcOnMultiArcCell)
   }
   const ArcDelayState& arc_delay = context.value();
   const SelectedArc& target_arc = arc_delay.target().arc;
-  ASSERT_NE(selectedArcInputPort(target_arc), nullptr);
-  ASSERT_NE(selectedArcOutputPort(target_arc), nullptr);
-  EXPECT_EQ(selectedArcInputPort(target_arc)->name(), "A1");
-  EXPECT_EQ(selectedArcOutputPort(target_arc)->name(), "ZN");
+  ASSERT_NE(target_arc.inputPort(), nullptr);
+  ASSERT_NE(target_arc.outputPort(), nullptr);
+  EXPECT_EQ(target_arc.inputPort()->name(), "A1");
+  EXPECT_EQ(target_arc.outputPort()->name(), "ZN");
+  EXPECT_GE(arc_delay.target().output_slew_merge_arcs.size(), 1);
+  EXPECT_GT(arc_delay.target().current_model_slew, 0.0f);
+
+  sta::Vertex* driver_vertex = sta_->graph()->pinDrvrVertex(target.driver_pin);
+  ASSERT_NE(driver_vertex, nullptr);
+  const int dcalc_ap
+      = target_arc.scene->dcalcAnalysisPtIndex(target_arc.min_max);
+  const float graph_slew = sta::delayAsFloat(sta_->graph()->slew(
+      driver_vertex, target_arc.outputRiseFall(), dcalc_ap));
+  EXPECT_FLOAT_EQ(arc_delay.target().current_slew, graph_slew);
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1_L");

@@ -76,13 +76,6 @@ std::string formatDelta(float estimated, float golden, float scale)
   return fmt::format("{:+.3f}", (estimated - golden) * scale);
 }
 
-// Liberty cell of the original (pre-swap) driver for a stage.
-sta::LibertyCell* currentCell(const SelectedArc& arc)
-{
-  return const_cast<sta::LibertyPort*>(selectedArcOutputPort(arc))
-      ->libertyCell();
-}
-
 }  // namespace
 
 // === Public name parsing (single source of truth for Tcl + C++) ===========
@@ -295,16 +288,22 @@ void DelayEstimatorReporter::measureGoldenAfterSwap(
   const std::string driver_port_name = driver_port->name();
   const sta::Scene* scene = before_match.target.activeScene(resizer_);
 
-  // Defensive: even though reportAccuracyForSizing pre-validates that the
-  // replacement exposes the driver port, post-swap pin resolution can still
-  // fail (e.g., instance renamed by an unforeseen ECO interaction).  Skip
-  // golden-after measurement instead of dereferencing null.
   sta::Instance* live_inst = network_->findInstance(before_inst_name);
-  sta::Pin* live_driver_pin
-      = live_inst != nullptr ? network_->findPin(live_inst, driver_port_name)
-                             : nullptr;
+  if (live_inst == nullptr) {
+    logger_->error(RSZ,
+                   3211,
+                   "Could not find instance {} after sizing ECO.",
+                   before_inst_name);
+  }
+
+  sta::Pin* live_driver_pin = network_->findPin(live_inst, driver_port_name);
   if (live_driver_pin == nullptr) {
-    return;
+    logger_->error(RSZ,
+                   3212,
+                   "Could not find driver pin {} on instance {} after sizing "
+                   "ECO.",
+                   driver_port_name,
+                   before_inst_name);
   }
   const float after_arrival = arrivalAtDriver(live_driver_pin, scene);
 
@@ -603,12 +602,14 @@ DelayEstimatorReporter::buildLegacyProfile(const Target& target,
       .cell_delay = current_cell_delay,
       .wire_delay = pathWireDelay(expanded, target.path_index),
       .load_cap = load_cap,
+      .output_slew = context->target().current_slew,
       .extra_delay = current_fanin_penalty};
   profile.current_stages.push_back(current_row);
 
   StageProfileRow candidate_row = current_row;
   candidate_row.cell_name = replacement->name();
   candidate_row.cell_delay = candidate_cell_delay;
+  candidate_row.output_slew = kMissingValue;
   candidate_row.extra_delay = candidate_fanin_penalty;
   profile.candidate_stages.push_back(candidate_row);
 
@@ -625,11 +626,12 @@ DelayEstimatorReporter::buildEstimatedCurrentStageRow(
   return {.path_index = stage.path_index,
           .role = roleFor(stage_index, target_index),
           .pin_name = stagePinName(expanded, stage.path_index),
-          .cell_name = currentCell(stage.arc)->name(),
+          .cell_name = stage.arc.currentCell()->name(),
           .input_slew = stage.input_slew,
           .cell_delay = stage.current_delay,
           .wire_delay = pathWireDelay(expanded, stage.path_index),
           .load_cap = stage.load_cap,
+          .output_slew = stage.current_slew,
           .extra_delay = 0.0f};
 }
 
@@ -707,6 +709,7 @@ DelayEstimatorReporter::buildDelayEstimatorProfile(
          .cell_delay = eval.stage_delay,
          .wire_delay = pathWireDelay(expanded, eval.path_index),
          .load_cap = eval.load_cap,
+         .output_slew = eval.output_slew,
          .extra_delay = 0.0f});
   }
 
@@ -792,6 +795,7 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
                       .cell_delay = kMissingValue,
                       .wire_delay = fixedStageWireDelay(fixed_stage),
                       .load_cap = kMissingValue,
+                      .output_slew = kMissingValue,
                       .extra_delay = 0.0f};
 
   sta::Pin* input_pin = network_->findPin(fixed_stage.input_pin_name);
@@ -839,7 +843,7 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
       fixed_stage.state.arc.min_max);
   row.input_slew = sta_->graphDelayCalc()->edgeFromSlew(
       gate_edge->from(graph_),
-      selectedArcInputRiseFall(fixed_stage.state.arc),
+      fixed_stage.state.arc.inputRiseFall(),
       gate_edge,
       fixed_stage.state.arc.scene,
       fixed_stage.state.arc.min_max);
@@ -847,6 +851,8 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
       = sta::delayAsFloat(graph_->arcDelay(gate_edge, gate_arc, dcalc_ap));
   row.load_cap = sta_->graphDelayCalc()->loadCap(
       driver_pin, fixed_stage.state.arc.scene, fixed_stage.state.arc.min_max);
+  row.output_slew = sta::delayAsFloat(graph_->slew(
+      driver_vertex, fixed_stage.state.arc.outputRiseFall(), dcalc_ap));
   return row;
 }
 
@@ -942,7 +948,7 @@ float DelayEstimatorReporter::fixedStageWireDelay(
     sta::Edge* edge = edge_iter.next();
     if (edge->isWire() && edge->to(graph_) == next_vertex) {
       return sta::delayAsFloat(graph_->wireArcDelay(
-          edge, selectedArcOutputRiseFall(fixed_stage.state.arc), dcalc_ap));
+          edge, fixed_stage.state.arc.outputRiseFall(), dcalc_ap));
     }
   }
 
@@ -991,7 +997,8 @@ void DelayEstimatorReporter::printStageComparison(
   logger_->report(
       "idx role    path_index pin                                      "
       "est_cell                 golden_cell              "
-      "slew_est/gold/err(ps)      cell_est/gold/err(ps)      "
+      "in_slew_est/gold/err(ps)   out_slew_est/gold/err(ps)  "
+      "cell_est/gold/err(ps)      "
       "wire_est/gold/err(ps)      load_est/gold/err(fF)      "
       "extra_est(ps)");
 
@@ -1016,6 +1023,10 @@ void DelayEstimatorReporter::printStageComparison(
         = has_estimated ? estimated_row.input_slew : kMissingValue;
     const float golden_slew
         = has_golden ? golden_row.input_slew : kMissingValue;
+    const float estimated_output_slew
+        = has_estimated ? estimated_row.output_slew : kMissingValue;
+    const float golden_output_slew
+        = has_golden ? golden_row.output_slew : kMissingValue;
     const float estimated_cell_delay
         = has_estimated ? estimated_row.cell_delay : kMissingValue;
     const float golden_cell_delay
@@ -1033,6 +1044,7 @@ void DelayEstimatorReporter::printStageComparison(
     logger_->report(
         "{:>3} {:<7} {:>10} {:<40} {:<24} {:<24} "
         "{:>8}/{:>8}/{:>8}  {:>8}/{:>8}/{:>8}  "
+        "{:>8}/{:>8}/{:>8}  "
         "{:>8}/{:>8}/{:>8}  {:>8}/{:>8}/{:>8}  {:>8}",
         row_index,
         roleName(role),
@@ -1043,6 +1055,10 @@ void DelayEstimatorReporter::printStageComparison(
         formatValue(estimated_slew, kSecondsToPicoseconds),
         formatValue(golden_slew, kSecondsToPicoseconds),
         formatDelta(estimated_slew, golden_slew, kSecondsToPicoseconds),
+        formatValue(estimated_output_slew, kSecondsToPicoseconds),
+        formatValue(golden_output_slew, kSecondsToPicoseconds),
+        formatDelta(
+            estimated_output_slew, golden_output_slew, kSecondsToPicoseconds),
         formatValue(estimated_cell_delay, kSecondsToPicoseconds),
         formatValue(golden_cell_delay, kSecondsToPicoseconds),
         formatDelta(

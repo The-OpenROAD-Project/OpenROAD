@@ -24,6 +24,7 @@
 #include "sta/StaState.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -103,15 +104,6 @@ std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
                                             sta::Instance* inst,
                                             sta::Pin* driver_pin,
                                             const sta::PathExpanded& expanded,
-                                            int path_index,
-                                            const sta::Scene* scene,
-                                            const sta::MinMax* min_max,
-                                            FailReason* fail_reason);
-
-std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
-                                            sta::Instance* inst,
-                                            sta::Pin* driver_pin,
-                                            const sta::PathExpanded& expanded,
                                             const int path_index,
                                             const sta::Scene* scene,
                                             const sta::MinMax* min_max,
@@ -178,44 +170,52 @@ std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
                      .ref_arc = ref_arc};
 }
 
-sta::LibertyCell* currentCell(const SelectedArc& arc)
+void warnInputSlewFallback(const Resizer& resizer,
+                           sta::Instance* inst,
+                           const sta::LibertyPort* input_port,
+                           const char* missing_object)
 {
-  return const_cast<sta::LibertyPort*>(selectedArcOutputPort(arc))
-      ->libertyCell();
+  resizer.logger()->warn(
+      utl::RSZ,
+      3210,
+      "Delay estimator could not find {} for input port {} on instance {}; "
+      "using 0 input slew.",
+      missing_object,
+      input_port->name(),
+      resizer.network()->pathName(inst));
 }
 
-bool findInputSlew(const Resizer& resizer,
-                   sta::Instance* inst,
-                   const SelectedArc& arc,
-                   float& input_slew,
-                   FailReason* fail_reason)
+float inputSlewOrZero(const Resizer& resizer,
+                      sta::Instance* inst,
+                      const SelectedArc& arc)
 {
-  input_slew = 0.0f;
   const sta::Pin* input_pin
-      = resizer.network()->findPin(inst, selectedArcInputPort(arc)->name());
+      = resizer.network()->findPin(inst, arc.inputPort()->name());
   if (input_pin == nullptr) {
-    return true;
+    warnInputSlewFallback(resizer, inst, arc.inputPort(), "input pin");
+    return 0.0f;
   }
 
   const sta::Vertex* input_vertex = resizer.graph()->pinDrvrVertex(input_pin);
   if (input_vertex == nullptr) {
-    return true;
+    warnInputSlewFallback(resizer, inst, arc.inputPort(), "input vertex");
+    return 0.0f;
   }
 
-  input_slew = resizer.staState()->graphDelayCalc()->edgeFromSlew(
-      input_vertex,
-      selectedArcInputRiseFall(arc),
-      arc.ref_arc->role(),
-      arc.scene,
-      arc.min_max);
-  return true;
+  return resizer.staState()->graphDelayCalc()->edgeFromSlew(input_vertex,
+                                                            arc.inputRiseFall(),
+                                                            arc.ref_arc->role(),
+                                                            arc.scene,
+                                                            arc.min_max);
 }
 
-bool findCandidatePorts(const SelectedArc& arc,
-                        const sta::LibertyCell* cell,
-                        sta::LibertyCell*& scene_cell,
-                        sta::LibertyPort*& candidate_input,
-                        sta::LibertyPort*& candidate_output)
+bool findCandidatePortsForArc(const sta::Scene* scene,
+                              const sta::MinMax* min_max,
+                              const sta::TimingArc* ref_arc,
+                              const sta::LibertyCell* cell,
+                              sta::LibertyCell*& scene_cell,
+                              sta::LibertyPort*& candidate_input,
+                              sta::LibertyPort*& candidate_output)
 {
   scene_cell = nullptr;
   candidate_input = nullptr;
@@ -224,24 +224,24 @@ bool findCandidatePorts(const SelectedArc& arc,
     return false;
   }
 
-  scene_cell
-      = const_cast<sta::LibertyCell*>(cell)->sceneCell(arc.scene, arc.min_max);
+  scene_cell = const_cast<sta::LibertyCell*>(cell)->sceneCell(scene, min_max);
   if (scene_cell == nullptr) {
     return false;
   }
-  candidate_input
-      = scene_cell->findLibertyPort(selectedArcInputPort(arc)->name());
-  candidate_output
-      = scene_cell->findLibertyPort(selectedArcOutputPort(arc)->name());
+  candidate_input = scene_cell->findLibertyPort(ref_arc->from()->name());
+  candidate_output = scene_cell->findLibertyPort(ref_arc->to()->name());
   return candidate_input != nullptr && candidate_output != nullptr;
 }
 
-bool lookupArcDelayAndSlew(const SelectedArc& arc,
-                           const float input_slew,
-                           const float load_cap,
-                           const sta::LibertyCell* cell,
-                           float& delay,
-                           float& output_slew)
+bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
+                                 const sta::Pvt* pvt,
+                                 const sta::TimingArc* ref_arc,
+                                 const float input_slew,
+                                 const float load_cap,
+                                 const sta::LibertyCell* cell,
+                                 float& delay,
+                                 float& output_slew)
 {
   delay = -sta::INF;
   output_slew = 0.0f;
@@ -249,8 +249,13 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
   sta::LibertyCell* scene_cell = nullptr;
   sta::LibertyPort* candidate_input = nullptr;
   sta::LibertyPort* candidate_output = nullptr;
-  if (!findCandidatePorts(
-          arc, cell, scene_cell, candidate_input, candidate_output)) {
+  if (!findCandidatePortsForArc(scene,
+                                min_max,
+                                ref_arc,
+                                cell,
+                                scene_cell,
+                                candidate_input,
+                                candidate_output)) {
     return false;
   }
 
@@ -261,14 +266,178 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
       continue;
     }
     const sta::TimingArc* candidate_arc
-        = findMatchingTimingArc(arc.ref_arc, arc_set);
+        = findMatchingTimingArc(ref_arc, arc_set);
     if (candidate_arc != nullptr) {
       return gateDelayAndSlewFromTableModel(
-          arc.pvt, candidate_arc, input_slew, load_cap, delay, output_slew);
+          pvt, candidate_arc, input_slew, load_cap, delay, output_slew);
     }
   }
 
   return false;
+}
+
+bool lookupArcDelayAndSlew(const SelectedArc& arc,
+                           const float input_slew,
+                           const float load_cap,
+                           const sta::LibertyCell* cell,
+                           float& delay,
+                           float& output_slew)
+{
+  return lookupArcDelayAndSlewForArc(arc.scene,
+                                     arc.min_max,
+                                     arc.pvt,
+                                     arc.ref_arc,
+                                     input_slew,
+                                     load_cap,
+                                     cell,
+                                     delay,
+                                     output_slew);
+}
+
+const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
+                                            sta::LibertyCell* scene_cell)
+{
+  sta::LibertyPort* input_port
+      = scene_cell->findLibertyPort(graph_arc->from()->name());
+  sta::LibertyPort* output_port
+      = scene_cell->findLibertyPort(graph_arc->to()->name());
+  if (input_port == nullptr || output_port == nullptr) {
+    return nullptr;
+  }
+
+  const sta::TimingArcSetSeq arc_sets
+      = scene_cell->timingArcSets(input_port, output_port);
+  for (const sta::TimingArcSet* arc_set : arc_sets) {
+    if (arc_set->role()->isTimingCheck()) {
+      continue;
+    }
+    const sta::TimingArc* ref_arc = findMatchingTimingArc(graph_arc, arc_set);
+    if (ref_arc != nullptr) {
+      return ref_arc;
+    }
+  }
+  return nullptr;
+}
+
+std::vector<OutputSlewMergeArc> collectOutputSlewMergeArcs(
+    const Resizer& resizer,
+    const SelectedArc& selected_arc,
+    sta::Pin* driver_pin,
+    sta::LibertyCell* current_cell,
+    const float load_cap)
+{
+  std::vector<OutputSlewMergeArc> merge_arcs;
+  sta::Vertex* driver_vertex = resizer.graph()->pinDrvrVertex(driver_pin);
+  if (driver_vertex == nullptr) {
+    return merge_arcs;
+  }
+
+  const sta::RiseFall* output_rf = selected_arc.outputRiseFall();
+  const sta::LibertyPort* output_port = selected_arc.outputPort();
+
+  // Capture non-path gate arcs that can merge into this driver's selected
+  // output transition. The selected path arc is handled by the stage lookup;
+  // this cache only controls the output slew propagated to the next stage.
+  sta::VertexInEdgeIterator edge_iter(driver_vertex, resizer.graph());
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    const sta::TimingArcSet* arc_set = edge->timingArcSet();
+    if (arc_set->role()->isTimingCheck()
+        || arc_set->to()->name() != output_port->name()) {
+      continue;
+    }
+
+    for (const sta::TimingArc* graph_arc : arc_set->arcs()) {
+      const sta::RiseFall* input_rf = graph_arc->fromEdge()->asRiseFall();
+      const sta::RiseFall* arc_output_rf = graph_arc->toEdge()->asRiseFall();
+      if (input_rf == nullptr || arc_output_rf != output_rf) {
+        continue;
+      }
+
+      const sta::TimingArc* ref_arc
+          = findCellTimingArcLike(graph_arc, current_cell);
+      if (ref_arc == nullptr) {
+        continue;
+      }
+      if (ref_arc == selected_arc.ref_arc) {
+        continue;
+      }
+
+      const float input_slew
+          = resizer.staState()->graphDelayCalc()->edgeFromSlew(
+              edge->from(resizer.graph()),
+              input_rf,
+              edge,
+              selected_arc.scene,
+              selected_arc.min_max);
+      float delay = 0.0f;
+      float output_slew = 0.0f;
+      if (!gateDelayAndSlewFromTableModel(selected_arc.pvt,
+                                          ref_arc,
+                                          input_slew,
+                                          load_cap,
+                                          delay,
+                                          output_slew)) {
+        continue;
+      }
+
+      merge_arcs.push_back({.ref_arc = ref_arc,
+                            .input_slew = input_slew,
+                            .current_model_slew = output_slew});
+    }
+  }
+  return merge_arcs;
+}
+
+// Estimate the post-ECO driver output slew for the selected transition.
+// First merge candidate table-model slews across all cached arcs that feed the
+// same output transition, then apply only that model delta to the current STA
+// graph slew.  This keeps STA's present graph/parasitic bias while using the
+// fast table model to capture the candidate/load change.
+float estimateOutputSlew(const DelayStageState& stage,
+                         const sta::LibertyCell* cell,
+                         const float path_input_slew,
+                         const float load_cap,
+                         const float selected_output_slew)
+{
+  // OpenSTA propagates GBA vertex slew, not the selected path arc's slew, so
+  // merge all arc slews that share the selected output transition.
+  float model_output_slew = selected_output_slew;
+  for (const OutputSlewMergeArc& merge_arc : stage.output_slew_merge_arcs) {
+    const bool uses_path_input
+        = merge_arc.ref_arc->from() == stage.arc.inputPort()
+          && merge_arc.ref_arc->fromEdge()->asRiseFall()
+                 == stage.arc.inputRiseFall();
+    const float input_slew
+        = uses_path_input ? path_input_slew : merge_arc.input_slew;
+    float delay = 0.0f;
+    float merge_output_slew = 0.0f;
+
+    // Get output slew by the candidate cell
+    if (!lookupArcDelayAndSlewForArc(stage.arc.scene,
+                                     stage.arc.min_max,
+                                     stage.arc.pvt,
+                                     merge_arc.ref_arc,
+                                     input_slew,
+                                     load_cap,
+                                     cell,
+                                     delay,
+                                     merge_output_slew)) {
+      continue;
+    }
+
+    // Store the worst slew
+    if (stage.arc.min_max->compare(merge_output_slew, model_output_slew)) {
+      model_output_slew = merge_output_slew;
+    }
+  }
+
+  // Calibrate the table-model estimate to STA's current merged vertex slew.
+  // The delta still captures the candidate/load change, while the baseline
+  // preserves STA effects that the lightweight table walk cannot reproduce.
+  const float calibrated_slew
+      = stage.current_slew + (model_output_slew - stage.current_model_slew);
+  return std::max(calibrated_slew, 0.0f);
 }
 
 std::optional<DelayStageState> buildDelayStageState(
@@ -293,14 +462,11 @@ std::optional<DelayStageState> buildDelayStageState(
     return std::nullopt;
   }
 
-  float input_slew = 0.0f;
-  if (!findInputSlew(resizer, inst, *selected_arc, input_slew, fail_reason)) {
-    return std::nullopt;
-  }
+  const float input_slew = inputSlewOrZero(resizer, inst, *selected_arc);
 
   const float load_cap = resizer.staState()->graphDelayCalc()->loadCap(
       driver_pin, selected_arc->scene, selected_arc->min_max);
-  const sta::LibertyCell* current_cell = currentCell(*selected_arc);
+  sta::LibertyCell* current_cell = selected_arc->currentCell();
   float current_delay = 0.0f;
   float current_slew = 0.0f;
   if (!lookupArcDelayAndSlew(*selected_arc,
@@ -318,7 +484,27 @@ std::optional<DelayStageState> buildDelayStageState(
   stage.input_slew = input_slew;
   stage.load_cap = load_cap;
   stage.current_delay = current_delay;
-  stage.current_slew = current_slew;
+  stage.output_slew_merge_arcs = collectOutputSlewMergeArcs(
+      resizer, *selected_arc, driver_pin, current_cell, load_cap);
+
+  // Compute merged model slew from all arcs sharing the output transition
+  stage.current_model_slew = current_slew;
+  for (const OutputSlewMergeArc& merge_arc : stage.output_slew_merge_arcs) {
+    if (selected_arc->min_max->compare(merge_arc.current_model_slew,
+                                       stage.current_model_slew)) {
+      stage.current_model_slew = merge_arc.current_model_slew;
+    }
+  }
+
+  // Use STA graph vertex slew as baseline for delta calibration
+  stage.current_slew = stage.current_model_slew;
+  sta::Vertex* driver_vertex = resizer.graph()->pinDrvrVertex(driver_pin);
+  if (driver_vertex != nullptr) {
+    const int dcalc_ap
+        = selected_arc->scene->dcalcAnalysisPtIndex(selected_arc->min_max);
+    stage.current_slew = sta::delayAsFloat(resizer.graph()->slew(
+        driver_vertex, selected_arc->outputRiseFall(), dcalc_ap));
+  }
   stage.path_index = path_index;
   return stage;
 }
@@ -439,13 +625,11 @@ float totalCurrentDelay(const std::vector<DelayStageState>& stages)
 // evaluated stage so diagnostic callers can present per-stage detail.
 //
 // Approximation note: from the fanin neighbor onward, each stage feeds the
-// previous stage's table-model gate output slew (propagated_slew) into the
-// next stage as input slew.  This bypasses the interconnect (RC) slew
-// degradation that STA accounts for between a driver's output pin and the
-// next cell's input pin.  As a result, post-swap input slews along the
-// chain are sharper than what STA would report, which biases gate delays to
-// look slightly faster than reality (optimistic).  This is an intentional
-// speed/accuracy trade-off for candidate ranking.
+// previous stage's merged gate output slew into the next stage as input slew.
+// The merge follows STA's same-output-transition slew merge, but still bypasses
+// interconnect (RC) slew degradation between a driver's output pin and the next
+// cell's input pin.  This remains a speed/accuracy trade-off for candidate
+// ranking.
 DelayEstimate estimateWindow(const ArcDelayState& context,
                              const sta::LibertyCell* candidate_cell,
                              std::vector<StageEvaluation>* trace = nullptr)
@@ -454,19 +638,23 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
   const int target_index = context.target_stage_index;
   const DelayStageState& target_stage = stages[target_index];
 
-  sta::LibertyCell* target_scene_cell = nullptr;
-  sta::LibertyPort* candidate_input = nullptr;
-  sta::LibertyPort* candidate_output = nullptr;
-  if (!findCandidatePorts(target_stage.arc,
-                          candidate_cell,
-                          target_scene_cell,
-                          candidate_input,
-                          candidate_output)) {
+  if (candidate_cell == nullptr) {
+    return {.legal = false, .reason = FailReason::kMissingCandidatePort};
+  }
+  sta::LibertyCell* candidate_scene_cell
+      = const_cast<sta::LibertyCell*>(candidate_cell)
+            ->sceneCell(target_stage.arc.scene, target_stage.arc.min_max);
+  if (candidate_scene_cell == nullptr) {
+    return {.legal = false, .reason = FailReason::kMissingCandidatePort};
+  }
+  sta::LibertyPort* candidate_input = candidate_scene_cell->findLibertyPort(
+      target_stage.arc.inputPort()->name());
+  if (candidate_input == nullptr) {
     return {.legal = false, .reason = FailReason::kMissingCandidatePort};
   }
 
   const float current_target_input_cap
-      = selectedArcInputPort(target_stage.arc)->capacitance();
+      = target_stage.arc.inputPort()->capacitance();
   const float candidate_target_input_cap = candidate_input->capacitance();
   const float target_input_cap_delta
       = candidate_target_input_cap - current_target_input_cap;
@@ -492,10 +680,11 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
       candidate_total_delay += stage.current_delay;
       if (trace != nullptr) {
         trace->push_back({.path_index = stage.path_index,
-                          .cell = currentCell(stage.arc),
+                          .cell = stage.arc.currentCell(),
                           .input_slew = stage.input_slew,
                           .load_cap = stage.load_cap,
-                          .stage_delay = stage.current_delay});
+                          .stage_delay = stage.current_delay,
+                          .output_slew = stage.current_slew});
       }
       continue;
     }
@@ -508,7 +697,7 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
     const bool is_target = (stage_index == target_index);
     const bool is_fanin_neighbor = (stage_index == target_index - 1);
     const sta::LibertyCell* cell
-        = is_target ? candidate_cell : currentCell(stage.arc);
+        = is_target ? candidate_cell : stage.arc.currentCell();
     const float load_cap = is_fanin_neighbor
                                ? stage.load_cap + target_input_cap_delta
                                : stage.load_cap;
@@ -525,7 +714,8 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
       return {.legal = false, .reason = fail_reason};
     }
     candidate_total_delay += stage_delay;
-    propagated_slew = stage_slew;
+    propagated_slew
+        = estimateOutputSlew(stage, cell, input_slew, load_cap, stage_slew);
     has_propagated_slew = true;
 
     if (trace != nullptr) {
@@ -533,7 +723,8 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                         .cell = cell,
                         .input_slew = input_slew,
                         .load_cap = load_cap,
-                        .stage_delay = stage_delay});
+                        .stage_delay = stage_delay,
+                        .output_slew = propagated_slew});
     }
   }
 
