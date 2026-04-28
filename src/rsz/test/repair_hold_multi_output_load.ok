@@ -57,7 +57,7 @@ Path Type: min
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% | -28.672 | -31.828 | u_capture_con/D
-    final |       0 |       2 |            0 |   +18.9% |  16.822 |   0.000 | u_capture_con/D
+    final |       0 |       2 |            0 |   +18.9% |  16.515 |   0.000 | u_capture_con/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
@@ -69,19 +69,19 @@ Path Type: min
 ---------------------------------------------------------
    0.00    0.00 ^ u_launch/CLK (DFFHQNx1_ASAP7_75t_R)
   38.23   38.23 ^ u_launch/QN (DFFHQNx1_ASAP7_75t_R)
-  17.19   55.42 v u_fa/CON (FAx1_ASAP7_75t_R)
-  49.11  104.53 v hold1/Y (HB4xp67_ASAP7_75t_R)
-   0.06  104.59 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
-         104.59   data arrival time
+  17.09   55.32 v u_fa/CON (FAx1_ASAP7_75t_R)
+  48.93  104.25 v hold1/Y (HB4xp67_ASAP7_75t_R)
+   0.06  104.30 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
+         104.30   data arrival time
 
   80.00   80.00   min_delay
    0.00   80.00   clock reconvergence pessimism
-   7.77   87.77   library hold time
-          87.77   data required time
+   7.79   87.79   library hold time
+          87.79   data required time
 ---------------------------------------------------------
-          87.77   data required time
-        -104.59   data arrival time
+          87.79   data required time
+        -104.30   data arrival time
 ---------------------------------------------------------
-          16.82   slack (MET)
+          16.52   slack (MET)
 
 
