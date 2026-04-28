@@ -68,6 +68,7 @@ TESTS = [
     "repair_design3_verbose",
     "repair_design4",
     "repair_design5",
+    "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",
     "repair_fanout2",

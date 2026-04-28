@@ -20,6 +20,8 @@
 
 #include "color.h"
 #include "db_sta/dbSta.hh"
+#include "font_atlas.h"
+#include "glyph_cache.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "json_builder.h"
@@ -40,132 +42,10 @@ namespace web {
 
 namespace {
 
-constexpr int kBitmapGlyphWidth = 5;
-constexpr int kBitmapGlyphHeight = 7;
-constexpr int kBitmapGlyphSpacing = 1;
-
 constexpr float kPinMarkerSizeRatio = 0.02;
 constexpr int kMinPinMarkerSize = 8;
 constexpr int kMinPinNameSizePixels = 20;
-
-const unsigned char* getBitmapGlyph(const char ch)
-{
-  // Minimal 5x7 bitmap font. Each byte is one row, only the low 5 bits are
-  // used.
-  switch (ch) {
-    case '0': {
-      static constexpr unsigned char kGlyph[]
-          = {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
-      return kGlyph;
-    }
-    case '1': {
-      static constexpr unsigned char kGlyph[]
-          = {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
-      return kGlyph;
-    }
-    case '2': {
-      static constexpr unsigned char kGlyph[]
-          = {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
-      return kGlyph;
-    }
-    case '3': {
-      static constexpr unsigned char kGlyph[]
-          = {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
-      return kGlyph;
-    }
-    case '4': {
-      static constexpr unsigned char kGlyph[]
-          = {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
-      return kGlyph;
-    }
-    case '5': {
-      static constexpr unsigned char kGlyph[]
-          = {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
-      return kGlyph;
-    }
-    case '6': {
-      static constexpr unsigned char kGlyph[]
-          = {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
-      return kGlyph;
-    }
-    case '7': {
-      static constexpr unsigned char kGlyph[]
-          = {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
-      return kGlyph;
-    }
-    case '8': {
-      static constexpr unsigned char kGlyph[]
-          = {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
-      return kGlyph;
-    }
-    case '9': {
-      static constexpr unsigned char kGlyph[]
-          = {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
-      return kGlyph;
-    }
-    case '.': {
-      static constexpr unsigned char kGlyph[]
-          = {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
-      return kGlyph;
-    }
-    case '-': {
-      static constexpr unsigned char kGlyph[]
-          = {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
-      return kGlyph;
-    }
-    case '/': {
-      static constexpr unsigned char kGlyph[]
-          = {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
-      return kGlyph;
-    }
-    case '=': {
-      static constexpr unsigned char kGlyph[]
-          = {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
-      return kGlyph;
-    }
-      // clang-format off
-    case 'A': case 'a': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
-    case 'B': case 'b': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E}; return kG; }
-    case 'C': case 'c': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x10,0x10,0x11,0x0E}; return kG; }
-    case 'D': case 'd': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x11,0x11,0x11,0x1E}; return kG; }
-    case 'E': case 'e': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F}; return kG; }
-    case 'F': case 'f': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x10}; return kG; }
-    case 'G': case 'g': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x17,0x11,0x11,0x0F}; return kG; }
-    case 'H': case 'h': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
-    case 'I': case 'i': { static constexpr unsigned char kG[]={0x0E,0x04,0x04,0x04,0x04,0x04,0x0E}; return kG; }
-    case 'J': case 'j': { static constexpr unsigned char kG[]={0x07,0x02,0x02,0x02,0x02,0x12,0x0C}; return kG; }
-    case 'K': case 'k': { static constexpr unsigned char kG[]={0x11,0x12,0x14,0x18,0x14,0x12,0x11}; return kG; }
-    case 'L': case 'l': { static constexpr unsigned char kG[]={0x10,0x10,0x10,0x10,0x10,0x10,0x1F}; return kG; }
-    case 'M': case 'm': { static constexpr unsigned char kG[]={0x11,0x1B,0x15,0x15,0x11,0x11,0x11}; return kG; }
-    case 'N': case 'n': { static constexpr unsigned char kG[]={0x11,0x19,0x15,0x13,0x11,0x11,0x11}; return kG; }
-    case 'O': case 'o': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
-    case 'P': case 'p': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x10,0x10,0x10}; return kG; }
-    case 'Q': case 'q': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x15,0x12,0x0D}; return kG; }
-    case 'R': case 'r': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x14,0x12,0x11}; return kG; }
-    case 'S': case 's': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x0E,0x01,0x11,0x0E}; return kG; }
-    case 'T': case 't': { static constexpr unsigned char kG[]={0x1F,0x04,0x04,0x04,0x04,0x04,0x04}; return kG; }
-    case 'U': case 'u': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
-    case 'V': case 'v': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return kG; }
-    case 'W': case 'w': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return kG; }
-    case 'X': case 'x': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return kG; }
-    case 'Y': case 'y': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return kG; }
-    case 'Z': case 'z': { static constexpr unsigned char kG[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return kG; }
-    case '_': { static constexpr unsigned char kG[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return kG; }
-    case '[': { static constexpr unsigned char kG[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return kG; }
-    case ']': { static constexpr unsigned char kG[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return kG; }
-    // clang-format on
-    default:
-      return nullptr;
-  }
-}
-
-int getBitmapGlyphAdvance(const char ch)
-{
-  if (ch == ' ') {
-    return kBitmapGlyphWidth;
-  }
-  return kBitmapGlyphWidth + kBitmapGlyphSpacing;
-}
+constexpr int kPinLabelFontHeight = 14;  // pre-baked atlas size for pin labels
 
 }  // namespace
 
@@ -401,6 +281,7 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
   if (chip) {
     search_->setTopChip(chip);
   }
+  computePinLabelMargin();
 }
 
 TileGenerator::~TileGenerator() = default;
@@ -415,6 +296,29 @@ void TileGenerator::eagerInit()
   if (block) {
     search_->eagerInit(block);
   }
+  computePinLabelMargin();
+}
+
+void TileGenerator::computePinLabelMargin()
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    pin_label_margin_dbu_ = 0;
+    return;
+  }
+  const int pin_size = getPinMaxSize();
+  if (pin_size <= 0) {
+    pin_label_margin_dbu_ = 0;
+    return;
+  }
+  int max_text_px = 0;
+  const auto pin_font = fontAtlasGetFont(kPinLabelFontHeight);
+  for (odb::dbBTerm* term : block->getBTerms()) {
+    const int w = pin_font.textWidth(term->getName());
+    max_text_px = std::max(w, max_text_px);
+  }
+  const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
+  pin_label_margin_dbu_ = label_px * pin_size / kMinPinNameSizePixels;
 }
 
 bool TileGenerator::shapesReady() const
@@ -516,13 +420,11 @@ odb::Rect TileGenerator::getBounds() const
   odb::Rect bounds;
   if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
-    // Expand for pin markers that extend outside the die edge.
-    const int margin = getPinMaxSize();
-    if (margin > 0) {
-      bounds.set_xlo(bounds.xMin() - margin);
-      bounds.set_ylo(bounds.yMin() - margin);
-      bounds.set_xhi(bounds.xMax() + margin);
-      bounds.set_yhi(bounds.yMax() + margin);
+    if (pin_label_margin_dbu_ > 0) {
+      bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
+      bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
+      bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
+      bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
     }
   }
   return bounds;
@@ -903,6 +805,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                      kMinPinMarkerSize);
       const bool draw_pin_names
           = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
+      const auto pin_label_font = fontAtlasGetFont(kPinLabelFontHeight);
 
       // Marker templates (same as GUI renderThread.cpp).
       // Defined for "top edge" orientation; rotated per actual edge.
@@ -1029,10 +932,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             if (draw_pin_names) {
               const std::string name = term->getName();
               const odb::Point anchor_pt = xfm.getOffset();
-              constexpr int kTextScale = 2;
-              const int text_w = getBitmapTextWidth(name, kTextScale);
-              const int text_h = getBitmapTextHeight(kTextScale);
-              const int text_margin_px = kTextScale + 1;
+              const int text_w = getTextWidth(name, pin_label_font);
+              const int text_h = getTextHeight(pin_label_font);
+              const int text_margin_px = 3;
               const bool rotated = (arg_min == 2 || arg_min == 3);
 
               // For rotated text, width/height swap.
@@ -1046,20 +948,21 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   = static_cast<int>((anchor_pt.y() - dbu_tile.yMin()) * scale);
               const int anchor_py = 255 - anchor_py_raw;
 
-              // Position text beyond the marker, anchored per edge.
+              // Position text outward (away from die center), matching the GUI.
               const int marker_px = static_cast<int>(pin_max_size * scale);
               int px;
               int py;
-              if (arg_min == 0) {  // left — right-aligned, left of marker
+              if (arg_min == 0) {  // left — text to the left (outward)
                 px = anchor_px - marker_px - text_margin_px - text_w;
                 py = anchor_py - text_h / 2;
-              } else if (arg_min == 1) {  // right — left-aligned
+              } else if (arg_min == 1) {  // right — text to the right (outward)
                 px = anchor_px + marker_px + text_margin_px;
                 py = anchor_py - text_h / 2;
-              } else if (arg_min == 2) {  // top — rotated, above marker
+              } else if (arg_min
+                         == 2) {  // top — rotated, above marker (outward)
                 px = anchor_px - block_w / 2;
                 py = anchor_py - marker_px - text_margin_px - block_h;
-              } else {  // bottom — rotated, below marker
+              } else {  // bottom — rotated, below marker (outward)
                 px = anchor_px - block_w / 2;
                 py = anchor_py + marker_px + text_margin_px;
               }
@@ -1071,11 +974,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                        .b = marker_color.b,
                                        .a = 255};
                 if (rotated) {
-                  drawBitmapTextRotated(
-                      image_buffer, px, py, name, kTextScale, text_color);
+                  drawTextRotated(
+                      image_buffer, px, py, name, pin_label_font, text_color);
                 } else {
-                  drawBitmapText(
-                      image_buffer, px, py, name, kTextScale, text_color);
+                  drawText(
+                      image_buffer, px, py, name, pin_label_font, text_color);
                 }
               }
             }
@@ -1610,7 +1513,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
   const double scale = kTileSizeInPixel / tile_dbu_size;
   constexpr double kTextRectMargin = 0.8;
-  constexpr int kTextScale = 2;
+  constexpr int kHeatmapFontHeight = 14;
+  const auto heatmap_font = fontAtlasGetFont(kHeatmapFontHeight);
   const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
@@ -1635,8 +1539,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     }
 
     const std::string text = source.formatValue(map_point.value, false);
-    const int text_width = getBitmapTextWidth(text, kTextScale);
-    const int text_height = getBitmapTextHeight(kTextScale);
+    const int text_width = getTextWidth(text, heatmap_font);
+    const int text_height = getTextHeight(heatmap_font);
     const double rect_width = map_point.rect.dx() * scale;
     const double rect_height = map_point.rect.dy() * scale;
     if (text_width >= kTextRectMargin * rect_width
@@ -1655,12 +1559,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
 
     const int pixel_x = std::lround((center_x - dbu_tile.xMin()) * scale);
     const int pixel_y = 255 - std::lround((center_y - dbu_tile.yMin()) * scale);
-    drawBitmapText(image_buffer,
-                   pixel_x - text_width / 2,
-                   pixel_y - text_height / 2,
-                   text,
-                   kTextScale,
-                   text_color);
+    drawText(image_buffer,
+             pixel_x - text_width / 2,
+             pixel_y - text_height / 2,
+             text,
+             heatmap_font,
+             text_color);
   }
 
   std::vector<unsigned char> png_data;
@@ -2025,7 +1929,7 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
                             + "/" + std::to_string(y);
 
-  drawBitmapText(image, 4, 4, label, 3, yellow);
+  drawText(image, 4, 4, label, fontAtlasGetFont(20), yellow);
 }
 
 namespace {
@@ -2214,16 +2118,12 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         if (s->pen.color.a == 0 || s->text.empty()) {
           continue;
         }
-        // Approximate the requested font size with a bitmap-font scale.
-        // Each glyph is 5 DBU-independent px tall; pick scale so total
-        // height ≈ requested font size.
-        const int scale_px
-            = std::max(1, s->font.size / (kBitmapGlyphHeight / 2));
-        const int tw = getBitmapTextWidth(s->text, scale_px);
-        const int th = getBitmapTextHeight(scale_px);
+        const auto str_font = fontAtlasGetFont(std::max(10, s->font.size));
+        const int tw = getTextWidth(s->text, str_font);
+        const int th = getTextHeight(str_font);
         int ax = toPxX(s->x, dbu_tile, scale);
         int ay = toPxY(s->y, dbu_tile, scale);
-        // Adjust anchor: default bitmap text renders with top-left at (ax, ay).
+        // Adjust anchor: text renders with top-left at (ax, ay).
         switch (s->anchor) {
           case gui::Painter::kBottomLeft:
             ay -= th;
@@ -2258,9 +2158,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         }
         const Color pen = toTileColor(s->pen.color);
         if (s->rotate_90) {
-          drawBitmapTextRotated(image, ax, ay, s->text, scale_px, pen);
+          drawTextRotated(image, ax, ay, s->text, str_font, pen);
         } else {
-          drawBitmapText(image, ax, ay, s->text, scale_px, pen);
+          drawText(image, ax, ay, s->text, str_font, pen);
         }
       }
     }
@@ -2268,111 +2168,86 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
 }
 
 /* static */
-int TileGenerator::getBitmapTextWidth(const std::string_view text,
-                                      const int scale)
+int TileGenerator::getTextWidth(const std::string_view text,
+                                const GlyphCache::FontSize& font)
 {
-  if (text.empty()) {
-    return 0;
-  }
-
-  int width = 0;
-  for (const char ch : text) {
-    width += getBitmapGlyphAdvance(ch);
-  }
-
-  return (width - kBitmapGlyphSpacing) * scale;
+  return font.textWidth(text);
 }
 
 /* static */
-int TileGenerator::getBitmapTextHeight(const int scale)
+int TileGenerator::getTextHeight(const GlyphCache::FontSize& font)
 {
-  return kBitmapGlyphHeight * scale;
+  return font.cellHeight();
 }
 
 /* static */
-void TileGenerator::drawBitmapText(std::vector<unsigned char>& image,
-                                   const int x,
-                                   const int y,
-                                   const std::string_view text,
-                                   const int scale,
-                                   const Color& color)
+void TileGenerator::drawText(std::vector<unsigned char>& image,
+                             const int x,
+                             const int y,
+                             const std::string_view text,
+                             const GlyphCache::FontSize& font,
+                             const Color& color)
 {
   int cursor_x = x;
-  for (const char ch : text) {
-    if (ch == ' ') {
-      cursor_x += getBitmapGlyphAdvance(ch) * scale;
-      continue;
-    }
-
-    const unsigned char* glyph = getBitmapGlyph(ch);
-    if (glyph == nullptr) {
-      cursor_x += getBitmapGlyphAdvance(ch) * scale;
-      continue;
-    }
-
-    for (int row = 0; row < kBitmapGlyphHeight; ++row) {
-      const unsigned char bits = glyph[row];
-      for (int col = 0; col < kBitmapGlyphWidth; ++col) {
-        if ((bits & (0x10 >> col)) == 0) {
-          continue;
-        }
-        for (int sy = 0; sy < scale; ++sy) {
-          for (int sx = 0; sx < scale; ++sx) {
-            blendPixel(image,
-                       cursor_x + col * scale + sx,
-                       y + row * scale + sy,
-                       color);
+  for (size_t i = 0; i < text.size(); ++i) {
+    const auto gi = font.glyph(text[i]);
+    if (gi.alpha != nullptr) {
+      for (int row = 0; row < gi.bmp_height; ++row) {
+        for (int col = 0; col < gi.bmp_width; ++col) {
+          const unsigned char alpha_val = gi.alpha[row * gi.bmp_width + col];
+          if (alpha_val == 0) {
+            continue;
           }
+          Color src = color;
+          src.a = static_cast<unsigned char>(
+              (static_cast<int>(color.a) * alpha_val) / 255);
+          blendPixel(
+              image, cursor_x + gi.x_offset + col, y + gi.y_offset + row, src);
         }
       }
     }
-
-    cursor_x += getBitmapGlyphAdvance(ch) * scale;
+    cursor_x += gi.advance;
+    if (i + 1 < text.size()) {
+      cursor_x += font.kern(text[i], text[i + 1]);
+    }
   }
 }
 
 /* static */
-void TileGenerator::drawBitmapTextRotated(std::vector<unsigned char>& image,
-                                          const int x,
-                                          const int y,
-                                          const std::string_view text,
-                                          const int scale,
-                                          const Color& color)
+void TileGenerator::drawTextRotated(std::vector<unsigned char>& image,
+                                    const int x,
+                                    const int y,
+                                    const std::string_view text,
+                                    const GlyphCache::FontSize& font,
+                                    const Color& color)
 {
-  // 90° CW rotation: original (col, row) → (H-1-row, col)
-  // where H = kBitmapGlyphHeight.  Characters stack downward (y increasing).
+  // 90° CW rotation: characters stack downward (y increasing).
+  const int ch_h = font.cellHeight();
   int cursor_y = y;
-  for (const char ch : text) {
-    if (ch == ' ') {
-      cursor_y += getBitmapGlyphAdvance(ch) * scale;
-      continue;
-    }
-
-    const unsigned char* glyph = getBitmapGlyph(ch);
-    if (glyph == nullptr) {
-      cursor_y += getBitmapGlyphAdvance(ch) * scale;
-      continue;
-    }
-
-    // Rotated glyph: width = kBitmapGlyphHeight, height = kBitmapGlyphWidth
-    for (int row = 0; row < kBitmapGlyphHeight; ++row) {
-      const unsigned char bits = glyph[row];
-      for (int col = 0; col < kBitmapGlyphWidth; ++col) {
-        if ((bits & (0x10 >> col)) == 0) {
-          continue;
-        }
-        // 90° CW: (col, row) → screen (x + (H-1-row), cursor_y + col)
-        const int px = x + (kBitmapGlyphHeight - 1 - row) * scale;
-        const int py = cursor_y + col * scale;
-        for (int sy = 0; sy < scale; ++sy) {
-          for (int sx = 0; sx < scale; ++sx) {
-            blendPixel(image, px + sx, py + sy, color);
+  for (size_t i = 0; i < text.size(); ++i) {
+    const auto gi = font.glyph(text[i]);
+    if (gi.alpha != nullptr) {
+      for (int row = 0; row < gi.bmp_height; ++row) {
+        for (int col = 0; col < gi.bmp_width; ++col) {
+          const unsigned char alpha_val = gi.alpha[row * gi.bmp_width + col];
+          if (alpha_val == 0) {
+            continue;
           }
+          Color src = color;
+          src.a = static_cast<unsigned char>(
+              (static_cast<int>(color.a) * alpha_val) / 255);
+          // Rotate 90° CW: (x_off+col, y_off+row) → screen
+          //   (x + (H-1-(y_off+row)), cursor_y + x_off+col)
+          const int px = x + (ch_h - 1 - gi.y_offset - row);
+          const int py = cursor_y + gi.x_offset + col;
+          blendPixel(image, px, py, src);
         }
       }
     }
-
-    cursor_y += getBitmapGlyphAdvance(ch) * scale;
+    cursor_y += gi.advance;
+    if (i + 1 < text.size()) {
+      cursor_y += font.kern(text[i], text[i + 1]);
+    }
   }
 }
 
@@ -2842,6 +2717,9 @@ void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
   b.field("has_liberty", gen.hasSta());
   if (gen.getBlock()) {
     b.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+    b.field("block_name", gen.getBlock()->getName());
+  } else {
+    b.field("block_name", std::string());
   }
   b.endObject();
 }
