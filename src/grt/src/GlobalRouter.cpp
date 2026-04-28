@@ -496,6 +496,14 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
+    // Repopulate edge usage from routes_ using updateNetResources, which
+    // uses layer_edge_cost (essential to NDR nets).
+    for (const auto& [db_net, groute] : routes_) {
+      if (!isDetailedRouted(db_net)) {
+        Net* net = db_net_map_[db_net];
+        updateNetResources(net, false);
+      }
+    }
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
