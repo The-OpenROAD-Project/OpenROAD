@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",

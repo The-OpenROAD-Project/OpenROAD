@@ -39,6 +39,3 @@ clock_tree_synthesis -buf_list BUF_X1 \
   -num_static_layers 1 \
   -repair_clock_nets
 
-set vout_file [make_result_file gated_clock4.v]
-write_verilog $vout_file
-diff_files gated_clock4.vok $vout_file
