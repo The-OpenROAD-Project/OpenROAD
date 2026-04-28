@@ -32,6 +32,7 @@ void
 generate_ram_netlist_cmd(int mask_size,
                          int word_size,
                          int num_words,
+                         int column_mux_ratio,
                          const char* storage_cell_name,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
@@ -87,7 +88,7 @@ generate_ram_netlist_cmd(int mask_size,
     }
   }
 
-  ram_gen->generate(mask_size, word_size, num_words, read_ports,
+  ram_gen->generate(mask_size, word_size, num_words, column_mux_ratio, read_ports,
                     storage_cell, tristate_cell, inv_cell, tapcell,
                     max_tap_dist);
 }
@@ -96,7 +97,6 @@ void ram_pdngen(const char* power_pin, const char* ground_pin,
                 const char* route_name, int route_width, 
                 const char* ver_name, int ver_width, int ver_pitch,
                 const char* hor_name, int hor_width, int hor_pitch)
- 
 {
   RamGen* ram_gen = ord::getRamGen();
   ram_gen->ramPdngen(power_pin, ground_pin, 
@@ -133,4 +133,3 @@ void set_behavioral_verilog_filename(const char* filename)
 } //namespace_ram
 
 %} // inline
-
