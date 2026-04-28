@@ -36,5 +36,4 @@ diff_files make_8x8_latch_sky130.lefok $lef_file
 set def_file [make_result_file make_8x8_latch_sky130.def]
 write_def $def_file
 diff_files make_8x8_latch_sky130.defok $def_file
-
 diff_files make_8x8_behavioral.vok $behavioral_file
