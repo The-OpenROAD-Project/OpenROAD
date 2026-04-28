@@ -1175,7 +1175,6 @@ void RenderThread::drawChip(QPainter* painter,
 
   dbBlock* block = chip->getBlock();
   if (!block) {
-    painter->drawRect(0, 0, chip->getWidth(), chip->getHeight());
     return;
   }
 

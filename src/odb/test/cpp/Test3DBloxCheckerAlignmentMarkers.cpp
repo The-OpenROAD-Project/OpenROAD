@@ -28,8 +28,7 @@ class AlignmentMarkersFixture : public CheckerFixture
     marker_master_->setWidth(100);
     marker_master_->setHeight(100);
     marker_master_->setType(dbMasterType::CORE);
-    dbMTerm::create(
-        marker_master_, "pin", dbIoType::INOUT, dbSigType::SIGNAL);
+    dbMTerm::create(marker_master_, "pin", dbIoType::INOUT, dbSigType::SIGNAL);
     marker_master_->setFrozen();
     marker_master_->setAlignmentMarker(true);
   }
@@ -42,7 +41,10 @@ class AlignmentMarkersFixture : public CheckerFixture
     inst->setPlacementStatus(dbPlacementStatus::PLACED);
   }
 
-  // chip1 at z=[0,500], chip2 stacked on top at z=[500,1000].
+  // chip1 at z=[0,500], chip2 stacked on top at z=[500,1000], bonded via a
+  // dbChipConn between chip1's front region and chip2's back region. The
+  // alignment-marker check is connection-aware, so the connection is required
+  // for markers on the two chips to be compared.
   void stackChips()
   {
     auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
@@ -52,6 +54,12 @@ class AlignmentMarkersFixture : public CheckerFixture
     auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
     inst2->setLoc(Point3D(0, 0, 500));
     inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+    auto* ri1 = inst1->findChipRegionInst("r1_fr");
+    auto* ri2 = inst2->findChipRegionInst("r2_bk");
+    auto* conn
+        = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+    conn->setThickness(0);
   }
 
   dbLib* lib_;
@@ -130,6 +138,29 @@ TEST_F(AlignmentMarkersFixture, noMarkersPassIsNoOp)
   placeMarker(chip1_, "m1", 500, 500);
   placeMarker(chip2_, "m1", 999, 999);
   stackChips();
+  top_chip_->setAlignmentMarkerTolerance(10);
+
+  check();
+
+  EXPECT_EQ(getMarkers(alignment_markers_category).size(), 0);
+}
+
+TEST_F(AlignmentMarkersFixture, noConnectionNoCheck)
+{
+  // Two chip insts placed on top of each other but with no dbChipConn between
+  // them. The check is connection-aware, so mismatched markers must not be
+  // flagged.
+  placeMarker(chip1_, "m1", 500, 500);
+  placeMarker(chip2_, "m1", 900, 900);
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
   top_chip_->setAlignmentMarkerTolerance(10);
 
   check();

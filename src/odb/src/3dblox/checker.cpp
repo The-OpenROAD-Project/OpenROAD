@@ -116,19 +116,19 @@ using AlignmentViolationReporter
 void matchMarkersBetweenChips(
     const std::vector<AlignmentMarkerIndex::Value>& list_a,
     std::vector<AlignmentMarkerIndex::Value> list_b,
-    const UnfoldedChip& c_a,
-    const UnfoldedChip& c_b,
-    int64_t tolerance_dbu,
-    int64_t tol_sq,
+    const UnfoldedChip* c_a,
+    const UnfoldedChip* c_b,
+    uint tolerance_dbu,
     const AlignmentViolationReporter& report)
 {
+  const int64_t tol_sq = static_cast<int64_t>(tolerance_dbu) * tolerance_dbu;
   AlignmentMarkerIndex index_b(std::move(list_b));
 
   for (const auto& [pa, a_marker] : list_a) {
-    const Rect qbox(static_cast<int>(pa.x() - tolerance_dbu),
-                    static_cast<int>(pa.y() - tolerance_dbu),
-                    static_cast<int>(pa.x() + tolerance_dbu),
-                    static_cast<int>(pa.y() + tolerance_dbu));
+    const Rect qbox(pa.x() - tolerance_dbu,
+                    pa.y() - tolerance_dbu,
+                    pa.x() + tolerance_dbu,
+                    pa.y() + tolerance_dbu);
     auto candidates = index_b.query(qbox);
     std::erase_if(candidates, [&](const auto& v) {
       const int64_t dx = static_cast<int64_t>(v.first.x()) - pa.x();
@@ -142,7 +142,7 @@ void matchMarkersBetweenChips(
           fmt::format("Alignment marker on {} has no counterpart on {} within "
                       "tolerance",
                       a_marker->parent_chip->name,
-                      c_b.name));
+                      c_b->name));
     } else if (candidates.size() > 1) {
       report(
           *a_marker,
@@ -150,7 +150,10 @@ void matchMarkersBetweenChips(
                       "tolerance (ambiguous)",
                       a_marker->parent_chip->name,
                       candidates.size(),
-                      c_b.name));
+                      c_b->name));
+      for (const auto& candidate : candidates) {
+        index_b.remove(candidate);
+      }
     } else {
       index_b.remove(candidates.front());
     }
@@ -160,7 +163,7 @@ void matchMarkersBetweenChips(
            fmt::format("Alignment marker on {} has no counterpart on {} within "
                        "tolerance",
                        m->parent_chip->name,
-                       c_a.name));
+                       c_a->name));
   }
 }
 
@@ -412,14 +415,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     return;
   }
 
-  const int64_t tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
-  const int64_t tol_sq = tolerance_dbu * tolerance_dbu;
-
-  std::vector<int> sorted(chips.size());
-  std::iota(sorted.begin(), sorted.end(), 0);
-  std::ranges::sort(sorted, [&](int a, int b) {
-    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
-  });
+  const uint tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
 
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
@@ -428,8 +424,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
       cat = dbMarkerCategory::createOrReplace(top_cat, "Alignment Markers");
     }
     auto* marker = dbMarker::create(cat);
-    marker->addSource(m.inst);
-    marker->addSource(m.parent_chip->chip_inst_path.back());
+    // TODO: Add sources correctly
     Rect bbox = m.inst->getBBox()->getBox();
     m.parent_chip->transform.apply(bbox);
     marker->addShape(bbox);
@@ -437,34 +432,31 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     violation_count++;
   };
 
-  for (size_t i = 0; i < sorted.size(); ++i) {
-    const auto& c_a = chips[sorted[i]];
-    if (c_a.alignment_markers.empty()) {
+  for (const auto& conn : model->getConnections()) {
+    const UnfoldedRegion* ra = conn.top_region;
+    const UnfoldedRegion* rb = conn.bottom_region;
+    if (!ra || !rb) {
       continue;
     }
-    for (size_t j = i + 1; j < sorted.size(); ++j) {
-      const auto& c_b = chips[sorted[j]];
-      if (c_b.cuboid.xMin() >= c_a.cuboid.xMax()) {
-        break;
-      }
-      if (c_b.alignment_markers.empty()) {
-        continue;
-      }
-      if (!c_a.cuboid.intersects(c_b.cuboid)) {
-        continue;
-      }
-
-      const Rect overlap = c_a.cuboid.getEnclosingRect().intersect(
-          c_b.cuboid.getEnclosingRect());
-      auto list_a = collectMarkersInRect(c_a.alignment_markers, overlap);
-      auto list_b = collectMarkersInRect(c_b.alignment_markers, overlap);
-      if (list_a.empty() && list_b.empty()) {
-        continue;
-      }
-
-      matchMarkersBetweenChips(
-          list_a, std::move(list_b), c_a, c_b, tolerance_dbu, tol_sq, report);
+    const UnfoldedChip* c_a = ra->parent_chip;
+    const UnfoldedChip* c_b = rb->parent_chip;
+    if (c_a == c_b) {
+      continue;
     }
+    if (c_a->alignment_markers.empty() && c_b->alignment_markers.empty()) {
+      continue;
+    }
+
+    const Rect overlap = ra->cuboid.getEnclosingRect().intersect(
+        rb->cuboid.getEnclosingRect());
+    auto list_a = collectMarkersInRect(c_a->alignment_markers, overlap);
+    auto list_b = collectMarkersInRect(c_b->alignment_markers, overlap);
+    if (list_a.empty() && list_b.empty()) {
+      continue;
+    }
+
+    matchMarkersBetweenChips(
+        list_a, std::move(list_b), c_a, c_b, tolerance_dbu, report);
   }
 
   if (violation_count > 0) {

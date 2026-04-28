@@ -342,8 +342,8 @@ void ThreeDBlox::calculateSize(dbChip* chip)
   for (auto inst : chip->getChipInsts()) {
     cuboid.merge(inst->getCuboid());
   }
-  chip->setWidth(cuboid.dx());
-  chip->setHeight(cuboid.dy());
+  chip->setWidth(cuboid.xMax());
+  chip->setHeight(cuboid.yMax());
   chip->setThickness(cuboid.dz());
 }
 

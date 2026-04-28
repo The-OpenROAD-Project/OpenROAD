@@ -523,16 +523,14 @@ void OpenRoad::check3DBlox()
   checker.check();
 }
 
-void OpenRoad::setAlignmentMarkers(
-    const std::vector<std::string>& master_names,
-    double tolerance_um)
+void OpenRoad::setAlignmentMarkers(const std::vector<std::string>& master_names,
+                                   double tolerance_um)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip == nullptr) {
     logger_->error(utl::ORD, 77, "No design loaded.");
     return;
   }
-
   for (odb::dbLib* lib : db_->getLibs()) {
     for (odb::dbMaster* master : lib->getMasters()) {
       master->setAlignmentMarker(false);
@@ -557,10 +555,7 @@ void OpenRoad::setAlignmentMarkers(
     found->setAlignmentMarker(true);
   }
 
-  const int dbu_per_um = chip->getBlock()->getTech()->getDbUnitsPerMicron();
-  const double tol_dbu_d = tolerance_um * dbu_per_um;
-  const uint tol_dbu
-      = tol_dbu_d < 0.0 ? 0 : static_cast<uint>(tol_dbu_d + 0.5);
+  const uint tol_dbu = static_cast<uint>(tolerance_um * db_->getDbuPerMicron());
   chip->setAlignmentMarkerTolerance(tol_dbu);
 }
 
