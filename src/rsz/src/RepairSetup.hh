@@ -145,6 +145,12 @@ class RepairSetup : public sta::dbStaState
                          bool enable_wns_stagnation);
   // Reset the per-phase WNS-stagnation tracking state.
   void resetStagnationTracking();
+  // Sample WNS and return true when the WNS-stagnation gate fires.
+  bool wnsStagnated(int iteration,
+                    int endpt_index,
+                    int num_endpts,
+                    const char* phase_name,
+                    char phase_marker);
   // Emit the phase-level abort log if the WNS-stagnation gate fired.
   void wnsStagnationReport(int iteration) const;
   bool swapVTCritCells(const OptoParams& params, int& num_viols);

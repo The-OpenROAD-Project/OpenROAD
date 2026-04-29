@@ -1024,6 +1024,59 @@ void RepairSetup::wnsStagnationReport(const int iteration) const
       delayAsString(threshold, digits, sta_));
 }
 
+bool RepairSetup::wnsStagnated(const int iteration,
+                               const int endpt_index,
+                               const int num_endpts,
+                               const char* phase_name,
+                               const char phase_marker)
+{
+  // Sample every WNS pass so the ring advances at the same rate as the
+  // caller's inner loop.
+  best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
+  const bool ring_full = wns_stagnation_sample_count_ >= wns_stagnation_window_;
+  const sta::Slack window_start_wns
+      = ring_full ? wns_stagnation_samples_[wns_stagnation_sample_index_]
+                  : best_wns_;
+  wns_stagnation_samples_[wns_stagnation_sample_index_] = best_wns_;
+  wns_stagnation_sample_index_
+      = (wns_stagnation_sample_index_ + 1) % wns_stagnation_window_;
+  if (wns_stagnation_sample_count_ < wns_stagnation_window_) {
+    wns_stagnation_sample_count_++;
+  }
+
+  if (!ring_full || iteration <= wns_stagnation_warmup_iterations_
+      || iteration % opto_small_interval_ != 0) {
+    return false;
+  }
+
+  const sta::Slack improvement = best_wns_ - window_start_wns;
+  const float threshold
+      = std::max(wns_stagnation_abs_tol_,
+                 wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
+  if (improvement >= threshold) {
+    return false;
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             1,
+             "{}{} Phase: Exiting at iteration {} because WNS "
+             "best-so-far {} only improved {} over {} passes "
+             "(threshold {}) [endpoint {}/{}]",
+             phase_name,
+             phase_marker,
+             iteration,
+             delayAsString(best_wns_, 3, sta_),
+             delayAsString(improvement, 3, sta_),
+             wns_stagnation_window_,
+             delayAsString(threshold, 3, sta_),
+             endpt_index,
+             num_endpts);
+  wns_stagnation_tripped_ = true;
+  return true;
+}
+
 // Terminate progress if incremental fix rate within an opto interval falls
 // below the threshold.   Bump up the threshold after each large opto
 // interval.
@@ -1045,49 +1098,10 @@ bool RepairSetup::terminateProgress(const int iteration,
 {
   wns_stagnation_tripped_ = false;
 
-  if (enable_wns_stagnation) {
-    // Sample every WNS pass so the ring advances at the same rate as the
-    // caller's inner loop.
-    best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
-    const bool ring_full
-        = wns_stagnation_sample_count_ >= wns_stagnation_window_;
-    const sta::Slack window_start_wns
-        = ring_full ? wns_stagnation_samples_[wns_stagnation_sample_index_]
-                    : best_wns_;
-    wns_stagnation_samples_[wns_stagnation_sample_index_] = best_wns_;
-    wns_stagnation_sample_index_
-        = (wns_stagnation_sample_index_ + 1) % wns_stagnation_window_;
-    if (wns_stagnation_sample_count_ < wns_stagnation_window_) {
-      wns_stagnation_sample_count_++;
-    }
-
-    if (ring_full && iteration > wns_stagnation_warmup_iterations_
-        && iteration % opto_small_interval_ == 0) {
-      const sta::Slack improvement = best_wns_ - window_start_wns;
-      const float threshold
-          = std::max(wns_stagnation_abs_tol_,
-                     wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
-      if (improvement < threshold) {
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   1,
-                   "{}{} Phase: Exiting at iteration {} because WNS "
-                   "best-so-far {} only improved {} over {} passes "
-                   "(threshold {}) [endpoint {}/{}]",
-                   phase_name,
-                   phase_marker,
-                   iteration,
-                   delayAsString(best_wns_, 3, sta_),
-                   delayAsString(improvement, 3, sta_),
-                   wns_stagnation_window_,
-                   delayAsString(threshold, 3, sta_),
-                   endpt_index,
-                   num_endpts);
-        wns_stagnation_tripped_ = true;
-        return true;
-      }
-    }
+  if (enable_wns_stagnation
+      && wnsStagnated(
+          iteration, endpt_index, num_endpts, phase_name, phase_marker)) {
+    return true;
   }
 
   if (iteration % opto_large_interval_ == 0) {
