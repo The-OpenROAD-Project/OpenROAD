@@ -32,7 +32,6 @@ namespace rsz {
 // expression (simulateExpr / equivCellPins).  For each equivalent pair
 // the generator evaluates the arc delay under the current load cap and
 // input slew; if swapping improves delay, a candidate is produced.
-// Requests kArcDelayState from the prepare stage for prepared-target mode.
 class SwapPinsGenerator : public MoveGenerator
 {
  public:
@@ -41,10 +40,6 @@ class SwapPinsGenerator : public MoveGenerator
 
   // === MoveGenerator API ====================================================
   MoveType type() const override { return MoveType::kSwapPins; }
-  PrepareCacheMask prepareRequirements() const override
-  {
-    return kArcDelayStateCache;
-  }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
@@ -62,9 +57,7 @@ class SwapPinsGenerator : public MoveGenerator
                             const sta::Scene*& scene,
                             const sta::MinMax*& min_max) const;
   std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
-      const Target& target,
-      std::optional<float> load_cap_override,
-      float current_delay_override) const;
+      const Target& target) const;
   bool loadInputPort(const Target& target, sta::LibertyPort*& input_port) const;
   bool selectSwapPort(sta::Instance* drvr,
                       sta::LibertyPort* drvr_port,

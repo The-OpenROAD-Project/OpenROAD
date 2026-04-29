@@ -412,7 +412,7 @@ TEST_F(TestResizerMt, DmpSlewBiasContextBuildLeavesTimingUpdateUsable)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, SetupLegacyMtPolicyRejectsNegativeDelayEstimationLevels)
+TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
 {
   ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
   ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
@@ -424,11 +424,11 @@ TEST_F(TestResizerMt, SetupLegacyMtPolicyRejectsNegativeDelayEstimationLevels)
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  // Negative envar values are rejected by readEnvarNonNegativeInt.
-  EXPECT_THROW(policy.start(config), std::runtime_error);
+  // Negative envar values are clamped by the policy consumer.
+  EXPECT_NO_THROW(policy.start(config));
 }
 
-TEST_F(TestResizerMt, SetupMt1PolicyRejectsNegativeDelayEstimationLevels)
+TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
 {
   ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
   ScopedEnv max_moves("RSZ_VTSWAP_MAX_MOVES", "100");
@@ -441,8 +441,8 @@ TEST_F(TestResizerMt, SetupMt1PolicyRejectsNegativeDelayEstimationLevels)
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  // Negative envar values are rejected by readEnvarNonNegativeInt.
-  EXPECT_THROW(policy.start(config), std::runtime_error);
+  // Negative envar values are clamped by the policy consumer.
+  EXPECT_NO_THROW(policy.start(config));
 }
 
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)

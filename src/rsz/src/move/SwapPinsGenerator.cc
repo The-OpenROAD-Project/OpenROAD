@@ -5,9 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <limits>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -52,14 +50,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::generate(
     return {};
   }
 
-  if (!target.isPrepared(kArcDelayStateCache)) {
-    return buildCandidates(
-        target, std::nullopt, -std::numeric_limits<double>::infinity());
-  }
-
-  const DelayStageState& target_stage = target.arc_delay.value().target();
-  return buildCandidates(
-      target, target_stage.load_cap, target_stage.current_delay);
+  return buildCandidates(target);
 }
 
 bool SwapPinsGenerator::resolveDriverContext(const Target& target,
@@ -94,9 +85,7 @@ bool SwapPinsGenerator::resolveDriverContext(const Target& target,
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::buildCandidates(
-    const Target& target,
-    const std::optional<float> load_cap_override,
-    const float current_delay_override) const
+    const Target& target) const
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
   sta::Pin* drvr_pin = nullptr;
@@ -129,10 +118,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::buildCandidates(
     return candidates;
   }
 
-  const float load_cap = load_cap_override.has_value()
-                             ? *load_cap_override
-                             : resizer_.sta()->graphDelayCalc()->loadCap(
-                                   drvr_pin, scene, min_max);
+  const float load_cap
+      = resizer_.sta()->graphDelayCalc()->loadCap(drvr_pin, scene, min_max);
 
   sta::LibertyPort* input_port = nullptr;
   if (!loadInputPort(target, input_port)) {
@@ -154,10 +141,6 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::buildCandidates(
     return candidates;
   }
 
-  current_delay
-      = current_delay_override > -std::numeric_limits<float>::infinity()
-            ? current_delay_override
-            : current_delay;
   candidates.push_back(std::make_unique<SwapPinsCandidate>(resizer_,
                                                            target,
                                                            drvr,
