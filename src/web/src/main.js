@@ -361,6 +361,29 @@ function tclAppend(text, className) {
     app.tclOutputEl.scrollTop = app.tclOutputEl.scrollHeight;
 }
 
+// Browser UX for `exit`/`quit` typed in the Tcl console. The OpenROAD
+// process keeps running in the terminal — only the web session ends.
+// window.close() only succeeds when the tab was opened via JS (or via
+// certain launcher integrations); when it fails we replace the page with
+// a terminal overlay so the user knows the web_server stopped and they
+// can close the tab manually.
+function handleServerShutdown() {
+    // Suppress the normal "disconnected" banner — the disconnect is intentional.
+    if (app.websocketManager) {
+        app.websocketManager.onPush = () => {};
+    }
+    const overlay = document.createElement('div');
+    overlay.style.cssText =
+        'position:fixed;inset:0;z-index:99999;background:#1e1e1e;color:#ddd;' +
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'font-family:system-ui,sans-serif;font-size:16px;padding:24px;text-align:center;';
+    overlay.innerHTML =
+        '<div style="font-size:22px;margin-bottom:12px;">Web session closed</div>' +
+        '<div style="opacity:0.7;">OpenROAD is still running in the terminal. You can close this tab.</div>';
+    document.body.appendChild(overlay);
+    setTimeout(() => { try { window.close(); } catch (e) { /* ignore */ } }, 400);
+}
+
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
@@ -395,6 +418,9 @@ function createTclConsole(container) {
                     if (data.result) {
                         tclAppend(data.result + '\n',
                                   data.is_error ? 'tcl-error' : '');
+                    }
+                    if (data.action === 'shutdown') {
+                        handleServerShutdown();
                     }
                 })
                 .catch(err => tclAppend(`Error: ${err}\n`, 'tcl-error'));

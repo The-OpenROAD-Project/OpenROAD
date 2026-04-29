@@ -135,6 +135,12 @@ void WebServer::serve(int port)
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
+    // The Tcl handler calls this when the browser sends `exit`/`quit`.
+    // Use requestStop() (not stop()) so waitForStop() on the main thread
+    // wakes up and tears down the server itself; calling stop() directly
+    // from the worker would leave the main thread blocked on stop_cv_,
+    // and the Tcl prompt would never resume reading stdin.
+    tcl_eval->close_session = [this] { requestStop(); };
 
     // Override Tcl's `exit` so a user typing `exit` in the browser tcl
     // widget doesn't run Tcl_Exit on the worker thread (which triggers
@@ -229,6 +235,28 @@ void WebServer::serve(int port)
   }
 }
 
+void WebServer::stopAndJoinIoThreads()
+{
+  if (ioc_) {
+    ioc_->stop();
+  }
+  const auto self_id = std::this_thread::get_id();
+  for (auto& t : threads_) {
+    if (!t.joinable()) {
+      continue;
+    }
+    if (t.get_id() == self_id) {
+      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
+      // worker so detaching is safe — the thread runs to completion on
+      // its own.
+      t.detach();
+    } else {
+      t.join();
+    }
+  }
+  threads_.clear();
+}
+
 void WebServer::waitForStop()
 {
   std::unique_lock<std::mutex> lock(stop_mutex_);
@@ -304,18 +332,21 @@ void WebServer::stop()
     shutdown_listener_();
     shutdown_listener_ = {};
   }
-  if (ioc_) {
-    ioc_->stop();
-  }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
+  stopAndJoinIoThreads();
+  // Release without destroying — destroying io_context can crash on
+  // residual async handlers. Leak is bounded (at most one io_context
+  // per serve/stop cycle).
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
   generator_.reset();
+  // Remove the log sink before destroying viewer_hook_ — the sink
+  // stores a raw pointer into it and the CLI thread may emit a log
+  // line at any moment.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   viewer_hook_.reset();
+  logger_->info(utl::WEB, 41, "Web session closed.");
 }
 
 }  // namespace web
