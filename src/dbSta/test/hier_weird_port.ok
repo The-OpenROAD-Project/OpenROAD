@@ -22,4 +22,4 @@ modinst 'u_sub' master 'sub':
   head modbterm: 'path\/with\/slash'
 --- pin-direction on u_sub ---
   u_sub/out dir=output
-  u_sub/slash dir=input
+  u_sub/path/with/slash dir=input

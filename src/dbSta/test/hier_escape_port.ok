@@ -6,7 +6,9 @@ module top (clk);
  wire net_c;
  wire net_b;
 
- child h1 (.clk(clk));
+ child h1 (.clk(clk),
+    .\pathA/midB/leaf (net_b),
+    .\pathA/midC/leaf (net_c));
 endmodule
 module child (clk,
     \pathA/midB/leaf ,
@@ -15,8 +17,6 @@ module child (clk,
  output \pathA/midB/leaf ;
  output \pathA/midC/leaf ;
 
- wire \pathA/midC/leaf ;
- wire \pathA/midB/leaf ;
 
  DFF_X1 ff_b (.CK(clk),
     .Q(\pathA/midB/leaf ));
