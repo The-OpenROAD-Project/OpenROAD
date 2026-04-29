@@ -54,7 +54,6 @@ proc detailed_placement { args } {
       $file_name [info exists flags(-incremental)] \
       [info exists flags(-use_negotiation)] \
       [info exists flags(-abacus)]
-    dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
   }

@@ -367,6 +367,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
         pct(overhead));
   }
 
+  total_moves_ += moves_count;
   logger_->report(
       "Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
   if (opendp_->iterative_debug_ && debug_observer_) {
