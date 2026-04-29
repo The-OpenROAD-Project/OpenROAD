@@ -41,6 +41,44 @@ using utl::RCX;
 
 namespace rcx {
 
+namespace {
+
+template <typename T>
+bool compareDbObjectsByNameAndId(T* lhs, T* rhs)
+{
+  const int name_cmp = std::strcmp(lhs->getConstName(), rhs->getConstName());
+  if (name_cmp != 0) {
+    return name_cmp < 0;
+  }
+  return lhs->getId() < rhs->getId();
+}
+
+std::vector<dbNet*> getSortedNets(dbBlock* block)
+{
+  auto nets = block->getNets();
+  std::vector<dbNet*> sorted_nets(nets.begin(), nets.end());
+  std::ranges::sort(sorted_nets, compareDbObjectsByNameAndId<dbNet>);
+  return sorted_nets;
+}
+
+std::vector<dbInst*> getSortedInsts(dbBlock* block)
+{
+  auto insts = block->getInsts();
+  std::vector<dbInst*> sorted_insts(insts.begin(), insts.end());
+  std::ranges::sort(sorted_insts, compareDbObjectsByNameAndId<dbInst>);
+  return sorted_insts;
+}
+
+std::vector<odb::dbBTerm*> getSortedBTerms(dbBlock* block)
+{
+  auto bterms = block->getBTerms();
+  std::vector<odb::dbBTerm*> sorted_bterms(bterms.begin(), bterms.end());
+  std::ranges::sort(sorted_bterms, compareDbObjectsByNameAndId<odb::dbBTerm>);
+  return sorted_bterms;
+}
+
+}  // namespace
+
 class extMain;
 
 extSpef::extSpef(odb::dbTech* tech,
@@ -922,7 +960,10 @@ class compareCC
       if (net1 != net2) {
         return (net1 < net2);
       }
-      return (id1 < id2);
+      if (id1 != id2) {
+        return (id1 < id2);
+      }
+      return cc1->getId() < cc2->getId();
     }
   }
 };
@@ -1275,7 +1316,7 @@ void extSpef::writeBlockPorts()
   if (_partial && !_btermFound) {
     return;
   }
-  dbSet<odb::dbBTerm> bterms = _block->getBTerms();
+  const auto bterms = getSortedBTerms(_block);
   if (!bterms.empty()) {
     writeKeyword("\n*PORTS");
   }
@@ -1358,7 +1399,9 @@ const char* extSpef::tinkerSpefName(const char* iname)
 void extSpef::writeNetMap(dbSet<dbNet>& nets)
 {
   _btermFound = false;
-  for (dbNet* net : nets) {
+  std::vector<dbNet*> sorted_nets(nets.begin(), nets.end());
+  std::ranges::sort(sorted_nets, compareDbObjectsByNameAndId<dbNet>);
+  for (dbNet* net : sorted_nets) {
     if (net->getSigType().isSupply()) {
       continue;
     }
@@ -1389,7 +1432,7 @@ void extSpef::writeNetMap(dbSet<dbNet>& nets)
       }
     }
   }
-  for (dbNet* net : nets) {
+  for (dbNet* net : sorted_nets) {
     if (net->getSigType().isSupply()) {
       continue;
     }
@@ -1408,7 +1451,7 @@ void extSpef::writeNetMap(dbSet<dbNet>& nets)
 
 void extSpef::writeInstMap()
 {
-  for (dbInst* inst : _block->getInsts()) {
+  for (dbInst* inst : getSortedInsts(_block)) {
     // for flat block won't make any difference!!!
     if (inst->getChild() != nullptr) {
       continue;
@@ -1564,7 +1607,7 @@ void extSpef::writeBlock(const char* nodeCoord,
 
   uint32_t cnt = 0;
 
-  for (dbNet* net : _block->getNets()) {
+  for (dbNet* net : getSortedNets(_block)) {
     if (!tnets.empty() && !net->isMarked()) {
       if (!_incrPlusCcNets || net->getCcCount() == 0) {
         continue;
@@ -1602,7 +1645,7 @@ void extSpef::write_spef_nets(const bool flatten, const bool parallel)
 
   uint32_t cnt = 0;
 
-  for (dbNet* net : _block->getNets()) {
+  for (dbNet* net : getSortedNets(_block)) {
     const dbSigType type = net->getSigType();
     if (type.isSupply()) {
       continue;

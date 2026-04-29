@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
@@ -26,10 +27,15 @@ class SessionRegistry
 {
  public:
   using SendFn = std::function<void(const std::string& json)>;
+  // Sends JSON and invokes the callback after the session write completes.
+  using SendAndWaitFn
+      = std::function<void(const std::string& json, std::function<void()>)>;
+  using WaitInterruptFn = std::function<bool()>;
 
   // Register a send callback.  Returns a token the caller must pass to
-  // remove() during teardown.
-  std::size_t add(SendFn send);
+  // remove() during teardown.  The optional SendAndWaitFn lets
+  // broadcastAndWait() wait until a write has completed.
+  std::size_t add(SendFn send, SendAndWaitFn send_and_wait = {});
   void remove(std::size_t token);
 
   // True if at least one session is registered.
@@ -37,16 +43,31 @@ class SessionRegistry
 
   // Block until at least one client connects (or timeout expires).
   // Returns true if a client is connected, false on timeout.
-  bool waitForClient(int timeout_seconds);
+  bool waitForClient(int timeout_seconds, const WaitInterruptFn& interrupted);
+
+  // Wake threads blocked in waitForClient() so they can observe an
+  // interrupt predicate change.
+  void notifyClientWaiters();
 
   // Deliver the JSON string to every currently-registered session.
   void broadcast(const std::string& json);
 
+  // Like broadcast(), but waits until every fenceable session has completed
+  // the queued write (or timeout expires).
+  bool broadcastAndWait(const std::string& json,
+                        std::chrono::milliseconds timeout);
+
  private:
+  struct SessionCallbacks
+  {
+    SendFn send;
+    SendAndWaitFn send_and_wait;  // may be empty for legacy callers
+  };
+
   mutable std::mutex mutex_;
   mutable std::condition_variable client_cv_;
   std::size_t next_token_ = 1;
-  std::unordered_map<std::size_t, SendFn> senders_;
+  std::unordered_map<std::size_t, SessionCallbacks> senders_;
 };
 
 // The web viewer's bridge to gui::Gui.  Installed as the Gui's
@@ -64,6 +85,9 @@ class WebViewerHook : public gui::HeadlessViewer
   ~WebViewerHook() override;
 
   SessionRegistry& sessions() { return sessions_; }
+
+  // Flush accumulated log output to all connected clients.
+  void drainLogs();
 
   // --- gui::HeadlessViewer ---
   void redraw() override;
@@ -100,7 +124,11 @@ class WebViewerHook : public gui::HeadlessViewer
   // Atomic so isPaused() (called per-tile on 32 I/O threads) avoids
   // acquiring pause_mutex_ on the hot path.
   std::atomic<bool> paused_{false};
+  std::atomic<bool> client_wait_interrupted_{false};
   bool released_ = false;  // true once continueExecution() or dtor fires
+  // Single-caller invariant: Gui::pause() drives one debug thread at a time.
+  bool in_pause_ = false;  // true while pause() is executing (any path)
+  std::condition_variable done_cv_;  // signaled when in_pause_ goes false
 
   mutable std::mutex charts_mutex_;
   std::vector<std::unique_ptr<WebChart>> charts_;

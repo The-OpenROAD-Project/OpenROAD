@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  snl_ff2x1
+  snl_invx2
+  snl_lenqnx1
+  snl_lqx1
+  snl_mux21x1
+  snl_nand02x1
+  snl_nand02x2
+  snl_oa012x1
+  snl_or02x1
+  snl_tbufx1
+  snl_xor2x1
+Warning: There is 1 input port missing set_input_delay.
+  in1
+Warning: There is 1 output port missing set_output_delay.
+  out1
+Warning: There is 1 unconstrained endpoint.
+  out1
+modinst 'u_sub' master 'sub':
+  head modbterm: 'path\/with\/slash'
+--- pin-direction on u_sub ---
+  u_sub/out dir=output
+  u_sub/path/with/slash dir=input

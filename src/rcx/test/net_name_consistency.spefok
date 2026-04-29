@@ -1,9 +1,9 @@
 *SPEF "ieee 1481-1999"
 *DESIGN "top"
-*DATE "22:32:56 Thursday March 26, 2026"
+*DATE "00:32:25 Monday March 30, 2026"
 *VENDOR "The OpenROAD Project"
 *PROGRAM "OpenROAD"
-*VERSION "26Q1-2587-g305aac2da5"
+*VERSION "26Q1-2760-g03ca1c9590"
 *DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
 *DIVIDER /
 *DELIMITER :
@@ -14,16 +14,27 @@
 *L_UNIT 1 HENRY
 
 *NAME_MAP
+*6 b/net2
 *1 mid
 *2 w0
 *5 w1
-*6 b/net2
+*13 b/buf0_1
 *8 b/leaf
+*14 b/leaf_2
 *10 leaf
 *11 load0
 *12 load1
-*13 b/buf0_1
-*14 b/leaf_2
+
+*D_NET *6 0.000182014
+*CONN
+*I *8:A I *D INV_X1
+*I *14:Z O *D LOGIC0_X1
+*CAP
+1 *8:A 9.10068e-05
+2 *14:Z 9.10068e-05
+*RES
+1 *14:Z *8:A 30.4286 
+*END
 
 *D_NET *2 8.26554e-05
 *CONN
@@ -52,15 +63,4 @@
 3 *2:8 *12:A 3.1343e-05
 *RES
 1 *13:Z *12:A 17.6964 
-*END
-
-*D_NET *6 0.000182014
-*CONN
-*I *8:A I *D INV_X1
-*I *14:Z O *D LOGIC0_X1
-*CAP
-1 *8:A 9.10068e-05
-2 *14:Z 9.10068e-05
-*RES
-1 *14:Z *8:A 30.4286 
 *END

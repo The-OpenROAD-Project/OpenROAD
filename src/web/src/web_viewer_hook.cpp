@@ -30,13 +30,17 @@ constexpr auto kMaxPauseTimeout = std::chrono::minutes(10);
 // SessionRegistry
 //------------------------------------------------------------------------------
 
-std::size_t SessionRegistry::add(SendFn send)
+std::size_t SessionRegistry::add(SendFn send, SendAndWaitFn send_and_wait)
 {
   std::size_t token;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     token = next_token_++;
-    senders_.emplace(token, std::move(send));
+    senders_.emplace(token,
+                     SessionCallbacks{
+                         .send = std::move(send),
+                         .send_and_wait = std::move(send_and_wait),
+                     });
   }
   client_cv_.notify_all();
   return token;
@@ -54,32 +58,98 @@ bool SessionRegistry::hasClients() const
   return !senders_.empty();
 }
 
-bool SessionRegistry::waitForClient(int timeout_seconds)
+bool SessionRegistry::waitForClient(int timeout_seconds,
+                                    const WaitInterruptFn& interrupted)
 {
   std::unique_lock<std::mutex> lock(mutex_);
   if (!senders_.empty()) {
     return true;
   }
-  return client_cv_.wait_for(lock,
-                             std::chrono::seconds(timeout_seconds),
-                             [this]() { return !senders_.empty(); });
+  const auto ready = [this, &interrupted]() {
+    return !senders_.empty() || (interrupted && interrupted());
+  };
+  client_cv_.wait_for(lock, std::chrono::seconds(timeout_seconds), ready);
+  return !senders_.empty();
+}
+
+void SessionRegistry::notifyClientWaiters()
+{
+  client_cv_.notify_all();
 }
 
 void SessionRegistry::broadcast(const std::string& json)
 {
-  // Copy the senders out under the lock so we don't hold it while
-  // invoking callbacks (which may take session-level locks of their own).
-  std::vector<SendFn> to_send;
+  // Copy the callbacks out under the lock so we don't hold it while
+  // invoking them (which may take session-level locks of their own).
+  std::vector<SessionCallbacks> to_send;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     to_send.reserve(senders_.size());
-    for (const auto& [_, fn] : senders_) {
-      to_send.push_back(fn);
+    for (const auto& [_, cb] : senders_) {
+      to_send.push_back(cb);
     }
   }
-  for (const auto& fn : to_send) {
-    fn(json);
+  for (const auto& cb : to_send) {
+    cb.send(json);
   }
+}
+
+bool SessionRegistry::broadcastAndWait(const std::string& json,
+                                       std::chrono::milliseconds timeout)
+{
+  // Copy the callbacks out under the lock.
+  std::vector<SessionCallbacks> to_send;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    to_send.reserve(senders_.size());
+    for (const auto& [_, cb] : senders_) {
+      to_send.push_back(cb);
+    }
+  }
+
+  // Count sessions that support write-completion fencing.
+  std::size_t fence_count = 0;
+  for (const auto& cb : to_send) {
+    if (cb.send_and_wait) {
+      ++fence_count;
+    }
+  }
+
+  if (fence_count == 0) {
+    // No fenceable sessions — fire-and-forget like broadcast().
+    for (const auto& cb : to_send) {
+      cb.send(json);
+    }
+    return true;
+  }
+
+  // Shared state for the fence: each session's SendAndWaitFn decrements
+  // the counter and notifies when all writes have completed.
+  struct FenceState
+  {
+    std::mutex mutex;
+    std::condition_variable cv;
+    std::size_t remaining;
+  };
+  auto state = std::make_shared<FenceState>();
+  state->remaining = fence_count;
+
+  for (const auto& cb : to_send) {
+    if (cb.send_and_wait) {
+      cb.send_and_wait(json, [state]() {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        if (--state->remaining == 0) {
+          state->cv.notify_one();
+        }
+      });
+    } else {
+      cb.send(json);
+    }
+  }
+
+  std::unique_lock<std::mutex> lock(state->mutex);
+  return state->cv.wait_for(
+      lock, timeout, [&state]() { return state->remaining == 0; });
 }
 
 //------------------------------------------------------------------------------
@@ -91,13 +161,16 @@ WebViewerHook::WebViewerHook() = default;
 WebViewerHook::~WebViewerHook()
 {
   // If the placer is currently paused in a call into this hook, make sure
-  // it unblocks before we're destroyed.
-  {
-    std::lock_guard<std::mutex> lock(pause_mutex_);
-    released_ = true;
-    paused_ = false;
-  }
+  // it unblocks and finishes all member access before we're destroyed.
+  std::unique_lock<std::mutex> lock(pause_mutex_);
+  released_ = true;
+  client_wait_interrupted_.store(true);
+  paused_ = false;
+  sessions_.notifyClientWaiters();
   pause_cv_.notify_all();
+  // Wait for pause() to fully exit (including any unlocked broadcasts).
+  // done_cv_.wait releases the lock, allowing the pause thread to proceed.
+  done_cv_.wait(lock, [this]() { return !in_pause_; });
 }
 
 void WebViewerHook::redraw()
@@ -117,10 +190,16 @@ void WebViewerHook::redraw()
 void WebViewerHook::pause(int timeout_ms)
 {
   std::unique_lock<std::mutex> lock(pause_mutex_);
+  in_pause_ = true;
+
   if (released_) {
     released_ = false;  // reset for next call
+    client_wait_interrupted_.store(false);
+    in_pause_ = false;
+    done_cv_.notify_all();
     return;
   }
+  client_wait_interrupted_.store(false);
 
   // If no web clients are connected, wait briefly for one to appear.
   // This handles the common case where the placer starts before the
@@ -128,7 +207,14 @@ void WebViewerHook::pause(int timeout_ms)
   // skip the pause — there's nobody to click Continue.
   if (!sessions_.hasClients()) {
     lock.unlock();
-    if (!sessions_.waitForClient(kClientConnectTimeoutSeconds)) {
+    if (!sessions_.waitForClient(kClientConnectTimeoutSeconds, [this]() {
+          return client_wait_interrupted_.load();
+        })) {
+      lock.lock();
+      released_ = false;
+      client_wait_interrupted_.store(false);
+      in_pause_ = false;
+      done_cv_.notify_all();
       return;
     }
     lock.lock();
@@ -136,6 +222,9 @@ void WebViewerHook::pause(int timeout_ms)
     // while we were waiting.
     if (released_) {
       released_ = false;
+      client_wait_interrupted_.store(false);
+      in_pause_ = false;
+      done_cv_.notify_all();
       return;
     }
   }
@@ -167,11 +256,22 @@ void WebViewerHook::pause(int timeout_ms)
   lock.unlock();
 
   sessions_.broadcast(R"({"type":"debug_resumed"})");
+
+  lock.lock();
+  in_pause_ = false;
+  done_cv_.notify_all();
 }
 
 bool WebViewerHook::isPaused() const
 {
   return paused_.load(std::memory_order_acquire);
+}
+
+void WebViewerHook::drainLogs()
+{
+  if (drain_logs_) {
+    drain_logs_();
+  }
 }
 
 void WebViewerHook::setDrainLogsFn(DrainLogsFn fn)
@@ -184,7 +284,9 @@ void WebViewerHook::continueExecution()
   {
     std::lock_guard<std::mutex> lock(pause_mutex_);
     released_ = true;
+    client_wait_interrupted_.store(true);
   }
+  sessions_.notifyClientWaiters();
   pause_cv_.notify_all();
 }
 

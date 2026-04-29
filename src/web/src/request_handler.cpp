@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -33,6 +34,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "request_dispatcher.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 
@@ -497,12 +499,39 @@ static std::string buildHeatMapsPayloadLocked(SessionState& state)
   return builder.str();
 }
 
-//------------------------------------------------------------------------------
-// dispatch_request — handles BOUNDS, TECH, TILE
-//------------------------------------------------------------------------------
+WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
+                                               const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  JsonBuilder builder;
+  serializeBoundsResponse(builder, gen, gen.shapesReady());
+  const std::string& json = builder.str();
+  resp.payload.assign(json.begin(), json.end());
+  return resp;
+}
 
-WebSocketResponse dispatch_request(
-    const WebSocketRequest& req,
+WebSocketResponse TileHandler::serializeTech(const uint32_t id,
+                                             const TileGenerator& gen)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type = WebSocketResponse::kJson;
+  JsonBuilder builder;
+  serializeTechResponse(builder, gen);
+  const std::string& json = builder.str();
+  resp.payload.assign(json.begin(), json.end());
+  return resp;
+}
+
+WebSocketResponse TileHandler::renderTile(
+    const uint32_t id,
+    const std::string& layer,
+    const int z,
+    const int x,
+    const int y,
+    const TileVisibility& vis,
     const TileGenerator& gen,
     const std::vector<odb::Rect>& highlight_rects,
     const std::vector<odb::Polygon>& highlight_polys,
@@ -513,49 +542,20 @@ WebSocketResponse dispatch_request(
     const std::set<uint32_t>* route_guide_net_ids)
 {
   WebSocketResponse resp;
-  resp.id = req.id;
-
-  switch (req.type) {
-    case WebSocketRequest::kBounds: {
-      resp.type = 0;
-      JsonBuilder builder;
-      serializeBoundsResponse(builder, gen, gen.shapesReady());
-      const std::string& json = builder.str();
-      resp.payload.assign(json.begin(), json.end());
-      break;
-    }
-    case WebSocketRequest::kTech: {
-      resp.type = 0;
-      JsonBuilder builder;
-      serializeTechResponse(builder, gen);
-      const std::string& json = builder.str();
-      resp.payload.assign(json.begin(), json.end());
-      break;
-    }
-    case WebSocketRequest::kTile: {
-      resp.type = 1;
-      resp.payload = gen.generateTile(req.layer,
-                                      req.z,
-                                      req.x,
-                                      req.y,
-                                      req.vis,
-                                      highlight_rects,
-                                      highlight_polys,
-                                      colored_rects,
-                                      flight_lines,
-                                      module_colors,
-                                      focus_net_ids,
-                                      route_guide_net_ids);
-      break;
-    }
-    default: {
-      resp.type = 2;
-      const std::string err = "Unknown request type";
-      resp.payload.assign(err.begin(), err.end());
-      break;
-    }
-  }
-
+  resp.id = id;
+  resp.type = WebSocketResponse::kPng;
+  resp.payload = gen.generateTile(layer,
+                                  z,
+                                  x,
+                                  y,
+                                  vis,
+                                  highlight_rects,
+                                  highlight_polys,
+                                  colored_rects,
+                                  flight_lines,
+                                  module_colors,
+                                  focus_net_ids,
+                                  route_guide_net_ids);
   return resp;
 }
 
@@ -569,24 +569,81 @@ SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
 {
 }
 
+void SelectHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("select",
+        WebSocketRequest::kSelect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelect(req, state);
+        });
+  d.add("inspect",
+        WebSocketRequest::kInspect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspect(req, state);
+        });
+  d.add("inspect_back",
+        WebSocketRequest::kInspectBack,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleInspectBack(req, state);
+        });
+  d.add("hover",
+        WebSocketRequest::kHover,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleHover(req, state);
+        });
+  d.add("snap",
+        WebSocketRequest::kSnap,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSnap(req);
+        });
+  d.add("schematic_cone",
+        WebSocketRequest::kSchematicCone,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSchematicCone(req);
+        });
+  d.add("schematic_full",
+        WebSocketRequest::kSchematicFull,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSchematicFull(req);
+        });
+  d.add("schematic_inspect",
+        WebSocketRequest::kSchematicInspect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSchematicInspect(req, state);
+        });
+  d.add("set_focus_nets",
+        WebSocketRequest::kSetFocusNets,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetFocusNets(req, state);
+        });
+  d.add("set_route_guides",
+        WebSocketRequest::kSetRouteGuides,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetRouteGuides(req, state);
+        });
+}
+
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                                               SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   try {
-    auto results = gen_->selectAt(req.select_x,
-                                  req.select_y,
-                                  req.select_zoom,
-                                  req.vis,
-                                  req.visible_layers);
+    TileVisibility vis;
+    vis.parseFromJson(req.raw_json);
+    auto results
+        = gen_->selectAt(extract_int(req.raw_json, "dbu_x"),
+                         extract_int(req.raw_json, "dbu_y"),
+                         extract_int_or(req.raw_json, "zoom", 0),
+                         vis,
+                         extract_string_array(req.raw_json, "visible_layers"));
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
 
     // Build JSON response with selection and properties
-    resp.type = 0;
+    resp.type = WebSocketResponse::kJson;
     JsonBuilder builder;
     builder.beginObject();
     builder.beginArray("selected");
@@ -647,7 +704,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -662,10 +719,11 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   try {
     gui::Selected sel;
     {
+      const int select_id = extract_int(req.raw_json, "select_id");
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      if (req.select_id >= 0
-          && req.select_id < static_cast<int>(state.selectables.size())) {
-        sel = state.selectables[req.select_id];
+      if (select_id >= 0
+          && select_id < static_cast<int>(state.selectables.size())) {
+        sel = state.selectables[select_id];
       }
     }
 
@@ -689,7 +747,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       can_navigate_back = !state.navigation_history.empty();
     }
 
-    resp.type = 0;
+    resp.type = WebSocketResponse::kJson;
     JsonBuilder builder;
     builder.beginObject();
     std::vector<gui::Selected> new_selectables;
@@ -702,7 +760,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -737,7 +795,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
       can_navigate_back = !state.navigation_history.empty();
     }
 
-    resp.type = 0;
+    resp.type = WebSocketResponse::kJson;
     JsonBuilder builder;
     builder.beginObject();
     std::vector<gui::Selected> new_selectables;
@@ -750,7 +808,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -769,12 +827,13 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
 
-      if (req.select_id >= 0) {
+      const int select_id = extract_int(req.raw_json, "select_id");
+      if (select_id >= 0) {
         gui::Selected sel;
         {
           std::lock_guard<std::mutex> slock(state.selectables_mutex);
-          if (req.select_id < static_cast<int>(state.selectables.size())) {
-            sel = state.selectables[req.select_id];
+          if (select_id < static_cast<int>(state.selectables.size())) {
+            sel = state.selectables[select_id];
           }
         }
         if (sel) {
@@ -795,7 +854,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
       // select_id < 0 just clears hover_rects (mouseleave)
     }
 
-    resp.type = 0;
+    resp.type = WebSocketResponse::kJson;
     JsonBuilder builder;
     builder.beginObject();
     builder.field("ok", 1);
@@ -814,7 +873,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -826,19 +885,20 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const std::string action = extract_string(req.raw_json, "action");
+    const std::string net_name = extract_string(req.raw_json, "net_name");
     std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
-    if (req.focus_action == "clear") {
+    if (action == "clear") {
       state.focus_net_ids.clear();
     } else {
       odb::dbBlock* block = gen_->getBlock();
-      odb::dbNet* net
-          = block ? block->findNet(req.focus_net_name.c_str()) : nullptr;
+      odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
       if (net) {
-        if (req.focus_action == "add") {
+        if (action == "add") {
           state.focus_net_ids.insert(net->getId());
-        } else if (req.focus_action == "remove") {
+        } else if (action == "remove") {
           state.focus_net_ids.erase(net->getId());
         }
       }
@@ -848,7 +908,7 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
         = R"({"ok":1,"count":)" + std::to_string(count) + "}";
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -861,19 +921,20 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const std::string action = extract_string(req.raw_json, "action");
+    const std::string net_name = extract_string(req.raw_json, "net_name");
     std::lock_guard<std::mutex> lock(state.route_guides_mutex);
-    if (req.route_guide_action == "clear") {
+    if (action == "clear") {
       state.route_guide_net_ids.clear();
     } else {
       odb::dbBlock* block = gen_->getBlock();
-      odb::dbNet* net
-          = block ? block->findNet(req.route_guide_net_name.c_str()) : nullptr;
+      odb::dbNet* net = block ? block->findNet(net_name.c_str()) : nullptr;
       if (net) {
-        if (req.route_guide_action == "add") {
+        if (action == "add") {
           state.route_guide_net_ids.insert(net->getId());
-        } else if (req.route_guide_action == "remove") {
+        } else if (action == "remove") {
           state.route_guide_net_ids.erase(net->getId());
         }
       }
@@ -883,7 +944,7 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
         = R"({"ok":1,"count":)" + std::to_string(count) + "}";
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -894,16 +955,19 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
-    auto snap = gen_->snapAt(req.snap_x,
-                             req.snap_y,
-                             req.snap_radius,
-                             req.snap_point_threshold,
-                             req.snap_horizontal,
-                             req.snap_vertical,
-                             req.vis,
-                             req.visible_layers);
+    TileVisibility vis;
+    vis.parseFromJson(req.raw_json);
+    auto snap
+        = gen_->snapAt(extract_int(req.raw_json, "dbu_x"),
+                       extract_int(req.raw_json, "dbu_y"),
+                       extract_int(req.raw_json, "radius"),
+                       extract_int_or(req.raw_json, "point_threshold", 10),
+                       extract_int_or(req.raw_json, "horizontal", 1) != 0,
+                       extract_int_or(req.raw_json, "vertical", 1) != 0,
+                       vis,
+                       extract_string_array(req.raw_json, "visible_layers"));
     JsonBuilder builder;
     builder.beginObject();
     builder.field("found", snap.found);
@@ -925,7 +989,7 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("snap error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -948,22 +1012,22 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
-
-  // Limits to prevent fanout explosions (e.g. clock net at depth > 0).
+  resp.type = WebSocketResponse::kJson;
   static constexpr int kMaxConeInsts = 150;
   static constexpr int kMaxNetFanout = 30;
 
   try {
+    const std::string inst_name = extract_string(req.raw_json, "inst_name");
+    const int fanin_depth = extract_int_or(req.raw_json, "fanin_depth", 1);
+    const int fanout_depth = extract_int_or(req.raw_json, "fanout_depth", 1);
     odb::dbBlock* block = gen_->getBlock();
     if (!block) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* target_inst = block->findInst(req.schematic_inst_name.c_str());
+    odb::dbInst* target_inst = block->findInst(inst_name.c_str());
     if (!target_inst) {
-      throw std::runtime_error("Instance not found: "
-                               + req.schematic_inst_name);
+      throw std::runtime_error("Instance not found: " + inst_name);
     }
 
     std::set<odb::dbInst*> all_insts;
@@ -974,7 +1038,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     {
       std::vector<odb::dbInst*> level = {target_inst};
       std::set<odb::dbNet*> seen_nets;
-      for (int d = 0; d < req.schematic_fanin_depth && !cone_full; ++d) {
+      for (int d = 0; d < fanin_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
           for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -1016,7 +1080,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     {
       std::vector<odb::dbInst*> level = {target_inst};
       std::set<odb::dbNet*> seen_nets;
-      for (int d = 0; d < req.schematic_fanout_depth && !cone_full; ++d) {
+      for (int d = 0; d < fanout_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
           for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -1153,7 +1217,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1165,7 +1229,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
     odb::dbBlock* block = gen_->getBlock();
@@ -1261,7 +1325,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1274,18 +1338,18 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
+    const std::string inst_name = extract_string(req.raw_json, "inst_name");
     odb::dbBlock* block = gen_->getBlock();
     if (!block) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* inst = block->findInst(req.schematic_inst_name.c_str());
+    odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
-      throw std::runtime_error("Instance not found: "
-                               + req.schematic_inst_name);
+      throw std::runtime_error("Instance not found: " + inst_name);
     }
 
     gui::Selected sel = gui::DescriptorRegistry::instance()->makeSelected(inst);
@@ -1318,7 +1382,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1334,13 +1398,27 @@ TclHandler::TclHandler(std::shared_ptr<TclEvaluator> tcl_eval)
 {
 }
 
+void TclHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("tcl_eval",
+        WebSocketRequest::kTclEval,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleTclEval(req);
+        });
+  d.add("tcl_complete",
+        WebSocketRequest::kTclComplete,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleTclComplete(req);
+        });
+}
+
 WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
-    auto result = tcl_eval_->eval(req.tcl_cmd);
+    auto result = tcl_eval_->eval(extract_string(req.raw_json, "cmd"));
     JsonBuilder builder;
     builder.beginObject();
     builder.field("output", result.output);
@@ -1350,7 +1428,7 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1431,10 +1509,10 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
-    const std::string& line = req.tcl_complete_line;
-    int cursor_pos = req.tcl_complete_cursor_pos;
+    const std::string line = extract_string(req.raw_json, "line");
+    int cursor_pos = extract_int_or(req.raw_json, "cursor_pos", -1);
     if (cursor_pos < 0) {
       cursor_pos = static_cast<int>(line.size());
     }
@@ -1554,7 +1632,7 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1574,23 +1652,50 @@ TimingHandler::TimingHandler(std::shared_ptr<TileGenerator> gen,
 {
 }
 
+void TimingHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("timing_report",
+        WebSocketRequest::kTimingReport,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleTimingReport(req);
+        });
+  d.add("timing_highlight",
+        WebSocketRequest::kTimingHighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTimingHighlight(req, state);
+        });
+  d.add("slack_histogram",
+        WebSocketRequest::kSlackHistogram,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSlackHistogram(req);
+        });
+  d.add("chart_filters",
+        WebSocketRequest::kChartFilters,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleChartFilters(req);
+        });
+}
+
 WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto paths = timing_report_->getReport(req.timing_is_setup,
-                                           req.timing_max_paths,
-                                           req.timing_slack_min,
-                                           req.timing_slack_max);
+    auto paths = timing_report_->getReport(
+        extract_int_or(req.raw_json, "is_setup", 1),
+        extract_int_or(req.raw_json, "max_paths", 100),
+        extract_float_or(
+            req.raw_json, "slack_min", -std::numeric_limits<float>::max()),
+        extract_float_or(
+            req.raw_json, "slack_max", std::numeric_limits<float>::max()));
     JsonBuilder builder;
     serializeTimingPaths(builder, paths);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1603,22 +1708,24 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const int path_index = extract_int_or(req.raw_json, "path_index", -1);
+    const bool is_setup = extract_int_or(req.raw_json, "is_setup", 1);
+    const std::string pin_name = extract_string(req.raw_json, "pin_name");
     std::vector<ColoredRect> new_rects;
     std::vector<FlightLine> new_lines;
 
-    if (req.timing_path_index >= 0) {
+    if (path_index >= 0) {
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-      auto paths = timing_report_->getReport(req.timing_highlight_setup);
-      if (req.timing_path_index < static_cast<int>(paths.size())) {
+      auto paths = timing_report_->getReport(is_setup);
+      if (path_index < static_cast<int>(paths.size())) {
         odb::dbBlock* block = gen_->getBlock();
-        collectTimingPathShapes(
-            block, paths[req.timing_path_index], new_rects, new_lines);
+        collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
 
-        if (!req.timing_pin_name.empty()) {
+        if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          auto [iterm, bterm] = resolvePin(block, req.timing_pin_name);
+          auto [iterm, bterm] = resolvePin(block, pin_name);
 
           odb::dbNet* net = nullptr;
           if (iterm) {
@@ -1652,7 +1759,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
     const std::string json = "{\"ok\": true}";
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1664,17 +1771,19 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto histogram = timing_report_->getSlackHistogram(
-        req.histogram_is_setup, req.histogram_path_group, req.histogram_clock);
+        extract_int_or(req.raw_json, "is_setup", 1),
+        extract_string(req.raw_json, "path_group"),
+        extract_string(req.raw_json, "clock_name"));
     JsonBuilder builder;
     serializeSlackHistogram(builder, histogram);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1685,7 +1794,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto filters = timing_report_->getChartFilters();
@@ -1694,7 +1803,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1715,11 +1824,25 @@ ClockTreeHandler::ClockTreeHandler(
 {
 }
 
+void ClockTreeHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("clock_tree",
+        WebSocketRequest::kClockTree,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleClockTree(req);
+        });
+  d.add("clock_tree_highlight",
+        WebSocketRequest::kClockTreeHighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClockTreeHighlight(req, state);
+        });
+}
+
 WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto clocks = clock_report_->getReport();
@@ -1756,7 +1879,7 @@ WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1769,18 +1892,19 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const std::string inst_name = extract_string(req.raw_json, "inst_name");
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     state.highlight_rects.clear();
     state.highlight_polys.clear();
     state.timing_rects.clear();
     state.timing_lines.clear();
 
-    if (!req.clock_tree_inst_name.empty()) {
+    if (!inst_name.empty()) {
       odb::dbBlock* block = gen_->getBlock();
       if (block) {
-        odb::dbInst* inst = block->findInst(req.clock_tree_inst_name.c_str());
+        odb::dbInst* inst = block->findInst(inst_name.c_str());
         if (inst) {
           state.highlight_rects.push_back(inst->getBBox()->getBox());
         }
@@ -1790,7 +1914,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     const std::string json = "{\"ok\": true}";
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1804,6 +1928,55 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
 TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
     : gen_(std::move(gen))
 {
+}
+
+void TileHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("tile",
+        WebSocketRequest::kTile,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
+  d.add("bounds",
+        WebSocketRequest::kBounds,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
+  d.add("tech",
+        WebSocketRequest::kTech,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTile(req, state);
+        });
+  d.add("module_hierarchy",
+        WebSocketRequest::kModuleHierarchy,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleModuleHierarchy(req);
+        });
+  d.add("set_module_colors",
+        WebSocketRequest::kSetModuleColors,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetModuleColors(req, state);
+        });
+  d.add("heatmaps",
+        WebSocketRequest::kHeatmaps,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleHeatMaps(req, state);
+        });
+  d.add("set_active_heatmap",
+        WebSocketRequest::kSetActiveHeatmap,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetActiveHeatMap(req, state);
+        });
+  d.add("set_heatmap",
+        WebSocketRequest::kSetHeatmap,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetHeatMap(req, state);
+        });
+  d.add("heatmap_tile",
+        WebSocketRequest::kHeatmapTile,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleHeatMapTile(req, state);
+        });
 }
 
 void TileHandler::initializeHeatMaps(SessionState& state)
@@ -1820,10 +1993,29 @@ void TileHandler::initializeHeatMaps(SessionState& state)
 WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                           SessionState& state)
 {
+  switch (req.type) {
+    case WebSocketRequest::kBounds:
+      return serializeBounds(req.id, *gen_);
+    case WebSocketRequest::kTech:
+      return serializeTech(req.id, *gen_);
+    case WebSocketRequest::kTile:
+      break;
+    default: {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = WebSocketResponse::kError;
+      const std::string err = "Unknown request type";
+      resp.payload.assign(err.begin(), err.end());
+      return resp;
+    }
+  }
+
+  TileVisibility vis;
+  vis.parseFromJson(req.raw_json);
   // When debug renderers are active, instance positions change between
   // frames.  Re-derive highlight shapes from the current inspected
   // object so the selection tracks the moving instance.
-  if (req.vis.debug_renderers) {
+  if (vis.debug_renderers) {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     if (state.current_inspected) {
       collectHighlightShapes(state.current_inspected,
@@ -1882,15 +2074,20 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::set<uint32_t>* route_guide_ptr
       = route_guides.empty() ? nullptr : &route_guides;
 
-  return dispatch_request(req,
-                          *gen_,
-                          rects,
-                          polys,
-                          colored,
-                          lines,
-                          mod_ptr,
-                          focus_ptr,
-                          route_guide_ptr);
+  return renderTile(req.id,
+                    extract_string(req.raw_json, "layer"),
+                    extract_int(req.raw_json, "z"),
+                    extract_int(req.raw_json, "x"),
+                    extract_int(req.raw_json, "y"),
+                    vis,
+                    *gen_,
+                    rects,
+                    polys,
+                    colored,
+                    lines,
+                    mod_ptr,
+                    focus_ptr,
+                    route_guide_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(
@@ -1898,42 +2095,18 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     odb::dbBlock* block = gen_->getBlock();
     HierarchyReport report(block, gen_->getSta());
     auto result = report.getReport();
 
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("nodes");
-    for (const auto& n : result.nodes) {
-      builder.beginObject();
-      builder.field("id", n.id);
-      builder.field("parent_id", n.parent_id);
-      builder.field("inst_name", n.inst_name);
-      builder.field("module_name", n.module_name);
-      builder.field("insts", n.insts);
-      builder.field("macros", n.macros);
-      builder.field("modules", n.modules);
-      builder.field("area", n.area);
-      builder.field("local_insts", n.local_insts);
-      builder.field("local_macros", n.local_macros);
-      builder.field("local_modules", n.local_modules);
-      if (n.node_kind != HierarchyNodeKind::kModule) {
-        builder.field("node_kind", static_cast<int>(n.node_kind));
-      }
-      if (n.node_kind == HierarchyNodeKind::kModule) {
-        builder.field("odb_id", static_cast<int>(n.odb_id));
-      }
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeHierarchyResult(builder, result);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -1946,11 +2119,9 @@ WebSocketResponse TileHandler::handleSetModuleColors(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
-
-  // Parse compact format: "id:r,g,b,a;id:r,g,b,a;..."
+  resp.type = WebSocketResponse::kJson;
   std::map<uint32_t, Color> colors;
-  const std::string data = extract_string(req.vis.raw_json, "colors");
+  const std::string data = extract_string(req.raw_json, "colors");
   if (!data.empty()) {
     size_t pos = 0;
     while (pos < data.size()) {
@@ -1996,12 +2167,12 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2014,8 +2185,9 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const std::string name = extract_string(req.raw_json, "name");
     std::lock_guard<std::mutex> lock(state.heatmap_mutex);
     if (!state.active_heatmap.empty()) {
       auto current = state.heatmaps.find(state.active_heatmap);
@@ -2025,19 +2197,19 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     }
 
     state.active_heatmap.clear();
-    if (!req.heatmap_name.empty()) {
-      auto next = state.heatmaps.find(req.heatmap_name);
+    if (!name.empty()) {
+      auto next = state.heatmaps.find(name);
       if (next == state.heatmaps.end()) {
         throw std::runtime_error("invalid heat map");
       }
-      state.active_heatmap = req.heatmap_name;
+      state.active_heatmap = name;
       next->second->onShow();
     }
 
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2049,34 +2221,36 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
   try {
+    const std::string name = extract_string(req.raw_json, "name");
+    const std::string option = extract_string(req.raw_json, "option");
     std::lock_guard<std::mutex> lock(state.heatmap_mutex);
-    auto source_itr = state.heatmaps.find(req.heatmap_name);
+    auto source_itr = state.heatmaps.find(name);
     if (source_itr == state.heatmaps.end()) {
       throw std::runtime_error("invalid heat map");
     }
 
     auto& source = *source_itr->second;
-    if (req.heatmap_option == "rebuild") {
+    if (option == "rebuild") {
       source.destroyMap();
       source.ensureMap();
     } else {
       auto settings = source.getSettings();
-      auto setting_itr = settings.find(req.heatmap_option);
+      auto setting_itr = settings.find(option);
       if (setting_itr == settings.end()) {
         throw std::runtime_error("invalid heat map option");
       }
 
       const auto& current_value = setting_itr->second;
       if (std::holds_alternative<bool>(current_value)) {
-        settings[req.heatmap_option] = extract_bool_value(req.raw_json);
+        settings[option] = extract_bool_value(req.raw_json);
       } else if (std::holds_alternative<int>(current_value)) {
-        settings[req.heatmap_option] = extract_int(req.raw_json, "value");
+        settings[option] = extract_int(req.raw_json, "value");
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[req.heatmap_option] = extract_double_value(req.raw_json);
+        settings[option] = extract_double_value(req.raw_json);
       } else {
-        settings[req.heatmap_option] = req.heatmap_string_value;
+        settings[option] = extract_string(req.raw_json, "value");
       }
       source.setSettings(settings);
     }
@@ -2084,7 +2258,7 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2096,22 +2270,26 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 1;
+  resp.type = WebSocketResponse::kPng;
   try {
+    const std::string req_name = extract_string(req.raw_json, "name");
+    const int z = extract_int(req.raw_json, "z");
+    const int x = extract_int(req.raw_json, "x");
+    const int y = extract_int(req.raw_json, "y");
     std::shared_ptr<gui::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
       const std::string name
-          = req.heatmap_name.empty() ? state.active_heatmap : req.heatmap_name;
+          = req_name.empty() ? state.active_heatmap : req_name;
       auto source_itr = state.heatmaps.find(name);
       if (source_itr == state.heatmaps.end()) {
         throw std::runtime_error("invalid heat map");
       }
       source = source_itr->second;
     }
-    resp.payload = gen_->generateHeatMapTile(*source, req.z, req.x, req.y);
+    resp.payload = gen_->generateHeatMapTile(*source, z, x, y);
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2124,11 +2302,12 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
 
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
+    const std::string dir_str = extract_string(req.raw_json, "path");
     fs::path dir_path
-        = req.dir_path.empty() ? fs::current_path() : fs::path(req.dir_path);
+        = dir_str.empty() ? fs::current_path() : fs::path(dir_str);
     dir_path = fs::canonical(dir_path);
 
     struct Entry
@@ -2186,7 +2365,7 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("list_dir error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2200,6 +2379,40 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
 DRCHandler::DRCHandler(std::shared_ptr<TileGenerator> gen)
     : gen_(std::move(gen))
 {
+}
+
+void DRCHandler::registerRequests(RequestDispatcher& d)
+{
+  d.add("drc_categories",
+        WebSocketRequest::kDrcCategories,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleDRCCategories(req);
+        });
+  d.add("drc_markers",
+        WebSocketRequest::kDrcMarkers,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDRCMarkers(req, state);
+        });
+  d.add("drc_load_report",
+        WebSocketRequest::kDrcLoadReport,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDRCLoadReport(req, state);
+        });
+  d.add("drc_update_marker",
+        WebSocketRequest::kDrcUpdateMarker,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDRCUpdateMarker(req, state);
+        });
+  d.add("drc_update_category_visibility",
+        WebSocketRequest::kDrcUpdateCategoryVisibility,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDRCUpdateCategoryVisibility(req, state);
+        });
+  d.add("drc_highlight",
+        WebSocketRequest::kDrcHighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDRCHighlight(req, state);
+        });
 }
 
 std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
@@ -2351,7 +2564,7 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
     auto [block, chip] = getBlockAndChip();
@@ -2379,7 +2592,7 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_categories error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2485,12 +2698,12 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
     auto [block, chip] = getBlockAndChip();
 
-    const std::string& cat_name = req.drc_category_name;
+    const std::string cat_name = extract_string(req.raw_json, "category");
 
     // Update active category and overlay
     {
@@ -2525,7 +2738,7 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_markers error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2537,12 +2750,12 @@ WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
     auto [block, chip] = getBlockAndChip();
 
-    const std::string& path = req.drc_file_path;
+    const std::string path = extract_string(req.raw_json, "path");
     if (path.empty()) {
       throw std::runtime_error("No file path provided");
     }
@@ -2582,7 +2795,7 @@ WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_load_report error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2594,39 +2807,42 @@ WebSocketResponse DRCHandler::handleDRCUpdateMarker(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
+    const int marker_id = extract_int(req.raw_json, "marker_id");
+    const std::string field = extract_string(req.raw_json, "field");
+    const bool field_value = extract_int_or(req.raw_json, "value", 0) != 0;
     auto [block, chip] = getBlockAndChip();
 
-    odb::dbMarker* target = findMarkerById(state, chip, req.drc_marker_id);
+    odb::dbMarker* target = findMarkerById(state, chip, marker_id);
     if (!target) {
       throw std::runtime_error("Marker not found with id "
-                               + std::to_string(req.drc_marker_id));
+                               + std::to_string(marker_id));
     }
 
-    if (req.drc_field == "visited") {
-      target->setVisited(req.drc_field_value);
-    } else if (req.drc_field == "visible") {
-      target->setVisible(req.drc_field_value);
+    if (field == "visited") {
+      target->setVisited(field_value);
+    } else if (field == "visible") {
+      target->setVisible(field_value);
       std::lock_guard<std::mutex> lock(state.drc_mutex);
       refreshDRCOverlay(state);
     } else {
-      throw std::runtime_error("Unknown field: " + req.drc_field);
+      throw std::runtime_error("Unknown field: " + field);
     }
 
     JsonBuilder builder;
     builder.beginObject();
     builder.field("ok", 1);
-    builder.field("id", req.drc_marker_id);
-    builder.field("field", req.drc_field);
-    builder.field("value", req.drc_field_value);
+    builder.field("id", marker_id);
+    builder.field("field", field);
+    builder.field("value", field_value);
     builder.endObject();
 
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_update_marker error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
@@ -2639,21 +2855,23 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
+    const std::string cat_name = extract_string(req.raw_json, "category");
+    const bool visible = extract_int_or(req.raw_json, "visible", 1) != 0;
     auto [block, chip] = getBlockAndChip();
 
     std::lock_guard<std::mutex> lock(state.drc_mutex);
     odb::dbMarkerCategory* category
-        = chip->findMarkerCategory(req.drc_category_name.c_str());
+        = chip->findMarkerCategory(cat_name.c_str());
     if (!category) {
-      throw std::runtime_error("Category not found: " + req.drc_category_name);
+      throw std::runtime_error("Category not found: " + cat_name);
     }
 
     int count = 0;
     for (odb::dbMarker* marker : category->getAllMarkers()) {
-      marker->setVisible(req.drc_field_value);
+      marker->setVisible(visible);
       ++count;
     }
     refreshDRCOverlay(state);
@@ -2661,15 +2879,15 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
     JsonBuilder builder;
     builder.beginObject();
     builder.field("ok", 1);
-    builder.field("category", req.drc_category_name);
-    builder.field("visible", req.drc_field_value);
+    builder.field("category", cat_name);
+    builder.field("visible", visible);
     builder.field("count", count);
     builder.endObject();
 
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err
         = std::string("drc_update_category_visibility error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
@@ -2682,12 +2900,13 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
 {
   WebSocketResponse resp;
   resp.id = req.id;
-  resp.type = 0;
+  resp.type = WebSocketResponse::kJson;
 
   try {
+    const int marker_id = extract_int_or(req.raw_json, "marker_id", -1);
     auto [block, chip] = getBlockAndChip();
 
-    odb::dbMarker* target = findMarkerById(state, chip, req.drc_marker_id);
+    odb::dbMarker* target = findMarkerById(state, chip, marker_id);
 
     JsonBuilder builder;
     builder.beginObject();
@@ -2715,7 +2934,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       }
     } else {
       // Clear highlight if marker_id is -1 (deselect)
-      if (req.drc_marker_id == -1) {
+      if (marker_id == -1) {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         state.highlight_rects.clear();
         state.highlight_polys.clear();
@@ -2727,7 +2946,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
-    resp.type = 2;
+    resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_highlight error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }

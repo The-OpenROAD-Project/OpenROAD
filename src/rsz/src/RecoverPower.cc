@@ -61,7 +61,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   init();
   constexpr int digits = 3;
   resize_count_ = 0;
-  resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
   sta::VertexSet& endpoints = sta_->endpoints();
@@ -328,10 +327,11 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
   sta::Instance* drvr = network_->instance(drvr_pin);
   const float load_cap = graph_delay_calc_->loadCap(
       drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
-  const int in_index = drvr_index - 1;
-  const sta::Path* in_path = expanded->path(in_index);
-  const sta::Pin* in_pin = in_path->pin(sta_);
-  const sta::LibertyPort* in_port = network_->libertyPort(in_pin);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  const sta::LibertyPort* in_port = in_arc ? in_arc->from() : nullptr;
+  if (in_port == nullptr) {
+    return false;
+  }
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive = 0.0;
     if (drvr_index >= 2) {

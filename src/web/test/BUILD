@@ -43,6 +43,14 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":request_handler_test",
+        ":tile_generator_test",
+    ],
+)
+
 js_test(
     name = "coordinates_test",
     data = JS_FILES,
@@ -131,6 +139,20 @@ js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "theme_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-theme.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "title_test",
+    data = JS_FILES,
+    entry_point = "js/test-title.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -232,6 +254,18 @@ cc_test(
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "glyph_cache_test",
+    srcs = ["cpp/TestGlyphCache.cpp"],
+    copts = ["-Isrc/web/src"],
+    features = ["-layering_check"],
+    deps = [
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
