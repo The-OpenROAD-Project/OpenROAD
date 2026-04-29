@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -1348,40 +1349,43 @@ void CoreGrid::setupDirectConnect(
 
     // Spatial sort: same comparator across nets so position i in each net
     // refers to a pad in roughly the same region of the die.
-    std::sort(
-        iterms.begin(), iterms.end(), [](odb::dbITerm* lhs, odb::dbITerm* rhs) {
-          const auto l_ll = lhs->getInst()->getBBox()->getBox().ll();
-          const auto r_ll = rhs->getInst()->getBBox()->getBox().ll();
-          return l_ll < r_ll;
-        });
+    std::ranges::sort(iterms, [](odb::dbITerm* lhs, odb::dbITerm* rhs) {
+      const auto l_ll = lhs->getInst()->getBBox()->getBox().ll();
+      const auto r_ll = rhs->getInst()->getBBox()->getBox().ll();
+      return l_ll < r_ll;
+    });
 
     per_net_iterms.push_back(std::move(iterms));
   }
 
+  // Interleave iterms across nets so VDD and VSS straps alternate during
+  // shape generation. position i in each net is a pad in the same region.
+  std::vector<odb::dbITerm*> ordered_iterms;
   size_t max_count = 0;
   for (const auto& iterms : per_net_iterms) {
     max_count = std::max(max_count, iterms.size());
   }
-
   for (size_t i = 0; i < max_count; ++i) {
     for (const auto& iterms : per_net_iterms) {
-      if (i >= iterms.size()) {
-        continue;
+      if (i < iterms.size()) {
+        ordered_iterms.push_back(iterms[i]);
       }
-      auto* iterm = iterms[i];
-      auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
-          this, iterm, connect_pad_layers);
-      if (pad_connect->canConnect()) {
-        straps.push_back(pad_connect.get());
-        addStrap(std::move(pad_connect));
-      } else {
-        debugPrint(getLogger(),
-                   utl::PDN,
-                   "Pad",
-                   2,
-                   "Rejecting pad cell pin {} due to lack of connectivity",
-                   iterm->getName())
-      }
+    }
+  }
+
+  for (auto* iterm : ordered_iterms) {
+    auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
+        this, iterm, connect_pad_layers);
+    if (pad_connect->canConnect()) {
+      straps.push_back(pad_connect.get());
+      addStrap(std::move(pad_connect));
+    } else {
+      debugPrint(getLogger(),
+                 utl::PDN,
+                 "Pad",
+                 2,
+                 "Rejecting pad cell pin {} due to lack of connectivity",
+                 iterm->getName())
     }
   }
 
