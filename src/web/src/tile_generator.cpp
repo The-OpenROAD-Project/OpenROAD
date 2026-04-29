@@ -11,6 +11,7 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <random>
 #include <set>
 #include <string>
@@ -298,6 +299,14 @@ void TileGenerator::eagerInit()
     search_->eagerInit(block);
   }
   computePinLabelMargin();
+
+  // A reload can replace the dbTech and reuse its memory address, which would
+  // make stale entries in the cache compare equal to a freshly allocated tech.
+  // Clearing here ties cache lifetime to design loading.
+  {
+    std::lock_guard lock(layer_colors_mutex_);
+    layer_colors_by_tech_.clear();
+  }
 }
 
 void TileGenerator::computePinLabelMargin()
@@ -721,6 +730,11 @@ odb::dbBlock* TileGenerator::getBlock() const
 odb::dbChip* TileGenerator::getChip() const
 {
   return db_->getChip();
+}
+
+odb::dbTech* TileGenerator::getTech() const
+{
+  return db_->getTech();
 }
 
 std::vector<unsigned char> TileGenerator::generateTile(
@@ -2780,12 +2794,7 @@ void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
 {
   b.beginObject();
   const auto& layer_colors = gen.getLayerColorMap();
-  // Look up rendered layers' colors by name without depending on iteration
-  // order.  Names are unique within a tech.
-  std::map<std::string, Color> color_by_name;
-  for (const auto& [layer, color] : layer_colors) {
-    color_by_name[layer->getName()] = color;
-  }
+  odb::dbTech* tech = gen.getTech();
   b.beginArray("layers");
   for (const auto& name : gen.getLayers()) {
     b.value(name);
@@ -2793,10 +2802,15 @@ void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
   b.endArray();
   b.beginArray("layer_colors");
   for (const auto& name : gen.getLayers()) {
-    const auto it = color_by_name.find(name);
-    const Color c = (it != color_by_name.end())
-                        ? it->second
-                        : Color{.r = 200, .g = 200, .b = 200, .a = 180};
+    Color c{.r = 200, .g = 200, .b = 200, .a = 180};
+    if (tech) {
+      if (odb::dbTechLayer* layer = tech->findLayer(name.c_str())) {
+        const auto it = layer_colors.find(layer);
+        if (it != layer_colors.end()) {
+          c = it->second;
+        }
+      }
+    }
     b.beginArray();
     b.value(static_cast<int>(c.r));
     b.value(static_cast<int>(c.g));

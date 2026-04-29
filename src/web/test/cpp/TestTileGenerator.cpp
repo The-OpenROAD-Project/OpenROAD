@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "color.h"
 #include "gtest/gtest.h"
 #include "json_builder.h"
 #include "odb/db.h"
@@ -195,6 +196,23 @@ TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
   const auto& first = tile_gen_->getLayerColorMap();
   const auto& second = tile_gen_->getLayerColorMap();
   EXPECT_EQ(&first, &second);
+}
+
+TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
+{
+  makeTileGen();
+  // Prime the cache.
+  tile_gen_->getLayerColorMap();
+  // eagerInit must drop cached entries so a reloaded design with a new
+  // dbTech allocated at the same address can't read stale colors.
+  tile_gen_->eagerInit();
+  // Recomputing still produces correct values.
+  const auto& colors = tile_gen_->getLayerColorMap();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  EXPECT_EQ(colors.at(metal1).r, 0);
+  EXPECT_EQ(colors.at(metal1).g, 0);
+  EXPECT_EQ(colors.at(metal1).b, 254);
 }
 
 TEST_F(TileGeneratorTest, SerializeTechResponseIncludesLayerColors)

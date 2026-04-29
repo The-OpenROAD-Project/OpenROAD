@@ -193,6 +193,7 @@ class TileGenerator
 
   odb::dbBlock* getBlock() const;
   odb::dbChip* getChip() const;
+  odb::dbTech* getTech() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
