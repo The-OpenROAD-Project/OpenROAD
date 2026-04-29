@@ -99,6 +99,9 @@ global_placement
     [-disable_revert_if_diverge]
     [-disable_pin_density_adjust]
     [-enable_routing_congestion]
+    [-virtual_cts]
+    [-virtual_cts_overflow virtual_cts_overflow]
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]
 ```
 
 #### Options
@@ -125,6 +128,9 @@ global_placement
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+| `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement.  Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. |
+| `-virtual_cts_overflow` | Set overflow thresholds to trigger virtual clock tree synthesis. Default is { 70 30 }, meaning that clock tree is initially built at placement bin overflow threshold at 70% and re-built at 30% to reflect clock sink placement changes. |
+| '-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Default is 0.10 (10%). |
 
 #### Routability-Driven Arguments
 
@@ -222,7 +228,7 @@ Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI w
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
 
 ```
-# adds padding and gets global placement uniform target density
+#adds padding and gets global placement uniform target density
 get_global_placement_uniform_density -pad_left -pad_right 
 ```
 Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:

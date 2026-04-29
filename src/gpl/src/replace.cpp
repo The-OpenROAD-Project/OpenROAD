@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
+#include "clockBase.h"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
@@ -62,6 +63,7 @@ void Replace::reset()
 
   tb_.reset();
   rb_.reset();
+  cb_.reset();
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
@@ -274,6 +276,12 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
   }
 
+  if (!cb_ && options.virtualCtsMode) {
+    cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
+    cb_->setVirtualCtsOverflows(options.virtualCtsOverflows);
+    cb_->setMaxSkewFraction(options.virtualCtsMaxSkewFraction);
+  }
+
   if (!np_) {
     NesterovPlaceVars npVars(options);
 
@@ -299,6 +307,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
                                           nbVec_,
                                           rb_,
                                           tb_,
+                                          cb_,
                                           graphics_->MakeNew(log_),
                                           log_);
   }

@@ -19,6 +19,8 @@ cc_library(
     srcs = [
         "src/AbstractGraphics.cpp",
         "src/MakeReplace.cpp",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",

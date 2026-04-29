@@ -37,6 +37,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
+class ClockBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -67,6 +68,15 @@ struct PlaceOptions
   bool disableRevertIfDiverge = false;
   bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
+  bool virtualCtsMode = false;
+  // Overflow thresholds (integer %, e.g. {70, 30}) at which to trigger
+  // virtual CTS. Lead the timing-driven thresholds {64, 20} by several
+  // percent so the placer has time to respond before net reweighting runs.
+  std::vector<int> virtualCtsOverflows{70, 30};
+  // Maximum clock insertion delay as a fraction of the clock period.
+  // The MST leaf farthest from the virtual clock root gets this delay;
+  // all others are scaled proportionally.  Default: 10% of the period.
+  float virtualCtsMaxSkewFraction = 0.10f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
@@ -162,6 +172,7 @@ class Replace
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;
