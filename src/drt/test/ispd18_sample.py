@@ -13,6 +13,10 @@ design.readDef("testcase/ispd18_sample/ispd18_sample.input.def")
 gr = design.getGlobalRouter()
 gr.readGuides("testcase/ispd18_sample/ispd18_sample.input.guide")
 
+block = design.getBlock()
+block.setMinRoutingLayer(1)
+block.setMaxRoutingLayer(9)
+
 drc_file = helpers.make_result_file("ispd18_sample.output.drc.rpt")
 maze_file = helpers.make_result_file("ispd18_sample.output.maze.log")
 guide_coverage_file = helpers.make_result_file("ispd18_sample.coverage.csv")

@@ -9,10 +9,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 

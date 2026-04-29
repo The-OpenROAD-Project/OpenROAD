@@ -6,8 +6,10 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -109,6 +111,59 @@ bool bboxIntersectsOuterShell(const Rect& bbox,
   return std::ranges::any_of(outer_shell_rects, [&](const Rect& shell_rect) {
     return bbox.intersects(shell_rect);
   });
+}
+
+// Look at single-row CORE masters and return a canonical R0-row (topPwr,
+// botPwr). Requires top != bot so the convention is unambiguous;
+// symmetric-power cells cannot anchor the convention.  Returns (UNK, UNK) if
+// none found.
+std::pair<int, int> inferR0RowPower(const Network* network,
+                                    const Grid* grid,
+                                    odb::dbBlock* block)
+{
+  for (odb::dbInst* inst : block->getInsts()) {
+    odb::dbMaster* db_master = inst->getMaster();
+    if (db_master->getType() != odb::dbMasterType::CORE) {
+      continue;
+    }
+    if (grid->isMultiHeight(db_master)) {
+      continue;
+    }
+    const Master* dpl_master
+        = const_cast<Network*>(network)->getMaster(db_master);
+    if (dpl_master == nullptr) {
+      continue;
+    }
+    const int bot = dpl_master->getBottomPowerType();
+    const int top = dpl_master->getTopPowerType();
+    if (bot != Architecture::Row::Power_UNK
+        && top != Architecture::Row::Power_UNK && bot != top) {
+      return {top, bot};
+    }
+  }
+  return {Architecture::Row::Power_UNK, Architecture::Row::Power_UNK};
+}
+
+// Whether the orientation flips the master's Y axis (swapping top and bottom
+// power rails).  Only the axis-aligned orientations are expected for standard
+// cell rows; rotations return nullopt so row power stays unknown.
+std::optional<bool> orientFlipsY(const odb::dbOrientType& orient)
+{
+  using odb::dbOrientType;
+  switch (orient.getValue()) {
+    case dbOrientType::MX:
+    case dbOrientType::R180:
+      return true;
+    case dbOrientType::R0:
+    case dbOrientType::MY:
+      return false;
+    case dbOrientType::R90:
+    case dbOrientType::R270:
+    case dbOrientType::MXR90:
+    case dbOrientType::MYR90:
+      return std::nullopt;
+  }
+  return std::nullopt;
 }
 
 }  // namespace
@@ -292,7 +347,8 @@ void Opendp::createArchitecture()
     archRow->setSiteWidth(DbuX{site->getWidth()});
     archRow->setHeight(DbuY{site->getHeight()});
 
-    // Set defaults.  Top and bottom power is set below.
+    // Start with UNK; resolved after all rows are created using an inferred
+    // R0 row convention.
     archRow->setBottomPower(Architecture::Row::Power_UNK);
     archRow->setTopPower(Architecture::Row::Power_UNK);
 
@@ -355,6 +411,29 @@ void Opendp::createArchitecture()
   arch_->setUsePadding(padding_ != nullptr);
   arch_->setPadding(padding_.get());
   arch_->setSiteWidth(grid_->getSiteWidth());
+
+  // Populate each row's top/bottom power rail from an inferred R0 convention.
+  // Without this, row power stays Power_UNK and Architecture::powerCompatible
+  // degenerates to "always true", letting multi-row cells land on wrong-parity
+  // rows (VDD pin on VSS stripe, etc.).
+  const auto [ref_r0_top, ref_r0_bot]
+      = inferR0RowPower(network_.get(), grid_.get(), block);
+  if (ref_r0_bot != Architecture::Row::Power_UNK) {
+    for (int r = 0; r < arch_->getNumRows(); r++) {
+      Architecture::Row* archRow = arch_->getRow(r);
+      const auto flipped = orientFlipsY(archRow->getOrient());
+      if (!flipped.has_value()) {
+        continue;  // Rotation — leave as UNK.
+      }
+      if (*flipped) {
+        archRow->setBottomPower(ref_r0_top);
+        archRow->setTopPower(ref_r0_bot);
+      } else {
+        archRow->setBottomPower(ref_r0_bot);
+        archRow->setTopPower(ref_r0_top);
+      }
+    }
+  }
 
   arch_->postProcess(network_.get());
 }

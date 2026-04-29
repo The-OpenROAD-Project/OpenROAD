@@ -39,6 +39,10 @@ export function createWebSocketTileLayer(visibility) {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = v ? 1 : 0;
             }
+            // Store the request ID so _removeTile() can cancel it
+            // when the tile is discarded (e.g. during zoom).
+            tile._websocketRequestId = this._websocketManager.nextId;
+
             this._websocketManager.request({
                 type: 'tile',
                 layer: this._layerName,
@@ -46,8 +50,12 @@ export function createWebSocketTileLayer(visibility) {
                 x: coords.x,
                 y: coords.y,
                 ...vf,
-            }).then(blob => {
-                tile.src = URL.createObjectURL(blob);
+            }).then(data => {
+                if (typeof data === 'string') {
+                    tile.src = data;  // data URI from cache
+                } else {
+                    tile.src = URL.createObjectURL(data);
+                }
             }).catch(() => {
                 // Request was cancelled (e.g. by refreshTiles); ignore
             });
@@ -87,11 +95,15 @@ export function createWebSocketTileLayer(visibility) {
                     x: coords.x,
                     y: coords.y,
                     ...vf,
-                }).then(blob => {
+                }).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
                     }
-                    tile.src = URL.createObjectURL(blob);
+                    if (typeof data === 'string') {
+                        tile.src = data;
+                    } else {
+                        tile.src = URL.createObjectURL(data);
+                    }
                 }).catch(() => {
                     // Tile refresh failed; keep existing image
                 });

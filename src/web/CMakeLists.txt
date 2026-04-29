@@ -12,6 +12,79 @@ swig_lib(NAME         web
                        ${ODB_HOME}/include
 )
 
+set(WEB_ASSET_FILES
+    src/index.html
+    src/style.css
+    src/theme.js
+    src/coordinates.js
+    src/ui-utils.js
+    src/checkbox-tree-model.js
+    src/vis-tree.js
+    src/websocket-manager.js
+    src/websocket-tile-layer.js
+    src/display-controls.js
+    src/inspector.js
+    src/ruler.js
+    src/tcl-completer.js
+    src/hierarchy-browser.js
+    src/menu-bar.js
+    src/clock-tree-widget.js
+    src/schematic-widget.js
+    src/charts-widget.js
+    src/timing-widget.js
+    src/drc-widget.js
+    src/main.js
+)
+
+# Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
+set(WEB_ASSET_PATHS "")
+foreach(f ${WEB_ASSET_FILES})
+  list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
+endforeach()
+
+set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
+add_custom_command(
+  OUTPUT ${REPORT_ASSETS_CPP}
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_report_assets.py
+    --output ${REPORT_ASSETS_CPP}
+    --css ${CMAKE_CURRENT_SOURCE_DIR}/src/style.css
+    --js ${CMAKE_CURRENT_SOURCE_DIR}/src/theme.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/coordinates.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
+  DEPENDS
+    src/embed_report_assets.py
+    ${WEB_ASSET_FILES}
+  COMMENT "Generating report_assets.cpp"
+)
+
+set(WEB_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/web_assets.cpp)
+add_custom_command(
+  OUTPUT ${WEB_ASSETS_CPP}
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
+    --output ${WEB_ASSETS_CPP}
+    ${WEB_ASSET_PATHS}
+  DEPENDS
+    src/embed_web_assets.py
+    ${WEB_ASSET_FILES}
+  COMMENT "Generating web_assets.cpp"
+)
+
 target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
@@ -22,7 +95,13 @@ target_sources(web
     src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
+    src/web_serve.cpp
+    src/web_chart.cpp
+    src/web_painter.cpp
+    src/web_viewer_hook.cpp
     src/MakeWeb.cpp
+    ${REPORT_ASSETS_CPP}
+    ${WEB_ASSETS_CPP}
 )
 
 target_link_libraries(web

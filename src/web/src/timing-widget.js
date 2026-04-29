@@ -6,7 +6,7 @@
 import { makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
-    constructor(container, app, redrawAllLayers) {
+    constructor(app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
 
@@ -17,10 +17,10 @@ export class TimingWidget {
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
 
-        this._build(container);
+        this._build();
     }
 
-    _build(container) {
+    _build() {
         const el = document.createElement('div');
         el.className = 'timing-widget';
 
@@ -74,7 +74,7 @@ export class TimingWidget {
         this._detailTableContainer.appendChild(this._detailTable);
         el.appendChild(this._detailTableContainer);
 
-        container.element.appendChild(el);
+        this.element = el;
 
         this._bindEvents();
     }
@@ -212,9 +212,13 @@ export class TimingWidget {
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._pathTableContainer.focus();
         this._renderDetailTable();
+        // Use _originalIndex when paths were filtered (e.g. by histogram
+        // column click in static mode) so the overlay lookup matches.
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const highlightIdx = paths[idx]?._originalIndex ?? idx;
         this._app.websocketManager.request({
             type: 'timing_highlight',
-            path_index: idx,
+            path_index: highlightIdx,
             is_setup: this._currentTab === 'setup' ? 1 : 0,
         }).then(() => this._redrawAllLayers())
           .catch(err => console.error('timing_highlight error:', err));
@@ -223,6 +227,11 @@ export class TimingWidget {
     _renderPathTable() {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
+
+        // Preserve column widths across re-renders.
+        const oldHeaders = this._pathTable.querySelectorAll('thead th');
+        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+
         this._pathTable.innerHTML = '';
 
         const thead = document.createElement('thead');
@@ -262,7 +271,17 @@ export class TimingWidget {
             tbody.appendChild(tr);
         });
         this._pathTable.appendChild(tbody);
-        makeResizableHeaders(this._pathTable);
+
+        // Restore previous widths if available, otherwise compute fresh.
+        if (savedWidths.length > 0 && savedWidths[0]) {
+            const newHeaders = this._pathTable.querySelectorAll('thead th');
+            this._pathTable.style.tableLayout = 'fixed';
+            newHeaders.forEach((th, i) => {
+                if (i < savedWidths.length) th.style.width = savedWidths[i];
+            });
+        } else {
+            makeResizableHeaders(this._pathTable);
+        }
     }
 
     _selectDetailRow(idx) {
@@ -279,15 +298,22 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        // Use _originalIndex when paths were filtered (e.g. by histogram
+        // column click in static mode) so the overlay lookup matches.
+        const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
         this._app.websocketManager.request({
             type: 'timing_highlight',
-            path_index: this._selectedPathIndex,
+            path_index: highlightIdx,
             is_setup: this._currentTab === 'setup' ? 1 : 0,
             pin_name: nodes[idx].pin,
         }).then(() => this._redrawAllLayers());
     }
 
     _renderDetailTable() {
+        // Preserve column widths across re-renders.
+        const oldHeaders = this._detailTable.querySelectorAll('thead th');
+        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+
         this._detailTable.innerHTML = '';
         this._selectedDetailIndex = -1;
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
@@ -329,11 +355,20 @@ export class TimingWidget {
             tbody.appendChild(tr);
         });
         this._detailTable.appendChild(tbody);
-        makeResizableHeaders(this._detailTable);
-        // Pin column: set initial width to 30 characters
-        const pinTh = this._detailTable.querySelector('thead th');
-        if (pinTh) {
-            pinTh.style.width = '30ch';
+
+        if (savedWidths.length > 0 && savedWidths[0]) {
+            const newHeaders = this._detailTable.querySelectorAll('thead th');
+            this._detailTable.style.tableLayout = 'fixed';
+            newHeaders.forEach((th, i) => {
+                if (i < savedWidths.length) th.style.width = savedWidths[i];
+            });
+        } else {
+            makeResizableHeaders(this._detailTable);
+            // Pin column: set initial width to 30 characters
+            const pinTh = this._detailTable.querySelector('thead th');
+            if (pinTh) {
+                pinTh.style.width = '30ch';
+            }
         }
     }
 

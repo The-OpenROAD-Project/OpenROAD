@@ -17,7 +17,6 @@
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
-#include "PACallBack.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
@@ -35,6 +34,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
+#include "drt/PinAccessService.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
@@ -57,21 +57,20 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/ServiceRegistry.h"
 
 using odb::dbTechLayerType;
 
 namespace drt {
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
-                         utl::CallBackHandler* callback_handler,
+                         utl::ServiceRegistry* service_registry,
                          dst::Distributed* dist,
                          stt::SteinerTreeBuilder* stt_builder)
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
-      pa_callback_(std::make_unique<PACallBack>(this)),
       router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
@@ -79,14 +78,26 @@ TritonRoute::TritonRoute(odb::dbDatabase* db,
   }
   db_ = db;
   logger_ = logger;
+  service_registry_ = service_registry;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  pa_callback_->setOwner(callback_handler);
+  service_registry_->provide<PinAccessService>(this);
 }
 
-TritonRoute::~TritonRoute() = default;
+TritonRoute::~TritonRoute()
+{
+  service_registry_->withdraw<PinAccessService>(this);
+}
+
+void TritonRoute::updateDirtyPinAccess()
+{
+  if (design_ == nullptr || design_->getTopBlock() == nullptr) {
+    return;
+  }
+  updateDirtyPAData();
+}
 
 void TritonRoute::initGraphics(
     std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
@@ -1277,7 +1288,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  router_cfg_->unidirectional_layers_.insert(dbLayer);
+  router_cfg_->unidirectional_layer_names_.insert(layerName);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)
@@ -1361,7 +1372,64 @@ void TritonRoute::reportDRC(const std::string& file_name,
                                       boost::geometry::index::quadratic<16UL>>
       obs_rtree(obstructions.begin(), obstructions.end());
 
+  std::vector<const frMarker*> sorted_markers;
+  sorted_markers.reserve(std::distance(markers.begin(), markers.end()));
   for (const auto& marker : markers) {
+    sorted_markers.push_back(marker.get());
+  }
+  auto marker_sort_key = [this](const frMarker* marker) {
+    const odb::Rect bbox = marker->getBBox();
+    auto tech = getDesign()->getTech();
+    auto layer = tech->getLayer(marker->getLayerNum());
+    auto con = marker->getConstraint();
+    std::string viol_name = "unknown";
+    if (con) {
+      if (con->typeId() == frConstraintTypeEnum::frcShortConstraint
+          && layer->getType() == dbTechLayerType::CUT) {
+        viol_name = "Cut Short";
+      } else {
+        viol_name = con->getViolName();
+      }
+    }
+    std::vector<std::string> sources;
+    for (auto src : marker->getSrcs()) {
+      if (!src) {
+        continue;
+      }
+      switch (src->typeId()) {
+        case frcNet:
+          sources.push_back(static_cast<frNet*>(src)->getName());
+          break;
+        case frcInstTerm: {
+          auto* inst_term = static_cast<frInstTerm*>(src);
+          sources.push_back(inst_term->getInst()->getName() + "/"
+                            + inst_term->getTerm()->getName());
+          break;
+        }
+        case frcBTerm:
+          sources.push_back(static_cast<frBTerm*>(src)->getName());
+          break;
+        default:
+          sources.push_back(std::to_string(src->typeId()) + ":"
+                            + std::to_string(src->getId()));
+          break;
+      }
+    }
+    std::ranges::sort(sources);
+    return std::make_tuple(marker->getLayerNum(),
+                           bbox.xMin(),
+                           bbox.yMin(),
+                           bbox.xMax(),
+                           bbox.yMax(),
+                           viol_name,
+                           sources);
+  };
+  std::ranges::sort(sorted_markers,
+                    [&](const frMarker* lhs, const frMarker* rhs) {
+                      return marker_sort_key(lhs) < marker_sort_key(rhs);
+                    });
+
+  for (const frMarker* marker : sorted_markers) {
     // get violation bbox
     odb::Rect bbox = marker->getBBox();
     if (drcBox != odb::Rect() && !drcBox.intersects(bbox)) {

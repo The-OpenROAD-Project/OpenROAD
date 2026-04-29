@@ -14,22 +14,50 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import './theme.js';
+import { setCookie } from './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
 const statusDiv = document.getElementById('websocket-status');
+let disconnectTimeout = null;
+const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
 
 function updateStatus() {
-    const n = app.websocketManager ? app.websocketManager.pending.size : 0;
-    if (n === 0) {
-        statusDiv.textContent = '';
-        statusDiv.style.display = 'none';
+    const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    
+    if (!isConnected) {
+        // After an intentional shutdown the "Server stopped" banner is
+        // already showing — don't overwrite it with the generic message.
+        if (app.websocketManager?._shutdown) {
+            return;
+        }
+        // Only show banner after a delay to avoid flashing on page load
+        if (!disconnectTimeout) {
+            disconnectTimeout = setTimeout(() => {
+                if (!app.websocketManager?.isConnected) {
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
+                    statusDiv.style.display = 'block';
+                }
+            }, DISCONNECT_DELAY_MS);
+        }
     } else {
-        statusDiv.textContent = `pending: ${n}`;
-        statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
+        // Connected - clear timeout and show pending indicator if needed
+        if (disconnectTimeout) {
+            clearTimeout(disconnectTimeout);
+            disconnectTimeout = null;
+        }
+        
+        if (pendingCount === 0) {
+            statusDiv.style.display = 'none';
+        } else {
+            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+            statusDiv.style.display = 'block';
+            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+            statusDiv.querySelector('.pending-indicator').style.color = color;
+        }
     }
 }
 
@@ -254,6 +282,16 @@ function redrawAllLayers() {
     }
 }
 
+// Debounced wrapper: coalesces back-to-back server pushes (e.g.
+// debug_refresh + debug_paused) into a single redrawAllLayers() call.
+let _redrawRAF = null;
+function scheduleRedrawAllLayers() {
+    if (_redrawRAF !== null) return;
+    _redrawRAF = requestAnimationFrame(() => {
+        _redrawRAF = null;
+        redrawAllLayers();
+    });
+}
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -329,7 +367,7 @@ function createTclConsole(container) {
         '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
-        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
+        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." spellcheck="false" autocomplete="off" autocapitalize="none" autocorrect="off"/>' +
         '</div>';
     container.element.appendChild(el);
 
@@ -376,12 +414,13 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(container, app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers);
+    container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
-    createStubPanel(container, 'DRC',
-        'Design rule check violations viewer.');
+    app.drcWidget = new DrcWidget(app, redrawAllLayers);
+    container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
@@ -389,7 +428,8 @@ function createClockWidget(container) {
 }
 
 function createChartsWidget(container) {
-    app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
+    app.chartsWidget = new ChartsWidget(app, redrawAllLayers);
+    container.element.appendChild(app.chartsWidget.element);
 }
 
 function createHelpWidget(container) {
@@ -537,8 +577,16 @@ const LAYOUT_VERSION = 3;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+const staticCache = window.__STATIC_CACHE__ || null;
+if (staticCache) {
+    app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
+} else {
+    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+}
+
+// Check initial connection status
+updateStatus();
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -608,7 +656,11 @@ app.focusComponent = focusComponent;
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    localStorage.setItem('theme', next);
+    setCookie('or_theme', next);
+    // Also write to localStorage for standalone file:// reports.
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('or_theme', next);
+    }
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
@@ -618,11 +670,68 @@ app.toggleTheme = function() {
 
 createMenuBar(app);
 
+// Debug-graphics pause affordance: appended lazily when the first
+// debug_paused push arrives.  Clicking "Continue" tells the server to
+// release the placer thread.
+function ensureDebugContinueButton() {
+    let btn = document.getElementById('debug-continue-btn');
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.id = 'debug-continue-btn';
+    btn.className = 'debug-continue-btn';
+    btn.textContent = 'Continue';
+    btn.title = 'Advance the debugger (gpl, cts, ...)';
+    btn.addEventListener('click', () => {
+        // Fire-and-forget; server's broadcast tells us when the placer
+        // actually resumed.
+        app.websocketManager.request({ type: 'debug_continue' })
+            .catch(() => {});
+    });
+    document.body.appendChild(btn);
+    return btn;
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+    } else if (msg.type === 'debug_paused') {
+        ensureDebugContinueButton().style.display = 'block';
+        // Refetch tiles so the user sees the current paused state.
+        // Use the debounced version so that a debug_refresh arriving
+        // in the same event-loop turn is coalesced (avoids 2x tiles).
+        scheduleRedrawAllLayers();
+        // Fetch debug charts (e.g. GPL HPWL vs iteration).
+        if (app.chartsWidget) {
+            app.websocketManager.request({ type: 'debug_charts' })
+                .then(data => app.chartsWidget.setDebugCharts(data.charts || []))
+                .catch(() => {});
+        }
+    } else if (msg.type === 'debug_resumed') {
+        const btn = document.getElementById('debug-continue-btn');
+        if (btn) btn.style.display = 'none';
+    } else if (msg.type === 'debug_refresh') {
+        // Instance positions changed — clear the stale Leaflet highlight
+        // outline (the tile-based highlight updates automatically).
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRedrawAllLayers();
+    } else if (msg.type === 'log') {
+        // Logger output from the main Tcl thread (e.g. global_placement).
+        // The text already contains \n between lines from the batch; strip
+        // any trailing newline to avoid a blank line at the end.
+        let text = msg.text;
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'shutdown') {
+        // Server is stopping intentionally (web_server -stop).
+        // Disable auto-reconnect and show a clear message.
+        app.websocketManager._shutdown = true;
+        statusDiv.innerHTML = '<div class="disconnected-banner">Server stopped</div>';
+        statusDiv.style.display = 'block';
     }
 };
 
@@ -663,10 +772,39 @@ app.websocketManager.readyPromise.then(async () => {
                 [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
             app.map.fitBounds(app.fitBounds);
+
+            if (staticCache) {
+                // Lock to the pre-rendered tile zoom level and fit.
+                const cacheZoom = staticCache.zoom;
+                app.map.setMinZoom(cacheZoom);
+                app.map.setMaxZoom(cacheZoom);
+                app.map.fitBounds(app.fitBounds);
+                app.map.scrollWheelZoom.disable();
+                app.map.touchZoom.disable();
+                app.map.boxZoom.disable();
+                app.map.doubleClickZoom.disable();
+
+                // Path highlight overlay image.
+                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
+                    opacity: 1, interactive: false, zIndex: 1000,
+                });
+                staticCache.setPathOverlay = (src) => {
+                    if (src) {
+                        app.pathOverlay.setUrl(src);
+                        app.pathOverlay.addTo(app.map);
+                    } else {
+                        app.map.removeLayer(app.pathOverlay);
+                    }
+                };
+            }
         }
 
         // Click-to-select: convert click position to DBU and query server
-        app.map.on('click', (e) => {
+        if (staticCache) {
+            // Hide loading overlay — shapes are always ready in static mode.
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        if (!staticCache) app.map.on('click', (e) => {
             if (!app.designScale) return;
             if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
@@ -711,7 +849,7 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
-        {
+        if (!staticCache) {
             const container = app.map.getContainer();
             let rbStart = null;   // {x, y} in client coords
             let rbDiv = null;     // overlay element

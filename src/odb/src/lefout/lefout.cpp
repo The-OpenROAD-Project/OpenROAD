@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
@@ -1103,38 +1104,36 @@ void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
   }
 
   for (auto rule : layer->getV54SpacingRules()) {
-    rule->writeLef(*this);
+    writeSpacingRuleLef(out, rule);
   }
 
   if (layer->hasV55SpacingRules()) {
-    layer->printV55SpacingRules(*this);
+    writeV55SpacingRules(out, layer);
     auto inf_rules = layer->getV55InfluenceRules();
     if (!inf_rules.empty()) {
       fmt::print(out, "SPACINGTABLE INFLUENCE");
       for (auto rule : inf_rules) {
-        rule->writeLef(*this);
+        writeV55InfluenceEntryLef(out, rule);
       }
       fmt::print(out, " ;\n");
     }
   }
 
   std::vector<dbTechMinCutRule*> cut_rules;
-  std::vector<dbTechMinCutRule*>::const_iterator citr;
   if (layer->getMinimumCutRules(cut_rules)) {
-    for (citr = cut_rules.begin(); citr != cut_rules.end(); citr++) {
-      (*citr)->writeLef(*this);
+    for (auto* rule : cut_rules) {
+      writeMinCutRuleLef(out, rule);
     }
   }
 
   std::vector<dbTechMinEncRule*> enc_rules;
-  std::vector<dbTechMinEncRule*>::const_iterator eitr;
   if (layer->getMinEnclosureRules(enc_rules)) {
-    for (eitr = enc_rules.begin(); eitr != enc_rules.end(); eitr++) {
-      (*eitr)->writeLef(*this);
+    for (auto* rule : enc_rules) {
+      writeMinEncRuleLef(out, rule);
     }
   }
 
-  layer->writeAntennaRulesLef(*this);
+  writeAntennaRulesLef(out, layer);
 
   if (layer->getDirection() != dbTechLayerDir::NONE) {
     fmt::print(out, "    DIRECTION {} ;\n", layer->getDirection().getString());
@@ -1162,6 +1161,346 @@ void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
   fmt::print(out, "{}", dbProperty::writeProperties(layer));
 
   fmt::print(out, "END {}\n", name.c_str());
+}
+
+void lefout::writeSpacingRuleLef(std::ostream& out,
+                                 dbTechLayerSpacingRule* rule)
+{
+  uint32_t rmin, rmax, length_or_influence, cut_spacing, numcuts;
+  bool except_same_pgnet;
+  dbTechLayer* rulely;
+
+  fmt::print(out, "    SPACING {:g} ", lefdist(rule->getSpacing()));
+
+  if (rule->getCutCenterToCenter()) {
+    fmt::print(out, "    CENTERTOCENTER ");
+  }
+
+  if (rule->getCutSameNet()) {
+    fmt::print(out, "    SAMENET ");
+  }
+
+  if (rule->getCutParallelOverlap()) {
+    fmt::print(out, "    PARALLELOVERLAP ");
+  }
+
+  if (rule->getCutArea() > 0) {
+    fmt::print(out, "    AREA {:g} ", lefdist(rule->getCutArea()));
+  }
+
+  if (rule->getRange(rmin, rmax)) {
+    fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    if (rule->hasUseLengthThreshold()) {
+      fmt::print(out, "USELENGTHTHRESHOLD ");
+    } else if (rule->getInfluence(length_or_influence)) {
+      fmt::print(out, "INFLUENCE {:g} ", lefdist(length_or_influence));
+      if (rule->getInfluenceRange(rmin, rmax)) {
+        fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+      }
+    } else if (rule->getRangeRange(rmin, rmax)) {
+      fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    }
+  } else if (rule->getLengthThreshold(length_or_influence)) {
+    fmt::print(out, "LENGTHTHRESHOLD {:g} ", lefdist(length_or_influence));
+    if (rule->getLengthThresholdRange(rmin, rmax)) {
+      fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    }
+  } else if (rule->getCutLayer4Spacing(rulely)) {
+    fmt::print(out, "LAYER {} ", rulely->getName().c_str());
+  } else if (rule->getAdjacentCuts(numcuts,
+                                   length_or_influence,
+                                   cut_spacing,
+                                   except_same_pgnet)) {
+    fmt::print(out,
+               "ADJACENTCUTS {} WITHIN {:g} ",
+               numcuts,
+               lefdist(length_or_influence));
+    if (except_same_pgnet) {
+      fmt::print(out, "EXCEPTSAMEPGNET ");
+    }
+  } else {
+    uint32_t width, within, parallelSpace, parallelWithin;
+    bool parallelEdge, twoEdges;
+    if (rule->getEol(width,
+                     within,
+                     parallelEdge,
+                     parallelSpace,
+                     parallelWithin,
+                     twoEdges)) {
+      fmt::print(
+          out, "ENDOFLINE {:g} WITHIN {:g} ", lefdist(width), lefdist(within));
+      if (parallelEdge) {
+        fmt::print(out,
+                   "PARALLELEDGE {:g} WITHIN {:g} ",
+                   lefdist(parallelSpace),
+                   lefdist(parallelWithin));
+        if (twoEdges) {
+          fmt::print(out, " TWOEDGES ");
+        }
+      }
+    }
+  }
+  fmt::print(out, " ;\n");
+}
+
+void lefout::writeV55SpacingRules(std::ostream& out, dbTechLayer* layer)
+{
+  std::vector<uint32_t> width_idx;
+  std::vector<uint32_t> length_idx;
+  std::vector<std::vector<uint32_t>> sptbl;
+  layer->getV55SpacingWidthsAndLengths(width_idx, length_idx);
+  layer->getV55SpacingTable(sptbl);
+
+  fmt::print(out, "SPACINGTABLE\n");
+  fmt::print(out, "  PARALLELRUNLENGTH");
+  for (uint32_t length : length_idx) {
+    fmt::print(out, " {:.3f}", lefdist(length));
+  }
+
+  for (size_t row = 0; row < width_idx.size(); ++row) {
+    fmt::print(out, "\n");
+    fmt::print(out, "  WIDTH {:.3f}\t", lefdist(width_idx[row]));
+    for (uint32_t spacing : sptbl[row]) {
+      fmt::print(out, " {:.3f}", lefdist(spacing));
+    }
+  }
+
+  fmt::print(out, " ;\n");
+}
+
+void lefout::writeV55InfluenceEntryLef(std::ostream& out,
+                                       dbTechV55InfluenceEntry* entry)
+{
+  uint32_t inf_width, inf_within, inf_spacing;
+  entry->getV55InfluenceEntry(inf_width, inf_within, inf_spacing);
+  fmt::print(out,
+             "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
+             lefdist(inf_width),
+             lefdist(inf_within),
+             lefdist(inf_spacing));
+}
+
+void lefout::writeMinCutRuleLef(std::ostream& out, dbTechMinCutRule* rule)
+{
+  uint32_t numcuts = 0;
+  uint32_t cut_width = 0;
+  rule->getMinimumCuts(numcuts, cut_width);
+  fmt::print(
+      out, "    MINIMUMCUT {}  WIDTH {:g} ", numcuts, lefdist(cut_width));
+
+  uint32_t cut_distance;
+  if (rule->getCutDistance(cut_distance)) {
+    fmt::print(out, "WITHIN {:g} ", lefdist(cut_distance));
+  }
+
+  if (rule->isAboveOnly()) {
+    fmt::print(out, "{}", "FROMABOVE ");
+  } else if (rule->isBelowOnly()) {
+    fmt::print(out, "{}", "FROMBELOW ");
+  }
+
+  uint32_t length, distance;
+  if (rule->getLengthForCuts(length, distance)) {
+    fmt::print(
+        out, "LENGTH {:g}  WITHIN {:g} ", lefdist(length), lefdist(distance));
+  }
+  fmt::print(out, ";\n");
+}
+
+void lefout::writeMinEncRuleLef(std::ostream& out, dbTechMinEncRule* rule)
+{
+  uint32_t enc_area, enc_width;
+  rule->getEnclosure(enc_area);
+  fmt::print(out, "    MINENCLOSEDAREA {:g} ", lefarea(enc_area));
+  if (rule->getEnclosureWidth(enc_width)) {
+    fmt::print(out, "WIDTH {:g} ", lefdist(enc_width));
+  }
+  fmt::print(out, "{}", ";\n");
+}
+
+void lefout::writeAntennaRulesLef(std::ostream& out, dbTechLayer* layer)
+{
+  bool prt_model
+      = (layer->hasDefaultAntennaRule() && layer->hasOxide2AntennaRule());
+
+  if (prt_model) {
+    fmt::print(out, "    ANTENNAMODEL OXIDE1 ;\n");
+  }
+  if (layer->hasDefaultAntennaRule()) {
+    writeAntennaRuleLef(out, layer->getDefaultAntennaRule());
+  }
+
+  if (prt_model) {
+    fmt::print(out, "    ANTENNAMODEL OXIDE2 ;\n");
+  }
+  if (layer->hasOxide2AntennaRule()) {
+    writeAntennaRuleLef(out, layer->getOxide2AntennaRule());
+  }
+}
+
+namespace {
+
+void writePwlPair(std::ostream& out,
+                  const char* keyword,
+                  const dbTechLayerAntennaRule::pwl_pair& pwl)
+{
+  fmt::print(out, "    {}  PWL ( ", keyword);
+  for (size_t i = 0; i < pwl.indices.size() && i < pwl.ratios.size(); ++i) {
+    fmt::print(out, "( {:g} {:g} ) ", pwl.indices[i], pwl.ratios[i]);
+  }
+  fmt::print(out, ") ;\n");
+}
+
+}  // namespace
+
+void lefout::writeAntennaRuleLef(std::ostream& out,
+                                 dbTechLayerAntennaRule* rule)
+{
+  if (rule->hasAreaFactor()) {
+    fmt::print(out,
+               "    ANTENNAAREAFACTOR {:g} {};\n",
+               rule->getAreaFactor(),
+               rule->isAreaFactorDiffUseOnly() ? "DIFFUSEONLY " : "");
+  }
+
+  if (rule->hasAntennaCumRoutingPlusCut()) {
+    fmt::print(out, "    ANTENNACUMROUTINGPLUSCUT ;\n");
+  }
+
+  auto gate_plus_diff_pwl = rule->getGatePlusDiffPWL();
+  if (gate_plus_diff_pwl.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNAGATEPLUSDIFF", gate_plus_diff_pwl);
+  } else if (rule->getGatePlusDiffFactor() > 0.0) {
+    fmt::print(
+        out, "    ANTENNAGATEPLUSDIFF {:g} ;\n", rule->getGatePlusDiffFactor());
+  }
+
+  if (rule->getAreaMinusDiffFactor() > 0.0) {
+    fmt::print(out,
+               "    ANTENNAAREAMINUSDIFF {:g} ;\n",
+               rule->getAreaMinusDiffFactor());
+  }
+
+  if (rule->hasSideAreaFactor()) {
+    fmt::print(out,
+               "    ANTENNASIDEAREAFACTOR {:g} {};\n",
+               rule->getSideAreaFactor(),
+               rule->isSideAreaFactorDiffUseOnly() ? "DIFFUSEONLY" : "");
+  }
+
+  if (rule->getPAR() > 0) {
+    fmt::print(out, "    ANTENNAAREARATIO {:g} ;\n", rule->getPAR());
+  }
+
+  auto diff_par = rule->getDiffPAR();
+  if (diff_par.ratios.size() == 1 && diff_par.ratios[0] > 0) {
+    fmt::print(out, "    ANTENNADIFFAREARATIO {:g} ;\n", diff_par.ratios[0]);
+  } else if (diff_par.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNADIFFAREARATIO", diff_par);
+  }
+
+  if (rule->getCAR() > 0) {
+    fmt::print(out, "    ANTENNACUMAREARATIO {:g} ;\n", rule->getCAR());
+  }
+
+  auto diff_car = rule->getDiffCAR();
+  if (diff_car.ratios.size() == 1 && diff_car.ratios[0] > 0) {
+    fmt::print(out, "    ANTENNACUMDIFFAREARATIO {:g} ;\n", diff_car.ratios[0]);
+  } else if (diff_car.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNACUMDIFFAREARATIO", diff_car);
+  }
+
+  if (rule->getPSR() > 0) {
+    fmt::print(out, "    ANTENNASIDEAREARATIO {:g} ;\n", rule->getPSR());
+  }
+
+  auto diff_psr = rule->getDiffPSR();
+  if (diff_psr.ratios.size() == 1 && diff_psr.ratios[0] > 0) {
+    fmt::print(
+        out, "    ANTENNADIFFSIDEAREARATIO {:g} ;\n", diff_psr.ratios[0]);
+  } else if (diff_psr.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNADIFFSIDEAREARATIO", diff_psr);
+  }
+
+  if (rule->getCSR() > 0) {
+    fmt::print(out, "    ANTENNACUMSIDEAREARATIO {:g} ;\n", rule->getCSR());
+  }
+
+  auto diff_csr = rule->getDiffCSR();
+  if (diff_csr.ratios.size() == 1 && diff_csr.ratios[0] > 0) {
+    fmt::print(
+        out, "    ANTENNACUMDIFFSIDEAREARATIO {:g} ;\n", diff_csr.ratios[0]);
+  } else if (diff_csr.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNACUMDIFFSIDEAREARATIO", diff_csr);
+  }
+
+  auto area_diff_reduce = rule->getAreaDiffReduce();
+  if (area_diff_reduce.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNAAREADIFFREDUCEPWL", area_diff_reduce);
+  }
+}
+
+namespace {
+
+// Emit one "<header> <area> [LAYER <name>] ;" line per element.
+void writeAntennaAreas(
+    std::ostream& out,
+    const char* header,
+    const std::vector<std::pair<double, dbTechLayer*>>& values)
+{
+  for (const auto& [area, layer] : values) {
+    fmt::print(out, "        {} {:g} ", header, area);
+    if (layer != nullptr) {
+      fmt::print(out, "LAYER {} ", layer->getName().c_str());
+    }
+    fmt::print(out, ";\n");
+  }
+}
+
+}  // namespace
+
+void lefout::writeAntennaPinModelLef(std::ostream& out,
+                                     dbTechAntennaPinModel* model)
+{
+  std::vector<std::pair<double, dbTechLayer*>> values;
+
+  model->getGateArea(values);
+  writeAntennaAreas(out, "ANTENNAGATEAREA", values);
+
+  model->getMaxAreaCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXAREACAR", values);
+
+  model->getMaxSideAreaCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXSIDEAREACAR", values);
+
+  model->getMaxCutCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXCUTCAR", values);
+}
+
+void lefout::writeMTermAntennaLef(std::ostream& out, dbMTerm* mterm)
+{
+  std::vector<std::pair<double, dbTechLayer*>> values;
+
+  mterm->getPartialMetalArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALMETALAREA", values);
+
+  mterm->getPartialMetalSideArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALMETALSIDEAREA", values);
+
+  mterm->getPartialCutArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALCUTAREA", values);
+
+  mterm->getDiffArea(values);
+  writeAntennaAreas(out, "ANTENNADIFFAREA", values);
+
+  if (mterm->hasDefaultAntennaModel()) {
+    writeAntennaPinModelLef(out, mterm->getDefaultAntennaModel());
+  }
+
+  if (mterm->hasOxide2AntennaModel()) {
+    fmt::print(out, "        ANTENNAMODEL OXIDE2 ;\n");
+    writeAntennaPinModelLef(out, mterm->getOxide2AntennaModel());
+  }
 }
 
 void lefout::writeVia(std::ostream& out, dbTechVia* via)
@@ -1423,7 +1762,7 @@ void lefout::writeMTerm(std::ostream& out, dbMTerm* mterm)
   fmt::print(out, "        DIRECTION {} ; \n", mterm->getIoType().getString());
   fmt::print(out, "        USE {} ; \n", mterm->getSigType().getString());
 
-  mterm->writeAntennaLef(*this);
+  writeMTermAntennaLef(out, mterm);
   dbSet<dbMPin> pins = mterm->getMPins();
   dbSet<dbMPin>::iterator pitr;
 

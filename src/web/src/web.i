@@ -13,10 +13,24 @@
 namespace web {
 
 void
-web_server_cmd(int port, const char* doc_root)
+web_server_cmd(int port)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
-  server->serve(port, doc_root);
+  server->serve(port);
+}
+
+void
+web_server_wait_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->waitForStop();
+}
+
+void
+web_server_stop_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->requestStop();
 }
 
 void
@@ -28,6 +42,14 @@ save_image_cmd(const char* filename,
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
   server->saveImage(filename, x0, y0, x1, y1, width, resolution,
                     vis_json ? vis_json : "");
+}
+
+void
+save_report_cmd(const char* filename,
+                int max_setup, int max_hold)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->saveReport(filename, max_setup, max_hold);
 }
 
 } // namespace web

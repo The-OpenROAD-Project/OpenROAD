@@ -210,7 +210,7 @@ TEST_F(SnapHandlerTest, SnapReturnsJson)
 {
   WebSocketRequest req;
   req.id = 100;
-  req.type = WebSocketRequest::SNAP;
+  req.type = WebSocketRequest::kSnap;
   req.snap_x = 50000;
   req.snap_y = 50;
   req.snap_radius = 1000;
@@ -230,7 +230,7 @@ TEST_F(SnapHandlerTest, SnapFoundContainsEdge)
 {
   WebSocketRequest req;
   req.id = 101;
-  req.type = WebSocketRequest::SNAP;
+  req.type = WebSocketRequest::kSnap;
   // Query near die area bottom edge at y=0.
   req.snap_x = 50000;
   req.snap_y = 50;
@@ -253,7 +253,7 @@ TEST_F(SnapHandlerTest, SnapAlwaysFindsEdgeDueToChipBoundary)
 {
   WebSocketRequest req;
   req.id = 102;
-  req.type = WebSocketRequest::SNAP;
+  req.type = WebSocketRequest::kSnap;
   // Center of design — die area edges are always checked so snap always
   // finds something (the closest die boundary).
   req.snap_x = 50000;
@@ -278,7 +278,7 @@ TEST_F(SnapHandlerTest, SnapDispatchesCorrectly)
   // is recognized and doesn't error out through the general path).
   WebSocketRequest req;
   req.id = 103;
-  req.type = WebSocketRequest::SNAP;
+  req.type = WebSocketRequest::kSnap;
   req.snap_x = 100;
   req.snap_y = 100;
   req.snap_radius = 5000;
@@ -297,7 +297,7 @@ TEST_F(SnapHandlerTest, TechResponseIncludesDbuPerMicron)
   // ruler for distance calculations.
   WebSocketRequest req;
   req.id = 104;
-  req.type = WebSocketRequest::TECH;
+  req.type = WebSocketRequest::kTech;
 
   auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.type, 0);

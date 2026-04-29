@@ -10,6 +10,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "color.h"
@@ -61,39 +62,47 @@ struct WebSocketRequest
 {
   enum Type
   {
-    TILE,
-    BOUNDS,
-    TECH,
-    SELECT,
-    INSPECT,
-    INSPECT_BACK,
-    HOVER,
-    TCL_EVAL,
-    TCL_COMPLETE,
-    TIMING_REPORT,
-    TIMING_HIGHLIGHT,
-    CLOCK_TREE,
-    CLOCK_TREE_HIGHLIGHT,
-    SLACK_HISTOGRAM,
-    CHART_FILTERS,
-    MODULE_HIERARCHY,
-    SET_MODULE_COLORS,
-    SET_FOCUS_NETS,
-    SET_ROUTE_GUIDES,
-    HEATMAPS,
-    SET_ACTIVE_HEATMAP,
-    SET_HEATMAP,
-    HEATMAP_TILE,
-    LIST_DIR,
-    SNAP,
-    SCHEMATIC_CONE,
-    SCHEMATIC_FULL,
-    SCHEMATIC_INSPECT,
-    UNKNOWN
+    kTile,
+    kBounds,
+    kTech,
+    kSelect,
+    kInspect,
+    kInspectBack,
+    kHover,
+    kTclEval,
+    kTclComplete,
+    kTimingReport,
+    kTimingHighlight,
+    kClockTree,
+    kClockTreeHighlight,
+    kSlackHistogram,
+    kChartFilters,
+    kModuleHierarchy,
+    kSetModuleColors,
+    kSetFocusNets,
+    kSetRouteGuides,
+    kHeatmaps,
+    kSetActiveHeatmap,
+    kSetHeatmap,
+    kHeatmapTile,
+    kListDir,
+    kSnap,
+    kSchematicCone,
+    kSchematicFull,
+    kSchematicInspect,
+    kDrcCategories,
+    kDrcMarkers,
+    kDrcLoadReport,
+    kDrcUpdateMarker,
+    kDrcUpdateCategoryVisibility,
+    kDrcHighlight,
+    kDebugContinue,
+    kDebugCharts,
+    kUnknown
   };
 
   uint32_t id = 0;
-  Type type = UNKNOWN;
+  Type type = kUnknown;
   std::string layer;
   int z = 0;
   int x = 0;
@@ -158,6 +167,13 @@ struct WebSocketRequest
   bool snap_horizontal = true;
   bool snap_vertical = true;
 
+  // DRC fields
+  std::string drc_category_name;
+  int drc_marker_id = -1;
+  std::string drc_file_path;
+  std::string drc_field;  // "visited" or "visible"
+  bool drc_field_value = false;
+
   // Heat map fields
   std::string heatmap_name;
   std::string heatmap_option;
@@ -201,6 +217,11 @@ struct SessionState
 
   std::mutex route_guides_mutex;
   std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
+
+  std::mutex drc_mutex;
+  std::string active_drc_category;     // name of active top-level category
+  std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
+  std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
 
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
@@ -335,6 +356,42 @@ class TileHandler
 
  private:
   std::shared_ptr<TileGenerator> gen_;
+};
+
+// Handles DRC_CATEGORIES, DRC_MARKERS, DRC_LOAD_REPORT,
+// DRC_UPDATE_MARKER, and DRC_HIGHLIGHT requests.
+class DRCHandler
+{
+ public:
+  explicit DRCHandler(std::shared_ptr<TileGenerator> gen);
+
+  WebSocketResponse handleDRCCategories(const WebSocketRequest& req);
+  WebSocketResponse handleDRCMarkers(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleDRCLoadReport(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleDRCUpdateMarker(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleDRCUpdateCategoryVisibility(
+      const WebSocketRequest& req,
+      SessionState& state);
+  WebSocketResponse handleDRCHighlight(const WebSocketRequest& req,
+                                       SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  int min_box_ = -1;  // cached tech pitch for marker rendering threshold
+
+  // Returns block and chip, throwing if either is null.
+  std::pair<odb::dbBlock*, odb::dbChip*> getBlockAndChip();
+
+  // Find a marker by ID in the active category. Returns nullptr if not found.
+  odb::dbMarker* findMarkerById(SessionState& state,
+                                odb::dbChip* chip,
+                                int marker_id);
+
+  // Recompute DRC overlay rects from the active category's visible markers.
+  void refreshDRCOverlay(SessionState& state);
 };
 
 // Handles LIST_DIR requests (server-side file browsing).

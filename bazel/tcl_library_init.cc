@@ -78,21 +78,52 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
   return Tcl_GetStringResult(interp);
 #else
   using rules_cc::cc::runfiles::Runfiles;
+
+  auto find_tcl_resources
+      = [](const Runfiles* runfiles) -> std::optional<std::string> {
+    std::error_code ec;
+    for (const std::string loc : {"openroad", "opensta", "_main"}) {
+      const std::string check_loc = loc + "/bazel/tcl_resources_dir";
+      const std::string path = runfiles->Rlocation(check_loc);
+      if (!path.empty() && std::filesystem::exists(path, ec)) {
+        return path;
+      }
+    }
+    return std::nullopt;
+  };
+
+  // First try with the inherited RUNFILES_* env vars.  When OpenROAD
+  // is the direct Bazel target (or invoked from an sh_test whose
+  // runfiles tree also contains OpenROAD's data), those env vars
+  // already point at the correct tree.
   std::string error;
   std::unique_ptr<Runfiles> runfiles(
+      Runfiles::Create(GetProgramLocation(), BAZEL_CURRENT_REPOSITORY, &error));
+  if (runfiles) {
+    if (auto path = find_tcl_resources(runfiles.get())) {
+      return path;
+    }
+  }
+
+  // Fallback: when OpenROAD is invoked by a build system that
+  // previously ran another Bazel binary (e.g. a Python wrapper), the
+  // inherited RUNFILES_* variables point to the *other* binary's
+  // runfiles tree and won't contain OpenROAD's tcl_resources_dir.
+  // Unset them and retry so Runfiles::Create falls back to the
+  // exe_path derived from /proc/self/exe.
+  unsetenv("RUNFILES_DIR");
+  unsetenv("RUNFILES_MANIFEST_FILE");
+  unsetenv("RUNFILES_MANIFEST_ONLY");
+
+  runfiles.reset(
       Runfiles::Create(GetProgramLocation(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << "[Warning] Failed to create bazel runfiles: " << error << "\n";
     return std::nullopt;
   }
 
-  std::error_code ec;
-  for (const std::string loc : {"openroad", "opensta", "_main"}) {
-    const std::string check_loc = loc + "/bazel/tcl_resources_dir";
-    const std::string path = runfiles->Rlocation(check_loc);
-    if (!path.empty() && std::filesystem::exists(path, ec)) {
-      return path;
-    }
+  if (auto path = find_tcl_resources(runfiles.get())) {
+    return path;
   }
   return std::nullopt;
 #endif

@@ -1909,7 +1909,6 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
-          resizer_->invalidateVertexOrdering();
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -2049,10 +2048,10 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   long_wire_stepping_runtime_ = 0;
 
   init();
-  resizer_->ensureLevelDrvrVertices();
 
   std::vector<sta::Pin*> filtered_pins;
-  for (auto drvr : resizer_->level_drvr_vertices_) {
+  const sta::VertexSeq drvrs = sta_->levelizedDrvrVertices();
+  for (auto drvr : drvrs) {
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = nullptr;
     odb::dbNet* net_db = nullptr;
@@ -2306,7 +2305,6 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   }
 
   printProgress(filtered_pins.size(), false, true, 0);
-  resizer_->invalidateVertexOrdering();
 
   debugPrint(logger_, RSZ, "rebuffer", 1, "Time spent");
   debugPrint(logger_, RSZ, "rebuffer", 1, "----------");
@@ -2383,7 +2381,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     const bool allow_topology_rewrite
         = (estimate_parasitics_->getParasiticsSrc()
-           == est::ParasiticsSrc::placement);
+           == est::ParasiticsSrc::kPlacement);
 
     for (int i = 0; i < 3; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);
@@ -2432,10 +2430,6 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
     int inserted_count;
     inserted_count = exportBufferTree(
         bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
-
-    if (inserted_count > 0) {
-      resizer_->invalidateVertexOrdering();
-    }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 

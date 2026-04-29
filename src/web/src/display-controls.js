@@ -291,6 +291,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });
+    // Debug graphics overlay: calls drawObjects() on registered renderers
+    // (e.g. gpl::GraphicsImpl when global_placement_debug is enabled).
+    visTree.add({ label: 'Debug Graphics', visKey: 'debug_renderers',
+        children: [
+            { key: 'debug_live', label: 'Live (don\'t require pause)' },
+        ],
+    });
     visTree.render(app.displayControlsEl);
 
     if (!app.heatMapLayer) {
