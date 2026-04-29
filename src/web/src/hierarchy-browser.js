@@ -14,17 +14,6 @@ const COLS = [
 // Must match HierarchyNodeKind enum on the server.
 const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
 
-// 31-color palette matching the Qt GUI's ColorGenerator.
-const MODULE_COLORS = [
-    [255,0,0], [255,140,0], [255,215,0], [0,255,0], [148,0,211],
-    [0,250,154], [220,20,60], [0,255,255], [0,191,255], [0,0,255],
-    [173,255,47], [218,112,214], [255,0,255], [30,144,255], [250,128,114],
-    [176,224,230], [255,20,147], [123,104,238], [255,250,205], [255,182,193],
-    [85,107,47], [139,69,19], [72,61,139], [0,128,0], [60,179,113],
-    [184,134,11], [0,139,139], [0,0,139], [50,205,50], [128,0,128],
-    [176,48,96],
-];
-
 export class HierarchyBrowser {
     constructor(container, app, redrawAllLayers) {
         this._app = app;
@@ -44,6 +33,11 @@ export class HierarchyBrowser {
 
         // Expose on app so display-controls can interact
         app.hierarchyBrowser = this;
+
+        // Auto-load in static mode (data is already cached).
+        if (app.websocketManager && app.websocketManager.isStaticMode) {
+            this.update();
+        }
     }
 
     _build(container) {
@@ -91,7 +85,7 @@ export class HierarchyBrowser {
             });
             this._nodes = data.nodes || [];
             this._buildTree();
-            this._assignColors();
+            this._readServerColors();
             this._computeEffectiveColors();
             this._render();
             const nMods = this._nodes.filter(
@@ -166,22 +160,20 @@ export class HierarchyBrowser {
         })));
     }
 
-    // Assign a color from the palette to each MODULE node in DFS order.
-    _assignColors() {
+    // Read server-assigned colors for each MODULE node.
+    _readServerColors() {
         this._moduleState.clear();
-        let colorIdx = 0;
         for (const row of this._rows) {
             const node = this._nodeMap.get(row.id);
             if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
             if (node.odb_id == null) continue;
-            const c = MODULE_COLORS[colorIdx % MODULE_COLORS.length];
+            const c = node.color || [128, 128, 128];
             this._moduleState.set(node.odb_id, {
                 color: c,
                 effectiveColor: c,
                 visible: true,
                 nodeId: node.id,
             });
-            colorIdx++;
         }
     }
 
@@ -214,26 +206,11 @@ export class HierarchyBrowser {
         }
     }
 
-    // Check if a node has MODULE children (not just LEAF_GROUP/TYPE_GROUP).
-    _hasModuleChildren(nodeId) {
-        const children = this._childrenMap.get(nodeId) || [];
-        return children.some(cid => {
-            const c = this._nodeMap.get(cid);
-            return c && (c.node_kind || 0) === NODE_KIND.MODULE;
-        });
-    }
-
     // Send the current effective color map to the server.
-    // Expanded modules with sub-modules are excluded — their "background"
-    // instances stay uncolored so child module colors are clearly visible.
     async _sendModuleColors() {
         const parts = [];
         for (const [odbId, st] of this._moduleState) {
             if (!st.visible) continue;
-            // Skip expanded modules that have child modules — only
-            // collapsed or leaf modules contribute to the color overlay.
-            const expanded = !this._collapsed.has(st.nodeId);
-            if (expanded && this._hasModuleChildren(st.nodeId)) continue;
             const [r, g, b] = st.effectiveColor;
             parts.push(`${odbId}:${r},${g},${b},100`);
         }

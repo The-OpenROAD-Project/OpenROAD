@@ -95,10 +95,12 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   sta::Scene* scene = drvr_path->scene(sta_);
   const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
-  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
 
-  // We get the driver port and the cell for that port.
-  sta::LibertyPort* input_port = network_->libertyPort(drvr_input_pin);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  sta::LibertyPort* input_port = in_arc ? in_arc->from() : nullptr;
+  if (input_port == nullptr) {
+    return false;
+  }
   sta::LibertyPort* swap_port = input_port;
   LibertyPortVec ports;
 

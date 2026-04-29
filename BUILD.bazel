@@ -208,6 +208,7 @@ cc_binary(
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
@@ -523,6 +524,7 @@ sh_test(
     srcs = ["//bazel:bzl_lint_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -536,6 +538,7 @@ sh_test(
     srcs = ["//bazel:bzl_fmt_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -582,6 +585,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
     ],
     data = [
+        "MODULE.bazel",
         "tclint.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
