@@ -74,7 +74,7 @@ class _dbInst : public _dbObject
   // path. dbModule::addInst() fires inDbPostInstParentChange in that
   // case so downstream caches (e.g., dbSdcNetwork's path-to-instance
   // map) stay consistent. The callback is suppressed on the initial
-  // assignment during dbInst::create — that path's accounting belongs
+  // assignment during dbInst::create -- that path's accounting belongs
   // to inDbInstCreate. Prefer dbModule::addInst() over assigning this
   // field directly.
   dbId<_dbModule> module_;

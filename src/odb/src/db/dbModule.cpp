@@ -238,7 +238,7 @@ void dbModule::addInst(dbInst* inst)
 
   // Distinguish a real reparent (inst already had a module) from the
   // initial assignment during dbInst::create (module_ is unset). Only
-  // the former should fire inDbPostInstParentChange — otherwise every
+  // the former should fire inDbPostInstParentChange -- otherwise every
   // create would falsely trigger downstream subtree-invalidation paths.
   const bool is_reparent = (_inst->module_ != 0);
   if (is_reparent) {
