@@ -16,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <ostream>
+#include <source_location>
 #include <sstream>
 #include <stack>
 #include <stdexcept>
@@ -25,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "spdlog/common.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
@@ -98,6 +100,33 @@ enum ToolId
       SIZE  // the number of tools, do not put anything after this
 };
 
+// Captures the caller's source location alongside the log message
+struct LogMessage
+{
+  std::string message;
+  std::source_location loc;
+  bool source_lines_disabled;
+
+  LogMessage(const char* msg,
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
+  {
+  }
+  LogMessage(const std::string& msg,
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
+  {
+  }
+  LogMessage(std::string_view msg,
+             const std::source_location& l = std::source_location::current(),
+             bool source_lines_off = false)
+      : message(msg), loc(l), source_lines_disabled(source_lines_off)
+  {
+  }
+};
+
 class Logger
 {
  public:
@@ -145,30 +174,48 @@ class Logger
   template <typename... Args>
   void info(ToolId tool,
             int id,
-            const std::string& message,
+            const LogMessage& log_message,
             const Args&... args)
   {
-    log(tool, spdlog::level::level_enum::info, id, message, args...);
+    log(tool,
+        spdlog::level::level_enum::info,
+        id,
+        log_message.loc,
+        log_message.message,
+        log_message.source_lines_disabled,
+        args...);
   }
 
   template <typename... Args>
   void warn(ToolId tool,
             int id,
-            const std::string& message,
+            const LogMessage& log_message,
             const Args&... args)
   {
     warning_count_++;
-    log(tool, spdlog::level::level_enum::warn, id, message, args...);
+    log(tool,
+        spdlog::level::level_enum::warn,
+        id,
+        log_message.loc,
+        log_message.message,
+        log_message.source_lines_disabled,
+        args...);
   }
 
   template <typename... Args>
   __attribute__((noreturn)) void error(ToolId tool,
                                        int id,
-                                       const std::string& message,
+                                       LogMessage log_message,
                                        const Args&... args)
   {
     error_count_++;
-    log(tool, spdlog::level::err, id, message, args...);
+    log(tool,
+        spdlog::level::err,
+        id,
+        log_message.loc,
+        log_message.message,
+        log_message.source_lines_disabled,
+        args...);
     // Exception should be caught by swig error handler.
     throw std::runtime_error(fmt::format("{}-{:04}", tool_names_[tool], id));
   }
@@ -176,10 +223,16 @@ class Logger
   template <typename... Args>
   __attribute__((noreturn)) void critical(ToolId tool,
                                           int id,
-                                          const std::string& message,
+                                          LogMessage log_message,
                                           const Args&... args)
   {
-    log(tool, spdlog::level::level_enum::critical, id, message, args...);
+    log(tool,
+        spdlog::level::level_enum::critical,
+        id,
+        log_message.loc,
+        log_message.message,
+        log_message.source_lines_disabled,
+        args...);
     exit(EXIT_FAILURE);
   }
 
@@ -278,7 +331,9 @@ class Logger
   void log(ToolId tool,
            spdlog::level::level_enum level,
            int id,
+           std::source_location loc,
            const std::string& message,
+           bool source_lines_disabled,
            const Args&... args)
   {
     assert(id >= 0 && id <= max_message_id);
@@ -286,13 +341,26 @@ class Logger
     auto& counter = message_counters_[tool][id];
     auto count = counter++;
     if (count < max_message_print) {
-      logger_->log(level,
-                   FMT_RUNTIME("[{} {}-{:04d}] " + message
-                               + spdlog::details::os::default_eol),
-                   level_names[level],
-                   tool_names_[tool],
-                   id,
-                   args...);
+      if (source_lines_enabled_ && !source_lines_disabled
+          && level >= spdlog::level::warn) {
+        logger_->log(level,
+                     FMT_RUNTIME("[{} {}-{:04d}] [{}:{}] " + message
+                                 + spdlog::details::os::default_eol),
+                     level_names[level],
+                     tool_names_[tool],
+                     id,
+                     loc.file_name(),
+                     loc.line(),
+                     args...);
+      } else {
+        logger_->log(level,
+                     FMT_RUNTIME("[{} {}-{:04d}] " + message
+                                 + spdlog::details::os::default_eol),
+                     level_names[level],
+                     tool_names_[tool],
+                     id,
+                     args...);
+      }
       return;
     }
 
@@ -373,6 +441,7 @@ class Logger
   bool debug_on_{false};
   std::atomic_int warning_count_{0};
   std::atomic_int error_count_{0};
+  bool source_lines_enabled_{true};
   static constexpr const char* level_names[]
       = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "OFF"};
   static constexpr const char* pattern_ = "%v";
