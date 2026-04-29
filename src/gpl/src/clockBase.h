@@ -50,7 +50,7 @@ class ClockBase
   // Maximum clock insertion delay as a fraction of the clock period.
   // The MST leaf farthest from the virtual root gets this much insertion
   // delay; all others are scaled proportionally.
-  // Default: 0.05 (5% of the clock period).
+  // Default: 0.10 (10% of the clock period).
   void setMaxSkewFraction(float f) { max_skew_fraction_ = f; }
   float getMaxSkewFraction() const { return max_skew_fraction_; }
 
@@ -79,7 +79,7 @@ class ClockBase
   // Build virtual clock tree for a single clock and set per-sink delays.
   void buildVirtualTreeForClock(const sta::Clock* clk);
 
-  // Get the instance center (in DBU) for a given STA pin.
+  // Get the instance origin (in DBU) for a given STA pin.
   // Returns false if the pin has no placement location.
   bool getPinLocation(const sta::Pin* pin, int& x, int& y) const;
 
