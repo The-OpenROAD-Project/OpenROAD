@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <queue>
 #include <utility>
@@ -16,6 +17,7 @@
 #include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
@@ -43,7 +45,7 @@ void ClockBase::initOverflowChk()
 void ClockBase::setVirtualCtsOverflows(const std::vector<int>& overflows)
 {
   overflows_ = overflows;
-  std::sort(overflows_.begin(), overflows_.end(), std::greater<int>());
+  std::ranges::sort(overflows_, std::greater<int>());
   initOverflowChk();
 }
 
@@ -123,7 +125,7 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
 
   // Skip clocks with invalid or infinite periods (e.g. generated clocks
   // before propagation).
-  const float period = static_cast<float>(clk->period());
+  const float period = clk->period();
   if (period <= 0.0f || std::isinf(period)) {
     return;
   }
@@ -262,8 +264,7 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
   // max_skew_fraction_ * period of insertion delay.  All others scale
   // proportionally, preserving the relative skew structure.
   // -----------------------------------------------------------------------
-  const double max_tree_dist
-      = *std::max_element(tree_dist.begin(), tree_dist.end());
+  const double max_tree_dist = *std::ranges::max_element(tree_dist);
 
   if (max_tree_dist < 1.0) {
     // All sinks are co-located; no meaningful skew to assign.
