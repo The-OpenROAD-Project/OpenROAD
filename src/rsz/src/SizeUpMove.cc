@@ -13,6 +13,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -48,26 +49,27 @@ bool SizeUpMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
     return false;
   }
 
-  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  sta::LibertyPort* in_port = in_arc ? in_arc->from() : nullptr;
+  if (in_port == nullptr) {
+    return false;
+  }
+
   sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
   sta::Pin* prev_drvr_pin
       = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;
 
-  float prev_drive;
+  float prev_drive = 0.0;
   if (prev_drvr_pin) {
-    prev_drive = 0.0;
     sta::LibertyPort* prev_drvr_port = network_->libertyPort(prev_drvr_pin);
     if (prev_drvr_port) {
       prev_drive = prev_drvr_port->driveResistance();
     }
-  } else {
-    prev_drive = 0.0;
   }
 
   sta::Scene* scene = drvr_path->scene(sta_);
   const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
-  sta::LibertyPort* in_port = network_->libertyPort(drvr_input_pin);
   sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
   sta::LibertyCell* upsize
       = upsizeCell(in_port, drvr_port, load_cap, prev_drive, scene, min_max);

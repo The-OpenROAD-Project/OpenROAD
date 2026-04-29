@@ -544,18 +544,24 @@ std::vector<dbInst*> dbModule::getLeafInsts()
 
 dbModBTerm* dbModule::findModBTerm(const char* name) const
 {
-  std::string modbterm_name(name);
-  const char hier_delimiter = getOwner()->getHierarchyDelimiter();
-  size_t last_idx = modbterm_name.find_last_of(hier_delimiter);
-  if (last_idx != std::string::npos) {
-    modbterm_name = modbterm_name.substr(last_idx + 1);
-  }
   const _dbModule* obj = (const _dbModule*) this;
   const _dbBlock* par = (const _dbBlock*) obj->getOwner();
-  auto it = obj->modbterm_hash_.find(modbterm_name);
+
+  // Try the full name first.  modbterm names may legitimately contain the
+  // hierarchy delimiter (e.g. escaped-identifier ports emitted by other
+  // EDA tools), so unconditionally truncating at the last '/' would miss
+  // them.  Fall back to the trailing segment for callers that pass a
+  // hierarchical path to a non-hierarchical port name.
+  auto it = obj->modbterm_hash_.find(name);
+  if (it == obj->modbterm_hash_.end()) {
+    const char hier_delimiter = getOwner()->getHierarchyDelimiter();
+    const char* last_delim = strrchr(name, hier_delimiter);
+    if (last_delim != nullptr) {
+      it = obj->modbterm_hash_.find(last_delim + 1);
+    }
+  }
   if (it != obj->modbterm_hash_.end()) {
-    auto db_id = (*it).second;
-    return (dbModBTerm*) par->modbterm_tbl_->getPtr(db_id);
+    return (dbModBTerm*) par->modbterm_tbl_->getPtr((*it).second);
   }
   return nullptr;
 }
