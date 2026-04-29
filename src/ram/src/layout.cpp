@@ -92,6 +92,15 @@ void Layout::addCell(std::unique_ptr<Cell> cell)
   cells_.push_back(std::move(cell));
 }
 
+bool Layout::insertCell(std::unique_ptr<Cell> cell, int idx)
+{
+  if (idx > static_cast<int>(cells_.size())) {
+    return false;
+  }
+  cells_.insert(cells_.begin() + idx, std::move(cell));
+  return true;
+}
+
 void Layout::layoutInit()
 {
   for (int i = 0; i < cells_.size(); ++i) {
@@ -180,6 +189,14 @@ void Grid::addCell(std::unique_ptr<Cell> cell, int idx)
     }
   }
   layouts_[idx]->addCell(std::move(cell));
+}
+
+bool Grid::insertCell(std::unique_ptr<Cell> cell, int layout_idx, int cell_idx)
+{
+  if (layout_idx > static_cast<int>(layouts_.size())) {
+    return false;
+  }
+  return layouts_[layout_idx]->insertCell(std::move(cell), cell_idx);
 }
 
 void Grid::gridInit()
