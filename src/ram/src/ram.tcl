@@ -9,13 +9,14 @@ sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
                                              [-tristate_cell name]
                                              [-inv_cell name]
                                              [-read_ports count]
+                                             [-use_latch value]
                                              [-tapcell name]
                                              [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
-      -read_ports -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
+      -read_ports -use_latch -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -64,6 +65,11 @@ proc generate_ram_netlist { args } {
     set read_ports $keys(-read_ports)
   }
 
+  set use_latch 0
+  if { [info exists keys(-use_latch)] } {
+    set use_latch $keys(-use_latch)
+  }
+
   set tapcell ""
   set max_tap_dist 0
   if { [info exists keys(-tapcell)] } {
@@ -84,7 +90,7 @@ proc generate_ram_netlist { args } {
   }
 
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $column_mux_ratio $storage_cell \
-    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
+    $tristate_cell $inv_cell $read_ports $use_latch $tapcell $max_tap_dist
 }
 
 sta::define_cmd_args "generate_ram" {-mask_size bits
@@ -103,6 +109,7 @@ sta::define_cmd_args "generate_ram" {-mask_size bits
                                      -filler_cells fillers
                                      [-tapcell name]
                                      [-max_tap_dist value]
+                                     [-use_latch value]
                                      [-write_behavioral_verilog filename]
                                      }
 
@@ -110,7 +117,7 @@ sta::define_cmd_args "generate_ram" {-mask_size bits
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio
-           -storage_cell -tristate_cell -inv_cell -read_ports
+           -storage_cell -tristate_cell -inv_cell -read_ports -use_latch
       -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
         -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
@@ -157,6 +164,10 @@ proc generate_ram { args } {
   if { [info exists keys(-write_behavioral_verilog)] } {
     set behavioral_verilog_file $keys(-write_behavioral_verilog)
     ram::set_behavioral_verilog_filename $behavioral_verilog_file
+  }
+
+  if { [info exists keys(-use_latch)] } {
+    lappend ram_netlist_args -use_latch $keys(-use_latch)
   }
 
   generate_ram_netlist {*}$ram_netlist_args
