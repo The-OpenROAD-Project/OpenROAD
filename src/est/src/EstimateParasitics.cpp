@@ -160,12 +160,12 @@ void EstimateParasitics::addSignalLayer(odb::dbTechLayer* layer)
 
 void EstimateParasitics::sortClkAndSignalLayers()
 {
-  auto sortLayers = [](const odb::dbTechLayer* a, const odb::dbTechLayer* b) {
+  auto sort_layers = [](const odb::dbTechLayer* a, const odb::dbTechLayer* b) {
     return a->getNumber() < b->getNumber();
   };
 
-  std::ranges::sort(clk_layers_, sortLayers);
-  std::ranges::sort(signal_layers_, sortLayers);
+  std::ranges::sort(clk_layers_, sort_layers);
+  std::ranges::sort(signal_layers_, sort_layers);
 }
 
 void EstimateParasitics::setHWireSignalRC(const sta::Scene* scene,
@@ -373,8 +373,8 @@ void EstimateParasitics::initBlock()
 void EstimateParasitics::ensureParasitics()
 {
   estimateParasitics(global_router_->haveRoutes()
-                         ? ParasiticsSrc::global_routing
-                         : ParasiticsSrc::placement);
+                         ? ParasiticsSrc::kGlobalRouting
+                         : ParasiticsSrc::kPlacement);
 }
 
 void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
@@ -395,26 +395,26 @@ void EstimateParasitics::estimateParasitics(
   }
 
   switch (src) {
-    case ParasiticsSrc::placement:
+    case ParasiticsSrc::kPlacement:
       estimateWireParasitics(spef_writer.get());
-      parasitics_src_ = ParasiticsSrc::placement;
+      parasitics_src_ = ParasiticsSrc::kPlacement;
       break;
-    case ParasiticsSrc::global_routing:
+    case ParasiticsSrc::kGlobalRouting:
       estimateGlobalRouteRC(spef_writer.get());
-      parasitics_src_ = ParasiticsSrc::global_routing;
+      parasitics_src_ = ParasiticsSrc::kGlobalRouting;
       break;
-    case ParasiticsSrc::detailed_routing:
+    case ParasiticsSrc::kDetailedRouting:
       // TODO: call rcx to extract parasitics and load them to STA
-      parasitics_src_ = ParasiticsSrc::detailed_routing;
+      parasitics_src_ = ParasiticsSrc::kDetailedRouting;
       break;
-    case ParasiticsSrc::none:
+    case ParasiticsSrc::kNone:
       break;
   }
 }
 
 bool EstimateParasitics::haveEstimatedParasitics() const
 {
-  return parasitics_src_ != ParasiticsSrc::none;
+  return parasitics_src_ != ParasiticsSrc::kNone;
 }
 
 void EstimateParasitics::updateParasitics()
@@ -433,7 +433,7 @@ void EstimateParasitics::updateParasitics()
   network_->setDefaultLibertyLibrary(default_lib);
 
   switch (parasitics_src_) {
-    case ParasiticsSrc::placement:
+    case ParasiticsSrc::kPlacement:
       for (const sta::Net* net : parasitics_invalid_) {
         //
         // TODO: remove this check (we expect all to be flat net)
@@ -456,8 +456,8 @@ void EstimateParasitics::updateParasitics()
         estimateWireParasitic(net);
       }
       break;
-    case ParasiticsSrc::global_routing:
-    case ParasiticsSrc::detailed_routing: {
+    case ParasiticsSrc::kGlobalRouting:
+    case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes();
       for (const sta::Net* net : parasitics_invalid_) {
@@ -471,7 +471,7 @@ void EstimateParasitics::updateParasitics()
       }
       break;
     }
-    case ParasiticsSrc::none:
+    case ParasiticsSrc::kNone:
       break;
   }
 
@@ -480,7 +480,7 @@ void EstimateParasitics::updateParasitics()
   // annotations on the nets affected by a network edit. We need to explicitly
   // invalidate those delays. Do it in bulk instead of interleaving with each
   // groute call.
-  if (parasitics_src_ != ParasiticsSrc::none) {
+  if (parasitics_src_ != ParasiticsSrc::kNone) {
     for (const sta::Net* net : parasitics_invalid_) {
       debugPrint(logger_,
                  EST,
@@ -519,20 +519,20 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
       || parasitics->findPiElmore(drvr_pin, sta::RiseFall::rise(), max_)
              == nullptr) {
     switch (parasitics_src_) {
-      case ParasiticsSrc::placement:
+      case ParasiticsSrc::kPlacement:
         estimateWireParasitic(drvr_pin, net);
         parasitics_invalid_.erase(net);
         break;
-      case ParasiticsSrc::global_routing: {
+      case ParasiticsSrc::kGlobalRouting: {
         incr_groute_->updateRoutes();
         estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;
       }
-      case ParasiticsSrc::detailed_routing:
+      case ParasiticsSrc::kDetailedRouting:
         // TODO: call incremental drt for the modified net
         break;
-      case ParasiticsSrc::none:
+      case ParasiticsSrc::kNone:
         break;
     }
   }
@@ -631,7 +631,7 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
       sta::Net* cur_net = db_network_->dbToSta(db_net);
       estimateWireParasitic(cur_net, spef_writer);
     }
-    parasitics_src_ = ParasiticsSrc::placement;
+    parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
   }
 }
@@ -1331,10 +1331,10 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
     }
 
     switch (estimate_parasitics_->getParasiticsSrc()) {
-      case ParasiticsSrc::placement:
+      case ParasiticsSrc::kPlacement:
         break;
-      case ParasiticsSrc::global_routing:
-      case ParasiticsSrc::detailed_routing:
+      case ParasiticsSrc::kGlobalRouting:
+      case ParasiticsSrc::kDetailedRouting:
         // TODO: add IncrementalDRoute
         estimate_parasitics_->setIncrementalGRT(
             new grt::IncrementalGRoute(estimate_parasitics_->getGlobalRouter(),
@@ -1342,7 +1342,7 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
         // Don't print verbose messages for incremental routing
         estimate_parasitics_->getGlobalRouter()->setVerbose(false);
         break;
-      case ParasiticsSrc::none:
+      case ParasiticsSrc::kNone:
         break;
     }
 
@@ -1374,15 +1374,15 @@ IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
     }
 
     switch (estimate_parasitics_->getParasiticsSrc()) {
-      case ParasiticsSrc::placement:
+      case ParasiticsSrc::kPlacement:
         break;
-      case ParasiticsSrc::global_routing:
-      case ParasiticsSrc::detailed_routing:
+      case ParasiticsSrc::kGlobalRouting:
+      case ParasiticsSrc::kDetailedRouting:
         // TODO: add IncrementalDRoute
         delete estimate_parasitics_->getIncrementalGRT();
         estimate_parasitics_->setIncrementalGRT(nullptr);
         break;
-      case ParasiticsSrc::none:
+      case ParasiticsSrc::kNone:
         break;
     }
 

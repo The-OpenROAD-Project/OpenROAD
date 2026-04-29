@@ -33,10 +33,10 @@ class extPattern
   int under_met2;
   int wireCnt;
 
-  float minWidth;
-  int _minWidth;
-  float minSpacing;
-  int _minSpacing;
+  float min_width_um;
+  int min_width_dbu;
+  float min_spacing_um;
+  int min_spacing_dbu;
   uint32_t dir;
 
   uint32_t _cnt;

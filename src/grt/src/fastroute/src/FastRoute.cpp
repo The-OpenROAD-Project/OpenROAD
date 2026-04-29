@@ -822,6 +822,11 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   bool exists;
   getNetId(db_net, net_id, exists);
 
+  if (!exists) {
+    logger_->error(
+        GRT, 127, "net_id for db_net {} not found", db_net->getConstName());
+  }
+
   net = nets_[net_id];
 
   int8_t layer_edge_cost = net->getLayerEdgeCost(k);
@@ -2216,6 +2221,10 @@ void FastRouteCore::setDebugTree2D(bool tree2D)
 void FastRouteCore::setDebugTree3D(bool tree3D)
 {
   debug_->tree3D = tree3D;
+}
+void FastRouteCore::setDebugEdges3D(bool edges3D)
+{
+  debug_->edges3D = edges3D;
 }
 void FastRouteCore::setDebugNet(const odb::dbNet* net)
 {

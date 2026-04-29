@@ -210,17 +210,13 @@ TEST_F(SnapHandlerTest, SnapReturnsJson)
 {
   WebSocketRequest req;
   req.id = 100;
-  req.type = WebSocketRequest::SNAP;
-  req.snap_x = 50000;
-  req.snap_y = 50;
-  req.snap_radius = 1000;
-  req.snap_point_threshold = 10;
-  req.snap_horizontal = true;
-  req.snap_vertical = true;
+  req.type = WebSocketRequest::kSnap;
+  req.raw_json
+      = R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":1,"vertical":1})";
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.id, 100u);
-  EXPECT_EQ(resp.type, 0);  // JSON
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);  // JSON
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"found\""), std::string::npos);
@@ -230,17 +226,13 @@ TEST_F(SnapHandlerTest, SnapFoundContainsEdge)
 {
   WebSocketRequest req;
   req.id = 101;
-  req.type = WebSocketRequest::SNAP;
+  req.type = WebSocketRequest::kSnap;
   // Query near die area bottom edge at y=0.
-  req.snap_x = 50000;
-  req.snap_y = 50;
-  req.snap_radius = 1000;
-  req.snap_point_threshold = 10;
-  req.snap_horizontal = true;
-  req.snap_vertical = true;
+  req.raw_json
+      = R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":1,"vertical":1})";
 
   auto resp = handler_->handleSnap(req);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   // Should find the die area bottom edge.
@@ -253,18 +245,14 @@ TEST_F(SnapHandlerTest, SnapAlwaysFindsEdgeDueToChipBoundary)
 {
   WebSocketRequest req;
   req.id = 102;
-  req.type = WebSocketRequest::SNAP;
-  // Center of design — die area edges are always checked so snap always
+  req.type = WebSocketRequest::kSnap;
+  // Center of design -- die area edges are always checked so snap always
   // finds something (the closest die boundary).
-  req.snap_x = 50000;
-  req.snap_y = 50000;
-  req.snap_radius = 10;
-  req.snap_point_threshold = 5;
-  req.snap_horizontal = true;
-  req.snap_vertical = true;
+  req.raw_json
+      = R"({"dbu_x":50000,"dbu_y":50000,"radius":10,"point_threshold":5,"horizontal":1,"vertical":1})";
 
   auto resp = handler_->handleSnap(req);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"found\": true"), std::string::npos);
@@ -274,33 +262,31 @@ TEST_F(SnapHandlerTest, SnapAlwaysFindsEdgeDueToChipBoundary)
 TEST_F(SnapHandlerTest, SnapDispatchesCorrectly)
 {
   // Verify that dispatch_request routes SNAP type (even though SNAP goes
-  // through SelectHandler, not dispatch_request — just verify SNAP type
+  // through SelectHandler, not dispatch_request -- just verify SNAP type
   // is recognized and doesn't error out through the general path).
   WebSocketRequest req;
   req.id = 103;
-  req.type = WebSocketRequest::SNAP;
-  req.snap_x = 100;
-  req.snap_y = 100;
-  req.snap_radius = 5000;
-  req.snap_point_threshold = 50;
-  req.snap_horizontal = true;
-  req.snap_vertical = true;
+  req.type = WebSocketRequest::kSnap;
+  req.raw_json
+      = R"({"dbu_x":100,"dbu_y":100,"radius":5000,"point_threshold":50,"horizontal":1,"vertical":1})";
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.id, 103u);
-  EXPECT_NE(resp.type, 2);  // not error
+  EXPECT_NE(resp.type, WebSocketResponse::kError);  // not error
 }
 
 TEST_F(SnapHandlerTest, TechResponseIncludesDbuPerMicron)
 {
   // The TECH response should include dbu_per_micron which is needed by the
   // ruler for distance calculations.
+  TileHandler tile_handler(gen_);
+  SessionState state;
   WebSocketRequest req;
   req.id = 104;
-  req.type = WebSocketRequest::TECH;
+  req.type = WebSocketRequest::kTech;
 
-  auto resp = dispatch_request(req, *gen_);
-  EXPECT_EQ(resp.type, 0);
+  auto resp = tile_handler.handleTile(req, state);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"dbu_per_micron\""), std::string::npos);

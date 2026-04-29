@@ -27,40 +27,40 @@ std::string payloadStr(const WebSocketResponse& resp)
 
 TEST(ClockTreeNodeTest, TypeToStringRoot)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::ROOT), "root");
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kRoot), "root");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringBuffer)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::BUFFER), "buffer");
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kBuffer), "buffer");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringInverter)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::INVERTER),
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kInverter),
                "inverter");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringClockGate)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::CLOCK_GATE),
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kClockGate),
                "clock_gate");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringRegister)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::REGISTER),
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kRegister),
                "register");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringMacro)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::MACRO), "macro");
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kMacro), "macro");
 }
 
 TEST(ClockTreeNodeTest, TypeToStringUnknown)
 {
-  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::UNKNOWN), "unknown");
+  EXPECT_STREQ(ClockTreeNode::typeToString(ClockTreeNode::kUnknown), "unknown");
 }
 
 //------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ TEST(ClockTreeNodeTest, DefaultValues)
   EXPECT_EQ(node.parent_id, -1);
   EXPECT_TRUE(node.name.empty());
   EXPECT_TRUE(node.pin_name.empty());
-  EXPECT_EQ(node.type, ClockTreeNode::UNKNOWN);
+  EXPECT_EQ(node.type, ClockTreeNode::kUnknown);
   EXPECT_EQ(node.arrival, 0.0f);
   EXPECT_EQ(node.delay, 0.0f);
   EXPECT_EQ(node.fanout, 0);
@@ -135,12 +135,12 @@ TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
 
   WebSocketRequest req;
   req.id = 1;
-  req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
-  req.clock_tree_inst_name = "clkbuf1";
+  req.type = WebSocketRequest::kClockTreeHighlight;
+  req.raw_json = R"({"inst_name":"clkbuf1"})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.id, 1u);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"ok\""), std::string::npos);
@@ -156,11 +156,11 @@ TEST_F(ClockTreeHighlightTest, HighlightNonExistentInstance)
 
   WebSocketRequest req;
   req.id = 2;
-  req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
-  req.clock_tree_inst_name = "does_not_exist";
+  req.type = WebSocketRequest::kClockTreeHighlight;
+  req.raw_json = R"({"inst_name":"does_not_exist"})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // No instance found → no highlight rects
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -181,11 +181,11 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
 
   WebSocketRequest req;
   req.id = 3;
-  req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
-  req.clock_tree_inst_name = "";
+  req.type = WebSocketRequest::kClockTreeHighlight;
+  req.raw_json = R"({"inst_name":""})";
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // All state should be cleared
   std::lock_guard<std::mutex> lock(state_.selection_mutex);

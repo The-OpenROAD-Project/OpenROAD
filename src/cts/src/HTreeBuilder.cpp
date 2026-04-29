@@ -2123,6 +2123,9 @@ void HTreeBuilder::createSingleBufferClockNet()
   ClockInst& rootBuffer = clock_.addClockBuffer(
       "clkbuf_0", options_->getRootBuffer(), centerX, centerY);
 
+  if (topBufferName_.empty()) {
+    topBufferName_ = rootBuffer.getName();
+  }
   // clang-format off
   if (center != legalCenter) {
     debugPrint(logger_, CTS, "legalizer", 2, "createSingleBufferClockNet "
