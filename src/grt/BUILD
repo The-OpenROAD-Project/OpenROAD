@@ -18,6 +18,7 @@ cc_library(
         "src/fastroute/include/AbstractFastRouteRenderer.h",
         "src/fastroute/include/DataType.h",
     ],
+    includes = ["src/fastroute/include"],
     visibility = ["//visibility:private"],
     deps = [
         "//src/stt",
