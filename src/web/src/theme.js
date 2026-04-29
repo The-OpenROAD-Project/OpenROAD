@@ -14,6 +14,15 @@ export function setCookie(name, value) {
     document.cookie = name + '=' + value + '; path=/; max-age=31536000; SameSite=Lax';
 }
 
+// Enable the Golden Layout theme stylesheet matching the active theme.
+export function applyGLTheme(theme) {
+    const dark  = document.getElementById('gl-theme-dark');
+    const light = document.getElementById('gl-theme-light');
+    if (!dark || !light) return;
+    dark.disabled  = (theme !== 'dark');
+    light.disabled = (theme !== 'light');
+}
+
 if (typeof document !== 'undefined') {
     // Try cookie first (shared across ports for the live server),
     // then localStorage (works for standalone file:// reports).
@@ -21,6 +30,7 @@ if (typeof document !== 'undefined') {
         || (typeof localStorage !== 'undefined' && localStorage.getItem('or_theme'))
         || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     document.documentElement.dataset.theme = savedTheme;
+    applyGLTheme(savedTheme);
 }
 
 // Read current CSS custom property values for canvas-based widgets.

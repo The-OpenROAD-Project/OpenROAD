@@ -1,12 +1,10 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
-load("//bazel:extract_zip.bzl", "extract_zip")
 
 package(features = ["layering_check"])
 
@@ -68,12 +66,6 @@ pkg_zip(
     ],
 )
 
-# ... however, Tcl8 still needs access to a directory, so unpack in that case.
-extract_zip(
-    name = "tcl_resources_dir",
-    src = ":tcl_resources_zip",
-)
-
 genrule(
     name = "tcl_resources_zip_data_h",
     srcs = [":tcl_resources_zip"],
@@ -87,44 +79,15 @@ cc_binary(
     srcs = ["embed.cc"],
 )
 
-# As long as we support tcl8 (using runfiles) we need this flag.
-bool_flag(
-    name = "use_zipfs",
-    build_setting_default = True,  # True as we use tcl9 with zipfs feature
-)
-
-config_setting(
-    name = "zipfs_config",
-    flag_values = {":use_zipfs": "true"},
-)
-
-# Library initialization is a bit different for tcl8 and tcl9.
-# In tcl9, we can use a zipped version of the needed include files, but
-# for tcl8, we have to use the unpacked zip file and point our runfiles
-# to it.
 cc_library(
     name = "tcl_library_init",
-    srcs = ["tcl_library_init.cc"] +
-           select({
-               ":zipfs_config": ["tcl_resources_zip_data.h"],
-               "//conditions:default": [],
-           }),
+    srcs = [
+        "tcl_library_init.cc",
+        "tcl_resources_zip_data.h",
+    ],
     hdrs = ["tcl_library_init.h"],
-    copts = select({
-        ":zipfs_config": [],
-        "//conditions:default": ["-DUSE_TCL_RUNFILE_INIT"],
-    }),
-    data = select({
-        ":zipfs_config": [],
-        "//conditions:default": [":tcl_resources_dir"],
-    }),
     visibility = ["//visibility:public"],
-    deps = [
-        "@tcl_lang//:tcl",
-    ] + select({
-        ":zipfs_config": [],
-        "//conditions:default": ["@rules_cc//cc/runfiles"],
-    }),
+    deps = ["@tcl_lang//:tcl"],
 )
 
 # small build test to check if "bazel build //src/sta:StaTclInitVar" works

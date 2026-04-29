@@ -6,16 +6,18 @@
 [INFO RAM-0016] Selected and2 cell sky130_fd_sc_hd__and2_0
 [INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
 [INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
+[INFO RAM-0016] Selected aoi22 cell sky130_fd_sc_hd__a22oi_1
 [INFO RAM-0024] Behavioral Verilog written for RAM8x8
 [INFO PDN-0001] Inserting grid: ram_grid
 [INFO PPL-0067] Restrict pins [ D[0] Q[0] D[1] Q[1] D[2] ... ] to region 0.00u-110.40u at the TOP edge.
-[INFO PPL-0001] Number of available slots 258
+[INFO PPL-0067] Restrict pins [ clk we[0] addr_rw[0] addr_rw[1] addr_rw[2] ... ] to region 0.00u-24.48u at the RIGHT edge.
+[INFO PPL-0001] Number of available slots 270
 [INFO PPL-0002] Number of I/O             21
 [INFO PPL-0003] Number of I/O w/sink      21
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 331.91 um.
+[INFO PPL-0012] I/O nets HPWL: 330.99 um.
 [INFO DPL-0001] Placed 48 filler instances.
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon

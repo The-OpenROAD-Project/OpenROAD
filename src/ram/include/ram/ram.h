@@ -90,6 +90,7 @@ class RamGen
   void generate(int mask_size,
                 int word_size,
                 int num_words,
+                int column_mux_ratio,
                 int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
@@ -139,22 +140,32 @@ class RamGen
   void makeSlice(int slice_idx,
                  int mask_size,
                  int row_idx,
+                 int word_idx,
                  int read_ports,
+                 int column_mux_ratio,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
+                 odb::dbNet* word_select,
                  const std::vector<odb::dbNet*>& selects,
+                 const std::vector<odb::dbNet*>& shared_select_b_nets,
+                 bool create_select_inv,
                  const std::vector<odb::dbNet*>& data_input,
-                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                 const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   void makeWord(int slices_per_word,
                 int mask_size,
                 int row_idx,
+                int word_idx,
                 int read_ports,
+                int column_mux_ratio,
                 odb::dbNet* clock,
+                odb::dbNet* word_select,
                 std::vector<odb::dbBTerm*>& write_enable,
                 const std::vector<odb::dbNet*>& selects,
+                const std::vector<odb::dbNet*>& shared_select_b_nets,
+                bool create_select_inv,
                 const std::vector<odb::dbNet*>& data_input,
-                const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
@@ -185,6 +196,7 @@ class RamGen
   odb::dbMaster* and2_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
+  odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
   std::map<PortRole, std::string> storage_ports_;
@@ -198,6 +210,8 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
+      aoi22_out_;
   Grid ram_grid_;
 };
 
