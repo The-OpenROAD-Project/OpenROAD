@@ -46,6 +46,7 @@ or_integration_tests(
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
+    sdc_modinst_slash
     sdc_names1
     sdc_names2
     sta1

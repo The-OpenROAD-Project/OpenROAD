@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "spdlog/fmt/fmt.h"
 #include "sta/NetworkClass.hh"
@@ -66,52 +67,23 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
-  // If the pattern is a literal (no wildcards and not a regex), return
-  // immediately as the literal lookup has already failed in the caller.
+  // Literal pattern: serve from the precomputed pathological-path map.
+  // Most designs contribute zero entries to this map, so the lookup is
+  // O(1) and the miss path simply falls through.
   if (!pattern->isRegexp() && !pattern->hasWildcards()) {
+    const SdcPathToInstMap& map = sdcPathToInstMap();
+    auto it = map.find(pattern->pattern());
+    if (it != map.end()) {
+      insts.push_back(it->second);
+    }
     return;
   }
-  // A recursive lambda to traverse the design hierarchy with a depth-first
-  // search (DFS).
-  // It builds the hierarchical path incrementally using fmt::memory_buffer to
-  // avoid expensive std::string allocations and copies at each step.
-  std::function<void(Instance*, fmt::memory_buffer&)> dfs_search
-      = [&, this](Instance* instance, fmt::memory_buffer& path_buffer) -> void {
-    // Iterate over the children of the current instance.
-    std::unique_ptr<InstanceChildIterator> child_iter{childIterator(instance)};
-    while (child_iter->hasNext()) {
-      Instance* child = child_iter->next();
-
-      // Save the current size of the buffer to restore it later.
-      const size_t original_size = path_buffer.size();
-
-      // Build the child's full path name incrementally.
-      if (original_size > 0) {
-        path_buffer.push_back(pathDivider());
-      }
-      path_buffer.append(std::string_view(name(child)));
-
-      // Check if the child instance name matches the pattern.
-      // Add a null terminator for C-style string compatibility.
-      path_buffer.push_back('\0');
-      if (pattern->match(staToSdc(path_buffer.data()))) {
-        insts.push_back(child);
-      }
-      path_buffer.resize(path_buffer.size() - 1);  // Remove the null terminator
-
-      // Recurse into the child's hierarchy if it's not a leaf.
-      if (!isLeaf(child)) {
-        dfs_search(child, path_buffer);
-      }
-
-      // Restore the buffer to its original state for the next sibling.
-      path_buffer.resize(original_size);
-    }
-  };
-
-  // Start the search from the top-level instance.
-  fmt::memory_buffer path_buffer;
-  dfs_search(topInstance(), path_buffer);
+  visitAllInstancesSdcPath(
+      [&](Instance* child, const std::string& sdc_path, bool /*any_div*/) {
+        if (pattern->match(sdc_path)) {
+          insts.push_back(child);
+        }
+      });
 }
 
 NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
@@ -241,6 +213,121 @@ Pin* dbSdcNetwork::findPin(std::string_view path_name) const
     pin = findPin(topInstance(), path_name);
   }
   return pin;
+}
+
+void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
+{
+  // Build paths incrementally in a fmt::memory_buffer to avoid the
+  // per-step std::string allocations a naive DFS would incur. Using a
+  // generic recursive lambda (auto& self) instead of a std::function
+  // skips type erasure and the heap allocation it can incur.
+  // The any_div flag propagates down so the visitor can cheaply tell
+  // whether sdc_path's recursive splitter resolution would fail.
+  auto rec = [&](auto& self,
+                 Instance* parent,
+                 fmt::memory_buffer& buf,
+                 bool any_div) -> void {
+    std::unique_ptr<InstanceChildIterator> it{childIterator(parent)};
+    while (it->hasNext()) {
+      Instance* child = it->next();
+      const size_t orig_size = buf.size();
+      if (orig_size > 0) {
+        buf.push_back(pathDivider());
+      }
+      const std::string leaf = name(child);
+      // Short-circuit: once a subtree is pathological, descendants
+      // inherit that flag without re-scanning the leaf string.
+      const bool subtree_any_div
+          = any_div || leaf.find(pathDivider()) != std::string::npos;
+      buf.append(std::string_view(leaf));
+      buf.push_back('\0');  // null-terminate for staToSdc's C-string input
+      visitor(child, staToSdc(buf.data()), subtree_any_div);
+      buf.resize(buf.size() - 1);
+      if (!isLeaf(child)) {
+        self(self, child, buf, subtree_any_div);
+      }
+      buf.resize(orig_size);
+    }
+  };
+  fmt::memory_buffer buf;
+  rec(rec, topInstance(), buf, false);
+}
+
+const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
+{
+  if (!cache_built_) {
+    visitAllInstancesSdcPath(
+        [&](Instance* inst, std::string sdc_path, bool any_div) {
+          // Only pathological entries (those the recursive splitter in
+          // findInstance cannot resolve) need to live in the cache.
+          if (any_div) {
+            inst_to_sdc_path_.emplace(inst, sdc_path);
+            sdc_path_to_inst_.emplace(std::move(sdc_path), inst);
+          }
+        });
+    cache_built_ = true;
+  }
+  return sdc_path_to_inst_;
+}
+
+bool dbSdcNetwork::hasPathologicalPath(const Instance* inst) const
+{
+  const Instance* top = topInstance();
+  for (const Instance* a = inst; a && a != top; a = network_->parent(a)) {
+    if (name(a).find(pathDivider()) != std::string::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void dbSdcNetwork::insertEntry(Instance* inst) const
+{
+  std::string sdc_path = SdcNetwork::pathName(inst);
+  inst_to_sdc_path_.emplace(inst, sdc_path);
+  sdc_path_to_inst_.emplace(std::move(sdc_path), inst);
+}
+
+void dbSdcNetwork::eraseEntry(const Instance* inst) const
+{
+  auto rev_it = inst_to_sdc_path_.find(inst);
+  if (rev_it == inst_to_sdc_path_.end()) {
+    return;
+  }
+  sdc_path_to_inst_.erase(rev_it->second);
+  inst_to_sdc_path_.erase(rev_it);
+}
+
+void dbSdcNetwork::onInstCreated(Instance* inst)
+{
+  if (!cache_built_) {
+    return;
+  }
+  if (!hasPathologicalPath(inst)) {
+    return;
+  }
+  insertEntry(inst);
+}
+
+void dbSdcNetwork::onInstDestroyed(Instance* inst)
+{
+  if (!cache_built_) {
+    return;
+  }
+  eraseEntry(inst);
+}
+
+void dbSdcNetwork::onInstRenamed(Instance* inst)
+{
+  if (!cache_built_) {
+    return;
+  }
+  // Erase by Instance* (uses the reverse map) — no need to reconstruct
+  // the pre-rename path. Re-insert if still pathological.
+  eraseEntry(inst);
+  if (hasPathologicalPath(inst)) {
+    insertEntry(inst);
+  }
 }
 
 }  // namespace sta
