@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -98,4 +99,8 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

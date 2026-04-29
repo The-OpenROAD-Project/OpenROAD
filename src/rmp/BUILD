@@ -185,5 +185,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rmp/test:__pkg__",
+    ],
 )
