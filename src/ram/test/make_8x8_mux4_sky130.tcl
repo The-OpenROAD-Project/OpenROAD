@@ -14,13 +14,13 @@ generate_ram \
   -word_size 8 \
   -num_words 8 \
   -column_mux_ratio 4 \
-  -read_ports 1 \
+  -rw_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
   -power_pin VPWR \
   -ground_pin VGND \
-  -routing_layer {met1 0.48} \
-  -ver_layer {met2 0.48 10} \
-  -hor_layer {met3 0.48 7} \
+  -routing_layer {met1 0.14} \
+  -ver_layer {met2 0.3 24} \
+  -hor_layer {met3 0.3 24} \
   -filler_cells {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
     sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8} \
   -tapcell sky130_fd_sc_hd__tap_1 \

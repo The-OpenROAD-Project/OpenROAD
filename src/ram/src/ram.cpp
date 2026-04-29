@@ -1024,10 +1024,11 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
       we_pins.push_back(bterm);
     }
   }
-  block_->addBTermsToConstraint(clk_pins, right_constraint);
-  block_->addBTermsToConstraint(we_pins, right_constraint);
-  for (int p = 0; p < addr_inputs_.size(); ++p) {
-    block_->addBTermsToConstraint(addr_inputs_[p], right_constraint);
+  // moving clock and we pins to the top
+  block_->addBTermsToConstraint(clk_pins, top_constraint);
+  block_->addBTermsToConstraint(we_pins, top_constraint);
+  for (auto inputs : addr_inputs_) {
+    block_->addBTermsToConstraint(inputs, right_constraint);
   }
 
   auto pin_tech = block_->getDb()->getTech();
@@ -1094,15 +1095,6 @@ void RamGen::generate(const int mask_size,
                    "values of 1, 2, or 4.");
   }
 
-  // TODO: add support for col/mux ratio when read_ports > 1
-  // error checking, current col/mux only supports read_ports = 1
-  if (column_mux_ratio > 1 && rw_ports + r_ports != 1) {
-    logger_->error(RAM,
-                   36,
-                   "The ram generator currently only supports column_mux_ratio "
-                   "> 1 when read_ports = 1.");
-  }
-
   // TODO: add support for non-divisble word counts, for these cases the last
   // row will have empty spaces/filler cells instead of errorring out
   if (num_words % column_mux_ratio != 0) {
@@ -1152,7 +1144,7 @@ void RamGen::generate(const int mask_size,
   // plus inverter columns shared across ports
   const int total_ports = rw_ports + r_ports + w_ports;
   const int ports_per_col
-      = (num_inputs > 0) ? (num_words / num_row_bits) : total_ports;
+      = (num_row_bits > 0) ? (num_rows / num_row_bits) : total_ports;
   const int inv_col_count
       = std::ceil(static_cast<float>(total_ports) / ports_per_col);
 
@@ -1270,15 +1262,6 @@ void RamGen::generate(const int mask_size,
   if (column_mux_ratio == 2) {
     word_sel_nets[0] = inv_addr_nets[0][0];
     word_sel_nets[1] = addr_inputs_[0][0]->getNet();
-    // place inv_addr[0] inverter in sel column
-    inv_sel_cell = std::make_unique<Cell>();
-    makeInst(
-        inv_sel_cell.get(),
-        "word_sel",
-        "inv_addr_0",
-        inv_cell_,
-        {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
-         {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
   } else if (column_mux_ratio == 4) {
     word_sel_cell = std::make_unique<Cell>();
     for (int c = 0; c < 4; ++c) {
@@ -1440,85 +1423,103 @@ void RamGen::generate(const int mask_size,
             = slice * (mask_size * column_mux_ratio + column_mux_ratio)
               + bit * column_mux_ratio;
         const std::string prefix = fmt::format("mux_slice{}_bit{}", slice, bit);
+        auto mux_cell = std::make_unique<Cell>();
+        auto s1_cell_0 = std::make_unique<Cell>();
+        auto s1_cell_1 = std::make_unique<Cell>();
+        auto s2_cell = std::make_unique<Cell>();
 
-        // collect this bit's net from each word
-        vector<dbNet*> bit_word_q_nets(column_mux_ratio);
-        for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
-          bit_word_q_nets[word_idx] = word_q_nets[word_idx][0][global_bit];
+        for (int port = 0; port < r_total; ++port) {
+          logger_->info(RAM, 999, "port setup");
+          // collect this bit's net from each word
+          vector<dbNet*> bit_word_q_nets(column_mux_ratio);
+          for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
+            bit_word_q_nets[word_idx] = word_q_nets[word_idx][port][global_bit];
+          }
+          logger_->info(RAM, 999, "bit_word_q_nets complete");
+
+          const std::string port_prefix = fmt::format("{}_p{}", prefix, port);
+          // determine which port's address bits to use for mux select
+          // Write-capable ports use index 0, read-only ports use their own
+          // address
+          const int addr_port = (port < rw_ports)
+                                    ? port
+                                    : (rw_ports + w_ports) + (port - rw_ports);
+
+          if (column_mux_ratio == 2) {
+            // mux placement
+            // col base_col+0: buffer
+            // col base_col+1: AOI22 + inverter side by side in same cell/column
+            auto aoi_out = makeNet(port_prefix, "aoi_out");
+            makeInst(mux_cell.get(),
+                     port_prefix,
+                     "aoi",
+                     aoi22_cell_,
+                     {{aoi22_in_a1_, inv_addr_nets[addr_port][0]},
+                      {aoi22_in_a2_, bit_word_q_nets[0]},
+                      {aoi22_in_b1_, addr_inputs_[addr_port][0]->getNet()},
+                      {aoi22_in_b2_, bit_word_q_nets[1]},
+                      {aoi22_out_, aoi_out}});
+            makeInst(mux_cell.get(),
+                     port_prefix,
+                     "inv",
+                     inv_cell_,
+                     {{inv_ports_[{PortRoleType::DataIn, 0}], aoi_out},
+                      {inv_ports_[{PortRoleType::DataOut, 0}],
+                       q_outputs_[port][global_bit]->getNet()}});
+
+            logger_->info(RAM, 999, "complete mux_cell creation");
+
+          } else if (column_mux_ratio == 4) {
+            // mux placement:
+            // col base_col+0: buffer
+            // col base_col+1: s1_AOI_0 (w0+w1)
+            // col base_col+2: s2_AOI final (even stages so no inverter needed)
+            // col base_col+3: s1_AOI_1 (w2+w3)
+            auto s1_out_0 = makeNet(port_prefix, "s1_out_0");
+            auto s1_out_1 = makeNet(port_prefix, "s1_out_1");
+
+            // col base_col+1: stage1 AOI for word0+word1
+            makeInst(s1_cell_0.get(),
+                     port_prefix,
+                     "s1_aoi_0",
+                     aoi22_cell_,
+                     {{aoi22_in_a1_, inv_addr_nets[addr_port][0]},
+                      {aoi22_in_a2_, bit_word_q_nets[0]},
+                      {aoi22_in_b1_, addr_inputs_[addr_port][0]->getNet()},
+                      {aoi22_in_b2_, bit_word_q_nets[1]},
+                      {aoi22_out_, s1_out_0}});
+
+            // col base_col+3: stage1 AOI for word2 + word3
+            // NOTE: must be placed before s2 so s1_out_1 net exists for s2
+            // input
+            makeInst(s1_cell_1.get(),
+                     port_prefix,
+                     "s1_aoi_1",
+                     aoi22_cell_,
+                     {{aoi22_in_a1_, inv_addr_nets[addr_port][0]},
+                      {aoi22_in_a2_, bit_word_q_nets[2]},
+                      {aoi22_in_b1_, addr_inputs_[addr_port][0]->getNet()},
+                      {aoi22_in_b2_, bit_word_q_nets[3]},
+                      {aoi22_out_, s1_out_1}});
+
+            // col base_col+2: stage2 AOI combining stage 1 outputs and drives Q
+            // directly
+            makeInst(s2_cell.get(),
+                     port_prefix,
+                     "s2_aoi",
+                     aoi22_cell_,
+                     {{aoi22_in_a1_, inv_addr_nets[addr_port][1]},
+                      {aoi22_in_a2_, s1_out_0},
+                      {aoi22_in_b1_, addr_inputs_[addr_port][1]->getNet()},
+                      {aoi22_in_b2_, s1_out_1},
+                      {aoi22_out_, q_outputs_[port][global_bit]->getNet()}});
+          }
         }
-
         if (column_mux_ratio == 2) {
-          // mux placement
-          // col base_col+0: buffer
-          // col base_col+1: AOI22 + inverter side by side in same cell/column
-          auto aoi_out = makeNet(prefix, "aoi_out");
-          auto mux_cell = std::make_unique<Cell>();
-          makeInst(mux_cell.get(),
-                   prefix,
-                   "aoi",
-                   aoi22_cell_,
-                   {{aoi22_in_a1_, inv_addr_nets[0][0]},
-                    {aoi22_in_a2_, bit_word_q_nets[0]},
-                    {aoi22_in_b1_, addr_inputs_[0][0]->getNet()},
-                    {aoi22_in_b2_, bit_word_q_nets[1]},
-                    {aoi22_out_, aoi_out}});
-          makeInst(mux_cell.get(),
-                   prefix,
-                   "inv",
-                   inv_cell_,
-                   {{inv_ports_[{PortRoleType::DataIn, 0}], aoi_out},
-                    {inv_ports_[{PortRoleType::DataOut, 0}],
-                     q_outputs_[0][global_bit]->getNet()}});
           ram_grid_.addCell(std::move(mux_cell), base_col + 1);
-
         } else if (column_mux_ratio == 4) {
-          // mux placement:
-          // col base_col+0: buffer
-          // col base_col+1: s1_AOI_0 (w0+w1)
-          // col base_col+2: s2_AOI final (even stages so no inverter needed)
-          // col base_col+3: s1_AOI_1 (w2+w3)
-          auto s1_out_0 = makeNet(prefix, "s1_out_0");
-          auto s1_out_1 = makeNet(prefix, "s1_out_1");
-
-          // col base_col+1: stage1 AOI for word0+word1
-          auto s1_cell_0 = std::make_unique<Cell>();
-          makeInst(s1_cell_0.get(),
-                   prefix,
-                   "s1_aoi_0",
-                   aoi22_cell_,
-                   {{aoi22_in_a1_, inv_addr_nets[0][0]},
-                    {aoi22_in_a2_, bit_word_q_nets[0]},
-                    {aoi22_in_b1_, addr_inputs_[0][0]->getNet()},
-                    {aoi22_in_b2_, bit_word_q_nets[1]},
-                    {aoi22_out_, s1_out_0}});
           ram_grid_.addCell(std::move(s1_cell_0), base_col + 1);
-
-          // col base_col+3: stage1 AOI for word2 + word3
-          // NOTE: must be placed before s2 so s1_out_1 net exists for s2 input
-          auto s1_cell_1 = std::make_unique<Cell>();
-          makeInst(s1_cell_1.get(),
-                   prefix,
-                   "s1_aoi_1",
-                   aoi22_cell_,
-                   {{aoi22_in_a1_, inv_addr_nets[0][0]},
-                    {aoi22_in_a2_, bit_word_q_nets[2]},
-                    {aoi22_in_b1_, addr_inputs_[0][0]->getNet()},
-                    {aoi22_in_b2_, bit_word_q_nets[3]},
-                    {aoi22_out_, s1_out_1}});
           ram_grid_.addCell(std::move(s1_cell_1), base_col + 3);
-
-          // col base_col+2: stage2 AOI combining stage 1 outputs and drives Q
-          // directly
-          auto s2_cell = std::make_unique<Cell>();
-          makeInst(s2_cell.get(),
-                   prefix,
-                   "s2_aoi",
-                   aoi22_cell_,
-                   {{aoi22_in_a1_, inv_addr_nets[0][1]},
-                    {aoi22_in_a2_, s1_out_0},
-                    {aoi22_in_b1_, addr_inputs_[0][1]->getNet()},
-                    {aoi22_in_b2_, s1_out_1},
-                    {aoi22_out_, q_outputs_[0][global_bit]->getNet()}});
           ram_grid_.addCell(std::move(s2_cell), base_col + 2);
         }
       }
