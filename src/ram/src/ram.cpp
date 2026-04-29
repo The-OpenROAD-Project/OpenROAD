@@ -1082,7 +1082,7 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tapcell,
                       int max_tap_dist)
 {
-  if (num_words == 1) {
+  if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 37, "1-row RAMs are not supported.");
   }
   const int slices_per_word = word_size / mask_size;
@@ -1341,9 +1341,6 @@ void RamGen::generate(const int mask_size,
         for (int bit = 0; bit < word_size; ++bit) {
           word_output_nets[port].push_back(word_q_nets[word_idx][port][bit]);
         }
-      }
-
-      if (row == num_rows / 2) {
       }
 
       makeWord(slices_per_word,

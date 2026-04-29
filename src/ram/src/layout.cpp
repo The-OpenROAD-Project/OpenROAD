@@ -193,7 +193,7 @@ void Grid::addCell(std::unique_ptr<Cell> cell, int idx)
 
 bool Grid::insertCell(std::unique_ptr<Cell> cell, int layout_idx, int cell_idx)
 {
-  if (layout_idx > static_cast<int>(layouts_.size())) {
+  if (layout_idx >= static_cast<int>(layouts_.size())) {
     return false;
   }
   return layouts_[layout_idx]->insertCell(std::move(cell), cell_idx);
