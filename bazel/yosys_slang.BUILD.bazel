@@ -127,8 +127,8 @@ cc_library(
     ],
     hdrs = glob([
         "third_party/slang/include/**/*.h",
-        "third_party/slang/external/**/*.hpp",
-        "third_party/slang/external/ieee1800/**",
+        "third_party/slang/external/**/*.hpp",  # buildifier: disable=external-path
+        "third_party/slang/external/ieee1800/**",  # buildifier: disable=external-path
     ]) + [
         ":slang/diagnostics/AllDiags.h",
         ":slang/diagnostics/AnalysisDiags.h",
