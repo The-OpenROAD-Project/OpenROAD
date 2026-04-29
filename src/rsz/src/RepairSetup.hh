@@ -5,7 +5,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -142,11 +141,10 @@ class RepairSetup : public sta::dbStaState
                          int num_endpts,
                          const char* phase_name,
                          char phase_marker);
-  // Reset the per-phase WNS-stagnation ring buffer.
+  // Reset the per-phase WNS-stagnation tracking state.
   void resetStagnationTracking();
-  // Return the info-log message for a phase-level abort caused by the
-  // WNS-stagnation gate (empty if that gate did not fire).
-  std::string wnsStagnationReport(int iteration) const;
+  // Emit the phase-level abort log if the WNS-stagnation gate fired.
+  void wnsStagnationReport() const;
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
   void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,

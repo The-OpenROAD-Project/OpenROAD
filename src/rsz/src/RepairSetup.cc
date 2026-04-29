@@ -994,13 +994,15 @@ void RepairSetup::resetStagnationTracking()
   wns_stagnation_iteration_ = 0;
 }
 
-std::string RepairSetup::wnsStagnationReport(const int iteration) const
+void RepairSetup::wnsStagnationReport() const
 {
   if (!wns_stagnation_tripped_) {
-    return {};
+    return;
   }
   const int digits = 3;
-  return fmt::format(
+  logger_->info(
+      RSZ,
+      234,
       "repair_timing: obviously futile - WNS only reached {} after {} passes "
       "(initial {}, improvement {}). This is probably an exploration run, "
       "not a timing closure run. Aborting with best-effort result.",
@@ -1407,10 +1409,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                  "LEGACY{} Phase: Exiting due to no TNS progress "
                  "for two opto cycles",
                  phase_marker);
-      const std::string wns_msg = wnsStagnationReport(opto_iteration);
-      if (!wns_msg.empty()) {
-        logger_->info(RSZ, 234, "{}", wns_msg);
-      }
+      wnsStagnationReport();
       break;
     }
   }  // for each violating endpoint
@@ -1726,10 +1725,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                    "WNS{} Phase: No TNS progress for {} cycles, exiting",
                    phase_marker,
                    overall_no_progress_count_);
-        const std::string wns_msg = wnsStagnationReport(opto_iteration);
-        if (!wns_msg.empty()) {
-          logger_->info(RSZ, 235, "{}", wns_msg);
-        }
+        wnsStagnationReport();
         break;
       }
     }
@@ -3152,10 +3148,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                  "LAST_GASP{} Phase: No TNS progress for two opto cycles, "
                  "exiting",
                  phase_marker);
-      const std::string wns_msg = wnsStagnationReport(opto_iteration);
-      if (!wns_msg.empty()) {
-        logger_->info(RSZ, 236, "{}", wns_msg);
-      }
+      wnsStagnationReport();
       break;
     }
   }  // for each violating endpoint
