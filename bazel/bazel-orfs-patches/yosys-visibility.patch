@@ -1,0 +1,11 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,5 +1,8 @@
++# Techlib cell definitions, plugins and other runtime data needed by the
++# synthesis flow.
+ share_tree(
+     name = "yosys_share",
++    visibility = ["//visibility:public"],
+     file_map = {f: share_dst(f) for f in _TECHLIBS_SHARE_SRCS},
+     renames = [
+         # lattice files also appear under ecp5/ with renamed destinations
