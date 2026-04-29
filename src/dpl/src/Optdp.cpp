@@ -69,18 +69,13 @@ void Opendp::improvePlacement(const int seed,
   importDb();
 
   // importDb() rebuilds the network from scratch; fresh Node objects have
-  // placed_=false.  After negotiation-based detailedPlacement, cells are
-  // PLACED in ODB.  Without this, ShiftLegalizer treats every movable cell
-  // as unplaced and re-legalizes from scratch, ignoring the negotiation
-  // result.
-  // The negotiation legalizer writes row-correct orientations to dbInst in
-  // its post-flush orient loop.  Fresh nodes carry the constructor-default
-  // orient, so DetailedMgr DRC checks run with the wrong orientation.
+  // orientation hard coded as R0. The legalizer writes row-correct orientations
+  // to dbInst in its post-flush orient loop, so use this orientation for
+  // DetailedMgr DRC checks
   for (const auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed()) {
       odb::dbInst* inst = node->getDbInst();
       if (inst && inst->getPlacementStatus().isPlaced()) {
-        node->setPlaced(true);
         node->adjustCurrOrient(inst->getOrient());
       }
     }
