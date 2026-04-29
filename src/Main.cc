@@ -18,8 +18,10 @@
 #include <string>
 #include <system_error>
 
+#include "absl/base/no_destructor.h"
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
+#include "tclDecls.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -182,16 +184,16 @@ static volatile sig_atomic_t fatal_error_in_progress = 0;
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
-//
-// Use a wrapper struct to ensure destruction ordering - design
-// then tech (members are destroyed in reverse order).
+// Use a wrapper struct to hold the objects. They are wrapped in
+// absl::NoDestructor below to intentionally leak them and avoid
+// static destruction order issues.
 struct TechAndDesign
 {
   std::unique_ptr<ord::Tech> tech;
   std::unique_ptr<ord::Design> design;
 };
 
-static TechAndDesign the_tech_and_design;
+static absl::NoDestructor<TechAndDesign> the_tech_and_design;
 
 static void handler(int sig)
 {
@@ -265,10 +267,10 @@ int main(int argc, char* argv[])
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
     Tcl_Init(interp);
-    the_tech_and_design.tech = std::make_unique<ord::Tech>(interp);
-    the_tech_and_design.design
-        = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
-    ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
+    the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
+    the_tech_and_design->design
+        = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
+    ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
@@ -502,16 +504,17 @@ static int tclAppInit(int& argc,
 
 int ord::tclAppInit(Tcl_Interp* interp)
 {
-  the_tech_and_design.tech = std::make_unique<ord::Tech>(interp);
-  the_tech_and_design.design
-      = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
-  ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
+  the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
+  the_tech_and_design->design
+      = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
+  ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
 
   // This is to enable Design.i where a design arg can be
   // retrieved from the interpreter.  This is necessary for
   // cases with more than one interpreter (ie more than one Design).
   // This should replace the use of the singleton OpenRoad::openRoad().
-  Tcl_SetAssocData(interp, "design", nullptr, the_tech_and_design.design.get());
+  Tcl_SetAssocData(
+      interp, "design", nullptr, the_tech_and_design->design.get());
 
   return ord::tclInit(interp);
 }

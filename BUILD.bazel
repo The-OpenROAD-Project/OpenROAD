@@ -198,6 +198,7 @@ cc_binary(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//src/web",
+        "@abseil-cpp//absl/base:no_destructor",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
