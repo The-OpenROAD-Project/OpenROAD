@@ -500,8 +500,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     // uses layer_edge_cost (essential to NDR nets).
     for (const auto& [db_net, groute] : routes_) {
       if (!isDetailedRouted(db_net)) {
-        Net* net = db_net_map_[db_net];
-        updateNetResources(net, false);
+        auto it = db_net_map_.find(db_net);
+        if (it != db_net_map_.end()) {
+          updateNetResources(it->second, false);
+        }
       }
     }
   }
