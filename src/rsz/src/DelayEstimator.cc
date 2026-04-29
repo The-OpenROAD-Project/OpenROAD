@@ -40,6 +40,7 @@ namespace {
     = std::this_thread::get_id();
 constexpr float kSlewMatchAbsTolerance = 1.0e-15f;
 constexpr float kSlewMatchRelTolerance = 1.0e-6f;
+constexpr float kMinSlewRatioDenominator = 1.0e-15f;
 
 void setFailReason(FailReason* fail_reason, const FailReason reason)
 {
@@ -923,6 +924,29 @@ float estimateOutputSlew(const DelayStageState& stage,
   return std::max(calibrated_slew, 0.0f);
 }
 
+float estimateReceiverInputSlew(const DelayStageState& driver_stage,
+                                const DelayStageState& receiver_stage,
+                                const float candidate_driver_output_slew)
+{
+  // Preserve the current net's receiver/driver slew degradation ratio instead
+  // of passing the pre-RC driver output slew directly to the receiver input.
+
+  // Pre-ECO driver output slew.
+  const float current_driver_output_slew
+      = std::max(driver_stage.current_slew, kMinSlewRatioDenominator);
+
+  // Pre-ECO receiver input slew.
+  const float current_receiver_input_slew
+      = std::max(receiver_stage.input_slew, 0.0f);
+
+  // Post-ECO estimated driver output slew.
+  const float candidate_output_slew
+      = std::max(candidate_driver_output_slew, 0.0f);
+
+  return candidate_output_slew * current_receiver_input_slew
+         / current_driver_output_slew;
+}
+
 std::optional<DelayStageState> buildDelayStageState(
     const Resizer& resizer,
     sta::Instance* inst,
@@ -1145,8 +1169,8 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
 
   const float current_total_delay = totalCurrentDelay(stages);
   float candidate_total_delay = 0.0f;
-  float propagated_slew = 0.0f;
-  bool has_propagated_slew = false;
+  float propagated_driver_output_slew = 0.0f;
+  bool has_propagated_driver_output_slew = false;
 
   if (trace != nullptr) {
     trace->reserve(stages.size());
@@ -1175,9 +1199,8 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
 
     // Per-stage role: the target stage uses the candidate cell; the fanin
     // neighbor sees the candidate's adjusted input cap; downstream stages
-    // reuse the original cell.  The propagated slew formula is uniform: the
-    // fanin neighbor reaches here first, so has_propagated_slew is still
-    // false there and the ternary collapses to stage.input_slew.
+    // reuse the original cell.  Inter-stage slew propagation preserves the
+    // current receiver/driver slew ratio for the net between adjacent stages.
     const bool is_target = (stage_index == target_index);
     const bool is_fanin_neighbor = (stage_index == target_index - 1);
     const sta::LibertyCell* cell
@@ -1186,7 +1209,11 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                                ? stage.load_cap + target_input_cap_delta
                                : stage.load_cap;
     const float input_slew
-        = has_propagated_slew ? propagated_slew : stage.input_slew;
+        = has_propagated_driver_output_slew
+              ? estimateReceiverInputSlew(stages[stage_index - 1],
+                                          stage,
+                                          propagated_driver_output_slew)
+              : stage.input_slew;
     const FailReason fail_reason = is_target
                                        ? FailReason::kMissingCandidateTimingArc
                                        : FailReason::kMissingCurrentTimingArc;
@@ -1198,9 +1225,9 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
       return {.legal = false, .reason = fail_reason};
     }
     candidate_total_delay += stage_delay;
-    propagated_slew
+    propagated_driver_output_slew
         = estimateOutputSlew(stage, cell, input_slew, load_cap, stage_slew);
-    has_propagated_slew = true;
+    has_propagated_driver_output_slew = true;
 
     if (trace != nullptr) {
       trace->push_back({.path_index = stage.path_index,
@@ -1208,7 +1235,7 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                         .input_slew = input_slew,
                         .load_cap = load_cap,
                         .stage_delay = stage_delay,
-                        .output_slew = propagated_slew});
+                        .output_slew = propagated_driver_output_slew});
     }
   }
 
