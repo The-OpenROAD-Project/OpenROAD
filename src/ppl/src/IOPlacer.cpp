@@ -688,6 +688,10 @@ void IOPlacer::findSlots(const std::set<int>& layers,
         = is_die_polygon ? findLayerSlots(layer, Edge::polygonEdge, line, true)
                          : findLayerSlots(layer, edge, empty_line, false);
 
+    if (slots.empty()) {
+      continue;
+    }
+
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
     int slot_count = 0;
