@@ -8,7 +8,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sta.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -95,6 +100,73 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(bterm_clk, nullptr);
   // There is no related dbITerm for a dbBTerm
   ASSERT_EQ(bterm_clk->getITerm(), nullptr);
+}
+
+// Regression for #10210 (stale Path* dereference in rsz).
+//
+// Topology (TestDbSta_StalePrevPath.v):
+//   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
+//                                   nd1/A2 <- in2
+//
+// Flow:
+//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin name
+//   2. Delete upstream b1 + updateTiming -> free
+//   3. Add a fresh BUF + clock + updateTiming -> recycle
+//   4. Assert the captured Path's prev slot has been recycled: pin()
+//      decodes to data that belongs to a different instance than nd1's
+//      real input.
+TEST_F(TestDbSta, StalePrevPath)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+  readVerilogAndSetup(test_name + ".v");
+  sta_->updateTiming(true);
+
+  Network* network = sta_->network();
+
+  Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
+  Path* drvr_path = sta_->vertexWorstArrivalPath(
+      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
+      MinMax::max());
+  ASSERT_NE(drvr_path, nullptr);
+  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
+  const Path* pre_addr = drvr_path->prevPath();
+  ASSERT_NE(pre_addr, nullptr);
+  const std::string pre_pin_name = network->pathName(pre_addr->pin(sta_.get()));
+
+  // 2. Free upstream Path[] slots.
+  sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
+  sta_->updateTiming(true);
+
+  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
+  odb::dbNet* in3_net = odb::dbNet::create(block_, "in3");
+  odb::dbBTerm* new_bt = odb::dbBTerm::create(in3_net, "in3");
+  new_bt->setIoType(odb::dbIoType::INPUT);
+  odb::dbNet* nfan_net = odb::dbNet::create(block_, "nfan");
+  odb::dbInst* bnew
+      = odb::dbInst::create(block_, db_->findMaster("BUF_X1"), "bnew");
+  bnew->findITerm("A")->connect(in3_net);
+  bnew->findITerm("Z")->connect(nfan_net);
+
+  PinSet clk2_pins(db_network_);
+  clk2_pins.insert(db_network_->dbToSta(new_bt));
+  FloatSeq clk2_waveform = {0.0f, 0.1f};
+  sta_->makeClock(
+      "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
+  sta_->updateTiming(true);
+
+  // 4. Staleness evidence. Pointer address is same but pin name has changed.
+  const Path* post_addr = drvr_path->prevPath();
+  const std::string post_pin_name
+      = post_addr ? network->pathName(post_addr->pin(sta_.get()))
+                  : std::string("<null>");
+
+  EXPECT_EQ(pre_addr, post_addr)
+      << "stale-pointer signature: prev_path_ address unchanged";
+  EXPECT_NE(pre_pin_name, post_pin_name)
+      << "but slot content should differ after free+reuse. before="
+      << pre_pin_name << " after=" << post_pin_name;
 }
 
 }  // namespace sta

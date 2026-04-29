@@ -2102,31 +2102,7 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
     auto result = report.getReport();
 
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("nodes");
-    for (const auto& n : result.nodes) {
-      builder.beginObject();
-      builder.field("id", n.id);
-      builder.field("parent_id", n.parent_id);
-      builder.field("inst_name", n.inst_name);
-      builder.field("module_name", n.module_name);
-      builder.field("insts", n.insts);
-      builder.field("macros", n.macros);
-      builder.field("modules", n.modules);
-      builder.field("area", n.area);
-      builder.field("local_insts", n.local_insts);
-      builder.field("local_macros", n.local_macros);
-      builder.field("local_modules", n.local_modules);
-      if (n.node_kind != HierarchyNodeKind::kModule) {
-        builder.field("node_kind", static_cast<int>(n.node_kind));
-      }
-      if (n.node_kind == HierarchyNodeKind::kModule) {
-        builder.field("odb_id", static_cast<int>(n.odb_id));
-      }
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeHierarchyResult(builder, result);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
