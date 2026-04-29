@@ -47,13 +47,13 @@ global_route
 | `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-skip_large_fanout_nets` | Skips routing for nets with a fanout higher than the specified limit. Nets above this pin count threshold are ignored by the global router and will not have routing guides, meaning they will also be skipped during detailed routing. This option is useful in debugging or estimation flows where high-fanout nets (such as pre-CTS clock nets) can be ignored. The default value is 0, indicating no fanout limit. The default value is `MAX_INT`. The allowed values are integers `[0, MAX_INT]`. |
 | `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
-| `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing. The default is `0`, preserving the non-batched behavior.. Use a value different than `0` for batched behavior. Execution width still follows `set_thread_count`. |
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
 | `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
+| `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
 
 ### Set Routing Layers
 
