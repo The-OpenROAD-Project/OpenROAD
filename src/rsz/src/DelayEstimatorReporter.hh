@@ -120,6 +120,7 @@ class DelayEstimatorReporter
   {
     std::vector<StageProfileRow> before_stages;
     std::vector<StageProfileRow> after_stages;
+    std::string arrival_reference_pin_name;
     float before_arrival{0.0f};
     float after_arrival{0.0f};
     float arrival_impr{0.0f};
@@ -183,13 +184,12 @@ class DelayEstimatorReporter
   float fixedStageWireDelay(const FixedStage& fixed_stage) const;
   std::string stagePinName(const sta::PathExpanded& expanded,
                            int path_index) const;
+  float arrivalAtPinName(const std::string& pin_name,
+                         const sta::Scene* scene) const;
   float arrivalAtDriver(sta::Pin* driver_pin, const sta::Scene* scene) const;
 
   // === Print helpers =======================================================
-  void printStageComparison(const std::string& title,
-                            const std::vector<StageProfileRow>& estimated,
-                            const std::vector<StageProfileRow>& golden) const;
-  void printStageScoreBreakdown(
+  void printStageWindowDetail(
       const std::vector<StageProfileRow>& estimated_current,
       const std::vector<StageProfileRow>& estimated_candidate,
       const std::vector<StageProfileRow>& golden_before,

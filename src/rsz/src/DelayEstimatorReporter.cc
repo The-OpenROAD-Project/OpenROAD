@@ -18,6 +18,7 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -25,6 +26,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
@@ -47,6 +49,10 @@ constexpr float kFaradsToFemtofarads = 1.0e15f;
 // Reporter accepts at most 2 fanin/fanout levels.  Beyond that the table
 // cascade approximation accumulates error faster than the diagnostic value.
 constexpr int kMaxDelayLevels = 2;
+// Diagnostic path search is filtered by the target output pins, so a generous
+// path count is affordable and avoids missing the worst endpoint path through
+// the selected instance.
+constexpr int kReporterPathSearchCount = 1000;
 // Returns NaN when the value should display as missing.  Reporter uses this
 // uniformly so summaries and per-stage tables agree on what counts as "no
 // data".
@@ -77,9 +83,51 @@ std::string formatDelta(float estimated, float golden, float scale)
   return fmt::format("{:+.3f}", (estimated - golden) * scale);
 }
 
+std::string formatWithUnit(float value, float scale, std::string_view unit)
+{
+  if (!std::isfinite(value)) {
+    return "-";
+  }
+  return fmt::format("{:.3f} {}", value * scale, unit);
+}
+
+std::string formatDeltaWithUnit(float estimated,
+                                float golden,
+                                float scale,
+                                std::string_view unit)
+{
+  if (!std::isfinite(estimated) || !std::isfinite(golden)) {
+    return "-";
+  }
+  return fmt::format("{:+.3f} {}", (estimated - golden) * scale, unit);
+}
+
 bool dmpSlewBiasEnabled()
 {
   return utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 0) > 0;
+}
+
+bool containsPin(const std::vector<sta::Pin*>& pins, const sta::Pin* pin)
+{
+  for (sta::Pin* candidate : pins) {
+    if (candidate == pin) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void printMetricRow(utl::Logger* logger,
+                    const std::string& metric,
+                    const float estimated,
+                    const float golden,
+                    const float scale)
+{
+  logger->report("    {:<31} {:>10}   {:>10}   {:>10}",
+                 metric,
+                 formatValue(estimated, scale),
+                 formatValue(golden, scale),
+                 formatDelta(estimated, golden, scale));
 }
 
 }  // namespace
@@ -221,14 +269,20 @@ void DelayEstimatorReporter::reportAccuracyForSizing(
             : buildDelayEstimatorProfile(
                   before_target, replacement, normalized_levels);
 
-  // Phase 3: golden-before snapshot (still no DB mutation).
-  const sta::Scene* scene = before_target.activeScene(resizer_);
-  const float before_arrival = arrivalAtDriver(before_target.driver_pin, scene);
-  GoldenProfile golden_profile;
-  golden_profile.before_arrival = before_arrival;
-  golden_profile.after_arrival = before_arrival;
+  // Phase 3: golden-before snapshot (still no DB mutation).  Capture fixed
+  // path stages before arrivalAtDriver(), which may trigger a STA search
+  // preamble and invalidate through-filtered PathEnd handles.
   const std::vector<FixedStage> fixed_stages
       = captureFixedStages(before_target, report_levels);
+  const sta::Scene* scene = before_target.activeScene(resizer_);
+  GoldenProfile golden_profile;
+  golden_profile.arrival_reference_pin_name
+      = fixed_stages.empty() ? network_->pathName(before_target.driver_pin)
+                             : fixed_stages.back().driver_pin_name;
+  const float before_arrival
+      = arrivalAtPinName(golden_profile.arrival_reference_pin_name, scene);
+  golden_profile.before_arrival = before_arrival;
+  golden_profile.after_arrival = before_arrival;
   golden_profile.before_stages = buildGoldenStageRows(fixed_stages);
 
   // Phase 4: apply the candidate inside an ECO journal so golden STA can be
@@ -290,31 +344,16 @@ void DelayEstimatorReporter::measureGoldenAfterSwap(
     const std::vector<FixedStage>& fixed_stages,
     GoldenProfile& golden_profile) const
 {
-  const std::string before_inst_name
-      = network_->pathName(before_match.target.inst(resizer_));
-  sta::LibertyPort* driver_port
-      = network_->libertyPort(before_match.target.driver_pin);
-  const std::string driver_port_name = driver_port->name();
   const sta::Scene* scene = before_match.target.activeScene(resizer_);
 
-  sta::Instance* live_inst = network_->findInstance(before_inst_name);
-  if (live_inst == nullptr) {
-    logger_->error(RSZ,
-                   3211,
-                   "Could not find instance {} after sizing ECO.",
-                   before_inst_name);
+  if (golden_profile.arrival_reference_pin_name.empty()) {
+    golden_profile.arrival_reference_pin_name
+        = fixed_stages.empty()
+              ? network_->pathName(before_match.target.driver_pin)
+              : fixed_stages.back().driver_pin_name;
   }
-
-  sta::Pin* live_driver_pin = network_->findPin(live_inst, driver_port_name);
-  if (live_driver_pin == nullptr) {
-    logger_->error(RSZ,
-                   3212,
-                   "Could not find driver pin {} on instance {} after sizing "
-                   "ECO.",
-                   driver_port_name,
-                   before_inst_name);
-  }
-  const float after_arrival = arrivalAtDriver(live_driver_pin, scene);
+  const float after_arrival
+      = arrivalAtPinName(golden_profile.arrival_reference_pin_name, scene);
 
   // Use the exact stage identities captured before the ECO.  Re-selecting a
   // worst path here would mix estimator data from one path with golden data
@@ -350,6 +389,28 @@ void DelayEstimatorReporter::printSummary(
       = sumGoldenStagePathDelays(golden_profile.after_stages);
   const float golden_stage_impr
       = golden_before_stage_delay - golden_after_stage_delay;
+  const size_t stage_count
+      = std::max(std::max(estimator_profile.current_stages.size(),
+                          estimator_profile.candidate_stages.size()),
+                 std::max(golden_profile.before_stages.size(),
+                          golden_profile.after_stages.size()));
+  const std::string stage_count_label
+      = fmt::format("{}-stage", static_cast<int>(stage_count));
+  const float candidate_stage_delay_for_table
+      = estimator_profile.candidate_stages_incomplete
+            ? kMissingValue
+            : estimated_candidate_stage_delay;
+  const float estimated_stage_impr_for_table
+      = estimator_profile.candidate_stages_incomplete ? kMissingValue
+                                                      : estimated_stage_impr;
+  const std::string arrival_reference_pin_name
+      = golden_profile.arrival_reference_pin_name.empty()
+            ? driver_pin_name
+            : golden_profile.arrival_reference_pin_name;
+  const char* arrival_reference_role
+      = !golden_profile.before_stages.empty()
+            ? roleName(golden_profile.before_stages.back().role)
+            : roleName(Role::kTarget);
 
   logger_->report("Delay estimator sizing accuracy");
   logger_->report("  instance:          {}", inst_name);
@@ -363,55 +424,63 @@ void DelayEstimatorReporter::printSummary(
                   estimator_profile.legal ? "true" : "false",
                   failReasonName(estimator_profile.fail_reason));
   logger_->report("");
-  logger_->report("Stage delay delta summary");
-  logger_->report("  estimated current stage delay:   {:>10.3f} ps",
-                  estimated_current_stage_delay * kSecondsToPicoseconds);
+  logger_->report("Stage window delay summary");
+  logger_->report(
+      "  {:<30} {:>14} {:>14} {:>14}", "", "estimated", "golden", "error");
+  logger_->report(
+      "  {:<30} {:>14} {:>14} {:>14}",
+      fmt::format("pre-ECO {} delay:", stage_count_label),
+      formatWithUnit(
+          estimated_current_stage_delay, kSecondsToPicoseconds, "ps"),
+      formatWithUnit(golden_before_stage_delay, kSecondsToPicoseconds, "ps"),
+      formatDeltaWithUnit(estimated_current_stage_delay,
+                          golden_before_stage_delay,
+                          kSecondsToPicoseconds,
+                          "ps"));
+  logger_->report(
+      "  {:<30} {:>14} {:>14} {:>14}",
+      fmt::format("post-ECO {} delay:", stage_count_label),
+      formatWithUnit(
+          candidate_stage_delay_for_table, kSecondsToPicoseconds, "ps"),
+      formatWithUnit(golden_after_stage_delay, kSecondsToPicoseconds, "ps"),
+      formatDeltaWithUnit(candidate_stage_delay_for_table,
+                          golden_after_stage_delay,
+                          kSecondsToPicoseconds,
+                          "ps"));
+  logger_->report(
+      "  {:<30} {:>14} {:>14} {:>14}",
+      fmt::format("pre-post {} delta:", stage_count_label),
+      formatWithUnit(
+          estimated_stage_impr_for_table, kSecondsToPicoseconds, "ps"),
+      formatWithUnit(golden_stage_impr, kSecondsToPicoseconds, "ps"),
+      formatDeltaWithUnit(estimated_stage_impr_for_table,
+                          golden_stage_impr,
+                          kSecondsToPicoseconds,
+                          "ps"));
   if (estimator_profile.candidate_stages_incomplete) {
     // Estimator failed mid-walk; partial sums would mislead.  Show explicit
     // marker; per-stage tables below still display the prefix that succeeded.
     logger_->report(
-        "  estimated candidate stage delay: (incomplete: {} of {} stages)",
+        "  estimated post-ECO stage delay is incomplete: {} of {} stages",
         estimator_profile.candidate_stages.size(),
         estimator_profile.current_stages.size());
-    logger_->report("  estimated stage delay delta:     (incomplete)");
-  } else {
-    logger_->report("  estimated candidate stage delay: {:>10.3f} ps",
-                    estimated_candidate_stage_delay * kSecondsToPicoseconds);
-    logger_->report("  estimated stage delay delta:     {:>10.3f} ps",
-                    estimated_stage_impr * kSecondsToPicoseconds);
-  }
-  logger_->report("  golden before stage delay:       {:>10.3f} ps",
-                  golden_before_stage_delay * kSecondsToPicoseconds);
-  logger_->report("  golden after stage delay:        {:>10.3f} ps",
-                  golden_after_stage_delay * kSecondsToPicoseconds);
-  logger_->report("  golden stage delay delta:        {:>10.3f} ps",
-                  golden_stage_impr * kSecondsToPicoseconds);
-  if (estimator_profile.candidate_stages_incomplete) {
-    logger_->report("  stage delay delta error:         (incomplete)");
-  } else {
-    logger_->report(
-        "  stage delay delta error:          {:>+10.3f} ps",
-        (estimated_stage_impr - golden_stage_impr) * kSecondsToPicoseconds);
   }
   logger_->report("");
-  logger_->report("Driver arrival reference");
+  logger_->report("Stage-window output arrival reference");
+  logger_->report("  reference pin:                   {} ({})",
+                  arrival_reference_pin_name,
+                  arrival_reference_role);
   logger_->report("  golden before arrival:           {:>10.3f} ps",
                   golden_profile.before_arrival * kSecondsToPicoseconds);
   logger_->report("  golden after arrival:            {:>10.3f} ps",
                   golden_profile.after_arrival * kSecondsToPicoseconds);
-  logger_->report("  golden driver arrival delta:     {:>10.3f} ps",
+  logger_->report("  golden reference arrival delta:  {:>10.3f} ps",
                   golden_profile.arrival_impr * kSecondsToPicoseconds);
 
-  printStageScoreBreakdown(estimator_profile.current_stages,
-                           estimator_profile.candidate_stages,
-                           golden_profile.before_stages,
-                           golden_profile.after_stages);
-  printStageComparison("Current stage absolute comparison",
-                       estimator_profile.current_stages,
-                       golden_profile.before_stages);
-  printStageComparison("Candidate stage absolute comparison",
-                       estimator_profile.candidate_stages,
-                       golden_profile.after_stages);
+  printStageWindowDetail(estimator_profile.current_stages,
+                         estimator_profile.candidate_stages,
+                         golden_profile.before_stages,
+                         golden_profile.after_stages);
 }
 
 // === Role helpers =========================================================
@@ -464,40 +533,78 @@ std::optional<DelayEstimatorReporter::TargetMatch>
 DelayEstimatorReporter::findWorstTargetForInstance(sta::Instance* inst,
                                                    const int delay_levels) const
 {
-  // For each output pin, ask STA directly for the worst-slack setup path
-  // that traverses that pin's vertex.  vertexWorstSlackPath walks all path
-  // tags reaching the vertex and picks the worst slack, so it works on
-  // internal driver vertices, not just endpoints.
+  // Use a through-filtered endpoint path rather than vertexWorstSlackPath().
+  // vertexWorstSlackPath() stops at the target output vertex, which hides
+  // downstream stages from the fanout diagnostic table.
+  const std::vector<sta::Pin*> output_pins = outputPins(inst);
+  if (output_pins.empty()) {
+    return std::nullopt;
+  }
+
+  sta::PinSet* through_pins = new sta::PinSet(network_);
+  for (sta::Pin* output_pin : output_pins) {
+    through_pins->insert(output_pin);
+  }
+  sta::ExceptionThru* through
+      = sta_->makeExceptionThru(through_pins,
+                                nullptr,
+                                nullptr,
+                                sta::RiseFallBoth::riseFall(),
+                                sta_->cmdSdc());
+  sta::ExceptionThruSeq* thrus = new sta::ExceptionThruSeq;
+  thrus->push_back(through);
+
+  sta::StringSeq group_names;
+  sta::PathEndSeq path_ends = sta_->findPathEnds(nullptr,
+                                                 thrus,
+                                                 nullptr,
+                                                 false,
+                                                 sta_->scenes(),
+                                                 max_min_max_->asMinMaxAll(),
+                                                 kReporterPathSearchCount,
+                                                 kReporterPathSearchCount,
+                                                 false,
+                                                 false,
+                                                 -sta::INF,
+                                                 sta::INF,
+                                                 true,
+                                                 group_names,
+                                                 true,
+                                                 false,
+                                                 false,
+                                                 false,
+                                                 false,
+                                                 false);
+
   std::optional<TargetMatch> best_match;
-  for (sta::Pin* driver_pin : outputPins(inst)) {
-    sta::Vertex* driver_vertex = graph_->pinDrvrVertex(driver_pin);
-    if (driver_vertex == nullptr) {
-      continue;
-    }
-    sta::Path* path = sta_->vertexWorstSlackPath(driver_vertex, max_min_max_);
+  for (const sta::PathEnd* path_end : path_ends) {
+    const sta::Path* path = path_end->path();
     if (path == nullptr) {
       continue;
     }
-
     sta::PathExpanded expanded(path, resizer_.staState());
-    // Locate driver_pin's stage in the expanded path.  vertexWorstSlackPath
-    // guarantees driver_vertex is on the path; we additionally require a
-    // valid prevArc/prevEdge so the stage can drive a sizing target.
+
+    // Locate the requested instance output stage on the full endpoint path.
+    // The previous timing arc/edge must be valid so the stage can drive a
+    // sizing target.
+    sta::Pin* driver_pin = nullptr;
     int driver_path_index = -1;
     for (int i = expanded.startIndex(); i < expanded.size(); ++i) {
       const sta::Path* stage_path = expanded.path(i);
-      if (stage_path->pin(resizer_.staState()) == driver_pin
+      sta::Pin* stage_pin = stage_path->pin(resizer_.staState());
+      if (containsPin(output_pins, stage_pin)
           && stage_path->prevArc(resizer_.staState()) != nullptr
           && stage_path->prevEdge(resizer_.staState()) != nullptr) {
+        driver_pin = stage_pin;
         driver_path_index = i;
         break;
       }
     }
-    if (driver_path_index < 0) {
+    if (driver_pin == nullptr || driver_path_index < 0) {
       continue;
     }
 
-    const sta::Slack slack = path->slack(resizer_.staState());
+    const sta::Slack slack = path_end->slack(resizer_.staState());
     const sta::Pin* endpoint_pin
         = expanded.path(expanded.size() - 1)->pin(resizer_.staState());
     TargetMatch match;
@@ -977,6 +1084,17 @@ std::string DelayEstimatorReporter::stagePinName(
   return network_->pathName(pin);
 }
 
+float DelayEstimatorReporter::arrivalAtPinName(const std::string& pin_name,
+                                               const sta::Scene* scene) const
+{
+  sta::Pin* pin = network_->findPin(pin_name);
+  if (pin == nullptr) {
+    logger_->error(
+        RSZ, 3213, "Could not find arrival reference pin {}.", pin_name);
+  }
+  return arrivalAtDriver(pin, scene);
+}
+
 float DelayEstimatorReporter::arrivalAtDriver(sta::Pin* driver_pin,
                                               const sta::Scene* scene) const
 {
@@ -997,108 +1115,17 @@ DelayEstimatorReporter::rowOrEmpty(const std::vector<StageProfileRow>& rows,
   return index < rows.size() ? rows[index] : kEmpty;
 }
 
-void DelayEstimatorReporter::printStageComparison(
-    const std::string& title,
-    const std::vector<StageProfileRow>& estimated,
-    const std::vector<StageProfileRow>& golden) const
-{
-  logger_->report("");
-  logger_->report("{}", title);
-  logger_->report(
-      "idx role    path_index pin                                      "
-      "est_cell                 golden_cell              "
-      "in_slew_est/gold/err(ps)   out_slew_est/gold/err(ps)  "
-      "cell_est/gold/err(ps)      "
-      "wire_est/gold/err(ps)      load_est/gold/err(fF)      "
-      "extra_est(ps)");
-
-  const size_t row_count = std::max(estimated.size(), golden.size());
-  for (size_t row_index = 0; row_index < row_count; ++row_index) {
-    const StageProfileRow& estimated_row = rowOrEmpty(estimated, row_index);
-    const StageProfileRow& golden_row = rowOrEmpty(golden, row_index);
-    const bool has_estimated = row_index < estimated.size();
-    const bool has_golden = row_index < golden.size();
-
-    const Role role = has_estimated ? estimated_row.role : golden_row.role;
-    const int path_index
-        = has_estimated ? estimated_row.path_index : golden_row.path_index;
-    const std::string& pin_name
-        = has_estimated ? estimated_row.pin_name : golden_row.pin_name;
-    const std::string& estimated_cell
-        = has_estimated ? estimated_row.cell_name : kDashCell;
-    const std::string& golden_cell
-        = has_golden ? golden_row.cell_name : kDashCell;
-
-    const float estimated_slew
-        = has_estimated ? estimated_row.input_slew : kMissingValue;
-    const float golden_slew
-        = has_golden ? golden_row.input_slew : kMissingValue;
-    const float estimated_output_slew
-        = has_estimated ? estimated_row.output_slew : kMissingValue;
-    const float golden_output_slew
-        = has_golden ? golden_row.output_slew : kMissingValue;
-    const float estimated_cell_delay
-        = has_estimated ? estimated_row.cell_delay : kMissingValue;
-    const float golden_cell_delay
-        = has_golden ? golden_row.cell_delay : kMissingValue;
-    const float estimated_wire_delay
-        = has_estimated ? estimated_row.wire_delay : kMissingValue;
-    const float golden_wire_delay
-        = has_golden ? golden_row.wire_delay : kMissingValue;
-    const float estimated_load
-        = has_estimated ? estimated_row.load_cap : kMissingValue;
-    const float golden_load = has_golden ? golden_row.load_cap : kMissingValue;
-    const float estimated_extra
-        = has_estimated ? estimated_row.extra_delay : kMissingValue;
-
-    logger_->report(
-        "{:>3} {:<7} {:>10} {:<40} {:<24} {:<24} "
-        "{:>8}/{:>8}/{:>8}  {:>8}/{:>8}/{:>8}  "
-        "{:>8}/{:>8}/{:>8}  "
-        "{:>8}/{:>8}/{:>8}  {:>8}/{:>8}/{:>8}  {:>8}",
-        row_index,
-        roleName(role),
-        path_index,
-        pin_name,
-        estimated_cell,
-        golden_cell,
-        formatValue(estimated_slew, kSecondsToPicoseconds),
-        formatValue(golden_slew, kSecondsToPicoseconds),
-        formatDelta(estimated_slew, golden_slew, kSecondsToPicoseconds),
-        formatValue(estimated_output_slew, kSecondsToPicoseconds),
-        formatValue(golden_output_slew, kSecondsToPicoseconds),
-        formatDelta(
-            estimated_output_slew, golden_output_slew, kSecondsToPicoseconds),
-        formatValue(estimated_cell_delay, kSecondsToPicoseconds),
-        formatValue(golden_cell_delay, kSecondsToPicoseconds),
-        formatDelta(
-            estimated_cell_delay, golden_cell_delay, kSecondsToPicoseconds),
-        formatValue(estimated_wire_delay, kSecondsToPicoseconds),
-        formatValue(golden_wire_delay, kSecondsToPicoseconds),
-        formatDelta(
-            estimated_wire_delay, golden_wire_delay, kSecondsToPicoseconds),
-        formatValue(estimated_load, kFaradsToFemtofarads),
-        formatValue(golden_load, kFaradsToFemtofarads),
-        formatDelta(estimated_load, golden_load, kFaradsToFemtofarads),
-        formatValue(estimated_extra, kSecondsToPicoseconds));
-  }
-}
-
-void DelayEstimatorReporter::printStageScoreBreakdown(
+void DelayEstimatorReporter::printStageWindowDetail(
     const std::vector<StageProfileRow>& estimated_current,
     const std::vector<StageProfileRow>& estimated_candidate,
     const std::vector<StageProfileRow>& golden_before,
     const std::vector<StageProfileRow>& golden_after) const
 {
   logger_->report("");
-  logger_->report("Stage delay delta comparison");
+  logger_->report("Stage window detail");
   logger_->report(
       "  estimated delay = cell_delay + extra_est; "
       "golden delay = cell_delay + wire_delay");
-  logger_->report(
-      "idx role    pin                                      "
-      "est_cur/est_cand/est_impr(ps)  "
-      "gold_cur/gold_cand/gold_impr(ps)  impr_err(ps)");
 
   const size_t est_row_count
       = std::max(estimated_current.size(), estimated_candidate.size());
@@ -1119,11 +1146,28 @@ void DelayEstimatorReporter::printStageScoreBreakdown(
     const bool has_golden_before = row_index < golden_before.size();
     const bool has_golden_after = row_index < golden_after.size();
 
-    const Role role = has_estimated_candidate ? estimated_candidate_row.role
-                                              : golden_after_row.role;
-    const std::string& pin_name = has_estimated_candidate
-                                      ? estimated_candidate_row.pin_name
-                                      : golden_after_row.pin_name;
+    const Role role = has_estimated_current     ? estimated_current_row.role
+                      : has_estimated_candidate ? estimated_candidate_row.role
+                      : has_golden_before       ? golden_before_row.role
+                                                : golden_after_row.role;
+    const int path_index
+        = has_estimated_current     ? estimated_current_row.path_index
+          : has_estimated_candidate ? estimated_candidate_row.path_index
+          : has_golden_before       ? golden_before_row.path_index
+                                    : golden_after_row.path_index;
+    const std::string& pin_name
+        = has_estimated_current     ? estimated_current_row.pin_name
+          : has_estimated_candidate ? estimated_candidate_row.pin_name
+          : has_golden_before       ? golden_before_row.pin_name
+                                    : golden_after_row.pin_name;
+    const std::string& pre_cell
+        = has_estimated_current ? estimated_current_row.cell_name
+          : has_golden_before   ? golden_before_row.cell_name
+                                : kDashCell;
+    const std::string& post_cell
+        = has_estimated_candidate ? estimated_candidate_row.cell_name
+          : has_golden_after      ? golden_after_row.cell_name
+                                  : kDashCell;
 
     const float estimated_current_delay
         = has_estimated_current
@@ -1140,22 +1184,143 @@ void DelayEstimatorReporter::printStageScoreBreakdown(
         = has_golden_after ? goldenStagePathDelay(golden_after_row)
                            : kMissingValue;
     const float estimated_impr
-        = estimated_current_delay - estimated_candidate_delay;
+        = std::isfinite(estimated_current_delay)
+                  && std::isfinite(estimated_candidate_delay)
+              ? estimated_current_delay - estimated_candidate_delay
+              : kMissingValue;
     const float golden_impr = golden_before_delay - golden_after_delay;
+    const float estimated_current_input_slew
+        = has_estimated_current ? estimated_current_row.input_slew
+                                : kMissingValue;
+    const float estimated_candidate_input_slew
+        = has_estimated_candidate ? estimated_candidate_row.input_slew
+                                  : kMissingValue;
+    const float golden_before_input_slew
+        = has_golden_before ? golden_before_row.input_slew : kMissingValue;
+    const float golden_after_input_slew
+        = has_golden_after ? golden_after_row.input_slew : kMissingValue;
+    const float estimated_current_cell_delay
+        = has_estimated_current ? estimated_current_row.cell_delay
+                                : kMissingValue;
+    const float estimated_candidate_cell_delay
+        = has_estimated_candidate ? estimated_candidate_row.cell_delay
+                                  : kMissingValue;
+    const float golden_before_cell_delay
+        = has_golden_before ? golden_before_row.cell_delay : kMissingValue;
+    const float golden_after_cell_delay
+        = has_golden_after ? golden_after_row.cell_delay : kMissingValue;
+    const float estimated_current_output_slew
+        = has_estimated_current ? estimated_current_row.output_slew
+                                : kMissingValue;
+    const float estimated_candidate_output_slew
+        = has_estimated_candidate ? estimated_candidate_row.output_slew
+                                  : kMissingValue;
+    const float golden_before_output_slew
+        = has_golden_before ? golden_before_row.output_slew : kMissingValue;
+    const float golden_after_output_slew
+        = has_golden_after ? golden_after_row.output_slew : kMissingValue;
+    const float estimated_current_wire_delay
+        = has_estimated_current ? estimated_current_row.wire_delay
+                                : kMissingValue;
+    const float estimated_candidate_wire_delay
+        = has_estimated_candidate ? estimated_candidate_row.wire_delay
+                                  : kMissingValue;
+    const float golden_before_wire_delay
+        = has_golden_before ? golden_before_row.wire_delay : kMissingValue;
+    const float golden_after_wire_delay
+        = has_golden_after ? golden_after_row.wire_delay : kMissingValue;
+    const float estimated_current_load_cap
+        = has_estimated_current ? estimated_current_row.load_cap
+                                : kMissingValue;
+    const float estimated_candidate_load_cap
+        = has_estimated_candidate ? estimated_candidate_row.load_cap
+                                  : kMissingValue;
+    const float golden_before_load_cap
+        = has_golden_before ? golden_before_row.load_cap : kMissingValue;
+    const float golden_after_load_cap
+        = has_golden_after ? golden_after_row.load_cap : kMissingValue;
 
+    logger_->report("");
+    logger_->report("[{}] {}  path_index={}  pin={}",
+                    row_index,
+                    roleName(role),
+                    path_index,
+                    pin_name);
+    logger_->report("    cell: pre={}  post={}", pre_cell, post_cell);
+    logger_->report("");
+    logger_->report("    {:<31} {:>10}   {:>10}   {:>10}",
+                    "metric",
+                    "estimated",
+                    "golden",
+                    "error");
+    printMetricRow(logger_,
+                   "pre-ECO input slew(ps)",
+                   estimated_current_input_slew,
+                   golden_before_input_slew,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "post-ECO input slew(ps)",
+                   estimated_candidate_input_slew,
+                   golden_after_input_slew,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "pre-ECO cell delay(ps)",
+                   estimated_current_cell_delay,
+                   golden_before_cell_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "post-ECO cell delay(ps)",
+                   estimated_candidate_cell_delay,
+                   golden_after_cell_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "pre-ECO output slew(ps)",
+                   estimated_current_output_slew,
+                   golden_before_output_slew,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "post-ECO output slew(ps)",
+                   estimated_candidate_output_slew,
+                   golden_after_output_slew,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "pre-ECO wire delay(ps)",
+                   estimated_current_wire_delay,
+                   golden_before_wire_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "post-ECO wire delay(ps)",
+                   estimated_candidate_wire_delay,
+                   golden_after_wire_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "pre-ECO load cap(fF)",
+                   estimated_current_load_cap,
+                   golden_before_load_cap,
+                   kFaradsToFemtofarads);
+    printMetricRow(logger_,
+                   "post-ECO load cap(fF)",
+                   estimated_candidate_load_cap,
+                   golden_after_load_cap,
+                   kFaradsToFemtofarads);
     logger_->report(
-        "{:>3} {:<7} {:<40} {:>8}/{:>8}/{:>8}  "
-        "{:>8}/{:>8}/{:>8}  {:>8}",
-        row_index,
-        roleName(role),
-        pin_name,
-        formatValue(estimated_current_delay, kSecondsToPicoseconds),
-        formatValue(estimated_candidate_delay, kSecondsToPicoseconds),
-        formatValue(estimated_impr, kSecondsToPicoseconds),
-        formatValue(golden_before_delay, kSecondsToPicoseconds),
-        formatValue(golden_after_delay, kSecondsToPicoseconds),
-        formatValue(golden_impr, kSecondsToPicoseconds),
-        formatDelta(estimated_impr, golden_impr, kSecondsToPicoseconds));
+        "    "
+        "------------------------------------------------------------------");
+    printMetricRow(logger_,
+                   "pre-ECO stage delay(ps)",
+                   estimated_current_delay,
+                   golden_before_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "post-ECO stage delay(ps)",
+                   estimated_candidate_delay,
+                   golden_after_delay,
+                   kSecondsToPicoseconds);
+    printMetricRow(logger_,
+                   "pre-post delay delta(ps)",
+                   estimated_impr,
+                   golden_impr,
+                   kSecondsToPicoseconds);
   }
 }
 
