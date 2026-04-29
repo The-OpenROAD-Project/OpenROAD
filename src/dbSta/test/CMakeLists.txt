@@ -53,6 +53,7 @@ or_integration_tests(
     sta3
     sta4
     sta5
+    spef_def_names
     write_sdc1
     write_verilog1
     write_verilog2
