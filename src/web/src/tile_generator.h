@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "color.h"
+#include "glyph_cache.h"
 #include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -274,22 +275,25 @@ class TileGenerator
                         int x,
                         int y) const;
 
-  static int getBitmapTextWidth(std::string_view text, int scale);
-  static int getBitmapTextHeight(int scale);
-  static void drawBitmapText(std::vector<unsigned char>& image,
-                             int x,
-                             int y,
-                             std::string_view text,
-                             int scale,
-                             const Color& color);
-  // Draw text rotated 90° CCW (reads bottom-to-top).
-  // (x, y) is the bottom-left corner of the rotated text block.
-  static void drawBitmapTextRotated(std::vector<unsigned char>& image,
-                                    int x,
-                                    int y,
-                                    std::string_view text,
-                                    int scale,
-                                    const Color& color);
+  // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
+  // handle so callers lock the glyph cache once per rendering context rather
+  // than once per character.
+  static int getTextWidth(std::string_view text,
+                          const GlyphCache::FontSize& font);
+  static int getTextHeight(const GlyphCache::FontSize& font);
+  static void drawText(std::vector<unsigned char>& image,
+                       int x,
+                       int y,
+                       std::string_view text,
+                       const GlyphCache::FontSize& font,
+                       const Color& color);
+  // Draw text rotated 90° CW (reads top-to-bottom).
+  static void drawTextRotated(std::vector<unsigned char>& image,
+                              int x,
+                              int y,
+                              std::string_view text,
+                              const GlyphCache::FontSize& font,
+                              const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -351,10 +355,13 @@ class TileGenerator
                        const Color& c,
                        int width = 3);
 
+  void computePinLabelMargin();
+
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
+  int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
   static constexpr int kTileSizeInPixel = 256;
 };
 

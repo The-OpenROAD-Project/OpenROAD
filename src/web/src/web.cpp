@@ -13,6 +13,7 @@
 #include <fstream>
 #include <functional>
 #include <ios>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -29,6 +30,7 @@
 #include "boost/beast/websocket.hpp"
 #include "clock_tree_report.h"
 #include "gui/heatMap.h"
+#include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
 #include "request_dispatcher.h"
@@ -945,6 +947,18 @@ void WebServer::saveReport(const std::string& filename,
       [&](JsonBuilder& b) { serializeBoundsResponse(b, *generator_, true); });
   const auto tech_layers = generator_->getLayers();
 
+  // ── Serialize module hierarchy ──
+
+  HierarchyReport hier_report(block, sta_);
+  auto hier_result = hier_report.getReport();
+
+  const std::string hierarchy_json = serializeToJson(
+      [&](JsonBuilder& b) { serializeHierarchyResult(b, hier_result); });
+
+  auto module_colors = computeDefaultModuleColors(hier_result);
+  const std::map<uint32_t, Color>* mod_colors_ptr
+      = module_colors.empty() ? nullptr : &module_colors;
+
   // ── Render tiles at a fixed zoom level ──
 
   // Pick z so the design fits in a typical panel (~500px).
@@ -964,6 +978,7 @@ void WebServer::saveReport(const std::string& filename,
   for (const auto& name : tech_layers) {
     all_layers.push_back(name);
   }
+  all_layers.emplace_back("_modules");
   all_layers.emplace_back("_pins");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
@@ -971,7 +986,8 @@ void WebServer::saveReport(const std::string& filename,
   for (const auto& layer : all_layers) {
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(layer, kZ, tx, ty, vis);
+        auto png = generator_->generateTile(
+            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
         if (png.size() > kEmptyPngSize) {
           std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
@@ -1023,7 +1039,8 @@ void WebServer::saveReport(const std::string& filename,
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
 <style>
 )" << kReportCSS
       << R"(
@@ -1058,7 +1075,9 @@ window.__STATIC_CACHE__ = {
     "slack_histogram:hold": )"
       << hist_hold << R"(,
     "chart_filters": )"
-      << filters << R"(
+      << filters << R"(,
+    "module_hierarchy": )"
+      << hierarchy_json << R"(
   },
   tiles: {)";
 
