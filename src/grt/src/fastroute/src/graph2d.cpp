@@ -74,6 +74,35 @@ void Graph2D::InitLastUsage(const int upType)
   }
 }
 
+void Graph2D::copyRoutingStateFrom(const Graph2D& other,
+                                   const bool include_ndr_state)
+{
+  const bool needs_init = x_grid_ != other.x_grid_ || y_grid_ != other.y_grid_
+                          || num_layers_ != other.num_layers_ || !hasEdges();
+  if (needs_init) {
+    init(other.x_grid_, other.y_grid_, other.num_layers_, other.logger_);
+    initCap3D();
+  }
+
+  h_edges_ = other.h_edges_;
+  v_edges_ = other.v_edges_;
+  h_cap_3D_ = other.h_cap_3D_;
+  v_cap_3D_ = other.v_cap_3D_;
+  h_used_ggrid_ = other.h_used_ggrid_;
+  v_used_ggrid_ = other.v_used_ggrid_;
+
+  if (include_ndr_state) {
+    h_ndr_nets_ = other.h_ndr_nets_;
+    v_ndr_nets_ = other.v_ndr_nets_;
+    congested_ndrs_ = other.congested_ndrs_;
+    congestion_nets_ = other.congestion_nets_;
+  } else {
+    clearNDRnets();
+    clearCongestedNDRnets();
+    congestion_nets_.clear();
+  }
+}
+
 // Clears all horizontal and vertical edges from the graph.
 void Graph2D::clear()
 {
