@@ -992,8 +992,6 @@ void RepairSetup::resetStagnationTracking()
   best_wns_ = std::numeric_limits<float>::lowest();
   wns_stagnation_sample_count_ = 0;
   wns_stagnation_sample_index_ = 0;
-  wns_stagnation_window_improvement_ = 0;
-  wns_stagnation_threshold_ = 0;
   wns_stagnation_tripped_ = false;
 }
 
@@ -1002,6 +1000,14 @@ void RepairSetup::wnsStagnationReport(const int iteration) const
   if (!wns_stagnation_tripped_) {
     return;
   }
+  // The gate fired on the most recent terminateProgress() call, so the ring
+  // and best_wns_ still reflect that trip. Recompute the displayed values
+  // here instead of caching them on the class.
+  const sta::Slack improvement
+      = best_wns_ - wns_stagnation_samples_[wns_stagnation_sample_index_];
+  const float threshold
+      = std::max(wns_stagnation_abs_tol_,
+                 wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
   const int digits = 3;
   logger_->info(
       RSZ,
@@ -1014,8 +1020,8 @@ void RepairSetup::wnsStagnationReport(const int iteration) const
       iteration,
       delayAsString(initial_wns_, digits, sta_),
       wns_stagnation_window_,
-      delayAsString(wns_stagnation_window_improvement_, digits, sta_),
-      delayAsString(wns_stagnation_threshold_, digits, sta_));
+      delayAsString(improvement, digits, sta_),
+      delayAsString(threshold, digits, sta_));
 }
 
 // Terminate progress if incremental fix rate within an opto interval falls
@@ -1054,11 +1060,11 @@ bool RepairSetup::terminateProgress(const int iteration,
 
   if (ring_full && iteration > wns_stagnation_warmup_iterations_
       && iteration % opto_small_interval_ == 0) {
-    wns_stagnation_window_improvement_ = best_wns_ - window_start_wns;
-    wns_stagnation_threshold_
+    const sta::Slack improvement = best_wns_ - window_start_wns;
+    const float threshold
         = std::max(wns_stagnation_abs_tol_,
                    wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
-    if (wns_stagnation_window_improvement_ < wns_stagnation_threshold_) {
+    if (improvement < threshold) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
@@ -1070,9 +1076,9 @@ bool RepairSetup::terminateProgress(const int iteration,
                  phase_marker,
                  iteration,
                  delayAsString(best_wns_, 3, sta_),
-                 delayAsString(wns_stagnation_window_improvement_, 3, sta_),
+                 delayAsString(improvement, 3, sta_),
                  wns_stagnation_window_,
-                 delayAsString(wns_stagnation_threshold_, 3, sta_),
+                 delayAsString(threshold, 3, sta_),
                  endpt_index,
                  num_endpts);
       wns_stagnation_tripped_ = true;

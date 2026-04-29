@@ -267,8 +267,6 @@ class RepairSetup : public sta::dbStaState
   std::array<sta::Slack, wns_stagnation_window_> wns_stagnation_samples_;
   int wns_stagnation_sample_count_ = 0;
   int wns_stagnation_sample_index_ = 0;
-  sta::Slack wns_stagnation_window_improvement_ = 0;
-  sta::Slack wns_stagnation_threshold_ = 0;
   // Set by terminateProgress() when the WNS-stagnation gate fires. Consumed
   // by the phase-level abort sites to emit a loud info log. Reset by
   // resetStagnationTracking().
