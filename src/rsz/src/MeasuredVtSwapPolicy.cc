@@ -76,7 +76,8 @@ void MeasuredVtSwapPolicy::iterate()
 
   // Repeatedly pick the current worst endpoint and try one VT-swap stage on it.
   while (hasSetupViolations(config_, max_)
-         && committed_moves_ < policy_config_.max_committed_moves) {
+         && (policy_config_.max_committed_moves <= 0
+             || committed_moves_ < policy_config_.max_committed_moves)) {
     sta::Vertex* endpoint = findWorstViolatingEndpoint();
     if (endpoint == nullptr) {
       debugPrint(
@@ -122,7 +123,8 @@ void MeasuredVtSwapPolicy::iterate()
     return;
   }
 
-  if (committed_moves_ >= policy_config_.max_committed_moves) {
+  if (policy_config_.max_committed_moves > 0
+      && committed_moves_ >= policy_config_.max_committed_moves) {
     finishRun(false);
     return;
   }

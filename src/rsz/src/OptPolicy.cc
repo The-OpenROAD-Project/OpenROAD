@@ -60,20 +60,20 @@ void OptPolicy::start(const OptimizerRunConfig& config)
 
 void OptPolicy::loadPolicyEnvars()
 {
-  // VtSwap candidate cap (per target, per generator).
+  // VtSwap candidate cap (per target, per generator); 0 means unlimited.
   policy_config_.max_candidate_generation
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 10);
+      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 0);
   // Hard cap on accepted moves; 0 means unlimited (per OptPolicyConfig docs).
   policy_config_.max_committed_moves
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 100);
+      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 0);
   // Number of fanin/fanout stages included in MT delay estimation; 0 keeps
   // target-stage-only scoring.
   policy_config_.delay_estimation_levels
-      = utl::readEnvarNonNegativeInt("RSZ_MT_DELAY_LEVELS", 0);
+      = utl::readEnvarInt("RSZ_MT_DELAY_LEVELS", 1);
   // Experimental DMP/Ceff slew-bias sampling. Negative values are treated the
-  // same as 0 so the consumer clamps the knob rather than the env reader.
+  // same as 0.
   policy_config_.delay_estimator_dmp_slew_bias
-      = utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 0) > 0;
+      = utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 1) > 0;
 }
 
 GeneratorContext OptPolicy::makeGeneratorContext(

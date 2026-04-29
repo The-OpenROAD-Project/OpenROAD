@@ -44,8 +44,8 @@ class MoveGenerator;
 //   4. commitEvaluatedTargets(): apply the best candidate for each target
 //      on the main thread, sequentially, under one ECO journal per target.
 //
-// Convergence: stops when TNS stops improving, committed_moves_ reaches
-// max_committed_moves, or no legal candidate is found.
+// Convergence: stops when TNS stops improving, the positive
+// max_committed_moves cap is reached, or no legal candidate is found.
 //
 // Currently supports VtSwapMt and SizeUpMt types only.
 class SetupMt1Policy : public OptPolicy

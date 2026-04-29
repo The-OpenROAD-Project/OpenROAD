@@ -24,9 +24,9 @@ namespace rsz {
 // (This is for experiment)
 //
 // selectCandidateCells() retrieves VT-equivalent Liberty cells for the current
-// driver and caps the list at max_candidate_generation in library order.  This
-// bounds the number of expensive incremental STA evaluations per target without
-// reordering candidates.  Single-threaded only.
+// driver and caps the list at a positive max_candidate_generation in library
+// order.  This bounds the number of expensive incremental STA evaluations per
+// target without reordering candidates.  Single-threaded only.
 class MeasuredVtSwapGenerator : public MoveGenerator
 {
  public:

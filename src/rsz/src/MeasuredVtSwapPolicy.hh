@@ -46,9 +46,9 @@ class MeasuredVtSwapGenerator;
 // target where N = number of VT-equivalent cells evaluated.
 //
 // Convergence: the policy stops when no violating endpoint can produce an
-// accepted VT swap, when committed_moves_ >=
-// policy_config_.max_committed_moves, or when every endpoint/instance has been
-// exhausted (tracked in exhausted_endpoints_ / exhausted_instances_).
+// accepted VT swap, when the positive max_committed_moves cap is reached, or
+// when every endpoint/instance has been exhausted (tracked in
+// exhausted_endpoints_ / exhausted_instances_).
 class MeasuredVtSwapPolicy : public OptPolicy
 {
  public:

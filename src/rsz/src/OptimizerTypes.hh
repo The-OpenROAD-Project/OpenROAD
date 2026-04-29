@@ -392,7 +392,8 @@ struct RepairSetupParams
 // belong in the OptimizerRunConfig.
 struct OptPolicyConfig
 {
-  // Cap on how many per-target candidates a generator expands.
+  // Cap on how many per-target candidates a generator expands. A value of 0
+  // means unlimited.
   int max_candidate_generation{0};
 
   // Experimental. Hard cap on accepted moves for policies that support bounded

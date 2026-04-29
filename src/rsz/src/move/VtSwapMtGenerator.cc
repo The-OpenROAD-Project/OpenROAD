@@ -86,8 +86,9 @@ std::vector<sta::LibertyCell*> VtSwapMtGenerator::selectCandidateCells(
     }
   }
 
-  if (candidates.size()
-      <= static_cast<size_t>(policy_config_.max_candidate_generation)) {
+  if (policy_config_.max_candidate_generation <= 0
+      || candidates.size()
+             <= static_cast<size_t>(policy_config_.max_candidate_generation)) {
     return candidates;
   }
 

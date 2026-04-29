@@ -108,13 +108,18 @@ std::vector<sta::LibertyCell*> MeasuredVtSwapGenerator::selectCandidateCells(
   // Enumerate alternate VT implementations in deterministic library order.
   sta::LibertyCellSeq equiv_cells = resizer_.getVTEquivCells(current_cell);
   std::vector<sta::LibertyCell*> candidates;
-  candidates.reserve(
-      std::min(equiv_cells.size(),
-               static_cast<size_t>(policy_config_.max_candidate_generation)));
+  if (policy_config_.max_candidate_generation <= 0) {
+    candidates.reserve(equiv_cells.size());
+  } else {
+    candidates.reserve(std::min(
+        equiv_cells.size(),
+        static_cast<size_t>(policy_config_.max_candidate_generation)));
+  }
   for (sta::LibertyCell* cell : equiv_cells) {
     if (cell != nullptr && cell != current_cell) {
       candidates.push_back(cell);
-      if (candidates.size()
+      if (policy_config_.max_candidate_generation > 0
+          && candidates.size()
           >= static_cast<size_t>(policy_config_.max_candidate_generation)) {
         break;
       }

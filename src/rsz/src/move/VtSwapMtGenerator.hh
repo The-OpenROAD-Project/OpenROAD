@@ -22,7 +22,7 @@ namespace rsz {
 //
 // prepareRequirements() requests kArcDelayState so worker threads can read the
 // prepared timing snapshot without touching shared STA state. The number of
-// candidates produced is bounded by max_candidate_generation in
+// candidates produced is bounded by a positive max_candidate_generation in
 // OptPolicyConfig.
 class VtSwapMtGenerator : public MoveGenerator
 {
