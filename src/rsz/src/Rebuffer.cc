@@ -1095,6 +1095,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
 
     if (!slack) {
       // ignore this option as it doesn't pass ERC
+      debugPrint(
+          logger_, RSZ, "rebuffer", 2, "option {} fails ERC, skipping", i);
       continue;
     }
 
@@ -1104,6 +1106,13 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
       best_slack = slack.value();
       best_slack_option = p;
       best_slack_index = i;
+      debugPrint(logger_,
+                 RSZ,
+                 "rebuffer",
+                 2,
+                 "option {} best so far in terms of slack (slack {})",
+                 i,
+                 delayAsString(slack.value().toSeconds(), 3, this));
     }
     if ((slack.value() >= slack_target
          || p->slackTransition() == nullptr /* buffer tree unconstrained */)
@@ -1112,6 +1121,15 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
       best_area = p->area();
       best_area_option = p;
       best_area_index = i;
+      debugPrint(
+          logger_,
+          RSZ,
+          "rebuffer",
+          2,
+          "option {} best so far in terms of area (area {}) with slack {}",
+          i,
+          p->area(),
+          delayAsString(p->slack().toSeconds(), 3, this));
     }
     i++;
   }
@@ -2042,7 +2060,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
   }
 }
 
-void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
+void Rebuffer::fullyRebuffer(sta::Pin* user_pin, const float ns_area_tradeoff)
 {
   double sta_runtime = 0, bft_runtime = 0, ra_runtime = 0;
   long_wire_stepping_runtime_ = 0;
@@ -2167,6 +2185,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     BnetPtr unbuffered_tree = resteiner(stripTreeBuffers(original_tree));
     BnetPtr timing_tree = unbuffered_tree;
 
+    // TODO: This seems weird, if we find a solution we should stop
     {
       utl::DebugScopedTimer timer(bft_runtime);
       for (int i = 0; i < 3; i++) {
@@ -2204,6 +2223,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     //    optimistic compared to full STA, we compensate and reduce the
     //    relaxation by the error amount.
     //
+    //  - If we are projecting negative slack, we trade away some worse timing
+    //    for area. This allows us to recover some area even when we are not
+    //    able to meet timing, as complete timing repair should not be done
+    //    solely by rebuffering.
+    //
     //  - No matter the projected slack, we always add a small amount
     //    (`relaxation_factor_`) of the overall projected critical path delay.
     //    This helps with not introducing buffers for marginal benefit, or to no
@@ -2221,18 +2245,56 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
-      sta::Delay relaxation
+      sta::Delay positive_slack_area_tradeoff
           = std::max<float>(
                 0.0f,
                 ((slackAtDriverPin(timing_tree).toSeconds())
                  - std::min(float(original_tree_slack_error), 0.0f)))
-                / 4.0f
-            + (std::max(float(drvr_gate_delay), 0.0f)
-               + criticalPathDelay(logger_, timing_tree).toSeconds())
-                  * relaxation_factor_;
+            / 4.0f;
+
+      sta::Delay negative_slack_tradeoff
+          = std::max<float>(0.0f, -slack) * ns_area_tradeoff;
+
+      sta::Delay additional_relaxation
+          = (std::max(float(drvr_gate_delay), 0.0f)
+             + criticalPathDelay(logger_, timing_tree).toSeconds())
+            * relaxation_factor_;
+
+      sta::Delay relaxation = positive_slack_area_tradeoff
+                              + negative_slack_tradeoff + additional_relaxation;
       target_slack
           = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
+
+      debugPrint(
+          logger_,
+          RSZ,
+          "rebuffer",
+          2,
+          "slack at driver pin: {} (original tree slack error: {}, "
+          "positive slack-area tradeoff: {}, additional relaxation: {})",
+          delayAsString(slackAtDriverPin(timing_tree).toSeconds(), 3, this),
+          delayAsString(
+              FixedDelay(original_tree_slack_error, resizer_).toSeconds(),
+              3,
+              this),
+          delayAsString(
+              FixedDelay(positive_slack_area_tradeoff, resizer_).toSeconds(),
+              3,
+              this),
+          delayAsString(FixedDelay(additional_relaxation, resizer_).toSeconds(),
+                        3,
+                        this));
     }
+
+    debugPrint(
+        logger_,
+        RSZ,
+        "rebuffer",
+        2,
+        "timing tree slack at driver pin: {} (target slack for area "
+        "recovery: {})",
+        delayAsString(slackAtDriverPin(timing_tree).toSeconds(), 3, this),
+        delayAsString(target_slack.toSeconds(), 3, this));
 
     BnetPtr area_opt_tree = timing_tree;
     {

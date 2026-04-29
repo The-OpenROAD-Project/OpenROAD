@@ -470,7 +470,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks(bool run_journal_restore);
+  void findResizeSlacks(bool run_journal_restore, float ns_area_tradeoff);
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -508,7 +508,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
-  void fullyRebuffer(sta::Pin* pin);
+  void fullyRebuffer(sta::Pin* pin, float ns_area_tradeoff);
 
   bool hasFanout(sta::Vertex* drvr);
   bool hasFanout(sta::Pin* drvr);

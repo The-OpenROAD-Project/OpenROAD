@@ -876,6 +876,17 @@ proc repair_setup_pin { end_pin } {
   repair_setup_pin_cmd $end_pin
 }
 
+sta::define_cmd_args "fully_rebuffer" {[-ns_area_tradeoff]}
+
+proc fully_rebuffer { args } {
+  sta::parse_key_args "fully_rebuffer" args \
+    keys { -ns_area_tradeoff } \
+    flags {} ;# checker off
+
+  set ns_area_tradeoff [rsz::parse_percent_margin_arg "-ns_area_tradeoff" keys]
+  rsz::fully_rebuffer_cmd [lindex $args 0] [expr $ns_area_tradeoff / 100.0]
+}
+
 proc set_debug { args } {
   sta::parse_key_args "set_debug" args \
     keys { -net } \

@@ -13,7 +13,7 @@ estimate_parasitics -placement
 remove_buffers
 rsz::resize_slack_preamble
 
-rsz::find_resize_slacks
+rsz::find_resize_slacks 0
 foreach net [rsz::resize_worst_slack_nets] {
   puts "[get_full_name $net]\
           [sta::format_time [rsz::resize_net_slack $net] 3]"
