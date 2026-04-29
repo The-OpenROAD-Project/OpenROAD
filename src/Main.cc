@@ -183,9 +183,9 @@ static volatile sig_atomic_t fatal_error_in_progress = 0;
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
-//
-// Use a wrapper struct to ensure destruction ordering - design
-// then tech (members are destroyed in reverse order).
+// Use a wrapper struct to hold the objects. They are wrapped in
+// absl::NoDestructor below to intentionally leak them and avoid
+// static destruction order issues.
 struct TechAndDesign
 {
   std::unique_ptr<ord::Tech> tech;
