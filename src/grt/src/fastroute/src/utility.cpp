@@ -96,14 +96,13 @@ void FastRouteCore::ConvertToFull3DType2()
 // Resistance-aware score calculation to order critical nets
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  const float kResistanceWeight = 2.0f;
+  const float kResistanceWeight = 1.0f;
   const float kSlackWeight = 4.0f;
-  const float kFanoutWeight = 1.0f;
-  const float kNetLengthWeight = 1.0f;
+  const float kFanoutWeight = 3.0f;
+  const float kNetLengthWeight = 2.0f;
 
   return net->getResistance() / worst_net_resistance_ * kResistanceWeight
-         + (!is_incremental_grt_ ? kSlackWeight * net->getSlack() / worst_slack_
-                                 : 0)
+         + net->getSlack() / worst_slack_ * kSlackWeight
          + static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight
          + static_cast<float>(net->getNetLength()) / worst_net_length_
                * kNetLengthWeight;

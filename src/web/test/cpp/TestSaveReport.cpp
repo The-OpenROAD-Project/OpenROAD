@@ -81,7 +81,11 @@ class SaveReportTest : public tst::Nangate45Fixture
                       int max_setup = 0,
                       int max_hold = 0)
   {
-    WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+    WebServer server(getDb(),
+                     /*sta=*/nullptr,
+                     getLogger(),
+                     /*interp=*/nullptr,
+                     /*num_threads=*/1);
     server.saveReport(path, max_setup, max_hold);
   }
 

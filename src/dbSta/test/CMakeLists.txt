@@ -13,9 +13,11 @@ or_integration_tests(
     get_ports1_hier
     hier2
     hier3
+    hier_escape_port
     hierclock
     hierwrite
     hier_deep
+    hier_weird_port
     make_port
     network_edit1
     power1

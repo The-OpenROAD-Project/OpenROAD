@@ -778,6 +778,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void insertBufferPostProcess(odb::dbInst* buffer_inst);
 
   void setLocation(odb::dbInst* db_inst, const odb::Point& pt);
+  odb::Point clampLocToCore(const odb::Point& loc, odb::dbMaster* master) const;
   sta::LibertyCell* findTargetCell(sta::LibertyCell* cell,
                                    float load_cap,
                                    bool revisiting_inst);
@@ -804,7 +805,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                       float& limit,
                       float& slack,
                       const sta::Scene*& corner);
-  void warnBufferMovedIntoCore();
   bool isLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
@@ -889,7 +889,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
-  bool buffer_moved_into_core_ = false;
   bool match_cell_footprint_ = false;
   bool equiv_cells_made_ = false;
 

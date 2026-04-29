@@ -18,6 +18,28 @@ const kNegativeBorder = '#8b0000';  // darkred
 const kPositiveFill = '#90ee90';    // lightgreen
 const kPositiveBorder = '#006400';  // darkgreen
 
+// Line chart series colors (Tableau 10)
+const kLineColors = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
+                      '#59a14f', '#edc948', '#b07aa1', '#ff9da7'];
+const kNegativeHighlight = 'rgba(240,128,128,0.12)';
+const kPositiveHighlight = 'rgba(144,238,144,0.12)';
+const kNegativeHover = '#ff9999';
+const kPositiveHover = '#b0ffb0';
+
+// Pure hit-test — returns the bar whose column contains (mx, my), or null.
+// Uses the full column height (chartArea top to bottom) so that buckets with
+// few paths are easy to click.
+export function hitTestColumn(bars, chartArea, mx, my) {
+    if (!bars || !chartArea) return null;
+    if (my < chartArea.top || my > chartArea.bottom) return null;
+    for (const bar of bars) {
+        if (mx >= bar.x && mx <= bar.x + bar.width) {
+            return bar;
+        }
+    }
+    return null;
+}
+
 // Pure layout computation — extracted for testability.
 export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight) {
     const bins = histogramData?.bins;
@@ -107,6 +129,10 @@ export class ChartsWidget {
         this._chartArea = null;
         this._hoveredBar = null;
 
+        // Debug charts (line charts from GPL, etc.)
+        this._debugCharts = [];
+        this._activeDebugChart = -1;  // -1 = show histogram
+
         this._build();
     }
 
@@ -115,6 +141,12 @@ export class ChartsWidget {
     _build() {
         const el = document.createElement('div');
         el.className = 'charts-widget';
+
+        // Debug chart tabs (hidden until debug charts arrive)
+        this._debugTabBar = document.createElement('div');
+        this._debugTabBar.className = 'timing-tab-bar';
+        this._debugTabBar.style.display = 'none';
+        el.appendChild(this._debugTabBar);
 
         // Toolbar
         const toolbar = document.createElement('div');
@@ -184,6 +216,10 @@ export class ChartsWidget {
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 
+        // Group histogram-specific elements so we can hide them
+        // when a debug line chart tab is active.
+        this._histogramControls = [toolbar, tabBar, filterRow];
+
         this.element = el;
 
         this._ctx = this._canvas.getContext('2d');
@@ -216,15 +252,13 @@ export class ChartsWidget {
         this._canvas.addEventListener('mouseleave', () => {
             this._hoveredBar = null;
             this._tooltip.style.display = 'none';
-            this._render();
+            this._syncView();
         });
         this._canvas.addEventListener('click', (e) => this._handleClick(e));
 
         // Re-render on resize
         const ro = new ResizeObserver(() => {
-            this._sizeCanvas();
-            this._computeLayout();
-            this._render();
+            this._syncView();
         });
         ro.observe(this._canvas);
     }
@@ -288,9 +322,7 @@ export class ChartsWidget {
             }
             const data = await this._app.websocketManager.request(req);
             this._histogramData = data;
-            this._sizeCanvas();
-            this._computeLayout();
-            this._render();
+            this._syncView();
 
             const total = data.total_endpoints || 0;
             const unconstrained = data.unconstrained_count || 0;
@@ -313,7 +345,7 @@ export class ChartsWidget {
         this._chartArea = result.chartArea;
     }
 
-    render() { this._render(); }
+    render() { this._syncView(); }
 
     _render() {
         const rect = this._canvas.getBoundingClientRect();
@@ -422,16 +454,24 @@ export class ChartsWidget {
     }
 
     _drawBars(ctx) {
+        const ca = this._chartArea;
         for (const bar of this._bars) {
-            if (bar.height <= 0) continue;
-
             const isHovered = (this._hoveredBar === bar);
+
+            // Draw a subtle column highlight on hover so the full clickable
+            // area is visible, even for buckets with very short bars.
+            if (isHovered && ca) {
+                ctx.fillStyle = bar.negative
+                    ? kNegativeHighlight : kPositiveHighlight;
+                ctx.fillRect(bar.x, ca.top, bar.width, ca.bottom - ca.top);
+            }
+
+            if (bar.height <= 0) continue;
 
             // Fill
             ctx.fillStyle = bar.negative ? kNegativeFill : kPositiveFill;
             if (isHovered) {
-                // Lighten on hover
-                ctx.fillStyle = bar.negative ? '#ff9999' : '#b0ffb0';
+                ctx.fillStyle = bar.negative ? kNegativeHover : kPositiveHover;
             }
             ctx.fillRect(bar.x, bar.y, bar.width, bar.height);
 
@@ -452,20 +492,18 @@ export class ChartsWidget {
     }
 
     _hitTestBar(e) {
-        if (!this._bars) return null;
         const rect = this._canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        for (const bar of this._bars) {
-            if (mx >= bar.x && mx <= bar.x + bar.width &&
-                my >= bar.y && my <= bar.y + bar.height) {
-                return bar;
-            }
-        }
-        return null;
+        return hitTestColumn(this._bars, this._chartArea, mx, my);
     }
 
     _handleHover(e) {
+        if (this._activeDebugChart >= 0) {
+            this._hoveredBar = null;
+            this._tooltip.style.display = 'none';
+            return;
+        }
         const bar = this._hitTestBar(e);
         if (bar !== this._hoveredBar) {
             this._hoveredBar = bar;
@@ -492,6 +530,7 @@ export class ChartsWidget {
     }
 
     async _handleClick(e) {
+        if (this._activeDebugChart >= 0) return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
@@ -514,5 +553,224 @@ export class ChartsWidget {
         } catch (err) {
             console.error('Charts bar click error:', err);
         }
+    }
+
+    // ---- Debug line charts (GPL HPWL, density, etc.) ----
+
+    setDebugCharts(charts) {
+        this._debugCharts = charts;
+        this._rebuildDebugTabs();
+        // Auto-select the first debug chart if none is active;
+        // reset to histogram if charts are now empty.
+        if (charts.length === 0) {
+            this._activeDebugChart = -1;
+        } else if (this._activeDebugChart < 0) {
+            this._activeDebugChart = 0;
+        } else if (this._activeDebugChart >= charts.length) {
+            this._activeDebugChart = 0;
+        }
+        this._syncView();
+    }
+
+    _rebuildDebugTabs() {
+        const bar = this._debugTabBar;
+        bar.innerHTML = '';
+        if (this._debugCharts.length === 0) {
+            bar.style.display = 'none';
+            return;
+        }
+        bar.style.display = '';
+
+        // "Histogram" tab to switch back to the slack histogram.
+        const histTab = document.createElement('div');
+        histTab.className = 'timing-tab' +
+            (this._activeDebugChart < 0 ? ' active' : '');
+        histTab.textContent = 'Histogram';
+        histTab.addEventListener('click', () => {
+            this._activeDebugChart = -1;
+            this._rebuildDebugTabs();
+            this._syncView();
+        });
+        bar.appendChild(histTab);
+
+        // One tab per debug chart.
+        this._debugCharts.forEach((chart, i) => {
+            const tab = document.createElement('div');
+            tab.className = 'timing-tab' +
+                (this._activeDebugChart === i ? ' active' : '');
+            tab.textContent = chart.name;
+            tab.addEventListener('click', () => {
+                this._activeDebugChart = i;
+                this._rebuildDebugTabs();
+                this._syncView();
+            });
+            bar.appendChild(tab);
+        });
+    }
+
+    _syncView() {
+        const showHist = this._activeDebugChart < 0;
+        if (!showHist) {
+            this._hoveredBar = null;
+            this._tooltip.style.display = 'none';
+        }
+        for (const el of this._histogramControls) {
+            el.style.display = showHist ? '' : 'none';
+        }
+        this._sizeCanvas();
+        if (showHist) {
+            this._computeLayout();
+            this._render();
+        } else {
+            this._renderLineChart(this._debugCharts[this._activeDebugChart]);
+        }
+    }
+
+    _renderLineChart(chart) {
+        const rect = this._canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        const ctx = this._ctx;
+        const tc = getThemeColors();
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = tc.canvasBg;
+        ctx.fillRect(0, 0, w, h);
+
+        const pts = chart.points;
+        if (!pts || pts.length === 0) {
+            ctx.fillStyle = tc.canvasText;
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('No data points yet', w / 2, h / 2);
+            return;
+        }
+
+        const numSeries = chart.y_labels ? chart.y_labels.length : 1;
+        const cLeft = kLeftMargin;
+        const cRight = w - kRightMargin;
+        const cTop = kTopMargin;
+        const cBottom = h - kBottomMargin;
+        const cW = cRight - cLeft;
+        const cH = cBottom - cTop;
+        if (cW <= 0 || cH <= 0) return;
+
+        // Compute data ranges.
+        let xMin = pts[0].x, xMax = pts[0].x;
+        let yMin = Infinity, yMax = -Infinity;
+        for (const p of pts) {
+            if (p.x < xMin) xMin = p.x;
+            if (p.x > xMax) xMax = p.x;
+            for (const v of p.ys) {
+                if (v < yMin) yMin = v;
+                if (v > yMax) yMax = v;
+            }
+        }
+        if (xMin === xMax) xMax = xMin + 1;
+        if (!isFinite(yMin) || !isFinite(yMax)) { yMin = 0; yMax = 1; }
+        // Add 5% padding to Y range.
+        const yPad = (yMax - yMin) * 0.05 || 1;
+        yMin -= yPad;
+        yMax += yPad;
+
+        const toX = (v) => cLeft + ((v - xMin) / (xMax - xMin)) * cW;
+        const toY = (v) => cBottom - ((v - yMin) / (yMax - yMin)) * cH;
+
+        // Axes.
+        ctx.strokeStyle = tc.canvasAxis;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cLeft, cTop);
+        ctx.lineTo(cLeft, cBottom);
+        ctx.lineTo(cRight, cBottom);
+        ctx.stroke();
+
+        // Y axis ticks.
+        ctx.fillStyle = tc.canvasLabel;
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const nYTicks = 5;
+        for (let i = 0; i <= nYTicks; i++) {
+            const v = yMin + (yMax - yMin) * i / nYTicks;
+            const y = toY(v);
+            ctx.fillText(this._formatNum(v), cLeft - 4, y);
+            if (i > 0 && i < nYTicks) {
+                ctx.strokeStyle = tc.canvasGrid;
+                ctx.beginPath();
+                ctx.moveTo(cLeft, y);
+                ctx.lineTo(cRight, y);
+                ctx.stroke();
+            }
+        }
+
+        // X axis ticks.
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        if (pts.length === 1) {
+            ctx.fillStyle = tc.canvasLabel;
+            ctx.fillText(this._formatNum(pts[0].x), toX(pts[0].x), cBottom + 4);
+        } else {
+            const nXTicks = Math.min(pts.length - 1, 6);
+            for (let i = 0; i <= nXTicks; i++) {
+                const v = xMin + (xMax - xMin) * i / nXTicks;
+                const x = toX(v);
+                ctx.fillStyle = tc.canvasLabel;
+                ctx.fillText(this._formatNum(v), x, cBottom + 4);
+            }
+        }
+
+        // Axis labels.
+        ctx.fillStyle = tc.canvasTitle;
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(chart.x_label || '', (cLeft + cRight) / 2, cBottom + 22);
+
+        // Title.
+        ctx.fillStyle = tc.fgPrimary;
+        ctx.font = '13px monospace';
+        ctx.textBaseline = 'top';
+        ctx.fillText(chart.name, w / 2, 4);
+
+        // Draw each Y series as a line.
+        for (let s = 0; s < numSeries; s++) {
+            ctx.strokeStyle = kLineColors[s % kLineColors.length];
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            let first = true;
+            for (const p of pts) {
+                const px = toX(p.x);
+                const py = toY(p.ys[s]);
+                if (first) { ctx.moveTo(px, py); first = false; }
+                else { ctx.lineTo(px, py); }
+            }
+            ctx.stroke();
+        }
+
+        // Legend (if multiple series).
+        if (numSeries > 1 && chart.y_labels) {
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            let lx = cLeft + 8;
+            const ly = cTop + 4;
+            for (let s = 0; s < numSeries; s++) {
+                const color = kLineColors[s % kLineColors.length];
+                ctx.fillStyle = color;
+                ctx.fillRect(lx, ly + s * 14, 12, 10);
+                ctx.fillStyle = tc.canvasLabel;
+                ctx.fillText(chart.y_labels[s], lx + 16, ly + s * 14);
+            }
+        }
+    }
+
+    _formatNum(v) {
+        const abs = Math.abs(v);
+        if (abs === 0) return '0';
+        if (abs >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+        if (abs >= 1e3) return (v / 1e3).toFixed(1) + 'k';
+        if (abs >= 1) return v.toFixed(1);
+        return v.toPrecision(3);
     }
 }

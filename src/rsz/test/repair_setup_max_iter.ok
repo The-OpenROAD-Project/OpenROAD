@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 17 components and 92 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 7 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |       -0.3 |      4 | r2/D
+       4* |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |       -0.3 |      4 | r2/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.9% |   -0.268 |       -0.3 |       -0.3 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LAST_GASP
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.268 |       -0.3 |       -0.3 |      1 | r2/D
+       6* |       0 |       6 |        0 |      0 |     0 |    +3.2% |   -0.147 |       -0.1 |       -0.1 |      1 | r2/D
+    final |       0 |       6 |        0 |      0 |     0 |    +3.2% |   -0.147 |        0.0 |       -0.1 |      0 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 6 instances: 6 up, 0 up match, 0 down, 0 VT

@@ -264,6 +264,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mpl_block_macro_channels_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestBlockMacroChannels.cpp",
+    ],
+    deps = [
+        "//src/mpl",
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],

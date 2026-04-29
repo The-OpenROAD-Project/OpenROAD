@@ -84,6 +84,7 @@ COMPULSORY_TESTS = [
     "blockage1-opt",
     "gcd-opt",
     "gcd_no_one_site_gaps-opt",
+    "gcd_no_one_site_sanity",
     "ibex-opt",
     "multi_height1-opt",
     "edge_spacing-opt",
@@ -97,6 +98,7 @@ filegroup(
     name = "regression_resources",
     srcs = [
         "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
         "helpers.tcl",
     ],
 )
@@ -197,6 +199,9 @@ filegroup(
             "gcd_no_one_site_gaps-opt": [
                 "Nangate45_data/Nangate45-opt.lef",
             ],
+            "gcd_no_one_site_sanity": [
+                "Nangate45_data/Nangate45-opt.lef",
+            ],
             "hybrid_cells": [
                 "Nangate45/fake_macros.lef",
             ],
@@ -239,6 +244,7 @@ filegroup(
                 "Nangate45/fake_macros.lef",
             ],
             "obstruction2": [
+                "Nangate45/fakeram45_64x7.lib",
                 "Nangate45/fakeram45_64x7.lef",
             ],
             "pad01": [

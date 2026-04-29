@@ -5,10 +5,13 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "json_builder.h"
+#include "module_color_palette.h"
 #include "odb/db.h"
 
 namespace web {
@@ -280,7 +283,147 @@ HierarchyResult HierarchyReport::getReport() const
     node.area *= dbu_to_um_sq;
   }
 
+  // Assign palette colors to MODULE nodes in DFS order (the order
+  // they appear in result.nodes, guaranteed by addModule's recursion).
+  int color_idx = 0;
+  for (auto& node : result.nodes) {
+    if (node.node_kind == HierarchyNodeKind::kModule) {
+      node.color = kModuleColorPalette[color_idx % kModuleColorPaletteSize];
+      color_idx++;
+    }
+  }
+
   return result;
+}
+
+// ─── Shared serialization ──────────────────────────────────────────────
+
+void serializeHierarchyResult(JsonBuilder& b, const HierarchyResult& result)
+{
+  b.beginObject();
+  b.beginArray("nodes");
+  for (const auto& n : result.nodes) {
+    b.beginObject();
+    b.field("id", n.id);
+    b.field("parent_id", n.parent_id);
+    b.field("inst_name", n.inst_name);
+    b.field("module_name", n.module_name);
+    b.field("insts", n.insts);
+    b.field("macros", n.macros);
+    b.field("modules", n.modules);
+    b.field("area", n.area);
+    b.field("local_insts", n.local_insts);
+    b.field("local_macros", n.local_macros);
+    b.field("local_modules", n.local_modules);
+    if (n.node_kind != HierarchyNodeKind::kModule) {
+      b.field("node_kind", static_cast<int>(n.node_kind));
+    }
+    if (n.node_kind == HierarchyNodeKind::kModule) {
+      b.field("odb_id", static_cast<int>(n.odb_id));
+      b.beginArray("color");
+      b.value(static_cast<int>(n.color.r));
+      b.value(static_cast<int>(n.color.g));
+      b.value(static_cast<int>(n.color.b));
+      b.endArray();
+    }
+    b.endObject();
+  }
+  b.endArray();
+  b.endObject();
+}
+
+// ─── Default module color computation ──────────────────────────────────
+
+std::map<uint32_t, Color> computeDefaultModuleColors(
+    const HierarchyResult& result)
+{
+  // Build tree: children map + node lookup.
+  std::map<int, std::vector<int>> children;
+  std::map<int, const HierarchyNode*> node_map;
+  for (const auto& n : result.nodes) {
+    children[n.id];
+    node_map[n.id] = &n;
+    if (n.parent_id >= 0) {
+      auto it = children.find(n.parent_id);
+      if (it != children.end()) {
+        it->second.push_back(n.id);
+      }
+    }
+  }
+
+  // Default collapse state + read palette colors.
+  struct ModState
+  {
+    Color color;
+    Color effective_color;
+  };
+  std::map<unsigned int, ModState> mod_state;
+  std::set<int> collapsed;
+
+  for (const auto& n : result.nodes) {
+    const bool has_kids = !children[n.id].empty();
+    if (has_kids) {
+      if (n.node_kind == HierarchyNodeKind::kLeafGroup
+          || n.node_kind == HierarchyNodeKind::kTypeGroup) {
+        collapsed.insert(n.id);
+      } else if (n.node_kind == HierarchyNodeKind::kModule
+                 && n.parent_id >= 0) {
+        collapsed.insert(n.id);
+      }
+    }
+    if (n.node_kind == HierarchyNodeKind::kModule) {
+      mod_state[n.odb_id] = {.color = n.color, .effective_color = n.color};
+    }
+  }
+
+  // Effective colors: collapsed ancestors override descendant colors.
+  for (const auto& n : result.nodes) {
+    if (n.node_kind != HierarchyNodeKind::kModule) {
+      continue;
+    }
+    auto it = mod_state.find(n.odb_id);
+    if (it == mod_state.end()) {
+      continue;
+    }
+    Color inherited;
+    bool found_ancestor = false;
+    int pid = n.parent_id;
+    while (pid >= 0) {
+      auto nit = node_map.find(pid);
+      if (nit == node_map.end()) {
+        break;
+      }
+      const HierarchyNode* parent = nit->second;
+      if (parent->node_kind == HierarchyNodeKind::kModule
+          && collapsed.contains(parent->id)) {
+        auto pit = mod_state.find(parent->odb_id);
+        if (pit != mod_state.end()) {
+          inherited = pit->second.effective_color;
+          found_ancestor = true;
+        }
+      }
+      pid = parent->parent_id;
+    }
+    if (found_ancestor) {
+      it->second.effective_color = inherited;
+    }
+  }
+
+  // Build color map: every visible module contributes its effective color.
+  // The tile renderer looks up each instance's direct module, so parent
+  // and child colors don't conflict.
+  std::map<uint32_t, Color> colors;
+  for (const auto& n : result.nodes) {
+    if (n.node_kind != HierarchyNodeKind::kModule) {
+      continue;
+    }
+    auto it = mod_state.find(n.odb_id);
+    if (it == mod_state.end()) {
+      continue;
+    }
+    colors[n.odb_id] = it->second.effective_color;
+  }
+  return colors;
 }
 
 }  // namespace web

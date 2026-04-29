@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
@@ -61,6 +62,7 @@ struct DebugSetting
   bool rectilinearSTree = false;
   bool tree2D = false;
   bool tree3D = false;
+  bool edges3D = false;
   std::unique_ptr<AbstractFastRouteRenderer> renderer;
   std::string sttInputFileName;
 
@@ -264,6 +266,7 @@ class FastRouteCore
   void setDebugRectilinearSTree(bool rectiliniarSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
@@ -652,10 +655,10 @@ class FastRouteCore
   bool enable_resistance_aware_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
-  float worst_slack_;
-  float worst_net_resistance_;
-  int worst_net_length_;
-  int worst_fanout_;
+  float worst_slack_ = std::numeric_limits<float>::max();
+  float worst_net_resistance_ = 0;
+  int worst_net_length_ = 0;
+  int worst_fanout_ = 0;
   int num_adjust_;
   int v_capacity_;
   int h_capacity_;

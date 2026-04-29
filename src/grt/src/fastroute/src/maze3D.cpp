@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -725,7 +726,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          : kHighDetourPenalty);
   }
 
-  const int endIND = tree_order_pv_.size() * 0.9;
+  // Don't need to reroute every net during first GRT run, let it for the
+  // incremental optimizations
+  const int endIND = (enable_resistance_aware_ && is_incremental_grt_)
+                         ? tree_order_pv_.size()
+                         : tree_order_pv_.size() * 0.9;
+  const int max_reroute_iter
+      = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -733,7 +740,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     FrNet* net = nets_[netID];
     int8_t edge_cost = 0;
 
-    // Debug mode Tree 3D after layer assignament
+    // Debug mode Tree 3D during maze
     if (debug_->isOn() && debug_->tree3D) {
       if (net->getDbNet() == debug_->net) {
         logger_->report("Tree 3D during maze route 3D");
@@ -752,831 +759,880 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
 
-    for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
-      TreeEdge* treeedge = &(treeedges[edgeID]);
+    // First pass processes all edges; subsequent passes retry only the edges
+    // whose content was overwritten by a node shift (updateRouteType1/2).
+    std::vector<int> edges_to_process(sttrees_[netID].num_edges());
+    std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
+    int reroute_iter = 0;
 
-      if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
-        continue;
-      }
+    if (net->getDbNet() == debug_->net) {
+      logger_->report("Edges: {}", edges_to_process.size());
+    }
 
-      int n1 = treeedge->n1;
-      int n2 = treeedge->n2;
-      const int n1x = treenodes[n1].x;
-      const int n1y = treenodes[n1].y;
-      const int n2x = treenodes[n2].x;
-      const int n2y = treenodes[n2].y;
+    while (!edges_to_process.empty()) {
+      std::vector<int> next_retry;
 
-      const auto [ymin, ymax] = std::minmax(n1y, n2y);
-      const auto [xmin, xmax] = std::minmax(n1x, n2x);
+      for (int edgeID : edges_to_process) {
+        TreeEdge* treeedge = &(treeedges[edgeID]);
 
-      int original_len = treeedge->route.routelen;
+        if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
+          continue;
+        }
 
-      // ripup the routing for the edge
-      if (!newRipup3DType3(netID, edgeID)) {
-        continue;
-      }
+        int n1 = treeedge->n1;
+        int n2 = treeedge->n2;
+        const int n1x = treenodes[n1].x;
+        const int n1y = treenodes[n1].y;
+        const int n2x = treenodes[n2].x;
+        const int n2y = treenodes[n2].y;
 
-      enlarge = std::min(origEng, treeedge->route.routelen);
+        const auto [ymin, ymax] = std::minmax(n1y, n2y);
+        const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
-      const int regionX1 = std::max(0, xmin - enlarge);
-      const int regionX2 = std::min(x_grid_ - 1, xmax + enlarge);
-      const int regionY1 = std::max(0, ymin - enlarge);
-      const int regionY2 = std::min(y_grid_ - 1, ymax + enlarge);
+        int original_len = treeedge->len;
 
-      bool n1Shift = false;
-      bool n2Shift = false;
-      int n1a = treeedge->n1a;
-      int n2a = treeedge->n2a;
-
-      // initialize pop_src_heap_3D_[] and pop_heap2_3D[] as false (for
-      // detecting the shortest path is found or not)
-
-      for (int k = 0; k < num_layers_; k++) {
-        for (int i = regionY1; i <= regionY2; i++) {
-          for (int j = regionX1; j <= regionX2; j++) {
-            d1_3D_[k][i][j] = BIG_INT;
-            d2_3D_[k][i][j] = BIG_INT;
-            path_len_3D_[k][i][j] = BIG_INT;
+        // Debug mode edges 3D
+        if (debug_->isOn() && debug_->edges3D) {
+          if (net->getDbNet() == debug_->net) {
+            logger_->report(
+                "Edge {} 3D during maze route 3D ({},{}) -> ({},{}) - M{}",
+                edgeID,
+                n1x * tile_size_,
+                n1y * tile_size_,
+                n2x * tile_size_,
+                n2y * tile_size_,
+                treeedge->route.grids.back().layer);
+            StTreeVisualization(sttrees_[netID], net, true);
           }
         }
-      }
 
-      // setup src_heap_3D, dest_heap_3D and initialize d1_3D[][] and
-      // d2_3D[][] for all the grids on the two subtrees
-      setupHeap3D(netID,
-                  edgeID,
-                  src_heap_3D_,
-                  dest_heap_3D_,
-                  directions_3D_,
-                  corr_edge_3D_,
-                  d1_3D_,
-                  d2_3D_,
-                  path_len_3D_,
-                  regionX1,
-                  regionX2,
-                  regionY1,
-                  regionY2);
+        // ripup the routing for the edge
+        if (!newRipup3DType3(netID, edgeID)) {
+          continue;
+        }
 
-      // while loop to find shortest path
-      int ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
+        enlarge = std::min(origEng, treeedge->route.routelen);
 
-      for (auto& i : dest_heap_3D_) {
-        pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
-      }
+        const int regionX1 = std::max(0, xmin - enlarge);
+        const int regionX2 = std::min(x_grid_ - 1, xmax + enlarge);
+        const int regionY1 = std::max(0, ymin - enlarge);
+        const int regionY2 = std::min(y_grid_ - 1, ymax + enlarge);
 
-      while (
-          !pop_heap2_3D_[ind1])  // stop until the grid position been popped out
-                                 // from both src_heap_3D and dest_heap_3D
-      {
-        // relax all the adjacent grids within the enlarged region for
-        // source subtree
-        const int curL = ind1 / (grid_hv_);
-        const int remd = ind1 % (grid_hv_);
-        const int curX = remd % x_range_;
-        const int curY = remd / x_range_;
-        removeMin3D(src_heap_3D_);
+        bool n1Shift = false;
+        bool n2Shift = false;
+        int n1a = treeedge->n1a;
+        int n2a = treeedge->n2a;
 
-        // If the net has more than 1 cost, use its cost as extra cost when
-        // trying to find a new route
-        edge_cost = net->getLayerEdgeCost(curL);
+        // initialize pop_src_heap_3D_[] and pop_heap2_3D[] as false (for
+        // detecting the shortest path is found or not)
 
-        const bool Horizontal
-            = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
+        for (int k = 0; k < num_layers_; k++) {
+          for (int i = regionY1; i <= regionY2; i++) {
+            for (int j = regionX1; j <= regionX2; j++) {
+              d1_3D_[k][i][j] = BIG_INT;
+              d2_3D_[k][i][j] = BIG_INT;
+              path_len_3D_[k][i][j] = BIG_INT;
+            }
+          }
+        }
 
-        if (Horizontal) {
-          // left
-          if (curX > regionX1
-              && directions_3D_[curL][curY][curX] != Direction::East) {
-            const float cost = getMazeRouteCost3D(
-                netID, curL, curL, curX, curY, curX - 1, curY, false);
-            const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const float penalty = (new_len > original_len && resistance_aware_)
-                                      ? detour_penalty_
-                                      : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-            if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
-                    <= h_edges_3D_[curL][curY][curX - 1].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-              const int tmpX = curX - 1;  // the left neighbor
+        // setup src_heap_3D, dest_heap_3D and initialize d1_3D[][] and
+        // d2_3D[][] for all the grids on the two subtrees
+        setupHeap3D(netID,
+                    edgeID,
+                    src_heap_3D_,
+                    dest_heap_3D_,
+                    directions_3D_,
+                    corr_edge_3D_,
+                    d1_3D_,
+                    d2_3D_,
+                    path_len_3D_,
+                    regionX1,
+                    regionX2,
+                    regionY1,
+                    regionY2);
 
-              if (d1_3D_[curL][curY][tmpX]
-                  >= BIG_INT)  // left neighbor not been
-                               // put into src_heap_3D
-              {
-                d1_3D_[curL][curY][tmpX] = tmp;
-                path_len_3D_[curL][curY][tmpX] = new_len;
-                pr_3D_[curL][curY][tmpX].layer = curL;
-                pr_3D_[curL][curY][tmpX].x = curX;
-                pr_3D_[curL][curY][tmpX].y = curY;
-                directions_3D_[curL][curY][tmpX] = Direction::West;
-                src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
-                updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-              } else if (d1_3D_[curL][curY][tmpX]
-                         > tmp)  // left neighbor been put into src_heap_3D
-                                 // but needs update
-              {
-                d1_3D_[curL][curY][tmpX] = tmp;
-                path_len_3D_[curL][curY][tmpX] = new_len;
-                pr_3D_[curL][curY][tmpX].layer = curL;
-                pr_3D_[curL][curY][tmpX].x = curX;
-                pr_3D_[curL][curY][tmpX].y = curY;
-                directions_3D_[curL][curY][tmpX] = Direction::West;
-                const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                if (it != src_heap_3D_.end()) {
-                  const int pos = it - src_heap_3D_.begin();
-                  updateHeap3D(src_heap_3D_, pos);
-                } else {
-                  logger_->error(GRT,
-                                 601,
-                                 "Unable to update: position not found in 3D "
-                                 "heap for net {}.",
-                                 net->getName());
+        // while loop to find shortest path
+        int ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
+
+        for (auto& i : dest_heap_3D_) {
+          pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
+        }
+
+        while (
+            !pop_heap2_3D_[ind1])  // stop until the grid position been popped
+                                   // out from both src_heap_3D and dest_heap_3D
+        {
+          // relax all the adjacent grids within the enlarged region for
+          // source subtree
+          const int curL = ind1 / (grid_hv_);
+          const int remd = ind1 % (grid_hv_);
+          const int curX = remd % x_range_;
+          const int curY = remd / x_range_;
+          removeMin3D(src_heap_3D_);
+
+          // If the net has more than 1 cost, use its cost as extra cost when
+          // trying to find a new route
+          edge_cost = net->getLayerEdgeCost(curL);
+
+          const bool Horizontal
+              = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
+
+          if (Horizontal) {
+            // left
+            if (curX > regionX1
+                && directions_3D_[curL][curY][curX] != Direction::East) {
+              const float cost = getMazeRouteCost3D(
+                  netID, curL, curL, curX, curY, curX - 1, curY, false);
+              const int new_len = path_len_3D_[curL][curY][curX] + 1;
+              const float penalty
+                  = (new_len > original_len && resistance_aware_)
+                        ? detour_penalty_
+                        : 0;
+              const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+              if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
+                      <= h_edges_3D_[curL][curY][curX - 1].cap
+                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                const int tmpX = curX - 1;  // the left neighbor
+
+                if (d1_3D_[curL][curY][tmpX]
+                    >= BIG_INT)  // left neighbor not been
+                                 // put into src_heap_3D
+                {
+                  d1_3D_[curL][curY][tmpX] = tmp;
+                  path_len_3D_[curL][curY][tmpX] = new_len;
+                  pr_3D_[curL][curY][tmpX].layer = curL;
+                  pr_3D_[curL][curY][tmpX].x = curX;
+                  pr_3D_[curL][curY][tmpX].y = curY;
+                  directions_3D_[curL][curY][tmpX] = Direction::West;
+                  src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
+                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+                } else if (d1_3D_[curL][curY][tmpX]
+                           > tmp)  // left neighbor been put into src_heap_3D
+                                   // but needs update
+                {
+                  d1_3D_[curL][curY][tmpX] = tmp;
+                  path_len_3D_[curL][curY][tmpX] = new_len;
+                  pr_3D_[curL][curY][tmpX].layer = curL;
+                  pr_3D_[curL][curY][tmpX].x = curX;
+                  pr_3D_[curL][curY][tmpX].y = curY;
+                  directions_3D_[curL][curY][tmpX] = Direction::West;
+                  const int* dtmp = &d1_3D_[curL][curY][tmpX];
+                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
+                  if (it != src_heap_3D_.end()) {
+                    const int pos = it - src_heap_3D_.begin();
+                    updateHeap3D(src_heap_3D_, pos);
+                  } else {
+                    logger_->error(GRT,
+                                   601,
+                                   "Unable to update: position not found in 3D "
+                                   "heap for net {}.",
+                                   net->getName());
+                  }
+                }
+              }
+            }
+            // right
+            if (Horizontal && curX < regionX2
+                && directions_3D_[curL][curY][curX] != Direction::West) {
+              const float cost = getMazeRouteCost3D(
+                  netID, curL, curL, curX, curY, curX + 1, curY, false);
+              const int new_len = path_len_3D_[curL][curY][curX] + 1;
+              const float penalty
+                  = (new_len > original_len && resistance_aware_)
+                        ? detour_penalty_
+                        : 0;
+              const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+              const int tmpX = curX + 1;  // the right neighbor
+
+              if (h_edges_3D_[curL][curY][curX].usage + edge_cost
+                      <= h_edges_3D_[curL][curY][curX].cap
+                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                if (d1_3D_[curL][curY][tmpX]
+                    >= BIG_INT)  // right neighbor not been put into
+                                 // src_heap_3D
+                {
+                  d1_3D_[curL][curY][tmpX] = tmp;
+                  path_len_3D_[curL][curY][tmpX] = new_len;
+                  pr_3D_[curL][curY][tmpX].layer = curL;
+                  pr_3D_[curL][curY][tmpX].x = curX;
+                  pr_3D_[curL][curY][tmpX].y = curY;
+                  directions_3D_[curL][curY][tmpX] = Direction::East;
+                  src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
+                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+                } else if (d1_3D_[curL][curY][tmpX]
+                           > tmp)  // right neighbor been put into src_heap_3D
+                                   // but needs update
+                {
+                  d1_3D_[curL][curY][tmpX] = tmp;
+                  path_len_3D_[curL][curY][tmpX] = new_len;
+                  pr_3D_[curL][curY][tmpX].layer = curL;
+                  pr_3D_[curL][curY][tmpX].x = curX;
+                  pr_3D_[curL][curY][tmpX].y = curY;
+                  directions_3D_[curL][curY][tmpX] = Direction::East;
+                  const int* dtmp = &d1_3D_[curL][curY][tmpX];
+                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
+                  if (it != src_heap_3D_.end()) {
+                    const int pos = it - src_heap_3D_.begin();
+                    updateHeap3D(src_heap_3D_, pos);
+                  } else {
+                    logger_->error(GRT,
+                                   602,
+                                   "Unable to update: position not found in 3D "
+                                   "heap for net {}.",
+                                   net->getName());
+                  }
+                }
+              }
+            }
+          } else {
+            // bottom
+            if (!Horizontal && curY > regionY1
+                && directions_3D_[curL][curY][curX] != Direction::South) {
+              const float cost = getMazeRouteCost3D(
+                  netID, curL, curL, curX, curY, curX, curY - 1, false);
+              const int new_len = path_len_3D_[curL][curY][curX] + 1;
+              const float penalty
+                  = (new_len > original_len && resistance_aware_)
+                        ? detour_penalty_
+                        : 0;
+              const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+              const int tmpY = curY - 1;  // the bottom neighbor
+              if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
+                      <= v_edges_3D_[curL][curY - 1][curX].cap
+                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                if (d1_3D_[curL][tmpY][curX]
+                    >= BIG_INT)  // bottom neighbor not been put into
+                                 // src_heap_3D
+                {
+                  d1_3D_[curL][tmpY][curX] = tmp;
+                  path_len_3D_[curL][tmpY][curX] = new_len;
+                  pr_3D_[curL][tmpY][curX].layer = curL;
+                  pr_3D_[curL][tmpY][curX].x = curX;
+                  pr_3D_[curL][tmpY][curX].y = curY;
+                  directions_3D_[curL][tmpY][curX] = Direction::North;
+                  src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
+                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+                } else if (d1_3D_[curL][tmpY][curX]
+                           > tmp)  // bottom neighbor been put into
+                                   // src_heap_3D but needs update
+                {
+                  d1_3D_[curL][tmpY][curX] = tmp;
+                  path_len_3D_[curL][tmpY][curX] = new_len;
+                  pr_3D_[curL][tmpY][curX].layer = curL;
+                  pr_3D_[curL][tmpY][curX].x = curX;
+                  pr_3D_[curL][tmpY][curX].y = curY;
+                  directions_3D_[curL][tmpY][curX] = Direction::North;
+                  const int* dtmp = &d1_3D_[curL][tmpY][curX];
+                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
+                  if (it != src_heap_3D_.end()) {
+                    const int pos = it - src_heap_3D_.begin();
+                    updateHeap3D(src_heap_3D_, pos);
+                  } else {
+                    logger_->error(GRT,
+                                   603,
+                                   "Unable to update: position not found in 3D "
+                                   "heap for net {}.",
+                                   net->getName());
+                  }
+                }
+              }
+            }
+            // top
+            if (!Horizontal && curY < regionY2
+                && directions_3D_[curL][curY][curX] != Direction::North) {
+              const float cost = getMazeRouteCost3D(
+                  netID, curL, curL, curX, curY, curX, curY + 1, false);
+              const int new_len = path_len_3D_[curL][curY][curX] + 1;
+              const float penalty
+                  = (new_len > original_len && resistance_aware_)
+                        ? detour_penalty_
+                        : 0;
+              const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+              const int tmpY = curY + 1;  // the top neighbor
+              if (v_edges_3D_[curL][curY][curX].usage + edge_cost
+                      <= v_edges_3D_[curL][curY][curX].cap
+                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
+                if (d1_3D_[curL][tmpY][curX]
+                    >= BIG_INT)  // top neighbor not been put into src_heap_3D
+                {
+                  d1_3D_[curL][tmpY][curX] = tmp;
+                  path_len_3D_[curL][tmpY][curX] = new_len;
+                  pr_3D_[curL][tmpY][curX].layer = curL;
+                  pr_3D_[curL][tmpY][curX].x = curX;
+                  pr_3D_[curL][tmpY][curX].y = curY;
+                  directions_3D_[curL][tmpY][curX] = Direction::South;
+                  src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
+                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+                } else if (d1_3D_[curL][tmpY][curX]
+                           > tmp)  // top neighbor been put into src_heap_3D
+                                   // but needs update
+                {
+                  d1_3D_[curL][tmpY][curX] = tmp;
+                  path_len_3D_[curL][tmpY][curX] = new_len;
+                  pr_3D_[curL][tmpY][curX].layer = curL;
+                  pr_3D_[curL][tmpY][curX].x = curX;
+                  pr_3D_[curL][tmpY][curX].y = curY;
+                  directions_3D_[curL][tmpY][curX] = Direction::South;
+                  const int* dtmp = &d1_3D_[curL][tmpY][curX];
+                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
+                  if (it != src_heap_3D_.end()) {
+                    const int pos = it - src_heap_3D_.begin();
+                    updateHeap3D(src_heap_3D_, pos);
+                  } else {
+                    logger_->error(GRT,
+                                   604,
+                                   "Unable to update: position not found in 3D "
+                                   "heap for net {}.",
+                                   net->getName());
+                  }
                 }
               }
             }
           }
-          // right
-          if (Horizontal && curX < regionX2
-              && directions_3D_[curL][curY][curX] != Direction::West) {
-            const float cost = getMazeRouteCost3D(
-                netID, curL, curL, curX, curY, curX + 1, curY, false);
-            const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const float penalty = (new_len > original_len && resistance_aware_)
-                                      ? detour_penalty_
-                                      : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-            const int tmpX = curX + 1;  // the right neighbor
 
-            if (h_edges_3D_[curL][curY][curX].usage + edge_cost
-                    <= h_edges_3D_[curL][curY][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-              if (d1_3D_[curL][curY][tmpX]
-                  >= BIG_INT)  // right neighbor not been put into
-                               // src_heap_3D
-              {
-                d1_3D_[curL][curY][tmpX] = tmp;
-                path_len_3D_[curL][curY][tmpX] = new_len;
-                pr_3D_[curL][curY][tmpX].layer = curL;
-                pr_3D_[curL][curY][tmpX].x = curX;
-                pr_3D_[curL][curY][tmpX].y = curY;
-                directions_3D_[curL][curY][tmpX] = Direction::East;
-                src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
-                updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-              } else if (d1_3D_[curL][curY][tmpX]
-                         > tmp)  // right neighbor been put into src_heap_3D
-                                 // but needs update
-              {
-                d1_3D_[curL][curY][tmpX] = tmp;
-                path_len_3D_[curL][curY][tmpX] = new_len;
-                pr_3D_[curL][curY][tmpX].layer = curL;
-                pr_3D_[curL][curY][tmpX].x = curX;
-                pr_3D_[curL][curY][tmpX].y = curY;
-                directions_3D_[curL][curY][tmpX] = Direction::East;
-                const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                if (it != src_heap_3D_.end()) {
-                  const int pos = it - src_heap_3D_.begin();
-                  updateHeap3D(src_heap_3D_, pos);
-                } else {
-                  logger_->error(GRT,
-                                 602,
-                                 "Unable to update: position not found in 3D "
-                                 "heap for net {}.",
-                                 net->getName());
-                }
+          // down
+          if (curL > 0 && directions_3D_[curL][curY][curX] != Direction::Up) {
+            // Via cost
+            const float cost = getMazeRouteCost3D(
+                netID, curL, curL - 1, curX, curY, curX, curY, true);
+            const int new_len = path_len_3D_[curL][curY][curX];
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
+            const int tmpL = curL - 1;  // the bottom neighbor
+
+            if (d1_3D_[tmpL][curY][curX]
+                >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
+            {
+              d1_3D_[tmpL][curY][curX] = tmp;
+              path_len_3D_[tmpL][curY][curX] = new_len;
+              pr_3D_[tmpL][curY][curX].layer = curL;
+              pr_3D_[tmpL][curY][curX].x = curX;
+              pr_3D_[tmpL][curY][curX].y = curY;
+              directions_3D_[tmpL][curY][curX] = Direction::Down;
+              src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
+              updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+            } else if (d1_3D_[tmpL][curY][curX]
+                       > tmp)  // bottom neighbor been put into src_heap_3D
+                               // but needs update
+            {
+              d1_3D_[tmpL][curY][curX] = tmp;
+              path_len_3D_[tmpL][curY][curX] = new_len;
+              pr_3D_[tmpL][curY][curX].layer = curL;
+              pr_3D_[tmpL][curY][curX].x = curX;
+              pr_3D_[tmpL][curY][curX].y = curY;
+              directions_3D_[tmpL][curY][curX] = Direction::Down;
+              const int* dtmp = &d1_3D_[tmpL][curY][curX];
+              const auto it = std::ranges::find(src_heap_3D_, dtmp);
+              if (it != src_heap_3D_.end()) {
+                const int pos = it - src_heap_3D_.begin();
+                updateHeap3D(src_heap_3D_, pos);
+              } else {
+                logger_->error(GRT,
+                               605,
+                               "Unable to update: position not found in 3D "
+                               "heap for net {}.",
+                               net->getName());
               }
             }
           }
-        } else {
-          // bottom
-          if (!Horizontal && curY > regionY1
-              && directions_3D_[curL][curY][curX] != Direction::South) {
+
+          // up
+          if (curL < num_layers_ - 1
+              && directions_3D_[curL][curY][curX] != Direction::Down) {
+            // Via cost
             const float cost = getMazeRouteCost3D(
-                netID, curL, curL, curX, curY, curX, curY - 1, false);
-            const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const float penalty = (new_len > original_len && resistance_aware_)
-                                      ? detour_penalty_
-                                      : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-            const int tmpY = curY - 1;  // the bottom neighbor
-            if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
-                    <= v_edges_3D_[curL][curY - 1][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-              if (d1_3D_[curL][tmpY][curX]
-                  >= BIG_INT)  // bottom neighbor not been put into
-                               // src_heap_3D
-              {
-                d1_3D_[curL][tmpY][curX] = tmp;
-                path_len_3D_[curL][tmpY][curX] = new_len;
-                pr_3D_[curL][tmpY][curX].layer = curL;
-                pr_3D_[curL][tmpY][curX].x = curX;
-                pr_3D_[curL][tmpY][curX].y = curY;
-                directions_3D_[curL][tmpY][curX] = Direction::North;
-                src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
-                updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-              } else if (d1_3D_[curL][tmpY][curX]
-                         > tmp)  // bottom neighbor been put into
-                                 // src_heap_3D but needs update
-              {
-                d1_3D_[curL][tmpY][curX] = tmp;
-                path_len_3D_[curL][tmpY][curX] = new_len;
-                pr_3D_[curL][tmpY][curX].layer = curL;
-                pr_3D_[curL][tmpY][curX].x = curX;
-                pr_3D_[curL][tmpY][curX].y = curY;
-                directions_3D_[curL][tmpY][curX] = Direction::North;
-                const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                if (it != src_heap_3D_.end()) {
-                  const int pos = it - src_heap_3D_.begin();
-                  updateHeap3D(src_heap_3D_, pos);
-                } else {
-                  logger_->error(GRT,
-                                 603,
-                                 "Unable to update: position not found in 3D "
-                                 "heap for net {}.",
-                                 net->getName());
-                }
+                netID, curL, curL + 1, curX, curY, curX, curY, true);
+            const int new_len = path_len_3D_[curL][curY][curX];
+            const float tmp = d1_3D_[curL][curY][curX] + cost;
+            const int tmpL = curL + 1;  // the bottom neighbor
+            if (d1_3D_[tmpL][curY][curX]
+                >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
+            {
+              d1_3D_[tmpL][curY][curX] = tmp;
+              path_len_3D_[tmpL][curY][curX] = new_len;
+              pr_3D_[tmpL][curY][curX].layer = curL;
+              pr_3D_[tmpL][curY][curX].x = curX;
+              pr_3D_[tmpL][curY][curX].y = curY;
+              directions_3D_[tmpL][curY][curX] = Direction::Up;
+              src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
+              updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
+            } else if (d1_3D_[tmpL][curY][curX]
+                       > tmp)  // bottom neighbor been put into src_heap_3D
+                               // but needs update
+            {
+              d1_3D_[tmpL][curY][curX] = tmp;
+              path_len_3D_[tmpL][curY][curX] = new_len;
+              pr_3D_[tmpL][curY][curX].layer = curL;
+              pr_3D_[tmpL][curY][curX].x = curX;
+              pr_3D_[tmpL][curY][curX].y = curY;
+              directions_3D_[tmpL][curY][curX] = Direction::Up;
+              const int* dtmp = &d1_3D_[tmpL][curY][curX];
+              const auto it = std::ranges::find(src_heap_3D_, dtmp);
+              if (it != src_heap_3D_.end()) {
+                const int pos = it - src_heap_3D_.begin();
+                updateHeap3D(src_heap_3D_, pos);
+              } else {
+                logger_->error(GRT,
+                               606,
+                               "Unable to update: position not found in 3D "
+                               "heap for net {}.",
+                               net->getName());
               }
             }
           }
-          // top
-          if (!Horizontal && curY < regionY2
-              && directions_3D_[curL][curY][curX] != Direction::North) {
-            const float cost = getMazeRouteCost3D(
-                netID, curL, curL, curX, curY, curX, curY + 1, false);
-            const int new_len = path_len_3D_[curL][curY][curX] + 1;
-            const float penalty = (new_len > original_len && resistance_aware_)
-                                      ? detour_penalty_
-                                      : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-            const int tmpY = curY + 1;  // the top neighbor
-            if (v_edges_3D_[curL][curY][curX].usage + edge_cost
-                    <= v_edges_3D_[curL][curY][curX].cap
-                && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-              if (d1_3D_[curL][tmpY][curX]
-                  >= BIG_INT)  // top neighbor not been put into src_heap_3D
-              {
-                d1_3D_[curL][tmpY][curX] = tmp;
-                path_len_3D_[curL][tmpY][curX] = new_len;
-                pr_3D_[curL][tmpY][curX].layer = curL;
-                pr_3D_[curL][tmpY][curX].x = curX;
-                pr_3D_[curL][tmpY][curX].y = curY;
-                directions_3D_[curL][tmpY][curX] = Direction::South;
-                src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
-                updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-              } else if (d1_3D_[curL][tmpY][curX]
-                         > tmp)  // top neighbor been put into src_heap_3D
-                                 // but needs update
-              {
-                d1_3D_[curL][tmpY][curX] = tmp;
-                path_len_3D_[curL][tmpY][curX] = new_len;
-                pr_3D_[curL][tmpY][curX].layer = curL;
-                pr_3D_[curL][tmpY][curX].x = curX;
-                pr_3D_[curL][tmpY][curX].y = curY;
-                directions_3D_[curL][tmpY][curX] = Direction::South;
-                const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                if (it != src_heap_3D_.end()) {
-                  const int pos = it - src_heap_3D_.begin();
-                  updateHeap3D(src_heap_3D_, pos);
-                } else {
-                  logger_->error(GRT,
-                                 604,
-                                 "Unable to update: position not found in 3D "
-                                 "heap for net {}.",
-                                 net->getName());
-                }
+
+          if (src_heap_3D_.empty()) {
+            logger_->error(GRT,
+                           183,
+                           "Net {}: heap underflow during 3D maze routing.",
+                           nets_[netID]->getName());
+          }
+          // update ind1 for next loop
+          ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
+        }  // while loop
+
+        for (auto& i : dest_heap_3D_) {
+          pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
+        }
+        // get the new route for the edge and store it in gridsX[] and
+        // gridsY[] temporarily
+
+        const int16_t crossL = ind1 / (grid_hv_);
+        const int16_t crossX = (ind1 % (grid_hv_)) % x_range_;
+        const int16_t crossY = (ind1 % (grid_hv_)) / x_range_;
+
+        int cnt = 0;
+        int16_t curX = crossX;
+        int16_t curY = crossY;
+        int16_t curL = crossL;
+
+        if (d1_3D_[curL][curY][curX] == 0) {
+          recoverEdge(netID, edgeID);
+          continue;
+        }
+
+        std::vector<GPoint3D> tmp_grids;
+
+        while (d1_3D_[curL][curY][curX] != 0)  // loop until reach subtree1
+        {
+          const int tmpL = pr_3D_[curL][curY][curX].layer;
+          const int tmpX = pr_3D_[curL][curY][curX].x;
+          const int tmpY = pr_3D_[curL][curY][curX].y;
+          curX = tmpX;
+          curY = tmpY;
+          curL = tmpL;
+          tmp_grids.push_back({curX, curY, curL});
+          cnt++;
+        }
+
+        std::vector<GPoint3D> grids(tmp_grids.rbegin(), tmp_grids.rend());
+
+        // add the connection point (crossX, crossY)
+        grids.push_back({crossX, crossY, crossL});
+        cnt++;
+
+        const int cnt_n1n2 = cnt;
+
+        const int E1x = grids[0].x;
+        const int E1y = grids[0].y;
+        const int E2x = grids.back().x;
+        const int E2y = grids.back().y;
+
+        int headRoom = 0;
+        int origL = grids[0].layer;
+
+        while (headRoom < grids.size() && grids[headRoom].x == E1x
+               && grids[headRoom].y == E1y) {
+          headRoom++;
+        }
+        if (headRoom > 0) {
+          headRoom--;
+        }
+
+        int lastL = grids[headRoom].layer;
+
+        // change the tree structure according to the new routing for the tree
+        // edge find E1 and E2, and the endpoints of the edges they are on
+
+        const int edge_n1n2 = edgeID;
+        // (1) consider subtree1
+        if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
+          // split neighbor edge and return id new node
+          n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
+          // calculate TreeNode variables for new node
+          setTreeNodesVariables(netID);
+        }
+        if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
+        // n1 is not a pin and E1!=n1, then make change to subtree1,
+        // otherwise, no change to subtree1
+        {
+          n1Shift = true;
+          const int corE1 = corr_edge_3D_[origL][E1y][E1x];
+
+          const int endpt1 = treeedges[corE1].n1;
+          const int endpt2 = treeedges[corE1].n2;
+
+          // find A1, A2 and edge_n1A1, edge_n1A2
+          int edge_n1A1, edge_n1A2;
+          int A1, A2;
+          if (treenodes[n1].nbr[0] == n2) {
+            A1 = treenodes[n1].nbr[1];
+            A2 = treenodes[n1].nbr[2];
+            edge_n1A1 = treenodes[n1].edge[1];
+            edge_n1A2 = treenodes[n1].edge[2];
+          } else if (treenodes[n1].nbr[1] == n2) {
+            A1 = treenodes[n1].nbr[0];
+            A2 = treenodes[n1].nbr[2];
+            edge_n1A1 = treenodes[n1].edge[0];
+            edge_n1A2 = treenodes[n1].edge[2];
+          } else {
+            A1 = treenodes[n1].nbr[0];
+            A2 = treenodes[n1].nbr[1];
+            edge_n1A1 = treenodes[n1].edge[0];
+            edge_n1A2 = treenodes[n1].edge[1];
+          }
+
+          if (endpt1 == n1 || endpt2 == n1)  // E1 is on (n1, A1) or (n1, A2)
+          {
+            // if E1 is on (n1, A2), switch A1 and A2 so that E1 is always on
+            // (n1, A1)
+            if (endpt1 == A2 || endpt2 == A2) {
+              std::swap(A1, A2);
+              std::swap(edge_n1A1, edge_n1A2);
+            }
+
+            // update route for edge (n1, A1), (n1, A2)
+            updateRouteType13D(netID,
+                               treenodes,
+                               n1,
+                               A1,
+                               A2,
+                               E1x,
+                               E1y,
+                               treeedges,
+                               edge_n1A1,
+                               edge_n1A2);
+
+            // Both edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n1A1);
+            next_retry.push_back(edge_n1A2);
+
+            // update position for n1
+
+            // treenodes[n1].l = E1l;
+            treenodes[n1].assigned = true;
+          }  // if E1 is on (n1, A1) or (n1, A2)
+          else  // E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
+          {
+            const int C1 = endpt1;
+            const int C2 = endpt2;
+            const int edge_C1C2 = corr_edge_3D_[origL][E1y][E1x];
+
+            // update route for edge (n1, C1), (n1, C2) and (A1, A2)
+            updateRouteType23D(netID,
+                               treenodes,
+                               n1,
+                               A1,
+                               A2,
+                               C1,
+                               C2,
+                               E1x,
+                               E1y,
+                               treeedges,
+                               edge_n1A1,
+                               edge_n1A2,
+                               edge_C1C2);
+            // All three edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n1A1);
+            next_retry.push_back(edge_n1A2);
+            next_retry.push_back(edge_C1C2);
+            // update position for n1
+            treenodes[n1].x = E1x;
+            treenodes[n1].y = E1y;
+            treenodes[n1].assigned = true;
+            // update 3 edges (n1, A1)->(C1, n1), (n1, A2)->(n1, C2), (C1,
+            // C2)->(A1, A2)
+            const int edge_n1C1 = edge_n1A1;
+            treeedges[edge_n1C1].n1 = C1;
+            treeedges[edge_n1C1].n2 = n1;
+            const int edge_n1C2 = edge_n1A2;
+            treeedges[edge_n1C2].n1 = n1;
+            treeedges[edge_n1C2].n2 = C2;
+            const int edge_A1A2 = edge_C1C2;
+            treeedges[edge_A1A2].n1 = A1;
+            treeedges[edge_A1A2].n2 = A2;
+            // update nbr and edge for 5 nodes n1, A1, A2, C1, C2
+            // n1's nbr (n2, A1, A2)->(n2, C1, C2)
+            treenodes[n1].nbr[0] = n2;
+            treenodes[n1].edge[0] = edge_n1n2;
+            treenodes[n1].nbr[1] = C1;
+            treenodes[n1].edge[1] = edge_n1C1;
+            treenodes[n1].nbr[2] = C2;
+            treenodes[n1].edge[2] = edge_n1C2;
+            // A1's nbr n1->A2
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[A1].nbr[i] == n1) {
+                treenodes[A1].nbr[i] = A2;
+                treenodes[A1].edge[i] = edge_A1A2;
+                break;
               }
             }
-          }
+            // A2's nbr n1->A1
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[A2].nbr[i] == n1) {
+                treenodes[A2].nbr[i] = A1;
+                treenodes[A2].edge[i] = edge_A1A2;
+                break;
+              }
+            }
+            // C1's nbr C2->n1
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[C1].nbr[i] == C2) {
+                treenodes[C1].nbr[i] = n1;
+                treenodes[C1].edge[i] = edge_n1C1;
+                break;
+              }
+            }
+            // C2's nbr C1->n1
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[C2].nbr[i] == C1) {
+                treenodes[C2].nbr[i] = n1;
+                treenodes[C2].edge[i] = edge_n1C2;
+                break;
+              }
+            }
+          }  // else E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
+        }  // n1 is not a pin and E1!=n1
+        else {
+          newUpdateNodeLayers(treenodes, edge_n1n2, n1a, lastL);
         }
 
-        // down
-        if (curL > 0 && directions_3D_[curL][curY][curX] != Direction::Up) {
-          // Via cost
-          const float cost = getMazeRouteCost3D(
-              netID, curL, curL - 1, curX, curY, curX, curY, true);
-          const int new_len = path_len_3D_[curL][curY][curX] + 1;
-          const float penalty = (new_len > original_len && resistance_aware_
-                                 && !is_incremental_grt_)
-                                    ? detour_penalty_
-                                    : 0;
-          const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-          const int tmpL = curL - 1;  // the bottom neighbor
+        origL = grids[cnt_n1n2 - 1].layer;
+        int tailRoom = cnt_n1n2 - 1;
 
-          if (d1_3D_[tmpL][curY][curX]
-              >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
+        while (tailRoom > 0 && grids[tailRoom].x == E2x
+               && grids[tailRoom].y == E2y) {
+          tailRoom--;
+        }
+        if (tailRoom < cnt_n1n2 - 1) {
+          tailRoom++;
+        }
+
+        lastL = grids[tailRoom].layer;
+
+        // (2) consider subtree2
+        if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
+          // split neighbor edge and return id new node
+          n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
+          // calculate TreeNode variables for new node
+          setTreeNodesVariables(netID);
+        }
+        if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
+        // n2 is not a pin and E2!=n2, then make change to subtree2,
+        // otherwise, no change to subtree2
+        {
+          // find the endpoints of the edge E1 is on
+
+          n2Shift = true;
+          const int corE2 = corr_edge_3D_[origL][E2y][E2x];
+          const int endpt1 = treeedges[corE2].n1;
+          const int endpt2 = treeedges[corE2].n2;
+
+          // find B1, B2
+          int edge_n2B1, edge_n2B2;
+          int B1, B2;
+          if (treenodes[n2].nbr[0] == n1) {
+            B1 = treenodes[n2].nbr[1];
+            B2 = treenodes[n2].nbr[2];
+            edge_n2B1 = treenodes[n2].edge[1];
+            edge_n2B2 = treenodes[n2].edge[2];
+          } else if (treenodes[n2].nbr[1] == n1) {
+            B1 = treenodes[n2].nbr[0];
+            B2 = treenodes[n2].nbr[2];
+            edge_n2B1 = treenodes[n2].edge[0];
+            edge_n2B2 = treenodes[n2].edge[2];
+          } else {
+            B1 = treenodes[n2].nbr[0];
+            B2 = treenodes[n2].nbr[1];
+            edge_n2B1 = treenodes[n2].edge[0];
+            edge_n2B2 = treenodes[n2].edge[1];
+          }
+
+          if (endpt1 == n2 || endpt2 == n2)  // E2 is on (n2, B1) or (n2, B2)
           {
-            d1_3D_[tmpL][curY][curX] = tmp;
-            path_len_3D_[tmpL][curY][curX] = new_len;
-            pr_3D_[tmpL][curY][curX].layer = curL;
-            pr_3D_[tmpL][curY][curX].x = curX;
-            pr_3D_[tmpL][curY][curX].y = curY;
-            directions_3D_[tmpL][curY][curX] = Direction::Down;
-            src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
-            updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-          } else if (d1_3D_[tmpL][curY][curX]
-                     > tmp)  // bottom neighbor been put into src_heap_3D
-                             // but needs update
+            // if E2 is on (n2, B2), switch B1 and B2 so that E2 is always on
+            // (n2, B1)
+            if (endpt1 == B2 || endpt2 == B2) {
+              std::swap(B1, B2);
+              std::swap(edge_n2B1, edge_n2B2);
+            }
+
+            // update route for edge (n2, B1), (n2, B2)
+            updateRouteType13D(netID,
+                               treenodes,
+                               n2,
+                               B1,
+                               B2,
+                               E2x,
+                               E2y,
+                               treeedges,
+                               edge_n2B1,
+                               edge_n2B2);
+
+            // Both edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n2B1);
+            next_retry.push_back(edge_n2B2);
+
+            // update position for n2
+            treenodes[n2].assigned = true;
+          }  // if E2 is on (n2, B1) or (n2, B2)
+          else  // E2 is not on (n2, B1) or (n2, B2), but on (d1_3D, d2_3D)
           {
-            d1_3D_[tmpL][curY][curX] = tmp;
-            path_len_3D_[tmpL][curY][curX] = new_len;
-            pr_3D_[tmpL][curY][curX].layer = curL;
-            pr_3D_[tmpL][curY][curX].x = curX;
-            pr_3D_[tmpL][curY][curX].y = curY;
-            directions_3D_[tmpL][curY][curX] = Direction::Down;
-            const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it = std::ranges::find(src_heap_3D_, dtmp);
-            if (it != src_heap_3D_.end()) {
-              const int pos = it - src_heap_3D_.begin();
-              updateHeap3D(src_heap_3D_, pos);
-            } else {
-              logger_->error(
-                  GRT,
-                  605,
-                  "Unable to update: position not found in 3D heap for net {}.",
-                  net->getName());
+            const int D1 = endpt1;
+            const int D2 = endpt2;
+            const int edge_D1D2 = corr_edge_3D_[origL][E2y][E2x];
+
+            // update route for edge (n2, d1_3D), (n2, d2_3D) and (B1, B2)
+            updateRouteType23D(netID,
+                               treenodes,
+                               n2,
+                               B1,
+                               B2,
+                               D1,
+                               D2,
+                               E2x,
+                               E2y,
+                               treeedges,
+                               edge_n2B1,
+                               edge_n2B2,
+                               edge_D1D2);
+            // All three edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n2B1);
+            next_retry.push_back(edge_n2B2);
+            next_retry.push_back(edge_D1D2);
+            // update position for n2
+            treenodes[n2].x = E2x;
+            treenodes[n2].y = E2y;
+            treenodes[n2].assigned = true;
+            // update 3 edges (n2, B1)->(d1_3D, n2), (n2, B2)->(n2, d2_3D),
+            // (d1_3D, d2_3D)->(B1, B2)
+            const int edge_n2D1 = edge_n2B1;
+            treeedges[edge_n2D1].n1 = D1;
+            treeedges[edge_n2D1].n2 = n2;
+            const int edge_n2D2 = edge_n2B2;
+            treeedges[edge_n2D2].n1 = n2;
+            treeedges[edge_n2D2].n2 = D2;
+            const int edge_B1B2 = edge_D1D2;
+            treeedges[edge_B1B2].n1 = B1;
+            treeedges[edge_B1B2].n2 = B2;
+            // update nbr and edge for 5 nodes n2, B1, B2, d1_3D, d2_3D
+            // n1's nbr (n1, B1, B2)->(n1, d1_3D, d2_3D)
+            treenodes[n2].nbr[0] = n1;
+            treenodes[n2].edge[0] = edge_n1n2;
+            treenodes[n2].nbr[1] = D1;
+            treenodes[n2].edge[1] = edge_n2D1;
+            treenodes[n2].nbr[2] = D2;
+            treenodes[n2].edge[2] = edge_n2D2;
+            // B1's nbr n2->B2
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[B1].nbr[i] == n2) {
+                treenodes[B1].nbr[i] = B2;
+                treenodes[B1].edge[i] = edge_B1B2;
+                break;
+              }
+            }
+            // B2's nbr n2->B1
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[B2].nbr[i] == n2) {
+                treenodes[B2].nbr[i] = B1;
+                treenodes[B2].edge[i] = edge_B1B2;
+                break;
+              }
+            }
+            // D1's nbr D2->n2
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[D1].nbr[i] == D2) {
+                treenodes[D1].nbr[i] = n2;
+                treenodes[D1].edge[i] = edge_n2D1;
+                break;
+              }
+            }
+            // D2's nbr D1->n2
+            for (int i = 0; i < 3; i++) {
+              if (treenodes[D2].nbr[i] == D1) {
+                treenodes[D2].nbr[i] = n2;
+                treenodes[D2].edge[i] = edge_n2D2;
+                break;
+              }
+            }
+          }  // else E2 is not on (n2, B1) or (n2, B2), but on (d1_3D,
+             // d2_3D)
+        } else  // n2 is not a pin and E2!=n2
+        {
+          newUpdateNodeLayers(treenodes, edge_n1n2, n2a, lastL);
+        }
+
+        const int newcnt_n1n2 = tailRoom - headRoom + 1;
+
+        // update route for edge (n1, n2) and edge usage
+        if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
+          treeedges[edge_n1n2].route.grids.clear();
+        }
+
+        // avoid resizing vector with negative value.
+        // this may happen when all elements of gridsX and gridsY are the
+        // same.
+        if (newcnt_n1n2 > 0) {
+          treeedges[edge_n1n2].route.grids.resize(newcnt_n1n2);
+        }
+        treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
+        treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
+        treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);
+
+        int j = headRoom;
+        for (int i = 0; i < newcnt_n1n2; i++) {
+          treeedges[edge_n1n2].route.grids[i] = grids[j];
+          j++;
+        }
+
+        // update edge usage
+        for (int i = headRoom; i < tailRoom; i++) {
+          if (grids[i].layer == grids[i + 1].layer) {
+            if (grids[i].x == grids[i + 1].x)  // a vertical edge
+            {
+              const int min_y = std::min(grids[i].y, grids[i + 1].y);
+              graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
+              v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
+                  += net->getLayerEdgeCost(grids[i].layer);
+            } else  // a horizontal edge
+            {
+              const int min_x = std::min(grids[i].x, grids[i + 1].x);
+              graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
+              h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
+                  += net->getLayerEdgeCost(grids[i].layer);
             }
           }
         }
 
-        // up
-        if (curL < num_layers_ - 1
-            && directions_3D_[curL][curY][curX] != Direction::Down) {
-          // Via cost
-          const float cost = getMazeRouteCost3D(
-              netID, curL, curL + 1, curX, curY, curX, curY, true);
-          const int new_len = path_len_3D_[curL][curY][curX] + 1;
-          const float penalty = (new_len > original_len && resistance_aware_
-                                 && !is_incremental_grt_)
-                                    ? detour_penalty_
-                                    : 0;
-          const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
-          const int tmpL = curL + 1;  // the bottom neighbor
-          if (d1_3D_[tmpL][curY][curX]
-              >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
-          {
-            d1_3D_[tmpL][curY][curX] = tmp;
-            path_len_3D_[tmpL][curY][curX] = new_len;
-            pr_3D_[tmpL][curY][curX].layer = curL;
-            pr_3D_[tmpL][curY][curX].x = curX;
-            pr_3D_[tmpL][curY][curX].y = curY;
-            directions_3D_[tmpL][curY][curX] = Direction::Up;
-            src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
-            updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-          } else if (d1_3D_[tmpL][curY][curX]
-                     > tmp)  // bottom neighbor been put into src_heap_3D
-                             // but needs update
-          {
-            d1_3D_[tmpL][curY][curX] = tmp;
-            path_len_3D_[tmpL][curY][curX] = new_len;
-            pr_3D_[tmpL][curY][curX].layer = curL;
-            pr_3D_[tmpL][curY][curX].x = curX;
-            pr_3D_[tmpL][curY][curX].y = curY;
-            directions_3D_[tmpL][curY][curX] = Direction::Up;
-            const int* dtmp = &d1_3D_[tmpL][curY][curX];
-            const auto it = std::ranges::find(src_heap_3D_, dtmp);
-            if (it != src_heap_3D_.end()) {
-              const int pos = it - src_heap_3D_.begin();
-              updateHeap3D(src_heap_3D_, pos);
-            } else {
-              logger_->error(
-                  GRT,
-                  606,
-                  "Unable to update: position not found in 3D heap for net {}.",
-                  net->getName());
-            }
-          }
+        if (!n1Shift && !n2Shift) {
+          continue;
         }
+        setTreeNodesVariables(netID);
+      }  // edges loop
 
-        if (src_heap_3D_.empty()) {
-          logger_->error(GRT,
-                         183,
-                         "Net {}: heap underflow during 3D maze routing.",
-                         nets_[netID]->getName());
-        }
-        // update ind1 for next loop
-        ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
-      }  // while loop
+      // Deduplicate the retry set.
+      std::ranges::sort(next_retry);
+      next_retry.erase(std::ranges::unique(next_retry).begin(),
+                       next_retry.end());
 
-      for (auto& i : dest_heap_3D_) {
-        pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
-      }
-      // get the new route for the edge and store it in gridsX[] and
-      // gridsY[] temporarily
-
-      const int16_t crossL = ind1 / (grid_hv_);
-      const int16_t crossX = (ind1 % (grid_hv_)) % x_range_;
-      const int16_t crossY = (ind1 % (grid_hv_)) / x_range_;
-
-      int cnt = 0;
-      int16_t curX = crossX;
-      int16_t curY = crossY;
-      int16_t curL = crossL;
-
-      if (d1_3D_[curL][curY][curX] == 0) {
-        recoverEdge(netID, edgeID);
+      // Stop if nothing shifted, or the iteration cap is reached.
+      if (next_retry.empty() || reroute_iter >= max_reroute_iter) {
         break;
       }
-
-      std::vector<GPoint3D> tmp_grids;
-
-      while (d1_3D_[curL][curY][curX] != 0)  // loop until reach subtree1
-      {
-        const int tmpL = pr_3D_[curL][curY][curX].layer;
-        const int tmpX = pr_3D_[curL][curY][curX].x;
-        const int tmpY = pr_3D_[curL][curY][curX].y;
-        curX = tmpX;
-        curY = tmpY;
-        curL = tmpL;
-        tmp_grids.push_back({curX, curY, curL});
-        cnt++;
-      }
-
-      std::vector<GPoint3D> grids(tmp_grids.rbegin(), tmp_grids.rend());
-
-      // add the connection point (crossX, crossY)
-      grids.push_back({crossX, crossY, crossL});
-      cnt++;
-
-      curX = crossX;
-      curY = crossY;
-      curL = crossL;
-
-      const int cnt_n1n2 = cnt;
-
-      const int E1x = grids[0].x;
-      const int E1y = grids[0].y;
-      const int E2x = grids.back().x;
-      const int E2y = grids.back().y;
-
-      int headRoom = 0;
-      int origL = grids[0].layer;
-
-      while (headRoom < grids.size() && grids[headRoom].x == E1x
-             && grids[headRoom].y == E1y) {
-        headRoom++;
-      }
-      if (headRoom > 0) {
-        headRoom--;
-      }
-
-      int lastL = grids[headRoom].layer;
-
-      // change the tree structure according to the new routing for the tree
-      // edge find E1 and E2, and the endpoints of the edges they are on
-
-      const int edge_n1n2 = edgeID;
-      // (1) consider subtree1
-      if (n1 < num_terminals && (E1x != n1x || E1y != n1y)) {
-        // split neighbor edge and return id new node
-        n1 = splitEdge(treeedges, treenodes, n2, n1, edgeID);
-        // calculate TreeNode variables for new node
-        setTreeNodesVariables(netID);
-      }
-      if (n1 >= num_terminals && (E1x != n1x || E1y != n1y))
-      // n1 is not a pin and E1!=n1, then make change to subtree1,
-      // otherwise, no change to subtree1
-      {
-        n1Shift = true;
-        const int corE1 = corr_edge_3D_[origL][E1y][E1x];
-
-        const int endpt1 = treeedges[corE1].n1;
-        const int endpt2 = treeedges[corE1].n2;
-
-        // find A1, A2 and edge_n1A1, edge_n1A2
-        int edge_n1A1, edge_n1A2;
-        int A1, A2;
-        if (treenodes[n1].nbr[0] == n2) {
-          A1 = treenodes[n1].nbr[1];
-          A2 = treenodes[n1].nbr[2];
-          edge_n1A1 = treenodes[n1].edge[1];
-          edge_n1A2 = treenodes[n1].edge[2];
-        } else if (treenodes[n1].nbr[1] == n2) {
-          A1 = treenodes[n1].nbr[0];
-          A2 = treenodes[n1].nbr[2];
-          edge_n1A1 = treenodes[n1].edge[0];
-          edge_n1A2 = treenodes[n1].edge[2];
-        } else {
-          A1 = treenodes[n1].nbr[0];
-          A2 = treenodes[n1].nbr[1];
-          edge_n1A1 = treenodes[n1].edge[0];
-          edge_n1A2 = treenodes[n1].edge[1];
-        }
-
-        if (endpt1 == n1 || endpt2 == n1)  // E1 is on (n1, A1) or (n1, A2)
-        {
-          // if E1 is on (n1, A2), switch A1 and A2 so that E1 is always on
-          // (n1, A1)
-          if (endpt1 == A2 || endpt2 == A2) {
-            std::swap(A1, A2);
-            std::swap(edge_n1A1, edge_n1A2);
-          }
-
-          // update route for edge (n1, A1), (n1, A2)
-          updateRouteType13D(netID,
-                             treenodes,
-                             n1,
-                             A1,
-                             A2,
-                             E1x,
-                             E1y,
-                             treeedges,
-                             edge_n1A1,
-                             edge_n1A2);
-
-          // update position for n1
-
-          // treenodes[n1].l = E1l;
-          treenodes[n1].assigned = true;
-        }  // if E1 is on (n1, A1) or (n1, A2)
-        else  // E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
-        {
-          const int C1 = endpt1;
-          const int C2 = endpt2;
-          const int edge_C1C2 = corr_edge_3D_[origL][E1y][E1x];
-
-          // update route for edge (n1, C1), (n1, C2) and (A1, A2)
-          updateRouteType23D(netID,
-                             treenodes,
-                             n1,
-                             A1,
-                             A2,
-                             C1,
-                             C2,
-                             E1x,
-                             E1y,
-                             treeedges,
-                             edge_n1A1,
-                             edge_n1A2,
-                             edge_C1C2);
-          // update position for n1
-          treenodes[n1].x = E1x;
-          treenodes[n1].y = E1y;
-          treenodes[n1].assigned = true;
-          // update 3 edges (n1, A1)->(C1, n1), (n1, A2)->(n1, C2), (C1,
-          // C2)->(A1, A2)
-          const int edge_n1C1 = edge_n1A1;
-          treeedges[edge_n1C1].n1 = C1;
-          treeedges[edge_n1C1].n2 = n1;
-          const int edge_n1C2 = edge_n1A2;
-          treeedges[edge_n1C2].n1 = n1;
-          treeedges[edge_n1C2].n2 = C2;
-          const int edge_A1A2 = edge_C1C2;
-          treeedges[edge_A1A2].n1 = A1;
-          treeedges[edge_A1A2].n2 = A2;
-          // update nbr and edge for 5 nodes n1, A1, A2, C1, C2
-          // n1's nbr (n2, A1, A2)->(n2, C1, C2)
-          treenodes[n1].nbr[0] = n2;
-          treenodes[n1].edge[0] = edge_n1n2;
-          treenodes[n1].nbr[1] = C1;
-          treenodes[n1].edge[1] = edge_n1C1;
-          treenodes[n1].nbr[2] = C2;
-          treenodes[n1].edge[2] = edge_n1C2;
-          // A1's nbr n1->A2
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[A1].nbr[i] == n1) {
-              treenodes[A1].nbr[i] = A2;
-              treenodes[A1].edge[i] = edge_A1A2;
-              break;
-            }
-          }
-          // A2's nbr n1->A1
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[A2].nbr[i] == n1) {
-              treenodes[A2].nbr[i] = A1;
-              treenodes[A2].edge[i] = edge_A1A2;
-              break;
-            }
-          }
-          // C1's nbr C2->n1
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[C1].nbr[i] == C2) {
-              treenodes[C1].nbr[i] = n1;
-              treenodes[C1].edge[i] = edge_n1C1;
-              break;
-            }
-          }
-          // C2's nbr C1->n1
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[C2].nbr[i] == C1) {
-              treenodes[C2].nbr[i] = n1;
-              treenodes[C2].edge[i] = edge_n1C2;
-              break;
-            }
-          }
-        }  // else E1 is not on (n1, A1) or (n1, A2), but on (C1, C2)
-      }  // n1 is not a pin and E1!=n1
-      else {
-        newUpdateNodeLayers(treenodes, edge_n1n2, n1a, lastL);
-      }
-
-      origL = grids[cnt_n1n2 - 1].layer;
-      int tailRoom = cnt_n1n2 - 1;
-
-      while (tailRoom > 0 && grids[tailRoom].x == E2x
-             && grids[tailRoom].y == E2y) {
-        tailRoom--;
-      }
-      if (tailRoom < cnt_n1n2 - 1) {
-        tailRoom++;
-      }
-
-      lastL = grids[tailRoom].layer;
-
-      // (2) consider subtree2
-      if (n2 < num_terminals && (E2x != n2x || E2y != n2y)) {
-        // split neighbor edge and return id new node
-        n2 = splitEdge(treeedges, treenodes, n1, n2, edgeID);
-        // calculate TreeNode variables for new node
-        setTreeNodesVariables(netID);
-      }
-      if (n2 >= num_terminals && (E2x != n2x || E2y != n2y))
-      // n2 is not a pin and E2!=n2, then make change to subtree2,
-      // otherwise, no change to subtree2
-      {
-        // find the endpoints of the edge E1 is on
-
-        n2Shift = true;
-        const int corE2 = corr_edge_3D_[origL][E2y][E2x];
-        const int endpt1 = treeedges[corE2].n1;
-        const int endpt2 = treeedges[corE2].n2;
-
-        // find B1, B2
-        int edge_n2B1, edge_n2B2;
-        int B1, B2;
-        if (treenodes[n2].nbr[0] == n1) {
-          B1 = treenodes[n2].nbr[1];
-          B2 = treenodes[n2].nbr[2];
-          edge_n2B1 = treenodes[n2].edge[1];
-          edge_n2B2 = treenodes[n2].edge[2];
-        } else if (treenodes[n2].nbr[1] == n1) {
-          B1 = treenodes[n2].nbr[0];
-          B2 = treenodes[n2].nbr[2];
-          edge_n2B1 = treenodes[n2].edge[0];
-          edge_n2B2 = treenodes[n2].edge[2];
-        } else {
-          B1 = treenodes[n2].nbr[0];
-          B2 = treenodes[n2].nbr[1];
-          edge_n2B1 = treenodes[n2].edge[0];
-          edge_n2B2 = treenodes[n2].edge[1];
-        }
-
-        if (endpt1 == n2 || endpt2 == n2)  // E2 is on (n2, B1) or (n2, B2)
-        {
-          // if E2 is on (n2, B2), switch B1 and B2 so that E2 is always on
-          // (n2, B1)
-          if (endpt1 == B2 || endpt2 == B2) {
-            std::swap(B1, B2);
-            std::swap(edge_n2B1, edge_n2B2);
-          }
-
-          // update route for edge (n2, B1), (n2, B2)
-          updateRouteType13D(netID,
-                             treenodes,
-                             n2,
-                             B1,
-                             B2,
-                             E2x,
-                             E2y,
-                             treeedges,
-                             edge_n2B1,
-                             edge_n2B2);
-
-          // update position for n2
-          treenodes[n2].assigned = true;
-        }  // if E2 is on (n2, B1) or (n2, B2)
-        else  // E2 is not on (n2, B1) or (n2, B2), but on (d1_3D, d2_3D)
-        {
-          const int D1 = endpt1;
-          const int D2 = endpt2;
-          const int edge_D1D2 = corr_edge_3D_[origL][E2y][E2x];
-
-          // update route for edge (n2, d1_3D), (n2, d2_3D) and (B1, B2)
-          updateRouteType23D(netID,
-                             treenodes,
-                             n2,
-                             B1,
-                             B2,
-                             D1,
-                             D2,
-                             E2x,
-                             E2y,
-                             treeedges,
-                             edge_n2B1,
-                             edge_n2B2,
-                             edge_D1D2);
-          // update position for n2
-          treenodes[n2].x = E2x;
-          treenodes[n2].y = E2y;
-          treenodes[n2].assigned = true;
-          // update 3 edges (n2, B1)->(d1_3D, n2), (n2, B2)->(n2, d2_3D),
-          // (d1_3D, d2_3D)->(B1, B2)
-          const int edge_n2D1 = edge_n2B1;
-          treeedges[edge_n2D1].n1 = D1;
-          treeedges[edge_n2D1].n2 = n2;
-          const int edge_n2D2 = edge_n2B2;
-          treeedges[edge_n2D2].n1 = n2;
-          treeedges[edge_n2D2].n2 = D2;
-          const int edge_B1B2 = edge_D1D2;
-          treeedges[edge_B1B2].n1 = B1;
-          treeedges[edge_B1B2].n2 = B2;
-          // update nbr and edge for 5 nodes n2, B1, B2, d1_3D, d2_3D
-          // n1's nbr (n1, B1, B2)->(n1, d1_3D, d2_3D)
-          treenodes[n2].nbr[0] = n1;
-          treenodes[n2].edge[0] = edge_n1n2;
-          treenodes[n2].nbr[1] = D1;
-          treenodes[n2].edge[1] = edge_n2D1;
-          treenodes[n2].nbr[2] = D2;
-          treenodes[n2].edge[2] = edge_n2D2;
-          // B1's nbr n2->B2
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[B1].nbr[i] == n2) {
-              treenodes[B1].nbr[i] = B2;
-              treenodes[B1].edge[i] = edge_B1B2;
-              break;
-            }
-          }
-          // B2's nbr n2->B1
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[B2].nbr[i] == n2) {
-              treenodes[B2].nbr[i] = B1;
-              treenodes[B2].edge[i] = edge_B1B2;
-              break;
-            }
-          }
-          // D1's nbr D2->n2
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[D1].nbr[i] == D2) {
-              treenodes[D1].nbr[i] = n2;
-              treenodes[D1].edge[i] = edge_n2D1;
-              break;
-            }
-          }
-          // D2's nbr D1->n2
-          for (int i = 0; i < 3; i++) {
-            if (treenodes[D2].nbr[i] == D1) {
-              treenodes[D2].nbr[i] = n2;
-              treenodes[D2].edge[i] = edge_n2D2;
-              break;
-            }
-          }
-        }  // else E2 is not on (n2, B1) or (n2, B2), but on (d1_3D,
-           // d2_3D)
-      } else  // n2 is not a pin and E2!=n2
-      {
-        newUpdateNodeLayers(treenodes, edge_n1n2, n2a, lastL);
-      }
-
-      const int newcnt_n1n2 = tailRoom - headRoom + 1;
-
-      // update route for edge (n1, n2) and edge usage
-      if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
-        treeedges[edge_n1n2].route.grids.clear();
-      }
-
-      // avoid resizing vector with negative value.
-      // this may happen when all elements of gridsX and gridsY are the
-      // same.
-      if (newcnt_n1n2 > 0) {
-        treeedges[edge_n1n2].route.grids.resize(newcnt_n1n2);
-      }
-      treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
-      treeedges[edge_n1n2].route.routelen = newcnt_n1n2 - 1;
-      treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);
-
-      int j = headRoom;
-      for (int i = 0; i < newcnt_n1n2; i++) {
-        treeedges[edge_n1n2].route.grids[i] = grids[j];
-        j++;
-      }
-
-      // update edge usage
-      for (int i = headRoom; i < tailRoom; i++) {
-        if (grids[i].layer == grids[i + 1].layer) {
-          if (grids[i].x == grids[i + 1].x)  // a vertical edge
-          {
-            const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            graph2d_.updateUsageV(grids[i].x, min_y, net, net->getEdgeCost());
-            v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
-                += net->getLayerEdgeCost(grids[i].layer);
-          } else  // a horizontal edge
-          {
-            const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            graph2d_.updateUsageH(min_x, grids[i].y, net, net->getEdgeCost());
-            h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
-                += net->getLayerEdgeCost(grids[i].layer);
-          }
-        }
-      }
-
-      if (!n1Shift && !n2Shift) {
-        continue;
-      }
-      setTreeNodesVariables(netID);
-    }
-  }
+      edges_to_process = std::move(next_retry);
+      reroute_iter++;
+    }  // while edges_to_process
+  }  // nets loop
 }
 
 }  // namespace grt

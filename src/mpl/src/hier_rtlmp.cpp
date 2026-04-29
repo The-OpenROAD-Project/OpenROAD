@@ -252,6 +252,50 @@ void HierRTLMP::run()
   computeWireLength();
 }
 
+void HierRTLMP::blockMacroChannels()
+{
+  if (!block_) {
+    block_ = db_->getChip()->getBlock();
+  }
+
+  int blockage_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock() || !inst->isFixed()) {
+      continue;
+    }
+
+    // There is no need to create blockages for soft halos since other
+    // tools capable of placement are aware of them.
+    if (inst->getHalo() != nullptr && inst->getHalo()->isSoft()) {
+      continue;
+    }
+
+    HardMacro::Halo halo;
+    if (macro_to_halo_.contains(inst)) {
+      halo = macro_to_halo_.at(inst);
+    } else if (inst->getHalo() != nullptr) {
+      const HardMacro::Halo inst_halo(inst->getHalo());
+      halo = inst_halo.floorTo(base_halo_);
+    } else {
+      halo = base_halo_;
+    }
+
+    HardMacro hard_macro(inst, halo);
+    hard_macro.setOrientation(inst->getOrient());
+    hard_macro.setRealLocation(inst->getLocation());
+
+    const odb::Rect box = hard_macro.getBBox();
+    odb::dbBlockage* blockage = odb::dbBlockage::create(
+        block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+    blockage->setSoft();
+
+    ++blockage_count;
+  }
+
+  logger_->info(
+      MPL, 76, "Created {} soft blockages around macros.", blockage_count);
+}
+
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();

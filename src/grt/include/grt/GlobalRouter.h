@@ -276,6 +276,7 @@ class GlobalRouter
   void setDebugRectilinearSTree(bool rectilinearSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
   void saveSttInputFile(Net* net);

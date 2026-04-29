@@ -24,6 +24,7 @@
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -99,7 +100,12 @@ bool UnbufferMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 
   // Don't remove buffer if new max fanout violations are created
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
-  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  const sta::LibertyPort* in_lib_port = in_arc ? in_arc->from() : nullptr;
+  if (in_lib_port == nullptr) {
+    return false;
+  }
+  sta::Pin* drvr_input_pin = network_->findPin(drvr, in_lib_port);
   sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
   sta::Pin* prev_drvr_pin
       = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;

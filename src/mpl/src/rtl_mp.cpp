@@ -228,6 +228,11 @@ void MacroPlacer::setMacroHalo(odb::dbInst* macro,
   hier_rtlmp_->setMacroHalo(macro, left, bottom, right, top);
 }
 
+void MacroPlacer::blockMacroChannels()
+{
+  hier_rtlmp_->blockMacroChannels();
+}
+
 void MacroPlacer::setMacroPlacementFile(const std::string& file_name)
 {
   hier_rtlmp_->setMacroPlacementFile(file_name);
