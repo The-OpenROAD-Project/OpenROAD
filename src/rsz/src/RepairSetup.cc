@@ -990,11 +990,14 @@ void RepairSetup::resetStagnationTracking()
   // Initialize best_wns_ to the most-negative finite float so the very first
   // worstSlack() sample always wins the max().
   best_wns_ = std::numeric_limits<float>::lowest();
+  wns_stagnation_sample_count_ = 0;
+  wns_stagnation_sample_index_ = 0;
+  wns_stagnation_window_improvement_ = 0;
+  wns_stagnation_threshold_ = 0;
   wns_stagnation_tripped_ = false;
-  wns_stagnation_iteration_ = 0;
 }
 
-void RepairSetup::wnsStagnationReport() const
+void RepairSetup::wnsStagnationReport(const int iteration) const
 {
   if (!wns_stagnation_tripped_) {
     return;
@@ -1004,25 +1007,25 @@ void RepairSetup::wnsStagnationReport() const
       RSZ,
       234,
       "repair_timing: obviously futile - WNS only reached {} after {} passes "
-      "(initial {}, improvement {}). This is probably an exploration run, "
-      "not a timing closure run. Aborting with best-effort result.",
+      "(initial {}, {}-pass improvement {}, threshold {}). This is probably "
+      "an exploration run, not a timing closure run. Aborting with "
+      "best-effort result.",
       delayAsString(best_wns_, digits, sta_),
-      wns_stagnation_iteration_,
+      iteration,
       delayAsString(initial_wns_, digits, sta_),
-      delayAsString(best_wns_ - initial_wns_, digits, sta_));
+      wns_stagnation_window_,
+      delayAsString(wns_stagnation_window_improvement_, digits, sta_),
+      delayAsString(wns_stagnation_threshold_, digits, sta_));
 }
 
 // Terminate progress if incremental fix rate within an opto interval falls
 // below the threshold.   Bump up the threshold after each large opto
 // interval.
-// A second, independent "WNS-stagnation" gate also returns true when, after
-// the warmup, the best-so-far WNS has failed to improve by a deterministic
-// threshold relative to the initial WNS. That detects designs where WNS
-// essentially never moves from its starting value — the real signature of
-// an "obviously futile" run. Plateaus on legitimate designs (WNS drops by
-// orders of magnitude early, then flat-lines while TNS keeps improving) do
-// not trip this gate, because best_wns_ has already moved far from
-// initial_wns_ by the time the plateau starts.
+// A second, independent "WNS-stagnation" gate also returns true when the
+// best-so-far WNS has failed to improve by a deterministic threshold over a
+// full ring-buffer window. The threshold is scaled against the WNS captured
+// at the start of repair_timing, while the gate itself is checked on the same
+// 100-pass cadence as the existing two-consecutive-termination rule.
 bool RepairSetup::terminateProgress(const int iteration,
                                     const float initial_tns,
                                     float& prev_tns,
@@ -1033,32 +1036,46 @@ bool RepairSetup::terminateProgress(const int iteration,
                                     const char* phase_name,
                                     const char phase_marker)
 {
-  // WNS-stagnation gate. Sampled every call so the "best so far" tracker
-  // advances at the same rate as the caller's inner loop (deterministic).
+  wns_stagnation_tripped_ = false;
+
+  // WNS-stagnation gate. Sample every call so the ring advances at the same
+  // rate as the caller's inner loop.
   best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
-  if (iteration > wns_stagnation_warmup_iterations_) {
-    const float threshold
+  const bool ring_full = wns_stagnation_sample_count_ >= wns_stagnation_window_;
+  const sta::Slack window_start_wns
+      = ring_full ? wns_stagnation_samples_[wns_stagnation_sample_index_]
+                  : best_wns_;
+  wns_stagnation_samples_[wns_stagnation_sample_index_] = best_wns_;
+  wns_stagnation_sample_index_
+      = (wns_stagnation_sample_index_ + 1) % wns_stagnation_window_;
+  if (wns_stagnation_sample_count_ < wns_stagnation_window_) {
+    wns_stagnation_sample_count_++;
+  }
+
+  if (ring_full && iteration > wns_stagnation_warmup_iterations_
+      && iteration % opto_small_interval_ == 0) {
+    wns_stagnation_window_improvement_ = best_wns_ - window_start_wns;
+    wns_stagnation_threshold_
         = std::max(wns_stagnation_abs_tol_,
                    wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
-    if (best_wns_ - initial_wns_ < threshold) {
+    if (wns_stagnation_window_improvement_ < wns_stagnation_threshold_) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
                  1,
                  "{}{} Phase: Exiting at iteration {} because WNS best-so-far "
-                 "{} only improved {} from initial {} (threshold {}) "
+                 "{} only improved {} over {} passes (threshold {}) "
                  "[endpoint {}/{}]",
                  phase_name,
                  phase_marker,
                  iteration,
                  delayAsString(best_wns_, 3, sta_),
-                 delayAsString(best_wns_ - initial_wns_, 3, sta_),
-                 delayAsString(initial_wns_, 3, sta_),
-                 delayAsString(threshold, 3, sta_),
+                 delayAsString(wns_stagnation_window_improvement_, 3, sta_),
+                 wns_stagnation_window_,
+                 delayAsString(wns_stagnation_threshold_, 3, sta_),
                  endpt_index,
                  num_endpts);
       wns_stagnation_tripped_ = true;
-      wns_stagnation_iteration_ = iteration;
       return true;
     }
   }
@@ -1409,7 +1426,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                  "LEGACY{} Phase: Exiting due to no TNS progress "
                  "for two opto cycles",
                  phase_marker);
-      wnsStagnationReport();
+      wnsStagnationReport(opto_iteration);
       break;
     }
   }  // for each violating endpoint
@@ -1725,7 +1742,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                    "WNS{} Phase: No TNS progress for {} cycles, exiting",
                    phase_marker,
                    overall_no_progress_count_);
-        wnsStagnationReport();
+        wnsStagnationReport(opto_iteration);
         break;
       }
     }
@@ -3148,7 +3165,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                  "LAST_GASP{} Phase: No TNS progress for two opto cycles, "
                  "exiting",
                  phase_marker);
-      wnsStagnationReport();
+      wnsStagnationReport(opto_iteration);
       break;
     }
   }  // for each violating endpoint

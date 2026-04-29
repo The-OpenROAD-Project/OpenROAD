@@ -7,9 +7,9 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
        1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
-[INFO RSZ-0234] repair_timing: obviously futile - WNS only reached -0.142 after 1002 passes (initial -0.142, improvement 0.000). This is probably an exploration run, not a timing closure run. Aborting with best-effort result.
-    1002* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
-[INFO RSZ-0234] repair_timing: obviously futile - WNS only reached -0.142 after 1004 passes (initial -0.142, improvement 0.000). This is probably an exploration run, not a timing closure run. Aborting with best-effort result.
+[INFO RSZ-0234] repair_timing: obviously futile - WNS only reached -0.142 after 1200 passes (initial -0.142, 200-pass improvement 0.000, threshold 0.001). This is probably an exploration run, not a timing closure run. Aborting with best-effort result.
+    1200* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
+    1200+ |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
     final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.142 |     -170.6 |     -170.6 |   1200 | dst0/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.

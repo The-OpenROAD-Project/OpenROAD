@@ -3,8 +3,8 @@
 # time. The block below has many independent register-to-register pairs,
 # a clock period below clk-to-Q + setup, and dont_use + skip_* tuned so
 # no move can improve WNS. Without the WNS-stagnation gate, repair_timing
-# walks the whole 1200-endpoint list; with the gate it exits shortly
-# after the warmup. The .ok pins the bounded behaviour.
+# walks the whole 1200-endpoint list; with the gate it exits after the
+# warmup plus one full stagnation window. The .ok pins the bounded behaviour.
 
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
