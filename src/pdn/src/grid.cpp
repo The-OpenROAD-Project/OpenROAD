@@ -1320,7 +1320,13 @@ void CoreGrid::setupDirectConnect(
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
 {
   std::vector<PadDirectConnectionStraps*> straps;
-  // look for pads that need to be connected
+  // Collect placed pad iterms grouped by net, sorted spatially within each
+  // group. We then round-robin across nets when adding straps so that VDD
+  // and VSS pads interleave in the grid component list. Grid::makeShapes
+  // accumulates obstructions in iteration order, so a static all-VDD-first
+  // ordering would let core PDN straps drop a disproportionate share of
+  // VSS pad-to-ring connections (issue #9994).
+  std::vector<std::vector<odb::dbITerm*>> per_net_iterms;
   for (auto* net : getNets()) {
     std::vector<odb::dbITerm*> iterms;
     for (auto* iterm : net->getITerms()) {
@@ -1336,7 +1342,33 @@ void CoreGrid::setupDirectConnect(
       iterms.push_back(iterm);
     }
 
-    for (auto* iterm : iterms) {
+    if (iterms.empty()) {
+      continue;
+    }
+
+    // Spatial sort: same comparator across nets so position i in each net
+    // refers to a pad in roughly the same region of the die.
+    std::sort(
+        iterms.begin(), iterms.end(), [](odb::dbITerm* lhs, odb::dbITerm* rhs) {
+          const auto l_ll = lhs->getInst()->getBBox()->getBox().ll();
+          const auto r_ll = rhs->getInst()->getBBox()->getBox().ll();
+          return l_ll < r_ll;
+        });
+
+    per_net_iterms.push_back(std::move(iterms));
+  }
+
+  size_t max_count = 0;
+  for (const auto& iterms : per_net_iterms) {
+    max_count = std::max(max_count, iterms.size());
+  }
+
+  for (size_t i = 0; i < max_count; ++i) {
+    for (const auto& iterms : per_net_iterms) {
+      if (i >= iterms.size()) {
+        continue;
+      }
+      auto* iterm = iterms[i];
       auto pad_connect = std::make_unique<PadDirectConnectionStraps>(
           this, iterm, connect_pad_layers);
       if (pad_connect->canConnect()) {
