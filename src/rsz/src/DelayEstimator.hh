@@ -35,7 +35,7 @@ struct StageEvaluation
   const sta::LibertyCell* cell{nullptr};
   float input_slew{0.0f};
   float load_cap{0.0f};
-  float stage_delay{0.0f};
+  float stage_delay{0.0f};  // Calibrated cell delay, not wire delay.
   float output_slew{0.0f};
 };
 

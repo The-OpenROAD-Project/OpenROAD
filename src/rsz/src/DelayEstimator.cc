@@ -9,7 +9,6 @@
 #include <cmath>
 #include <optional>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "OptimizerTypes.hh"
@@ -36,8 +35,6 @@ namespace rsz {
 
 namespace {
 
-[[maybe_unused]] const std::thread::id kDelayEstimatorMainThread
-    = std::this_thread::get_id();
 constexpr float kSlewMatchAbsTolerance = 1.0e-15f;
 constexpr float kSlewMatchRelTolerance = 1.0e-6f;
 constexpr float kMinSlewRatioDenominator = 1.0e-15f;
@@ -219,6 +216,26 @@ float inputSlewOrZero(const Resizer& resizer,
                                                             arc.ref_arc->role(),
                                                             arc.scene,
                                                             arc.min_max);
+}
+
+float pathGraphCellDelayOrModelDelay(const Resizer& resizer,
+                                     const sta::PathExpanded& expanded,
+                                     const int path_index,
+                                     const SelectedArc& arc,
+                                     const float model_delay)
+{
+  const sta::Path* driver_path = expanded.path(path_index);
+  sta::Edge* gate_edge = driver_path->prevEdge(resizer.staState());
+  if (gate_edge == nullptr) {
+    // Path validation guarantees the timing arc; fall back only if the graph
+    // edge is unavailable for a boundary stage.
+    return model_delay;
+  }
+
+  const int dcalc_ap = arc.scene->dcalcAnalysisPtIndex(arc.min_max);
+  const sta::TimingArc* gate_arc = driver_path->prevArc(resizer.staState());
+  return sta::delayAsFloat(
+      resizer.graph()->arcDelay(gate_edge, gate_arc, dcalc_ap));
 }
 
 bool findCandidatePortsForArc(const sta::Scene* scene,
@@ -681,9 +698,8 @@ DmpSlewBiasModel buildDmpSlewBiasModel(Resizer& resizer,
                                        const float max_load_delta)
 {
   // DMP sampling temporarily mutates the live reduced Pi model and calls the
-  // active ArcDelayCalc.  It must run only during single-threaded prepare,
-  // before candidate worker scoring or any concurrent STA update begins.
-  assert(std::this_thread::get_id() == kDelayEstimatorMainThread);
+  // active ArcDelayCalc.  Call it only during single-threaded prepare, before
+  // candidate worker scoring or any concurrent STA update begins.
 
   DmpSlewBiasModel model;
   if (max_load_delta <= 0.0f || stage.driver_pin == nullptr) {
@@ -974,23 +990,26 @@ std::optional<DelayStageState> buildDelayStageState(
   const float load_cap = resizer.staState()->graphDelayCalc()->loadCap(
       driver_pin, selected_arc->scene, selected_arc->min_max);
   sta::LibertyCell* current_cell = selected_arc->currentCell();
-  float current_delay = 0.0f;
+  float current_model_delay = 0.0f;
   float current_slew = 0.0f;
   if (!lookupArcDelayAndSlew(*selected_arc,
                              input_slew,
                              load_cap,
                              current_cell,
-                             current_delay,
+                             current_model_delay,
                              current_slew)) {
     setFailReason(fail_reason, FailReason::kMissingCurrentTimingArc);
     return std::nullopt;
   }
+  const float current_delay = pathGraphCellDelayOrModelDelay(
+      resizer, expanded, path_index, *selected_arc, current_model_delay);
 
   DelayStageState stage;
   stage.arc = *selected_arc;
   stage.driver_pin = driver_pin;
   stage.input_slew = input_slew;
   stage.load_cap = load_cap;
+  stage.current_model_delay = current_model_delay;
   stage.current_delay = current_delay;
   stage.output_slew_merge_arcs = collectOutputSlewMergeArcs(
       resizer, *selected_arc, driver_pin, current_cell, load_cap);
@@ -1218,12 +1237,20 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                                        ? FailReason::kMissingCandidateTimingArc
                                        : FailReason::kMissingCurrentTimingArc;
 
-    float stage_delay = 0.0f;
+    float model_stage_delay = 0.0f;
     float stage_slew = 0.0f;
-    if (!lookupArcDelayAndSlew(
-            stage.arc, input_slew, load_cap, cell, stage_delay, stage_slew)) {
+    if (!lookupArcDelayAndSlew(stage.arc,
+                               input_slew,
+                               load_cap,
+                               cell,
+                               model_stage_delay,
+                               stage_slew)) {
       return {.legal = false, .reason = fail_reason};
     }
+    // Keep candidate scoring on the table-model delta, but report absolute
+    // delay from the STA graph baseline so traces compare directly to golden.
+    const float stage_delay
+        = stage.current_delay + (model_stage_delay - stage.current_model_delay);
     candidate_total_delay += stage_delay;
     propagated_driver_output_slew
         = estimateOutputSlew(stage, cell, input_slew, load_cap, stage_slew);

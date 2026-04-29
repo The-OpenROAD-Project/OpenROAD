@@ -140,9 +140,10 @@ struct DelayStageState
   sta::Pin* driver_pin{nullptr};
   float input_slew{0.0f};
   float load_cap{0.0f};
-  float current_delay{0.0f};       // Original delay before optimization
-  float current_model_slew{0.0f};  // Table-model merged slew baseline
-  float current_slew{0.0f};        // STA graph merged slew baseline
+  float current_model_delay{0.0f};  // Table-model cell delay baseline
+  float current_delay{0.0f};        // STA graph cell delay baseline
+  float current_model_slew{0.0f};   // Table-model merged slew baseline
+  float current_slew{0.0f};         // STA graph merged slew baseline
   std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
   DmpSlewBiasModel dmp_slew_bias;
   int path_index{-1};
