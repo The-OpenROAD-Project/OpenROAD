@@ -219,4 +219,9 @@
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::write_upf(getOpenRoad()->getLogger(), db->getChip()->getBlock(), file);
   }
+
+  bool upf_version_cmd(const char* version) {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    return upf::upf_version(getOpenRoad()->getLogger(), db->getChip()->getBlock(), version);
+  }
 %}  // inline
