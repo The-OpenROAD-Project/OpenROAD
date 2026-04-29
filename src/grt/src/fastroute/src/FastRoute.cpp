@@ -1090,18 +1090,18 @@ int FastRouteCore::resolveSnapshotExecutionThreads(const int work_items) const
 int FastRouteCore::resolveSnapshotWaveSize(
     const int available_batch_count) const
 {
-  return std::min(available_batch_count, kSnapshotSemanticWidth);
+  return std::min(available_batch_count, snapshot_batched_width_);
 }
 
 int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
 {
-  return std::min(net_count, 2 * kSnapshotSemanticWidth);
+  return std::min(net_count, 2 * snapshot_batched_width_);
 }
 
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
   return snapshot_batched_width_ > 0 && !snapshot_batch_disabled_for_run_
-         && !debug_->isOn() && net_count > kMinNetsForSnapshotBatch
+         && !debug_->isOn() && net_count > 2 * snapshot_batched_width_
          && !has_non_soft_ndr_nets_;
 }
 

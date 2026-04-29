@@ -703,21 +703,19 @@ class FastRouteCore
 
   // Snapshot-batched routing constants.
   // Nets are partitioned into batches and routed in parallel waves against
-  // a frozen graph snapshot.  These constants control when batching is
-  // eligible and how work is sized.
+  // a frozen graph snapshot.  The user-supplied snapshot_batched_width_
+  // controls the maximum batches per wave (independent of thread count) and
+  // gates the minimum routable net count (2 * width) needed to attempt
+  // batching.
   //
-  // kSnapshotSemanticWidth: max batches per wave (independent of thread count).
   // kSnapshotLowOverflowForSerialCleanup /
   // kSnapshotLowMaxOverflowForSerialCleanup:
   //   overflow thresholds below which batching is disabled for the run,
   //   because the design is already near-converged.
-  // kMinNetsForSnapshotBatch: minimum routable nets to attempt batching.
   // kSnapshotCleanupPatience: how many non-improving iterations to tolerate
   //   in the snapshot cleanup phase before breaking.
-  static constexpr int kSnapshotSemanticWidth = 16;
   static constexpr int kSnapshotLowOverflowForSerialCleanup = 1500;
   static constexpr int kSnapshotLowMaxOverflowForSerialCleanup = 32;
-  static constexpr int kMinNetsForSnapshotBatch = 2 * kSnapshotSemanticWidth;
   static constexpr int kSnapshotCleanupPatience = 12;
 
   int max_degree_;
