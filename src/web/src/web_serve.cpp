@@ -8,7 +8,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <functional>
@@ -18,10 +17,6 @@
 #include <thread>
 #include <utility>
 #include <vector>
-
-#ifndef _WIN32
-#include <unistd.h>
-#endif
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
@@ -140,9 +135,12 @@ void WebServer::serve(int port)
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
-    // The Tcl handler calls this when the browser sends `exit`/`quit`, so
-    // the web server shuts down while the OpenROAD process keeps running.
-    tcl_eval->close_session = [this] { stop(); };
+    // The Tcl handler calls this when the browser sends `exit`/`quit`.
+    // Use requestStop() (not stop()) so waitForStop() on the main thread
+    // wakes up and tears down the server itself; calling stop() directly
+    // from the worker would leave the main thread blocked on stop_cv_,
+    // and the Tcl prompt would never resume reading stdin.
+    tcl_eval->close_session = [this] { requestStop(); };
 
     // Override Tcl's `exit` so a user typing `exit` in the browser tcl
     // widget doesn't run Tcl_Exit on the worker thread (which triggers
@@ -349,15 +347,6 @@ void WebServer::stop()
   }
   viewer_hook_.reset();
   logger_->info(utl::WEB, 41, "Web session closed.");
-  // Re-emit the prompt: tclreadline does not redraw on async output
-  // from another thread, so without this the user would have to press
-  // Enter to see a live prompt. Purely visual — readline's input state
-  // is untouched.
-  // NOLINTNEXTLINE(misc-include-cleaner)
-  if (isatty(fileno(stdout))) {
-    std::fputs("openroad> ", stdout);
-    std::fflush(stdout);
-  }
 }
 
 }  // namespace web
