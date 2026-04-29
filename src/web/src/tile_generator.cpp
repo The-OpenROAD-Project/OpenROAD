@@ -11,6 +11,8 @@
 #include <iterator>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <random>
 #include <set>
 #include <string>
 #include <string_view>
@@ -297,6 +299,14 @@ void TileGenerator::eagerInit()
     search_->eagerInit(block);
   }
   computePinLabelMargin();
+
+  // A reload can replace the dbTech and reuse its memory address, which would
+  // make stale entries in the cache compare equal to a freshly allocated tech.
+  // Clearing here ties cache lifetime to design loading.
+  {
+    std::lock_guard lock(layer_colors_mutex_);
+    layer_colors_by_tech_.clear();
+  }
 }
 
 void TileGenerator::computePinLabelMargin()
@@ -456,6 +466,97 @@ std::vector<std::string> TileGenerator::getLayers() const
     }
   }
   return layers;
+}
+
+// Build per-layer colors that match gui::DisplayControls::techInit.  The two
+// must stay in sync so the GUI and web frontend show the same colors for the
+// same design.  Walks every dbTechLayer in tech order (not just routing/cut)
+// because the random fallback shares one PRNG and the iteration order is what
+// determines which layer gets which random color.
+static std::map<odb::dbTechLayer*, Color> buildLayerColorMap(odb::dbTech* tech)
+{
+  std::map<odb::dbTechLayer*, Color> colors;
+  if (!tech) {
+    return colors;
+  }
+
+  // From http://vrl.cs.brown.edu/color seeded with #00F, #F00, #0D0
+  static constexpr std::array<Color, 14> kMetalColors = {{
+      // NOLINTBEGIN(modernize-use-designated-initializers)
+      {0, 0, 254, 180},
+      {254, 0, 0, 180},
+      {9, 221, 0, 180},
+      {190, 244, 81, 180},
+      {222, 33, 96, 180},  // Metal 5
+      {32, 216, 253, 180},
+      {253, 108, 160, 180},
+      {117, 63, 194, 180},
+      {128, 155, 49, 180},
+      {234, 63, 252, 180},  // Metal 10
+      {9, 96, 19, 180},
+      {214, 120, 239, 180},
+      {192, 222, 164, 180},
+      {110, 68, 107, 180},  // Metal 14
+                            // NOLINTEND(modernize-use-designated-initializers)
+  }};
+  static constexpr std::array<Color, 14> kCutColors = {{
+      // NOLINTBEGIN(modernize-use-designated-initializers)
+      {126, 126, 255, 180},
+      {255, 126, 126, 180},
+      {4, 110, 0, 180},
+      {95, 122, 40, 180},
+      {111, 17, 48, 180},  // Cut 5
+      {16, 108, 126, 180},
+      {126, 54, 80, 180},
+      {58, 32, 97, 180},
+      {225, 255, 136, 180},
+      {117, 32, 126, 180},  // Cut 10
+      {18, 192, 38, 180},
+      {107, 60, 119, 180},
+      {96, 111, 82, 180},
+      {220, 136, 214, 180},  // Cut 14
+                             // NOLINTEND(modernize-use-designated-initializers)
+  }};
+
+  std::mt19937 rng(1);
+  auto random_color = [&rng]() {
+    return Color{.r = static_cast<unsigned char>(50 + rng() % 200),
+                 .g = static_cast<unsigned char>(50 + rng() % 200),
+                 .b = static_cast<unsigned char>(50 + rng() % 200),
+                 .a = 180};
+  };
+
+  size_t metal = 0;
+  size_t via = 0;
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    Color c;
+    const odb::dbTechLayerType type = layer->getType();
+    if (type == odb::dbTechLayerType::ROUTING) {
+      c = (metal < kMetalColors.size()) ? kMetalColors[metal++]
+                                        : random_color();
+    } else if (type == odb::dbTechLayerType::CUT) {
+      // GUI: a CUT layer that appears before any ROUTING layer gets a random
+      // color so cuts don't claim the metal palette slots.
+      c = (via < kCutColors.size() && metal != 0) ? kCutColors[via++]
+                                                  : random_color();
+    } else {
+      c = random_color();
+    }
+    colors[layer] = c;
+  }
+  return colors;
+}
+
+const std::map<odb::dbTechLayer*, Color>& TileGenerator::getLayerColorMap()
+    const
+{
+  std::lock_guard lock(layer_colors_mutex_);
+  odb::dbTech* tech = db_->getTech();
+  auto [it, inserted] = layer_colors_by_tech_.try_emplace(tech);
+  if (inserted) {
+    it->second = buildLayerColorMap(tech);
+  }
+  return it->second;
 }
 
 std::vector<std::string> TileGenerator::getSites() const
@@ -631,6 +732,11 @@ odb::dbChip* TileGenerator::getChip() const
   return db_->getChip();
 }
 
+odb::dbTech* TileGenerator::getTech() const
+{
+  return db_->getTech();
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
@@ -700,35 +806,20 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     return png_data;
   }
 
-  // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
-  static const Color kPalette[] = {
-      // clang-format off
-      // NOLINTBEGIN(modernize-use-designated-initializers)
-      { 70, 130, 210, 180},  // moderate blue
-      {200,  50,  50, 180},   // red
-      { 50, 180,  80, 180},   // green
-      {200, 160,  40, 180},  // amber
-      {160,  60, 200, 180},  // purple
-      { 40, 190, 190, 180},  // teal
-      {220, 120,  50, 180},  // orange
-      {180,  70, 150, 180},  // magenta
-      // NOLINTEND(modernize-use-designated-initializers)
-      // clang-format on
-  };
-  static constexpr int kPaletteSize = sizeof(kPalette) / sizeof(kPalette[0]);
+  // Per-layer colors mirror gui::DisplayControls so the GUI and web frontend
+  // agree on which color belongs to which layer.
+  const auto& layer_colors = getLayerColorMap();
 
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
 
-  int layer_index = 0;
+  Color color{.r = 200, .g = 200, .b = 200, .a = 180};
   if (tech_layer) {
-    const auto all_layers = getLayers();
-    const auto it = std::ranges::find(all_layers, layer);
-    if (it != all_layers.end()) {
-      layer_index = std::distance(all_layers.begin(), it);
+    const auto it = layer_colors.find(tech_layer);
+    if (it != layer_colors.end()) {
+      color = it->second;
     }
   }
-  const Color color = kPalette[layer_index % kPaletteSize];
   const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
@@ -830,9 +921,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                           {qw, pin_max_size / 2},
                           {0, 0}};
 
-      // Determine layer colors for per-layer coloring of markers.
-      const auto all_layers = getLayers();
-
       // Iterate per-box like the GUI (each dbBox gets its own marker).
       for (odb::dbBTerm* term : block->getBTerms()) {
         for (odb::dbBPin* pin : term->getBPins()) {
@@ -852,11 +940,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
             odb::dbTechLayer* pin_layer = box->getTechLayer();
             if (pin_layer) {
-              const auto it = std::ranges::find(
-                  all_layers, std::string(pin_layer->getName()));
-              if (it != all_layers.end()) {
-                const int idx = std::distance(all_layers.begin(), it);
-                marker_color = kPalette[idx % kPaletteSize];
+              const auto it = layer_colors.find(pin_layer);
+              if (it != layer_colors.end()) {
+                marker_color = it->second;
                 marker_color.a = 220;
               }
             }
@@ -2707,9 +2793,29 @@ void collectTimingPathShapes(odb::dbBlock* block,
 void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
 {
   b.beginObject();
+  const auto& layer_colors = gen.getLayerColorMap();
+  odb::dbTech* tech = gen.getTech();
   b.beginArray("layers");
   for (const auto& name : gen.getLayers()) {
     b.value(name);
+  }
+  b.endArray();
+  b.beginArray("layer_colors");
+  for (const auto& name : gen.getLayers()) {
+    Color c{.r = 200, .g = 200, .b = 200, .a = 180};
+    if (tech) {
+      if (odb::dbTechLayer* layer = tech->findLayer(name.c_str())) {
+        const auto it = layer_colors.find(layer);
+        if (it != layer_colors.end()) {
+          c = it->second;
+        }
+      }
+    }
+    b.beginArray();
+    b.value(static_cast<int>(c.r));
+    b.value(static_cast<int>(c.g));
+    b.value(static_cast<int>(c.b));
+    b.endArray();
   }
   b.endArray();
   b.beginArray("sites");
