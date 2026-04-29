@@ -87,6 +87,7 @@ or_integration_tests(
     repair_hold15
     repair_hold_multi_output_load
     repair_setup_hopeless
+    repair_setup_max_iter
     repair_setup_sizedown
     repair_setup_sizeup_match
     repair_setup1

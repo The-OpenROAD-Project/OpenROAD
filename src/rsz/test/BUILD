@@ -102,6 +102,7 @@ TESTS = [
     "repair_hold9",
     "repair_hold9_verbose",
     "repair_hold_multi_output_load",
+    "repair_setup_max_iter",
     "repair_setup1",
     "repair_setup1_multi",
     "repair_setup2",
