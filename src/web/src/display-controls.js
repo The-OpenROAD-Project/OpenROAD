@@ -16,8 +16,8 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
-// Layer color palette (must match server-side palette in web.cpp)
-const layerPalette = [
+// Fallback color used when the server didn't supply a layer color.
+const fallbackLayerPalette = [
     [70, 130, 210],  // moderate blue
     [200, 50, 50],   // red
     [50, 180, 80],   // green
@@ -146,7 +146,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
         const colorSwatch = document.createElement('span');
         colorSwatch.className = 'layer-color';
-        const c = layerPalette[index % layerPalette.length];
+        const c = (techData.layer_colors && techData.layer_colors[index])
+            || fallbackLayerPalette[index % fallbackLayerPalette.length];
         colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
         label.appendChild(colorSwatch);
 

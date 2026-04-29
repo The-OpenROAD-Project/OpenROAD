@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -162,6 +163,10 @@ class TileGenerator
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
+
+  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // lazily and cached; the cache is rebuilt only if the tech changes.
+  const std::map<odb::dbTechLayer*, Color>& getLayerColorMap() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -362,6 +367,14 @@ class TileGenerator
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
   int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
+
+  // Cached layer-color map keyed by tech (see getLayerColorMap).  Each tech is
+  // computed once and kept; std::map reference stability means a returned ref
+  // stays valid even if another tech is added later.
+  mutable std::mutex layer_colors_mutex_;
+  mutable std::map<odb::dbTech*, std::map<odb::dbTechLayer*, Color>>
+      layer_colors_by_tech_;
+
   static constexpr int kTileSizeInPixel = 256;
 };
 
