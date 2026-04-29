@@ -200,6 +200,7 @@ class RamGen
       int num_row_bits,
       int start_port,
       int end_port,
+      int num_word_bits,
       const std::vector<std::vector<odb::dbNet*>>& inv_addr_nets);
 
   std::vector<odb::dbNet*> makeDecoderOutputNets(const std::string& prefix,

@@ -397,6 +397,7 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
     const int num_row_bits,
     const int start_port,
     const int end_port,
+    const int num_word_bits,
     const std::vector<std::vector<dbNet*>>& inv_addr_nets)
 {
   auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
@@ -417,8 +418,8 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
           fmt::format("inv_p{}_a{}", p, bit),
           inv_cell_,
           {{inv_ports_[{PortRoleType::DataIn, 0}],
-            addr_inputs_[p][bit]->getNet()},
-           {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][bit]}});
+            addr_inputs_[p][num_word_bits + bit]->getNet()},
+           {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][num_word_bits + bit]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
     }
     // add fillers between bit groups
@@ -1027,7 +1028,7 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
   // moving clock and we pins to the top
   block_->addBTermsToConstraint(clk_pins, top_constraint);
   block_->addBTermsToConstraint(we_pins, top_constraint);
-  for (auto inputs : addr_inputs_) {
+  for (const auto& inputs : addr_inputs_) {
     block_->addBTermsToConstraint(inputs, right_constraint);
   }
 
@@ -1105,6 +1106,13 @@ void RamGen::generate(const int mask_size,
                    column_mux_ratio);
   }
 
+  // can't support multi-port if the number of rows is too small
+  if (column_mux_ratio == 4 && rw_ports + r_ports + w_ports > 1) {
+    logger_->info(RAM,
+                  38,
+                  "Generated layout may not pass DRC due to congestion");
+  }
+
   const int num_inputs = std::ceil(std::log2(num_words));
   // compute information to support col/mux ratio feature
   const int num_rows = num_words / column_mux_ratio;
@@ -1157,7 +1165,7 @@ void RamGen::generate(const int mask_size,
   // mux layout columns + per-port buffer/decoder columns + inverter columns
   int col_cell_count
       = slices_per_word * (mask_size * column_mux_ratio + column_mux_ratio)
-        + 2 * total_ports + inv_col_count;
+        + 2 * total_ports + inv_col_count + (column_mux_ratio > 1 ? 1 : 0);
   ram_grid_.setNumLayouts(col_cell_count);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
@@ -1256,64 +1264,6 @@ void RamGen::generate(const int mask_size,
     }
   }
 
-  std::unique_ptr<Cell> inv_sel_cell;
-  std::unique_ptr<Cell> word_sel_cell;
-
-  if (column_mux_ratio == 2) {
-    word_sel_nets[0] = inv_addr_nets[0][0];
-    word_sel_nets[1] = addr_inputs_[0][0]->getNet();
-  } else if (column_mux_ratio == 4) {
-    word_sel_cell = std::make_unique<Cell>();
-    for (int c = 0; c < 4; ++c) {
-      word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
-    }
-    makeInst(word_sel_cell.get(),
-             "word_sel",
-             "and_0",
-             and2_cell_,
-             {{and2_ports_[{PortRoleType::DataIn, 0}], inv_addr_nets[0][1]},
-              {and2_ports_[{PortRoleType::DataIn, 1}], inv_addr_nets[0][0]},
-              {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[0]}});
-    makeInst(
-        word_sel_cell.get(),
-        "word_sel",
-        "and_1",
-        and2_cell_,
-        {{and2_ports_[{PortRoleType::DataIn, 0}], inv_addr_nets[0][1]},
-         {and2_ports_[{PortRoleType::DataIn, 1}], addr_inputs_[0][0]->getNet()},
-         {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[1]}});
-    makeInst(
-        word_sel_cell.get(),
-        "word_sel",
-        "and_2",
-        and2_cell_,
-        {{and2_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
-         {and2_ports_[{PortRoleType::DataIn, 1}], inv_addr_nets[0][0]},
-         {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[2]}});
-    makeInst(
-        word_sel_cell.get(),
-        "word_sel",
-        "and_3",
-        and2_cell_,
-        {{and2_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
-         {and2_ports_[{PortRoleType::DataIn, 1}], addr_inputs_[0][0]->getNet()},
-         {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[3]}});
-    makeInst(
-        word_sel_cell.get(),
-        "word_sel",
-        "inv_addr_0",
-        inv_cell_,
-        {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
-         {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
-    makeInst(
-        word_sel_cell.get(),
-        "word_sel",
-        "inv_addr_1",
-        inv_cell_,
-        {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
-         {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][1]}});
-  }
-
   // start of input/output net creation
   int r_total = rw_ports + r_ports;
   q_outputs_.resize(r_total);
@@ -1394,6 +1344,10 @@ void RamGen::generate(const int mask_size,
         }
       }
 
+      if (row == num_rows / 2) {
+        
+      }
+
       makeWord(slices_per_word,
                mask_size,
                row,
@@ -1429,13 +1383,11 @@ void RamGen::generate(const int mask_size,
         auto s2_cell = std::make_unique<Cell>();
 
         for (int port = 0; port < r_total; ++port) {
-          logger_->info(RAM, 999, "port setup");
           // collect this bit's net from each word
           vector<dbNet*> bit_word_q_nets(column_mux_ratio);
           for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
             bit_word_q_nets[word_idx] = word_q_nets[word_idx][port][global_bit];
           }
-          logger_->info(RAM, 999, "bit_word_q_nets complete");
 
           const std::string port_prefix = fmt::format("{}_p{}", prefix, port);
           // determine which port's address bits to use for mux select
@@ -1467,7 +1419,6 @@ void RamGen::generate(const int mask_size,
                       {inv_ports_[{PortRoleType::DataOut, 0}],
                        q_outputs_[port][global_bit]->getNet()}});
 
-            logger_->info(RAM, 999, "complete mux_cell creation");
 
           } else if (column_mux_ratio == 4) {
             // mux placement:
@@ -1582,14 +1533,63 @@ void RamGen::generate(const int mask_size,
       int start_port = col * ports_per_col;
       int end_port = std::min(start_port + ports_per_col, total_ports);
       ram_grid_.addLayout(makeInverterColumn(
-          num_rows, num_row_bits, start_port, end_port, inv_addr_nets));
+          num_rows, num_row_bits, start_port, end_port, num_word_bits, inv_addr_nets));
     }
   }
 
+  std::unique_ptr<Cell> inv_sel_cell = std::make_unique<Cell>();
+  std::vector<std::unique_ptr<Cell>> word_sel_cells(column_mux_ratio);
+
   if (column_mux_ratio == 2) {
-    ram_grid_.addCell(std::move(inv_sel_cell), col_cell_count - 1);
+    word_sel_nets[0] = inv_addr_nets[0][0];
+    word_sel_nets[1] = addr_inputs_[0][0]->getNet();
+    // place inv_addr[0] inverter in sel column
+    makeInst(
+        inv_sel_cell.get(),
+        "word_sel",
+        "inv_addr_0",
+        inv_cell_,
+        {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
+         {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
   } else if (column_mux_ratio == 4) {
-    ram_grid_.addCell(std::move(word_sel_cell), col_cell_count - 1);
+    for (int c = 0; c < 4; ++c) {
+      word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
+      word_sel_cells[c] = std::make_unique<Cell>();
+    }
+    makeInst(word_sel_cells[0].get(), "word_sel", "and_0", and2_cell_,
+            {{and2_ports_[{PortRoleType::DataIn, 0}], inv_addr_nets[0][1]},
+              {and2_ports_[{PortRoleType::DataIn, 1}], inv_addr_nets[0][0]},
+              {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[0]}});
+    makeInst(word_sel_cells[1].get(), "word_sel", "and_1", and2_cell_,
+            {{and2_ports_[{PortRoleType::DataIn, 0}], inv_addr_nets[0][1]},
+              {and2_ports_[{PortRoleType::DataIn, 1}], addr_inputs_[0][0]->getNet()},
+              {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[1]}});
+    makeInst(word_sel_cells[2].get(), "word_sel", "and_2", and2_cell_,
+            {{and2_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
+              {and2_ports_[{PortRoleType::DataIn, 1}], inv_addr_nets[0][0]},
+              {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[2]}});
+    makeInst(word_sel_cells[3].get(), "word_sel", "and_3", and2_cell_,
+            {{and2_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
+              {and2_ports_[{PortRoleType::DataIn, 1}], addr_inputs_[0][0]->getNet()},
+              {and2_ports_[{PortRoleType::DataOut, 0}], word_sel_nets[3]}});
+    // inverters in alternated cells
+    makeInst(word_sel_cells[1].get(), "word_sel", "inv_addr_0", inv_cell_,
+            {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
+              {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
+    makeInst(word_sel_cells[0].get(), "word_sel", "inv_addr_1", inv_cell_,
+            {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0][1]->getNet()},
+              {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][1]}});
+  }
+
+  // moving column_mux select cells to the top row to ease horizontal congestion
+  // also removes extra column that sits to the right of decoders
+  if (column_mux_ratio == 2) {
+    ram_grid_.addCell(std::move(inv_sel_cell), mask_size * column_mux_ratio);
+  } else if (column_mux_ratio == 4) {
+    for (int c = 0; c < 4; ++c) {
+      int sel_col = mask_size * column_mux_ratio + c;
+      ram_grid_.addCell(std::move(word_sel_cells[c]), sel_col);
+    }
   }
 
   auto ram_origin(odb::Point(0, 0));
