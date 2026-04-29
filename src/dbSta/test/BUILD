@@ -201,6 +201,10 @@ filegroup(
             "sdc_names1": [
                 "hier1.def",
             ],
+            "spef_def_names": [
+                "example1_slow.lib",
+                "example1.lef",
+            ],
             "sta1": [
                 "example1_slow.lib",
                 "example1.def",
@@ -230,10 +234,6 @@ filegroup(
                 "example1_slow.lib",
                 "example1_typ.lib",
                 "example1.def",
-                "example1.lef",
-            ],
-            "spef_def_names": [
-                "example1_slow.lib",
                 "example1.lef",
             ],
             "write_sdc1": [
