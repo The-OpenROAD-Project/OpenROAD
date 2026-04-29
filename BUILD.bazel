@@ -163,6 +163,7 @@ cc_library(
     name = "tcl_readline_setup",
     srcs = ["src/tcl_readline_setup.cc"],
     hdrs = ["src/tcl_readline_setup.h"],
+    includes = ["src"],
     visibility = ["//src/sta:__pkg__"],
     deps = [
         "@tcl_lang//:tcl",
