@@ -70,12 +70,13 @@ class _dbInst : public _dbObject
   dbId<_dbInstHdr> inst_hdr_;
   dbId<_dbBox> bbox_;
   dbId<_dbRegion> region_;
-  // WARNING: changing module_ moves the instance in the hierarchy and
-  // therefore changes its full SDC path. Any code that writes this field
-  // MUST fire inDbPostInstParentChange via the block's callbacks so
-  // downstream caches (e.g., dbSdcNetwork's path-to-instance map) stay
-  // consistent. Prefer going through dbModule::addInst() rather than
-  // assigning here directly.
+  // WARNING: re-parenting an existing instance changes its full SDC
+  // path. dbModule::addInst() fires inDbPostInstParentChange in that
+  // case so downstream caches (e.g., dbSdcNetwork's path-to-instance
+  // map) stay consistent. The callback is suppressed on the initial
+  // assignment during dbInst::create — that path's accounting belongs
+  // to inDbInstCreate. Prefer dbModule::addInst() over assigning this
+  // field directly.
   dbId<_dbModule> module_;
   dbId<_dbGroup> group_;
   dbId<_dbInst> region_next_;

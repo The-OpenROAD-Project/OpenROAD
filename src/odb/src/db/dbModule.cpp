@@ -236,7 +236,12 @@ void dbModule::addInst(dbInst* inst)
         _inst->name_);
   }
 
-  if (_inst->module_ != 0) {
+  // Distinguish a real reparent (inst already had a module) from the
+  // initial assignment during dbInst::create (module_ is unset). Only
+  // the former should fire inDbPostInstParentChange — otherwise every
+  // create would falsely trigger downstream subtree-invalidation paths.
+  const bool is_reparent = (_inst->module_ != 0);
+  if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
     ((_dbModule*) mod)->removeInst(inst);
   }
@@ -255,8 +260,10 @@ void dbModule::addInst(dbInst* inst)
     cur_head->module_prev_ = _inst->getOID();
   }
 
-  for (dbBlockCallBackObj* cb : block->callbacks_) {
-    cb->inDbPostInstParentChange(inst);
+  if (is_reparent) {
+    for (dbBlockCallBackObj* cb : block->callbacks_) {
+      cb->inDbPostInstParentChange(inst);
+    }
   }
 }
 
