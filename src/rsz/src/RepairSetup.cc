@@ -1030,8 +1030,8 @@ void RepairSetup::wnsStagnationReport(const int iteration) const
 // A second, independent "WNS-stagnation" gate also returns true when the
 // best-so-far WNS has failed to improve by a deterministic threshold over a
 // full ring-buffer window. The threshold is scaled against the WNS captured
-// at the start of repair_timing, while the gate itself is checked on the same
-// 100-pass cadence as the existing two-consecutive-termination rule.
+// at the start of repair_timing. The gate is only enabled for WNS-focused
+// phases, while LEGACY and LAST_GASP keep using the TNS-progress rule below.
 bool RepairSetup::terminateProgress(const int iteration,
                                     const float initial_tns,
                                     float& prev_tns,
@@ -1040,49 +1040,53 @@ bool RepairSetup::terminateProgress(const int iteration,
                                     const int endpt_index,
                                     const int num_endpts,
                                     const char* phase_name,
-                                    const char phase_marker)
+                                    const char phase_marker,
+                                    const bool enable_wns_stagnation)
 {
   wns_stagnation_tripped_ = false;
 
-  // WNS-stagnation gate. Sample every call so the ring advances at the same
-  // rate as the caller's inner loop.
-  best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
-  const bool ring_full = wns_stagnation_sample_count_ >= wns_stagnation_window_;
-  const sta::Slack window_start_wns
-      = ring_full ? wns_stagnation_samples_[wns_stagnation_sample_index_]
-                  : best_wns_;
-  wns_stagnation_samples_[wns_stagnation_sample_index_] = best_wns_;
-  wns_stagnation_sample_index_
-      = (wns_stagnation_sample_index_ + 1) % wns_stagnation_window_;
-  if (wns_stagnation_sample_count_ < wns_stagnation_window_) {
-    wns_stagnation_sample_count_++;
-  }
+  if (enable_wns_stagnation) {
+    // Sample every WNS pass so the ring advances at the same rate as the
+    // caller's inner loop.
+    best_wns_ = std::max(best_wns_, sta_->worstSlack(max_));
+    const bool ring_full
+        = wns_stagnation_sample_count_ >= wns_stagnation_window_;
+    const sta::Slack window_start_wns
+        = ring_full ? wns_stagnation_samples_[wns_stagnation_sample_index_]
+                    : best_wns_;
+    wns_stagnation_samples_[wns_stagnation_sample_index_] = best_wns_;
+    wns_stagnation_sample_index_
+        = (wns_stagnation_sample_index_ + 1) % wns_stagnation_window_;
+    if (wns_stagnation_sample_count_ < wns_stagnation_window_) {
+      wns_stagnation_sample_count_++;
+    }
 
-  if (ring_full && iteration > wns_stagnation_warmup_iterations_
-      && iteration % opto_small_interval_ == 0) {
-    const sta::Slack improvement = best_wns_ - window_start_wns;
-    const float threshold
-        = std::max(wns_stagnation_abs_tol_,
-                   wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
-    if (improvement < threshold) {
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
-                 1,
-                 "{}{} Phase: Exiting at iteration {} because WNS best-so-far "
-                 "{} only improved {} over {} passes (threshold {}) "
-                 "[endpoint {}/{}]",
-                 phase_name,
-                 phase_marker,
-                 iteration,
-                 delayAsString(best_wns_, 3, sta_),
-                 delayAsString(improvement, 3, sta_),
-                 wns_stagnation_window_,
-                 delayAsString(threshold, 3, sta_),
-                 endpt_index,
-                 num_endpts);
-      wns_stagnation_tripped_ = true;
-      return true;
+    if (ring_full && iteration > wns_stagnation_warmup_iterations_
+        && iteration % opto_small_interval_ == 0) {
+      const sta::Slack improvement = best_wns_ - window_start_wns;
+      const float threshold
+          = std::max(wns_stagnation_abs_tol_,
+                     wns_stagnation_rel_tol_ * std::fabs(initial_wns_));
+      if (improvement < threshold) {
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   1,
+                   "{}{} Phase: Exiting at iteration {} because WNS "
+                   "best-so-far {} only improved {} over {} passes "
+                   "(threshold {}) [endpoint {}/{}]",
+                   phase_name,
+                   phase_marker,
+                   iteration,
+                   delayAsString(best_wns_, 3, sta_),
+                   delayAsString(improvement, 3, sta_),
+                   wns_stagnation_window_,
+                   delayAsString(threshold, 3, sta_),
+                   endpt_index,
+                   num_endpts);
+        wns_stagnation_tripped_ = true;
+        return true;
+      }
     }
   }
 
@@ -1222,7 +1226,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                             end_index,
                             max_end_repairs_,
                             "LEGACY",
-                            phase_marker)) {
+                            phase_marker,
+                            false)) {
         if (prev_termination) {
           // Abort entire fixing if no progress for 200 iterations
           two_cons_terminations = true;
@@ -1738,7 +1743,12 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                           0,
                           1,
                           "WNS",
-                          phase_marker)) {
+                          phase_marker,
+                          true)) {
+      if (wns_stagnation_tripped_) {
+        wnsStagnationReport(opto_iteration);
+        break;
+      }
       overall_no_progress_count_++;
       if (overall_no_progress_count_ >= max_no_progress) {
         debugPrint(logger_,
@@ -3048,7 +3058,8 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                             end_index,
                             max_end_count,
                             "LAST_GASP",
-                            phase_marker)) {
+                            phase_marker,
+                            false)) {
         if (prev_termination) {
           // Abort entire fixing if no progress for 200 iterations
           two_cons_terminations = true;

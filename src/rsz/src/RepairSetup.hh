@@ -141,7 +141,8 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts,
                          const char* phase_name,
-                         char phase_marker);
+                         char phase_marker,
+                         bool enable_wns_stagnation);
   // Reset the per-phase WNS-stagnation tracking state.
   void resetStagnationTracking();
   // Emit the phase-level abort log if the WNS-stagnation gate fired.
