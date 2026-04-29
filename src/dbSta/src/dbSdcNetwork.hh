@@ -4,7 +4,6 @@
 #pragma once
 #include <cstddef>
 #include <functional>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -32,8 +31,9 @@ class dbSdcNetwork : public SdcNetwork
   // the next literal lookup rebuild lazily.
   void invalidateSdcPathToInstMap()
   {
-    sdc_path_to_inst_.reset();
-    inst_to_sdc_path_.reset();
+    sdc_path_to_inst_.clear();
+    inst_to_sdc_path_.clear();
+    cache_built_ = false;
   }
 
   // Incremental cache maintenance for hierarchy edits. Each is a no-op
@@ -95,8 +95,9 @@ class dbSdcNetwork : public SdcNetwork
   // Verilog escaped identifier "\foo/bar"). Only pathological entries are
   // stored, so memory is O(escaped-identifier-count), not O(N).
   const SdcPathToInstMap& sdcPathToInstMap() const;
-  mutable std::optional<SdcPathToInstMap> sdc_path_to_inst_;
-  mutable std::optional<InstToSdcPathMap> inst_to_sdc_path_;
+  mutable SdcPathToInstMap sdc_path_to_inst_;
+  mutable InstToSdcPathMap inst_to_sdc_path_;
+  mutable bool cache_built_ = false;
 };
 
 }  // namespace sta

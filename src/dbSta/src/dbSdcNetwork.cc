@@ -255,20 +255,19 @@ void dbSdcNetwork::visitAllInstancesSdcPath(const SdcPathVisitor& visitor) const
 
 const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
 {
-  if (!sdc_path_to_inst_) {
-    sdc_path_to_inst_.emplace();
-    inst_to_sdc_path_.emplace();
+  if (!cache_built_) {
     visitAllInstancesSdcPath(
         [&](Instance* inst, std::string sdc_path, bool any_div) {
           // Only pathological entries (those the recursive splitter in
           // findInstance cannot resolve) need to live in the cache.
           if (any_div) {
-            inst_to_sdc_path_->emplace(inst, sdc_path);
-            sdc_path_to_inst_->emplace(std::move(sdc_path), inst);
+            inst_to_sdc_path_.emplace(inst, sdc_path);
+            sdc_path_to_inst_.emplace(std::move(sdc_path), inst);
           }
         });
+    cache_built_ = true;
   }
-  return *sdc_path_to_inst_;
+  return sdc_path_to_inst_;
 }
 
 bool dbSdcNetwork::hasPathologicalPath(const Instance* inst) const
@@ -285,23 +284,23 @@ bool dbSdcNetwork::hasPathologicalPath(const Instance* inst) const
 void dbSdcNetwork::insertEntry(Instance* inst) const
 {
   std::string sdc_path = SdcNetwork::pathName(inst);
-  inst_to_sdc_path_->emplace(inst, sdc_path);
-  sdc_path_to_inst_->emplace(std::move(sdc_path), inst);
+  inst_to_sdc_path_.emplace(inst, sdc_path);
+  sdc_path_to_inst_.emplace(std::move(sdc_path), inst);
 }
 
 void dbSdcNetwork::eraseEntry(const Instance* inst) const
 {
-  auto rev_it = inst_to_sdc_path_->find(inst);
-  if (rev_it == inst_to_sdc_path_->end()) {
+  auto rev_it = inst_to_sdc_path_.find(inst);
+  if (rev_it == inst_to_sdc_path_.end()) {
     return;
   }
-  sdc_path_to_inst_->erase(rev_it->second);
-  inst_to_sdc_path_->erase(rev_it);
+  sdc_path_to_inst_.erase(rev_it->second);
+  inst_to_sdc_path_.erase(rev_it);
 }
 
 void dbSdcNetwork::onInstCreated(Instance* inst)
 {
-  if (!sdc_path_to_inst_) {
+  if (!cache_built_) {
     return;
   }
   if (!hasPathologicalPath(inst)) {
@@ -312,7 +311,7 @@ void dbSdcNetwork::onInstCreated(Instance* inst)
 
 void dbSdcNetwork::onInstDestroyed(Instance* inst)
 {
-  if (!sdc_path_to_inst_) {
+  if (!cache_built_) {
     return;
   }
   eraseEntry(inst);
@@ -320,7 +319,7 @@ void dbSdcNetwork::onInstDestroyed(Instance* inst)
 
 void dbSdcNetwork::onInstRenamed(Instance* inst)
 {
-  if (!sdc_path_to_inst_) {
+  if (!cache_built_) {
     return;
   }
   // Erase by Instance* (uses the reverse map) — no need to reconstruct
