@@ -58,6 +58,7 @@ ALL_TESTS = [
     "sdc_get1",
     "sdc_names1",
     "sdc_names2",
+    "spef_def_names",
     "sta1",
     "sta2",
     "sta3",
@@ -199,6 +200,10 @@ filegroup(
             ],
             "sdc_names1": [
                 "hier1.def",
+            ],
+            "spef_def_names": [
+                "example1_slow.lib",
+                "example1.lef",
             ],
             "sta1": [
                 "example1_slow.lib",

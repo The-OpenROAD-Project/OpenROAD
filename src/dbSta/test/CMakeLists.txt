@@ -48,6 +48,7 @@ or_integration_tests(
     sdc_get1
     sdc_names1
     sdc_names2
+    spef_def_names
     sta1
     sta2
     sta3
