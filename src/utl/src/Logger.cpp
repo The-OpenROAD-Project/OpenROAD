@@ -48,6 +48,11 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
       "logger", sinks_.begin(), sinks_.end());
   setFormatter();
   logger_->set_level(spdlog::level::level_enum::debug);
+  #if SPDLOG_VERSION >= 10600
+  // Saves the last max_backtrace_messages debug logs in a ring buffer,
+  // and dumps them if an error or critical is logged.
+  logger_->enable_backtrace(max_backtrace_messages);
+  #endif
 
   if (metrics_filename) {
     addMetricsSink(metrics_filename);
