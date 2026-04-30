@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -313,6 +314,13 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
     return !shape->belongsTo(this);
   };
 
+  // When rings are present, shapes must not be extended beyond the ring
+  // boundary.  Without this guard, extendTo() can push stripes through the
+  // padframe when a via sits right at the ring edge.  For ring-less grids the
+  // obstruction-based check inside extendTo() is sufficient.
+  const std::optional<odb::Rect> allowed_area
+      = rings_.empty() ? std::nullopt : std::make_optional(getRingArea());
+
   std::map<Shape*, std::unique_ptr<Shape>> replace_shapes;
   for (const auto& via : vias_) {
     // ensure shapes belong to something
@@ -345,7 +353,9 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
                                   obstructions[extend_test->getLayer()],
                                   lower_shape.get(),
                                   obs_filter);
-      if (new_lower != nullptr) {
+      const bool lower_in_bounds
+          = !allowed_area || allowed_area->contains(new_lower->getRect());
+      if (new_lower != nullptr && lower_in_bounds) {
         replace_shapes[lower_shape.get()] = std::move(new_lower);
       }
     }
@@ -361,7 +371,9 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
                                   obstructions[extend_test->getLayer()],
                                   upper_shape.get(),
                                   obs_filter);
-      if (new_upper != nullptr) {
+      const bool upper_in_bounds
+          = !allowed_area || allowed_area->contains(new_upper->getRect());
+      if (new_upper != nullptr && upper_in_bounds) {
         replace_shapes[upper_shape.get()] = std::move(new_upper);
       }
     }
