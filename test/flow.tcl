@@ -129,7 +129,7 @@ set_propagated_clock [all_clocks]
 
 # Global routing is fast enough for the flow regressions.
 # It is NOT FAST ENOUGH FOR PRODUCTION USE.
-set repair_timing_use_grt_parasitics 0
+set repair_timing_use_grt_parasitics 1
 if { $repair_timing_use_grt_parasitics } {
   # Global route for parasitics - no guide file requied
   global_route -congestion_iterations 100
@@ -138,7 +138,7 @@ if { $repair_timing_use_grt_parasitics } {
   estimate_parasitics -placement
 }
 
-repair_timing -skip_gate_cloning
+repair_timing -skip_gate_cloning -max_buffer_percent 50 -max_utilization 80
 
 # Post timing repair.
 report_worst_slack -min -digits 3
