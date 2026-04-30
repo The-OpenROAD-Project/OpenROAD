@@ -23,7 +23,12 @@ bool update_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
                          const std::string& name,
                          const std::string& element);
-
+                         
+bool create_supply_net(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const std::string& name,
+                       odb::dbSigType type = odb::dbSigType::POWER);
+                       
 bool create_logic_port(utl::Logger* logger,
                        odb::dbBlock* block,
                        const std::string& name,
