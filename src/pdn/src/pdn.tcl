@@ -1,6 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Resolve a list of net name strings to dbNet objects.
+# Reports PDN error $err_id if any name is not found.
+proc pdn::collect_secondary_nets { net_names err_id type_label } {
+  set nets {}
+  foreach snet $net_names {
+    set db_net [[ord::get_db_block] findNet $snet]
+    if { $db_net == "NULL" } {
+      utl::error PDN $err_id "Unable to find secondary $type_label net: $snet"
+    } else {
+      lappend nets $db_net
+    }
+  }
+  return $nets
+}
+
 sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-dont_add_pins] \
                                [-reset] \
@@ -62,8 +77,7 @@ proc pdngen { args } {
   }
 
   pdn::check_setup
-  pdn::build_grids $trim
-  pdn::write_to_db $add_pins $failed_via_report
+  pdn::run_pdngen $trim $add_pins $failed_via_report
   pdn::reset_shapes
 }
 
@@ -71,12 +85,14 @@ sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            -power power_net_name \
                                            -ground ground_net_name \
                                            [-region region_name] \
-                                           [-secondary_power secondary_power_net_name] \
+                                           [-secondary_power list_of_secondary_power_nets] \
+                                           [-secondary_ground list_of_secondary_ground_nets] \
                                            [-switched_power switched_power_net_name]}
 
 proc set_voltage_domain { args } {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power -switched_power} flags {}
+    keys {-name -region -power -ground -secondary_power -secondary_ground \
+          -switched_power} flags {}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -115,16 +131,16 @@ proc set_voltage_domain { args } {
     }
   }
 
-  set secondary {}
+  set secondary_power {}
   if { [info exists keys(-secondary_power)] } {
-    foreach snet $keys(-secondary_power) {
-      set db_net [[ord::get_db_block] findNet $snet]
-      if { $db_net == "NULL" } {
-        utl::error PDN 1006 "Unable to find secondary power net: $snet"
-      } else {
-        lappend secondary $db_net
-      }
-    }
+    set secondary_power \
+        [pdn::collect_secondary_nets $keys(-secondary_power) 1006 "power"]
+  }
+
+  set secondary_ground {}
+  if { [info exists keys(-secondary_ground)] } {
+    set secondary_ground \
+        [pdn::collect_secondary_nets $keys(-secondary_ground) 1007 "ground"]
   }
 
   set switched_power "NULL"
@@ -148,9 +164,11 @@ proc set_voltage_domain { args } {
     if { [info exists keys(-name)] && [pdn::modify_voltage_domain_name $keys(-name)] != "Core" } {
       utl::warn PDN 1042 "Core voltage domain will be named \"Core\"."
     }
-    pdn::set_core_domain $pwr $switched_power $gnd $secondary
+    pdn::set_core_domain $pwr $switched_power $gnd $secondary_power \
+        $secondary_ground
   } else {
-    pdn::make_region_domain $name $pwr $switched_power $gnd $secondary $region
+    pdn::make_region_domain $name $pwr $switched_power $gnd $secondary_power \
+        $secondary_ground $region
   }
 }
 
