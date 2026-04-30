@@ -502,9 +502,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool match_cell_footprint,
                              bool report_all_cells,
                              bool report_vt_equiv);
+  sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
+  sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
   void reportBuffers(bool filtered);
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
+  bool replaceCell(sta::Instance* inst,
+                   const sta::LibertyCell* replacement,
+                   bool journal);
 
   static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
@@ -613,8 +618,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
-  sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
-  sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
@@ -746,10 +749,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                 est::SteinerTree* tree,
                                 SteinerPt pt,
                                 size_t& resistor_id);
-
-  bool replaceCell(sta::Instance* inst,
-                   const sta::LibertyCell* replacement,
-                   bool journal);
 
   void findResizeSlacks1();
   sta::Instance* makeInstance(sta::LibertyCell* cell,
