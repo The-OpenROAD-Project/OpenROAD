@@ -22,6 +22,7 @@ class dbChipRegionInst;
 class dbChipBumpInst;
 class dbChipConn;
 class dbChipNet;
+class dbInst;
 
 enum class UnfoldedRegionSide
 {
@@ -39,6 +40,13 @@ struct UnfoldedBump
   dbChipBumpInst* bump_inst = nullptr;
   UnfoldedRegion* parent_region = nullptr;
   Point3D global_position;
+};
+
+struct UnfoldedAlignmentMarker
+{
+  dbInst* inst = nullptr;
+  UnfoldedChip* parent_chip = nullptr;
+  Point global_position;
 };
 
 struct UnfoldedRegion
@@ -85,6 +93,7 @@ struct UnfoldedChip
   dbTransform transform;
 
   std::deque<UnfoldedRegion> regions;
+  std::deque<UnfoldedAlignmentMarker> alignment_markers;
 
   std::unordered_map<dbChipRegionInst*, UnfoldedRegion*> region_map;
   std::unordered_map<dbChipBumpInst*, UnfoldedBump*> bump_inst_map;
@@ -113,6 +122,7 @@ class UnfoldedModel
   void registerUnfoldedChip(UnfoldedChip* uf_chip);
   void unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst);
   void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
+  void unfoldAlignmentMarkers(UnfoldedChip& uf_chip);
   void unfoldConnections(dbChip* chip,
                          const std::vector<dbChipInst*>& parent_path);
   void unfoldNets(dbChip* chip, const std::vector<dbChipInst*>& parent_path);

@@ -121,6 +121,7 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   // Transform cuboid to global space
   uf_chip.transform.apply(uf_chip.cuboid);
   unfoldRegions(uf_chip, inst);
+  unfoldAlignmentMarkers(uf_chip);
 
   unfolded_chips_.push_back(std::move(uf_chip));
   UnfoldedChip* created_chip = &unfolded_chips_.back();
@@ -140,6 +141,9 @@ void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
       bump.parent_region = &region;
       chip->bump_inst_map[bump.bump_inst] = &bump;
     }
+  }
+  for (auto& marker : chip->alignment_markers) {
+    marker.parent_chip = chip;
   }
 }
 
@@ -195,6 +199,26 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
            .parent_region = nullptr,  // set later in registerUnfoldedChip
            .global_position = Point3D(global_xy.x(), global_xy.y(), z)});
     }
+  }
+}
+
+void UnfoldedModel::unfoldAlignmentMarkers(UnfoldedChip& uf_chip)
+{
+  dbChip* master = uf_chip.chip_inst_path.back()->getMasterChip();
+  dbBlock* block = master->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+  for (dbInst* inst : block->getInsts()) {
+    if (!inst->getMaster()->isAlignmentMarker()) {
+      continue;
+    }
+    Point p = inst->getLocation();
+    uf_chip.transform.apply(p);
+    uf_chip.alignment_markers.push_back(
+        {.inst = inst,
+         .parent_chip = nullptr,  // set later in registerUnfoldedChip
+         .global_position = p});
   }
 }
 

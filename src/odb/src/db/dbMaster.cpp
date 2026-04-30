@@ -169,7 +169,8 @@ _dbMaster::_dbMaster(_dbDatabase* db)
   flags_.mark = 0;
   flags_.special_power = 0;
   flags_.sequential = 0;
-  flags_.spare_bits_19 = 0;
+  flags_.is_alignment_marker = 0;
+  flags_.spare_bits_18 = 0;
 
   x_ = 0;
   y_ = 0;
@@ -646,6 +647,18 @@ bool dbMaster::isSpecialPower()
 {
   _dbMaster* master = (_dbMaster*) this;
   return master->flags_.special_power == 1;
+}
+
+void dbMaster::setAlignmentMarker(bool value)
+{
+  _dbMaster* master = (_dbMaster*) this;
+  master->flags_.is_alignment_marker = (value) ? 1 : 0;
+}
+
+bool dbMaster::isAlignmentMarker()
+{
+  _dbMaster* master = (_dbMaster*) this;
+  return master->flags_.is_alignment_marker == 1;
 }
 
 void dbMaster::getPlacementBoundary(Rect& r)

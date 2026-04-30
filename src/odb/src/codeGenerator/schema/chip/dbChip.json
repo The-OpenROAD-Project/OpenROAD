@@ -118,6 +118,12 @@
       "schema": "kSchemaChipExtended"
     },
     {
+      "name": "alignment_marker_tolerance_",
+      "type": "uint32_t",
+      "default": "0",
+      "schema": "kSchemaChipAlignmentMarker"
+    },
+    {
       "name": "top_",
       "type": "dbId<_dbBlock>",
       "flags": ["private", "cmpgt"],

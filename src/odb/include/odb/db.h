@@ -5628,6 +5628,9 @@ class dbMaster : public dbObject
   bool isSpecialPower();
   void setSpecialPower(bool v);
 
+  bool isAlignmentMarker();
+  void setAlignmentMarker(bool v);
+
   ///
   /// Returns the number of mterms of this master.
   ///
@@ -7265,6 +7268,10 @@ class dbChip : public dbObject
   void setTsv(bool tsv);
 
   bool isTsv() const;
+
+  void setAlignmentMarkerTolerance(uint32_t alignment_marker_tolerance);
+
+  uint32_t getAlignmentMarkerTolerance() const;
 
   dbSet<dbChipRegion> getChipRegions() const;
 

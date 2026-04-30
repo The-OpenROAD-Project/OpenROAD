@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
 #include <map>
 #include <numeric>
 #include <ranges>
@@ -16,8 +19,10 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"  // IWYU pragma: keep
 #include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
+#include "utl/spatialIndex.h"
 #include "utl/unionFind.h"
 
 namespace odb {
@@ -89,6 +94,79 @@ bool isValid(const UnfoldedConnection& conn)
   return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
+using AlignmentMarkerIndex
+    = utl::SpatialIndex<Point, const UnfoldedAlignmentMarker*>;
+
+std::vector<AlignmentMarkerIndex::Value> collectMarkersInRect(
+    const std::deque<UnfoldedAlignmentMarker>& markers,
+    const Rect& rect)
+{
+  std::vector<AlignmentMarkerIndex::Value> out;
+  for (const auto& m : markers) {
+    if (rect.intersects(m.global_position)) {
+      out.emplace_back(m.global_position, &m);
+    }
+  }
+  return out;
+}
+
+using AlignmentViolationReporter
+    = std::function<void(const UnfoldedAlignmentMarker&, const std::string&)>;
+
+void matchMarkersBetweenChips(
+    const std::vector<AlignmentMarkerIndex::Value>& list_a,
+    std::vector<AlignmentMarkerIndex::Value> list_b,
+    const UnfoldedChip* c_a,
+    const UnfoldedChip* c_b,
+    uint32_t tolerance_dbu,
+    const AlignmentViolationReporter& report)
+{
+  const int64_t tol_sq = static_cast<int64_t>(tolerance_dbu) * tolerance_dbu;
+  AlignmentMarkerIndex index_b(std::move(list_b));
+
+  for (const auto& [pa, a_marker] : list_a) {
+    const Rect qbox(pa.x() - tolerance_dbu,
+                    pa.y() - tolerance_dbu,
+                    pa.x() + tolerance_dbu,
+                    pa.y() + tolerance_dbu);
+    auto candidates = index_b.query(qbox);
+    std::erase_if(candidates, [&](const auto& v) {
+      const int64_t dx = static_cast<int64_t>(v.first.x()) - pa.x();
+      const int64_t dy = static_cast<int64_t>(v.first.y()) - pa.y();
+      return dx * dx + dy * dy > tol_sq;
+    });
+
+    if (candidates.empty()) {
+      report(
+          *a_marker,
+          fmt::format("Alignment marker on {} has no counterpart on {} within "
+                      "tolerance",
+                      a_marker->parent_chip->name,
+                      c_b->name));
+    } else if (candidates.size() > 1) {
+      report(
+          *a_marker,
+          fmt::format("Alignment marker on {} has {} candidates on {} within "
+                      "tolerance (ambiguous)",
+                      a_marker->parent_chip->name,
+                      candidates.size(),
+                      c_b->name));
+      for (const auto& candidate : candidates) {
+        index_b.remove(candidate);
+      }
+    } else {
+      index_b.remove(candidates.front());
+    }
+  }
+  for (const auto& [pt, m] : index_b) {
+    report(*m,
+           fmt::format("Alignment marker on {} has no counterpart on {} within "
+                       "tolerance",
+                       m->parent_chip->name,
+                       c_a->name));
+  }
+}
+
 }  // namespace
 
 Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
@@ -109,6 +187,7 @@ void Checker::check()
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
   checkBumpPhysicalAlignment(top_cat, model);
+  checkAlignmentMarkers(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -324,6 +403,68 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
                                    const UnfoldedModel* model)
 {
+}
+
+void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
+                                    const UnfoldedModel* model)
+{
+  const auto& chips = model->getChips();
+  if (std::ranges::none_of(chips, [](const UnfoldedChip& c) {
+        return !c.alignment_markers.empty();
+      })) {
+    return;
+  }
+
+  const uint32_t tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
+
+  dbMarkerCategory* cat = nullptr;
+  int violation_count = 0;
+  auto report = [&](const UnfoldedAlignmentMarker& m, const std::string& msg) {
+    if (!cat) {
+      cat = dbMarkerCategory::createOrReplace(top_cat, "Alignment Markers");
+    }
+    auto* marker = dbMarker::create(cat);
+    // TODO: Add sources correctly
+    Rect bbox = m.inst->getBBox()->getBox();
+    m.parent_chip->transform.apply(bbox);
+    marker->addShape(bbox);
+    marker->setComment(msg);
+    violation_count++;
+  };
+
+  for (const auto& conn : model->getConnections()) {
+    const UnfoldedRegion* ra = conn.top_region;
+    const UnfoldedRegion* rb = conn.bottom_region;
+    if (!ra || !rb) {
+      continue;
+    }
+    const UnfoldedChip* c_a = ra->parent_chip;
+    const UnfoldedChip* c_b = rb->parent_chip;
+    if (c_a == c_b) {
+      continue;
+    }
+    if (c_a->alignment_markers.empty() && c_b->alignment_markers.empty()) {
+      continue;
+    }
+
+    const Rect overlap = ra->cuboid.getEnclosingRect().intersect(
+        rb->cuboid.getEnclosingRect());
+    auto list_a = collectMarkersInRect(c_a->alignment_markers, overlap);
+    auto list_b = collectMarkersInRect(c_b->alignment_markers, overlap);
+    if (list_a.empty() && list_b.empty()) {
+      continue;
+    }
+
+    matchMarkersBetweenChips(
+        list_a, std::move(list_b), c_a, c_b, tolerance_dbu, report);
+  }
+
+  if (violation_count > 0) {
+    logger_->warn(utl::ODB,
+                  404,
+                  "Found {} alignment marker violation(s)",
+                  violation_count);
+  }
 }
 
 void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
