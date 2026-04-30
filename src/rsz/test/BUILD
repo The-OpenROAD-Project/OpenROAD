@@ -124,6 +124,7 @@ TESTS = [
     "repair_setup8",
     "repair_setup9",
     "repair_setup9_hier",
+    "repair_setup_hopeless",
     "repair_setup_sizedown",
     "repair_setup_sizeup_match",
     "repair_setup_undo1",

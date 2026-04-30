@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -140,7 +141,18 @@ class RepairSetup : public sta::dbStaState
                          int endpt_index,
                          int num_endpts,
                          const char* phase_name,
-                         char phase_marker);
+                         char phase_marker,
+                         bool enable_wns_stagnation);
+  // Reset the per-phase WNS-stagnation tracking state.
+  void resetStagnationTracking();
+  // Sample WNS and return true when the WNS-stagnation gate fires.
+  bool wnsStagnated(int iteration,
+                    int endpt_index,
+                    int num_endpts,
+                    const char* phase_name,
+                    char phase_marker);
+  // Emit the phase-level abort log if the WNS-stagnation gate fired.
+  void wnsStagnationReport(int iteration) const;
   bool swapVTCritCells(const OptoParams& params, int& num_viols);
   void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,
@@ -245,6 +257,27 @@ class RepairSetup : public sta::dbStaState
   static constexpr float inc_fix_rate_threshold_
       = 0.0001;  // default fix rate threshold = 0.01%
   static constexpr int max_last_gasp_passes_ = 10;
+
+  // WNS-stagnation gate. Samples best-so-far WNS into a deterministic ring
+  // buffer every pass. Once a full window is available, terminateProgress()
+  // can return true when best WNS has not improved enough over the window.
+  static constexpr float wns_stagnation_abs_tol_ = 1.0e-12f;  // 1 ps
+  static constexpr float wns_stagnation_rel_tol_ = 0.005f;
+  static constexpr int wns_stagnation_window_ = 200;
+  // Warmup: skip the gate until this many passes have elapsed, so normal
+  // repair progress on ordinary designs is not short-circuited.
+  static constexpr int wns_stagnation_warmup_iterations_ = 1000;
+
+  sta::Slack initial_wns_ = 0;
+  // Best (largest / least-negative) WNS observed since the most recent reset.
+  sta::Slack best_wns_ = 0;
+  std::array<sta::Slack, wns_stagnation_window_> wns_stagnation_samples_;
+  int wns_stagnation_sample_count_ = 0;
+  int wns_stagnation_sample_index_ = 0;
+  // Set by terminateProgress() when the WNS-stagnation gate fires. Consumed
+  // by the phase-level abort sites to emit a loud info log. Reset by
+  // resetStagnationTracking().
+  bool wns_stagnation_tripped_ = false;
 };
 
 }  // namespace rsz
