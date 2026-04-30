@@ -26,6 +26,7 @@
 [INFO RAM-0016] Selected and2 cell AND2_X1
 [INFO RAM-0016] Selected clock gate cell CLKGATE_X1
 [INFO RAM-0016] Selected buffer cell BUF_X1
+[INFO RAM-0016] Selected aoi22 cell AOI22_X1
 [INFO RAM-0024] Behavioral Verilog written for RAM7x7
 [INFO PDN-0001] Inserting grid: ram_grid
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (4.5000 um, 4.0000 um) for VDD
@@ -37,13 +38,14 @@
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (31.5000 um, 4.0000 um) for VDD
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (36.0000 um, 8.0000 um) for VSS
 [INFO PPL-0067] Restrict pins [ D[0] Q[0] D[1] Q[1] D[2] ... ] to region 0.00u-39.52u at the TOP edge.
-[INFO PPL-0001] Number of available slots 184
+[INFO PPL-0067] Restrict pins [ clk we[0] addr_rw[0] addr_rw[1] addr_rw[2] ... ] to region 0.00u-11.20u at the RIGHT edge.
+[INFO PPL-0001] Number of available slots 208
 [INFO PPL-0002] Number of I/O             19
 [INFO PPL-0003] Number of I/O w/sink      19
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 120.70 um.
+[INFO PPL-0012] I/O nets HPWL: 119.46 um.
 [INFO DPL-0001] Placed 35 filler instances.
 [INFO DRT-0167] List of default vias:
   Layer via2

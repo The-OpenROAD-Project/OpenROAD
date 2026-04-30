@@ -1607,7 +1607,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
     if (router_cfg_->OR_SEED != -1 && rerouteNets.size() >= 2) {
       std::uniform_int_distribution<int> distribution(0,
                                                       rerouteNets.size() - 1);
-      std::default_random_engine generator(router_cfg_->OR_SEED);
+      std::mt19937 generator(router_cfg_->OR_SEED);
       int numSwap = (double) (rerouteNets.size()) * router_cfg_->OR_K;
       for (int i = 0; i < numSwap; i++) {
         int idx = distribution(generator);

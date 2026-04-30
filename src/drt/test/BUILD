@@ -27,7 +27,16 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+BIG_TESTS = [
+    "ndr_vias1",
+    "ndr_vias2",
+]
 
 PY_TESTS = [
     "ispd18_sample",
@@ -108,6 +117,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        size = "large" if test_name in BIG_TESTS else "small",
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
@@ -138,6 +149,11 @@ py_library(
     )
     for test_name in PY_TESTS
 ]
+
+test_suite(
+    name = "gc_test",
+    tests = [":gc_unittest"],
+)
 
 cc_test(
     name = "gc_unittest",

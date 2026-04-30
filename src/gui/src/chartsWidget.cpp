@@ -3,6 +3,9 @@
 
 #include "chartsWidget.h"
 
+#include <qbarset.h>
+#include <qchar.h>
+
 #include <QColor>
 #include <QComboBox>
 #include <QFrame>
@@ -20,7 +23,6 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -31,6 +33,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
 
@@ -200,6 +203,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
       chart_tabs_(new QTabWidget(this)),
       mode_menu_(new QComboBox(this)),
       path_group_menu_(new QComboBox(this)),
+      path_group_menu_model_(new QStandardItemModel(path_group_menu_)),
       clock_menu_(new QComboBox(this)),
       display_(new HistogramView(this)),
       refresh_filters_button_(new QPushButton("Update", this)),
@@ -214,6 +218,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   controls_layout_top->addWidget(mode_menu_);
   setModeMenu();
   controls_layout_top->addWidget(path_group_menu_);
+  path_group_menu_->setModel(path_group_menu_model_);
   path_group_menu_->hide();
   controls_layout_top->addWidget(clock_menu_);
   clock_menu_->hide();
@@ -256,15 +261,15 @@ ChartsWidget::ChartsWidget(QWidget* parent)
           this,
           &ChartsWidget::reportEndPoints);
 
-  connect(path_group_menu_,
-          qOverload<int>(&QComboBox::currentIndexChanged),
+  connect(path_group_menu_model_,
+          &QStandardItemModel::itemChanged,
           this,
-          &ChartsWidget::changePathGroupFilter);
+          qOverload<QStandardItem*>(&ChartsWidget::updateFilters));
 
   connect(clock_menu_,
           qOverload<int>(&QComboBox::currentIndexChanged),
           this,
-          &ChartsWidget::changePathGroupFilter);
+          qOverload<>(&ChartsWidget::updateFilters));
   setWidget(container);
 }
 
@@ -337,15 +342,17 @@ void ChartsWidget::setSlackHistogramLayout()
 
 void ChartsWidget::clearMenus()
 {
+  path_group_menu_model_->clear();
   path_group_menu_->clear();
   clock_menu_->clear();
 
-  filter_index_to_path_group_name_.clear();
   clock_index_to_clock_.clear();
 
-  path_group_name_.clear();
+  path_groups_names_.clear();
   clock_filter_ = nullptr;
   all_clocks_.clear();
+
+  endpoints_cache_.clear();
 }
 
 void ChartsWidget::setModeMenu()
@@ -365,44 +372,37 @@ void ChartsWidget::updatePathGroupMenuIndexes()
   resetting_menu_ = true;
   clearMenus();
 
-  path_group_menu_->addItem("No Path Group");  // Index 0
-  filter_index_to_path_group_name_[0] = "";
+  path_group_text_ = new QStandardItem("Select Path Group");
+  path_group_text_->setFlags(Qt::NoItemFlags);
+  path_group_menu_model_->appendRow(path_group_text_);
+  all_endpoints_item_ = new QStandardItem("All Endpoints");
+  all_endpoints_item_->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+  all_endpoints_item_->setData(Qt::Checked, Qt::CheckStateRole);
+  path_group_menu_model_->appendRow(all_endpoints_item_);
+  for (const std::string& name : stagui_->getGroupPathsNames()) {
+    auto* item = new QStandardItem(name.c_str());
+    item->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    item->setData(Qt::Unchecked, Qt::CheckStateRole);
+    path_group_menu_model_->appendRow(item);
+  }
 
   clock_menu_->addItem("All Clocks");  // Index 0
   clock_index_to_clock_[0] = nullptr;
-
   int filter_index = 1;
-  for (const std::string& name : stagui_->getGroupPathsNames()) {
-    path_group_menu_->addItem(name.c_str());
-    filter_index_to_path_group_name_[filter_index] = name;
-    ++filter_index;
-  }
-
-  filter_index = 1;
   for (sta::Clock* clock : *stagui_->getClocks()) {
     clock_menu_->addItem(clock->name().c_str());
     clock_index_to_clock_[filter_index] = clock;
     all_clocks_.insert(clock);
     ++filter_index;
   }
+
   resetting_menu_ = false;
-  changePathGroupFilter();
+  updateFilters();
 }
 
-SlackHistogramData ChartsWidget::fetchSlackHistogramData() const
+EndPointSlackMap ChartsWidget::fetchSlackHistogramData() const
 {
-  SlackHistogramData data;
-
-  removeUnconstrainedPinsAndSetLimits(data);
-
-  data.clocks = all_clocks_;
-
-  return data;
-}
-
-void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
-    SlackHistogramData& data) const
-{
+  EndPointSlackMap data;
   StaPins end_points = stagui_->getEndPoints();
   const int all_endpoints_count = end_points.size();
 
@@ -417,6 +417,7 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
 
     if (slack != sta::INF && slack != -sta::INF) {
       ++pin_iter;
+      data[pin] = slack;
     } else {
       const bool is_input = network->direction(pin)->isAnyInput();
       auto net = network->isTopLevelPort(pin) ? network->net(network->term(pin))
@@ -442,14 +443,13 @@ void ChartsWidget::removeUnconstrainedPinsAndSetLimits(
     }
   }
 
-  data.constrained_pins = std::move(end_points);
-
   if (unconstrained_count != 0 && unconstrained_count != all_endpoints_count) {
     const QString label_message = "Number of unconstrained pins: ";
     QString unconstrained_number;
     unconstrained_number.setNum(unconstrained_count);
     label_->setText(label_message + unconstrained_number);
   }
+  return data;
 }
 
 void ChartsWidget::setLogger(utl::Logger* logger)
@@ -467,64 +467,124 @@ void ChartsWidget::setSTA(sta::dbSta* sta)
   display_->setSTA(stagui_.get());
 }
 
-void ChartsWidget::changePathGroupFilter()
+void ChartsWidget::updateFilters()
 {
   if (resetting_menu_) {
     return;
   }
+  path_groups_names_.clear();
 
-  const int path_menu_index = path_group_menu_->currentIndex();
-  if (path_menu_index < 0) {
-    return;
-  }
   const int clock_menu_index = clock_menu_->currentIndex();
   if (clock_menu_index < 0) {
+    display_->clear();
+    return;
+  }
+  clock_filter_ = clock_index_to_clock_.at(clock_menu_index);
+
+  bool path_group_selected = false;
+  for (auto row = 2; row < path_group_menu_model_->rowCount(); row++) {
+    QStandardItem* item_iter = path_group_menu_model_->item(row);
+    if (item_iter->checkState() == Qt::Checked) {
+      path_groups_names_.push_back(item_iter->text().toStdString());
+      path_group_selected = true;
+    }
+  }
+  if (path_group_selected) {
+    all_endpoints_item_->setCheckState(Qt::Unchecked);
+  }
+
+  if (all_endpoints_item_->checkState() == Qt::Checked) {
+    path_groups_names_.emplace_back("");
+  }
+  setData(display_);
+}
+
+void ChartsWidget::updateFilters(QStandardItem* item)
+{
+  if (updating_) {
+    return;
+  }
+  if (item == all_endpoints_item_) {
+    if (item->checkState() == Qt::Checked) {
+      updating_ = true;
+      for (auto row = 2; row < path_group_menu_model_->rowCount(); row++) {
+        QStandardItem* item_iter = path_group_menu_model_->item(row);
+        item_iter->setCheckState(Qt::Unchecked);
+      }
+      updating_ = false;
+    }
+  }
+  updateFilters();
+}
+
+EndPointSlackMap* ChartsWidget::getData(const std::string& path_group,
+                                        sta::Clock* clock_filter)
+{
+  auto key = std::make_pair(path_group, clock_filter_);
+  if (endpoints_cache_.contains(key) == 0) {
+    if (clock_filter != nullptr) {
+      if (!path_group.empty()) {
+        // filter by clock and path_group
+        endpoints_cache_[key]
+            = stagui_->getEndPointToSlackMap(path_group, clock_filter);
+      } else {
+        // filter only by clock
+        endpoints_cache_[key] = stagui_->getEndPointToSlackMap(clock_filter);
+      }
+    } else if (!path_group.empty()) {
+      // filter only by path_group
+      endpoints_cache_[key] = stagui_->getEndPointToSlackMap(path_group);
+    } else {
+      EndPointSlackMap data = fetchSlackHistogramData();
+      if (data.empty()) {
+        logger_->warn(
+            utl::GUI,
+            97,
+            "All pins are unconstrained. Cannot plot histogram. Check if "
+            "timing data is loaded!");
+      }
+      endpoints_cache_[key] = data;
+    }
+  }
+  return &endpoints_cache_[key];
+}
+
+void ChartsWidget::setData(HistogramView* view)
+{
+  view->clear();
+  if (path_groups_names_.empty()) {
     return;
   }
 
-  path_group_name_ = filter_index_to_path_group_name_.at(path_menu_index);
-  clock_filter_ = clock_index_to_clock_.at(clock_menu_index);
-
-  setData(display_, path_group_name_, clock_filter_);
-}
-
-void ChartsWidget::setData(HistogramView* view,
-                           const std::string& path_group,
-                           sta::Clock* clock)
-{
-  view->clear();
-
-  if (clock != nullptr) {
-    sta::ClockSet clocks;
-    clocks.insert(clock);
-    if (!path_group.empty()) {
-      // filter by clock and path_group
-      view->setData(stagui_->getEndPointToSlackMap(path_group, clock), &clocks);
+  if (path_groups_names_.size() == 1) {
+    if (clock_filter_) {
+      sta::ClockSet clocks = {clock_filter_};
+      view->setData(getData(path_groups_names_[0], clock_filter_), &clocks);
     } else {
-      // filter only by clock
-      view->setData(stagui_->getEndPointToSlackMap(clock), &clocks);
+      view->setData(getData(path_groups_names_[0], clock_filter_),
+                    &all_clocks_);
     }
-  } else if (!path_group.empty()) {
-    // filter only by path_group
-    view->setData(stagui_->getEndPointToSlackMap(path_group), &all_clocks_);
-  } else {
-    SlackHistogramData data = fetchSlackHistogramData();
+    return;
+  }
 
-    if (data.constrained_pins.empty()) {
-      logger_->warn(
-          utl::GUI,
-          97,
-          "All pins are unconstrained. Cannot plot histogram. Check if "
-          "timing data is loaded!");
-      return;
-    }
-    view->setData(data);
+  std::vector<std::pair<std::string, EndPointSlackMap*>> data(
+      path_groups_names_.size());
+  int i = 0;
+  for (auto& path_group : path_groups_names_) {
+    data[i++] = std::make_pair(path_group, getData(path_group, clock_filter_));
+  }
+
+  if (clock_filter_) {
+    sta::ClockSet clocks = {clock_filter_};
+    view->setData(data, &clocks);
+  } else {
+    view->setData(data, &all_clocks_);
   }
 }
 
 void ChartsWidget::reportEndPoints(const std::set<const sta::Pin*>& report_pins)
 {
-  emit endPointsToReport(report_pins, path_group_name_);
+  emit endPointsToReport(report_pins, path_groups_names_[0]);
 }
 
 void ChartsWidget::saveImage(const std::string& path,
@@ -538,7 +598,7 @@ void ChartsWidget::saveImage(const std::string& path,
   HistogramView print_view(this);
   print_view.setLogger(logger_);
   print_view.setSTA(stagui_.get());
-  setData(&print_view, path_group_name_, clock_filter_);
+  setData(&print_view);
   QSize view_size(500, 500);
   if (width_px.has_value()) {
     view_size.setWidth(width_px.value());
@@ -579,7 +639,11 @@ void HistogramView::clear()
   buckets_.positive.clear();
   buckets_.negative.clear();
 
-  histogram_ = nullptr;
+  all_histogram_.reset();
+
+  histograms_.clear();
+  path_groups_.clear();
+  pins_bucket_.clear();
 
   chart_->setTitle("");
   chart_->removeAllSeries();
@@ -607,13 +671,25 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
       }
     }
 
-    const QString number_of_pins
-        = QString("Number of Endpoints: %1\n").arg(num);
+    QString number_of_pins;
+    if (path_groups_.empty()) {
+      number_of_pins = QString("Number of Endpoints: %1\n").arg(num);
+    } else {
+      number_of_pins = QString("Total number of Endpoints: %1\n").arg(num);
+      int i = 0;
+      for (auto& path_group : path_groups_) {
+        int num_pins = pins_bucket_[i++][bar_index].size();
+        number_of_pins += QString("%1: %2 (%3 %)\n")
+                              .arg(path_group)
+                              .arg(num_pins)
+                              .arg(num ? (100.0 * num_pins) / num : 0);
+      }
+    }
 
     QString scaled_suffix = QString::fromStdString(
         sta_->getSTA()->units()->timeUnit()->scaleAbbrevSuffix());
 
-    const auto& [lower, upper] = histogram_->getBinRange(bar_index);
+    const auto& [lower, upper] = all_histogram_->getBinRange(bar_index);
 
     QString time_info
         = QString("Interval: [%1, %2) ").arg(lower).arg(upper) + scaled_suffix;
@@ -628,16 +704,19 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
 
 void HistogramView::populateBins()
 {
-  if (!histogram_->hasData()) {
+  if (!all_histogram_->hasData()) {
     return;
   }
 
-  const float min_slack = std::min(0.0f, histogram_->getMinValue());
-  const float max_slack = std::max(0.0f, histogram_->getMaxValue());
+  const float min_slack = std::min(0.0f, all_histogram_->getMinValue());
+  const float max_slack = std::max(0.0f, all_histogram_->getMaxValue());
   if (min_slack == max_slack) {
     precision_count_ = 1;
-    histogram_->generateBins(1, -0.1, 0.2);
-    return;
+    all_histogram_->generateBins(1, -0.1, 0.2);
+    for (auto& histogram : histograms_) {
+      histogram->generateBins(1, -0.1, 0.2);
+      return;
+    }
   }
 
   // determine interval
@@ -646,14 +725,18 @@ void HistogramView::populateBins()
   const float bin_max = std::ceil(max_slack / bin_interval) * bin_interval;
 
   const int bins = (bin_max - bin_min) / bin_interval;
-  histogram_->generateBins(bins, bin_min, bin_interval);
+  all_histogram_->generateBins(bins, bin_min, bin_interval);
+  for (auto& histogram : histograms_) {
+    histogram->generateBins(bins, bin_min, bin_interval);
+  }
 }
 
 void HistogramView::populateBuckets(
-    const std::vector<std::vector<const sta::Pin*>>& pin_bins)
+    std::unique_ptr<utl::Histogram<float>>& histogram,
+    const PinBuckets& pin_bins)
 {
-  for (int bin = 0; bin < histogram_->getBinsCount(); bin++) {
-    const auto& [bin_start, bin_end] = histogram_->getBinRange(bin);
+  for (int bin = 0; bin < histogram->getBinsCount(); bin++) {
+    const auto& [bin_start, bin_end] = histogram->getBinRange(bin);
     if ((bin_start + bin_end) / 2 < 0) {
       buckets_.negative.push_back(pin_bins[bin]);
     } else {
@@ -662,62 +745,69 @@ void HistogramView::populateBuckets(
   }
 }
 
-void HistogramView::setData(const SlackHistogramData& data)
-{
-  clear();
-
-  clocks_ = data.clocks;
-
-  histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
-
-  // extract data
-  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
-
-  for (const sta::Pin* pin : data.constrained_pins) {
-    const float slack = time_unit->staToUser(sta_->getPinSlack(pin));
-    histogram_->addData(slack);
-  }
-
-  populateBins();
-
-  std::vector<std::vector<const sta::Pin*>> pin_buckets(
-      histogram_->getBinsCount());
-  for (const sta::Pin* pin : data.constrained_pins) {
-    const float slack = time_unit->staToUser(sta_->getPinSlack(pin));
-    pin_buckets[histogram_->getBinIndex(slack)].push_back(pin);
-  }
-
-  populateBuckets(pin_buckets);
-
-  setVisualConfig();
-}
-
-void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
+void HistogramView::setData(const EndPointSlackMap* data, sta::ClockSet* clocks)
 {
   clear();
 
   clocks_ = *clocks;
-
-  histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
+  all_histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
 
   // extract data
   sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
 
-  for (const auto& [pin, sta_slack] : data) {
+  for (const auto& [pin, sta_slack] : *data) {
     const float slack = time_unit->staToUser(sta_slack);
-    histogram_->addData(slack);
+    all_histogram_->addData(slack);
   }
 
   populateBins();
 
-  std::vector<std::vector<const sta::Pin*>> pin_buckets(
-      histogram_->getBinsCount());
-  for (const auto& [pin, sta_slack] : data) {
+  PinBuckets pin_buckets(all_histogram_->getBinsCount());
+  for (const auto& [pin, sta_slack] : *data) {
     const float slack = time_unit->staToUser(sta_slack);
-    pin_buckets[histogram_->getBinIndex(slack)].push_back(pin);
+    pin_buckets[all_histogram_->getBinIndex(slack)].push_back(pin);
   }
 
-  populateBuckets(pin_buckets);
+  populateBuckets(all_histogram_, pin_buckets);
+
+  setVisualConfig();
+}
+
+void HistogramView::setData(
+    const std::vector<std::pair<std::string, EndPointSlackMap*>>& data_vec,
+    sta::ClockSet* clocks)
+{
+  clear();
+
+  clocks_ = *clocks;
+  all_histogram_ = std::make_unique<utl::Histogram<float>>(logger_);
+
+  // extract data
+  sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
+
+  for (auto& [path_group, data] : data_vec) {
+    histograms_.emplace_back(std::make_unique<utl::Histogram<float>>(logger_));
+    path_groups_.push_back(QString::fromStdString(path_group));
+    for (const auto& [pin, sta_slack] : *data) {
+      const float slack = time_unit->staToUser(sta_slack);
+      histograms_[histograms_.size() - 1]->addData(slack);
+      all_histogram_->addData(slack);
+    }
+  }
+
+  populateBins();
+
+  PinBuckets all_pin_buckets(all_histogram_->getBinsCount());
+  for (auto& [_, data] : data_vec) {
+    pins_bucket_.emplace_back(all_histogram_->getBinsCount());
+    for (const auto& [pin, sta_slack] : *data) {
+      const float slack = time_unit->staToUser(sta_slack);
+      int index = all_histogram_->getBinIndex(slack);
+      pins_bucket_[pins_bucket_.size() - 1][index].push_back(pin);
+      all_pin_buckets[index].push_back(pin);
+    }
+  }
+  populateBuckets(all_histogram_, all_pin_buckets);
 
   setVisualConfig();
 }
@@ -765,69 +855,22 @@ void HistogramView::setVisualConfig()
     return;
   }
 
-  std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*> bar_sets
-      = createBarSets(); /* <neg, pos> */
-  populateBarSets(*std::get<0>(bar_sets),
-                  *std::get<1>(bar_sets),
-                  *std::get<2>(bar_sets),
-                  *std::get<3>(bar_sets));
-
-  QStackedBarSeries* series = new QStackedBarSeries(this);
-  series->append(std::get<0>(bar_sets));
-  series->append(std::get<1>(bar_sets));
-  series->append(std::get<2>(bar_sets));
-  series->append(std::get<3>(bar_sets));
+  auto* series = populateSeries();
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
-  setXAxisConfig(std::get<0>(bar_sets)->count());
+  setXAxisConfig(all_histogram_->getBinsCount());
   setYAxisConfig();
   series->attachAxis(axis_y_);
 
-  chart_->legend()->markers(series)[0]->setVisible(false);
-  chart_->legend()->markers(series)[1]->setVisible(false);
+  for (auto& marker : chart_->legend()->markers(series)) {
+    marker->setVisible(true);
+  }
+
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
+  chart_->legend()->setReverseMarkers(true);
   chart_->setTitle("Endpoint Slack");
-}
-
-std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*>
-HistogramView::createBarSets()
-{
-  QBarSet* neg_set = new QBarSet("");
-  neg_set->setBorderColor(0x8b0000);  // darkred
-  neg_set->setColor(0xf08080);        // lightcoral
-  QBarSet* pos_set = new QBarSet("");
-  pos_set->setBorderColor(0x006400);  // darkgreen
-  pos_set->setColor(0x90ee90);        // lightgreen
-  QBarSet* pos_set_invisible = new QBarSet("");
-  pos_set_invisible->setBorderColor(Qt::transparent);
-  pos_set_invisible->setColor(Qt::transparent);
-  QBarSet* neg_set_invisible = new QBarSet("");
-  neg_set_invisible->setBorderColor(Qt::transparent);
-  neg_set_invisible->setColor(Qt::transparent);
-
-  connect(neg_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
-  connect(pos_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
-  connect(
-      pos_set_invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
-  connect(
-      neg_set_invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
-
-  connect(
-      neg_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
-  connect(
-      pos_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
-  connect(pos_set_invisible,
-          &QBarSet::clicked,
-          this,
-          &HistogramView::emitEndPointsInBucket);
-  connect(neg_set_invisible,
-          &QBarSet::clicked,
-          this,
-          &HistogramView::emitEndPointsInBucket);
-
-  return {neg_set, pos_set, pos_set_invisible, neg_set_invisible};
 }
 
 void HistogramView::emitEndPointsInBucket(const int bar_index)
@@ -897,7 +940,8 @@ void HistogramView::setXAxisTitle()
       period = std::round(period * places) / places;
     }
 
-    // Adjust strings: two clocks in the first row and three per row afterwards
+    // Adjust strings: two clocks in the first row and three per row
+    // afterwards
     if (clock->name() != (*(clocks_.begin()))->name()) {
       axis_x_title += ", ";
 
@@ -917,7 +961,7 @@ void HistogramView::setXAxisTitle()
 
 void HistogramView::setYAxisConfig()
 {
-  const int largest_slack_count = histogram_->getMaxBinCount();
+  const int largest_slack_count = all_histogram_->getMaxBinCount();
 
   const int y_interval = computeYInterval(largest_slack_count);
   int max_y = 0;
@@ -950,10 +994,10 @@ void HistogramView::setXAxisConfig(const int all_bars_count)
 
   const int neg_count_offset = static_cast<int>(buckets_.negative.size());
   const int pos_bars_count = all_bars_count - neg_count_offset;
-  const float min
-      = -(static_cast<float>(neg_count_offset)) * histogram_->getBinsWidth();
+  const float min = -(static_cast<float>(neg_count_offset))
+                    * all_histogram_->getBinsWidth();
   const float max
-      = static_cast<float>(pos_bars_count) * histogram_->getBinsWidth();
+      = static_cast<float>(pos_bars_count) * all_histogram_->getBinsWidth();
   axis_x_->setRange(min, max);
 
   axis_x_->setTickCount(all_bars_count + 1);
@@ -994,24 +1038,77 @@ int HistogramView::computeFirstDigit(int value, int digits)
   return static_cast<int>(value / std::pow(10, digits - 1));
 }
 
-void HistogramView::populateBarSets(QBarSet& neg_set,
-                                    QBarSet& pos_set,
-                                    QBarSet& neg_set_invisible,
-                                    QBarSet& pos_set_invisible)
+QStackedBarSeries* HistogramView::populateSeries()
 {
-  const int max_bin_count = histogram_->getMaxBinCount();
+  // Create bar series
+  QStackedBarSeries* series = new QStackedBarSeries(this);
+  QBarSet* invisible = new QBarSet("");
+  connect(invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
+  invisible->setBorderColor(Qt::transparent);
+  invisible->setColor(Qt::transparent);
+
+  if (path_groups_.empty()) {
+    // Default histogram
+    QBarSet* pos_set = new QBarSet("Positive Slack");
+    pos_set->setBorderColor(0x006400);  // darkgreen
+    pos_set->setColor(0x90ee90);        // lightgreen
+    connect(pos_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+    connect(pos_set,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
+
+    QBarSet* neg_set = new QBarSet("Negative Slack");
+    neg_set->setBorderColor(0x8b0000);  // darkred
+    neg_set->setColor(0xf08080);        // lightcoral
+    connect(neg_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+    connect(neg_set,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
+
+    connect(invisible,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
+
+    // Populate bar series
+    for (const auto& bucket : buckets_.negative) {
+      *neg_set << bucket.size();
+      *pos_set << 0;
+    }
+    for (const auto& bucket : buckets_.positive) {
+      *neg_set << 0;
+      *pos_set << bucket.size();
+    }
+
+    series->append(pos_set);
+    series->append(neg_set);
+  } else {
+    // Stacked histogram
+    for (int i = path_groups_.size() - 1; i > -1; i--) {
+      QBarSet* bar_set = new QBarSet(path_groups_[i]);
+      connect(bar_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+
+      // Populate bar series
+      for (const auto& bucket : pins_bucket_[i]) {
+        *bar_set << bucket.size();
+      }
+      series->append(bar_set);
+    }
+  }
+
+  // Populate invisible barset);
+  const int max_bin_count = all_histogram_->getMaxBinCount();
   for (const auto& bucket : buckets_.negative) {
-    neg_set << bucket.size();
-    neg_set_invisible << max_bin_count - bucket.size();
-    pos_set << 0;
-    pos_set_invisible << 0;
+    *invisible << max_bin_count - bucket.size();
   }
   for (const auto& bucket : buckets_.positive) {
-    neg_set << 0;
-    neg_set_invisible << 0;
-    pos_set << bucket.size();
-    pos_set_invisible << max_bin_count - bucket.size();
+    *invisible << max_bin_count - bucket.size();
   }
+  series->append(invisible);
+
+  return series;
 }
 
 void HistogramView::save(const QString& path)

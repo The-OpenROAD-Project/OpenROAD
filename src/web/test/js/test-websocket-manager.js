@@ -109,6 +109,46 @@ describe('WebSocketManager', () => {
             assert.equal(mgr.pending.has(5), false);
         });
     });
+
+    describe('connection state', () => {
+        it('isConnected is true after socket opens', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            await mgr.readyPromise;
+            assert.equal(mgr.isConnected, true);
+        });
+
+        it('isConnected is false after socket closes', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            await mgr.readyPromise;
+            assert.equal(mgr.isConnected, true);
+            // Simulate socket close
+            mgr.socket.readyState = 3; // CLOSED
+            mgr.socket.onclose?.();
+            assert.equal(mgr.isConnected, false);
+        });
+
+        it('onStatusChange is called when socket opens', async () => {
+            let statusChangedCount = 0;
+            const mgr = new WebSocketManager('ws://fake', () => {
+                statusChangedCount++;
+            });
+            await mgr.readyPromise;
+            assert.ok(statusChangedCount > 0, 'onStatusChange should be called on open');
+        });
+
+        it('onStatusChange is called when socket closes', async () => {
+            let statusChangedCount = 0;
+            const mgr = new WebSocketManager('ws://fake', () => {
+                statusChangedCount++;
+            });
+            await mgr.readyPromise;
+            const countAfterOpen = statusChangedCount;
+            // Simulate socket close
+            mgr.socket.readyState = 3; // CLOSED
+            mgr.socket.onclose?.();
+            assert.ok(statusChangedCount > countAfterOpen, 'onStatusChange should be called on close');
+        });
+    });
 });
 
 describe('WebSocketManager.fromCache', () => {
@@ -145,6 +185,11 @@ describe('WebSocketManager.fromCache', () => {
     it('readyPromise resolves immediately', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
         await mgr.readyPromise; // Should not hang.
+    });
+
+    it('isConnected is true for cache-backed instances', () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        assert.equal(mgr.isConnected, true);
     });
 
     it('returns cached JSON for tech', async () => {

@@ -63,7 +63,7 @@ class MacroPlacer
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data);
-
+  void blockMacroChannels();
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,
@@ -74,7 +74,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
-  void setDefaultHalo(int left, int bottom, int right, int top);
+  void setBaseHalo(int left, int bottom, int right, int top);
   void setMacroHalo(odb::dbInst* macro,
                     int left,
                     int bottom,

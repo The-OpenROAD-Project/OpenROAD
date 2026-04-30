@@ -38,12 +38,12 @@ Blif::Blif(utl::Logger* logger,
            const std::string& const0_cell_port,
            const std::string& const1_cell,
            const std::string& const1_cell_port,
-           const int call_id_)
+           const int call_id)
     : const0_cell_(const0_cell),
       const0_cell_port_(const0_cell_port),
       const1_cell_(const1_cell),
       const1_cell_port_(const1_cell_port),
-      call_id_(call_id_)
+      call_id_(call_id)
 {
   logger_ = logger;
   open_sta_ = sta;
@@ -76,27 +76,27 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   }
 
   std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
-  std::map<uint32_t, odb::dbInst*> instMap;
+  std::map<uint32_t, odb::dbInst*> inst_map;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
 
   subckts.resize(insts.size());
-  int instIndex = 0;
+  int inst_index = 0;
 
   for (auto&& inst : insts) {
-    instMap.insert(std::pair<uint32_t, odb::dbInst*>(inst->getId(), inst));
+    inst_map.insert(std::pair<uint32_t, odb::dbInst*>(inst->getId(), inst));
   }
 
   for (auto&& inst : insts) {
     auto master = inst->getMaster();
     sta::LibertyCell* cell = open_sta_->getDbNetwork()->libertyCell(
         open_sta_->getDbNetwork()->dbToSta(master));
-    auto masterName = master->getName();
+    auto master_name = master->getName();
 
-    std::string currentGate
-        = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + masterName;
-    std::string currentConnections, currentClock;
-    std::set<std::string> currentClocks;
+    std::string current_gate
+        = ((cell->hasSequentials()) ? ".mlatch " : ".gate ") + master_name;
+    std::string current_connections, current_clock;
+    std::set<std::string> current_clocks;
 
     auto iterms = inst->getITerms();
 
@@ -110,27 +110,27 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       }
 
       sta::Vertex *vertex, *bidirect_drvr_vertex;
-      auto pin_ = open_sta_->getDbNetwork()->dbToSta(iterm);
+      auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);
       open_sta_->getDbNetwork()->graph()->pinVertices(
-          pin_, vertex, bidirect_drvr_vertex);
-      auto network_ = open_sta_->network();
-      auto port_ = network_->libertyPort(pin_);
-      if (port_->isClock()) {
+          pin, vertex, bidirect_drvr_vertex);
+      auto network = open_sta_->network();
+      auto port = network->libertyPort(pin);
+      if (port->isClock()) {
         if (net == nullptr) {
           continue;
         }
         clocks.insert(net->getName());
-        currentClocks.insert(net->getName());
-        currentClock = net->getName();
+        current_clocks.insert(net->getName());
+        current_clock = net->getName();
         continue;
       }
 
-      const auto& mtermName = mterm->getName();
-      const auto& netName = (net == nullptr)
-                                ? ("dummy_" + std::to_string(dummy_nets++))
-                                : net->getName();
+      const auto& mterm_name = mterm->getName();
+      const auto& net_name = (net == nullptr)
+                                 ? ("dummy_" + std::to_string(dummy_nets++))
+                                 : net->getName();
 
-      currentConnections += fmt::format(" {}={}", mtermName, netName);
+      current_connections += fmt::format(" {}={}", mterm_name, net_name);
 
       if (net == nullptr) {
         continue;
@@ -138,125 +138,125 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       // check whether connected net is input/output
       // If it's only connected to one Iterm OR
       // It's connected to another instance that's outside the bubble
-      auto connectedIterms = net->getITerms();
+      auto connected_iterms = net->getITerms();
 
-      if (connectedIterms.size() == 1) {
+      if (connected_iterms.size() == 1) {
         if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          inputs.insert(netName);
-          addArrival(pin_, netName);
+          inputs.insert(net_name);
+          addArrival(pin, net_name);
         } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          outputs.insert(netName);
-          addRequired(pin_, netName);
+          outputs.insert(net_name);
+          addRequired(pin, net_name);
         }
 
       } else {
-        bool addAsInput = false;
-        for (auto&& connectedIterm : connectedIterms) {
-          auto connectedInstId = connectedIterm->getInst()->getId();
+        bool add_as_input = false;
+        for (auto&& connected_iterm : connected_iterms) {
+          auto connected_inst_id = connected_iterm->getInst()->getId();
 
-          if (instMap.find(connectedInstId) == instMap.end()) {
+          if (inst_map.find(connected_inst_id) == inst_map.end()) {
             // Net is connected to an instance outside the cut out region
             // Check whether it's input or output
             if (iterm->getIoType() == odb::dbIoType::INPUT) {
               // Net is connected to a pin outside the bubble and should be
               // treated as an input If the driving pin is contant then we'll
               // add a constant gate in blif otherwise just add the net as input
-              auto pin_ = open_sta_->getDbNetwork()->dbToSta(connectedIterm);
-              auto network_ = open_sta_->network();
-              auto port_ = network_->libertyPort(pin_);
+              auto pin = open_sta_->getDbNetwork()->dbToSta(connected_iterm);
+              auto network = open_sta_->network();
+              auto port = network->libertyPort(pin);
 
-              if (port_) {
-                auto expr = port_->function();
+              if (port) {
+                auto expr = port->function();
                 if (expr
                     // Tristate outputs do not force the output to be constant.
-                    && port_->tristateEnable() == nullptr
+                    && port->tristateEnable() == nullptr
                     && (expr->op() == sta::FuncExpr::Op::zero
                         || expr->op() == sta::FuncExpr::Op::one)) {
                   if (expr->op() == sta::FuncExpr::Op::zero) {
                     if (const0.empty()) {
-                      const0_cell_ = port_->libertyCell()->name();
-                      const0_cell_port_ = port_->name();
+                      const0_cell_ = port->libertyCell()->name();
+                      const0_cell_port_ = port->name();
                     }
-                    const0.insert(netName);
+                    const0.insert(net_name);
                   } else {
                     if (const1.empty()) {
-                      const1_cell_ = port_->libertyCell()->name();
-                      const1_cell_port_ = port_->name();
+                      const1_cell_ = port->libertyCell()->name();
+                      const1_cell_port_ = port->name();
                     }
-                    const1.insert(netName);
+                    const1.insert(net_name);
                   }
 
                 } else {
-                  addAsInput = true;
+                  add_as_input = true;
                 }
               } else {
-                addAsInput = true;
+                add_as_input = true;
               }
 
             } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-              outputs.insert(netName);
-              addRequired(pin_, netName);
+              outputs.insert(net_name);
+              addRequired(pin, net_name);
             }
           }
         }
-        if (addAsInput && const0.find(netName) == const0.end()
-            && const1.find(netName) == const1.end()) {
-          inputs.insert(netName);
-          addArrival(pin_, netName);
+        if (add_as_input && const0.find(net_name) == const0.end()
+            && const1.find(net_name) == const1.end()) {
+          inputs.insert(net_name);
+          addArrival(pin, net_name);
         }
       }
 
       // connect to original ports if not inferred already
-      if (inputs.find(netName) == inputs.end()
-          && outputs.find(netName) == outputs.end()
-          && const0.find(netName) == const0.end()
-          && const1.find(netName) == const1.end()) {
-        auto connectedPorts = net->getBTerms();
-        for (auto connectedPort : connectedPorts) {
-          if (connectedPort->getIoType() == odb::dbIoType::INPUT) {
-            auto pin_ = open_sta_->getDbNetwork()->dbToSta(connectedPort);
-            auto network_ = open_sta_->network();
-            auto port_ = network_->libertyPort(pin_);
+      if (inputs.find(net_name) == inputs.end()
+          && outputs.find(net_name) == outputs.end()
+          && const0.find(net_name) == const0.end()
+          && const1.find(net_name) == const1.end()) {
+        auto connected_ports = net->getBTerms();
+        for (auto connected_port : connected_ports) {
+          if (connected_port->getIoType() == odb::dbIoType::INPUT) {
+            auto pin = open_sta_->getDbNetwork()->dbToSta(connected_port);
+            auto network = open_sta_->network();
+            auto port = network->libertyPort(pin);
 
-            if (port_) {
-              auto expr = port_->function();
+            if (port) {
+              auto expr = port->function();
               if (expr
                   // Tristate outputs do not force the output to be constant.
-                  && port_->tristateEnable() == nullptr
+                  && port->tristateEnable() == nullptr
                   && (expr->op() == sta::FuncExpr::Op::zero
                       || expr->op() == sta::FuncExpr::Op::one)) {
                 if (expr->op() == sta::FuncExpr::Op::zero) {
-                  const0.insert(netName);
+                  const0.insert(net_name);
                 } else {
-                  const1.insert(netName);
+                  const1.insert(net_name);
                 }
 
               } else {
-                inputs.insert(netName);
-                addArrival(pin_, netName);
+                inputs.insert(net_name);
+                addArrival(pin, net_name);
               }
             } else {
-              inputs.insert(netName);
-              addArrival(pin_, netName);
+              inputs.insert(net_name);
+              addArrival(pin, net_name);
             }
-          } else if (connectedPort->getIoType() == odb::dbIoType::OUTPUT) {
-            outputs.insert(netName);
-            addRequired(pin_, netName);
+          } else if (connected_port->getIoType() == odb::dbIoType::OUTPUT) {
+            outputs.insert(net_name);
+            addRequired(pin, net_name);
           }
         }
       }
     }
 
-    currentGate += currentConnections;
+    current_gate += current_connections;
 
-    if (cell->hasSequentials() && currentClocks.size() != 1) {
+    if (cell->hasSequentials() && current_clocks.size() != 1) {
       continue;
     }
     if (cell->hasSequentials()) {
-      currentGate += " " + currentClock;
+      current_gate += " " + current_clock;
     }
 
-    subckts[instIndex++] = std::move(currentGate);
+    subckts[inst_index++] = std::move(current_gate);
   }
 
   // remove drivers from input list
@@ -331,7 +331,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
   logger_->info(CUT,
                 2,
                 "Blif writer successfully dumped file with {} instances.",
-                instIndex);
+                inst_index);
 
   return true;
 }
@@ -348,7 +348,7 @@ void preprocessString(std::string& s)
   }
 }
 
-bool Blif::inspectBlif(const char* file_name, int& numInstances)
+bool Blif::inspectBlif(const char* file_name, int& num_instances)
 {
   std::ifstream f(file_name);
   if (f.bad()) {
@@ -356,20 +356,20 @@ bool Blif::inspectBlif(const char* file_name, int& numInstances)
     return false;
   }
 
-  std::string fileString((std::istreambuf_iterator<char>(f)),
+  std::string file_string((std::istreambuf_iterator<char>(f)),
                          std::istreambuf_iterator<char>());
 
   // Remove Comment Lines from Blif
-  preprocessString(fileString);
+  preprocessString(file_string);
 
   BlifParser blif;
 
-  bool isValid = blif.parse(fileString);
+  bool is_valid = blif.parse(file_string);
 
-  if (isValid) {
-    numInstances = blif.getGates().size();
+  if (is_valid) {
+    num_instances = blif.getGates().size();
   }
-  return isValid;
+  return is_valid;
 }
 
 bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
@@ -380,16 +380,16 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     return false;
   }
 
-  std::string fileString((std::istreambuf_iterator<char>(f)),
+  std::string file_string((std::istreambuf_iterator<char>(f)),
                          std::istreambuf_iterator<char>());
 
   // Remove Comment Lines from Blif
-  preprocessString(fileString);
+  preprocessString(file_string);
 
   BlifParser blif;
 
-  bool isValid = blif.parse(fileString);
-  if (!isValid) {
+  bool is_valid = blif.parse(file_string);
+  if (!is_valid) {
     logger_->error(CUT,
                    5,
                    "Blif parser failed. File doesn't follow blif spec.",
@@ -413,7 +413,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getFlopCount());
 
   for (auto& inst : instances_to_optimize_) {
-    std::set<odb::dbNet*> connectedNets;
+    std::set<odb::dbNet*> connected_nets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();
@@ -428,62 +428,62 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   // Create and connect new instances
   auto gates = blif.getGates();
   logger_->info(CUT, 8, "Inserting {} new instances.", gates.size());
-  std::map<std::string, int> instIds;
+  std::map<std::string, int> inst_ids;
 
   for (auto&& gate : gates) {
-    GateType masterType = gate.type;
-    std::string masterName = gate.master;
+    GateType master_type = gate.type;
+    std::string master_name = gate.master;
     std::vector<std::string> connections = gate.connections;
     odb::dbMaster* master = nullptr;
 
     for (auto&& lib : block->getDb()->getLibs()) {
-      master = lib->findMaster(masterName.c_str());
+      master = lib->findMaster(master_name.c_str());
       if (master != nullptr) {
         break;
       }
     }
 
     if (master == nullptr
-        && (masterName == "_const0_" || masterName == "_const1_")) {
+        && (master_name == "_const0_" || master_name == "_const1_")) {
       if (connections.empty()) {
         logger_->info(CUT,
                       9,
                       "Const driver {} doesn't have any connected nets.",
-                      masterName.c_str());
+                      master_name.c_str());
         continue;
       }
-      auto constNetName = connections[0].substr(connections[0].find('=') + 1);
-      odb::dbNet* net = block->findNet(constNetName.c_str());
+      auto const_net_name = connections[0].substr(connections[0].find('=') + 1);
+      odb::dbNet* net = block->findNet(const_net_name.c_str());
       if (net == nullptr) {
         std::string net_name_modified
-            = std::string("or_") + std::to_string(call_id_) + constNetName;
+            = std::string("or_") + std::to_string(call_id_) + const_net_name;
         net = odb::dbNet::create(block, net_name_modified.c_str());
       }
 
       // Add tie cells
-      std::string constMaster
-          = (masterName == "_const0_") ? const0_cell_ : const1_cell_;
-      std::string constPort
-          = (masterName == "_const0_") ? const0_cell_port_ : const1_cell_port_;
-      instIds[constMaster]
-          = (instIds[constMaster]) ? instIds[constMaster] + 1 : 1;
-      std::string instName = constMaster + "_" + std::to_string(call_id_)
-                             + std::to_string(instIds[constMaster]);
+      std::string const_master
+          = (master_name == "_const0_") ? const0_cell_ : const1_cell_;
+      std::string const_port
+          = (master_name == "_const0_") ? const0_cell_port_ : const1_cell_port_;
+      inst_ids[const_master]
+          = (inst_ids[const_master]) ? inst_ids[const_master] + 1 : 1;
+      std::string inst_name = const_master + "_" + std::to_string(call_id_)
+                             + std::to_string(inst_ids[const_master]);
       for (auto&& lib : block->getDb()->getLibs()) {
-        master = lib->findMaster(constMaster.c_str());
+        master = lib->findMaster(const_master.c_str());
         if (master != nullptr) {
           break;
         }
       }
 
       if (master != nullptr) {
-        while (block->findInst(instName.c_str())) {
-          instIds[constMaster]++;
-          instName = constMaster + "_" + std::to_string(call_id_)
-                     + std::to_string(instIds[constMaster]);
+        while (block->findInst(inst_name.c_str())) {
+          inst_ids[const_master]++;
+          inst_name = const_master + "_" + std::to_string(call_id_)
+                     + std::to_string(inst_ids[const_master]);
         }
-        auto newInst = odb::dbInst::create(block, master, instName.c_str());
-        newInst->findITerm(constPort.c_str())->connect(net);
+        auto new_inst = odb::dbInst::create(block, master, inst_name.c_str());
+        new_inst->findITerm(const_port.c_str())->connect(net);
       }
 
       continue;
@@ -493,88 +493,90 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       logger_->info(CUT,
                     10,
                     "Master ({}) not found while stitching back instances.",
-                    masterName.c_str());
+                    master_name.c_str());
       // return false;
       continue;
     }
 
-    instIds[masterName] = (instIds[masterName]) ? instIds[masterName] + 1 : 1;
-    std::string instName = masterName + "_" + std::to_string(call_id_) + "_"
-                           + std::to_string(instIds[masterName]);
-    while (block->findInst(instName.c_str())) {
-      instIds[masterName]++;
-      instName = masterName + "_" + std::to_string(call_id_) + "_"
-                 + std::to_string(instIds[masterName]);
+    inst_ids[master_name]
+        = (inst_ids[master_name]) ? inst_ids[master_name] + 1 : 1;
+    std::string inst_name = master_name + "_" + std::to_string(call_id_) + "_"
+                           + std::to_string(inst_ids[master_name]);
+    while (block->findInst(inst_name.c_str())) {
+      inst_ids[master_name]++;
+      inst_name = master_name + "_" + std::to_string(call_id_) + "_"
+                 + std::to_string(inst_ids[master_name]);
     }
 
-    auto newInst = odb::dbInst::create(block, master, instName.c_str());
+    auto new_inst = odb::dbInst::create(block, master, inst_name.c_str());
 
-    if (newInst == nullptr) {
+    if (new_inst == nullptr) {
       logger_->error(CUT,
                      11,
                      "Could not create new instance of type {} with name {}.",
-                     masterName,
-                     instName);
+                     master_name,
+                     inst_name);
       continue;
     }
 
     for (auto&& connection : connections) {
-      auto equalSignPos = connection.find("=");
+      auto equal_sign_pos = connection.find("=");
 
-      std::string mtermName, netName;
+      std::string mterm_name, net_name;
 
-      if (equalSignPos == std::string::npos && masterType == GateType::Mlatch) {
+      if (equal_sign_pos == std::string::npos
+          && master_type == GateType::kMlatch) {
         // Identified clock net!
         // Find clock pin
-        auto masterTerms = master->getMTerms();
-        for (auto&& mTerm : masterTerms) {
+        auto master_terms = master->getMTerms();
+        for (auto&& m_term : master_terms) {
           // Assuming that no more than 1 Pin can have clock type!
-          auto pin_ = open_sta_->getDbNetwork()->dbToSta(mTerm);
-          auto network_ = open_sta_->network();
-          auto port_ = network_->libertyPort(pin_);
-          if (port_->isClock()) {
-            mtermName = mTerm->getName();
-            netName = std::move(connection);
+          auto pin = open_sta_->getDbNetwork()->dbToSta(m_term);
+          auto network = open_sta_->network();
+          auto port = network->libertyPort(pin);
+          if (port->isClock()) {
+            mterm_name = m_term->getName();
+            net_name = std::move(connection);
             break;
           }
         }
 
-      } else if (equalSignPos == std::string::npos) {
+      } else if (equal_sign_pos == std::string::npos) {
         continue;
       } else {
-        if (equalSignPos == connection.length() - 1) {
+        if (equal_sign_pos == connection.length() - 1) {
           logger_->info(CUT,
                         12,
                         "Connection {} parsing failed for {} instance.",
                         connection,
-                        masterName);
+                        master_name);
           continue;
         }
-        mtermName = connection.substr(0, equalSignPos);
-        netName = connection.substr(equalSignPos + 1);
+        mterm_name = connection.substr(0, equal_sign_pos);
+        net_name = connection.substr(equal_sign_pos + 1);
       }
 
-      odb::dbNet* net = block->findNet(netName.c_str());
+      odb::dbNet* net = block->findNet(net_name.c_str());
       if (net == nullptr) {
         std::string net_name_modified
-            = std::string("or_") + std::to_string(call_id_) + netName;
+            = std::string("or_") + std::to_string(call_id_) + net_name;
         net = block->findNet(net_name_modified.c_str());
         if (!net) {
           net = odb::dbNet::create(block, net_name_modified.c_str());
         }
       }
 
-      if (mtermName.empty()) {
+      if (mterm_name.empty()) {
         logger_->info(CUT,
                       13,
                       "Could not connect instance of cell type {} to {} net "
                       "due to unknown mterm in blif.",
-                      masterName,
-                      netName);
+                      master_name,
+                      net_name);
         continue;
       }
 
-      newInst->findITerm(mtermName.c_str())->connect(net);
+      new_inst->findITerm(mterm_name.c_str())->connect(net);
     }
   }
 
@@ -614,18 +616,18 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
   return arr;
 }
 
-void Blif::addArrival(sta::Pin* pin, const std::string& netName)
+void Blif::addArrival(sta::Pin* pin, const std::string& net_name)
 {
-  if (arrivals_.find(netName) == arrivals_.end()) {
-    arrivals_[netName] = std::pair<float, float>(
+  if (arrivals_.find(net_name) == arrivals_.end()) {
+    arrivals_[net_name] = std::pair<float, float>(
         getArrivalTime(pin, true) * 1e12, getArrivalTime(pin, false) * 1e12);
   }
 }
 
-void Blif::addRequired(sta::Pin* pin, const std::string& netName)
+void Blif::addRequired(sta::Pin* pin, const std::string& net_name)
 {
-  if (requireds_.find(netName) == requireds_.end()) {
-    requireds_[netName] = std::pair<float, float>(
+  if (requireds_.find(net_name) == requireds_.end()) {
+    requireds_[net_name] = std::pair<float, float>(
         getRequiredTime(pin, true) * 1e12, getRequiredTime(pin, false) * 1e12);
   }
 }

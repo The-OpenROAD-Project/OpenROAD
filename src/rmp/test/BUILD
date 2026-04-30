@@ -121,10 +121,24 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+# Genetic/annealing tests run significantly longer than the "small" 300s
+# default; bump their size under concurrent load.
+LONG_RUNNING_TESTS = [
+    "aes_genetic",
+    "gcd_genetic",
+    "aes_annealing",
+    "gcd_annealing1",
+    "gcd_annealing2",
+]
+
 [
     regression_test(
         name = test_name,
-        data = [":" + test_name + "_resources"],
+        size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
+        data = [
+            ":" + test_name + "_resources",
+            "//src/rmp:rmp_py",
+        ],
         tags = [],
         visibility = ["//visibility:public"],
     )
