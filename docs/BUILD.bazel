@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@openroad-pip//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+
+# Replicates the ReadTheDocs Sphinx build locally (hermetic Python deps).
+# See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
+#
+# Usage:
+#   bazelisk test //docs:sphinx_build_test
+#   bazelisk test --test_tag_filters=doc_check //docs/...
+py_test(
+    name = "sphinx_build_test",
+    srcs = ["sphinx_build_test.py"],
+    data = glob(
+        ["**/*"],
+        exclude = [
+            "BUILD.bazel",
+            "sphinx_build_test.py",
+            "_build/**",
+            "_readthedocs/**",
+            "main/**",
+        ],
+    ) + [
+        # Staged at the runfiles workspace root so conf.py's setup(app)
+        # can resolve ../README.md and main/README.md through the
+        # `main -> ..` symlink it creates.
+        "//:README.md",
+    ],
+    tags = [
+        "doc_check",
+        "local",
+        "no-sandbox",
+    ],
+    deps = [
+        requirement("sphinx"),
+        requirement("sphinx-book-theme"),
+        requirement("sphinx-copybutton"),
+        requirement("sphinx-external-toc"),
+        requirement("sphinx-tabs"),
+        requirement("sphinxcontrib-mermaid"),
+        requirement("myst-parser"),
+        requirement("standard-imghdr"),
+    ],
+)
