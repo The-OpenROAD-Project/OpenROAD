@@ -37,16 +37,19 @@
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (27.0000 um, 8.0000 um) for VSS
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (31.5000 um, 4.0000 um) for VDD
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (36.0000 um, 8.0000 um) for VSS
-[INFO PPL-0067] Restrict pins [ clk we[0] D[0] Q[0] D[1] ... ] to region 0.00u-40.28u at the TOP edge.
-[INFO PPL-0067] Restrict pins [ addr_rw[0][0] addr_rw[0][1] addr_rw[0][2] ] to region 0.00u-11.20u at the RIGHT edge.
-[INFO PPL-0001] Number of available slots 210
-[INFO PPL-0002] Number of I/O             19
-[INFO PPL-0003] Number of I/O w/sink      19
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (40.5000 um, 4.0000 um) for VDD
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (45.0000 um, 8.0000 um) for VSS
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (49.5000 um, 4.0000 um) for VDD
+[INFO PPL-0067] Restrict pins [ clk we[0] D[0] Q0[0] Q1[0] ... ] to region 0.00u-53.96u at the TOP edge.
+[INFO PPL-0067] Restrict pins [ addr_rw[0][0] addr_rw[0][1] addr_rw[0][2] addr_r[0][0] addr_r[0][1] ... ] to region 0.00u-11.20u at the RIGHT edge.
+[INFO PPL-0001] Number of available slots 260
+[INFO PPL-0002] Number of I/O             29
+[INFO PPL-0003] Number of I/O w/sink      29
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 125.20 um.
-[INFO DPL-0001] Placed 36 filler instances.
+[INFO PPL-0012] I/O nets HPWL: 227.42 um.
+[INFO DPL-0001] Placed 43 filler instances.
 [INFO DRT-0167] List of default vias:
   Layer via2
     default via: via2_5
@@ -67,13 +70,13 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] active shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] metal1 shape region query size = 4625.
-[INFO DRT-0033] via1 shape region query size = 36.
-[INFO DRT-0033] metal2 shape region query size = 72.
-[INFO DRT-0033] via2 shape region query size = 36.
-[INFO DRT-0033] metal3 shape region query size = 75.
-[INFO DRT-0033] via3 shape region query size = 36.
-[INFO DRT-0033] metal4 shape region query size = 76.
+[INFO DRT-0033] metal1 shape region query size = 6635.
+[INFO DRT-0033] via1 shape region query size = 49.
+[INFO DRT-0033] metal2 shape region query size = 98.
+[INFO DRT-0033] via2 shape region query size = 49.
+[INFO DRT-0033] metal3 shape region query size = 104.
+[INFO DRT-0033] via3 shape region query size = 49.
+[INFO DRT-0033] metal4 shape region query size = 105.
 [INFO DRT-0033] via4 shape region query size = 0.
 [INFO DRT-0033] metal5 shape region query size = 0.
 [INFO DRT-0033] via5 shape region query size = 0.
@@ -89,13 +92,13 @@
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
-[INFO DRT-0036] metal1 guide region query size = 288.
+[INFO DRT-0036] metal1 guide region query size = 435.
 [INFO DRT-0036] via1 guide region query size = 0.
-[INFO DRT-0036] metal2 guide region query size = 220.
+[INFO DRT-0036] metal2 guide region query size = 369.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] metal3 guide region query size = 146.
+[INFO DRT-0036] metal3 guide region query size = 239.
 [INFO DRT-0036] via3 guide region query size = 0.
-[INFO DRT-0036] metal4 guide region query size = 16.
+[INFO DRT-0036] metal4 guide region query size = 23.
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] metal5 guide region query size = 0.
 [INFO DRT-0036] via5 guide region query size = 0.
@@ -109,10 +112,12 @@
 [INFO DRT-0036] via9 guide region query size = 0.
 [INFO DRT-0036] metal10 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
-Differences found at line 11.
-  SIZE 39.52 BY 11.2 ;
-  SIZE 40.28 BY 11.2 ;
-Differences found at line 6.
-DIEAREA ( 0 0 ) ( 3952 1120 ) ;
-DIEAREA ( 0 0 ) ( 4028 1120 ) ;
-No differences found.
+Differences found at line 1.
+
+VERSION 5.8 ;
+Differences found at line 1.
+
+VERSION 5.8 ;
+Differences found at line 1.
+
+module RAM7x7 (

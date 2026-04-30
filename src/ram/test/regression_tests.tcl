@@ -6,4 +6,7 @@ record_tests {
   make_8x8_1rw1r_sky130
   make_8x8_1r1w_sky130
   make_8x8_2r1w_sky130
+  make_7x7_1r1w_nangate45
+  make_7x7_1rw1r_nangate45
+  make_7x7_2r1w_nangate45
 }
