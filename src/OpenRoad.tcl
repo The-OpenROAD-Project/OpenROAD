@@ -337,7 +337,7 @@ proc global_connect { args } {
     keys {} \
     flags {-force -verbose}
 
-  sta::check_argc_eq0 "add_global_connection" $args
+  sta::check_argc_eq0 "global_connect" $args
   [ord::get_db_block] globalConnect [info exists flags(-force)] [info exists flags(-verbose)]
 }
 

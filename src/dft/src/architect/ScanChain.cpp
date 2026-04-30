@@ -46,12 +46,23 @@ uint64_t ScanChain::getBits() const
   return bits_;
 }
 
-void ScanChain::sortScanCells(
-    const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
-                             std::vector<std::unique_ptr<ScanCell>>&,
-                             std::vector<std::unique_ptr<ScanCell>>&)>& sort_fn)
+int64_t ScanChain::sortScanCells(
+    const std::function<int64_t(std::vector<std::unique_ptr<ScanCell>>&,
+                                std::vector<std::unique_ptr<ScanCell>>&,
+                                std::vector<std::unique_ptr<ScanCell>>&)>&
+        sort_fn)
 {
-  sort_fn(falling_edge_scan_cells_, rising_edge_scan_cells_, scan_cells_);
+  if (!empty()) {
+    bits_ = 0;
+    for (auto& cell : scan_cells_) {
+      add(std::move(cell));
+    }
+    scan_cells_.clear();
+    scan_cells_.shrink_to_fit();
+  }
+
+  auto total_wire_length
+      = sort_fn(falling_edge_scan_cells_, rising_edge_scan_cells_, scan_cells_);
   // At this point, falling_edge_scan_cells_ and rising_edge_scan_cells_ will be
   // with just null, we clear and reduce the memory of the vectors
 
@@ -60,6 +71,23 @@ void ScanChain::sortScanCells(
 
   falling_edge_scan_cells_.shrink_to_fit();
   rising_edge_scan_cells_.shrink_to_fit();
+
+  return total_wire_length;
+}
+
+int64_t ScanChain::estimateInternalTWL()
+{
+  if (scan_cells_.size() == 0) {
+    return 0;
+  }
+  int64_t twl = 0;
+  auto last = scan_cells_[0]->getOrigin();
+  for (const auto& cell : scan_cells_) {
+    auto current = cell->getOrigin();
+    twl += odb::Point::manhattanDistance(last, current);
+    last = current;
+  }
+  return twl;
 }
 
 const std::vector<std::unique_ptr<ScanCell>>& ScanChain::getScanCells() const
