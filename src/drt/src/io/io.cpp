@@ -2061,11 +2061,13 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       continue;
     }
     if (!rule->isCutClassValid()) {
-      logger_->warn(DRT,
-                    349,
-                    "LEF58_ENCLOSURE with no CUTCLASS is not supported. "
-                    "Skipping for layer {}",
-                    layer->getName());
+      if (!layer->getTechLayerCutClassRules().empty()) {
+        logger_->warn(DRT,
+                      349,
+                      "LEF58_ENCLOSURE with no CUTCLASS is not supported. "
+                      "Skipping for layer {}",
+                      layer->getName());
+      }
       continue;
     }
     std::unique_ptr<frConstraint> uCon
