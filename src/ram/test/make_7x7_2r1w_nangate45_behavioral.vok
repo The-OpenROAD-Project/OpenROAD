@@ -1,0 +1,42 @@
+module RAM7x7 (
+  clk,
+  D,
+  Q0,
+  Q1,
+  addr_w,
+  addr_r0,
+  addr_r1,
+  we
+);
+  input clk;
+  input [6:0] D;
+  output reg [6:0] Q0;
+  output reg [6:0] Q1;
+  input [2:0] addr_w;
+  input [2:0] addr_r0;
+  input [2:0] addr_r1;
+  input [0:0] we;
+
+  // memory array declaration
+  reg [6:0] mem[0:6];
+
+  // write logic
+  integer i;
+  always @(posedge clk) begin
+    for (i = 0; i < 1; i = i + 1) begin
+      if (we[i]) begin
+        mem[addr_w][i*7 +:7] <= D[i*7 +:7];
+      end
+    end
+  end
+
+  // read logic
+  always @(*) begin
+    Q0 = mem[addr_r0];
+  end
+
+  always @(*) begin
+    Q1 = mem[addr_r1];
+  end
+
+endmodule
