@@ -1,0 +1,21 @@
+{
+    "name": "OpenROAD Dev Environment",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "target": "dev",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            },
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "twxs.cmake"
+            ]
+        }
+    },
+    "remoteUser": "root",
+    "postCreateCommand": "echo 'Welcome to the OpenROAD DevContainer! Run ./etc/Build.sh to get started.'"
+}
