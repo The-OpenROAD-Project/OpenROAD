@@ -141,6 +141,14 @@ proc balance_row_usage { args } {
   rsz::balance_row_usage_cmd
 }
 
+sta::define_cmd_args "fully_rebuffer" {}
+
+proc fully_rebuffer { args } {
+  sta::parse_key_args "fully_rebuffer" args keys {} flags {}
+  sta::check_argc_eq0 "fully_rebuffer" $args
+  rsz::fully_rebuffer_cmd
+}
+
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \

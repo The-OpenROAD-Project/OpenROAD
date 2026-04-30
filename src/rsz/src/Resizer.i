@@ -306,6 +306,13 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 }
 
 void
+fully_rebuffer_cmd()
+{
+  Resizer *resizer = getResizer();
+  resizer->fullyRebuffer(nullptr);
+}
+
+void
 repair_design_cmd(double max_length,
                   double slew_margin,
                   double cap_margin,
