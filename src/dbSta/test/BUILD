@@ -300,6 +300,7 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
+        "cpp/TestDbSta_StalePrevPath.v",
     ],
     deps = [
         "//src/dbSta",
