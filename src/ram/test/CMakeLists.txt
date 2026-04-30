@@ -6,7 +6,5 @@ or_integration_tests(
     # build typically used by cmake. See src/ram/test/BUILD.
     make_7x7_nangate45
     make_7x7_1r1w_nangate45
-    make_7x7_1rw1r_nangate45
-    make_7x7_2r1w_nangate45
 )
 
