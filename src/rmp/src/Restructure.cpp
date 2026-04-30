@@ -24,6 +24,7 @@
 #include "cut/abc_init.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
+#include "extended_technology_mapping.h"
 #include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -721,4 +722,15 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   }
   return status;
 }
+
+void Restructure::resynthEmap(sta::Scene* scene,
+                              bool map_multioutput,
+                              bool verbose,
+                              char* workdir_name)
+{
+  auto emap = ExtendedTechnologyMapping(scene, map_multioutput, verbose);
+
+  emap.map(open_sta_, db_, resizer_, logger_);
+}
+
 }  // namespace rmp

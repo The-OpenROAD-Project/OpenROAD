@@ -105,18 +105,18 @@ proc restructure { args } {
     $depth_threshold_value $workdir_name $abc_logfile
 }
 
-sta::define_cmd_args "resynth" {[-corner corner]}
+sta::define_cmd_args "resynth" {[-scene scene]}
 
 proc resynth { args } {
   sta::parse_key_args "resynth" args \
-    keys {-corner} \
+    keys {-scene} \
     flags {}
-  set corner [sta::parse_scene keys]
-  rmp::resynth_cmd $corner
+  set scene [sta::parse_scene keys]
+  rmp::resynth_cmd $scene
 }
 
 sta::define_cmd_args "resynth_annealing" {
-                                            [-corner corner]
+                                            [-scene scene]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-temp temp]
@@ -127,10 +127,10 @@ sta::define_cmd_args "resynth_annealing" {
 
 proc resynth_annealing { args } {
   sta::parse_key_args "resynth_annealing" args \
-    keys {-corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
+    keys {-scene -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
-  set corner [sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
   }
@@ -150,11 +150,36 @@ proc resynth_annealing { args } {
     rmp::set_annealing_initial_ops $keys(-initial_ops)
   }
 
-  rmp::resynth_annealing_cmd $corner
+  rmp::resynth_annealing_cmd $scene
+}
+
+sta::define_cmd_args "resynth_emap" {
+                                      [-scene scene]
+                                      [-map_multioutput]
+                                      [-verbose]
+                                      [-work_dir workdir_name]
+                                    }
+
+proc resynth_emap { args } {
+  sta::parse_key_args "resynth_emap" args \
+    keys {-scene -work_dir} \
+    flags {-map_multioutput -verbose}
+
+  set scene [sta::parse_scene keys]
+  set target "area"
+  set map_multioutput [info exists flags(-map_multioutput)]
+  set verbose [info exists flags(-verbose)]
+  set workdir_name "."
+
+  if { [info exists keys(-work_dir)] } {
+    set workdir_name $keys(-work_dir)
+  }
+
+  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $workdir_name
 }
 
 sta::define_cmd_args "resynth_genetic" {
-                                            [-corner corner]
+                                            [-scene scene]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-population_size population_size]
@@ -168,11 +193,11 @@ sta::define_cmd_args "resynth_genetic" {
 
 proc resynth_genetic { args } {
   sta::parse_key_args "resynth_genetic" args \
-    keys {-corner -iters -seed -population_size -mutation_probability -crossover_probability \
+    keys {-scene -iters -seed -population_size -mutation_probability -crossover_probability \
               -tournament_size -tournament_probability -initial_ops -slack_threshold} \
     flags {}
 
-  set corner [sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
   }
@@ -201,5 +226,5 @@ proc resynth_genetic { args } {
     rmp::set_genetic_initial_ops $keys(-initial_ops)
   }
 
-  rmp::resynth_genetic_cmd $corner
+  rmp::resynth_genetic_cmd $scene
 }

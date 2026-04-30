@@ -57,5 +57,24 @@ add_compile_options(
 
 endif()
 
+add_library(mockturtle INTERFACE)
+
+find_package(spdlog REQUIRED)
+
+# Mockturtle uses abseil random, but we don't add it here to avoid conflicts
+# with or-tools vendored version.
+target_link_libraries(mockturtle
+  INTERFACE
+    spdlog::spdlog
+)
+
+target_include_directories(mockturtle
+  INTERFACE
+    ./mockturtle/include/
+    ./mockturtle/lib/kitty/
+    ./mockturtle/lib/lorina/
+    ./mockturtle/lib/parallel_hashmap/
+)
+
 add_subdirectory(lodepng)
 add_subdirectory(stb_truetype)

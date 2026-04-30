@@ -12,6 +12,11 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "aes_annealing",
+    "aes_asap7",
+    "aes_donttouch_nangate45",
+    "aes_dontuse_nangate45",
+    "aes_genetic",
     "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
@@ -22,17 +27,17 @@ COMPULSORY_TESTS = [
     "blif_writer_input_output",
     "blif_writer_sequential",
     "const_cell_removal",
-    "gcd_restructure",
-    "aes_asap7",
-    "gcd_asap7",
-    "memory_nangate45",
-    "aes_dontuse_nangate45",
-    "aes_donttouch_nangate45",
-    "aes_annealing",
+    "emap_aes_asap7",
+    "emap_gcd_asap7",
+    "emap_ibex_sky130hd",
+    "emap_sub_aes_asap7",
+    "emap_summation_asap7",
     "gcd_annealing1",
     "gcd_annealing2",
-    "aes_genetic",
+    "gcd_asap7",
     "gcd_genetic",
+    "gcd_restructure",
+    "memory_nangate45",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -74,6 +79,7 @@ filegroup(
         "Nangate45/work_around_yosys/cells.v",
         "aes_asap7.sdc",
         "aes_asap7.v",
+        "sub_aes.v",
         "aes_nangate45.sdc",
         "aes_nangate45.tcl",
         "aes_nangate45.v",
@@ -99,11 +105,16 @@ filegroup(
         "gcd_asap7.v",
         "gcd_placed.def",
         "helpers.tcl",
+        "ibex_sky130hd.v",
+        "ibex_sky130hd.sdc",
         "rcon.def",
         "rcon.sdc",
         "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
+        "sky130/sky130hd.rc",
+        "summation_asap7.sdc",
+        "summation_asap7.v",
     ],
 )
 

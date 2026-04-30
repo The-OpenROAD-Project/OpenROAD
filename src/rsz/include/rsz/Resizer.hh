@@ -551,6 +551,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                            const sta::Scene* corner,
                            std::map<const sta::Pin*, float>& load_pin_slew);
 
+  void invalidateLevelDrvrVertices() {
+    level_drvr_vertices_valid_ = false;
+  }
+
  protected:
   void init();
   double computeDesignArea();

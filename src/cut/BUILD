@@ -36,6 +36,7 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party:mockturtle",
         "@abc",
         "@boost.bind",
         "@boost.config",

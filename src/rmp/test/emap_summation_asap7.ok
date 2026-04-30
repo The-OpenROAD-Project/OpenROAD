@@ -1,0 +1,136 @@
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_SS_nldm_211120.lib.gz line 14814, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] ./asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: ./asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+-- Before --
+
+Cell type report:                       Count       Area
+  Tie cell                                  1       0.04
+  Buffer                                    1       0.07
+  Multi-Input combinational cell            5       0.79
+  Total                                     7       0.90
+[691.787, 694.171): ************************************************** (1)
+[694.171, 696.555): ************************************************** (1)
+[696.555, 698.940):  (0)
+[698.940, 701.324):  (0)
+[701.324, 703.708):  (0)
+[703.708, 706.092):  (0)
+[706.092, 708.477):  (0)
+[708.477, 710.861):  (0)
+[710.861, 713.245):  (0)
+[713.245, 715.630]: ************************************************** (1)
+Startpoint: b[0] (input port clocked by core_clock)
+Endpoint: sum[2] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 252.00  252.00 v input external delay
+   0.00  252.00 v b[0] (in)
+  25.99  277.99 v _4_/Y (AND2x4_ASAP7_75t_R)
+  38.22  316.21 v _7_/Y (MAJx2_ASAP7_75t_R)
+   0.00  316.21 v sum[2] (out)
+         316.21   data arrival time
+
+1260.00 1260.00   clock core_clock (rise edge)
+   0.00 1260.00   clock network delay (ideal)
+   0.00 1260.00   clock reconvergence pessimism
+-252.00 1008.00   output external delay
+        1008.00   data required time
+---------------------------------------------------------
+        1008.00   data required time
+        -316.21   data arrival time
+---------------------------------------------------------
+         691.79   slack (MET)
+
+
+wns max 0.00
+tns max 0.00
+-- After --
+
+[i] WARNING: library does not contain cells that can implement output pin 1 of the multi-output cell FAx1_ASAP7_75t_R
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell HAxp5_ASAP7_75t_R
+[i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
+Extended technology mapping stats:
+	area: 0.000
+	delay: 0.000
+	power: 0.000
+	inverters: 0
+	multioutput gates: 0
+
+[i] Report cells usage:
+[i] TOTAL                    	 Instance =          0	 Area =         0.00   100.00 %
+[i] Report stats: area =  0.00; delay =  0.00;
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0098] No setup violations found
+[INFO RSZ-0033] No hold violations found.
+Cell type report:                       Count       Area
+  Tie cell                                  1       0.04
+  Buffer                                    1       0.07
+  Multi-Input combinational cell            5       0.79
+  Total                                     7       0.90
+[691.787, 694.171): ************************************************** (1)
+[694.171, 696.555): ************************************************** (1)
+[696.555, 698.940):  (0)
+[698.940, 701.324):  (0)
+[701.324, 703.708):  (0)
+[703.708, 706.092):  (0)
+[706.092, 708.477):  (0)
+[708.477, 710.861):  (0)
+[710.861, 713.245):  (0)
+[713.245, 715.630]: ************************************************** (1)
+Startpoint: b[0] (input port clocked by core_clock)
+Endpoint: sum[2] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 252.00  252.00 v input external delay
+   0.00  252.00 v b[0] (in)
+  25.99  277.99 v _4_/Y (AND2x4_ASAP7_75t_R)
+  38.22  316.21 v _7_/Y (MAJx2_ASAP7_75t_R)
+   0.00  316.21 v sum[2] (out)
+         316.21   data arrival time
+
+1260.00 1260.00   clock core_clock (rise edge)
+   0.00 1260.00   clock network delay (ideal)
+   0.00 1260.00   clock reconvergence pessimism
+-252.00 1008.00   output external delay
+        1008.00   data required time
+---------------------------------------------------------
+        1008.00   data required time
+        -316.21   data arrival time
+---------------------------------------------------------
+         691.79   slack (MET)
+
+
+wns max 0.00
+tns max 0.00
+Repair timing output passed/skipped equivalence test

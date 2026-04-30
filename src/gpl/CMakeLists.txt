@@ -62,6 +62,7 @@ target_include_directories(gpl_lib
 )
 
 target_link_libraries(gpl_lib
+  PUBLIC
     utl_lib
     Eigen3::Eigen
     odb

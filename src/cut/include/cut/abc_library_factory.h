@@ -35,6 +35,7 @@ class AbcLibrary
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   abc::Mio_Library_t* mio_library();
   bool IsSupportedCell(const std::string& cell_name);
+  const std::set<std::string>& SupportedCells();
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
   bool IsConstCell(const std::string& cell_name);
@@ -64,7 +65,8 @@ class AbcLibraryFactory
   explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
   AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
-  AbcLibraryFactory& SetCorner(sta::Scene* corner);
+  utl::UniquePtrWithDeleter<abc::SC_Lib> BuildScl();
+  AbcLibraryFactory& SetScene(sta::Scene* scene);
   AbcLibrary Build();
 
  private:
@@ -82,12 +84,12 @@ class AbcLibraryFactory
   void AbcPopulateAbcSurfaceFromSta(abc::SC_Surface* abc_table,
                                     const sta::TableModel* model,
                                     sta::Units* units);
-  std::vector<sta::LibertyCell*> GetLibertyCellsFromCorner(sta::Scene* corner);
+  std::vector<sta::LibertyCell*> GetLibertyCellsFromScene(sta::Scene* scene);
   std::vector<abc::SC_Pin*> CreateAbcInputPins(sta::LibertyCell* cell);
 
   utl::Logger* logger_;
   sta::dbSta* db_sta_ = nullptr;
-  sta::Scene* corner_ = nullptr;
+  sta::Scene* scene_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
 };
 
