@@ -18,14 +18,24 @@ ARG INSTALLER_ARGS=""
 COPY etc/DependencyInstaller.sh /tmp/.
 RUN <<EOF
 set -e
+# 1. Install dependencies via script
 /tmp/DependencyInstaller.sh -ci -base
 /tmp/DependencyInstaller.sh -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
+
+# 2. Optimization: Strip libQt5Core if on Ubuntu
 if echo "$fromImage" | grep -q "ubuntu"; then
     echo "fromImage contains 'ubuntu' — stripping section from libQt5Core.so"
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || true
-else
-    echo "Skipping strip command as fromImage does not contain 'ubuntu'"
 fi
+
+# 3. THE DOCKER DIET: Purge apt cache to shrink image size
+# This prevents temporary package lists from being saved into the image layer.
+if command -v apt-get &> /dev/null; then
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+fi
+
+# 4. Cleanup temporary files
 rm -f /tmp/DependencyInstaller.sh
 EOF
 
