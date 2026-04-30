@@ -24,6 +24,11 @@ bool update_power_domain(utl::Logger* logger,
                          const std::string& name,
                          const std::string& element);
 
+bool update_power_domain_supply(utl::Logger* logger,
+                                 odb::dbBlock* block,
+                                 const std::string& name,
+                                 const std::string& supply);
+
 bool create_logic_port(utl::Logger* logger,
                        odb::dbBlock* block,
                        const std::string& name,

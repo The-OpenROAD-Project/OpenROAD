@@ -30,6 +30,13 @@
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, element); 
   }
 
+  void update_power_domain_supply_cmd(const char* name,
+                                    const char* supply)
+  {
+    odb::dbDatabase* db = getOpenRoad()->getDb();
+    update_power_domain_supply(getOpenRoad()->getLogger(),db->getChip()->getBlock(),name,supply);
+  }
+
   void create_logic_port_cmd(const char* name, const char* direction)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
