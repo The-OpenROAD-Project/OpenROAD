@@ -542,21 +542,20 @@ void OpenRoad::setAlignmentMarkers(const std::vector<std::string>& master_names,
   }
 
   for (const std::string& name : master_names) {
-    odb::dbMaster* found = nullptr;
+    bool found = false;
     for (odb::dbLib* lib : db_->getLibs()) {
       if (odb::dbMaster* m = lib->findMaster(name.c_str())) {
-        found = m;
-        break;
+        m->setAlignmentMarker(true);
+        found = true;
       }
     }
-    if (found == nullptr) {
+    if (!found) {
       logger_->warn(utl::ODB,
-                    275,
+                    405,
                     "Alignment marker master '{}' not found in any library",
                     name);
       continue;
     }
-    found->setAlignmentMarker(true);
   }
 
   const uint32_t tol_dbu
