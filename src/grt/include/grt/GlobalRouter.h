@@ -155,12 +155,16 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setSnapshotBatchedWidth(int snapshot_batched_width);
+  int getSnapshotBatchedWidth() const;
+  int getSnapshotBatchCount() const;
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
   };
+  void setNumThreads(int num_threads);
 
   void setInfiniteCapacity(bool infinite_capacity);
 
@@ -531,6 +535,8 @@ class GlobalRouter
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
+  int snapshot_batched_width_{0};
+  int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;

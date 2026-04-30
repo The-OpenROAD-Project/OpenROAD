@@ -780,6 +780,10 @@ class Search::MinHeightPredicate
   int min_height_;
 };
 
+// Eagerly collect shape search results under a shared_lock so we don't
+// hold a lazy iterator into an R-tree that another thread may rebuild.
+// Mirrors the pattern used by searchInsts / searchFills.
+
 Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
                                              odb::dbTechLayer* layer,
                                              int x_lo,
@@ -793,23 +797,30 @@ Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.box_shapes.find(layer);
   if (it == data.box_shapes.end()) {
-    return RoutingRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  RoutingRange results;
   if (min_size > 0) {
-    return RoutingRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return RoutingRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
@@ -825,23 +836,30 @@ Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.snet_via_shapes.find(layer);
   if (it == data.snet_via_shapes.end()) {
-    return SNetSBoxRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  SNetSBoxRange results;
   if (min_size > 0) {
-    return SNetSBoxRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return SNetSBoxRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
@@ -857,28 +875,34 @@ Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.snet_shapes.find(layer);
   if (it == data.snet_shapes.end()) {
-    return SNetShapeRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  SNetShapeRange results;
   if (min_size > 0) {
-    return SNetShapeRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
-            && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
+             && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return SNetShapeRange(
-      rtree.qbegin(
-          bgi::intersects(query)
-          && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
-      rtree.qend());
+  return results;
 }
 
 Search::FillRange Search::searchFills(odb::dbBlock* block,
@@ -968,18 +992,26 @@ Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
     updateBlockages(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.blockages_init_mutex);
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  BlockageRange results;
   if (min_height > 0) {
-    return BlockageRange(
-        data.blockages.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(
-                MinHeightPredicate<odb::dbBlockage*>(min_height))),
-        data.blockages.qend());
+    for (auto qi = data.blockages.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(
+                 MinHeightPredicate<odb::dbBlockage*>(min_height)));
+         qi != data.blockages.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = data.blockages.qbegin(bgi::intersects(query));
+         qi != data.blockages.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return BlockageRange(data.blockages.qbegin(bgi::intersects(query)),
-                       data.blockages.qend());
+  return results;
 }
 
 Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
@@ -995,22 +1027,31 @@ Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
     updateObstructions(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
   auto it = data.obstructions.find(layer);
   if (it == data.obstructions.end()) {
-    return ObstructionRange();
+    return {};
   }
 
   auto& rtree = it->second;
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  ObstructionRange results;
   if (min_size > 0) {
-    return ObstructionRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbObstruction*>(min_size))),
-        rtree.qend());
+    for (auto qi
+         = rtree.qbegin(bgi::intersects(query)
+                        && bgi::satisfies(
+                            MinSizePredicate<odb::dbObstruction*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return ObstructionRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::RowRange Search::searchRows(odb::dbBlock* block,
@@ -1025,16 +1066,25 @@ Search::RowRange Search::searchRows(odb::dbBlock* block,
     updateRows(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.rows_init_mutex);
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  RowRange results;
   if (min_height > 0) {
-    return RowRange(
-        data.rows.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height))),
-        data.rows.qend());
+    for (auto qi = data.rows.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height)));
+         qi != data.rows.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = data.rows.qbegin(bgi::intersects(query));
+         qi != data.rows.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return RowRange(data.rows.qbegin(bgi::intersects(query)), data.rows.qend());
+  return results;
 }
 
 // ─── Snap (nearest edge search) ─────────────────────────────────────────────

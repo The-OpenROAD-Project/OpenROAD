@@ -758,6 +758,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         if (!dbu_tile.overlaps(inst_bbox)) {
           continue;
         }
+        if (inst->getMaster()->isFiller()) {
+          continue;
+        }
         odb::dbModule* mod = inst->getModule();
         if (!mod) {
           continue;
