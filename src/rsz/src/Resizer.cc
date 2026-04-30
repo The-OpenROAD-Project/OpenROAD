@@ -157,6 +157,48 @@ Resizer::Resizer(utl::Logger* logger,
 
 Resizer::~Resizer() = default;
 
+void Resizer::clear()
+{
+  db_cbk_->removeOwner();
+
+  block_ = nullptr;
+  debug_pin_ = nullptr;
+  core_exists_ = false;
+  core_ = odb::Rect();
+  design_area_ = 0.0;
+  dbu_ = 0;
+  max_area_ = 0.0;
+
+  dont_use_.clear();
+  buffer_cells_.clear();
+  buffer_lowest_drive_ = nullptr;
+  buffer_fast_sizes_.clear();
+  clk_buffers_.clear();
+  swappable_cells_cache_.clear();
+  vt_equiv_cells_cache_.clear();
+  target_load_map_.reset();
+  tgt_slews_ = {};
+  tgt_slew_corner_ = nullptr;
+  resized_multi_output_insts_.clear();
+  net_slack_map_.clear();
+  cell_leakage_cache_.clear();
+  inserted_buffer_set_.clear();
+  all_inserted_buffer_set_.clear();
+  removed_buffer_set_.clear();
+  input_slew_map_.clear();
+  vt_map_.clear();
+  vt_hash_map_.clear();
+  equiv_cells_made_ = false;
+
+  inserted_buffer_count_ = 0;
+  cloned_gate_count_ = 0;
+  swap_pin_count_ = 0;
+  removed_buffer_count_ = 0;
+  accepted_move_count_ = 0;
+  max_wire_length_ = 0;
+  buffer_moved_into_core_ = false;
+}
+
 ////////////////////////////////////////////////////////////////
 
 double Resizer::coreArea() const

@@ -33,6 +33,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
@@ -478,6 +479,24 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+  chip_hash_.setTable(chip_tbl_);
+
+  chip_inst_tbl_ = new dbTable<_dbChipInst>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
+  chip_region_inst_tbl_ = new dbTable<_dbChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbChipRegionInstObj);
+  chip_conn_tbl_ = new dbTable<_dbChipConn>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipConnObj);
+  chip_bump_inst_tbl_
+      = new dbTable<_dbChipBumpInst>(this,
+                                     this,
+                                     (GetObjTbl_t) &_dbDatabase::getObjectTable,
+                                     dbChipBumpInstObj);
+  chip_net_tbl_ = new dbTable<_dbChipNet>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -925,8 +944,14 @@ void dbDatabase::clear()
 {
   _dbDatabase* db = (_dbDatabase*) this;
   int id = db->unique_id_;
+  // Save session-level state that was set up during init and is not
+  // part of the database content being cleared.
+  auto observers = std::move(db->observers_);
+  utl::Logger* logger = db->logger_;
   db->~_dbDatabase();
   new (db) _dbDatabase(db, id);
+  db->observers_ = std::move(observers);
+  db->logger_ = logger;
 }
 
 void dbDatabase::destroy(dbDatabase* db_)
@@ -1026,6 +1051,14 @@ void dbDatabase::triggerPostReadDb()
   _dbDatabase* db = (_dbDatabase*) this;
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postReadDb(this);
+  }
+}
+
+void dbDatabase::triggerPreDbClear()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->preDbClear(this);
   }
 }
 

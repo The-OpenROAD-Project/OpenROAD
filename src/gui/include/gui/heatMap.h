@@ -53,7 +53,7 @@ class HeatMapDataSource
     std::string name;
     std::string label;
     std::function<std::vector<std::string>()> choices;
-    std::function<const std::string()> getter;
+    std::function<std::string()> getter;
     std::function<void(const std::string&)> setter;
   };
 
@@ -92,7 +92,13 @@ class HeatMapDataSource
 
   void registerHeatMap();
 
-  virtual void setChip(odb::dbChip* chip) { chip_ = chip; }
+  virtual void setChip(odb::dbChip* chip)
+  {
+    if (chip_ != chip) {
+      destroyMap();
+    }
+    chip_ = chip;
+  }
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
   bool getUseDBU() const { return use_dbu_; }
 

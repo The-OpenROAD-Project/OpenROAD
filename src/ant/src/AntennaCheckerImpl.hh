@@ -92,6 +92,7 @@ class AntennaChecker::Impl
                                   float ratio_margin);
   void initAntennaRules();
   void setReportFileName(const char* file_name);
+  void clear();
   void makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets);
 
  private:

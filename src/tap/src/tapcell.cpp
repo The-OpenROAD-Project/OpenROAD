@@ -38,6 +38,7 @@ void Tapcell::reset()
   phy_idx_ = 0;
   tap_prefix_ = "TAP_";
   endcap_prefix_ = "PHY_";
+  filled_edges_.clear();
 }
 
 //---------------------------------------------------------------

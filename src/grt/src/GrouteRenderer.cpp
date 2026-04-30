@@ -27,6 +27,15 @@ void GrouteRenderer::highlightRoute(odb::dbNet* net, bool show_pin_locations)
 
 void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
+  // After a database reload, cached net pointers are stale.
+  // Detect the reload by checking if the tech changed.
+  if (layer->getTech() != tech_) {
+    tech_ = layer->getTech();
+    nets_.clear();
+    show_segments_.clear();
+    show_pin_locations_.clear();
+  }
+
   painter.setPen(layer);
   painter.setBrush(layer);
 

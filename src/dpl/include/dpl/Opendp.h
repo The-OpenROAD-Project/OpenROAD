@@ -95,6 +95,7 @@ class Opendp
  public:
   Opendp(odb::dbDatabase* db, utl::Logger* logger);
   ~Opendp();
+  void clearForReload();
 
   Opendp(const Opendp&) = delete;
   Opendp& operator=(const Opendp&) = delete;

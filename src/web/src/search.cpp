@@ -203,10 +203,13 @@ void Search::setTopChip(odb::dbChip* chip)
     return;
   }
   odb::dbBlock* block = chip->getBlock();
-  if (top_chip_ != chip) {
+  // Re-initialize when the chip changed or when the previous block was
+  // destroyed (e.g. after a database reload via read_db).  The block
+  // destructor calls removeOwner() which clears hasOwner().
+  if (top_chip_ != chip || !hasOwner()) {
     clear();
 
-    if (top_chip_ != nullptr) {
+    if (hasOwner()) {
       removeOwner();
     }
 

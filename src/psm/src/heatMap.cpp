@@ -96,6 +96,9 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
 
 void IRDropDataSource::setChip(odb::dbChip* chip)
 {
+  layer_ = nullptr;
+  net_ = nullptr;
+  corner_ = nullptr;
   gui::HeatMapDataSource::setChip(chip);
   if (chip != nullptr) {
     odb::dbBlock* block = chip->getBlock();

@@ -92,6 +92,11 @@ void AntennaChecker::setReportFileName(const char* file_name)
   impl_->setReportFileName(file_name);
 }
 
+void AntennaChecker::clear()
+{
+  impl_->clear();
+}
+
 void AntennaChecker::makeNetWiresFromGuides(
     const std::vector<odb::dbNet*>& nets)
 {
@@ -1302,6 +1307,15 @@ double AntennaChecker::Impl::diffArea(odb::dbMTerm* mterm)
 void AntennaChecker::Impl::setReportFileName(const char* file_name)
 {
   report_file_name_ = file_name;
+}
+
+void AntennaChecker::Impl::clear()
+{
+  block_ = nullptr;
+  layer_info_.clear();
+  net_violation_count_ = 0;
+  nets_.clear();
+  net_to_report_.clear();
 }
 
 void AntennaChecker::Impl::makeNetWiresFromGuides(

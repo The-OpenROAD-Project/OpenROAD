@@ -79,6 +79,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
   void postRead3Dbx(odb::dbChip* chip) override;
+  void preDbClear(odb::dbDatabase* db) override;
 
   // Capture logger messages into the script widget output
   void setLogger(utl::Logger* logger);

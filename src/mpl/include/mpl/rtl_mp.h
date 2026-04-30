@@ -81,6 +81,7 @@ class MacroPlacer
                     int right,
                     int top);
 
+  void clear();
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);

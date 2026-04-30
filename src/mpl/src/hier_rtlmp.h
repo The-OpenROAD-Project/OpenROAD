@@ -118,6 +118,7 @@ class HierRTLMP
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
+  void clear();
 
  private:
   struct PinAccessDepthLimits
@@ -140,7 +141,6 @@ class HierRTLMP
   void commitClusteringDataToDb() const;
   void createGroupForCluster(Cluster* cluster,
                              odb::dbGroup* parent_group) const;
-  void clear();
   void computeWireLength() const;
 
   // Coarse Shaping

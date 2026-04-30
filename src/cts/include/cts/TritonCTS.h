@@ -75,6 +75,8 @@ class TritonCTS
   void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
 
+  void clear();
+
  private:
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
@@ -219,6 +221,7 @@ class TritonCTS
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  stt::SteinerTreeBuilder* st_builder_ = nullptr;
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;

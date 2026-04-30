@@ -65,6 +65,16 @@ Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
 
 Opendp::~Opendp() = default;
 
+void Opendp::clearForReload()
+{
+  importClear();
+  padding_ = std::make_shared<Padding>();
+  decap_masters_.clear();
+  disallow_one_site_gaps_ = false;
+  extra_dpl_enabled_ = false;
+  global_swap_params_ = GlobalSwapParams();
+}
+
 void Opendp::setPaddingGlobal(const int left, const int right)
 {
   padding_->setPaddingGlobal(GridX{left}, GridX{right});

@@ -62,6 +62,8 @@ void Replace::reset()
 
   tb_.reset();
   rb_.reset();
+
+  clusters_.clear();
 }
 
 void Replace::addPlacementCluster(const Cluster& cluster)
