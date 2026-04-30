@@ -864,8 +864,18 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
     // Classify each original iterm and record its tray-port mapping
     // *before* disconnecting, then disconnect/reconnect and store the
     // original pin name as a property on the tray instance.
-    const std::string orig_inst_name(insts_[flops[i].idx]->getName());
-    for (dbITerm* iterm : insts_[flops[i].idx]->getITerms()) {
+    // dbInst::getName() returns the local leaf name when the design has
+    // a populated dbModule hierarchy, so prepend the parent module's
+    // hierarchical name to record the full path.
+    dbInst* const orig_inst = insts_[flops[i].idx];
+    std::string orig_inst_name;
+    if (odb::dbModule* mod = orig_inst->getModule(); mod && mod->getModInst()) {
+      orig_inst_name = mod->getHierarchicalName()
+                       + block_->getHierarchyDelimiter() + orig_inst->getName();
+    } else {
+      orig_inst_name = orig_inst->getName();
+    }
+    for (dbITerm* iterm : orig_inst->getITerms()) {
       // Classify while the iterm is still connected.
       const bool is_d = IsDPin(iterm);
       const bool is_q = !is_d && IsQPin(iterm);

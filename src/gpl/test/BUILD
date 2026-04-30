@@ -18,6 +18,7 @@ TESTS = [
     "error01",
     "incremental01",
     "mbff_orig_name",
+    "mbff_orig_name_hier",
     "nograd01",
     "simple01",
     "simple01-obs",
