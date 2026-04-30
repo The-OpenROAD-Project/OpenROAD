@@ -1455,17 +1455,28 @@ bool TritonCTS::separateMacroRegSinks(
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
     std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks)
 {
+  odb::dbInst* skippedTimingBuf = nullptr;
+
   for (odb::dbITerm* iterm : net->getITerms()) {
     odb::dbInst* inst = iterm->getInst();
 
-    if (buffer_masters.find(inst->getMaster()) != buffer_masters.end()
-        && inst->getSourceType() == odb::dbSourceType::TIMING) {
+    const bool isTimingBuffer
+        = buffer_masters.find(inst->getMaster()) != buffer_masters.end()
+          && inst->getSourceType() == odb::dbSourceType::TIMING;
+
+    if (iterm->isOutputSignal() && isTimingBuffer) {
       logger_->warn(CTS,
                     105,
                     "Net \"{}\" already has clock buffer {}. Skipping...",
                     clockNet.getName(),
                     inst->getName());
       return false;
+    }
+
+    // TIMING buffer sinks are traversed via initOneClockTree, not as sinks.
+    if (iterm->isInputSignal() && isTimingBuffer) {
+      skippedTimingBuf = inst;
+      continue;
     }
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
@@ -1488,6 +1499,14 @@ bool TritonCTS::separateMacroRegSinks(
         registerSinks.emplace_back(inst, mterm);
       }
     }
+  }
+  if (skippedTimingBuf && (registerSinks.size() + macroSinks.size()) < 2) {
+    logger_->warn(CTS,
+                  110,
+                  "Net \"{}\" already has clock buffer {}. Skipping...",
+                  clockNet.getName(),
+                  skippedTimingBuf->getName());
+    return false;
   }
 
   return true;
