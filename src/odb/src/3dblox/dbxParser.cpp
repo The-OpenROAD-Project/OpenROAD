@@ -8,6 +8,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "baseParser.h"
 #include "objects.h"
@@ -90,8 +91,16 @@ void DbxParser::parseDesignExternal(DesignExternal& external,
                                     const YAML::Node& external_node)
 {
   if (external_node["verilog_file"]) {
-    extractValue(external_node, "verilog_file", external.verilog_file);
-    external.verilog_file = resolvePath(external.verilog_file);
+    std::vector<std::string> verilog_files;
+    extractValue(external_node, "verilog_file", verilog_files);
+    if (verilog_files.size() > 1) {
+      logError(
+          "Multiple verilog_file entries for a single Design are currently "
+          "unsupported.");
+    }
+    if (!verilog_files.empty()) {
+      external.verilog_file = resolvePath(verilog_files[0]);
+    }
   }
 }
 
@@ -134,18 +143,41 @@ void DbxParser::parseChipletInstExternal(ChipletInstExternal& external,
                                          const YAML::Node& external_node)
 {
   if (external_node["verilog_file"]) {
-    extractValue(external_node, "verilog_file", external.verilog_file);
-    external.verilog_file = resolvePath(external.verilog_file);
+    std::vector<std::string> verilog_files;
+    extractValue(external_node, "verilog_file", verilog_files);
+    if (verilog_files.size() > 1) {
+      logError(
+          "Multiple verilog_file entries for a single chiplet are currently "
+          "unsupported.");
+    }
+    if (!verilog_files.empty()) {
+      external.verilog_file = resolvePath(verilog_files[0]);
+    }
   }
 
   if (external_node["sdc_file"]) {
-    extractValue(external_node, "sdc_file", external.sdc_file);
-    external.sdc_file = resolvePath(external.sdc_file);
+    std::vector<std::string> sdc_files;
+    extractValue(external_node, "sdc_file", sdc_files);
+    if (sdc_files.size() > 1) {
+      logError(
+          "Multiple sdc_file entries for a single chiplet are currently "
+          "unsupported.");
+    }
+    if (!sdc_files.empty()) {
+      external.sdc_file = resolvePath(sdc_files[0]);
+    }
   }
 
   if (external_node["def_file"]) {
-    extractValue(external_node, "def_file", external.def_file);
-    external.def_file = resolvePath(external.def_file);
+    std::vector<std::string> def_files;
+    extractValue(external_node, "def_file", def_files);
+    if (def_files.size() > 1) {
+      logError(
+          "Multiple def_file entries for a single chiplet are currently "
+          "unsupported.");
+    } else if (!def_files.empty()) {
+      external.def_file = resolvePath(def_files[0]);
+    }
   }
 }
 
