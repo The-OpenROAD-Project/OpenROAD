@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
 
     utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
     if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
-      logger->warn(utl::ORD, 38, "-gui is not yet supported with -python");
+      gui::startGui(cmd_argc, cmd_argv, gui::Interpreter::Python, interp);
     }
 
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_init")) {
@@ -293,11 +293,10 @@ int main(int argc, char* argv[])
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
+    ord::pyAppInit(exit);
 #if PY_VERSION_HEX >= 0x03080000
-    initPython(cmd_argc, cmd_argv, exit);
     return Py_RunMain();
 #else
-    initPython();
     std::vector<wchar_t*> args;
     args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
     if (!exit) {
@@ -319,6 +318,17 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+
+#ifdef ENABLE_PYTHON3
+void ord::pyAppInit(const bool exit_after_cmd_file)
+{
+#if PY_VERSION_HEX >= 0x03080000
+  initPython(cmd_argc, cmd_argv, exit_after_cmd_file);
+#else
+  initPython();
+#endif  // PY_VERSION_HEX >= 0x03080000
+}
+#endif
 
 #ifdef ENABLE_READLINE
 static int tclOrdReadlineInit(Tcl_Interp* interp)
@@ -352,7 +362,14 @@ static int tclAppInit(int& argc,
       ;
     }
 
-    gui::startGui(argc, argv, interp, "", true, !no_settings, minimize);
+    gui::startGui(argc,
+                  argv,
+                  gui::Interpreter::Tcl,
+                  interp,
+                  "",
+                  true,
+                  !no_settings,
+                  minimize);
   } else {
     // Initialize tcl interpreter and readline.
     exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");

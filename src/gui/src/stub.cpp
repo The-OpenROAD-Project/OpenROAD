@@ -202,6 +202,7 @@ void Gui::removeSelectedByType(const std::string& /* type */)
 // using namespace odb;
 int startGui(int& argc,
              char* argv[],
+             Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
