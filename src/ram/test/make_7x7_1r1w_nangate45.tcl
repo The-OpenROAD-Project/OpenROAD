@@ -1,10 +1,3 @@
-# SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2024-2025, The OpenROAD Authors
-#
-# Test: ram/make_7x7_1r1w_nangate45
-# Verifies that generate_ram works correctly with the Nangate45 technology
-# node using a 1 read + 1 write port configuration.
-
 source "helpers.tcl"
 
 set_thread_count [expr [cpu_count] / 4]

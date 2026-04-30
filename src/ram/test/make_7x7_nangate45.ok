@@ -109,10 +109,6 @@
 [INFO DRT-0036] via9 guide region query size = 0.
 [INFO DRT-0036] metal10 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
-Differences found at line 11.
-  SIZE 39.52 BY 11.2 ;
-  SIZE 40.28 BY 11.2 ;
-Differences found at line 6.
-DIEAREA ( 0 0 ) ( 3952 1120 ) ;
-DIEAREA ( 0 0 ) ( 4028 1120 ) ;
+No differences found.
+No differences found.
 No differences found.
