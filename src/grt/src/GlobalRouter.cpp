@@ -357,7 +357,7 @@ void GlobalRouter::startIncremental()
 
 void GlobalRouter::endIncremental(bool save_guides)
 {
-  is_incremental_ = true;
+  is_incremental_ = false;
   fastroute_->setResistanceAware(resistance_aware_);
   updateDirtyRoutes(save_guides);
   grouter_cbk_->removeOwner();
