@@ -18,7 +18,10 @@ using namespace rsz;
 %ignore rsz::Resizer::init;
 %ignore rsz::Resizer::postReadLiberty;
 
+%ignore rsz::Resizer::getSwappableCells;
+%ignore rsz::Resizer::getVTEquivCells;
 %ignore rsz::Resizer::setDebugGraphics;
+%ignore rsz::Resizer::replaceCell;
 
 %ignore rsz::Resizer::orderedLoadPinVertices;
 %ignore rsz::Resizer::resizeWorstSlackNets;
