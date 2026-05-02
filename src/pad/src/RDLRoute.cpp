@@ -8,8 +8,7 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <string_view>
-#include <tuple>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -57,8 +56,8 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
         if (lhs_dist != rhs_dist) {
           return lhs_dist < rhs_dist;
         }
-        const std::string_view lhs_name = lhs->getName();
-        const std::string_view rhs_name = rhs->getName();
+        const std::string& lhs_name = lhs->getName();
+        const std::string& rhs_name = rhs->getName();
         if (lhs_name != rhs_name) {
           return lhs_name < rhs_name;
         }
@@ -101,8 +100,8 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
                                     rhs_shortest->getBBox().center());
 
   if (lhs_dist == rhs_dist) {
-    const std::string_view lhs_name = getTerminal()->getName();
-    const std::string_view rhs_name = other->getTerminal()->getName();
+    const std::string& lhs_name = getTerminal()->getName();
+    const std::string& rhs_name = other->getTerminal()->getName();
     if (lhs_name != rhs_name) {
       return lhs_name < rhs_name;
     }
