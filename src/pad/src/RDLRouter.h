@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -35,6 +36,32 @@ class Logger;
 }
 
 namespace pad {
+
+struct DbNetPtrLess
+{
+  bool operator()(const odb::dbNet* lhs, const odb::dbNet* rhs) const
+  {
+    const std::string lhs_name = lhs->getName();
+    const std::string rhs_name = rhs->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return lhs->getId() < rhs->getId();
+  }
+};
+
+struct DbITermPtrLess
+{
+  bool operator()(const odb::dbITerm* lhs, const odb::dbITerm* rhs) const
+  {
+    const std::string lhs_name = lhs->getName();
+    const std::string rhs_name = rhs->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return lhs->getId() < rhs->getId();
+  }
+};
 
 class RDLRouter;
 
