@@ -8,13 +8,14 @@ Given a standard cell library with the required basic cells, the generator can p
 The generated ram can be checked using the built-in static timing analyzer rather than SPICE simulation, leading to faster turnaround time.
 
 **Major Features**:
-- Support for 1rw memories
+- Support for 1rw, 1rw1r, 1r1w, 2r1w memories
 - Arbitrary word size and number of words (although timing must be checked)
 - Arbitrary word mask granularity
 - Generated behavioral Verilog model for fast, portable simulation
 
 **Tested Platforms**:
 - sky130hd
+- Nangate45
 
 **Planned Features**:
 - See [#9392](https://github.com/The-OpenROAD-Project/OpenROAD/issues/9392)
