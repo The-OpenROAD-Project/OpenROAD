@@ -45,6 +45,8 @@ Recommended conclusion: use map for concrete cells. They are invariant.
  */
 #include "db_sta/dbNetwork.hh"
 
+#include <sys/types.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -4575,18 +4577,17 @@ void dbNetwork::checkSanityModNetPortAliasing() const
           flats += std::to_string(id);
           first = false;
         }
-        logger_->warn(
-            ORD,
-            2059,
-            "SanityCheck: dbModNet '{}' in module '{}' has multiple "
-            "dbModBTerms ({}) whose parent modITerms resolve to "
-            "distinct flat dbNets (ids: {}). The module boundary "
-            "aliases unrelated external nets together, which lets "
-            "STA cross-propagate signals across them.",
-            mn->getName(),
-            module->getHierarchicalName(),
-            ports,
-            flats);
+        logger_->warn(ORD,
+                      2059,
+                      "SanityCheck: dbModNet '{}' in module '{}' has multiple "
+                      "dbModBTerms ({}) whose parent modITerms resolve to "
+                      "distinct flat dbNets (ids: {}). The module boundary "
+                      "aliases unrelated external nets together, which lets "
+                      "STA cross-propagate signals across them.",
+                      mn->getName(),
+                      module->getHierarchicalName(),
+                      ports,
+                      flats);
       }
     }
   }
