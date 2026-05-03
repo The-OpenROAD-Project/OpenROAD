@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <set>
 #include <string>
 
 #include "gtest/gtest.h"
@@ -124,6 +125,92 @@ TEST_F(TestReadVerilog, FeedThrough)
   // We avoid checkAxioms() here because it triggers ORD-2041 on the
   // intentionally unconnected pins (U1/A, U2/ZN), which terminates the test.
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Regression for the deep-descendant modBTerm false-attach bug in
+// Verilog2db::staToDb. The reader must NOT attach a deep-descendant
+// pin (e.g. u_block/u_l2/u_consumer/clk) to a same-named modBTerm
+// of an ancestor module (aliased_port_block::clk). The structural
+// invariant we assert: every dbModNet whose getModBTerms() has size
+// >= 2 must have all those modBTerms' parent modITerms resolve to
+// the same flat dbNet. >= 2 distinct flat nets means the boundary
+// is aliasing electrically-distinct external nets.
+TEST_F(TestReadVerilog, DeepDescendantModBTermCollision)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbModule* mid = block_->findModule("mid");
+  ASSERT_NE(mid, nullptr);
+
+  // Both clk and txclk modBTerms must exist and remain distinct.
+  odb::dbModBTerm* clk_mbt = mid->findModBTerm("clk");
+  odb::dbModBTerm* txclk_mbt = mid->findModBTerm("txclk");
+  ASSERT_NE(clk_mbt, nullptr);
+  ASSERT_NE(txclk_mbt, nullptr);
+  EXPECT_NE(clk_mbt, txclk_mbt);
+
+  // Their parent-side flat dbNets must be electrically distinct
+  // (clk_a vs clk_b at the top scope).
+  auto parent_flat_id = [](odb::dbModBTerm* mbt) -> uint {
+    odb::dbModITerm* pmi = mbt->getParentModITerm();
+    if (pmi == nullptr) {
+      return 0;
+    }
+    odb::dbModNet* pmn = pmi->getModNet();
+    if (pmn == nullptr) {
+      return 0;
+    }
+    odb::dbNet* pflat = pmn->findRelatedNet();
+    return pflat ? pflat->getId() : 0;
+  };
+  uint clk_parent = parent_flat_id(clk_mbt);
+  uint txclk_parent = parent_flat_id(txclk_mbt);
+  ASSERT_NE(clk_parent, 0u);
+  ASSERT_NE(txclk_parent, 0u);
+  EXPECT_NE(clk_parent, txclk_parent)
+      << "clk and txclk modBTerms resolve to the same parent flat dbNet "
+         "(id="
+      << clk_parent
+      << "), but top drives them with two distinct external nets.";
+
+  // Walk every modnet in every module and assert the structural
+  // invariant. This is the same check checkSanityModNetPortAliasing
+  // performs at runtime, but here we fail the test directly instead
+  // of relying on a warning code being emitted.
+  for (odb::dbModule* module : block_->getModules()) {
+    for (odb::dbModNet* mn : module->getModNets()) {
+      auto mbts = mn->getModBTerms();
+      if (mbts.size() < 2) {
+        continue;
+      }
+      std::set<uint> parent_flat_ids;
+      for (odb::dbModBTerm* mbt : mbts) {
+        odb::dbModITerm* pmi = mbt->getParentModITerm();
+        if (pmi == nullptr) {
+          continue;
+        }
+        odb::dbModNet* pmn = pmi->getModNet();
+        if (pmn == nullptr) {
+          continue;
+        }
+        odb::dbNet* pflat = pmn->findRelatedNet();
+        if (pflat != nullptr) {
+          parent_flat_ids.insert(pflat->getId());
+        }
+      }
+      EXPECT_LT(parent_flat_ids.size(), 2u)
+          << "dbModNet '" << mn->getName() << "' in module '"
+          << module->getHierarchicalName()
+          << "' has modBTerms whose parent modITerms resolve to "
+          << parent_flat_ids.size()
+          << " distinct flat dbNets. Boundary aliases unrelated "
+             "external nets.";
+    }
+  }
 }
 
 }  // namespace sta
