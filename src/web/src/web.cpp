@@ -813,6 +813,31 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+// Defined here (not in web_serve.cpp) so the destructor's TU does not
+// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// usable from tests that don't link the full gui library.
+void WebServer::stopAndJoinIoThreads()
+{
+  if (ioc_) {
+    ioc_->stop();
+  }
+  const auto self_id = std::this_thread::get_id();
+  for (auto& t : threads_) {
+    if (!t.joinable()) {
+      continue;
+    }
+    if (t.get_id() == self_id) {
+      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
+      // worker so detaching is safe — the thread runs to completion on
+      // its own.
+      t.detach();
+    } else {
+      t.join();
+    }
+  }
+  threads_.clear();
+}
+
 WebServer::~WebServer()
 {
   // Wake any thread blocked in waitForStop() so it can return before
@@ -825,24 +850,12 @@ WebServer::~WebServer()
 
   // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
   // By this point the Tcl interpreter is partially torn down and static
-  // objects may be destroyed.  Calling stop() (which joins 32 threads
-  // and tears down boost::asio's reactor) triggers SIGSEGV because the
-  // reactor's internal state references destroyed statics.
-  //
-  // Since the destructor only runs at process exit, the OS reclaims all
-  // memory and closes all sockets.  We just need to stop the threads so
-  // the process can actually exit:
-  if (ioc_) {
-    ioc_->stop();
-  }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
-  // Close the Listener's acceptor and release the shared_ptr to it
-  // before the io_context goes away.
+  // objects may be destroyed.  We avoid the full stop() path (which
+  // tears down boost::asio's reactor and would crash on residual async
+  // handlers referencing destroyed statics) — the OS reclaims memory
+  // and sockets at process exit, so we only need to release the worker
+  // threads so the process can actually exit.
+  stopAndJoinIoThreads();
   if (shutdown_listener_) {
     shutdown_listener_();
     shutdown_listener_ = {};

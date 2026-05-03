@@ -37,6 +37,7 @@
 #include "request_dispatcher.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/Logger.h"
 
 namespace web {
 
@@ -1418,12 +1419,27 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    auto result = tcl_eval_->eval(extract_string(req.raw_json, "cmd"));
+    const std::string cmd = extract_string(req.raw_json, "cmd");
+    auto result = tcl_eval_->eval(cmd);
+    // tclExitHandler (web_serve.cpp) sets this sentinel as the Tcl
+    // result whenever `exit`/`quit` is evaluated through the override —
+    // whether typed bare in the browser or buried in `eval`/`source`.
+    // Convert it to a clean shutdown signal for the browser; the actual
+    // teardown is already requested by tclExitHandler via requestStop().
+    const bool is_exit = (result.result == kExitResultMsg);
     JsonBuilder builder;
     builder.beginObject();
     builder.field("output", result.output);
-    builder.field("result", result.result);
-    builder.field("is_error", result.is_error);
+    if (is_exit) {
+      tcl_eval_->logger->info(
+          utl::WEB, 40, "Exit requested from web GUI; shutting down.");
+      builder.field("result", "Exiting OpenROAD.");
+      builder.field("is_error", false);
+      builder.field("action", "shutdown");
+    } else {
+      builder.field("result", result.result);
+      builder.field("is_error", result.is_error);
+    }
     builder.endObject();
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());

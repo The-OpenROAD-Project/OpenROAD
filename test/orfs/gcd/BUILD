@@ -16,8 +16,6 @@ orfs_sweep(
         # Demonstrate clock period specified in arguments, useful
         # for Optuna scripts.
         "ABC_CLOCK_PERIOD_IN_PS": "310.001",
-        # Smoketest
-        "SWAP_ARITH_OPERATORS": "1",
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],

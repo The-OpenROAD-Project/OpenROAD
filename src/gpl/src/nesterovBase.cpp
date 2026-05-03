@@ -839,26 +839,22 @@ void BinGrid::updateBinsNonPlaceArea()
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator&=;
 
-  // Build the union of all non-place instance rectangles. Overlapping
-  // fixed macros (or blockages) would otherwise be double-counted into
-  // the bins they share, pushing density above 100% and producing
-  // artificially large repulsive forces on movable cells.
-  Polygon90Set fixed_set;
-  for (auto& inst : pb_->nonPlaceInsts()) {
+  // For each bin, collect indices of non-place instances whose bbox
+  // overlaps it. The per-bin geometric union (which dedupes overlapping
+  // fixed macros / blockages) only depends on those instances, so we
+  // avoid copying a full design-wide polygon set per bin.
+  const auto& non_place_insts = pb_->nonPlaceInsts();
+  std::vector<std::vector<int>> bin_insts(bins_.size());
+  for (size_t i = 0; i < non_place_insts.size(); ++i) {
+    const Instance* inst = non_place_insts[i];
     if (inst->lx() >= inst->ux() || inst->ly() >= inst->uy()) {
       continue;
     }
-    fixed_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
-  }
-
-  // Identify bins touched by any fixed instance to skip the empty ones.
-  std::vector<bool> touched(bins_.size(), false);
-  for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
-        touched[y * binCntX_ + x] = true;
+        bin_insts[y * binCntX_ + x].push_back(static_cast<int>(i));
       }
     }
   }
@@ -867,13 +863,31 @@ void BinGrid::updateBinsNonPlaceArea()
   // fixed instances). Drives nonPlaceAreaUnscaled and the cap below.
   std::vector<int64_t> unionArea(bins_.size(), 0);
   for (size_t i = 0; i < bins_.size(); ++i) {
-    if (!touched[i]) {
+    const auto& touching = bin_insts[i];
+    if (touching.empty()) {
       continue;
     }
     Bin& bin = bins_[i];
-    Polygon90Set clip = fixed_set;
-    clip &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
-    unionArea[i] = boost::polygon::area(clip);
+    if (touching.size() == 1) {
+      // Single instance: union == clipped overlap, skip Boost.Polygon.
+      const Instance* inst = non_place_insts[touching.front()];
+      const int rectLx = std::max(bin.lx(), inst->lx());
+      const int rectLy = std::max(bin.ly(), inst->ly());
+      const int rectUx = std::min(bin.ux(), inst->ux());
+      const int rectUy = std::min(bin.uy(), inst->uy());
+      if (rectLx < rectUx && rectLy < rectUy) {
+        unionArea[i] = static_cast<int64_t>(rectUx - rectLx)
+                       * static_cast<int64_t>(rectUy - rectLy);
+      }
+    } else {
+      Polygon90Set local_set;
+      for (int idx : touching) {
+        const Instance* inst = non_place_insts[idx];
+        local_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
+      }
+      local_set &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
+      unionArea[i] = boost::polygon::area(local_set);
+    }
     // Note that nonPlaceArea should have scale-down with target
     // density. See MS-replace paper.
     bin.setNonPlaceAreaUnscaled(
@@ -899,7 +913,7 @@ void BinGrid::updateBinsNonPlaceArea()
     }
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
-    if (!touched[i]) {
+    if (bin_insts[i].empty()) {
       continue;
     }
     Bin& bin = bins_[i];

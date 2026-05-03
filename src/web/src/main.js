@@ -361,6 +361,42 @@ function tclAppend(text, className) {
     app.tclOutputEl.scrollTop = app.tclOutputEl.scrollHeight;
 }
 
+// Browser UX for `exit`/`quit` typed in the Tcl console. The browser
+// override (web_serve.cpp tclExitHandler) sets exit_requested_, and
+// Main.cc calls exit(EXIT_SUCCESS) once waitForStop() returns — so the
+// whole OpenROAD process exits, not just the web session. (Compare
+// `web_server -stop`, which only stops serving and arrives here as a
+// broadcast `type: shutdown` handled below.)
+// window.close() only succeeds when the tab was opened via JS (or via
+// certain launcher integrations); when it fails we replace the page
+// with a terminal overlay so the user knows OpenROAD exited and they
+// can close the tab manually.
+function handleServerShutdown() {
+    // Idempotent: invoked from both the Tcl-eval response (`action: shutdown`)
+    // and the broadcast push (`type: shutdown`); whichever arrives first wins.
+    if (app._shutdownHandled) return;
+    app._shutdownHandled = true;
+    // Disable auto-reconnect and suppress the "disconnected" banner —
+    // the disconnect is intentional.
+    if (app.websocketManager) {
+        app.websocketManager._shutdown = true;
+        app.websocketManager.onPush = () => {};
+    }
+    const overlay = document.createElement('div');
+    overlay.style.cssText =
+        'position:fixed;inset:0;z-index:99999;background:#1e1e1e;color:#ddd;' +
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'font-family:system-ui,sans-serif;font-size:16px;padding:24px;text-align:center;';
+    overlay.innerHTML =
+        '<div style="font-size:22px;margin-bottom:12px;">OpenROAD exited</div>' +
+        '<div style="opacity:0.7;">You can close this tab.</div>';
+    document.body.appendChild(overlay);
+    // Hold the overlay visible long enough for the user to read it before
+    // window.close() fires.  400 ms was below the perceptual threshold and
+    // looked like the tab vanished instantly on `exit`.
+    setTimeout(() => { try { window.close(); } catch (e) { /* ignore */ } }, 1500);
+}
+
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
@@ -395,6 +431,9 @@ function createTclConsole(container) {
                     if (data.result) {
                         tclAppend(data.result + '\n',
                                   data.is_error ? 'tcl-error' : '');
+                    }
+                    if (data.action === 'shutdown') {
+                        handleServerShutdown();
                     }
                 })
                 .catch(err => tclAppend(`Error: ${err}\n`, 'tcl-error'));
@@ -730,7 +769,11 @@ app.websocketManager.onPush = (msg) => {
         if (text) tclAppend(text + '\n', '');
     } else if (msg.type === 'shutdown') {
         // Server is stopping intentionally (web_server -stop).
-        // Disable auto-reconnect and show a clear message.
+        // Disable auto-reconnect and show a clear message. Note that
+        // when the user typed `exit`/`quit` in the browser, the eval
+        // response's `action: shutdown` already ran handleServerShutdown
+        // (which set _shutdown and replaced onPush with a no-op), so
+        // this branch only runs in the external-stop case.
         app.websocketManager._shutdown = true;
         statusDiv.innerHTML = '<div class="disconnected-banner">Server stopped</div>';
         statusDiv.style.display = 'block';

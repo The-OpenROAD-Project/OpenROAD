@@ -26,6 +26,12 @@ class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
 
+// Sentinel string set as the Tcl result by WebServer::tclExitHandler
+// when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
+// detects this in handleTclEval and converts the response to a clean
+// shutdown signal for the browser.
+inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
+
 // Thread-safe Tcl command evaluation with output capture.
 struct TclEvaluator
 {
