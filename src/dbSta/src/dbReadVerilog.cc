@@ -658,8 +658,20 @@ bool Verilog2db::staToDb(dbModule* module,
       if (db_inst) {
         iterm = db_inst->findITerm(pin_name.c_str());
       } else {
-        // a port on the module itself (a mod bterm)
-        mod_bterm = module->findModBTerm(pin_name.c_str());
+        // Only treat this as a port of `module` (a modBTerm) when
+        // cur_inst's full hierarchical path matches `module`'s own
+        // hierarchical path. Without this guard, deep-descendant pins
+        // whose path strips to a name also held by one of `module`'s
+        // ports would be falsely attached, since findModBTerm matches
+        // by name only. (E.g., a deep pin path "sub/sub/clk" strips
+        // to "clk" and would collide with `module`'s top-level "clk"
+        // port.) Avoid dbNetwork::staToDb here -- during reader
+        // construction the sta::Instance may not yet be backed by a
+        // dbObject, and the reinterpret_cast inside that function
+        // would crash.
+        if (instance_name == module->getHierarchicalName()) {
+          mod_bterm = module->findModBTerm(pin_name.c_str());
+        }
       }
     }
   }

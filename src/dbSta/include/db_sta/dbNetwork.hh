@@ -69,6 +69,15 @@ class dbNetwork : public ConcreteNetwork
   void checkSanityNetNames() const;
   void checkSanityModNetNamesInModule(odb::dbModule* module) const;
   void checkSanityNetDrvrPinMapConsistency() const;
+  // Detect dbModNets that have multiple dbModBTerms whose parent
+  // modITerms resolve to electrically distinct flat dbNets. This
+  // is a structural integrity violation: the boundary of a single
+  // hierarchical module would be claiming that two unrelated
+  // external nets are the same wire on the inside, which lets
+  // STA cross-propagate clocks across them. Was caused by the
+  // staToDb fall-through bug in dbReadVerilog before commit
+  // <will-fill-after-merge>.
+  void checkSanityModNetPortAliasing() const;
 
   void readLefAfter(odb::dbLib* lib);
   void readDefAfter(odb::dbBlock* block);

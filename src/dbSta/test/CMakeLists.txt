@@ -19,6 +19,7 @@ or_integration_tests(
     hier_deep
     hier_weird_port
     make_port
+    modnet_port_alias
     network_edit1
     power1
     read_def_bus_port

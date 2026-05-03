@@ -4380,6 +4380,7 @@ int dbNetwork::checkAxioms(odb::dbObject* obj) const
     checkSanityInstNames();
     checkSanityNetNames();
     checkSanityModuleInsts();
+    checkSanityModNetPortAliasing();
   }
 
   int post_warn_cnt = logger_->getWarningCount();
@@ -4513,6 +4514,80 @@ void sta::dbNetwork::checkSanityModITerms() const
                        mod_inst->getName());
       }
       iterm_names.insert(iterm_name);
+    }
+  }
+}
+
+// A single dbModNet may have multiple dbModBTerms only if those
+// modBTerms' parent modITerms in the parent scope alias to the SAME
+// flat dbNet. Otherwise the boundary of the module is shorting two
+// electrically-distinct external nets together inside, and STA will
+// cross-propagate clocks/signals across them. This was the symptom
+// of the staToDb fall-through bug in dbReadVerilog: a deep-descendant
+// pin's portName was stripped to a leaf token (e.g. "clk") and
+// findModBTerm matched the wrong modBTerm of `module` by string name
+// alone, attaching it to a modnet built for an unrelated net.
+void dbNetwork::checkSanityModNetPortAliasing() const
+{
+  if (block_ == nullptr) {
+    return;
+  }
+  for (odb::dbModule* module : block_->getModules()) {
+    for (odb::dbModNet* mn : module->getModNets()) {
+      auto mbts = mn->getModBTerms();
+      if (mbts.size() < 2) {
+        continue;
+      }
+      // Resolve each modBTerm's parent-side flat dbNet id and
+      // collect the distinct ids encountered. >= 2 distinct ids
+      // means the boundary aliases two unrelated external nets.
+      std::set<uint> parent_flat_ids;
+      std::vector<std::string> port_names;
+      for (odb::dbModBTerm* mbt : mbts) {
+        port_names.emplace_back(mbt->getName());
+        odb::dbModITerm* pmi = mbt->getParentModITerm();
+        if (pmi == nullptr) {
+          continue;
+        }
+        odb::dbModNet* pmn = pmi->getModNet();
+        if (pmn == nullptr) {
+          continue;
+        }
+        odb::dbNet* pflat = pmn->findRelatedNet();
+        if (pflat != nullptr) {
+          parent_flat_ids.insert(pflat->getId());
+        }
+      }
+      if (parent_flat_ids.size() >= 2) {
+        std::string ports;
+        for (size_t i = 0; i < port_names.size(); ++i) {
+          if (i > 0) {
+            ports += ", ";
+          }
+          ports += "'" + port_names[i] + "'";
+        }
+        std::string flats;
+        bool first = true;
+        for (uint id : parent_flat_ids) {
+          if (!first) {
+            flats += ", ";
+          }
+          flats += std::to_string(id);
+          first = false;
+        }
+        logger_->warn(
+            ORD,
+            2059,
+            "SanityCheck: dbModNet '{}' in module '{}' has multiple "
+            "dbModBTerms ({}) whose parent modITerms resolve to "
+            "distinct flat dbNets (ids: {}). The module boundary "
+            "aliases unrelated external nets together, which lets "
+            "STA cross-propagate signals across them.",
+            mn->getName(),
+            module->getHierarchicalName(),
+            ports,
+            flats);
+      }
     }
   }
 }
