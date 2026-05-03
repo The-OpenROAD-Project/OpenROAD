@@ -114,10 +114,11 @@ sta_to_db_port(Port *port)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbNetwork *db_network = openroad->getDbNetwork();
+  Pin *pin = db_network->findPin(db_network->topInstance(), port);
+  odb::dbITerm *iterm = nullptr;
   odb::dbBTerm *bterm = nullptr;
-  odb::dbMTerm *mterm = nullptr;
-  odb::dbModBTerm *modbterm = nullptr;
-  db_network->staToDb(port, bterm, mterm, modbterm);
+  odb::dbModITerm *moditerm = nullptr;
+  db_network->staToDb(pin, iterm, bterm, moditerm);
   return bterm;
 }
 
