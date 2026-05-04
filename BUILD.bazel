@@ -253,7 +253,10 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
-    deps = ["@abseil-cpp//absl/synchronization"],
+    deps = [
+        "@abseil-cpp//absl/synchronization",
+        "@tcl_lang//:tcl",
+    ],
 )
 
 cc_library(
