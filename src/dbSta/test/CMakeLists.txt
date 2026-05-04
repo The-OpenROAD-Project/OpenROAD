@@ -54,6 +54,8 @@ or_integration_tests(
     sta3
     sta4
     sta5
+    sta_to_db1
+    sta_to_db1_hier
     write_sdc1
     write_verilog1
     write_verilog2
