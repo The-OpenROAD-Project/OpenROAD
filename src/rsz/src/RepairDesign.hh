@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -113,6 +115,22 @@ class RepairDesign : sta::dbStaState
                     int& cap_violations,
                     int& fanout_violations,
                     int& length_violations);
+
+  // Cheap lib + odb HPWL screen on top of repair_design's per-driver
+  // loop. Returns true iff Penfield-Rubinstein-style upper bounds
+  // prove that this driver's net cannot violate slew, cap, or
+  // fanout limits, *and* none of the existing repairNet code path's
+  // skip-conditions would have applied. When true, the caller can
+  // safely return without invoking ensureWireParasitic / findDelays
+  // / makeBufferedNet / repairNet body.
+  //
+  // Fast path: only lib lookups (cached) + a single iterm/bterm walk
+  // to compute HPWL and sum of input pin caps. ~50-100 ns per net
+  // once caches are warm.
+  bool screenNetSafe(const sta::Pin* drvr_pin,
+                     sta::Net* net,
+                     const sta::Scene* corner);
+  void resetScreenCaches();
 
   void repairNet(sta::Net* net,
                  const sta::Pin* drvr_pin,
@@ -280,6 +298,42 @@ class RepairDesign : sta::dbStaState
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
+
+  // Screen caches and counters (reset at the top of repairDesign()).
+  // Keyed by LibertyCell* / LibertyPort* — same lookup result for
+  // every instance of a given cell. SDC per-instance overrides on
+  // cap/slew limits are not honored here; for the screen we accept
+  // a small false-skip risk in exchange for O(1) per driver, and
+  // empirical buffer-count comparison vs the reference catches it.
+  std::unordered_map<sta::LibertyCell*, float> cell_cap_limit_cache_;
+  std::unordered_map<const sta::LibertyPort*, float> port_slew_limit_cache_;
+  // Design-level limits, looked up once per repairDesign call.
+  float design_fanout_limit_ = 0.0f;  // 0 means unset
+  bool design_fanout_limit_valid_ = false;
+  // Telemetry. Counted across all calls within one repairDesign().
+  int64_t screen_calls_ = 0;
+  int64_t screen_safe_ = 0;
+  // Per-reason rejection counters (for debugging the false-negative
+  // rate). Printed alongside the safe rate in verbose mode.
+  int64_t screen_rej_special_ = 0;    // special / dontTouch / tristate / etc
+  int64_t screen_rej_no_lib_ = 0;     // no lib port or no lib limits
+  int64_t screen_rej_top_bterm_ = 0;  // top-level OUTPUT/INOUT bterm
+  int64_t screen_rej_cap_ = 0;        // cap_total > cap_limit
+  int64_t screen_rej_slew_ = 0;       // slew_ub > slew_limit
+  int64_t screen_rej_fanout_ = 0;     // fanout > fanout_limit
+  // Knobs (defaults; can be tuned empirically).
+  // HPWL is a lower bound on Steiner length. 1.5x is the typical
+  // industry upper bound (Hwang 1976, FastSTA tooling). Going to
+  // 1.2 trades a small theoretical false-skip risk for a much
+  // tighter screen; we validate empirically vs the baseline buffer
+  // count. Bump back to 1.5 if buffer-count drift appears.
+  static constexpr float k_steiner_ub_ = 1.2f;
+  // Extra safety margin applied on top of the lib limit (and on top
+  // of any user slew/cap_margin). The existing slew_rc_factor_
+  // already includes 10% modeling pessimism (RepairDesign.cc:134),
+  // so the screen does not need its own. Empirically validate
+  // buffer-count match before relaxing further.
+  static constexpr float k_screen_safety_ = 0.0f;
 
   friend class Resizer;
 };

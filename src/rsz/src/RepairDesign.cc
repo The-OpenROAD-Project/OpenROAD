@@ -91,6 +91,247 @@ void RepairDesign::init()
   }
 }
 
+void RepairDesign::resetScreenCaches()
+{
+  cell_cap_limit_cache_.clear();
+  port_slew_limit_cache_.clear();
+  design_fanout_limit_ = 0.0f;
+  design_fanout_limit_valid_ = false;
+  screen_calls_ = 0;
+  screen_safe_ = 0;
+  screen_rej_special_ = 0;
+  screen_rej_no_lib_ = 0;
+  screen_rej_top_bterm_ = 0;
+  screen_rej_cap_ = 0;
+  screen_rej_slew_ = 0;
+  screen_rej_fanout_ = 0;
+  // Pre-look-up the design-level fanout limit once. The screen
+  // only enforces fanout when this is set (>0) — otherwise the
+  // existing repairNet's checkFanout block is a no-op anyway.
+  if (resizer_->sta_ != nullptr) {
+    const sta::Scene* scene = resizer_->sta_->cmdScene();
+    if (scene && scene->sdc()) {
+      sta::Cell* top_cell = network_->cell(network_->topInstance());
+      float limit = 0.0f;
+      bool exists = false;
+      scene->sdc()->fanoutLimit(top_cell, sta::MinMax::max(), limit, exists);
+      if (exists) {
+        design_fanout_limit_ = limit;
+        design_fanout_limit_valid_ = true;
+      }
+    }
+  }
+}
+
+// Screen a driver's net using only lib + odb HPWL. Returns true iff
+// the net is provably safe (no slew, cap, or fanout violation), so
+// the caller can early-return without invoking the expensive STA
+// path (ensureWireParasitic + findDelays + checkSlew + checkCap +
+// makeBufferedNet).
+//
+// Soundness argument:
+//   - Cap upper bound = (sum of lib pin caps) + k_steiner * HPWL *
+//     wire_signal_cap. HPWL is a lower bound on Steiner length, so
+//     k_steiner >= 1.5 keeps this an upper bound.
+//   - Slew upper bound uses the Penfield-Rubinstein closed form
+//     already present in repairNetWire (line ~1462), with all R/C
+//     lumped at the worst load:
+//       (r_drvr*(c_wire+c_pin) + r_wire*c_pin + r_wire*c_wire/2)
+//       * slew_rc_factor.
+//   - Both upper bounds are then compared against the lib limits
+//     after applying the user-supplied slew_margin / cap_margin
+//     and an additional k_screen_safety_ to absorb model error.
+//
+// We mirror all the existing skip-conditions in repairDriver /
+// repairNet so a screen-safe verdict can never silently bypass a
+// case the existing code would have repaired.
+bool RepairDesign::screenNetSafe(const sta::Pin* drvr_pin,
+                                 sta::Net* net,
+                                 const sta::Scene* corner)
+{
+  ++screen_calls_;
+  if (net == nullptr || corner == nullptr) {
+    ++screen_rej_special_;
+    return false;
+  }
+  // These are the same guards the existing repairDriver path uses.
+  if (db_network_->isSpecial(net) || resizer_->dontTouch(net)
+      || resizer_->isTristateDriver(drvr_pin)) {
+    ++screen_rej_special_;
+    return false;
+  }
+
+  sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  if (drvr_port == nullptr) {
+    ++screen_rej_no_lib_;
+    return false;
+  }
+  sta::LibertyCell* drvr_lib_cell = drvr_port->libertyCell();
+  if (drvr_lib_cell == nullptr) {
+    ++screen_rej_no_lib_;
+    return false;
+  }
+
+  // Cap limit lookup (cached per LibertyCell). Resizer::maxLoad
+  // already does the SDC-top + lib-default merge.
+  float cap_limit;
+  {
+    auto it = cell_cap_limit_cache_.find(drvr_lib_cell);
+    if (it == cell_cap_limit_cache_.end()) {
+      sta::Cell* sta_cell = network_->cell(drvr_lib_cell);
+      cap_limit = (sta_cell != nullptr) ? resizer_->maxLoad(sta_cell) : 0.0f;
+      cell_cap_limit_cache_[drvr_lib_cell] = cap_limit;
+    } else {
+      cap_limit = it->second;
+    }
+  }
+  if (cap_limit <= 0.0f) {
+    ++screen_rej_no_lib_;  // No lib limit known: defer to STA.
+    return false;
+  }
+  cap_limit *= (1.0f - static_cast<float>(cap_margin_) / 100.0f);
+  cap_limit *= (1.0f - k_screen_safety_);
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    ++screen_rej_special_;
+    return false;
+  }
+
+  // Walk iterms + bterms once: bbox merge for HPWL, sum input pin
+  // caps, count fanout, track the tightest load slew limit.
+  odb::Rect bbox;
+  bbox.mergeInit();
+  float c_pins = 0.0f;
+  int fanout = 0;
+  float min_load_slew_limit = std::numeric_limits<float>::infinity();
+
+  for (auto* iterm : db_net->getITerms()) {
+    int x = 0, y = 0;
+    if (iterm->getAvgXY(&x, &y)) {
+      bbox.merge(odb::Rect(x, y, x, y));
+    }
+    const odb::dbIoType io = iterm->getIoType();
+    if (io == odb::dbIoType::INPUT || io == odb::dbIoType::INOUT) {
+      sta::Pin* load_pin = db_network_->dbToSta(iterm);
+      if (load_pin == nullptr) {
+        ++screen_rej_no_lib_;
+        return false;
+      }
+      sta::LibertyPort* load_port = network_->libertyPort(load_pin);
+      if (load_port == nullptr) {
+        ++screen_rej_no_lib_;
+        return false;
+      }
+      c_pins += resizer_->portCapacitance(load_port, corner);
+      ++fanout;
+      auto it = port_slew_limit_cache_.find(load_port);
+      float lim;
+      if (it == port_slew_limit_cache_.end()) {
+        lim = resizer_->maxInputSlew(load_port, corner);
+        port_slew_limit_cache_[load_port] = lim;
+      } else {
+        lim = it->second;
+      }
+      if (lim > 0.0f && lim < min_load_slew_limit) {
+        min_load_slew_limit = lim;
+      }
+    }
+  }
+  for (auto* bterm : db_net->getBTerms()) {
+    int x = 0, y = 0;
+    if (bterm->getFirstPinLocation(x, y)) {
+      bbox.merge(odb::Rect(x, y, x, y));
+    }
+    // A top-level OUTPUT bterm on this net is a load that exits the
+    // chip; we have no lib pin cap for it. Defer to STA.
+    if (bterm->getIoType() == odb::dbIoType::OUTPUT
+        || bterm->getIoType() == odb::dbIoType::INOUT) {
+      ++screen_rej_top_bterm_;
+      return false;
+    }
+  }
+
+  // Fanout check (only when a design-level limit is set).
+  if (design_fanout_limit_valid_ && design_fanout_limit_ > 0.0f) {
+    const float fanout_limit = design_fanout_limit_ * (1.0f - k_screen_safety_);
+    if (static_cast<float>(fanout) > fanout_limit) {
+      ++screen_rej_fanout_;
+      return false;
+    }
+  }
+
+  if (fanout == 0) {
+    // No loads: no slew/cap to check. Trivially safe.
+    ++screen_safe_;
+    return true;
+  }
+
+  // Slew limit: tightest of driver-port and load-port limits.
+  float drvr_slew_limit;
+  {
+    auto it = port_slew_limit_cache_.find(drvr_port);
+    if (it == port_slew_limit_cache_.end()) {
+      drvr_slew_limit = resizer_->maxInputSlew(drvr_port, corner);
+      port_slew_limit_cache_[drvr_port] = drvr_slew_limit;
+    } else {
+      drvr_slew_limit = it->second;
+    }
+  }
+  if (drvr_slew_limit <= 0.0f) {
+    drvr_slew_limit = std::numeric_limits<float>::infinity();
+  }
+  float slew_limit = std::min(drvr_slew_limit, min_load_slew_limit);
+  if (!std::isfinite(slew_limit) || slew_limit <= 0.0f) {
+    ++screen_rej_no_lib_;  // No slew limit known: defer to STA.
+    return false;
+  }
+  slew_limit *= (1.0f - static_cast<float>(slew_margin_) / 100.0f);
+  slew_limit *= (1.0f - k_screen_safety_);
+
+  // HPWL -> upper bound on Steiner wire length, in meters.
+  const int hpwl_dbu = bbox.dx() + bbox.dy();
+  const double wire_len_m
+      = dbuToMeters(hpwl_dbu) * static_cast<double>(k_steiner_ub_);
+  const double wire_cap_per_m
+      = estimate_parasitics_->wireSignalCapacitance(corner);
+  const double wire_res_per_m
+      = estimate_parasitics_->wireSignalResistance(corner);
+  if (!(wire_cap_per_m >= 0.0) || !(wire_res_per_m >= 0.0)) {
+    ++screen_rej_no_lib_;
+    return false;
+  }
+
+  const double c_wire = wire_len_m * wire_cap_per_m;
+  const double c_total = static_cast<double>(c_pins) + c_wire;
+  if (c_total > cap_limit) {
+    ++screen_rej_cap_;
+    return false;
+  }
+
+  // Penfield-Rubinstein lumped Elmore upper bound; same shape as
+  // repairNetWire's load_slew estimate at line ~1462.
+  float r_drvr = resizer_->driveResistance(drvr_pin);
+  // Mirror existing clip for top ports without specified drive.
+  r_drvr = std::max(r_drvr, r_strongest_buffer_);
+  const double r_wire = wire_len_m * wire_res_per_m;
+  if (!slew_rc_factor_.has_value()) {
+    ++screen_rej_no_lib_;
+    return false;
+  }
+  const double slew_ub
+      = (static_cast<double>(r_drvr) * (c_wire + static_cast<double>(c_pins))
+         + r_wire * static_cast<double>(c_pins) + r_wire * c_wire / 2.0)
+        * static_cast<double>(*slew_rc_factor_);
+  if (slew_ub > static_cast<double>(slew_limit)) {
+    ++screen_rej_slew_;
+    return false;
+  }
+
+  ++screen_safe_;
+  return true;
+}
+
 void RepairDesign::computeSlewRCFactor()
 {
   const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
@@ -302,6 +543,7 @@ void RepairDesign::repairDesign(
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
+  resetScreenCaches();
 
   sta_->checkSlewsPreamble();
   sta_->checkCapacitancesPreamble(sta_->scenes());
@@ -390,6 +632,16 @@ void RepairDesign::repairDesign(
                   repaired_net_count,
                   static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
+    int64_t last_screen_calls = 0;
+    int64_t last_screen_safe = 0;
+    // Approximate per-instance memory cost. Used only for a
+    // *deterministic* memory-pressure estimate in the verbose log
+    // — every run with the same design produces identical numbers,
+    // so two runs can be diff'd. This is intentionally rough; the
+    // point is the trend, not the absolute value.
+    static constexpr int kBytesPerInst = 5 * 1024;  // ~5 KB / inst
+    const int64_t initial_insts
+        = static_cast<int64_t>(network_->instanceCount());
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
       print_iteration++;
       if (verbose || (print_iteration == 1)) {
@@ -398,6 +650,38 @@ void RepairDesign::repairDesign(
                       false,
                       repaired_net_count,
                       static_cast<int>(driver_vertices.size()));
+        // Emit a per-bucket screen diagnostic. Verbose-only so
+        // non-verbose regression .ok files are unaffected. The
+        // line is deterministic (no timestamps, no measured RSS):
+        // every column is a function of the design state at this
+        // iteration, so two runs with the same input produce the
+        // same line.
+        if (verbose && print_iteration > 1
+            && print_iteration % print_interval_ == 0 && screen_calls_ > 0) {
+          const int64_t bucket_calls = screen_calls_ - last_screen_calls;
+          const int64_t bucket_safe = screen_safe_ - last_screen_safe;
+          const int64_t insts_now = initial_insts + inserted_buffer_count_;
+          const double est_mem_gb
+              = static_cast<double>(insts_now * kBytesPerInst)
+                / (1024.0 * 1024.0 * 1024.0);
+          logger_->report(
+              "[screen] bucket {}/{} safe; cum {}/{} safe; "
+              "rej cap={} slew={} other={}; "
+              "est design mem ~{:.1f} GB ({} insts × {} KB)",
+              bucket_safe,
+              bucket_calls,
+              screen_safe_,
+              screen_calls_,
+              screen_rej_cap_,
+              screen_rej_slew_,
+              screen_rej_special_ + screen_rej_no_lib_ + screen_rej_top_bterm_
+                  + screen_rej_fanout_,
+              est_mem_gb,
+              insts_now,
+              kBytesPerInst / 1024);
+          last_screen_calls = screen_calls_;
+          last_screen_safe = screen_safe_;
+        }
       }
       sta::Vertex* drvr = driver_vertices[i];
       repairDriver(drvr,
@@ -435,6 +719,34 @@ void RepairDesign::repairDesign(
                 true,
                 repaired_net_count,
                 static_cast<int>(driver_vertices.size()));
+  if (verbose && screen_calls_ > 0) {
+    // Deterministic end-of-run summary: every value is a function
+    // of the input, no timestamps, no measured memory.
+    static constexpr int kBytesPerInst = 5 * 1024;
+    const int64_t insts_now
+        = static_cast<int64_t>(network_->instanceCount())
+          + 0;  // already updated in-place by buffer insertions
+    const double est_mem_gb = static_cast<double>(insts_now * kBytesPerInst)
+                              / (1024.0 * 1024.0 * 1024.0);
+    const double pct = 100.0 * static_cast<double>(screen_safe_)
+                       / static_cast<double>(screen_calls_);
+    logger_->report(
+        "[repair_design screen] {}/{} drivers safe ({:.1f}%); "
+        "rejects: cap={} slew={} special={} no_lib={} top_bterm={} "
+        "fanout={}; final design ~{:.1f} GB ({} insts × {} KB)",
+        screen_safe_,
+        screen_calls_,
+        pct,
+        screen_rej_cap_,
+        screen_rej_slew_,
+        screen_rej_special_,
+        screen_rej_no_lib_,
+        screen_rej_top_bterm_,
+        screen_rej_fanout_,
+        est_mem_gb,
+        insts_now,
+        kBytesPerInst / 1024);
+  }
   db_network_->removeUnusedPortsAndPinsOnModuleInstances();
 }
 
@@ -997,20 +1309,29 @@ void RepairDesign::repairDriver(sta::Vertex* drvr,
       && !sta_->isClock(drvr_pin, sta_->cmdMode())
       // Exclude tie hi/low cells and supply nets.
       && !sta_->isConstant(drvr_pin, sta_->cmdMode())) {
-    repairNet(net,
-              drvr_pin,
-              drvr,
-              check_slew,
-              check_cap,
-              check_fanout,
-              max_length,
-              resize_drvr,
-              corner_w_load_slew_viol,
-              repaired_net_count,
-              slew_violations,
-              cap_violations,
-              fanout_violations,
-              length_violations);
+    // Cheap lib + odb HPWL screen. When all three repair checks are
+    // requested (the repair_design main loop's case), and the
+    // Penfield-Rubinstein closed-form bound proves no violation,
+    // skip the entire expensive STA path. Sound by construction.
+    if (check_slew && check_cap && check_fanout
+        && screenNetSafe(drvr_pin, net, sta_->cmdScene())) {
+      // No-op: screened safe.
+    } else {
+      repairNet(net,
+                drvr_pin,
+                drvr,
+                check_slew,
+                check_cap,
+                check_fanout,
+                max_length,
+                resize_drvr,
+                corner_w_load_slew_viol,
+                repaired_net_count,
+                slew_violations,
+                cap_violations,
+                fanout_violations,
+                length_violations);
+    }
   }
 
   if (debug) {
@@ -1096,7 +1417,26 @@ void RepairDesign::repairNet(sta::Net* net,
         slew_violation = true;
         if (repairDriverSlew(corner1, drvr_pin)) {
           resize_count_++;
-          estimate_parasitics_->updateParasitics();
+          // Refresh ONLY this driver's net parasitics, not the
+          // global invalidated set. The OdbCallBack from
+          // inDbInstSwapMasterAfter has invalidated parasitics
+          // on every net touching this resized instance; flushing
+          // all of them via updateParasitics() walks each net's
+          // fanin and inserts every reachable vertex into
+          // Search::invalid_arrivals_/invalid_requireds_ (a
+          // std::set<Vertex*>) — that cascade was ~14% of CPU
+          // in the long-tail perf trace, and most of those
+          // invalidated delays will be needed only when their
+          // upstream drivers are processed later in the loop,
+          // at which point their own ensureWireParasitic() refreshes
+          // them. By limiting the refresh to drvr_pin's net here
+          // we keep the local recheck correct (findDelays sees
+          // fresh parasitics for this driver) without paying for
+          // the global cascade.
+          sta::Net* drvr_net = db_network_->findFlatNet(drvr_pin);
+          if (drvr_net) {
+            estimate_parasitics_->ensureWireParasitic(drvr_pin, drvr_net);
+          }
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
         }
@@ -1159,23 +1499,33 @@ void RepairDesign::repairNet(sta::Net* net,
 
     // For tristate nets all we can do is resize the driver.
     if (!resizer_->isTristateDriver(drvr_pin)) {
-      BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner);
+      // Skip the Steiner-tree build entirely when nothing in this
+      // block can possibly trigger a repair. needRepairWire only
+      // fires when max_length > 0; if no slew/cap violation was
+      // detected and there's no wire-length limit, building bnet
+      // and calling maxLoadWireLength is pure overhead — and
+      // makeBufferedNet/makeBufferedNetSteiner are among the
+      // most expensive per-driver operations in this loop.
+      const bool need_bnet = repair_cap || repair_load_slew || (max_length > 0);
+      if (need_bnet) {
+        BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner);
 
-      if (!bnet) {
-        // Create a Steiner bnet in case we haven't selected a source of
-        // parasitics
-        bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
-      }
+        if (!bnet) {
+          // Create a Steiner bnet in case we haven't selected a
+          // source of parasitics
+          bnet = resizer_->makeBufferedNetSteiner(drvr_pin, corner);
+        }
 
-      if (bnet) {
-        int wire_length = bnet->maxLoadWireLength();
-        repair_wire
-            = needRepairWire(max_length, wire_length, length_violations);
+        if (bnet) {
+          int wire_length = bnet->maxLoadWireLength();
+          repair_wire
+              = needRepairWire(max_length, wire_length, length_violations);
 
-        // Insert buffers on the Steiner tree if need be
-        if (repair_cap || repair_load_slew || repair_wire) {
-          repaired_net = true;
-          repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+          // Insert buffers on the Steiner tree if need be
+          if (repair_cap || repair_load_slew || repair_wire) {
+            repaired_net = true;
+            repairNet(bnet, drvr_pin, max_cap, max_length, corner);
+          }
         }
       }
     }
