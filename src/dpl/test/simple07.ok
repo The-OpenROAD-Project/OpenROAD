@@ -14,11 +14,11 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          8.8 u
-average displacement        0.9 u
+total displacement         11.6 u
+average displacement        1.2 u
 max displacement            2.0 u
 original HPWL              65.5 u
-legalized HPWL             83.5 u
+legalized HPWL             83.0 u
 delta HPWL                   27 %
 
 No differences found.

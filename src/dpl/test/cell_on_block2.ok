@@ -12,29 +12,28 @@
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |      10153 |       719 |      7561
-        1 |       8689 |       568 |      6376
-        2 |       7100 |       494 |      5443
-        3 |       5081 |       411 |      4154
-        4 |       3678 |       341 |      3259
-        5 |       2994 |       261 |      2485
-        6 |       2279 |       222 |      2021
-        7 |       1931 |       179 |      1710
-        8 |       1512 |       142 |      1364
-        9 |       1240 |       132 |      1075
-       10 |       1060 |       108 |       925
-       20 |         96 |        14 |        82
-       30 |         48 |         6 |        42
-       40 |          4 |         2 |         2
-       47 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 47.
+        0 |      10183 |       717 |      7548
+        1 |       8762 |       576 |      6402
+        2 |       6761 |       491 |      5301
+        3 |       5034 |       403 |      4179
+        4 |       3845 |       338 |      3353
+        5 |       3075 |       284 |      2668
+        6 |       2371 |       236 |      2087
+        7 |       1897 |       191 |      1667
+        8 |       1628 |       168 |      1430
+        9 |       1216 |       126 |      1027
+       10 |       1048 |       116 |       932
+       20 |         78 |         8 |        70
+       30 |         14 |         2 |        12
+       38 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 38.
 Placement Analysis
 ---------------------------------
-total displacement       7073.3 u
+total displacement       7024.3 u
 average displacement        0.6 u
 max displacement           12.4 u
 original HPWL         1353118.6 u
-legalized HPWL        1392996.0 u
+legalized HPWL        1392068.5 u
 delta HPWL                    3 %
 
 No differences found.

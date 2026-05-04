@@ -18,7 +18,7 @@ module reg1 (clk,
  DFF_X1 r1 (.D(in),
     .CK(clk),
     .Q(r1q));
- DFF_X1 r10 (.D(net2),
+ DFF_X1 r10 (.D(net),
     .CK(clk));
  DFF_X1 r11 (.D(net),
     .CK(clk));
@@ -32,13 +32,13 @@ module reg1 (clk,
     .CK(clk));
  DFF_X1 r5 (.D(net),
     .CK(clk));
- DFF_X1 r6 (.D(net),
+ DFF_X1 r6 (.D(net2),
     .CK(clk));
  DFF_X1 r7 (.D(net2),
     .CK(clk));
- DFF_X1 r8 (.D(net),
+ DFF_X1 r8 (.D(net2),
     .CK(clk));
- DFF_X1 r9 (.D(net2),
+ DFF_X1 r9 (.D(net),
     .CK(clk));
  BUF_X4 rebuffer1 (.A(net3),
     .Z(net1));

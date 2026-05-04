@@ -56,18 +56,18 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |       2693 |        71 |      1174
-        1 |        369 |        19 |       299
-        2 |        102 |         6 |        96
+        1 |        303 |        15 |       237
+        2 |         37 |         3 |        34
         3 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 3.
 Placement Analysis
 ---------------------------------
-total displacement         49.0 u
+total displacement         50.4 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL               3.6 u
-legalized HPWL            106.7 u
-delta HPWL                 2841 %
+legalized HPWL            106.5 u
+delta HPWL                 2838 %
 
 max fanout
 
@@ -78,11 +78,11 @@ drvr/Q                                   10     70    -60 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       144
-    final |     +2.2% |       0 |       9 |             1 |         0
+    final |     +2.0% |       0 |       8 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.
-[INFO RSZ-0038] Inserted 9 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 8 buffers in 1 nets.
 max fanout
 
 Pin                                   Limit Fanout  Slack

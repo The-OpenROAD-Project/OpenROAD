@@ -58,25 +58,24 @@ Using 2 tracks default min distance between IO pins.
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
         0 |      99529 |       279 |      4743
-        1 |      44176 |       272 |      4624
-        2 |      26461 |       271 |      4402
-        3 |      17385 |       237 |      3814
-        4 |      11894 |       200 |      3120
-        5 |       7652 |       132 |      2002
-        6 |       5345 |        87 |      1406
-        7 |       3296 |        54 |       892
-        8 |       1357 |        31 |       527
-        9 |        318 |        12 |       204
-       10 |         36 |         2 |        34
-       11 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 11.
+        1 |      44162 |       272 |      4624
+        2 |      26257 |       263 |      4371
+        3 |      17080 |       240 |      3873
+        4 |      11436 |       198 |      3163
+        5 |       7469 |       133 |      2015
+        6 |       4745 |        83 |      1272
+        7 |       2793 |        53 |       851
+        8 |       1151 |        29 |       493
+        9 |        282 |        10 |       170
+       10 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 10.
 Placement Analysis
 ---------------------------------
-total displacement        190.4 u
+total displacement        191.8 u
 average displacement        0.7 u
 max displacement            1.4 u
 original HPWL             605.0 u
-legalized HPWL            626.0 u
+legalized HPWL            625.4 u
 delta HPWL                    3 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
@@ -96,8 +95,8 @@ delta HPWL                    3 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(25840, 106799), (25840, 106799)].
-[INFO CTS-0024]  Normalized sink region: [(1.84571, 7.6285), (1.84571, 7.6285)].
+[INFO CTS-0023]  Original sink region: [(24700, 109599), (24700, 109599)].
+[INFO CTS-0024]  Normalized sink region: [(1.76429, 7.8285), (1.76429, 7.8285)].
 [INFO CTS-0025]     Width:  0.0000.
 [INFO CTS-0026]     Height: 0.0000.
  Level 1
@@ -117,13 +116,13 @@ delta HPWL                    3 %
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 28.
-[INFO CTS-0024]  Normalized sink region: [(0.236143, 0.497571), (3.49871, 10.0576)].
-[INFO CTS-0025]     Width:  3.2626.
-[INFO CTS-0026]     Height: 9.5600.
+[INFO CTS-0024]  Normalized sink region: [(0.230714, 0.45), (3.382, 9.8)].
+[INFO CTS-0025]     Width:  3.1513.
+[INFO CTS-0026]     Height: 9.3500.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
-    Sub-region size: 3.2626 X 4.7800
+    Sub-region size: 3.1513 X 4.6750
 [INFO CTS-0034]     Segment length (rounded): 2.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
@@ -144,7 +143,7 @@ delta HPWL                    3 %
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 280
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 37.56 um
+[INFO CTS-0101]  Average sink wire length 37.42 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core

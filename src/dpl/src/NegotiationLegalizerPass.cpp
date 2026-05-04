@@ -795,7 +795,10 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     if (cells_[a].height != cells_[b].height) {
       return cells_[a].height < cells_[b].height;
     }
-    return cells_[a].width < cells_[b].width;
+    if (cells_[a].width != cells_[b].width) {
+      return cells_[a].width < cells_[b].width;
+    }
+    return a < b;
   });
 }
 
