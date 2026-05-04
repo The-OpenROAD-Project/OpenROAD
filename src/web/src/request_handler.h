@@ -3,13 +3,16 @@
 
 #pragma once
 
+#include <boost/json/object.hpp>
+#include <boost/json/value.hpp>
+#include <boost/json/value_to.hpp>
 #include <cstdint>
-#include <limits>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -23,8 +26,15 @@
 
 namespace web {
 
+class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
+
+// Sentinel string set as the Tcl result by WebServer::tclExitHandler
+// when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
+// detects this in handleTclEval and converts the response to a clean
+// shutdown signal for the browser.
+inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
 // Thread-safe Tcl command evaluation with output capture.
 struct TclEvaluator
@@ -103,93 +113,33 @@ struct WebSocketRequest
 
   uint32_t id = 0;
   Type type = kUnknown;
-  std::string layer;
-  int z = 0;
-  int x = 0;
-  int y = 0;
-
-  // SELECT fields
-  int select_x = 0;
-  int select_y = 0;
-  int select_zoom = 0;
-  std::set<std::string> visible_layers;
-
-  // INSPECT / HOVER fields
-  int select_id = -1;
-
-  // TCL_EVAL fields
-  std::string tcl_cmd;
-
-  // TCL_COMPLETE fields
-  std::string tcl_complete_line;
-  int tcl_complete_cursor_pos = -1;
-
-  // SCHEMATIC_CONE / SCHEMATIC_INSPECT fields
-  std::string schematic_inst_name;
-  int schematic_fanin_depth = 1;
-  int schematic_fanout_depth = 1;
-
-  // TIMING_REPORT fields
-  bool timing_is_setup = true;
-  int timing_max_paths = 100;
-  float timing_slack_min = -std::numeric_limits<float>::max();
-  float timing_slack_max = std::numeric_limits<float>::max();
-
-  // TIMING_HIGHLIGHT fields
-  int timing_path_index = -1;  // -1 = clear
-  bool timing_highlight_setup = true;
-  std::string timing_pin_name;  // optional: highlight this pin's net in yellow
-
-  // CLOCK_TREE_HIGHLIGHT fields
-  std::string clock_tree_inst_name;
-
-  // SLACK_HISTOGRAM fields
-  bool histogram_is_setup = true;
-  std::string histogram_path_group;
-  std::string histogram_clock;
-
-  // SET_FOCUS_NETS fields
-  std::string focus_action;  // "add", "remove", "clear"
-  std::string focus_net_name;
-
-  // SET_ROUTE_GUIDES fields
-  std::string route_guide_action;  // "add", "remove", "clear"
-  std::string route_guide_net_name;
-
-  // LIST_DIR fields
-  std::string dir_path;
-
-  // SNAP fields
-  int snap_x = 0;
-  int snap_y = 0;
-  int snap_radius = 0;
-  int snap_point_threshold = 10;
-  bool snap_horizontal = true;
-  bool snap_vertical = true;
-
-  // DRC fields
-  std::string drc_category_name;
-  int drc_marker_id = -1;
-  std::string drc_file_path;
-  std::string drc_field;  // "visited" or "visible"
-  bool drc_field_value = false;
-
-  // Heat map fields
-  std::string heatmap_name;
-  std::string heatmap_option;
-  std::string heatmap_string_value;
-  std::string raw_json;
-
-  // Visibility flags (default: all visible)
-  TileVisibility vis;
+  boost::json::object json;  // parsed payload; empty on parse failure
+  // Original `"type"` string from the JSON, even when not registered.
+  // Used by the kUnknown error path for diagnosability.  Empty when
+  // the message was malformed (parse threw) or had no `type` field.
+  std::string raw_type;
+  // Set to the boost::json exception message when JSON parsing or one
+  // of the required envelope reads (id/type) failed.  Surfaced in the
+  // kUnknown error payload so WEB-0043 names the actual parse error.
+  std::string parse_error;
 };
 
 struct WebSocketResponse
 {
+  enum PayloadType : uint8_t
+  {
+    kJson = 0,
+    kPng = 1,
+    kError = 2
+  };
+
   uint32_t id = 0;
-  // 0 = JSON payload, 1 = PNG payload, 2 = error
-  uint8_t type = 0;
+  PayloadType type = kJson;
   std::vector<unsigned char> payload;
+  // Original `"type"` string from the request, used by the kError
+  // logging path for diagnosability.  Annotated by WebSocketSession::on_read
+  // after the handler returns; handlers do not need to set it.
+  std::string request_type;
 };
 
 // Shared mutable state for a WebSocket session.
@@ -228,29 +178,23 @@ struct SessionState
   std::string active_heatmap;
 };
 
-// Minimal JSON field extraction (no JSON library dependency).
-std::string extract_string(const std::string& json, const std::string& key);
-int extract_int(const std::string& json, const std::string& key);
-int extract_int_or(const std::string& json,
-                   const std::string& key,
-                   int default_val);
-float extract_float_or(const std::string& json,
-                       const std::string& key,
-                       float default_val);
-std::set<std::string> extract_string_array(const std::string& json,
-                                           const std::string& key);
-
-// Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
-WebSocketResponse dispatch_request(
-    const WebSocketRequest& req,
-    const TileGenerator& gen,
-    const std::vector<odb::Rect>& highlight_rects = {},
-    const std::vector<odb::Polygon>& highlight_polys = {},
-    const std::vector<ColoredRect>& colored_rects = {},
-    const std::vector<FlightLine>& flight_lines = {},
-    const std::map<uint32_t, Color>* module_colors = nullptr,
-    const std::set<uint32_t>* focus_net_ids = nullptr,
-    const std::set<uint32_t>* route_guide_net_ids = nullptr);
+// Optional-field accessor: returns the JSON value at `key` converted to T,
+// or `default_val` when the key is missing.  Throws
+// (boost::system::system_error) when the key is present but the JSON type
+// doesn't convert to T — that's a frontend/backend contract violation, surface
+// it.
+//
+// For required fields, prefer the bare boost::json idiom
+// `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
+// which throws on either missing or wrong-typed input.
+template <class T>
+T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
+{
+  if (auto* v = obj.if_contains(key)) {
+    return boost::json::value_to<T>(*v);
+  }
+  return default_val;
+}
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -258,6 +202,7 @@ class SelectHandler
  public:
   SelectHandler(std::shared_ptr<TileGenerator> gen,
                 std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   WebSocketResponse handleSelect(const WebSocketRequest& req,
                                  SessionState& state);
@@ -287,6 +232,7 @@ class TclHandler
 {
  public:
   explicit TclHandler(std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   WebSocketResponse handleTclEval(const WebSocketRequest& req);
   WebSocketResponse handleTclComplete(const WebSocketRequest& req);
@@ -302,6 +248,7 @@ class TimingHandler
   TimingHandler(std::shared_ptr<TileGenerator> gen,
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   WebSocketResponse handleTimingReport(const WebSocketRequest& req);
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
@@ -322,6 +269,7 @@ class ClockTreeHandler
   ClockTreeHandler(std::shared_ptr<TileGenerator> gen,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   WebSocketResponse handleClockTree(const WebSocketRequest& req);
   WebSocketResponse handleClockTreeHighlight(const WebSocketRequest& req,
@@ -338,6 +286,7 @@ class TileHandler
 {
  public:
   explicit TileHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
@@ -355,6 +304,25 @@ class TileHandler
                                       SessionState& state);
 
  private:
+  static WebSocketResponse serializeBounds(uint32_t id,
+                                           const TileGenerator& gen);
+  static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);
+  static WebSocketResponse renderTile(
+      uint32_t id,
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis,
+      const TileGenerator& gen,
+      const std::vector<odb::Rect>& highlight_rects,
+      const std::vector<odb::Polygon>& highlight_polys,
+      const std::vector<ColoredRect>& colored_rects,
+      const std::vector<FlightLine>& flight_lines,
+      const std::map<uint32_t, Color>* module_colors,
+      const std::set<uint32_t>* focus_net_ids,
+      const std::set<uint32_t>* route_guide_net_ids);
+
   std::shared_ptr<TileGenerator> gen_;
 };
 
@@ -364,6 +332,7 @@ class DRCHandler
 {
  public:
   explicit DRCHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
 
   WebSocketResponse handleDRCCategories(const WebSocketRequest& req);
   WebSocketResponse handleDRCMarkers(const WebSocketRequest& req,

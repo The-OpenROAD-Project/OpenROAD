@@ -13,6 +13,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -48,6 +49,38 @@ using odb::dbTechLayerType;
 namespace drt {
 
 namespace bgi = boost::geometry::index;
+
+namespace {
+
+std::tuple<int, std::string, int> getBlockObjectSortKey(frBlockObject* obj)
+{
+  if (obj == nullptr) {
+    return {-1, "", -1};
+  }
+
+  switch (obj->typeId()) {
+    case frcNet: {
+      auto* net = static_cast<frNet*>(obj);
+      return {obj->typeId(), net->getName(), net->getId()};
+    }
+    case frcBTerm: {
+      auto* term = static_cast<frBTerm*>(obj);
+      return {obj->typeId(), term->getName(), term->getId()};
+    }
+    case frcInstTerm: {
+      auto* term = static_cast<frInstTerm*>(obj);
+      return {obj->typeId(), term->getName(), term->getId()};
+    }
+    case drcNet: {
+      auto* net = static_cast<drNet*>(obj);
+      return {obj->typeId(), net->getFrNet()->getName(), net->getId()};
+    }
+    default:
+      return {obj->typeId(), "", obj->getId()};
+  }
+}
+
+}  // namespace
 
 bool FlexDRWorker::isRoutePatchWire(const frPatchWire* pwire) const
 {
@@ -2373,10 +2406,25 @@ void FlexDRWorker::route_queue_update_queue(
     const std::vector<RouteQueueEntry>& routes,
     std::queue<RouteQueueEntry>& rerouteQueue)
 {
-  for (auto& route : routes) {
+  auto sorted_routes = routes;
+  auto sorted_checks = checks;
+  auto compare_route_queue_entry
+      = [](const RouteQueueEntry& lhs, const RouteQueueEntry& rhs) {
+          return std::make_tuple(lhs.doRoute,
+                                 lhs.numReroute,
+                                 getBlockObjectSortKey(lhs.block),
+                                 getBlockObjectSortKey(lhs.checkingObj))
+                 < std::make_tuple(rhs.doRoute,
+                                   rhs.numReroute,
+                                   getBlockObjectSortKey(rhs.block),
+                                   getBlockObjectSortKey(rhs.checkingObj));
+        };
+  std::ranges::sort(sorted_routes, compare_route_queue_entry);
+  std::ranges::sort(sorted_checks, compare_route_queue_entry);
+  for (auto& route : sorted_routes) {
     rerouteQueue.push(route);
   }
-  for (auto& check : checks) {
+  for (auto& check : sorted_checks) {
     rerouteQueue.push(check);
   }
 }

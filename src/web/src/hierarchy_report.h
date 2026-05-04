@@ -3,8 +3,13 @@
 
 #pragma once
 
+#include <boost/json/object.hpp>
+#include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
+
+#include "color.h"
 
 namespace odb {
 class dbBlock;
@@ -40,6 +45,7 @@ struct HierarchyNode
   int local_modules = 0;    // direct child module count
   HierarchyNodeKind node_kind = HierarchyNodeKind::kModule;
   unsigned int odb_id = 0;  // dbModule::getId() for MODULE nodes
+  Color color;              // set by getReport() for MODULEs
 };
 
 struct HierarchyResult
@@ -58,5 +64,14 @@ class HierarchyReport
   odb::dbBlock* block_;
   sta::dbSta* sta_;
 };
+
+// JSON serialization (shared by handleModuleHierarchy and saveReport).
+boost::json::object serializeHierarchyResult(const HierarchyResult& result);
+
+// Compute the module color map for the default UI state (depth-1+ modules
+// collapsed, all visible).  Returns odb module id → RGBA color, ready for
+// use in tile rendering.
+std::map<uint32_t, Color> computeDefaultModuleColors(
+    const HierarchyResult& result);
 
 }  // namespace web

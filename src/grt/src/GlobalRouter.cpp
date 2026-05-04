@@ -87,6 +87,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
+      num_threads_(1),
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
@@ -108,6 +109,28 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   fastroute_
       = new FastRouteCore(db_, logger_, service_registry_, stt_builder_, sta_);
   cugr_ = new CUGR(db_, logger_, service_registry_, stt_builder_, sta_);
+}
+
+void GlobalRouter::setNumThreads(int num_threads)
+{
+  num_threads_ = num_threads;
+  fastroute_->setNumThreads(num_threads_);
+}
+
+void GlobalRouter::setSnapshotBatchedWidth(int snapshot_batched_width)
+{
+  snapshot_batched_width_ = snapshot_batched_width;
+  fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
+}
+
+int GlobalRouter::getSnapshotBatchedWidth() const
+{
+  return fastroute_->getSnapshotBatchedWidth();
+}
+
+int GlobalRouter::getSnapshotBatchCount() const
+{
+  return fastroute_->getSnapshotBatchCount();
 }
 
 void GlobalRouter::initGui(
@@ -496,6 +519,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
+    // Repopulate edge usage from routes_ using updateNetResources, which
+    // uses layer_edge_cost (essential to NDR nets).
+    for (const auto& [db_net, groute] : routes_) {
+      if (!isDetailedRouted(db_net)) {
+        auto it = db_net_map_.find(db_net);
+        if (it != db_net_map_.end()) {
+          updateNetResources(it->second, false);
+        }
+      }
+    }
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -2317,6 +2350,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
   fastroute_->setResistanceAware(resistance_aware_);
+  fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);
@@ -3838,9 +3872,17 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 
 void GlobalRouter::computeWirelength()
 {
+  std::vector<odb::dbNet*> routed_nets;
+  routed_nets.reserve(routes_.size());
+  for (const auto& [db_net, route] : routes_) {
+    routed_nets.push_back(db_net);
+  }
+
   int64_t total_wirelength = 0;
-  for (auto& net_route : routes_) {
-    total_wirelength += computeNetWirelength(net_route.first);
+#pragma omp parallel for num_threads(num_threads_) \
+    reduction(+ : total_wirelength)
+  for (int i = 0; i < static_cast<int>(routed_nets.size()); i++) {
+    total_wirelength += computeNetWirelength(routed_nets[i]);
   }
   logger_->metric("global_route__wirelength",
                   total_wirelength / block_->getDefUnits());
@@ -4394,8 +4436,13 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
     if (preserved_net->areSegmentsRestored()
         && deleted_net->areSegmentsRestored()) {
       // Both preserved and deleted nets have segments restored from ODB. Do
-      // nothing, as the resources used by the deleted net were included in
-      // the preserved net.
+      // nothing to 3D resources, as the resources used by the deleted net were
+      // included in the preserved net.
+      // clearNetRoute releases sttrees usage (no-op for restored nets) but
+      // keeps db_net in db_net_id_map_; deleteNet then removes the stale entry
+      // so future nets at the same pointer address find no mapping.
+      fastroute_->clearNetRoute(db_net);
+      fastroute_->deleteNet(db_net);
     } else if (preserved_net->areSegmentsRestored()) {
       // If preserved net has segments restored from ODB, it won't have routing
       // data inside FastRouteCore. Instead of merging the deleted net into
@@ -4413,8 +4460,10 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       // the capacities used by the deleted net.
       // Remove usage from the preserved net.
       fastroute_->clearNetRoute(preserved_net->getDbNet());
-      // Remove usage of the deleted net.
+      fastroute_->clearNetRoute(db_net);
+      // Remove usage from the deleted net.
       updateNetResources(deleted_net, true);
+      fastroute_->deleteNet(db_net);
       preserved_net->setAreSegmentsRestored(true);
       // Include usage of the merged net.
       updateNetResources(preserved_net, false);
@@ -4422,9 +4471,12 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       fastroute_->mergeNet(db_net, preserved_net->getDbNet());
     }
   } else {
-    fastroute_->removeNet(db_net);
     if (deleted_net->areSegmentsRestored()) {
+      fastroute_->clearNetRoute(db_net);
       updateNetResources(deleted_net, true);
+      fastroute_->deleteNet(db_net);
+    } else {
+      fastroute_->removeNet(db_net);
     }
   }
   delete deleted_net;

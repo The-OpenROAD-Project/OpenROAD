@@ -133,13 +133,13 @@ class Search : public odb::dbBlockCallBackObj
     Iterator end_;
   };
   using InstRange = std::vector<odb::dbInst*>;
-  using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
-  using SNetSBoxRange = Range<RtreeSNetDBoxShapes<odb::dbNet*>>;
-  using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
+  using RoutingRange = std::vector<RouteBoxValue<odb::dbNet*>>;
+  using SNetSBoxRange = std::vector<SNetDBoxValue<odb::dbNet*>>;
+  using SNetShapeRange = std::vector<SNetValue<odb::dbNet*>>;
   using FillRange = std::vector<odb::dbFill*>;
-  using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
-  using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
-  using RowRange = Range<RtreeRect<odb::dbRow*>>;
+  using ObstructionRange = std::vector<odb::dbObstruction*>;
+  using BlockageRange = std::vector<odb::dbBlockage*>;
+  using RowRange = std::vector<RectValue<odb::dbRow*>>;
 
   explicit Search(utl::Logger* logger);
   ~Search() override;

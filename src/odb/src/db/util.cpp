@@ -519,14 +519,15 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
                                   int64_t& hpwl_x,
                                   int64_t& hpwl_y) const
 {
+  hpwl_x = 0;
+  hpwl_y = 0;
+
   if (net->getSigType().isSupply() || net->isSpecial()) {
     return 0;
   }
 
   Rect bbox = net->getTermBBox();
   if (bbox.isInverted()) {
-    hpwl_x = 0;
-    hpwl_y = 0;
     return 0;
   }
 
@@ -539,10 +540,10 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
 void WireLengthEvaluator::reportEachNetHpwl(utl::Logger* logger) const
 {
   for (dbNet* net : block_->getNets()) {
-    int64_t tmp;
+    int64_t tmp_x, tmp_y;
     logger->report("{} {}",
                    net->getConstName(),
-                   block_->dbuToMicrons(hpwl(net, tmp, tmp)));
+                   block_->dbuToMicrons(hpwl(net, tmp_x, tmp_y)));
   }
 }
 
