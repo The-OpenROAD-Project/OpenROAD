@@ -84,7 +84,7 @@ cc_library(
         "src/dbSdcNetwork.hh",
     ],
     includes = [
-        "include",
+        "src",
     ],
     deps = [
         "//src/sta:opensta_lib",

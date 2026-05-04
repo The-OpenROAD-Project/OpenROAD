@@ -24,6 +24,9 @@ cc_library(
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
