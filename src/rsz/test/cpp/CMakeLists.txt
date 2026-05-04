@@ -140,3 +140,22 @@ gtest_discover_tests(TestResizerMt
 
 add_dependencies(build_and_test TestResizerMt
 )
+
+add_executable(TestParsePhases TestParsePhases.cc)
+target_link_libraries(TestParsePhases
+        GTest::gtest
+        GTest::gtest_main
+        rsz_lib
+)
+
+target_include_directories(TestParsePhases
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestParsePhases
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestParsePhases
+)

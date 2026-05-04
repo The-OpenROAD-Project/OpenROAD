@@ -28,6 +28,7 @@ add_library(rsz_lib
     MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
+    dispatch.cc
     SetupMt1Policy.cc
     Resizer.cc
     OdbCallBack.cc

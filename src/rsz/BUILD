@@ -23,6 +23,8 @@ cc_library(
         "src/DelayEstimator.hh",
         "src/DelayEstimatorReporter.cc",
         "src/DelayEstimatorReporter.hh",
+        "src/dispatch.cc",
+        "src/dispatch.hh",
         "src/MeasuredVtSwapPolicy.cc",
         "src/MeasuredVtSwapPolicy.hh",
         "src/MoveCommitter.cc",

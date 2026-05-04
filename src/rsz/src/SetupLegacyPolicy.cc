@@ -32,6 +32,7 @@
 #include "SwapPinsGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbSta.hh"
+#include "dispatch.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -804,28 +805,9 @@ bool SetupLegacyPolicy::runSetup()
     reportCustomPhaseSetup();
   }
 
-  auto getPhaseMarker = [](int phase_index) -> char {
-    constexpr char special_markers[] = "*+^&@!-=";
-    constexpr int num_special = 8;
-    if (phase_index < num_special) {
-      return special_markers[phase_index];
-    }
-    phase_index -= num_special;
-    if (phase_index < 26) {
-      return 'a' + phase_index;
-    }
-    phase_index -= 26;
-    if (phase_index < 26) {
-      return 'A' + phase_index;
-    }
-    return '?';
-  };
-
-  std::istringstream phase_stream(phases);
-  std::string phase_name;
-  int phase_index = 0;
-  while (phase_stream >> phase_name) {
-    const char phase_marker = getPhaseMarker(phase_index++);
+  for (const PhaseStep& phase_step : parsePhases(phases)) {
+    const std::string& phase_name = phase_step.name;
+    const char phase_marker = phase_step.marker;
     if (phase_name == "LEGACY") {
       committer_.capturePrePhaseSlack();
       MainRepairState main_state;
