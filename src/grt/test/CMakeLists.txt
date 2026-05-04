@@ -100,5 +100,10 @@ or_integration_tests(
     upper_layer_net
     write_segments1
     write_segments2
+  PASSFAIL_TESTS
+    snapshot_batched_bus_route
+    snapshot_batched_incremental_state
+    snapshot_batched_smoke
+    snapshot_batched_single_thread_smoke
+    thread_count_reports
 )
-

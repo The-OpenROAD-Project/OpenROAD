@@ -16,11 +16,7 @@ set -euo pipefail
 PREFIX=""
 CI="no"
 SAVE_DEPS_PREFIXES=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    NUM_THREADS=$(sysctl -n hw.logicalcpu)
-else
-    NUM_THREADS=$(nproc)
-fi
+NUM_THREADS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 SKIP_SYSTEM_OR_TOOLS="false"
 BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 CMAKE_PACKAGE_ROOT_ARGS=""
@@ -76,6 +72,15 @@ FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
 OR_TOOLS_VERSION_BIG="9.14"
 OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
+INSTALL_BAZEL="no"
+INSTALL_BAZEL_DEV="no"
+NO_GUI="no"
+BAZELISK_VERSION="1.28.1"
+BAZELISK_CHECKSUM_AMD64="2dc74b7ad6bdd6b6b08f6802d14fc1fd"
+BAZELISK_CHECKSUM_ARM64="94415d08ed2f86a49375f25a7f2f9cca"
+BUILDIFIER_VERSION="8.5.1"
+BUILDIFIER_CHECKSUM_AMD64="72f5953ab6dcc309a4447c2e2d79c680"
+BUILDIFIER_CHECKSUM_ARM64="06f52f0872bde33685c6260110261cf7"
 # ... configuration variables will be added here ...
 
 # ==============================================================================
@@ -784,6 +789,93 @@ _install_or_tools() {
 # Each dependency will have its own dedicated function for installation and
 # version management. This modular approach makes the script easier to
 # maintain and extend.
+# ------------------------------------------------------------------------------
+# Bazel
+# ------------------------------------------------------------------------------
+_install_bazel() {
+    local bazel_prefix=${PREFIX:-"/usr/local"}
+    log "Checking Bazel (via bazelisk)"
+    if _command_exists "bazelisk"; then
+        log "bazelisk already installed, skipping."
+        INSTALL_SUMMARY+=("Bazel: system=found, required=any, status=skipped")
+        return
+    fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing bazelisk via Homebrew..." brew install bazelisk
+    else
+        local arch
+        arch=$(uname -m)
+        local bazelisk_arch="amd64"
+        if [[ "${arch}" == "aarch64" ]]; then
+            bazelisk_arch="arm64"
+        fi
+        local bazelisk_checksum="${BAZELISK_CHECKSUM_AMD64}"
+        if [[ "${bazelisk_arch}" == "arm64" ]]; then
+            bazelisk_checksum="${BAZELISK_CHECKSUM_ARM64}"
+        fi
+        (
+            cd "${BASE_DIR}"
+            _execute "Downloading bazelisk v${BAZELISK_VERSION}..." curl -Lo bazelisk \
+                "https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-${bazelisk_arch}"
+            _verify_checksum "${bazelisk_checksum}" "bazelisk" || error "Bazelisk checksum failed."
+            chmod +x bazelisk
+            _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
+        )
+        if [[ "${NO_GUI}" != "yes" ]]; then
+            # Install xcb libraries needed for GUI support with Bazel builds
+            if _command_exists "apt-get"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    apt-get -y install --no-install-recommends \
+                    libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
+                    libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
+                    libxcb-xinerama0-dev libxcb-xkb-dev
+            elif _command_exists "yum"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    yum install -y \
+                    libxcb-devel xcb-util-devel xcb-util-image-devel \
+                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel
+            fi
+        fi
+    fi
+    INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
+}
+
+# ------------------------------------------------------------------------------
+# Bazel Dev Tools (buildifier, etc.)
+# ------------------------------------------------------------------------------
+_install_bazel_dev() {
+    local bazel_prefix=${PREFIX:-"/usr/local"}
+    log "Checking Bazel dev tools (buildifier)"
+    if _command_exists "buildifier"; then
+        log "buildifier already installed, skipping."
+        INSTALL_SUMMARY+=("buildifier: system=found, required=any, status=skipped")
+        return
+    fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing buildifier via Homebrew..." brew install buildifier
+    else
+        local arch
+        arch=$(uname -m)
+        local buildifier_arch="amd64"
+        if [[ "${arch}" == "aarch64" ]]; then
+            buildifier_arch="arm64"
+        fi
+        local buildifier_checksum="${BUILDIFIER_CHECKSUM_AMD64}"
+        if [[ "${buildifier_arch}" == "arm64" ]]; then
+            buildifier_checksum="${BUILDIFIER_CHECKSUM_ARM64}"
+        fi
+        (
+            cd "${BASE_DIR}"
+            _execute "Downloading buildifier v${BUILDIFIER_VERSION}..." curl -Lo buildifier \
+                "https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-${buildifier_arch}"
+            _verify_checksum "${buildifier_checksum}" "buildifier" || error "Buildifier checksum failed."
+            chmod +x buildifier
+            _execute "Installing buildifier..." mv buildifier "${bazel_prefix}/bin/buildifier"
+        )
+    fi
+    INSTALL_SUMMARY+=("buildifier: system=none, required=latest, status=installed")
+}
+
 _install_common_dev() {
     log "Install common development dependencies (-common or -all)"
     rm -rf "${BASE_DIR}"
@@ -1043,6 +1135,9 @@ Options:
   -base                       Install base dependencies using package managers. Requires privileged access.
   -common                     Install common dependencies.
   -eqy                        Install equivalence dependencies (yosys, eqy, sby).
+  -bazel                      Download and install bazel (via bazelisk).
+  -bazel-dev                  Download and install bazel developer tools (buildifier, etc.).
+  -no-gui                     Skip GUI-only dependencies (e.g. xcb libraries) when used with -bazel.
   -prefix=DIR                 Install common dependencies in a user-specified directory.
   -local                      Install common dependencies in \${HOME}/.local.
   -ci                         Install dependencies required for CI.
@@ -1068,6 +1163,9 @@ main() {
             -base) option="base" ;;
             -common) option="common" ;;
             -eqy) EQUIVALENCE_DEPS="yes" ;;
+            -bazel) INSTALL_BAZEL="yes" ;;
+            -bazel-dev) INSTALL_BAZEL_DEV="yes" ;;
+            -no-gui) NO_GUI="yes" ;;
             -ci) CI="yes" ;;
             -verbose) VERBOSE_MODE="yes" ;;
             -local)
@@ -1113,8 +1211,23 @@ main() {
         shift 1
     done
 
+    if [[ "${option}" == "none" && "${INSTALL_BAZEL}" == "no" && "${INSTALL_BAZEL_DEV}" == "no" ]]; then
+        error "You must use one of: -all, -base, -common, -bazel, or -bazel-dev."
+    fi
+
+    # -bazel-dev implies -bazel (you need bazelisk to use buildifier)
+    if [[ "${INSTALL_BAZEL}" == "yes" || "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
+        _install_bazel
+    fi
+
+    if [[ "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
+        _install_bazel_dev
+    fi
+
     if [[ "${option}" == "none" ]]; then
-        error "You must use one of: -all, -base, or -common."
+        _print_summary
+        rm -rf "${BASE_DIR}"
+        return
     fi
 
     OR_TOOLS_PATH=${PREFIX:-"/opt/or-tools"}

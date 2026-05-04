@@ -153,7 +153,16 @@ export class DrcWidget {
         this._infoBar.textContent = `${total} total violation${total !== 1 ? 's' : ''}`;
 
         const subcats = this._markerTree.subcategories || [];
-        if (subcats.length === 0) {
+        const directMarkers = this._markerTree.markers || [];
+        const topNodes = [...subcats];
+        if (directMarkers.length > 0) {
+            topNodes.unshift({
+                name: this._markerTree.name || 'Markers',
+                count: directMarkers.length,
+                markers: directMarkers,
+            });
+        }
+        if (topNodes.length === 0) {
             this._treeContainer.innerHTML = '<div class="drc-empty">No violations</div>';
             return;
         }
@@ -161,8 +170,8 @@ export class DrcWidget {
         const tree = document.createElement('div');
         tree.className = 'drc-tree';
 
-        for (const subcat of subcats) {
-            tree.appendChild(this._buildCategoryNode(subcat));
+        for (const node of topNodes) {
+            tree.appendChild(this._buildCategoryNode(node));
         }
 
         this._treeContainer.appendChild(tree);
@@ -345,7 +354,7 @@ export class DrcWidget {
             type: 'drc_update_marker',
             marker_id: markerId,
             field: field,
-            value: value ? 1 : 0
+            value: !!value
         }).then(() => {
             this._redrawAllLayers();
         }).catch(err => {
@@ -371,7 +380,7 @@ export class DrcWidget {
         this._app.websocketManager.request({
             type: 'drc_update_category_visibility',
             category: category.name,
-            visible: visible ? 1 : 0
+            visible: !!visible
         }).then(() => {
             const checks = nodeEl.querySelectorAll(
                 '.drc-marker-row > .drc-visibility-check');

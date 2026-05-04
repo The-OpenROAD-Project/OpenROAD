@@ -668,6 +668,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+  if (global_router_ != nullptr) {
+    global_router_->setNumThreads(threads_);
+  }
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 
 #include "clock_tree_report.h"
 #include "gtest/gtest.h"
@@ -19,6 +22,12 @@ namespace {
 std::string payloadStr(const WebSocketResponse& resp)
 {
   return std::string(resp.payload.begin(), resp.payload.end());
+}
+
+// Helper to parse a JSON literal into a boost::json::object for tests.
+boost::json::object parseObj(std::string_view json)
+{
+  return boost::json::parse(json).as_object();
 }
 
 //------------------------------------------------------------------------------
@@ -136,7 +145,7 @@ TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.raw_json = R"({"inst_name":"clkbuf1"})";
+  req.json = parseObj(R"({"inst_name":"clkbuf1"})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.id, 1u);
@@ -157,7 +166,7 @@ TEST_F(ClockTreeHighlightTest, HighlightNonExistentInstance)
   WebSocketRequest req;
   req.id = 2;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.raw_json = R"({"inst_name":"does_not_exist"})";
+  req.json = parseObj(R"({"inst_name":"does_not_exist"})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -182,7 +191,7 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
   WebSocketRequest req;
   req.id = 3;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.raw_json = R"({"inst_name":""})";
+  req.json = parseObj(R"({"inst_name":""})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);

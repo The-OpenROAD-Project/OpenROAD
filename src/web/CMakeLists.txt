@@ -131,7 +131,11 @@ target_include_directories(web
     ${OPENROAD_HOME}/third-party
 )
 
-target_compile_definitions(web PRIVATE BOOST_ASIO_NO_DEPRECATED)
+target_compile_definitions(web
+  PRIVATE
+    BOOST_ASIO_NO_DEPRECATED
+    BOOST_JSON_HEADER_ONLY
+)
 
 messages(
   TARGET web

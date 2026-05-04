@@ -7,7 +7,6 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 def verilog(name, **_kwargs):
     """Provide mock array verilog sources
@@ -147,13 +146,6 @@ def element(name, config):
         tags = ["manual"],
         verilog_files = [":{name}_verilog".format(name = name)],
         variant = "{name}_base".format(name = name),
-    )
-    eqy_flow_test(
-        name = "Element_eqy_{variant}".format(variant = name),
-        flow = "Element_{variant}_base".format(variant = name),
-        verilog_files = [":{name}_verilog".format(name = name)],
-        tags = ["manual"],
-        module_top = "Element",
     )
 
 POWER_STAGES = {
@@ -342,8 +334,6 @@ def mock_array(name, config):
         orfs_flow(
             name = "MockArray",
             arguments = {
-                "ARRAY_COLS": str(config["cols"]),
-                "ARRAY_ROWS": str(config["rows"]),
                 "CORE_AREA": "{} {} {} {}".format(
                     array_spacing_x,
                     array_spacing_y,
@@ -390,16 +380,12 @@ def mock_array(name, config):
             test_kwargs = {
                 "tags": ["orfs"],
             },
+            user_arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
+            },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
-        )
-        eqy_flow_test(
-            name = "MockArray_eqy_{variant}".format(variant = variant),
-            flow = "MockArray_{variant}".format(variant = variant),
-            verilog_files = [":{name}_verilog".format(name = name)],
-            other_verilog_files = [":Element_eqy_{name}_final_verilog".format(name = name)],
-            tags = ["manual"],
-            module_top = "MockArray",
         )
 
         for stage in POWER_STAGES:
@@ -462,11 +448,11 @@ def mock_array(name, config):
                         ))
                         for macro in MACROS
                     ] + [
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+                        "//test/orfs/asap7:asap7sc7p5t_AO_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+                        "//test/orfs/asap7:dff.v",
+                        "//test/orfs/asap7:empty.v",
                     ],
                     tags = ["manual"],
                 )

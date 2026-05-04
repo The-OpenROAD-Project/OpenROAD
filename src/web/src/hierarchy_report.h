@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <boost/json/object.hpp>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -64,10 +65,8 @@ class HierarchyReport
   sta::dbSta* sta_;
 };
 
-class JsonBuilder;  // forward
-
 // JSON serialization (shared by handleModuleHierarchy and saveReport).
-void serializeHierarchyResult(JsonBuilder& b, const HierarchyResult& result);
+boost::json::object serializeHierarchyResult(const HierarchyResult& result);
 
 // Compute the module color map for the default UI state (depth-1+ modules
 // collapsed, all visible).  Returns odb module id → RGBA color, ready for

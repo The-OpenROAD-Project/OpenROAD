@@ -163,6 +163,7 @@ cc_library(
     name = "tcl_readline_setup",
     srcs = ["src/tcl_readline_setup.cc"],
     hdrs = ["src/tcl_readline_setup.h"],
+    includes = ["src"],
     visibility = ["//src/sta:__pkg__"],
     deps = [
         "@tcl_lang//:tcl",
@@ -253,7 +254,10 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
-    deps = ["@abseil-cpp//absl/synchronization"],
+    deps = [
+        "@abseil-cpp//absl/synchronization",
+        "@tcl_lang//:tcl",
+    ],
 )
 
 cc_library(
