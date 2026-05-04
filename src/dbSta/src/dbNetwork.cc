@@ -2793,6 +2793,15 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   //    dbNet to maintain cache consistency between multiple hierarchical nets
   //    corresponding to a single physical net.
 
+  // 0. Bulk-delete mode: caller will invalidate the cache wholesale in
+  //    endBulkDelete(). Skipping per-pin maintenance avoids the
+  //    findRelatedModNets DFS, which dominates eliminate_dead_logic on
+  //    hierarchical designs because every disconnect re-walks the modnet
+  //    hierarchy from scratch.
+  if (bulk_delete_mode_) {
+    return;
+  }
+
   // 1. Load pin case
   if (isLoad(pin)) {
     return;  // No need to update net_drvr_pin_map_ cache.
@@ -5150,6 +5159,19 @@ void dbNetwork::removeDriverFromCache(const Net* net)
     delete entry->second;
     net_drvr_pin_map_.erase(entry);
   }
+}
+
+void dbNetwork::beginBulkDelete()
+{
+  bulk_delete_mode_ = true;
+}
+
+void dbNetwork::endBulkDelete()
+{
+  bulk_delete_mode_ = false;
+  // Per-disconnect cache maintenance was suppressed; the cache may now
+  // reference deleted pins. Drop it; lazy rebuild on next drivers() query.
+  clearNetDrvrPinMap();
 }
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)

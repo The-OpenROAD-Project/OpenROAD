@@ -428,6 +428,17 @@ class dbNetwork : public ConcreteNetwork
   void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
+  // Suspend per-disconnect driver-cache maintenance for the duration of a
+  // bulk netlist edit (e.g. eliminate_dead_logic). While this mode is
+  // active, disconnectPinBefore is a no-op: the caller promises to
+  // invalidate the entire driver cache via endBulkDelete() once finished.
+  // Avoids quadratic-shaped findRelatedModNets DFS work on hierarchical
+  // designs (each call would otherwise re-walk the modnet hierarchy from
+  // scratch).
+  void beginBulkDelete();
+  void endBulkDelete();
+  bool inBulkDelete() const { return bulk_delete_mode_; }
+
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;
@@ -488,6 +499,7 @@ class dbNetwork : public ConcreteNetwork
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
+  bool bulk_delete_mode_ = false;
 };
 
 }  // namespace sta

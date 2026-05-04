@@ -5394,12 +5394,19 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
   }
 
   int remove_inst_count = 0, remove_net_count = 0;
+  // Suspend per-disconnect driver-cache maintenance during the sweep.
+  // Without this, every dead pin disconnect runs a fresh DFS through the
+  // modnet hierarchy (findRelatedModNets), which dominates runtime on
+  // hierarchical / keep_hierarchy designs and grows with design size.
+  // endBulkDelete() invalidates the cache once, after the sweep.
+  db_network_->beginBulkDelete();
   for (auto inst : network_->leafInstances()) {
     if (!kept_instances.contains(inst)) {
       sta_->deleteInstance((sta::Instance*) inst);
       remove_inst_count++;
     }
   }
+  db_network_->endBulkDelete();
 
   if (clean_nets) {
     auto nets = db_network_->block()->getNets();
