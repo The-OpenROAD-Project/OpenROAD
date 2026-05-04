@@ -18,8 +18,13 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/error.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/asio/steady_timer.hpp"
+#include "boost/asio/strand.hpp"
+#include "boost/system/error_code.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "boost/beast/core.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
@@ -168,6 +173,13 @@ void WebServer::serve(int port)
     logger_->addSink(log_sink_);
     viewer_hook_->setDrainLogsFn(
         [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
+    // Flush WebLogSink at the end of every Tcl eval so log output
+    // emitted during a command reaches clients before the response
+    // carrying the Tcl result.  viewer_hook_ outlives every io thread
+    // that can run a request handler (stop() joins io threads before
+    // resetting viewer_hook_), so the raw pointer capture is safe.
+    tcl_eval->drain_output
+        = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
 
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
@@ -209,6 +221,17 @@ void WebServer::serve(int port)
     shutdown_listener_ = std::move(handle.shutdown);
 
     const std::string url = "http://localhost:" + std::to_string(handle.port);
+
+    // Bind the timer to a strand so all timer operations (expires_after,
+    // async_wait, cancel) run serialized on a single io thread.  Without
+    // this, stop()'s cancel from the caller thread would race with the
+    // async_wait handler rescheduling on a worker thread — the same
+    // steady_timer cannot be safely mutated from multiple threads.  The
+    // initial scheduleLogDrain() below runs before io threads start, so
+    // it is single-threaded by construction.
+    log_drain_timer_ = std::make_unique<net::steady_timer>(
+        net::make_strand(ioc_->get_executor()));
+    scheduleLogDrain();
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
@@ -275,6 +298,32 @@ int WebServer::tclExitHandler(ClientData clientData,
   return TCL_ERROR;
 }
 
+// Drain interval chosen to keep the browser console feeling live without
+// burning CPU when nothing is logged.  An idle tick costs one mutex
+// acquire + empty-buffer check inside WebLogSink::drainToClients.
+static constexpr auto kLogDrainInterval = std::chrono::milliseconds(250);
+
+void WebServer::scheduleLogDrain()
+{
+  if (!log_drain_timer_) {
+    return;
+  }
+  log_drain_timer_->expires_after(kLogDrainInterval);
+  log_drain_timer_->async_wait([this](const boost::system::error_code& ec) {
+    // operation_aborted means cancel() was called from stop().  Any
+    // other error (or none) means the timer fired normally — drain and
+    // reschedule.  ioc_->stop() in stop() will discard a re-armed timer
+    // before its next firing, so no UAF risk on shutdown.
+    if (ec == net::error::operation_aborted) {
+      return;
+    }
+    if (viewer_hook_) {
+      viewer_hook_->drainLogs();
+    }
+    scheduleLogDrain();
+  });
+}
+
 void WebServer::requestStop()
 {
   if (!isRunning()) {
@@ -316,7 +365,20 @@ void WebServer::stop()
     shutdown_listener_();
     shutdown_listener_ = {};
   }
+  // Cancel the periodic log drain so its handler stops re-arming.  The
+  // cancel is posted onto the timer's strand so it runs serialized with
+  // scheduleLogDrain — calling cancel() directly from the caller thread
+  // would race with the async_wait handler mutating the timer on an io
+  // thread.  Any in-flight handler completes normally; a re-armed timer
+  // is discarded by ioc_->stop() below.
+  if (log_drain_timer_) {
+    auto* timer = log_drain_timer_.get();
+    net::post(timer->get_executor(), [timer] { timer->cancel(); });
+  }
   stopAndJoinIoThreads();
+  // Reset only after threads are joined so no handler can dereference
+  // the timer mid-shutdown.
+  log_drain_timer_.reset();
   // Release without destroying — destroying io_context can crash on
   // residual async handlers. Leak is bounded (at most one io_context
   // per serve/stop cycle).

@@ -505,12 +505,12 @@ function createTclConsole(container) {
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
             completer.addToHistory(cmd);
             input.value = '';
+            // Log output produced while the command runs streams in
+            // separately as {"type":"log",...} push messages (handled
+            // below in the onPush dispatch).  The eval response only
+            // carries the Tcl return value plus shutdown signaling.
             app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
-                    if (data.output) {
-                        tclAppend(data.output,
-                                  data.is_error ? 'tcl-error' : '');
-                    }
                     if (data.result) {
                         tclAppend(data.result + '\n',
                                   data.is_error ? 'tcl-error' : '');

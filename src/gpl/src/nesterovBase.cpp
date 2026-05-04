@@ -4,7 +4,6 @@
 #include "nesterovBase.h"
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -23,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "nesterovPlace.h"

@@ -7,6 +7,7 @@
 #include <boost/json/value.hpp>
 #include <boost/json/value_to.hpp>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -36,16 +37,23 @@ class ClockTreeReport;
 // shutdown signal for the browser.
 inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
-// Thread-safe Tcl command evaluation with output capture.
+// Thread-safe Tcl command evaluation.  Log output emitted while the
+// command runs is captured by WebLogSink (registered on the logger via
+// addSink) and pushed to clients as {"type":"log",...} messages — do
+// NOT redirect the logger to a string here.  redirectStringBegin clears
+// the entire sink list, which would unhook WebLogSink (and any other
+// sink) for the duration of the command and break log streaming.  After
+// each eval the optional drain_output hook is invoked so any buffered
+// log output reaches clients before the eval response is sent.
 struct TclEvaluator
 {
   Tcl_Interp* interp;
   utl::Logger* logger;
   std::mutex mutex;
+  std::function<void()> drain_output;
 
   struct Result
   {
-    std::string output;
     std::string result;
     bool is_error;
   };
@@ -58,12 +66,13 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    logger->redirectStringBegin();
     const int rc = Tcl_Eval(interp, cmd.c_str());
     Result r;
-    r.output = logger->redirectStringEnd();
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
+    if (drain_output) {
+      drain_output();
+    }
     return r;
   }
 };

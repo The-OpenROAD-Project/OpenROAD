@@ -169,6 +169,7 @@ cc_library(
         "@boost.beast",
         "@boost.geometry",
         "@boost.json",
+        "@boost.system",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],

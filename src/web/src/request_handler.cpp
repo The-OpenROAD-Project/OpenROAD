@@ -1208,7 +1208,6 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
     // teardown is already requested by tclExitHandler via requestStop().
     const bool is_exit = (result.result == kExitResultMsg);
     boost::json::object root;
-    root["output"] = result.output;
     if (is_exit) {
       tcl_eval_->logger->info(
           utl::WEB, 40, "Exit requested from web GUI; shutting down.");
