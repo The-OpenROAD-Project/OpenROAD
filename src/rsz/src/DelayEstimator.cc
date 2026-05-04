@@ -262,6 +262,8 @@ bool findCandidatePortsForArc(const sta::Scene* scene,
   return candidate_input != nullptr && candidate_output != nullptr;
 }
 
+// `match_relaxed_out` is OR-set when relaxed fallback succeeds (never reset
+// to false here) so a single accumulator can chain multiple lookups.
 bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
                                  const sta::MinMax* min_max,
                                  const sta::Pvt* pvt,
@@ -270,7 +272,9 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
                                  const float load_cap,
                                  const sta::LibertyCell* cell,
                                  float& delay,
-                                 float& output_slew)
+                                 float& output_slew,
+                                 ArcMatchMode match_mode = ArcMatchMode::kExact,
+                                 bool* match_relaxed_out = nullptr)
 {
   delay = -sta::INF;
   output_slew = 0.0f;
@@ -290,6 +294,7 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
 
   const sta::TimingArcSetSeq arc_sets
       = scene_cell->timingArcSets(candidate_input, candidate_output);
+
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
       continue;
@@ -302,7 +307,45 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
     }
   }
 
-  return false;
+  if (match_mode != ArcMatchMode::kRelaxedCandidate) {
+    return false;
+  }
+
+  // Conservative selection across relaxed candidates: pick the arc with the
+  // worst output slew, so downstream stages see the larger slew on the next
+  // input.  Reported delay tracks the same arc.
+  bool found = false;
+  for (const sta::TimingArcSet* arc_set : arc_sets) {
+    if (arc_set->role()->isTimingCheck()) {
+      continue;
+    }
+    for (const sta::TimingArc* arc : arc_set->arcs()) {
+      if (matchTimingArc(ref_arc, arc, ArcMatchMode::kRelaxedCandidate)
+          != ArcMatchType::kRelaxed) {
+        continue;
+      }
+      float candidate_delay = 0.0f;
+      float candidate_slew = 0.0f;
+      if (!gateDelayAndSlewFromTableModel(pvt,
+                                          arc,
+                                          input_slew,
+                                          load_cap,
+                                          candidate_delay,
+                                          candidate_slew)) {
+        continue;
+      }
+      if (!found || min_max->compare(candidate_slew, output_slew)) {
+        delay = candidate_delay;
+        output_slew = candidate_slew;
+        found = true;
+      }
+    }
+  }
+
+  if (found && match_relaxed_out != nullptr) {
+    *match_relaxed_out = true;
+  }
+  return found;
 }
 
 bool lookupArcDelayAndSlew(const SelectedArc& arc,
@@ -310,7 +353,9 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
                            const float load_cap,
                            const sta::LibertyCell* cell,
                            float& delay,
-                           float& output_slew)
+                           float& output_slew,
+                           ArcMatchMode match_mode = ArcMatchMode::kExact,
+                           bool* match_relaxed_out = nullptr)
 {
   return lookupArcDelayAndSlewForArc(arc.scene,
                                      arc.min_max,
@@ -320,7 +365,9 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
                                      load_cap,
                                      cell,
                                      delay,
-                                     output_slew);
+                                     output_slew,
+                                     match_mode,
+                                     match_relaxed_out);
 }
 
 const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
@@ -876,11 +923,16 @@ void prepareFaninNeighborDmpSlewBias(Resizer& resizer, ArcDelayState& context)
 // Estimate the post-ECO driver output slew for the selected transition.  When
 // a DMP/Ceff bias model is prepared for this stage, correct only the stable
 // table-worst arc.  Otherwise use the existing merged table-delta calibration.
+// `merge_arc_mode = kRelaxedCandidate` activates relaxed fallback for the
+// merge loop (target stage only).  `slew_relaxed_out` is OR-set when any
+// merge arc lookup used relaxed matching; never reset, so callers can chain.
 float estimateOutputSlew(const DelayStageState& stage,
                          const sta::LibertyCell* cell,
                          const float path_input_slew,
                          const float load_cap,
-                         const float selected_output_slew)
+                         const float selected_output_slew,
+                         ArcMatchMode merge_arc_mode = ArcMatchMode::kExact,
+                         bool* slew_relaxed_out = nullptr)
 {
   if (canUseDmpSlewBias(stage, cell, path_input_slew)) {
     float table_delay = 0.0f;
@@ -912,8 +964,6 @@ float estimateOutputSlew(const DelayStageState& stage,
         = uses_path_input ? path_input_slew : merge_arc.input_slew;
     float delay = 0.0f;
     float merge_output_slew = 0.0f;
-
-    // Get output slew by the candidate cell
     if (!lookupArcDelayAndSlewForArc(stage.arc.scene,
                                      stage.arc.min_max,
                                      stage.arc.pvt,
@@ -922,7 +972,9 @@ float estimateOutputSlew(const DelayStageState& stage,
                                      load_cap,
                                      cell,
                                      delay,
-                                     merge_output_slew)) {
+                                     merge_output_slew,
+                                     merge_arc_mode,
+                                     slew_relaxed_out)) {
       continue;
     }
 
@@ -1237,6 +1289,12 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                                        ? FailReason::kMissingCandidateTimingArc
                                        : FailReason::kMissingCurrentTimingArc;
 
+    // Relaxed arc matching is applied only to the target candidate cell.
+    const ArcMatchMode arc_mode
+        = is_target ? ArcMatchMode::kRelaxedCandidate : ArcMatchMode::kExact;
+    bool arc_relaxed = false;
+    bool* arc_relaxed_out = is_target ? &arc_relaxed : nullptr;
+
     float model_stage_delay = 0.0f;
     float stage_slew = 0.0f;
     if (!lookupArcDelayAndSlew(stage.arc,
@@ -1244,7 +1302,9 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                                load_cap,
                                cell,
                                model_stage_delay,
-                               stage_slew)) {
+                               stage_slew,
+                               arc_mode,
+                               arc_relaxed_out)) {
       return {.legal = false, .reason = fail_reason};
     }
     // Keep candidate scoring on the table-model delta, but report absolute
@@ -1252,8 +1312,13 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
     const float stage_delay
         = stage.current_delay + (model_stage_delay - stage.current_model_delay);
     candidate_total_delay += stage_delay;
-    propagated_driver_output_slew
-        = estimateOutputSlew(stage, cell, input_slew, load_cap, stage_slew);
+    propagated_driver_output_slew = estimateOutputSlew(stage,
+                                                       cell,
+                                                       input_slew,
+                                                       load_cap,
+                                                       stage_slew,
+                                                       arc_mode,
+                                                       arc_relaxed_out);
     has_propagated_driver_output_slew = true;
 
     if (trace != nullptr) {
@@ -1262,7 +1327,8 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
                         .input_slew = input_slew,
                         .load_cap = load_cap,
                         .stage_delay = stage_delay,
-                        .output_slew = propagated_driver_output_slew});
+                        .output_slew = propagated_driver_output_slew,
+                        .arc_match_relaxed = arc_relaxed});
     }
   }
 

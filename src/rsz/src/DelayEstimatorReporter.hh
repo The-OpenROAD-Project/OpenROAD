@@ -98,6 +98,8 @@ class DelayEstimatorReporter
     float load_cap{0.0f};
     float output_slew{0.0f};
     float extra_delay{0.0f};
+    // True when this diagnostic row used relaxed fallback arc matching.
+    bool arc_match_relaxed{false};
   };
 
   struct EstimatorProfile

@@ -74,6 +74,35 @@ enum class FailReason : uint8_t
 
 const char* failReasonName(FailReason reason);
 
+// === Timing arc matching ====================================================
+
+// kExact            : require full conditional/default/mode equivalence
+//                     (current cell, fanin/fanout lookups, strict path data).
+// kRelaxedCandidate : fall back to same port-name and RF matching when no
+//                     exact arc exists.  For sizing/VtSwap target candidate
+//                     analysis only.
+enum class ArcMatchMode : uint8_t
+{
+  kExact,
+  kRelaxedCandidate
+};
+
+enum class ArcMatchType : uint8_t
+{
+  kNone,
+  kExact,
+  kRelaxed
+};
+
+ArcMatchType matchTimingArc(const sta::TimingArc* reference,
+                            const sta::TimingArc* candidate_arc,
+                            ArcMatchMode match_mode);
+
+const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
+                                            const sta::TimingArcSet* candidate,
+                                            ArcMatchMode match_mode,
+                                            ArcMatchType* match_type);
+
 // === Target preparation flags ==============================================
 
 using PrepareCacheMask = uint32_t;

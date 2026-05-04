@@ -826,7 +826,8 @@ DelayEstimatorReporter::buildDelayEstimatorProfile(
          .wire_delay = pathWireDelay(expanded, eval.path_index),
          .load_cap = eval.load_cap,
          .output_slew = eval.output_slew,
-         .extra_delay = 0.0f});
+         .extra_delay = 0.0f,
+         .arc_match_relaxed = eval.arc_match_relaxed});
   }
 
   return profile;
@@ -933,6 +934,9 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
     return row;
   }
 
+  const int dcalc_ap = fixed_stage.state.arc.scene->dcalcAnalysisPtIndex(
+      fixed_stage.state.arc.min_max);
+
   // Resolve the same conditional/non-unate timing arc family captured before
   // the ECO.  RF-only graph lookup can pick the wrong XOR/XNOR table.
   sta::Edge* gate_edge = nullptr;
@@ -951,24 +955,59 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
       break;
     }
   }
+
+  // For the target replacement only, mirror DelayEstimator's relaxed fallback
+  // so default current arcs can be compared against conditional replacement
+  // arcs in the golden post-ECO table.
+  bool arc_match_relaxed = false;
+  float selected_cell_delay = 0.0f;
+  if (gate_edge == nullptr && fixed_stage.role == Role::kTarget) {
+    sta::VertexInEdgeIterator relaxed_edge_iter(driver_vertex, graph_);
+    bool found_relaxed = false;
+    while (relaxed_edge_iter.hasNext()) {
+      sta::Edge* edge = relaxed_edge_iter.next();
+      if (edge->from(graph_) != input_vertex) {
+        continue;
+      }
+      for (const sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+        if (matchTimingArc(fixed_stage.state.arc.ref_arc,
+                           arc,
+                           ArcMatchMode::kRelaxedCandidate)
+            != ArcMatchType::kRelaxed) {
+          continue;
+        }
+        const float arc_delay
+            = sta::delayAsFloat(graph_->arcDelay(edge, arc, dcalc_ap));
+        if (!found_relaxed
+            || fixed_stage.state.arc.min_max->compare(arc_delay,
+                                                      selected_cell_delay)) {
+          gate_edge = edge;
+          gate_arc = arc;
+          selected_cell_delay = arc_delay;
+          found_relaxed = true;
+          arc_match_relaxed = true;
+        }
+      }
+    }
+  }
   if (gate_edge == nullptr || gate_arc == nullptr) {
     return row;
   }
 
-  const int dcalc_ap = fixed_stage.state.arc.scene->dcalcAnalysisPtIndex(
-      fixed_stage.state.arc.min_max);
   row.input_slew = sta_->graphDelayCalc()->edgeFromSlew(
       gate_edge->from(graph_),
       fixed_stage.state.arc.inputRiseFall(),
       gate_edge,
       fixed_stage.state.arc.scene,
       fixed_stage.state.arc.min_max);
-  row.cell_delay
-      = sta::delayAsFloat(graph_->arcDelay(gate_edge, gate_arc, dcalc_ap));
+  row.cell_delay = arc_match_relaxed ? selected_cell_delay
+                                     : sta::delayAsFloat(graph_->arcDelay(
+                                           gate_edge, gate_arc, dcalc_ap));
   row.load_cap = sta_->graphDelayCalc()->loadCap(
       driver_pin, fixed_stage.state.arc.scene, fixed_stage.state.arc.min_max);
   row.output_slew = sta::delayAsFloat(graph_->slew(
       driver_vertex, fixed_stage.state.arc.outputRiseFall(), dcalc_ap));
+  row.arc_match_relaxed = arc_match_relaxed;
   return row;
 }
 
@@ -1246,7 +1285,12 @@ void DelayEstimatorReporter::printStageWindowDetail(
                     roleName(role),
                     path_index,
                     pin_name);
-    logger_->report("    cell: pre={}  post={}", pre_cell, post_cell);
+    const bool post_arc_relaxed
+        = has_estimated_candidate && estimated_candidate_row.arc_match_relaxed;
+    logger_->report("    cell: pre={}  post={}{}",
+                    pre_cell,
+                    post_cell,
+                    post_arc_relaxed ? "  arc_match: relaxed" : "");
     logger_->report("");
     logger_->report("    {:<31} {:>10}   {:>10}   {:>10}",
                     "metric",

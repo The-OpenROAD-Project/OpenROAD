@@ -37,6 +37,9 @@ struct StageEvaluation
   float load_cap{0.0f};
   float stage_delay{0.0f};  // Calibrated cell delay, not wire delay.
   float output_slew{0.0f};
+  // True when the target candidate lookup used relaxed (port-name+RF)
+  // matching because no exact conditional/default arc was found.
+  bool arc_match_relaxed{false};
 };
 
 // === Delay estimator API ====================================================

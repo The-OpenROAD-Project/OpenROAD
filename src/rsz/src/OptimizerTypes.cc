@@ -14,6 +14,7 @@
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 
 namespace rsz {
 
@@ -83,30 +84,115 @@ sta::LibertyCell* SelectedArc::currentCell() const
   return const_cast<sta::LibertyPort*>(outputPort())->libertyCell();
 }
 
+namespace {
+
+bool isExactArcMatch(const sta::TimingArc* reference,
+                     const sta::TimingArc* candidate_arc)
+{
+  // Arc-set identity (same condition, mode, functional form) plus per-arc
+  // edge/role equivalence.  TimingArcSet::equiv covers from/to/role/cond/sdf;
+  // mode and isCondDefault must be checked explicitly.
+  const sta::TimingArcSet* ref_set = reference->set();
+  const sta::TimingArcSet* candidate_set = candidate_arc->set();
+  return sta::TimingArcSet::equiv(ref_set, candidate_set)
+         && ref_set->isCondDefault() == candidate_set->isCondDefault()
+         && ref_set->modeName() == candidate_set->modeName()
+         && ref_set->modeValue() == candidate_set->modeValue()
+         && sta::TimingArc::equiv(reference, candidate_arc);
+}
+
+bool canTryRelaxedMatch(const sta::TimingArc* reference,
+                        const sta::TimingArc* candidate_arc)
+{
+  // Relax only from a default/unconditional reference arc into a non-check
+  // candidate arc.  Conditional reference arcs must keep exact semantics.
+  const sta::TimingArcSet* ref_set = reference->set();
+  return (ref_set->cond() == nullptr || ref_set->isCondDefault())
+         && !candidate_arc->set()->role()->isTimingCheck();
+}
+
+bool isRelaxedArcMatch(const sta::TimingArc* reference,
+                       const sta::TimingArc* candidate_arc)
+{
+  // Same port-name + RF transition + mode; condition is allowed to differ.
+  if (!canTryRelaxedMatch(reference, candidate_arc)) {
+    return false;
+  }
+  const sta::TimingArcSet* ref_set = reference->set();
+  const sta::TimingArcSet* candidate_set = candidate_arc->set();
+  return sta::LibertyPort::equiv(reference->from(), candidate_arc->from())
+         && sta::LibertyPort::equiv(reference->to(), candidate_arc->to())
+         && reference->fromEdge() == candidate_arc->fromEdge()
+         && reference->toEdge() == candidate_arc->toEdge()
+         && ref_set->modeName() == candidate_set->modeName()
+         && ref_set->modeValue() == candidate_set->modeValue();
+}
+
+}  // namespace
+
+ArcMatchType matchTimingArc(const sta::TimingArc* reference,
+                            const sta::TimingArc* candidate_arc,
+                            const ArcMatchMode match_mode)
+{
+  if (reference == nullptr || candidate_arc == nullptr) {
+    return ArcMatchType::kNone;
+  }
+  if (isExactArcMatch(reference, candidate_arc)) {
+    return ArcMatchType::kExact;
+  }
+  if (match_mode == ArcMatchMode::kRelaxedCandidate
+      && isRelaxedArcMatch(reference, candidate_arc)) {
+    return ArcMatchType::kRelaxed;
+  }
+  return ArcMatchType::kNone;
+}
+
+const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
+                                            const sta::TimingArcSet* candidate,
+                                            const ArcMatchMode match_mode,
+                                            ArcMatchType* match_type)
+{
+  if (match_type != nullptr) {
+    *match_type = ArcMatchType::kNone;
+  }
+  if (reference == nullptr || candidate == nullptr) {
+    return nullptr;
+  }
+
+  // Exact match always wins, even when relaxed fallback is enabled.
+  for (const sta::TimingArc* arc : candidate->arcs()) {
+    if (matchTimingArc(reference, arc, ArcMatchMode::kExact)
+        == ArcMatchType::kExact) {
+      if (match_type != nullptr) {
+        *match_type = ArcMatchType::kExact;
+      }
+      return arc;
+    }
+  }
+
+  if (match_mode != ArcMatchMode::kRelaxedCandidate) {
+    return nullptr;
+  }
+
+  for (const sta::TimingArc* arc : candidate->arcs()) {
+    if (matchTimingArc(reference, arc, ArcMatchMode::kRelaxedCandidate)
+        == ArcMatchType::kRelaxed) {
+      if (match_type != nullptr) {
+        *match_type = ArcMatchType::kRelaxed;
+      }
+      return arc;
+    }
+  }
+  return nullptr;
+}
+
 // Find the timing arc in `candidate` that matches the reference arc's
 // conditional/mode/sense.  Returns nullptr when no match exists.
 const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             const sta::TimingArcSet* candidate)
 {
-  if (reference == nullptr || candidate == nullptr) {
-    return nullptr;
-  }
-
-  // Compare arc-set identity: same condition, mode, and functional form.
-  const sta::TimingArcSet* ref_set = reference->set();
-  if (!sta::TimingArcSet::equiv(ref_set, candidate)
-      || ref_set->isCondDefault() != candidate->isCondDefault()
-      || ref_set->modeName() != candidate->modeName()
-      || ref_set->modeValue() != candidate->modeValue()) {
-    return nullptr;
-  }
-
-  for (const sta::TimingArc* arc : candidate->arcs()) {
-    if (sta::TimingArc::equiv(reference, arc)) {
-      return arc;
-    }
-  }
-  return nullptr;
+  return findMatchingTimingArc(
+      reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
 bool Target::canBePathDriver() const
