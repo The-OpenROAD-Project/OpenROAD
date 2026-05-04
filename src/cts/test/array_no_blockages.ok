@@ -117,24 +117,32 @@
 [INFO RSZ-0047] Found 36 long wires.
 [INFO RSZ-0048] Inserted 103 buffers in 36 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261543.60 um^2, Utilization: 83.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 20261543.60 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2805
-Diamond Move Success:           2805 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       1797 |        33 |       882
+        1 |       1797 |        33 |       882
+        2 |       1797 |        33 |       882
+        3 |       1797 |        33 |       882
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 1797 for 3 consecutive iterations.
+Using old diamond search for 33 remaining illegal cells.
+diamond recovery: recovered 32/33 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |         31 |         1 |        15
+      403 |         31 |         1 |        15
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 31 for 3 consecutive iterations. Using diamond search for 1 remaining illegal cells.
+diamond recovery: recovered 0/1 stuck cells.
+[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 1
 Placement Analysis
 ---------------------------------
-total displacement       3467.0 u
-average displacement        1.1 u
-max displacement          135.2 u
+total displacement       2003.4 u
+average displacement        0.7 u
+max displacement            1.4 u
 original HPWL          183178.2 u
-legalized HPWL         183919.9 u
+legalized HPWL         183996.5 u
 delta HPWL                    0 %
 
 Clock clk

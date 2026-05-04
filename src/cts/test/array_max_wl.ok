@@ -553,24 +553,21 @@ TritonCTS forced slew degradation on these wires.
 [INFO RSZ-0047] Found 37 long wires.
 [INFO RSZ-0048] Inserted 97 buffers in 37 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261817.85 um^2, Utilization: 83.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 20261817.85 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2954
-Diamond Move Success:           2954 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement       3642.2 u
-average displacement        1.1 u
-max displacement          125.5 u
+total displacement       2105.6 u
+average displacement        0.7 u
+max displacement            1.4 u
 original HPWL          189211.8 u
-legalized HPWL         189853.8 u
+legalized HPWL         189994.2 u
 delta HPWL                    0 %
 
 Clock clk
