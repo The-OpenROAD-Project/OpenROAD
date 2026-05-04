@@ -35,26 +35,26 @@ proc check_port { label port } {
 # --- leaf instance ---
 puts "# leaf instance r1"
 set inst [get_cells r1]
-check "  sta_to_db_inst"     [sta::sta_to_db_inst $inst]
+check "  sta_to_db_inst" [sta::sta_to_db_inst $inst]
 check "  sta_to_db_mod_inst" [sta::sta_to_db_mod_inst $inst]
 
 # --- leaf instance pin ---
 puts "# leaf pin r1/D"
 set pin [get_pin r1/D]
-check      "  sta_to_db_pin"     [sta::sta_to_db_pin $pin]
-check      "  sta_to_db_mod_pin" [sta::sta_to_db_mod_pin $pin]
-check_port "  sta_pin_to_port"   [sta::sta_pin_to_port $pin]
+check "  sta_to_db_pin" [sta::sta_to_db_pin $pin]
+check "  sta_to_db_mod_pin" [sta::sta_to_db_mod_pin $pin]
+check_port "  sta_pin_to_port" [sta::sta_pin_to_port $pin]
 
 # --- top-level Port ---
 puts "# top-level port clk1"
 set port [lindex [get_ports clk1] 0]
-check "  sta_to_db_port"     [sta::sta_to_db_port $port]
+check "  sta_to_db_port" [sta::sta_to_db_port $port]
 check "  sta_to_db_mod_port" [sta::sta_to_db_mod_port $port]
 
 # --- a flat dbNet ---
 puts "# net r1q"
 set net [get_net r1q]
-check "  sta_to_db_net"     [sta::sta_to_db_net $net]
+check "  sta_to_db_net" [sta::sta_to_db_net $net]
 check "  sta_to_db_mod_net" [sta::sta_to_db_mod_net $net]
 
 # --- LibertyCell -> dbMaster, LibertyPort -> dbMTerm ---
