@@ -1210,10 +1210,10 @@ Search::SnapResult Search::searchNearestEdge(
                              search_box.yMin(),
                              search_box.xMax(),
                              search_box.yMax())) {
-          if (!vis.routing && type == kWire) {
+          if (type == kWire && !(vis.routing && vis.routing_segments)) {
             continue;
           }
-          if (!vis.routing && type == kVia) {
+          if (type == kVia && !(vis.routing && vis.routing_vias)) {
             continue;
           }
           if (!vis.pins && type == kBterm) {
@@ -1225,8 +1225,8 @@ Search::SnapResult Search::searchNearestEdge(
         }
       }
 
-      // Special net shapes.
-      if (vis.special_nets) {
+      // Special net shapes (segments).
+      if (vis.special_nets && vis.srouting_segments) {
         for (const auto& [sbox, poly, net] :
              searchSNetShapes(block,
                               layer,
@@ -1238,8 +1238,10 @@ Search::SnapResult Search::searchNearestEdge(
             check_rect(sbox->getBox());
           }
         }
+      }
 
-        // Special net vias.
+      // Special net vias.
+      if (vis.special_nets && vis.srouting_vias) {
         for (const auto& [sbox, net] : searchSNetViaShapes(block,
                                                            layer,
                                                            search_box.xMin(),

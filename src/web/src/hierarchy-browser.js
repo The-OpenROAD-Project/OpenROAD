@@ -226,10 +226,9 @@ export class HierarchyBrowser {
             console.error('set_module_colors failed:', err);
         }
 
-        // Refresh the modules layer if it exists
-        if (this._app.modulesLayer && this._app.map.hasLayer(this._app.modulesLayer)) {
-            this._app.modulesLayer.refreshTiles();
-        }
+        // Redraw all layers so the module overlay picks up the new
+        // colors.  This matches what the vis-tree toggle does.
+        this._redrawAllLayers();
     }
 
     _dfs(id, depth) {

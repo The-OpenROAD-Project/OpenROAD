@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -18,6 +21,12 @@ namespace {
 std::string payloadStr(const WebSocketResponse& resp)
 {
   return std::string(resp.payload.begin(), resp.payload.end());
+}
+
+// Helper to parse a JSON literal into a boost::json::object for tests.
+boost::json::object parseObj(std::string_view json)
+{
+  return boost::json::parse(json).as_object();
 }
 
 // ─── TileGenerator::snapAt tests ─────────────────────────────────────────────
@@ -211,8 +220,8 @@ TEST_F(SnapHandlerTest, SnapReturnsJson)
   WebSocketRequest req;
   req.id = 100;
   req.type = WebSocketRequest::kSnap;
-  req.raw_json
-      = R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":1,"vertical":1})";
+  req.json = parseObj(
+      R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":true,"vertical":true,"visible_layers":[]})");
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.id, 100u);
@@ -228,15 +237,15 @@ TEST_F(SnapHandlerTest, SnapFoundContainsEdge)
   req.id = 101;
   req.type = WebSocketRequest::kSnap;
   // Query near die area bottom edge at y=0.
-  req.raw_json
-      = R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":1,"vertical":1})";
+  req.json = parseObj(
+      R"({"dbu_x":50000,"dbu_y":50,"radius":1000,"point_threshold":10,"horizontal":true,"vertical":true,"visible_layers":[]})");
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   // Should find the die area bottom edge.
-  EXPECT_NE(json.find("\"found\": true"), std::string::npos);
+  EXPECT_NE(json.find("\"found\":true"), std::string::npos);
   EXPECT_NE(json.find("\"edge\""), std::string::npos);
   EXPECT_NE(json.find("\"is_point\""), std::string::npos);
 }
@@ -248,14 +257,14 @@ TEST_F(SnapHandlerTest, SnapAlwaysFindsEdgeDueToChipBoundary)
   req.type = WebSocketRequest::kSnap;
   // Center of design -- die area edges are always checked so snap always
   // finds something (the closest die boundary).
-  req.raw_json
-      = R"({"dbu_x":50000,"dbu_y":50000,"radius":10,"point_threshold":5,"horizontal":1,"vertical":1})";
+  req.json = parseObj(
+      R"({"dbu_x":50000,"dbu_y":50000,"radius":10,"point_threshold":5,"horizontal":true,"vertical":true,"visible_layers":[]})");
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"found\": true"), std::string::npos);
+  EXPECT_NE(json.find("\"found\":true"), std::string::npos);
   EXPECT_NE(json.find("\"edge\""), std::string::npos);
 }
 
@@ -267,8 +276,8 @@ TEST_F(SnapHandlerTest, SnapDispatchesCorrectly)
   WebSocketRequest req;
   req.id = 103;
   req.type = WebSocketRequest::kSnap;
-  req.raw_json
-      = R"({"dbu_x":100,"dbu_y":100,"radius":5000,"point_threshold":50,"horizontal":1,"vertical":1})";
+  req.json = parseObj(
+      R"({"dbu_x":100,"dbu_y":100,"radius":5000,"point_threshold":50,"horizontal":true,"vertical":true,"visible_layers":[]})");
 
   auto resp = handler_->handleSnap(req);
   EXPECT_EQ(resp.id, 103u);

@@ -24,9 +24,10 @@
 #include "boost/beast/core.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "boost/beast/websocket.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
 #include "gui/gui.h"
-#include "json_builder.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
@@ -48,7 +49,6 @@ using Tcp = net::ip::tcp;
 // Tcl command name used to stash the original `exit` while our override
 // is installed.  Mirrors gui::TclCmdInputWidget's kCommandRenamePrefix.
 static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
-static constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
@@ -104,8 +104,10 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
     if (pending_.empty()) {
       return;
     }
-    hook_->sessions().broadcast(R"({"type":"log","text":")"
-                                + json_escape(pending_) + R"("})");
+    boost::json::object msg;
+    msg["type"] = "log";
+    msg["text"] = pending_;
+    hook_->sessions().broadcast(boost::json::serialize(msg));
     pending_.clear();
   }
 
@@ -141,6 +143,8 @@ void WebServer::serve(int port)
     // ~WebServer's self-join → std::terminate).  Same pattern as
     // gui::TclCmdInputWidget.  The handler signals waitForStop() and
     // sets exit_requested_; the main thread does the real exit.
+    // TclHandler::handleTclEval detects kExitResultMsg in the Tcl
+    // result and sends `action: "shutdown"` to the browser.
     exit_requested_ = false;
     {
       const std::string rename_orig
@@ -216,7 +220,15 @@ void WebServer::serve(int port)
 #elif defined(_WIN32)
     std::string open_cmd = "start " + url + " > nul 2>&1";
 #else
-    std::string open_cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
+    // `setsid -f` forks the launcher into a new session, severing the
+    // SIGHUP cascade from openroad's controlling pty.  Without this,
+    // running openroad from inside an emacs shell-mode buffer kills
+    // the browser tab as soon as openroad exits, because emacs holds
+    // the pty master and SIGHUPs every process in the session.  Also
+    // redirect stdin from /dev/null so xdg-open never blocks on input
+    // inherited from the pty.
+    std::string open_cmd
+        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null 2>&1";
 #endif
     int ret = std::system(open_cmd.c_str());
     (void) ret;
@@ -304,18 +316,21 @@ void WebServer::stop()
     shutdown_listener_();
     shutdown_listener_ = {};
   }
-  if (ioc_) {
-    ioc_->stop();
-  }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
+  stopAndJoinIoThreads();
+  // Release without destroying — destroying io_context can crash on
+  // residual async handlers. Leak is bounded (at most one io_context
+  // per serve/stop cycle).
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
   generator_.reset();
+  // Remove the log sink before destroying viewer_hook_ — the sink
+  // stores a raw pointer into it and the CLI thread may emit a log
+  // line at any moment.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   viewer_hook_.reset();
+  logger_->info(utl::WEB, 41, "Web session closed.");
 }
 
 }  // namespace web
