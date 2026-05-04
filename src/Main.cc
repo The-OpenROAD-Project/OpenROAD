@@ -454,7 +454,7 @@ static int tclAppInit(int& argc,
 
     if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
       showUsage(argv[0], init_filename);
-      exit(1);
+      Tcl_Exit(1);
     } else {
       if (argc == 2) {
         char* cmd_file = argv[1];
@@ -463,7 +463,7 @@ static int tclAppInit(int& argc,
             int result = sourceTclFile(cmd_file, false, false, interp);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
-              exit(exit_code);
+              Tcl_Exit(exit_code);
             }
           } else {
             // need to delay loading of file until after GUI is completed
@@ -487,7 +487,7 @@ static int tclAppInit(int& argc,
       // real process exit now from the main thread (worker threads are
       // already joined by stop()).
       if (server->exitRequested()) {
-        exit(EXIT_SUCCESS);
+        Tcl_Exit(EXIT_SUCCESS);
       }
     }
   }
