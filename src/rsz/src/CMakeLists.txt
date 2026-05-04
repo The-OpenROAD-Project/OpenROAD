@@ -29,6 +29,7 @@ add_library(rsz_lib
     DelayEstimator.cc
     DelayEstimatorReporter.cc
     dispatch.cc
+    PhasePolicies.cc
     SetupMt1Policy.cc
     Resizer.cc
     OdbCallBack.cc

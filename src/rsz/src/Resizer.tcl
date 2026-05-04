@@ -241,7 +241,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-sequence move_list]\
-                                        [-phases phases]\
+                                        [-policy phases]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
@@ -260,10 +260,13 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-verbose]}
 
 proc repair_timing { args } {
+  # `-policy` is the public spelling listed in -help / define_cmd_args.
+  # `-phases` and `-policies` are accepted-but-undocumented aliases for the
+  # same value; only one of the three may be supplied per call.
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases \
+            -policy -phases -policies \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -297,10 +300,20 @@ proc repair_timing { args } {
     set sequence ""
   }
 
-  if { [info exists keys(-phases)] } {
-    set phases $keys(-phases)
-  } else {
-    set phases ""
+  # Resolve -policy / -phases / -policies aliases to a single `phases` value.
+  # All three carry identical semantics; rejecting more than one prevents
+  # silent precedence surprises if the user mixes spellings.
+  set phases ""
+  set policy_alias_count 0
+  foreach alias_key {-policy -phases -policies} {
+    if { [info exists keys($alias_key)] } {
+      incr policy_alias_count
+      set phases $keys($alias_key)
+    }
+  }
+  if { $policy_alias_count > 1 } {
+    utl::error RSZ 222 \
+      "specify at most one of -policy / -phases / -policies"
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]

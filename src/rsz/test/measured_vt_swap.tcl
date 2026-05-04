@@ -1,7 +1,6 @@
 source "helpers.tcl"
 source asap7/asap7.vars
 
-set ::env(RSZ_POLICY) measured_vt_swap
 set ::env(RSZ_VTSWAP_CANDIDATES) 10
 set ::env(RSZ_VTSWAP_MAX_MOVES) 100
 
@@ -75,12 +74,11 @@ estimate_parasitics -placement
 
 
 set ppa_before [capture_setup_ppa]
-repair_timing -setup -skip_last_gasp -verbose
+repair_timing -setup -policy "MEASURED_VT_SWAP" -skip_last_gasp -verbose
 set ppa_after [capture_setup_ppa]
 report_setup_ppa_delta $ppa_before $ppa_after
 
 #report_checks -path_delay max -endpoint_path_count 10
 
-unset -nocomplain ::env(RSZ_POLICY)
 unset -nocomplain ::env(RSZ_VTSWAP_CANDIDATES)
 unset -nocomplain ::env(RSZ_VTSWAP_MAX_MOVES)

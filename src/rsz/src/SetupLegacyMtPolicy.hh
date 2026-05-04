@@ -21,7 +21,8 @@ class Resizer;
 class SizeUpMtGenerator;
 class VtSwapMtGenerator;
 
-// Hybrid single/multi-threaded setup-repair policy (RSZ_POLICY=legacy_mt).
+// Hybrid single/multi-threaded setup-repair policy (selected as the legacy
+// context when a LEGACY_MT token appears in the -policy list).
 //
 // SetupLegacyMtPolicy keeps SetupLegacyPolicy's serial endpoint, target, and
 // move-type ordering.  Only the VtSwap and SizeUp move types use MT candidate
@@ -37,7 +38,8 @@ class SetupLegacyMtPolicy : public SetupLegacyPolicy
   ~SetupLegacyMtPolicy() override;
 
   const char* name() const override { return "SetupLegacyMtPolicy"; }
-  void start(const OptimizerRunConfig& config) override;
+  using SetupLegacyPolicy::start;
+  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
 
  protected:
   // === SetupLegacyPolicy hooks

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "dispatch.hh"
 
 namespace sta {
 class dbSta;
@@ -43,12 +44,17 @@ class Resizer;
 //                             generators, or drive generators directly on the
 //                             main thread (legacy path)
 //
-// Optimizer creates exactly one OptPolicy per run and calls
-// start() -> iterate()* -> converged()/result() in that order.  Shared
-// helpers below (makeGeneratorContext, buildMoveGenerators,
+// Optimizer (sequencer) creates one or more OptPolicy instances per run and
+// drives each through start(config, ctx) -> iterate()* -> converged()/result()
+// in that order.  When `ctx` is non-null the sequencer is sharing cross-phase
+// accumulators with the policy; legacy single-policy callers may pass nullptr
+// and the policy keeps its own accumulators.  hooks() lets a policy opt in to
+// sequencer-side log/profiler scopes and pre-iteration slack sampling.
+//
+// Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
-// generatorEnabled) are intentionally placed on the base so the four
-// policies do not re-implement wiring boilerplate.
+// generatorEnabled) are intentionally placed on the base so the policies do
+// not re-implement wiring boilerplate.
 class OptPolicy
 {
  public:
@@ -59,11 +65,18 @@ class OptPolicy
   virtual ~OptPolicy();
 
   virtual const char* name() const = 0;
-  virtual void start(const OptimizerRunConfig& config);
+  virtual void start(const OptimizerRunConfig& config, PhaseRunContext* ctx);
+  // Convenience overload for legacy callers that do not need cross-phase
+  // accumulator sharing.  Forwards to start(config, nullptr).
+  void start(const OptimizerRunConfig& config) { start(config, nullptr); }
   virtual void iterate() = 0;
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
+
+  // Hooks the sequencer applies around iterate().  Default returns an empty
+  // PhaseHooks (no pre-slack capture, no log/profiler scopes).
+  virtual PhaseHooks hooks() const { return {}; }
 
  protected:
   // === Generator setup ======================================================
@@ -131,6 +144,9 @@ class OptPolicy
   Resizer& resizer_;
   MoveCommitter& committer_;
   OptimizerRunConfig config_;
+  // Sequencer-supplied accumulator state; nullptr for legacy callers.  Phases
+  // that need cross-phase accumulators read/write through this pointer.
+  PhaseRunContext* run_ctx_{nullptr};
   utl::Logger* logger_{nullptr};
   sta::dbSta* sta_{nullptr};
   sta::Network* network_{nullptr};

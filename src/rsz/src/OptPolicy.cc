@@ -44,9 +44,11 @@ OptPolicy::OptPolicy(Resizer& resizer, MoveCommitter& committer)
 
 OptPolicy::~OptPolicy() = default;
 
-void OptPolicy::start(const OptimizerRunConfig& config)
+void OptPolicy::start(const OptimizerRunConfig& config,
+                      PhaseRunContext* const ctx)
 {
   config_ = config;
+  run_ctx_ = ctx;
   logger_ = resizer_.logger();
   sta_ = resizer_.sta();
   network_ = resizer_.network();

@@ -30,7 +30,7 @@ namespace rsz {
 class MeasuredVtSwapGenerator;
 
 // Experimental single-threaded VT-swap-only policy
-// (RSZ_POLICY=measured_vt_swap).
+// (selected via -policy "MEASURED_VT_SWAP").
 //
 // Unlike the legacy path that relies on local delay-table estimation, this
 // policy scores each VT-swap candidate by:
@@ -57,7 +57,8 @@ class MeasuredVtSwapPolicy : public OptPolicy
   ~MeasuredVtSwapPolicy() override;
 
   const char* name() const override { return "MeasuredVtSwapPolicy"; }
-  void start(const OptimizerRunConfig& config) override;
+  using OptPolicy::start;
+  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
  private:

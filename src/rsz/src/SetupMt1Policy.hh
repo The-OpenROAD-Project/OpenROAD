@@ -28,7 +28,8 @@ namespace rsz {
 class MoveCandidate;
 class MoveGenerator;
 
-// Experimental fully-MT batched setup-repair policy (RSZ_POLICY=mt1).
+// Experimental fully-MT batched setup-repair policy (selected via -policy
+// "MT1").
 //
 // Unlike SetupLegacyMtPolicy (which preserves the legacy per-endpoint loop),
 // SetupMt1Policy processes a flat batch of prepared path-driver targets per
@@ -56,7 +57,8 @@ class SetupMt1Policy : public OptPolicy
   ~SetupMt1Policy() override;
 
   const char* name() const override { return "SetupMt1Policy"; }
-  void start(const OptimizerRunConfig& config) override;
+  using OptPolicy::start;
+  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
  private:

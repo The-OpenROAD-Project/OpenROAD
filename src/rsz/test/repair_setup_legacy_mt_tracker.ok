@@ -9,6 +9,7 @@
 [INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
 [DEBUG RSZ-move_tracker] Scanned 29 driver pins, found 6 with negative slack
 [DEBUG RSZ-move_tracker] Scanned 34 endpoints, found 4 with negative slack
+[INFO RSZ-0221] Using custom phase sequence: LEGACY_MT LAST_GASP
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------

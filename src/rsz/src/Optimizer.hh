@@ -13,21 +13,23 @@
 
 namespace rsz {
 
-// Top-level driver for one repair_setup run.
+class SetupLegacyPolicy;
+
+// Top-level driver and sequencer for one repair_setup run.
 //
 // Lifecycle per call:
 //   1. configure()/repairSetup() freezes user options into `config_`.
-//   2. selectActivePolicy() picks exactly one OptPolicy instance based on the
-//      RSZ_POLICY environment variable (falling back to SetupLegacyPolicy).
-//   3. runActivePolicy() calls OptPolicy::start()/iterate() until the policy
-//      reports converged(), then returns its result().
+//   2. run() parses `config_.phases` (or the default token list when the
+//      user did not supply -policy/-phases/-policies), picks the legacy
+//      context class based on the tokens (single-thread by default,
+//      SetupLegacyMtPolicy when LEGACY_MT appears), then dispatches each
+//      token through makeOptPolicyByToken  -  phase wrappers delegate back to
+//      the legacy context, top-level policies (MT1, MEASURED_VT_SWAP) are
+//      self-contained.
 //
-// The Optimizer owns `committer_` and `opt_policy_` for the full run; the
-// policy reaches into the committer for ECO journaling and tracking, and the
-// committer outlives the policy so final reports can be emitted after the
-// policy object has been destroyed.  The Optimizer itself does not perform
-// any timing analysis or ECO work -- all move logic lives in OptPolicy and
-// its MoveGenerator/MoveCandidate collaborators.
+// The Optimizer owns `committer_` for the full run; the legacy context and
+// any phase-OptPolicy / top-level OptPolicy live for the duration of the
+// dispatch loop only.
 class Optimizer
 {
  public:
@@ -37,7 +39,6 @@ class Optimizer
 
   void configure(const OptimizerRunConfig& config);
   bool run();
-  bool converged() const;
 
   // === repair_setup API =====================================================
   bool repairSetup(double setup_margin,
@@ -63,18 +64,8 @@ class Optimizer
   MoveCommitter& committer();
 
  private:
-  enum class PolicySelection
-  {
-    kLegacy,
-    kLegacyMt,
-    kMeasuredVtSwap,
-    kVtSwapMt1
-  };
-
-  // === Policy orchestration =================================================
-  PolicySelection selectPolicy() const;
-  void selectActivePolicy();
-  bool runActivePolicy();
+  // Default token list when the user did not supply -policy/-phases/-policies.
+  static constexpr const char* kDefaultPhases = "LEGACY LAST_GASP";
 
   // === Run configuration builders ==========================================
   static OptimizerRunConfig makeRepairSetupConfig(
@@ -100,7 +91,6 @@ class Optimizer
   OptimizerRunConfig config_;
   Resizer& resizer_;
   MoveCommitter committer_;
-  std::unique_ptr<OptPolicy> opt_policy_;
 };
 
 }  // namespace rsz

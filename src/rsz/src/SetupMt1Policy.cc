@@ -37,9 +37,10 @@ SetupMt1Policy::SetupMt1Policy(Resizer& resizer, MoveCommitter& committer)
 
 SetupMt1Policy::~SetupMt1Policy() = default;
 
-void SetupMt1Policy::start(const OptimizerRunConfig& config)
+void SetupMt1Policy::start(const OptimizerRunConfig& config,
+                           PhaseRunContext* const ctx)
 {
-  OptPolicy::start(config);
+  OptPolicy::start(config, ctx);
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);

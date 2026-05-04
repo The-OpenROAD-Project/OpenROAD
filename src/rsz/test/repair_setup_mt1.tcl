@@ -2,7 +2,6 @@
 source "helpers.tcl"
 source asap7/asap7.vars
 
-set ::env(RSZ_POLICY) vtswapmt1
 set ::env(RSZ_VTSWAP_CANDIDATES) 10
 set ::env(RSZ_VTSWAP_MAX_MOVES) 100
 
@@ -75,12 +74,11 @@ source asap7/setRC.tcl
 estimate_parasitics -placement
 
 set ppa_before [capture_setup_ppa]
-repair_timing -setup -skip_last_gasp -verbose
+repair_timing -setup -policy "MT1" -skip_last_gasp -verbose
 set ppa_after [capture_setup_ppa]
 report_setup_ppa_delta $ppa_before $ppa_after
 
 puts "pass"
 
-unset -nocomplain ::env(RSZ_POLICY)
 unset -nocomplain ::env(RSZ_VTSWAP_CANDIDATES)
 unset -nocomplain ::env(RSZ_VTSWAP_MAX_MOVES)

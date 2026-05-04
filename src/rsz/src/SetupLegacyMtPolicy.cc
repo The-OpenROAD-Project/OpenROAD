@@ -40,9 +40,10 @@ SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
 
 SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 
-void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config)
+void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config,
+                                PhaseRunContext* const ctx)
 {
-  SetupLegacyPolicy::start(config);
+  SetupLegacyPolicy::start(config, ctx);
   thread_pool_ = makeWorkerThreadPool();
 }
 

@@ -22,6 +22,7 @@
 #include "RepairTargetCollector.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dispatch.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -47,36 +48,71 @@ class Resizer;
 
 namespace rsz {
 
-// Single-threaded setup-repair policy (default, RSZ_POLICY=legacy or unset).
+// Single-threaded setup-repair policy (default; selected when no LEGACY_MT
+// token appears in the -policy list).
 //
 // This policy replicates the original pre-optimizer repair_setup flow so that
 // existing regression results are preserved when no MT policy is requested.
 //
 // Three-phase structure:
-//   Phase 1 – Main repair loop: endpoints are sorted by decreasing violation,
+//   Phase 1 - Main repair loop: endpoints are sorted by decreasing violation,
 //     each expanded into path-driver targets.  For each target the policy
 //     tries every type in `move_sequence_` order; the first accepted move
 //     counts, then the endpoint is re-evaluated.  ECO journals checkpoint
 //     every pass and are rolled back if slack degrades.
-//   Phase 2 – Custom phase schedule (if `phases` is non-empty): WNS, TNS,
+//   Phase 2 - Custom phase schedule (if `phases` is non-empty): WNS, TNS,
 //     directional (fanin/fanout), and startpoint-driven sub-phases.
-//   Phase 3 – Last-gasp: a lighter single-pass sweep over still-violating
+//   Phase 3 - Last-gasp: a lighter single-pass sweep over still-violating
 //     endpoints with VT-swap-only or a broad sequence, plus critical-cell
 //     VT fanin-cone sweep (swapVTCritCells).
 //
 // All work runs on the calling thread; no ThreadPool is used.
+// Forward declarations of phase-OptPolicy wrappers (PhasePolicies.hh) that
+// delegate to SetupLegacyPolicy's per-phase repair helpers.  Friend-listed
+// here so the wrappers can call protected helpers without exposing them on
+// SetupLegacyPolicy's public API.
+class MainRepairPhasePolicy;
+class WnsPhasePolicy;
+class TnsPhasePolicy;
+class DirectionalPhasePolicy;
+class LastGaspPhasePolicy;
+
 class SetupLegacyPolicy : public OptPolicy
 {
+  friend class MainRepairPhasePolicy;
+  friend class WnsPhasePolicy;
+  friend class TnsPhasePolicy;
+  friend class DirectionalPhasePolicy;
+  friend class LastGaspPhasePolicy;
+
  public:
   // === OptPolicy entry points ==============================================
   SetupLegacyPolicy(Resizer& resizer, MoveCommitter& committer);
 
   const char* name() const override { return "SetupLegacyPolicy"; }
-  void start(const OptimizerRunConfig& config) override;
+  using OptPolicy::start;
+  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
   // === Single-endpoint repair API ==========================================
   bool repairSetupPin(const sta::Pin* end_pin);
+
+  // === Sequencer entry points (called from Optimizer::run) =================
+  // Prep work that all phase tokens depend on  -  STA preambles, target
+  // collector init, move-sequence build, violation count.  Returns false
+  // when there is nothing to repair (caller should short-circuit before any
+  // phase token runs).  Called once per Optimizer::run before the phase
+  // dispatch loop.
+  bool prepareForPhasePipeline();
+
+  // Critical-cell VT swap that must run after all phase tokens.  No-op when
+  // skip_crit_vt_swap / skip_vt_swap is set or the design has no VT cells.
+  void runPostPhaseVtSwap(int& num_viols);
+
+  // Final progress dump + tracker reports + repair summary.  Returns the
+  // bool that the legacy runSetup() used to return (true if any repair
+  // committed).
+  bool finalizeAndReport(int opto_iteration);
 
  protected:
   using ViolatingEnds = std::vector<std::pair<sta::Vertex*, sta::Slack>>;
@@ -139,7 +175,6 @@ class SetupLegacyPolicy : public OptPolicy
 
   // === Run setup ============================================================
   virtual void init();
-  virtual bool runSetup();
   virtual void initializeSetupServices();
   virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;
@@ -304,41 +339,31 @@ class SetupLegacyPolicy : public OptPolicy
                       int max_passes_per_endpoint,
                       int max_repairs_per_pass,
                       bool verbose,
-                      int& opto_iteration,
-                      float initial_tns,
-                      float& prev_tns,
                       bool use_cone_collection,
-                      char phase_marker,
-                      rsz::ViolatorSortType sort_type);
+                      rsz::ViolatorSortType sort_type,
+                      PhaseRunContext& ctx);
   void repairSetupTns(float setup_slack_margin,
                       int max_passes_per_endpoint,
                       int max_repairs_per_pass,
                       bool verbose,
-                      int& opto_iteration,
-                      char phase_marker,
-                      rsz::ViolatorSortType sort_type);
+                      rsz::ViolatorSortType sort_type,
+                      PhaseRunContext& ctx);
   void repairSetupEndpointFanin(float setup_slack_margin,
                                 int max_passes_per_endpoint,
                                 bool verbose,
-                                int& opto_iteration,
-                                char phase_marker);
+                                PhaseRunContext& ctx);
   void repairSetupStartpointFanout(float setup_slack_margin,
                                    int max_passes_per_startpoint,
                                    bool verbose,
-                                   int& opto_iteration,
-                                   char phase_marker);
+                                   PhaseRunContext& ctx);
   void repairSetupDirectional(bool use_startpoints,
                               float setup_slack_margin,
                               int max_passes_per_point,
                               bool verbose,
-                              int& opto_iteration,
-                              char phase_marker);
+                              PhaseRunContext& ctx);
   void repairSetupLastGasp(const RepairSetupParams& params,
-                           int& num_viols,
                            int max_iterations,
-                           int opto_iteration,
-                           float initial_tns,
-                           char phase_marker);
+                           PhaseRunContext& ctx);
 
   // === Critical-cell VT sweep ==============================================
   bool swapVTCritCells(const RepairSetupParams& params, int& num_viols);
@@ -354,6 +379,12 @@ class SetupLegacyPolicy : public OptPolicy
 
   // === Repair services ======================================================
   std::unique_ptr<rsz::RepairTargetCollector> target_collector_;
+
+  // === Sequencer-shared state ==============================================
+  // Cached params for runPostPhaseVtSwap; computed once in
+  // prepareForPhasePipeline so the sequencer doesn't have to thread them
+  // through phase boundaries.
+  std::optional<RepairSetupParams> repair_setup_params_;
 
   // === Repair progress state ===============================================
   bool fallback_ = false;

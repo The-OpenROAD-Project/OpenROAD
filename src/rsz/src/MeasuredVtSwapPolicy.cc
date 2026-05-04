@@ -39,9 +39,10 @@ MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
 
 MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
 
-void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config)
+void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config,
+                                 PhaseRunContext* const ctx)
 {
-  OptPolicy::start(config);
+  OptPolicy::start(config, ctx);
   generator_ = std::make_unique<MeasuredVtSwapGenerator>(
       makeGeneratorContext(config_));
   target_collector_ = std::make_unique<rsz::RepairTargetCollector>(&resizer_);
