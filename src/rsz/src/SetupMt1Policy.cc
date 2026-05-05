@@ -139,11 +139,11 @@ void SetupMt1Policy::iterate()
 
 std::vector<Target> SetupMt1Policy::collectWorstEndpointTargets() const
 {
-  rsz::RepairTargetCollector collector(&resizer_);
-  collector.init(config_.setup_slack_margin);
-  return collector.collectCritPathDriverPinTargets([this](sta::Pin* pin) {
-    return resizer_.isEditableLogicStdCell(network_->instance(pin));
-  });
+  target_collector_->init(config_.setup_slack_margin);
+  return target_collector_->collectCritPathDriverPinTargets(
+      [this](sta::Pin* pin) {
+        return resizer_.isEditableLogicStdCell(network_->instance(pin));
+      });
 }
 
 std::vector<TargetEvaluation> SetupMt1Policy::generateAndEstimateTargets(

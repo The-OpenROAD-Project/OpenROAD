@@ -43,7 +43,9 @@
 namespace rsz {
 
 OptPolicy::OptPolicy(Resizer& resizer, MoveCommitter& committer)
-    : resizer_(resizer), committer_(committer)
+    : resizer_(resizer),
+      committer_(committer),
+      target_collector_(std::make_unique<RepairTargetCollector>(&resizer))
 {
 }
 
@@ -138,8 +140,7 @@ void OptPolicy::printFinalProgress(
 
 const std::vector<const sta::Pin*>& OptPolicy::finalReportPins() const
 {
-  static const std::vector<const sta::Pin*> empty_report_pins;
-  return empty_report_pins;
+  return target_collector_->getViolatingPins();
 }
 
 bool OptPolicy::reportRepairSummary() const

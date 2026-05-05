@@ -18,7 +18,6 @@ class Vertex;
 
 namespace rsz {
 class Resizer;
-class RepairTargetCollector;
 }  // namespace rsz
 
 namespace utl {
@@ -74,7 +73,6 @@ class MeasuredVtSwapPolicy : public OptPolicy
   bool estimateAndCommitBestCandidate(const Target& target);
 
   // === Run configuration and generators ====================================
-  std::unique_ptr<rsz::RepairTargetCollector> target_collector_;
   std::unique_ptr<MeasuredVtSwapGenerator> generator_;
 
   // === Iteration progress ===================================================

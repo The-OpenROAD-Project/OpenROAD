@@ -198,6 +198,7 @@ class OptPolicy
   est::EstimateParasitics* estimate_parasitics_{nullptr};
   const sta::MinMax* max_{nullptr};
   OptPolicyConfig policy_config_{};
+  std::unique_ptr<RepairTargetCollector> target_collector_;
   GeneratorVector move_generators_;
   std::vector<MoveType> move_sequence_;
   std::unique_ptr<utl::ThreadPool> thread_pool_;

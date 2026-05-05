@@ -119,7 +119,6 @@ bool SetupLegacyPolicy::repairSetupPin(const sta::Pin* end_pin)
 
 void SetupLegacyPolicy::init()
 {
-  target_collector_ = std::make_unique<rsz::RepairTargetCollector>(&resizer_);
   initial_design_area_ = resizer_.computeDesignArea();
 }
 
@@ -804,11 +803,6 @@ void SetupLegacyPolicy::runCriticalVtSwapPhase(int& num_viols)
     sta_->findRequireds();
   }
   committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
-}
-
-const std::vector<const sta::Pin*>& SetupLegacyPolicy::finalReportPins() const
-{
-  return target_collector_->getViolatingPins();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

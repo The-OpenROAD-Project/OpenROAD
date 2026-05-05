@@ -4,7 +4,6 @@
 #pragma once
 
 #include <map>
-#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -311,8 +310,6 @@ class SetupLegacyPolicy : public OptPolicy
   int fanout(sta::Vertex* vertex) const;
 
   // === Progress reporting ===================================================
-  // Preserve the legacy MoveTracker final-report critical pin set.
-  const std::vector<const sta::Pin*>& finalReportPins() const override;
   void printProgress(int iteration, bool force, bool end, bool last_gasp) const;
   void printProgress(int iteration,
                      bool force,
@@ -363,9 +360,6 @@ class SetupLegacyPolicy : public OptPolicy
                          std::unordered_set<sta::Instance*>& notSwappable,
                          const RepairSetupParams& params);
   sta::Slack getInstanceSlack(sta::Instance* inst);
-
-  // === Repair services ======================================================
-  std::unique_ptr<rsz::RepairTargetCollector> target_collector_;
 
   // === Repair progress state ===============================================
   bool fallback_ = false;
