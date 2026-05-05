@@ -70,10 +70,6 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.8")
 
-# JavaScript / web UI — only used for JS unit tests in src/web/test
-bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
-bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
-
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
 # of this project generate stubs .ifso for things like X11 that will
@@ -97,10 +93,16 @@ bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = Tr
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
+
+# JavaScript / web UI — only used for JS unit tests in src/web/test
+bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
+bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
+
+# ORFS
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "78f19f25cec73bdec3517a76465dec7ce17ce227"
+BAZEL_ORFS_COMMIT = "f5e20547f93729a4f67929902aaa3386d933bad0"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -118,34 +120,6 @@ git_override(
     strip_prefix = "verilog",
 )
 
-# bazel-orfs pulls in orfs without a version and patches yosys, relying on
-# overrides that only apply when bazel-orfs is the root module. Mirror them
-# here so OpenROAD-as-root can resolve the module graph.
-bazel_dep(name = "orfs", dev_dependency = True)
-git_override(
-    module_name = "orfs",
-    commit = "10a2baea2171059ec14cda9a5855aa26dd7572c6",
-    patch_strip = 1,
-    patches = [
-        "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
-    ],
-    remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
-)
-
-bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
-
-# yosys-slang is not on BCR. Pin to a commit on povik/yosys-slang master
-# that has the upstream Bazel build (povik/yosys-slang#310) and the
-# slang.so visibility fix (povik/yosys-slang#311). Submodules pull in
-# vendored slang and fmt sources.
-bazel_dep(name = "yosys-slang", dev_dependency = True)
-git_override(
-    module_name = "yosys-slang",
-    commit = "7753ea70431d85929292b90c33b32f6dbdb3b048",
-    init_submodules = True,
-    remote = "https://github.com/povik/yosys-slang.git",
-)
-
 # --- Extensions ---
 
 llvm = use_extension(
@@ -159,7 +133,7 @@ llvm.toolchain(
 use_repo(llvm, "llvm_toolchain")
 # use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
-# FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
+# FYI: Comment out @llvm_toolchain//:all on NixOS and use the local clang toolchain instead.
 register_toolchains(
     "@llvm_toolchain//:all",
     "@rules_verilator//verilator:verilator_toolchain",
@@ -200,13 +174,16 @@ npm.npm_translate_lock(
 use_repo(npm, "npm")
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
-    # Use OpenROAD of this repo instead of the one bundled with @orfs
+    # Official image https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
+    # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
-    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
-    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
+    sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
 )
+use_repo(orfs, "docker_orfs")
 
 # --- Overrides ---
 

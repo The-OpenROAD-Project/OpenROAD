@@ -334,6 +334,8 @@ def mock_array(name, config):
         orfs_flow(
             name = "MockArray",
             arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
                 "CORE_AREA": "{} {} {} {}".format(
                     array_spacing_x,
                     array_spacing_y,
@@ -379,10 +381,6 @@ def mock_array(name, config):
             tags = ["manual"],
             test_kwargs = {
                 "tags": ["orfs"],
-            },
-            user_arguments = {
-                "ARRAY_COLS": str(config["cols"]),
-                "ARRAY_ROWS": str(config["rows"]),
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
