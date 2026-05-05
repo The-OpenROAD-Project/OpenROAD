@@ -59,8 +59,6 @@ cc_library(
         "src/SetupMt1Policy.cc",
         "src/SetupMt1Policy.hh",
         "src/SwapArithModules.hh",
-        "src/dispatch.cc",
-        "src/dispatch.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
         "src/move/BufferGenerator.cc",

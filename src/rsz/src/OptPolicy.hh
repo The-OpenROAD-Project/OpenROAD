@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "dispatch.hh"
 
 namespace sta {
 class dbSta;
@@ -32,6 +31,49 @@ class MoveCommitter;
 class MoveGenerator;
 class Resizer;
 
+// Single-character marker used in legacy phase log prefixes.
+// Order: 8 special chars, 26 lowercase, 26 uppercase, then '?' fallback.
+inline char phaseMarkerForIndex(int phase_index)
+{
+  constexpr char special_markers[] = "*+^&@!-=";
+  constexpr int num_special = 8;
+  if (phase_index < num_special) {
+    return special_markers[phase_index];
+  }
+  phase_index -= num_special;
+  if (phase_index < 26) {
+    return 'a' + phase_index;
+  }
+  phase_index -= 26;
+  if (phase_index < 26) {
+    return 'A' + phase_index;
+  }
+  return '?';
+}
+
+// Optimization progress shared across phase/policy invocations.
+//
+// Optimizer owns this object for the full run. Policies may update it to keep
+// iteration and TNS progress continuous across phase boundaries.
+struct OptimizerProgress
+{
+  int iteration{0};
+  int violation_count{0};
+  float initial_tns{0.0f};
+  float previous_tns{0.0f};
+};
+
+// Cross-phase state shared by the sequencer with each phase invocation.
+//
+// `progress` is sequencer-owned and survives across phase boundaries.
+struct PhaseRunContext
+{
+  OptimizerProgress& progress;
+
+  // Zero-based position in the phase token list.
+  int phase_index{0};
+};
+
 // Abstract base for one repair_setup strategy.
 //
 // Each concrete policy is responsible for:
@@ -48,8 +90,7 @@ class Resizer;
 // drives each through start(config, ctx) -> iterate()* -> converged()/result()
 // in that order.  When `ctx` is non-null the sequencer is sharing cross-phase
 // accumulators with the policy; legacy single-policy callers may pass nullptr
-// and the policy keeps its own accumulators.  hooks() lets a policy opt in to
-// sequencer-side log/profiler scopes and pre-iteration slack sampling.
+// and the policy keeps its own accumulators.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
@@ -66,17 +107,10 @@ class OptPolicy
 
   virtual const char* name() const = 0;
   virtual void start(const OptimizerRunConfig& config, PhaseRunContext* ctx);
-  // Convenience overload for legacy callers that do not need cross-phase
-  // accumulator sharing.  Forwards to start(config, nullptr).
-  void start(const OptimizerRunConfig& config) { start(config, nullptr); }
   virtual void iterate() = 0;
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
-
-  // Hooks the sequencer applies around iterate().  Default returns an empty
-  // PhaseHooks (no pre-slack capture, no log/profiler scopes).
-  virtual PhaseHooks hooks() const { return {}; }
 
  protected:
   // === Generator setup ======================================================

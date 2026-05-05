@@ -6,7 +6,6 @@
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
 #include "SetupLegacyPolicy.hh"
-#include "dispatch.hh"
 
 namespace rsz {
 
@@ -17,18 +16,17 @@ PhasePolicyBase::PhasePolicyBase(Resizer& resizer,
 {
 }
 
-// LEGACY phase  -  sets up MainRepairState from PhaseRunContext, runs the main
-// endpoint repair loop, then writes the updated accumulators back to ctx.
 void MainRepairPhasePolicy::iterate()
 {
   PhaseRunContext& ctx = *run_ctx_;
+  OptimizerProgress& progress = ctx.progress;
   parent_->committer_.capturePrePhaseSlack();
 
   SetupLegacyPolicy::MainRepairState main_state;
-  main_state.opto_iteration = ctx.opto_iteration;
-  main_state.initial_tns = ctx.initial_tns;
-  main_state.prev_tns = ctx.initial_tns;
-  main_state.phase_marker = ctx.step.marker;
+  main_state.opto_iteration = progress.iteration;
+  main_state.initial_tns = progress.initial_tns;
+  main_state.prev_tns = progress.initial_tns;
+  main_state.phase_marker = phaseMarkerForIndex(ctx.phase_index);
   SetupLegacyPolicy::ViolatingEnds violating_ends;
   if (parent_->initializeMainRepair(parent_->config_.setup_slack_margin,
                                     parent_->config_.repair_tns_end_percent,
@@ -44,12 +42,11 @@ void MainRepairPhasePolicy::iterate()
   parent_->committer_.printTrackerPhaseSummary(
       "LEGACY Phase Summary", "LEGACY Phase Endpoint Profiler", true);
 
-  // Propagate accumulator deltas to the sequencer so subsequent phases see
-  // the updated TNS / iteration / violation counters.
-  ctx.opto_iteration = main_state.opto_iteration;
-  ctx.num_viols = main_state.num_viols;
-  ctx.initial_tns = main_state.initial_tns;
-  ctx.prev_tns = main_state.prev_tns;
+  // Propagate accumulator deltas back to the sequencer.
+  progress.iteration = main_state.opto_iteration;
+  progress.violation_count = main_state.num_viols;
+  progress.initial_tns = main_state.initial_tns;
+  progress.previous_tns = main_state.prev_tns;
 
   markRunComplete(true);
 }

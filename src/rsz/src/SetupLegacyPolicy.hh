@@ -22,7 +22,6 @@
 #include "RepairTargetCollector.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "dispatch.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -49,7 +48,7 @@ class Resizer;
 namespace rsz {
 
 // Single-threaded setup-repair policy (default; selected when no LEGACY_MT
-// token appears in the -policy list).
+// token appears in the -phases list).
 //
 // This policy replicates the original pre-optimizer repair_setup flow so that
 // existing regression results are preserved when no MT policy is requested.
@@ -90,7 +89,6 @@ class SetupLegacyPolicy : public OptPolicy
   SetupLegacyPolicy(Resizer& resizer, MoveCommitter& committer);
 
   const char* name() const override { return "SetupLegacyPolicy"; }
-  using OptPolicy::start;
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
@@ -348,14 +346,6 @@ class SetupLegacyPolicy : public OptPolicy
                       bool verbose,
                       rsz::ViolatorSortType sort_type,
                       PhaseRunContext& ctx);
-  void repairSetupEndpointFanin(float setup_slack_margin,
-                                int max_passes_per_endpoint,
-                                bool verbose,
-                                PhaseRunContext& ctx);
-  void repairSetupStartpointFanout(float setup_slack_margin,
-                                   int max_passes_per_startpoint,
-                                   bool verbose,
-                                   PhaseRunContext& ctx);
   void repairSetupDirectional(bool use_startpoints,
                               float setup_slack_margin,
                               int max_passes_per_point,
@@ -379,12 +369,6 @@ class SetupLegacyPolicy : public OptPolicy
 
   // === Repair services ======================================================
   std::unique_ptr<rsz::RepairTargetCollector> target_collector_;
-
-  // === Sequencer-shared state ==============================================
-  // Cached params for runPostPhaseVtSwap; computed once in
-  // prepareForPhasePipeline so the sequencer doesn't have to thread them
-  // through phase boundaries.
-  std::optional<RepairSetupParams> repair_setup_params_;
 
   // === Repair progress state ===============================================
   bool fallback_ = false;

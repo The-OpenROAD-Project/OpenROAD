@@ -31,7 +31,6 @@
 #include "SwapPinsGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbSta.hh"
-#include "dispatch.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -737,10 +736,6 @@ bool SetupLegacyPolicy::prepareForPhasePipeline()
   const float setup_slack_margin = config_.setup_slack_margin;
   const double repair_tns_end_percent = config_.repair_tns_end_percent;
   const int max_repairs_per_pass = config_.max_repairs_per_pass;
-  // Cache for runPostPhaseVtSwap.  RepairSetupParams has const fields so
-  // optional<> can only be filled via emplace.
-  repair_setup_params_.reset();
-  repair_setup_params_.emplace(makeRepairSetupParams(setup_slack_margin));
 
   max_repairs_per_pass_ = max_repairs_per_pass;
   resetMovedBufferFlag();
@@ -804,7 +799,7 @@ void SetupLegacyPolicy::runPostPhaseVtSwap(int& num_viols)
     return;
   }
   committer_.capturePrePhaseSlack();
-  RepairSetupParams params = repair_setup_params_.value();
+  RepairSetupParams params = makeRepairSetupParams(config_.setup_slack_margin);
   if (swapVTCritCells(params, num_viols)) {
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
@@ -1429,10 +1424,11 @@ void SetupLegacyPolicy::repairSetupWns(const float setup_slack_margin,
                                        const rsz::ViolatorSortType sort_type,
                                        PhaseRunContext& ctx)
 {
-  int& opto_iteration = ctx.opto_iteration;
-  const float initial_tns = ctx.initial_tns;
-  float& prev_tns = ctx.prev_tns;
-  const char phase_marker = ctx.step.marker;
+  OptimizerProgress& progress = ctx.progress;
+  int& opto_iteration = progress.iteration;
+  const float initial_tns = progress.initial_tns;
+  float& prev_tns = progress.previous_tns;
+  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
   const utl::DebugScopedTimer timer(
       logger_,
       RSZ,
@@ -1748,8 +1744,8 @@ void SetupLegacyPolicy::repairSetupTns(const float setup_slack_margin,
                                        const rsz::ViolatorSortType sort_type,
                                        PhaseRunContext& ctx)
 {
-  int& opto_iteration = ctx.opto_iteration;
-  const char phase_marker = ctx.step.marker;
+  int& opto_iteration = ctx.progress.iteration;
+  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
   const utl::DebugScopedTimer timer(
       logger_,
       RSZ,
@@ -1946,40 +1942,14 @@ void SetupLegacyPolicy::repairSetupTns(const float setup_slack_margin,
   }
 }
 
-void SetupLegacyPolicy::repairSetupEndpointFanin(
-    const float setup_slack_margin,
-    const int max_passes_per_endpoint,
-    const bool verbose,
-    PhaseRunContext& ctx)
-{
-  repairSetupDirectional(/*use_startpoints=*/false,
-                         setup_slack_margin,
-                         max_passes_per_endpoint,
-                         verbose,
-                         ctx);
-}
-
-void SetupLegacyPolicy::repairSetupStartpointFanout(
-    const float setup_slack_margin,
-    const int max_passes_per_startpoint,
-    const bool verbose,
-    PhaseRunContext& ctx)
-{
-  repairSetupDirectional(/*use_startpoints=*/true,
-                         setup_slack_margin,
-                         max_passes_per_startpoint,
-                         verbose,
-                         ctx);
-}
-
 void SetupLegacyPolicy::repairSetupDirectional(const bool use_startpoints,
                                                const float setup_slack_margin,
                                                const int max_passes_per_point,
                                                const bool verbose,
                                                PhaseRunContext& ctx)
 {
-  int& opto_iteration = ctx.opto_iteration;
-  const char phase_marker = ctx.step.marker;
+  int& opto_iteration = ctx.progress.iteration;
+  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
   const char* phase_name
       = use_startpoints ? "STARTPOINT_FANOUT" : "ENDPOINT_FANIN";
   const utl::DebugScopedTimer timer(
@@ -2523,10 +2493,11 @@ void SetupLegacyPolicy::repairSetupLastGasp(const RepairSetupParams& params,
                                             const int max_iterations,
                                             PhaseRunContext& ctx)
 {
-  int& num_viols = ctx.num_viols;
-  const int opto_iteration = ctx.opto_iteration;
-  const float initial_tns = ctx.initial_tns;
-  const char phase_marker = ctx.step.marker;
+  OptimizerProgress& progress = ctx.progress;
+  int& num_viols = progress.violation_count;
+  const int opto_iteration = progress.iteration;
+  const float initial_tns = progress.initial_tns;
+  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
   const utl::DebugScopedTimer timer(
       logger_,
       RSZ,

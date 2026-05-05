@@ -13,12 +13,10 @@ class SetupLegacyPolicy;
 // OptPolicy lifecycle: a single iterate() runs the entire repair phase and
 // then marks the policy converged.  All of them share a `parent_` pointer
 // back to the host SetupLegacyPolicy because the legacy helpers and config
-// fields they delegate to currently live on that class (will become
-// LegacyRepairContext in Step 8).
+// fields they delegate to currently live on that class.
 
-// Common base for all phase wrappers.  Holds the parent pointer and provides
-// a default hooks()  -  concrete classes only override iterate() and (when
-// applicable) hooks().
+// Common base for all phase wrappers.  Holds the parent pointer; concrete
+// classes only override iterate().
 class PhasePolicyBase : public OptPolicy
 {
  public:
@@ -27,7 +25,7 @@ class PhasePolicyBase : public OptPolicy
                   SetupLegacyPolicy* parent);
 
  protected:
-  SetupLegacyPolicy* parent_{nullptr};
+  SetupLegacyPolicy* parent_;
 };
 
 // LEGACY token  -  runs initializeMainRepair + runMainRepairLoop.

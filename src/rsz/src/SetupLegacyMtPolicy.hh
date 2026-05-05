@@ -22,7 +22,7 @@ class SizeUpMtGenerator;
 class VtSwapMtGenerator;
 
 // Hybrid single/multi-threaded setup-repair policy (selected as the legacy
-// context when a LEGACY_MT token appears in the -policy list).
+// context when a LEGACY_MT token appears in the -phases list).
 //
 // SetupLegacyMtPolicy keeps SetupLegacyPolicy's serial endpoint, target, and
 // move-type ordering.  Only the VtSwap and SizeUp move types use MT candidate

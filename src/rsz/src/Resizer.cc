@@ -4846,24 +4846,29 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
 {
+  OptimizerRunConfig config;
+  // Freeze Tcl-facing repair setup knobs before policy dispatch.
+  config.setup_slack_margin = setup_margin;
+  config.repair_tns_end_percent = repair_tns_end_percent;
+  config.max_passes = max_passes;
+  config.max_iterations = max_iterations;
+  config.max_repairs_per_pass = max_repairs_per_pass;
+  config.match_cell_footprint = match_cell_footprint;
+  config.verbose = verbose;
+  config.sequence = sequence;
+  config.phases = phases != nullptr ? phases : "";
+  config.skip_pin_swap = skip_pin_swap;
+  config.skip_gate_cloning = skip_gate_cloning;
+  config.skip_size_down = skip_size_down;
+  config.skip_buffering = skip_buffering;
+  config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_last_gasp = skip_last_gasp;
+  config.skip_vt_swap = skip_vt_swap;
+  config.skip_crit_vt_swap = skip_crit_vt_swap;
+
   rsz::Optimizer optimizer(this);
-  return optimizer.repairSetup(setup_margin,
-                               repair_tns_end_percent,
-                               max_passes,
-                               max_iterations,
-                               max_repairs_per_pass,
-                               match_cell_footprint,
-                               verbose,
-                               sequence,
-                               phases,
-                               skip_pin_swap,
-                               skip_gate_cloning,
-                               skip_size_down,
-                               skip_buffering,
-                               skip_buffer_removal,
-                               skip_last_gasp,
-                               skip_vt_swap,
-                               skip_crit_vt_swap);
+  optimizer.configure(config);
+  return optimizer.run();
 }
 
 void Resizer::reportSwappablePins()

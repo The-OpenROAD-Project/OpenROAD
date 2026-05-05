@@ -57,7 +57,6 @@ class MeasuredVtSwapPolicy : public OptPolicy
   ~MeasuredVtSwapPolicy() override;
 
   const char* name() const override { return "MeasuredVtSwapPolicy"; }
-  using OptPolicy::start;
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
