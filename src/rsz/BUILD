@@ -48,6 +48,7 @@ cc_library(
         "src/RepairDesign.hh",
         "src/RepairHold.cc",
         "src/RepairHold.hh",
+        "src/RepairSetupContext.hh",
         "src/RepairTargetCollector.cc",
         "src/RepairTargetCollector.hh",
         "src/Resizer.cc",

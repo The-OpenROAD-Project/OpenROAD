@@ -3,97 +3,213 @@
 
 #pragma once
 
-#include "OptPolicy.hh"
+#include "SetupLegacyPolicy.hh"
 
 namespace rsz {
 
-class SetupLegacyPolicy;
-
-// Phase-OptPolicy wrappers.  Each class adapts one legacy repair phase to the
-// OptPolicy lifecycle: a single iterate() runs the entire repair phase and
-// then marks the policy converged.  All of them share a `parent_` pointer
-// back to the host SetupLegacyPolicy because the legacy helpers and config
-// fields they delegate to currently live on that class.
-
-// Common base for all phase wrappers.  Holds the parent pointer; concrete
-// classes only override iterate().
-class PhasePolicyBase : public OptPolicy
+class MainRepairPhasePolicy : public SetupLegacyPolicy
 {
  public:
-  PhasePolicyBase(Resizer& resizer,
-                  MoveCommitter& committer,
-                  SetupLegacyPolicy* parent);
+  using SetupLegacyPolicy::SetupLegacyPolicy;
 
- protected:
-  SetupLegacyPolicy* parent_;
-};
-
-// LEGACY token  -  runs initializeMainRepair + runMainRepairLoop.
-class MainRepairPhasePolicy : public PhasePolicyBase
-{
- public:
-  using PhasePolicyBase::PhasePolicyBase;
   const char* name() const override { return "MainRepairPhasePolicy"; }
   void iterate() override;
+
+ protected:
+  // Mutable progress counters for the main endpoint repair loop.
+  struct MainRepairState
+  {
+    int end_index{0};
+    int max_end_count{0};
+    int num_viols{0};
+    int opto_iteration{0};
+    float initial_tns{0.0f};
+    float prev_tns{0.0f};
+    float fix_rate_threshold{0.0f};
+    bool prev_termination{false};
+    bool two_cons_terminations{false};
+    char phase_marker{'*'};
+  };
+
+  void runMainRepairPhase();
+  bool initializeMainRepair(float setup_slack_margin,
+                            double repair_tns_end_percent,
+                            MainRepairState& main_state,
+                            ViolatingEnds& violating_ends);
+  void runMainRepairLoop(const ViolatingEnds& violating_ends,
+                         float setup_slack_margin,
+                         int max_passes,
+                         int max_iterations,
+                         bool verbose,
+                         MainRepairState& main_state);
+  virtual bool beginEndpointRepair(
+      const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
+      MainRepairState& main_state,
+      EndpointRepairState& endpoint_state);
+  virtual void repairEndpoint(EndpointRepairState& endpoint_state,
+                              MainRepairState& main_state,
+                              float setup_slack_margin,
+                              int max_passes,
+                              int max_iterations,
+                              bool verbose);
+  virtual bool shouldStopEndpointRepair(EndpointRepairState& endpoint_state,
+                                        float setup_slack_margin);
+  bool shouldStopMainRepair(const MainRepairState& main_state) const;
+  bool pathImproved(int end_index,
+                    sta::Slack end_slack,
+                    sta::Slack worst_slack,
+                    sta::Slack prev_end_slack,
+                    sta::Slack prev_worst_slack) const;
 };
 
-// WNS / WNS_PATH / WNS_CONE tokens  -  runs repairSetupWns.  `use_cone`
-// distinguishes WNS_CONE from WNS / WNS_PATH.
-class WnsPhasePolicy : public PhasePolicyBase
+class WnsPhasePolicy : public SetupLegacyPolicy
 {
  public:
   WnsPhasePolicy(Resizer& resizer,
                  MoveCommitter& committer,
-                 SetupLegacyPolicy* parent,
-                 bool use_cone);
+                 RepairSetupContext& setup_context,
+                 bool use_cone)
+      : SetupLegacyPolicy(resizer, committer, setup_context),
+        use_cone_(use_cone)
+  {
+  }
+
   const char* name() const override { return "WnsPhasePolicy"; }
   void iterate() override;
 
  private:
+  void repairSetupWns(float setup_slack_margin,
+                      int max_passes_per_endpoint,
+                      int max_repairs_per_pass,
+                      bool verbose,
+                      bool use_cone_collection,
+                      rsz::ViolatorSortType sort_type,
+                      PhaseRunContext& ctx);
+
   bool use_cone_{false};
 };
 
-// TNS token  -  runs repairSetupTns.
-class TnsPhasePolicy : public PhasePolicyBase
+class TnsPhasePolicy : public SetupLegacyPolicy
 {
  public:
-  using PhasePolicyBase::PhasePolicyBase;
+  using SetupLegacyPolicy::SetupLegacyPolicy;
+
   const char* name() const override { return "TnsPhasePolicy"; }
   void iterate() override;
+
+ private:
+  void repairSetupTns(float setup_slack_margin,
+                      int max_passes_per_endpoint,
+                      int max_repairs_per_pass,
+                      bool verbose,
+                      rsz::ViolatorSortType sort_type,
+                      PhaseRunContext& ctx);
 };
 
-// ENDPOINT_FANIN / STARTPOINT_FANOUT tokens  -  runs repairSetupDirectional.
-// `use_starts` selects startpoint-driven (true) vs endpoint-driven (false).
-class DirectionalPhasePolicy : public PhasePolicyBase
+class DirectionalPhasePolicy : public SetupLegacyPolicy
 {
  public:
   DirectionalPhasePolicy(Resizer& resizer,
                          MoveCommitter& committer,
-                         SetupLegacyPolicy* parent,
-                         bool use_starts);
+                         RepairSetupContext& setup_context,
+                         bool use_starts)
+      : SetupLegacyPolicy(resizer, committer, setup_context),
+        use_starts_(use_starts)
+  {
+  }
+
   const char* name() const override { return "DirectionalPhasePolicy"; }
   void iterate() override;
 
  private:
+  void repairSetupDirectional(bool use_startpoints,
+                              float setup_slack_margin,
+                              int max_passes_per_point,
+                              bool verbose,
+                              PhaseRunContext& ctx);
+
   bool use_starts_{false};
 };
 
-// LAST_GASP token  -  runs repairSetupLastGasp.  Honors skip_last_gasp.
-class LastGaspPhasePolicy : public PhasePolicyBase
+class LastGaspPhasePolicy : public SetupLegacyPolicy
 {
  public:
-  using PhasePolicyBase::PhasePolicyBase;
+  using SetupLegacyPolicy::SetupLegacyPolicy;
+
   const char* name() const override { return "LastGaspPhasePolicy"; }
   void iterate() override;
+
+ private:
+  // Mutable progress for the last-gasp phase executed after the main repair
+  // loop has converged or hit its iteration limit.
+  struct LastGaspState
+  {
+    int end_index{0};
+    int max_end_count{0};
+    int num_viols{0};
+    int opto_iteration{0};
+    float initial_tns{0.0f};
+    float prev_tns{0.0f};
+    float fix_rate_threshold{0.0f};
+    sta::Slack prev_worst_slack{0.0};
+    bool prev_termination{false};
+    bool two_cons_terminations{false};
+    char phase_marker{'+'};
+  };
+
+  void repairSetupLastGasp(const RepairSetupParams& params,
+                           int max_iterations,
+                           PhaseRunContext& ctx);
+  void buildLastGaspMoveSequence(const RepairSetupParams& params);
+  bool initializeLastGaspRepair(const RepairSetupParams& params,
+                                int opto_iteration,
+                                float initial_tns,
+                                LastGaspState& last_gasp_state,
+                                ViolatingEnds& violating_ends);
+  void runLastGaspLoop(const ViolatingEnds& violating_ends,
+                       const RepairSetupParams& params,
+                       int max_iterations,
+                       LastGaspState& last_gasp_state);
+  bool beginLastGaspEndpoint(
+      const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
+      LastGaspState& last_gasp_state,
+      EndpointRepairState& endpoint_state);
+  void repairLastGaspEndpoint(EndpointRepairState& endpoint_state,
+                              LastGaspState& last_gasp_state,
+                              const RepairSetupParams& params,
+                              int max_iterations);
+  bool advanceLastGaspProgress(EndpointRepairState& endpoint_state,
+                               LastGaspState& last_gasp_state,
+                               const RepairSetupParams& params,
+                               float curr_tns);
+  bool lastGaspImproved(sta::Slack worst_slack,
+                        float curr_tns,
+                        sta::Slack prev_worst_slack,
+                        float prev_tns) const;
+  bool shouldStopLastGasp(const LastGaspState& last_gasp_state,
+                          int max_iterations) const;
+
+  static constexpr int max_last_gasp_passes_ = 10;
 };
 
-// CRIT_VT_SWAP token  -  runs the legacy critical fanin-cone VT sweep.
-class CritVtSwapPhasePolicy : public PhasePolicyBase
+class CritVtSwapPhasePolicy : public SetupLegacyPolicy
 {
  public:
-  using PhasePolicyBase::PhasePolicyBase;
+  using SetupLegacyPolicy::SetupLegacyPolicy;
+
   const char* name() const override { return "CritVtSwapPhasePolicy"; }
   void iterate() override;
+
+ private:
+  void runCriticalVtSwapPhase(int& num_viols);
+  bool swapVTCritCells(const RepairSetupParams& params, int& num_viols);
+  sta::Pin* worstOutputPin(sta::Instance* inst);
+  void traverseFaninCone(sta::Vertex* endpoint,
+                         std::unordered_map<sta::Instance*, float>& crit_insts,
+                         std::unordered_set<sta::Vertex*>& visited,
+                         std::unordered_set<sta::Instance*>& notSwappable,
+                         const RepairSetupParams& params);
+  sta::Slack getInstanceSlack(sta::Instance* inst);
 };
 
 }  // namespace rsz

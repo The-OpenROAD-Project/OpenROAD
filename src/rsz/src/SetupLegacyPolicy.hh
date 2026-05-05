@@ -18,7 +18,7 @@
 #include "MoveGenerator.hh"
 #include "OptPolicy.hh"
 #include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
+#include "RepairSetupContext.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -64,30 +64,13 @@ namespace rsz {
 //     endpoints with VT-swap-only or a broad sequence, plus critical-cell
 //     VT fanin-cone sweep (swapVTCritCells).
 //
-// All work runs on the calling thread; no ThreadPool is used.
-// Forward declarations of phase-OptPolicy wrappers (PhasePolicies.hh) that
-// delegate to SetupLegacyPolicy's per-phase repair helpers.  Friend-listed
-// here so the wrappers can call protected helpers without exposing them on
-// SetupLegacyPolicy's public API.
-class MainRepairPhasePolicy;
-class WnsPhasePolicy;
-class TnsPhasePolicy;
-class DirectionalPhasePolicy;
-class LastGaspPhasePolicy;
-class CritVtSwapPhasePolicy;
-
 class SetupLegacyPolicy : public OptPolicy
 {
-  friend class MainRepairPhasePolicy;
-  friend class WnsPhasePolicy;
-  friend class TnsPhasePolicy;
-  friend class DirectionalPhasePolicy;
-  friend class LastGaspPhasePolicy;
-  friend class CritVtSwapPhasePolicy;
-
  public:
   // === OptPolicy entry points ==============================================
-  SetupLegacyPolicy(Resizer& resizer, MoveCommitter& committer);
+  SetupLegacyPolicy(Resizer& resizer,
+                    MoveCommitter& committer,
+                    RepairSetupContext& setup_context);
 
   const char* name() const override { return "SetupLegacyPolicy"; }
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
@@ -104,32 +87,10 @@ class SetupLegacyPolicy : public OptPolicy
   // dispatch loop.
   bool prepareForPhasePipeline();
 
-  // Critical-cell VT swap phase.  No-op when skip_crit_vt_swap /
-  // skip_vt_swap is set or the design has no VT cells.
-  void runCriticalVtSwapPhase(int& num_viols);
-
  protected:
   using ViolatingEnds = std::vector<std::pair<sta::Vertex*, sta::Slack>>;
 
   // === Phase state ==========================================================
-
-  // Mutable progress counters for the main endpoint repair loop (Phase 1).
-  // Resets on each outer iteration when endpoints are re-sorted.  The
-  // two_cons_terminations flag triggers convergence: two consecutive
-  // iterations where TNS improvement falls below fix_rate_threshold.
-  struct MainRepairState
-  {
-    int end_index{0};
-    int max_end_count{0};
-    int num_viols{0};
-    int opto_iteration{0};
-    float initial_tns{0.0f};
-    float prev_tns{0.0f};
-    float fix_rate_threshold{0.0f};
-    bool prev_termination{false};
-    bool two_cons_terminations{false};
-    char phase_marker{'*'};
-  };
 
   // Per-endpoint pass state managed under an ECO journal.
   // At the start of each endpoint the committer opens a journal
@@ -150,66 +111,26 @@ class SetupLegacyPolicy : public OptPolicy
     bool journal_open{false};
   };
 
-  // Mutable progress for the last-gasp phase (Phase 3) executed after the
-  // main repair loop has converged or hit its iteration limit.
-  struct LastGaspState
-  {
-    int end_index{0};
-    int max_end_count{0};
-    int num_viols{0};
-    int opto_iteration{0};
-    float initial_tns{0.0f};
-    float prev_tns{0.0f};
-    float fix_rate_threshold{0.0f};
-    sta::Slack prev_worst_slack{0.0};
-    bool prev_termination{false};
-    bool two_cons_terminations{false};
-    char phase_marker{'+'};
-  };
-
   // === Run setup ============================================================
   virtual void init();
+  void finishSetupPhase(bool result);
   virtual void initializeSetupServices();
   virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;
 
   // === Move-sequence configuration =========================================
-  virtual void buildMainMoveSequence();
-  void buildLastGaspMoveSequence(const RepairSetupParams& params);
+  virtual void buildMainMoveSequence(bool log_sequence);
   virtual void activateMoveSequence(bool log_sequence);
   void pushMoveIfEnabled(bool enabled, MoveType type);
   void logMoveSequence() const;
-  RepairSetupParams makeRepairSetupParams(float setup_slack_margin) const;
   ViolatingEnds collectViolatingEndpoints(float setup_slack_margin) const;
 
-  // === Main repair loop =====================================================
-  bool initializeMainRepair(float setup_slack_margin,
-                            double repair_tns_end_percent,
-                            MainRepairState& main_state,
-                            ViolatingEnds& violating_ends);
-  void runMainRepairLoop(const ViolatingEnds& violating_ends,
-                         float setup_slack_margin,
-                         int max_passes,
-                         int max_iterations,
-                         bool verbose,
-                         MainRepairState& main_state);
+  // === Endpoint journal helpers ============================================
   bool beginJournaledEndpointSearch(
       const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
       int max_end_count,
       int& end_index,
       EndpointRepairState& endpoint_state);
-  virtual bool beginEndpointRepair(
-      const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
-      MainRepairState& main_state,
-      EndpointRepairState& endpoint_state);
-  virtual void repairEndpoint(EndpointRepairState& endpoint_state,
-                              MainRepairState& main_state,
-                              float setup_slack_margin,
-                              int max_passes,
-                              int max_iterations,
-                              bool verbose);
-  virtual bool shouldStopEndpointRepair(EndpointRepairState& endpoint_state,
-                                        float setup_slack_margin);
   void recordTermination(bool& prev_termination, bool& two_cons_terminations);
   void acceptEndpointState(EndpointRepairState& endpoint_state);
   void restoreEndpointState(EndpointRepairState& endpoint_state);
@@ -218,43 +139,8 @@ class SetupLegacyPolicy : public OptPolicy
                               int max_passes);
   void refreshEndpointSlacks(EndpointRepairState& endpoint_state);
 
-  // === Last-gasp repair loop ===============================================
-  bool initializeLastGaspRepair(const RepairSetupParams& params,
-                                int opto_iteration,
-                                float initial_tns,
-                                LastGaspState& last_gasp_state,
-                                ViolatingEnds& violating_ends);
-  void runLastGaspLoop(const ViolatingEnds& violating_ends,
-                       const RepairSetupParams& params,
-                       int max_iterations,
-                       LastGaspState& last_gasp_state);
-  bool beginLastGaspEndpoint(
-      const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
-      LastGaspState& last_gasp_state,
-      EndpointRepairState& endpoint_state);
-  void repairLastGaspEndpoint(EndpointRepairState& endpoint_state,
-                              LastGaspState& last_gasp_state,
-                              const RepairSetupParams& params,
-                              int max_iterations);
-  bool advanceLastGaspProgress(EndpointRepairState& endpoint_state,
-                               LastGaspState& last_gasp_state,
-                               const RepairSetupParams& params,
-                               float curr_tns);
-  bool shouldStopMainRepair(const MainRepairState& main_state) const;
-  bool shouldStopLastGasp(const LastGaspState& last_gasp_state,
-                          int max_iterations) const;
   bool reachedIterationLimit(int iteration, int max_iterations) const;
 
-  // === Progress and improvement checks =====================================
-  bool pathImproved(int end_index,
-                    sta::Slack end_slack,
-                    sta::Slack worst_slack,
-                    sta::Slack prev_end_slack,
-                    sta::Slack prev_worst_slack) const;
-  bool lastGaspImproved(sta::Slack worst_slack,
-                        float curr_tns,
-                        sta::Slack prev_worst_slack,
-                        float prev_tns) const;
   // === Target construction and path repair =================================
   virtual bool repairPath(sta::Path* path, sta::Slack path_slack);
   virtual bool repairPins(
@@ -324,49 +210,11 @@ class SetupLegacyPolicy : public OptPolicy
                          char phase_marker);
   void reportCustomPhaseSetup() const;
 
-  // === Custom repair phases =================================================
-  void repairSetupWns(float setup_slack_margin,
-                      int max_passes_per_endpoint,
-                      int max_repairs_per_pass,
-                      bool verbose,
-                      bool use_cone_collection,
-                      rsz::ViolatorSortType sort_type,
-                      PhaseRunContext& ctx);
-  void repairSetupTns(float setup_slack_margin,
-                      int max_passes_per_endpoint,
-                      int max_repairs_per_pass,
-                      bool verbose,
-                      rsz::ViolatorSortType sort_type,
-                      PhaseRunContext& ctx);
-  void repairSetupDirectional(bool use_startpoints,
-                              float setup_slack_margin,
-                              int max_passes_per_point,
-                              bool verbose,
-                              PhaseRunContext& ctx);
-  void repairSetupLastGasp(const RepairSetupParams& params,
-                           int max_iterations,
-                           PhaseRunContext& ctx);
-
-  // === Critical-cell VT sweep ==============================================
-  bool swapVTCritCells(const RepairSetupParams& params, int& num_viols);
-  sta::Pin* worstOutputPin(sta::Instance* inst);
   int committedMoves(MoveType type) const;
   int totalMoves(MoveType type) const;
-  void traverseFaninCone(sta::Vertex* endpoint,
-                         std::unordered_map<sta::Instance*, float>& crit_insts,
-                         std::unordered_set<sta::Vertex*>& visited,
-                         std::unordered_set<sta::Instance*>& notSwappable,
-                         const RepairSetupParams& params);
-  sta::Slack getInstanceSlack(sta::Instance* inst);
 
   // === Repair progress state ===============================================
-  bool fallback_ = false;
-  float min_viol_ = 0.0;
-  float max_viol_ = 0.0;
-  int max_repairs_per_pass_ = 1;
-  int max_end_repairs_ = 1;
-  int overall_no_progress_count_ = 0;
-  double initial_design_area_ = 0.0;
+  RepairSetupContext& setup_context_;
 
   // === Rejection state ======================================================
   std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>
@@ -379,7 +227,6 @@ class SetupLegacyPolicy : public OptPolicy
   static constexpr int opto_small_interval_ = 100;
   static constexpr int opto_large_interval_ = 1000;
   static constexpr float inc_fix_rate_threshold_ = 0.0001;
-  static constexpr int max_last_gasp_passes_ = 10;
 };
 
 }  // namespace rsz

@@ -16,6 +16,7 @@
 #include "DelayEstimator.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpGenerator.hh"
@@ -42,10 +43,30 @@
 
 namespace rsz {
 
-OptPolicy::OptPolicy(Resizer& resizer, MoveCommitter& committer)
+char phaseMarkerForIndex(int phase_index)
+{
+  constexpr char special_markers[] = "*+^&@!-=";
+  constexpr int num_special = 8;
+  if (phase_index < num_special) {
+    return special_markers[phase_index];
+  }
+  phase_index -= num_special;
+  if (phase_index < 26) {
+    return 'a' + phase_index;
+  }
+  phase_index -= 26;
+  if (phase_index < 26) {
+    return 'A' + phase_index;
+  }
+  return '?';
+}
+
+OptPolicy::OptPolicy(Resizer& resizer,
+                     MoveCommitter& committer,
+                     RepairSetupContext& setup_context)
     : resizer_(resizer),
       committer_(committer),
-      target_collector_(std::make_unique<RepairTargetCollector>(&resizer))
+      target_collector_(&setup_context.target_collector)
 {
 }
 
@@ -63,7 +84,6 @@ void OptPolicy::start(const OptimizerRunConfig& config,
   estimate_parasitics_ = resizer_.estimateParasitics();
   max_ = resizer_.maxAnalysisMode();
   resetRun();
-  // Single source of truth for all policy-tunable envars.
   loadPolicyEnvars();
 }
 
@@ -228,10 +248,10 @@ void OptPolicy::loadPolicyEnvars()
   // target-stage-only scoring.
   policy_config_.delay_estimation_levels
       = utl::readEnvarInt("RSZ_MT_DELAY_LEVELS", 1);
-  // Experimental DMP/Ceff slew-bias sampling. Negative values are treated the
-  // same as 0.
-  policy_config_.delay_estimator_dmp_slew_bias
-      = utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 1) > 0;
+  // Experimental STA slew-bias sampling. Negative values are treated the same
+  // as 0.
+  policy_config_.delay_estimator_sta_slew_bias
+      = utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 1) > 0;
 }
 
 GeneratorContext OptPolicy::makeGeneratorContext(
@@ -367,7 +387,7 @@ void OptPolicy::prepareArcDelayState(Target& target) const
       target,
       policy_config_.delay_estimation_levels,
       &fail_reason,
-      policy_config_.delay_estimator_dmp_slew_bias);
+      policy_config_.delay_estimator_sta_slew_bias);
 }
 
 void OptPolicy::prewarmTargetLibertyCaches(

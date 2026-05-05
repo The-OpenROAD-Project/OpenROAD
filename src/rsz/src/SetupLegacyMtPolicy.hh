@@ -12,7 +12,7 @@
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
-#include "SetupLegacyPolicy.hh"
+#include "PhasePolicies.hh"
 
 namespace rsz {
 
@@ -24,21 +24,22 @@ class VtSwapMtGenerator;
 // Hybrid single/multi-threaded setup-repair policy (selected as the legacy
 // context when a LEGACY_MT token appears in the -phases list).
 //
-// SetupLegacyMtPolicy keeps SetupLegacyPolicy's serial endpoint, target, and
-// move-type ordering.  Only the VtSwap and SizeUp move types use MT candidate
-// expansion and parallel candidate scoring for one prepared target at a time.
-// All other generators stay on the caller thread, which preserves their
+// SetupLegacyMtPolicy keeps MainRepairPhasePolicy's serial endpoint, target,
+// and move-type ordering.  Only the VtSwap and SizeUp move types use MT
+// candidate expansion and parallel candidate scoring for one prepared target at
+// a time. All other generators stay on the caller thread, which preserves their
 // single-threaded assumptions while still allowing incremental MT expansion by
 // move type.
-class SetupLegacyMtPolicy : public SetupLegacyPolicy
+class SetupLegacyMtPolicy : public MainRepairPhasePolicy
 {
  public:
   // === OptPolicy entry points ==============================================
-  SetupLegacyMtPolicy(Resizer& resizer, MoveCommitter& committer);
+  SetupLegacyMtPolicy(Resizer& resizer,
+                      MoveCommitter& committer,
+                      RepairSetupContext& setup_context);
   ~SetupLegacyMtPolicy() override;
 
   const char* name() const override { return "SetupLegacyMtPolicy"; }
-  using SetupLegacyPolicy::start;
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
 
  protected:

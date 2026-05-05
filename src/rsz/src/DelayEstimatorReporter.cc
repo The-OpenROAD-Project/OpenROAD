@@ -102,9 +102,9 @@ std::string formatDeltaWithUnit(float estimated,
   return fmt::format("{:+.3f} {}", (estimated - golden) * scale, unit);
 }
 
-bool dmpSlewBiasEnabled()
+bool slewBiasEnabled()
 {
-  return utl::readEnvarInt("RSZ_MT_DMP_SLEW_BIAS", 0) > 0;
+  return utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 0) > 0;
 }
 
 bool containsPin(const std::vector<sta::Pin*>& pins, const sta::Pin* pin)
@@ -1023,7 +1023,7 @@ std::optional<ArcDelayState> DelayEstimatorReporter::contextForTarget(
     return target.arc_delay;
   }
   return DelayEstimator::buildContext(
-      resizer_, target, delay_levels, fail_reason, dmpSlewBiasEnabled());
+      resizer_, target, delay_levels, fail_reason, slewBiasEnabled());
 }
 
 void DelayEstimatorReporter::prepareTargetContext(
@@ -1057,7 +1057,7 @@ void DelayEstimatorReporter::prepareTargetContext(
                                                   min_max,
                                                   delay_levels,
                                                   &ignored_reason,
-                                                  dmpSlewBiasEnabled());
+                                                  slewBiasEnabled());
 }
 
 float DelayEstimatorReporter::pathWireDelay(const sta::PathExpanded& expanded,

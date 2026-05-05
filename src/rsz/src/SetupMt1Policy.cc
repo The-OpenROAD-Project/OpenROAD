@@ -30,8 +30,10 @@
 
 namespace rsz {
 
-SetupMt1Policy::SetupMt1Policy(Resizer& resizer, MoveCommitter& committer)
-    : OptPolicy(resizer, committer)
+SetupMt1Policy::SetupMt1Policy(Resizer& resizer,
+                               MoveCommitter& committer,
+                               RepairSetupContext& setup_context)
+    : OptPolicy(resizer, committer, setup_context)
 {
 }
 

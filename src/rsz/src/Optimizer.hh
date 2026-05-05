@@ -16,17 +16,17 @@
 namespace rsz {
 
 class SetupLegacyPolicy;
+struct RepairSetupContext;
 
 // Top-level driver and sequencer for one repair_setup run.
 //
 // Lifecycle per call:
 //   1. configure() freezes user options into `config_`.
 //   2. run() parses `config_.phases` (or the default token list when the
-//      user did not supply -phases/-policy/-policies), prepares a legacy
-//      context only when a legacy phase is present, then dispatches each token
-//      through makePolicyForPhase  -  phase wrappers delegate back to the
-//      legacy context, top-level policies (MT1, MEASURED_VT_SWAP) are
-//      self-contained.
+//      user did not supply -phases/-policy/-policies), prepares one shared
+//      setup-repair context, then dispatches each token through
+//      makePolicyForPhase. Every policy sees the same target collector and
+//      tracker-report context.
 //
 // The Optimizer owns `committer_` for the full run; the legacy context and
 // any phase-OptPolicy / top-level OptPolicy live for the duration of the
@@ -53,9 +53,10 @@ class Optimizer
 
   std::unique_ptr<OptPolicy> makePolicyForPhase(
       std::string_view phase_name,
-      SetupLegacyPolicy* legacy_parent);
+      RepairSetupContext& setup_context);
   std::unique_ptr<SetupLegacyPolicy> makeLegacyContext(
-      const std::vector<std::string>& phase_names);
+      const std::vector<std::string>& phase_names,
+      RepairSetupContext& setup_context);
 
   // === Run state ============================================================
   OptimizerRunConfig config_;

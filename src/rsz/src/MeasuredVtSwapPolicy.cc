@@ -32,8 +32,9 @@ namespace rsz {
 using utl::RSZ;
 
 MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
-                                           MoveCommitter& committer)
-    : OptPolicy(resizer, committer)
+                                           MoveCommitter& committer,
+                                           RepairSetupContext& setup_context)
+    : OptPolicy(resizer, committer, setup_context)
 {
 }
 

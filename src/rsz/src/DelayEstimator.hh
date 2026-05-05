@@ -46,7 +46,7 @@ struct StageEvaluation
 
 // Stateless helper for building timing-arc contexts and comparing candidate
 // cell delays.  The default buildContext() path only reads STA/OpenDB state.
-// The optional DMP/Ceff slew-bias path temporarily mutates and restores STA's
+// The optional STA slew-bias path temporarily mutates and restores STA's
 // reduced Pi model during main-thread prepare.
 //
 // All methods are static.  buildContext() queries STA (main-thread only) to
@@ -73,7 +73,7 @@ class DelayEstimator
                                                    int delay_levels,
                                                    FailReason* fail_reason
                                                    = nullptr,
-                                                   bool use_dmp_slew_bias
+                                                   bool use_sta_slew_bias
                                                    = false);
 
   // Lower-level overload used by tests and policy prepare code.
@@ -87,7 +87,7 @@ class DelayEstimator
       const sta::MinMax* min_max,
       int delay_levels,
       FailReason* fail_reason = nullptr,
-      bool use_dmp_slew_bias = false);
+      bool use_sta_slew_bias = false);
 
   // === Delay estimation =====================================================
   // When `trace` is non-null it is cleared and one StageEvaluation per

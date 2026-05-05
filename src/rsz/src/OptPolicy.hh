@@ -32,26 +32,11 @@ class MoveCommitter;
 class MoveGenerator;
 class RepairTargetCollector;
 class Resizer;
+struct RepairSetupContext;
 
-// Single-character marker used in legacy phase log prefixes.
-// Order: 8 special chars, 26 lowercase, 26 uppercase, then '?' fallback.
-inline char phaseMarkerForIndex(int phase_index)
-{
-  constexpr char special_markers[] = "*+^&@!-=";
-  constexpr int num_special = 8;
-  if (phase_index < num_special) {
-    return special_markers[phase_index];
-  }
-  phase_index -= num_special;
-  if (phase_index < 26) {
-    return 'a' + phase_index;
-  }
-  phase_index -= 26;
-  if (phase_index < 26) {
-    return 'A' + phase_index;
-  }
-  return '?';
-}
+// Single-character marker for log prefixes; sequence: 8 special chars, then
+// 26 lowercase, then 26 uppercase, then '?' fallback.
+char phaseMarkerForIndex(int phase_index);
 
 // Optimization progress shared across phase/policy invocations.
 //
@@ -91,8 +76,8 @@ struct PhaseRunContext
 // Optimizer (sequencer) creates one or more OptPolicy instances per run and
 // drives each through start(config, ctx) -> iterate()* -> converged()/result()
 // in that order.  When `ctx` is non-null the sequencer is sharing cross-phase
-// accumulators with the policy; legacy single-policy callers may pass nullptr
-// and the policy keeps its own accumulators.
+// accumulators with the policy; single-policy callers may pass nullptr and the
+// policy keeps its own accumulators.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
@@ -104,7 +89,9 @@ class OptPolicy
   using GeneratorVector = std::vector<std::unique_ptr<MoveGenerator>>;
 
   // === Policy interface =====================================================
-  OptPolicy(Resizer& resizer, MoveCommitter& committer);
+  OptPolicy(Resizer& resizer,
+            MoveCommitter& committer,
+            RepairSetupContext& setup_context);
   virtual ~OptPolicy();
 
   virtual const char* name() const = 0;
@@ -163,7 +150,6 @@ class OptPolicy
                           bool include_header) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;
   bool reportRepairSummary() const;
-
   // Load every policy-tunable envar into policy_config_ once at start time.
   // Each subclass reads only the fields it actually consumes from
   // policy_config_; loading unused fields is harmless.
@@ -188,8 +174,8 @@ class OptPolicy
   Resizer& resizer_;
   MoveCommitter& committer_;
   OptimizerRunConfig config_;
-  // Sequencer-supplied accumulator state; nullptr for legacy callers.  Phases
-  // that need cross-phase accumulators read/write through this pointer.
+  // Sequencer-supplied accumulator state; nullptr for standalone callers.
+  // Phases that need cross-phase accumulators read/write through this pointer.
   PhaseRunContext* run_ctx_{nullptr};
   utl::Logger* logger_{nullptr};
   sta::dbSta* sta_{nullptr};
@@ -198,7 +184,7 @@ class OptPolicy
   est::EstimateParasitics* estimate_parasitics_{nullptr};
   const sta::MinMax* max_{nullptr};
   OptPolicyConfig policy_config_{};
-  std::unique_ptr<RepairTargetCollector> target_collector_;
+  RepairTargetCollector* target_collector_;
   GeneratorVector move_generators_;
   std::vector<MoveType> move_sequence_;
   std::unique_ptr<utl::ThreadPool> thread_pool_;

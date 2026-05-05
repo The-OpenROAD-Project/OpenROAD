@@ -9,6 +9,7 @@
 #include "MoveCommitter.hh"
 #include "OptPolicy.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
 
 namespace sta {
@@ -52,7 +53,9 @@ class MeasuredVtSwapPolicy : public OptPolicy
 {
  public:
   // === OptPolicy entry points ==============================================
-  MeasuredVtSwapPolicy(Resizer& resizer, MoveCommitter& committer);
+  MeasuredVtSwapPolicy(Resizer& resizer,
+                       MoveCommitter& committer,
+                       RepairSetupContext& setup_context);
   ~MeasuredVtSwapPolicy() override;
 
   const char* name() const override { return "MeasuredVtSwapPolicy"; }

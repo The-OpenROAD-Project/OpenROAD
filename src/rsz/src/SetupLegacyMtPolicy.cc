@@ -33,8 +33,9 @@ namespace rsz {
 using utl::RSZ;
 
 SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
-                                         MoveCommitter& committer)
-    : SetupLegacyPolicy(resizer, committer)
+                                         MoveCommitter& committer,
+                                         RepairSetupContext& setup_context)
+    : MainRepairPhasePolicy(resizer, committer, setup_context)
 {
 }
 
@@ -43,7 +44,7 @@ SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config,
                                 PhaseRunContext* const ctx)
 {
-  SetupLegacyPolicy::start(config, ctx);
+  MainRepairPhasePolicy::start(config, ctx);
   thread_pool_ = makeWorkerThreadPool();
 }
 

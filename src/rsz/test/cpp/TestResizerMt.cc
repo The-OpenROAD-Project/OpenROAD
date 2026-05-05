@@ -387,7 +387,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, DmpSlewBiasContextBuildLeavesTimingUpdateUsable)
+TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -398,7 +398,7 @@ TEST_F(TestResizerMt, DmpSlewBiasContextBuildLeavesTimingUpdateUsable)
       = DelayEstimator::buildContext(resizer, target, 1, &fail_reason, true);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
 
-  // DMP slew-bias sampling mutates and restores a live reduced Pi model during
+  // STA slew-bias sampling mutates and restores a live reduced Pi model during
   // prepare; a fresh STA update after context construction must remain valid.
   EXPECT_NO_THROW(sta_->updateTiming(true));
 
@@ -420,12 +420,13 @@ TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
   MoveCommitter committer(resizer);
-  SetupLegacyMtPolicy policy(resizer, committer);
+  RepairSetupContext setup_context(resizer);
+  SetupLegacyMtPolicy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config));
+  EXPECT_NO_THROW(policy.start(config, nullptr));
 }
 
 TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
@@ -437,12 +438,13 @@ TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
   MoveCommitter committer(resizer);
-  SetupMt1Policy policy(resizer, committer);
+  RepairSetupContext setup_context(resizer);
+  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config));
+  EXPECT_NO_THROW(policy.start(config, nullptr));
 }
 
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
@@ -823,11 +825,12 @@ TEST_F(TestResizerMt,
   resizer.runRepairSetupPreamble();
 
   MoveCommitter committer(resizer);
-  SetupMt1Policy policy(resizer, committer);
+  RepairSetupContext setup_context(resizer);
+  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config);
+  policy.start(config, nullptr);
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_GE(policy.thread_pool_->threadCount(), 1u);
@@ -909,11 +912,12 @@ TEST_F(TestResizerMt,
   sta_->updateTiming(true);
 
   MoveCommitter committer(resizer);
-  SetupMt1Policy policy(resizer, committer);
+  RepairSetupContext setup_context(resizer);
+  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config);
+  policy.start(config, nullptr);
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_EQ(policy.thread_pool_->threadCount(), 32u);

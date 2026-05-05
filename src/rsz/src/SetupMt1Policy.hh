@@ -10,6 +10,7 @@
 #include "MoveCommitter.hh"
 #include "OptPolicy.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
 
 namespace sta {
@@ -53,7 +54,9 @@ class SetupMt1Policy : public OptPolicy
 {
  public:
   // === OptPolicy entry points ==============================================
-  SetupMt1Policy(Resizer& resizer, MoveCommitter& committer);
+  SetupMt1Policy(Resizer& resizer,
+                 MoveCommitter& committer,
+                 RepairSetupContext& setup_context);
   ~SetupMt1Policy() override;
 
   const char* name() const override { return "SetupMt1Policy"; }
