@@ -27,8 +27,7 @@ class SetupWnsPolicy : public SetupLegacyBase
                       int max_repairs_per_pass,
                       bool verbose,
                       bool use_cone_collection,
-                      rsz::ViolatorSortType sort_type,
-                      PhaseRunContext& ctx);
+                      rsz::ViolatorSortType sort_type);
 
   bool use_cone_{false};
 };

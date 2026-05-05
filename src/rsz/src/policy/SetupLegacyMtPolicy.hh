@@ -40,7 +40,7 @@ class SetupLegacyMtPolicy : public SetupLegacyPolicy
   ~SetupLegacyMtPolicy() override;
 
   const char* name() const override { return "SetupLegacyMtPolicy"; }
-  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
+  bool start(const OptimizerRunConfig& config) override;
 
  protected:
   // === SetupLegacyBase hooks

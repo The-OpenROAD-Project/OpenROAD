@@ -45,9 +45,8 @@ void Optimizer::configure(const OptimizerRunConfig& config)
 
 namespace {
 
-// Returns true when the token list contains a phase that needs the legacy
-// setup-repair preamble before phase dispatch. MT-only tokens still share the
-// setup context, but they do their own target collection.
+// Returns true when the token list contains a phase that uses the legacy
+// setup-repair progress header/reporting layout.
 bool hasLegacyPhase(const std::vector<std::string>& phase_names)
 {
   return std::any_of(phase_names.begin(),
@@ -56,17 +55,6 @@ bool hasLegacyPhase(const std::vector<std::string>& phase_names)
                        return phase_name != "MT1"
                               && phase_name != "MEASURED_VT_SWAP";
                      });
-}
-
-// Returns true when any LEGACY_MT token appears in the list.  Selects
-// SetupLegacyMtPolicy as the legacy context so virtual buildMoveGenerators
-// / tryRepairTarget calls dispatch to the MT overrides.
-bool hasLegacyMtPhase(const std::vector<std::string>& phase_names)
-{
-  return std::any_of(
-      phase_names.begin(),
-      phase_names.end(),
-      [](const std::string& phase_name) { return phase_name == "LEGACY_MT"; });
 }
 
 }  // namespace
@@ -131,17 +119,6 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
   return nullptr;
 }
 
-std::unique_ptr<SetupLegacyBase> Optimizer::makeLegacyContext(
-    const std::vector<std::string>& phase_names,
-    RepairSetupContext& setup_context)
-{
-  if (hasLegacyMtPhase(phase_names)) {
-    return std::make_unique<SetupLegacyMtPolicy>(
-        resizer_, committer_, setup_context);
-  }
-  return std::make_unique<SetupLegacyBase>(resizer_, committer_, setup_context);
-}
-
 bool Optimizer::run()
 {
   // Keep the footprint override local to this optimizer run.
@@ -160,40 +137,23 @@ bool Optimizer::run()
 
   const bool has_legacy_phase = hasLegacyPhase(phase_names);
   RepairSetupContext setup_context(resizer_);
-  setup_context.initial_design_area = resizer_.computeDesignArea();
-  std::unique_ptr<SetupLegacyBase> setup_prepare_policy;
-  if (has_legacy_phase) {
-    setup_prepare_policy = makeLegacyContext(phase_names, setup_context);
-    // Wire base members (logger_, sta_, network_, graph_, ...) but do not
-    // run the phase pipeline yet; that prep is gated below.
-    setup_prepare_policy->start(config_, nullptr);
-  }
+  setup_context.phase_pipeline_active = true;
 
   // Keep incremental parasitics enabled across the full optimizer run so every
   // policy sees the same ECO invalidation/update behavior.
   est::IncrementalParasiticsGuard parasitics_guard(
       resizer_.estimateParasitics());
-  if (setup_prepare_policy != nullptr
-      && !setup_prepare_policy->prepareForPhasePipeline()) {
-    // No violations to repair - early return
-    return false;
-  }
-
-  // Shared optimization progress, owned by the sequencer and updated by
-  // policies that participate in multi-phase repair.
-  OptimizerProgress progress;
-  progress.initial_tns
-      = resizer_.sta()->totalNegativeSlack(resizer_.maxAnalysisMode());
-  progress.previous_tns = progress.initial_tns;
 
   // Phase loop - Run multiple policies sequentially
   std::unique_ptr<OptPolicy> last_policy;
   const int phase_count = phase_names.size();
   for (int phase_index = 0; phase_index < phase_count; ++phase_index) {
-    PhaseRunContext ctx{progress, phase_index};
+    setup_context.phase_index = phase_index;
     std::unique_ptr<OptPolicy> policy
         = makePolicyForPhase(phase_names[phase_index], setup_context);
-    policy->start(config_, &ctx);
+    if (!policy->start(config_)) {
+      return false;
+    }
     while (!policy->converged()) {
       policy->iterate();
     }
@@ -201,12 +161,8 @@ bool Optimizer::run()
   }
 
   // Final report
-  OptPolicy* report_policy = setup_prepare_policy != nullptr
-                                 ? setup_prepare_policy.get()
-                                 : last_policy.get();
-  bool include_progress_header = (setup_prepare_policy == nullptr);
-  return report_policy->finalizeAndReport(setup_context.initial_design_area,
-                                          include_progress_header);
+  return last_policy->finalizeAndReport(setup_context.initial_design_area,
+                                        !has_legacy_phase);
 }
 
 // Single-endpoint setup repair for test/debug purpose
@@ -235,9 +191,10 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   resizer_.runRepairSetupPreamble();
 
   RepairSetupContext setup_context(resizer_);
-  setup_context.initial_design_area = resizer_.computeDesignArea();
   SetupLegacyBase policy(resizer_, committer_, setup_context);
-  policy.start(config, nullptr);
+  if (!policy.start(config)) {
+    return false;
+  }
   committer_.init();
   return policy.repairSetupPin(end_pin);
 }

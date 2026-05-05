@@ -58,19 +58,11 @@ class SetupLegacyBase : public OptPolicy
                   RepairSetupContext& setup_context);
 
   const char* name() const override { return "SetupLegacyBase"; }
-  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
+  bool start(const OptimizerRunConfig& config) override;
   void iterate() override;
 
   // === Single-endpoint repair API ==========================================
   bool repairSetupPin(const sta::Pin* end_pin);
-
-  // === Sequencer entry points (called from Optimizer::run) =================
-  // Prep work that all phase tokens depend on  -  STA preambles, target
-  // collector init, move-sequence build, violation count.  Returns false
-  // when there is nothing to repair (caller should short-circuit before any
-  // phase token runs).  Called once per Optimizer::run before the phase
-  // dispatch loop.
-  bool prepareForPhasePipeline();
 
  protected:
   using ViolatingEnds = std::vector<std::pair<sta::Vertex*, sta::Slack>>;
@@ -100,6 +92,9 @@ class SetupLegacyBase : public OptPolicy
   virtual void initializeSetupServices();
   virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;
+  // Prep work that all legacy-derived phase tokens depend on.  Called once per
+  // Optimizer::run by the first legacy-derived policy start().
+  bool prepareForPhasePipeline();
 
   // === Move-sequence configuration =========================================
   virtual void buildMainMoveSequence(bool log_sequence);
@@ -195,9 +190,6 @@ class SetupLegacyBase : public OptPolicy
 
   int committedMoves(MoveType type) const;
   int totalMoves(MoveType type) const;
-
-  // === Repair progress state ===============================================
-  RepairSetupContext& setup_context_;
 
   // === Rejection state ======================================================
   std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>

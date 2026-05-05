@@ -6,7 +6,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptPolicy.hh"
@@ -15,7 +14,6 @@
 
 namespace rsz {
 
-class SetupLegacyBase;
 struct RepairSetupContext;
 
 // Top-level driver and sequencer for one repair_setup run.
@@ -28,9 +26,9 @@ struct RepairSetupContext;
 //      makePolicyForPhase. Every policy sees the same target collector and
 //      tracker-report context.
 //
-// The Optimizer owns `committer_` for the full run; the legacy context and
-// any phase-OptPolicy / top-level OptPolicy live for the duration of the
-// dispatch loop only.
+// The Optimizer owns `committer_` for the full run; the shared setup context
+// and each phase/top-level OptPolicy live for the duration of the dispatch
+// loop only.
 class Optimizer
 {
  public:
@@ -53,9 +51,6 @@ class Optimizer
 
   std::unique_ptr<OptPolicy> makePolicyForPhase(
       std::string_view phase_name,
-      RepairSetupContext& setup_context);
-  std::unique_ptr<SetupLegacyBase> makeLegacyContext(
-      const std::vector<std::string>& phase_names,
       RepairSetupContext& setup_context);
 
   // === Run state ============================================================

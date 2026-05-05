@@ -44,16 +44,14 @@ static constexpr int kDelayDigits = 3;
 
 void SetupLegacyPolicy::iterate()
 {
-  PhaseRunContext& ctx = *run_ctx_;
-  OptimizerProgress& progress = ctx.progress;
   committer_.capturePrePhaseSlack();
   buildMainMoveSequence(/*log_sequence=*/false);
 
   MainRepairState main_state;
-  main_state.opto_iteration = progress.iteration;
-  main_state.initial_tns = progress.initial_tns;
-  main_state.prev_tns = progress.initial_tns;
-  main_state.phase_marker = phaseMarkerForIndex(ctx.phase_index);
+  main_state.opto_iteration = setup_context_.iteration;
+  main_state.initial_tns = setup_context_.initial_tns;
+  main_state.prev_tns = setup_context_.initial_tns;
+  main_state.phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
 
   ViolatingEnds violating_ends;
   if (initializeMainRepair(main_state, violating_ends)) {
@@ -63,10 +61,10 @@ void SetupLegacyPolicy::iterate()
       "LEGACY Phase Summary", "LEGACY Phase Endpoint Profiler", true);
 
   // Propagate accumulator deltas back to the sequencer.
-  progress.iteration = main_state.opto_iteration;
-  progress.violation_count = main_state.num_viols;
-  progress.initial_tns = main_state.initial_tns;
-  progress.previous_tns = main_state.prev_tns;
+  setup_context_.iteration = main_state.opto_iteration;
+  setup_context_.violation_count = main_state.num_viols;
+  setup_context_.initial_tns = main_state.initial_tns;
+  setup_context_.previous_tns = main_state.prev_tns;
   markRunComplete(true);
 }
 

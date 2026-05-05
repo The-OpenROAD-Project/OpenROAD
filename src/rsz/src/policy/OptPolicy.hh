@@ -38,29 +38,6 @@ struct RepairSetupContext;
 // 26 lowercase, then 26 uppercase, then '?' fallback.
 char phaseMarkerForIndex(int phase_index);
 
-// Optimization progress shared across phase/policy invocations.
-//
-// Optimizer owns this object for the full run. Policies may update it to keep
-// iteration and TNS progress continuous across phase boundaries.
-struct OptimizerProgress
-{
-  int iteration{0};
-  int violation_count{0};
-  float initial_tns{0.0f};
-  float previous_tns{0.0f};
-};
-
-// Cross-phase state shared by the sequencer with each phase invocation.
-//
-// `progress` is sequencer-owned and survives across phase boundaries.
-struct PhaseRunContext
-{
-  OptimizerProgress& progress;
-
-  // Zero-based position in the phase token list.
-  int phase_index{0};
-};
-
 // Abstract base for one repair_setup strategy.
 //
 // Each concrete policy is responsible for:
@@ -74,10 +51,10 @@ struct PhaseRunContext
 //                             main thread (legacy path)
 //
 // Optimizer (sequencer) creates one or more OptPolicy instances per run and
-// drives each through start(config, ctx) -> iterate()* -> converged()/result()
-// in that order.  When `ctx` is non-null the sequencer is sharing cross-phase
-// accumulators with the policy; single-policy callers may pass nullptr and the
-// policy keeps its own accumulators.
+// drives each through start(config) -> iterate()* -> converged()/result()
+// in that order.  start() returns false when the policy determines that the
+// optimizer run should stop before iterate().  Policies share run-level setup
+// state through RepairSetupContext.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
@@ -95,7 +72,7 @@ class OptPolicy
   virtual ~OptPolicy();
 
   virtual const char* name() const = 0;
-  virtual void start(const OptimizerRunConfig& config, PhaseRunContext* ctx);
+  virtual bool start(const OptimizerRunConfig& config);
   virtual void iterate() = 0;
 
   bool converged() const { return converged_; }
@@ -173,10 +150,8 @@ class OptPolicy
   // === Shared policy state ==================================================
   Resizer& resizer_;
   MoveCommitter& committer_;
+  RepairSetupContext& setup_context_;
   OptimizerRunConfig config_;
-  // Sequencer-supplied accumulator state; nullptr for standalone callers.
-  // Phases that need cross-phase accumulators read/write through this pointer.
-  PhaseRunContext* run_ctx_{nullptr};
   utl::Logger* logger_{nullptr};
   sta::dbSta* sta_{nullptr};
   sta::Network* network_{nullptr};

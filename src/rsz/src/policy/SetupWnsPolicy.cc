@@ -50,8 +50,7 @@ void SetupWnsPolicy::iterate()
                  config_.max_repairs_per_pass,
                  config_.verbose,
                  /*use_cone_collection=*/use_cone_,
-                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
-                 *run_ctx_);
+                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY);
   if (use_cone_) {
     committer_.printTrackerPhaseSummary(
         "WNS_CONE Phase Summary", "WNS_CONE Phase Endpoint Profiler", true);
@@ -67,14 +66,12 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
                                     const int max_repairs_per_pass,
                                     const bool verbose,
                                     const bool use_cone_collection,
-                                    const rsz::ViolatorSortType sort_type,
-                                    PhaseRunContext& ctx)
+                                    const rsz::ViolatorSortType sort_type)
 {
-  OptimizerProgress& progress = ctx.progress;
-  int& opto_iteration = progress.iteration;
-  const float initial_tns = progress.initial_tns;
-  float& prev_tns = progress.previous_tns;
-  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
+  int& opto_iteration = setup_context_.iteration;
+  const float initial_tns = setup_context_.initial_tns;
+  float& prev_tns = setup_context_.previous_tns;
+  const char phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
   const utl::DebugScopedTimer timer(
       logger_,
       RSZ,

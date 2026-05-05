@@ -50,9 +50,8 @@ void SetupLastGaspPolicy::iterate()
   }
 
   committer_.capturePrePhaseSlack();
-  OptimizerProgress& progress = run_ctx_->progress;
-  int& num_viols = progress.violation_count;
-  const char phase_marker = phaseMarkerForIndex(run_ctx_->phase_index);
+  int& num_viols = setup_context_.violation_count;
+  const char phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
   {
     const utl::DebugScopedTimer timer(
         logger_,
@@ -126,8 +125,8 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
   }
 
   last_gasp_state.max_end_count = violating_ends.size();
-  last_gasp_state.opto_iteration = run_ctx_->progress.iteration;
-  last_gasp_state.initial_tns = run_ctx_->progress.initial_tns;
+  last_gasp_state.opto_iteration = setup_context_.iteration;
+  last_gasp_state.initial_tns = setup_context_.initial_tns;
   last_gasp_state.prev_tns = curr_tns;
   last_gasp_state.prev_worst_slack = violating_ends.front().second;
   last_gasp_state.fix_rate_threshold = inc_fix_rate_threshold_;

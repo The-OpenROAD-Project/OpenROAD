@@ -60,7 +60,7 @@ class SetupMt1Policy : public OptPolicy
   ~SetupMt1Policy() override;
 
   const char* name() const override { return "SetupMt1Policy"; }
-  void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
+  bool start(const OptimizerRunConfig& config) override;
   void iterate() override;
 
  private:

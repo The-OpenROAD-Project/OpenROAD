@@ -39,10 +39,9 @@ SetupMt1Policy::SetupMt1Policy(Resizer& resizer,
 
 SetupMt1Policy::~SetupMt1Policy() = default;
 
-void SetupMt1Policy::start(const OptimizerRunConfig& config,
-                           PhaseRunContext* const ctx)
+bool SetupMt1Policy::start(const OptimizerRunConfig& config)
 {
-  OptPolicy::start(config, ctx);
+  OptPolicy::start(config);
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);
@@ -54,6 +53,7 @@ void SetupMt1Policy::start(const OptimizerRunConfig& config,
   committer_.captureInitialSlackDistribution();
   committer_.captureOriginalEndpointSlack();
   thread_pool_ = makeWorkerThreadPool();
+  return true;
 }
 
 void SetupMt1Policy::buildMoveGenerators(

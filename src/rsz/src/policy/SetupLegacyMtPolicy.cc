@@ -41,11 +41,13 @@ SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
 
 SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 
-void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config,
-                                PhaseRunContext* const ctx)
+bool SetupLegacyMtPolicy::start(const OptimizerRunConfig& config)
 {
-  SetupLegacyPolicy::start(config, ctx);
+  if (!SetupLegacyPolicy::start(config)) {
+    return false;
+  }
   thread_pool_ = makeWorkerThreadPool();
+  return true;
 }
 
 void SetupLegacyMtPolicy::buildMoveGenerators(

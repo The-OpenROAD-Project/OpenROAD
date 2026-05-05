@@ -48,8 +48,7 @@ void SetupDirectionalPolicy::iterate()
   repairSetupDirectional(use_starts_,
                          config_.setup_slack_margin,
                          config_.max_passes,
-                         config_.verbose,
-                         *run_ctx_);
+                         config_.verbose);
   if (use_starts_) {
     committer_.printTrackerPhaseSummary(
         "STARTPOINT_FANOUT Phase Summary",
@@ -68,11 +67,10 @@ void SetupDirectionalPolicy::repairSetupDirectional(
     const bool use_startpoints,
     const float setup_slack_margin,
     const int max_passes_per_point,
-    const bool verbose,
-    PhaseRunContext& ctx)
+    const bool verbose)
 {
-  int& opto_iteration = ctx.progress.iteration;
-  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
+  int& opto_iteration = setup_context_.iteration;
+  const char phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
   const char* phase_name
       = use_startpoints ? "STARTPOINT_FANOUT" : "ENDPOINT_FANIN";
   const utl::DebugScopedTimer timer(

@@ -45,7 +45,7 @@ static constexpr int kMaxCritInstancesPerEndpoint = 50;
 
 void SetupCritVtSwapPolicy::iterate()
 {
-  int& num_viols = run_ctx_->progress.violation_count;
+  int& num_viols = setup_context_.violation_count;
   // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
   if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
     markRunComplete(true);

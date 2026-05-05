@@ -61,16 +61,22 @@ using utl::RSZ;
 SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
                                  MoveCommitter& committer,
                                  RepairSetupContext& setup_context)
-    : OptPolicy(resizer, committer, setup_context),
-      setup_context_(setup_context)
+    : OptPolicy(resizer, committer, setup_context)
 {
 }
 
-void SetupLegacyBase::start(const OptimizerRunConfig& config,
-                            PhaseRunContext* const ctx)
+bool SetupLegacyBase::start(const OptimizerRunConfig& config)
 {
-  OptPolicy::start(config, ctx);
+  OptPolicy::start(config);
   setup_context_.max_repairs_per_pass = config.max_repairs_per_pass;
+  if (!setup_context_.phase_pipeline_active) {
+    return true;
+  }
+  if (!setup_context_.legacy_preamble_done) {
+    setup_context_.legacy_preamble_done = true;
+    setup_context_.legacy_preamble_has_violations = prepareForPhasePipeline();
+  }
+  return setup_context_.legacy_preamble_has_violations;
 }
 
 void SetupLegacyBase::iterate()

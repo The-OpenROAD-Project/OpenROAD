@@ -43,6 +43,14 @@
 
 namespace rsz {
 
+RepairSetupContext::RepairSetupContext(Resizer& resizer)
+    : target_collector(&resizer),
+      initial_design_area(resizer.computeDesignArea()),
+      initial_tns(resizer.sta()->totalNegativeSlack(resizer.maxAnalysisMode())),
+      previous_tns(initial_tns)
+{
+}
+
 char phaseMarkerForIndex(int phase_index)
 {
   constexpr char special_markers[] = "*+^&@!-=";
@@ -66,17 +74,16 @@ OptPolicy::OptPolicy(Resizer& resizer,
                      RepairSetupContext& setup_context)
     : resizer_(resizer),
       committer_(committer),
-      target_collector_(&setup_context.target_collector)
+      setup_context_(setup_context),
+      target_collector_(&setup_context_.target_collector)
 {
 }
 
 OptPolicy::~OptPolicy() = default;
 
-void OptPolicy::start(const OptimizerRunConfig& config,
-                      PhaseRunContext* const ctx)
+bool OptPolicy::start(const OptimizerRunConfig& config)
 {
   config_ = config;
-  run_ctx_ = ctx;
   logger_ = resizer_.logger();
   sta_ = resizer_.sta();
   network_ = resizer_.network();
@@ -85,6 +92,7 @@ void OptPolicy::start(const OptimizerRunConfig& config,
   max_ = resizer_.maxAnalysisMode();
   resetRun();
   loadPolicyEnvars();
+  return true;
 }
 
 bool OptPolicy::finalizeAndReport(const double initial_design_area,

@@ -20,8 +20,7 @@ class SetupTnsPolicy : public SetupLegacyBase
                       int max_passes_per_endpoint,
                       int max_repairs_per_pass,
                       bool verbose,
-                      rsz::ViolatorSortType sort_type,
-                      PhaseRunContext& ctx);
+                      rsz::ViolatorSortType sort_type);
 };
 
 }  // namespace rsz

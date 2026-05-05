@@ -49,8 +49,7 @@ void SetupTnsPolicy::iterate()
                  config_.max_passes,
                  config_.max_repairs_per_pass,
                  config_.verbose,
-                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
-                 *run_ctx_);
+                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY);
   committer_.printTrackerPhaseSummary(
       "TNS Phase Summary", "TNS Phase Endpoint Profiler", true);
   markRunComplete(true);
@@ -60,11 +59,10 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
                                     const int max_passes_per_endpoint,
                                     const int max_repairs_per_pass,
                                     const bool verbose,
-                                    const rsz::ViolatorSortType sort_type,
-                                    PhaseRunContext& ctx)
+                                    const rsz::ViolatorSortType sort_type)
 {
-  int& opto_iteration = ctx.progress.iteration;
-  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
+  int& opto_iteration = setup_context_.iteration;
+  const char phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
   const utl::DebugScopedTimer timer(
       logger_,
       RSZ,

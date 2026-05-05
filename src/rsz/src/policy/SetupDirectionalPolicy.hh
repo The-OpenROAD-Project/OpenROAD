@@ -26,8 +26,7 @@ class SetupDirectionalPolicy : public SetupLegacyBase
   void repairSetupDirectional(bool use_startpoints,
                               float setup_slack_margin,
                               int max_passes_per_point,
-                              bool verbose,
-                              PhaseRunContext& ctx);
+                              bool verbose);
 
   bool use_starts_{false};
 };

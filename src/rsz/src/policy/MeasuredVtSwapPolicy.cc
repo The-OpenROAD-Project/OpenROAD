@@ -40,10 +40,9 @@ MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
 
 MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
 
-void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config,
-                                 PhaseRunContext* const ctx)
+bool MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config)
 {
-  OptPolicy::start(config, ctx);
+  OptPolicy::start(config);
   generator_ = std::make_unique<MeasuredVtSwapGenerator>(
       makeGeneratorContext(config_));
   committed_moves_ = 0;
@@ -56,6 +55,7 @@ void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config,
     // alternative.
     finishRun(!hasSetupViolations(config_, max_));
   }
+  return true;
 }
 
 void MeasuredVtSwapPolicy::iterate()
