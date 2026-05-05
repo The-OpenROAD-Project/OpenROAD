@@ -82,11 +82,11 @@ void SetupLegacyPolicy::start(const OptimizerRunConfig& config,
 void SetupLegacyPolicy::iterate()
 {
   // Optimizer is the sequencer for the legacy phase pipeline  -  it calls
-  // prepareForPhasePipeline / dispatch loop / runCriticalVtSwapPhase /
-  // finalizeAndReport directly.  This OptPolicy iterate() is a no-op kept
-  // only so SetupLegacyPolicy / SetupLegacyMtPolicy stay concrete (their
-  // virtual buildMoveGenerators / tryRepairTarget overrides are still used
-  // by the phase wrappers via the parent_ pointer).
+  // prepareForPhasePipeline and then dispatches phase wrappers.  This
+  // OptPolicy iterate() is a no-op kept only so SetupLegacyPolicy /
+  // SetupLegacyMtPolicy stay concrete (their virtual buildMoveGenerators /
+  // tryRepairTarget overrides are still used by the phase wrappers via the
+  // parent_ pointer).
   markRunComplete(true);
 }
 
@@ -806,83 +806,9 @@ void SetupLegacyPolicy::runCriticalVtSwapPhase(int& num_viols)
   committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
 }
 
-bool SetupLegacyPolicy::finalizeAndReport(const int opto_iteration)
+const std::vector<const sta::Pin*>& SetupLegacyPolicy::finalReportPins() const
 {
-  printProgress(opto_iteration, true, true, false);
-  committer_.printTrackerFinalReports(target_collector_->getViolatingPins());
-  return reportRepairSummary(config_.setup_slack_margin);
-}
-
-bool SetupLegacyPolicy::reportRepairSummary(const float setup_slack_margin)
-{
-  bool repaired = false;
-
-  const int buffer_moves = committer_.summaryCommittedMoves(MoveType::kBuffer);
-  const int size_up_moves = committer_.summaryCommittedMoves(MoveType::kSizeUp);
-  const int size_down_moves
-      = committer_.summaryCommittedMoves(MoveType::kSizeDown);
-  const int swap_pins_moves
-      = committer_.summaryCommittedMoves(MoveType::kSwapPins);
-  const int clone_moves = committer_.summaryCommittedMoves(MoveType::kClone);
-  const int split_load_moves
-      = committer_.summaryCommittedMoves(MoveType::kSplitLoad);
-  const int unbuffer_moves
-      = committer_.summaryCommittedMoves(MoveType::kUnbuffer);
-  const int vt_swap_moves = committer_.summaryCommittedMoves(MoveType::kVtSwap);
-  const int size_up_match_moves
-      = committer_.summaryCommittedMoves(MoveType::kSizeUpMatch);
-
-  if (unbuffer_moves > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ, 59, "Removed {} buffers.", unbuffer_moves);
-  }
-  if (buffer_moves > 0 || split_load_moves > 0) {
-    repaired = true;
-    if (split_load_moves == 0) {
-      logger_->info(utl::RSZ, 40, "Inserted {} buffers.", buffer_moves);
-    } else {
-      logger_->info(utl::RSZ,
-                    45,
-                    "Inserted {} buffers, {} to split loads.",
-                    buffer_moves + split_load_moves,
-                    split_load_moves);
-    }
-  }
-  logger_->metric("design__instance__count__setup_buffer",
-                  buffer_moves + split_load_moves);
-  if (size_up_moves + size_down_moves + size_up_match_moves + vt_swap_moves
-      > 0) {
-    repaired = true;
-    logger_->info(
-        utl::RSZ,
-        51,
-        "Resized {} instances: {} up, {} up match, {} down, {} VT",
-        size_up_moves + size_up_match_moves + size_down_moves + vt_swap_moves,
-        size_up_moves,
-        size_up_match_moves,
-        size_down_moves,
-        vt_swap_moves);
-  }
-  if (swap_pins_moves > 0) {
-    repaired = true;
-    logger_->info(
-        utl::RSZ, 43, "Swapped pins on {} instances.", swap_pins_moves);
-  }
-  if (clone_moves > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ, 49, "Cloned {} instances.", clone_moves);
-  }
-
-  const sta::Slack worst_slack = sta_->worstSlack(max_);
-  if (sta::fuzzyLess(worst_slack, setup_slack_margin)) {
-    repaired = true;
-    logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
-  }
-  if (resizer_.overMaxArea()) {
-    logger_->error(utl::RSZ, 25, "max utilization reached.");
-  }
-
-  return repaired;
+  return target_collector_->getViolatingPins();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

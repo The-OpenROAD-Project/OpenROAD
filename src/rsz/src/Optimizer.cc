@@ -20,6 +20,7 @@
 #include "SetupMt1Policy.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
+#include "utl/Logger.h"
 #include "utl/scope.h"
 
 namespace rsz {
@@ -148,6 +149,7 @@ bool Optimizer::run()
   // Common initialize
   resizer_.runRepairSetupPreamble();
   committer_.init();
+  const double initial_design_area = resizer_.computeDesignArea();
 
   // Token list: user-supplied -phases/-policy/-policies takes precedence,
   // otherwise the default ("LEGACY LAST_GASP CRIT_VT_SWAP").
@@ -181,6 +183,7 @@ bool Optimizer::run()
   progress.previous_tns = progress.initial_tns;
 
   // Phase loop - Run multiple policies sequentially
+  std::unique_ptr<OptPolicy> last_policy;
   for (std::size_t phase_index = 0; phase_index < steps.size(); ++phase_index) {
     const std::string& step = steps[phase_index];
     PhaseRunContext ctx{.progress = progress,
@@ -191,13 +194,14 @@ bool Optimizer::run()
     while (!policy->converged()) {
       policy->iterate();
     }
+    last_policy = std::move(policy);
   }
 
-  if (legacy_ctx != nullptr) {
-    return legacy_ctx->finalizeAndReport(progress.iteration);
-  }
-  // Top-level-only run  -  self-contained policies already reported.
-  return true;
+  OptPolicy* report_policy
+      = legacy_ctx != nullptr ? legacy_ctx.get() : last_policy.get();
+  return report_policy->finalizeAndReport(initial_design_area,
+                                          /*include_progress_header=*/
+                                          legacy_ctx == nullptr);
 }
 
 // Single-endpoint setup repair for test/debug purpose

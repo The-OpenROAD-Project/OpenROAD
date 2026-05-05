@@ -319,19 +319,6 @@ void SetupMt1Policy::printTrackerIterationSummary()
   committer_.clearTrackedMoves();
 }
 
-void SetupMt1Policy::printTrackerFinalReports()
-{
-  std::vector<const sta::Pin*> critical_pins;
-  committer_.trackCriticalPins(critical_pins);
-  committer_.printSlackDistribution("MT1 Pin Slack Distribution");
-  committer_.printTopBinEndpoints("MT1 Critical Endpoints After Optimization");
-  committer_.printCriticalEndpointPathHistogram(
-      "MT1 Critical Endpoint Path Distribution");
-  committer_.printSuccessReport("MT1 Successful Optimizations Report");
-  committer_.printFailureReport("MT1 Unsuccessful Optimizations Report");
-  committer_.printMissedOpportunitiesReport("MT1 Missed Opportunities Report");
-}
-
 bool SetupMt1Policy::finishIfNoValidTargetPin(
     const std::vector<Target>& targets)
 {
@@ -372,7 +359,6 @@ bool SetupMt1Policy::finishIfStopConditionReached(const sta::Slack tns_before,
 
 void SetupMt1Policy::finishRun(const bool result)
 {
-  printTrackerFinalReports();
   markRunComplete(result);
 }
 

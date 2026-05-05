@@ -91,7 +91,6 @@ class SetupMt1Policy : public OptPolicy
   // === MoveTracker reporting ===============================================
   void trackPreparedTargets(const std::vector<Target>& targets);
   void printTrackerIterationSummary();
-  void printTrackerFinalReports();
 
   // === Iteration progress ===================================================
   int committed_moves_{0};

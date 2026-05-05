@@ -4,6 +4,8 @@
 #include "OptPolicy.hh"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <memory>
 #include <unordered_set>
 #include <utility>
@@ -14,6 +16,7 @@
 #include "DelayEstimator.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairTargetCollector.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
@@ -32,8 +35,10 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/StaState.hh"
+#include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 #include "utl/env.h"
+#include "utl/mem_stats.h"
 
 namespace rsz {
 
@@ -58,6 +63,155 @@ void OptPolicy::start(const OptimizerRunConfig& config,
   resetRun();
   // Single source of truth for all policy-tunable envars.
   loadPolicyEnvars();
+}
+
+bool OptPolicy::finalizeAndReport(const double initial_design_area,
+                                  const bool include_progress_header)
+{
+  RepairTargetCollector final_targets(&resizer_);
+  final_targets.init(config_.setup_slack_margin);
+  printFinalProgress(
+      final_targets, initial_design_area, include_progress_header);
+  committer_.printTrackerFinalReports(finalReportPins());
+  return reportRepairSummary();
+}
+
+void OptPolicy::printProgressHeader() const
+{
+  logger_->report(
+      "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
+      "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst");
+  logger_->report(
+      "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
+      "          |          |            |            | Endpts | St/EnPt");
+  logger_->report(
+      "---------------------------------------------------------------"
+      "---------------------------------------------------------------");
+}
+
+void OptPolicy::printFinalProgress(
+    const RepairTargetCollector& target_collector,
+    const double initial_design_area,
+    const bool include_header) const
+{
+  if (include_header) {
+    printProgressHeader();
+  }
+
+  const sta::Slack wns = target_collector.getWns();
+  const sta::Slack st_tns = target_collector.getTns(true);
+  const sta::Slack en_tns = target_collector.getTns(false);
+  const sta::Pin* worst_pin = target_collector.getWorstPin(false);
+
+  const double design_area = resizer_.computeDesignArea();
+  const double area_growth = design_area - initial_design_area;
+  double area_growth_percent = std::numeric_limits<double>::infinity();
+  if (std::abs(initial_design_area) > 0.0) {
+    area_growth_percent = area_growth / initial_design_area * 100.0;
+  }
+
+  logger_->report(
+      "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
+      "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
+      "final",
+      committer_.totalMoves(MoveType::kUnbuffer),
+      committer_.totalMoves(MoveType::kSizeUp)
+          + committer_.totalMoves(MoveType::kSizeDown)
+          + committer_.totalMoves(MoveType::kSizeUpMatch)
+          + committer_.totalMoves(MoveType::kVtSwap),
+      committer_.totalMoves(MoveType::kBuffer)
+          + committer_.totalMoves(MoveType::kSplitLoad),
+      committer_.totalMoves(MoveType::kClone),
+      committer_.totalMoves(MoveType::kSwapPins),
+      area_growth_percent,
+      sta::delayAsString(wns, 3, sta_),
+      sta::delayAsString(st_tns, 1, sta_),
+      sta::delayAsString(en_tns, 1, sta_),
+      std::max(0, target_collector.getNumViolatingEndpoints()),
+      worst_pin != nullptr ? network_->pathName(worst_pin) : "");
+
+  debugPrint(logger_, utl::RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
+  logger_->report(
+      "---------------------------------------------------------------"
+      "---------------------------------------------------------------");
+}
+
+const std::vector<const sta::Pin*>& OptPolicy::finalReportPins() const
+{
+  static const std::vector<const sta::Pin*> empty_report_pins;
+  return empty_report_pins;
+}
+
+bool OptPolicy::reportRepairSummary() const
+{
+  bool repaired = false;
+
+  const int buffer_moves = committer_.summaryCommittedMoves(MoveType::kBuffer);
+  const int size_up_moves = committer_.summaryCommittedMoves(MoveType::kSizeUp);
+  const int size_down_moves
+      = committer_.summaryCommittedMoves(MoveType::kSizeDown);
+  const int swap_pins_moves
+      = committer_.summaryCommittedMoves(MoveType::kSwapPins);
+  const int clone_moves = committer_.summaryCommittedMoves(MoveType::kClone);
+  const int split_load_moves
+      = committer_.summaryCommittedMoves(MoveType::kSplitLoad);
+  const int unbuffer_moves
+      = committer_.summaryCommittedMoves(MoveType::kUnbuffer);
+  const int vt_swap_moves = committer_.summaryCommittedMoves(MoveType::kVtSwap);
+  const int size_up_match_moves
+      = committer_.summaryCommittedMoves(MoveType::kSizeUpMatch);
+
+  if (unbuffer_moves > 0) {
+    repaired = true;
+    logger_->info(utl::RSZ, 59, "Removed {} buffers.", unbuffer_moves);
+  }
+  if (buffer_moves > 0 || split_load_moves > 0) {
+    repaired = true;
+    if (split_load_moves == 0) {
+      logger_->info(utl::RSZ, 40, "Inserted {} buffers.", buffer_moves);
+    } else {
+      logger_->info(utl::RSZ,
+                    45,
+                    "Inserted {} buffers, {} to split loads.",
+                    buffer_moves + split_load_moves,
+                    split_load_moves);
+    }
+  }
+  logger_->metric("design__instance__count__setup_buffer",
+                  buffer_moves + split_load_moves);
+  if (size_up_moves + size_down_moves + size_up_match_moves + vt_swap_moves
+      > 0) {
+    repaired = true;
+    logger_->info(
+        utl::RSZ,
+        51,
+        "Resized {} instances: {} up, {} up match, {} down, {} VT",
+        size_up_moves + size_up_match_moves + size_down_moves + vt_swap_moves,
+        size_up_moves,
+        size_up_match_moves,
+        size_down_moves,
+        vt_swap_moves);
+  }
+  if (swap_pins_moves > 0) {
+    repaired = true;
+    logger_->info(
+        utl::RSZ, 43, "Swapped pins on {} instances.", swap_pins_moves);
+  }
+  if (clone_moves > 0) {
+    repaired = true;
+    logger_->info(utl::RSZ, 49, "Cloned {} instances.", clone_moves);
+  }
+
+  const sta::Slack worst_slack = sta_->worstSlack(max_);
+  if (sta::fuzzyLess(worst_slack, config_.setup_slack_margin)) {
+    repaired = true;
+    logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
+  }
+  if (resizer_.overMaxArea()) {
+    logger_->error(utl::RSZ, 25, "max utilization reached.");
+  }
+
+  return repaired;
 }
 
 void OptPolicy::loadPolicyEnvars()

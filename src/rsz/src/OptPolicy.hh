@@ -13,6 +13,7 @@ class dbSta;
 class Graph;
 class MinMax;
 class Network;
+class Pin;
 }  // namespace sta
 
 namespace utl {
@@ -29,6 +30,7 @@ namespace rsz {
 struct GeneratorContext;
 class MoveCommitter;
 class MoveGenerator;
+class RepairTargetCollector;
 class Resizer;
 
 // Single-character marker used in legacy phase log prefixes.
@@ -111,6 +113,8 @@ class OptPolicy
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
+  bool finalizeAndReport(double initial_design_area,
+                         bool include_progress_header);
 
  protected:
   // === Generator setup ======================================================
@@ -153,6 +157,12 @@ class OptPolicy
   sta::Slack totalNegativeSlack(const sta::MinMax* max) const;
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
+  void printProgressHeader() const;
+  void printFinalProgress(const RepairTargetCollector& target_collector,
+                          double initial_design_area,
+                          bool include_header) const;
+  virtual const std::vector<const sta::Pin*>& finalReportPins() const;
+  bool reportRepairSummary() const;
 
   // Load every policy-tunable envar into policy_config_ once at start time.
   // Each subclass reads only the fields it actually consumes from

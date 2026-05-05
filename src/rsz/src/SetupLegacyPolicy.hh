@@ -109,11 +109,6 @@ class SetupLegacyPolicy : public OptPolicy
   // skip_vt_swap is set or the design has no VT cells.
   void runCriticalVtSwapPhase(int& num_viols);
 
-  // Final progress dump + tracker reports + repair summary.  Returns the
-  // bool that the legacy runSetup() used to return (true if any repair
-  // committed).
-  bool finalizeAndReport(int opto_iteration);
-
  protected:
   using ViolatingEnds = std::vector<std::pair<sta::Vertex*, sta::Slack>>;
 
@@ -261,8 +256,6 @@ class SetupLegacyPolicy : public OptPolicy
                         float curr_tns,
                         sta::Slack prev_worst_slack,
                         float prev_tns) const;
-  bool reportRepairSummary(float setup_slack_margin);
-
   // === Target construction and path repair =================================
   virtual bool repairPath(sta::Path* path, sta::Slack path_slack);
   virtual bool repairPins(
@@ -318,6 +311,8 @@ class SetupLegacyPolicy : public OptPolicy
   int fanout(sta::Vertex* vertex) const;
 
   // === Progress reporting ===================================================
+  // Preserve the legacy MoveTracker final-report critical pin set.
+  const std::vector<const sta::Pin*>& finalReportPins() const override;
   void printProgress(int iteration, bool force, bool end, bool last_gasp) const;
   void printProgress(int iteration,
                      bool force,
