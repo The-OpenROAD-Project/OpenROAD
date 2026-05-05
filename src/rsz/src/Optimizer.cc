@@ -112,27 +112,25 @@ bool Optimizer::run()
   resizer_.runRepairSetupPreamble();
   committer_.init();
 
-  // Token list: user-supplied -phases/-policy/-policies takes precedence,
-  // otherwise the default ("LEGACY LAST_GASP CRIT_VT_SWAP").
-  const std::string token_list
-      = !config_.phases.empty() ? config_.phases : kDefaultPhases;
-  const std::vector<std::string> phase_names = sta::parseTokens(token_list);
-
-  RepairSetupContext setup_context(resizer_);
-  setup_context.phase_pipeline_active = true;
-
   // Keep incremental parasitics enabled across the full optimizer run so every
   // policy sees the same ECO invalidation/update behavior.
   est::IncrementalParasiticsGuard parasitics_guard(
       resizer_.estimateParasitics());
 
-  // Phase loop - Run multiple policies sequentially
-  std::unique_ptr<OptPolicy> last_policy;
+  // Get phase string from -phases/-policy/-policies
+  const std::string token_list
+      = !config_.phases.empty() ? config_.phases : kDefaultPhases;
+  const std::vector<std::string> phase_names = sta::parseTokens(token_list);
   const int phase_count = phase_names.size();
-  for (int phase_index = 0; phase_index < phase_count; ++phase_index) {
-    setup_context.phase_index = phase_index;
+
+  // Phase loop - Run multiple policies sequentially.
+  std::unique_ptr<OptPolicy> last_policy;
+  RepairSetupContext setup_context(resizer_);
+  setup_context.phase_pipeline_active = true;
+  for (int i = 0; i < phase_count; ++i) {
+    setup_context.phase_index = i;
     std::unique_ptr<OptPolicy> policy
-        = makePolicyForPhase(phase_names[phase_index], setup_context);
+        = makePolicyForPhase(phase_names[i], setup_context);
     if (!policy->start(config_)) {
       return false;
     }

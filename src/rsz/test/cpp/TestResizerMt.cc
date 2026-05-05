@@ -426,7 +426,7 @@ TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config, nullptr));
+  EXPECT_NO_THROW(policy.start(config));
 }
 
 TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
@@ -444,7 +444,7 @@ TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config, nullptr));
+  EXPECT_NO_THROW(policy.start(config));
 }
 
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
@@ -830,7 +830,7 @@ TEST_F(TestResizerMt,
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config, nullptr);
+  policy.start(config);
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_GE(policy.thread_pool_->threadCount(), 1u);
@@ -917,7 +917,7 @@ TEST_F(TestResizerMt,
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config, nullptr);
+  policy.start(config);
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_EQ(policy.thread_pool_->threadCount(), 32u);
