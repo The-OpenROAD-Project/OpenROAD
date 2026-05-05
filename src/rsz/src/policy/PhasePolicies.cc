@@ -43,19 +43,6 @@ static constexpr int kDelayDigits = 3;
 static constexpr size_t kMaxCritEndpoints = 100;
 static constexpr int kMaxCritInstancesPerEndpoint = 50;
 
-RepairSetupParams makeRepairSetupParams(const OptimizerRunConfig& config,
-                                        const float setup_slack_margin)
-{
-  return RepairSetupParams{.setup_slack_margin = setup_slack_margin,
-                           .verbose = config.verbose,
-                           .skip_pin_swap = config.skip_pin_swap,
-                           .skip_gate_cloning = config.skip_gate_cloning,
-                           .skip_size_down = config.skip_size_down,
-                           .skip_buffering = config.skip_buffering,
-                           .skip_buffer_removal = config.skip_buffer_removal,
-                           .skip_vt_swap = config.skip_vt_swap};
-}
-
 }  // namespace
 
 void SetupLegacyPolicy::iterate()
@@ -158,8 +145,6 @@ void SetupLastGaspPolicy::iterate()
   }
 
   committer_.capturePrePhaseSlack();
-  RepairSetupParams params
-      = makeRepairSetupParams(config_, config_.setup_slack_margin);
   OptimizerProgress& progress = run_ctx_->progress;
   int& num_viols = progress.violation_count;
   const int opto_iteration = progress.iteration;
@@ -175,15 +160,11 @@ void SetupLastGaspPolicy::iterate()
     LastGaspState last_gasp_state;
     last_gasp_state.phase_marker = phase_marker;
     ViolatingEnds violating_ends;
-    if (!initializeLastGaspRepair(params,
-                                  opto_iteration,
-                                  initial_tns,
-                                  last_gasp_state,
-                                  violating_ends)) {
+    if (!initializeLastGaspRepair(
+            opto_iteration, initial_tns, last_gasp_state, violating_ends)) {
       num_viols = last_gasp_state.num_viols;
     } else {
-      runLastGaspLoop(
-          violating_ends, params, config_.max_iterations, last_gasp_state);
+      runLastGaspLoop(violating_ends, config_.max_iterations, last_gasp_state);
       num_viols = last_gasp_state.num_viols;
       if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
         sta::Slack final_wns;
@@ -215,9 +196,7 @@ void SetupCritVtSwapPolicy::iterate()
     return;
   }
   committer_.capturePrePhaseSlack();
-  RepairSetupParams params
-      = makeRepairSetupParams(config_, config_.setup_slack_margin);
-  if (swapVTCritCells(params, num_viols)) {
+  if (swapVTCritCells(num_viols)) {
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
   }
@@ -1368,7 +1347,6 @@ void SetupDirectionalPolicy::repairSetupDirectional(
 }
 
 bool SetupLastGaspPolicy::initializeLastGaspRepair(
-    const RepairSetupParams& params,
     const int opto_iteration,
     const float initial_tns,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state,
@@ -1377,13 +1355,13 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
   // Last-gasp intentionally narrows the move sequence to transforms that still
   // have a chance to improve slack without large topology changes.
   move_sequence_.clear();
-  pushMoveIfEnabled(!params.skip_vt_swap, MoveType::kVtSwap);
+  pushMoveIfEnabled(!config_.skip_vt_swap, MoveType::kVtSwap);
   move_sequence_.push_back(MoveType::kSizeUpMatch);
   move_sequence_.push_back(MoveType::kSizeUp);
-  pushMoveIfEnabled(!params.skip_pin_swap, MoveType::kSwapPins);
+  pushMoveIfEnabled(!config_.skip_pin_swap, MoveType::kSwapPins);
   activateMoveSequence(false);
 
-  violating_ends = collectViolatingEndpoints(params.setup_slack_margin);
+  violating_ends = collectViolatingEndpoints(config_.setup_slack_margin);
   last_gasp_state.num_viols = violating_ends.size();
   const float curr_tns = sta_->totalNegativeSlack(max_);
   if (sta::fuzzyGreaterEqual(curr_tns, 0)) {
@@ -1471,7 +1449,6 @@ bool SetupLastGaspPolicy::lastGaspImproved(const sta::Slack worst_slack,
 bool SetupLastGaspPolicy::advanceLastGaspProgress(
     SetupLegacyBase::EndpointRepairState& endpoint_state,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state,
-    const RepairSetupParams& params,
     const float curr_tns)
 {
   if (!lastGaspImproved(endpoint_state.worst_slack,
@@ -1514,7 +1491,7 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
   last_gasp_state.prev_worst_slack = endpoint_state.worst_slack;
   last_gasp_state.prev_tns = curr_tns;
   if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
-                             params.setup_slack_margin)) {
+                             config_.setup_slack_margin)) {
     --last_gasp_state.num_viols;
   }
   saveImprovedCheckpoint(endpoint_state, max_last_gasp_passes_);
@@ -1524,7 +1501,6 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
 void SetupLastGaspPolicy::repairLastGaspEndpoint(
     SetupLegacyBase::EndpointRepairState& endpoint_state,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state,
-    const RepairSetupParams& params,
     const int max_iterations)
 {
   while (endpoint_state.pass <= max_last_gasp_passes_) {
@@ -1546,12 +1522,12 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     if (last_gasp_state.opto_iteration % opto_small_interval_ == 0) {
       last_gasp_state.prev_termination = false;
     }
-    if (params.verbose || last_gasp_state.opto_iteration == 1) {
+    if (config_.verbose || last_gasp_state.opto_iteration == 1) {
       printProgress(
           last_gasp_state.opto_iteration, false, last_gasp_state.phase_marker);
     }
     if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
-                               params.setup_slack_margin)) {
+                               config_.setup_slack_margin)) {
       --last_gasp_state.num_viols;
       acceptEndpointState(endpoint_state);
       break;
@@ -1568,8 +1544,7 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     sta_->findRequireds();
     refreshEndpointSlacks(endpoint_state);
     const float curr_tns = sta_->totalNegativeSlack(max_);
-    if (!advanceLastGaspProgress(
-            endpoint_state, last_gasp_state, params, curr_tns)) {
+    if (!advanceLastGaspProgress(endpoint_state, last_gasp_state, curr_tns)) {
       break;
     }
 
@@ -1606,7 +1581,6 @@ bool SetupLastGaspPolicy::shouldStopLastGasp(
 
 void SetupLastGaspPolicy::runLastGaspLoop(
     const SetupLegacyBase::ViolatingEnds& violating_ends,
-    const RepairSetupParams& params,
     const int max_iterations,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state)
 {
@@ -1621,10 +1595,9 @@ void SetupLastGaspPolicy::runLastGaspLoop(
       break;
     }
 
-    repairLastGaspEndpoint(
-        endpoint_state, last_gasp_state, params, max_iterations);
+    repairLastGaspEndpoint(endpoint_state, last_gasp_state, max_iterations);
 
-    if (params.verbose || last_gasp_state.opto_iteration == 1) {
+    if (config_.verbose || last_gasp_state.opto_iteration == 1) {
       printProgress(
           last_gasp_state.opto_iteration, true, last_gasp_state.phase_marker);
     }
@@ -1641,12 +1614,11 @@ void SetupLastGaspPolicy::runLastGaspLoop(
   }
 }
 
-bool SetupCritVtSwapPolicy::swapVTCritCells(const RepairSetupParams& params,
-                                            int& num_viols)
+bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
 {
   bool changed = false;
   ViolatingEnds violating_ends
-      = collectViolatingEndpoints(params.setup_slack_margin);
+      = collectViolatingEndpoints(config_.setup_slack_margin);
   if (violating_ends.size() > kMaxCritEndpoints) {
     violating_ends.resize(kMaxCritEndpoints);
   }
@@ -1656,7 +1628,7 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(const RepairSetupParams& params,
   std::unordered_set<sta::Vertex*> visited;
   std::unordered_set<sta::Instance*> notSwappable;
   for (const auto& [endpoint, slack] : violating_ends) {
-    traverseFaninCone(endpoint, crit_insts, visited, notSwappable, params);
+    traverseFaninCone(endpoint, crit_insts, visited, notSwappable);
   }
   debugPrint(logger_,
              RSZ,
@@ -1712,7 +1684,7 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(const RepairSetupParams& params,
     committer_.acceptPendingMoves();
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
-    num_viols = collectViolatingEndpoints(params.setup_slack_margin).size();
+    num_viols = collectViolatingEndpoints(config_.setup_slack_margin).size();
   } else {
     committer_.rejectPendingMoves();
   }
@@ -1724,8 +1696,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     sta::Vertex* endpoint,
     std::unordered_map<sta::Instance*, float>& crit_insts,
     std::unordered_set<sta::Vertex*>& visited,
-    std::unordered_set<sta::Instance*>& notSwappable,
-    const RepairSetupParams& params)
+    std::unordered_set<sta::Instance*>& notSwappable)
 {
   if (visited.find(endpoint) != visited.end()) {
     return;
@@ -1749,7 +1720,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     if (inst) {
       if (resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_lib_cell)) {
         const sta::Slack inst_slack = getInstanceSlack(inst);
-        if (sta::fuzzyLess(inst_slack, params.setup_slack_margin)) {
+        if (sta::fuzzyLess(inst_slack, config_.setup_slack_margin)) {
           auto it = crit_insts.find(inst);
           if (it == crit_insts.end()) {
             crit_insts[inst] = inst_slack;
@@ -1776,7 +1747,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
 
       if (visited.find(fanin_vertex) == visited.end()) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
-        if (sta::fuzzyLess(fanin_slack, params.setup_slack_margin)) {
+        if (sta::fuzzyLess(fanin_slack, config_.setup_slack_margin)) {
           queue.push(fanin_vertex);
           visited.insert(fanin_vertex);
         }

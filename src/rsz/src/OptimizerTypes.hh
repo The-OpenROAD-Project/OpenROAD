@@ -402,22 +402,6 @@ struct OptimizerRunConfig
   std::string phases;
 };
 
-// Narrow immutable option view for repair-setup helper phases (last-gasp,
-// directional repair, VT-swap of critical cells) that only need the
-// slack-margin plus skip flags, not the full OptimizerRunConfig surface.
-// All fields are const so helpers cannot silently mutate per-run options.
-struct RepairSetupParams
-{
-  const float setup_slack_margin;
-  const bool verbose;
-  const bool skip_pin_swap;
-  const bool skip_gate_cloning;
-  const bool skip_size_down;
-  const bool skip_buffering;
-  const bool skip_buffer_removal;
-  const bool skip_vt_swap;
-};
-
 // Policy-to-generator configuration channel for tunable knobs that do not
 // belong in the OptimizerRunConfig.
 struct OptPolicyConfig

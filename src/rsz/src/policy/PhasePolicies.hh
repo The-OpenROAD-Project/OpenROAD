@@ -154,13 +154,11 @@ class SetupLastGaspPolicy : public SetupLegacyBase
     char phase_marker{'+'};
   };
 
-  bool initializeLastGaspRepair(const RepairSetupParams& params,
-                                int opto_iteration,
+  bool initializeLastGaspRepair(int opto_iteration,
                                 float initial_tns,
                                 LastGaspState& last_gasp_state,
                                 ViolatingEnds& violating_ends);
   void runLastGaspLoop(const ViolatingEnds& violating_ends,
-                       const RepairSetupParams& params,
                        int max_iterations,
                        LastGaspState& last_gasp_state);
   bool beginLastGaspEndpoint(
@@ -169,11 +167,9 @@ class SetupLastGaspPolicy : public SetupLegacyBase
       EndpointRepairState& endpoint_state);
   void repairLastGaspEndpoint(EndpointRepairState& endpoint_state,
                               LastGaspState& last_gasp_state,
-                              const RepairSetupParams& params,
                               int max_iterations);
   bool advanceLastGaspProgress(EndpointRepairState& endpoint_state,
                                LastGaspState& last_gasp_state,
-                               const RepairSetupParams& params,
                                float curr_tns);
   bool lastGaspImproved(sta::Slack worst_slack,
                         float curr_tns,
@@ -194,13 +190,12 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
   void iterate() override;
 
  private:
-  bool swapVTCritCells(const RepairSetupParams& params, int& num_viols);
+  bool swapVTCritCells(int& num_viols);
   sta::Pin* worstOutputPin(sta::Instance* inst);
   void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,
                          std::unordered_set<sta::Vertex*>& visited,
-                         std::unordered_set<sta::Instance*>& notSwappable,
-                         const RepairSetupParams& params);
+                         std::unordered_set<sta::Instance*>& notSwappable);
   sta::Slack getInstanceSlack(sta::Instance* inst);
 };
 
