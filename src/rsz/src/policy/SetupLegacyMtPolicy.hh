@@ -12,7 +12,7 @@
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
-#include "PhasePolicies.hh"
+#include "SetupLegacyPolicy.hh"
 
 namespace rsz {
 

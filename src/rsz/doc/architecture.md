@@ -513,7 +513,7 @@ SetupMt1Policy:
 | Added | `Optimizer.cc`, `Optimizer.hh` | Top-level repair setup driver and policy selection. |
 | Added | `policy/OptPolicy.cc`, `policy/OptPolicy.hh` | Abstract policy base and shared setup helpers. |
 | Added | `policy/SetupLegacyBase.cc`, `policy/SetupLegacyBase.hh` | Shared legacy setup-repair implementation used by legacy phase policies. |
-| Added | `policy/PhasePolicies.cc`, `policy/PhasePolicies.hh` | `SetupLegacyPolicy`, `SetupWnsPolicy`, `SetupTnsPolicy`, `SetupDirectionalPolicy`, `SetupLastGaspPolicy`, and `SetupCritVtSwapPolicy`. |
+| Added | `policy/SetupLegacyPolicy.*`, `policy/SetupWnsPolicy.*`, `policy/SetupTnsPolicy.*`, `policy/SetupDirectionalPolicy.*`, `policy/SetupLastGaspPolicy.*`, `policy/SetupCritVtSwapPolicy.*` | Legacy-compatible repair setup phase policies. |
 | Added | `policy/SetupLegacyMtPolicy.cc`, `policy/SetupLegacyMtPolicy.hh` | Hybrid legacy policy with MT scoring for selected move types. |
 | Added | `policy/SetupMt1Policy.cc`, `policy/SetupMt1Policy.hh` | Experimental batched MT policy. |
 | Added | `policy/MeasuredVtSwapPolicy.cc`, `policy/MeasuredVtSwapPolicy.hh` | Experimental measured VT-swap policy. |
