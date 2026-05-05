@@ -97,7 +97,6 @@ class SetupLegacyBase : public OptPolicy
   };
 
   // === Run setup ============================================================
-  virtual void init();
   virtual void initializeSetupServices();
   virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;

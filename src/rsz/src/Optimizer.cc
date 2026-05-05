@@ -151,7 +151,6 @@ bool Optimizer::run()
   // Common initialize
   resizer_.runRepairSetupPreamble();
   committer_.init();
-  const double initial_design_area = resizer_.computeDesignArea();
 
   // Token list: user-supplied -phases/-policy/-policies takes precedence,
   // otherwise the default ("LEGACY LAST_GASP CRIT_VT_SWAP").
@@ -161,6 +160,7 @@ bool Optimizer::run()
 
   const bool has_legacy_phase = hasLegacyPhase(phase_names);
   RepairSetupContext setup_context(resizer_);
+  setup_context.initial_design_area = resizer_.computeDesignArea();
   std::unique_ptr<SetupLegacyBase> setup_prepare_policy;
   if (has_legacy_phase) {
     setup_prepare_policy = makeLegacyContext(phase_names, setup_context);
@@ -205,7 +205,7 @@ bool Optimizer::run()
                                  ? setup_prepare_policy.get()
                                  : last_policy.get();
   bool include_progress_header = (setup_prepare_policy == nullptr);
-  return report_policy->finalizeAndReport(initial_design_area,
+  return report_policy->finalizeAndReport(setup_context.initial_design_area,
                                           include_progress_header);
 }
 
@@ -235,6 +235,7 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   resizer_.runRepairSetupPreamble();
 
   RepairSetupContext setup_context(resizer_);
+  setup_context.initial_design_area = resizer_.computeDesignArea();
   SetupLegacyBase policy(resizer_, committer_, setup_context);
   policy.start(config, nullptr);
   committer_.init();

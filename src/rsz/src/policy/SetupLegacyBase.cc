@@ -81,7 +81,6 @@ void SetupLegacyBase::iterate()
 
 bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
 {
-  init();
   if (end_pin == nullptr) {
     return false;
   }
@@ -104,11 +103,6 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   return repairPath(end_path, end_slack);
-}
-
-void SetupLegacyBase::init()
-{
-  setup_context_.initial_design_area = resizer_.computeDesignArea();
 }
 
 void SetupLegacyBase::initializeSetupServices()
@@ -325,7 +319,6 @@ bool SetupLegacyBase::reachedIterationLimit(const int iteration,
 
 bool SetupLegacyBase::prepareForPhasePipeline()
 {
-  init();
   initializeSetupServices();
 
   const float setup_slack_margin = config_.setup_slack_margin;
