@@ -18,6 +18,10 @@ namespace ord {
 pad::ICeWall* getICeWall();
 utl::Logger* getLogger();
 } // namespace ord
+
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
 %}
 
 %import <std_vector.i>

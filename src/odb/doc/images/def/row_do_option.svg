@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="555" height="57"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_DO"
+      xlink:title="K_DO">
+      <rect x="51" y="23" width="54" height="32"/>
+      <rect x="49" y="21" width="54" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="41">K_DO</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="125" y="23" width="72" height="32"/>
+      <rect x="123" y="21" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="133" y="41">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_BY"
+      xlink:title="K_BY">
+      <rect x="217" y="23" width="52" height="32"/>
+      <rect x="215" y="21" width="52" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="225" y="41">K_BY</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="289" y="23" width="72" height="32"/>
+      <rect x="287" y="21" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="297" y="41">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#row_step_option"
+      xlink:title="row_step_option">
+      <rect x="381" y="23" width="126" height="32"/>
+      <rect x="379" y="21" width="126" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="389" y="41">row_step_option</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m20 0 h10 m0 0 h466 m-496 0 h20 m476 0 h20 m-516 0 q10 0 10 10 m496 0 q0 -10 10 -10 m-506 10 v12 m496 0 v-12 m-496 12 q0 10 10 10 m476 0 q10 0 10 -10 m-486 10 h10 m54 0 h10 m0 0 h10 m72 0 h10 m0 0 h10 m52 0 h10 m0 0 h10 m72 0 h10 m0 0 h10 m126 0 h10 m23 -32 h-3"/>
+   <polygon points="545 5 553 1 553 9"/>
+   <polygon points="545 5 537 1 537 9"/>
+</svg>

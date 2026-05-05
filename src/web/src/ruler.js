@@ -234,7 +234,7 @@ export class RulerManager {
 
         const vf = {};
         for (const [k, v] of Object.entries(this._visibility)) {
-            vf[k] = v ? 1 : 0;
+            vf[k] = !!v;
         }
 
         try {
@@ -244,8 +244,8 @@ export class RulerManager {
                 dbu_y: dbuY,
                 radius,
                 point_threshold: pointThreshold,
-                horizontal: horizontal ? 1 : 0,
-                vertical: vertical ? 1 : 0,
+                horizontal: !!horizontal,
+                vertical: !!vertical,
                 visible_layers: [...app.visibleLayers],
                 ...vf,
             });

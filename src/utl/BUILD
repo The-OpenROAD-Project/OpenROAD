@@ -21,8 +21,6 @@ cc_library(
     name = "utl",
     srcs = [
         "src/CFileUtils.cpp",
-        "src/CallBack.cpp",
-        "src/CallBackHandler.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
         "src/CsvParser.cpp",
@@ -30,6 +28,7 @@ cc_library(
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
+        "src/ServiceRegistry.cpp",
         "src/SuppressStdout.cpp",
         "src/decode.cpp",
         "src/histogram.cpp",
@@ -40,13 +39,12 @@ cc_library(
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
-        "include/utl/CallBack.h",
-        "include/utl/CallBackHandler.h",
         "include/utl/CsvParser.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
+        "include/utl/ServiceRegistry.h",
         "include/utl/SuppressStdout.h",
         "include/utl/algorithms.h",
         "include/utl/decode.h",
@@ -103,10 +101,14 @@ cc_library(
 cc_binary(
     name = "_utl.so",
     srcs = [
+        "src/LoggerCommon.cpp",
         "src/LoggerCommon.h",
         ":swig-py",
     ],
-    defines = [PYTHON_STABLE_API_DEFINE],
+    defines = [
+        "BAZEL=1",
+        PYTHON_STABLE_API_DEFINE,
+    ],
     includes = ["src"],
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,

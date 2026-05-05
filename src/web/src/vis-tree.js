@@ -57,6 +57,14 @@ export class VisTree {
                 this.visibility[spec.visKey] = node.checked || node.indeterminate;
             }
         });
+        // Apply disabledBy: gray out nodes whose controlling key is off.
+        this.model.forEach(node => {
+            const spec = node.data;
+            if (spec.disabledBy && node.el) {
+                const disabled = !this.visibility[spec.disabledBy];
+                node.el.classList.toggle('disabled', disabled);
+            }
+        });
     }
 
     // -- DOM --
@@ -78,6 +86,7 @@ export class VisTree {
             label.appendChild(spacer);
             label.appendChild(cb);
             label.appendChild(document.createTextNode(spec.label));
+            node.el = label;
             return label;
         }
 

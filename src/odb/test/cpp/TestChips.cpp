@@ -3,6 +3,7 @@
 #include <fstream>
 #include <ios>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"

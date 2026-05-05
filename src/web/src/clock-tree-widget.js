@@ -12,7 +12,8 @@ export const kBottomMargin = 40;   // pixels below the last node
 export const kLeftMargin = 70;     // room for time-axis labels
 export const kRightMargin = 20;
 
-// Node type → fill colour
+// Node type → outline colour (fill is a lighter shade). Matches
+// the GUI palette in src/gui/src/clockWidget.h.
 const kTypeColors = {
     root:       '#ff4444',
     buffer:     '#4488ff',
@@ -22,6 +23,16 @@ const kTypeColors = {
     macro:      '#00b0b0',
     unknown:    '#888888',
 };
+
+// Approximation of Qt's QColor::lighter() — blend toward white.
+function lighter(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const mix = (c) => Math.round((c + 255) / 2);
+    const hh = (c) => c.toString(16).padStart(2, '0');
+    return '#' + hh(mix(r)) + hh(mix(g)) + hh(mix(b));
+}
 
 // Pure layout computation — extracted for testability.
 export function computeClockTreeLayout(clockData) {
@@ -407,6 +418,7 @@ export class ClockTreeWidget {
 
     _drawConnections(ctx) {
         const lw = 1.5 / this._scale;
+        const s = kNodeSize;
         const timeRange = this._timeMax - this._timeMin || 1;
 
         for (const item of this._layout) {
@@ -415,27 +427,42 @@ export class ClockTreeWidget {
             if (!parent) continue;
 
             const px = parent.x;
-            const py = parent.y + kNodeSize / 2;  // bottom of parent node
             const cx = item.x;
-            const cy = item.y - kNodeSize / 2;    // top of child node
 
-            // Cell delay: vertical segment below parent node
+            // Time-anchored endpoints: parent output arrival to child
+            // input arrival. Matches the GUI; guarantees splitY <= cy
+            // because child.arrival >= parent.arrival + parent.delay.
             const cellDelayPx = (parent.delay || 0) / timeRange
                 * this._sceneHeight;
-            const splitY = py + cellDelayPx;
+            const splitY = parent.y + cellDelayPx;
+            const cy = item.y;
 
-            // Cell delay segment (orange)
-            if (cellDelayPx > 0) {
-                ctx.strokeStyle = '#886644';
+            // Output pin location. Root extends upward (apex at parent.y),
+            // every other shape extends downward (output at parent.y + s).
+            const outY = parent.type === 'root' ? parent.y : parent.y + s;
+
+            // Cell-delay fin in the parent's outline color, with a small
+            // horizontal tick at the bottom — matches the GUI's
+            // ClockNodeGraphicsViewItem::addDelayFin. Skip when splitY
+            // does not extend past the output pin: the cell delay is
+            // already covered by the fixed visual cell height, and a fin
+            // would draw backwards through the body.
+            if (splitY > outY) {
+                const finColor =
+                    kTypeColors[parent.type] || kTypeColors.unknown;
+                ctx.strokeStyle = finColor;
                 ctx.lineWidth = lw;
                 ctx.beginPath();
-                ctx.moveTo(px, py);
+                ctx.moveTo(px, outY);
                 ctx.lineTo(px, splitY);
+                const finHalf = s / 20;
+                ctx.moveTo(px - finHalf, splitY);
+                ctx.lineTo(px + finHalf, splitY);
                 ctx.stroke();
             }
 
             // Wire delay segment (green Bezier from splitY to child)
-            ctx.strokeStyle = '#338833';
+            ctx.strokeStyle = '#006400';
             ctx.lineWidth = lw;
             const midY = (splitY + cy) / 2;
             ctx.beginPath();
@@ -446,64 +473,99 @@ export class ClockTreeWidget {
     }
 
     _drawNode(ctx, item, selected) {
+        // Match the GUI's clockWidget shapes: each non-root node is
+        // anchored at its input pin (item.y), with the body extending
+        // downward by the node size. Root extends upward, with its
+        // output pin at item.y. Filled with a lighter shade and
+        // outlined with the type color.
         const x = item.x;
         const y = item.y;
         const s = kNodeSize;
         const color = kTypeColors[item.type] || kTypeColors.unknown;
 
-        ctx.fillStyle = color;
+        ctx.fillStyle = lighter(color);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1 / this._scale;
 
         switch (item.type) {
-            case 'root':
-            case 'buffer':
-                // Triangle pointing down
+            case 'root': {
+                // Triangle pointing down, body above item.y, apex at item.y
                 ctx.beginPath();
-                ctx.moveTo(x - s / 2, y - s / 2);
-                ctx.lineTo(x + s / 2, y - s / 2);
-                ctx.lineTo(x, y + s / 2);
+                ctx.moveTo(x - s / 2, y - s);
+                ctx.lineTo(x + s / 2, y - s);
+                ctx.lineTo(x, y);
                 ctx.closePath();
                 ctx.fill();
+                ctx.stroke();
                 break;
-            case 'inverter':
-                // Triangle with small circle at tip
+            }
+            case 'buffer': {
+                // Triangle pointing down, base at item.y, apex at item.y + s
                 ctx.beginPath();
-                ctx.moveTo(x - s / 2, y - s / 2);
-                ctx.lineTo(x + s / 2, y - s / 2);
-                ctx.lineTo(x, y + s / 2);
-                ctx.closePath();
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(x, y + s / 2 + 2, 2, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-            case 'clock_gate':
-                // Circle
-                ctx.beginPath();
-                ctx.arc(x, y, s / 2, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-            case 'register':
-            case 'macro':
-                // Rectangle
-                ctx.fillRect(x - s / 2, y - s / 4, s, s / 2);
-                break;
-            default:
-                // Diamond
-                ctx.beginPath();
-                ctx.moveTo(x, y - s / 2);
+                ctx.moveTo(x - s / 2, y);
                 ctx.lineTo(x + s / 2, y);
-                ctx.lineTo(x, y + s / 2);
-                ctx.lineTo(x - s / 2, y);
+                ctx.lineTo(x, y + s);
                 ctx.closePath();
                 ctx.fill();
+                ctx.stroke();
                 break;
+            }
+            case 'inverter': {
+                // Triangle (slightly shortened) plus bubble at the apex
+                const bar = s * 0.1;
+                const tipY = y + s - bar;
+                ctx.beginPath();
+                ctx.moveTo(x - s / 2, y);
+                ctx.lineTo(x + s / 2, y);
+                ctx.lineTo(x, tipY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(x, tipY + bar / 2, bar / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                break;
+            }
+            case 'clock_gate': {
+                // Circle, top at item.y, bottom at item.y + s
+                ctx.beginPath();
+                ctx.arc(x, y + s / 2, s / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                break;
+            }
+            case 'register':
+            case 'macro': {
+                // Rectangle with a small clock-input triangle at the top
+                ctx.beginPath();
+                ctx.rect(x - s / 2, y, s, s);
+                ctx.fill();
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x - s / 8, y);
+                ctx.lineTo(x + s / 8, y);
+                ctx.lineTo(x, y + s / 4);
+                ctx.closePath();
+                ctx.stroke();
+                break;
+            }
+            default: {
+                // Unknown — circle in dark gray, matching GUI fallback
+                ctx.beginPath();
+                ctx.arc(x, y + s / 2, s / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                break;
+            }
         }
 
         if (selected) {
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2 / this._scale;
+            const cy = item.type === 'root' ? y - s / 2 : y + s / 2;
             ctx.beginPath();
-            ctx.arc(x, y, s / 2 + 3, 0, Math.PI * 2);
+            ctx.arc(x, cy, s / 2 + 3, 0, Math.PI * 2);
             ctx.stroke();
         }
     }
@@ -572,11 +634,14 @@ export class ClockTreeWidget {
 
     _hitTest(screenX, screenY) {
         const p = this._screenToLayout(screenX, screenY);
-        const hitRadius = kNodeSize;
+        const s = kNodeSize;
         for (const item of this._layout) {
-            const dx = p.x - item.x;
-            const dy = p.y - item.y;
-            if (dx * dx + dy * dy < hitRadius * hitRadius) {
+            // Shape extends from item.y to item.y + s for non-root nodes,
+            // and from item.y - s to item.y for the root.
+            const top = item.type === 'root' ? item.y - s : item.y;
+            const bot = item.type === 'root' ? item.y : item.y + s;
+            if (p.x >= item.x - s / 2 && p.x <= item.x + s / 2 &&
+                p.y >= top && p.y <= bot) {
                 return item;
             }
         }

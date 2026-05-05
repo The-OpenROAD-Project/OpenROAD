@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -284,7 +283,6 @@ class ViolatorCollector
   sta::Sta* sta_;
   sta::Graph* graph_;
   sta::Network* network_;
-  sta::dbNetwork* db_network_;
   const sta::MinMax* max_;
   sta::Search* search_;
   sta::Sdc* sdc_;

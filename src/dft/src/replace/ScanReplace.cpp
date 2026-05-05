@@ -46,8 +46,7 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
         && scan_cell_port->function() == nullptr) {
       // input ports do not have a function
       port_equiv
-          = port_equiv
-            && strcmp(non_scan_cell_port->name(), scan_cell_port->name()) == 0;
+          = port_equiv && non_scan_cell_port->name() == scan_cell_port->name();
     } else {
       port_equiv = port_equiv
                    && sta::FuncExpr::equiv(non_scan_cell_port->function(),

@@ -17,13 +17,13 @@ jobs:
           xcode-version: latest-stable
 
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
       # 1. RESTORE: All jobs (PRs, manual runs, master) get to read the cache
       - name: Restore Bazel Disk Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ~/.cache/bazel-disk-cache
           key: ${{ runner.os }}-bazel-${{ github.sha }}
@@ -43,7 +43,7 @@ jobs:
       # 2. SAVE: Only executes if this is a push/merge directly to the master branch
       - name: Save Bazel Disk Cache
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ~/.cache/bazel-disk-cache
           key: ${{ runner.os }}-bazel-${{ github.sha }}

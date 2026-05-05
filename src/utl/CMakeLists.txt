@@ -36,12 +36,11 @@ if (Python3_FOUND AND BUILD_PYTHON)
 endif()
 
 add_library(utl_lib
-  src/CallBackHandler.cpp
-  src/CallBack.cpp
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/CsvParser.cpp
   src/ScopedTemporaryFile.cpp
+  src/ServiceRegistry.cpp
   src/SuppressStdout.cpp
   src/Logger.cpp
   src/Progress.cpp

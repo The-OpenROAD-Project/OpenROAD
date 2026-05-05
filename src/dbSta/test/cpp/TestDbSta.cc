@@ -8,7 +8,12 @@
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sta.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -17,7 +22,7 @@ class TestDbSta : public tst::IntegratedFixture
 {
  protected:
   TestDbSta()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/dbSta/test/")
   {
   }
@@ -95,6 +100,218 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(bterm_clk, nullptr);
   // There is no related dbITerm for a dbBTerm
   ASSERT_EQ(bterm_clk->getITerm(), nullptr);
+}
+
+// Coverage for dbNetwork::findFlatDbNet overloads. Verifies that a flat
+// dbNet can be reached from any of: a leaf iterm pin, a top-level bterm
+// pin, a hierarchical moditerm pin, a flat dbNet, and a hierarchical
+// dbModNet. Pair this with the FlatNet test, which characterizes the
+// non-hierarchy-resolving flatNet overloads.
+TEST_F(TestDbSta, FindFlatDbNet)
+{
+  std::string test_name = "TestDbSta_0";
+  readVerilogAndSetup(test_name + ".v");
+
+  odb::dbNet* dbnet_net2 = block_->findNet("net2");
+  ASSERT_NE(dbnet_net2, nullptr);
+
+  odb::dbModNet* modnet_mod_in = block_->findModNet("sub_inst/mod_in");
+  ASSERT_NE(modnet_mod_in, nullptr);
+  // The hier net for sub_inst/mod_in shares the flat net "net2".
+  ASSERT_EQ(modnet_mod_in->findRelatedNet(), dbnet_net2);
+
+  // 1. findFlatDbNet(Pin*) on an iterm pin (buf/Z drives net2).
+  odb::dbInst* buf_inst = block_->findInst("buf");
+  ASSERT_NE(buf_inst, nullptr);
+  Pin* iterm_pin = db_network_->dbToSta(buf_inst->findITerm("Z"));
+  ASSERT_NE(iterm_pin, nullptr);
+  EXPECT_EQ(db_network_->findFlatDbNet(iterm_pin), dbnet_net2);
+
+  // 2. findFlatDbNet(Pin*) on a top-level bterm pin (in1).
+  odb::dbBTerm* bterm_in1 = block_->findBTerm("in1");
+  ASSERT_NE(bterm_in1, nullptr);
+  Pin* bterm_pin = db_network_->dbToSta(bterm_in1);
+  ASSERT_NE(bterm_pin, nullptr);
+  EXPECT_EQ(db_network_->findFlatDbNet(bterm_pin), bterm_in1->getNet());
+
+  // 3. findFlatDbNet(Pin*) on a moditerm pin (sub_inst/mod_in).
+  Pin* moditerm_pin = db_network_->findPin("sub_inst/mod_in");
+  ASSERT_NE(moditerm_pin, nullptr);
+  EXPECT_EQ(db_network_->findFlatDbNet(moditerm_pin), dbnet_net2);
+
+  // 4. findFlatDbNet(Net*) on a flat dbNet returns the same dbNet.
+  Net* sta_dbnet = db_network_->dbToSta(dbnet_net2);
+  EXPECT_EQ(db_network_->findFlatDbNet(sta_dbnet), dbnet_net2);
+
+  // 5. findFlatDbNet(Net*) on a dbModNet resolves to the related flat
+  // dbNet.
+  Net* sta_modnet = db_network_->dbToSta(modnet_mod_in);
+  EXPECT_EQ(db_network_->findFlatDbNet(sta_modnet), dbnet_net2);
+
+  // 6. findFlatDbNet(Net*) on null returns null.
+  EXPECT_EQ(db_network_->findFlatDbNet(static_cast<Net*>(nullptr)), nullptr);
+}
+
+// Characterization tests for dbNetwork::flatNet in the presence of
+// hierarchy. flatNet does NOT walk the hierarchy: a hierarchical input
+// (moditerm Pin*, dbModNet Net*) yields nullptr even when a related flat
+// dbNet exists. Callers that need hierarchical resolution must use
+// findFlatDbNet. These expectations pin down the current behavior so any
+// future change to flatNet is intentional and reviewed.
+TEST_F(TestDbSta, FlatNet)
+{
+  std::string test_name = "TestDbSta_0";
+  readVerilogAndSetup(test_name + ".v");
+
+  odb::dbNet* dbnet_net2 = block_->findNet("net2");
+  ASSERT_NE(dbnet_net2, nullptr);
+
+  odb::dbModNet* modnet_mod_in = block_->findModNet("sub_inst/mod_in");
+  ASSERT_NE(modnet_mod_in, nullptr);
+  // Sanity: the hierarchical net for sub_inst/mod_in shares flat net "net2".
+  ASSERT_EQ(modnet_mod_in->findRelatedNet(), dbnet_net2);
+
+  // 1. flatNet(Pin*) on a leaf iterm pin returns the directly attached
+  // flat dbNet.
+  odb::dbInst* buf_inst = block_->findInst("buf");
+  ASSERT_NE(buf_inst, nullptr);
+  Pin* iterm_pin = db_network_->dbToSta(buf_inst->findITerm("Z"));
+  ASSERT_NE(iterm_pin, nullptr);
+  EXPECT_EQ(db_network_->flatNet(iterm_pin), dbnet_net2);
+
+  // 2. flatNet(Pin*) on a top-level bterm pin returns the directly
+  // attached flat dbNet.
+  odb::dbBTerm* bterm_in1 = block_->findBTerm("in1");
+  ASSERT_NE(bterm_in1, nullptr);
+  Pin* bterm_pin = db_network_->dbToSta(bterm_in1);
+  ASSERT_NE(bterm_pin, nullptr);
+  EXPECT_EQ(db_network_->flatNet(bterm_pin), bterm_in1->getNet());
+
+  // 3. flatNet(Pin*) on a hierarchical moditerm pin returns nullptr —
+  // moditerms attach only to modnets, and flatNet does not resolve through
+  // the modnet. Callers needing the related flat dbNet must use
+  // findFlatDbNet instead.
+  Pin* moditerm_pin = db_network_->findPin("sub_inst/mod_in");
+  ASSERT_NE(moditerm_pin, nullptr);
+  EXPECT_EQ(db_network_->flatNet(moditerm_pin), nullptr);
+
+  // 4. flatNet(Net*) on a flat dbNet returns the same dbNet.
+  Net* sta_dbnet = db_network_->dbToSta(dbnet_net2);
+  EXPECT_EQ(db_network_->flatNet(sta_dbnet), dbnet_net2);
+
+  // 5. flatNet(Net*) on a hierarchical dbModNet returns nullptr — flatNet
+  // does not resolve through the modnet to its related flat dbNet.
+  Net* sta_modnet = db_network_->dbToSta(modnet_mod_in);
+  EXPECT_EQ(db_network_->flatNet(sta_modnet), nullptr);
+
+  // 6. flatNet(Net*) on null returns null.
+  EXPECT_EQ(db_network_->flatNet(static_cast<Net*>(nullptr)), nullptr);
+
+  // 7. flatNet(Term*) on a top-level bterm returns its dbNet.
+  Term* bterm_term = db_network_->dbToStaTerm(bterm_in1);
+  ASSERT_NE(bterm_term, nullptr);
+  EXPECT_EQ(db_network_->flatNet(bterm_term), bterm_in1->getNet());
+}
+
+// Reassociating a moditerm pin must preserve its modnet connection and not
+// trip ORD-2026 in connectPin. moditerms only attach to modnets, so the
+// flat-net leg of reassociatePinConnection must resolve to nullptr for
+// these pins. Regression for the hierarchical repair_tie_fanout flow.
+TEST_F(TestDbSta, ReassociateModITermPin)
+{
+  std::string test_name = "TestDbSta_0";
+  readVerilogAndSetup(test_name + ".v");
+
+  Pin* moditerm_pin = db_network_->findPin("sub_inst/mod_in");
+  ASSERT_NE(moditerm_pin, nullptr);
+
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  db_network_->staToDb(moditerm_pin, iterm, bterm, moditerm);
+  ASSERT_EQ(iterm, nullptr);
+  ASSERT_EQ(bterm, nullptr);
+  ASSERT_NE(moditerm, nullptr);
+
+  odb::dbModNet* original_modnet = moditerm->getModNet();
+  ASSERT_NE(original_modnet, nullptr);
+  // The pin's modnet has a related flat dbNet, so a buggy reassociate that
+  // forwarded findFlatDbNet's result into connectPin would trigger ORD-2026.
+  ASSERT_NE(db_network_->findFlatDbNet(moditerm_pin), nullptr);
+
+  db_network_->reassociatePinConnection(moditerm_pin);
+
+  EXPECT_EQ(moditerm->getModNet(), original_modnet);
+  EXPECT_TRUE(db_network_->isConnected(db_network_->dbToSta(original_modnet),
+                                       moditerm_pin));
+  db_network_->checkAxioms();
+}
+
+// Regression for #10210 (stale Path* dereference in rsz).
+//
+// Topology (TestDbSta_StalePrevPath.v):
+//   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
+//                                   nd1/A2 <- in2
+//
+// Flow:
+//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin name
+//   2. Delete upstream b1 + updateTiming -> free
+//   3. Add a fresh BUF + clock + updateTiming -> recycle
+//   4. Assert the captured Path's prev slot has been recycled: pin()
+//      decodes to data that belongs to a different instance than nd1's
+//      real input.
+TEST_F(TestDbSta, StalePrevPath)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+  readVerilogAndSetup(test_name + ".v");
+  sta_->updateTiming(true);
+
+  Network* network = sta_->network();
+
+  Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
+  Path* drvr_path = sta_->vertexWorstArrivalPath(
+      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
+      MinMax::max());
+  ASSERT_NE(drvr_path, nullptr);
+  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
+  const Path* pre_addr = drvr_path->prevPath();
+  ASSERT_NE(pre_addr, nullptr);
+  const std::string pre_pin_name = network->pathName(pre_addr->pin(sta_.get()));
+
+  // 2. Free upstream Path[] slots.
+  sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
+  sta_->updateTiming(true);
+
+  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
+  odb::dbNet* in3_net = odb::dbNet::create(block_, "in3");
+  odb::dbBTerm* new_bt = odb::dbBTerm::create(in3_net, "in3");
+  new_bt->setIoType(odb::dbIoType::INPUT);
+  odb::dbNet* nfan_net = odb::dbNet::create(block_, "nfan");
+  odb::dbInst* bnew
+      = odb::dbInst::create(block_, db_->findMaster("BUF_X1"), "bnew");
+  bnew->findITerm("A")->connect(in3_net);
+  bnew->findITerm("Z")->connect(nfan_net);
+
+  PinSet clk2_pins(db_network_);
+  clk2_pins.insert(db_network_->dbToSta(new_bt));
+  FloatSeq clk2_waveform = {0.0f, 0.1f};
+  sta_->makeClock(
+      "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
+  sta_->updateTiming(true);
+
+  // 4. Staleness evidence. Pointer address is same but pin name has changed.
+  const Path* post_addr = drvr_path->prevPath();
+  const std::string post_pin_name
+      = post_addr ? network->pathName(post_addr->pin(sta_.get()))
+                  : std::string("<null>");
+
+  EXPECT_EQ(pre_addr, post_addr)
+      << "stale-pointer signature: prev_path_ address unchanged";
+  EXPECT_NE(pre_pin_name, post_pin_name)
+      << "but slot content should differ after free+reuse. before="
+      << pre_pin_name << " after=" << post_pin_name;
 }
 
 }  // namespace sta

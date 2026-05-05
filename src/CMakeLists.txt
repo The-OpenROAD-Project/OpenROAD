@@ -32,6 +32,7 @@ set(OPENROAD_SOURCE
   Design.cc
   Timing.cc
   Tech.cc
+  tcl_readline_setup.cc
   OpenRoad.cc
   Main.cc
   )
@@ -138,10 +139,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 4.0 REQUIRED)
-if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
-  message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
-endif()
+find_package(SWIG 4.3 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost CONFIG REQUIRED)
@@ -347,7 +345,6 @@ target_link_libraries(openroad
   cut
   grt
   tap
-  gui
   drt
   dst
   psm
@@ -360,6 +357,7 @@ target_link_libraries(openroad
   par
   est
   web
+  gui
   absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
@@ -437,6 +435,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     stt_py
     psm_py
     pdn_py
+    rsz_py
     dft_py
     par_py
     web_py

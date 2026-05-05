@@ -290,7 +290,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
       continue;
     }
     sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
+    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name().c_str());
     if (to_mterm) {
       outputs.insert(to_mterm);
     }
@@ -458,9 +458,7 @@ std::vector<ClockInfo> Timing::getClockInfo()
     ClockInfo info;
     info.name = clk->name();
     info.period = clk->period();
-    if (clk->waveform()) {
-      info.waveform = *clk->waveform();
-    }
+    info.waveform = clk->waveform();
     for (const sta::Pin* pin : clk->pins()) {
       auto [iterm, bterm] = staToDBPin(pin);
       if (iterm) {

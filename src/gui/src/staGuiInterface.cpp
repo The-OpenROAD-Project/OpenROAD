@@ -678,7 +678,7 @@ int ClockTree::getMaxLeaves(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       minimum = std::min(minimum, arrival);
@@ -700,7 +700,7 @@ sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 {
-  sta::Delay maximum = std::numeric_limits<sta::Delay>::min();
+  sta::Delay maximum = std::numeric_limits<float>::min();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       maximum = std::max(maximum, arrival);
@@ -722,7 +722,7 @@ sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     if (parent_ != nullptr) {
       for (const auto& [driver, arrival] : drivers_) {

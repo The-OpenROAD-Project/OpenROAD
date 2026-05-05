@@ -193,7 +193,7 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
 {
   const int lib_ap = scene->libertyIndex(min_max);
   sta::LibertyCell* load_cell = load_port->libertyCell();
-  const char* load_port_name = load_port->name();
+  const char* load_port_name = load_port->name().c_str();
 
   sta::LibertyCellSeq swappable_cells = BaseMove::getSwappableCells(load_cell);
   sta::LibertyCell* best_cell = nullptr;
@@ -259,7 +259,7 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
 
   for (const auto& output_pin : output_pins) {
     sta::LibertyPort* output_port = network_->libertyPort(output_pin);
-    const char* output_port_name = output_port->name();
+    const char* output_port_name = output_port->name().c_str();
     output_port_names.push_back(output_port_name);
     sta::Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
 

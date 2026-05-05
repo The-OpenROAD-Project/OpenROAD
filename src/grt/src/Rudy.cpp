@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -105,6 +106,9 @@ void Rudy::getResourceReductions()
       Tile& tile = getEditableTile(x, y);
       uint8_t tile_cap = cap_usage_data[x][y].capacity;
       float tile_reduction = cap_usage_data[x][y].reduction;
+      if (tile_cap == 0) {
+        continue;
+      }
       float cap_usage_data = tile_reduction / tile_cap;
       tile.addRudy(cap_usage_data * 100);
     }
@@ -144,6 +148,9 @@ void Rudy::processNet(odb::dbNet* net)
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
+  if (net_rect.isInverted()) {
+    return;
+  }
   const auto net_area = net_rect.area();
   if (net_area == 0) {
     // TODO: handle nets with 0 area from getTermBBox()

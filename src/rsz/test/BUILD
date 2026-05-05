@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
@@ -43,6 +43,7 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "swap_pins_dont_touch",
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
@@ -67,6 +68,7 @@ TESTS = [
     "repair_design3_verbose",
     "repair_design4",
     "repair_design5",
+    "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",
     "repair_fanout2",
@@ -99,6 +101,8 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_multi_output_load",
+    "repair_setup_max_iter",
     "repair_setup1",
     "repair_setup1_multi",
     "repair_setup2",
@@ -208,9 +212,6 @@ TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -261,6 +262,11 @@ BIG_TESTS = [
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [":TestBufRem1"],
+)
 
 cc_test(
     name = "rsz_buffer_removal",
@@ -441,6 +447,36 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+    ],
+)
+
+py_library(
+    name = "helpers",
+    srcs = ["helpers.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_library(
+    name = "rsz_aux",
+    srcs = ["rsz_aux.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_test(
+    name = "gcd_resize_py",
+    srcs = ["gcd_resize.py"],
+    data = [":test_resources"],
+    main = "gcd_resize.py",
+    deps = [
+        ":helpers",
+        ":rsz_aux",
+        "//python/openroad:openroadpy",
     ],
 )
 

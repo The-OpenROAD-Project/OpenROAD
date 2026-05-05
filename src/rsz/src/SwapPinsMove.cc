@@ -95,10 +95,12 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   sta::Scene* scene = drvr_path->scene(sta_);
   const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
-  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
 
-  // We get the driver port and the cell for that port.
-  sta::LibertyPort* input_port = network_->libertyPort(drvr_input_pin);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  sta::LibertyPort* input_port = in_arc ? in_arc->from() : nullptr;
+  if (input_port == nullptr) {
+    return false;
+  }
   sta::LibertyPort* swap_port = input_port;
   LibertyPortVec ports;
 
@@ -157,12 +159,14 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
              drvr_cell->name(),
              input_port->name(),
              swap_port->name());
-  swapPins(drvr, input_port, swap_port);
+  if (!swapPins(drvr, input_port, swap_port)) {
+    return false;
+  }
   countMove(drvr);
   return true;
 }
 
-void SwapPinsMove::swapPins(sta::Instance* inst,
+bool SwapPinsMove::swapPins(sta::Instance* inst,
                             sta::LibertyPort* port1,
                             sta::LibertyPort* port2)
 {
@@ -186,13 +190,13 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
 
     // port pointers may change after sizing
     // if (port == port1) {
-    if (std::strcmp(port->name(), port1->name()) == 0) {
+    if (port->name() == port1->name()) {
       found_pin1 = pin;
       net1 = net;
       flat_net_pin1 = db_network_->flatNet(found_pin1);
       mod_net_pin1 = db_network_->hierNet(found_pin1);
     }
-    if (std::strcmp(port->name(), port2->name()) == 0) {
+    if (port->name() == port2->name()) {
       found_pin2 = pin;
       net2 = net;
       flat_net_pin2 = db_network_->flatNet(found_pin2);
@@ -201,6 +205,28 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
   }
 
   if (net1 != nullptr && net2 != nullptr) {
+    // Honor net dont-touch
+    if (flat_net_pin1 && flat_net_pin1->isDoNotTouch()) {
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_pins_move",
+                 2,
+                 "REJECT SwapPinsMove {}: Net {} is \"don't touch\"",
+                 network_->pathName(inst),
+                 network_->pathName(net1));
+      return false;
+    }
+    if (flat_net_pin2 && flat_net_pin2->isDoNotTouch()) {
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_pins_move",
+                 2,
+                 "REJECT SwapPinsMove {}: Net {} is \"don't touch\"",
+                 network_->pathName(inst),
+                 network_->pathName(net2));
+      return false;
+    }
+
     // Swap the ports and nets
     // Support for hierarchy, swap modnets as well as dbnets
 
@@ -217,6 +243,7 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
     db_network_->connectPin(
         found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
   }
+  return true;
 }
 
 // Lets just look at the first list for now.
