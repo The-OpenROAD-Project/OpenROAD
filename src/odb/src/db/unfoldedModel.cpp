@@ -88,6 +88,28 @@ UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
   }
   unfoldConnections(chip, {});
   unfoldNets(chip, {});
+  attachObservers(chip);
+}
+
+void UnfoldedModel::attachObservers(dbChip* chip)
+{
+  if (!chip || !observed_chips_.insert(chip).second) {
+    return;
+  }
+
+  chip_observers_.emplace_back(this);
+  chip_observers_.back().addOwner(chip);
+
+  if (dbBlock* block = chip->getBlock()) {
+    if (observed_blocks_.insert(block).second) {
+      block_observers_.emplace_back(this);
+      block_observers_.back().addOwner(block);
+    }
+  }
+
+  for (dbChipInst* inst : chip->getChipInsts()) {
+    attachObservers(inst->getMasterChip());
+  }
 }
 
 UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,

@@ -7,14 +7,18 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
+class dbBlock;
 class dbChip;
 class dbChipInst;
 class dbChipRegion;
@@ -22,6 +26,7 @@ class dbChipRegionInst;
 class dbChipBumpInst;
 class dbChipConn;
 class dbChipNet;
+class UnfoldedModel;
 
 enum class UnfoldedRegionSide
 {
@@ -93,6 +98,24 @@ struct UnfoldedChip
   UnfoldedBump* findUnfoldedBump(dbChipBumpInst* bump_inst);
 };
 
+class UnfoldedChipObserver : public dbChipCallBackObj
+{
+ public:
+  explicit UnfoldedChipObserver(UnfoldedModel* model) : model_(model) {}
+
+ private:
+  UnfoldedModel* model_;
+};
+
+class UnfoldedBlockObserver : public dbBlockCallBackObj
+{
+ public:
+  explicit UnfoldedBlockObserver(UnfoldedModel* model) : model_(model) {}
+
+ private:
+  UnfoldedModel* model_;
+};
+
 class UnfoldedModel
 {
  public:
@@ -119,11 +142,22 @@ class UnfoldedModel
 
   UnfoldedChip* findUnfoldedChip(const std::vector<dbChipInst*>& path);
 
+  // Recursively register chip/block observers across the hierarchy rooted
+  // at `chip` so that callback events can keep the unfolded model in sync.
+  void attachObservers(dbChip* chip);
+
   utl::Logger* logger_;
   std::deque<UnfoldedChip> unfolded_chips_;
   std::vector<UnfoldedConnection> unfolded_connections_;
   std::vector<UnfoldedNet> unfolded_nets_;
   std::map<std::string, UnfoldedChip*> chip_map_;
+
+  // Use deque so observer addresses are stable; ~CallBackObj removes
+  // ownership automatically when the model is destroyed.
+  std::deque<UnfoldedChipObserver> chip_observers_;
+  std::deque<UnfoldedBlockObserver> block_observers_;
+  std::unordered_set<dbChip*> observed_chips_;
+  std::unordered_set<dbBlock*> observed_blocks_;
 };
 
 }  // namespace odb
