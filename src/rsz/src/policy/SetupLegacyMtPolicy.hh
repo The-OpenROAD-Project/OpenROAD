@@ -24,13 +24,13 @@ class VtSwapMtGenerator;
 // Hybrid single/multi-threaded setup-repair policy (selected as the legacy
 // context when a LEGACY_MT token appears in the -phases list).
 //
-// SetupLegacyMtPolicy keeps MainRepairPhasePolicy's serial endpoint, target,
+// SetupLegacyMtPolicy keeps SetupLegacyPolicy's serial endpoint, target,
 // and move-type ordering.  Only the VtSwap and SizeUp move types use MT
 // candidate expansion and parallel candidate scoring for one prepared target at
 // a time. All other generators stay on the caller thread, which preserves their
 // single-threaded assumptions while still allowing incremental MT expansion by
 // move type.
-class SetupLegacyMtPolicy : public MainRepairPhasePolicy
+class SetupLegacyMtPolicy : public SetupLegacyPolicy
 {
  public:
   // === OptPolicy entry points ==============================================
@@ -43,7 +43,7 @@ class SetupLegacyMtPolicy : public MainRepairPhasePolicy
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
 
  protected:
-  // === SetupLegacyPolicy hooks
+  // === SetupLegacyBase hooks
   // ===================================================
   void buildMoveGenerators(const std::vector<MoveType>& move_types,
                            const GeneratorContext& context) override;

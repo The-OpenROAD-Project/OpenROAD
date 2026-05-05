@@ -35,7 +35,7 @@ using utl::RSZ;
 SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
                                          MoveCommitter& committer,
                                          RepairSetupContext& setup_context)
-    : MainRepairPhasePolicy(resizer, committer, setup_context)
+    : SetupLegacyPolicy(resizer, committer, setup_context)
 {
 }
 
@@ -44,7 +44,7 @@ SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config,
                                 PhaseRunContext* const ctx)
 {
-  MainRepairPhasePolicy::start(config, ctx);
+  SetupLegacyPolicy::start(config, ctx);
   thread_pool_ = makeWorkerThreadPool();
 }
 
@@ -52,7 +52,7 @@ void SetupLegacyMtPolicy::buildMoveGenerators(
     const std::vector<MoveType>& move_types,
     const GeneratorContext& context)
 {
-  // Keep SetupLegacyPolicy's move sequence, but use MT-safe generators only for
+  // Keep SetupLegacyBase's move sequence, but use MT-safe generators only for
   // VtSwap and SizeUp.
   move_generators_.clear();
   move_generators_.reserve(move_types.size());
@@ -289,7 +289,7 @@ bool SetupLegacyMtPolicy::tryRepairTarget(
     const std::unordered_set<MoveType>* rejected_types,
     std::optional<MoveType>& accepted_type)
 {
-  // Preserve SetupLegacyPolicy's single-target, move-sequence ordering.  Only
+  // Preserve SetupLegacyBase's single-target, move-sequence ordering.  Only
   // the VtSwap/SizeUp move types score their generated candidates in parallel.
   const Target prepared_target = OptPolicy::prepareTarget(target);
 

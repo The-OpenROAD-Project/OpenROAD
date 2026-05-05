@@ -500,7 +500,7 @@ SetupMt1Policy:
 | Status | File(s) | Replacement / Purpose |
 |---|---|---|
 | Removed | `BaseMove.cc`, `BaseMove.hh` | Shared helpers moved into `Resizer`, `MoveCommitter`, `DelayEstimator`, and generator/candidate classes. |
-| Removed | `RepairSetup.cc`, `RepairSetup.hh` | Replaced by `Optimizer`, `OptPolicy`, `SetupLegacyPolicy`, and derived policies. |
+| Removed | `RepairSetup.cc`, `RepairSetup.hh` | Replaced by `Optimizer`, `policy/OptPolicy`, `policy/SetupLegacyBase`, `policy/SetupLegacyPolicy`, and derived policies. |
 | Removed | `BufferMove.cc`, `BufferMove.hh` | Replaced by `move/BufferGenerator.*`, `move/BufferCandidate.*`. |
 | Removed | `CloneMove.cc`, `CloneMove.hh` | Replaced by `move/CloneGenerator.*`, `move/CloneCandidate.*`. |
 | Removed | `SizeUpMove.cc`, `SizeUpMove.hh` | Replaced by `move/SizeUpGenerator.*`, `move/SizeUpCandidate.*`, `move/SizeUpMt*`, `move/SizeUpMatch*`. |
@@ -511,11 +511,12 @@ SetupMt1Policy:
 | Removed | `SplitLoadMove.cc`, `SplitLoadMove.hh` | Replaced by `move/SplitLoadGenerator.*`, `move/SplitLoadCandidate.*`. |
 | Renamed/refactored | `ViolatorCollector.*` -> `RepairTargetCollector.*` | Setup-repair target and violator collection. |
 | Added | `Optimizer.cc`, `Optimizer.hh` | Top-level repair setup driver and policy selection. |
-| Added | `OptPolicy.cc`, `OptPolicy.hh` | Abstract policy base and shared setup helpers. |
-| Added | `SetupLegacyPolicy.cc`, `SetupLegacyPolicy.hh` | Default single-threaded legacy-compatible policy. |
-| Added | `SetupLegacyMtPolicy.cc`, `SetupLegacyMtPolicy.hh` | Hybrid legacy policy with MT scoring for selected move types. |
-| Added | `SetupMt1Policy.cc`, `SetupMt1Policy.hh` | Experimental batched MT policy. |
-| Added | `MeasuredVtSwapPolicy.cc`, `MeasuredVtSwapPolicy.hh` | Experimental measured VT-swap policy. |
+| Added | `policy/OptPolicy.cc`, `policy/OptPolicy.hh` | Abstract policy base and shared setup helpers. |
+| Added | `policy/SetupLegacyBase.cc`, `policy/SetupLegacyBase.hh` | Shared legacy setup-repair implementation used by legacy phase policies. |
+| Added | `policy/PhasePolicies.cc`, `policy/PhasePolicies.hh` | `SetupLegacyPolicy`, `SetupWnsPolicy`, `SetupTnsPolicy`, `SetupDirectionalPolicy`, `SetupLastGaspPolicy`, and `SetupCritVtSwapPolicy`. |
+| Added | `policy/SetupLegacyMtPolicy.cc`, `policy/SetupLegacyMtPolicy.hh` | Hybrid legacy policy with MT scoring for selected move types. |
+| Added | `policy/SetupMt1Policy.cc`, `policy/SetupMt1Policy.hh` | Experimental batched MT policy. |
+| Added | `policy/MeasuredVtSwapPolicy.cc`, `policy/MeasuredVtSwapPolicy.hh` | Experimental measured VT-swap policy. |
 | Modified | `rsz/Resizer.hh` | Owns the shared `MoveType` enum used by legacy and optimizer code. |
 | Added | `OptimizerTypes.cc`, `OptimizerTypes.hh` | Shared target, estimate, config, message IDs, move labels, and prepare-stage data structures. |
 | Added | `DelayEstimator.cc`, `DelayEstimator.hh` | Arc delay state construction and candidate delay estimation helpers. |

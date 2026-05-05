@@ -3,16 +3,18 @@
 
 #pragma once
 
-#include "SetupLegacyPolicy.hh"
+#include "SetupLegacyBase.hh"
 
 namespace rsz {
 
-class MainRepairPhasePolicy : public SetupLegacyPolicy
+// Default single-threaded setup-repair phase.  This preserves the original
+// endpoint/path-driver repair loop when the LEGACY phase is selected.
+class SetupLegacyPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyPolicy::SetupLegacyPolicy;
+  using SetupLegacyBase::SetupLegacyBase;
 
-  const char* name() const override { return "MainRepairPhasePolicy"; }
+  const char* name() const override { return "SetupLegacyPolicy"; }
   void iterate() override;
 
  protected:
@@ -31,7 +33,6 @@ class MainRepairPhasePolicy : public SetupLegacyPolicy
     char phase_marker{'*'};
   };
 
-  void runMainRepairPhase();
   bool initializeMainRepair(float setup_slack_margin,
                             double repair_tns_end_percent,
                             MainRepairState& main_state,
@@ -52,9 +53,6 @@ class MainRepairPhasePolicy : public SetupLegacyPolicy
                               int max_passes,
                               int max_iterations,
                               bool verbose);
-  virtual bool shouldStopEndpointRepair(EndpointRepairState& endpoint_state,
-                                        float setup_slack_margin);
-  bool shouldStopMainRepair(const MainRepairState& main_state) const;
   bool pathImproved(int end_index,
                     sta::Slack end_slack,
                     sta::Slack worst_slack,
@@ -62,19 +60,18 @@ class MainRepairPhasePolicy : public SetupLegacyPolicy
                     sta::Slack prev_worst_slack) const;
 };
 
-class WnsPhasePolicy : public SetupLegacyPolicy
+class SetupWnsPolicy : public SetupLegacyBase
 {
  public:
-  WnsPhasePolicy(Resizer& resizer,
+  SetupWnsPolicy(Resizer& resizer,
                  MoveCommitter& committer,
                  RepairSetupContext& setup_context,
                  bool use_cone)
-      : SetupLegacyPolicy(resizer, committer, setup_context),
-        use_cone_(use_cone)
+      : SetupLegacyBase(resizer, committer, setup_context), use_cone_(use_cone)
   {
   }
 
-  const char* name() const override { return "WnsPhasePolicy"; }
+  const char* name() const override { return "SetupWnsPolicy"; }
   void iterate() override;
 
  private:
@@ -89,12 +86,12 @@ class WnsPhasePolicy : public SetupLegacyPolicy
   bool use_cone_{false};
 };
 
-class TnsPhasePolicy : public SetupLegacyPolicy
+class SetupTnsPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyPolicy::SetupLegacyPolicy;
+  using SetupLegacyBase::SetupLegacyBase;
 
-  const char* name() const override { return "TnsPhasePolicy"; }
+  const char* name() const override { return "SetupTnsPolicy"; }
   void iterate() override;
 
  private:
@@ -106,19 +103,19 @@ class TnsPhasePolicy : public SetupLegacyPolicy
                       PhaseRunContext& ctx);
 };
 
-class DirectionalPhasePolicy : public SetupLegacyPolicy
+class SetupDirectionalPolicy : public SetupLegacyBase
 {
  public:
-  DirectionalPhasePolicy(Resizer& resizer,
+  SetupDirectionalPolicy(Resizer& resizer,
                          MoveCommitter& committer,
                          RepairSetupContext& setup_context,
                          bool use_starts)
-      : SetupLegacyPolicy(resizer, committer, setup_context),
+      : SetupLegacyBase(resizer, committer, setup_context),
         use_starts_(use_starts)
   {
   }
 
-  const char* name() const override { return "DirectionalPhasePolicy"; }
+  const char* name() const override { return "SetupDirectionalPolicy"; }
   void iterate() override;
 
  private:
@@ -131,12 +128,12 @@ class DirectionalPhasePolicy : public SetupLegacyPolicy
   bool use_starts_{false};
 };
 
-class LastGaspPhasePolicy : public SetupLegacyPolicy
+class SetupLastGaspPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyPolicy::SetupLegacyPolicy;
+  using SetupLegacyBase::SetupLegacyBase;
 
-  const char* name() const override { return "LastGaspPhasePolicy"; }
+  const char* name() const override { return "SetupLastGaspPolicy"; }
   void iterate() override;
 
  private:
@@ -157,10 +154,6 @@ class LastGaspPhasePolicy : public SetupLegacyPolicy
     char phase_marker{'+'};
   };
 
-  void repairSetupLastGasp(const RepairSetupParams& params,
-                           int max_iterations,
-                           PhaseRunContext& ctx);
-  void buildLastGaspMoveSequence(const RepairSetupParams& params);
   bool initializeLastGaspRepair(const RepairSetupParams& params,
                                 int opto_iteration,
                                 float initial_tns,
@@ -192,16 +185,15 @@ class LastGaspPhasePolicy : public SetupLegacyPolicy
   static constexpr int max_last_gasp_passes_ = 10;
 };
 
-class CritVtSwapPhasePolicy : public SetupLegacyPolicy
+class SetupCritVtSwapPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyPolicy::SetupLegacyPolicy;
+  using SetupLegacyBase::SetupLegacyBase;
 
-  const char* name() const override { return "CritVtSwapPhasePolicy"; }
+  const char* name() const override { return "SetupCritVtSwapPolicy"; }
   void iterate() override;
 
  private:
-  void runCriticalVtSwapPhase(int& num_viols);
   bool swapVTCritCells(const RepairSetupParams& params, int& num_viols);
   sta::Pin* worstOutputPin(sta::Instance* inst);
   void traverseFaninCone(sta::Vertex* endpoint,

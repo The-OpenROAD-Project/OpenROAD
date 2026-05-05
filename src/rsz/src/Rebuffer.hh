@@ -34,7 +34,7 @@ namespace rsz {
 class Resizer;
 class BufferedNet;
 class BufferCandidate;
-class SetupLegacyPolicy;
+class SetupLegacyBase;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
@@ -176,7 +176,7 @@ class Rebuffer : public sta::dbStaState
   double long_wire_stepping_runtime_ = 0;
 
   friend class rsz::BufferCandidate;
-  friend class rsz::SetupLegacyPolicy;
+  friend class rsz::SetupLegacyBase;
   friend class Resizer;
 };
 

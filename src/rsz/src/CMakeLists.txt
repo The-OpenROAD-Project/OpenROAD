@@ -17,19 +17,19 @@ add_library(rsz_lib
     RepairDesign.cc
     RepairHold.cc
     Rebuffer.cc
-    SetupLegacyMtPolicy.cc
-    SetupLegacyPolicy.cc
+    policy/SetupLegacyMtPolicy.cc
+    policy/SetupLegacyBase.cc
     MoveCommitter.cc
     MoveTracker.cc
-    OptPolicy.cc
-    OptPolicy.hh
+    policy/OptPolicy.cc
+    policy/OptPolicy.hh
     Optimizer.cc
     OptimizerTypes.cc
-    MeasuredVtSwapPolicy.cc
+    policy/MeasuredVtSwapPolicy.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
-    PhasePolicies.cc
-    SetupMt1Policy.cc
+    policy/PhasePolicies.cc
+    policy/SetupMt1Policy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
@@ -77,6 +77,7 @@ target_include_directories(rsz
     ${OPENSTA_HOME}
     ${OPENSTA_HOME}/include/sta
     .
+    policy
 )
 
 target_include_directories(rsz_lib
@@ -85,6 +86,7 @@ target_include_directories(rsz_lib
   PRIVATE
     .
     move
+    policy
 )
 
 target_link_libraries(rsz_lib

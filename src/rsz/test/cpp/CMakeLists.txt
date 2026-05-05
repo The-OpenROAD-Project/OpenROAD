@@ -132,6 +132,7 @@ target_include_directories(TestResizerMt
     PRIVATE
       ${PROJECT_SOURCE_DIR}/src/rsz/src
       ${PROJECT_SOURCE_DIR}/src/rsz/src/move
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/policy
 )
 
 gtest_discover_tests(TestResizerMt

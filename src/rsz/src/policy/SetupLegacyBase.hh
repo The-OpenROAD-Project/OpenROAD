@@ -46,33 +46,18 @@ class Resizer;
 
 namespace rsz {
 
-// Single-threaded setup-repair policy (default; selected when no LEGACY_MT
-// token appears in the -phases list).
-//
-// This policy replicates the original pre-optimizer repair_setup flow so that
-// existing regression results are preserved when no MT policy is requested.
-//
-// Three-phase structure:
-//   Phase 1 - Main repair loop: endpoints are sorted by decreasing violation,
-//     each expanded into path-driver targets.  For each target the policy
-//     tries every type in `move_sequence_` order; the first accepted move
-//     counts, then the endpoint is re-evaluated.  ECO journals checkpoint
-//     every pass and are rolled back if slack degrades.
-//   Phase 2 - Custom phase schedule (if `phases` is non-empty): WNS, TNS,
-//     directional (fanin/fanout), and startpoint-driven sub-phases.
-//   Phase 3 - Last-gasp: a lighter single-pass sweep over still-violating
-//     endpoints with VT-swap-only or a broad sequence, plus critical-cell
-//     VT fanin-cone sweep (swapVTCritCells).
-//
-class SetupLegacyPolicy : public OptPolicy
+// Shared single-threaded setup-repair implementation used by the legacy phase
+// policies.  It owns the legacy move sequence, target construction, endpoint
+// journal handling, progress reporting, and repair_setup_pin flow.
+class SetupLegacyBase : public OptPolicy
 {
  public:
   // === OptPolicy entry points ==============================================
-  SetupLegacyPolicy(Resizer& resizer,
-                    MoveCommitter& committer,
-                    RepairSetupContext& setup_context);
+  SetupLegacyBase(Resizer& resizer,
+                  MoveCommitter& committer,
+                  RepairSetupContext& setup_context);
 
-  const char* name() const override { return "SetupLegacyPolicy"; }
+  const char* name() const override { return "SetupLegacyBase"; }
   void start(const OptimizerRunConfig& config, PhaseRunContext* ctx) override;
   void iterate() override;
 
@@ -113,7 +98,6 @@ class SetupLegacyPolicy : public OptPolicy
 
   // === Run setup ============================================================
   virtual void init();
-  void finishSetupPhase(bool result);
   virtual void initializeSetupServices();
   virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;

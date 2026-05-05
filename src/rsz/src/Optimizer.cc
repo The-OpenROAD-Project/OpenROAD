@@ -15,8 +15,8 @@
 #include "OptimizerTypes.hh"
 #include "PhasePolicies.hh"
 #include "RepairSetupContext.hh"
+#include "SetupLegacyBase.hh"
 #include "SetupLegacyMtPolicy.hh"
-#include "SetupLegacyPolicy.hh"
 #include "SetupMt1Policy.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
@@ -71,7 +71,7 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
     RepairSetupContext& setup_context)
 {
   if (phase_name == "LEGACY") {
-    return std::make_unique<MainRepairPhasePolicy>(
+    return std::make_unique<SetupLegacyPolicy>(
         resizer_, committer_, setup_context);
   }
   if (phase_name == "LEGACY_MT") {
@@ -79,31 +79,31 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
         resizer_, committer_, setup_context);
   }
   if (phase_name == "WNS" || phase_name == "WNS_PATH") {
-    return std::make_unique<WnsPhasePolicy>(
+    return std::make_unique<SetupWnsPolicy>(
         resizer_, committer_, setup_context, /*use_cone=*/false);
   }
   if (phase_name == "WNS_CONE") {
-    return std::make_unique<WnsPhasePolicy>(
+    return std::make_unique<SetupWnsPolicy>(
         resizer_, committer_, setup_context, /*use_cone=*/true);
   }
   if (phase_name == "TNS") {
-    return std::make_unique<TnsPhasePolicy>(
+    return std::make_unique<SetupTnsPolicy>(
         resizer_, committer_, setup_context);
   }
   if (phase_name == "ENDPOINT_FANIN") {
-    return std::make_unique<DirectionalPhasePolicy>(
+    return std::make_unique<SetupDirectionalPolicy>(
         resizer_, committer_, setup_context, /*use_starts=*/false);
   }
   if (phase_name == "STARTPOINT_FANOUT") {
-    return std::make_unique<DirectionalPhasePolicy>(
+    return std::make_unique<SetupDirectionalPolicy>(
         resizer_, committer_, setup_context, /*use_starts=*/true);
   }
   if (phase_name == "LAST_GASP") {
-    return std::make_unique<LastGaspPhasePolicy>(
+    return std::make_unique<SetupLastGaspPolicy>(
         resizer_, committer_, setup_context);
   }
   if (phase_name == "CRIT_VT_SWAP") {
-    return std::make_unique<CritVtSwapPhasePolicy>(
+    return std::make_unique<SetupCritVtSwapPolicy>(
         resizer_, committer_, setup_context);
   }
   if (phase_name == "MT1") {
@@ -126,7 +126,7 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
   return nullptr;
 }
 
-std::unique_ptr<SetupLegacyPolicy> Optimizer::makeLegacyContext(
+std::unique_ptr<SetupLegacyBase> Optimizer::makeLegacyContext(
     const std::vector<std::string>& phase_names,
     RepairSetupContext& setup_context)
 {
@@ -134,8 +134,7 @@ std::unique_ptr<SetupLegacyPolicy> Optimizer::makeLegacyContext(
     return std::make_unique<SetupLegacyMtPolicy>(
         resizer_, committer_, setup_context);
   }
-  return std::make_unique<SetupLegacyPolicy>(
-      resizer_, committer_, setup_context);
+  return std::make_unique<SetupLegacyBase>(resizer_, committer_, setup_context);
 }
 
 bool Optimizer::run()
@@ -157,7 +156,7 @@ bool Optimizer::run()
 
   const bool has_legacy_phase = hasLegacyPhase(phase_names);
   RepairSetupContext setup_context(resizer_);
-  std::unique_ptr<SetupLegacyPolicy> setup_prepare_policy;
+  std::unique_ptr<SetupLegacyBase> setup_prepare_policy;
   if (has_legacy_phase) {
     setup_prepare_policy = makeLegacyContext(phase_names, setup_context);
     // Wire base members (logger_, sta_, network_, graph_, ...) but do not
@@ -231,7 +230,7 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   resizer_.runRepairSetupPreamble();
 
   RepairSetupContext setup_context(resizer_);
-  SetupLegacyPolicy policy(resizer_, committer_, setup_context);
+  SetupLegacyBase policy(resizer_, committer_, setup_context);
   policy.start(config, nullptr);
   committer_.init();
   return policy.repairSetupPin(end_pin);

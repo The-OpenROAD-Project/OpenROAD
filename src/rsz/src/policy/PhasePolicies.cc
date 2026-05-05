@@ -20,7 +20,7 @@
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
-#include "SetupLegacyPolicy.hh"
+#include "SetupLegacyBase.hh"
 #include "VtSwapGenerator.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
@@ -58,106 +58,7 @@ RepairSetupParams makeRepairSetupParams(const OptimizerRunConfig& config,
 
 }  // namespace
 
-void MainRepairPhasePolicy::iterate()
-{
-  runMainRepairPhase();
-}
-
-void WnsPhasePolicy::iterate()
-{
-  buildMainMoveSequence(/*log_sequence=*/false);
-  repairSetupWns(config_.setup_slack_margin,
-                 config_.max_passes,
-                 config_.max_repairs_per_pass,
-                 config_.verbose,
-                 /*use_cone_collection=*/use_cone_,
-                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
-                 *run_ctx_);
-  if (use_cone_) {
-    committer_.printTrackerPhaseSummary(
-        "WNS_CONE Phase Summary", "WNS_CONE Phase Endpoint Profiler", true);
-  } else {
-    committer_.printTrackerPhaseSummary(
-        "WNS_PATH Phase Summary", "WNS_PATH Phase Endpoint Profiler", true);
-  }
-  finishSetupPhase(true);
-}
-
-void TnsPhasePolicy::iterate()
-{
-  buildMainMoveSequence(/*log_sequence=*/false);
-  repairSetupTns(config_.setup_slack_margin,
-                 config_.max_passes,
-                 config_.max_repairs_per_pass,
-                 config_.verbose,
-                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
-                 *run_ctx_);
-  committer_.printTrackerPhaseSummary(
-      "TNS Phase Summary", "TNS Phase Endpoint Profiler", true);
-  finishSetupPhase(true);
-}
-
-void DirectionalPhasePolicy::iterate()
-{
-  buildMainMoveSequence(/*log_sequence=*/false);
-  repairSetupDirectional(use_starts_,
-                         config_.setup_slack_margin,
-                         config_.max_passes,
-                         config_.verbose,
-                         *run_ctx_);
-  if (use_starts_) {
-    committer_.printTrackerPhaseSummary(
-        "STARTPOINT_FANOUT Phase Summary",
-        "STARTPOINT_FANOUT Phase Startpoint Profiler",
-        true);
-  } else {
-    committer_.printTrackerPhaseSummary(
-        "ENDPOINT_FANIN Phase Summary",
-        "ENDPOINT_FANIN Phase Endpoint Profiler",
-        true);
-  }
-  finishSetupPhase(true);
-}
-
-void LastGaspPhasePolicy::iterate()
-{
-  if (config_.skip_last_gasp) {
-    finishSetupPhase(false);
-    return;
-  }
-
-  committer_.capturePrePhaseSlack();
-  RepairSetupParams params
-      = makeRepairSetupParams(config_, config_.setup_slack_margin);
-  repairSetupLastGasp(params, config_.max_iterations, *run_ctx_);
-  committer_.printTrackerPhaseSummary(
-      "LAST_GASP Phase Summary", "LAST_GASP Phase Endpoint Profiler", true);
-  finishSetupPhase(true);
-}
-
-void CritVtSwapPhasePolicy::iterate()
-{
-  runCriticalVtSwapPhase(run_ctx_->progress.violation_count);
-  finishSetupPhase(true);
-}
-
-void CritVtSwapPhasePolicy::runCriticalVtSwapPhase(int& num_viols)
-{
-  // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
-  if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
-    return;
-  }
-  committer_.capturePrePhaseSlack();
-  RepairSetupParams params
-      = makeRepairSetupParams(config_, config_.setup_slack_margin);
-  if (swapVTCritCells(params, num_viols)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
-  }
-  committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
-}
-
-void MainRepairPhasePolicy::runMainRepairPhase()
+void SetupLegacyPolicy::iterate()
 {
   PhaseRunContext& ctx = *run_ctx_;
   OptimizerProgress& progress = ctx.progress;
@@ -190,10 +91,141 @@ void MainRepairPhasePolicy::runMainRepairPhase()
   progress.violation_count = main_state.num_viols;
   progress.initial_tns = main_state.initial_tns;
   progress.previous_tns = main_state.prev_tns;
-  finishSetupPhase(true);
+  markRunComplete(true);
 }
 
-bool MainRepairPhasePolicy::initializeMainRepair(
+void SetupWnsPolicy::iterate()
+{
+  buildMainMoveSequence(/*log_sequence=*/false);
+  repairSetupWns(config_.setup_slack_margin,
+                 config_.max_passes,
+                 config_.max_repairs_per_pass,
+                 config_.verbose,
+                 /*use_cone_collection=*/use_cone_,
+                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
+                 *run_ctx_);
+  if (use_cone_) {
+    committer_.printTrackerPhaseSummary(
+        "WNS_CONE Phase Summary", "WNS_CONE Phase Endpoint Profiler", true);
+  } else {
+    committer_.printTrackerPhaseSummary(
+        "WNS_PATH Phase Summary", "WNS_PATH Phase Endpoint Profiler", true);
+  }
+  markRunComplete(true);
+}
+
+void SetupTnsPolicy::iterate()
+{
+  buildMainMoveSequence(/*log_sequence=*/false);
+  repairSetupTns(config_.setup_slack_margin,
+                 config_.max_passes,
+                 config_.max_repairs_per_pass,
+                 config_.verbose,
+                 rsz::ViolatorSortType::SORT_BY_LOAD_DELAY,
+                 *run_ctx_);
+  committer_.printTrackerPhaseSummary(
+      "TNS Phase Summary", "TNS Phase Endpoint Profiler", true);
+  markRunComplete(true);
+}
+
+void SetupDirectionalPolicy::iterate()
+{
+  buildMainMoveSequence(/*log_sequence=*/false);
+  repairSetupDirectional(use_starts_,
+                         config_.setup_slack_margin,
+                         config_.max_passes,
+                         config_.verbose,
+                         *run_ctx_);
+  if (use_starts_) {
+    committer_.printTrackerPhaseSummary(
+        "STARTPOINT_FANOUT Phase Summary",
+        "STARTPOINT_FANOUT Phase Startpoint Profiler",
+        true);
+  } else {
+    committer_.printTrackerPhaseSummary(
+        "ENDPOINT_FANIN Phase Summary",
+        "ENDPOINT_FANIN Phase Endpoint Profiler",
+        true);
+  }
+  markRunComplete(true);
+}
+
+void SetupLastGaspPolicy::iterate()
+{
+  if (config_.skip_last_gasp) {
+    markRunComplete(false);
+    return;
+  }
+
+  committer_.capturePrePhaseSlack();
+  RepairSetupParams params
+      = makeRepairSetupParams(config_, config_.setup_slack_margin);
+  OptimizerProgress& progress = run_ctx_->progress;
+  int& num_viols = progress.violation_count;
+  const int opto_iteration = progress.iteration;
+  const float initial_tns = progress.initial_tns;
+  const char phase_marker = phaseMarkerForIndex(run_ctx_->phase_index);
+  {
+    const utl::DebugScopedTimer timer(
+        logger_,
+        RSZ,
+        "repair_setup",
+        10,
+        fmt::format("LAST_GASP{} Phase Time: {{}}", phase_marker));
+    LastGaspState last_gasp_state;
+    last_gasp_state.phase_marker = phase_marker;
+    ViolatingEnds violating_ends;
+    if (!initializeLastGaspRepair(params,
+                                  opto_iteration,
+                                  initial_tns,
+                                  last_gasp_state,
+                                  violating_ends)) {
+      num_viols = last_gasp_state.num_viols;
+    } else {
+      runLastGaspLoop(
+          violating_ends, params, config_.max_iterations, last_gasp_state);
+      num_viols = last_gasp_state.num_viols;
+      if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
+        sta::Slack final_wns;
+        sta::Vertex* final_worst;
+        sta_->worstSlack(max_, final_wns, final_worst);
+        const float final_tns = sta_->totalNegativeSlack(max_);
+        debugPrint(logger_,
+                   RSZ,
+                   "repair_setup",
+                   1,
+                   "LAST_GASP{} Phase complete. WNS: {}, TNS: {}",
+                   phase_marker,
+                   delayAsString(final_wns, kDelayDigits, sta_),
+                   delayAsString(final_tns, 1, sta_));
+      }
+    }
+  }
+  committer_.printTrackerPhaseSummary(
+      "LAST_GASP Phase Summary", "LAST_GASP Phase Endpoint Profiler", true);
+  markRunComplete(true);
+}
+
+void SetupCritVtSwapPolicy::iterate()
+{
+  int& num_viols = run_ctx_->progress.violation_count;
+  // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
+  if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
+    markRunComplete(true);
+    return;
+  }
+  committer_.capturePrePhaseSlack();
+  RepairSetupParams params
+      = makeRepairSetupParams(config_, config_.setup_slack_margin);
+  if (swapVTCritCells(params, num_viols)) {
+    estimate_parasitics_->updateParasitics();
+    sta_->findRequireds();
+  }
+  committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
+  markRunComplete(true);
+}
+
+bool SetupLegacyPolicy::initializeMainRepair(
     const float setup_slack_margin,
     const double repair_tns_end_percent,
     MainRepairState& main_state,
@@ -235,7 +267,7 @@ bool MainRepairPhasePolicy::initializeMainRepair(
   return true;
 }
 
-bool MainRepairPhasePolicy::beginEndpointRepair(
+bool SetupLegacyPolicy::beginEndpointRepair(
     const pair<sta::Vertex*, sta::Slack>& end_original_slack,
     MainRepairState& main_state,
     EndpointRepairState& endpoint_state)
@@ -266,19 +298,14 @@ bool MainRepairPhasePolicy::beginEndpointRepair(
   return true;
 }
 
-void MainRepairPhasePolicy::repairEndpoint(EndpointRepairState& endpoint_state,
-                                           MainRepairState& main_state,
-                                           const float setup_slack_margin,
-                                           const int max_passes,
-                                           const int max_iterations,
-                                           const bool verbose)
+void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
+                                       MainRepairState& main_state,
+                                       const float setup_slack_margin,
+                                       const int max_passes,
+                                       const int max_iterations,
+                                       const bool verbose)
 {
   while (endpoint_state.pass <= max_passes) {
-    if (shouldStopEndpointRepair(endpoint_state, setup_slack_margin)) {
-      finishEndpointSearch(endpoint_state);
-      break;
-    }
-
     ++main_state.opto_iteration;
     if (verbose || main_state.opto_iteration == 1) {
       printProgress(main_state.opto_iteration, false, main_state.phase_marker);
@@ -471,28 +498,12 @@ void MainRepairPhasePolicy::repairEndpoint(EndpointRepairState& endpoint_state,
   acceptEndpointState(endpoint_state);
 }
 
-bool MainRepairPhasePolicy::shouldStopEndpointRepair(
-    EndpointRepairState& endpoint_state,
-    const float setup_slack_margin)
-{
-  static_cast<void>(endpoint_state);
-  static_cast<void>(setup_slack_margin);
-  return false;
-}
-
-bool MainRepairPhasePolicy::shouldStopMainRepair(
-    const MainRepairState& main_state) const
-{
-  return main_state.two_cons_terminations;
-}
-
-void MainRepairPhasePolicy::runMainRepairLoop(
-    const ViolatingEnds& violating_ends,
-    const float setup_slack_margin,
-    const int max_passes,
-    const int max_iterations,
-    const bool verbose,
-    MainRepairState& main_state)
+void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
+                                          const float setup_slack_margin,
+                                          const int max_passes,
+                                          const int max_iterations,
+                                          const bool verbose,
+                                          MainRepairState& main_state)
 {
   const utl::DebugScopedTimer timer(
       logger_,
@@ -517,7 +528,7 @@ void MainRepairPhasePolicy::runMainRepairLoop(
     if (verbose || main_state.opto_iteration == 1) {
       printProgress(main_state.opto_iteration, true, main_state.phase_marker);
     }
-    if (shouldStopMainRepair(main_state)) {
+    if (main_state.two_cons_terminations) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
@@ -546,19 +557,18 @@ void MainRepairPhasePolicy::runMainRepairLoop(
   }
 }
 
-bool MainRepairPhasePolicy::pathImproved(
-    const int end_index,
-    const sta::Slack end_slack,
-    const sta::Slack worst_slack,
-    const sta::Slack prev_end_slack,
-    const sta::Slack prev_worst_slack) const
+bool SetupLegacyPolicy::pathImproved(const int end_index,
+                                     const sta::Slack end_slack,
+                                     const sta::Slack worst_slack,
+                                     const sta::Slack prev_end_slack,
+                                     const sta::Slack prev_worst_slack) const
 {
   return sta::fuzzyGreater(worst_slack, prev_worst_slack)
          || (end_index != 1 && sta::fuzzyEqual(worst_slack, prev_worst_slack)
              && sta::fuzzyGreater(end_slack, prev_end_slack));
 }
 
-void WnsPhasePolicy::repairSetupWns(const float setup_slack_margin,
+void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
                                     const int max_passes_per_endpoint,
                                     const int max_repairs_per_pass,
                                     const bool verbose,
@@ -880,7 +890,7 @@ void WnsPhasePolicy::repairSetupWns(const float setup_slack_margin,
   }
 }
 
-void TnsPhasePolicy::repairSetupTns(const float setup_slack_margin,
+void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
                                     const int max_passes_per_endpoint,
                                     const int max_repairs_per_pass,
                                     const bool verbose,
@@ -1085,7 +1095,7 @@ void TnsPhasePolicy::repairSetupTns(const float setup_slack_margin,
   }
 }
 
-void DirectionalPhasePolicy::repairSetupDirectional(
+void SetupDirectionalPolicy::repairSetupDirectional(
     const bool use_startpoints,
     const float setup_slack_margin,
     const int max_passes_per_point,
@@ -1357,16 +1367,21 @@ void DirectionalPhasePolicy::repairSetupDirectional(
   }
 }
 
-bool LastGaspPhasePolicy::initializeLastGaspRepair(
+bool SetupLastGaspPolicy::initializeLastGaspRepair(
     const RepairSetupParams& params,
     const int opto_iteration,
     const float initial_tns,
-    LastGaspPhasePolicy::LastGaspState& last_gasp_state,
-    SetupLegacyPolicy::ViolatingEnds& violating_ends)
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state,
+    SetupLegacyBase::ViolatingEnds& violating_ends)
 {
   // Last-gasp intentionally narrows the move sequence to transforms that still
   // have a chance to improve slack without large topology changes.
-  buildLastGaspMoveSequence(params);
+  move_sequence_.clear();
+  pushMoveIfEnabled(!params.skip_vt_swap, MoveType::kVtSwap);
+  move_sequence_.push_back(MoveType::kSizeUpMatch);
+  move_sequence_.push_back(MoveType::kSizeUp);
+  pushMoveIfEnabled(!params.skip_pin_swap, MoveType::kSwapPins);
+  activateMoveSequence(false);
 
   violating_ends = collectViolatingEndpoints(params.setup_slack_margin);
   last_gasp_state.num_viols = violating_ends.size();
@@ -1410,21 +1425,10 @@ bool LastGaspPhasePolicy::initializeLastGaspRepair(
   return true;
 }
 
-void LastGaspPhasePolicy::buildLastGaspMoveSequence(
-    const RepairSetupParams& params)
-{
-  move_sequence_.clear();
-  pushMoveIfEnabled(!params.skip_vt_swap, MoveType::kVtSwap);
-  move_sequence_.push_back(MoveType::kSizeUpMatch);
-  move_sequence_.push_back(MoveType::kSizeUp);
-  pushMoveIfEnabled(!params.skip_pin_swap, MoveType::kSwapPins);
-  activateMoveSequence(false);
-}
-
-bool LastGaspPhasePolicy::beginLastGaspEndpoint(
+bool SetupLastGaspPolicy::beginLastGaspEndpoint(
     const pair<sta::Vertex*, sta::Slack>& end_original_slack,
-    LastGaspPhasePolicy::LastGaspState& last_gasp_state,
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state,
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   if (!beginJournaledEndpointSearch(end_original_slack,
                                     last_gasp_state.max_end_count,
@@ -1455,7 +1459,7 @@ bool LastGaspPhasePolicy::beginLastGaspEndpoint(
   return true;
 }
 
-bool LastGaspPhasePolicy::lastGaspImproved(const sta::Slack worst_slack,
+bool SetupLastGaspPolicy::lastGaspImproved(const sta::Slack worst_slack,
                                            const float curr_tns,
                                            const sta::Slack prev_worst_slack,
                                            const float prev_tns) const
@@ -1464,9 +1468,9 @@ bool LastGaspPhasePolicy::lastGaspImproved(const sta::Slack worst_slack,
          && sta::fuzzyGreaterEqual(curr_tns, prev_tns);
 }
 
-bool LastGaspPhasePolicy::advanceLastGaspProgress(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state,
-    LastGaspPhasePolicy::LastGaspState& last_gasp_state,
+bool SetupLastGaspPolicy::advanceLastGaspProgress(
+    SetupLegacyBase::EndpointRepairState& endpoint_state,
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state,
     const RepairSetupParams& params,
     const float curr_tns)
 {
@@ -1517,9 +1521,9 @@ bool LastGaspPhasePolicy::advanceLastGaspProgress(
   return true;
 }
 
-void LastGaspPhasePolicy::repairLastGaspEndpoint(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state,
-    LastGaspPhasePolicy::LastGaspState& last_gasp_state,
+void SetupLastGaspPolicy::repairLastGaspEndpoint(
+    SetupLegacyBase::EndpointRepairState& endpoint_state,
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state,
     const RepairSetupParams& params,
     const int max_iterations)
 {
@@ -1591,8 +1595,8 @@ void LastGaspPhasePolicy::repairLastGaspEndpoint(
   acceptEndpointState(endpoint_state);
 }
 
-bool LastGaspPhasePolicy::shouldStopLastGasp(
-    const LastGaspPhasePolicy::LastGaspState& last_gasp_state,
+bool SetupLastGaspPolicy::shouldStopLastGasp(
+    const SetupLastGaspPolicy::LastGaspState& last_gasp_state,
     const int max_iterations) const
 {
   return last_gasp_state.two_cons_terminations
@@ -1600,11 +1604,11 @@ bool LastGaspPhasePolicy::shouldStopLastGasp(
                                   max_iterations);
 }
 
-void LastGaspPhasePolicy::runLastGaspLoop(
-    const SetupLegacyPolicy::ViolatingEnds& violating_ends,
+void SetupLastGaspPolicy::runLastGaspLoop(
+    const SetupLegacyBase::ViolatingEnds& violating_ends,
     const RepairSetupParams& params,
     const int max_iterations,
-    LastGaspPhasePolicy::LastGaspState& last_gasp_state)
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state)
 {
   for (const auto& end_original_slack : violating_ends) {
     if (shouldStopLastGasp(last_gasp_state, max_iterations)) {
@@ -1637,52 +1641,7 @@ void LastGaspPhasePolicy::runLastGaspLoop(
   }
 }
 
-void LastGaspPhasePolicy::repairSetupLastGasp(const RepairSetupParams& params,
-                                              const int max_iterations,
-                                              PhaseRunContext& ctx)
-{
-  OptimizerProgress& progress = ctx.progress;
-  int& num_viols = progress.violation_count;
-  const int opto_iteration = progress.iteration;
-  const float initial_tns = progress.initial_tns;
-  const char phase_marker = phaseMarkerForIndex(ctx.phase_index);
-  const utl::DebugScopedTimer timer(
-      logger_,
-      RSZ,
-      "repair_setup",
-      10,
-      fmt::format("LAST_GASP{} Phase Time: {{}}", phase_marker));
-  LastGaspState last_gasp_state;
-  last_gasp_state.phase_marker = phase_marker;
-  ViolatingEnds violating_ends;
-  if (!initializeLastGaspRepair(params,
-                                opto_iteration,
-                                initial_tns,
-                                last_gasp_state,
-                                violating_ends)) {
-    num_viols = last_gasp_state.num_viols;
-    return;
-  }
-
-  runLastGaspLoop(violating_ends, params, max_iterations, last_gasp_state);
-  num_viols = last_gasp_state.num_viols;
-  if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
-    sta::Slack final_wns;
-    sta::Vertex* final_worst;
-    sta_->worstSlack(max_, final_wns, final_worst);
-    const float final_tns = sta_->totalNegativeSlack(max_);
-    debugPrint(logger_,
-               RSZ,
-               "repair_setup",
-               1,
-               "LAST_GASP{} Phase complete. WNS: {}, TNS: {}",
-               phase_marker,
-               delayAsString(final_wns, kDelayDigits, sta_),
-               delayAsString(final_tns, 1, sta_));
-  }
-}
-
-bool CritVtSwapPhasePolicy::swapVTCritCells(const RepairSetupParams& params,
+bool SetupCritVtSwapPolicy::swapVTCritCells(const RepairSetupParams& params,
                                             int& num_viols)
 {
   bool changed = false;
@@ -1761,7 +1720,7 @@ bool CritVtSwapPhasePolicy::swapVTCritCells(const RepairSetupParams& params,
   return changed;
 }
 
-void CritVtSwapPhasePolicy::traverseFaninCone(
+void SetupCritVtSwapPolicy::traverseFaninCone(
     sta::Vertex* endpoint,
     std::unordered_map<sta::Instance*, float>& crit_insts,
     std::unordered_set<sta::Vertex*>& visited,
@@ -1839,7 +1798,7 @@ void CritVtSwapPhasePolicy::traverseFaninCone(
   }
 }
 
-sta::Slack CritVtSwapPhasePolicy::getInstanceSlack(sta::Instance* inst)
+sta::Slack SetupCritVtSwapPolicy::getInstanceSlack(sta::Instance* inst)
 {
   sta::Slack worst_slack = std::numeric_limits<float>::max();
   sta::InstancePinIterator* pin_iter = network_->pinIterator(inst);
@@ -1858,7 +1817,7 @@ sta::Slack CritVtSwapPhasePolicy::getInstanceSlack(sta::Instance* inst)
   return worst_slack;
 }
 
-sta::Pin* CritVtSwapPhasePolicy::worstOutputPin(sta::Instance* inst)
+sta::Pin* SetupCritVtSwapPolicy::worstOutputPin(sta::Instance* inst)
 {
   sta::Pin* worst_pin = nullptr;
   sta::Slack worst_slack = std::numeric_limits<float>::max();

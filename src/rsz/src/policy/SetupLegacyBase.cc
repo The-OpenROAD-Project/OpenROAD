@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupLegacyPolicy.hh"
+#include "SetupLegacyBase.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -58,29 +58,28 @@ using std::vector;
 
 using utl::RSZ;
 
-
-SetupLegacyPolicy::SetupLegacyPolicy(Resizer& resizer,
-                                     MoveCommitter& committer,
-                                     RepairSetupContext& setup_context)
+SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
+                                 MoveCommitter& committer,
+                                 RepairSetupContext& setup_context)
     : OptPolicy(resizer, committer, setup_context),
       setup_context_(setup_context)
 {
 }
 
-void SetupLegacyPolicy::start(const OptimizerRunConfig& config,
-                              PhaseRunContext* const ctx)
+void SetupLegacyBase::start(const OptimizerRunConfig& config,
+                            PhaseRunContext* const ctx)
 {
   OptPolicy::start(config, ctx);
   setup_context_.max_repairs_per_pass = config.max_repairs_per_pass;
 }
 
-void SetupLegacyPolicy::iterate()
+void SetupLegacyBase::iterate()
 {
   // Used as the shared prepare/report policy; phases run via derived classes.
   markRunComplete(true);
 }
 
-bool SetupLegacyPolicy::repairSetupPin(const sta::Pin* end_pin)
+bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
 {
   init();
   if (end_pin == nullptr) {
@@ -107,28 +106,23 @@ bool SetupLegacyPolicy::repairSetupPin(const sta::Pin* end_pin)
   return repairPath(end_path, end_slack);
 }
 
-void SetupLegacyPolicy::init()
+void SetupLegacyBase::init()
 {
   setup_context_.initial_design_area = resizer_.computeDesignArea();
 }
 
-void SetupLegacyPolicy::finishSetupPhase(const bool result)
-{
-  markRunComplete(result);
-}
-
-void SetupLegacyPolicy::initializeSetupServices()
+void SetupLegacyBase::initializeSetupServices()
 {
   resizer_.rebuffer_->init();
   resizer_.rebuffer_->initOnCorner(sta_->cmdScene());
 }
 
-void SetupLegacyPolicy::resetMovedBufferFlag()
+void SetupLegacyBase::resetMovedBufferFlag()
 {
   resizer_.buffer_moved_into_core_ = false;
 }
 
-bool SetupLegacyPolicy::hasVtSwapCells() const
+bool SetupLegacyBase::hasVtSwapCells() const
 {
   return resizer_.lib_data_->sorted_vt_categories.size() > 1;
 }
@@ -137,15 +131,14 @@ bool SetupLegacyPolicy::hasVtSwapCells() const
 // Setup sequence helpers
 ///////////////////////////////////////////////////////////////////////////////
 
-void SetupLegacyPolicy::pushMoveIfEnabled(const bool enabled,
-                                          const MoveType type)
+void SetupLegacyBase::pushMoveIfEnabled(const bool enabled, const MoveType type)
 {
   if (enabled) {
     move_sequence_.push_back(type);
   }
 }
 
-void SetupLegacyPolicy::logMoveSequence() const
+void SetupLegacyBase::logMoveSequence() const
 {
   string repair_moves = "Repair move sequence: ";
   for (const MoveType type : move_sequence_) {
@@ -158,7 +151,7 @@ void SetupLegacyPolicy::logMoveSequence() const
   logger_->info(utl::RSZ, 100, "{}", repair_moves);
 }
 
-void SetupLegacyPolicy::activateMoveSequence(const bool log_sequence)
+void SetupLegacyBase::activateMoveSequence(const bool log_sequence)
 {
   buildMoveGenerators(move_sequence_, makeGeneratorContext(config_));
   if (log_sequence) {
@@ -166,7 +159,7 @@ void SetupLegacyPolicy::activateMoveSequence(const bool log_sequence)
   }
 }
 
-void SetupLegacyPolicy::buildMainMoveSequence(const bool log_sequence)
+void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
 {
   move_sequence_.clear();
 
@@ -222,7 +215,7 @@ void SetupLegacyPolicy::buildMainMoveSequence(const bool log_sequence)
   activateMoveSequence(log_sequence);
 }
 
-SetupLegacyPolicy::ViolatingEnds SetupLegacyPolicy::collectViolatingEndpoints(
+SetupLegacyBase::ViolatingEnds SetupLegacyBase::collectViolatingEndpoints(
     const float setup_slack_margin) const
 {
   target_collector_->init(setup_slack_margin);
@@ -238,11 +231,11 @@ SetupLegacyPolicy::ViolatingEnds SetupLegacyPolicy::collectViolatingEndpoints(
   return violating_ends;
 }
 
-bool SetupLegacyPolicy::beginJournaledEndpointSearch(
+bool SetupLegacyBase::beginJournaledEndpointSearch(
     const pair<sta::Vertex*, sta::Slack>& end_original_slack,
     const int max_end_count,
     int& end_index,
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   setup_context_.fallback = false;
   endpoint_state.end = end_original_slack.first;
@@ -261,8 +254,8 @@ bool SetupLegacyPolicy::beginJournaledEndpointSearch(
   return true;
 }
 
-void SetupLegacyPolicy::recordTermination(bool& prev_termination,
-                                          bool& two_cons_terminations)
+void SetupLegacyBase::recordTermination(bool& prev_termination,
+                                        bool& two_cons_terminations)
 {
   if (prev_termination) {
     two_cons_terminations = true;
@@ -271,8 +264,8 @@ void SetupLegacyPolicy::recordTermination(bool& prev_termination,
   }
 }
 
-void SetupLegacyPolicy::acceptEndpointState(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+void SetupLegacyBase::acceptEndpointState(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   if (!endpoint_state.journal_open) {
     return;
@@ -283,8 +276,8 @@ void SetupLegacyPolicy::acceptEndpointState(
   endpoint_state.journal_open = false;
 }
 
-void SetupLegacyPolicy::restoreEndpointState(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+void SetupLegacyBase::restoreEndpointState(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   if (!endpoint_state.journal_open) {
     return;
@@ -295,8 +288,8 @@ void SetupLegacyPolicy::restoreEndpointState(
   endpoint_state.journal_open = false;
 }
 
-void SetupLegacyPolicy::finishEndpointSearch(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+void SetupLegacyBase::finishEndpointSearch(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   if (endpoint_state.pass == 1) {
     acceptEndpointState(endpoint_state);
@@ -305,8 +298,8 @@ void SetupLegacyPolicy::finishEndpointSearch(
   }
 }
 
-void SetupLegacyPolicy::saveImprovedCheckpoint(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state,
+void SetupLegacyBase::saveImprovedCheckpoint(
+    SetupLegacyBase::EndpointRepairState& endpoint_state,
     const int max_passes)
 {
   acceptEndpointState(endpoint_state);
@@ -316,21 +309,21 @@ void SetupLegacyPolicy::saveImprovedCheckpoint(
   }
 }
 
-void SetupLegacyPolicy::refreshEndpointSlacks(
-    SetupLegacyPolicy::EndpointRepairState& endpoint_state)
+void SetupLegacyBase::refreshEndpointSlacks(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   endpoint_state.end_slack = sta_->slack(endpoint_state.end, max_);
   sta_->worstSlack(
       max_, endpoint_state.worst_slack, endpoint_state.worst_vertex);
 }
 
-bool SetupLegacyPolicy::reachedIterationLimit(const int iteration,
-                                              const int max_iterations) const
+bool SetupLegacyBase::reachedIterationLimit(const int iteration,
+                                            const int max_iterations) const
 {
   return max_iterations > 0 && iteration >= max_iterations;
 }
 
-bool SetupLegacyPolicy::prepareForPhasePipeline()
+bool SetupLegacyBase::prepareForPhasePipeline()
 {
   init();
   initializeSetupServices();
@@ -397,7 +390,7 @@ bool SetupLegacyPolicy::prepareForPhasePipeline()
 // Path repair
 ///////////////////////////////////////////////////////////////////////////////
 
-int SetupLegacyPolicy::fanout(sta::Vertex* vertex) const
+int SetupLegacyBase::fanout(sta::Vertex* vertex) const
 {
   int fanout_count = 0;
   sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
@@ -410,7 +403,7 @@ int SetupLegacyPolicy::fanout(sta::Vertex* vertex) const
   return fanout_count;
 }
 
-std::vector<std::pair<int, sta::Delay>> SetupLegacyPolicy::rankPathDrivers(
+std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
     sta::PathExpanded& expanded,
     const sta::Scene* corner,
     const int lib_ap) const
@@ -446,7 +439,7 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyPolicy::rankPathDrivers(
   return load_delays;
 }
 
-int SetupLegacyPolicy::repairBudget(const sta::Slack path_slack) const
+int SetupLegacyBase::repairBudget(const sta::Slack path_slack) const
 {
   int repairs_per_pass = 1;
   if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
@@ -458,10 +451,10 @@ int SetupLegacyPolicy::repairBudget(const sta::Slack path_slack) const
   return setup_context_.fallback ? 1 : repairs_per_pass;
 }
 
-bool SetupLegacyPolicy::makePinTargetOnPath(const sta::Pin* pin,
-                                            const sta::Path* path,
-                                            const sta::Slack focus_slack,
-                                            Target& target) const
+bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
+                                          const sta::Path* path,
+                                          const sta::Slack focus_slack,
+                                          Target& target) const
 {
   if (path == nullptr) {
     return false;
@@ -492,9 +485,9 @@ bool SetupLegacyPolicy::makePinTargetOnPath(const sta::Pin* pin,
   return false;
 }
 
-bool SetupLegacyPolicy::makePinTarget(const sta::Pin* pin,
-                                      const sta::Slack focus_slack,
-                                      Target& target) const
+bool SetupLegacyBase::makePinTarget(const sta::Pin* pin,
+                                    const sta::Slack focus_slack,
+                                    Target& target) const
 {
   sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
   if (vertex == nullptr) {
@@ -505,7 +498,7 @@ bool SetupLegacyPolicy::makePinTarget(const sta::Pin* pin,
   return makePinTargetOnPath(pin, path, focus_slack, target);
 }
 
-bool SetupLegacyPolicy::repairPins(
+bool SetupLegacyBase::repairPins(
     const std::vector<const sta::Pin*>& pins,
     const sta::Path* focus_path,
     const std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>*
@@ -579,11 +572,11 @@ bool SetupLegacyPolicy::repairPins(
   return changed > 0;
 }
 
-void SetupLegacyPolicy::makePathDriverTarget(const sta::Path* path,
-                                             sta::PathExpanded& expanded,
-                                             const int drvr_index,
-                                             const sta::Slack path_slack,
-                                             Target& target) const
+void SetupLegacyBase::makePathDriverTarget(const sta::Path* path,
+                                           sta::PathExpanded& expanded,
+                                           const int drvr_index,
+                                           const sta::Slack path_slack,
+                                           Target& target) const
 {
   const sta::Path* drvr_path = expanded.path(drvr_index);
   sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
@@ -593,7 +586,7 @@ void SetupLegacyPolicy::makePathDriverTarget(const sta::Path* path,
   target.fanout = fanout(drvr_vertex);
 }
 
-void SetupLegacyPolicy::logRepairTarget(const Target& target) const
+void SetupLegacyBase::logRepairTarget(const Target& target) const
 {
   sta::LibertyPort* drvr_port = network_->libertyPort(target.driver_pin);
   sta::LibertyCell* drvr_cell
@@ -609,18 +602,18 @@ void SetupLegacyPolicy::logRepairTarget(const Target& target) const
              target.path_index);
 }
 
-int SetupLegacyPolicy::repairProgressIncrement(const MoveType type,
-                                               const int repairs_per_pass)
+int SetupLegacyBase::repairProgressIncrement(const MoveType type,
+                                             const int repairs_per_pass)
 {
   return type == MoveType::kUnbuffer ? repairs_per_pass : 1;
 }
 
-bool SetupLegacyPolicy::allowsBatchRepair(const MoveType type)
+bool SetupLegacyBase::allowsBatchRepair(const MoveType type)
 {
   return type == MoveType::kSizeDown;
 }
 
-bool SetupLegacyPolicy::tryCandidateSequence(
+bool SetupLegacyBase::tryCandidateSequence(
     MoveGenerator& generator,
     const Target& target,
     const int repairs_per_pass,
@@ -647,11 +640,11 @@ bool SetupLegacyPolicy::tryCandidateSequence(
   return false;
 }
 
-bool SetupLegacyPolicy::trySizeDownBatch(MoveGenerator& generator,
-                                         const Target& target,
-                                         const int repairs_per_pass,
-                                         int& changed,
-                                         std::optional<MoveType>& accepted_type)
+bool SetupLegacyBase::trySizeDownBatch(MoveGenerator& generator,
+                                       const Target& target,
+                                       const int repairs_per_pass,
+                                       int& changed,
+                                       std::optional<MoveType>& accepted_type)
 {
   bool accepted_batch = false;
   while (tryCandidateSequence(
@@ -661,7 +654,7 @@ bool SetupLegacyPolicy::trySizeDownBatch(MoveGenerator& generator,
   return accepted_batch;
 }
 
-bool SetupLegacyPolicy::tryRepairTarget(
+bool SetupLegacyBase::tryRepairTarget(
     const Target& target,
     const int repairs_per_pass,
     int& changed,
@@ -672,7 +665,7 @@ bool SetupLegacyPolicy::tryRepairTarget(
       target, repairs_per_pass, changed, rejected_types, accepted_type);
 }
 
-bool SetupLegacyPolicy::tryRepairTarget(
+bool SetupLegacyBase::tryRepairTarget(
     const Target& target,
     const int repairs_per_pass,
     int& changed,
@@ -721,10 +714,10 @@ bool SetupLegacyPolicy::tryRepairTarget(
   return false;
 }
 
-bool SetupLegacyPolicy::tryRepairPathTarget(const Target& target,
-                                            const sta::Slack path_slack,
-                                            const int repairs_per_pass,
-                                            int& changed)
+bool SetupLegacyBase::tryRepairPathTarget(const Target& target,
+                                          const sta::Slack path_slack,
+                                          const int repairs_per_pass,
+                                          int& changed)
 {
   committer_.trackViolatorWithTimingInfo(target.driver_pin,
                                          target.vertex(resizer_),
@@ -734,7 +727,7 @@ bool SetupLegacyPolicy::tryRepairPathTarget(const Target& target,
   return tryRepairTarget(target, repairs_per_pass, changed, nullptr);
 }
 
-bool SetupLegacyPolicy::repairPath(sta::Path* path, const sta::Slack path_slack)
+bool SetupLegacyBase::repairPath(sta::Path* path, const sta::Slack path_slack)
 {
   sta::PathExpanded expanded(path, sta_);
   int changed = 0;
@@ -791,20 +784,20 @@ bool SetupLegacyPolicy::repairPath(sta::Path* path, const sta::Slack path_slack)
   return changed > 0;
 }
 
-int SetupLegacyPolicy::committedMoves(const MoveType type) const
+int SetupLegacyBase::committedMoves(const MoveType type) const
 {
   return committer_.committedMoves(type);
 }
 
-int SetupLegacyPolicy::totalMoves(const MoveType type) const
+int SetupLegacyBase::totalMoves(const MoveType type) const
 {
   return committer_.totalMoves(type);
 }
 
-void SetupLegacyPolicy::printProgress(const int iteration,
-                                      const bool force,
-                                      const char phase_marker,
-                                      const bool use_startpoint_metrics) const
+void SetupLegacyBase::printProgress(const int iteration,
+                                    const bool force,
+                                    const char phase_marker,
+                                    const bool use_startpoint_metrics) const
 {
   const bool start = iteration == 0;
 
@@ -865,14 +858,14 @@ void SetupLegacyPolicy::printProgress(const int iteration,
   debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
 }
 
-bool SetupLegacyPolicy::terminateProgress(const int iteration,
-                                          const float initial_tns,
-                                          float& prev_tns,
-                                          float& fix_rate_threshold,
-                                          const int endpt_index,
-                                          const int num_endpts,
-                                          const std::string_view phase_name,
-                                          const char phase_marker)
+bool SetupLegacyBase::terminateProgress(const int iteration,
+                                        const float initial_tns,
+                                        float& prev_tns,
+                                        float& fix_rate_threshold,
+                                        const int endpt_index,
+                                        const int num_endpts,
+                                        const std::string_view phase_name,
+                                        const char phase_marker)
 {
   if (iteration % opto_large_interval_ == 0) {
     fix_rate_threshold *= 2.0;
@@ -901,7 +894,7 @@ bool SetupLegacyPolicy::terminateProgress(const int iteration,
   return false;
 }
 
-void SetupLegacyPolicy::reportCustomPhaseSetup() const
+void SetupLegacyBase::reportCustomPhaseSetup() const
 {
   logger_->info(
       utl::RSZ, 221, "Using custom phase sequence: {}", config_.phases);

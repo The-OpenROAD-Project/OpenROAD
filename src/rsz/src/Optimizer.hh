@@ -15,7 +15,7 @@
 
 namespace rsz {
 
-class SetupLegacyPolicy;
+class SetupLegacyBase;
 struct RepairSetupContext;
 
 // Top-level driver and sequencer for one repair_setup run.
@@ -54,7 +54,7 @@ class Optimizer
   std::unique_ptr<OptPolicy> makePolicyForPhase(
       std::string_view phase_name,
       RepairSetupContext& setup_context);
-  std::unique_ptr<SetupLegacyPolicy> makeLegacyContext(
+  std::unique_ptr<SetupLegacyBase> makeLegacyContext(
       const std::vector<std::string>& phase_names,
       RepairSetupContext& setup_context);
 

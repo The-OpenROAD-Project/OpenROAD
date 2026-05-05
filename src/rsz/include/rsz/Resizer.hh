@@ -48,7 +48,7 @@
 #include "utl/Logger.h"
 
 namespace rsz {
-class SetupLegacyPolicy;
+class SetupLegacyBase;
 struct SlackEstimatorParams;
 }  // namespace rsz
 
@@ -1022,7 +1022,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class ConcreteSwapArithModules;
   friend class Rebuffer;
   friend class OdbCallBack;
-  friend class SetupLegacyPolicy;
+  friend class SetupLegacyBase;
   friend class RepairTargetCollector;
   friend class DelayEstimatorReporter;
 };
