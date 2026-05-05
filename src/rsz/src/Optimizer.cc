@@ -42,81 +42,85 @@ namespace {
 // Whitespace-tokenize the phase string.
 std::vector<std::string> parsePhases(const std::string_view phases)
 {
-  std::vector<std::string> steps;
+  std::vector<std::string> phase_names;
   std::istringstream stream{std::string(phases)};
   std::string token;
   while (stream >> token) {
-    steps.push_back(token);
+    phase_names.push_back(token);
   }
-  return steps;
+  return phase_names;
 }
 
 // Returns true when the token list contains a phase that needs a prepared
 // LegacyRepairContext (target collector, move sequence, STA preambles).
 // Top-level tokens (MT1, MEASURED_VT_SWAP) are self-contained and do not
 // need it.
-bool hasLegacyPhase(const std::vector<std::string>& steps)
+bool hasLegacyPhase(const std::vector<std::string>& phase_names)
 {
-  return std::any_of(steps.begin(), steps.end(), [](const std::string& step) {
-    return step != "MT1" && step != "MEASURED_VT_SWAP";
-  });
+  return std::any_of(phase_names.begin(),
+                     phase_names.end(),
+                     [](const std::string& phase_name) {
+                       return phase_name != "MT1"
+                              && phase_name != "MEASURED_VT_SWAP";
+                     });
 }
 
 // Returns true when any LEGACY_MT token appears in the list.  Selects
 // SetupLegacyMtPolicy as the legacy context so virtual buildMoveGenerators
 // / tryRepairTarget calls dispatch to the MT overrides.
-bool hasLegacyMtPhase(const std::vector<std::string>& steps)
+bool hasLegacyMtPhase(const std::vector<std::string>& phase_names)
 {
-  return std::any_of(steps.begin(), steps.end(), [](const std::string& step) {
-    return step == "LEGACY_MT";
-  });
+  return std::any_of(
+      phase_names.begin(),
+      phase_names.end(),
+      [](const std::string& phase_name) { return phase_name == "LEGACY_MT"; });
 }
 
 }  // namespace
 
 std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
-    const std::string_view token,
+    const std::string_view phase_name,
     SetupLegacyPolicy* const legacy_parent)
 {
   // Single-thread vs MT behavior for LEGACY/LEGACY_MT is determined by the
   // legacy_parent class (SetupLegacyPolicy vs SetupLegacyMtPolicy) selected
   // by the sequencer before dispatch starts.
-  if (token == "LEGACY" || token == "LEGACY_MT") {
+  if (phase_name == "LEGACY" || phase_name == "LEGACY_MT") {
     return std::make_unique<MainRepairPhasePolicy>(
         resizer_, committer_, legacy_parent);
   }
-  if (token == "WNS" || token == "WNS_PATH") {
+  if (phase_name == "WNS" || phase_name == "WNS_PATH") {
     return std::make_unique<WnsPhasePolicy>(
         resizer_, committer_, legacy_parent, /*use_cone=*/false);
   }
-  if (token == "WNS_CONE") {
+  if (phase_name == "WNS_CONE") {
     return std::make_unique<WnsPhasePolicy>(
         resizer_, committer_, legacy_parent, /*use_cone=*/true);
   }
-  if (token == "TNS") {
+  if (phase_name == "TNS") {
     return std::make_unique<TnsPhasePolicy>(
         resizer_, committer_, legacy_parent);
   }
-  if (token == "ENDPOINT_FANIN") {
+  if (phase_name == "ENDPOINT_FANIN") {
     return std::make_unique<DirectionalPhasePolicy>(
         resizer_, committer_, legacy_parent, /*use_starts=*/false);
   }
-  if (token == "STARTPOINT_FANOUT") {
+  if (phase_name == "STARTPOINT_FANOUT") {
     return std::make_unique<DirectionalPhasePolicy>(
         resizer_, committer_, legacy_parent, /*use_starts=*/true);
   }
-  if (token == "LAST_GASP") {
+  if (phase_name == "LAST_GASP") {
     return std::make_unique<LastGaspPhasePolicy>(
         resizer_, committer_, legacy_parent);
   }
-  if (token == "CRIT_VT_SWAP") {
+  if (phase_name == "CRIT_VT_SWAP") {
     return std::make_unique<CritVtSwapPhasePolicy>(
         resizer_, committer_, legacy_parent);
   }
-  if (token == "MT1") {
+  if (phase_name == "MT1") {
     return std::make_unique<SetupMt1Policy>(resizer_, committer_);
   }
-  if (token == "MEASURED_VT_SWAP") {
+  if (phase_name == "MEASURED_VT_SWAP") {
     return std::make_unique<MeasuredVtSwapPolicy>(resizer_, committer_);
   }
   // Only public phase names are listed; experimental top-level tokens
@@ -127,14 +131,14 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
       "Unknown phase name '{}'. Valid phase names are: LEGACY, WNS, "
       "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
       "LAST_GASP, CRIT_VT_SWAP",
-      token);
+      phase_name);
   return nullptr;
 }
 
 std::unique_ptr<SetupLegacyPolicy> Optimizer::makeLegacyContext(
-    const std::vector<std::string>& phases)
+    const std::vector<std::string>& phase_names)
 {
-  if (hasLegacyMtPhase(phases)) {
+  if (hasLegacyMtPhase(phase_names)) {
     return std::make_unique<SetupLegacyMtPolicy>(resizer_, committer_);
   }
   return std::make_unique<SetupLegacyPolicy>(resizer_, committer_);
@@ -155,11 +159,11 @@ bool Optimizer::run()
   // otherwise the default ("LEGACY LAST_GASP CRIT_VT_SWAP").
   const std::string token_list
       = !config_.phases.empty() ? config_.phases : kDefaultPhases;
-  const std::vector<std::string> steps = parsePhases(token_list);
+  const std::vector<std::string> phase_names = parsePhases(token_list);
 
   std::unique_ptr<SetupLegacyPolicy> legacy_ctx;
-  if (hasLegacyPhase(steps)) {
-    legacy_ctx = makeLegacyContext(steps);
+  if (hasLegacyPhase(phase_names)) {
+    legacy_ctx = makeLegacyContext(phase_names);
     // Wire base members (logger_, sta_, network_, graph_, ...) but do not
     // run the phase pipeline yet; that prep is gated below.
     legacy_ctx->start(config_, nullptr);
@@ -170,8 +174,7 @@ bool Optimizer::run()
   est::IncrementalParasiticsGuard parasitics_guard(
       resizer_.estimateParasitics());
   if (legacy_ctx != nullptr && !legacy_ctx->prepareForPhasePipeline()) {
-    // No violations to repair  -  early return (matches legacy runSetup
-    // behavior on total_violations == 0).
+    // No violations to repair - early return
     return false;
   }
 
@@ -184,12 +187,11 @@ bool Optimizer::run()
 
   // Phase loop - Run multiple policies sequentially
   std::unique_ptr<OptPolicy> last_policy;
-  for (std::size_t phase_index = 0; phase_index < steps.size(); ++phase_index) {
-    const std::string& step = steps[phase_index];
-    PhaseRunContext ctx{.progress = progress,
-                        .phase_index = static_cast<int>(phase_index)};
+  const int phase_count = phase_names.size();
+  for (int phase_index = 0; phase_index < phase_count; ++phase_index) {
+    PhaseRunContext ctx{progress, phase_index};
     std::unique_ptr<OptPolicy> policy
-        = makePolicyForPhase(step, legacy_ctx.get());
+        = makePolicyForPhase(phase_names[phase_index], legacy_ctx.get());
     policy->start(config_, &ctx);
     while (!policy->converged()) {
       policy->iterate();
@@ -197,11 +199,12 @@ bool Optimizer::run()
     last_policy = std::move(policy);
   }
 
+  // Final report
   OptPolicy* report_policy
       = legacy_ctx != nullptr ? legacy_ctx.get() : last_policy.get();
+  bool include_progress_header = (legacy_ctx == nullptr);
   return report_policy->finalizeAndReport(initial_design_area,
-                                          /*include_progress_header=*/
-                                          legacy_ctx == nullptr);
+                                          include_progress_header);
 }
 
 // Single-endpoint setup repair for test/debug purpose

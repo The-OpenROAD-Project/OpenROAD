@@ -310,10 +310,8 @@ class SetupLegacyPolicy : public OptPolicy
   int fanout(sta::Vertex* vertex) const;
 
   // === Progress reporting ===================================================
-  void printProgress(int iteration, bool force, bool end, bool last_gasp) const;
   void printProgress(int iteration,
                      bool force,
-                     bool end,
                      char phase_marker,
                      bool use_startpoint_metrics = false) const;
   bool terminateProgress(int iteration,

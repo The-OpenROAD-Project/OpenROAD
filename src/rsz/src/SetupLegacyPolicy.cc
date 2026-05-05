@@ -302,8 +302,7 @@ bool SetupLegacyPolicy::initializeMainRepair(
   main_state.num_viols = violating_ends.size();
   main_state.fix_rate_threshold = inc_fix_rate_threshold_;
 
-  printProgress(
-      main_state.opto_iteration, false, false, main_state.phase_marker);
+  printProgress(main_state.opto_iteration, false, main_state.phase_marker);
 
   min_viol_ = -violating_ends.back().second;
   max_viol_ = -violating_ends.front().second;
@@ -443,8 +442,7 @@ void SetupLegacyPolicy::repairEndpoint(
 
     ++main_state.opto_iteration;
     if (verbose || main_state.opto_iteration == 1) {
-      printProgress(
-          main_state.opto_iteration, false, false, main_state.phase_marker);
+      printProgress(main_state.opto_iteration, false, main_state.phase_marker);
     }
 
     if (terminateProgress(main_state.opto_iteration,
@@ -683,8 +681,7 @@ void SetupLegacyPolicy::runMainRepairLoop(
                    verbose);
 
     if (verbose || main_state.opto_iteration == 1) {
-      printProgress(
-          main_state.opto_iteration, true, false, main_state.phase_marker);
+      printProgress(main_state.opto_iteration, true, main_state.phase_marker);
     }
     if (shouldStopMainRepair(main_state)) {
       debugPrint(logger_,
@@ -698,8 +695,7 @@ void SetupLegacyPolicy::runMainRepairLoop(
     }
   }
 
-  printProgress(
-      main_state.opto_iteration, true, false, main_state.phase_marker);
+  printProgress(main_state.opto_iteration, true, main_state.phase_marker);
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
@@ -1214,21 +1210,12 @@ int SetupLegacyPolicy::totalMoves(const MoveType type) const
 
 void SetupLegacyPolicy::printProgress(const int iteration,
                                       const bool force,
-                                      const bool end,
-                                      const bool last_gasp) const
-{
-  printProgress(iteration, force, end, last_gasp ? '+' : '*', false);
-}
-
-void SetupLegacyPolicy::printProgress(const int iteration,
-                                      const bool force,
-                                      const bool end,
                                       const char phase_marker,
                                       const bool use_startpoint_metrics) const
 {
   const bool start = iteration == 0;
 
-  if (start && !end) {
+  if (start) {
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
         "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  ");
@@ -1240,26 +1227,22 @@ void SetupLegacyPolicy::printProgress(const int iteration,
         "---------------------------------------------------------------");
   }
 
-  if (iteration % print_interval_ != 0 && !force && !end) {
+  if (iteration % print_interval_ != 0 && !force) {
     return;
   }
 
-  if (end) {
-    target_collector_->collectViolatingEndpoints();
-    target_collector_->collectViolatingStartpoints();
-  }
+  // StTNS is printed in every progress row, so collect startpoints only when a
+  // row is actually emitted.
+  target_collector_->collectViolatingStartpoints();
 
   const sta::Slack wns = target_collector_->getWns();
   const sta::Slack st_tns = target_collector_->getTns(true);
   const sta::Slack en_tns = target_collector_->getTns(false);
-  const bool show_startpoint_metrics = use_startpoint_metrics && !end;
+  const bool show_startpoint_metrics = use_startpoint_metrics;
   const sta::Pin* worst_pin
       = target_collector_->getWorstPin(show_startpoint_metrics);
 
   std::string itr_field = fmt::format("{}{}", iteration, phase_marker);
-  if (end) {
-    itr_field = "final";
-  }
 
   const double design_area = resizer_.computeDesignArea();
   const double area_growth = design_area - initial_design_area_;
@@ -1286,11 +1269,6 @@ void SetupLegacyPolicy::printProgress(const int iteration,
       worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
   debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
-  if (end) {
-    logger_->report(
-        "---------------------------------------------------------------"
-        "---------------------------------------------------------------");
-  }
 }
 
 bool SetupLegacyPolicy::terminateProgress(const int iteration,
@@ -1392,7 +1370,7 @@ void SetupLegacyPolicy::repairSetupWns(const float setup_slack_margin,
              "WNS{} Phase: Focusing on worst slack path{}...",
              phase_marker,
              use_cone_collection ? " with fanin cone collection" : "");
-  printProgress(opto_iteration, false, false, phase_marker);
+  printProgress(opto_iteration, false, phase_marker);
 
   sta::Vertex* current_endpoint = worst_endpoint;
   target_collector_->useWorstEndpoint(worst_endpoint);
@@ -1482,7 +1460,7 @@ void SetupLegacyPolicy::repairSetupWns(const float setup_slack_margin,
                  phase_marker,
                  delayAsString(worst_slack, kDelayDigits, sta_),
                  delayAsString(setup_slack_margin, kDelayDigits, sta_));
-      printProgress(opto_iteration, true, false, phase_marker);
+      printProgress(opto_iteration, true, phase_marker);
       break;
     }
     if (terminateProgress(opto_iteration,
@@ -1526,7 +1504,7 @@ void SetupLegacyPolicy::repairSetupWns(const float setup_slack_margin,
 
     opto_iteration++;
     if (verbose || opto_iteration % print_interval_ == 0) {
-      printProgress(opto_iteration, false, false, phase_marker);
+      printProgress(opto_iteration, false, phase_marker);
     }
 
     std::vector<const sta::Pin*> viol_pins;
@@ -1639,7 +1617,7 @@ void SetupLegacyPolicy::repairSetupWns(const float setup_slack_margin,
     }
   }
 
-  printProgress(opto_iteration, true, false, phase_marker);
+  printProgress(opto_iteration, true, phase_marker);
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
@@ -1680,7 +1658,7 @@ void SetupLegacyPolicy::repairSetupTns(const float setup_slack_margin,
              1,
              "TNS{} Phase: Focusing on all violating endpoints...",
              phase_marker);
-  printProgress(opto_iteration, false, false, phase_marker);
+  printProgress(opto_iteration, false, phase_marker);
 
   sta::Slack prev_global_wns = 0.0;
   sta::Vertex* initial_tns_phase_worst = nullptr;
@@ -1827,7 +1805,7 @@ void SetupLegacyPolicy::repairSetupTns(const float setup_slack_margin,
       }
 
       if (resizer_.overMaxArea()) {
-        printProgress(opto_iteration, true, true, phase_marker);
+        printProgress(opto_iteration, true, phase_marker);
         return;
       }
 
@@ -1840,11 +1818,11 @@ void SetupLegacyPolicy::repairSetupTns(const float setup_slack_margin,
     opto_iteration++;
     if (verbose || endpoint_index == 1
         || opto_iteration % print_interval_ == 0) {
-      printProgress(opto_iteration, false, false, phase_marker);
+      printProgress(opto_iteration, false, phase_marker);
     }
   }
 
-  printProgress(opto_iteration, true, false, phase_marker);
+  printProgress(opto_iteration, true, phase_marker);
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
@@ -1893,7 +1871,7 @@ void SetupLegacyPolicy::repairSetupDirectional(const bool use_startpoints,
   target_collector_->collectViolatingPoints(use_startpoints);
   const int max_point_count
       = target_collector_->getMaxPointCount(use_startpoints);
-  printProgress(opto_iteration, false, false, phase_marker, use_startpoints);
+  printProgress(opto_iteration, false, phase_marker, use_startpoints);
   if (max_point_count == 0) {
     debugPrint(logger_,
                RSZ,
@@ -2011,8 +1989,7 @@ void SetupLegacyPolicy::repairSetupDirectional(const bool use_startpoints,
       point_pass_count++;
       opto_iteration++;
       if (verbose || opto_iteration % print_interval_ == 0) {
-        printProgress(
-            opto_iteration, false, false, phase_marker, use_startpoints);
+        printProgress(opto_iteration, false, phase_marker, use_startpoints);
       }
 
       std::vector<const sta::Pin*> viol_pins
@@ -2113,7 +2090,7 @@ void SetupLegacyPolicy::repairSetupDirectional(const bool use_startpoints,
     points_processed++;
   }
 
-  printProgress(opto_iteration, true, false, phase_marker, use_startpoints);
+  printProgress(opto_iteration, true, phase_marker, use_startpoints);
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
@@ -2181,10 +2158,8 @@ bool SetupLegacyPolicy::initializeLastGaspRepair(
              "LAST_GASP{} Phase: {} violating endpoints remain",
              last_gasp_state.phase_marker,
              last_gasp_state.max_end_count);
-  printProgress(last_gasp_state.opto_iteration,
-                false,
-                false,
-                last_gasp_state.phase_marker);
+  printProgress(
+      last_gasp_state.opto_iteration, false, last_gasp_state.phase_marker);
   return true;
 }
 
@@ -2310,10 +2285,8 @@ void SetupLegacyPolicy::repairLastGaspEndpoint(
       last_gasp_state.prev_termination = false;
     }
     if (params.verbose || last_gasp_state.opto_iteration == 1) {
-      printProgress(last_gasp_state.opto_iteration,
-                    false,
-                    false,
-                    last_gasp_state.phase_marker);
+      printProgress(
+          last_gasp_state.opto_iteration, false, last_gasp_state.phase_marker);
     }
     if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
                                params.setup_slack_margin)) {
@@ -2390,10 +2363,8 @@ void SetupLegacyPolicy::runLastGaspLoop(
         endpoint_state, last_gasp_state, params, max_iterations);
 
     if (params.verbose || last_gasp_state.opto_iteration == 1) {
-      printProgress(last_gasp_state.opto_iteration,
-                    true,
-                    false,
-                    last_gasp_state.phase_marker);
+      printProgress(
+          last_gasp_state.opto_iteration, true, last_gasp_state.phase_marker);
     }
     if (shouldStopLastGasp(last_gasp_state, max_iterations)) {
       debugPrint(logger_,

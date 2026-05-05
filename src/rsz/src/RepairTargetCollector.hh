@@ -74,7 +74,7 @@ class RepairTargetCollector
     needs_threshold_recompute_ = true;  // Force compute on first call
   }
 
-  void init(float slack_margin);
+  void init(float slack_margin, bool collect_startpoints = false);
   void printHistogram(int numBins = 20) const;
   void printViolators(int numPrint) const;
 

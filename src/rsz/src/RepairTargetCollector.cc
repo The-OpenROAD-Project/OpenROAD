@@ -205,7 +205,8 @@ void RepairTargetCollector::printHistogram(int numBins) const
 }
 
 // Must be called after STA is initialized
-void RepairTargetCollector::init(float slack_margin)
+void RepairTargetCollector::init(float slack_margin,
+                                 const bool collect_startpoints)
 {
   graph_ = sta_->graph();
   search_ = sta_->search();
@@ -219,7 +220,11 @@ void RepairTargetCollector::init(float slack_margin)
   slack_margin_ = slack_margin;
 
   collectViolatingEndpoints();
-  collectViolatingStartpoints();
+  if (collect_startpoints) {
+    collectViolatingStartpoints();
+  } else {
+    violating_startpoints_.clear();
+  }
 
   pin_data_.clear();
   violating_pins_.clear();

@@ -71,7 +71,8 @@ bool OptPolicy::finalizeAndReport(const double initial_design_area,
                                   const bool include_progress_header)
 {
   RepairTargetCollector final_targets(&resizer_);
-  final_targets.init(config_.setup_slack_margin);
+  final_targets.init(config_.setup_slack_margin,
+                     /*collect_startpoints=*/true);
   printFinalProgress(
       final_targets, initial_design_area, include_progress_header);
   committer_.printTrackerFinalReports(finalReportPins());

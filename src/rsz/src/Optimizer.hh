@@ -52,10 +52,10 @@ class Optimizer
   static constexpr const char* kDefaultPhases = "LEGACY LAST_GASP CRIT_VT_SWAP";
 
   std::unique_ptr<OptPolicy> makePolicyForPhase(
-      std::string_view token,
+      std::string_view phase_name,
       SetupLegacyPolicy* legacy_parent);
   std::unique_ptr<SetupLegacyPolicy> makeLegacyContext(
-      const std::vector<std::string>& phases);
+      const std::vector<std::string>& phase_names);
 
   // === Run state ============================================================
   OptimizerRunConfig config_;
