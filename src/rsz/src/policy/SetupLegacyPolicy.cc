@@ -56,16 +56,8 @@ void SetupLegacyPolicy::iterate()
   main_state.phase_marker = phaseMarkerForIndex(ctx.phase_index);
 
   ViolatingEnds violating_ends;
-  if (initializeMainRepair(config_.setup_slack_margin,
-                           config_.repair_tns_end_percent,
-                           main_state,
-                           violating_ends)) {
-    runMainRepairLoop(violating_ends,
-                      config_.setup_slack_margin,
-                      config_.max_passes,
-                      config_.max_iterations,
-                      config_.verbose,
-                      main_state);
+  if (initializeMainRepair(main_state, violating_ends)) {
+    runMainRepairLoop(violating_ends, main_state);
   }
   committer_.printTrackerPhaseSummary(
       "LEGACY Phase Summary", "LEGACY Phase Endpoint Profiler", true);
@@ -78,12 +70,10 @@ void SetupLegacyPolicy::iterate()
   markRunComplete(true);
 }
 
-bool SetupLegacyPolicy::initializeMainRepair(
-    const float setup_slack_margin,
-    const double repair_tns_end_percent,
-    MainRepairState& main_state,
-    ViolatingEnds& violating_ends)
+bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
+                                             ViolatingEnds& violating_ends)
 {
+  const float setup_slack_margin = config_.setup_slack_margin;
   violating_ends = collectViolatingEndpoints(setup_slack_margin);
 
   // prepareForPhasePipeline already rejected the zero-violation case, but the
@@ -107,7 +97,8 @@ bool SetupLegacyPolicy::initializeMainRepair(
              violating_ends.size());
 
   main_state.max_end_count = std::max(
-      static_cast<int>(violating_ends.size() * repair_tns_end_percent), 1);
+      static_cast<int>(violating_ends.size() * config_.repair_tns_end_percent),
+      1);
   main_state.initial_tns = sta_->totalNegativeSlack(max_);
   main_state.prev_tns = main_state.initial_tns;
   main_state.num_viols = violating_ends.size();
@@ -152,15 +143,12 @@ bool SetupLegacyPolicy::beginEndpointRepair(
 }
 
 void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
-                                       MainRepairState& main_state,
-                                       const float setup_slack_margin,
-                                       const int max_passes,
-                                       const int max_iterations,
-                                       const bool verbose)
+                                       MainRepairState& main_state)
 {
-  while (endpoint_state.pass <= max_passes) {
+  const float setup_slack_margin = config_.setup_slack_margin;
+  while (endpoint_state.pass <= config_.max_passes) {
     ++main_state.opto_iteration;
-    if (verbose || main_state.opto_iteration == 1) {
+    if (config_.verbose || main_state.opto_iteration == 1) {
       printProgress(main_state.opto_iteration, false, main_state.phase_marker);
     }
 
@@ -283,7 +271,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       endpoint_state.prev_end_slack = endpoint_state.end_slack;
       endpoint_state.prev_worst_slack = endpoint_state.worst_slack;
       endpoint_state.decreasing_slack_passes = 0;
-      saveImprovedCheckpoint(endpoint_state, max_passes);
+      saveImprovedCheckpoint(endpoint_state, config_.max_passes);
     } else {
       setup_context_.fallback = true;
       ++endpoint_state.decreasing_slack_passes;
@@ -342,7 +330,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     }
 
     ++endpoint_state.pass;
-    if (max_iterations > 0 && main_state.opto_iteration >= max_iterations) {
+    if (config_.max_iterations > 0
+        && main_state.opto_iteration >= config_.max_iterations) {
       acceptEndpointState(endpoint_state);
       break;
     }
@@ -352,10 +341,6 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
 }
 
 void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
-                                          const float setup_slack_margin,
-                                          const int max_passes,
-                                          const int max_iterations,
-                                          const bool verbose,
                                           MainRepairState& main_state)
 {
   const utl::DebugScopedTimer timer(
@@ -371,14 +356,9 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
       break;
     }
 
-    repairEndpoint(endpoint_state,
-                   main_state,
-                   setup_slack_margin,
-                   max_passes,
-                   max_iterations,
-                   verbose);
+    repairEndpoint(endpoint_state, main_state);
 
-    if (verbose || main_state.opto_iteration == 1) {
+    if (config_.verbose || main_state.opto_iteration == 1) {
       printProgress(main_state.opto_iteration, true, main_state.phase_marker);
     }
     if (main_state.two_cons_terminations) {

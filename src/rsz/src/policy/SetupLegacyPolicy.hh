@@ -33,26 +33,16 @@ class SetupLegacyPolicy : public SetupLegacyBase
     char phase_marker{'*'};
   };
 
-  bool initializeMainRepair(float setup_slack_margin,
-                            double repair_tns_end_percent,
-                            MainRepairState& main_state,
+  bool initializeMainRepair(MainRepairState& main_state,
                             ViolatingEnds& violating_ends);
   void runMainRepairLoop(const ViolatingEnds& violating_ends,
-                         float setup_slack_margin,
-                         int max_passes,
-                         int max_iterations,
-                         bool verbose,
                          MainRepairState& main_state);
   virtual bool beginEndpointRepair(
       const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
       MainRepairState& main_state,
       EndpointRepairState& endpoint_state);
   virtual void repairEndpoint(EndpointRepairState& endpoint_state,
-                              MainRepairState& main_state,
-                              float setup_slack_margin,
-                              int max_passes,
-                              int max_iterations,
-                              bool verbose);
+                              MainRepairState& main_state);
   bool pathImproved(int end_index,
                     sta::Slack end_slack,
                     sta::Slack worst_slack,

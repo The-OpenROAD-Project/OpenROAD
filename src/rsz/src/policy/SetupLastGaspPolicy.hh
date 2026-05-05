@@ -33,20 +33,16 @@ class SetupLastGaspPolicy : public SetupLegacyBase
     char phase_marker{'+'};
   };
 
-  bool initializeLastGaspRepair(int opto_iteration,
-                                float initial_tns,
-                                LastGaspState& last_gasp_state,
+  bool initializeLastGaspRepair(LastGaspState& last_gasp_state,
                                 ViolatingEnds& violating_ends);
   void runLastGaspLoop(const ViolatingEnds& violating_ends,
-                       int max_iterations,
                        LastGaspState& last_gasp_state);
   bool beginLastGaspEndpoint(
       const std::pair<sta::Vertex*, sta::Slack>& end_original_slack,
       LastGaspState& last_gasp_state,
       EndpointRepairState& endpoint_state);
   void repairLastGaspEndpoint(EndpointRepairState& endpoint_state,
-                              LastGaspState& last_gasp_state,
-                              int max_iterations);
+                              LastGaspState& last_gasp_state);
   bool advanceLastGaspProgress(EndpointRepairState& endpoint_state,
                                LastGaspState& last_gasp_state,
                                float curr_tns);
@@ -54,8 +50,7 @@ class SetupLastGaspPolicy : public SetupLegacyBase
                         float curr_tns,
                         sta::Slack prev_worst_slack,
                         float prev_tns) const;
-  bool shouldStopLastGasp(const LastGaspState& last_gasp_state,
-                          int max_iterations) const;
+  bool shouldStopLastGasp(const LastGaspState& last_gasp_state) const;
 
   static constexpr int max_last_gasp_passes_ = 10;
 };

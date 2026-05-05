@@ -52,8 +52,6 @@ void SetupLastGaspPolicy::iterate()
   committer_.capturePrePhaseSlack();
   OptimizerProgress& progress = run_ctx_->progress;
   int& num_viols = progress.violation_count;
-  const int opto_iteration = progress.iteration;
-  const float initial_tns = progress.initial_tns;
   const char phase_marker = phaseMarkerForIndex(run_ctx_->phase_index);
   {
     const utl::DebugScopedTimer timer(
@@ -65,11 +63,10 @@ void SetupLastGaspPolicy::iterate()
     LastGaspState last_gasp_state;
     last_gasp_state.phase_marker = phase_marker;
     ViolatingEnds violating_ends;
-    if (!initializeLastGaspRepair(
-            opto_iteration, initial_tns, last_gasp_state, violating_ends)) {
+    if (!initializeLastGaspRepair(last_gasp_state, violating_ends)) {
       num_viols = last_gasp_state.num_viols;
     } else {
-      runLastGaspLoop(violating_ends, config_.max_iterations, last_gasp_state);
+      runLastGaspLoop(violating_ends, last_gasp_state);
       num_viols = last_gasp_state.num_viols;
       if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
         sta::Slack final_wns;
@@ -93,8 +90,6 @@ void SetupLastGaspPolicy::iterate()
 }
 
 bool SetupLastGaspPolicy::initializeLastGaspRepair(
-    const int opto_iteration,
-    const float initial_tns,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state,
     SetupLegacyBase::ViolatingEnds& violating_ends)
 {
@@ -131,8 +126,8 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
   }
 
   last_gasp_state.max_end_count = violating_ends.size();
-  last_gasp_state.opto_iteration = opto_iteration;
-  last_gasp_state.initial_tns = initial_tns;
+  last_gasp_state.opto_iteration = run_ctx_->progress.iteration;
+  last_gasp_state.initial_tns = run_ctx_->progress.initial_tns;
   last_gasp_state.prev_tns = curr_tns;
   last_gasp_state.prev_worst_slack = violating_ends.front().second;
   last_gasp_state.fix_rate_threshold = inc_fix_rate_threshold_;
@@ -246,8 +241,7 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
 
 void SetupLastGaspPolicy::repairLastGaspEndpoint(
     SetupLegacyBase::EndpointRepairState& endpoint_state,
-    SetupLastGaspPolicy::LastGaspState& last_gasp_state,
-    const int max_iterations)
+    SetupLastGaspPolicy::LastGaspState& last_gasp_state)
 {
   while (endpoint_state.pass <= max_last_gasp_passes_) {
     ++last_gasp_state.opto_iteration;
@@ -307,7 +301,8 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     }
 
     ++endpoint_state.pass;
-    if (reachedIterationLimit(last_gasp_state.opto_iteration, max_iterations)) {
+    if (reachedIterationLimit(last_gasp_state.opto_iteration,
+                              config_.max_iterations)) {
       acceptEndpointState(endpoint_state);
       break;
     }
@@ -317,21 +312,19 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
 }
 
 bool SetupLastGaspPolicy::shouldStopLastGasp(
-    const SetupLastGaspPolicy::LastGaspState& last_gasp_state,
-    const int max_iterations) const
+    const SetupLastGaspPolicy::LastGaspState& last_gasp_state) const
 {
   return last_gasp_state.two_cons_terminations
          || reachedIterationLimit(last_gasp_state.opto_iteration,
-                                  max_iterations);
+                                  config_.max_iterations);
 }
 
 void SetupLastGaspPolicy::runLastGaspLoop(
     const SetupLegacyBase::ViolatingEnds& violating_ends,
-    const int max_iterations,
     SetupLastGaspPolicy::LastGaspState& last_gasp_state)
 {
   for (const auto& end_original_slack : violating_ends) {
-    if (shouldStopLastGasp(last_gasp_state, max_iterations)) {
+    if (shouldStopLastGasp(last_gasp_state)) {
       break;
     }
 
@@ -341,13 +334,13 @@ void SetupLastGaspPolicy::runLastGaspLoop(
       break;
     }
 
-    repairLastGaspEndpoint(endpoint_state, last_gasp_state, max_iterations);
+    repairLastGaspEndpoint(endpoint_state, last_gasp_state);
 
     if (config_.verbose || last_gasp_state.opto_iteration == 1) {
       printProgress(
           last_gasp_state.opto_iteration, true, last_gasp_state.phase_marker);
     }
-    if (shouldStopLastGasp(last_gasp_state, max_iterations)) {
+    if (shouldStopLastGasp(last_gasp_state)) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
