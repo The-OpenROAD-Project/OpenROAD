@@ -14,5 +14,5 @@
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.278 |       -0.7 |       -0.5 |      2 | y2
       10* |       0 |       3 |        0 |      0 |     1 |   +53.8% |   -0.195 |       -0.5 |       -0.3 |      2 | y2
       14* |       0 |       4 |        0 |      0 |     0 |   +84.6% |   -0.157 |       -0.4 |       -0.3 |      2 | y2
-[ERROR RSZ-0217] Unknown phase name 'BAD_PHASE'. Valid phase names are: LEGACY, WNS, WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, LAST_GASP
+[ERROR RSZ-0217] Unknown phase name 'BAD_PHASE'. Valid phase names are: LEGACY, WNS, WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, LAST_GASP, CRIT_VT_SWAP
 Caught expected invalid phase error: RSZ-0217

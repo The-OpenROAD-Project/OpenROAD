@@ -108,6 +108,10 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<LastGaspPhasePolicy>(
         resizer_, committer_, legacy_parent);
   }
+  if (token == "CRIT_VT_SWAP") {
+    return std::make_unique<CritVtSwapPhasePolicy>(
+        resizer_, committer_, legacy_parent);
+  }
   if (token == "MT1") {
     return std::make_unique<SetupMt1Policy>(resizer_, committer_);
   }
@@ -121,7 +125,7 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
       217,
       "Unknown phase name '{}'. Valid phase names are: LEGACY, WNS, "
       "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-      "LAST_GASP",
+      "LAST_GASP, CRIT_VT_SWAP",
       token);
   return nullptr;
 }
@@ -146,7 +150,7 @@ bool Optimizer::run()
   committer_.init();
 
   // Token list: user-supplied -phases/-policy/-policies takes precedence,
-  // otherwise the default ("LEGACY LAST_GASP").
+  // otherwise the default ("LEGACY LAST_GASP CRIT_VT_SWAP").
   const std::string token_list
       = !config_.phases.empty() ? config_.phases : kDefaultPhases;
   const std::vector<std::string> steps = parsePhases(token_list);
@@ -190,7 +194,6 @@ bool Optimizer::run()
   }
 
   if (legacy_ctx != nullptr) {
-    legacy_ctx->runPostPhaseVtSwap(progress.violation_count);
     return legacy_ctx->finalizeAndReport(progress.iteration);
   }
   // Top-level-only run  -  self-contained policies already reported.

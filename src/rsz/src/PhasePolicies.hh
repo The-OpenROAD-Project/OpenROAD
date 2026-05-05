@@ -87,4 +87,13 @@ class LastGaspPhasePolicy : public PhasePolicyBase
   void iterate() override;
 };
 
+// CRIT_VT_SWAP token  -  runs the legacy critical fanin-cone VT sweep.
+class CritVtSwapPhasePolicy : public PhasePolicyBase
+{
+ public:
+  using PhasePolicyBase::PhasePolicyBase;
+  const char* name() const override { return "CritVtSwapPhasePolicy"; }
+  void iterate() override;
+};
+
 }  // namespace rsz

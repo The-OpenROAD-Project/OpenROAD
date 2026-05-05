@@ -82,7 +82,7 @@ void SetupLegacyPolicy::start(const OptimizerRunConfig& config,
 void SetupLegacyPolicy::iterate()
 {
   // Optimizer is the sequencer for the legacy phase pipeline  -  it calls
-  // prepareForPhasePipeline / dispatch loop / runPostPhaseVtSwap /
+  // prepareForPhasePipeline / dispatch loop / runCriticalVtSwapPhase /
   // finalizeAndReport directly.  This OptPolicy iterate() is a no-op kept
   // only so SetupLegacyPolicy / SetupLegacyMtPolicy stay concrete (their
   // virtual buildMoveGenerators / tryRepairTarget overrides are still used
@@ -791,10 +791,9 @@ bool SetupLegacyPolicy::prepareForPhasePipeline()
   return true;
 }
 
-void SetupLegacyPolicy::runPostPhaseVtSwap(int& num_viols)
+void SetupLegacyPolicy::runCriticalVtSwapPhase(int& num_viols)
 {
-  // Critical VT swap runs as a separate batch because it is endpoint-agnostic
-  // once the critical instance set has been collected.
+  // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
   if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
     return;
   }

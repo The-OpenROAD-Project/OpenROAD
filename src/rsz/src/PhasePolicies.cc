@@ -136,4 +136,10 @@ void LastGaspPhasePolicy::iterate()
   markRunComplete(true);
 }
 
+void CritVtSwapPhasePolicy::iterate()
+{
+  parent_->runCriticalVtSwapPhase(run_ctx_->progress.violation_count);
+  markRunComplete(true);
+}
+
 }  // namespace rsz

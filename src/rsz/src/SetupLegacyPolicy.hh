@@ -75,6 +75,7 @@ class WnsPhasePolicy;
 class TnsPhasePolicy;
 class DirectionalPhasePolicy;
 class LastGaspPhasePolicy;
+class CritVtSwapPhasePolicy;
 
 class SetupLegacyPolicy : public OptPolicy
 {
@@ -83,6 +84,7 @@ class SetupLegacyPolicy : public OptPolicy
   friend class TnsPhasePolicy;
   friend class DirectionalPhasePolicy;
   friend class LastGaspPhasePolicy;
+  friend class CritVtSwapPhasePolicy;
 
  public:
   // === OptPolicy entry points ==============================================
@@ -103,9 +105,9 @@ class SetupLegacyPolicy : public OptPolicy
   // dispatch loop.
   bool prepareForPhasePipeline();
 
-  // Critical-cell VT swap that must run after all phase tokens.  No-op when
-  // skip_crit_vt_swap / skip_vt_swap is set or the design has no VT cells.
-  void runPostPhaseVtSwap(int& num_viols);
+  // Critical-cell VT swap phase.  No-op when skip_crit_vt_swap /
+  // skip_vt_swap is set or the design has no VT cells.
+  void runCriticalVtSwapPhase(int& num_viols);
 
   // Final progress dump + tracker reports + repair summary.  Returns the
   // bool that the legacy runSetup() used to return (true if any repair

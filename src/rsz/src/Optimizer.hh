@@ -49,7 +49,7 @@ class Optimizer
 
  private:
   // Default token list when the user did not supply -phases/-policy/-policies.
-  static constexpr const char* kDefaultPhases = "LEGACY LAST_GASP";
+  static constexpr const char* kDefaultPhases = "LEGACY LAST_GASP CRIT_VT_SWAP";
 
   std::unique_ptr<OptPolicy> makePolicyForPhase(
       std::string_view token,

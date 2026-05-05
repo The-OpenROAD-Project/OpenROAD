@@ -1,4 +1,4 @@
-# Probe default LEGACY/LAST_GASP behavior.
+# Probe default LEGACY/LAST_GASP/CRIT_VT_SWAP behavior.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
