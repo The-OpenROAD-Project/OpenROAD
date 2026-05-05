@@ -32,6 +32,7 @@ struct RepairSetupContext
   int violation_count{0};
   float initial_tns{0.0f};
   float previous_tns{0.0f};
+  bool progress_header_printed{false};
 
   // Legacy-derived setup phases share one preamble per repair_setup run.
   bool legacy_preamble_done{false};

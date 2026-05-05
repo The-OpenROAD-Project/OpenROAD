@@ -95,20 +95,22 @@ bool OptPolicy::start(const OptimizerRunConfig& config)
   return true;
 }
 
-bool OptPolicy::finalizeAndReport(const double initial_design_area,
-                                  const bool include_progress_header)
+bool OptPolicy::finalizeAndReport(const double initial_design_area)
 {
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
                      /*collect_startpoints=*/true);
-  printFinalProgress(
-      final_targets, initial_design_area, include_progress_header);
+  printFinalProgress(final_targets, initial_design_area);
   committer_.printTrackerFinalReports(finalReportPins());
   return reportRepairSummary();
 }
 
 void OptPolicy::printProgressHeader() const
 {
+  if (setup_context_.progress_header_printed) {
+    return;
+  }
+  setup_context_.progress_header_printed = true;
   logger_->report(
       "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
       "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst");
@@ -122,12 +124,9 @@ void OptPolicy::printProgressHeader() const
 
 void OptPolicy::printFinalProgress(
     const RepairTargetCollector& target_collector,
-    const double initial_design_area,
-    const bool include_header) const
+    const double initial_design_area) const
 {
-  if (include_header) {
-    printProgressHeader();
-  }
+  printProgressHeader();
 
   const sta::Slack wns = target_collector.getWns();
   const sta::Slack st_tns = target_collector.getTns(true);

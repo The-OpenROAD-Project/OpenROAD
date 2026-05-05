@@ -801,6 +801,7 @@ void SetupLegacyBase::printProgress(const int iteration,
   const bool start = iteration == 0;
 
   if (start) {
+    setup_context_.progress_header_printed = true;
     logger_->report(
         "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
         "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  ");

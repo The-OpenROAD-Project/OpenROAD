@@ -3,7 +3,6 @@
 
 #include "Optimizer.hh"
 
-#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -42,22 +41,6 @@ void Optimizer::configure(const OptimizerRunConfig& config)
 {
   config_ = config;
 }
-
-namespace {
-
-// Returns true when the token list contains a phase that uses the legacy
-// setup-repair progress header/reporting layout.
-bool hasLegacyPhase(const std::vector<std::string>& phase_names)
-{
-  return std::any_of(phase_names.begin(),
-                     phase_names.end(),
-                     [](const std::string& phase_name) {
-                       return phase_name != "MT1"
-                              && phase_name != "MEASURED_VT_SWAP";
-                     });
-}
-
-}  // namespace
 
 std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
     const std::string_view phase_name,
@@ -135,7 +118,6 @@ bool Optimizer::run()
       = !config_.phases.empty() ? config_.phases : kDefaultPhases;
   const std::vector<std::string> phase_names = sta::parseTokens(token_list);
 
-  const bool has_legacy_phase = hasLegacyPhase(phase_names);
   RepairSetupContext setup_context(resizer_);
   setup_context.phase_pipeline_active = true;
 
@@ -161,8 +143,7 @@ bool Optimizer::run()
   }
 
   // Final report
-  return last_policy->finalizeAndReport(setup_context.initial_design_area,
-                                        !has_legacy_phase);
+  return last_policy->finalizeAndReport(setup_context.initial_design_area);
 }
 
 // Single-endpoint setup repair for test/debug purpose

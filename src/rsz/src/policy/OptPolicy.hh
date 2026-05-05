@@ -77,8 +77,7 @@ class OptPolicy
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
-  bool finalizeAndReport(double initial_design_area,
-                         bool include_progress_header);
+  bool finalizeAndReport(double initial_design_area);
 
  protected:
   // === Generator setup ======================================================
@@ -123,8 +122,7 @@ class OptPolicy
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
   void printProgressHeader() const;
   void printFinalProgress(const RepairTargetCollector& target_collector,
-                          double initial_design_area,
-                          bool include_header) const;
+                          double initial_design_area) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;
   bool reportRepairSummary() const;
   // Load every policy-tunable envar into policy_config_ once at start time.
