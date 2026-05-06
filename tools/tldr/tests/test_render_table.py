@@ -24,6 +24,22 @@ class RenderTableTest(unittest.TestCase):
         out = render([], pr=1, sha="z" * 12)
         self.assertIn("No findings", out)
 
+    def test_empty_with_failing_urls_says_so(self) -> None:
+        # When discovery reports failing checks but no parser produced a
+        # finding, surface the URLs rather than say "CI is clean".
+        out = render(
+            [],
+            pr=1,
+            sha="z" * 12,
+            failing_check_urls=[
+                "https://jenkins.openroad.tools/job/x/1/display/redirect",
+                "https://jenkins.openroad.tools/job/x/2/display/redirect",
+            ],
+        )
+        self.assertIn("couldn't extract", out)
+        self.assertIn("Found 2 failing", out)
+        self.assertIn("jenkins.openroad.tools/job/x/1", out)
+
 
 if __name__ == "__main__":
     unittest.main()

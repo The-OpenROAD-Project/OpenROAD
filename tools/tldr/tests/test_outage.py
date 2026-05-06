@@ -100,9 +100,7 @@ class OutageTest(unittest.TestCase):
             "Failed to run image 'gcr.io/x/y:z'. Error: ",
             "java.io.IOException: Failed to run image 'gcr.io/x/y:z'. Error: ",
         ]:
-            out = list(
-                OutageParser().scan([line], StaticStageContext("Build binary"))
-            )
+            out = list(OutageParser().scan([line], StaticStageContext("Build binary")))
             self.assertEqual(len(out), 1, f"no match for: {line!r}")
             self.assertEqual(out[0].severity, Severity.infra)
             self.assertTrue(out[0].headline.startswith("container-registry:"))

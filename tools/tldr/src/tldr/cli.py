@@ -96,8 +96,36 @@ def _scan_check(
                 yield line
 
         for f in plugin.scan(_tracked(), sub_ctx):
-            out.append(f.with_stage(sub_ctx.current))
+            f = f.with_stage(sub_ctx.current)
+            # Thread the failing-check's full URL into each finding so the
+            # markdown render can link "see the full log" right next to
+            # the finding.
+            if f.log_url is None and check.details_url:
+                f = _with_log_url(f, check.details_url)
+            out.append(f)
     return out
+
+
+def _with_log_url(f: Finding, url: str) -> Finding:
+    """Return a copy of `f` with `log_url` set."""
+    return Finding(
+        parser=f.parser,
+        severity=f.severity,
+        kind=f.kind,
+        headline=f.headline,
+        detail=f.detail,
+        stage=f.stage,
+        location=f.location,
+        log_url=url,
+        log_line=f.log_line,
+        dedupe_key=f.dedupe_key,
+        human_headline=f.human_headline,
+        ai_directive=f.ai_directive,
+        verify_command=f.verify_command,
+        auto_fix_command=f.auto_fix_command,
+        extras=f.extras,
+        collapse_in_human_tldr=f.collapse_in_human_tldr,
+    )
 
 
 def discover_findings(
@@ -107,7 +135,13 @@ def discover_findings(
     pr: int | None = None,
     runner=None,
     url_opener=None,
-) -> list[Finding]:
+) -> tuple[list[Finding], list[str]]:
+    """Return (findings, failing_check_urls).
+
+    The URL list is for the renderer's "no findings extracted" fallback —
+    when the discovery code reports failing checks but no parser produced
+    a finding, we still want to point the user at the logs to look at.
+    """
     checks = github_api.discover_failing_checks(repo, sha, runner=runner)
     findings: list[Finding] = []
     for ch in checks:
@@ -116,7 +150,8 @@ def discover_findings(
         from . import review_comments
 
         findings.extend(review_comments.discover(repo, pr, runner=runner))
-    return collapse(findings)
+    failing_urls = [c.details_url for c in checks if c.details_url]
+    return collapse(findings), failing_urls
 
 
 def _resolve_sha_for_pr(repo: str, pr: int, *, runner=None) -> str:
@@ -201,7 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     fmt = args.format or ("markdown" if args.post else "table")
 
     try:
-        findings = discover_findings(repo, sha, pr=pr)
+        findings, failing_urls = discover_findings(repo, sha, pr=pr)
     except Exception as e:  # noqa: BLE001
         print(f"error: failed to discover findings: {e}", file=sys.stderr)
         return 1
@@ -230,6 +265,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             sys.stdout.write(block)
     else:
-        sys.stdout.write(render_table.render(findings, pr=pr, sha=sha, repo=repo))
+        sys.stdout.write(
+            render_table.render(
+                findings,
+                pr=pr,
+                sha=sha,
+                repo=repo,
+                failing_check_urls=failing_urls,
+            )
+        )
 
     return 0

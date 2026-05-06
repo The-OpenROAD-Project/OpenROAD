@@ -115,7 +115,8 @@ def _ai_section(findings: list[Finding], pr_url: str | None) -> list[str]:
             directive = f.ai_directive or f.headline
             verify = f" Verify with `{f.verify_command}`." if f.verify_command else ""
             location = f" at `{f.location}`" if f.location else ""
-            out.append(f"{idx}. **{f.kind}**{location}: {directive}{verify}")
+            log_link = f" Full log: <{f.log_url}>." if f.log_url else ""
+            out.append(f"{idx}. **{f.kind}**{location}: {directive}{verify}{log_link}")
             out.append("")
 
     if infra:

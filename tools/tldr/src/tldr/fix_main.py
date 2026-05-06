@@ -119,7 +119,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
-        findings = discover_findings(repo, sha)
+        findings, _failing_urls = discover_findings(repo, sha)
     except Exception as e:  # noqa: BLE001
         print(f"error: failed to discover findings: {e}", file=sys.stderr)
         return 1

@@ -29,6 +29,7 @@ def render(
     sha: str | None = None,
     repo: str | None = None,
     term_width: int | None = None,
+    failing_check_urls: list[str] | None = None,
 ) -> str:
     findings = list(findings)
     if term_width is None:
@@ -49,6 +50,16 @@ def render(
     header = "  ".join(header_bits)
 
     if not findings:
+        if failing_check_urls:
+            # Distinguish "CI is clean" from "CI failed but we couldn't
+            # extract a single finding from any log."
+            urls_block = "\n".join(f"  - {u}" for u in failing_check_urls)
+            return (
+                f"{header}\n\n"
+                f"Found {len(failing_check_urls)} failing check(s) but couldn't "
+                "extract any actionable findings. Inspect the logs manually:\n"
+                f"{urls_block}\n"
+            )
         return f"{header}\n\nNo findings — CI is clean for this SHA.\n"
 
     cols = ("SEV", "STAGE", "KIND", "WHAT")

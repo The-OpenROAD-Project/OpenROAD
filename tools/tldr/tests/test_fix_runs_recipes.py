@@ -54,7 +54,9 @@ class FixRunsRecipesTest(unittest.TestCase):
 
     def test_exit_code_nonzero_when_leftover_present(self) -> None:
         findings = [_f("flow_test_fail")]
-        with mock.patch.object(fix_main, "discover_findings", return_value=findings):
+        with mock.patch.object(
+            fix_main, "discover_findings", return_value=(findings, [])
+        ):
             with mock.patch.object(fix_main.local, "resolve") as resolve:
                 resolve.return_value = mock.Mock(repo="O/R", pr=1, sha="abc")
                 with mock.patch("sys.stdout", io.StringIO()):
@@ -63,7 +65,9 @@ class FixRunsRecipesTest(unittest.TestCase):
 
     def test_exit_code_zero_when_all_fixed(self) -> None:
         findings = [_f("clang_format", recipe=("clang-format", "-i", "x.cpp"))]
-        with mock.patch.object(fix_main, "discover_findings", return_value=findings):
+        with mock.patch.object(
+            fix_main, "discover_findings", return_value=(findings, [])
+        ):
             with mock.patch.object(fix_main.local, "resolve") as resolve:
                 resolve.return_value = mock.Mock(repo="O/R", pr=1, sha="abc")
                 with mock.patch.object(

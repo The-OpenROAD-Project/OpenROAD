@@ -32,7 +32,7 @@ class CliTest(unittest.TestCase):
 
     def test_table_format_default(self) -> None:
         with mock.patch.object(
-            cli, "discover_findings", return_value=self._stub_findings()
+            cli, "discover_findings", return_value=(self._stub_findings(), [])
         ):
             buf = io.StringIO()
             with mock.patch("sys.stdout", buf):
@@ -43,7 +43,7 @@ class CliTest(unittest.TestCase):
 
     def test_markdown_format(self) -> None:
         with mock.patch.object(
-            cli, "discover_findings", return_value=self._stub_findings()
+            cli, "discover_findings", return_value=(self._stub_findings(), [])
         ):
             buf = io.StringIO()
             with mock.patch("sys.stdout", buf):
@@ -67,7 +67,7 @@ class CliTest(unittest.TestCase):
     def test_post_requires_pr(self) -> None:
         # When --post is set without --pr, the resolver may return pr=None and
         # the publish step must refuse.
-        with mock.patch.object(cli, "discover_findings", return_value=[]):
+        with mock.patch.object(cli, "discover_findings", return_value=([], [])):
             with mock.patch("sys.stderr", io.StringIO()) as err:
                 with mock.patch("sys.stdout", io.StringIO()):
                     rc = cli.main(["--sha", "abc1234567", "--repo", "O/R", "--post"])
