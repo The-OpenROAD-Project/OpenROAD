@@ -30,11 +30,15 @@ def _default_runner(cmd: list[str]) -> tuple[int, str]:
     )
 
 
-def _fetch_url(url: str, *, opener: Callable[[str], Iterator[str]] | None = None) -> Iterator[str]:
+def _fetch_url(
+    url: str, *, opener: Callable[[str], Iterator[str]] | None = None
+) -> Iterator[str]:
     if opener is not None:
         yield from opener(url)
         return
-    with urllib.request.urlopen(url, timeout=300) as resp:  # noqa: S310 (caller-provided URL)
+    with urllib.request.urlopen(
+        url, timeout=300
+    ) as resp:  # noqa: S310 (caller-provided URL)
         for raw in resp:
             yield raw.decode("utf-8", errors="replace")
 

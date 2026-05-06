@@ -25,9 +25,7 @@ class CtestParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return True
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         in_block = False
         for i, line in enumerate(lines, start=1):
             if _HEADER.match(line):

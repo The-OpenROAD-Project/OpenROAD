@@ -31,7 +31,9 @@ class CliTest(unittest.TestCase):
         ]
 
     def test_table_format_default(self) -> None:
-        with mock.patch.object(cli, "discover_findings", return_value=self._stub_findings()):
+        with mock.patch.object(
+            cli, "discover_findings", return_value=self._stub_findings()
+        ):
             buf = io.StringIO()
             with mock.patch("sys.stdout", buf):
                 rc = cli.main(["--pr", "42", "--sha", "abc1234567", "--repo", "O/R"])
@@ -40,11 +42,22 @@ class CliTest(unittest.TestCase):
             self.assertIn("flow_test_fail", buf.getvalue())
 
     def test_markdown_format(self) -> None:
-        with mock.patch.object(cli, "discover_findings", return_value=self._stub_findings()):
+        with mock.patch.object(
+            cli, "discover_findings", return_value=self._stub_findings()
+        ):
             buf = io.StringIO()
             with mock.patch("sys.stdout", buf):
                 rc = cli.main(
-                    ["--pr", "42", "--sha", "abc1234567", "--repo", "O/R", "--format", "markdown"]
+                    [
+                        "--pr",
+                        "42",
+                        "--sha",
+                        "abc1234567",
+                        "--repo",
+                        "O/R",
+                        "--format",
+                        "markdown",
+                    ]
                 )
             self.assertEqual(rc, 0)
             self.assertIn("<!-- tldr:begin -->", buf.getvalue())

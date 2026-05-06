@@ -68,9 +68,7 @@ def render(
         sev = f.severity.value
         stage = f.stage or "-"
         what = _ellipsize(f.headline, what_w)
-        out.append(
-            f"{sev:<{sev_w}}  {stage:<{stage_w}}  {f.kind:<{kind_w}}  {what}"
-        )
+        out.append(f"{sev:<{sev_w}}  {stage:<{stage_w}}  {f.kind:<{kind_w}}  {what}")
 
     out.append("")
     if pr is not None:

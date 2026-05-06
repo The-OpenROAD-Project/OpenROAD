@@ -20,11 +20,7 @@ class BazelTimeoutTest(unittest.TestCase):
         self.assertIn("600s", out[0].headline)
 
     def test_no_match_means_no_finding(self) -> None:
-        out = list(
-            BazelTimeoutParser().scan(
-                ["all good here"], StaticStageContext()
-            )
-        )
+        out = list(BazelTimeoutParser().scan(["all good here"], StaticStageContext()))
         self.assertEqual(out, [])
 
 

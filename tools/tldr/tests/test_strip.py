@@ -14,11 +14,11 @@ class StripTest(unittest.TestCase):
         )
 
     def test_removes_ansi(self) -> None:
-        self.assertEqual(strip_line("\x1B[31mERROR\x1B[0m: x"), "ERROR: x")
+        self.assertEqual(strip_line("\x1b[31mERROR\x1b[0m: x"), "ERROR: x")
 
     def test_strips_combined(self) -> None:
         self.assertEqual(
-            strip_line("[2026-05-04T11:03:22.234Z] \x1B[1mERROR\x1B[0m: x"),
+            strip_line("[2026-05-04T11:03:22.234Z] \x1b[1mERROR\x1b[0m: x"),
             "ERROR: x",
         )
 

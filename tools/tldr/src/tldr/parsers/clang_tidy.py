@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+from ..paths import to_repo_relative
 from .base import Finding, Severity, StageContext
 
 _PATTERN = re.compile(
@@ -34,14 +35,13 @@ class ClangTidyParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return "tidy" in check_name.lower()
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.match(line)
             if not m:
                 continue
-            file_, lineno, col = m["file"], m["line"], m["col"]
+            file_ = to_repo_relative(m["file"])
+            lineno, col = m["line"], m["col"]
             check = m["check"]
             location = f"{file_}:{lineno}:{col}"
             auto_fix = (

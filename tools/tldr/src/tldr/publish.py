@@ -44,8 +44,10 @@ def upsert(body: str, block: str) -> str:
 
     if n_begin == 0 and n_end == 0:
         # First run: append after one blank line.
-        sep = "" if body.endswith("\n\n") or body == "" else (
-            "\n\n" if not body.endswith("\n") else "\n"
+        sep = (
+            ""
+            if body.endswith("\n\n") or body == ""
+            else ("\n\n" if not body.endswith("\n") else "\n")
         )
         return body + sep + block
 

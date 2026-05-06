@@ -28,7 +28,9 @@ class StagesTest(unittest.TestCase):
     def test_branch_prefix(self) -> None:
         t = StageTracker()
         t.feed("[bp_fe_top nangate45 on ubuntu:22.04] [Pipeline] { (Branch: bp_fe_top)")
-        self.assertEqual(t.current, "Branch: bp_fe_top (bp_fe_top nangate45 on ubuntu:22.04)")
+        self.assertEqual(
+            t.current, "Branch: bp_fe_top (bp_fe_top nangate45 on ubuntu:22.04)"
+        )
 
 
 if __name__ == "__main__":

@@ -15,7 +15,12 @@ class BlackTest(unittest.TestCase):
         stripped = [strip_line(l) for l in raw]
         out = list(BlackParser().scan(stripped, StaticStageContext("Black")))
         files = sorted(f.location for f in out)
+        # CI absolute paths must be normalised to repo-relative form so
+        # the recipes can find the files locally.
         self.assertEqual(files, ["etc/whittle.py", "tools/tldr/src/tldr/cli.py"])
+        for f in out:
+            self.assertEqual(f.auto_fix_command[0], "black")
+            self.assertFalse(f.auto_fix_command[1].startswith("/"))
 
 
 if __name__ == "__main__":

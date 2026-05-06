@@ -8,15 +8,15 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+from ..paths import to_repo_relative
 from .base import Finding, Severity, StageContext
 
-# Buildifier's --mode=check emits lines like:
-#   src/foo/BUILD.bazel: not formatted
-# or:
-#   src/foo/BUILD: needs reformat
+# Buildifier's -mode=check emits one line per file needing reformatting:
+#   tools/foo/BUILD.bazel # reformat
+# Older outputs occasionally use the "<file>: not formatted" colon form.
 _PATTERN = re.compile(
-    r"^(?P<file>\S+(?:BUILD(?:\.bazel)?|\.bzl|MODULE\.bazel|WORKSPACE(?:\.bazel)?)):\s*"
-    r"(?:not formatted|needs reformat)\b"
+    r"^(?P<file>\S+(?:BUILD(?:\.bazel)?|\.bzl|MODULE\.bazel|WORKSPACE(?:\.bazel)?))"
+    r"(?:\s*#\s*reformat\b|:\s*(?:not formatted|needs reformat)\b)"
 )
 
 
@@ -26,15 +26,13 @@ class BuildifierParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return "buildifier" in check_name.lower()
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         seen: set[str] = set()
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.match(line)
             if not m:
                 continue
-            file_ = m["file"]
+            file_ = to_repo_relative(m["file"])
             if file_ in seen:
                 continue
             seen.add(file_)

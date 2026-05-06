@@ -25,7 +25,9 @@ class LocalContext:
     source: str  # "gh-pr-view" | "git-head" | "explicit"
 
 
-_SSH_REMOTE = re.compile(r"git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?$")
+_SSH_REMOTE = re.compile(
+    r"git@github\.com:(?P<owner>[^/]+)/(?P<repo>[^/.]+)(?:\.git)?$"
+)
 _HTTPS_REMOTE = re.compile(
     r"https?://github\.com/(?P<owner>[^/]+)/(?P<repo>[^/.]+?)(?:\.git)?/?$"
 )
@@ -113,7 +115,5 @@ def resolve() -> LocalContext:
 
     sha = _git_head()
     if sha:
-        return LocalContext(
-            repo=infer_repo(), pr=None, sha=sha, source="git-head"
-        )
+        return LocalContext(repo=infer_repo(), pr=None, sha=sha, source="git-head")
     return LocalContext(repo=infer_repo(), pr=None, sha="", source="git-head")

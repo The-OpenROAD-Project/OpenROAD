@@ -20,7 +20,9 @@ from typing import Iterable, Iterator
 
 _OPEN = re.compile(r"^\[Pipeline\]\s+\{\s+\((?P<stage>[^)]+)\)\s*$")
 _CLOSE = re.compile(r"^\[Pipeline\]\s+\}\s*$")
-_BRANCH = re.compile(r"^\[(?P<branch>[^\]]+)\]\s*\[Pipeline\]\s+\{\s+\((?P<stage>[^)]+)\)\s*$")
+_BRANCH = re.compile(
+    r"^\[(?P<branch>[^\]]+)\]\s*\[Pipeline\]\s+\{\s+\((?P<stage>[^)]+)\)\s*$"
+)
 
 
 class StageTracker:

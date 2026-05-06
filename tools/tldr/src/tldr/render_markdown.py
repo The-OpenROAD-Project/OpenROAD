@@ -75,9 +75,7 @@ def _human_bullets(findings: list[Finding]) -> list[str]:
             if len(group) == 1:
                 bullets.append(f"- `{kind}`: {first.headline}")
             else:
-                bullets.append(
-                    f"- `{kind}` × {len(group)}: {first.headline}, …"
-                )
+                bullets.append(f"- `{kind}` × {len(group)}: {first.headline}, …")
     return bullets
 
 
@@ -107,19 +105,13 @@ def _ai_section(findings: list[Finding], pr_url: str | None) -> list[str]:
         out.append("")
         for idx, f in enumerate(actionable, start=1):
             directive = f.ai_directive or f.headline
-            verify = (
-                f" Verify with `{f.verify_command}`."
-                if f.verify_command
-                else ""
-            )
+            verify = f" Verify with `{f.verify_command}`." if f.verify_command else ""
             location = f" at `{f.location}`" if f.location else ""
             out.append(f"{idx}. **{f.kind}**{location}: {directive}{verify}")
             out.append("")
 
     if infra:
-        ignore_lines = ", ".join(
-            f"`{f.kind}` ({f.headline})" for f in infra
-        )
+        ignore_lines = ", ".join(f"`{f.kind}` ({f.headline})" for f in infra)
         out.append(f"**Ignore (transient/infra):** {ignore_lines}.")
         out.append("")
 

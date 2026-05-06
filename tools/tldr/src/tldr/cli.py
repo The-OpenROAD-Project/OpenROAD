@@ -56,9 +56,7 @@ def _scan_check(
     # We have to materialise the lines because each parser scans the whole
     # log; the logs are big but trimmed in tests, and in production the
     # `gh` CLI streams them once.
-    raw_lines = list(
-        fetch.log_lines(check, runner=runner, url_opener=url_opener)
-    )
+    raw_lines = list(fetch.log_lines(check, runner=runner, url_opener=url_opener))
     stripped = [strip.strip_line(l) for l in raw_lines]
     # Update stage tracker once before scanning so each parser observes
     # consistent stages. Parsers iterate the same stripped list independently.
@@ -203,8 +201,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             sys.stdout.write(block)
     else:
-        sys.stdout.write(
-            render_table.render(findings, pr=pr, sha=sha, repo=repo)
-        )
+        sys.stdout.write(render_table.render(findings, pr=pr, sha=sha, repo=repo))
 
     return 0

@@ -15,9 +15,18 @@ class BuildifierTest(unittest.TestCase):
         stripped = [strip_line(l) for l in raw]
         out = list(BuildifierParser().scan(stripped, StaticStageContext("Buildifier")))
         files = sorted(f.location for f in out)
-        self.assertEqual(files, ["src/bar/BUILD", "src/foo/BUILD.bazel"])
+        self.assertEqual(files, ["src/foo/BUILD", "tools/tldr/BUILD.bazel"])
         for f in out:
             self.assertEqual(f.auto_fix_command[0], "buildifier")
+
+    def test_accepts_legacy_colon_form(self) -> None:
+        out = list(
+            BuildifierParser().scan(
+                ["src/foo/BUILD.bazel: not formatted"],
+                StaticStageContext("Buildifier"),
+            )
+        )
+        self.assertEqual(len(out), 1)
 
 
 if __name__ == "__main__":

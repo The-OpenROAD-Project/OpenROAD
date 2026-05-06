@@ -23,9 +23,7 @@ class LockfileParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return True
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         seen: set[str] = set()
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.search(line)

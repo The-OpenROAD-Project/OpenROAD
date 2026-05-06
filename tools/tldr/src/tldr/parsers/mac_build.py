@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
+from ..paths import to_repo_relative
 from .base import Finding, Severity, StageContext
 
 _PATTERN = re.compile(
@@ -22,15 +23,14 @@ class MacBuildParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return "mac" in check_name.lower() or "build" in check_name.lower()
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         seen: set[str] = set()
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.match(line)
             if not m:
                 continue
-            location = f"{m['file']}:{m['line']}:{m['col']}"
+            file_ = to_repo_relative(m["file"])
+            location = f"{file_}:{m['line']}:{m['col']}"
             if location in seen:
                 continue
             seen.add(location)

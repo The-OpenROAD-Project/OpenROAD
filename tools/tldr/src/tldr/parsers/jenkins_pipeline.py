@@ -19,9 +19,7 @@ class JenkinsPipelineParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return "jenkins" in check_name.lower()
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.match(line)
             if not m:

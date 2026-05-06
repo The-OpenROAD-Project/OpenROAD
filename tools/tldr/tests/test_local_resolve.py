@@ -15,13 +15,17 @@ from tldr import local
 class LocalResolveTest(unittest.TestCase):
     def test_parse_repo_from_ssh_url(self) -> None:
         self.assertEqual(
-            local.parse_repo_from_url("git@github.com:The-OpenROAD-Project/OpenROAD.git"),
+            local.parse_repo_from_url(
+                "git@github.com:The-OpenROAD-Project/OpenROAD.git"
+            ),
             "The-OpenROAD-Project/OpenROAD",
         )
 
     def test_parse_repo_from_https_url(self) -> None:
         self.assertEqual(
-            local.parse_repo_from_url("https://github.com/The-OpenROAD-Project/OpenROAD"),
+            local.parse_repo_from_url(
+                "https://github.com/The-OpenROAD-Project/OpenROAD"
+            ),
             "The-OpenROAD-Project/OpenROAD",
         )
 

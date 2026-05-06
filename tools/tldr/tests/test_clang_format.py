@@ -13,7 +13,9 @@ class ClangFormatTest(unittest.TestCase):
     def test_parses_two_files(self) -> None:
         raw = read_lines("gha_clang_format.txt")
         stripped = [strip_line(l) for l in raw]
-        out = list(ClangFormatParser().scan(stripped, StaticStageContext("Clang-Format")))
+        out = list(
+            ClangFormatParser().scan(stripped, StaticStageContext("Clang-Format"))
+        )
         files = sorted(f.location for f in out)
         self.assertEqual(
             files,

@@ -10,7 +10,9 @@ from typing import Iterable
 
 from .base import Finding, Severity, StageContext
 
-_PATTERN = re.compile(r"\bTimeout\s+after\s+(?P<seconds>\d+)\s+seconds\b", re.IGNORECASE)
+_PATTERN = re.compile(
+    r"\bTimeout\s+after\s+(?P<seconds>\d+)\s+seconds\b", re.IGNORECASE
+)
 
 
 class BazelTimeoutParser:
@@ -19,9 +21,7 @@ class BazelTimeoutParser:
     def applies(self, check_name: str, repo: str) -> bool:
         return True
 
-    def scan(
-        self, lines: Iterable[str], ctx: StageContext
-    ) -> Iterable[Finding]:
+    def scan(self, lines: Iterable[str], ctx: StageContext) -> Iterable[Finding]:
         for i, line in enumerate(lines, start=1):
             m = _PATTERN.search(line)
             if not m:

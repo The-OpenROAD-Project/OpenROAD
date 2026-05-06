@@ -29,7 +29,9 @@ class CheckLike:
     log_hint: str | None  # for Jenkins, the consoleText URL; for GHA, an API path
 
 
-def _gh(args: list[str], runner: Callable[[list[str]], tuple[int, str]] | None = None) -> str:
+def _gh(
+    args: list[str], runner: Callable[[list[str]], tuple[int, str]] | None = None
+) -> str:
     runner = runner or _default_runner
     rc, out = runner(["gh"] + args)
     if rc != 0:
@@ -41,7 +43,9 @@ def _default_runner(cmd: list[str]) -> tuple[int, str]:
     result = subprocess.run(
         cmd, capture_output=True, text=True, check=False, timeout=120
     )
-    return result.returncode, (result.stdout or "") + ("" if result.returncode == 0 else result.stderr or "")
+    return result.returncode, (result.stdout or "") + (
+        "" if result.returncode == 0 else result.stderr or ""
+    )
 
 
 def discover_failing_checks(

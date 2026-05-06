@@ -14,19 +14,19 @@ py_library(
 py_binary(
     name = "tldr",
     srcs = ["src/tldr/__main__.py"],
-    main = "src/tldr/__main__.py",
-    deps = [":tldr_lib"],
     imports = ["src"],
+    main = "src/tldr/__main__.py",
     visibility = ["//visibility:public"],
+    deps = [":tldr_lib"],
 )
 
 py_binary(
     name = "fix_tldr",
     srcs = ["src/tldr/fix_main.py"],
-    main = "src/tldr/fix_main.py",
-    deps = [":tldr_lib"],
     imports = ["src"],
+    main = "src/tldr/fix_main.py",
     visibility = ["//visibility:public"],
+    deps = [":tldr_lib"],
 )
 
 py_library(
@@ -41,18 +41,19 @@ py_library(
     py_test(
         name = test_name,
         srcs = ["tests/%s.py" % test_name],
-        deps = [
-            ":test_support",
-            ":tldr_lib",
-        ],
         imports = [
             "src",
             "tests",
+        ],
+        deps = [
+            ":test_support",
+            ":tldr_lib",
         ],
     )
     for test_name in [
         "test_strip",
         "test_stages",
+        "test_paths",
         "test_local_resolve",
         "test_orfs_flow",
         "test_metric_guard",

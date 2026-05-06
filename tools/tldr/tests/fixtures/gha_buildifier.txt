@@ -1,4 +1,4 @@
-2026-05-04T11:00:00.000Z Run buildifier -mode=check -r .
-2026-05-04T11:00:01.000Z src/foo/BUILD.bazel: not formatted
-2026-05-04T11:00:01.000Z src/bar/BUILD: needs reformat
+2026-05-04T11:00:00.000Z Run ./buildifier -r -mode=check -lint=off .
+2026-05-04T11:00:01.000Z tools/tldr/BUILD.bazel # reformat
+2026-05-04T11:00:01.000Z src/foo/BUILD # reformat
 2026-05-04T11:00:02.000Z Error: Process completed with exit code 4.
