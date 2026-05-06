@@ -46,7 +46,7 @@ class Rings : public GridComponent
   void getTotalWidth(int& hor, int& ver) const;
 
   void report() const override;
-  Type type() const override { return GridComponent::Ring; }
+  Type type() const override { return GridComponent::kRing; }
 
   void checkLayerSpecifications() const override;
 

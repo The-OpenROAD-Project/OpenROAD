@@ -48,7 +48,9 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 31300
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000005 HPWL: 31350
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 30416
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 321.06 um^2, Utilization: 0.7%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      71

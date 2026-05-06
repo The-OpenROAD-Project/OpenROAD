@@ -16,6 +16,8 @@ tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45_tech.lef")
 tech.readLef("Nangate45/Nangate45_stdcell.lef")
 
+assert tech.getTech().getName() != ""
+
 design = Design(tech)
 design.readDef("gcd_nangate45.def")
 design.evalTclString("read_sdc timing_api_3.sdc")

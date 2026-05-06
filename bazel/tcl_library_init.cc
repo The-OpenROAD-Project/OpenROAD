@@ -3,29 +3,19 @@
 
 #include "bazel/tcl_library_init.h"
 
-#include <cstdlib>
-#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <string>
-#include <system_error>
 
+#include "bazel/tcl_resources_zip_data.h"
 #include "tcl.h"
 
-#if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
-#include "bazel/tcl_resources_zip_data.h"
-#else
-#include <memory>
-
-#include "rules_cc/cc/runfiles/runfiles.h"
-#endif
-
 namespace in_bazel {
+
 static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 {
-  // In tcl9, we can use //zipfs:/ otherwise we need to point to the
-  // directory where the tcl library files are extracted.
-#if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
+  // In tcl9, we can mount an encoded zipfile as //zipfs:/ and read
+  // libraries from there.
   if (TclZipfs_MountBuffer(
           interp, kTclResourceZip, sizeof(kTclResourceZip), "/app", 0)
       != TCL_OK) {
@@ -33,26 +23,6 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
     return std::nullopt;
   }
   return Tcl_GetStringResult(interp);
-#else
-  using rules_cc::cc::runfiles::Runfiles;
-  std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
-      Tcl_GetNameOfExecutable(), BAZEL_CURRENT_REPOSITORY, &error));
-  if (!runfiles) {
-    std::cerr << "[Warning] Failed to create bazel runfiles: " << error << "\n";
-    return std::nullopt;
-  }
-
-  std::error_code ec;
-  for (const std::string loc : {"openroad", "opensta", "_main"}) {
-    const std::string check_loc = loc + "/bazel/tcl_resources_dir";
-    const std::string path = runfiles->Rlocation(check_loc);
-    if (!path.empty() && std::filesystem::exists(path, ec)) {
-      return path;
-    }
-  }
-  return std::nullopt;
-#endif
 }
 
 int SetupTclEnvironment(Tcl_Interp* interp)

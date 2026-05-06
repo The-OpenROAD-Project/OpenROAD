@@ -23,7 +23,7 @@ class TestSwapPinsMove : public tst::IntegratedFixture
 {
  public:
   TestSwapPinsMove()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/rsz/test/")
   {
   }
@@ -59,7 +59,8 @@ class TestSwapPinsMove : public tst::IntegratedFixture
 
 TEST_F(TestSwapPinsMove, FeedthroughModNet)
 {
-  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
   const std::string test_name
       = std::string(test_info->test_suite_name()) + "_" + test_info->name();
 
@@ -91,7 +92,7 @@ TEST_F(TestSwapPinsMove, FeedthroughModNet)
 
   // This is the exact reconnect path used by repair_timing's SwapPinsMove.
   SwapPinsMove swap_move(&resizer_);
-  swap_move.swapPins(sta_gate, port_a1, port_a2);
+  ASSERT_TRUE(swap_move.swapPins(sta_gate, port_a1, port_a2));
 
   // The correct post-swap state should keep the output-side modnet local to
   // the swapped gate input. The rest of the flat src_net should preserve

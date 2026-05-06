@@ -687,10 +687,11 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 // of the algorithm (wire_length_step_ should have been chosen
                 // to always allow a minimal size buffer to drive itself without
                 // ERC)
-                logger_->critical(RSZ,
-                                  2008,
-                                  "buffering pin {}: wire step options empty",
-                                  network_->name(pin_));
+                logger_->warn(RSZ,
+                              2008,
+                              "Skipping net buffering because no buffer can "
+                              "drive the wire load on net connected to pin {}.",
+                              network_->name(pin_));
               }
               return opts1;
             }
@@ -737,13 +738,14 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               insertBufferOptions(opts, level, std::min(remaining_wl, step));
 
               if (opts.empty()) {
-                logger_->warn(RSZ,
-                              2007,
-                              "buffering pin {}: wire step options empty at "
-                              "round {}, falling back to last valid options",
-                              network_->name(pin_),
-                              round);
-                opts = last_valid_opts;
+                logger_->warn(
+                    RSZ,
+                    2007,
+                    "Skipping buffer insertion along long wire "
+                    "segment on net connected to pin {} at round {} because no "
+                    "buffer can drive the wire load.",
+                    network_->name(pin_),
+                    round);
                 break;
               }
               round++;
@@ -843,7 +845,13 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
       tree);
 
   if (top_opts.empty()) {
-    logger_->critical(RSZ, 2009, "buffering pin {}: no options produced");
+    logger_->warn(
+        RSZ,
+        2009,
+        "Skipping buffering because no valid buffering solution satisfying the "
+        "design rules can be found for net connected to pin {}.",
+        network_->name(pin_));
+    return nullptr;
   }
 
   FixedDelay best_slack = -FixedDelay::INF;
@@ -1901,7 +1909,6 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
-          resizer_->invalidateVertexOrdering();
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -2041,10 +2048,10 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   long_wire_stepping_runtime_ = 0;
 
   init();
-  resizer_->ensureLevelDrvrVertices();
 
   std::vector<sta::Pin*> filtered_pins;
-  for (auto drvr : resizer_->level_drvr_vertices_) {
+  const sta::VertexSeq drvrs = sta_->levelizedDrvrVertices();
+  for (auto drvr : drvrs) {
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = nullptr;
     odb::dbNet* net_db = nullptr;
@@ -2298,7 +2305,6 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   }
 
   printProgress(filtered_pins.size(), false, true, 0);
-  resizer_->invalidateVertexOrdering();
 
   debugPrint(logger_, RSZ, "rebuffer", 1, "Time spent");
   debugPrint(logger_, RSZ, "rebuffer", 1, "----------");
@@ -2375,7 +2381,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     const bool allow_topology_rewrite
         = (estimate_parasitics_->getParasiticsSrc()
-           == est::ParasiticsSrc::placement);
+           == est::ParasiticsSrc::kPlacement);
 
     for (int i = 0; i < 3; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);
@@ -2424,10 +2430,6 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
     int inserted_count;
     inserted_count = exportBufferTree(
         bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
-
-    if (inserted_count > 0) {
-      resizer_->invalidateVertexOrdering();
-    }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 

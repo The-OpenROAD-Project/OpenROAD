@@ -17,6 +17,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 namespace ord {
 // Defined in OpenRoad.i
 est::EstimateParasitics* getEstimateParasitics();
@@ -86,11 +90,11 @@ using est::ParasiticsSrc;
   Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   if (stringEq(arg, "placement"))
-    $1 = ParasiticsSrc::placement;
+    $1 = ParasiticsSrc::kPlacement;
   else if (stringEq(arg, "global_routing"))
-    $1 = ParasiticsSrc::global_routing;
+    $1 = ParasiticsSrc::kGlobalRouting;
   else if (stringEq(arg, "detailed_routing"))
-    $1 = ParasiticsSrc::detailed_routing;
+    $1 = ParasiticsSrc::kDetailedRouting;
   else {
     utl::Logger* logger = ord::getLogger();
     try {

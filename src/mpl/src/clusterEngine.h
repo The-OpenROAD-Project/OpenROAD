@@ -57,7 +57,6 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  HardMacro::Halo default_halo;
   int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
@@ -104,7 +103,8 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
+  void setHalos(const HardMacro::Halo& base_halo,
+                const std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -251,6 +251,8 @@ class ClusteringEngine
   IOBundleSpans io_bundle_spans_;
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
+
+  HardMacro::Halo base_halo_;
   std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
 };
 

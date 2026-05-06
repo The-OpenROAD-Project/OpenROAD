@@ -18,20 +18,20 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
-    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
-PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
+EXCEPTION_TESTS = [
+    "test_error_exception",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + EXCEPTION_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -75,11 +75,22 @@ filegroup(
         name = test_name,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
+        expected_exit_code = 1 if test_name in EXCEPTION_TESTS else 0,
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":TestAlgorithms",
+        ":TestCFileUtils",
+        ":TestMetrics",
+        ":TestSuppressStdout",
+    ],
+)
 
 cc_test(
     name = "utl_cfile_unittest",
@@ -132,6 +143,16 @@ cc_test(
 cc_test(
     name = "TestSuppressStdout",
     srcs = ["cpp/TestSuppressStdout.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestServiceRegistry",
+    srcs = ["cpp/TestServiceRegistry.cpp"],
     deps = [
         "//src/utl",
         "@googletest//:gtest",

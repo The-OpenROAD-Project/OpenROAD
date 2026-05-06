@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/dbTypes.h"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 
@@ -19,7 +20,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
 {
  public:
   TestInsertBuffer()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/rsz/test/")
   {
     if (debug_) {

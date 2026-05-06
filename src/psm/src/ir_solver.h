@@ -162,9 +162,6 @@ class IRSolver
 
   void reportUnconnectedNodes() const;
   void reportMissingBTerm() const;
-  bool wasNodeVisited(const std::unique_ptr<ITermNode>& node) const;
-  bool wasNodeVisited(const std::unique_ptr<Node>& node) const;
-  bool wasNodeVisited(const Node* node) const;
 
   std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
@@ -216,8 +213,6 @@ class IRSolver
 
   const PDNSim::GeneratedSourceSettings& generated_source_settings_;
 
-  // Holds nodes that were visited during the open net check
-  std::set<const Node*> visited_;
   std::optional<bool> connected_;
 
   std::map<sta::Scene*, ValueNodeMap<Voltage>> voltages_;

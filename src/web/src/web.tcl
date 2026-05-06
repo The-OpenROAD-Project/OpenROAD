@@ -1,24 +1,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
-sta::define_cmd_args "web_server" { [-port port] -dir dir }
+sta::define_cmd_args "web_server" { [-port port] [-dir dir] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -dir} flags {}
+    keys {-port -dir} flags {-stop}
+
+  if { [info exists flags(-stop)] } {
+    web::web_server_stop_cmd
+    return
+  }
 
   sta::check_argc_eq0 "web_server" $args
 
-  set port 8080
+  set port 0
   if { [info exists keys(-port)] } {
     set port $keys(-port)
   }
 
-  if { ![info exists keys(-dir)] } {
-    utl::error WEB 19 "-dir is required: pass the path to the web assets directory."
+  if { [info exists keys(-dir)] } {
+    utl::warn WEB 37 "-dir is deprecated and ignored; assets are embedded in the binary."
   }
 
-  web::web_server_cmd $port $keys(-dir)
+  web::web_server_cmd $port
+  web::web_server_wait_cmd
 }
 
 sta::define_cmd_args "save_image" {[-web] \
@@ -125,4 +131,31 @@ proc save_image { args } {
 
     rename $options ""
   }
+}
+
+sta::define_cmd_args "web_save_report" {[-setup_paths count] \
+                                        [-hold_paths count] \
+                                        path
+}
+
+proc web_save_report { args } {
+  sta::parse_key_args "web_save_report" args \
+    keys {-setup_paths -hold_paths} flags {}
+
+  set max_setup 100
+  if { [info exists keys(-setup_paths)] } {
+    sta::check_positive_int "-setup_paths" $keys(-setup_paths)
+    set max_setup $keys(-setup_paths)
+  }
+
+  set max_hold 100
+  if { [info exists keys(-hold_paths)] } {
+    sta::check_positive_int "-hold_paths" $keys(-hold_paths)
+    set max_hold $keys(-hold_paths)
+  }
+
+  sta::check_argc_eq1 "web_save_report" $args
+  set path [lindex $args 0]
+
+  web::save_report_cmd $path $max_setup $max_hold
 }

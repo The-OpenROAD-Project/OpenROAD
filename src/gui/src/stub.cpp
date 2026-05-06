@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
 #include "bufferTreeDescriptor.h"
@@ -47,19 +48,33 @@ Gui* gui::Gui::get()
 
 bool gui::Gui::enabled()
 {
+  return Gui::get()->getHeadlessViewer() != nullptr;
+}
+
+bool gui::Gui::hasUI()
+{
   return false;
 }
 
-void gui::Gui::registerRenderer(gui::Renderer*)
+void gui::Gui::registerRenderer(gui::Renderer* renderer)
 {
+  renderers_.insert(renderer);
+  redraw();
 }
 
 void HeatMapDataSource::registerHeatMap()
 {
+  // gpl / other modules call this to expose their heatmap to the GUI.
+  // In headless mode the web viewer enumerates heatmaps via
+  // gui::getRegisteredHeatMapSources() (factory-backed sources) so this
+  // one-off pathway does nothing here for now.  Left intentionally as
+  // a no-op until heatmap plumbing for ad-hoc sources lands.
 }
 
-void gui::Gui::unregisterRenderer(gui::Renderer*)
+void gui::Gui::unregisterRenderer(gui::Renderer* renderer)
 {
+  renderers_.erase(renderer);
+  redraw();
 }
 
 void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -68,10 +83,26 @@ void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
 
 void gui::Gui::redraw()
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->redraw();
+  }
 }
 
 void gui::Gui::pause(int timeout)
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->pause(timeout);
+  }
+}
+
+void gui::Gui::setHeadlessViewer(HeadlessViewer* viewer)
+{
+  headless_viewer_ = viewer;
+}
+
+void gui::Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
 }
 
 void Gui::status(const std::string& /* message */)
@@ -84,9 +115,13 @@ void Gui::triggerAction(const std::string& /* action */)
 
 void Renderer::redraw()
 {
+  Gui::get()->redraw();
 }
 
-Renderer::~Renderer() = default;
+Renderer::~Renderer()
+{
+  Gui::get()->unregisterRenderer(this);
+}
 
 void DiscreteLegend::addLegendKey(const Painter::Color& color,
                                   const std::string& text)
@@ -97,17 +132,27 @@ void DiscreteLegend::draw(Painter& painter) const
 {
 }
 
-bool Renderer::checkDisplayControl(const std::string& /* name */)
+bool Renderer::checkDisplayControl(const std::string& name)
 {
+  auto it = controls_.find(name);
+  if (it != controls_.end()) {
+    return it->second.visibility;
+  }
   return false;
 }
 
 void Renderer::addDisplayControl(
-    const std::string& /* name */,
-    bool /* initial_visible */,
-    const DisplayControlCallback& /* setup */,
-    const std::vector<std::string>& /* mutual_exclusivity */)
+    const std::string& name,
+    bool initial_visible,
+    const DisplayControlCallback& setup,
+    const std::vector<std::string>& mutual_exclusivity)
 {
+  DisplayControl control;
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
+                                    mutual_exclusivity.end());
+  controls_[name] = std::move(control);
 }
 
 Renderer::Settings Renderer::getSettings()
@@ -241,6 +286,9 @@ Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
 {
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
   return nullptr;
 }
 

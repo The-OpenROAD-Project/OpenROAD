@@ -27,7 +27,7 @@ class SwapPinsMove : public BaseMove
 
  private:
   using LibertyPortVec = std::vector<sta::LibertyPort*>;
-  void swapPins(sta::Instance* inst,
+  bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
                 sta::LibertyPort* port2);
   void equivCellPins(const sta::LibertyCell* cell,

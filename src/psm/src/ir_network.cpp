@@ -709,9 +709,9 @@ std::set<Node*> IRNetwork::getSharedShapeNodes() const
     const auto layer_shapes = getShapeTree(layer);
 
     for (const auto& node : nodes) {
-      const Point pt(node->getPoint().x(), node->getPoint().y());
       const auto shapes = std::distance(
-          layer_shapes.qbegin(boost::geometry::index::intersects(pt)),
+          layer_shapes.qbegin(
+              boost::geometry::index::intersects(node->getPoint())),
           layer_shapes.qend());
       if (shapes > 1) {
         shared_nodes.insert(node.get());
@@ -804,7 +804,7 @@ void IRNetwork::sortNodes()
 
   for (auto& [layer, nodes] : nodes_) {
     std::ranges::stable_sort(nodes, [](const auto& lhs, const auto& rhs) {
-      return lhs->compare(rhs);
+      return lhs->compare(rhs) < 0;
     });
   }
 }
@@ -813,10 +813,9 @@ void IRNetwork::sortConnections()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Sorting connections: {}");
-  std::ranges::stable_sort(
-      connections_,
-
-      [](const auto& lhs, const auto& rhs) { return lhs->compare(rhs); });
+  std::ranges::stable_sort(connections_, [](const auto& lhs, const auto& rhs) {
+    return lhs->compare(rhs);
+  });
 }
 
 int IRNetwork::getEffectiveNumberOfCuts(const odb::dbShape& shape) const
@@ -1297,6 +1296,21 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
   }
 
   return pin_nodes;
+}
+
+void IRNetwork::clearVisitedNodes()
+{
+  for (const auto& [layer, nodes] : nodes_) {
+    for (const auto& node : nodes) {
+      node->setVisited(false);
+    }
+  }
+  for (const auto& node : iterm_nodes_) {
+    node->setVisited(false);
+  }
+  for (const auto& node : bpin_nodes_) {
+    node->setVisited(false);
+  }
 }
 
 }  // namespace psm

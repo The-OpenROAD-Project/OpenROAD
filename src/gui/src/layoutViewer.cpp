@@ -54,6 +54,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "renderThread.h"
 #include "ruler.h"
 #include "scriptWidget.h"
 #include "search.h"

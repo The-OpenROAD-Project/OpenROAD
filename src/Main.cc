@@ -5,11 +5,13 @@
 #include <strings.h>
 
 #include <array>
+#include <charconv>
 #include <climits>
 #include <clocale>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -18,11 +20,6 @@
 
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
-#ifdef ENABLE_READLINE
-// If you get an error on this include be sure you have
-//   the package tcl-tclreadline-devel installed
-#include "tclreadline.h"
-#endif
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -42,10 +39,13 @@
 #include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 #include "utl/decode.h"
+#include "web/web.h"
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "bazel/tcl_library_init.h"
 #endif
+
+#include "tcl_readline_setup.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
@@ -96,6 +96,8 @@ static const char* metrics_filename = nullptr;
 static const char* read_odb_filename = nullptr;
 static bool no_settings = false;
 static bool minimize = false;
+static bool web_enabled = false;
+static const char* web_port_arg = nullptr;
 
 static const char* init_filename = ".openroad";
 
@@ -252,6 +254,8 @@ int main(int argc, char* argv[])
   read_odb_filename = findCmdLineKey(argc, argv, "-db");
   no_settings = findCmdLineFlag(argc, argv, "-no_settings");
   minimize = findCmdLineFlag(argc, argv, "-minimize");
+  web_enabled = findCmdLineFlag(argc, argv, "-web");
+  web_port_arg = findCmdLineKey(argc, argv, "-web_port");
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -317,90 +321,7 @@ int main(int argc, char* argv[])
 }
 
 #ifdef ENABLE_READLINE
-// A stopgap fallback from the hardcoded TCLRL_LIBRARY path for OpenROAD,
-// not essential for OpenSTA
-static std::string findPathToTclreadlineInit(Tcl_Interp* interp)
-{
-  // TL;DR it is possible to run the OpenROAD binary from within the
-  // official Docker image on a different distribution than the
-  // distribution within the Docker image.
-  //
-  // In this case we have to look up
-  // the location of the tclreadline scripts instead of using the hardcoded
-  // path.
-  //
-  // It is helpful to use the official Docker image as CI infrastructure and
-  // also because it is a good way to have as similar an environment as possible
-  // during testing and deployment.
-  //
-  // See
-  // https://github.com/The-OpenROAD-Project/bazel-orfs/blob/main/docker.BUILD.bazel
-  // for the details on how this is done.
-  //
-  // Running Docker within a bazel isolated environment introduces lots of
-  // problems and is not really done.
-  const char* tcl_script = R"(
-      namespace eval temp {
-        # Check standard Bazel runfiles relative path
-        set runfiles_path [file join [pwd] "external/tclreadline/tclreadlineInit.tcl"]
-        if {[file exists $runfiles_path]} {
-            return $runfiles_path
-        }
-
-        # Check Bazel runfiles in adjacent directories for other run strategies
-        set runfiles_execroot_path [file join [pwd] "../tclreadline/tclreadlineInit.tcl"]
-        if {[file exists $runfiles_execroot_path]} {
-            return $runfiles_execroot_path
-        }
-
-        foreach dir $::auto_path {
-            set folder [file join $dir]
-            set path [file join $folder "tclreadline)" TCLRL_VERSION_STR
-                           R"(" "tclreadlineInit.tcl"]
-            if {[file exists $path]} {
-                return $path
-           }
-        }
-        error "tclreadlineInit.tcl not found in any of the directories in auto_path"
-      }
-    )";
-
-  if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
-    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp) << '\n';
-    return "";
-  }
-
-  return Tcl_GetStringResult(interp);
-}
-
-static bool TryReadlineStaticInit(Tcl_Interp* interp)
-{
-  Tcl_StaticPackage(
-      interp, "tclreadline", Tclreadline_Init, Tclreadline_SafeInit);
-
-  return Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl") == TCL_OK;
-}
-
-static bool TryTclBazelInit(Tcl_Interp* interp)
-{
-  // Here, ::tclreadline::library is already set up by SetupTclEnvironment
-  constexpr char kInitializeReadlineLib[] = R"(
-        set ::tclreadline::setup_path [file join $::tclreadline::library "tclreadlineSetup.tcl"]
-        set ::tclreadline::completer_path [file join $::tclreadline::library "tclreadlineCompleter.tcl"]
-        if {[info commands history] == ""} { proc history {args} {} };
-        source [file join $::tclreadline::library "tclreadlineInit.tcl"]
-)";
-
-  return Tcl_Eval(interp, kInitializeReadlineLib) == TCL_OK;
-}
-
-static bool TrySearchPathManuallyInit(Tcl_Interp* interp)
-{
-  const std::string path = findPathToTclreadlineInit(interp);
-  return !path.empty() && Tcl_EvalFile(interp, path.c_str()) == TCL_OK;
-}
-
-static int tclReadlineInit(Tcl_Interp* interp)
+static int tclOrdReadlineInit(Tcl_Interp* interp)
 {
   std::array<const char*, 2> readline_cmds
       = {"ord::setup_tclreadline", "::tclreadline::Loop"};
@@ -452,22 +373,30 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-#ifdef ENABLE_READLINE
     if (!exit_after_cmd_file) {
-      if (Tclreadline_Init(interp) == TCL_ERROR) {
-        return TCL_ERROR;
-      }
-
-      if (!TryReadlineStaticInit(interp) &&  //
-          !TryTclBazelInit(interp) &&        //
-          !TrySearchPathManuallyInit(interp)) {
+      if (ord::SetupTclReadlineLibrary(interp) == TCL_ERROR) {
         printf("Failed to load tclreadline\n");
       }
     }
-#endif
 
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
+
+    // Start the web server before splash/thread output so the
+    // WebLogSink captures all startup messages for the browser console.
+    if (web_enabled) {
+      int port = 0;
+      if (web_port_arg) {
+        const char* end = web_port_arg + std::strlen(web_port_arg);
+        auto [ptr, ec] = std::from_chars(web_port_arg, end, port);
+        if (ec != std::errc{} || ptr != end || port < 0 || port > 65535) {
+          fprintf(
+              stderr, "Error: invalid -web_port value '%s'\n", web_port_arg);
+          exit(EXIT_FAILURE);
+        }
+      }
+      ord::OpenRoad::openRoad()->getWebServer()->serve(port);
+    }
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
@@ -483,7 +412,11 @@ static int tclAppInit(int& argc,
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    const bool gui_enabled = gui::Gui::enabled();
+    // gui::Gui::enabled() is true when a HeadlessViewer is installed
+    // (which the web server does).  But addRestoreStateCommand() only
+    // works with the Qt event loop — the web server executes scripts
+    // directly on the main thread, like the non-GUI path.
+    const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
@@ -542,10 +475,26 @@ static int tclAppInit(int& argc,
         }
       }
     }
+
+    // Block until the web server is stopped (like QApplication::exec()
+    // for the GUI).  After this returns, fall through to readline.
+    if (web_enabled) {
+      auto* server = ord::OpenRoad::openRoad()->getWebServer();
+      server->waitForStop();
+      // `exit` typed in the browser Tcl widget signalled stop; do the
+      // real process exit now from the main thread (worker threads are
+      // already joined by stop()).
+      if (server->exitRequested()) {
+        exit(EXIT_SUCCESS);
+      }
+    }
   }
 #ifdef ENABLE_READLINE
-  if (!gui::Gui::enabled() && !exit_after_cmd_file) {
-    return tclReadlineInit(interp);
+  // Initialize readline unless the Qt GUI is active (it has its own
+  // script widget).  The web viewer's headless mode still needs the
+  // terminal prompt.
+  if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
+    return tclOrdReadlineInit(interp);
   }
 #endif
   return TCL_OK;
@@ -575,8 +524,9 @@ int ord::tclInit(Tcl_Interp* interp)
 static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
-  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
-  printf("[-db file_name] [-no_settings] [-minimize] cmd_file\n");
+  printf("[-gui] [-web] [-threads count|max] [-log file_name] ");
+  printf("[-metrics file_name] [-db file_name] [-no_settings] [-minimize] ");
+  printf("cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
@@ -584,6 +534,8 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");
+  printf("  -web                  start in web viewer mode\n");
+  printf("  -web_port port        web server port (default auto-assigned)\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

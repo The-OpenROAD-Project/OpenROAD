@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -27,6 +28,7 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frMPin.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
@@ -1563,7 +1565,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
   }
-  if (router_cfg_->unidirectional_layers_.contains(layer)) {
+  if (router_cfg_->unidirectional_layer_names_.find(layer->getName())
+      != router_cfg_->unidirectional_layer_names_.end()) {
     tmpLayer->setUnidirectional(true);
   }
   if (layer->isRectOnly()) {

@@ -17,6 +17,10 @@
 #include <thread>
 #include <vector>
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ helper functions used by the interface functions.
@@ -644,6 +648,17 @@ void report_hpwl()
   w.reportHpwl(getLogger());
 }
 
+void report_design_area_metrics_cmd()
+{
+  dbDatabase* db = OpenRoad::openRoad()->getDb();
+  odb::dbChip* chip = db->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  dbBlock* block = chip->getBlock();
+  odb::blockMetrics(block, getLogger());
 }
+
+} // namespace ord
 
 %} // inline
