@@ -1004,8 +1004,8 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root)
   collectChipletsRec(
       root, nullptr, odb::dbTransform{}, std::string{}, 0, 0, out);
 
-  std::stable_sort(
-      out.begin(), out.end(), [](const ChipletNode& a, const ChipletNode& b) {
+  std::ranges::stable_sort(
+      out, [](const ChipletNode& a, const ChipletNode& b) {
         if (a.global_z != b.global_z) {
           return a.global_z < b.global_z;
         }
