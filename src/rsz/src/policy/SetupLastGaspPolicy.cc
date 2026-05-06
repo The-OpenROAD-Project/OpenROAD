@@ -209,7 +209,6 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
         delayAsString(endpoint_state.worst_slack, kDelayDigits, sta_),
         delayAsString(last_gasp_state.prev_tns, 1, sta_),
         delayAsString(curr_tns, 1, sta_));
-    setup_context_.fallback = true;
     restoreEndpointState(endpoint_state);
     return false;
   }
@@ -273,7 +272,9 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     }
 
     sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
-    const bool changed = repairPath(end_path, endpoint_state.end_slack);
+    const bool changed = repairPath(end_path,
+                                    endpoint_state.end_slack,
+                                    /*force_single_repair=*/false);
     if (!changed) {
       finishEndpointSearch(endpoint_state);
       break;

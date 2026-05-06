@@ -17,7 +17,6 @@ struct RepairSetupContext
   // tracker reports observe one repair_setup run, while each policy keeps its
   // own move generator list.
   RepairTargetCollector target_collector;
-  bool fallback{false};
   float min_viol{0.0};
   float max_viol{0.0};
   int max_repairs_per_pass{1};

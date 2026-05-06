@@ -200,7 +200,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     }
 
     sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
-    const bool changed = repairPath(end_path, endpoint_state.end_slack);
+    const bool changed = repairPath(
+        end_path, endpoint_state.end_slack, endpoint_state.force_single_repair);
     if (!changed) {
       if (endpoint_state.pass != 1) {
         debugPrint(logger_,
@@ -271,7 +272,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       endpoint_state.decreasing_slack_passes = 0;
       saveImprovedCheckpoint(endpoint_state, config_.max_passes);
     } else {
-      setup_context_.fallback = true;
+      endpoint_state.force_single_repair = true;
       ++endpoint_state.decreasing_slack_passes;
       if (endpoint_state.decreasing_slack_passes
           > decreasing_slack_max_passes_) {

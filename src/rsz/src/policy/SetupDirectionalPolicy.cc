@@ -233,7 +233,8 @@ void SetupDirectionalPolicy::repairSetupDirectional(
         changed = repairPins(viol_pins,
                              nullptr,
                              &rejected_pin_moves_current_endpoint_,
-                             &chosen_moves);
+                             &chosen_moves,
+                             /*force_single_repair=*/false);
       }
       if (!changed) {
         committer_.commitJournal();

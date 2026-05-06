@@ -153,6 +153,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
     int pass = 1;
     int decreasing_slack_passes = 0;
     int successful_passes = 0;
+    bool force_single_repair = false;
     sta::Slack prev_endpoint_slack = endpoint_slack;
 
     committer_.beginJournal();
@@ -169,7 +170,8 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
         changed = repairPins(viol_pins,
                              focus_path,
                              &rejected_pin_moves_current_endpoint_,
-                             &chosen_moves);
+                             &chosen_moves,
+                             force_single_repair);
       }
 
       if (!changed) {
@@ -204,6 +206,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
         }
         prev_endpoint_slack = endpoint_slack;
         decreasing_slack_passes = 0;
+        force_single_repair = false;
         successful_passes++;
         constexpr int max_adaptive_limit = 25;
         if (pass >= current_limit && successful_passes > current_limit / 2
@@ -214,7 +217,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
         committer_.commitJournal();
         committer_.beginJournal();
       } else {
-        setup_context_.fallback = true;
+        force_single_repair = true;
         decreasing_slack_passes++;
         if (decreasing_slack_passes > current_limit) {
           committer_.restoreJournal();

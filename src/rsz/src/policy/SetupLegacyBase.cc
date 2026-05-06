@@ -108,7 +108,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   buildMainMoveSequence(/*log_sequence=*/true);
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-  return repairPath(end_path, end_slack);
+  return repairPath(end_path, end_slack, /*force_single_repair=*/false);
 }
 
 void SetupLegacyBase::initializeSetupServices()
@@ -237,7 +237,6 @@ bool SetupLegacyBase::beginJournaledEndpointSearch(
     int& end_index,
     SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
-  setup_context_.fallback = false;
   endpoint_state.end = end_original_slack.first;
   refreshEndpointSlacks(endpoint_state);
   target_collector_->useWorstEndpoint(endpoint_state.end);
@@ -249,6 +248,7 @@ bool SetupLegacyBase::beginJournaledEndpointSearch(
 
   endpoint_state.pass = 1;
   endpoint_state.decreasing_slack_passes = 0;
+  endpoint_state.force_single_repair = false;
   resizer_.journalBegin();
   endpoint_state.journal_open = true;
   return true;
@@ -438,7 +438,8 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
   return load_delays;
 }
 
-int SetupLegacyBase::repairBudget(const sta::Slack path_slack) const
+int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
+                                  const bool force_single_repair) const
 {
   int repairs_per_pass = 1;
   if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
@@ -447,7 +448,7 @@ int SetupLegacyBase::repairBudget(const sta::Slack path_slack) const
                       * (-path_slack - setup_context_.min_viol)
                       / (setup_context_.max_viol - setup_context_.min_viol));
   }
-  return setup_context_.fallback ? 1 : repairs_per_pass;
+  return force_single_repair ? 1 : repairs_per_pass;
 }
 
 bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
@@ -502,7 +503,8 @@ bool SetupLegacyBase::repairPins(
     const sta::Path* focus_path,
     const std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>*
         rejected_moves,
-    std::vector<std::pair<const sta::Pin*, MoveType>>* chosen_moves)
+    std::vector<std::pair<const sta::Pin*, MoveType>>* chosen_moves,
+    const bool force_single_repair)
 {
   int changed = 0;
 
@@ -512,7 +514,7 @@ bool SetupLegacyBase::repairPins(
 
   int repairs_per_pass
       = target_collector_->repairsPerPass(setup_context_.max_repairs_per_pass);
-  if (setup_context_.fallback) {
+  if (force_single_repair) {
     repairs_per_pass = 1;
   }
 
@@ -726,7 +728,9 @@ bool SetupLegacyBase::tryRepairPathTarget(const Target& target,
   return tryRepairTarget(target, repairs_per_pass, changed, nullptr);
 }
 
-bool SetupLegacyBase::repairPath(sta::Path* path, const sta::Slack path_slack)
+bool SetupLegacyBase::repairPath(sta::Path* path,
+                                 const sta::Slack path_slack,
+                                 const bool force_single_repair)
 {
   sta::PathExpanded expanded(path, sta_);
   int changed = 0;
@@ -745,7 +749,7 @@ bool SetupLegacyBase::repairPath(sta::Path* path, const sta::Slack path_slack)
 
   const auto load_delays
       = rankPathDrivers(expanded, corner, corner->libertyIndex(resizer_.max_));
-  const int repairs_per_pass = repairBudget(path_slack);
+  const int repairs_per_pass = repairBudget(path_slack, force_single_repair);
 
   debugPrint(logger_,
              RSZ,

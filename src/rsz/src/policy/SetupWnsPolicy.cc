@@ -242,7 +242,6 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
       prev_end_slack = target_collector_->getCurrentEndpointSlack();
       prev_worst_slack = worst_slack;
       prev_tns_local = sta_->totalNegativeSlack(max_);
-      setup_context_.fallback = false;
       committer_.beginJournal();
     } else {
       prev_end_slack = target_end_slack;
@@ -267,15 +266,17 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
     std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
     bool changed;
     {
-      const int new_max_repairs
-          = use_cone_collection ? static_cast<int>(viol_pins.size())
-                                : max_repairs_per_pass;
+      const int new_max_repairs = use_cone_collection
+                                      ? static_cast<int>(viol_pins.size())
+                                      : max_repairs_per_pass;
+      const bool force_single_repair = total_decreasing_slack_passes > 0;
       utl::SetAndRestore<int> override_max_repairs(
           setup_context_.max_repairs_per_pass, new_max_repairs);
       changed = repairPins(viol_pins,
                            focus_path,
                            &rejected_pin_moves_current_endpoint_,
-                           &chosen_moves);
+                           &chosen_moves,
+                           force_single_repair);
     }
 
     if (!changed) {
@@ -331,7 +332,6 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
       }
       committer_.commitJournal();
     } else {
-      setup_context_.fallback = true;
       if (total_decreasing_slack_passes == 0) {
         target_end_slack = prev_end_slack;
         target_worst_slack = prev_worst_slack;

@@ -86,6 +86,7 @@ class SetupLegacyBase : public OptPolicy
     int pass{1};
     int decreasing_slack_passes{0};
     bool journal_open{false};
+    bool force_single_repair{false};
   };
 
   // === Run setup ============================================================
@@ -120,18 +121,21 @@ class SetupLegacyBase : public OptPolicy
   bool reachedIterationLimit(int iteration, int max_iterations) const;
 
   // === Target construction and path repair =================================
-  virtual bool repairPath(sta::Path* path, sta::Slack path_slack);
+  virtual bool repairPath(sta::Path* path,
+                          sta::Slack path_slack,
+                          bool force_single_repair);
   virtual bool repairPins(
       const std::vector<const sta::Pin*>& pins,
       const sta::Path* focus_path,
       const std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>*
           rejected_moves,
-      std::vector<std::pair<const sta::Pin*, MoveType>>* chosen_moves);
+      std::vector<std::pair<const sta::Pin*, MoveType>>* chosen_moves,
+      bool force_single_repair);
   std::vector<std::pair<int, sta::Delay>> rankPathDrivers(
       sta::PathExpanded& expanded,
       const sta::Scene* corner,
       int lib_ap) const;
-  int repairBudget(sta::Slack path_slack) const;
+  int repairBudget(sta::Slack path_slack, bool force_single_repair) const;
   bool makePinTargetOnPath(const sta::Pin* pin,
                            const sta::Path* path,
                            sta::Slack focus_slack,
