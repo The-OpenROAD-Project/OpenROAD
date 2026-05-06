@@ -1,0 +1,25 @@
+[2026-05-04T10:00:00.000Z] [Pipeline] { (Mac-Build prelude)
+[2026-05-04T10:00:00.123Z] + docker pull flow-ubuntu22.04-builder:46cafa2cb
+[2026-05-04T10:00:00.456Z] Error response from daemon: failed to resolve reference "docker.io/library/flow-ubuntu22.04-builder:46cafa2cb": not found
+[2026-05-04T10:00:00.500Z] [Pipeline] }
+[2026-05-04T10:00:01.000Z] [Pipeline] { (apt update)
+[2026-05-04T10:00:01.500Z] Err:1 http://archive.ubuntu.com/ubuntu jammy InRelease
+[2026-05-04T10:00:01.500Z] Failed to fetch http://archive.ubuntu.com/ubuntu/dists/jammy/InRelease  Connection timed out
+[2026-05-04T10:00:01.700Z] E: Unable to fetch some archives, maybe run apt-get update?
+[2026-05-04T10:00:01.800Z] [Pipeline] }
+[2026-05-04T10:00:02.000Z] [Pipeline] { (pip install)
+[2026-05-04T10:00:02.500Z] WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError': /simple/torch/
+[2026-05-04T10:00:02.700Z] Could not fetch URL https://pypi.org/simple/torch/: There was a problem confirming the ssl certificate
+[2026-05-04T10:00:02.800Z] [Pipeline] }
+[2026-05-04T10:00:03.000Z] [Pipeline] { (Bazel build)
+[2026-05-04T10:00:03.500Z] WARNING: Remote Cache: UNAVAILABLE: io exception
+[2026-05-04T10:00:03.700Z] BulkTransferException: io error
+[2026-05-04T10:00:03.800Z] [Pipeline] }
+[2026-05-04T10:00:04.000Z] [Pipeline] { (gh release download)
+[2026-05-04T10:00:04.500Z] gh: connection to api.github.com failed: 502 Bad Gateway
+[2026-05-04T10:00:04.800Z] [Pipeline] }
+[2026-05-04T10:00:05.000Z] [Pipeline] { (Test on agent-3)
+[2026-05-04T10:00:05.500Z] FATAL: Remote call on agent-3 failed
+[2026-05-04T10:00:05.700Z] hudson.remoting.RequestAbortedException: java.io.IOException: Backing channel 'agent-3' is disconnected.
+[2026-05-04T10:00:05.800Z] [Pipeline] }
+[2026-05-04T10:00:06.000Z] Finished: FAILURE

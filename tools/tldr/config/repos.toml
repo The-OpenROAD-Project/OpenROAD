@@ -14,7 +14,7 @@ parsers = [
     "lockfile",
     "black",
     "buildifier",
-    "docker_pull",
+    "outage",
     "jenkins_pipeline",
 ]
 
@@ -23,7 +23,7 @@ parsers = [
     "orfs_flow",
     "metric_guard",
     "openroad_msg",
-    "docker_pull",
+    "outage",
     "jenkins_pipeline",
     "lockfile",
     "black",

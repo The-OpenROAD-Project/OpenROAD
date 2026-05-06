@@ -14,13 +14,13 @@ from . import (
     clang_format,
     clang_tidy,
     ctest,
-    docker_pull,
     jenkins_pipeline,
     lockfile,
     mac_build,
     metric_guard,
     openroad_msg,
     orfs_flow,
+    outage,
 )
 
 REGISTRY: dict[str, Parser] = {
@@ -30,7 +30,7 @@ REGISTRY: dict[str, Parser] = {
     "bazel_test": bazel_test.BazelTestParser(),
     "bazel_timeout": bazel_timeout.BazelTimeoutParser(),
     "ctest": ctest.CtestParser(),
-    "docker_pull": docker_pull.DockerPullParser(),
+    "outage": outage.OutageParser(),
     "jenkins_pipeline": jenkins_pipeline.JenkinsPipelineParser(),
     "clang_tidy": clang_tidy.ClangTidyParser(),
     "clang_format": clang_format.ClangFormatParser(),
