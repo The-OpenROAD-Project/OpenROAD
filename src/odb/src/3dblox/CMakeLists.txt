@@ -24,6 +24,7 @@ target_link_libraries(3dblox
     utl_lib
     yaml-cpp
     OpenSTA
+    Boost::headers
 )
 
 target_include_directories(3dblox

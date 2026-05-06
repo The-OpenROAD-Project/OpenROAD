@@ -3,14 +3,16 @@
 
 #include "odb/3dblox.h"
 
+#include <boost/algorithm/string.hpp>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
-#include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -203,15 +205,7 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
 static std::vector<std::string> splitPath(const std::string& path)
 {
   std::vector<std::string> parts;
-  std::istringstream stream(path);
-  std::string part;
-
-  while (std::getline(stream, part, '/')) {
-    if (!part.empty()) {
-      parts.push_back(part);
-    }
-  }
-
+  boost::split(parts, path, boost::is_any_of("/"));
   return parts;
 }
 

@@ -165,7 +165,37 @@ TEST_F(CheckerFixture, test_path_assertion_do_not_touch_non_critical)
   EXPECT_TRUE(getMarkers(path_assertions_category).empty());
 }
 
-// 5. No path assertions → no markers.
+// 5. BFS seeded from the bottom region must reach the top region —
+//    catches a missing reverse edge (v→u).  With only u→v stored,
+//    BFS from ri2_bk finds no out-edges to ri1_fr and falsely reports
+//    a violation.
+TEST_F(CheckerFixture, test_path_assertion_reverse_traversal)
+{
+  auto* inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2_bk = inst2->findChipRegionInst("r2_bk");
+  auto* conn
+      = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2_bk);
+  conn->setThickness(0);
+
+  // List the bottom region first so BFS seeds from ri2_bk and must reach
+  // ri1_fr by traversing the connection in reverse.
+  auto* chip_path = dbChipPath::create(top_chip_, "Path1");
+  chip_path->addEntry({inst2}, ri2_bk, false);  // BFS seed
+  chip_path->addEntry({inst1}, ri1, false);     // must reach via reverse edge
+
+  check();
+  EXPECT_TRUE(getMarkers(path_assertions_category).empty());
+}
+
+// 6. No path assertions → no markers.
 TEST_F(CheckerFixture, test_path_assertion_empty)
 {
   auto* inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");

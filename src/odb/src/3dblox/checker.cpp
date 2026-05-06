@@ -4,6 +4,8 @@
 #include "checker.h"
 
 #include <algorithm>
+#include <boost/graph/compressed_sparse_row_graph.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -109,14 +111,14 @@ struct BfsState
   std::vector<uint8_t> is_blocked;
   std::vector<uint8_t> is_target;
   std::vector<uint8_t> visited;
-  std::vector<uint32_t> queue;
-  std::vector<uint32_t> dirty_blocked;
-  std::vector<uint32_t> dirty_target;
+  std::vector<RoutingGraphVetex_t> queue;
+  std::vector<RoutingGraphVetex_t> dirty_blocked;
+  std::vector<RoutingGraphVetex_t> dirty_target;
 
-  explicit BfsState(uint32_t n)
+  explicit BfsState(RoutingGraphVetex_t n)
       : is_blocked(n, 0), is_target(n, 0), visited(n, 0)
   {
-    queue.reserve(std::min<uint32_t>(n, 4096u));
+    queue.reserve(std::min<RoutingGraphVetex_t>(n, 4096u));
     dirty_blocked.reserve(64);
     dirty_target.reserve(64);
   }
@@ -126,13 +128,13 @@ struct BfsState
   // directly.
   void reset()
   {
-    for (const uint32_t id : dirty_blocked) {
+    for (const RoutingGraphVetex_t id : dirty_blocked) {
       is_blocked[id] = 0;
     }
-    for (const uint32_t id : dirty_target) {
+    for (const RoutingGraphVetex_t id : dirty_target) {
       is_target[id] = 0;
     }
-    for (const uint32_t id : queue) {
+    for (const RoutingGraphVetex_t id : queue) {
       visited[id] = 0;
     }
     dirty_blocked.clear();
@@ -196,7 +198,7 @@ std::vector<uint32_t> assertNetRoutability(
     return {};  // No waypoints → trivially satisfiable.
   }
 
-  const uint32_t n = g.num_nodes;
+  const auto n = boost::num_vertices(g);
 
   // Populate the blocked mask (do_not_touch walls).
   for (const uint32_t id : do_not_touch_ids) {
@@ -208,8 +210,8 @@ std::vector<uint32_t> assertNetRoutability(
 
   // Populate the target mask and choose the BFS seed.
   // If any must_touch node is also blocked the assertion is unsatisfiable.
-  uint32_t remaining = 0;
-  uint32_t start = std::numeric_limits<uint32_t>::max();
+  RoutingGraphVetex_t remaining = 0;
+  RoutingGraphVetex_t start = std::numeric_limits<RoutingGraphVetex_t>::max();
 
   for (const uint32_t id : must_touch_ids) {
     if (id >= n) {
@@ -225,7 +227,7 @@ std::vector<uint32_t> assertNetRoutability(
       s.dirty_target.push_back(id);
       ++remaining;
     }
-    if (start == std::numeric_limits<uint32_t>::max()) {
+    if (start == std::numeric_limits<RoutingGraphVetex_t>::max()) {
       start = id;  // Seed BFS from the first valid must_touch.
     }
   }
@@ -241,9 +243,9 @@ std::vector<uint32_t> assertNetRoutability(
 
   // Walk the queue by index — sequential access is hardware-prefetchable.
   for (size_t head = 0; head < s.queue.size(); ++head) {
-    const uint32_t u = s.queue[head];
-    for (uint32_t i = g.offsets[u]; i < g.offsets[u + 1]; ++i) {
-      const uint32_t v = g.neighbors[i];
+    const auto u = s.queue[head];
+    for (auto e : boost::make_iterator_range(boost::out_edges(u, g))) {
+      auto v = boost::target(e, g);
       if (!s.visited[v] && !s.is_blocked[v]) {
         s.visited[v] = 1;
         s.queue.push_back(v);
@@ -520,12 +522,12 @@ void Checker::checkPathAssertions(dbMarkerCategory* top_cat,
     return;
   }
 
-  auto [graph, region_to_idx] = buildRoutingGraph(*model);
-  if (graph.num_nodes == 0) {
+  auto [graph, region_to_idx] = buildRoutingGraph(*model, *logger_);
+  if (boost::num_vertices(graph) == 0) {
     return;
   }
 
-  BfsState state(graph.num_nodes);
+  BfsState state(boost::num_vertices(graph));
   auto region_inst_map = buildRegionInstMap(*model);
 
   dbMarkerCategory* cat = nullptr;
@@ -541,7 +543,7 @@ void Checker::checkPathAssertions(dbMarkerCategory* top_cat,
     for (const auto& entry : entries) {
       if (!entry.region) {
         logger_->warn(utl::ODB,
-                      473,
+                      549,
                       "Path assertion '{}' skipped: an entry has an unresolved "
                       "region; check earlier resolution warnings",
                       name);
@@ -552,7 +554,7 @@ void Checker::checkPathAssertions(dbMarkerCategory* top_cat,
       if (ri_it == region_inst_map.end()) {
         logger_->warn(
             utl::ODB,
-            474,
+            550,
             "Path assertion '{}' skipped: region inst '{}' is not part of the "
             "assembled design",
             name,
@@ -563,7 +565,7 @@ void Checker::checkPathAssertions(dbMarkerCategory* top_cat,
       auto idx_it = region_to_idx.find(ri_it->second);
       if (idx_it == region_to_idx.end()) {
         logger_->error(utl::ODB,
-                       475,
+                       551,
                        "Path assertion '{}': region '{}' found in model but "
                        "missing from routing graph index — this is a bug",
                        name,
@@ -612,13 +614,13 @@ void Checker::checkPathAssertions(dbMarkerCategory* top_cat,
         }
       }
 
-      logger_->warn(utl::ODB, 469, "Path assertion '{}' violated", name);
+      logger_->warn(utl::ODB, 552, "Path assertion '{}' violated", name);
     }
   }
 
   if (violation_count > 0) {
     logger_->warn(
-        utl::ODB, 472, "Found {} path assertion(s) violated", violation_count);
+        utl::ODB, 553, "Found {} path assertion(s) violated", violation_count);
   }
 }
 
