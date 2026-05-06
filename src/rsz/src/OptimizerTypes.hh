@@ -188,6 +188,9 @@ struct ArcDelayState
   std::vector<DelayStageState> path_stages;
   int target_stage_index{0};
   int delay_estimation_levels{0};
+  // Cached sum of stage.current_delay across path_stages; populated once at
+  // build time so per-candidate scoring does not re-walk the window.
+  float current_total_delay{0.0f};
 
   const DelayStageState& target() const
   {

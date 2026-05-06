@@ -158,7 +158,7 @@ std::optional<SelectedArc> buildSelectedArc(const Resizer& resizer,
     return std::nullopt;
   }
 
-  const sta::TimingArcSetSeq current_sets = current_cell->timingArcSets(
+  const sta::TimingArcSetSeq& current_sets = current_cell->timingArcSets(
       const_cast<sta::LibertyPort*>(input_port),
       const_cast<sta::LibertyPort*>(current_output_port));
   const sta::TimingArc* ref_arc = nullptr;
@@ -248,13 +248,15 @@ bool findArcPorts(sta::LibertyCell* cell,
   return input_port != nullptr && output_port != nullptr;
 }
 
-sta::TimingArcSetSeq timingArcSetsForRefPorts(sta::LibertyCell* cell,
-                                              const sta::TimingArc* ref_arc)
+const sta::TimingArcSetSeq& timingArcSetsForRefPorts(
+    sta::LibertyCell* cell,
+    const sta::TimingArc* ref_arc)
 {
   sta::LibertyPort* input_port = nullptr;
   sta::LibertyPort* output_port = nullptr;
   if (!findArcPorts(cell, ref_arc, input_port, output_port)) {
-    return {};
+    static const sta::TimingArcSetSeq kEmpty;
+    return kEmpty;
   }
   return cell->timingArcSets(input_port, output_port);
 }
@@ -286,7 +288,7 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
     return false;
   }
 
-  const sta::TimingArcSetSeq arc_sets
+  const sta::TimingArcSetSeq& arc_sets
       = timingArcSetsForRefPorts(scene_cell, ref_arc);
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
@@ -366,7 +368,7 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
 const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
                                             sta::LibertyCell* scene_cell)
 {
-  const sta::TimingArcSetSeq arc_sets
+  const sta::TimingArcSetSeq& arc_sets
       = timingArcSetsForRefPorts(scene_cell, graph_arc);
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
@@ -1122,6 +1124,7 @@ ArcDelayState collectPathStages(const Resizer& resizer,
   if (delay_levels == 0) {
     context.path_stages = {target_stage};
     context.target_stage_index = 0;
+    context.current_total_delay = target_stage.current_delay;
     return context;
   }
 
@@ -1160,6 +1163,9 @@ ArcDelayState collectPathStages(const Resizer& resizer,
     context.path_stages.push_back(*stage);
     ++found_fanout_stages;
   }
+  for (const DelayStageState& stage : context.path_stages) {
+    context.current_total_delay += stage.current_delay;
+  }
   return context;
 }
 
@@ -1172,15 +1178,6 @@ DelayEstimate makeEstimate(const float current_delay,
           .arrival_impr = arrival_impr,
           .reason = arrival_impr > 0.0f ? FailReason::kEstimateLegal
                                         : FailReason::kEstimateNonImproving};
-}
-
-float totalCurrentDelay(const std::vector<DelayStageState>& stages)
-{
-  float total_delay = 0.0f;
-  for (const DelayStageState& stage : stages) {
-    total_delay += stage.current_delay;
-  }
-  return total_delay;
 }
 
 // Score a candidate over a path-local fanin/fanout window using cached delay
@@ -1219,7 +1216,7 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
   const float target_input_cap_delta
       = candidate_target_input_cap - current_target_input_cap;
 
-  const float current_total_delay = totalCurrentDelay(stages);
+  const float current_total_delay = context.current_total_delay;
   float candidate_total_delay = 0.0f;
   float propagated_driver_output_slew = 0.0f;
   bool has_propagated_driver_output_slew = false;

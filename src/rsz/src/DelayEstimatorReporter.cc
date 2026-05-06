@@ -107,16 +107,6 @@ bool slewBiasEnabled()
   return utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 0) > 0;
 }
 
-bool containsPin(const std::vector<sta::Pin*>& pins, const sta::Pin* pin)
-{
-  for (sta::Pin* candidate : pins) {
-    if (candidate == pin) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void printMetricRow(utl::Logger* logger,
                     const std::string& metric,
                     const float estimated,
@@ -592,7 +582,8 @@ DelayEstimatorReporter::findWorstTargetForInstance(sta::Instance* inst,
     for (int i = expanded.startIndex(); i < expanded.size(); ++i) {
       const sta::Path* stage_path = expanded.path(i);
       sta::Pin* stage_pin = stage_path->pin(resizer_.staState());
-      if (containsPin(output_pins, stage_pin)
+      if (std::find(output_pins.begin(), output_pins.end(), stage_pin)
+              != output_pins.end()
           && stage_path->prevArc(resizer_.staState()) != nullptr
           && stage_path->prevEdge(resizer_.staState()) != nullptr) {
         driver_pin = stage_pin;
