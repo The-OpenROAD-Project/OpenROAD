@@ -86,6 +86,7 @@ cc_library(
     includes = [
         "src",
     ],
+    visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
         "@spdlog",
