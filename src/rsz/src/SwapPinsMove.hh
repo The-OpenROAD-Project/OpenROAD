@@ -12,6 +12,16 @@
 #include "sta/Path.hh"
 #include "sta/Scene.hh"
 
+// Provide gtest's FRIEND_TEST without pulling in the gtest header,
+// because gtest is a dev-only dependency in Bazel and cannot be linked
+// into production libraries (layering_check would reject it).
+// The body matches gtest/gtest_prod.h exactly, so the guard makes it
+// safe even if a TU also includes the real header later.
+#ifndef FRIEND_TEST
+#define FRIEND_TEST(test_case_name, test_name) \
+  friend class test_case_name##_##test_name##_Test
+#endif
+
 namespace rsz {
 
 class SwapPinsMove : public BaseMove
@@ -28,7 +38,7 @@ class SwapPinsMove : public BaseMove
  private:
   // Allow the unit test to drive swapPins() directly without going
   // through full repair_timing. Test class must live in namespace rsz.
-  friend class TestResizer_FeedthroughModNet_Test;
+  FRIEND_TEST(TestResizer, SwapPinsFeedthroughModNet);
 
   using LibertyPortVec = std::vector<sta::LibertyPort*>;
   bool swapPins(sta::Instance* inst,

@@ -51,7 +51,7 @@ class TestResizer : public tst::IntegratedFixture
   }
 };
 
-TEST_F(TestResizer, FeedthroughModNet)
+TEST_F(TestResizer, SwapPinsFeedthroughModNet)
 {
   const testing::TestInfo* test_info
       = testing::UnitTest::GetInstance()->current_test_info();
