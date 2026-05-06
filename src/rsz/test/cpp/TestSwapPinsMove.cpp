@@ -8,7 +8,6 @@
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/VerilogWriter.hh"
 #include "tst/IntegratedFixture.h"
 
 // Expose the local swap helper so the test can target the exact
