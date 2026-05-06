@@ -526,7 +526,7 @@ function isTclComplete(cmd) {
       while (i < cmd.length && cmd[i] !== '\n') i++;
       continue;
     }
-    if (c === '"') {
+    if (c === '"' && braces === 0) {
       quotes = quotes === 0 ? 1 : 0;
       atCommandStart = false;
     } else if (quotes === 0) {
@@ -537,15 +537,17 @@ function isTclComplete(cmd) {
         braces--;
         atCommandStart = false;
       } else if (c === '[') {
-        brackets++;
+        if (braces === 0) brackets++;
         atCommandStart = true;
       } else if (c === ']') {
-        brackets--;
+        if (braces === 0) brackets--;
         atCommandStart = false;
       } else if (c === '\n' || c === ';')
         atCommandStart = true;
-      else if (c !== ' ' && c !== '\t')
+      else if (c !== ' ' && c !== '\t' && c !== '\r')
         atCommandStart = false;
+    } else if (c === '[' || c === ']') {
+      c === '[' ? brackets++ : brackets--;
     }
   }
   return !escaped && braces <= 0 && brackets <= 0 && quotes <= 0;
@@ -580,9 +582,9 @@ function createTclConsole(container) {
       }
       e.preventDefault();
       const cmd = input.value.trim();
-      if (!cmd) return;
       input.value = '';
       input.style.height = 'auto';
+      if (!cmd) return;
       tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
       completer.addToHistory(cmd);
       // Log output produced while the command runs streams in
