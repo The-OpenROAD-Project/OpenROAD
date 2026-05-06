@@ -11,7 +11,6 @@ import unittest
 from tldr import review_comments
 from tldr.parsers.base import Severity
 
-
 GEMINI_HIGH = (
     "![high](https://www.gstatic.com/codereviewagent/high-priority.svg)\n\n"
     "The current implementation calls `plugin.scan` line-by-line with a "
@@ -39,13 +38,16 @@ def _inline(id_: int, body: str, path: str, line: int, position: int = 5) -> dic
     }
 
 
-def _outdated(id_: int, body: str, path: str) -> dict:
+def _outdated(id_: int, body: str, path: str, position: int | None = None) -> dict:
+    # GitHub sets `line` to None when a comment's hunk has moved off the
+    # head diff, regardless of whether `position` is still set.
     return {
         "id": id_,
         "body": body,
         "path": path,
         "line": None,
-        "position": None,
+        "original_line": 42,
+        "position": position,
         "user": {"login": "gemini-code-assist[bot]"},
     }
 
@@ -103,6 +105,15 @@ class ReviewCommentsTest(unittest.TestCase):
     def test_outdated_comment_dropped(self) -> None:
         runner = self._runner(
             [_outdated(4, GEMINI_HIGH, "deleted.py")],
+            [],
+        )
+        out = list(review_comments.discover("o/r", 1, runner=runner))
+        self.assertEqual(out, [])
+
+    def test_outdated_with_nonnull_position_still_dropped(self) -> None:
+        # Real-world shape observed on PR #10341: line=null but position=1.
+        runner = self._runner(
+            [_outdated(9, GEMINI_HIGH, "github_api.py", position=1)],
             [],
         )
         out = list(review_comments.discover("o/r", 1, runner=runner))

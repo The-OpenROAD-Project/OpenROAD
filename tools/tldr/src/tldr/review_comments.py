@@ -79,12 +79,14 @@ def _from_inline_comment(c: dict) -> Finding | None:
     body = (c.get("body") or "").strip()
     if not body:
         return None
-    # GitHub sets position to None when the diff has moved past this
-    # comment's hunk. The comment is no longer applicable; skip it.
-    if c.get("position") is None and not c.get("line"):
+    # When a comment becomes outdated (the line it pointed at no longer
+    # exists in the head diff), GitHub sets `line` to None. `position` is
+    # not a reliable signal on its own — observed cases where `line` is
+    # null while `position` is still 1 — so we key off `line` directly.
+    line = c.get("line")
+    if line is None:
         return None
     path = c.get("path") or ""
-    line = c.get("line") or c.get("original_line") or "?"
     user = ((c.get("user") or {}).get("login")) or "?"
     severity = _severity_from_body(body)
     headline = _first_meaningful_line(body)
