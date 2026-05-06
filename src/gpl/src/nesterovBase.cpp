@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "nesterovPlace.h"
@@ -43,8 +44,6 @@ static float calculateBiVariateNormalCDF(biNormalParameters i);
 static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron);
-
-static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b);
@@ -835,26 +834,93 @@ void BinGrid::updateBinsNonPlaceArea()
     bin.setNonPlaceAreaUnscaled(0);
   }
 
+  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+  using BoostRect = boost::polygon::rectangle_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator&=;
+
+  // For each bin, collect indices of non-place instances whose bbox
+  // overlaps it. The per-bin geometric union (which dedupes overlapping
+  // fixed macros / blockages) only depends on those instances, so we
+  // avoid copying a full design-wide polygon set per bin.
+  const auto& non_place_insts = pb_->nonPlaceInsts();
+  std::vector<std::vector<int>> bin_insts(bins_.size());
+  for (size_t i = 0; i < non_place_insts.size(); ++i) {
+    const Instance* inst = non_place_insts[i];
+    if (inst->lx() >= inst->ux() || inst->ly() >= inst->uy()) {
+      continue;
+    }
+    std::pair<int, int> pairX = getMinMaxIdxX(inst);
+    std::pair<int, int> pairY = getMinMaxIdxY(inst);
+    for (int y = pairY.first; y < pairY.second; y++) {
+      for (int x = pairX.first; x < pairX.second; x++) {
+        bin_insts[y * binCntX_ + x].push_back(static_cast<int>(i));
+      }
+    }
+  }
+
+  // Per-bin geometric union area (deduplicated across overlapping
+  // fixed instances). Drives nonPlaceAreaUnscaled and the cap below.
+  std::vector<int64_t> unionArea(bins_.size(), 0);
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    const auto& touching = bin_insts[i];
+    if (touching.empty()) {
+      continue;
+    }
+    Bin& bin = bins_[i];
+    if (touching.size() == 1) {
+      // Single instance: union == clipped overlap, skip Boost.Polygon.
+      const Instance* inst = non_place_insts[touching.front()];
+      const int rectLx = std::max(bin.lx(), inst->lx());
+      const int rectLy = std::max(bin.ly(), inst->ly());
+      const int rectUx = std::min(bin.ux(), inst->ux());
+      const int rectUy = std::min(bin.uy(), inst->uy());
+      if (rectLx < rectUx && rectLy < rectUy) {
+        unionArea[i] = static_cast<int64_t>(rectUx - rectLx)
+                       * static_cast<int64_t>(rectUy - rectLy);
+      }
+    } else {
+      Polygon90Set local_set;
+      for (int idx : touching) {
+        const Instance* inst = non_place_insts[idx];
+        local_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
+      }
+      local_set &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
+      unionArea[i] = boost::polygon::area(local_set);
+    }
+    // Note that nonPlaceArea should have scale-down with target
+    // density. See MS-replace paper.
+    bin.setNonPlaceAreaUnscaled(
+        static_cast<int64_t>(unionArea[i] * bin.getTargetDensity()));
+  }
+
+  // Per-macro Gaussian smoothing in getOverlapArea spreads density
+  // around the macro center; preserve that for non-overlapping cases
+  // by accumulating per-instance, then clamp at union-area * 1.10
+  // (the same headroom getOverlapArea allows for a single macro) so
+  // overlapping macros cannot exceed a single-macro contribution.
+  const int dbu_per_micron
+      = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
-
-        // Note that nonPlaceArea should have scale-down with
-        // target density.
-        // See MS-replace paper
-        //
-        bin.addNonPlaceArea(
-            getOverlapArea(
-                &bin,
-                inst,
-                pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron())
-            * bin.getTargetDensity());
-        bin.addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(&bin, inst)
-                                    * bin.getTargetDensity());
+        bin.addNonPlaceArea(getOverlapArea(&bin, inst, dbu_per_micron)
+                            * bin.getTargetDensity());
       }
+    }
+  }
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    if (bin_insts[i].empty()) {
+      continue;
+    }
+    Bin& bin = bins_[i];
+    const int64_t cap
+        = static_cast<int64_t>(unionArea[i] * bin.getTargetDensity() * 1.10f);
+    if (bin.getNonPlaceArea() > cap) {
+      bin.setNonPlaceArea(cap);
     }
   }
 }
@@ -4285,20 +4351,6 @@ static int64_t getOverlapArea(const Bin* bin,
   }
   return static_cast<float>(rectUx - rectLx)
          * static_cast<float>(rectUy - rectLy);
-}
-
-static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
-{
-  const int rectLx = std::max(bin->lx(), inst->lx());
-  const int rectLy = std::max(bin->ly(), inst->ly());
-  const int rectUx = std::min(bin->ux(), inst->ux());
-  const int rectUy = std::min(bin->uy(), inst->uy());
-
-  if (rectLx >= rectUx || rectLy >= rectUy) {
-    return 0;
-  }
-  return static_cast<int64_t>(rectUx - rectLx)
-         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a

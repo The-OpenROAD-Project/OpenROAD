@@ -27,6 +27,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -155,14 +156,11 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::buildCandidates(
 bool SwapPinsGenerator::loadInputPort(const Target& target,
                                       sta::LibertyPort*& input_port) const
 {
-  const sta::Path* in_path = target.inputPath(resizer_);
-  sta::Pin* input_pin
-      = in_path != nullptr ? in_path->pin(resizer_.sta()) : nullptr;
-  if (input_pin == nullptr) {
-    return false;
-  }
-
-  input_port = resizer_.network()->libertyPort(input_pin);
+  const sta::Path* drvr_path = target.driverPath(resizer_);
+  const sta::TimingArc* in_arc = drvr_path != nullptr
+                                     ? drvr_path->prevArc(resizer_.staState())
+                                     : nullptr;
+  input_port = in_arc != nullptr ? in_arc->from() : nullptr;
   return input_port != nullptr && !input_port->direction()->isOutput();
 }
 

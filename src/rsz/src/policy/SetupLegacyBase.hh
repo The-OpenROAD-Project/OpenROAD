@@ -92,7 +92,6 @@ class SetupLegacyBase : public OptPolicy
 
   // === Run setup ============================================================
   virtual void initializeSetupServices();
-  virtual void resetMovedBufferFlag();
   virtual bool hasVtSwapCells() const;
   // Prep work that all legacy-derived phase tokens depend on.  Called once per
   // Optimizer::run by the first legacy-derived policy start().
@@ -115,8 +114,7 @@ class SetupLegacyBase : public OptPolicy
   void acceptEndpointState(EndpointRepairState& endpoint_state);
   void restoreEndpointState(EndpointRepairState& endpoint_state);
   void finishEndpointSearch(EndpointRepairState& endpoint_state);
-  void saveImprovedCheckpoint(EndpointRepairState& endpoint_state,
-                              int max_passes);
+  void saveImprovedCheckpoint(EndpointRepairState& endpoint_state);
   void refreshEndpointSlacks(EndpointRepairState& endpoint_state);
 
   bool reachedIterationLimit(int iteration, int max_iterations) const;

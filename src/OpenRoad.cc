@@ -134,6 +134,9 @@ OpenRoad::~OpenRoad()
   delete example_;
   delete extractor_;
   delete detailed_router_;
+  // Stop the web server first — its I/O threads access the database
+  // for tile rendering, so it must be torn down before the DB.
+  delete web_server_;
   delete replace_;
   delete pdnsim_;
   delete finale_;
@@ -147,7 +150,6 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
-  delete web_server_;
   delete logger_;
   delete verilog_reader_;
   delete service_registry_;
@@ -257,7 +259,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
-  web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  web_server_
+      = new web::WebServer(db_, sta_, logger_, tcl_interp, getThreadCount());
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -665,6 +668,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+  if (global_router_ != nullptr) {
+    global_router_->setNumThreads(threads_);
+  }
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

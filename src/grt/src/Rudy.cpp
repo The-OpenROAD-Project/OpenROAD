@@ -4,6 +4,7 @@
 #include "grt/Rudy.h"
 
 #include <algorithm>
+#include <climits>
 #include <cstdint>
 #include <optional>
 #include <set>
@@ -147,6 +148,9 @@ void Rudy::processNet(odb::dbNet* net)
 
 void Rudy::processIntersectionSignalNet(const odb::Rect net_rect)
 {
+  if (net_rect.isInverted()) {
+    return;
+  }
   const auto net_area = net_rect.area();
   if (net_area == 0) {
     // TODO: handle nets with 0 area from getTermBBox()

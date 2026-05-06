@@ -18,6 +18,7 @@ cc_library(
         "src/fastroute/include/AbstractFastRouteRenderer.h",
         "src/fastroute/include/DataType.h",
     ],
+    includes = ["src/fastroute/include"],
     visibility = ["//visibility:private"],
     deps = [
         "//src/stt",
@@ -47,6 +48,9 @@ cc_library(
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     includes = [
         "include",
         "src/fastroute/include",
@@ -65,6 +69,7 @@ cc_library(
         "@boost.container_hash",
         "@boost.icl",
         "@boost.multi_array",
+        "@openmp",
     ],
 )
 

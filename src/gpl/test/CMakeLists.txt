@@ -14,7 +14,6 @@ or_integration_tests(
     diverge01
     error01
     incremental01
-    incremental02
     nograd01
     simple01
     simple01-obs
@@ -37,6 +36,8 @@ or_integration_tests(
     simple09
     simple10
     region01
+  PASSFAIL_TESTS
+    incremental02
 )
 
 

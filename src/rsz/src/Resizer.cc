@@ -75,6 +75,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"
@@ -1207,7 +1208,6 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
 
   sta_->ensureClkNetwork(sta_->cmdMode());
   inserted_buffer_count_ = 0;
-  buffer_moved_into_core_ = false;
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -1345,7 +1345,6 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
   }
 
   inserted_buffer_count_ = 0;
-  buffer_moved_into_core_ = false;
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -1432,7 +1431,7 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
         for (auto rf : sta::RiseFall::range()) {
           const sta::LibertyCell* cell;
           const sta::LibertyPort* from_port;
-          float* from_slews;
+          const sta::DriveCellSlews* from_slews;
           const sta::LibertyPort* to_port;
           drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
           if (to_port) {
@@ -3800,6 +3799,22 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                      new_tie_loc,
                      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  // If the load pin's instance is not placed, the computed location is
+  // meaningless; mark the new tie cell as unplaced
+  if (!db_network_->isPlaced(load_pin)) {
+    dbInst* new_tie_db_inst = db_network_->staToDb(new_tie_inst);
+    new_tie_db_inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "repair_tie_fanout",
+             1,
+             "Created tie instance {} for load pin {} at location ({}, {})",
+             network_->name(new_tie_inst),
+             sdc_network_->pathName(load_pin),
+             dbuToMeters(new_tie_loc.getX()),
+             dbuToMeters(new_tie_loc.getY()));
+
   // If the load pin is not in the top module, move the new tie instance
   sta::Instance* load_inst = network_->instance(load_pin);
   if (!network_->isTopInstance(load_inst)) {
@@ -5503,6 +5518,11 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
+  // ODB's insertBuffer* already placed the instance; re-run through
+  // setLocation so clampLocToCore can pull it back inside the core if
+  // the insertion point landed in the die-core gap.
+  setLocation(buffer_inst, buffer_inst->getLocation());
+
   // Legalize the cell position for accurate parasitic estimation
   if (estimate_parasitics_->getParasiticsSrc()
           == est::ParasiticsSrc::kGlobalRouting
@@ -5525,33 +5545,35 @@ void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 
 void Resizer::setLocation(dbInst* db_inst, const odb::Point& pt)
 {
-  int x = pt.x();
-  int y = pt.y();
-  // Stay inside the lines.
-  if (core_exists_) {
-    dbMaster* master = db_inst->getMaster();
-    int width = master->getWidth();
-    if (x < core_.xMin()) {
-      x = core_.xMin();
-      buffer_moved_into_core_ = true;
-    } else if (x > core_.xMax() - width) {
-      // Make sure the instance is entirely inside core.
-      x = core_.xMax() - width;
-      buffer_moved_into_core_ = true;
-    }
-
-    int height = master->getHeight();
-    if (y < core_.yMin()) {
-      y = core_.yMin();
-      buffer_moved_into_core_ = true;
-    } else if (y > core_.yMax() - height) {
-      y = core_.yMax() - height;
-      buffer_moved_into_core_ = true;
-    }
-  }
-
+  const odb::Point loc = clampLocToCore(pt, db_inst->getMaster());
   db_inst->setPlacementStatus(dbPlacementStatus::PLACED);
-  db_inst->setLocation(x, y);
+  db_inst->setLocation(loc.x(), loc.y());
+  if (loc != pt) {
+    debugPrint(logger_,
+               RSZ,
+               "buffer_clamp",
+               1,
+               "{} clamped to core ({}, {}) -> ({}, {})",
+               db_inst->getName(),
+               pt.x(),
+               pt.y(),
+               loc.x(),
+               loc.y());
+  }
+}
+
+odb::Point Resizer::clampLocToCore(const odb::Point& loc,
+                                   odb::dbMaster* master) const
+{
+  if (!core_exists_) {
+    return loc;
+  }
+  const int x_max = std::max(
+      core_.xMin(), core_.xMax() - static_cast<int>(master->getWidth()));
+  const int y_max = std::max(
+      core_.yMin(), core_.yMax() - static_cast<int>(master->getHeight()));
+  return {std::clamp(loc.x(), core_.xMin(), x_max),
+          std::clamp(loc.y(), core_.yMin(), y_max)};
 }
 
 float Resizer::portCapacitance(sta::LibertyPort* input,
@@ -5659,13 +5681,6 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
     }
   }
   delete pin_iter;
-}
-
-void Resizer::warnBufferMovedIntoCore()
-{
-  if (buffer_moved_into_core_) {
-    logger_->warn(RSZ, 77, "some buffers were moved inside the core.");
-  }
 }
 
 void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,

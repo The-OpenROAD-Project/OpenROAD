@@ -11,14 +11,12 @@
 #include <cstring>
 #include <deque>
 #include <exception>
-#include <filesystem>
 #include <fstream>
+#include <functional>
 #include <ios>
-#include <iterator>
-#include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <regex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -27,20 +25,27 @@
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
-#include "boost/asio/signal_set.hpp"
 #include "boost/asio/strand.hpp"
 #include "boost/beast/core.hpp"
 #include "boost/beast/http.hpp"
 #include "boost/beast/websocket.hpp"
+#include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "gui/heatMap.h"
-#include "json_builder.h"
+#include "hierarchy_report.h"
 #include "odb/db.h"
+#include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web_assets.h"
+#include "web_chart.h"
+#include "web_viewer_hook.h"
 
 namespace web {
 
@@ -48,153 +53,10 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;
-using tcp = net::ip::tcp;
+using Tcp = net::ip::tcp;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-
-static WebSocketRequest parse_web_socket_request(const std::string& msg)
-{
-  WebSocketRequest req;
-  req.id = static_cast<uint32_t>(extract_int(msg, "id"));
-  req.raw_json = msg;
-
-  std::string type_str = extract_string(msg, "type");
-  if (type_str == "tile") {
-    req.type = WebSocketRequest::TILE;
-    req.layer = extract_string(msg, "layer");
-    req.z = extract_int(msg, "z");
-    req.x = extract_int(msg, "x");
-    req.y = extract_int(msg, "y");
-    req.vis.parseFromJson(msg);
-  } else if (type_str == "bounds") {
-    req.type = WebSocketRequest::BOUNDS;
-  } else if (type_str == "tech") {
-    req.type = WebSocketRequest::TECH;
-  } else if (type_str == "inspect") {
-    req.type = WebSocketRequest::INSPECT;
-    req.select_id = extract_int(msg, "select_id");
-  } else if (type_str == "inspect_back") {
-    req.type = WebSocketRequest::INSPECT_BACK;
-  } else if (type_str == "hover") {
-    req.type = WebSocketRequest::HOVER;
-    req.select_id = extract_int(msg, "select_id");
-  } else if (type_str == "tcl_eval") {
-    req.type = WebSocketRequest::TCL_EVAL;
-    req.tcl_cmd = extract_string(msg, "cmd");
-  } else if (type_str == "tcl_complete") {
-    req.type = WebSocketRequest::TCL_COMPLETE;
-    req.tcl_complete_line = extract_string(msg, "line");
-    req.tcl_complete_cursor_pos = extract_int_or(msg, "cursor_pos", -1);
-  } else if (type_str == "timing_report") {
-    req.type = WebSocketRequest::TIMING_REPORT;
-    req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
-    req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
-    req.timing_slack_min = extract_float_or(
-        msg, "slack_min", -std::numeric_limits<float>::max());
-    req.timing_slack_max
-        = extract_float_or(msg, "slack_max", std::numeric_limits<float>::max());
-  } else if (type_str == "timing_highlight") {
-    req.type = WebSocketRequest::TIMING_HIGHLIGHT;
-    req.timing_path_index = extract_int_or(msg, "path_index", -1);
-    req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
-    req.timing_pin_name = extract_string(msg, "pin_name");
-  } else if (type_str == "clock_tree") {
-    req.type = WebSocketRequest::CLOCK_TREE;
-  } else if (type_str == "clock_tree_highlight") {
-    req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
-    req.clock_tree_inst_name = extract_string(msg, "inst_name");
-  } else if (type_str == "slack_histogram") {
-    req.type = WebSocketRequest::SLACK_HISTOGRAM;
-    req.histogram_is_setup = extract_int_or(msg, "is_setup", 1);
-    req.histogram_path_group = extract_string(msg, "path_group");
-    req.histogram_clock = extract_string(msg, "clock_name");
-  } else if (type_str == "chart_filters") {
-    req.type = WebSocketRequest::CHART_FILTERS;
-  } else if (type_str == "module_hierarchy") {
-    req.type = WebSocketRequest::MODULE_HIERARCHY;
-  } else if (type_str == "set_module_colors") {
-    req.type = WebSocketRequest::SET_MODULE_COLORS;
-    req.vis.parseFromJson(msg);
-  } else if (type_str == "set_focus_nets") {
-    req.type = WebSocketRequest::SET_FOCUS_NETS;
-    req.focus_action = extract_string(msg, "action");
-    req.focus_net_name = extract_string(msg, "net_name");
-  } else if (type_str == "set_route_guides") {
-    req.type = WebSocketRequest::SET_ROUTE_GUIDES;
-    req.route_guide_action = extract_string(msg, "action");
-    req.route_guide_net_name = extract_string(msg, "net_name");
-  } else if (type_str == "schematic_cone") {
-    req.type = WebSocketRequest::SCHEMATIC_CONE;
-    req.schematic_inst_name = extract_string(msg, "inst_name");
-    req.schematic_fanin_depth = extract_int_or(msg, "fanin_depth", 1);
-    req.schematic_fanout_depth = extract_int_or(msg, "fanout_depth", 1);
-  } else if (type_str == "schematic_full") {
-    req.type = WebSocketRequest::SCHEMATIC_FULL;
-  } else if (type_str == "schematic_inspect") {
-    req.type = WebSocketRequest::SCHEMATIC_INSPECT;
-    req.schematic_inst_name = extract_string(msg, "inst_name");
-  } else if (type_str == "select") {
-    req.type = WebSocketRequest::SELECT;
-    req.select_x = extract_int(msg, "dbu_x");
-    req.select_y = extract_int(msg, "dbu_y");
-    req.select_zoom = extract_int_or(msg, "zoom", 0);
-    req.visible_layers = extract_string_array(msg, "visible_layers");
-    req.vis.parseFromJson(msg);
-  } else if (type_str == "snap") {
-    req.type = WebSocketRequest::SNAP;
-    req.snap_x = extract_int(msg, "dbu_x");
-    req.snap_y = extract_int(msg, "dbu_y");
-    req.snap_radius = extract_int(msg, "radius");
-    req.snap_point_threshold = extract_int_or(msg, "point_threshold", 10);
-    req.snap_horizontal = extract_int_or(msg, "horizontal", 1) != 0;
-    req.snap_vertical = extract_int_or(msg, "vertical", 1) != 0;
-    req.visible_layers = extract_string_array(msg, "visible_layers");
-    req.vis.parseFromJson(msg);
-  } else if (type_str == "heatmaps") {
-    req.type = WebSocketRequest::HEATMAPS;
-  } else if (type_str == "set_active_heatmap") {
-    req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
-    req.heatmap_name = extract_string(msg, "name");
-  } else if (type_str == "set_heatmap") {
-    req.type = WebSocketRequest::SET_HEATMAP;
-    req.heatmap_name = extract_string(msg, "name");
-    req.heatmap_option = extract_string(msg, "option");
-    req.heatmap_string_value = extract_string(msg, "value");
-  } else if (type_str == "heatmap_tile") {
-    req.type = WebSocketRequest::HEATMAP_TILE;
-    req.heatmap_name = extract_string(msg, "name");
-    req.z = extract_int(msg, "z");
-    req.x = extract_int(msg, "x");
-    req.y = extract_int(msg, "y");
-  } else if (type_str == "drc_categories") {
-    req.type = WebSocketRequest::DRC_CATEGORIES;
-  } else if (type_str == "drc_markers") {
-    req.type = WebSocketRequest::DRC_MARKERS;
-    req.drc_category_name = extract_string(msg, "category");
-  } else if (type_str == "drc_load_report") {
-    req.type = WebSocketRequest::DRC_LOAD_REPORT;
-    req.drc_file_path = extract_string(msg, "path");
-  } else if (type_str == "drc_update_marker") {
-    req.type = WebSocketRequest::DRC_UPDATE_MARKER;
-    req.drc_marker_id = extract_int(msg, "marker_id");
-    req.drc_field = extract_string(msg, "field");
-    req.drc_field_value = extract_int_or(msg, "value", 0) != 0;
-  } else if (type_str == "drc_update_category_visibility") {
-    req.type = WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY;
-    req.drc_category_name = extract_string(msg, "category");
-    req.drc_field_value = extract_int_or(msg, "visible", 1) != 0;
-  } else if (type_str == "drc_highlight") {
-    req.type = WebSocketRequest::DRC_HIGHLIGHT;
-    req.drc_marker_id = extract_int_or(msg, "marker_id", -1);
-  } else if (type_str == "list_dir") {
-    req.type = WebSocketRequest::LIST_DIR;
-    req.dir_path = extract_string(msg, "path");
-  } else {
-    req.type = WebSocketRequest::UNKNOWN;
-  }
-  return req;
-}
 
 // Serialize a WebSocketResponse into the binary wire format:
 //   [0..3] uint32_t id (big-endian)
@@ -216,34 +78,11 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (wraps dispatch_request for HTTP transport)
+// HTTP request handler (serves embedded static assets)
 //------------------------------------------------------------------------------
 
-static std::string content_type_for(const std::string& path)
-{
-  auto ext = std::filesystem::path(path).extension().string();
-  if (ext == ".html") {
-    return "text/html";
-  }
-  if (ext == ".js") {
-    return "application/javascript";
-  }
-  if (ext == ".css") {
-    return "text/css";
-  }
-  if (ext == ".png") {
-    return "image/png";
-  }
-  if (ext == ".json") {
-    return "application/json";
-  }
-  return "application/octet-stream";
-}
-
 static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req,
-    const TileGenerator& generator,
-    const std::string& doc_root)
+    http::request<http::string_body>&& req)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -251,63 +90,18 @@ static http::response<http::string_body> handle_request(
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
 
-  std::regex tile_regex(R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
-  std::smatch match_pieces;
-  std::string target_path(req.target());
-
-  if (req.method() == http::verb::get && req.target() == "/bounds") {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::BOUNDS;
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-    res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-  } else if (req.method() == http::verb::get && req.target() == "/tech") {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::TECH;
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-    res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-  } else if (req.method() == http::verb::get
-             && std::regex_match(target_path, match_pieces, tile_regex)) {
-    WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::TILE;
-    websocket_req.layer = match_pieces[1].str();
-    websocket_req.z = std::stoi(match_pieces[2].str());
-    websocket_req.x = std::stoi(match_pieces[3].str());
-    websocket_req.y = std::stoi(match_pieces[4].str());
-    WebSocketResponse websocket_resp
-        = dispatch_request(websocket_req, generator);
-
-    res.set(http::field::content_type, "image/png");
-    res.body() = std::string(websocket_resp.payload.begin(),
-                             websocket_resp.payload.end());
-    res.set(http::field::cache_control, "public, max-age=604800");
-  } else if (req.method() == http::verb::get && !doc_root.empty()) {
-    // Serve static files from doc_root
-    std::string file_path = std::move(target_path);
+  if (req.method() == http::verb::get) {
+    std::string file_path(req.target());
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Reject paths with ".." to preventd irectory traversal
-    if (file_path.find("..") == std::string::npos) {
-      auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
-      std::ifstream file(full_path, std::ios::binary);
-      if (file) {
-        std::string content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
-        res.set(http::field::content_type, content_type_for(file_path));
-        res.body() = std::move(content);
-      } else {
-        res.result(http::status::not_found);
-        res.body() = "File not found.";
-      }
+    const auto* asset = findEmbeddedAsset(file_path);
+    if (asset) {
+      res.set(http::field::content_type, asset->content_type);
+      res.body() = std::string(asset->content());
     } else {
-      res.result(http::status::bad_request);
-      res.body() = "Invalid path.";
+      res.result(http::status::not_found);
+      res.body() = "Resource not found.";
     }
   } else {
     res.result(http::status::not_found);
@@ -337,22 +131,36 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   TileHandler tile_handler_;
   DRCHandler drc_handler_;
 
+  // Registration-based request dispatcher (replaces parse/dispatch switches)
+  RequestDispatcher dispatcher_;
+
   // Write serialization: strand + queue ensures one async_write at a time
+  struct PendingWrite
+  {
+    std::vector<unsigned char> frame;
+    std::function<void()> on_complete;
+  };
   net::strand<net::any_io_executor> strand_;
-  std::deque<std::vector<unsigned char>> write_queue_;
+  std::deque<PendingWrite> write_queue_;
   bool writing_ = false;
 
   // Background search index initialization
   std::shared_ptr<TileGenerator> generator_;
   std::thread init_thread_;
 
+  // Debug-graphics hook (nullable).  When set, this session registers a
+  // send callback for server-push broadcasts (pause/continue notifications).
+  WebViewerHook* viewer_hook_ = nullptr;
+  std::size_t viewer_token_ = 0;
+
  public:
-  WebSocketSession(tcp::socket&& socket,
+  WebSocketSession(Tcp::socket&& socket,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
-                   utl::Logger* logger);
+                   utl::Logger* logger,
+                   WebViewerHook* viewer_hook);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
@@ -361,19 +169,21 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void on_accept(beast::error_code ec);
   void do_read();
   void on_read(beast::error_code ec);
-  void queue_response(const WebSocketResponse& resp);
+  void queue_response(const WebSocketResponse& resp,
+                      std::function<void()> on_complete = {});
   void do_write();
 };
 
 WebSocketSession::WebSocketSession(
-    tcp::socket&& socket,
+    Tcp::socket&& socket,
     // NOLINTBEGIN(performance-unnecessary-value-param)
     std::shared_ptr<TileGenerator> generator,
     std::shared_ptr<TclEvaluator> tcl_eval,
     // NOLINTEND(performance-unnecessary-value-param)
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    utl::Logger* logger)
+    utl::Logger* logger,
+    WebViewerHook* viewer_hook)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -383,15 +193,103 @@ WebSocketSession::WebSocketSession(
       tile_handler_(generator),
       drc_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor())),
-      generator_(std::move(generator))
+      generator_(std::move(generator)),
+      viewer_hook_(viewer_hook)
 {
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
+
+  // Register all handler request types with the dispatcher.
+  select_handler_.registerRequests(dispatcher_);
+  tcl_handler_.registerRequests(dispatcher_);
+  timing_handler_.registerRequests(dispatcher_);
+  clock_tree_handler_.registerRequests(dispatcher_);
+  tile_handler_.registerRequests(dispatcher_);
+  drc_handler_.registerRequests(dispatcher_);
+
+  // Free function handler
+  dispatcher_.add("list_dir",
+                  WebSocketRequest::kListDir,
+                  [](const WebSocketRequest& req, SessionState&) {
+                    return handleListDir(req);
+                  });
+
+  // Session-specific debug handlers (need viewer_hook_, run inline)
+  dispatcher_.add(
+      "debug_continue",
+      WebSocketRequest::kDebugContinue,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        if (viewer_hook_ != nullptr) {
+          viewer_hook_->continueExecution();
+        }
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        const std::string json = R"({"ok":1})";
+        resp.payload.assign(json.begin(), json.end());
+        return resp;
+      },
+      /*run_inline=*/true);
+
+  dispatcher_.add(
+      "debug_charts",
+      WebSocketRequest::kDebugCharts,
+      [this](const WebSocketRequest& req, SessionState&) -> WebSocketResponse {
+        WebSocketResponse resp;
+        resp.id = req.id;
+        resp.type = WebSocketResponse::kJson;
+        boost::json::object root;
+        boost::json::array charts;
+        if (viewer_hook_ != nullptr) {
+          const auto& hook_charts = viewer_hook_->charts();
+          charts.reserve(hook_charts.size());
+          for (WebChart* chart : hook_charts) {
+            boost::json::object c;
+            c["name"] = chart->name();
+            c["x_label"] = chart->xLabel();
+            boost::json::array y_labels;
+            for (const auto& lbl : chart->yLabels()) {
+              y_labels.emplace_back(lbl);
+            }
+            c["y_labels"] = std::move(y_labels);
+            c["x_format"] = chart->xAxisFormat();
+            boost::json::array y_formats;
+            for (const auto& f : chart->yAxisFormats()) {
+              y_formats.emplace_back(f);
+            }
+            c["y_formats"] = std::move(y_formats);
+            boost::json::array points;
+            const auto& chart_points = chart->points();
+            points.reserve(chart_points.size());
+            for (const auto& pt : chart_points) {
+              boost::json::object p;
+              p["x"] = pt.x;
+              boost::json::array ys;
+              ys.reserve(pt.ys.size());
+              for (double v : pt.ys) {
+                ys.emplace_back(v);
+              }
+              p["ys"] = std::move(ys);
+              points.emplace_back(std::move(p));
+            }
+            c["points"] = std::move(points);
+            charts.emplace_back(std::move(c));
+          }
+        }
+        root["charts"] = std::move(charts);
+        std::string s = boost::json::serialize(root);
+        resp.payload.assign(s.begin(), s.end());
+        return resp;
+      },
+      /*run_inline=*/true);
 }
 
 WebSocketSession::~WebSocketSession()
 {
+  if (viewer_hook_ != nullptr && viewer_token_ != 0) {
+    viewer_hook_->sessions().remove(viewer_token_);
+  }
   if (init_thread_.joinable()) {
     init_thread_.join();
   }
@@ -413,25 +311,6 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
 
-  // Build search indices in the background; tiles render without shapes
-  // until ready, then a "refresh" push notification triggers a redraw.
-  init_thread_ = std::thread([self = shared_from_this()]() {
-    self->generator_->eagerInit();
-    // Only send refresh if there's actually a design to render.
-    // Without this guard, eagerInit returns instantly when no block is
-    // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
-      return;
-    }
-    // Send server-push refresh notification (id=0)
-    WebSocketResponse resp;
-    resp.id = 0;
-    resp.type = 0;  // JSON
-    const std::string json = R"({"type":"refresh"})";
-    resp.payload.assign(json.begin(), json.end());
-    self->queue_response(resp);
-  });
-
   websocket_.async_accept(req,
                           [self = shared_from_this()](beast::error_code ec) {
                             self->on_accept(ec);
@@ -449,6 +328,66 @@ void WebSocketSession::on_accept(beast::error_code ec)
                ec.message());
     return;
   }
+
+  // Register this session with the viewer hook so debug_paused /
+  // debug_refresh / debug_resumed push messages reach the client.  The
+  // lambda captures a weak_ptr so we never keep the session alive on the
+  // registry's behalf.  This must happen AFTER accept completes — writing
+  // before the handshake finishes sends masked (client-role) frames that
+  // browsers reject with "A server must not mask any frames".
+  if (viewer_hook_ != nullptr) {
+    auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
+    viewer_token_ = viewer_hook_->sessions().add(
+        // SendFn — queue a JSON push message on this session's write queue.
+        [weak_self](const std::string& json) {
+          auto self = weak_self.lock();
+          if (!self) {
+            return;
+          }
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = WebSocketResponse::kJson;
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp);
+        },
+        // SendAndWaitFn — queue a JSON push message and invoke the callback
+        // after async_write completes.
+        [weak_self](const std::string& json, std::function<void()> fn) {
+          auto self = weak_self.lock();
+          if (!self) {
+            fn();  // session gone — signal fence immediately
+            return;
+          }
+          WebSocketResponse resp;
+          resp.id = 0;
+          resp.type = WebSocketResponse::kJson;
+          resp.payload.assign(json.begin(), json.end());
+          self->queue_response(resp, std::move(fn));
+        });
+
+    // Flush any log output that accumulated before this client
+    // connected (splash screen, script output, etc.).
+    viewer_hook_->drainLogs();
+  }
+
+  // Build search indices in the background; tiles render without shapes
+  // until ready, then a "refresh" push notification triggers a redraw.
+  init_thread_ = std::thread([self = shared_from_this()]() {
+    self->generator_->eagerInit();
+    // Only send refresh if there's actually a design to render.
+    // Without this guard, eagerInit returns instantly when no block is
+    // loaded and the push races with async_accept (Beast soft_mutex crash).
+    if (!self->generator_->getBlock()) {
+      return;
+    }
+    // Send server-push refresh notification (id=0)
+    WebSocketResponse resp;
+    resp.id = 0;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"refresh"})";
+    resp.payload.assign(json.begin(), json.end());
+    self->queue_response(resp);
+  });
 
   do_read();
 }
@@ -478,249 +417,82 @@ void WebSocketSession::on_read(beast::error_code ec)
   const std::string msg = beast::buffers_to_string(buffer_.data());
   buffer_.consume(buffer_.size());
 
-  WebSocketRequest req = parse_web_socket_request(msg);
+  WebSocketRequest req = dispatcher_.parse(msg);
   auto self = shared_from_this();
 
-  switch (req.type) {
-    case WebSocketRequest::SELECT:
+  const auto* entry = dispatcher_.find(req.type);
+  if (entry != nullptr) {
+    if (entry->run_inline) {
+      auto resp = entry->handle(req, state_);
+      resp.request_type = req.raw_type;
+      queue_response(resp);
+    } else {
+      auto handle = entry->handle;
       net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->select_handler_.handleSelect(req, self->state_));
+                [self = std::move(self),
+                 req = std::move(req),
+                 handle = std::move(handle)]() {
+                  auto resp = handle(req, self->state_);
+                  resp.request_type = req.raw_type;
+                  self->queue_response(resp);
                 });
-      break;
-    case WebSocketRequest::SNAP:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->select_handler_.handleSnap(req));
-                });
-      break;
-    case WebSocketRequest::INSPECT:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->select_handler_.handleInspect(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::INSPECT_BACK:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->select_handler_.handleInspectBack(
-                      req, self->state_));
-                });
-      break;
-    case WebSocketRequest::HOVER:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->select_handler_.handleHover(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::SCHEMATIC_CONE:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->select_handler_.handleSchematicCone(req));
-      });
-      break;
-    case WebSocketRequest::SCHEMATIC_FULL:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->select_handler_.handleSchematicFull(req));
-      });
-      break;
-    case WebSocketRequest::SCHEMATIC_INSPECT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSchematicInspect(req, self->state_));
-      });
-      break;
-    case WebSocketRequest::TCL_EVAL:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->tcl_handler_.handleTclEval(req));
-                });
-      break;
-    case WebSocketRequest::TCL_COMPLETE:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(self->tcl_handler_.handleTclComplete(req));
-          });
-      break;
-    case WebSocketRequest::TIMING_REPORT:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(self->timing_handler_.handleTimingReport(req));
-          });
-      break;
-    case WebSocketRequest::TIMING_HIGHLIGHT:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(
-                self->timing_handler_.handleTimingHighlight(req, self->state_));
-          });
-      break;
-    case WebSocketRequest::CLOCK_TREE:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->clock_tree_handler_.handleClockTree(req));
-                });
-      break;
-    case WebSocketRequest::CLOCK_TREE_HIGHLIGHT:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->clock_tree_handler_.handleClockTreeHighlight(
-                          req, self->state_));
-                });
-      break;
-    case WebSocketRequest::SLACK_HISTOGRAM:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->timing_handler_.handleSlackHistogram(req));
-                });
-      break;
-    case WebSocketRequest::CHART_FILTERS:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(self->timing_handler_.handleChartFilters(req));
-          });
-      break;
-    case WebSocketRequest::MODULE_HIERARCHY:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleModuleHierarchy(req));
-                });
-      break;
-    case WebSocketRequest::SET_MODULE_COLORS:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(
-                self->tile_handler_.handleSetModuleColors(req, self->state_));
-          });
-      break;
-    case WebSocketRequest::SET_FOCUS_NETS:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->select_handler_.handleSetFocusNets(
-                      req, self->state_));
-                });
-      break;
-    case WebSocketRequest::SET_ROUTE_GUIDES:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(
-                self->select_handler_.handleSetRouteGuides(req, self->state_));
-          });
-      break;
-    case WebSocketRequest::HEATMAPS:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleHeatMaps(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::SET_ACTIVE_HEATMAP:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(
-                self->tile_handler_.handleSetActiveHeatMap(req, self->state_));
-          });
-      break;
-    case WebSocketRequest::SET_HEATMAP:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleSetHeatMap(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::HEATMAP_TILE:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleHeatMapTile(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::LIST_DIR:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(handleListDir(req));
-                });
-      break;
-    case WebSocketRequest::DRC_CATEGORIES:
-      net::post(
-          websocket_.get_executor(),
-          [self = std::move(self), req = std::move(req)]() {
-            self->queue_response(self->drc_handler_.handleDRCCategories(req));
-          });
-      break;
-    case WebSocketRequest::DRC_MARKERS:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCMarkers(req, self->state_));
-                });
-      break;
-    case WebSocketRequest::DRC_LOAD_REPORT:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->drc_handler_.handleDRCLoadReport(
-                      req, self->state_));
-                });
-      break;
-    case WebSocketRequest::DRC_UPDATE_MARKER:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(self->drc_handler_.handleDRCUpdateMarker(
-                      req, self->state_));
-                });
-      break;
-    case WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCUpdateCategoryVisibility(
-                          req, self->state_));
-                });
-      break;
-    case WebSocketRequest::DRC_HIGHLIGHT:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCHighlight(req, self->state_));
-                });
-      break;
-    default:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->tile_handler_.handleTile(req, self->state_));
-                });
-      break;
+    }
+  } else {
+    // Unknown type -- return an error so the client knows the request
+    // was not understood (e.g. typo or client/server version mismatch).
+    WebSocketResponse resp;
+    resp.id = req.id;
+    resp.type = WebSocketResponse::kError;
+    resp.request_type = req.raw_type;
+    std::string err;
+    if (!req.raw_type.empty()) {
+      err = "Unknown request type: " + req.raw_type;
+    } else if (!req.parse_error.empty()) {
+      err = "Malformed request: " + req.parse_error;
+    } else {
+      err = "Malformed request (missing or invalid id/type)";
+    }
+    resp.payload.assign(err.begin(), err.end());
+    queue_response(resp);
   }
 
   do_read();
 }
 
-void WebSocketSession::queue_response(const WebSocketResponse& resp)
+void WebSocketSession::queue_response(const WebSocketResponse& resp,
+                                      std::function<void()> on_complete)
 {
+  // Surface every error response in the server log so contract violations
+  // (malformed payloads, missing fields, wrong field types) are visible to
+  // the operator/developer and not silently swallowed by the client.
+  if (resp.type == WebSocketResponse::kError) {
+    const std::string_view err(
+        reinterpret_cast<const char*>(resp.payload.data()),
+        resp.payload.size());
+    const std::string type_label
+        = resp.request_type.empty() ? "unknown" : resp.request_type;
+    logger_->warn(utl::WEB,
+                  43,
+                  "request id={} type={} failed: {}",
+                  resp.id,
+                  type_label,
+                  err);
+  }
+
   std::vector<unsigned char> frame = serialize_response(resp);
 
   // Post to the strand to serialize write queue access
-  net::post(strand_,
-            [self = shared_from_this(), frame = std::move(frame)]() mutable {
-              self->write_queue_.push_back(std::move(frame));
-              if (!self->writing_) {
-                self->do_write();
-              }
-            });
+  net::post(
+      strand_,
+      [self = shared_from_this(),
+       frame = std::move(frame),
+       on_complete = std::move(on_complete)]() mutable {
+        self->write_queue_.push_back(PendingWrite{
+            .frame = std::move(frame), .on_complete = std::move(on_complete)});
+        if (!self->writing_) {
+          self->do_write();
+        }
+      });
 }
 
 void WebSocketSession::do_write()
@@ -732,9 +504,14 @@ void WebSocketSession::do_write()
   writing_ = true;
   websocket_.binary(true);
   websocket_.async_write(
-      net::buffer(write_queue_.front()),
+      net::buffer(write_queue_.front().frame),
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
         net::post(self->strand_, [self, ec]() {
+          auto on_complete = std::move(self->write_queue_.front().on_complete);
+          self->write_queue_.pop_front();
+          if (on_complete) {
+            on_complete();
+          }
           if (ec) {
             debugPrint(self->logger_,
                        utl::WEB,
@@ -742,9 +519,9 @@ void WebSocketSession::do_write()
                        1,
                        "websocket write error: {}",
                        ec.message());
+            self->writing_ = false;
             return;
           }
-          self->write_queue_.pop_front();
           self->do_write();
         });
       });
@@ -758,17 +535,12 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 {
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
-  std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(tcp::socket&& socket,
-              std::shared_ptr<TileGenerator> generator,
-              std::string doc_root,
-              utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -783,14 +555,8 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_close();
 };
 
-HttpSession::HttpSession(tcp::socket&& socket,
-                         std::shared_ptr<TileGenerator> generator,
-                         std::string doc_root,
-                         utl::Logger* logger)
-    : stream_(std::move(socket)),
-      generator_(std::move(generator)),
-      doc_root_(std::move(doc_root)),
-      logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
+    : stream_(std::move(socket)), logger_(logger)
 {
 }
 
@@ -827,7 +593,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), *generator_, doc_root_));
+      handle_request(std::move(req_)));
   do_write();
 }
 
@@ -862,7 +628,7 @@ void HttpSession::on_write(beast::error_code ec)
 void HttpSession::do_close()
 {
   beast::error_code ec;
-  stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+  stream_.socket().shutdown(Tcp::socket::shutdown_send, ec);
 }
 
 //------------------------------------------------------------------------------
@@ -878,17 +644,17 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
   http::request<http::string_body> req_;
-  std::string doc_root_;
   utl::Logger* logger_;
+  WebViewerHook* viewer_hook_ = nullptr;
 
  public:
-  DetectSession(tcp::socket&& socket,
+  DetectSession(Tcp::socket&& socket,
                 std::shared_ptr<TileGenerator> generator,
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
-                std::string doc_root,
-                utl::Logger* logger);
+                utl::Logger* logger,
+                WebViewerHook* viewer_hook);
 
   void run();
 
@@ -896,20 +662,20 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   void on_read(beast::error_code ec);
 };
 
-DetectSession::DetectSession(tcp::socket&& socket,
+DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<TileGenerator> generator,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
-                             std::string doc_root,
-                             utl::Logger* logger)
+                             utl::Logger* logger,
+                             WebViewerHook* viewer_hook)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
-      logger_(logger)
+      logger_(logger),
+      viewer_hook_(viewer_hook)
 {
 }
 
@@ -940,12 +706,12 @@ void DetectSession::on_read(beast::error_code ec)
                                              tcl_eval_,
                                              timing_report_,
                                              clock_report_,
-                                             logger_);
+                                             logger_,
+                                             viewer_hook_);
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, doc_root_, logger_);
+    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -957,47 +723,59 @@ void DetectSession::on_read(beast::error_code ec)
 class Listener : public std::enable_shared_from_this<Listener>
 {
   net::io_context& ioc_;
-  tcp::acceptor acceptor_;
+  Tcp::acceptor acceptor_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
-  std::string doc_root_;
   utl::Logger* logger_;
+  WebViewerHook* viewer_hook_ = nullptr;
 
  public:
   Listener(net::io_context& ioc,
-           const tcp::endpoint& endpoint,
+           const Tcp::endpoint& endpoint,
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
-           std::string doc_root,
-           utl::Logger* logger);
+           utl::Logger* logger,
+           WebViewerHook* viewer_hook);
 
   void run() { do_accept(); }
 
+  // The actual port the acceptor bound to (useful when port 0 was
+  // requested and the OS assigned a free port).
+  uint16_t port() const { return acceptor_.local_endpoint().port(); }
+
+  // Close the acceptor so its destructor doesn't touch a dying
+  // io_context.  Called from WebServer::stop() before ioc_.reset().
+  void close()
+  {
+    beast::error_code ec;
+    acceptor_.close(ec);
+  }
+
  private:
   void do_accept();
-  void on_accept(beast::error_code ec, tcp::socket socket);
+  void on_accept(beast::error_code ec, Tcp::socket socket);
 };
 
 Listener::Listener(net::io_context& ioc,
-                   const tcp::endpoint& endpoint,
+                   const Tcp::endpoint& endpoint,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
-                   std::string doc_root,
-                   utl::Logger* logger)
+                   utl::Logger* logger,
+                   WebViewerHook* viewer_hook)
     : ioc_(ioc),
       acceptor_(ioc),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
-      doc_root_(std::move(doc_root)),
-      logger_(logger)
+      logger_(logger),
+      viewer_hook_(viewer_hook)
 {
   beast::error_code ec;
 
@@ -1028,12 +806,12 @@ void Listener::do_accept()
 {
   acceptor_.async_accept(
       ioc_,
-      [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
+      [self = shared_from_this()](beast::error_code ec, Tcp::socket socket) {
         self->on_accept(ec, std::move(socket));
       });
 }
 
-void Listener::on_accept(beast::error_code ec, tcp::socket socket)
+void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 {
   if (ec) {
     debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
@@ -1047,8 +825,8 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
                                     tcl_eval_,
                                     timing_report_,
                                     clock_report_,
-                                    doc_root_,
-                                    logger_)
+                                    logger_,
+                                    viewer_hook_)
         ->run();
   }
   do_accept();
@@ -1061,24 +839,76 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp)
-    : db_(db), sta_(sta), logger_(logger), interp_(interp)
+                     Tcl_Interp* interp,
+                     int num_threads)
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      interp_(interp),
+      num_threads_(num_threads)
 {
 }
 
-WebServer::~WebServer() = default;
+// Defined here (not in web_serve.cpp) so the destructor's TU does not
+// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// usable from tests that don't link the full gui library.
+void WebServer::stopAndJoinIoThreads()
+{
+  if (ioc_) {
+    ioc_->stop();
+  }
+  const auto self_id = std::this_thread::get_id();
+  for (auto& t : threads_) {
+    if (!t.joinable()) {
+      continue;
+    }
+    if (t.get_id() == self_id) {
+      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
+      // worker so detaching is safe — the thread runs to completion on
+      // its own.
+      t.detach();
+    } else {
+      t.join();
+    }
+  }
+  threads_.clear();
+}
+
+WebServer::~WebServer()
+{
+  // Wake any thread blocked in waitForStop() so it can return before
+  // we tear down the io_context.
+  {
+    std::lock_guard<std::mutex> lock(stop_mutex_);
+    stop_requested_ = true;
+  }
+  stop_cv_.notify_one();
+
+  // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
+  // By this point the Tcl interpreter is partially torn down and static
+  // objects may be destroyed.  We avoid the full stop() path (which
+  // tears down boost::asio's reactor and would crash on residual async
+  // handlers referencing destroyed statics) — the OS reclaims memory
+  // and sockets at process exit, so we only need to release the worker
+  // threads so the process can actually exit.
+  stopAndJoinIoThreads();
+  if (shutdown_listener_) {
+    shutdown_listener_();
+    shutdown_listener_ = {};
+  }
+  // Release without destroying — ~io_context() crashes because
+  // reactor::shutdown() destroys pending async operations whose
+  // handlers reference the dying reactor.  The OS reclaims at exit.
+  (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
+  // Also leak viewer_hook_ — it may be referenced by Gui's
+  // headless_viewer_ pointer which outlives us (static singleton).
+  (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
+}
 
 // Embedded JS/CSS for standalone timing report (generated at build time
 // by embed_report_assets.py → report_assets.cpp).
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
-
-static std::string serializeToJson(auto serialize_fn)
-{
-  JsonBuilder b;
-  serialize_fn(b);
-  return b.str();
-}
 
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
@@ -1129,43 +959,47 @@ void WebServer::saveReport(const std::string& filename,
     TimingReport report(sta_);
     setup_paths = report.getReport(true, max_setup);
     hold_paths = report.getReport(false, max_hold);
-    setup_json = serializeToJson(
-        [&](JsonBuilder& b) { serializeTimingPaths(b, setup_paths); });
-    hold_json = serializeToJson(
-        [&](JsonBuilder& b) { serializeTimingPaths(b, hold_paths); });
-    hist_setup = serializeToJson([&](JsonBuilder& b) {
-      serializeSlackHistogram(b, report.getSlackHistogram(true));
-    });
-    hist_hold = serializeToJson([&](JsonBuilder& b) {
-      serializeSlackHistogram(b, report.getSlackHistogram(false));
-    });
-    filters = serializeToJson([&](JsonBuilder& b) {
-      serializeChartFilters(b, report.getChartFilters());
-    });
+    setup_json = boost::json::serialize(serializeTimingPaths(setup_paths));
+    hold_json = boost::json::serialize(serializeTimingPaths(hold_paths));
+    hist_setup = boost::json::serialize(
+        serializeSlackHistogram(report.getSlackHistogram(true)));
+    hist_hold = boost::json::serialize(
+        serializeSlackHistogram(report.getSlackHistogram(false)));
+    filters = boost::json::serialize(
+        serializeChartFilters(report.getChartFilters()));
   } else {
     logger_->warn(utl::WEB, 30, "No STA data — timing sections will be empty.");
-    setup_json
-        = serializeToJson([](JsonBuilder& b) { serializeTimingPaths(b, {}); });
+    setup_json = boost::json::serialize(serializeTimingPaths({}));
     hold_json = setup_json;
-    hist_setup = serializeToJson(
-        [](JsonBuilder& b) { serializeSlackHistogram(b, {}); });
+    hist_setup = boost::json::serialize(serializeSlackHistogram({}));
     hist_hold = hist_setup;
-    filters
-        = serializeToJson([](JsonBuilder& b) { serializeChartFilters(b, {}); });
+    filters = boost::json::serialize(serializeChartFilters({}));
   }
-  const std::string tech_json = serializeToJson(
-      [&](JsonBuilder& b) { serializeTechResponse(b, *generator_); });
-  const std::string bounds_json = serializeToJson(
-      [&](JsonBuilder& b) { serializeBoundsResponse(b, *generator_, true); });
+  const std::string tech_json
+      = boost::json::serialize(serializeTechResponse(*generator_));
+  const std::string bounds_json
+      = boost::json::serialize(serializeBoundsResponse(*generator_, true));
   const auto tech_layers = generator_->getLayers();
+
+  // ── Serialize module hierarchy ──
+
+  HierarchyReport hier_report(block, sta_);
+  auto hier_result = hier_report.getReport();
+
+  const std::string hierarchy_json
+      = boost::json::serialize(serializeHierarchyResult(hier_result));
+
+  auto module_colors = computeDefaultModuleColors(hier_result);
+  const std::map<uint32_t, Color>* mod_colors_ptr
+      = module_colors.empty() ? nullptr : &module_colors;
 
   // ── Render tiles at a fixed zoom level ──
 
   // Pick z so the design fits in a typical panel (~500px).
   // In Leaflet CRS.Simple, the design spans 256 units = 256*2^z pixels.
   // z=1 → 512px, a good fit for most panel sizes.
-  constexpr int z = 1;
-  const int num_tiles = 1 << z;
+  constexpr int kZ = 1;
+  const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
   // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
@@ -1178,6 +1012,7 @@ void WebServer::saveReport(const std::string& filename,
   for (const auto& name : tech_layers) {
     all_layers.push_back(name);
   }
+  all_layers.emplace_back("_modules");
   all_layers.emplace_back("_pins");
 
   // Collect non-empty tiles as "layer/z/x/y" -> base64.
@@ -1185,9 +1020,10 @@ void WebServer::saveReport(const std::string& filename,
   for (const auto& layer : all_layers) {
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(layer, z, tx, ty, vis);
+        auto png = generator_->generateTile(
+            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
         if (png.size() > kEmptyPngSize) {
-          std::string key = layer + "/" + std::to_string(z) + "/"
+          std::string key = layer + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
         }
@@ -1196,17 +1032,17 @@ void WebServer::saveReport(const std::string& filename,
   }
 
   logger_->info(
-      utl::WEB, 33, "Cached {} tiles at zoom {}.", tile_entries.size(), z);
+      utl::WEB, 33, "Cached {} tiles at zoom {}.", tile_entries.size(), kZ);
 
   // ── Render per-path overlay images ──
 
-  auto renderPathOverlays = [&](const std::vector<TimingPathSummary>& paths) {
+  auto render_path_overlays = [&](const std::vector<TimingPathSummary>& paths) {
     std::vector<std::string> overlays;
     for (const auto& path : paths) {
       std::vector<ColoredRect> rects;
       std::vector<FlightLine> lines;
       collectTimingPathShapes(block, path, rects, lines);
-      const int overlay_px = 256 * (1 << z);
+      const int overlay_px = 256 * (1 << kZ);
       auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
       if (png.size() > kEmptyPngSize) {
         overlays.push_back(base64Encode(png));
@@ -1216,8 +1052,8 @@ void WebServer::saveReport(const std::string& filename,
     }
     return overlays;
   };
-  const auto setup_overlays = renderPathOverlays(setup_paths);
-  const auto hold_overlays = renderPathOverlays(hold_paths);
+  const auto setup_overlays = render_path_overlays(setup_paths);
+  const auto hold_overlays = render_path_overlays(hold_paths);
 
   logger_->info(utl::WEB,
                 34,
@@ -1237,7 +1073,8 @@ void WebServer::saveReport(const std::string& filename,
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
 <style>
 )" << kReportCSS
       << R"(
@@ -1256,7 +1093,7 @@ void WebServer::saveReport(const std::string& filename,
 <script>
 window.__STATIC_CACHE__ = {
   zoom: )"
-      << z << R"(,
+      << kZ << R"(,
   json: {
     "tech": )"
       << tech_json << R"(,
@@ -1272,17 +1109,21 @@ window.__STATIC_CACHE__ = {
     "slack_histogram:hold": )"
       << hist_hold << R"(,
     "chart_filters": )"
-      << filters << R"(
+      << filters << R"(,
+    "module_hierarchy": )"
+      << hierarchy_json << R"(
   },
   tiles: {)";
 
-  // Emit tile entries.
+  // Emit tile entries.  Use boost::json::serialize for the key to escape
+  // special characters consistently (the value side is already base64).
   for (size_t i = 0; i < tile_entries.size(); ++i) {
     if (i > 0) {
       out << ",";
     }
-    out << "\n    \"" << json_escape(tile_entries[i].first) << "\":\""
-        << tile_entries[i].second << "\"";
+    out << "\n    "
+        << boost::json::serialize(boost::json::value(tile_entries[i].first))
+        << ":\"" << tile_entries[i].second << "\"";
   }
 
   out << R"(
@@ -1346,80 +1187,40 @@ void WebServer::saveImage(const std::string& filename,
   const odb::Rect region(x0, y0, x1, y1);
   TileVisibility vis;
   if (!vis_json.empty()) {
-    vis.parseFromJson(vis_json);
+    try {
+      boost::json::value v = boost::json::parse(vis_json);
+      if (auto* obj = v.if_object()) {
+        vis.parseFromJson(*obj);
+      }
+    } catch (const std::exception& e) {
+      logger_->warn(
+          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+    }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
 }
 
-void WebServer::serve(int port, const std::string& doc_root)
+ListenerHandle createAndRunListener(
+    net::io_context& ioc,
+    const Tcp::endpoint& endpoint,
+    std::shared_ptr<TileGenerator> generator,
+    std::shared_ptr<TclEvaluator> tcl_eval,
+    std::shared_ptr<TimingReport> timing_report,
+    std::shared_ptr<ClockTreeReport> clock_report,
+    utl::Logger* logger,
+    WebViewerHook* viewer_hook)
 {
-  try {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-    auto timing_report = std::make_shared<TimingReport>(sta_);
-    auto clock_report = std::make_shared<ClockTreeReport>(sta_);
-
-    // Create Tcl evaluator with logger sink for output capture
-    auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
-
-    auto const address = net::ip::make_address("127.0.0.1");
-    uint16_t const u_port = port;
-    int const num_threads = 32;
-
-    if (!doc_root.empty()) {
-      logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
-    }
-
-    const std::string url = "http://localhost:" + std::to_string(port);
-    logger_->info(utl::WEB,
-                  1,
-                  "Server starting on {} with {} threads...",
-                  url,
-                  num_threads);
-
-#if defined(__APPLE__)
-    std::string cmd = "open " + url + " > /dev/null 2>&1";
-#elif defined(_WIN32)
-    std::string cmd = "start " + url + " > nul 2>&1";
-#else
-    std::string cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
-#endif
-    int ret = std::system(cmd.c_str());
-    (void) ret;
-
-    net::io_context ioc{num_threads};
-
-    std::make_shared<Listener>(ioc,
-                               tcp::endpoint{address, u_port},
-                               generator_,
-                               tcl_eval,
-                               timing_report,
-                               clock_report,
-                               doc_root,
-                               logger_)
-        ->run();
-
-    net::signal_set signals(ioc, SIGINT, SIGTERM);
-    signals.async_wait([&](auto, auto) {
-      logger_->info(utl::WEB, 3, "Shutting down...");
-      ioc.stop();
-    });
-
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads - 1);
-    for (int i = 0; i < num_threads - 1; ++i) {
-      threads.emplace_back([&ioc] { ioc.run(); });
-    }
-
-    ioc.run();
-
-    for (auto& t : threads) {
-      t.join();
-    }
-
-    logger_->info(utl::WEB, 5, "Server stopped.");
-  } catch (std::exception const& e) {
-    logger_->error(utl::WEB, 2, "Server error : {}", e.what());
-  }
+  auto listener = std::make_shared<Listener>(ioc,
+                                             endpoint,
+                                             std::move(generator),
+                                             std::move(tcl_eval),
+                                             std::move(timing_report),
+                                             std::move(clock_report),
+                                             logger,
+                                             viewer_hook);
+  listener->run();
+  return {.shutdown = [listener]() { listener->close(); },
+          .port = listener->port()};
 }
 
 }  // namespace web

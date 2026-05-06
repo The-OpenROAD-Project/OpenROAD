@@ -232,8 +232,10 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
   if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
                              config_.setup_slack_margin)) {
     --last_gasp_state.num_viols;
+    acceptEndpointState(endpoint_state);
+    return false;
   }
-  saveImprovedCheckpoint(endpoint_state, max_last_gasp_passes_);
+  saveImprovedCheckpoint(endpoint_state);
   return true;
 }
 

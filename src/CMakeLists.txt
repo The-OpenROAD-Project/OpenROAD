@@ -345,7 +345,6 @@ target_link_libraries(openroad
   cut
   grt
   tap
-  gui
   drt
   dst
   psm
@@ -358,6 +357,7 @@ target_link_libraries(openroad
   par
   est
   web
+  gui
   absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}

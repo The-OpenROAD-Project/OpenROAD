@@ -3,11 +3,10 @@
 
 #pragma once
 
+#include <boost/json/object.hpp>
 #include <limits>
 #include <string>
 #include <vector>
-
-#include "json_builder.h"
 
 namespace sta {
 class dbSta;
@@ -98,11 +97,11 @@ class TimingReport
 
 // ── JSON serialization helpers (shared by request_handler and saveReport) ──
 
-void serializeTimingNode(JsonBuilder& b, const TimingNode& n);
-void serializeTimingPath(JsonBuilder& b, const TimingPathSummary& p);
-void serializeTimingPaths(JsonBuilder& b,
-                          const std::vector<TimingPathSummary>& paths);
-void serializeSlackHistogram(JsonBuilder& b, const SlackHistogramResult& h);
-void serializeChartFilters(JsonBuilder& b, const ChartFilters& f);
+boost::json::object serializeTimingNode(const TimingNode& n);
+boost::json::object serializeTimingPath(const TimingPathSummary& p);
+boost::json::object serializeTimingPaths(
+    const std::vector<TimingPathSummary>& paths);
+boost::json::object serializeSlackHistogram(const SlackHistogramResult& h);
+boost::json::object serializeChartFilters(const ChartFilters& f);
 
 }  // namespace web

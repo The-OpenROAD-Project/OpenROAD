@@ -16,5 +16,8 @@ pkg_tar(
     srcs = ["//:openroad"],
     include_runfiles = True,
     package_file_name = "openroad.tar",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//:__pkg__",
+        "//test:__subpackages__",
+    ],
 )

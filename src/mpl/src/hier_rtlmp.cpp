@@ -4,6 +4,7 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -111,13 +112,13 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setDefaultHalo(int left, int bottom, int right, int top)
+void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
 {
-  if (!default_halo_.isZero()) {
-    logger_->warn(MPL, 71, "Overwriting default macro halo.");
+  if (!base_halo_.isZero()) {
+    logger_->warn(MPL, 71, "Overwriting base macro halo.");
   }
 
-  default_halo_ = {left, bottom, right, top};
+  base_halo_ = {left, bottom, right, top};
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -252,6 +253,50 @@ void HierRTLMP::run()
   computeWireLength();
 }
 
+void HierRTLMP::blockMacroChannels()
+{
+  if (!block_) {
+    block_ = db_->getChip()->getBlock();
+  }
+
+  int blockage_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock() || !inst->isFixed()) {
+      continue;
+    }
+
+    // There is no need to create blockages for soft halos since other
+    // tools capable of placement are aware of them.
+    if (inst->getHalo() != nullptr && inst->getHalo()->isSoft()) {
+      continue;
+    }
+
+    HardMacro::Halo halo;
+    if (macro_to_halo_.contains(inst)) {
+      halo = macro_to_halo_.at(inst);
+    } else if (inst->getHalo() != nullptr) {
+      const HardMacro::Halo inst_halo(inst->getHalo());
+      halo = inst_halo.floorTo(base_halo_);
+    } else {
+      halo = base_halo_;
+    }
+
+    HardMacro hard_macro(inst, halo);
+    hard_macro.setOrientation(inst->getOrient());
+    hard_macro.setRealLocation(inst->getLocation());
+
+    const odb::Rect box = hard_macro.getBBox();
+    odb::dbBlockage* blockage = odb::dbBlockage::create(
+        block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+    blockage->setSoft();
+
+    ++blockage_count;
+  }
+
+  logger_->info(
+      MPL, 76, "Created {} soft blockages around macros.", blockage_count);
+}
+
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
@@ -274,7 +319,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(default_halo_, macro_to_halo_);
+  clustering_engine_->setHalos(base_halo_, macro_to_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -2366,6 +2411,27 @@ void HierRTLMP::commitMacroPlacementToDb()
 void HierRTLMP::commitClusteringDataToDb() const
 {
   createGroupForCluster(tree_->root.get(), nullptr);
+
+  // Check that all instances are in a group
+  int ungrouped_instances = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getGroup() == nullptr) {
+      debugPrint(logger_,
+                 MPL,
+                 "commit_clustering_data",
+                 1,
+                 "Instance {} is not in any group.",
+                 inst->getName());
+      ungrouped_instances++;
+    }
+  }
+  if (ungrouped_instances > 0) {
+    logger_->error(MPL,
+                   49,
+                   "{} instances are not in any group after committing "
+                   "clustering data to the database.",
+                   ungrouped_instances);
+  }
 }
 
 void HierRTLMP::createGroupForCluster(Cluster* cluster,
@@ -2383,21 +2449,27 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+    assert(inst->getGroup() == nullptr);
     cluster_group->addInst(inst);
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    assert(macro->getGroup() == nullptr);
     cluster_group->addInst(macro);
-  }
-
-  for (odb::dbModule* module : cluster->getDbModules()) {
-    for (odb::dbInst* inst : module->getLeafInsts()) {
-      cluster_group->addInst(inst);
-    }
   }
 
   for (const auto& child : cluster->getChildren()) {
     createGroupForCluster(child.get(), cluster_group);
+  }
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      if (inst->getGroup() != nullptr) {
+        // Skip if it is part of a child cluster
+        continue;
+      }
+      cluster_group->addInst(inst);
+    }
   }
 }
 

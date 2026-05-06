@@ -94,7 +94,6 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
 
   initializeSetupServices();
   setup_context_.max_repairs_per_pass = 1;
-  resetMovedBufferFlag();
 
   sta::Vertex* end_vertex = graph_->pinLoadVertex(end_pin);
   if (end_vertex == nullptr) {
@@ -116,11 +115,6 @@ void SetupLegacyBase::initializeSetupServices()
 {
   resizer_.rebuffer_->init();
   resizer_.rebuffer_->initOnCorner(sta_->cmdScene());
-}
-
-void SetupLegacyBase::resetMovedBufferFlag()
-{
-  resizer_.buffer_moved_into_core_ = false;
 }
 
 bool SetupLegacyBase::hasVtSwapCells() const
@@ -300,14 +294,11 @@ void SetupLegacyBase::finishEndpointSearch(
 }
 
 void SetupLegacyBase::saveImprovedCheckpoint(
-    SetupLegacyBase::EndpointRepairState& endpoint_state,
-    const int max_passes)
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   acceptEndpointState(endpoint_state);
-  if (endpoint_state.pass < max_passes) {
-    resizer_.journalBegin();
-    endpoint_state.journal_open = true;
-  }
+  resizer_.journalBegin();
+  endpoint_state.journal_open = true;
 }
 
 void SetupLegacyBase::refreshEndpointSlacks(
@@ -333,7 +324,6 @@ bool SetupLegacyBase::prepareForPhasePipeline()
   const int max_repairs_per_pass = config_.max_repairs_per_pass;
 
   setup_context_.max_repairs_per_pass = max_repairs_per_pass;
-  resetMovedBufferFlag();
 
   target_collector_->init(setup_slack_margin);
 

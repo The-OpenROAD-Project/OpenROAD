@@ -576,6 +576,13 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
             if (pred.searchTo(fanout, mode) && pred.searchThru(edge, mode)) {
               sta::Slack fanout_hold_slack = sta_->slack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
+              if (load_pin == nullptr) {
+                continue;
+              }
+              if (!network_->direction(load_pin)->isAnyInput()
+                  && !network_->isTopLevelPort(load_pin)) {
+                continue;
+              }
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
@@ -711,13 +718,7 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
 
   // New insert buffer behavior
   sta::Pin* drvr_pin = drvr->pin();
-  odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
-  odb::dbNet* drvr_dbnet = nullptr;
-  if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
-    drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
-  } else {
-    drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
-  }
+  odb::dbNet* drvr_dbnet = db_network_->findFlatDbNet(drvr_pin);
 
   sta::Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
@@ -730,6 +731,9 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
       }
       load_pins_set.insert(const_cast<sta::Pin*>(load_pin));
     }
+  }
+  if (load_pins_set.empty()) {
+    return;
   }
 
   buffer = resizer_->insertBufferBeforeLoads(

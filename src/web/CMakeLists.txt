@@ -12,6 +12,37 @@ swig_lib(NAME         web
                        ${ODB_HOME}/include
 )
 
+set(WEB_ASSET_FILES
+    src/index.html
+    src/style.css
+    src/theme.js
+    src/coordinates.js
+    src/ui-utils.js
+    src/checkbox-tree-model.js
+    src/vis-tree.js
+    src/websocket-manager.js
+    src/websocket-tile-layer.js
+    src/display-controls.js
+    src/inspector.js
+    src/ruler.js
+    src/tcl-completer.js
+    src/hierarchy-browser.js
+    src/menu-bar.js
+    src/title.js
+    src/clock-tree-widget.js
+    src/schematic-widget.js
+    src/charts-widget.js
+    src/timing-widget.js
+    src/drc-widget.js
+    src/main.js
+)
+
+# Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
+set(WEB_ASSET_PATHS "")
+foreach(f ${WEB_ASSET_FILES})
+  list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
+endforeach()
+
 set(REPORT_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/report_assets.cpp)
 add_custom_command(
   OUTPUT ${REPORT_ASSETS_CPP}
@@ -31,6 +62,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tcl-completer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hierarchy-browser.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/menu-bar.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/title.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/clock-tree-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
@@ -39,27 +71,20 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
-    src/style.css
-    src/theme.js
-    src/coordinates.js
-    src/ui-utils.js
-    src/checkbox-tree-model.js
-    src/vis-tree.js
-    src/websocket-manager.js
-    src/websocket-tile-layer.js
-    src/display-controls.js
-    src/inspector.js
-    src/ruler.js
-    src/tcl-completer.js
-    src/hierarchy-browser.js
-    src/menu-bar.js
-    src/clock-tree-widget.js
-    src/schematic-widget.js
-    src/charts-widget.js
-    src/timing-widget.js
-    src/drc-widget.js
-    src/main.js
+    ${WEB_ASSET_FILES}
   COMMENT "Generating report_assets.cpp"
+)
+
+set(WEB_ASSETS_CPP ${CMAKE_CURRENT_BINARY_DIR}/web_assets.cpp)
+add_custom_command(
+  OUTPUT ${WEB_ASSETS_CPP}
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
+    --output ${WEB_ASSETS_CPP}
+    ${WEB_ASSET_PATHS}
+  DEPENDS
+    src/embed_web_assets.py
+    ${WEB_ASSET_FILES}
+  COMMENT "Generating web_assets.cpp"
 )
 
 target_sources(web
@@ -69,11 +94,18 @@ target_sources(web
     src/hierarchy_report.cpp
     src/request_handler.cpp
     src/search.cpp
+    src/font_data.cpp
+    src/glyph_cache.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
+    src/web_serve.cpp
+    src/web_chart.cpp
+    src/web_painter.cpp
+    src/web_viewer_hook.cpp
     src/MakeWeb.cpp
     ${REPORT_ASSETS_CPP}
+    ${WEB_ASSETS_CPP}
 )
 
 target_link_libraries(web
@@ -84,6 +116,7 @@ target_link_libraries(web
     gui_heatmap_core
     dbSta_lib
     lodepng
+    stb_truetype
     utl_lib
 )
 
@@ -98,7 +131,11 @@ target_include_directories(web
     ${OPENROAD_HOME}/third-party
 )
 
-target_compile_definitions(web PRIVATE BOOST_ASIO_NO_DEPRECATED)
+target_compile_definitions(web
+  PRIVATE
+    BOOST_ASIO_NO_DEPRECATED
+    BOOST_JSON_HEADER_ONLY
+)
 
 messages(
   TARGET web

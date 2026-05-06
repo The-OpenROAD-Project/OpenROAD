@@ -43,6 +43,7 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "swap_pins_dont_touch",
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
@@ -67,6 +68,7 @@ TESTS = [
     "repair_design3_verbose",
     "repair_design4",
     "repair_design5",
+    "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",
     "repair_fanout2",
@@ -99,6 +101,8 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_multi_output_load",
+    "repair_setup_max_iter",
     "repair_setup1",
     "repair_setup1_multi",
     "repair_setup2",
@@ -305,6 +309,11 @@ BIG_TESTS = [
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [":TestBufRem1"],
+)
 
 cc_test(
     name = "rsz_buffer_removal",

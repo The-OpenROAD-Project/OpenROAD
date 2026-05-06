@@ -21,6 +21,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -96,16 +97,23 @@ bool resolveDriverContext(UnbufferSelectionContext& ctx)
 
 bool loadExpandedPath(UnbufferSelectionContext& ctx)
 {
-  const sta::Path* drvr_input_path = ctx.target.inputPath(ctx.resizer);
-  ctx.prev_drvr_path = ctx.target.prevDriverPath(ctx.resizer);
-  if (drvr_input_path == nullptr || ctx.prev_drvr_path == nullptr) {
+  const sta::Path* drvr_path = ctx.target.driverPath(ctx.resizer);
+  const sta::TimingArc* in_arc
+      = drvr_path != nullptr ? drvr_path->prevArc(ctx.resizer.staState())
+                             : nullptr;
+  const sta::LibertyPort* in_lib_port
+      = in_arc != nullptr ? in_arc->from() : nullptr;
+  if (in_lib_port == nullptr) {
     return false;
   }
 
-  sta::Vertex* drvr_input_vertex = drvr_input_path->vertex(ctx.resizer.sta());
+  ctx.prev_drvr_path = ctx.target.prevDriverPath(ctx.resizer);
+  if (ctx.prev_drvr_path == nullptr) {
+    return false;
+  }
+
   sta::Vertex* prev_drvr_vertex = ctx.prev_drvr_path->vertex(ctx.resizer.sta());
-  ctx.drvr_input_pin
-      = drvr_input_vertex != nullptr ? drvr_input_vertex->pin() : nullptr;
+  ctx.drvr_input_pin = ctx.resizer.network()->findPin(ctx.drvr, in_lib_port);
   ctx.prev_drvr_pin
       = prev_drvr_vertex != nullptr ? prev_drvr_vertex->pin() : nullptr;
   return ctx.drvr_input_pin != nullptr && ctx.prev_drvr_pin != nullptr;

@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <boost/json/serialize.hpp>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -11,7 +12,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "tile_generator.h"
@@ -81,7 +81,11 @@ class SaveReportTest : public tst::Nangate45Fixture
                       int max_setup = 0,
                       int max_hold = 0)
   {
-    WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+    WebServer server(getDb(),
+                     /*sta=*/nullptr,
+                     getLogger(),
+                     /*interp=*/nullptr,
+                     /*num_threads=*/1);
     server.saveReport(path, max_setup, max_hold);
   }
 
@@ -189,7 +193,7 @@ TEST_F(SaveReportTest, CachesValidBoundsResponse)
   const std::string html = readFile(path);
 
   EXPECT_TRUE(contains(html, "\"bounds\":"));
-  EXPECT_TRUE(contains(html, "\"shapes_ready\": true"));
+  EXPECT_TRUE(contains(html, "\"shapes_ready\":true"));
   EXPECT_TRUE(contains(html, "\"pin_max_size\":"));
 }
 
@@ -322,9 +326,7 @@ TEST_F(SaveReportTest, SerializeTimingPathsRoundTrip)
   p.data_nodes.push_back(std::move(node));
 
   std::vector<TimingPathSummary> paths = {std::move(p)};
-  JsonBuilder b;
-  serializeTimingPaths(b, paths);
-  const std::string json = b.str();
+  const std::string json = boost::json::serialize(serializeTimingPaths(paths));
 
   EXPECT_TRUE(contains(json, "\"clk1\""));
   EXPECT_TRUE(contains(json, "\"clk2\""));
@@ -343,14 +345,12 @@ TEST_F(SaveReportTest, SerializeSlackHistogramRoundTrip)
   h.total_endpoints = 35;
   h.time_unit = "ns";
 
-  JsonBuilder b;
-  serializeSlackHistogram(b, h);
-  const std::string json = b.str();
+  const std::string json = boost::json::serialize(serializeSlackHistogram(h));
 
   EXPECT_TRUE(contains(json, "\"bins\":"));
-  EXPECT_TRUE(contains(json, "\"unconstrained_count\": 5"));
-  EXPECT_TRUE(contains(json, "\"total_endpoints\": 35"));
-  EXPECT_TRUE(contains(json, "\"time_unit\": \"ns\""));
+  EXPECT_TRUE(contains(json, "\"unconstrained_count\":5"));
+  EXPECT_TRUE(contains(json, "\"total_endpoints\":35"));
+  EXPECT_TRUE(contains(json, "\"time_unit\":\"ns\""));
 }
 
 TEST_F(SaveReportTest, SerializeChartFiltersRoundTrip)
@@ -359,9 +359,7 @@ TEST_F(SaveReportTest, SerializeChartFiltersRoundTrip)
   f.path_groups.emplace_back("default");
   f.clocks.emplace_back("clk");
 
-  JsonBuilder b;
-  serializeChartFilters(b, f);
-  const std::string json = b.str();
+  const std::string json = boost::json::serialize(serializeChartFilters(f));
 
   EXPECT_TRUE(contains(json, "\"path_groups\":"));
   EXPECT_TRUE(contains(json, "\"default\""));
@@ -372,9 +370,7 @@ TEST_F(SaveReportTest, SerializeChartFiltersRoundTrip)
 TEST_F(SaveReportTest, SerializeTechResponse)
 {
   TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
-  JsonBuilder b;
-  serializeTechResponse(b, gen);
-  const std::string json = b.str();
+  const std::string json = boost::json::serialize(serializeTechResponse(gen));
 
   EXPECT_TRUE(contains(json, "\"layers\":"));
   EXPECT_TRUE(contains(json, "\"sites\":"));
@@ -386,13 +382,13 @@ TEST_F(SaveReportTest, SerializeBoundsShapesReady)
 {
   TileGenerator gen(getDb(), /*sta=*/nullptr, getLogger());
 
-  JsonBuilder b_true;
-  serializeBoundsResponse(b_true, gen, true);
-  EXPECT_TRUE(contains(b_true.str(), "\"shapes_ready\": true"));
+  const std::string json_true
+      = boost::json::serialize(serializeBoundsResponse(gen, true));
+  EXPECT_TRUE(contains(json_true, "\"shapes_ready\":true"));
 
-  JsonBuilder b_false;
-  serializeBoundsResponse(b_false, gen, false);
-  EXPECT_TRUE(contains(b_false.str(), "\"shapes_ready\": false"));
+  const std::string json_false
+      = boost::json::serialize(serializeBoundsResponse(gen, false));
+  EXPECT_TRUE(contains(json_false, "\"shapes_ready\":false"));
 }
 
 // ─── Edge Cases ─────────────────────────────────────────────────────────────
@@ -404,7 +400,7 @@ TEST_F(SaveReportTest, ZeroPathsReport)
   const std::string html = readFile(path);
 
   ASSERT_TRUE(std::filesystem::exists(path));
-  EXPECT_TRUE(contains(html, "\"paths\": []"));
+  EXPECT_TRUE(contains(html, "\"paths\":[]"));
 }
 
 }  // namespace

@@ -539,7 +539,6 @@ void RepairDesign::repairNet(sta::Net* net,
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->resized_multi_output_insts_.clear();
-  resizer_->buffer_moved_into_core_ = false;
 
   sta_->checkSlewsPreamble();
   sta_->checkCapacitancesPreamble(sta_->scenes());

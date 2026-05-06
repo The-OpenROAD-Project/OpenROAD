@@ -21,6 +21,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/TimingArc.hh"
 
 namespace rsz {
 
@@ -100,15 +101,12 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
   load_cap
       = resizer_.sta()->graphDelayCalc()->loadCap(drvr_pin, scene, min_max);
 
-  const sta::Path* in_path = target.inputPath(resizer_);
   const sta::Path* prev_drvr_path = target.prevDriverPath(resizer_);
-  if (in_path == nullptr) {
-    return false;
-  }
-
-  sta::Pin* in_pin = in_path->pin(resizer_.staState());
-  in_port
-      = in_pin != nullptr ? resizer_.network()->libertyPort(in_pin) : nullptr;
+  const sta::Path* drvr_path = target.driverPath(resizer_);
+  const sta::TimingArc* in_arc = drvr_path != nullptr
+                                     ? drvr_path->prevArc(resizer_.staState())
+                                     : nullptr;
+  in_port = in_arc != nullptr ? in_arc->from() : nullptr;
   if (in_port == nullptr) {
     return false;
   }

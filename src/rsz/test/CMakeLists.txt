@@ -59,6 +59,7 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design_outside_core
     repair_fanout1
     repair_fanout2
     repair_fanout3
@@ -84,6 +85,7 @@ or_integration_tests(
     repair_hold13
     repair_hold14
     repair_hold15
+    repair_hold_multi_output_load
     repair_setup_buffer_legacy_basic
     repair_setup_clone_legacy_flat
     repair_setup_clone_high_fanout
@@ -99,6 +101,7 @@ or_integration_tests(
     repair_setup_split_load_hier_only
     repair_setup_startpoint_fanout_only
     repair_setup_swap_pins_dont_touch_sequence
+    repair_setup_max_iter
     repair_setup_tns
     repair_setup_wns_guard
     repair_setup_wns_last_gasp_noop

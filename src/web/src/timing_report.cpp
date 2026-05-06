@@ -4,6 +4,7 @@
 #include "timing_report.h"
 
 #include <algorithm>
+#include <boost/json/array.hpp>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -14,7 +15,6 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/ExceptionPath.hh"
@@ -389,8 +389,7 @@ static void collectFilteredSlacks(sta::dbSta* sta,
   // Find the path group.
   sta::PathGroup* pg = nullptr;
   if (!path_group.empty()) {
-    pg = sta->cmdMode()->pathGroups()->findPathGroup(path_group.c_str(),
-                                                     min_max);
+    pg = sta->cmdMode()->pathGroups()->findPathGroup(path_group, min_max);
   } else if (clk) {
     pg = sta->cmdMode()->pathGroups()->findPathGroup(clk, min_max);
   }
@@ -545,92 +544,98 @@ ChartFilters TimingReport::getChartFilters() const
 
 // ── JSON serialization helpers ──
 
-void serializeTimingNode(JsonBuilder& b, const TimingNode& n)
+boost::json::object serializeTimingNode(const TimingNode& n)
 {
-  b.beginObject();
-  b.field("pin", n.pin_name);
-  b.field("fanout", n.fanout);
-  b.field("rise", n.is_rising);
-  b.field("clk", n.is_clock);
-  b.field("time", n.time);
-  b.field("delay", n.delay);
-  b.field("slew", n.slew);
-  b.field("load", n.load);
-  b.endObject();
+  boost::json::object o;
+  o["pin"] = n.pin_name;
+  o["fanout"] = n.fanout;
+  o["rise"] = n.is_rising;
+  o["clk"] = n.is_clock;
+  o["time"] = n.time;
+  o["delay"] = n.delay;
+  o["slew"] = n.slew;
+  o["load"] = n.load;
+  return o;
 }
 
-void serializeTimingPath(JsonBuilder& b, const TimingPathSummary& p)
+boost::json::object serializeTimingPath(const TimingPathSummary& p)
 {
-  b.beginObject();
-  b.field("start_clk", p.start_clk);
-  b.field("end_clk", p.end_clk);
-  b.field("required", p.required);
-  b.field("arrival", p.arrival);
-  b.field("slack", p.slack);
-  b.field("skew", p.skew);
-  b.field("path_delay", p.path_delay);
-  b.field("logic_depth", p.logic_depth);
-  b.field("fanout", p.fanout);
-  b.field("start_pin", p.start_pin);
-  b.field("end_pin", p.end_pin);
-  b.beginArray("data_nodes");
+  boost::json::object o;
+  o["start_clk"] = p.start_clk;
+  o["end_clk"] = p.end_clk;
+  o["required"] = p.required;
+  o["arrival"] = p.arrival;
+  o["slack"] = p.slack;
+  o["skew"] = p.skew;
+  o["path_delay"] = p.path_delay;
+  o["logic_depth"] = p.logic_depth;
+  o["fanout"] = p.fanout;
+  o["start_pin"] = p.start_pin;
+  o["end_pin"] = p.end_pin;
+  boost::json::array data;
+  data.reserve(p.data_nodes.size());
   for (const auto& n : p.data_nodes) {
-    serializeTimingNode(b, n);
+    data.emplace_back(serializeTimingNode(n));
   }
-  b.endArray();
-  b.beginArray("capture_nodes");
+  o["data_nodes"] = std::move(data);
+  boost::json::array capture;
+  capture.reserve(p.capture_nodes.size());
   for (const auto& n : p.capture_nodes) {
-    serializeTimingNode(b, n);
+    capture.emplace_back(serializeTimingNode(n));
   }
-  b.endArray();
-  b.endObject();
+  o["capture_nodes"] = std::move(capture);
+  return o;
 }
 
-void serializeTimingPaths(JsonBuilder& b,
-                          const std::vector<TimingPathSummary>& paths)
+boost::json::object serializeTimingPaths(
+    const std::vector<TimingPathSummary>& paths)
 {
-  b.beginObject();
-  b.beginArray("paths");
+  boost::json::object o;
+  boost::json::array arr;
+  arr.reserve(paths.size());
   for (const auto& p : paths) {
-    serializeTimingPath(b, p);
+    arr.emplace_back(serializeTimingPath(p));
   }
-  b.endArray();
-  b.endObject();
+  o["paths"] = std::move(arr);
+  return o;
 }
 
-void serializeSlackHistogram(JsonBuilder& b, const SlackHistogramResult& h)
+boost::json::object serializeSlackHistogram(const SlackHistogramResult& h)
 {
-  b.beginObject();
-  b.beginArray("bins");
+  boost::json::object o;
+  boost::json::array bins;
+  bins.reserve(h.bins.size());
   for (const auto& bin : h.bins) {
-    b.beginObject();
-    b.field("lower", bin.lower);
-    b.field("upper", bin.upper);
-    b.field("count", bin.count);
-    b.field("negative", bin.is_negative);
-    b.endObject();
+    boost::json::object b;
+    b["lower"] = bin.lower;
+    b["upper"] = bin.upper;
+    b["count"] = bin.count;
+    b["negative"] = bin.is_negative;
+    bins.emplace_back(std::move(b));
   }
-  b.endArray();
-  b.field("unconstrained_count", h.unconstrained_count);
-  b.field("total_endpoints", h.total_endpoints);
-  b.field("time_unit", h.time_unit);
-  b.endObject();
+  o["bins"] = std::move(bins);
+  o["unconstrained_count"] = h.unconstrained_count;
+  o["total_endpoints"] = h.total_endpoints;
+  o["time_unit"] = h.time_unit;
+  return o;
 }
 
-void serializeChartFilters(JsonBuilder& b, const ChartFilters& f)
+boost::json::object serializeChartFilters(const ChartFilters& f)
 {
-  b.beginObject();
-  b.beginArray("path_groups");
+  boost::json::object o;
+  boost::json::array groups;
+  groups.reserve(f.path_groups.size());
   for (const auto& name : f.path_groups) {
-    b.value(name);
+    groups.emplace_back(name);
   }
-  b.endArray();
-  b.beginArray("clocks");
+  o["path_groups"] = std::move(groups);
+  boost::json::array clocks;
+  clocks.reserve(f.clocks.size());
   for (const auto& name : f.clocks) {
-    b.value(name);
+    clocks.emplace_back(name);
   }
-  b.endArray();
-  b.endObject();
+  o["clocks"] = std::move(clocks);
+  return o;
 }
 
 }  // namespace web
