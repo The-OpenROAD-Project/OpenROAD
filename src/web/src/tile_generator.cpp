@@ -861,9 +861,11 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           const odb::Rect& box = std::get<0>(shape);
           if (box.intersects(click_pt) && vis.isNetVisible(net)) {
             seen_nets.insert(net);
-            results.push_back(
-                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
-                 false});
+            results.push_back({net,
+                               net->getName(),
+                               "Net",
+                               toWorld(net->getTermBBox()),
+                               false});
           }
         }
       }
@@ -879,9 +881,11 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           const odb::Rect box = std::get<0>(shape)->getBox();
           if (box.intersects(click_pt) && vis.isNetVisible(net)) {
             seen_nets.insert(net);
-            results.push_back(
-                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
-                 false});
+            results.push_back({net,
+                               net->getName(),
+                               "Net",
+                               toWorld(net->getTermBBox()),
+                               false});
           }
         }
       }
@@ -897,9 +901,11 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           const odb::Rect box = std::get<0>(shape)->getBox();
           if (box.intersects(click_pt) && vis.isNetVisible(net)) {
             seen_nets.insert(net);
-            results.push_back(
-                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
-                 false});
+            results.push_back({net,
+                               net->getName(),
+                               "Net",
+                               toWorld(net->getTermBBox()),
+                               false});
           }
         }
       }
@@ -915,15 +921,15 @@ std::vector<SelectionResult> TileGenerator::selectAt(
     return a.bbox.area() > b.bbox.area();
   });
 
-  debugPrint(logger_,
-             utl::WEB,
-             "select",
-             1,
-             "  selected={} (insts={}, nets={})",
-             results.size(),
-             std::ranges::count_if(results,
-                                   [](const auto& r) { return r.is_inst; }),
-             seen_nets.size());
+  debugPrint(
+      logger_,
+      utl::WEB,
+      "select",
+      1,
+      "  selected={} (insts={}, nets={})",
+      results.size(),
+      std::ranges::count_if(results, [](const auto& r) { return r.is_inst; }),
+      seen_nets.size());
   return results;
 }
 
@@ -995,14 +1001,16 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root)
   if (!root) {
     return out;
   }
-  collectChipletsRec(root, nullptr, odb::dbTransform{}, std::string{}, 0, 0, out);
+  collectChipletsRec(
+      root, nullptr, odb::dbTransform{}, std::string{}, 0, 0, out);
 
-  std::stable_sort(out.begin(), out.end(), [](const ChipletNode& a, const ChipletNode& b) {
-    if (a.global_z != b.global_z) {
-      return a.global_z < b.global_z;
-    }
-    return a.depth < b.depth;
-  });
+  std::stable_sort(
+      out.begin(), out.end(), [](const ChipletNode& a, const ChipletNode& b) {
+        if (a.global_z != b.global_z) {
+          return a.global_z < b.global_z;
+        }
+        return a.depth < b.depth;
+      });
 
   return out;
 }
@@ -1162,8 +1170,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // the slow-path it's a per-chiplet local buffer that the
       // reverse-mapping block at the end of this iteration composites
       // back onto world_image_buffer.
-      auto& image_buffer
-          = use_local ? local_image_buffer : world_image_buffer;
+      auto& image_buffer = use_local ? local_image_buffer : world_image_buffer;
 
       odb::Rect dbu_tile = dbu_tile_world;
       if (use_local) {
@@ -1195,8 +1202,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int yh = die.yMax();
           const int64_t pixel_xl = (int64_t) ((xl - dbu_x_min) * scale);
           const int64_t pixel_yl = (int64_t) ((yl - dbu_y_min) * scale);
-          const int64_t pixel_xh = (int64_t) std::ceil((xh - dbu_x_min) * scale);
-          const int64_t pixel_yh = (int64_t) std::ceil((yh - dbu_y_min) * scale);
+          const int64_t pixel_xh
+              = (int64_t) std::ceil((xh - dbu_x_min) * scale);
+          const int64_t pixel_yh
+              = (int64_t) std::ceil((yh - dbu_y_min) * scale);
 
           const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, 256);
           const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, 256);
@@ -1208,8 +1217,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, 255);
           const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, 255);
 
-          constexpr Color die_outline{
-              .r = 128, .g = 128, .b = 128, .a = 255};
+          constexpr Color die_outline{.r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
             for (int iy = loop_yl; iy < loop_yh; ++iy) {
               setPixel(image_buffer, draw_xl, 255 - iy, die_outline);
@@ -1526,8 +1534,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
           const int64_t pixel_xl = (int64_t) ((xl - dbu_x_min) * scale);
           const int64_t pixel_yl = (int64_t) ((yl - dbu_y_min) * scale);
-          const int64_t pixel_xh = (int64_t) std::ceil((xh - dbu_x_min) * scale);
-          const int64_t pixel_yh = (int64_t) std::ceil((yh - dbu_y_min) * scale);
+          const int64_t pixel_xh
+              = (int64_t) std::ceil((xh - dbu_x_min) * scale);
+          const int64_t pixel_yh
+              = (int64_t) std::ceil((yh - dbu_y_min) * scale);
 
           const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, 256);
           const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, 256);
@@ -1573,8 +1583,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             // elided from the left ("...suffix") to fit 90% of the
             // available dimension, matching the Qt GUI's behavior.
             if (vis.inst_names) {
-              const int box_px_w = (int)(pixel_xh - pixel_xl);
-              const int box_px_h = (int)(pixel_yh - pixel_yl);
+              const int box_px_w = (int) (pixel_xh - pixel_xl);
+              const int box_px_h = (int) (pixel_yh - pixel_yl);
               const int box_px_min = std::min(box_px_w, box_px_h);
               if (std::max(box_px_w, box_px_h) >= kMinInstNameBoxPx) {
                 const int font_px
@@ -1640,16 +1650,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const int64_t py = cy - text_w / 2;
                     if (px > -font_h && px < kTileSizeInPixel && py > -text_w
                         && py < kTileSizeInPixel) {
-                      drawTextRotated(
-                          image_buffer, (int)px, (int)py, name, inst_font, name_color);
+                      drawTextRotated(image_buffer,
+                                      (int) px,
+                                      (int) py,
+                                      name,
+                                      inst_font,
+                                      name_color);
                     }
                   } else {
                     const int64_t px = cx - text_w / 2;
                     const int64_t py = cy - font_h / 2;
                     if (px > -text_w && px < kTileSizeInPixel && py > -font_h
                         && py < kTileSizeInPixel) {
-                      drawText(
-                          image_buffer, (int)px, (int)py, name, inst_font, name_color);
+                      drawText(image_buffer,
+                               (int) px,
+                               (int) py,
+                               name,
+                               inst_font,
+                               name_color);
                     }
                   }
                 }
@@ -2182,10 +2200,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         for (int py_w = 0; py_w < kTileSizeInPixel; ++py_w) {
           for (int px_w = 0; px_w < kTileSizeInPixel; ++px_w) {
             // World pixel center → world DBU.
-            odb::Point pt(std::lround(dbu_x_min_world + (px_w + 0.5) / scale),
-                          std::lround(dbu_y_min_world
-                                      + (kTileSizeInPixel - 1 - py_w + 0.5)
-                                            / scale));
+            odb::Point pt(
+                std::lround(dbu_x_min_world + (px_w + 0.5) / scale),
+                std::lround(dbu_y_min_world
+                            + (kTileSizeInPixel - 1 - py_w + 0.5) / scale));
             // World DBU → local DBU.
             inv_xfm.apply(pt);
             // Local DBU → local pixel.
@@ -2239,8 +2257,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           world_image_buffer, colored_rects, layer, dbu_tile_world, scale);
     }
     if (!flight_lines.empty()) {
-      drawFlightLines(
-          world_image_buffer, flight_lines, dbu_tile_world, scale);
+      drawFlightLines(world_image_buffer, flight_lines, dbu_tile_world, scale);
     }
     if (route_guide_net_ids && !route_guide_net_ids->empty()
         && world_tech_layer) {
