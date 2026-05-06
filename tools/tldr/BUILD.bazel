@@ -54,6 +54,8 @@ py_library(
         "test_strip",
         "test_stages",
         "test_paths",
+        "test_paginate",
+        "test_review_comments",
         "test_local_resolve",
         "test_orfs_flow",
         "test_metric_guard",

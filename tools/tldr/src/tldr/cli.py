@@ -80,6 +80,7 @@ def discover_findings(
     repo: str,
     sha: str,
     *,
+    pr: int | None = None,
     runner=None,
     url_opener=None,
 ) -> list[Finding]:
@@ -87,6 +88,10 @@ def discover_findings(
     findings: list[Finding] = []
     for ch in checks:
         findings.extend(_scan_check(repo, ch, runner=runner, url_opener=url_opener))
+    if pr is not None:
+        from . import review_comments
+
+        findings.extend(review_comments.discover(repo, pr, runner=runner))
     return collapse(findings)
 
 
@@ -172,7 +177,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     fmt = args.format or ("markdown" if args.post else "table")
 
     try:
-        findings = discover_findings(repo, sha)
+        findings = discover_findings(repo, sha, pr=pr)
     except Exception as e:  # noqa: BLE001
         print(f"error: failed to discover findings: {e}", file=sys.stderr)
         return 1

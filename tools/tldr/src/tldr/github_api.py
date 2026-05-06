@@ -18,6 +18,8 @@ import subprocess
 from dataclasses import dataclass
 from typing import Callable, Iterable
 
+from ._paginate import iter_objects
+
 
 @dataclass(frozen=True)
 class CheckLike:
@@ -66,12 +68,8 @@ def discover_failing_checks(
         ],
         runner=runner,
     )
-    for chunk in raw.strip().split("\n\n"):
-        if not chunk.strip():
-            continue
-        try:
-            data = json.loads(chunk)
-        except json.JSONDecodeError:
+    for data in iter_objects(raw):
+        if not isinstance(data, dict):
             continue
         for cr in data.get("check_runs", []) or []:
             if (cr.get("conclusion") or "") in ("failure", "timed_out"):
@@ -97,17 +95,11 @@ def discover_failing_checks(
         ],
         runner=runner,
     )
-    for chunk in raw.strip().split("\n\n"):
-        if not chunk.strip():
-            continue
-        try:
-            arr = json.loads(chunk)
-        except json.JSONDecodeError:
-            continue
+    # Statuses API returns a list of statuses, latest first per context.
+    seen: set[str] = set()
+    for arr in iter_objects(raw):
         if not isinstance(arr, list):
             continue
-        # Statuses API returns a list of statuses, latest first per context.
-        seen: set[str] = set()
         for st in arr:
             ctx = st.get("context", "")
             if ctx in seen:

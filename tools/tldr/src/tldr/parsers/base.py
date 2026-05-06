@@ -35,6 +35,11 @@ class Finding:
     verify_command: str | None = None
     auto_fix_command: tuple[str, ...] | None = None
     extras: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+    # When False, the renderer never collapses this finding into a same-kind
+    # group in the human TL;DR — each gets its own bullet. Used for review
+    # comments, where every comment is independent feedback. Default True
+    # so e.g. 30 black-format findings still collapse to one bullet.
+    collapse_in_human_tldr: bool = True
 
     def with_stage(self, stage: str | None) -> "Finding":
         return Finding(
@@ -53,6 +58,7 @@ class Finding:
             verify_command=self.verify_command,
             auto_fix_command=self.auto_fix_command,
             extras=self.extras,
+            collapse_in_human_tldr=self.collapse_in_human_tldr,
         )
 
 

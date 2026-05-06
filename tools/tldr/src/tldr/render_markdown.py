@@ -53,15 +53,23 @@ PROJECT_NORMS = [
 
 
 def _human_bullets(findings: list[Finding]) -> list[str]:
-    """Collapse same-kind findings into one bullet."""
+    """Collapse same-kind findings into one bullet, except for findings that
+    opt out via ``collapse_in_human_tldr=False`` (e.g. review comments)."""
     by_kind: OrderedDict[str, list[Finding]] = OrderedDict()
     for f in findings:
         by_kind.setdefault(f.kind, []).append(f)
 
     bullets: list[str] = []
     for kind, group in by_kind.items():
-        # If a finding ships a custom human_headline, use the first one and
-        # qualify with a count if there are several.
+        # Findings that opt out of collapsing — every member gets its own bullet.
+        if not group[0].collapse_in_human_tldr:
+            for f in group:
+                if f.human_headline:
+                    bullets.append(f"- {f.human_headline}.")
+                else:
+                    bullets.append(f"- `{f.kind}`: {f.headline}")
+            continue
+
         first = group[0]
         if first.human_headline:
             if len(group) == 1:
