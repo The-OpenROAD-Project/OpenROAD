@@ -74,5 +74,59 @@ class LocalResolveTest(unittest.TestCase):
         self.assertEqual(ctx.repo, "The-OpenROAD-Project/OpenROAD")
 
 
+class InferRepoForkMappingTest(unittest.TestCase):
+    """A fork's `origin` shouldn't always route to OpenROAD upstream — a
+    fork of OpenROAD-flow-scripts must route to that upstream. Covers
+    Gemini's [medium] finding on local.py:79."""
+
+    def _run_with_origin(self, origin_url: str):
+        def runner(cmd):
+            if cmd[:3] == ["git", "remote", "get-url"]:
+                return 0, origin_url
+            return 1, ""
+
+        return runner
+
+    def test_upstream_origin_returns_as_is(self) -> None:
+        with mock.patch.object(
+            local,
+            "_run",
+            self._run_with_origin(
+                "git@github.com:The-OpenROAD-Project/OpenROAD-flow-scripts.git"
+            ),
+        ):
+            self.assertEqual(
+                local.infer_repo(),
+                "The-OpenROAD-Project/OpenROAD-flow-scripts",
+            )
+
+    def test_fork_of_orfs_routes_to_orfs_upstream(self) -> None:
+        with mock.patch.object(
+            local,
+            "_run",
+            self._run_with_origin("git@github.com:alice/OpenROAD-flow-scripts.git"),
+        ):
+            self.assertEqual(
+                local.infer_repo(),
+                "The-OpenROAD-Project/OpenROAD-flow-scripts",
+            )
+
+    def test_fork_of_openroad_routes_to_openroad_upstream(self) -> None:
+        with mock.patch.object(
+            local,
+            "_run",
+            self._run_with_origin("git@github.com:bob/OpenROAD.git"),
+        ):
+            self.assertEqual(local.infer_repo(), "The-OpenROAD-Project/OpenROAD")
+
+    def test_unknown_fork_falls_back_to_default(self) -> None:
+        with mock.patch.object(
+            local,
+            "_run",
+            self._run_with_origin("git@github.com:carol/some-other-repo.git"),
+        ):
+            self.assertEqual(local.infer_repo(), local.DEFAULT_REPO)
+
+
 if __name__ == "__main__":
     unittest.main()

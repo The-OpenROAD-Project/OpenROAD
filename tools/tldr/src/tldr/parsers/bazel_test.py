@@ -38,7 +38,7 @@ from .base import Finding, Severity, StageContext
 # resolved-repo names, optionally with version suffix `+1.2.3` or `~tilde`),
 # followed by `//<path>:<name>`.
 _PATTERN = re.compile(
-    r"^(?P<target>(?:@@?[A-Za-z0-9_.\-+~]+)?//[A-Za-z0-9_./:\-+~]+)"
+    r"^\s*(?P<target>(?:@@?[A-Za-z0-9_.\-+~]+)?//[A-Za-z0-9_./:\-+~]+)"
     r"\s+(?:\(.*\)\s+)?FAILED\b(?:\s+in\s+\S+)?"
 )
 
@@ -105,9 +105,11 @@ class BazelTestParser:
         for target in order:
             rec = records[target]
             block = block_buffers.get(target, [])
-            detail_lines = [rec["first"].strip()] + [
-                l.strip() for l in block if l.strip()
-            ]
+            # Preserve leading whitespace inside the captured Test-output
+            # block so stack traces / diffs / indented assertion messages
+            # remain readable. Only the FAILED summary's own line gets
+            # collapsed (it has fixed-width spacing for the FAILED column).
+            detail_lines = [rec["first"].strip()] + [l for l in block if l.strip()]
             yield Finding(
                 parser=self.name,
                 severity=Severity.actionable,

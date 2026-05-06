@@ -11,7 +11,7 @@ from typing import Iterable
 from .base import Finding, Severity, StageContext
 
 _PATTERN = re.compile(
-    r"^\[(?P<level>ERROR|WARNING)\s+(?P<code>[A-Z]{2,5}-\d{4})\]\s+(?P<msg>.+)$"
+    r"^\s*\[(?P<level>ERROR|WARNING)\s+(?P<code>[A-Z]{2,5}-\d{4})\]\s+(?P<msg>.+)$"
 )
 
 

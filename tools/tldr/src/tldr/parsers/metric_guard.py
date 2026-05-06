@@ -16,7 +16,7 @@ from typing import Iterable
 from .base import Finding, Severity, StageContext
 
 _PATTERN = re.compile(
-    r"^\[ERROR\]\s+(?P<metric>\S+)\s+fail test:\s+"
+    r"^\s*\[ERROR\]\s+(?P<metric>\S+)\s+fail test:\s+"
     r"(?P<actual>-?\d+(?:\.\d+)?)\s*(?P<op>>=|<=|>|<|==|!=)\s*"
     r"(?P<bound>-?\d+(?:\.\d+)?)"
 )

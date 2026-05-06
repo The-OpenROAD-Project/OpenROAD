@@ -49,14 +49,21 @@ def _default_runner(cmd: list[str]) -> tuple[int, str]:
     )
 
 
+# Some servers (notably GitHub and certain Jenkins instances) reject the
+# default `Python-urllib/<ver>` User-Agent with a 403. Send a plain browser
+# UA so anonymous Jenkins consoleText fetches succeed.
+_USER_AGENT = "Mozilla/5.0 (compatible; tldr/0.1; +https://github.com/The-OpenROAD-Project/OpenROAD)"
+
+
 def _fetch_url(
     url: str, *, opener: Callable[[str], Iterator[str]] | None = None
 ) -> Iterator[str]:
     if opener is not None:
         yield from opener(url)
         return
+    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
     with urllib.request.urlopen(
-        url, timeout=300
+        req, timeout=300
     ) as resp:  # noqa: S310 (caller-provided URL)
         for raw in resp:
             yield raw.decode("utf-8", errors="replace")

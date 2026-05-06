@@ -66,17 +66,28 @@ def parse_repo_from_url(url: str) -> str | None:
 
 
 def infer_repo() -> str:
-    # Prefer `origin` (upstream by convention); if it doesn't look like the
-    # upstream OpenROAD repo, fall through to DEFAULT_REPO.
+    # Prefer `origin` (upstream by convention). If origin is a fork, map the
+    # fork's repository name back to the upstream The-OpenROAD-Project repo
+    # rather than always defaulting to OpenROAD — a contributor working on a
+    # fork of `OpenROAD-flow-scripts` should target that, not OpenROAD.
     url = _git_remote_url("origin")
     if url:
         repo = parse_repo_from_url(url)
-        if repo and repo.lower().startswith("the-openroad-project/"):
-            return repo
         if repo:
-            # Some other GitHub remote (e.g. fork). Fall back to upstream.
-            return DEFAULT_REPO
+            owner, _, name = repo.partition("/")
+            if owner.lower() == "the-openroad-project":
+                return repo
+            # Fork: route via the repo name.
+            mapped = _UPSTREAM_BY_NAME.get(name.lower())
+            if mapped:
+                return mapped
     return DEFAULT_REPO
+
+
+_UPSTREAM_BY_NAME = {
+    "openroad": "The-OpenROAD-Project/OpenROAD",
+    "openroad-flow-scripts": "The-OpenROAD-Project/OpenROAD-flow-scripts",
+}
 
 
 def _gh_pr_view() -> dict | None:

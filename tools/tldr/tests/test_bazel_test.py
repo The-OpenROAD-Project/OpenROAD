@@ -101,6 +101,39 @@ class BazelTestTest(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertIn("AssertionError: 20 != 19", out[0].detail)
 
+    def test_leading_whitespace_in_failed_row_is_tolerated(self) -> None:
+        # Some CI logs indent the FAILED rows. The parser must still match.
+        out = list(
+            BazelTestParser().scan(
+                ["    //src/x:y     FAILED in 1.0s"],
+                StaticStageContext("Test"),
+            )
+        )
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].location, "//src/x:y")
+
+    def test_detail_block_preserves_indentation(self) -> None:
+        # Stack-trace indentation must survive the trip to the rendered
+        # finding so `File "...", line N, in foo` blocks remain readable.
+        log = [
+            "//src/x:y FAILED in 1s",
+            "==================== Test output for //src/x:y:",
+            "Traceback (most recent call last):",
+            '  File "/path/to/test.py", line 71, in test_command_counts_match',
+            "    self.assertEqual(",
+            "        h,",
+            "        r,",
+            "    )",
+            "AssertionError: 20 != 19",
+            "================================================================================",
+        ]
+        out = list(BazelTestParser().scan(log, StaticStageContext("Test")))
+        self.assertEqual(len(out), 1)
+        # Indented `File "..."` line keeps its 2-space indent.
+        self.assertIn('  File "/path/to/test.py"', out[0].detail)
+        # Indented `self.assertEqual(` keeps its 4-space indent.
+        self.assertIn("    self.assertEqual(", out[0].detail)
+
     def test_no_block_means_minimal_detail(self) -> None:
         # If there's no Test-output block (Bazel didn't print one because
         # the test failed for an infrastructure reason), the finding still

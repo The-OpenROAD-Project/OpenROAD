@@ -10,7 +10,7 @@ from typing import Iterable
 
 from .base import Finding, Severity, StageContext
 
-_PATTERN = re.compile(r"^ERROR: Test (?P<design>\S+) (?P<platform>\S+) failed\b")
+_PATTERN = re.compile(r"^\s*ERROR: Test (?P<design>\S+) (?P<platform>\S+) failed\b")
 
 
 class OrfsFlowParser:

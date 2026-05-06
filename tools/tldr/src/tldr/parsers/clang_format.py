@@ -14,7 +14,7 @@ from .base import Finding, Severity, StageContext
 # `clang-format --dry-run -Werror` emits diagnostics like
 #   src/foo.cpp:42:1: error: code should be clang-formatted [-Wclang-format-violations]
 _PATTERN = re.compile(
-    r"^(?P<file>[^:\s]+\.(?:cpp|cc|cxx|c|h|hh|hpp)):"
+    r"^\s*(?P<file>[^:\s]+\.(?:cpp|cc|cxx|c|h|hh|hpp)):"
     r"(?P<line>\d+):(?P<col>\d+):\s+error:\s+code should be clang-formatted"
 )
 

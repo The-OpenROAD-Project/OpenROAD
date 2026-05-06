@@ -12,7 +12,7 @@ from ..paths import to_repo_relative
 from .base import Finding, Severity, StageContext
 
 _PATTERN = re.compile(
-    r"^(?P<file>[^:\s]+\.(?:cpp|cc|cxx|c|h|hh|hpp|m|mm)):"
+    r"^\s*(?P<file>[^:\s]+\.(?:cpp|cc|cxx|c|h|hh|hpp|m|mm)):"
     r"(?P<line>\d+):(?P<col>\d+):\s+error:\s+(?P<msg>.+)$"
 )
 

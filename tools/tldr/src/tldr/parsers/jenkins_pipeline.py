@@ -10,7 +10,9 @@ from typing import Iterable
 
 from .base import Finding, Severity, StageContext
 
-_PATTERN = re.compile(r"^ERROR: A fatal error occurred in the pipeline: (?P<msg>.+)$")
+_PATTERN = re.compile(
+    r"^\s*ERROR: A fatal error occurred in the pipeline: (?P<msg>.+)$"
+)
 
 
 class JenkinsPipelineParser:
