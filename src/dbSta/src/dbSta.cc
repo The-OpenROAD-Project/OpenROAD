@@ -1159,16 +1159,23 @@ void dbStaCbk::inDbNetDestroy(odb::dbNet* db_net)
   Net* net = network_->dbToSta(db_net);
   sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
+  // The modnet -> flat dbNet memo may hold a pointer to db_net that
+  // would dangle after destruction; drop it.
+  network_->invalidateModnetFlatNetCache();
 }
 
 void dbStaCbk::inDbModNetDestroy(odb::dbModNet* modnet)
 {
   Net* net = network_->dbToSta(modnet);
   network_->deleteNetBefore(net);
+  network_->invalidateModnetFlatNetCache();
 }
 
 void dbStaCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 {
+  if (iterm->getModNet()) {
+    network_->invalidateModnetFlatNetCache();
+  }
   Pin* pin = network_->dbToSta(iterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
@@ -1176,6 +1183,11 @@ void dbStaCbk::inDbITermPostConnect(odb::dbITerm* iterm)
 
 void dbStaCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
+  // Disconnecting a flat iterm that also names a modnet can change which
+  // flat dbNet that modnet's hierarchy reaches; drop the memo conservatively.
+  if (iterm->getModNet()) {
+    network_->invalidateModnetFlatNetCache();
+  }
   Pin* pin = network_->dbToSta(iterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
@@ -1188,6 +1200,7 @@ void dbStaCbk::inDbITermDestroy(odb::dbITerm* iterm)
 
 void dbStaCbk::inDbModITermPostConnect(odb::dbModITerm* moditerm)
 {
+  network_->invalidateModnetFlatNetCache();
   Pin* pin = network_->dbToSta(moditerm);
   network_->connectPinAfter(pin);
   // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
@@ -1196,6 +1209,7 @@ void dbStaCbk::inDbModITermPostConnect(odb::dbModITerm* moditerm)
 
 void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
 {
+  network_->invalidateModnetFlatNetCache();
   Pin* pin = network_->dbToSta(moditerm);
   // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
   // sta_->disconnectPinBefore(pin);
@@ -1204,11 +1218,15 @@ void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
 
 void dbStaCbk::inDbModITermDestroy(odb::dbModITerm* moditerm)
 {
+  network_->invalidateModnetFlatNetCache();
   sta_->deletePinBefore(network_->dbToSta(moditerm));
 }
 
 void dbStaCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 {
+  if (bterm->getModNet()) {
+    network_->invalidateModnetFlatNetCache();
+  }
   Pin* pin = network_->dbToSta(bterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
@@ -1216,6 +1234,9 @@ void dbStaCbk::inDbBTermPostConnect(odb::dbBTerm* bterm)
 
 void dbStaCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
+  if (bterm->getModNet()) {
+    network_->invalidateModnetFlatNetCache();
+  }
   Pin* pin = network_->dbToSta(bterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
@@ -1263,10 +1284,12 @@ void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 
 void dbStaCbk::inDbModBTermPostConnect(odb::dbModBTerm* modbterm)
 {
+  network_->invalidateModnetFlatNetCache();
 }
 
 void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 {
+  network_->invalidateModnetFlatNetCache();
 }
 
 ////////////////////////////////////////////////////////////////

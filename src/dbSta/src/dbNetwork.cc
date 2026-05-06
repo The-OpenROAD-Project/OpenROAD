@@ -703,6 +703,7 @@ void dbNetwork::setBlock(dbBlock* block)
 void dbNetwork::clear()
 {
   ConcreteNetwork::clear();
+  modnet_to_flat_net_cache_.clear();
   db_ = nullptr;
 }
 
@@ -2781,24 +2782,17 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
-  // This function is called before a pin is disconnected to update (invalidate)
-  // the internal driver cache (net_drvr_pin_map_).
-  // 1. If load pin, nop because it is not managed by the driver cache
-  // 2. If hierarchical pin:
-  //    Find the associated physical net (dbNet) and all hierarchical nets
-  //    (odb::dbModNet) and remove the driver information from the cache.
-  // 3. If driver pin:
-  //    Find the dbNet and odb::dbModNet driven by this pin and remove the
-  //    cache. Also, clean up the cache for all dbModNets associated with the
-  //    dbNet to maintain cache consistency between multiple hierarchical nets
-  //    corresponding to a single physical net.
+  // Called before a pin is disconnected to update (invalidate) the inherited
+  // driver cache (net_drvr_pin_map_). The cache is keyed by the canonical
+  // flat dbNet (see drivers(const Net*)), so a single per-flat-net eviction
+  // is sufficient -- no DFS through the modnet hierarchy is needed.
 
-  // 1. Load pin case
+  // 1. Load pin: not tracked by the driver cache.
   if (isLoad(pin)) {
-    return;  // No need to update net_drvr_pin_map_ cache.
+    return;
   }
 
-  // 2. Hierarchical pin case
+  // 2. Hierarchical pin (moditerm).
   if (isHierarchical(pin)) {
     dbITerm* iterm;
     dbBTerm* bterm;
@@ -2807,51 +2801,23 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     if (moditerm == nullptr) {
       return;
     }
-
     odb::dbModNet* modnet = moditerm->getModNet();
     if (modnet == nullptr) {
       return;
     }
-
-    dbNet* db_net = modnet->findRelatedNet();
-    if (db_net == nullptr) {
-      return;
-    }
-
-    // Remove flat net from cache
-    removeDriverFromCache(dbToSta(db_net));
-
-    // Remove all related hier nets from cache
-    std::set<odb::dbModNet*> modnet_set;
-    db_net->findRelatedModNets(modnet_set);
-    for (odb::dbModNet* modnet : modnet_set) {
-      removeDriverFromCache(dbToSta(modnet));
+    if (dbNet* db_net = findFlatDbNet(dbToSta(modnet))) {
+      removeDriverFromCache(dbToSta(db_net), pin);
     }
     return;
   }
 
-  // 3. Driver pin case
-
-  // Get all the related dbNet & odb::dbModNet with the pin.
-  // Incrementally update the net-drvr cache.
+  // 3. Driver pin (flat iterm or bterm). The pin's flat dbNet is available
+  //    directly via iterm/bterm; no hierarchy walk required.
   dbNet* db_net;
   odb::dbModNet* mod_net;
   net(pin, db_net, mod_net);
-
   if (db_net) {
-    // A dbNet can be associated with multiple dbModNets.
-    // We need to update the cache for all of them.
-    std::set<odb::dbModNet*> related_mod_nets;
-    db_net->findRelatedModNets(related_mod_nets);
-    for (odb::dbModNet* related_mod_net : related_mod_nets) {
-      removeDriverFromCache(dbToSta(related_mod_net), pin);
-    }
-
     removeDriverFromCache(dbToSta(db_net), pin);
-  }
-
-  if (mod_net) {
-    removeDriverFromCache(dbToSta(mod_net), pin);
   }
 }
 
@@ -4398,6 +4364,13 @@ Net* dbNetwork::findFlatNet(const Net* net) const
 // Given a net that may be hierarchical, find the corresponding flat dbNet.
 // If the net is already a flat net (dbNet), it is returned as is.
 // If the net is a hierarchical net (odb::dbModNet), find the associated dbNet.
+//
+// The dbModNet -> dbNet translation walks the modnet hierarchy via
+// findRelatedNet() and is memoized here: the mapping depends only on
+// hierarchy structure (modnet/modITerm/modBTerm wiring plus the modnet's
+// flat iterm/bterm reach), so dbStaCbk invalidates the cache only on
+// structural changes. Inside hot loops like Resizer::eliminateDeadLogic
+// this turns repeated translations into hash lookups.
 dbNet* dbNetwork::findFlatDbNet(const Net* net) const
 {
   if (!net) {
@@ -4414,9 +4387,12 @@ dbNet* dbNetwork::findFlatDbNet(const Net* net) const
   }
 
   if (db_mod_net) {
-    // If it's a hierarchical net, find the associated dbNet
-    // by traversing the hierarchy.
+    auto entry = modnet_to_flat_net_cache_.find(db_mod_net);
+    if (entry != modnet_to_flat_net_cache_.end()) {
+      return entry->second;
+    }
     db_net = db_mod_net->findRelatedNet();
+    modnet_to_flat_net_cache_.emplace(db_mod_net, db_net);
   }
   return db_net;
 }
@@ -5120,25 +5096,27 @@ PinSet* dbNetwork::drivers(const Net* net)
     return nullptr;
   }
 
-  // Get or create drvrs pin set
-  auto drvrs_entry = net_drvr_pin_map_.find(net);
-  if (drvrs_entry == net_drvr_pin_map_.end()) {
-    std::tie(drvrs_entry, std::ignore)
-        = net_drvr_pin_map_.insert({net, new PinSet(this)});
-  }
-
-  PinSet* drvrs = drvrs_entry->second;
-
-  // Insert the driver pin of the net
+  // Cache by canonical flat dbNet*. Multiple dbModNets can name the same
+  // physical net; keying on the flat net deduplicates entries and removes
+  // the need for findRelatedModNets()-driven eviction in disconnectPinBefore.
   dbNet* db_net = findFlatDbNet(net);
   if (db_net == nullptr) {
-    return drvrs;
+    // Dangling modnet (no flat net reachable). Return a shared empty set
+    // rather than inserting under the modnet pointer.
+    static PinSet empty(this);
+    return &empty;
   }
-
-  dbObject* drvr = db_net->getFirstDriverTerm();
-  Pin* drvr_pin = dbToSta(drvr);
-  if (drvr_pin) {
-    drvrs->insert(drvr_pin);
+  const Net* key = dbToSta(db_net);
+  auto drvrs_entry = net_drvr_pin_map_.find(key);
+  if (drvrs_entry == net_drvr_pin_map_.end()) {
+    std::tie(drvrs_entry, std::ignore)
+        = net_drvr_pin_map_.insert({key, new PinSet(this)});
+  }
+  PinSet* drvrs = drvrs_entry->second;
+  if (dbObject* drvr = db_net->getFirstDriverTerm()) {
+    if (Pin* drvr_pin = dbToSta(drvr)) {
+      drvrs->insert(drvr_pin);
+    }
   }
   return drvrs;
 }

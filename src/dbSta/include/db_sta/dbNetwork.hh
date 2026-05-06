@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "odb/db.h"
@@ -428,6 +429,11 @@ class dbNetwork : public ConcreteNetwork
   void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
 
+  // Drop the cached dbModNet -> flat dbNet mapping used by findFlatDbNet.
+  // The mapping depends only on the modnet hierarchy structure; callers in
+  // dbStaCbk invoke this on any event that can change that structure.
+  void invalidateModnetFlatNetCache() { modnet_to_flat_net_cache_.clear(); }
+
   using Network::cell;
   using Network::direction;
   using Network::findCellsMatching;
@@ -484,6 +490,14 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy separators.  Used to recover an in-module name from a
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
+
+  // Memoize dbModNet::findRelatedNet() per modnet. Mapping is hierarchy-only;
+  // dbStaCbk clears this whenever a modnet, modITerm or modBTerm is created,
+  // destroyed, connected, or disconnected (including flat iterm/bterm
+  // disconnects from a modnet). Sentinel nullptr is cached for dangling
+  // modnets to avoid repeating the DFS.
+  mutable std::unordered_map<const odb::dbModNet*, odb::dbNet*>
+      modnet_to_flat_net_cache_;
 
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
