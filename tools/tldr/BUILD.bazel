@@ -65,6 +65,7 @@ py_library(
         "test_bazel_timeout",
         "test_ctest",
         "test_outage",
+        "test_pipeline_outcome",
         "test_jenkins_pipeline",
         "test_clang_tidy",
         "test_clang_format",

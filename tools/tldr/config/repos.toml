@@ -16,6 +16,7 @@ parsers = [
     "buildifier",
     "outage",
     "jenkins_pipeline",
+    "pipeline_outcome",
 ]
 
 [repos."The-OpenROAD-Project/OpenROAD-flow-scripts"]
@@ -25,6 +26,7 @@ parsers = [
     "openroad_msg",
     "outage",
     "jenkins_pipeline",
+    "pipeline_outcome",
     "lockfile",
     "black",
     "buildifier",

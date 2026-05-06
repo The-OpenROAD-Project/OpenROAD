@@ -56,6 +56,28 @@ _PATTERNS: list[tuple[re.Pattern[str], str, str | None]] = [
         "container-registry",
         "transient auth flake",
     ),
+    (
+        # Jenkins docker-workflow plugin couldn't `docker run` the image.
+        # Seen in three guises on PR #10340 (`Caught exception: ...`,
+        # `ERROR: A fatal error occurred ...`, and a bare
+        # `java.io.IOException: ...`); match the common substring instead
+        # of any one wrapper.
+        re.compile(r"Failed to run image\s+'(?P<img>[^']+)'"),
+        "container-registry",
+        "Jenkins could not run the build container",
+    ),
+    # Jenkins-side workflow exceptions (infra, not user code). The
+    # `ErrorAction$ErrorId` marker tags an exception that Jenkins itself
+    # threw — typically a node disconnect or a step that crashed before
+    # any pipeline `error` was emitted.
+    (
+        re.compile(
+            r"Also:\s+org\.jenkinsci\.plugins\.workflow\.actions\."
+            r"ErrorAction\$ErrorId:"
+        ),
+        "jenkins-pipeline-error",
+        "Jenkins workflow threw before user code ran",
+    ),
     # GitHub API itself.
     (
         re.compile(

@@ -21,6 +21,7 @@ from . import (
     openroad_msg,
     orfs_flow,
     outage,
+    pipeline_outcome,
 )
 
 REGISTRY: dict[str, Parser] = {
@@ -32,6 +33,7 @@ REGISTRY: dict[str, Parser] = {
     "ctest": ctest.CtestParser(),
     "outage": outage.OutageParser(),
     "jenkins_pipeline": jenkins_pipeline.JenkinsPipelineParser(),
+    "pipeline_outcome": pipeline_outcome.PipelineOutcomeParser(),
     "clang_tidy": clang_tidy.ClangTidyParser(),
     "clang_format": clang_format.ClangFormatParser(),
     "mac_build": mac_build.MacBuildParser(),

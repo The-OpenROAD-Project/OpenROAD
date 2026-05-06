@@ -90,6 +90,38 @@ class OutageTest(unittest.TestCase):
         sources = sorted(f.headline.split(":")[0] for f in out)
         self.assertEqual(sources, ["ci-runner-disk", "dns", "network"])
 
+    def test_jenkins_failed_to_run_image(self) -> None:
+        # PR #10340: Jenkins docker-workflow plugin couldn't run the image.
+        # The same root cause appears in three wrappers; all three should
+        # be recognised as a container-registry outage.
+        for line in [
+            "Caught exception: Failed to run image 'gcr.io/x/y:z'. Error: ",
+            "ERROR: A fatal error occurred in the pipeline: "
+            "Failed to run image 'gcr.io/x/y:z'. Error: ",
+            "java.io.IOException: Failed to run image 'gcr.io/x/y:z'. Error: ",
+        ]:
+            out = list(
+                OutageParser().scan([line], StaticStageContext("Build binary"))
+            )
+            self.assertEqual(len(out), 1, f"no match for: {line!r}")
+            self.assertEqual(out[0].severity, Severity.infra)
+            self.assertTrue(out[0].headline.startswith("container-registry:"))
+
+    def test_jenkins_workflow_error_action(self) -> None:
+        # Jenkins-side workflow exception (vs. user-code failure).
+        out = list(
+            OutageParser().scan(
+                [
+                    "Also: org.jenkinsci.plugins.workflow.actions."
+                    "ErrorAction$ErrorId: deadbeef",
+                ],
+                StaticStageContext("Test"),
+            )
+        )
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].severity, Severity.infra)
+        self.assertTrue(out[0].headline.startswith("jenkins-pipeline-error:"))
+
     def test_no_findings_on_clean_log(self) -> None:
         out = list(
             OutageParser().scan(
