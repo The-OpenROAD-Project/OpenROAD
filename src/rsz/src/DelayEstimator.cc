@@ -1201,9 +1201,6 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
   const int target_index = context.target_stage_index;
   const DelayStageState& target_stage = stages[target_index];
 
-  if (candidate_cell == nullptr) {
-    return {.legal = false, .reason = FailReason::kMissingCandidatePort};
-  }
   sta::LibertyCell* candidate_scene_cell
       = const_cast<sta::LibertyCell*>(candidate_cell)
             ->sceneCell(target_stage.arc.scene, target_stage.arc.min_max);
