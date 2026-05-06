@@ -13,8 +13,9 @@ class SetupDirectionalPolicy : public SetupLegacyBase
   SetupDirectionalPolicy(Resizer& resizer,
                          MoveCommitter& committer,
                          RepairSetupContext& setup_context,
+                         const OptimizerRunConfig& config,
                          bool use_starts)
-      : SetupLegacyBase(resizer, committer, setup_context),
+      : SetupLegacyBase(resizer, committer, setup_context, config),
         use_starts_(use_starts)
   {
   }

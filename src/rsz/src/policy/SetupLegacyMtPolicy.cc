@@ -34,16 +34,17 @@ using utl::RSZ;
 
 SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
                                          MoveCommitter& committer,
-                                         RepairSetupContext& setup_context)
-    : SetupLegacyPolicy(resizer, committer, setup_context)
+                                         RepairSetupContext& setup_context,
+                                         const OptimizerRunConfig& config)
+    : SetupLegacyPolicy(resizer, committer, setup_context, config)
 {
 }
 
 SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;
 
-bool SetupLegacyMtPolicy::start(const OptimizerRunConfig& config)
+bool SetupLegacyMtPolicy::start()
 {
-  if (!SetupLegacyPolicy::start(config)) {
+  if (!SetupLegacyPolicy::start()) {
     return false;
   }
   thread_pool_ = makeWorkerThreadPool();

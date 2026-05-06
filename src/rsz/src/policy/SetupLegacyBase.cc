@@ -60,15 +60,16 @@ using utl::RSZ;
 
 SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
                                  MoveCommitter& committer,
-                                 RepairSetupContext& setup_context)
-    : OptPolicy(resizer, committer, setup_context)
+                                 RepairSetupContext& setup_context,
+                                 const OptimizerRunConfig& config)
+    : OptPolicy(resizer, committer, setup_context, config)
 {
 }
 
-bool SetupLegacyBase::start(const OptimizerRunConfig& config)
+bool SetupLegacyBase::start()
 {
-  OptPolicy::start(config);
-  setup_context_.max_repairs_per_pass = config.max_repairs_per_pass;
+  OptPolicy::start();
+  setup_context_.max_repairs_per_pass = config_.max_repairs_per_pass;
   if (!setup_context_.phase_pipeline_active) {
     return true;
   }
@@ -153,7 +154,7 @@ void SetupLegacyBase::logMoveSequence() const
 
 void SetupLegacyBase::activateMoveSequence(const bool log_sequence)
 {
-  buildMoveGenerators(move_sequence_, makeGeneratorContext(config_));
+  buildMoveGenerators(move_sequence_, makeGeneratorContext());
   if (log_sequence) {
     logMoveSequence();
   }

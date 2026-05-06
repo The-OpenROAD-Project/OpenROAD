@@ -83,7 +83,7 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
              "identified {} critical instances",
              crit_insts.size());
 
-  VtSwapGenerator generator(makeGeneratorContext(config_), &notSwappable);
+  VtSwapGenerator generator(makeGeneratorContext(), &notSwappable);
   for (auto crit_inst_slack : crit_insts) {
     sta::Pin* output_pin = worstOutputPin(crit_inst_slack.first);
     if (output_pin == nullptr) {

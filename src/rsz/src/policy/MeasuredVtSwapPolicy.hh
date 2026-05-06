@@ -55,11 +55,12 @@ class MeasuredVtSwapPolicy : public OptPolicy
   // === OptPolicy entry points ==============================================
   MeasuredVtSwapPolicy(Resizer& resizer,
                        MoveCommitter& committer,
-                       RepairSetupContext& setup_context);
+                       RepairSetupContext& setup_context,
+                       const OptimizerRunConfig& config);
   ~MeasuredVtSwapPolicy() override;
 
   const char* name() const override { return "MeasuredVtSwapPolicy"; }
-  bool start(const OptimizerRunConfig& config) override;
+  bool start() override;
   void iterate() override;
 
  private:

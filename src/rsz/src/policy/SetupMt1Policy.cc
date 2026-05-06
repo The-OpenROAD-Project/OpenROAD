@@ -32,22 +32,23 @@ namespace rsz {
 
 SetupMt1Policy::SetupMt1Policy(Resizer& resizer,
                                MoveCommitter& committer,
-                               RepairSetupContext& setup_context)
-    : OptPolicy(resizer, committer, setup_context)
+                               RepairSetupContext& setup_context,
+                               const OptimizerRunConfig& config)
+    : OptPolicy(resizer, committer, setup_context, config)
 {
 }
 
 SetupMt1Policy::~SetupMt1Policy() = default;
 
-bool SetupMt1Policy::start(const OptimizerRunConfig& config)
+bool SetupMt1Policy::start()
 {
-  OptPolicy::start(config);
+  OptPolicy::start();
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);
   }
   move_sequence_.push_back(MoveType::kSizeUp);
-  buildMoveGenerators(move_sequence_, makeGeneratorContext(config_));
+  buildMoveGenerators(move_sequence_, makeGeneratorContext());
   committed_moves_ = 0;
   iteration_index_ = 0;
   committer_.captureInitialSlackDistribution();

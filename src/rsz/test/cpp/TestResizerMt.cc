@@ -421,12 +421,12 @@ TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
   resizer.runRepairSetupPreamble();
   MoveCommitter committer(resizer);
   RepairSetupContext setup_context(resizer);
-  SetupLegacyMtPolicy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
+  SetupLegacyMtPolicy policy(resizer, committer, setup_context, config);
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config));
+  EXPECT_NO_THROW(policy.start());
 }
 
 TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
@@ -439,12 +439,12 @@ TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
   resizer.runRepairSetupPreamble();
   MoveCommitter committer(resizer);
   RepairSetupContext setup_context(resizer);
-  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
+  SetupMt1Policy policy(resizer, committer, setup_context, config);
   // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start(config));
+  EXPECT_NO_THROW(policy.start());
 }
 
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
@@ -826,11 +826,11 @@ TEST_F(TestResizerMt,
 
   MoveCommitter committer(resizer);
   RepairSetupContext setup_context(resizer);
-  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config);
+  SetupMt1Policy policy(resizer, committer, setup_context, config);
+  policy.start();
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_GE(policy.thread_pool_->threadCount(), 1u);
@@ -913,11 +913,11 @@ TEST_F(TestResizerMt,
 
   MoveCommitter committer(resizer);
   RepairSetupContext setup_context(resizer);
-  SetupMt1Policy policy(resizer, committer, setup_context);
 
   OptimizerRunConfig config;
   config.setup_slack_margin = 1.0;
-  policy.start(config);
+  SetupMt1Policy policy(resizer, committer, setup_context, config);
+  policy.start();
 
   ASSERT_NE(policy.thread_pool_, nullptr);
   ASSERT_EQ(policy.thread_pool_->threadCount(), 32u);

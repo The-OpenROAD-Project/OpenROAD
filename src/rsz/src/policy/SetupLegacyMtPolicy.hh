@@ -36,11 +36,12 @@ class SetupLegacyMtPolicy : public SetupLegacyPolicy
   // === OptPolicy entry points ==============================================
   SetupLegacyMtPolicy(Resizer& resizer,
                       MoveCommitter& committer,
-                      RepairSetupContext& setup_context);
+                      RepairSetupContext& setup_context,
+                      const OptimizerRunConfig& config);
   ~SetupLegacyMtPolicy() override;
 
   const char* name() const override { return "SetupLegacyMtPolicy"; }
-  bool start(const OptimizerRunConfig& config) override;
+  bool start() override;
 
  protected:
   // === SetupLegacyBase hooks

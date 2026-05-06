@@ -51,10 +51,10 @@ char phaseMarkerForIndex(int phase_index);
 //                             main thread (legacy path)
 //
 // Optimizer (sequencer) creates one or more OptPolicy instances per run and
-// drives each through start(config) -> iterate()* -> converged()/result()
-// in that order.  start() returns false when the policy determines that the
-// optimizer run should stop before iterate().  Policies share run-level setup
-// state through RepairSetupContext.
+// drives each through start() -> iterate()* -> converged()/result() in that
+// order.  start() returns false when the policy determines that the optimizer
+// run should stop before iterate().  Policies share run-level setup state
+// through RepairSetupContext.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
@@ -68,11 +68,12 @@ class OptPolicy
   // === Policy interface =====================================================
   OptPolicy(Resizer& resizer,
             MoveCommitter& committer,
-            RepairSetupContext& setup_context);
+            RepairSetupContext& setup_context,
+            const OptimizerRunConfig& config);
   virtual ~OptPolicy();
 
   virtual const char* name() const = 0;
-  virtual bool start(const OptimizerRunConfig& config);
+  virtual bool start();
   virtual void iterate() = 0;
 
   bool converged() const { return converged_; }
@@ -81,8 +82,7 @@ class OptPolicy
 
  protected:
   // === Generator setup ======================================================
-  GeneratorContext makeGeneratorContext(
-      const OptimizerRunConfig& run_config) const;
+  GeneratorContext makeGeneratorContext() const;
   virtual void buildMoveGenerators(const std::vector<MoveType>& move_types,
                                    const GeneratorContext& context);
 
@@ -149,7 +149,9 @@ class OptPolicy
   Resizer& resizer_;
   MoveCommitter& committer_;
   RepairSetupContext& setup_context_;
-  OptimizerRunConfig config_;
+  // Frozen run config. MoveGenerators store references to this same object, so
+  // the caller must keep it alive for the full policy lifetime.
+  const OptimizerRunConfig& config_;
   utl::Logger* logger_{nullptr};
   sta::dbSta* sta_{nullptr};
   sta::Network* network_{nullptr};

@@ -13,8 +13,10 @@ class SetupWnsPolicy : public SetupLegacyBase
   SetupWnsPolicy(Resizer& resizer,
                  MoveCommitter& committer,
                  RepairSetupContext& setup_context,
+                 const OptimizerRunConfig& config,
                  bool use_cone)
-      : SetupLegacyBase(resizer, committer, setup_context), use_cone_(use_cone)
+      : SetupLegacyBase(resizer, committer, setup_context, config),
+        use_cone_(use_cone)
   {
   }
 

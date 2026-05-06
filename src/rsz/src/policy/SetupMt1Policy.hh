@@ -56,11 +56,12 @@ class SetupMt1Policy : public OptPolicy
   // === OptPolicy entry points ==============================================
   SetupMt1Policy(Resizer& resizer,
                  MoveCommitter& committer,
-                 RepairSetupContext& setup_context);
+                 RepairSetupContext& setup_context,
+                 const OptimizerRunConfig& config);
   ~SetupMt1Policy() override;
 
   const char* name() const override { return "SetupMt1Policy"; }
-  bool start(const OptimizerRunConfig& config) override;
+  bool start() override;
   void iterate() override;
 
  private:

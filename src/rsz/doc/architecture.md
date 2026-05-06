@@ -34,7 +34,7 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 [Optimizer::run()]
   resizer_.runRepairSetupPreamble()
   selectActivePolicy()                  <- RSZ_POLICY envar
-  policy->start(config)
+  policy->start()
   while (!policy.converged()):
     policy.iterate()
 
@@ -210,7 +210,7 @@ New prepared attributes can also be added to support new move types.
 class OptPolicy
 {
  public:
-  virtual void start(const OptimizerRunConfig& config);
+  virtual bool start();
   virtual void iterate() = 0;
 
  protected:
@@ -226,7 +226,7 @@ class OptPolicy
 bool Optimizer::runActivePolicy()
 {
   // Drive the selected policy until it reports convergence.
-  opt_policy_->start(config_);
+  opt_policy_->start();
   while (!opt_policy_->converged()) {
     opt_policy_->iterate();
   }

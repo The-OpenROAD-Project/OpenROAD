@@ -48,47 +48,47 @@ std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
 {
   if (phase_name == "LEGACY") {
     return std::make_unique<SetupLegacyPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "LEGACY_MT") {
     return std::make_unique<SetupLegacyMtPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "WNS" || phase_name == "WNS_PATH") {
     return std::make_unique<SetupWnsPolicy>(
-        resizer_, committer_, setup_context, /*use_cone=*/false);
+        resizer_, committer_, setup_context, config_, /*use_cone=*/false);
   }
   if (phase_name == "WNS_CONE") {
     return std::make_unique<SetupWnsPolicy>(
-        resizer_, committer_, setup_context, /*use_cone=*/true);
+        resizer_, committer_, setup_context, config_, /*use_cone=*/true);
   }
   if (phase_name == "TNS") {
     return std::make_unique<SetupTnsPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "ENDPOINT_FANIN") {
     return std::make_unique<SetupDirectionalPolicy>(
-        resizer_, committer_, setup_context, /*use_starts=*/false);
+        resizer_, committer_, setup_context, config_, /*use_starts=*/false);
   }
   if (phase_name == "STARTPOINT_FANOUT") {
     return std::make_unique<SetupDirectionalPolicy>(
-        resizer_, committer_, setup_context, /*use_starts=*/true);
+        resizer_, committer_, setup_context, config_, /*use_starts=*/true);
   }
   if (phase_name == "LAST_GASP") {
     return std::make_unique<SetupLastGaspPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "CRIT_VT_SWAP") {
     return std::make_unique<SetupCritVtSwapPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "MT1") {
     return std::make_unique<SetupMt1Policy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "MEASURED_VT_SWAP") {
     return std::make_unique<MeasuredVtSwapPolicy>(
-        resizer_, committer_, setup_context);
+        resizer_, committer_, setup_context, config_);
   }
   // Only public phase names are listed; experimental top-level tokens
   // (LEGACY_MT, MT1, MEASURED_VT_SWAP) are accepted but undocumented.
@@ -131,7 +131,7 @@ bool Optimizer::run()
     setup_context.phase_index = i;
     std::unique_ptr<OptPolicy> policy
         = makePolicyForPhase(phase_names[i], setup_context);
-    if (!policy->start(config_)) {
+    if (!policy->start()) {
       return false;
     }
     while (!policy->converged()) {
@@ -169,8 +169,8 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   resizer_.runRepairSetupPreamble();
 
   RepairSetupContext setup_context(resizer_);
-  SetupLegacyBase policy(resizer_, committer_, setup_context);
-  if (!policy.start(config)) {
+  SetupLegacyBase policy(resizer_, committer_, setup_context, config);
+  if (!policy.start()) {
     return false;
   }
   committer_.init();

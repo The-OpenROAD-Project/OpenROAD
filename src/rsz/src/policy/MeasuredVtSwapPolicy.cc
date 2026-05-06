@@ -33,18 +33,19 @@ using utl::RSZ;
 
 MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
                                            MoveCommitter& committer,
-                                           RepairSetupContext& setup_context)
-    : OptPolicy(resizer, committer, setup_context)
+                                           RepairSetupContext& setup_context,
+                                           const OptimizerRunConfig& config)
+    : OptPolicy(resizer, committer, setup_context, config)
 {
 }
 
 MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
 
-bool MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config)
+bool MeasuredVtSwapPolicy::start()
 {
-  OptPolicy::start(config);
-  generator_ = std::make_unique<MeasuredVtSwapGenerator>(
-      makeGeneratorContext(config_));
+  OptPolicy::start();
+  generator_
+      = std::make_unique<MeasuredVtSwapGenerator>(makeGeneratorContext());
   committed_moves_ = 0;
   iteration_index_ = 0;
   attempt_index_ = 0;

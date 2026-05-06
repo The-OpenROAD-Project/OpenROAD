@@ -55,10 +55,11 @@ class SetupLegacyBase : public OptPolicy
   // === OptPolicy entry points ==============================================
   SetupLegacyBase(Resizer& resizer,
                   MoveCommitter& committer,
-                  RepairSetupContext& setup_context);
+                  RepairSetupContext& setup_context,
+                  const OptimizerRunConfig& config);
 
   const char* name() const override { return "SetupLegacyBase"; }
-  bool start(const OptimizerRunConfig& config) override;
+  bool start() override;
   void iterate() override;
 
   // === Single-endpoint repair API ==========================================

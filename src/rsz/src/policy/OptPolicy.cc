@@ -71,19 +71,20 @@ char phaseMarkerForIndex(int phase_index)
 
 OptPolicy::OptPolicy(Resizer& resizer,
                      MoveCommitter& committer,
-                     RepairSetupContext& setup_context)
+                     RepairSetupContext& setup_context,
+                     const OptimizerRunConfig& config)
     : resizer_(resizer),
       committer_(committer),
       setup_context_(setup_context),
+      config_(config),
       target_collector_(&setup_context_.target_collector)
 {
 }
 
 OptPolicy::~OptPolicy() = default;
 
-bool OptPolicy::start(const OptimizerRunConfig& config)
+bool OptPolicy::start()
 {
-  config_ = config;
   logger_ = resizer_.logger();
   sta_ = resizer_.sta();
   network_ = resizer_.network();
@@ -261,12 +262,11 @@ void OptPolicy::loadPolicyEnvars()
       = utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 1) > 0;
 }
 
-GeneratorContext OptPolicy::makeGeneratorContext(
-    const OptimizerRunConfig& run_config) const
+GeneratorContext OptPolicy::makeGeneratorContext() const
 {
   return GeneratorContext{.resizer = resizer_,
                           .committer = committer_,
-                          .run_config = run_config,
+                          .run_config = config_,
                           .policy_config = policy_config_};
 }
 
