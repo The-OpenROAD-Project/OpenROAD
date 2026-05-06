@@ -17,6 +17,31 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
+// Build the CheckboxTreeModel input for the Chiplets group.  Each
+// `chipletData` entry comes from the backend serializeTechResponse and
+// has shape { path, name, parent, master, depth }.  `savedHidden` is the
+// set of chiplet paths the user has hidden (loaded from the cookie).
+//
+// Returns a flat array of nodes — id is the entry index, parentId is the
+// index of the entry whose `path` matches `parent` (or -1 for the root),
+// hasCheckbox is false for the root (no toggle for the whole stack).
+export function buildChipletFlatNodes(chipletData, savedHidden) {
+    const pathToId = new Map();
+    chipletData.forEach((c, i) => pathToId.set(c.path, i));
+    return chipletData.map((c, i) => {
+        const visible = !savedHidden.has(c.path);
+        return {
+            id: i,
+            parentId: c.parent != null && pathToId.has(c.parent)
+                ? pathToId.get(c.parent) : -1,
+            hasCheckbox: c.parent != null,
+            checked: visible,
+            data: { path: c.path, name: c.name, master: c.master,
+                    depth: c.depth },
+        };
+    });
+}
+
 // Fallback color used when the server didn't supply a layer color.
 const fallbackLayerPalette = [
     [70, 130, 210],  // moderate blue
@@ -239,6 +264,149 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     });
 
     app.displayControlsEl.appendChild(layerGroup);
+
+    // --- Chiplets group (multi-die / 3D-IC visibility) ---
+    //
+    // Mirrors the Qt GUI's per-chiplet visibility (see
+    // gui::DisplayControls::setCurrentChip).  Backend sends one entry
+    // per dbChip / dbChipInst node with a unique `path` ("top",
+    // "top.soc_inst", "top.soc_inst.sub_ip", …).  Toggling a node
+    // refreshes every Leaflet tile so the server's chiplet filter
+    // (`visible_chiplets`) takes effect on the next render.
+    const chipletData = (techData && Array.isArray(techData.chiplets))
+        ? techData.chiplets : [];
+    if (chipletData.length > 1) {
+        let savedHiddenChiplets = new Set();
+        try {
+            const raw = getCookie('or_hidden_chiplets');
+            if (raw) {
+                savedHiddenChiplets = new Set(
+                    JSON.parse(decodeURIComponent(raw)));
+            }
+        } catch (_) { /* ignore */ }
+
+        // Build a flat node list keyed by path; CheckboxTreeModel will
+        // wire parent/child relationships from `parent` strings.  Force
+        // hasCheckbox=true on the root so its tri-state drives the
+        // group-header checkbox below.  buildChipletFlatNodes itself
+        // returns hasCheckbox=false for the root (its DOM is rendered
+        // by the header, not by renderChipletNode).
+        const flatNodes = buildChipletFlatNodes(chipletData,
+                                                savedHiddenChiplets);
+        const rootIdx = flatNodes.findIndex(n => n.parentId === -1);
+        const rootId = rootIdx >= 0 ? flatNodes[rootIdx].id : null;
+        if (rootIdx >= 0) {
+            flatNodes[rootIdx].hasCheckbox = true;
+        }
+
+        // Initialize visible set from the saved cookie state.
+        app.visibleChiplets = new Set(
+            chipletData
+                .filter(c => !savedHiddenChiplets.has(c.path))
+                .map(c => c.path));
+
+        const chipletModel = new CheckboxTreeModel(() => {
+            // Sync DOM checkboxes and recompute the visibility set in
+            // a single pass (renaming `node.cb` mirrors the layer
+            // group's pattern).
+            const newVisible = new Set();
+            chipletModel.forEach(node => {
+                if (node.cb) {
+                    node.cb.checked = node.checked;
+                    node.cb.indeterminate = node.indeterminate;
+                }
+                if (node.checked && node.data && node.data.path) {
+                    newVisible.add(node.data.path);
+                }
+            });
+            app.visibleChiplets = newVisible;
+
+            // Persist hidden paths to a cookie.
+            const hidden = chipletData
+                .filter(c => !newVisible.has(c.path))
+                .map(c => c.path);
+            setCookie('or_hidden_chiplets',
+                      encodeURIComponent(JSON.stringify(hidden)));
+
+            // Refresh every Leaflet tile so the server applies the
+            // updated `visible_chiplets` filter on the next request.
+            redrawAllLayers();
+        });
+        chipletModel.buildFromNodes(flatNodes);
+
+        const chipletGroup = document.createElement('div');
+        chipletGroup.className = 'vis-group';
+
+        const chipletHeader = document.createElement('label');
+        chipletHeader.className = 'vis-group-header';
+        const chipletArrow = document.createElement('span');
+        chipletArrow.className = 'vis-arrow';
+        chipletArrow.textContent = '▼';
+        chipletHeader.appendChild(chipletArrow);
+
+        // Group-level checkbox: toggles every chiplet at once and
+        // shows tri-state when the children disagree, matching the
+        // Layers group's UX.
+        const rootNode = rootId != null ? chipletModel.get(rootId) : null;
+        if (rootNode) {
+            const parentCb = document.createElement('input');
+            parentCb.type = 'checkbox';
+            parentCb.checked = rootNode.checked;
+            parentCb.indeterminate = rootNode.indeterminate;
+            rootNode.cb = parentCb;
+            parentCb.addEventListener('change', (e) => {
+                e.stopPropagation();
+                chipletModel.check(rootId, parentCb.checked);
+            });
+            chipletHeader.appendChild(parentCb);
+        }
+        chipletHeader.appendChild(document.createTextNode('Chiplets'));
+        chipletGroup.appendChild(chipletHeader);
+
+        const chipletChildren = document.createElement('div');
+        chipletChildren.className = 'vis-group-children';
+
+        function renderChipletNode(node) {
+            const c = node.data;
+            // The root is rendered by the header above; skip it here.
+            if (node !== rootNode) {
+                const label = document.createElement('label');
+                label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
+                label.title = c.path
+                    + (c.master ? ` (${c.master})` : '');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = node.checked;
+                checkbox.indeterminate = node.indeterminate;
+                node.cb = checkbox;
+                checkbox.addEventListener('change', () => {
+                    chipletModel.check(node.id, checkbox.checked);
+                });
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(c.name));
+                chipletChildren.appendChild(label);
+            }
+            if (node.children) {
+                node.children.forEach(renderChipletNode);
+            }
+        }
+        chipletModel.roots.forEach(renderChipletNode);
+        chipletGroup.appendChild(chipletChildren);
+
+        chipletArrow.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const collapsed = chipletChildren.classList.toggle('collapsed');
+            chipletArrow.textContent = collapsed ? '▶' : '▼';
+        });
+
+        app.displayControlsEl.appendChild(chipletGroup);
+    } else {
+        // Single-chip designs render every chiplet (i.e. only the top).
+        // Clearing keeps WebSocketTileLayer's serializer from sending an
+        // empty array and accidentally enabling the filter.
+        app.visibleChiplets = null;
+    }
 
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
     const visTree = new VisTree(visibility, redrawAllLayers);

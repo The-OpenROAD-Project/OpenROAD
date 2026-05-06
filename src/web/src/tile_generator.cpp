@@ -141,6 +141,15 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     }
   }
 
+  visible_chiplets.clear();
+  has_visible_chiplets = false;
+  if (auto it = json.find("visible_chiplets"); it != json.end()) {
+    has_visible_chiplets = true;
+    for (const auto& v : it->value().as_array()) {
+      visible_chiplets.emplace(v.as_string());
+    }
+  }
+
   // Per-site flags are only consulted when rows are visible; skip the
   // full-object scan otherwise.
   sites.clear();
@@ -154,6 +163,14 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
       sites.emplace(std::string(k.substr(kPrefix.size())), value.as_bool());
     }
   }
+}
+
+bool TileVisibility::isChipletVisible(const std::string& path) const
+{
+  if (!has_visible_chiplets) {
+    return true;
+  }
+  return visible_chiplets.contains(path);
 }
 
 bool TileVisibility::isSiteVisible(const std::string& site_name) const
@@ -328,13 +345,28 @@ TileGenerator::~TileGenerator() = default;
 
 void TileGenerator::eagerInit()
 {
+  // Invalidate the chiplet cache: setTopChip below may swap to a fresh
+  // dbChip whose ChipletNode addresses (dbBlock*, dbChip*, etc.) differ
+  // from the previous design's.
+  {
+    std::lock_guard lock(chiplets_mutex_);
+    chiplets_cache_.clear();
+    chiplets_cache_valid_ = false;
+  }
+
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     search_->setTopChip(chip);
   }
-  odb::dbBlock* block = getBlock();
-  if (block) {
-    search_->eagerInit(block);
+  // Index every block reachable via dbChipInst, not just the top block,
+  // so the recursive tile renderer can query searchInsts/searchBoxShapes
+  // for any chiplet's master block.
+  if (chip) {
+    for (const ChipletNode& node : chiplets()) {
+      if (node.block) {
+        search_->eagerInit(node.block);
+      }
+    }
   }
   computePinLabelMargin();
 
@@ -345,6 +377,16 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(layer_colors_mutex_);
     layer_colors_by_tech_.clear();
   }
+}
+
+const std::vector<ChipletNode>& TileGenerator::chiplets() const
+{
+  std::lock_guard lock(chiplets_mutex_);
+  if (!chiplets_cache_valid_) {
+    chiplets_cache_ = collectChiplets(db_->getChip());
+    chiplets_cache_valid_ = true;
+  }
+  return chiplets_cache_;
 }
 
 void TileGenerator::computePinLabelMargin()
@@ -465,15 +507,51 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
 
 odb::Rect TileGenerator::getBounds() const
 {
+  // Union of every reachable chiplet's bbox in world coordinates.
+  // For single-chip designs the loop reduces to the top block's bbox,
+  // matching the previous behavior.  For multi-die / 3D-IC designs it
+  // expands the viewport to include all dbChipInst placements so
+  // zoom-to-fit shows the entire stack.
+  odb::dbChip* root = getChip();
+  if (!root) {
+    return {};
+  }
   odb::Rect bounds;
-  if (odb::dbBlock* block = getBlock()) {
-    bounds = block->getBBox()->getBox();
-    if (pin_label_margin_dbu_ > 0) {
-      bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
-      bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
-      bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
-      bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
+  bounds.mergeInit();
+  bool any = false;
+  const std::vector<ChipletNode>& nodes = chiplets();
+  // In single-chip designs the previous behavior used only the top
+  // block's bbox; expanding to the full die-area changes `scale` for
+  // every tile and breaks tests that depend on the marker/label
+  // pixel-size threshold.  Only multi-die designs (more than one
+  // chiplet) benefit from the die-area expansion needed by the
+  // chiplet outline overlay.
+  const bool include_die_area = nodes.size() > 1;
+  for (const ChipletNode& node : nodes) {
+    if (!node.block) {
+      continue;
     }
+    odb::Rect b = node.block->getBBox()->getBox();
+    node.world_xfm.apply(b);
+    bounds.merge(b);
+    if (include_die_area) {
+      const odb::Rect die = node.block->getDieArea();
+      if (die.area() > 0) {
+        odb::Rect d = die;
+        node.world_xfm.apply(d);
+        bounds.merge(d);
+      }
+    }
+    any = true;
+  }
+  if (!any) {
+    return {};
+  }
+  if (pin_label_margin_dbu_ > 0) {
+    bounds.set_xlo(bounds.xMin() - pin_label_margin_dbu_);
+    bounds.set_ylo(bounds.yMin() - pin_label_margin_dbu_);
+    bounds.set_xhi(bounds.xMax() + pin_label_margin_dbu_);
+    bounds.set_yhi(bounds.yMax() + pin_label_margin_dbu_);
   }
   return bounds;
 }
@@ -492,15 +570,41 @@ int TileGenerator::getPinMaxSize() const
 
 std::vector<std::string> TileGenerator::getLayers() const
 {
+  // Collect the union of routing/cut layers from every tech reachable
+  // through dbChipInst, mirroring DisplayControls::setCurrentChip().
+  // This is what makes layers exclusive to a chiplet's tech show up in
+  // the web display-controls panel.  Names are deduplicated; insertion
+  // order follows the layer enumeration order of the first tech that
+  // contributes the layer.
   std::vector<std::string> layers;
-  odb::dbTech* tech = db_->getTech();
-  if (!tech) {
-    return layers;
-  }
-  for (odb::dbTechLayer* layer : tech->getLayers()) {
-    if (layer->getRoutingLevel() > 0
-        || layer->getType() == odb::dbTechLayerType::CUT) {
-      layers.push_back(layer->getName());
+  std::set<std::string> seen;
+  std::set<odb::dbTech*> visited_techs;
+
+  auto collectFromTech = [&](odb::dbTech* tech) {
+    if (!tech || !visited_techs.insert(tech).second) {
+      return;
+    }
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      if (layer->getRoutingLevel() > 0
+          || layer->getType() == odb::dbTechLayerType::CUT) {
+        const std::string name = layer->getName();
+        if (seen.insert(name).second) {
+          layers.push_back(name);
+        }
+      }
+    }
+  };
+
+  // Top-tech first so single-chip designs preserve the previous order.
+  collectFromTech(db_->getTech());
+  for (const ChipletNode& node : chiplets()) {
+    if (node.chip) {
+      collectFromTech(node.chip->getTech());
+    }
+    if (node.block) {
+      for (odb::dbBlock* child : node.block->getChildren()) {
+        collectFromTech(child->getTech());
+      }
     }
   }
   return layers;
@@ -651,8 +755,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
     const std::set<std::string>& visible_layers)
 {
   std::vector<SelectionResult> results;
-  odb::dbBlock* block = getBlock();
-  if (!block) {
+  odb::dbChip* root = getChip();
+  if (!root) {
     return results;
   }
   // Compute a search margin of 2 pixels at the current zoom level.
@@ -671,95 +775,145 @@ std::vector<SelectionResult> TileGenerator::selectAt(
              zoom,
              margin);
 
-  const int x_lo = dbu_x - margin;
-  const int y_lo = dbu_y - margin;
-  const int x_hi = dbu_x + margin;
-  const int y_hi = dbu_y + margin;
-  const odb::Point click_pt(dbu_x, dbu_y);
+  std::set<odb::dbNet*> seen_nets;
 
-  // Search instances
-  for (odb::dbInst* inst :
-       search_->searchInsts(block, x_lo, y_lo, x_hi, y_hi)) {
-    const odb::Rect bbox = inst->getBBox()->getBox();
-    if (bbox.intersects(click_pt) && vis.isInstVisible(inst, sta_)) {
-      results.push_back({inst, inst->getName(), "Inst", bbox});
+  // Iterate every chiplet so clicks inside a translated/rotated
+  // dbChipInst land on the right object.  We map the world click into
+  // the chiplet's local frame using the inverse of world_xfm so that
+  // R90/R180/R270/mirrored chiplets work the same as R0 ones.
+  for (const ChipletNode& node : chiplets()) {
+    if (!vis.isChipletVisible(node.path)) {
+      continue;
+    }
+    odb::dbBlock* block = node.block;
+    if (!block || !node.chip) {
+      continue;
+    }
+    odb::dbTech* tech = node.chip->getTech();
+    if (!tech) {
+      continue;
+    }
+    odb::dbTransform inv_xfm = node.world_xfm;
+    inv_xfm.invert();
+    odb::Point click_pt(dbu_x, dbu_y);
+    inv_xfm.apply(click_pt);
+    const int local_x = click_pt.x();
+    const int local_y = click_pt.y();
+    const int x_lo = local_x - margin;
+    const int y_lo = local_y - margin;
+    const int x_hi = local_x + margin;
+    const int y_hi = local_y + margin;
+
+    // Map a local-frame rect back to world coordinates for the result
+    // bbox.  dbTransform::apply(Rect&) returns the axis-aligned
+    // bounding box of the rotated rect, which is what the frontend
+    // wants for zoom-to-bbox.
+    auto toWorld = [&](odb::Rect r) {
+      node.world_xfm.apply(r);
+      return r;
+    };
+
+    // Search instances in this chiplet's block.
+    for (odb::dbInst* inst :
+         search_->searchInsts(block, x_lo, y_lo, x_hi, y_hi)) {
+      const odb::Rect bbox = inst->getBBox()->getBox();
+      if (bbox.intersects(click_pt) && vis.isInstVisible(inst, sta_)) {
+        std::string label = inst->getName();
+        if (!node.path.empty() && node.inst != nullptr) {
+          std::string prefixed = node.path;
+          prefixed += '/';
+          prefixed += label;
+          label = std::move(prefixed);
+        }
+        results.push_back({inst, label, "Inst", toWorld(bbox), true});
+      }
+    }
+
+    // Search nets via routing shapes on each layer.
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      if (layer->getRoutingLevel() <= 0
+          && layer->getType() != odb::dbTechLayerType::CUT) {
+        continue;
+      }
+      if (!visible_layers.empty()
+          && !visible_layers.contains(layer->getName())) {
+        continue;
+      }
+
+      // Regular routing shapes (wires, vias) and BTerm shapes
+      if (vis.routing || vis.pins) {
+        for (const auto& shape :
+             search_->searchBoxShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
+          const auto type = std::get<1>(shape);
+          if (type == Search::kBterm && !vis.pins) {
+            continue;
+          }
+          if (type == Search::kWire && !(vis.routing && vis.routing_segments)) {
+            continue;
+          }
+          if (type == Search::kVia && !(vis.routing && vis.routing_vias)) {
+            continue;
+          }
+          odb::dbNet* net = std::get<2>(shape);
+          if (seen_nets.contains(net)) {
+            continue;
+          }
+          const odb::Rect& box = std::get<0>(shape);
+          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+            seen_nets.insert(net);
+            results.push_back(
+                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
+                 false});
+          }
+        }
+      }
+
+      // Special net vias
+      if (vis.special_nets && vis.srouting_vias) {
+        for (const auto& shape : search_->searchSNetViaShapes(
+                 block, layer, x_lo, y_lo, x_hi, y_hi)) {
+          odb::dbNet* net = std::get<1>(shape);
+          if (seen_nets.contains(net)) {
+            continue;
+          }
+          const odb::Rect box = std::get<0>(shape)->getBox();
+          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+            seen_nets.insert(net);
+            results.push_back(
+                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
+                 false});
+          }
+        }
+      }
+
+      // Special net shapes (segments/straps)
+      if (vis.special_nets && vis.srouting_segments) {
+        for (const auto& shape :
+             search_->searchSNetShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
+          odb::dbNet* net = std::get<2>(shape);
+          if (seen_nets.contains(net)) {
+            continue;
+          }
+          const odb::Rect box = std::get<0>(shape)->getBox();
+          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+            seen_nets.insert(net);
+            results.push_back(
+                {net, net->getName(), "Net", toWorld(net->getTermBBox()),
+                 false});
+          }
+        }
+      }
     }
   }
-  // Sort instances by area descending so larger instances (macros) come first
-  std::ranges::sort(results, [](const auto& a, const auto& b) {
+
+  // Sort instances by area descending so larger instances (macros) come
+  // first; nets keep their per-chiplet insertion order behind insts.
+  std::ranges::stable_sort(results, [](const auto& a, const auto& b) {
+    if (a.is_inst != b.is_inst) {
+      return a.is_inst;
+    }
     return a.bbox.area() > b.bbox.area();
   });
-
-  // Search nets via routing shapes on each layer
-  std::set<odb::dbNet*> seen_nets;
-  odb::dbTech* tech = db_->getTech();
-  for (odb::dbTechLayer* layer : tech->getLayers()) {
-    if (layer->getRoutingLevel() <= 0
-        && layer->getType() != odb::dbTechLayerType::CUT) {
-      continue;
-    }
-    if (!visible_layers.empty() && !visible_layers.contains(layer->getName())) {
-      continue;
-    }
-
-    // Regular routing shapes (wires, vias) and BTerm shapes
-    if (vis.routing || vis.pins) {
-      for (const auto& shape :
-           search_->searchBoxShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
-        const auto type = std::get<1>(shape);
-        if (type == Search::kBterm && !vis.pins) {
-          continue;
-        }
-        if (type == Search::kWire && !(vis.routing && vis.routing_segments)) {
-          continue;
-        }
-        if (type == Search::kVia && !(vis.routing && vis.routing_vias)) {
-          continue;
-        }
-        odb::dbNet* net = std::get<2>(shape);
-        if (seen_nets.contains(net)) {
-          continue;
-        }
-        const odb::Rect& box = std::get<0>(shape);
-        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
-          seen_nets.insert(net);
-          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
-        }
-      }
-    }
-
-    // Special net vias
-    if (vis.special_nets && vis.srouting_vias) {
-      for (const auto& shape :
-           search_->searchSNetViaShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
-        odb::dbNet* net = std::get<1>(shape);
-        if (seen_nets.contains(net)) {
-          continue;
-        }
-        const odb::Rect box = std::get<0>(shape)->getBox();
-        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
-          seen_nets.insert(net);
-          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
-        }
-      }
-    }
-
-    // Special net shapes (segments/straps)
-    if (vis.special_nets && vis.srouting_segments) {
-      for (const auto& shape :
-           search_->searchSNetShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
-        odb::dbNet* net = std::get<2>(shape);
-        if (seen_nets.contains(net)) {
-          continue;
-        }
-        const odb::Rect box = std::get<0>(shape)->getBox();
-        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
-          seen_nets.insert(net);
-          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
-        }
-      }
-    }
-  }
 
   debugPrint(logger_,
              utl::WEB,
@@ -767,7 +921,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
              1,
              "  selected={} (insts={}, nets={})",
              results.size(),
-             results.size() - seen_nets.size(),
+             std::ranges::count_if(results,
+                                   [](const auto& r) { return r.is_inst; }),
              seen_nets.size());
   return results;
 }
@@ -776,6 +931,80 @@ odb::dbBlock* TileGenerator::getBlock() const
 {
   odb::dbChip* chip = db_->getChip();
   return chip ? chip->getBlock() : nullptr;
+}
+
+namespace {
+
+// Recursive helper for collectChiplets.  Records the current chip,
+// then recurses into each dbChipInst with the accumulated world
+// transform.  See dbInst::getHierTransform() for the canonical
+// concat order: child_local.concat(parent_world) yields the
+// local-to-root transform.
+void collectChipletsRec(odb::dbChip* chip,
+                        odb::dbChipInst* inst,
+                        const odb::dbTransform& parent_world_xfm,
+                        const std::string& parent_path,
+                        const int depth,
+                        const int parent_global_z,
+                        std::vector<ChipletNode>& out)
+{
+  if (!chip) {
+    return;
+  }
+  ChipletNode node;
+  node.chip = chip;
+  node.block = chip->getBlock();
+  node.inst = inst;
+  node.depth = depth;
+  node.parent_path = parent_path;
+  if (inst != nullptr) {
+    odb::dbTransform local = inst->getTransform();
+    local.concat(parent_world_xfm);
+    node.world_xfm = local;
+    node.name = inst->getName();
+    node.path = parent_path + "." + node.name;
+    node.global_z = parent_global_z + inst->getLoc().z();
+  } else {
+    node.world_xfm = parent_world_xfm;
+    if (node.block) {
+      node.name = node.block->getName();
+    } else {
+      node.name = "top";
+    }
+    node.path = node.name;
+    node.global_z = parent_global_z;
+  }
+  out.push_back(node);
+
+  for (odb::dbChipInst* child : chip->getChipInsts()) {
+    collectChipletsRec(child->getMasterChip(),
+                       child,
+                       node.world_xfm,
+                       node.path,
+                       depth + 1,
+                       node.global_z,
+                       out);
+  }
+}
+
+}  // namespace
+
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root)
+{
+  std::vector<ChipletNode> out;
+  if (!root) {
+    return out;
+  }
+  collectChipletsRec(root, nullptr, odb::dbTransform{}, std::string{}, 0, 0, out);
+
+  std::stable_sort(out.begin(), out.end(), [](const ChipletNode& a, const ChipletNode& b) {
+    if (a.global_z != b.global_z) {
+      return a.global_z < b.global_z;
+    }
+    return a.depth < b.depth;
+  });
+
+  return out;
 }
 
 odb::dbChip* TileGenerator::getChip() const
@@ -848,703 +1077,791 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 {
   static_assert(sizeof(Color) == 4);
   constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(kBufferSize, 0);
+  // The world (final) tile buffer.  Inside the per-chiplet loop, a
+  // local alias `image_buffer` may instead refer to local_image_buffer
+  // when the chiplet's orient ≠ R0 (slow-path); the alias is composited
+  // back here at the end of each chiplet iteration via reverse mapping.
+  std::vector<unsigned char> world_image_buffer(kBufferSize, 0);
 
-  // No design loaded — return blank tile.
-  if (!getBlock()) {
-    std::vector<unsigned char> png_data;
-    lodepng::encode(png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
-    return png_data;
+  // No design loaded at all — return a blank raw RGBA buffer.  The
+  // caller (generateTile) will PNG-encode it before sending to the
+  // browser.  IMPORTANT: this contract returns *raw pixels*, never PNG
+  // bytes; an earlier version PNG-encoded here, which then caused
+  // lodepng to error out ("image too small to contain all pixels")
+  // when generateTile tried to encode the small PNG buffer as
+  // 256×256 RGBA.  We test for getChip(), not getBlock(), because
+  // 3DBX/multi-die designs create a HIER design top chiplet that
+  // itself has no block — the actual geometry lives in dbChipInst
+  // master chips, which the chiplet loop below traverses.
+  if (!getChip()) {
+    return world_image_buffer;
   }
 
   // Per-layer colors mirror gui::DisplayControls so the GUI and web frontend
   // agree on which color belongs to which layer.
   const auto& layer_colors = getLayerColorMap();
 
-  odb::dbTech* tech = db_->getTech();
-  odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
-
-  Color color{.r = 200, .g = 200, .b = 200, .a = 180};
-  if (tech_layer) {
-    const auto it = layer_colors.find(tech_layer);
-    if (it != layer_colors.end()) {
-      color = it->second;
-    }
-  }
-  const Color obs_color = color.lighter();
-
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
     y = num_tiles_at_zoom - 1 - y;  // flip
     const odb::Rect full_bounds = getBounds();
+    // Guard against an empty/invalid design footprint.  Without this,
+    // tile_dbu_size becomes 0 and `scale` blows up to infinity, which
+    // either produces garbage pixels or silently no-ops the render.
+    if (full_bounds.maxDXDY() <= 0) {
+      return world_image_buffer;
+    }
     const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
-    const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
-    const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
-    const int dbu_x_max
+    const int dbu_x_min_world = full_bounds.xMin() + x * tile_dbu_size;
+    const int dbu_y_min_world = full_bounds.yMin() + y * tile_dbu_size;
+    const int dbu_x_max_world
         = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
-    const int dbu_y_max
+    const int dbu_y_max_world
         = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
-    const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+    const odb::Rect dbu_tile_world(
+        dbu_x_min_world, dbu_y_min_world, dbu_x_max_world, dbu_y_max_world);
     const double scale = kTileSizeInPixel / tile_dbu_size;
 
-    odb::dbBlock* block = getBlock();
-
-    // Special "_modules" layer: draw filled module-colored rectangles
-    const bool modules_layer
-        = (layer == "_modules" && module_colors && !module_colors->empty());
-    if (modules_layer) {
-      for (odb::dbInst* inst : search_->searchInsts(
-               block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        odb::Rect inst_bbox = inst->getBBox()->getBox();
-        if (!dbu_tile.overlaps(inst_bbox)) {
-          continue;
-        }
-        if (inst->getMaster()->isFiller()) {
-          continue;
-        }
-        odb::dbModule* mod = inst->getModule();
-        if (!mod) {
-          continue;
-        }
-        auto it = module_colors->find(mod->getId());
-        if (it == module_colors->end()) {
-          continue;
-        }
-        const Color& c = it->second;
-        const int pxl
-            = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
-        const int pyl
-            = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
-        const int pxh = std::min(
-            255, (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
-        const int pyh = std::min(
-            255, (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
-        for (int iy = pyl; iy < pyh; ++iy) {
-          for (int ix = pxl; ix < pxh; ++ix) {
-            blendPixel(image_buffer, ix, 255 - iy, c);
-          }
-        }
+    // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
+    // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
+    // chiplet's block in its own frame, accumulating into the same tile
+    // image.  The world tile rect is shifted into each chiplet's local
+    // frame for translation-only transforms; non-R0 orientations log
+    // and skip for v1 (followup work to support full transforms).
+    const std::vector<ChipletNode>& chiplet_nodes = chiplets();
+    // The die-outline overlay only makes sense in multi-die designs; in
+    // single-chip layouts there is no chiplet to demarcate, and adding
+    // it caused regressions because every "expect transparent" test
+    // started seeing a gray frame.
+    const bool draw_die_outline = chiplet_nodes.size() > 1;
+    for (const ChipletNode& node : chiplet_nodes) {
+      if (!vis.isChipletVisible(node.path)) {
+        continue;
       }
-    }
-
-    // Special "_pins" layer: draw IO pin direction markers
-    const bool pins_layer = (layer == "_pins");
-    if (pins_layer && vis.pins) {
-      const odb::Rect die_area = block->getDieArea();
-      // Match GUI: scale markers to min(die, viewport) so they shrink
-      // when zoomed in (GUI renderThread.cpp:1598-1602).
-      const int die_max_dim = std::max(die_area.dx(), die_area.dy());
-      const int tile_extent = static_cast<int>(tile_dbu_size);
-      const int effective_dim = std::min(die_max_dim, tile_extent);
-      const int pin_max_size
-          = std::max(static_cast<int>(kPinMarkerSizeRatio * effective_dim),
-                     kMinPinMarkerSize);
-      const int qw = pin_max_size / 4;  // quarter-width of marker
-
-      // Show pin names when the full (die-relative) marker is large enough
-      // in pixels.  pin_max_size shrinks with zoom, but the die-relative
-      // size grows as scale increases, so names appear when zoomed in.
-      const int die_pin_size
-          = std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
-                     kMinPinMarkerSize);
-      const bool draw_pin_names
-          = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
-      const auto pin_label_font = fontAtlasGetFont(kPinLabelFontHeight);
-
-      // Marker templates (same as GUI renderThread.cpp).
-      // Defined for "top edge" orientation; rotated per actual edge.
-      using Pts = std::vector<odb::Point>;
-      const Pts in_marker{// arrow pointing into block
-                          {qw, pin_max_size},
-                          {0, 0},
-                          {-qw, pin_max_size},
-                          {qw, pin_max_size}};
-      const Pts out_marker{// arrow pointing out of block
-                           {0, pin_max_size},
-                           {-qw, 0},
-                           {qw, 0},
-                           {0, pin_max_size}};
-      const Pts bi_marker{// diamond
-                          {0, 0},
-                          {-qw, pin_max_size / 2},
-                          {0, pin_max_size},
-                          {qw, pin_max_size / 2},
-                          {0, 0}};
-
-      // Iterate per-box like the GUI (each dbBox gets its own marker).
-      for (odb::dbBTerm* term : block->getBTerms()) {
-        // Respect net-type visibility (Power, Ground, etc.).
-        if (!vis.isNetVisible(term->getNet())) {
-          continue;
-        }
-        for (odb::dbBPin* pin : term->getBPins()) {
-          const odb::dbPlacementStatus status = pin->getPlacementStatus();
-          if (status == odb::dbPlacementStatus::NONE
-              || status == odb::dbPlacementStatus::UNPLACED) {
-            continue;
-          }
-
-          for (odb::dbBox* box : pin->getBoxes()) {
-            if (!box) {
-              continue;
-            }
-
-            // Skip pins on hidden tech layers.
-            if (vis.has_visible_layers) {
-              odb::dbTechLayer* box_layer = box->getTechLayer();
-              if (box_layer
-                  && !vis.visible_layers.contains(box_layer->getName())) {
-                continue;
-              }
-            }
-
-            const odb::Rect box_rect = box->getBox();
-
-            // Layer color for this box.
-            Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
-            odb::dbTechLayer* pin_layer = box->getTechLayer();
-            if (pin_layer) {
-              const auto it = layer_colors.find(pin_layer);
-              if (it != layer_colors.end()) {
-                marker_color = it->second;
-                marker_color.a = 220;
-              }
-            }
-
-            // Center and edge distances from this specific box.
-            const odb::Point pin_center = box_rect.center();
-
-            const int dist_to_left
-                = std::abs(box_rect.xMin() - die_area.xMin());
-            const int dist_to_right
-                = std::abs(box_rect.xMax() - die_area.xMax());
-            const int dist_to_top = std::abs(box_rect.yMax() - die_area.yMax());
-            const int dist_to_bot = std::abs(box_rect.yMin() - die_area.yMin());
-            const std::array<int, 4> dists{
-                dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
-            const int arg_min = static_cast<int>(
-                std::distance(dists.begin(), std::ranges::min_element(dists)));
-
-            odb::dbTransform xfm(pin_center);
-            if (arg_min == 0) {  // left
-              xfm.setOrient(odb::dbOrientType::R90);
-              if (dist_to_left == 0) {
-                xfm.setOffset({die_area.xMin(), pin_center.y()});
-              }
-            } else if (arg_min == 1) {  // right
-              xfm.setOrient(odb::dbOrientType::R270);
-              if (dist_to_right == 0) {
-                xfm.setOffset({die_area.xMax(), pin_center.y()});
-              }
-            } else if (arg_min == 2) {  // top
-              // No rotation needed.
-              if (dist_to_top == 0) {
-                xfm.setOffset({pin_center.x(), die_area.yMax()});
-              }
-            } else {  // bottom
-              xfm.setOrient(odb::dbOrientType::MX);
-              if (dist_to_bot == 0) {
-                xfm.setOffset({pin_center.x(), die_area.yMin()});
-              }
-            }
-
-            // Select template based on IO direction.
-            const Pts* tmpl = &bi_marker;
-            const auto pin_dir = term->getIoType();
-            if (pin_dir == odb::dbIoType::INPUT) {
-              tmpl = &in_marker;
-            } else if (pin_dir == odb::dbIoType::OUTPUT) {
-              tmpl = &out_marker;
-            }
-
-            // Transform template to final marker polygon.
-            std::vector<odb::Point> marker_pts;
-            marker_pts.reserve(tmpl->size());
-            for (const auto& pt : *tmpl) {
-              odb::Point new_pt = pt;
-              xfm.apply(new_pt);
-              marker_pts.push_back(new_pt);
-            }
-            const odb::Polygon marker_poly(marker_pts);
-
-            // Only draw if marker intersects this tile.
-            const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
-            if (marker_bbox.overlaps(dbu_tile)) {
-              fillPolygon(
-                  image_buffer, marker_poly, dbu_tile, scale, marker_color);
-            }
-
-            // Draw the box rect itself (same as GUI painter.drawRect).
-            if (box_rect.overlaps(dbu_tile)) {
-              const odb::Rect overlap = box_rect.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              drawFilledRect(image_buffer, draw, marker_color);
-            }
-
-            // Draw pin name label when zoomed in enough.
-            if (draw_pin_names && vis.pin_names) {
-              const std::string name = term->getName();
-              const odb::Point anchor_pt = xfm.getOffset();
-              const int text_w = getTextWidth(name, pin_label_font);
-              const int text_h = getTextHeight(pin_label_font);
-              const int text_margin_px = 3;
-              const bool rotated = (arg_min == 2 || arg_min == 3);
-
-              // For rotated text, width/height swap.
-              const int block_w = rotated ? text_h : text_w;
-              const int block_h = rotated ? text_w : text_h;
-
-              // Convert anchor to pixel coords.
-              const int anchor_px
-                  = static_cast<int>((anchor_pt.x() - dbu_tile.xMin()) * scale);
-              const int anchor_py_raw
-                  = static_cast<int>((anchor_pt.y() - dbu_tile.yMin()) * scale);
-              const int anchor_py = 255 - anchor_py_raw;
-
-              // Position text outward (away from die center), matching the GUI.
-              const int marker_px = static_cast<int>(pin_max_size * scale);
-              int px;
-              int py;
-              if (arg_min == 0) {  // left — text to the left (outward)
-                px = anchor_px - marker_px - text_margin_px - text_w;
-                py = anchor_py - text_h / 2;
-              } else if (arg_min == 1) {  // right — text to the right (outward)
-                px = anchor_px + marker_px + text_margin_px;
-                py = anchor_py - text_h / 2;
-              } else if (arg_min
-                         == 2) {  // top — rotated, above marker (outward)
-                px = anchor_px - block_w / 2;
-                py = anchor_py - marker_px - text_margin_px - block_h;
-              } else {  // bottom — rotated, below marker (outward)
-                px = anchor_px - block_w / 2;
-                py = anchor_py + marker_px + text_margin_px;
-              }
-
-              if (px > -block_w && px < kTileSizeInPixel && py > -block_h
-                  && py < kTileSizeInPixel) {
-                const Color text_color{.r = marker_color.r,
-                                       .g = marker_color.g,
-                                       .b = marker_color.b,
-                                       .a = 255};
-                if (rotated) {
-                  drawTextRotated(
-                      image_buffer, px, py, name, pin_label_font, text_color);
-                } else {
-                  drawText(
-                      image_buffer, px, py, name, pin_label_font, text_color);
-                }
-              }
-            }
-          }
-        }
+      odb::dbBlock* block = node.block;
+      if (!block || !node.chip) {
+        continue;
       }
-    }
+      odb::dbTech* tech = node.chip->getTech();
+      if (!tech) {
+        continue;
+      }
+      // Translation-only fast path: the local tile is the world tile
+      // shifted by -offset, and pixel coordinates land in the same place
+      // because both shape coords and tile origin are in the same local
+      // frame.  Non-R0 orientations need full per-shape transforms; for
+      // now we render them as if R0 (visible, but slightly misplaced).
+      std::vector<unsigned char> local_image_buffer;
+      bool use_local = (node.world_xfm.getOrient() != odb::dbOrientType::R0);
+      if (use_local) {
+        local_image_buffer.resize(kBufferSize, 0);
+      }
+      // Alias the buffer the chiplet loop writes into.  In the R0
+      // fast-path it's the world buffer (so writes land directly).  In
+      // the slow-path it's a per-chiplet local buffer that the
+      // reverse-mapping block at the end of this iteration composites
+      // back onto world_image_buffer.
+      auto& image_buffer
+          = use_local ? local_image_buffer : world_image_buffer;
 
-    // Special "_instances" layer: only draw instance borders, no routing
-    const bool instances_only = (layer == "_instances");
+      odb::Rect dbu_tile = dbu_tile_world;
+      if (use_local) {
+        odb::dbTransform inv_xfm = node.world_xfm;
+        inv_xfm.invert();
+        inv_xfm.apply(dbu_tile);
+      } else {
+        const odb::Point xfm_off = node.world_xfm.getOffset();
+        dbu_tile = odb::Rect(dbu_x_min_world - xfm_off.x(),
+                             dbu_y_min_world - xfm_off.y(),
+                             dbu_x_max_world - xfm_off.x(),
+                             dbu_y_max_world - xfm_off.y());
+      }
+      const int dbu_x_min = dbu_tile.xMin();
+      const int dbu_y_min = dbu_tile.yMin();
+      const int dbu_x_max = dbu_tile.xMax();
+      const int dbu_y_max = dbu_tile.yMax();
 
-    // "_modules" and "_pins" layers handle their own drawing above;
-    // skip all other drawing (instances, routing, etc.)
-    if (!modules_layer && !pins_layer) {
-      const auto iterm_font = fontAtlasGetFont(kItermLabelFontHeight);
-      const int iterm_font_h = getTextHeight(iterm_font);
+      // Mirrors RenderThread::drawChip() in the Qt GUI: outline the die
+      // boundary so the chiplet shape is visible regardless of which
+      // tech layer is active. Drawn once per layer-pass on every tile,
+      // but only in multi-die designs where the demarcation is useful.
+      if (draw_die_outline) {
+        const odb::Rect die = block->getDieArea();
+        if (die.area() > 0) {
+          const int xl = die.xMin();
+          const int yl = die.yMin();
+          const int xh = die.xMax();
+          const int yh = die.yMax();
+          const int64_t pixel_xl = (int64_t) ((xl - dbu_x_min) * scale);
+          const int64_t pixel_yl = (int64_t) ((yl - dbu_y_min) * scale);
+          const int64_t pixel_xh = (int64_t) std::ceil((xh - dbu_x_min) * scale);
+          const int64_t pixel_yh = (int64_t) std::ceil((yh - dbu_y_min) * scale);
 
-      // Draw instances
-      for (odb::dbInst* inst : search_->searchInsts(
-               block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        odb::Rect inst_bbox = inst->getBBox()->getBox();
-        if (!dbu_tile.overlaps(inst_bbox)) {
-          continue;
-        }
-        odb::dbMaster* master = inst->getMaster();
+          const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, 256);
+          const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, 256);
+          const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, 256);
+          const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, 256);
 
-        if (!vis.isInstVisible(inst, sta_)) {
-          continue;
-        }
-        const int xl = inst_bbox.xMin();
-        const int yl = inst_bbox.yMin();
-        const int xh = inst_bbox.xMax();
-        const int yh = inst_bbox.yMax();
+          const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, 255);
+          const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, 255);
+          const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, 255);
+          const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, 255);
 
-        const int pixel_xl = (int) ((xl - dbu_x_min) * scale);
-        const int pixel_yl = (int) ((yl - dbu_y_min) * scale);
-        const int pixel_xh = (int) std::ceil((xh - dbu_x_min) * scale);
-        const int pixel_yh = (int) std::ceil((yh - dbu_y_min) * scale);
-
-        if (instances_only) {
-          // Draw the rectangle border (instances-only layer)
-          const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
+          constexpr Color die_outline{
+              .r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
-            for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, pixel_xl, draw_y, gray);
+            for (int iy = loop_yl; iy < loop_yh; ++iy) {
+              setPixel(image_buffer, draw_xl, 255 - iy, die_outline);
             }
           }
           if (dbu_x_min <= xh && xh <= dbu_x_max) {
-            for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, pixel_xh, draw_y, gray);
+            for (int iy = loop_yl; iy < loop_yh; ++iy) {
+              setPixel(image_buffer, draw_xh, 255 - iy, die_outline);
             }
           }
           if (dbu_y_min <= yl && yl <= dbu_y_max) {
-            for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-              const int draw_y = (255 - pixel_yl);
-              setPixel(image_buffer, ix, draw_y, gray);
+            for (int ix = loop_xl; ix < loop_xh; ++ix) {
+              setPixel(image_buffer, ix, 255 - draw_yl, die_outline);
             }
           }
           if (dbu_y_min <= yh && yh <= dbu_y_max) {
-            for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-              const int draw_y = (255 - pixel_yh);
-              setPixel(image_buffer, ix, draw_y, gray);
-            }
-          }
-
-          // Draw instance name label when zoomed in enough.
-          // Font scales to ~40% of the smaller box dimension, clamped
-          // to [kMinInstNameFontPx, kMaxInstNameFontPx].  Text is
-          // elided from the left ("...suffix") to fit 90% of the
-          // available dimension, matching the Qt GUI's behavior.
-          if (vis.inst_names) {
-            const int box_px_w = pixel_xh - pixel_xl;
-            const int box_px_h = pixel_yh - pixel_yl;
-            const int box_px_min = std::min(box_px_w, box_px_h);
-            if (std::max(box_px_w, box_px_h) >= kMinInstNameBoxPx) {
-              const int font_px = std::clamp(static_cast<int>(box_px_min * 0.4),
-                                             kMinInstNameFontPx,
-                                             kMaxInstNameFontPx);
-              const auto inst_font = fontAtlasGetFont(font_px);
-              const int font_h = getTextHeight(inst_font);
-
-              // Skip if font would dominate the cell (> 50% of cross
-              // dimension), matching GUI's kNonCoreScaleLimit = 2.0.
-              if (2 * font_h <= box_px_min) {
-                constexpr Color name_color{
-                    .r = 255, .g = 255, .b = 0, .a = 220};
-                const std::string full_name = inst->getName();
-                const int full_w = getTextWidth(full_name, inst_font);
-
-                // Rotate if taller than wide and text overflows (85%).
-                const bool rotate
-                    = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
-
-                // Available width for text (90% of relevant dim).
-                const int avail
-                    = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
-
-                // Elide from the left if text is too wide.  Maintain a
-                // running prefix width so each candidate "..." +
-                // name.substr(skip) is evaluated in O(1) using
-                //   textWidth(name.substr(skip))
-                //     = full_w - prefix_w - kern(name[skip-1], name[skip])
-                // giving O(N) total instead of O(N^2).
-                std::string name = full_name;
-                int text_w = full_w;
-                if (text_w > avail && name.size() > 4) {
-                  const int dots_w = getTextWidth("...", inst_font);
-                  const size_t n = name.size();
-                  int prefix_w = 0;
-                  for (size_t skip = 1; skip < n - 1; ++skip) {
-                    prefix_w += inst_font.glyph(name[skip - 1]).advance;
-                    if (skip >= 2) {
-                      prefix_w
-                          += inst_font.kern(name[skip - 2], name[skip - 1]);
-                    }
-                    const int suffix_w
-                        = full_w - prefix_w
-                          - inst_font.kern(name[skip - 1], name[skip]);
-                    const int w
-                        = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
-                    if (w <= avail) {
-                      name = "..." + name.substr(skip);
-                      text_w = w;
-                      break;
-                    }
-                  }
-                }
-
-                // Center of instance bbox in pixel coords.
-                const int cx = (pixel_xl + pixel_xh) / 2;
-                const int cy = 255 - (pixel_yl + pixel_yh) / 2;
-
-                if (rotate) {
-                  const int px = cx - font_h / 2;
-                  const int py = cy - text_w / 2;
-                  if (px > -font_h && px < kTileSizeInPixel && py > -text_w
-                      && py < kTileSizeInPixel) {
-                    drawTextRotated(
-                        image_buffer, px, py, name, inst_font, name_color);
-                  }
-                } else {
-                  const int px = cx - text_w / 2;
-                  const int py = cy - font_h / 2;
-                  if (px > -text_w && px < kTileSizeInPixel && py > -font_h
-                      && py < kTileSizeInPixel) {
-                    drawText(image_buffer, px, py, name, inst_font, name_color);
-                  }
-                }
-              }
-            }
-          }
-        } else {
-          // Layer-specific: obstructions and pins
-          if (vis.blockages) {
-            for (odb::dbPolygon* poly_obs : master->getPolygonObstructions()) {
-              if (tech_layer && poly_obs->getTechLayer() != tech_layer) {
-                continue;
-              }
-              odb::Polygon poly = poly_obs->getPolygon();
-              inst->getTransform().apply(poly);
-              fillPolygon(image_buffer, poly, dbu_tile, scale, obs_color);
-            }
-            for (odb::dbBox* obs : master->getObstructions(false)) {
-              if (tech_layer && obs->getTechLayer() != tech_layer) {
-                continue;
-              }
-              odb::Rect box = obs->getBox();
-              inst->getTransform().apply(box);
-              if (!box.overlaps(dbu_tile)) {
-                continue;
-              }
-              const odb::Rect overlap = box.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-              drawFilledRect(image_buffer, draw, obs_color);
-            }
-          }
-
-          if (vis.inst_pins) {
-            for (odb::dbMTerm* mterm : master->getMTerms()) {
-              for (odb::dbMPin* mpin : mterm->getMPins()) {
-                for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
-                  if (tech_layer && poly_geom->getTechLayer() != tech_layer) {
-                    continue;
-                  }
-                  odb::Polygon poly = poly_geom->getPolygon();
-                  inst->getTransform().apply(poly);
-                  fillPolygon(image_buffer, poly, dbu_tile, scale, color);
-                }
-                for (odb::dbBox* geom : mpin->getGeometry(false)) {
-                  if (tech_layer && geom->getTechLayer() != tech_layer) {
-                    continue;
-                  }
-                  odb::Rect box = geom->getBox();
-                  inst->getTransform().apply(box);
-                  if (!box.overlaps(dbu_tile)) {
-                    continue;
-                  }
-                  const odb::Rect overlap = box.intersect(dbu_tile);
-                  const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-                  drawFilledRect(image_buffer, draw, color);
-                }
-              }
-            }
-          }
-
-          // Draw ITerm name labels when zoomed in and pins are visible.
-          if (vis.inst_pins && vis.inst_pin_names) {
-            constexpr Color iterm_label_color{
-                .r = 255, .g = 255, .b = 0, .a = 220};
-            const odb::dbTransform xfm = inst->getTransform();
-
-            for (odb::dbMTerm* mterm : master->getMTerms()) {
-              bool drawn = false;
-              for (odb::dbMPin* mpin : mterm->getMPins()) {
-                for (odb::dbBox* geom : mpin->getGeometry(false)) {
-                  if (tech_layer && geom->getTechLayer() != tech_layer) {
-                    continue;
-                  }
-                  odb::Rect box = geom->getBox();
-                  xfm.apply(box);
-                  if (!box.overlaps(dbu_tile)) {
-                    continue;
-                  }
-
-                  // Skip if pin box is too small in pixels.
-                  const int box_px_w = static_cast<int>(box.dx() * scale);
-                  const int box_px_h = static_cast<int>(box.dy() * scale);
-                  if (box_px_w < kMinItermLabelBoxPx
-                      && box_px_h < kMinItermLabelBoxPx) {
-                    continue;
-                  }
-
-                  const std::string name(mterm->getName());
-                  const int text_w = getTextWidth(name, iterm_font);
-
-                  // Center of pin box in pixel coords.
-                  const odb::Point center = box.center();
-                  const int cx = static_cast<int>((center.x() - dbu_tile.xMin())
-                                                  * scale);
-                  const int cy = 255
-                                 - static_cast<int>(
-                                     (center.y() - dbu_tile.yMin()) * scale);
-
-                  // Rotate 90° if box is taller than wide and text overflows.
-                  const bool rotate
-                      = (box_px_h > box_px_w) && (text_w > box_px_w);
-
-                  if (rotate) {
-                    const int px = cx - iterm_font_h / 2;
-                    const int py = cy - text_w / 2;
-                    if (px > -iterm_font_h && px < kTileSizeInPixel
-                        && py > -text_w && py < kTileSizeInPixel) {
-                      drawTextRotated(image_buffer,
-                                      px,
-                                      py,
-                                      name,
-                                      iterm_font,
-                                      iterm_label_color);
-                    }
-                  } else {
-                    const int px = cx - text_w / 2;
-                    const int py = cy - iterm_font_h / 2;
-                    if (px > -text_w && px < kTileSizeInPixel
-                        && py > -iterm_font_h && py < kTileSizeInPixel) {
-                      drawText(image_buffer,
-                               px,
-                               py,
-                               name,
-                               iterm_font,
-                               iterm_label_color);
-                    }
-                  }
-
-                  drawn = true;
-                  break;  // only label first geometry per pin
-                }
-                if (drawn) {
-                  break;
-                }
-              }
+            for (int ix = loop_xl; ix < loop_xh; ++ix) {
+              setPixel(image_buffer, ix, 255 - draw_yh, die_outline);
             }
           }
         }
       }
 
-      // Draw routing shapes (wires, vias) and BTerm shapes on top of instances
-      if (!instances_only && tech_layer && (vis.routing || vis.pins)) {
-        for (const auto& shape : search_->searchBoxShapes(block,
-                                                          tech_layer,
-                                                          dbu_x_min,
-                                                          dbu_y_min,
-                                                          dbu_x_max,
-                                                          dbu_y_max)) {
-          const auto type = std::get<1>(shape);
-          if (type == Search::kBterm && !vis.pins) {
-            continue;
-          }
-          if (type == Search::kWire && !(vis.routing && vis.routing_segments)) {
-            continue;
-          }
-          if (type == Search::kVia && !(vis.routing && vis.routing_vias)) {
-            continue;
-          }
-          odb::dbNet* net = std::get<2>(shape);
-          if (!vis.isNetVisible(net)) {
-            continue;
-          }
-          if (focus_net_ids && !focus_net_ids->empty()
-              && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
-            continue;
-          }
-          const odb::Rect& box = std::get<0>(shape);
-          if (!box.overlaps(dbu_tile)) {
-            continue;
-          }
-          const odb::Rect overlap = box.intersect(dbu_tile);
-          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+      odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
+      Color color{.r = 200, .g = 200, .b = 200, .a = 180};
+      if (tech_layer) {
+        const auto it = layer_colors.find(tech_layer);
+        if (it != layer_colors.end()) {
+          color = it->second;
+        }
+      }
+      const Color obs_color = color.lighter();
 
-          drawFilledRect(image_buffer, draw, color);
+      // Special "_modules" layer: draw filled module-colored rectangles
+      const bool modules_layer
+          = (layer == "_modules" && module_colors && !module_colors->empty());
+      if (modules_layer) {
+        for (odb::dbInst* inst : search_->searchInsts(
+                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          odb::Rect inst_bbox = inst->getBBox()->getBox();
+          if (!dbu_tile.overlaps(inst_bbox)) {
+            continue;
+          }
+          if (inst->getMaster()->isFiller()) {
+            continue;
+          }
+          odb::dbModule* mod = inst->getModule();
+          if (!mod) {
+            continue;
+          }
+          auto it = module_colors->find(mod->getId());
+          if (it == module_colors->end()) {
+            continue;
+          }
+          const Color& c = it->second;
+          const int pxl
+              = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
+          const int pyl
+              = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+          const int pxh = std::min(
+              255, (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+          const int pyh = std::min(
+              255, (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+          for (int iy = pyl; iy < pyh; ++iy) {
+            for (int ix = pxl; ix < pxh; ++ix) {
+              blendPixel(image_buffer, ix, 255 - iy, c);
+            }
+          }
         }
       }
 
-      // Draw special net shapes (power/ground straps) on top of instances
-      if (!instances_only && tech_layer && vis.special_nets
-          && vis.srouting_segments) {
-        for (const auto& shape : search_->searchSNetShapes(block,
-                                                           tech_layer,
-                                                           dbu_x_min,
-                                                           dbu_y_min,
-                                                           dbu_x_max,
-                                                           dbu_y_max)) {
-          odb::dbNet* snet = std::get<2>(shape);
-          if (!vis.isNetVisible(snet)) {
-            continue;
-          }
-          if (focus_net_ids && !focus_net_ids->empty()
-              && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
-            continue;
-          }
-          const odb::Rect box = std::get<0>(shape)->getBox();
-          if (!box.overlaps(dbu_tile)) {
-            continue;
-          }
-          const odb::Polygon& poly = std::get<1>(shape);
-          fillPolygon(image_buffer, poly, dbu_tile, scale, color);
-        }
-      }
+      // Special "_pins" layer: draw IO pin direction markers
+      const bool pins_layer = (layer == "_pins");
+      if (pins_layer && vis.pins) {
+        const odb::Rect die_area = block->getDieArea();
+        // Match GUI: scale markers to min(die, viewport) so they shrink
+        // when zoomed in (GUI renderThread.cpp:1598-1602).
+        const int die_max_dim = std::max(die_area.dx(), die_area.dy());
+        const int tile_extent = static_cast<int>(tile_dbu_size);
+        const int effective_dim = std::min(die_max_dim, tile_extent);
+        const int pin_max_size
+            = std::max(static_cast<int>(kPinMarkerSizeRatio * effective_dim),
+                       kMinPinMarkerSize);
+        const int qw = pin_max_size / 4;  // quarter-width of marker
 
-      // Draw special net vias — decompose into individual cut boxes
-      if (!instances_only && tech_layer && vis.special_nets
-          && vis.srouting_vias) {
-        for (const auto& shape : search_->searchSNetViaShapes(block,
-                                                              tech_layer,
-                                                              dbu_x_min,
-                                                              dbu_y_min,
-                                                              dbu_x_max,
-                                                              dbu_y_max)) {
-          odb::dbNet* via_net = std::get<1>(shape);
-          if (!vis.isNetVisible(via_net)) {
+        // Show pin names when the full (die-relative) marker is large enough
+        // in pixels.  pin_max_size shrinks with zoom, but the die-relative
+        // size grows as scale increases, so names appear when zoomed in.
+        const int die_pin_size
+            = std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
+                       kMinPinMarkerSize);
+        const bool draw_pin_names
+            = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
+        const auto pin_label_font = fontAtlasGetFont(kPinLabelFontHeight);
+
+        // Marker templates (same as GUI renderThread.cpp).
+        // Defined for "top edge" orientation; rotated per actual edge.
+        using Pts = std::vector<odb::Point>;
+        const Pts in_marker{// arrow pointing into block
+                            {qw, pin_max_size},
+                            {0, 0},
+                            {-qw, pin_max_size},
+                            {qw, pin_max_size}};
+        const Pts out_marker{// arrow pointing out of block
+                             {0, pin_max_size},
+                             {-qw, 0},
+                             {qw, 0},
+                             {0, pin_max_size}};
+        const Pts bi_marker{// diamond
+                            {0, 0},
+                            {-qw, pin_max_size / 2},
+                            {0, pin_max_size},
+                            {qw, pin_max_size / 2},
+                            {0, 0}};
+
+        // Iterate per-box like the GUI (each dbBox gets its own marker).
+        for (odb::dbBTerm* term : block->getBTerms()) {
+          // Respect net-type visibility (Power, Ground, etc.).
+          if (!vis.isNetVisible(term->getNet())) {
             continue;
           }
-          if (focus_net_ids && !focus_net_ids->empty()
-              && focus_net_ids->find(via_net->getId())
-                     == focus_net_ids->end()) {
-            continue;
-          }
-          odb::dbSBox* sbox = std::get<0>(shape);
-          std::vector<odb::dbBox*> via_boxes;
-          if (auto tech_via = sbox->getTechVia()) {
-            via_boxes.assign(tech_via->getBoxes().begin(),
-                             tech_via->getBoxes().end());
-          } else if (auto block_via = sbox->getBlockVia()) {
-            via_boxes.assign(block_via->getBoxes().begin(),
-                             block_via->getBoxes().end());
-          }
-          const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
-                                  (sbox->yMin() + sbox->yMax()) / 2);
-          for (odb::dbBox* vbox : via_boxes) {
-            if (vbox->getTechLayer() != tech_layer) {
+          for (odb::dbBPin* pin : term->getBPins()) {
+            const odb::dbPlacementStatus status = pin->getPlacementStatus();
+            if (status == odb::dbPlacementStatus::NONE
+                || status == odb::dbPlacementStatus::UNPLACED) {
               continue;
             }
-            odb::Rect box = vbox->getBox();
-            box.moveDelta(origin.x(), origin.y());
+
+            for (odb::dbBox* box : pin->getBoxes()) {
+              if (!box) {
+                continue;
+              }
+
+              // Skip pins on hidden tech layers.
+              if (vis.has_visible_layers) {
+                odb::dbTechLayer* box_layer = box->getTechLayer();
+                if (box_layer
+                    && !vis.visible_layers.contains(box_layer->getName())) {
+                  continue;
+                }
+              }
+
+              const odb::Rect box_rect = box->getBox();
+
+              // Layer color for this box.
+              Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
+              odb::dbTechLayer* pin_layer = box->getTechLayer();
+              if (pin_layer) {
+                const auto it = layer_colors.find(pin_layer);
+                if (it != layer_colors.end()) {
+                  marker_color = it->second;
+                  marker_color.a = 220;
+                }
+              }
+
+              // Center and edge distances from this specific box.
+              const odb::Point pin_center = box_rect.center();
+
+              const int dist_to_left
+                  = std::abs(box_rect.xMin() - die_area.xMin());
+              const int dist_to_right
+                  = std::abs(box_rect.xMax() - die_area.xMax());
+              const int dist_to_top
+                  = std::abs(box_rect.yMax() - die_area.yMax());
+              const int dist_to_bot
+                  = std::abs(box_rect.yMin() - die_area.yMin());
+              const std::array<int, 4> dists{
+                  dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
+              const int arg_min = static_cast<int>(std::distance(
+                  dists.begin(), std::ranges::min_element(dists)));
+
+              odb::dbTransform xfm(pin_center);
+              if (arg_min == 0) {  // left
+                xfm.setOrient(odb::dbOrientType::R90);
+                if (dist_to_left == 0) {
+                  xfm.setOffset({die_area.xMin(), pin_center.y()});
+                }
+              } else if (arg_min == 1) {  // right
+                xfm.setOrient(odb::dbOrientType::R270);
+                if (dist_to_right == 0) {
+                  xfm.setOffset({die_area.xMax(), pin_center.y()});
+                }
+              } else if (arg_min == 2) {  // top
+                // No rotation needed.
+                if (dist_to_top == 0) {
+                  xfm.setOffset({pin_center.x(), die_area.yMax()});
+                }
+              } else {  // bottom
+                xfm.setOrient(odb::dbOrientType::MX);
+                if (dist_to_bot == 0) {
+                  xfm.setOffset({pin_center.x(), die_area.yMin()});
+                }
+              }
+
+              // Select template based on IO direction.
+              const Pts* tmpl = &bi_marker;
+              const auto pin_dir = term->getIoType();
+              if (pin_dir == odb::dbIoType::INPUT) {
+                tmpl = &in_marker;
+              } else if (pin_dir == odb::dbIoType::OUTPUT) {
+                tmpl = &out_marker;
+              }
+
+              // Transform template to final marker polygon.
+              std::vector<odb::Point> marker_pts;
+              marker_pts.reserve(tmpl->size());
+              for (const auto& pt : *tmpl) {
+                odb::Point new_pt = pt;
+                xfm.apply(new_pt);
+                marker_pts.push_back(new_pt);
+              }
+              const odb::Polygon marker_poly(marker_pts);
+
+              // Only draw if marker intersects this tile.
+              const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
+              if (marker_bbox.overlaps(dbu_tile)) {
+                fillPolygon(
+                    image_buffer, marker_poly, dbu_tile, scale, marker_color);
+              }
+
+              // Draw the box rect itself (same as GUI painter.drawRect).
+              if (box_rect.overlaps(dbu_tile)) {
+                const odb::Rect overlap = box_rect.intersect(dbu_tile);
+                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+                drawFilledRect(image_buffer, draw, marker_color);
+              }
+
+              // Draw pin name label when zoomed in enough.
+              if (draw_pin_names && vis.pin_names) {
+                const std::string name = term->getName();
+                const odb::Point anchor_pt = xfm.getOffset();
+                const int text_w = getTextWidth(name, pin_label_font);
+                const int text_h = getTextHeight(pin_label_font);
+                const int text_margin_px = 3;
+                const bool rotated = (arg_min == 2 || arg_min == 3);
+
+                // For rotated text, width/height swap.
+                const int block_w = rotated ? text_h : text_w;
+                const int block_h = rotated ? text_w : text_h;
+
+                // Convert anchor to pixel coords.
+                const int anchor_px = static_cast<int>(
+                    (anchor_pt.x() - dbu_tile.xMin()) * scale);
+                const int anchor_py_raw = static_cast<int>(
+                    (anchor_pt.y() - dbu_tile.yMin()) * scale);
+                const int anchor_py = 255 - anchor_py_raw;
+
+                // Position text outward (away from die center), matching the
+                // GUI.
+                const int marker_px = static_cast<int>(pin_max_size * scale);
+                int px;
+                int py;
+                if (arg_min == 0) {  // left — text to the left (outward)
+                  px = anchor_px - marker_px - text_margin_px - text_w;
+                  py = anchor_py - text_h / 2;
+                } else if (arg_min
+                           == 1) {  // right — text to the right (outward)
+                  px = anchor_px + marker_px + text_margin_px;
+                  py = anchor_py - text_h / 2;
+                } else if (arg_min
+                           == 2) {  // top — rotated, above marker (outward)
+                  px = anchor_px - block_w / 2;
+                  py = anchor_py - marker_px - text_margin_px - block_h;
+                } else {  // bottom — rotated, below marker (outward)
+                  px = anchor_px - block_w / 2;
+                  py = anchor_py + marker_px + text_margin_px;
+                }
+
+                if (px > -block_w && px < kTileSizeInPixel && py > -block_h
+                    && py < kTileSizeInPixel) {
+                  const Color text_color{.r = marker_color.r,
+                                         .g = marker_color.g,
+                                         .b = marker_color.b,
+                                         .a = 255};
+                  if (rotated) {
+                    drawTextRotated(
+                        image_buffer, px, py, name, pin_label_font, text_color);
+                  } else {
+                    drawText(
+                        image_buffer, px, py, name, pin_label_font, text_color);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Special "_instances" layer: only draw instance borders, no routing
+      const bool instances_only = (layer == "_instances");
+
+      // "_modules" and "_pins" layers handle their own drawing above;
+      // skip all other drawing (instances, routing, etc.)
+      if (!modules_layer && !pins_layer) {
+        const auto iterm_font = fontAtlasGetFont(kItermLabelFontHeight);
+        const int iterm_font_h = getTextHeight(iterm_font);
+
+        // Draw instances
+        for (odb::dbInst* inst : search_->searchInsts(
+                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          odb::Rect inst_bbox = inst->getBBox()->getBox();
+          if (!dbu_tile.overlaps(inst_bbox)) {
+            continue;
+          }
+          odb::dbMaster* master = inst->getMaster();
+
+          if (!vis.isInstVisible(inst, sta_)) {
+            continue;
+          }
+          const int xl = inst_bbox.xMin();
+          const int yl = inst_bbox.yMin();
+          const int xh = inst_bbox.xMax();
+          const int yh = inst_bbox.yMax();
+
+          const int64_t pixel_xl = (int64_t) ((xl - dbu_x_min) * scale);
+          const int64_t pixel_yl = (int64_t) ((yl - dbu_y_min) * scale);
+          const int64_t pixel_xh = (int64_t) std::ceil((xh - dbu_x_min) * scale);
+          const int64_t pixel_yh = (int64_t) std::ceil((yh - dbu_y_min) * scale);
+
+          const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, 256);
+          const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, 256);
+          const int loop_xh = std::clamp<int64_t>(pixel_xh, 0, 256);
+          const int loop_yh = std::clamp<int64_t>(pixel_yh, 0, 256);
+
+          const int draw_xl = std::clamp<int64_t>(pixel_xl, 0, 255);
+          const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, 255);
+          const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, 255);
+          const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, 255);
+
+          if (instances_only) {
+            // Draw the rectangle border (instances-only layer)
+            const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
+            if (dbu_x_min <= xl && xl <= dbu_x_max) {
+              for (int iy = loop_yl; iy < loop_yh; ++iy) {
+                const int draw_y = (255 - iy);
+                setPixel(image_buffer, draw_xl, draw_y, gray);
+              }
+            }
+            if (dbu_x_min <= xh && xh <= dbu_x_max) {
+              for (int iy = loop_yl; iy < loop_yh; ++iy) {
+                const int draw_y = (255 - iy);
+                setPixel(image_buffer, draw_xh, draw_y, gray);
+              }
+            }
+            if (dbu_y_min <= yl && yl <= dbu_y_max) {
+              for (int ix = loop_xl; ix < loop_xh; ++ix) {
+                const int draw_y = (255 - draw_yl);
+                setPixel(image_buffer, ix, draw_y, gray);
+              }
+            }
+            if (dbu_y_min <= yh && yh <= dbu_y_max) {
+              for (int ix = loop_xl; ix < loop_xh; ++ix) {
+                const int draw_y = (255 - draw_yh);
+                setPixel(image_buffer, ix, draw_y, gray);
+              }
+            }
+
+            // Draw instance name label when zoomed in enough.
+            // Font scales to ~40% of the smaller box dimension, clamped
+            // to [kMinInstNameFontPx, kMaxInstNameFontPx].  Text is
+            // elided from the left ("...suffix") to fit 90% of the
+            // available dimension, matching the Qt GUI's behavior.
+            if (vis.inst_names) {
+              const int box_px_w = (int)(pixel_xh - pixel_xl);
+              const int box_px_h = (int)(pixel_yh - pixel_yl);
+              const int box_px_min = std::min(box_px_w, box_px_h);
+              if (std::max(box_px_w, box_px_h) >= kMinInstNameBoxPx) {
+                const int font_px
+                    = std::clamp(static_cast<int>(box_px_min * 0.4),
+                                 kMinInstNameFontPx,
+                                 kMaxInstNameFontPx);
+                const auto inst_font = fontAtlasGetFont(font_px);
+                const int font_h = getTextHeight(inst_font);
+
+                // Skip if font would dominate the cell (> 50% of cross
+                // dimension), matching GUI's kNonCoreScaleLimit = 2.0.
+                if (2 * font_h <= box_px_min) {
+                  constexpr Color name_color{
+                      .r = 255, .g = 255, .b = 0, .a = 220};
+                  const std::string full_name = inst->getName();
+                  const int full_w = getTextWidth(full_name, inst_font);
+
+                  // Rotate if taller than wide and text overflows (85%).
+                  const bool rotate
+                      = (box_px_h > box_px_w) && (full_w > box_px_w * 85 / 100);
+
+                  // Available width for text (90% of relevant dim).
+                  const int avail
+                      = rotate ? (box_px_h * 9 / 10) : (box_px_w * 9 / 10);
+
+                  // Elide from the left if text is too wide.  Maintain a
+                  // running prefix width so each candidate "..." +
+                  // name.substr(skip) is evaluated in O(1) using
+                  //   textWidth(name.substr(skip))
+                  //     = full_w - prefix_w - kern(name[skip-1], name[skip])
+                  // giving O(N) total instead of O(N^2).
+                  std::string name = full_name;
+                  int text_w = full_w;
+                  if (text_w > avail && name.size() > 4) {
+                    const int dots_w = getTextWidth("...", inst_font);
+                    const size_t n = name.size();
+                    int prefix_w = 0;
+                    for (size_t skip = 1; skip < n - 1; ++skip) {
+                      prefix_w += inst_font.glyph(name[skip - 1]).advance;
+                      if (skip >= 2) {
+                        prefix_w
+                            += inst_font.kern(name[skip - 2], name[skip - 1]);
+                      }
+                      const int suffix_w
+                          = full_w - prefix_w
+                            - inst_font.kern(name[skip - 1], name[skip]);
+                      const int w
+                          = dots_w + inst_font.kern('.', name[skip]) + suffix_w;
+                      if (w <= avail) {
+                        name = "..." + name.substr(skip);
+                        text_w = w;
+                        break;
+                      }
+                    }
+                  }
+
+                  // Center of instance bbox in pixel coords.
+                  const int64_t cx = (pixel_xl + pixel_xh) / 2;
+                  const int64_t cy = 255 - (pixel_yl + pixel_yh) / 2;
+
+                  if (rotate) {
+                    const int64_t px = cx - font_h / 2;
+                    const int64_t py = cy - text_w / 2;
+                    if (px > -font_h && px < kTileSizeInPixel && py > -text_w
+                        && py < kTileSizeInPixel) {
+                      drawTextRotated(
+                          image_buffer, (int)px, (int)py, name, inst_font, name_color);
+                    }
+                  } else {
+                    const int64_t px = cx - text_w / 2;
+                    const int64_t py = cy - font_h / 2;
+                    if (px > -text_w && px < kTileSizeInPixel && py > -font_h
+                        && py < kTileSizeInPixel) {
+                      drawText(
+                          image_buffer, (int)px, (int)py, name, inst_font, name_color);
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            // Layer-specific: obstructions and pins
+            if (vis.blockages) {
+              for (odb::dbPolygon* poly_obs :
+                   master->getPolygonObstructions()) {
+                if (tech_layer && poly_obs->getTechLayer() != tech_layer) {
+                  continue;
+                }
+                odb::Polygon poly = poly_obs->getPolygon();
+                inst->getTransform().apply(poly);
+                fillPolygon(image_buffer, poly, dbu_tile, scale, obs_color);
+              }
+              for (odb::dbBox* obs : master->getObstructions(false)) {
+                if (tech_layer && obs->getTechLayer() != tech_layer) {
+                  continue;
+                }
+                odb::Rect box = obs->getBox();
+                inst->getTransform().apply(box);
+                if (!box.overlaps(dbu_tile)) {
+                  continue;
+                }
+                const odb::Rect overlap = box.intersect(dbu_tile);
+                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+                drawFilledRect(image_buffer, draw, obs_color);
+              }
+            }
+
+            if (vis.inst_pins) {
+              for (odb::dbMTerm* mterm : master->getMTerms()) {
+                for (odb::dbMPin* mpin : mterm->getMPins()) {
+                  for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
+                    if (tech_layer && poly_geom->getTechLayer() != tech_layer) {
+                      continue;
+                    }
+                    odb::Polygon poly = poly_geom->getPolygon();
+                    inst->getTransform().apply(poly);
+                    fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+                  }
+                  for (odb::dbBox* geom : mpin->getGeometry(false)) {
+                    if (tech_layer && geom->getTechLayer() != tech_layer) {
+                      continue;
+                    }
+                    odb::Rect box = geom->getBox();
+                    inst->getTransform().apply(box);
+                    if (!box.overlaps(dbu_tile)) {
+                      continue;
+                    }
+                    const odb::Rect overlap = box.intersect(dbu_tile);
+                    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+                    drawFilledRect(image_buffer, draw, color);
+                  }
+                }
+              }
+            }
+
+            // Draw ITerm name labels when zoomed in and pins are visible.
+            if (vis.inst_pins && vis.inst_pin_names) {
+              constexpr Color iterm_label_color{
+                  .r = 255, .g = 255, .b = 0, .a = 220};
+              const odb::dbTransform xfm = inst->getTransform();
+
+              for (odb::dbMTerm* mterm : master->getMTerms()) {
+                bool drawn = false;
+                for (odb::dbMPin* mpin : mterm->getMPins()) {
+                  for (odb::dbBox* geom : mpin->getGeometry(false)) {
+                    if (tech_layer && geom->getTechLayer() != tech_layer) {
+                      continue;
+                    }
+                    odb::Rect box = geom->getBox();
+                    xfm.apply(box);
+                    if (!box.overlaps(dbu_tile)) {
+                      continue;
+                    }
+
+                    // Skip if pin box is too small in pixels.
+                    const int box_px_w = static_cast<int>(box.dx() * scale);
+                    const int box_px_h = static_cast<int>(box.dy() * scale);
+                    if (box_px_w < kMinItermLabelBoxPx
+                        && box_px_h < kMinItermLabelBoxPx) {
+                      continue;
+                    }
+
+                    const std::string name(mterm->getName());
+                    const int text_w = getTextWidth(name, iterm_font);
+
+                    // Center of pin box in pixel coords.
+                    const odb::Point center = box.center();
+                    const int cx = static_cast<int>(
+                        (center.x() - dbu_tile.xMin()) * scale);
+                    const int cy = 255
+                                   - static_cast<int>(
+                                       (center.y() - dbu_tile.yMin()) * scale);
+
+                    // Rotate 90° if box is taller than wide and text overflows.
+                    const bool rotate
+                        = (box_px_h > box_px_w) && (text_w > box_px_w);
+
+                    if (rotate) {
+                      const int px = cx - iterm_font_h / 2;
+                      const int py = cy - text_w / 2;
+                      if (px > -iterm_font_h && px < kTileSizeInPixel
+                          && py > -text_w && py < kTileSizeInPixel) {
+                        drawTextRotated(image_buffer,
+                                        px,
+                                        py,
+                                        name,
+                                        iterm_font,
+                                        iterm_label_color);
+                      }
+                    } else {
+                      const int px = cx - text_w / 2;
+                      const int py = cy - iterm_font_h / 2;
+                      if (px > -text_w && px < kTileSizeInPixel
+                          && py > -iterm_font_h && py < kTileSizeInPixel) {
+                        drawText(image_buffer,
+                                 px,
+                                 py,
+                                 name,
+                                 iterm_font,
+                                 iterm_label_color);
+                      }
+                    }
+
+                    drawn = true;
+                    break;  // only label first geometry per pin
+                  }
+                  if (drawn) {
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Draw routing shapes (wires, vias) and BTerm shapes on top of
+        // instances
+        if (!instances_only && tech_layer && (vis.routing || vis.pins)) {
+          for (const auto& shape : search_->searchBoxShapes(block,
+                                                            tech_layer,
+                                                            dbu_x_min,
+                                                            dbu_y_min,
+                                                            dbu_x_max,
+                                                            dbu_y_max)) {
+            const auto type = std::get<1>(shape);
+            if (type == Search::kBterm && !vis.pins) {
+              continue;
+            }
+            if (type == Search::kWire
+                && !(vis.routing && vis.routing_segments)) {
+              continue;
+            }
+            if (type == Search::kVia && !(vis.routing && vis.routing_vias)) {
+              continue;
+            }
+            odb::dbNet* net = std::get<2>(shape);
+            if (!vis.isNetVisible(net)) {
+              continue;
+            }
+            if (focus_net_ids && !focus_net_ids->empty()
+                && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
+              continue;
+            }
+            const odb::Rect& box = std::get<0>(shape);
             if (!box.overlaps(dbu_tile)) {
               continue;
             }
             const odb::Rect overlap = box.intersect(dbu_tile);
             const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
             drawFilledRect(image_buffer, draw, color);
           }
         }
-      }
 
-      // Draw via enclosures from adjacent cut layers onto this metal layer.
-      // Vias are indexed by their cut layer in the search structure.  When
-      // rendering a routing layer we look up the cut layers immediately above
-      // and below, search for vias there, and draw only the enclosure boxes
-      // that belong to the current routing layer.
-      if (!instances_only && tech_layer && vis.special_nets && vis.srouting_vias
-          && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
-        odb::dbTechLayer* adj_cuts[2]
-            = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
-        for (odb::dbTechLayer* cut_layer : adj_cuts) {
-          if (!cut_layer || cut_layer->getType() != odb::dbTechLayerType::CUT) {
-            continue;
+        // Draw special net shapes (power/ground straps) on top of instances
+        if (!instances_only && tech_layer && vis.special_nets
+            && vis.srouting_segments) {
+          for (const auto& shape : search_->searchSNetShapes(block,
+                                                             tech_layer,
+                                                             dbu_x_min,
+                                                             dbu_y_min,
+                                                             dbu_x_max,
+                                                             dbu_y_max)) {
+            odb::dbNet* snet = std::get<2>(shape);
+            if (!vis.isNetVisible(snet)) {
+              continue;
+            }
+            if (focus_net_ids && !focus_net_ids->empty()
+                && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
+              continue;
+            }
+            const odb::Rect box = std::get<0>(shape)->getBox();
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Polygon& poly = std::get<1>(shape);
+            fillPolygon(image_buffer, poly, dbu_tile, scale, color);
           }
+        }
+
+        // Draw special net vias — decompose into individual cut boxes
+        if (!instances_only && tech_layer && vis.special_nets
+            && vis.srouting_vias) {
           for (const auto& shape : search_->searchSNetViaShapes(block,
-                                                                cut_layer,
+                                                                tech_layer,
                                                                 dbu_x_min,
                                                                 dbu_y_min,
                                                                 dbu_x_max,
@@ -1554,15 +1871,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             if (focus_net_ids && !focus_net_ids->empty()
-                && !focus_net_ids->contains(via_net->getId())) {
+                && focus_net_ids->find(via_net->getId())
+                       == focus_net_ids->end()) {
               continue;
             }
             odb::dbSBox* sbox = std::get<0>(shape);
-            odb::dbSet<odb::dbBox> via_boxes;
+            std::vector<odb::dbBox*> via_boxes;
             if (auto tech_via = sbox->getTechVia()) {
-              via_boxes = tech_via->getBoxes();
+              via_boxes.assign(tech_via->getBoxes().begin(),
+                               tech_via->getBoxes().end());
             } else if (auto block_via = sbox->getBlockVia()) {
-              via_boxes = block_via->getBoxes();
+              via_boxes.assign(block_via->getBoxes().begin(),
+                               block_via->getBoxes().end());
             }
             const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
                                     (sbox->yMin() + sbox->yMax()) / 2);
@@ -1581,230 +1901,355 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             }
           }
         }
-      }
 
-      // Draw placement blockages (dbBlockage) on the _instances layer.
-      // Diagonal white hash lines in pixel space, with period anchored in dbu
-      // coordinates so the pattern is seamless across tile boundaries.
-      if (instances_only && vis.placement_blockages) {
-        const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
-        constexpr int kPixelPeriod = 20;  // pixels between line centers
-        constexpr int kLineWidth = 2;     // pixels wide
-        for (odb::dbBlockage* blk : search_->searchBlockages(
-                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-          odb::Rect box = blk->getBBox()->getBox();
-          if (!box.overlaps(dbu_tile)) {
-            continue;
-          }
-          const odb::Rect overlap = box.intersect(dbu_tile);
-          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-          // Offset in absolute pixel coordinates for seamless tiling
-          const int ox = (int) (dbu_x_min * scale);
-          const int oy = (int) (dbu_y_min * scale);
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
-                blendPixel(image_buffer, ix, 255 - iy, hash_color);
-              }
+        // Draw via enclosures from adjacent cut layers onto this metal layer.
+        // Vias are indexed by their cut layer in the search structure.  When
+        // rendering a routing layer we look up the cut layers immediately above
+        // and below, search for vias there, and draw only the enclosure boxes
+        // that belong to the current routing layer.
+        if (!instances_only && tech_layer && vis.special_nets
+            && vis.srouting_vias
+            && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
+          odb::dbTechLayer* adj_cuts[2]
+              = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
+          for (odb::dbTechLayer* cut_layer : adj_cuts) {
+            if (!cut_layer
+                || cut_layer->getType() != odb::dbTechLayerType::CUT) {
+              continue;
             }
-          }
-        }
-      }
-
-      // Draw routing obstructions (dbObstruction) on per-layer tiles.
-      // Same diagonal white hash lines.
-      if (!instances_only && tech_layer && vis.routing_obstructions) {
-        const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
-        constexpr int kPixelPeriod = 20;
-        constexpr int kLineWidth = 2;
-        for (odb::dbObstruction* obs : search_->searchObstructions(block,
-                                                                   tech_layer,
-                                                                   dbu_x_min,
-                                                                   dbu_y_min,
-                                                                   dbu_x_max,
-                                                                   dbu_y_max)) {
-          odb::Rect box = obs->getBBox()->getBox();
-          if (!box.overlaps(dbu_tile)) {
-            continue;
-          }
-          const odb::Rect overlap = box.intersect(dbu_tile);
-          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-          const int ox = (int) (dbu_x_min * scale);
-          const int oy = (int) (dbu_y_min * scale);
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
-                blendPixel(image_buffer, ix, 255 - iy, hash_color);
-              }
-            }
-          }
-        }
-      }
-
-      // Draw rows (and individual sites when zoomed in) on _instances layer.
-      if (instances_only && vis.rows) {
-        const Color row_color{
-            .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
-
-        // Lambda to draw a rectangle outline.
-        auto draw_outline = [&](const odb::Rect& rect) {
-          const odb::Rect draw = toPixels(scale, rect, dbu_tile);
-          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
-            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
-            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
-          }
-          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
-            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
-            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
-          }
-        };
-
-        for (const auto& [row_rect, row] : search_->searchRows(
-                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-          if (!row_rect.overlaps(dbu_tile)) {
-            continue;
-          }
-          odb::dbSite* site = row->getSite();
-          if (site && !vis.isSiteVisible(site->getName())) {
-            continue;
-          }
-
-          // Always draw the row outline.
-          draw_outline(row_rect);
-
-          // Draw individual sites when zoomed in enough (site >= 5px).
-          // Matches GUI nominalViewableResolution threshold.
-          if (site) {
-            int site_w = site->getWidth();
-            int site_h = site->getHeight();
-
-            // Swap dimensions for rotated orientations.
-            switch (row->getOrient().getValue()) {
-              case odb::dbOrientType::R90:
-              case odb::dbOrientType::R270:
-              case odb::dbOrientType::MYR90:
-              case odb::dbOrientType::MXR90:
-                std::swap(site_w, site_h);
-                break;
-              default:
-                break;
-            }
-
-            const int site_w_px = static_cast<int>(site_w * scale);
-            if (site_w_px >= 5) {
-              odb::Point pt = row->getOrigin();
-              const int spacing = row->getSpacing();
-              const int count = row->getSiteCount();
-              const bool horizontal
-                  = (row->getDirection() == odb::dbRowDir::HORIZONTAL);
-
-              for (int i = 0; i < count; ++i) {
-                const odb::Rect site_rect(
-                    pt.x(), pt.y(), pt.x() + site_w, pt.y() + site_h);
-                if (site_rect.overlaps(dbu_tile)) {
-                  draw_outline(site_rect);
-                }
-                if (horizontal) {
-                  pt.addX(spacing);
-                } else {
-                  pt.addY(spacing);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Draw tracks on per-layer tiles
-      if (!instances_only && tech_layer
-          && (vis.tracks_pref || vis.tracks_non_pref)) {
-        odb::dbTrackGrid* grid = block->findTrackGrid(tech_layer);
-        debugPrint(logger_,
-                   utl::WEB,
-                   "tile",
-                   1,
-                   "tracks: layer={} grid={} pref={} non_pref={}",
-                   layer,
-                   grid != nullptr,
-                   vis.tracks_pref,
-                   vis.tracks_non_pref);
-        if (grid) {
-          Color track_color = color;
-          track_color.a = 150;
-          const bool is_horizontal
-              = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-
-          // X-direction tracks (vertical lines on screen)
-          // Preferred for vertical layers, non-preferred for horizontal layers
-          if ((!is_horizontal && vis.tracks_pref)
-              || (is_horizontal && vis.tracks_non_pref)) {
-            std::vector<int> x_grid;
-            grid->getGridX(x_grid);
-            debugPrint(logger_,
-                       utl::WEB,
-                       "tile",
-                       1,
-                       "  x_tracks: count={} tile=[{},{},{},{}]",
-                       x_grid.size(),
-                       dbu_x_min,
-                       dbu_y_min,
-                       dbu_x_max,
-                       dbu_y_max);
-            for (int tx : x_grid) {
-              if (tx < dbu_x_min || tx > dbu_x_max) {
+            for (const auto& shape : search_->searchSNetViaShapes(block,
+                                                                  cut_layer,
+                                                                  dbu_x_min,
+                                                                  dbu_y_min,
+                                                                  dbu_x_max,
+                                                                  dbu_y_max)) {
+              odb::dbNet* via_net = std::get<1>(shape);
+              if (!vis.isNetVisible(via_net)) {
                 continue;
               }
-              const int px = static_cast<int>((tx - dbu_x_min) * scale);
-              if (px >= 0 && px < kTileSizeInPixel) {
-                for (int py = 0; py < kTileSizeInPixel; ++py) {
-                  blendPixel(image_buffer, px, py, track_color);
+              if (focus_net_ids && !focus_net_ids->empty()
+                  && !focus_net_ids->contains(via_net->getId())) {
+                continue;
+              }
+              odb::dbSBox* sbox = std::get<0>(shape);
+              odb::dbSet<odb::dbBox> via_boxes;
+              if (auto tech_via = sbox->getTechVia()) {
+                via_boxes = tech_via->getBoxes();
+              } else if (auto block_via = sbox->getBlockVia()) {
+                via_boxes = block_via->getBoxes();
+              }
+              const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
+                                      (sbox->yMin() + sbox->yMax()) / 2);
+              for (odb::dbBox* vbox : via_boxes) {
+                if (vbox->getTechLayer() != tech_layer) {
+                  continue;
                 }
+                odb::Rect box = vbox->getBox();
+                box.moveDelta(origin.x(), origin.y());
+                if (!box.overlaps(dbu_tile)) {
+                  continue;
+                }
+                const odb::Rect overlap = box.intersect(dbu_tile);
+                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+                drawFilledRect(image_buffer, draw, color);
               }
             }
           }
+        }
 
-          // Y-direction tracks (horizontal lines on screen)
-          // Preferred for horizontal layers, non-preferred for vertical layers
-          if ((is_horizontal && vis.tracks_pref)
-              || (!is_horizontal && vis.tracks_non_pref)) {
-            std::vector<int> y_grid;
-            grid->getGridY(y_grid);
-            debugPrint(logger_,
-                       utl::WEB,
-                       "tile",
-                       1,
-                       "  y_tracks: count={}",
-                       y_grid.size());
-            for (int ty : y_grid) {
-              if (ty < dbu_y_min || ty > dbu_y_max) {
-                continue;
-              }
-              const int py = 255 - static_cast<int>((ty - dbu_y_min) * scale);
-              if (py >= 0 && py < kTileSizeInPixel) {
-                for (int px = 0; px < kTileSizeInPixel; ++px) {
-                  blendPixel(image_buffer, px, py, track_color);
+        // Draw placement blockages (dbBlockage) on the _instances layer.
+        // Diagonal white hash lines in pixel space, with period anchored in dbu
+        // coordinates so the pattern is seamless across tile boundaries.
+        if (instances_only && vis.placement_blockages) {
+          const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
+          constexpr int kPixelPeriod = 20;  // pixels between line centers
+          constexpr int kLineWidth = 2;     // pixels wide
+          for (odb::dbBlockage* blk : search_->searchBlockages(
+                   block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+            odb::Rect box = blk->getBBox()->getBox();
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+            // Offset in absolute pixel coordinates for seamless tiling
+            const int ox = (int) (dbu_x_min * scale);
+            const int oy = (int) (dbu_y_min * scale);
+            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+                  blendPixel(image_buffer, ix, 255 - iy, hash_color);
                 }
               }
             }
           }
         }
+
+        // Draw routing obstructions (dbObstruction) on per-layer tiles.
+        // Same diagonal white hash lines.
+        if (!instances_only && tech_layer && vis.routing_obstructions) {
+          const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
+          constexpr int kPixelPeriod = 20;
+          constexpr int kLineWidth = 2;
+          for (odb::dbObstruction* obs :
+               search_->searchObstructions(block,
+                                           tech_layer,
+                                           dbu_x_min,
+                                           dbu_y_min,
+                                           dbu_x_max,
+                                           dbu_y_max)) {
+            odb::Rect box = obs->getBBox()->getBox();
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+            const int ox = (int) (dbu_x_min * scale);
+            const int oy = (int) (dbu_y_min * scale);
+            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+                  blendPixel(image_buffer, ix, 255 - iy, hash_color);
+                }
+              }
+            }
+          }
+        }
+
+        // Draw rows (and individual sites when zoomed in) on _instances layer.
+        if (instances_only && vis.rows) {
+          const Color row_color{
+              .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
+
+          // Lambda to draw a rectangle outline.
+          auto draw_outline = [&](const odb::Rect& rect) {
+            const odb::Rect draw = toPixels(scale, rect, dbu_tile);
+            for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
+              blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
+              blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
+            }
+            for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
+              blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
+              blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+            }
+          };
+
+          for (const auto& [row_rect, row] : search_->searchRows(
+                   block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+            if (!row_rect.overlaps(dbu_tile)) {
+              continue;
+            }
+            odb::dbSite* site = row->getSite();
+            if (site && !vis.isSiteVisible(site->getName())) {
+              continue;
+            }
+
+            // Always draw the row outline.
+            draw_outline(row_rect);
+
+            // Draw individual sites when zoomed in enough (site >= 5px).
+            // Matches GUI nominalViewableResolution threshold.
+            if (site) {
+              int site_w = site->getWidth();
+              int site_h = site->getHeight();
+
+              // Swap dimensions for rotated orientations.
+              switch (row->getOrient().getValue()) {
+                case odb::dbOrientType::R90:
+                case odb::dbOrientType::R270:
+                case odb::dbOrientType::MYR90:
+                case odb::dbOrientType::MXR90:
+                  std::swap(site_w, site_h);
+                  break;
+                default:
+                  break;
+              }
+
+              const int site_w_px = static_cast<int>(site_w * scale);
+              if (site_w_px >= 5) {
+                odb::Point pt = row->getOrigin();
+                const int spacing = row->getSpacing();
+                const int count = row->getSiteCount();
+                const bool horizontal
+                    = (row->getDirection() == odb::dbRowDir::HORIZONTAL);
+
+                for (int i = 0; i < count; ++i) {
+                  const odb::Rect site_rect(
+                      pt.x(), pt.y(), pt.x() + site_w, pt.y() + site_h);
+                  if (site_rect.overlaps(dbu_tile)) {
+                    draw_outline(site_rect);
+                  }
+                  if (horizontal) {
+                    pt.addX(spacing);
+                  } else {
+                    pt.addY(spacing);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Draw tracks on per-layer tiles
+        if (!instances_only && tech_layer
+            && (vis.tracks_pref || vis.tracks_non_pref)) {
+          odb::dbTrackGrid* grid = block->findTrackGrid(tech_layer);
+          debugPrint(logger_,
+                     utl::WEB,
+                     "tile",
+                     1,
+                     "tracks: layer={} grid={} pref={} non_pref={}",
+                     layer,
+                     grid != nullptr,
+                     vis.tracks_pref,
+                     vis.tracks_non_pref);
+          if (grid) {
+            Color track_color = color;
+            track_color.a = 150;
+            const bool is_horizontal
+                = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+            // X-direction tracks (vertical lines on screen)
+            // Preferred for vertical layers, non-preferred for horizontal
+            // layers
+            if ((!is_horizontal && vis.tracks_pref)
+                || (is_horizontal && vis.tracks_non_pref)) {
+              std::vector<int> x_grid;
+              grid->getGridX(x_grid);
+              debugPrint(logger_,
+                         utl::WEB,
+                         "tile",
+                         1,
+                         "  x_tracks: count={} tile=[{},{},{},{}]",
+                         x_grid.size(),
+                         dbu_x_min,
+                         dbu_y_min,
+                         dbu_x_max,
+                         dbu_y_max);
+              for (int tx : x_grid) {
+                if (tx < dbu_x_min || tx > dbu_x_max) {
+                  continue;
+                }
+                const int px = static_cast<int>((tx - dbu_x_min) * scale);
+                if (px >= 0 && px < kTileSizeInPixel) {
+                  for (int py = 0; py < kTileSizeInPixel; ++py) {
+                    blendPixel(image_buffer, px, py, track_color);
+                  }
+                }
+              }
+            }
+
+            // Y-direction tracks (horizontal lines on screen)
+            // Preferred for horizontal layers, non-preferred for vertical
+            // layers
+            if ((is_horizontal && vis.tracks_pref)
+                || (!is_horizontal && vis.tracks_non_pref)) {
+              std::vector<int> y_grid;
+              grid->getGridY(y_grid);
+              debugPrint(logger_,
+                         utl::WEB,
+                         "tile",
+                         1,
+                         "  y_tracks: count={}",
+                         y_grid.size());
+              for (int ty : y_grid) {
+                if (ty < dbu_y_min || ty > dbu_y_max) {
+                  continue;
+                }
+                const int py = 255 - static_cast<int>((ty - dbu_y_min) * scale);
+                if (py >= 0 && py < kTileSizeInPixel) {
+                  for (int px = 0; px < kTileSizeInPixel; ++px) {
+                    blendPixel(image_buffer, px, py, track_color);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      }  // end if (!modules_layer && !pins_layer)
+
+      if (use_local) {
+        // Slow-path compositing for chiplets with non-R0 orientations.
+        // Forward-mapping (iterate the local buffer, write to world)
+        // leaves gaps when the rotation is non-identity because some
+        // world pixels never get a source.  We do reverse-mapping
+        // instead: for each world destination pixel we map back into
+        // the local frame, sample the local buffer if present, and
+        // use blendPixel() to alpha-composite onto image_buffer.
+        odb::dbTransform inv_xfm = node.world_xfm;
+        inv_xfm.invert();
+        for (int py_w = 0; py_w < kTileSizeInPixel; ++py_w) {
+          for (int px_w = 0; px_w < kTileSizeInPixel; ++px_w) {
+            // World pixel center → world DBU.
+            odb::Point pt(std::lround(dbu_x_min_world + (px_w + 0.5) / scale),
+                          std::lround(dbu_y_min_world
+                                      + (kTileSizeInPixel - 1 - py_w + 0.5)
+                                            / scale));
+            // World DBU → local DBU.
+            inv_xfm.apply(pt);
+            // Local DBU → local pixel.
+            const int px_l = std::floor((pt.x() - dbu_x_min) * scale);
+            const int py_l = kTileSizeInPixel - 1
+                             - std::floor((pt.y() - dbu_y_min) * scale);
+            if (px_l < 0 || px_l >= kTileSizeInPixel || py_l < 0
+                || py_l >= kTileSizeInPixel) {
+              continue;
+            }
+            const int src_idx = (py_l * kTileSizeInPixel + px_l) * 4;
+            const unsigned char a_src = local_image_buffer[src_idx + 3];
+            if (a_src == 0) {
+              continue;
+            }
+            const Color src_color{
+                .r = local_image_buffer[src_idx + 0],
+                .g = local_image_buffer[src_idx + 1],
+                .b = local_image_buffer[src_idx + 2],
+                .a = a_src,
+            };
+            blendPixel(world_image_buffer, px_w, py_w, src_color);
+          }
+        }
       }
+    }  // end per-chiplet for-loop
 
-    }  // end if (!modules_layer && !pins_layer)
-
+    // Overlays render once in world space, on top of all chiplets.
+    // Their geometry (timing paths, DRC rects, flight lines) is already
+    // expressed in world DBU and isn't tied to any single chiplet's
+    // local frame.  route_guides keys on the top-chip tech layer.
+    odb::dbTech* world_tech = db_->getTech();
+    odb::dbTechLayer* world_tech_layer
+        = world_tech ? world_tech->findLayer(layer.c_str()) : nullptr;
+    Color world_color{.r = 200, .g = 200, .b = 200, .a = 180};
+    if (world_tech_layer) {
+      const auto it = layer_colors.find(world_tech_layer);
+      if (it != layer_colors.end()) {
+        world_color = it->second;
+      }
+    }
     if (!highlight_rects.empty() || !highlight_polys.empty()) {
-      drawHighlight(
-          image_buffer, highlight_rects, highlight_polys, dbu_tile, scale);
+      drawHighlight(world_image_buffer,
+                    highlight_rects,
+                    highlight_polys,
+                    dbu_tile_world,
+                    scale);
     }
     if (!colored_rects.empty()) {
-      drawColoredHighlight(image_buffer, colored_rects, layer, dbu_tile, scale);
+      drawColoredHighlight(
+          world_image_buffer, colored_rects, layer, dbu_tile_world, scale);
     }
     if (!flight_lines.empty()) {
-      drawFlightLines(image_buffer, flight_lines, dbu_tile, scale);
+      drawFlightLines(
+          world_image_buffer, flight_lines, dbu_tile_world, scale);
     }
-    if (route_guide_net_ids && !route_guide_net_ids->empty() && tech_layer) {
-      drawRouteGuides(
-          image_buffer, *route_guide_net_ids, layer, color, dbu_tile, scale);
+    if (route_guide_net_ids && !route_guide_net_ids->empty()
+        && world_tech_layer) {
+      drawRouteGuides(world_image_buffer,
+                      *route_guide_net_ids,
+                      layer,
+                      world_color,
+                      dbu_tile_world,
+                      scale);
     }
     if (vis.debug_renderers) {
       // The callback (installed by WebServer at startup) decides
@@ -1812,15 +2257,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // the gui::Gui::get() access itself.  Keeping Gui:: references
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
-      drawRendererOverlay(image_buffer, dbu_tile, scale, vis.debug_live);
+      drawRendererOverlay(
+          world_image_buffer, dbu_tile_world, scale, vis.debug_live);
     }
   }
 
   if (vis.debug) {
-    drawDebugOverlay(image_buffer, z, x, y);
+    drawDebugOverlay(world_image_buffer, z, x, y);
   }
 
-  return image_buffer;
+  return world_image_buffer;
 }
 
 std::vector<unsigned char> TileGenerator::generateHeatMapTile(
@@ -3083,6 +3529,48 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
   } else {
     out["block_name"] = "";
   }
+
+  // Chiplet hierarchy.  One JSON object per node in the dbChip /
+  // dbChipInst tree.  Frontend uses these to populate the "Chiplets"
+  // section of the display-controls panel and to show the path of each
+  // selected object.  See collectChiplets() for the traversal.
+  boost::json::array chiplets;
+  if (gen.getChip()) {
+    auto orientStr = [](const odb::dbOrientType& o) {
+      return std::string(odb::dbOrientType(o).getString());
+    };
+    for (const ChipletNode& node : gen.chiplets()) {
+      boost::json::object entry;
+      entry["path"] = node.path;
+      entry["name"] = node.name;
+      entry["depth"] = node.depth;
+      if (node.parent_path.empty()) {
+        entry["parent"] = nullptr;
+      } else {
+        entry["parent"] = node.parent_path;
+      }
+      if (node.chip && node.chip->getBlock()) {
+        entry["master"] = node.chip->getBlock()->getName();
+      } else {
+        entry["master"] = "";
+      }
+      if (node.block) {
+        odb::Rect b = node.block->getBBox()->getBox();
+        boost::json::array local_bbox{b.xMin(), b.yMin(), b.xMax(), b.yMax()};
+        entry["bbox_dbu_local"] = std::move(local_bbox);
+        odb::Rect bw = b;
+        node.world_xfm.apply(bw);
+        boost::json::array world_bbox{
+            bw.xMin(), bw.yMin(), bw.xMax(), bw.yMax()};
+        entry["bbox_dbu_world"] = std::move(world_bbox);
+      }
+      const odb::Point off = node.world_xfm.getOffset();
+      entry["world_origin_dbu"] = boost::json::array{off.x(), off.y()};
+      entry["orient"] = orientStr(node.world_xfm.getOrient());
+      chiplets.emplace_back(std::move(entry));
+    }
+  }
+  out["chiplets"] = std::move(chiplets);
   return out;
 }
 
