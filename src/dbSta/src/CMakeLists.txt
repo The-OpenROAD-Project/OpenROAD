@@ -39,7 +39,7 @@ swig_lib(NAME          dbSta
                        ${OPENSTA_HOME}/tcl/CmdUtil.tcl
                        ${OPENSTA_HOME}/tcl/Property.tcl
                        ${OPENSTA_HOME}/spice/WriteSpice.tcl
-                       ${OPENSTA_HOME}/tcl/Variables.tcl
+                       ${OPENSTA_HOME}/sdc/Variables.tcl
                        ${OPENSTA_HOME}/tcl/Sta.tcl
                        ${OPENSTA_HOME}/tcl/Splash.tcl
                        ${OPENSTA_HOME}/dcalc/DelayCalc.tcl
