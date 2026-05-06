@@ -238,28 +238,25 @@ float pathGraphCellDelayOrModelDelay(const Resizer& resizer,
       resizer.graph()->arcDelay(gate_edge, gate_arc, dcalc_ap));
 }
 
-bool findCandidatePortsForArc(const sta::Scene* scene,
-                              const sta::MinMax* min_max,
-                              const sta::TimingArc* ref_arc,
-                              const sta::LibertyCell* cell,
-                              sta::LibertyCell*& scene_cell,
-                              sta::LibertyPort*& candidate_input,
-                              sta::LibertyPort*& candidate_output)
+bool findArcPorts(sta::LibertyCell* cell,
+                  const sta::TimingArc* ref_arc,
+                  sta::LibertyPort*& input_port,
+                  sta::LibertyPort*& output_port)
 {
-  scene_cell = nullptr;
-  candidate_input = nullptr;
-  candidate_output = nullptr;
-  if (cell == nullptr) {
-    return false;
-  }
+  input_port = cell->findLibertyPort(ref_arc->from()->name());
+  output_port = cell->findLibertyPort(ref_arc->to()->name());
+  return input_port != nullptr && output_port != nullptr;
+}
 
-  scene_cell = const_cast<sta::LibertyCell*>(cell)->sceneCell(scene, min_max);
-  if (scene_cell == nullptr) {
-    return false;
+sta::TimingArcSetSeq timingArcSetsForRefPorts(sta::LibertyCell* cell,
+                                              const sta::TimingArc* ref_arc)
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  if (!findArcPorts(cell, ref_arc, input_port, output_port)) {
+    return {};
   }
-  candidate_input = scene_cell->findLibertyPort(ref_arc->from()->name());
-  candidate_output = scene_cell->findLibertyPort(ref_arc->to()->name());
-  return candidate_input != nullptr && candidate_output != nullptr;
+  return cell->timingArcSets(input_port, output_port);
 }
 
 // `match_relaxed_out` is OR-set when relaxed fallback succeeds (never reset
@@ -279,22 +276,18 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
   delay = -sta::INF;
   output_slew = 0.0f;
 
-  sta::LibertyCell* scene_cell = nullptr;
-  sta::LibertyPort* candidate_input = nullptr;
-  sta::LibertyPort* candidate_output = nullptr;
-  if (!findCandidatePortsForArc(scene,
-                                min_max,
-                                ref_arc,
-                                cell,
-                                scene_cell,
-                                candidate_input,
-                                candidate_output)) {
+  if (cell == nullptr) {
+    return false;
+  }
+
+  sta::LibertyCell* scene_cell
+      = const_cast<sta::LibertyCell*>(cell)->sceneCell(scene, min_max);
+  if (scene_cell == nullptr) {
     return false;
   }
 
   const sta::TimingArcSetSeq arc_sets
-      = scene_cell->timingArcSets(candidate_input, candidate_output);
-
+      = timingArcSetsForRefPorts(scene_cell, ref_arc);
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
       continue;
@@ -373,16 +366,8 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
 const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
                                             sta::LibertyCell* scene_cell)
 {
-  sta::LibertyPort* input_port
-      = scene_cell->findLibertyPort(graph_arc->from()->name());
-  sta::LibertyPort* output_port
-      = scene_cell->findLibertyPort(graph_arc->to()->name());
-  if (input_port == nullptr || output_port == nullptr) {
-    return nullptr;
-  }
-
-  const sta::TimingArcSetSeq& arc_sets
-      = scene_cell->timingArcSets(input_port, output_port);
+  const sta::TimingArcSetSeq arc_sets
+      = timingArcSetsForRefPorts(scene_cell, graph_arc);
   for (const sta::TimingArcSet* arc_set : arc_sets) {
     if (arc_set->role()->isTimingCheck()) {
       continue;
