@@ -15,8 +15,12 @@ from typing import Iterable
 
 from .base import Finding, Severity, StageContext
 
+# Bazel target: optional leading `@<repo>` (or `@@<canonical>` for Bzlmod
+# resolved-repo names, optionally with version suffix `+1.2.3` or `~tilde`),
+# followed by `//<path>:<name>`.
 _PATTERN = re.compile(
-    r"^(?P<target>//[A-Za-z0-9_./:\-]+)\s+(?:\(.*\)\s+)?FAILED\b(?:\s+in\s+\S+)?"
+    r"^(?P<target>(?:@@?[A-Za-z0-9_.\-+~]+)?//[A-Za-z0-9_./:\-+~]+)"
+    r"\s+(?:\(.*\)\s+)?FAILED\b(?:\s+in\s+\S+)?"
 )
 
 

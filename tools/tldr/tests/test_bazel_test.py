@@ -27,6 +27,27 @@ class BazelTestTest(unittest.TestCase):
         for f in out:
             self.assertTrue(f.verify_command.startswith("bazelisk test //"))
 
+    def test_external_and_bzlmod_targets_are_recognised(self) -> None:
+        out = list(
+            BazelTestParser().scan(
+                [
+                    "@upstream//src/foo:test_bar                                FAILED in 0.5s",
+                    "@@protobuf+30.2//python:test                              FAILED in 1.2s",
+                    "@my~module//path:t                                        FAILED in 0.1s",
+                ],
+                StaticStageContext("Test"),
+            )
+        )
+        targets = sorted(f.location for f in out)
+        self.assertEqual(
+            targets,
+            [
+                "@@protobuf+30.2//python:test",
+                "@my~module//path:t",
+                "@upstream//src/foo:test_bar",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

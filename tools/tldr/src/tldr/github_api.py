@@ -142,16 +142,31 @@ def update_pr_body(
     pr: int,
     body: str,
     *,
-    runner: Callable[[list[str]], tuple[int, str]] | None = None,
+    runner: Callable[[list[str], str | None], tuple[int, str]] | None = None,
 ) -> None:
-    _gh(
-        [
-            "api",
-            "-X",
-            "PATCH",
-            f"/repos/{repo}/pulls/{pr}",
-            "-f",
-            f"body={body}",
-        ],
-        runner=runner,
-    )
+    """Patch the PR body in place.
+
+    PR bodies can be up to ~64KB; passing them as a `-f body=…` argv flag
+    risks blowing past `ARG_MAX` on some runners. We send the JSON payload
+    via stdin instead (`gh api --input -`).
+    """
+    payload = json.dumps({"body": body})
+    cmd = ["gh", "api", "-X", "PATCH", f"/repos/{repo}/pulls/{pr}", "--input", "-"]
+    if runner is None:
+        result = subprocess.run(
+            cmd,
+            input=payload,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"gh api PATCH failed (rc={result.returncode}): "
+                f"{result.stderr or result.stdout}"
+            )
+        return
+    rc, out = runner(cmd, payload)
+    if rc != 0:
+        raise RuntimeError(f"gh api PATCH failed (rc={rc}): {out}")

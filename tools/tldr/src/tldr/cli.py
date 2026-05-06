@@ -45,34 +45,35 @@ def _scan_check(
     runner=None,
     url_opener=None,
 ) -> Iterable[Finding]:
-    tracker = stages.StageTracker()
-    ctx = _LiveStageContext(tracker)
-
     # Pull all parsers; they self-filter on (check_name, repo).
     plugins = [p for p in parsers_pkg.REGISTRY.values() if p.applies(check.name, repo)]
     if not plugins:
         return []
 
-    # We have to materialise the lines because each parser scans the whole
-    # log; the logs are big but trimmed in tests, and in production the
-    # `gh` CLI streams them once.
+    # Materialise the log so we can replay it through each parser. The logs
+    # are big but trimmed in tests, and in production we only fetch a given
+    # check's log once.
     raw_lines = list(fetch.log_lines(check, runner=runner, url_opener=url_opener))
     stripped = [strip.strip_line(l) for l in raw_lines]
-    # Update stage tracker once before scanning so each parser observes
-    # consistent stages. Parsers iterate the same stripped list independently.
-    for line in stripped:
-        tracker.feed(line)
 
     out: list[Finding] = []
     for plugin in plugins:
-        # Re-run the tracker so each parser sees the correct StageContext as
-        # it walks. We do this by feeding stages alongside the lines.
+        # Each plugin gets the entire stream through one `scan()` call so it
+        # can maintain state across lines (e.g. CtestParser's `in_block`
+        # flag) and `enumerate` advances correctly inside the parser. The
+        # stage tracker is fed lazily by a generator wrapped around the
+        # lines, so `sub_ctx.current` is accurate at the moment the parser
+        # yields each finding.
         sub_tracker = stages.StageTracker()
         sub_ctx = _LiveStageContext(sub_tracker)
-        for line in stripped:
-            sub_tracker.feed(line)
-            for f in plugin.scan([line], sub_ctx):
-                out.append(f.with_stage(sub_ctx.current))
+
+        def _tracked(t=sub_tracker):
+            for line in stripped:
+                t.feed(line)
+                yield line
+
+        for f in plugin.scan(_tracked(), sub_ctx):
+            out.append(f.with_stage(sub_ctx.current))
     return out
 
 

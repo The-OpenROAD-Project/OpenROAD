@@ -51,5 +51,9 @@ class LockfileParser:
                     "(for `MODULE.bazel.lock`)."
                 ),
                 verify_command="bazelisk mod deps --lockfile_mode=error",
-                auto_fix_command=("bazelisk", "run", "//bazel:requirements.update"),
+                auto_fix_command=(
+                    ("bazelisk", "run", "//bazel:requirements.update")
+                    if "requirements" in file_
+                    else ("bazelisk", "mod", "deps", "--lockfile_mode=update")
+                ),
             )

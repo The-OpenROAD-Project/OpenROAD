@@ -76,6 +76,8 @@ py_library(
         "test_render_markdown_snapshot",
         "test_publish_upsert",
         "test_cli",
+        "test_scan_check",
+        "test_github_api",
         "test_fix_runs_recipes",
     ]
 ]
