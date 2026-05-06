@@ -24,7 +24,7 @@ from . import (
     strip,
 )
 from .dedupe import collapse
-from .parsers.base import Finding, StageContext
+from .parsers.base import Finding, Severity, StageContext
 
 
 class _LiveStageContext:
@@ -52,8 +52,31 @@ def _scan_check(
 
     # Materialise the log so we can replay it through each parser. The logs
     # are big but trimmed in tests, and in production we only fetch a given
-    # check's log once.
-    raw_lines = list(fetch.log_lines(check, runner=runner, url_opener=url_opener))
+    # check's log once. If the log is gone (purged build, 404), surface that
+    # as a single info-level finding rather than silently dropping the check.
+    try:
+        raw_lines = list(fetch.log_lines(check, runner=runner, url_opener=url_opener))
+    except fetch.LogUnavailable as e:
+        return [
+            Finding(
+                parser="fetch",
+                severity=Severity.info,
+                kind="log_unavailable",
+                headline=f"{check.name}: log unavailable"
+                + (f" (HTTP {e.status})" if e.status else ""),
+                detail=str(e),
+                location=None,
+                log_url=e.url,
+                dedupe_key=f"log_unavailable:{check.name}",
+                human_headline=(
+                    f"`{check.name}` log is no longer available "
+                    + (f"(HTTP {e.status})" if e.status else "(fetch error)")
+                ),
+                ai_directive=None,
+                verify_command=None,
+                auto_fix_command=None,
+            )
+        ]
     stripped = [strip.strip_line(l) for l in raw_lines]
 
     out: list[Finding] = []

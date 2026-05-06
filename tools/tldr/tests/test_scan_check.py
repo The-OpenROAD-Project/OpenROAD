@@ -68,6 +68,33 @@ class ScanCheckTest(unittest.TestCase):
         self.assertEqual(len(bazel), 2)
         self.assertEqual([f.log_line for f in bazel], [3, 5])
 
+    def test_log_unavailable_emits_info_finding_not_exception(self) -> None:
+        # Purged Jenkins build → LogUnavailable. The cli must surface it as
+        # a single info-level finding so the user knows the build went away.
+        from tldr import fetch as fetch_mod
+
+        def raising_log_lines(*a, **k):
+            raise fetch_mod.LogUnavailable(
+                check_name="continuous-integration/jenkins/pr-merge",
+                url="https://jenkins.openroad.tools/x/consoleText",
+                status=404,
+            )
+
+        check = github_api.CheckLike(
+            name="continuous-integration/jenkins/pr-merge",
+            conclusion="error",
+            details_url="https://jenkins.openroad.tools/x/consoleText",
+            log_hint="https://jenkins.openroad.tools/x/consoleText",
+        )
+        with mock.patch.object(cli, "fetch") as fake_fetch:
+            fake_fetch.log_lines = raising_log_lines
+            fake_fetch.LogUnavailable = fetch_mod.LogUnavailable
+            out = list(cli._scan_check("o/r", check))
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].kind, "log_unavailable")
+        self.assertEqual(out[0].severity.value, "info")
+        self.assertIn("404", out[0].headline)
+
 
 if __name__ == "__main__":
     unittest.main()

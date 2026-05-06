@@ -20,6 +20,18 @@ from typing import Callable, Iterable
 
 from ._paginate import iter_objects
 
+# Check-run conclusions that count as a failed run. `cancelled` covers the
+# Jenkins-agent-disconnect case; `action_required` is rare but real.
+_FAILED_CONCLUSIONS = frozenset(
+    {"failure", "timed_out", "cancelled", "action_required"}
+)
+
+# Commit-status states that count as a failed run. GitHub uses `error` for
+# pipeline-level breakage and `failure` for unstable/test-fail; both are
+# what a contributor needs to know about. (9 of the 10 dogfooded PRs use
+# `error`; only catching `failure` was missing nearly every real failure.)
+_FAILED_STATES = frozenset({"failure", "error"})
+
 
 @dataclass(frozen=True)
 class CheckLike:
@@ -50,6 +62,26 @@ def _default_runner(cmd: list[str]) -> tuple[int, str]:
     )
 
 
+def _jenkins_console_text_url(target_url: str | None) -> str | None:
+    """Turn a Jenkins build URL from a commit-status target into the canonical
+    `consoleText` endpoint.
+
+    GitHub commit statuses for Jenkins point at `<build>/display/redirect`,
+    which is a 302 that may or may not be followed depending on the HTTP
+    client. Strip the redirect suffix and any trailing slash, then append
+    `/consoleText` for the canonical 200-response URL.
+    """
+    if not target_url or "jenkins" not in target_url:
+        return None
+    base = target_url
+    # Strip the `/display/redirect` suffix Jenkins emits in commit-status URLs.
+    if base.endswith("/display/redirect"):
+        base = base[: -len("/display/redirect")]
+    elif base.endswith("/display/redirect/"):
+        base = base[: -len("/display/redirect/")]
+    return f"{base.rstrip('/')}/consoleText"
+
+
 def discover_failing_checks(
     repo: str,
     sha: str,
@@ -72,7 +104,7 @@ def discover_failing_checks(
         if not isinstance(data, dict):
             continue
         for cr in data.get("check_runs", []) or []:
-            if (cr.get("conclusion") or "") in ("failure", "timed_out"):
+            if (cr.get("conclusion") or "") in _FAILED_CONCLUSIONS:
                 out.append(
                     CheckLike(
                         name=cr.get("name", ""),
@@ -105,19 +137,15 @@ def discover_failing_checks(
             if ctx in seen:
                 continue
             seen.add(ctx)
-            if (st.get("state") or "") == "failure":
+            state = st.get("state") or ""
+            if state in _FAILED_STATES:
                 target = st.get("target_url")
-                console_text = (
-                    f"{target.rstrip('/')}/consoleText"
-                    if target and "jenkins" in (target or "")
-                    else None
-                )
                 out.append(
                     CheckLike(
                         name=ctx,
-                        conclusion="failure",
+                        conclusion=state,
                         details_url=target,
-                        log_hint=console_text,
+                        log_hint=_jenkins_console_text_url(target),
                     )
                 )
 

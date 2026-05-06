@@ -11,10 +11,29 @@ function so callers don't care.
 from __future__ import annotations
 
 import subprocess
+import urllib.error
 import urllib.request
 from typing import Callable, Iterator
 
 from .github_api import CheckLike
+
+
+class LogUnavailable(Exception):
+    """Raised when a check's log can't be fetched (purged build, 404, …).
+
+    Carries the check name and a hint URL so the caller can emit an
+    info-level finding pointing the user at where to look manually.
+    """
+
+    def __init__(self, check_name: str, url: str | None, status: int | None) -> None:
+        super().__init__(
+            f"log for {check_name} unavailable"
+            + (f" (HTTP {status})" if status is not None else "")
+        )
+        self.check_name = check_name
+        self.url = url
+        self.status = status
+
 
 # A runner returns (rc, stdout_text) so tests can swap it out.
 Runner = Callable[[list[str]], tuple[int, str]]
@@ -53,14 +72,23 @@ def log_lines(
 
     For Jenkins, hits the ``consoleText`` URL anonymously. For GHA, calls
     ``gh api /repos/.../jobs/<id>/logs`` (which returns the plain log).
+
+    Raises ``LogUnavailable`` when the log can't be fetched (HTTP 404 or
+    similar) so the caller can surface an info-level finding rather than
+    silently dropping the check from the table.
     """
     runner = runner or _default_runner
     if check.log_hint and check.log_hint.startswith("http"):
-        yield from _fetch_url(check.log_hint, opener=url_opener)
+        try:
+            yield from _fetch_url(check.log_hint, opener=url_opener)
+        except urllib.error.HTTPError as e:
+            raise LogUnavailable(check.name, check.log_hint, e.code) from e
+        except urllib.error.URLError as e:
+            raise LogUnavailable(check.name, check.log_hint, None) from e
         return
     if check.log_hint:
         rc, out = runner(["gh", "api", check.log_hint])
         if rc != 0:
-            return
+            raise LogUnavailable(check.name, check.log_hint, None)
         for line in out.splitlines():
             yield line + "\n"
