@@ -31,6 +31,16 @@ class StripTest(unittest.TestCase):
             "hello",
         )
 
+    def test_removes_jenkins_pipeline_echo(self) -> None:
+        # `set -x`-style shell echo prefix that Jenkins pipeline `sh` steps
+        # add to every command line.
+        self.assertEqual(strip_line("+ docker pull foo"), "docker pull foo")
+        # Combined with a Jenkins timestamp prefix.
+        self.assertEqual(
+            strip_line("[2026-05-04T10:00:00.123Z] + docker pull foo"),
+            "docker pull foo",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

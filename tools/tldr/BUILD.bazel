@@ -40,7 +40,7 @@ py_library(
 [
     py_test(
         name = test_name,
-        srcs = ["tests/%s.py" % test_name],
+        srcs = ["tests/{}.py".format(test_name)],
         imports = [
             "src",
             "tests",

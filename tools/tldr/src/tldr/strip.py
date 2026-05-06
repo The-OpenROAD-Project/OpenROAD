@@ -25,6 +25,7 @@ def strip_line(line: str) -> str:
     line = _ANSI.sub("", line)
     line = _TS_BRACKET.sub("", line)
     line = _TS_BARE.sub("", line)
+    line = _PIPELINE_ECHO.sub("", line)
     return line.rstrip("\r\n")
 
 
