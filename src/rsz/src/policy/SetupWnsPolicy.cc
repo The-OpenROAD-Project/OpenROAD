@@ -30,6 +30,7 @@
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace rsz {
@@ -263,19 +264,19 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
     }
     sta::Path* focus_path = sta_->vertexWorstSlackPath(current_endpoint, max_);
 
-    const int saved_max_repairs = setup_context_.max_repairs_per_pass;
-    if (use_cone_collection) {
-      setup_context_.max_repairs_per_pass = viol_pins.size();
-    } else {
-      setup_context_.max_repairs_per_pass = max_repairs_per_pass;
-    }
-
     std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
-    const bool changed = repairPins(viol_pins,
-                                    focus_path,
-                                    &rejected_pin_moves_current_endpoint_,
-                                    &chosen_moves);
-    setup_context_.max_repairs_per_pass = saved_max_repairs;
+    bool changed;
+    {
+      const int new_max_repairs
+          = use_cone_collection ? static_cast<int>(viol_pins.size())
+                                : max_repairs_per_pass;
+      utl::SetAndRestore<int> override_max_repairs(
+          setup_context_.max_repairs_per_pass, new_max_repairs);
+      changed = repairPins(viol_pins,
+                           focus_path,
+                           &rejected_pin_moves_current_endpoint_,
+                           &chosen_moves);
+    }
 
     if (!changed) {
       if (total_decreasing_slack_passes > 0) {

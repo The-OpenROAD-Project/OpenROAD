@@ -30,6 +30,7 @@
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace rsz {
@@ -160,14 +161,16 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       std::vector<const sta::Pin*> viol_pins
           = target_collector_->collectViolators(1, -1, sort_type);
       sta::Path* focus_path = sta_->vertexWorstSlackPath(endpoint, max_);
-      const int saved_max_repairs = setup_context_.max_repairs_per_pass;
-      setup_context_.max_repairs_per_pass = max_repairs_per_pass;
       std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
-      const bool changed = repairPins(viol_pins,
-                                      focus_path,
-                                      &rejected_pin_moves_current_endpoint_,
-                                      &chosen_moves);
-      setup_context_.max_repairs_per_pass = saved_max_repairs;
+      bool changed;
+      {
+        utl::SetAndRestore<int> override_max_repairs(
+            setup_context_.max_repairs_per_pass, max_repairs_per_pass);
+        changed = repairPins(viol_pins,
+                             focus_path,
+                             &rejected_pin_moves_current_endpoint_,
+                             &chosen_moves);
+      }
 
       if (!changed) {
         if (decreasing_slack_passes > current_limit) {

@@ -30,6 +30,7 @@
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace rsz {
@@ -223,14 +224,17 @@ void SetupDirectionalPolicy::repairSetupDirectional(
               threshold,
               rsz::ViolatorSortType::SORT_BY_LOAD_DELAY);
 
-      const int saved_max_repairs = setup_context_.max_repairs_per_pass;
-      setup_context_.max_repairs_per_pass = viol_pins.size();
       std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
-      const bool changed = repairPins(viol_pins,
-                                      nullptr,
-                                      &rejected_pin_moves_current_endpoint_,
-                                      &chosen_moves);
-      setup_context_.max_repairs_per_pass = saved_max_repairs;
+      bool changed;
+      {
+        utl::SetAndRestore<int> override_max_repairs(
+            setup_context_.max_repairs_per_pass,
+            static_cast<int>(viol_pins.size()));
+        changed = repairPins(viol_pins,
+                             nullptr,
+                             &rejected_pin_moves_current_endpoint_,
+                             &chosen_moves);
+      }
       if (!changed) {
         committer_.commitJournal();
         continue;

@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
 
 namespace sta {
 class Instance;
@@ -22,6 +21,7 @@ class Scene;
 }  // namespace sta
 
 namespace rsz {
+class Resizer;
 struct Target;
 
 // Per-stage trace entry produced by the trace overload of

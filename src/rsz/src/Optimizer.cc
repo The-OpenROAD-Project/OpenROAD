@@ -144,8 +144,7 @@ bool Optimizer::run()
   return last_policy->finalizeAndReport(setup_context.initial_design_area);
 }
 
-// Single-endpoint setup repair for test/debug purpose
-// - It bypasses the phase pipeline entirely
+// Single-endpoint setup repair (test/debug) - bypasses the phase pipeline.
 bool Optimizer::repairSetup(const sta::Pin* const end_pin)
 {
   if (end_pin == nullptr) {
