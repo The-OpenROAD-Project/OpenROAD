@@ -26,6 +26,10 @@ class SwapPinsMove : public BaseMove
   void reportSwappablePins();
 
  private:
+  // Allow the unit test to drive swapPins() directly without going
+  // through full repair_timing. Test class must live in namespace rsz.
+  friend class TestResizer_FeedthroughModNet_Test;
+
   using LibertyPortVec = std::vector<sta::LibertyPort*>;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,

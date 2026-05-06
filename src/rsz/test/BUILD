@@ -267,7 +267,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":TestBufRem1",
-        ":TestSwapPinsMove",
+        ":TestResizer",
     ],
 )
 
@@ -420,10 +420,10 @@ cc_test(
 )
 
 cc_test(
-    name = "TestSwapPinsMove",
-    srcs = ["cpp/TestSwapPinsMove.cpp"],
+    name = "TestResizer",
+    srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
-    data = glob(["cpp/TestSwapPinsMove*.v"]),
+    data = glob(["cpp/TestResizer*.v"]),
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dbSta",

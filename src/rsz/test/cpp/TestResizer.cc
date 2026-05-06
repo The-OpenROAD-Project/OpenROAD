@@ -4,24 +4,19 @@
 #include <memory>
 #include <string>
 
+#include "SwapPinsMove.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "tst/IntegratedFixture.h"
 
-// Expose the local swap helper so the test can target the exact
-// SwapPinsMove reconnect path without depending on full repair_timing.
-#define private public
-#include "SwapPinsMove.hh"
-#undef private
-
 namespace rsz {
 
-class TestSwapPinsMove : public tst::IntegratedFixture
+class TestResizer : public tst::IntegratedFixture
 {
  public:
-  TestSwapPinsMove()
+  TestResizer()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/rsz/test/")
   {
@@ -56,7 +51,7 @@ class TestSwapPinsMove : public tst::IntegratedFixture
   }
 };
 
-TEST_F(TestSwapPinsMove, FeedthroughModNet)
+TEST_F(TestResizer, FeedthroughModNet)
 {
   const testing::TestInfo* test_info
       = testing::UnitTest::GetInstance()->current_test_info();

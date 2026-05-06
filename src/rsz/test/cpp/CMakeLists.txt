@@ -87,8 +87,8 @@ gtest_discover_tests(TestBufferRemoval3
 add_dependencies(build_and_test TestBufferRemoval3
 )
 
-add_executable(TestSwapPinsMove TestSwapPinsMove.cpp)
-target_link_libraries(TestSwapPinsMove
+add_executable(TestResizer TestResizer.cc)
+target_link_libraries(TestResizer
         OpenSTA
         GTest::gtest
         GTest::gtest_main
@@ -104,16 +104,16 @@ target_link_libraries(TestSwapPinsMove
         ${TCL_LIBRARY}
 )
 
-target_include_directories(TestSwapPinsMove
+target_include_directories(TestResizer
     PRIVATE
       ${PROJECT_SOURCE_DIR}/src/rsz/src
 )
 
-gtest_discover_tests(TestSwapPinsMove
+gtest_discover_tests(TestResizer
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
-add_dependencies(build_and_test TestSwapPinsMove
+add_dependencies(build_and_test TestResizer
 )
 
 add_executable(TestInsertBuffer TestInsertBuffer.cpp)
