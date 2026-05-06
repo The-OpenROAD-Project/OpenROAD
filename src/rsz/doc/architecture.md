@@ -4,14 +4,16 @@
 
 1. [Summary](#summary)
 2. [Top-Level Flow](#top-level-flow)
-3. [Core Data Model](#core-data-model)
-4. [Policy Model](#policy-model)
-5. [Prewarm Stage](#prewarm-stage)
-6. [Prepare Stage](#prepare-stage)
-7. [Generator And Candidate Model](#generator-and-candidate-model)
-8. [Threading Model](#threading-model)
-9. [File Changes](#file-changes)
-10. [Future Work](#future-work)
+3. [Phase UI](#phase-ui)
+4. [Core Data Model](#core-data-model)
+5. [Policy Model](#policy-model)
+6. [Prewarm Stage](#prewarm-stage)
+7. [Prepare Stage](#prepare-stage)
+8. [Delay Estimator And Reporter](#delay-estimator-and-reporter)
+9. [Generator And Candidate Model](#generator-and-candidate-model)
+10. [Threading Model](#threading-model)
+11. [File Changes](#file-changes)
+12. [Future Work](#future-work)
 
 ## Summary
 
@@ -20,10 +22,12 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 | Area | Change |
 |---|---|
 | Move implementation | Replaced monolithic `*Move` classes with `MoveGenerator` + `MoveCandidate` pairs. |
-| Policy | Added `OptPolicy` class to provide easily tunable multiple optimization policies. `SetupLegacyPolicy` is the default. Other policies are **experimental (early stage; no QoR or runtime benefits yet)**. |
+| Phase policy | Added `OptPolicy` and concrete setup-repair phase policies. `repair_timing -phases` selects the ordered phase pipeline. |
 | MT support | Added common `utl::ThreadPool` and MT-capable policies/generators. |
 | Prewarm stage | Added policy-level Liberty-cell and driver-cache warmup before target preparation. Required to complete lazy updates and ensure thread safety. |
-| Prepare stage | Added per-target `ArcDelayState` caching for expensive STA-derived data before MT generation/estimation. Required to reduce redundant computations by multi-threads. |
+| Prepare stage | Added per-target `ArcDelayState` caching for expensive STA-derived data before MT generation/estimation. Required to reduce redundant computations in MT policies. |
+| Delay estimator | Added path-window delay estimation for MT size-up/VT-swap scoring, with optional STA slew-bias sampling. |
+| Estimator reporter | Added a diagnostic command that compares estimator predictions against ECO-journaled STA measurements. |
 | Scope | The new architecture targets `repair_setup` only. It can be extended to `repair_design`, `repair_hold`, and `recover_power` later. |
 | Compatibility | `SetupLegacyPolicy` is the default path and is kept close to legacy repair behavior. The QoR goal is ORFS design parity. |
 | Target model | `Target` exposes path-driver and instance view bits so generators can share one target representation. New views will be added later. |
@@ -33,21 +37,25 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 ```
 [Optimizer::run()]
   resizer_.runRepairSetupPreamble()
-  selectActivePolicy()                  <- RSZ_POLICY envar
-  policy->start()
-  while (!policy.converged()):
-    policy.iterate()
+  create shared RepairSetupContext
+  phases = parseTokens(-phases or "LEGACY LAST_GASP CRIT_VT_SWAP")
+  for each phase:
+    policy = makePolicyForPhase(phase)
+    policy->start()
+    while (!policy.converged()):
+      policy.iterate()
+  last_policy->finalizeAndReport()
 
 
 [OptPolicy::iterate()]
 
-SetupLegacyPolicy:
+LEGACY / SetupLegacyPolicy:
   select legacy target -> generate -> estimate -> commit first accepted move      <- [ST]
 
-MeasuredVtSwapPolicy (EXPERIMENTAL):
+MEASURED_VT_SWAP / MeasuredVtSwapPolicy (EXPERIMENTAL):
   select target -> generate candidates -> measure by ECO journal -> commit best   <- [ST]
 
-SetupLegacyMtPolicy (EXPERIMENTAL):
+LEGACY_MT / SetupLegacyMtPolicy (EXPERIMENTAL):
   select legacy target
   prewarm target vector                 <- [ST] Liberty/driver-cache warmup
   prepared_target = prepareTarget(t)    <- [ST] target ArcDelayState build
@@ -55,7 +63,7 @@ SetupLegacyMtPolicy (EXPERIMENTAL):
   estimates = estimate(candidates)      <- [MT] only for VtSwap/SizeUp candidates
   commit(first_or_best_candidate)       <- [ST] apply
 
-SetupMt1Policy (EXPERIMENTAL):
+MT1 / SetupMt1Policy (EXPERIMENTAL):
   select target batch
   prewarm(targets)                      <- [ST] Liberty/driver-cache warmup
   prepareTargets(targets)               <- [ST] target ArcDelayState build
@@ -69,11 +77,17 @@ SetupMt1Policy (EXPERIMENTAL):
 
 ```text
 Optimizer
-  Owns run scope
-  Owns committer + policy
+  Owns one repair_setup run
+  Owns MoveCommitter
+  Parses phase tokens and creates one OptPolicy per phase
 
 OptPolicy (interface)
   SetupLegacyPolicy     : Reproduces legacy repair-setup behavior
+  SetupWnsPolicy        : Legacy WNS phase
+  SetupTnsPolicy        : Legacy TNS phase
+  SetupDirectionalPolicy: Legacy endpoint-fanin / startpoint-fanout phases
+  SetupLastGaspPolicy   : Legacy last-gasp phase
+  SetupCritVtSwapPolicy : Legacy critical-VT-swap phase
   SetupLegacyMtPolicy   : Legacy phase flow with MT scoring for selected moves
   MeasuredVtSwapPolicy  : Single-threaded VT-swap-only with measured estimate
   SetupMt1Policy        : Batched multi-threaded VT-swap + size-up policy
@@ -95,40 +109,100 @@ MoveCommitter
 
 ```mermaid
 flowchart TD
-    A[Resizer::repairSetup] --> B[Optimizer]
-    B -->|RSZ_POLICY| C{selectPolicy}
-    C -->|default| D[SetupLegacyPolicy]
-    C -->|legacy_mt| E[SetupLegacyMtPolicy]
-    C -->|measured_vt_swap| F[MeasuredVtSwapPolicy]
-    C -->|mt1| G[SetupMt1Policy]
-    E --> L[ThreadPool]
-    G --> L
-    D --> H[MoveGenerator]
-    E --> H
-    F --> H2[MeasuredVtSwapGenerator]
-    G --> H
-    H --> I[MoveCandidate]
-    H2 --> I2[MeasuredVtSwapCandidate]
-    D --> J[MoveCommitter]
-    E --> J
-    F --> J
-    G --> J
+    A[repair_timing -setup] --> B[Tcl parses -phases]
+    B --> C[Resizer::repairSetup]
+    C --> D[Optimizer::configure]
+    D --> E[Optimizer::run]
+    E --> F[RepairSetupContext]
+    E --> G{phase token}
+    G -->|LEGACY| H[SetupLegacyPolicy]
+    G -->|WNS / TNS / directional| I[Legacy phase policies]
+    G -->|LAST_GASP| J[SetupLastGaspPolicy]
+    G -->|CRIT_VT_SWAP| K[SetupCritVtSwapPolicy]
+    G -->|experimental| L[SetupLegacyMtPolicy / SetupMt1Policy / MeasuredVtSwapPolicy]
+    H --> M[MoveGenerator]
+    I --> M
+    J --> M
+    K --> M
+    L --> M
+    M --> N[MoveCandidate]
+    N --> O[MoveCommitter]
 ```
 
 `Optimizer` is the top-level driver for one `repair_setup` call.
 
 ```cpp
+OptimizerRunConfig config;
+config.sequence = sequence;
+config.phases = phases != nullptr ? phases : "";
+
 rsz::Optimizer optimizer(this);
-return optimizer.repairSetup(...);
+optimizer.configure(config);
+return optimizer.run();
 ```
 
 | Step | Owner | Purpose |
 |---|---|---|
-| Configure | `Optimizer` | Freeze user inputs into `OptimizerRunConfig`. |
-| Select policy | `Optimizer` | Pick one concrete `OptPolicy` using `RSZ_POLICY` envar. UI will be changed later. |
-| Run policy | `OptPolicy` | Select targets, prepare data, generate candidates, estimate, commit, and decide convergence. |
+| Configure | `Resizer::repairSetup()` | Freeze Tcl/API options into `OptimizerRunConfig`. |
+| Parse phases | `Optimizer::run()` | Tokenize `config.phases`, or use the default `LEGACY LAST_GASP CRIT_VT_SWAP`. |
+| Create policy | `Optimizer::makePolicyForPhase()` | Map one phase token to one concrete `OptPolicy`. |
+| Run policy | `OptPolicy` | Select targets, prewarm/prepare data, generate candidates, estimate, commit, and decide convergence. |
+| Final report | `OptPolicy` | Emit final progress, move tracker reports, and repair summary after the last phase. |
 
 The optimizer does not implement move logic directly. Repair behavior belongs to policies and move implementations.
+
+## Phase UI
+
+`repair_timing -phases` is the public UI for selecting the setup-repair phase
+pipeline. The older spellings `-policy` and `-policies` are accepted aliases
+with identical semantics, but only `-phases` is listed in command help.
+
+Only one of `-phases`, `-policy`, and `-policies` may be supplied in a single
+command. Tokens are whitespace-separated and matched exactly as shown below. If
+none is supplied, the default pipeline is:
+
+```tcl
+repair_timing -setup -phases "LEGACY LAST_GASP CRIT_VT_SWAP"
+```
+
+Examples:
+
+```tcl
+# Default setup repair pipeline.
+repair_timing -setup
+
+# Explicit default pipeline.
+repair_timing -setup -phases "LEGACY LAST_GASP CRIT_VT_SWAP"
+
+# Run selected legacy-compatible phases.
+repair_timing -setup -phases "WNS TNS LAST_GASP"
+
+# Experimental top-level policies are accepted as phase tokens.
+repair_timing -setup -phases "LEGACY_MT"
+repair_timing -setup -phases "MT1"
+
+# Alias spelling; prefer -phases for new scripts.
+repair_timing -setup -policy "LEGACY"
+```
+
+Public phase tokens:
+
+| Token | Policy | Purpose |
+|---|---|---|
+| `LEGACY` | `SetupLegacyPolicy` | Main legacy-compatible setup repair loop. |
+| `WNS`, `WNS_PATH` | `SetupWnsPolicy` | Legacy WNS path phase. |
+| `WNS_CONE` | `SetupWnsPolicy` | Legacy WNS cone phase. |
+| `TNS` | `SetupTnsPolicy` | Legacy TNS phase. |
+| `ENDPOINT_FANIN` | `SetupDirectionalPolicy` | Legacy endpoint-fanin phase. |
+| `STARTPOINT_FANOUT` | `SetupDirectionalPolicy` | Legacy startpoint-fanout phase. |
+| `LAST_GASP` | `SetupLastGaspPolicy` | Legacy last-gasp repair phase. |
+| `CRIT_VT_SWAP` | `SetupCritVtSwapPolicy` | Legacy critical VT-swap post phase. |
+
+Experimental tokens are accepted but intentionally not listed in the user-facing
+error message: `LEGACY_MT`, `MT1`, and `MEASURED_VT_SWAP`.
+
+`-phases` controls phase/policy ordering. `-sequence` still controls the move
+ordering inside legacy-style phases.
 
 ## Core Data Model
 
@@ -220,31 +294,48 @@ class OptPolicy
 };
 ```
 
-`OptPolicy::iterate()` is called until it converges.
+Each phase policy receives the same `RepairSetupContext`, `MoveCommitter`, and
+run configuration. `OptPolicy::start()` returns `false` only when the full
+optimizer run should stop before any iteration. Otherwise, `iterate()` is called
+until `converged()` becomes true.
 
 ```cpp
-bool Optimizer::runActivePolicy()
-{
-  // Drive the selected policy until it reports convergence.
-  opt_policy_->start();
-  while (!opt_policy_->converged()) {
-    opt_policy_->iterate();
+const std::vector<std::string> phase_names = sta::parseTokens(token_list);
+const int phase_count = phase_names.size();
+RepairSetupContext setup_context(resizer_);
+for (int i = 0; i < phase_count; ++i) {
+  setup_context.phase_index = i;
+  std::unique_ptr<OptPolicy> policy
+      = makePolicyForPhase(phase_names[i], setup_context);
+  if (!policy->start()) {
+    return false;
   }
-  return opt_policy_->result();
+  while (!policy->converged()) {
+    policy->iterate();
+  }
+  last_policy = std::move(policy);
 }
+return last_policy->finalizeAndReport(setup_context.initial_design_area);
 ```
 
-Policy selection:
+Phase selection:
 
-| Environment variable `RSZ_POLICY` | Policy | Comment |
+| Phase token | Policy | Comment |
 |---|---|---|
-| unset or `legacy` | `SetupLegacyPolicy` (default) | Single-threaded legacy-compatible repair setup. |
-| `legacy_mt` | `SetupLegacyMtPolicy` | Legacy target/move ordering with MT candidate scoring for `VtSwap` and `SizeUp`. |
-| `mt1`, `vtswapmt1`, `vtswap_mt1` | `SetupMt1Policy` | Experimental batched MT policy for `VtSwap`/`SizeUp`. Class-name aliases are also accepted after lowercasing. |
-| `measured_vt_swap`, `measured_vt` | `MeasuredVtSwapPolicy` | Experimental VT swap policy that measures candidate impact by using network editing rather than delay estimation. Class-name aliases are also accepted after lowercasing. |
+| `LEGACY` | `SetupLegacyPolicy` | Default main setup-repair phase; single-threaded legacy-compatible target and move ordering. |
+| `WNS`, `WNS_PATH` | `SetupWnsPolicy` | Legacy WNS path phase. |
+| `WNS_CONE` | `SetupWnsPolicy` | Legacy WNS cone phase. |
+| `TNS` | `SetupTnsPolicy` | Legacy TNS phase. |
+| `ENDPOINT_FANIN` | `SetupDirectionalPolicy` | Legacy endpoint-fanin phase. |
+| `STARTPOINT_FANOUT` | `SetupDirectionalPolicy` | Legacy startpoint-fanout phase. |
+| `LAST_GASP` | `SetupLastGaspPolicy` | Legacy last-gasp phase. |
+| `CRIT_VT_SWAP` | `SetupCritVtSwapPolicy` | Legacy critical VT-swap post phase. |
+| `LEGACY_MT` | `SetupLegacyMtPolicy` | Experimental legacy ordering with MT candidate scoring for selected moves. |
+| `MT1` | `SetupMt1Policy` | Experimental batched MT policy for `VtSwap` and `SizeUp`. |
+| `MEASURED_VT_SWAP` | `MeasuredVtSwapPolicy` | Experimental VT-swap policy that measures candidate impact by ECO journal and STA update. |
 
 Multiple policies are implemented to show how to implement new policies.
-> NOTE: New policies except for `legacy` are not production quality yet.
+> NOTE: New policies except for `LEGACY` are not production quality yet.
 
 
 ### Legacy vs. LegacyMt vs. Mt1
@@ -376,12 +467,65 @@ OptPolicy::prepareTargets()
               -> ArcDelayCalc::finishDrvrPin()
 ```
 
-This is a graph/parasitic/SDC traversal, not a trivial field read.  Caching it in `Target::arc_delay.load_cap` avoids repeating the same work for every MT candidate.
+This is a graph/parasitic/SDC traversal, not a trivial field read. Caching it in `Target::arc_delay.load_cap` avoids repeating the same work for every MT candidate.
 
 Future direction:
 
 > If STA state read APIs become cheaper and clearly thread-safe, this prepare stage will be reduced or removed.
 
+
+## Delay Estimator And Reporter
+
+`DelayEstimator` is a stateless helper split into main-thread context
+construction and worker-safe candidate scoring.
+
+| API | Threading | Purpose |
+|---|---|---|
+| `DelayEstimator::buildContext()` | Main thread | Read STA/OpenDB state and build `ArcDelayState` for one target. |
+| `DelayEstimator::estimate(context, candidate_cell)` | Worker-safe after prepare | Read `ArcDelayState` and Liberty tables to estimate one replacement cell. |
+| `DelayEstimator::estimate(..., trace)` | Diagnostic | Return the same estimate and append one `StageEvaluation` per evaluated stage. |
+| `DelayEstimator::estimate(SelectedArc, ...)` | Worker-safe | Single-stage table lookup used by simpler candidate paths and tests. |
+
+`ArcDelayState` contains the target timing stage plus an optional path window:
+
+```text
+delay_levels = 0  -> target stage only
+delay_levels = N  -> up to N valid fanin stages + target + up to N valid fanout stages
+```
+
+The prepared state includes the selected Liberty arc, input slew, load cap,
+current model delay/slew, STA graph delay/slew, output-slew merge arcs, and
+optional STA slew-bias samples.
+
+Current estimator approximations:
+
+| Item | Handling |
+|---|---|
+| Target cell | Re-evaluated with the candidate Liberty cell. |
+| Fanin neighbor load | Adjusted by the target input capacitance delta. |
+| Fanout input slew | Propagated from the estimated upstream output slew. |
+| Interconnect slew | Preserves the current receiver/driver slew ratio; it does not recalculate full RC waveform degradation. |
+| Arc matching | Exact match is preferred; the target candidate can use relaxed port/RF matching when needed. |
+| STA slew bias | `RSZ_MT_SLEW_BIAS > 0` enables three-point load-dependent sampling on the main thread and interpolation in workers. |
+
+`DelayEstimatorReporter` is a diagnostic layer, not part of the MT contract. It
+is used by Tcl command `report_delay_estimator_accuracy_for_sizing` to compare
+estimator prediction against a measured STA result:
+
+```tcl
+report_delay_estimator_accuracy_for_sizing \
+  -inst u1 -lib_cell BUF_X4 -estimator delay_estimator -delay_levels 1
+
+report_delay_estimator_accuracy_for_sizing \
+  -inst u1 -lib_cell BUF_X4 -estimator legacy
+```
+
+Supported estimator names are `legacy`, `delay_estimator`, `legacy_mt`, and
+`mt`; `legacy_mt` and `mt` are aliases for `delay_estimator`. `-delay_levels`
+accepts `0`, `1`, or `2` for non-legacy estimators. The reporter runs on the
+main thread, finds the worst setup target for the instance, builds the requested
+estimator profile, applies the candidate cell inside an ECO journal, updates
+timing, records the STA "golden" result, and restores the original design.
 
 ## Generator And Candidate Model
 
@@ -510,8 +654,9 @@ SetupMt1Policy:
 | Removed | `UnbufferMove.cc`, `UnbufferMove.hh` | Replaced by `move/UnbufferGenerator.*`, `move/UnbufferCandidate.*`. |
 | Removed | `SplitLoadMove.cc`, `SplitLoadMove.hh` | Replaced by `move/SplitLoadGenerator.*`, `move/SplitLoadCandidate.*`. |
 | Renamed/refactored | `ViolatorCollector.*` -> `RepairTargetCollector.*` | Setup-repair target and violator collection. |
-| Added | `Optimizer.cc`, `Optimizer.hh` | Top-level repair setup driver and policy selection. |
+| Added | `Optimizer.cc`, `Optimizer.hh` | Top-level repair setup driver and phase sequencing. |
 | Added | `policy/OptPolicy.cc`, `policy/OptPolicy.hh` | Abstract policy base and shared setup helpers. |
+| Added | `RepairSetupContext.hh` | Shared per-run setup state passed across phase policies. |
 | Added | `policy/SetupLegacyBase.cc`, `policy/SetupLegacyBase.hh` | Shared legacy setup-repair implementation used by legacy phase policies. |
 | Added | `policy/SetupLegacyPolicy.*`, `policy/SetupWnsPolicy.*`, `policy/SetupTnsPolicy.*`, `policy/SetupDirectionalPolicy.*`, `policy/SetupLastGaspPolicy.*`, `policy/SetupCritVtSwapPolicy.*` | Legacy-compatible repair setup phase policies. |
 | Added | `policy/SetupLegacyMtPolicy.cc`, `policy/SetupLegacyMtPolicy.hh` | Hybrid legacy policy with MT scoring for selected move types. |
@@ -520,6 +665,7 @@ SetupMt1Policy:
 | Modified | `rsz/Resizer.hh` | Owns the shared `MoveType` enum used by legacy and optimizer code. |
 | Added | `OptimizerTypes.cc`, `OptimizerTypes.hh` | Shared target, estimate, config, message IDs, move labels, and prepare-stage data structures. |
 | Added | `DelayEstimator.cc`, `DelayEstimator.hh` | Arc delay state construction and candidate delay estimation helpers. |
+| Added | `DelayEstimatorReporter.cc`, `DelayEstimatorReporter.hh` | Diagnostic command implementation for comparing estimator predictions with measured STA ECO results. |
 | Added | `MoveCommitter.cc`, `MoveCommitter.hh` | ECO journal, commit, rollback, accounting, and MoveTracker interface. |
 | Added | `src/rsz/src/move/MoveGenerator.cc`, `src/rsz/src/move/MoveGenerator.hh` | Base generator interface and shared generator helpers. |
 | Added | `src/rsz/src/move/*Generator.*` | Move-specific target-to-candidate expansion. |
@@ -532,9 +678,9 @@ SetupMt1Policy:
 1. Architecture
     a. Apply review feedback
     b. Consider moving `MoveTracker` out of `MoveCommitter` for detailed tracking
-2. UI    
-    a. Envar or command option
-    b. Merge optimization policies (new) and phases (old)
+2. UI
+    a. Keep `-phases` as the public spelling
+    b. Document experimental phase tokens only after they become production-ready
 3. Enhance setup optimization QoR and runtime
     a. Enhance VtSwap & SizeUp moves w/ MT
     b. Develop a score metric for fair comparison among different moves
