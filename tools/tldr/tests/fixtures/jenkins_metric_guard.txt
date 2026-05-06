@@ -1,0 +1,6 @@
+[2026-05-04T12:00:00.000Z] [Pipeline] { (Metrics on ubuntu:22.04 / sky130hd)
+[2026-05-04T12:00:00.123Z] [INFO] running metrics check for bp_fe_top sky130hd
+[2026-05-04T12:00:01.456Z] [ERROR] finish__timing__setup__tns fail test: -1.21838 >= -0.685
+[2026-05-04T12:00:01.500Z] [ERROR] finish__timing__setup__tns fail test: -11515.9 >= -11500
+[2026-05-04T12:00:01.510Z] [Pipeline] }
+[2026-05-04T12:00:01.510Z] Finished: FAILURE

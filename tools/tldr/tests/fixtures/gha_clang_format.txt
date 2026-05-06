@@ -1,0 +1,4 @@
+2026-05-04T11:00:00.000Z Run clang-format --dry-run -Werror src/...
+2026-05-04T11:00:01.000Z src/mpl/src/hier_rtlmp.cpp:42:1: error: code should be clang-formatted [-Wclang-format-violations]
+2026-05-04T11:00:01.000Z src/rsz/src/Resizer.cpp:182:5: error: code should be clang-formatted [-Wclang-format-violations]
+2026-05-04T11:00:02.000Z Error: Process completed with exit code 1.

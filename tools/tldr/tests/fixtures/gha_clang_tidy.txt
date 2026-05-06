@@ -1,0 +1,7 @@
+2026-05-04T11:00:00.000Z Run clang-tidy
+2026-05-04T11:00:01.000Z src/mpl/src/hier_rtlmp.cpp:2451:23: warning: redundant string init [readability-redundant-string-init]
+2026-05-04T11:00:01.000Z         std::string foo = "";
+2026-05-04T11:00:01.000Z                       ^
+2026-05-04T11:00:02.000Z src/rsz/src/Resizer.cpp:182:9: warning: prefer 'override' over redundant 'virtual' [modernize-use-override]
+2026-05-04T11:00:03.000Z 2 warnings generated.
+2026-05-04T11:00:04.000Z Error: Process completed with exit code 1.

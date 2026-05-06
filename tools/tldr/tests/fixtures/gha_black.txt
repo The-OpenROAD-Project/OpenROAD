@@ -1,0 +1,6 @@
+2026-05-04T11:00:00.000Z Run black --check .
+2026-05-04T11:00:01.000Z would reformat etc/whittle.py
+2026-05-04T11:00:01.000Z would reformat tools/tldr/src/tldr/cli.py
+2026-05-04T11:00:01.000Z Oh no! 💥 💔 💥
+2026-05-04T11:00:01.000Z 2 files would be reformatted.
+2026-05-04T11:00:02.000Z Error: Process completed with exit code 1.

@@ -1,0 +1,8 @@
+2026-05-04T11:00:00.000Z Run cmake --build build
+2026-05-04T11:00:05.000Z [ 12%] Building CXX object src/CMakeFiles/openroad.dir/foo.cpp.o
+2026-05-04T11:00:05.500Z src/foo.cpp:42:10: error: use of undeclared identifier 'bar_baz'
+2026-05-04T11:00:05.500Z         return bar_baz(x);
+2026-05-04T11:00:05.500Z                ^
+2026-05-04T11:00:06.000Z 1 error generated.
+2026-05-04T11:00:06.000Z make[2]: *** [src/foo.cpp.o] Error 1
+2026-05-04T11:00:06.000Z Error: Process completed with exit code 2.

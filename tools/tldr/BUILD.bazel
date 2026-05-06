@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+py_library(
+    name = "tldr_lib",
+    srcs = glob(["src/tldr/**/*.py"]),
+    data = ["config/repos.toml"],
+    imports = ["src"],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "tldr",
+    srcs = ["src/tldr/__main__.py"],
+    main = "src/tldr/__main__.py",
+    deps = [":tldr_lib"],
+    imports = ["src"],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "fix_tldr",
+    srcs = ["src/tldr/fix_main.py"],
+    main = "src/tldr/fix_main.py",
+    deps = [":tldr_lib"],
+    imports = ["src"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "test_support",
+    testonly = True,
+    srcs = ["tests/_fixture_helpers.py"],
+    data = glob(["tests/fixtures/**"]),
+    imports = ["tests"],
+)
+
+[
+    py_test(
+        name = test_name,
+        srcs = ["tests/%s.py" % test_name],
+        deps = [
+            ":test_support",
+            ":tldr_lib",
+        ],
+        imports = [
+            "src",
+            "tests",
+        ],
+    )
+    for test_name in [
+        "test_strip",
+        "test_stages",
+        "test_local_resolve",
+        "test_orfs_flow",
+        "test_metric_guard",
+        "test_openroad_msg",
+        "test_bazel_test",
+        "test_bazel_timeout",
+        "test_ctest",
+        "test_docker_pull",
+        "test_jenkins_pipeline",
+        "test_clang_tidy",
+        "test_clang_format",
+        "test_mac_build",
+        "test_lockfile",
+        "test_black",
+        "test_buildifier",
+        "test_dedupe",
+        "test_render_table",
+        "test_render_markdown_snapshot",
+        "test_publish_upsert",
+        "test_cli",
+        "test_fix_runs_recipes",
+    ]
+]

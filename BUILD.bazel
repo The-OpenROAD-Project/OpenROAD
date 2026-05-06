@@ -448,6 +448,29 @@ alias(
     visibility = ["//visibility:public"],
 )
 
+# ---------------------------------------------------------------------------
+# CI-failure summarizer (issue #10335).
+#
+# Usage:
+#   bazelisk run //:tldr                 # current branch's PR → table
+#   bazelisk run //:tldr -- --pr 12345   # explicit PR
+#   bazelisk run //:fix-tldr             # run deterministic local fixes
+#
+# See tools/tldr/README.md.
+# ---------------------------------------------------------------------------
+
+alias(
+    name = "tldr",
+    actual = "//tools/tldr:tldr",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "fix-tldr",
+    actual = "//tools/tldr:fix_tldr",
+    visibility = ["//visibility:public"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tldr"
+version = "0.1.0"
+description = "Summarize CI failures on OpenROAD / OpenROAD-flow-scripts pull requests."
+requires-python = ">=3.11"
+authors = [{ name = "The OpenROAD Project" }]
+license = { text = "BSD-3-Clause" }
+dependencies = []
+
+[project.scripts]
+tldr = "tldr.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tldr = ["../../config/repos.toml"]

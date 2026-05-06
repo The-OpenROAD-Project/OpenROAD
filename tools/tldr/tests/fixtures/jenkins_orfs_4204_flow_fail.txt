@@ -1,0 +1,15 @@
+[2026-05-04T11:03:22.234Z] [Pipeline] { (Test on ubuntu:22.04)
+[2026-05-04T11:03:22.234Z] [Pipeline] sh
+[2026-05-04T11:03:22.234Z] + make DESIGN_CONFIG=designs/nangate45/bp_fe_top/config.mk
+[2026-05-04T11:03:23.111Z] read_liberty .../NangateOpenCellLibrary_typical.lib
+[2026-05-04T11:03:23.111Z] read_liberty .../fakeram45_512x64.lib
+[2026-05-04T11:03:23.111Z] read_db .../bp/base/3_2_place_iop.odb
+[2026-05-04T11:03:24.456Z] [Pipeline] catchError
+[2026-05-04T11:03:24.456Z] [Pipeline] error
+[2026-05-04T11:03:24.456Z] ERROR: Test bp_fe_top nangate45 failed
+[2026-05-04T11:03:24.500Z] ERROR: Test mempool_group nangate45 failed
+[2026-05-04T11:03:24.510Z] [Pipeline] }
+[2026-05-04T11:03:24.510Z] [Pipeline] { (Test on ubuntu:22.04)
+[2026-05-04T11:03:24.510Z] ERROR: Test microwatt sky130hd failed
+[2026-05-04T11:03:24.510Z] [Pipeline] }
+[2026-05-04T11:03:24.510Z] Finished: FAILURE

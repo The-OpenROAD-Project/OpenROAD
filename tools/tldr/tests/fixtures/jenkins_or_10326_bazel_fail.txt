@@ -1,0 +1,14 @@
+[2026-05-04T11:03:22.234Z] [Pipeline] { (Bazel test on ubuntu:24.04)
+[2026-05-04T11:03:22.234Z] [Pipeline] sh
+[2026-05-04T11:03:22.234Z] + bazelisk test //src/...
+[2026-05-04T11:03:23.111Z] //src/rsz:test_buffer_ports                                              FAILED in 12.3s
+[2026-05-04T11:03:23.111Z] //src/dbSta:test_dbsta                                                   FAILED in 0.4s
+[2026-05-04T11:03:23.111Z] //src/odb:test_odb                                                       PASSED in 1.2s
+[2026-05-04T11:03:23.111Z] Executed 12 out of 12 tests: 10 tests pass and 2 fail locally.
+[2026-05-04T11:03:23.111Z] The following tests FAILED:
+[2026-05-04T11:03:23.111Z]      42 - rsz_buffer_ports (Failed)
+[2026-05-04T11:03:23.111Z]      43 - rsz_estimate_parasitics (Timeout)
+[2026-05-04T11:03:23.111Z] Errors while running CTest
+[2026-05-04T11:03:23.111Z] [ERROR RSZ-2007] buffer_ports: rebuffering failed for net foo
+[2026-05-04T11:03:23.111Z] [Pipeline] }
+[2026-05-04T11:03:23.111Z] Finished: FAILURE

@@ -1,0 +1,3 @@
+2026-05-04T11:00:00.000Z Run bazelisk mod deps --lockfile_mode=error
+2026-05-04T11:00:01.000Z ERROR: MODULE.bazel.lock is out of date. Run `bazelisk mod deps --lockfile_mode=update`.
+2026-05-04T11:00:02.000Z Error: Process completed with exit code 1.

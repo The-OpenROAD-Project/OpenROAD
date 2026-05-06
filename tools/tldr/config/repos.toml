@@ -1,0 +1,31 @@
+# Per-repo configuration for the `tldr` summarizer.
+# Each entry enables a subset of parsers and a list of check names that count
+# as "infra/transient" by default.
+
+[repos."The-OpenROAD-Project/OpenROAD"]
+parsers = [
+    "bazel_test",
+    "bazel_timeout",
+    "ctest",
+    "openroad_msg",
+    "clang_tidy",
+    "clang_format",
+    "mac_build",
+    "lockfile",
+    "black",
+    "buildifier",
+    "docker_pull",
+    "jenkins_pipeline",
+]
+
+[repos."The-OpenROAD-Project/OpenROAD-flow-scripts"]
+parsers = [
+    "orfs_flow",
+    "metric_guard",
+    "openroad_msg",
+    "docker_pull",
+    "jenkins_pipeline",
+    "lockfile",
+    "black",
+    "buildifier",
+]
