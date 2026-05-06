@@ -196,7 +196,17 @@ _PATTERNS: list[tuple[re.Pattern[str], str, str | None]] = [
         None,
     ),
     (
-        re.compile(r"\b(?:i/o timeout|TLS handshake timeout)\b"),
+        # Bare phrases like `i/o timeout` and `TLS handshake timeout` can
+        # legitimately appear in non-infra output (e.g. an OpenROAD test
+        # that exercises a timeout path). Anchor these to common
+        # network-tool prefixes so we only fire on real infra flakes —
+        # `dial tcp ... i/o timeout` (Go HTTP client), `Get "https://...":
+        # net/http: TLS handshake timeout` (Docker/Go), `curl: ... TLS
+        # handshake timeout`, etc.
+        re.compile(
+            r"(?:dial\s+tcp|net/http|curl:|Get\s+\"|Post\s+\")"
+            r".*\b(?:i/o timeout|TLS handshake timeout)\b"
+        ),
         "network",
         None,
     ),

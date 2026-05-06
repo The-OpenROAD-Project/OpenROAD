@@ -36,6 +36,11 @@ class ClangFormatParser:
             if file_ in seen:
                 continue
             seen.add(file_)
+            # Per CLAUDE.md rule 2, never run `clang-format -i` on files
+            # under src/sta/ or on `*.i` files. Surface the finding so the
+            # human knows the file is off, but withhold the auto-fix recipe
+            # so `//:fix-tldr` doesn't violate the project rule.
+            skip_auto_fix = "src/sta/" in file_ or file_.endswith(".i")
             yield Finding(
                 parser=self.name,
                 severity=Severity.actionable,
@@ -51,7 +56,16 @@ class ClangFormatParser:
                     f"`{file_}` is not clang-formatted. Run "
                     f"`clang-format -i {file_}` (skip files under `src/sta/` "
                     "and any `*.i` files per CLAUDE.md rule 2)."
+                    if not skip_auto_fix
+                    else (
+                        f"`{file_}` is reported as not clang-formatted, but it "
+                        "is under `src/sta/` or is a `*.i` file — per CLAUDE.md "
+                        "rule 2 do NOT run clang-format on it. Ask the "
+                        "maintainer how to proceed."
+                    )
                 ),
                 verify_command=f"clang-format --dry-run -Werror {file_}",
-                auto_fix_command=("clang-format", "-i", file_),
+                auto_fix_command=(
+                    None if skip_auto_fix else ("clang-format", "-i", file_)
+                ),
             )

@@ -50,12 +50,17 @@ def _scan_check(
     if not plugins:
         return []
 
-    # Materialise the log so we can replay it through each parser. The logs
-    # are big but trimmed in tests, and in production we only fetch a given
-    # check's log once. If the log is gone (purged build, 404), surface that
-    # as a single info-level finding rather than silently dropping the check.
+    # Materialise the *stripped* log so we can replay it through each parser.
+    # We don't keep `raw` around — Jenkins consoleText commonly runs hundreds
+    # of MB and holding both raw and stripped doubles peak memory on the
+    # runner. Stream-strip line-by-line and discard the raw form.
+    # If the log is gone (purged build, 404), surface that as a single
+    # info-level finding rather than silently dropping the check.
     try:
-        raw_lines = list(fetch.log_lines(check, runner=runner, url_opener=url_opener))
+        stripped = [
+            strip.strip_line(l)
+            for l in fetch.log_lines(check, runner=runner, url_opener=url_opener)
+        ]
     except fetch.LogUnavailable as e:
         return [
             Finding(
@@ -77,7 +82,6 @@ def _scan_check(
                 auto_fix_command=None,
             )
         ]
-    stripped = [strip.strip_line(l) for l in raw_lines]
 
     out: list[Finding] = []
     for plugin in plugins:

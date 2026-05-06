@@ -46,6 +46,15 @@ class PublishUpsertTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             upsert("any", "no sentinels here")
 
+    def test_nested_sentinels_raise(self) -> None:
+        # Body has two BEGINs but only one END (e.g. an aborted previous
+        # run whose old block was edited but the begin sentinel left
+        # behind). Substring counts diverge from valid-block count, and
+        # we refuse rather than guess which span is "ours".
+        body = f"{BEGIN}\nA\n{BEGIN}\nB\n{END}\n"
+        with self.assertRaises(MalformedBodyError):
+            upsert(body, BLOCK1)
+
 
 if __name__ == "__main__":
     unittest.main()

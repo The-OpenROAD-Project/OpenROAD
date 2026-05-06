@@ -177,6 +177,14 @@ def update_pr_body(
     PR bodies can be up to ~64KB; passing them as a `-f body=…` argv flag
     risks blowing past `ARG_MAX` on some runners. We send the JSON payload
     via stdin instead (`gh api --input -`).
+
+    Concurrency caveat: this is a read-modify-write against the PR body.
+    GitHub doesn't expose conditional updates for the pulls API, so two
+    concurrent `--post` runs (e.g. several CI checks finishing in the same
+    second) can lose each other's writes. Today this is purely theoretical
+    — no in-tree caller exercises ``--post`` — but maintainers wiring up
+    the documented workflow should consider serialising the job (e.g. a
+    GHA `concurrency:` group keyed on the SHA) before enabling it.
     """
     payload = json.dumps({"body": body})
     cmd = ["gh", "api", "-X", "PATCH", f"/repos/{repo}/pulls/{pr}", "--input", "-"]

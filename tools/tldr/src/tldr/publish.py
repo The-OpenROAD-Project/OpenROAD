@@ -41,6 +41,11 @@ def upsert(body: str, block: str) -> str:
     body = body or ""
     n_begin = body.count(BEGIN)
     n_end = body.count(END)
+    # Counting well-formed bracketed spans on top of the substring counts
+    # catches nested or interleaved sentinels that the substring-only check
+    # would miss (e.g. ``BEGIN ... BEGIN ... END`` parses as a single span
+    # but n_begin would be 2 — the body is still malformed and we refuse).
+    n_blocks = len(_SPAN.findall(body))
 
     if n_begin == 0 and n_end == 0:
         # First run: append after one blank line.
@@ -51,9 +56,10 @@ def upsert(body: str, block: str) -> str:
         )
         return body + sep + block
 
-    if n_begin != n_end or n_begin > 1:
+    if n_begin != 1 or n_end != 1 or n_blocks != 1:
         raise MalformedBodyError(
-            f"sentinel mismatch: {n_begin} begin, {n_end} end markers"
+            f"sentinel mismatch: {n_begin} begin, {n_end} end, "
+            f"{n_blocks} valid block(s)"
         )
 
     # Replace exactly the bracketed span.

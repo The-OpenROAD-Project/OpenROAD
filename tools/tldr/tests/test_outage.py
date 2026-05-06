@@ -120,6 +120,34 @@ class OutageTest(unittest.TestCase):
         self.assertEqual(out[0].severity, Severity.infra)
         self.assertTrue(out[0].headline.startswith("jenkins-pipeline-error:"))
 
+    def test_bare_io_timeout_does_not_match_application_text(self) -> None:
+        # Application logs sometimes contain phrases like "i/o timeout" or
+        # "TLS handshake timeout" in error messages that are NOT infra
+        # outages. Without a network-tool prefix they shouldn't fire.
+        out = list(
+            OutageParser().scan(
+                [
+                    "OpenROAD test exercising i/o timeout path passed",
+                    "expected TLS handshake timeout exception was raised",
+                ],
+                StaticStageContext("Test"),
+            )
+        )
+        self.assertEqual(out, [])
+
+    def test_io_timeout_with_dial_tcp_prefix_matches(self) -> None:
+        # Real Go-network failures still match.
+        out = list(
+            OutageParser().scan(
+                [
+                    "dial tcp 1.2.3.4:443: i/o timeout",
+                ],
+                StaticStageContext("Build"),
+            )
+        )
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].severity, Severity.infra)
+
     def test_no_findings_on_clean_log(self) -> None:
         out = list(
             OutageParser().scan(
