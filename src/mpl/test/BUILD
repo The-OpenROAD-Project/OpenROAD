@@ -287,7 +287,7 @@ cc_test(
         "cpp/TestPusher.cpp",
     ],
     deps = [
-        "//src/mpl",
+        "//src/mpl:pusher",
         "//src/odb",
         "//src/tst",
         "//src/utl",
