@@ -18,6 +18,7 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "odb/dbChipCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -143,6 +144,11 @@ void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
 
   obj->bump_insts_paths_.emplace_back(std::move(path_ids),
                                       bump_inst->getImpl()->getOID());
+
+  _dbChip* chip = (_dbChip*) getChip();
+  for (auto cb : chip->callbacks_) {
+    cb->inDbChipNetConnectBumpInst(this, bump_inst);
+  }
 }
 
 dbChipNet* dbChipNet::create(dbChip* chip, const std::string& name)
@@ -158,6 +164,10 @@ dbChipNet* dbChipNet::create(dbChip* chip, const std::string& name)
   chip_net->chip_net_next_ = _chip->nets_;
   _chip->nets_ = chip_net->getOID();
 
+  for (auto cb : _chip->callbacks_) {
+    cb->inDbChipNetCreate((dbChipNet*) chip_net);
+  }
+
   return (dbChipNet*) chip_net;
 }
 
@@ -166,6 +176,10 @@ void dbChipNet::destroy(dbChipNet* net)
   _dbChipNet* _net = (_dbChipNet*) net;
   _dbDatabase* db = (_dbDatabase*) _net->getOwner();
   _dbChip* chip = (_dbChip*) net->getChip();
+
+  for (auto cb : chip->callbacks_) {
+    cb->inDbChipNetDestroy(net);
+  }
 
   // Remove from chip's net list
   if (chip->nets_ == _net->getOID()) {

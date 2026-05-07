@@ -6,6 +6,10 @@
 namespace odb {
 
 class dbChip;
+class dbChipBumpInst;
+class dbChipConn;
+class dbChipInst;
+class dbChipNet;
 class dbMarker;
 class dbMarkerCategory;
 
@@ -33,6 +37,24 @@ class dbChipCallBackObj
   virtual void inDbMarkerCreate(dbMarker*) {}
   virtual void inDbMarkerDestroy(dbMarker*) {}
   // dbMarker End
+
+  // dbChipInst Start
+  virtual void inDbChipInstCreate(dbChipInst*) {}
+  virtual void inDbChipInstDestroy(dbChipInst*) {}
+  virtual void inDbPreMoveDbChipInst(dbChipInst*) {}
+  virtual void inDbPostMoveDbChipInst(dbChipInst*) {}
+  // dbChipInst End
+
+  // dbChipConn Start
+  virtual void inDbChipConnCreate(dbChipConn*) {}
+  virtual void inDbChipConnDestroy(dbChipConn*) {}
+  // dbChipConn End
+
+  // dbChipNet Start
+  virtual void inDbChipNetCreate(dbChipNet*) {}
+  virtual void inDbChipNetDestroy(dbChipNet*) {}
+  virtual void inDbChipNetConnectBumpInst(dbChipNet*, dbChipBumpInst*) {}
+  // dbChipNet End
 
   // allow ECO client initialization - payam
   virtual dbChipCallBackObj& operator()() { return *this; }

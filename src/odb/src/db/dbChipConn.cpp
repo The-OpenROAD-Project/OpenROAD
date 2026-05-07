@@ -17,6 +17,7 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include "odb/dbChipCallBackObj.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -252,6 +253,9 @@ dbChipConn* dbChipConn::create(
 
   obj->chip_conn_next_ = chip->conns_;
   chip->conns_ = obj->getOID();
+  for (auto cb : chip->callbacks_) {
+    cb->inDbChipConnCreate((dbChipConn*) obj);
+  }
   return (dbChipConn*) obj;
 }
 
@@ -261,6 +265,9 @@ void dbChipConn::destroy(dbChipConn* chipConn)
   _dbDatabase* _db = (_dbDatabase*) obj->getOwner();
   // Remove from chip's list of connections
   _dbChip* chip = (_dbChip*) chipConn->getParentChip();
+  for (auto cb : chip->callbacks_) {
+    cb->inDbChipConnDestroy(chipConn);
+  }
   if (chip->conns_ == obj->getOID()) {
     chip->conns_ = obj->chip_conn_next_;
   } else {
