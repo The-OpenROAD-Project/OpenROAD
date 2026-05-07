@@ -441,6 +441,26 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Set 3DBlox Alignment Markers
+
+This command marks the given masters as alignment markers used by the 3DBlox
+checker, and optionally sets a tolerance (in microns) for marker alignment
+across stacked dies.
+
+```tcl
+set_3dblox_alignment_markers
+    -masters masters
+    [-tolerance tolerance_um]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-masters` | List of master cell names to flag as alignment markers. |
+| `-tolerance` | Optional alignment tolerance in microns (must be positive). |
+
+
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using
