@@ -226,15 +226,16 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   // Drivers sorted by (level, name) for determinism.
   const VertexSeq& levelizedDrvrVertices();
+  // Discard the cached driver-vertex list. Callers that mutate the timing
+  // graph outside the LevelizeObserver path (e.g. dbStaCbk on dbInst
+  // create/destroy) must invalidate so the next query rebuilds.
+  void invalidateLevelizedDrvrVertices();
 
  private:
-  friend class DbStaLevelizeObserver;
-
   void makeReport() override;
   void makeNetwork() override;
   void makeSdcNetwork() override;
   void makeObservers() override;
-  void invalidateLevelizedDrvrVertices();
 
   void replaceCell(Instance* inst,
                    Cell* to_cell,

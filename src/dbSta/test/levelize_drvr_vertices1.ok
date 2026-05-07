@@ -112,3 +112,11 @@ _229_/Y level=40
 _230_/Y level=40
 _231_/Y level=40
 _232_/Y level=40
+deleting instance _220_
+post-delete:
+driver vertex count 374
+clk level=0
+req_msg[0] level=0
+req_msg[10] level=0
+req_msg[11] level=0
+req_msg[12] level=0

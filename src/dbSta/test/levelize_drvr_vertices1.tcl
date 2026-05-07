@@ -14,5 +14,17 @@ read_verilog gcd_asap7.v
 link_design -hier gcd
 create_clock -name clk -period 500 {clk}
 
-# Report first 100 driver vertices in level order and total count
+# Initial report (first 100 drivers in level order).
 sta::report_levelized_drvr_vertices 100
+
+# Mutation probe: delete a leaf instance via ODB. dbSta's cache holds a
+# Vertex* for that instance. Without invalidation the next query returns
+# a dangling pointer (crash, or stale pathName). With invalidation the
+# rebuild drops the deleted instance's driver pin and lowers the count.
+set block [[[ord::get_db] getChip] getBlock]
+set victim [$block findInst _220_]
+puts "deleting instance [$victim getName]"
+odb::dbInst_destroy $victim
+
+puts "post-delete:"
+sta::report_levelized_drvr_vertices 5

@@ -1171,6 +1171,8 @@ void dbStaCbk::setNetwork(dbNetwork* network)
 void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 {
   sta_->makeInstanceAfter(network_->dbToSta(inst));
+  // New driver vertices may exist; invalidate cached driver-vertex list.
+  sta_->invalidateLevelizedDrvrVertices();
 }
 
 void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
@@ -1178,6 +1180,10 @@ void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+  // Sta::deleteLeafInstanceBefore calls Levelize::deleteVertexBefore
+  // directly (bypassing the LevelizeObserver), so the dbSta cache must be
+  // invalidated explicitly here to avoid a dangling Vertex* on next query.
+  sta_->invalidateLevelizedDrvrVertices();
 }
 
 void dbStaCbk::inDbModuleCreate(odb::dbModule* module)
