@@ -897,8 +897,11 @@ void GlobalRouter::setNetIsResAware(odb::dbNet* db_net, bool res_aware)
   if (net) {
     net->setIsResAware(res_aware);
   } else {
-    logger_->warn(
-        GRT, 103, "Net {} is not in the db_net_map_", db_net->getConstName());
+    logger_->warn(GRT,
+                  103,
+                  "Net {} has no GRT representation. It may have been ignored "
+                  "or excluded",
+                  db_net->getConstName());
   }
 }
 
@@ -910,7 +913,10 @@ bool GlobalRouter::isNetResAware(odb::dbNet* db_net)
   }
 
   logger_->warn(
-      GRT, 100, "Net {} is not in the db_net_map_", db_net->getConstName());
+      GRT,
+      100,
+      "Net {} has no GRT representation. It may have been ignored or excluded",
+      db_net->getConstName());
 
   return false;
 }
