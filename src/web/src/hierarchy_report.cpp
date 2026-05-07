@@ -3,14 +3,15 @@
 
 #include "hierarchy_report.h"
 
+#include <boost/json/array.hpp>
 #include <cstdint>
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "json_builder.h"
 #include "module_color_palette.h"
 #include "odb/db.h"
 
@@ -298,38 +299,37 @@ HierarchyResult HierarchyReport::getReport() const
 
 // ─── Shared serialization ──────────────────────────────────────────────
 
-void serializeHierarchyResult(JsonBuilder& b, const HierarchyResult& result)
+boost::json::object serializeHierarchyResult(const HierarchyResult& result)
 {
-  b.beginObject();
-  b.beginArray("nodes");
+  boost::json::array nodes;
+  nodes.reserve(result.nodes.size());
   for (const auto& n : result.nodes) {
-    b.beginObject();
-    b.field("id", n.id);
-    b.field("parent_id", n.parent_id);
-    b.field("inst_name", n.inst_name);
-    b.field("module_name", n.module_name);
-    b.field("insts", n.insts);
-    b.field("macros", n.macros);
-    b.field("modules", n.modules);
-    b.field("area", n.area);
-    b.field("local_insts", n.local_insts);
-    b.field("local_macros", n.local_macros);
-    b.field("local_modules", n.local_modules);
+    boost::json::object o;
+    o["id"] = n.id;
+    o["parent_id"] = n.parent_id;
+    o["inst_name"] = n.inst_name;
+    o["module_name"] = n.module_name;
+    o["insts"] = n.insts;
+    o["macros"] = n.macros;
+    o["modules"] = n.modules;
+    o["area"] = n.area;
+    o["local_insts"] = n.local_insts;
+    o["local_macros"] = n.local_macros;
+    o["local_modules"] = n.local_modules;
     if (n.node_kind != HierarchyNodeKind::kModule) {
-      b.field("node_kind", static_cast<int>(n.node_kind));
+      o["node_kind"] = static_cast<int>(n.node_kind);
     }
     if (n.node_kind == HierarchyNodeKind::kModule) {
-      b.field("odb_id", static_cast<int>(n.odb_id));
-      b.beginArray("color");
-      b.value(static_cast<int>(n.color.r));
-      b.value(static_cast<int>(n.color.g));
-      b.value(static_cast<int>(n.color.b));
-      b.endArray();
+      o["odb_id"] = static_cast<int>(n.odb_id);
+      o["color"] = boost::json::array{static_cast<int>(n.color.r),
+                                      static_cast<int>(n.color.g),
+                                      static_cast<int>(n.color.b)};
     }
-    b.endObject();
+    nodes.emplace_back(std::move(o));
   }
-  b.endArray();
-  b.endObject();
+  boost::json::object out;
+  out["nodes"] = std::move(nodes);
+  return out;
 }
 
 // ─── Default module color computation ──────────────────────────────────

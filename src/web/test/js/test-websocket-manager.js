@@ -206,21 +206,21 @@ describe('WebSocketManager.fromCache', () => {
         assert.equal(result.shapes_ready, true);
     });
 
-    it('returns setup timing report when is_setup=1', async () => {
+    it('returns setup timing report when is_setup=true', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'timing_report', is_setup: 1 });
+        const result = await mgr.request({ type: 'timing_report', is_setup: true });
         assert.equal(result.paths[0].slack, -0.1);
     });
 
-    it('returns hold timing report when is_setup=0', async () => {
+    it('returns hold timing report when is_setup=false', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'timing_report', is_setup: 0 });
+        const result = await mgr.request({ type: 'timing_report', is_setup: false });
         assert.equal(result.paths[0].slack, 0.2);
     });
 
     it('returns setup histogram', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'slack_histogram', is_setup: 1 });
+        const result = await mgr.request({ type: 'slack_histogram', is_setup: true });
         assert.equal(result.total_endpoints, 0);
     });
 
@@ -260,7 +260,7 @@ describe('WebSocketManager.fromCache', () => {
         const cache = makeCache();
         cache.setPathOverlay = (v) => { called = v; };
         const mgr = WebSocketManager.fromCache(cache);
-        await mgr.request({ type: 'timing_highlight', path_index: 0, is_setup: 1 });
+        await mgr.request({ type: 'timing_highlight', path_index: 0, is_setup: true });
         assert.ok(called !== null);
         assert.ok(called.startsWith('data:image/png;base64,'));
     });
@@ -304,7 +304,7 @@ describe('WebSocketManager.fromCache', () => {
 
         it('returns all paths when slack range is not provided', async () => {
             const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
-            const result = await mgr.request({ type: 'timing_report', is_setup: 1 });
+            const result = await mgr.request({ type: 'timing_report', is_setup: true });
             assert.equal(result.paths.length, 5);
             // No _originalIndex annotation when not filtering.
             assert.equal(result.paths[0]._originalIndex, undefined);
@@ -314,7 +314,7 @@ describe('WebSocketManager.fromCache', () => {
             const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
             const result = await mgr.request({
                 type: 'timing_report',
-                is_setup: 1,
+                is_setup: true,
                 slack_min: -0.1,
                 slack_max: 0.1,
             });
@@ -328,7 +328,7 @@ describe('WebSocketManager.fromCache', () => {
             const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
             const result = await mgr.request({
                 type: 'timing_report',
-                is_setup: 1,
+                is_setup: true,
                 slack_min: -0.1,
                 slack_max: 0.1,
             });
@@ -342,7 +342,7 @@ describe('WebSocketManager.fromCache', () => {
             const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
             const result = await mgr.request({
                 type: 'timing_report',
-                is_setup: 1,
+                is_setup: true,
                 slack_min: 10.0,
                 slack_max: 20.0,
             });
@@ -353,7 +353,7 @@ describe('WebSocketManager.fromCache', () => {
             const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
             const result = await mgr.request({
                 type: 'timing_report',
-                is_setup: 0,
+                is_setup: false,
                 slack_min: 0.1,
                 slack_max: 0.2,
             });
@@ -367,7 +367,7 @@ describe('WebSocketManager.fromCache', () => {
             const mgr = WebSocketManager.fromCache(cache);
             await mgr.request({
                 type: 'timing_report',
-                is_setup: 1,
+                is_setup: true,
                 slack_min: -0.1,
                 slack_max: 0.1,
             });
