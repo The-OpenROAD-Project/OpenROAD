@@ -265,7 +265,10 @@ BIG_TESTS = [
 
 test_suite(
     name = "cpp_tests",
-    tests = [":TestBufRem1"],
+    tests = [
+        ":TestBufRem1",
+        ":TestResizer",
+    ],
 )
 
 cc_test(
@@ -409,6 +412,29 @@ cc_test(
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestResizer",
+    srcs = ["cpp/TestResizer.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = glob(["cpp/TestResizer*.v"]),
+    features = ["-layering_check"],  # TODO: includes private headers
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",

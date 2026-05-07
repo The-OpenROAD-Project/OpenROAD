@@ -227,21 +227,19 @@ bool SwapPinsMove::swapPins(sta::Instance* inst,
       return false;
     }
 
-    // Swap the ports and nets
-    // Support for hierarchy, swap modnets as well as dbnets
-
-    // Simultaneously connect both flat and hier net so
-    // they are reassociated.
+    // Swap the ports and nets.
+    // Keep the dbNet/dbModNet swap local to these iterms. Feed-through
+    // structures can legitimately have mixed modnet names on the same flat
+    // net, so pin swap must not trigger a global hier/flat reassociation.
 
     // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
-    // new api call which keeps association
     db_network_->connectPin(
-        found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2);
+        found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2, false);
 
     sta_->disconnectPin(found_pin2);
     db_network_->connectPin(
-        found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
+        found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1, false);
   }
   return true;
 }

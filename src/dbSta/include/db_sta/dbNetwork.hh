@@ -169,7 +169,10 @@ class dbNetwork : public ConcreteNetwork
   // generic connect pin -> net, supports all pin/net types
   void connectPin(Pin* pin, Net* net);
   // generic connect pin -> flat_net, hier_net.
-  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
+  void connectPin(Pin* pin,
+                  Net* flat_net,
+                  Net* hier_net,
+                  bool reassociate_hier_flat = true);
   // hierarchical support functions
   odb::dbModule* getNetDriverParentModule(Net* net,
                                           Pin*& driver_pin,
