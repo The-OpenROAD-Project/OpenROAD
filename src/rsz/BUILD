@@ -80,6 +80,7 @@ cc_library(
         "//src/utl",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@googletest//:gtest_prod",
         "@spdlog",
     ],
 )
