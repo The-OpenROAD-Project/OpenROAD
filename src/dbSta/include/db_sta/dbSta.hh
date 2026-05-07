@@ -17,6 +17,7 @@
 #include "odb/dbObject.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Sta.hh"

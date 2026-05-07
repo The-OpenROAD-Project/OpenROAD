@@ -347,14 +347,13 @@ const VertexSeq& dbSta::levelizedDrvrVertices()
       }
     }
     VertexNameLess name_less(net);
-    std::sort(levelized_drvr_vertices_.begin(),
-              levelized_drvr_vertices_.end(),
-              [&name_less](const Vertex* a, const Vertex* b) {
-                if (a->level() != b->level()) {
-                  return a->level() < b->level();
-                }
-                return name_less(a, b);
-              });
+    std::ranges::sort(levelized_drvr_vertices_,
+                      [&name_less](const Vertex* a, const Vertex* b) {
+                        if (a->level() != b->level()) {
+                          return a->level() < b->level();
+                        }
+                        return name_less(a, b);
+                      });
     drvr_vertices_level_valid_ = true;
   }
   return levelized_drvr_vertices_;
