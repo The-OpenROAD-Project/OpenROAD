@@ -18,6 +18,5 @@ if [ -e openroad.repo_mapping ]; then
     chmod u+w openroad.repo_mapping
     rm -rf openroad.repo_mapping
 fi
-rm -rf openroad.runfiles/_main
 
 echo "OpenROAD binary installed to $(realpath "$DEST_DIR")"

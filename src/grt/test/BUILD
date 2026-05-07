@@ -133,6 +133,44 @@ MANUAL_FOR_BAZEL_TESTS = [
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
+regression_test(
+    name = "snapshot_batched_bus_route",
+    check_log = False,
+    check_passfail = True,
+    data = [
+        "bus_route.tcl",
+        ":test_resources",
+    ],
+)
+
+regression_test(
+    name = "snapshot_batched_incremental_state",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],

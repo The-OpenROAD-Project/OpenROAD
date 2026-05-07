@@ -26,7 +26,7 @@ using AdjacencyList = std::vector<std::vector<int>>;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace odb {
@@ -118,7 +118,7 @@ class GlobalRouter
 {
  public:
   GlobalRouter(utl::Logger* logger,
-               utl::CallBackHandler* callback_handler,
+               utl::ServiceRegistry* service_registry,
                stt::SteinerTreeBuilder* stt_builder,
                odb::dbDatabase* db,
                sta::dbSta* sta,
@@ -155,12 +155,16 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setSnapshotBatchedWidth(int snapshot_batched_width);
+  int getSnapshotBatchedWidth() const;
+  int getSnapshotBatchCount() const;
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
   };
+  void setNumThreads(int num_threads);
 
   void setInfiniteCapacity(bool infinite_capacity);
 
@@ -276,6 +280,7 @@ class GlobalRouter
   void setDebugRectilinearSTree(bool rectilinearSTree);
   void setDebugTree2D(bool tree2D);
   void setDebugTree3D(bool tree3D);
+  void setDebugEdges3D(bool edges3D);
   void setSttInputFilename(const char* file_name);
 
   void saveSttInputFile(Net* net);
@@ -506,7 +511,7 @@ class GlobalRouter
   void configFastRoute();
 
   utl::Logger* logger_;
-  utl::CallBackHandler* callback_handler_;
+  utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
@@ -530,6 +535,8 @@ class GlobalRouter
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
+  int snapshot_batched_width_{0};
+  int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;

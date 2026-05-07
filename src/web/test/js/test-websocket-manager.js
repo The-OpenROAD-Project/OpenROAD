@@ -109,6 +109,46 @@ describe('WebSocketManager', () => {
             assert.equal(mgr.pending.has(5), false);
         });
     });
+
+    describe('connection state', () => {
+        it('isConnected is true after socket opens', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            await mgr.readyPromise;
+            assert.equal(mgr.isConnected, true);
+        });
+
+        it('isConnected is false after socket closes', async () => {
+            const mgr = new WebSocketManager('ws://fake');
+            await mgr.readyPromise;
+            assert.equal(mgr.isConnected, true);
+            // Simulate socket close
+            mgr.socket.readyState = 3; // CLOSED
+            mgr.socket.onclose?.();
+            assert.equal(mgr.isConnected, false);
+        });
+
+        it('onStatusChange is called when socket opens', async () => {
+            let statusChangedCount = 0;
+            const mgr = new WebSocketManager('ws://fake', () => {
+                statusChangedCount++;
+            });
+            await mgr.readyPromise;
+            assert.ok(statusChangedCount > 0, 'onStatusChange should be called on open');
+        });
+
+        it('onStatusChange is called when socket closes', async () => {
+            let statusChangedCount = 0;
+            const mgr = new WebSocketManager('ws://fake', () => {
+                statusChangedCount++;
+            });
+            await mgr.readyPromise;
+            const countAfterOpen = statusChangedCount;
+            // Simulate socket close
+            mgr.socket.readyState = 3; // CLOSED
+            mgr.socket.onclose?.();
+            assert.ok(statusChangedCount > countAfterOpen, 'onStatusChange should be called on close');
+        });
+    });
 });
 
 describe('WebSocketManager.fromCache', () => {
@@ -147,6 +187,11 @@ describe('WebSocketManager.fromCache', () => {
         await mgr.readyPromise; // Should not hang.
     });
 
+    it('isConnected is true for cache-backed instances', () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        assert.equal(mgr.isConnected, true);
+    });
+
     it('returns cached JSON for tech', async () => {
         const cache = makeCache();
         const mgr = WebSocketManager.fromCache(cache);
@@ -161,21 +206,21 @@ describe('WebSocketManager.fromCache', () => {
         assert.equal(result.shapes_ready, true);
     });
 
-    it('returns setup timing report when is_setup=1', async () => {
+    it('returns setup timing report when is_setup=true', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'timing_report', is_setup: 1 });
+        const result = await mgr.request({ type: 'timing_report', is_setup: true });
         assert.equal(result.paths[0].slack, -0.1);
     });
 
-    it('returns hold timing report when is_setup=0', async () => {
+    it('returns hold timing report when is_setup=false', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'timing_report', is_setup: 0 });
+        const result = await mgr.request({ type: 'timing_report', is_setup: false });
         assert.equal(result.paths[0].slack, 0.2);
     });
 
     it('returns setup histogram', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        const result = await mgr.request({ type: 'slack_histogram', is_setup: 1 });
+        const result = await mgr.request({ type: 'slack_histogram', is_setup: true });
         assert.equal(result.total_endpoints, 0);
     });
 
@@ -215,7 +260,7 @@ describe('WebSocketManager.fromCache', () => {
         const cache = makeCache();
         cache.setPathOverlay = (v) => { called = v; };
         const mgr = WebSocketManager.fromCache(cache);
-        await mgr.request({ type: 'timing_highlight', path_index: 0, is_setup: 1 });
+        await mgr.request({ type: 'timing_highlight', path_index: 0, is_setup: true });
         assert.ok(called !== null);
         assert.ok(called.startsWith('data:image/png;base64,'));
     });
@@ -227,5 +272,111 @@ describe('WebSocketManager.fromCache', () => {
         const mgr = WebSocketManager.fromCache(cache);
         await mgr.request({ type: 'timing_highlight', path_index: -1 });
         assert.equal(called, null);
+    });
+
+    describe('timing_report slack filtering', () => {
+        function makeCacheWithPaths() {
+            return makeCache({
+                json: {
+                    tech: { layers: [], sites: [], has_liberty: false, dbu_per_micron: 1000 },
+                    bounds: { bounds: [[0, 0], [100, 100]], shapes_ready: true },
+                    heatmaps: { active: '', heatmaps: [] },
+                    'timing_report:setup': {
+                        paths: [
+                            { slack: -0.3, end_pin: 'a' },
+                            { slack: -0.1, end_pin: 'b' },
+                            { slack: 0.0,  end_pin: 'c' },
+                            { slack: 0.1,  end_pin: 'd' },
+                            { slack: 0.25, end_pin: 'e' },
+                        ],
+                    },
+                    'timing_report:hold': {
+                        paths: [
+                            { slack: 0.05, end_pin: 'h0' },
+                            { slack: 0.15, end_pin: 'h1' },
+                        ],
+                    },
+                    'slack_histogram:setup': { bins: [], total_endpoints: 0 },
+                    chart_filters: { path_groups: [], clocks: [] },
+                },
+            });
+        }
+
+        it('returns all paths when slack range is not provided', async () => {
+            const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
+            const result = await mgr.request({ type: 'timing_report', is_setup: true });
+            assert.equal(result.paths.length, 5);
+            // No _originalIndex annotation when not filtering.
+            assert.equal(result.paths[0]._originalIndex, undefined);
+        });
+
+        it('filters paths to the [slack_min, slack_max) range', async () => {
+            const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
+            const result = await mgr.request({
+                type: 'timing_report',
+                is_setup: true,
+                slack_min: -0.1,
+                slack_max: 0.1,
+            });
+            // -0.1 and 0.0 are in range; 0.1 is exclusive upper bound.
+            assert.deepEqual(
+                result.paths.map(p => p.end_pin),
+                ['b', 'c']);
+        });
+
+        it('tags filtered paths with original index for overlay lookup', async () => {
+            const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
+            const result = await mgr.request({
+                type: 'timing_report',
+                is_setup: true,
+                slack_min: -0.1,
+                slack_max: 0.1,
+            });
+            assert.equal(result.paths[0].end_pin, 'b');
+            assert.equal(result.paths[0]._originalIndex, 1);
+            assert.equal(result.paths[1].end_pin, 'c');
+            assert.equal(result.paths[1]._originalIndex, 2);
+        });
+
+        it('returns empty paths when no slack falls in range', async () => {
+            const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
+            const result = await mgr.request({
+                type: 'timing_report',
+                is_setup: true,
+                slack_min: 10.0,
+                slack_max: 20.0,
+            });
+            assert.equal(result.paths.length, 0);
+        });
+
+        it('filters the hold side independently of setup', async () => {
+            const mgr = WebSocketManager.fromCache(makeCacheWithPaths());
+            const result = await mgr.request({
+                type: 'timing_report',
+                is_setup: false,
+                slack_min: 0.1,
+                slack_max: 0.2,
+            });
+            assert.equal(result.paths.length, 1);
+            assert.equal(result.paths[0].end_pin, 'h1');
+            assert.equal(result.paths[0]._originalIndex, 1);
+        });
+
+        it('does not mutate the cached paths array', async () => {
+            const cache = makeCacheWithPaths();
+            const mgr = WebSocketManager.fromCache(cache);
+            await mgr.request({
+                type: 'timing_report',
+                is_setup: true,
+                slack_min: -0.1,
+                slack_max: 0.1,
+            });
+            const cached = cache.json['timing_report:setup'].paths;
+            assert.equal(cached.length, 5);
+            // Original cached objects must not be tagged.
+            for (const p of cached) {
+                assert.equal(p._originalIndex, undefined);
+            }
+        });
     });
 });

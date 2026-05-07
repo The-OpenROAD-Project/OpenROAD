@@ -160,7 +160,7 @@ void Straps::setExtend(ExtensionMode mode)
 
 void Straps::setStrapStartEnd(int start, int end)
 {
-  extend_mode_ = FIXED;
+  extend_mode_ = kFixed;
   strap_start_ = start;
   strap_end_ = end;
 }
@@ -181,16 +181,16 @@ void Straps::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   odb::Rect boundary;
   const odb::Rect core = grid->getDomainArea();
   switch (extend_mode_) {
-    case CORE:
+    case kCore:
       boundary = grid->getDomainBoundary();
       break;
-    case RINGS:
+    case kRings:
       boundary = grid->getRingArea();
       break;
-    case BOUNDARY:
+    case kBoundary:
       boundary = grid->getGridBoundary();
       break;
-    case FIXED:
+    case kFixed:
       boundary = odb::Rect(strap_start_, strap_start_, strap_end_, strap_end_);
       break;
   }
@@ -460,15 +460,15 @@ void FollowPins::makeShapes(const Shape::ShapeTreeMap& other_shapes)
   const odb::Rect core = grid->getDomainArea();
   odb::Rect boundary;
   switch (getExtendMode()) {
-    case CORE:
-    case FIXED:
+    case kCore:
+    case kFixed:
       // use core area for follow pins
       boundary = grid->getDomainArea();
       break;
-    case RINGS:
+    case kRings:
       boundary = grid->getRingArea();
       break;
-    case BOUNDARY:
+    case kBoundary:
       boundary = grid->getGridBoundary();
       break;
   }
@@ -591,7 +591,7 @@ PadDirectConnectionStraps::PadDirectConnectionStraps(
 bool PadDirectConnectionStraps::canConnect() const
 {
   return pad_edge_ != odb::dbDirection::NONE && !pins_.empty()
-         && type_ != ConnectionType::None;
+         && type_ != ConnectionType::kNone;
 }
 
 void PadDirectConnectionStraps::initialize(ConnectionType type)
@@ -635,17 +635,17 @@ void PadDirectConnectionStraps::initialize(ConnectionType type)
              pad_edge_ == odb::dbDirection::WEST);
 
   switch (type) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       pins_ = getPinsFacingCore();
       if (pins_.empty()) {
         // check if pins are accessible from above
         pins_ = getPinsFormingRing();
       }
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       pins_ = getPinsFacingCore();
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       pins_ = getPinsFormingRing();
       break;
   }
@@ -786,7 +786,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
   }
 
   if (!pins.empty()) {
-    type_ = ConnectionType::Edge;
+    type_ = ConnectionType::kEdge;
   }
   return pins;
 }
@@ -889,7 +889,7 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
   }
   setLayer(routing_layer);
   if (!pins.empty()) {
-    type_ = ConnectionType::OverPads;
+    type_ = ConnectionType::kOverPads;
   }
   return pins;
 }
@@ -902,18 +902,18 @@ void PadDirectConnectionStraps::report() const
   logger->report("    Pin: {}", getName());
   std::string connection_type = "Unknown";
   switch (type_) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       connection_type = "None";
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       connection_type = "Edge";
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       connection_type = "Over pads";
       break;
   }
   logger->report("    Connection type: {}", connection_type);
-  if (type_ == ConnectionType::Edge) {
+  if (type_ == ConnectionType::kEdge) {
     logger->report("    Edge: {}", pad_edge_.getString());
   }
   logger->report("    Net: {}", iterm_->getNet()->getName());
@@ -942,12 +942,12 @@ void PadDirectConnectionStraps::makeShapes(
   target_shapes_.clear();
   target_pin_shape_.clear();
   switch (type_) {
-    case ConnectionType::None:
+    case ConnectionType::kNone:
       break;
-    case ConnectionType::Edge:
+    case ConnectionType::kEdge:
       makeShapesFacingCore(other_shapes);
       break;
-    case ConnectionType::OverPads:
+    case ConnectionType::kOverPads:
       makeShapesOverPads(other_shapes);
       break;
   }
@@ -1147,7 +1147,7 @@ PadDirectConnectionStraps::getAssociatedStraps() const
   const odb::dbInst* inst = iterm_->getInst();
   std::vector<PadDirectConnectionStraps*> straps;
   for (const auto& strap : getGrid()->getStraps()) {
-    if (strap->type() == GridComponent::PadConnect) {
+    if (strap->type() == GridComponent::kPadConnect) {
       PadDirectConnectionStraps* pad_strap
           = dynamic_cast<PadDirectConnectionStraps*>(strap.get());
       if (pad_strap != nullptr && pad_strap->getITerm()->getInst() == inst) {
@@ -1310,7 +1310,7 @@ bool PadDirectConnectionStraps::snapRectToClosestShape(
 void PadDirectConnectionStraps::getConnectableShapes(
     Shape::ShapeTreeMap& shapes) const
 {
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return;
   }
 
@@ -1338,7 +1338,7 @@ void PadDirectConnectionStraps::cutShapes(
 {
   Straps::cutShapes(obstructions);
 
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return;
   }
 
@@ -1371,18 +1371,18 @@ void PadDirectConnectionStraps::unifyConnectionTypes(
 {
   std::set<ConnectionType> types;
   for (auto* strap : straps) {
-    if (strap->getConnectionType() == ConnectionType::None) {
+    if (strap->getConnectionType() == ConnectionType::kNone) {
       continue;
     }
     types.insert(strap->getConnectionType());
   }
 
-  ConnectionType global_connection = ConnectionType::None;
+  ConnectionType global_connection = ConnectionType::kNone;
   if (types.size() == 1) {
     global_connection = *types.begin();
   } else {
     // Multiple methods found, pick Edge
-    global_connection = ConnectionType::Edge;
+    global_connection = ConnectionType::kEdge;
   }
 
   for (auto* strap : straps) {
@@ -1463,7 +1463,7 @@ bool PadDirectConnectionStraps::refineShapes(
     Shape::ShapeTreeMap& all_shapes,
     Shape::ObstructionTreeMap& all_obstructions)
 {
-  if (type_ != ConnectionType::OverPads) {
+  if (type_ != ConnectionType::kOverPads) {
     return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
@@ -1893,7 +1893,7 @@ bool RepairChannelStraps::determineOffset(
   }
   check_layers.push_back(getLayer());
 
-  Shape estimated_shape(getLayer(), estimated_straps, Shape::SHAPE);
+  Shape estimated_shape(getLayer(), estimated_straps, Shape::kShape);
   estimated_shape.generateObstruction();
 
   bool has_obs = false;
@@ -2067,7 +2067,7 @@ Straps* RepairChannelStraps::getTargetStrap(Grid* grid, odb::dbTechLayer* layer)
   Straps* lowest_target = nullptr;
 
   for (const auto& strap : grid->getStraps()) {
-    if (strap->type() != GridComponent::Strap) {
+    if (strap->type() != GridComponent::kStrap) {
       continue;
     }
 
@@ -2099,7 +2099,7 @@ odb::dbTechLayer* RepairChannelStraps::getHighestStrapLayer(Grid* grid)
 {
   odb::dbTechLayer* highest_layer = nullptr;
   for (const auto& strap : grid->getStraps()) {
-    if (strap->type() != GridComponent::Strap) {
+    if (strap->type() != GridComponent::kStrap) {
       // only look for straps
       continue;
     }
@@ -2155,13 +2155,13 @@ RepairChannelStraps::findRepairChannels(Grid* grid,
       continue;
     }
     auto* grid_compomponent = shape->getGridComponent();
-    if (grid_compomponent->type() != GridComponent::Strap
-        && grid_compomponent->type() != GridComponent::Followpin) {
+    if (grid_compomponent->type() != GridComponent::kStrap
+        && grid_compomponent->type() != GridComponent::kFollowpin) {
       // only attempt to repair straps and followpins
       continue;
     }
 
-    if (grid_compomponent->type() == GridComponent::Strap) {
+    if (grid_compomponent->type() == GridComponent::kStrap) {
       if (shape->getNumberOfConnections() == 0
           || !shape->hasInternalConnections()) {
         // strap is floating and will be removed
@@ -2351,7 +2351,7 @@ void RepairChannelStraps::repairGridChannels(
   // check for recurring channels
   for (const auto& channel : channels) {
     for (const auto& strap : grid->getStraps()) {
-      if (strap->type() == GridComponent::RepairChannel) {
+      if (strap->type() == GridComponent::kRepairChannel) {
         RepairChannelStraps* repair_strap
             = dynamic_cast<RepairChannelStraps*>(strap.get());
         if (repair_strap == nullptr) {

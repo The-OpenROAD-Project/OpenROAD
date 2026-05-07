@@ -29,26 +29,27 @@ SRoute::SRoute(PdnGen* pdngen, odb::dbDatabase* db, utl::Logger* logger)
 {
 }
 
-std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net, uint32_t& Hdy)
+std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net,
+                                                 uint32_t& h_dy)
 {
   // find all 4 strips for the ring
-  uint32_t Hdx = 0;
-  uint32_t Vdy = 0;
+  uint32_t h_dx = 0;
+  uint32_t v_dy = 0;
   for (auto* swire : net->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      Vdy = std::max(wire->getDY(), Vdy);
-      Hdx = std::max(wire->getDX(), Hdx);
+      v_dy = std::max(wire->getDY(), v_dy);
+      h_dx = std::max(wire->getDX(), h_dx);
     }
   }
 
-  uint32_t Vdx = 0;
+  uint32_t v_dx = 0;
   for (auto* swire : net->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (wire->getDY() == Vdy) {
-        Vdx = std::max(wire->getDX(), Vdx);
+      if (wire->getDY() == v_dy) {
+        v_dx = std::max(wire->getDX(), v_dx);
       }
-      if (wire->getDX() == Hdx) {
-        Hdy = std::max(wire->getDY(), Hdy);
+      if (wire->getDX() == h_dx) {
+        h_dy = std::max(wire->getDY(), h_dy);
       }
     }
   }
@@ -56,8 +57,8 @@ std::vector<odb::dbSBox*> SRoute::findRingShapes(odb::dbNet* net, uint32_t& Hdy)
   std::vector<odb::dbSBox*> shapes;
   for (auto* swire : net->getSWires()) {
     for (auto* wire : swire->getWires()) {
-      if (((wire->getDY() == Hdy) && (wire->getDX() == Hdx))
-          || ((wire->getDX() == Vdx) && (wire->getDY() == Vdy))) {
+      if (((wire->getDY() == h_dy) && (wire->getDX() == h_dx))
+          || ((wire->getDX() == v_dx) && (wire->getDY() == v_dy))) {
         shapes.push_back(wire);
       }
     }
@@ -132,8 +133,8 @@ void SRoute::createSrouteWires(
     logger_->error(PDN, 116, "Can't find net {}", net_name);
   }
 
-  uint32_t Hdy = 0;
-  auto ring = findRingShapes(net, Hdy);
+  uint32_t h_dy = 0;
+  auto ring = findRingShapes(net, h_dy);
 
   sroute_itermss_.clear();
   for (auto* inst : insts) {
@@ -183,13 +184,14 @@ void SRoute::createSrouteWires(
           if (first) {
             if ((direction == odb::horizontal)
                 && (stripe_metal_layer == metal_layer)
-                && (wire->getDY() != Hdy)) {
+                && (wire->getDY() != h_dy)) {
               first = false;
               pdn_wire = wire;
             }
           } else {
             if ((direction == odb::horizontal)
-                && (stripe_metal_layer == metal_layer) && (wire->getDY() != Hdy)
+                && (stripe_metal_layer == metal_layer)
+                && (wire->getDY() != h_dy)
                 && (std::abs(wire->yMin() - avg_iterm_y)
                     < std::abs(pdn_wire->yMin() - avg_iterm_y))) {
               pdn_wire = wire;
@@ -318,24 +320,24 @@ void SRoute::createSrouteWires(
               (uint32_t) max_columns,
               (ring[index]->xMax() - ring[index]->xMin() - cut_pitch_x)
                   / (cut_pitch_x + box->getDX()));
-          int64_t centerX = cols / 2;
-          int64_t centerY = rows / 2;
+          int64_t center_x = cols / 2;
+          int64_t center_y = rows / 2;
           int64_t row = 0;
           int64_t col = 0;
           if (rows % 2 == 1) {
             row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+                  - center_y * (via_width + cut_pitch_y) - via_width / 2;
           } else {
             row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                  - centerY * (via_width) -cut_pitch_y / 2;
+                  - center_y * (via_width) -cut_pitch_y / 2;
           }
           for (int r = 0; r < rows; r++) {
             if (cols % 2 == 1) {
               col = (ring[index]->xMin() + ring[index]->xMax()) / 2
-                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+                    - center_x * (via_width + cut_pitch_x) - via_width / 2;
             } else {
               col = (ring[index]->xMin() + ring[index]->xMax()) / 2
-                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                    - center_x * (via_width) -std::max(center_x - 1, int64_t(0))
                           * cut_pitch_x
                     - cut_pitch_x / 2;
             }
@@ -374,24 +376,24 @@ void SRoute::createSrouteWires(
         int cols = std::min(
             (uint32_t) max_columns,
             (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
-        int64_t centerX = cols / 2;
-        int64_t centerY = rows / 2;
+        int64_t center_x = cols / 2;
+        int64_t center_y = rows / 2;
         int64_t row = 0;
         int64_t col = 0;
         if (rows % 2 == 1) {
           row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                - centerY * (via_width + cut_pitch_y) - via_width / 2;
+                - center_y * (via_width + cut_pitch_y) - via_width / 2;
         } else {
           row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                - centerY * (via_width) -cut_pitch_y / 2;
+                - center_y * (via_width) -cut_pitch_y / 2;
         }
         for (int r = 0; r < rows; r++) {
           if (cols % 2 == 1) {
             col = avg_iterm_x - metalwidths[0] / 2
-                  - centerX * (via_width + cut_pitch_x) - via_width / 2;
+                  - center_x * (via_width + cut_pitch_x) - via_width / 2;
           } else {
             col = avg_iterm_x - metalwidths[0] / 2
-                  - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                  - center_x * (via_width) -std::max(center_x - 1, int64_t(0))
                         * cut_pitch_x
                   - cut_pitch_x / 2;
           }
@@ -445,24 +447,24 @@ void SRoute::createSrouteWires(
           int cols = std::min(
               (uint32_t) max_columns,
               (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
-          int64_t centerX = cols / 2;
-          int64_t centerY = rows / 2;
+          int64_t center_x = cols / 2;
+          int64_t center_y = rows / 2;
           int64_t row = 0;
           int64_t col = 0;
           if (rows % 2 == 1) {
             row = (bbox.yMax() + bbox.yMin()) / 2
-                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+                  - center_y * (via_width + cut_pitch_y) - via_width / 2;
           } else {
             row = (bbox.yMax() + bbox.yMin()) / 2
-                  - centerY * (via_width) -cut_pitch_y / 2;
+                  - center_y * (via_width) -cut_pitch_y / 2;
           }
           for (int r = 0; r < rows; r++) {
             if (cols % 2 == 1) {
               col = avg_iterm_x - metalwidths[0] / 2
-                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+                    - center_x * (via_width + cut_pitch_x) - via_width / 2;
             } else {
               col = avg_iterm_x - metalwidths[0] / 2
-                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                    - center_x * (via_width) -std::max(center_x - 1, int64_t(0))
                           * cut_pitch_x
                     - cut_pitch_x / 2;
             }
@@ -533,24 +535,24 @@ void SRoute::createSrouteWires(
         int cols = std::min(
             (uint32_t) max_columns,
             (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
-        int64_t centerX = cols / 2;
-        int64_t centerY = rows / 2;
+        int64_t center_x = cols / 2;
+        int64_t center_y = rows / 2;
         int64_t row = 0;
         int64_t col = 0;
         if (rows % 2 == 1) {
           row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                - centerY * (via_width + cut_pitch_y) - via_width / 2;
+                - center_y * (via_width + cut_pitch_y) - via_width / 2;
         } else {
           row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
-                - centerY * (via_width) -cut_pitch_y / 2;
+                - center_y * (via_width) -cut_pitch_y / 2;
         }
         for (int r = 0; r < rows; r++) {
           if (cols % 2 == 1) {
             col = avg_iterm_x - metalwidths[0] / 2
-                  - centerX * (via_width + cut_pitch_x) - via_width / 2;
+                  - center_x * (via_width + cut_pitch_x) - via_width / 2;
           } else {
             col = avg_iterm_x - metalwidths[0] / 2
-                  - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                  - center_x * (via_width) -std::max(center_x - 1, int64_t(0))
                         * cut_pitch_x
                   - cut_pitch_x / 2;
           }
@@ -605,24 +607,24 @@ void SRoute::createSrouteWires(
           int cols = std::min(
               (uint32_t) max_columns,
               (metalwidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX()));
-          int64_t centerX = cols / 2;
-          int64_t centerY = rows / 2;
+          int64_t center_x = cols / 2;
+          int64_t center_y = rows / 2;
           int64_t row = 0;
           int64_t col = 0;
           if (rows % 2 == 1) {
             row = (bbox.yMax() + bbox.yMin()) / 2
-                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+                  - center_y * (via_width + cut_pitch_y) - via_width / 2;
           } else {
             row = (bbox.yMax() + bbox.yMin()) / 2
-                  - centerY * (via_width) -cut_pitch_y / 2;
+                  - center_y * (via_width) -cut_pitch_y / 2;
           }
           for (int r = 0; r < rows; r++) {
             if (cols % 2 == 1) {
               col = avg_iterm_x - metalwidths[0] / 2
-                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+                    - center_x * (via_width + cut_pitch_x) - via_width / 2;
             } else {
               col = avg_iterm_x - metalwidths[0] / 2
-                    - centerX * (via_width) -std::max(centerX - 1, int64_t(0))
+                    - center_x * (via_width) -std::max(center_x - 1, int64_t(0))
                           * cut_pitch_x
                     - cut_pitch_x / 2;
             }

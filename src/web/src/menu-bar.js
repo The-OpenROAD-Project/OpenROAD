@@ -310,7 +310,7 @@ function showPathDialog(app, title, tclCmd) {
                 cmd: `${tclCmd} ${path}`,
             });
 
-            if (resp.error) {
+            if (resp.is_error) {
                 errorDiv.textContent = resp.output || resp.result || 'Command failed';
                 errorDiv.style.display = '';
                 okBtn.disabled = false;

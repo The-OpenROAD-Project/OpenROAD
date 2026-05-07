@@ -32,56 +32,36 @@ struct GraphNode;
 
 struct NodeInfo
 {
-  double PAR;
-  double PSR;
-  double diff_PAR;
-  double diff_PSR;
-  double area;
-  double side_area;
-  double iterm_gate_area;
-  double iterm_diff_area;
+  double par = 0.0;
+  double psr = 0.0;
+  double diff_par = 0.0;
+  double diff_psr = 0.0;
+  double area = 0.0;
+  double side_area = 0.0;
+  double iterm_gate_area = 0.0;
+  double iterm_diff_area = 0.0;
 
-  double CAR;
-  double CSR;
-  double diff_CAR;
-  double diff_CSR;
+  double car = 0.0;
+  double csr = 0.0;
+  double diff_car = 0.0;
+  double diff_csr = 0.0;
 
   // Defines the ratio between the current PAR and the allowed PAR
-  double excess_ratio_PAR;
+  double excess_ratio_par = 0.0;
   // Defines the ratio between the current PSR and the allowed PSR
-  double excess_ratio_PSR;
+  double excess_ratio_psr = 0.0;
 
   std::vector<odb::dbITerm*> iterms;
 
   NodeInfo& operator+=(const NodeInfo& a)
   {
-    PAR += a.PAR;
-    PSR += a.PSR;
-    diff_PAR += a.diff_PAR;
-    diff_PSR += a.diff_PSR;
+    par += a.par;
+    psr += a.psr;
+    diff_par += a.diff_par;
+    diff_psr += a.diff_psr;
     area += a.area;
     side_area += a.side_area;
     return *this;
-  }
-  NodeInfo()
-  {
-    PAR = 0.0;
-    PSR = 0.0;
-    diff_PAR = 0.0;
-    diff_PSR = 0.0;
-
-    area = 0.0;
-    side_area = 0.0;
-    iterm_gate_area = 0.0;
-    iterm_diff_area = 0.0;
-
-    CAR = 0.0;
-    CSR = 0.0;
-    diff_CAR = 0.0;
-    diff_CSR = 0.0;
-
-    excess_ratio_PAR = 1.0;
-    excess_ratio_PSR = 1.0;
   }
 };
 
@@ -198,7 +178,7 @@ class AntennaChecker::Impl
   std::map<odb::dbNet*, ViolationReport> net_to_report_;
   absl::Mutex map_mutex_;
   // consts
-  static constexpr int max_diode_count_per_gate = 10;
+  static constexpr int kMaxDiodeCountPerGate = 10;
 };
 
 }  // namespace ant

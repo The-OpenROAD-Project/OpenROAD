@@ -77,3 +77,4 @@ target_include_directories(mockturtle
 )
 
 add_subdirectory(lodepng)
+add_subdirectory(stb_truetype)

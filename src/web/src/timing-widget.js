@@ -182,8 +182,8 @@ export class TimingWidget {
         this._updateBtn.textContent = 'Loading...';
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: 1, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: 0, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
             ]);
             this._setupPaths = setupData.paths || [];
             this._holdPaths = holdData.paths || [];
@@ -212,10 +212,14 @@ export class TimingWidget {
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._pathTableContainer.focus();
         this._renderDetailTable();
+        // Use _originalIndex when paths were filtered (e.g. by histogram
+        // column click in static mode) so the overlay lookup matches.
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const highlightIdx = paths[idx]?._originalIndex ?? idx;
         this._app.websocketManager.request({
             type: 'timing_highlight',
-            path_index: idx,
-            is_setup: this._currentTab === 'setup' ? 1 : 0,
+            path_index: highlightIdx,
+            is_setup: this._currentTab === 'setup',
         }).then(() => this._redrawAllLayers())
           .catch(err => console.error('timing_highlight error:', err));
     }
@@ -294,10 +298,13 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        // Use _originalIndex when paths were filtered (e.g. by histogram
+        // column click in static mode) so the overlay lookup matches.
+        const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
         this._app.websocketManager.request({
             type: 'timing_highlight',
-            path_index: this._selectedPathIndex,
-            is_setup: this._currentTab === 'setup' ? 1 : 0,
+            path_index: highlightIdx,
+            is_setup: this._currentTab === 'setup',
             pin_name: nodes[idx].pin,
         }).then(() => this._redrawAllLayers());
     }

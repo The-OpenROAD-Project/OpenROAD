@@ -382,12 +382,12 @@ static int divCeil(int dividend, int divisor)
 static int applyRowParity(int rows_y, const RowParity row_parity)
 {
   switch (row_parity) {
-    case RowParity::NONE:
+    case RowParity::kNone:
       break;
-    case RowParity::EVEN:
+    case RowParity::kEven:
       rows_y = (rows_y / 2) * 2;
       break;
-    case RowParity::ODD:
+    case RowParity::kOdd:
       if (rows_y > 0 && rows_y % 2 == 0) {
         rows_y--;
       }
@@ -498,7 +498,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
     }
 
     if (base_site->hasRowPattern()) {
-      if (row_parity != RowParity::NONE) {
+      if (row_parity != RowParity::kNone) {
         logger_->error(
             IFP,
             51,

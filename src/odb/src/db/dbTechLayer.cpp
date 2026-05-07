@@ -51,7 +51,6 @@
 #include "dbVector.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -1519,36 +1518,6 @@ bool dbTechLayer::getV55SpacingWidthsAndLengths(
   return true;
 }
 
-void dbTechLayer::printV55SpacingRules(lefout& writer) const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  fmt::print(writer.out(), "SPACINGTABLE\n");
-  fmt::print(writer.out(), "  PARALLELRUNLENGTH");
-  dbVector<uint32_t>::const_iterator v55_itr;
-  uint32_t wddx, lndx;
-
-  for (v55_itr = layer->v55sp_length_idx_.begin();
-       v55_itr != layer->v55sp_length_idx_.end();
-       v55_itr++) {
-    fmt::print(writer.out(), " {:.3f}", writer.lefdist(*v55_itr));
-  }
-
-  for (wddx = 0, v55_itr = layer->v55sp_width_idx_.begin();
-       v55_itr != layer->v55sp_width_idx_.end();
-       wddx++, v55_itr++) {
-    fmt::print(writer.out(), "\n");
-    fmt::print(writer.out(), "  WIDTH {:.3f}\t", writer.lefdist(*v55_itr));
-    for (lndx = 0; lndx < layer->v55sp_spacing_.numCols(); lndx++) {
-      fmt::print(writer.out(),
-                 " {:.3f}",
-                 writer.lefdist(layer->v55sp_spacing_(wddx, lndx)));
-    }
-  }
-
-  fmt::print(writer.out(), " ;\n");
-}
-
 bool dbTechLayer::getV55SpacingTable(
     std::vector<std::vector<uint32_t>>& sptbl) const
 {
@@ -1628,28 +1597,6 @@ bool dbTechLayer::hasTwoWidthsSpacingRules() const
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return ((!layer->two_widths_sp_idx_.empty())
           && (layer->two_widths_sp_spacing_.numElems() > 0));
-}
-
-void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-
-  fmt::print(writer.out(), "SPACINGTABLE TWOWIDTHS");
-  dbVector<uint32_t>::const_iterator itr;
-  uint32_t wddx, lndx;
-
-  for (wddx = 0, itr = layer->two_widths_sp_idx_.begin();
-       itr != layer->two_widths_sp_idx_.end();
-       wddx++, itr++) {
-    fmt::print(writer.out(), "\n  WIDTH {:.3f}\t", writer.lefdist(*itr));
-    for (lndx = 0; lndx < layer->two_widths_sp_spacing_.numCols(); lndx++) {
-      fmt::print(writer.out(),
-                 " {:.3f}",
-                 writer.lefdist(layer->two_widths_sp_spacing_(wddx, lndx)));
-    }
-  }
-
-  fmt::print(writer.out(), " ;\n");
 }
 
 uint32_t dbTechLayer::getTwoWidthsSpacingTableEntry(uint32_t row,
@@ -1868,25 +1815,6 @@ dbTechLayerAntennaRule* dbTechLayer::getOxide2AntennaRule() const
 
   return (dbTechLayerAntennaRule*) tech->antenna_rule_tbl_->getPtr(
       layer->oxide2_);
-}
-
-void dbTechLayer::writeAntennaRulesLef(lefout& writer) const
-{
-  bool prt_model = (hasDefaultAntennaRule() && hasOxide2AntennaRule());
-
-  if (prt_model) {
-    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
-  }
-  if (hasDefaultAntennaRule()) {
-    getDefaultAntennaRule()->writeLef(writer);
-  }
-
-  if (prt_model) {
-    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
-  }
-  if (hasOxide2AntennaRule()) {
-    getOxide2AntennaRule()->writeLef(writer);
-  }
 }
 
 uint32_t dbTechLayer::getNumMasks() const

@@ -458,9 +458,7 @@ std::vector<ClockInfo> Timing::getClockInfo()
     ClockInfo info;
     info.name = clk->name();
     info.period = clk->period();
-    if (clk->waveform()) {
-      info.waveform = *clk->waveform();
-    }
+    info.waveform = clk->waveform();
     for (const sta::Pin* pin : clk->pins()) {
       auto [iterm, bterm] = staToDBPin(pin);
       if (iterm) {

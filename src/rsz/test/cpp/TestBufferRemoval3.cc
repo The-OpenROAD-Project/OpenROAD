@@ -20,7 +20,7 @@ class BufRemTest3 : public tst::IntegratedFixture
 {
  protected:
   BufRemTest3()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/rsz/test/")
   {
     if (debug_) {

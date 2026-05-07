@@ -27,7 +27,7 @@ generate_ram \
   -write_behavioral_verilog $behavioral_file
 
 set lef_file [make_result_file make_8x8_sky130.lef]
-write_abstract_lef $lef_file
+write_abstract_lef -bloat_occupied_layers $lef_file
 diff_files make_8x8_sky130.lefok $lef_file
 
 set def_file [make_result_file make_8x8_sky130.def]

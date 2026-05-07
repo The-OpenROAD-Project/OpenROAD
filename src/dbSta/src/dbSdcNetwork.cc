@@ -66,6 +66,11 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
+  // If the pattern is a literal (no wildcards and not a regex), return
+  // immediately as the literal lookup has already failed in the caller.
+  if (!pattern->isRegexp() && !pattern->hasWildcards()) {
+    return;
+  }
   // A recursive lambda to traverse the design hierarchy with a depth-first
   // search (DFS).
   // It builds the hierarchical path incrementally using fmt::memory_buffer to
