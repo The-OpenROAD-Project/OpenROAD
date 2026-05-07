@@ -55,6 +55,10 @@ long during routability-driven execution, consider raising the target RC value
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
 
+Initial-placement arguments
+- They begin with `-initial_place`.
+- `-initial_place_max_iter`, `-initial_place_max_fanout`
+
 Routability-driven arguments
 - They begin with `-routability`.
 - `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
@@ -65,39 +69,39 @@ Timing-driven arguments
 
 ```tcl
 global_placement
-    [-timing_driven]
-    [-routability_driven]
-    [-skip_initial_place]
-    [-force_center_initial_place]
-    [-incremental]
-    [-bin_grid_count grid_count]
-    [-density target_density]
-    [-init_density_penalty init_density_penalty]
-    [-init_wirelength_coef init_wirelength_coef]
-    [-min_phi_coef min_phi_conef]
-    [-max_phi_coef max_phi_coef]
-    [-reference_hpwl reference_hpwl]
-    [-overflow overflow]
-    [-initial_place_max_iter initial_place_max_iter]
-    [-initial_place_max_fanout initial_place_max_fanout]
-    [-pad_left pad_left]
-    [-pad_right pad_right]
-    [-skip_io]
-    [-skip_nesterov_place]
-    [-routability_use_grt]
-    [-routability_target_rc_metric routability_target_rc_metric]
-    [-routability_snapshot_overflow routability_snapshot_overflow]
-    [-routability_check_overflow routability_check_overflow]
-    [-routability_max_density routability_max_density]   
-    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
-    [-routability_max_inflation_ratio routability_max_inflation_ratio]
-    [-routability_rc_coefficients routability_rc_coefficients]
-    [-timing_driven_net_reweight_overflow]
-    [-timing_driven_net_weight_max]
-    [-timing_driven_nets_percentage]
-    [-keep_resize_below_overflow]
-    [-disable_revert_if_diverge]
-    [-disable_pin_density_adjust]
+    [-skip_initial_place]\
+    [-force_center_initial_place]\
+    [-skip_nesterov_place]\
+    [-timing_driven]\
+    [-routability_driven]\
+    [-incremental]\
+    [-skip_io]\
+    [-bin_grid_count grid_count]\
+    [-density target_density]\
+    [-init_density_penalty init_density_penalty]\
+    [-init_wirelength_coef init_wirelength_coef]\
+    [-min_phi_coef min_phi_coef]\
+    [-max_phi_coef max_phi_coef]\
+    [-reference_hpwl reference_hpwl]\
+    [-overflow overflow]\
+    [-initial_place_max_iter initial_place_max_iter]\
+    [-initial_place_max_fanout initial_place_max_fanout]\
+    [-routability_use_grt]\
+    [-routability_target_rc_metric routability_target_rc_metric]\
+    [-routability_check_overflow routability_check_overflow]\
+    [-routability_snapshot_overflow routability_snapshot_overflow]\
+    [-routability_max_density routability_max_density]\
+    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
+    [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_rc_coefficients routability_rc_coefficients]\
+    [-keep_resize_below_overflow keep_resize_below_overflow]\
+    [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
+    [-timing_driven_net_weight_max timing_driven_net_weight_max]\
+    [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+    [-disable_revert_if_diverge]\
+    [-disable_pin_density_adjust]\
     [-enable_routing_congestion]
 ```
 
@@ -108,23 +112,30 @@ global_placement
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
+| `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |
 | `-init_wirelength_coef` | Set initial wirelength coefficient. The default value is `0.25`. Allowed values are floats. |
-| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Allowed values are floats `[0.95, 1.05]`. |
+| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Suggested values are positive floats `[0.95, 1.05]`. |
 | `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are `[1.00-1.20, float]`. |
+| `-reference_hpwl` | Set $\Delta HPWL_{ref}$. Default value is `466e6`. Allowed values are positive floats. See Eq. 36 in [ePlace](https://cseweb.ucsd.edu/~jlu/papers/eplace-todaes14/paper.pdf) |
 | `-overflow` | Set target overflow for termination condition. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
-| `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is `20`. Allowed values are integers `[0, MAX_INT]`. |
-| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
-| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
-| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
+| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+
+#### Initial-Placement Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is `20`. Allowed values are integers `[0, MAX_INT]`. |
+| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 
 #### Routability-Driven Arguments
 
