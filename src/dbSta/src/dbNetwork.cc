@@ -786,6 +786,21 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
+std::string dbNetwork::stripParentPrefix(const std::string& name)
+{
+  size_t pos = name.length();
+  while ((pos = name.rfind('/', pos)) != std::string::npos) {
+    if (pos > 0 && name[pos - 1] == '\\') {
+      // Escaped slash inside a Verilog escaped identifier; not a
+      // hierarchy separator.  Keep searching to the left.
+      pos--;
+    } else {
+      return name.substr(pos + 1);
+    }
+  }
+  return name;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -808,10 +823,7 @@ std::string dbNetwork::name(const Port* port) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -855,21 +867,7 @@ std::string dbNetwork::name(const Instance* instance) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = std::string::npos;
-    size_t pos = name.length();
-    while ((pos = name.rfind('/', pos)) != std::string::npos) {
-      if (pos > 0 && name[pos - 1] == '\\') {
-        // This is an escaped slash, so we should ignore it and continue
-        // searching.
-        pos--;
-      } else {
-        last_idx = pos;
-        break;
-      }
-    }
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -2540,7 +2538,10 @@ It also checks the legallity of the pin/net combination.
 
 */
 
-void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+void dbNetwork::connectPin(Pin* pin,
+                           Net* flat_net,
+                           Net* hier_net,
+                           bool reassociate_hier_flat)
 {
   // get the type of the pin
   odb::dbITerm* iterm = nullptr;
@@ -2599,9 +2600,9 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
-      // do the house keeping. Mod net must always have the flat net associated
-      // with it.
-      if (flat_net_db) {
+      // Do the house keeping. A mod net must have the correct flat-net
+      // association when the caller is performing a hierarchy edit.
+      if (flat_net_db && reassociate_hier_flat) {
         reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
       }
     }

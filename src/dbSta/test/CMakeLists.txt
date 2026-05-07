@@ -13,6 +13,7 @@ or_integration_tests(
     get_ports1_hier
     hier2
     hier3
+    hier_escape_port
     hierclock
     hierwrite
     hier_deep
@@ -48,6 +49,7 @@ or_integration_tests(
     sdc_modinst_slash
     sdc_names1
     sdc_names2
+    spef_def_names
     sta1
     sta2
     sta3

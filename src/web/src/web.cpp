@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <exception>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -28,10 +29,13 @@
 #include "boost/beast/core.hpp"
 #include "boost/beast/http.hpp"
 #include "boost/beast/websocket.hpp"
+#include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
@@ -235,44 +239,47 @@ WebSocketSession::WebSocketSession(
         WebSocketResponse resp;
         resp.id = req.id;
         resp.type = WebSocketResponse::kJson;
-        JsonBuilder builder;
-        builder.beginObject();
-        builder.beginArray("charts");
+        boost::json::object root;
+        boost::json::array charts;
         if (viewer_hook_ != nullptr) {
-          for (WebChart* chart : viewer_hook_->charts()) {
-            builder.beginObject();
-            builder.field("name", chart->name());
-            builder.field("x_label", chart->xLabel());
-            builder.beginArray("y_labels");
+          const auto& hook_charts = viewer_hook_->charts();
+          charts.reserve(hook_charts.size());
+          for (WebChart* chart : hook_charts) {
+            boost::json::object c;
+            c["name"] = chart->name();
+            c["x_label"] = chart->xLabel();
+            boost::json::array y_labels;
             for (const auto& lbl : chart->yLabels()) {
-              builder.value(lbl);
+              y_labels.emplace_back(lbl);
             }
-            builder.endArray();
-            builder.field("x_format", chart->xAxisFormat());
-            builder.beginArray("y_formats");
+            c["y_labels"] = std::move(y_labels);
+            c["x_format"] = chart->xAxisFormat();
+            boost::json::array y_formats;
             for (const auto& f : chart->yAxisFormats()) {
-              builder.value(f);
+              y_formats.emplace_back(f);
             }
-            builder.endArray();
-            builder.beginArray("points");
-            for (const auto& pt : chart->points()) {
-              builder.beginObject();
-              builder.field("x", pt.x);
-              builder.beginArray("ys");
+            c["y_formats"] = std::move(y_formats);
+            boost::json::array points;
+            const auto& chart_points = chart->points();
+            points.reserve(chart_points.size());
+            for (const auto& pt : chart_points) {
+              boost::json::object p;
+              p["x"] = pt.x;
+              boost::json::array ys;
+              ys.reserve(pt.ys.size());
               for (double v : pt.ys) {
-                builder.value(v);
+                ys.emplace_back(v);
               }
-              builder.endArray();
-              builder.endObject();
+              p["ys"] = std::move(ys);
+              points.emplace_back(std::move(p));
             }
-            builder.endArray();
-            builder.endObject();
+            c["points"] = std::move(points);
+            charts.emplace_back(std::move(c));
           }
         }
-        builder.endArray();
-        builder.endObject();
-        const std::string& json = builder.str();
-        resp.payload.assign(json.begin(), json.end());
+        root["charts"] = std::move(charts);
+        std::string s = boost::json::serialize(root);
+        resp.payload.assign(s.begin(), s.end());
         return resp;
       },
       /*run_inline=*/true);
@@ -416,14 +423,18 @@ void WebSocketSession::on_read(beast::error_code ec)
   const auto* entry = dispatcher_.find(req.type);
   if (entry != nullptr) {
     if (entry->run_inline) {
-      queue_response(entry->handle(req, state_));
+      auto resp = entry->handle(req, state_);
+      resp.request_type = req.raw_type;
+      queue_response(resp);
     } else {
       auto handle = entry->handle;
       net::post(websocket_.get_executor(),
                 [self = std::move(self),
                  req = std::move(req),
                  handle = std::move(handle)]() {
-                  self->queue_response(handle(req, self->state_));
+                  auto resp = handle(req, self->state_);
+                  resp.request_type = req.raw_type;
+                  self->queue_response(resp);
                 });
     }
   } else {
@@ -432,7 +443,15 @@ void WebSocketSession::on_read(beast::error_code ec)
     WebSocketResponse resp;
     resp.id = req.id;
     resp.type = WebSocketResponse::kError;
-    const std::string err = "Unknown request type";
+    resp.request_type = req.raw_type;
+    std::string err;
+    if (!req.raw_type.empty()) {
+      err = "Unknown request type: " + req.raw_type;
+    } else if (!req.parse_error.empty()) {
+      err = "Malformed request: " + req.parse_error;
+    } else {
+      err = "Malformed request (missing or invalid id/type)";
+    }
     resp.payload.assign(err.begin(), err.end());
     queue_response(resp);
   }
@@ -443,6 +462,23 @@ void WebSocketSession::on_read(beast::error_code ec)
 void WebSocketSession::queue_response(const WebSocketResponse& resp,
                                       std::function<void()> on_complete)
 {
+  // Surface every error response in the server log so contract violations
+  // (malformed payloads, missing fields, wrong field types) are visible to
+  // the operator/developer and not silently swallowed by the client.
+  if (resp.type == WebSocketResponse::kError) {
+    const std::string_view err(
+        reinterpret_cast<const char*>(resp.payload.data()),
+        resp.payload.size());
+    const std::string type_label
+        = resp.request_type.empty() ? "unknown" : resp.request_type;
+    logger_->warn(utl::WEB,
+                  43,
+                  "request id={} type={} failed: {}",
+                  resp.id,
+                  type_label,
+                  err);
+  }
+
   std::vector<unsigned char> frame = serialize_response(resp);
 
   // Post to the strand to serialize write queue access
@@ -813,6 +849,31 @@ WebServer::WebServer(odb::dbDatabase* db,
 {
 }
 
+// Defined here (not in web_serve.cpp) so the destructor's TU does not
+// pull in web_serve.cpp's gui::Gui::get() references — keeps WebServer
+// usable from tests that don't link the full gui library.
+void WebServer::stopAndJoinIoThreads()
+{
+  if (ioc_) {
+    ioc_->stop();
+  }
+  const auto self_id = std::this_thread::get_id();
+  for (auto& t : threads_) {
+    if (!t.joinable()) {
+      continue;
+    }
+    if (t.get_id() == self_id) {
+      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
+      // worker so detaching is safe — the thread runs to completion on
+      // its own.
+      t.detach();
+    } else {
+      t.join();
+    }
+  }
+  threads_.clear();
+}
+
 WebServer::~WebServer()
 {
   // Wake any thread blocked in waitForStop() so it can return before
@@ -825,24 +886,12 @@ WebServer::~WebServer()
 
   // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
   // By this point the Tcl interpreter is partially torn down and static
-  // objects may be destroyed.  Calling stop() (which joins 32 threads
-  // and tears down boost::asio's reactor) triggers SIGSEGV because the
-  // reactor's internal state references destroyed statics.
-  //
-  // Since the destructor only runs at process exit, the OS reclaims all
-  // memory and closes all sockets.  We just need to stop the threads so
-  // the process can actually exit:
-  if (ioc_) {
-    ioc_->stop();
-  }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
-  // Close the Listener's acceptor and release the shared_ptr to it
-  // before the io_context goes away.
+  // objects may be destroyed.  We avoid the full stop() path (which
+  // tears down boost::asio's reactor and would crash on residual async
+  // handlers referencing destroyed statics) — the OS reclaims memory
+  // and sockets at process exit, so we only need to release the worker
+  // threads so the process can actually exit.
+  stopAndJoinIoThreads();
   if (shutdown_listener_) {
     shutdown_listener_();
     shutdown_listener_ = {};
@@ -860,13 +909,6 @@ WebServer::~WebServer()
 // by embed_report_assets.py → report_assets.cpp).
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
-
-static std::string serializeToJson(auto serialize_fn)
-{
-  JsonBuilder b;
-  serialize_fn(b);
-  return b.str();
-}
 
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
@@ -917,34 +959,26 @@ void WebServer::saveReport(const std::string& filename,
     TimingReport report(sta_);
     setup_paths = report.getReport(true, max_setup);
     hold_paths = report.getReport(false, max_hold);
-    setup_json = serializeToJson(
-        [&](JsonBuilder& b) { serializeTimingPaths(b, setup_paths); });
-    hold_json = serializeToJson(
-        [&](JsonBuilder& b) { serializeTimingPaths(b, hold_paths); });
-    hist_setup = serializeToJson([&](JsonBuilder& b) {
-      serializeSlackHistogram(b, report.getSlackHistogram(true));
-    });
-    hist_hold = serializeToJson([&](JsonBuilder& b) {
-      serializeSlackHistogram(b, report.getSlackHistogram(false));
-    });
-    filters = serializeToJson([&](JsonBuilder& b) {
-      serializeChartFilters(b, report.getChartFilters());
-    });
+    setup_json = boost::json::serialize(serializeTimingPaths(setup_paths));
+    hold_json = boost::json::serialize(serializeTimingPaths(hold_paths));
+    hist_setup = boost::json::serialize(
+        serializeSlackHistogram(report.getSlackHistogram(true)));
+    hist_hold = boost::json::serialize(
+        serializeSlackHistogram(report.getSlackHistogram(false)));
+    filters = boost::json::serialize(
+        serializeChartFilters(report.getChartFilters()));
   } else {
     logger_->warn(utl::WEB, 30, "No STA data — timing sections will be empty.");
-    setup_json
-        = serializeToJson([](JsonBuilder& b) { serializeTimingPaths(b, {}); });
+    setup_json = boost::json::serialize(serializeTimingPaths({}));
     hold_json = setup_json;
-    hist_setup = serializeToJson(
-        [](JsonBuilder& b) { serializeSlackHistogram(b, {}); });
+    hist_setup = boost::json::serialize(serializeSlackHistogram({}));
     hist_hold = hist_setup;
-    filters
-        = serializeToJson([](JsonBuilder& b) { serializeChartFilters(b, {}); });
+    filters = boost::json::serialize(serializeChartFilters({}));
   }
-  const std::string tech_json = serializeToJson(
-      [&](JsonBuilder& b) { serializeTechResponse(b, *generator_); });
-  const std::string bounds_json = serializeToJson(
-      [&](JsonBuilder& b) { serializeBoundsResponse(b, *generator_, true); });
+  const std::string tech_json
+      = boost::json::serialize(serializeTechResponse(*generator_));
+  const std::string bounds_json
+      = boost::json::serialize(serializeBoundsResponse(*generator_, true));
   const auto tech_layers = generator_->getLayers();
 
   // ── Serialize module hierarchy ──
@@ -952,8 +986,8 @@ void WebServer::saveReport(const std::string& filename,
   HierarchyReport hier_report(block, sta_);
   auto hier_result = hier_report.getReport();
 
-  const std::string hierarchy_json = serializeToJson(
-      [&](JsonBuilder& b) { serializeHierarchyResult(b, hier_result); });
+  const std::string hierarchy_json
+      = boost::json::serialize(serializeHierarchyResult(hier_result));
 
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
@@ -1081,13 +1115,15 @@ window.__STATIC_CACHE__ = {
   },
   tiles: {)";
 
-  // Emit tile entries.
+  // Emit tile entries.  Use boost::json::serialize for the key to escape
+  // special characters consistently (the value side is already base64).
   for (size_t i = 0; i < tile_entries.size(); ++i) {
     if (i > 0) {
       out << ",";
     }
-    out << "\n    \"" << json_escape(tile_entries[i].first) << "\":\""
-        << tile_entries[i].second << "\"";
+    out << "\n    "
+        << boost::json::serialize(boost::json::value(tile_entries[i].first))
+        << ":\"" << tile_entries[i].second << "\"";
   }
 
   out << R"(
@@ -1151,7 +1187,15 @@ void WebServer::saveImage(const std::string& filename,
   const odb::Rect region(x0, y0, x1, y1);
   TileVisibility vis;
   if (!vis_json.empty()) {
-    vis.parseFromJson(vis_json);
+    try {
+      boost::json::value v = boost::json::parse(vis_json);
+      if (auto* obj = v.if_object()) {
+        vis.parseFromJson(*obj);
+      }
+    } catch (const std::exception& e) {
+      logger_->warn(
+          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+    }
   }
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
 }

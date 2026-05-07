@@ -169,7 +169,10 @@ class dbNetwork : public ConcreteNetwork
   // generic connect pin -> net, supports all pin/net types
   void connectPin(Pin* pin, Net* net);
   // generic connect pin -> flat_net, hier_net.
-  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
+  void connectPin(Pin* pin,
+                  Net* flat_net,
+                  Net* hier_net,
+                  bool reassociate_hier_flat = true);
   // hierarchical support functions
   odb::dbModule* getNetDriverParentModule(Net* net,
                                           Pin*& driver_pin,
@@ -479,6 +482,12 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
+  // Strip the parent-instance prefix from a hierarchical name, treating
+  // backslash-escaped slashes (\/) as literal name characters rather than
+  // hierarchy separators.  Used to recover an in-module name from a
+  // path-qualified one stored in ODB.
+  static std::string stripParentPrefix(const std::string& name);
+
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;

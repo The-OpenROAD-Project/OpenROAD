@@ -3330,6 +3330,22 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                      new_tie_loc,
                      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  // If the load pin's instance is not placed, the computed location is
+  // meaningless; mark the new tie cell as unplaced
+  if (!db_network_->isPlaced(load_pin)) {
+    dbInst* new_tie_db_inst = db_network_->staToDb(new_tie_inst);
+    new_tie_db_inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "repair_tie_fanout",
+             1,
+             "Created tie instance {} for load pin {} at location ({}, {})",
+             network_->name(new_tie_inst),
+             sdc_network_->pathName(load_pin),
+             dbuToMeters(new_tie_loc.getX()),
+             dbuToMeters(new_tie_loc.getY()));
+
   // If the load pin is not in the top module, move the new tie instance
   sta::Instance* load_inst = network_->instance(load_pin);
   if (!network_->isTopInstance(load_inst)) {

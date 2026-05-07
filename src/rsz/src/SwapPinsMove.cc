@@ -95,10 +95,12 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   sta::Scene* scene = drvr_path->scene(sta_);
   const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
-  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
 
-  // We get the driver port and the cell for that port.
-  sta::LibertyPort* input_port = network_->libertyPort(drvr_input_pin);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  sta::LibertyPort* input_port = in_arc ? in_arc->from() : nullptr;
+  if (input_port == nullptr) {
+    return false;
+  }
   sta::LibertyPort* swap_port = input_port;
   LibertyPortVec ports;
 
@@ -225,21 +227,19 @@ bool SwapPinsMove::swapPins(sta::Instance* inst,
       return false;
     }
 
-    // Swap the ports and nets
-    // Support for hierarchy, swap modnets as well as dbnets
-
-    // Simultaneously connect both flat and hier net so
-    // they are reassociated.
+    // Swap the ports and nets.
+    // Keep the dbNet/dbModNet swap local to these iterms. Feed-through
+    // structures can legitimately have mixed modnet names on the same flat
+    // net, so pin swap must not trigger a global hier/flat reassociation.
 
     // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
-    // new api call which keeps association
     db_network_->connectPin(
-        found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2);
+        found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2, false);
 
     sta_->disconnectPin(found_pin2);
     db_network_->connectPin(
-        found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
+        found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1, false);
   }
   return true;
 }

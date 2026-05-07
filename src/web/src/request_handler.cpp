@@ -5,7 +5,11 @@
 
 #include <algorithm>
 #include <any>
-#include <cstddef>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/value.hpp>
+#include <cmath>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -18,7 +22,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <system_error>
+#include <string_view>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -29,7 +33,6 @@
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -37,6 +40,7 @@
 #include "request_dispatcher.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/Logger.h"
 
 namespace web {
 
@@ -85,149 +89,40 @@ class ShapeCollector : public gui::Painter
   void drawRuler(int, int, int, int, bool, const std::string&) override {}
 };
 
-//------------------------------------------------------------------------------
-// JSON utilities
-//------------------------------------------------------------------------------
+namespace {
 
-std::string extract_string(const std::string& json, const std::string& key)
+// Read a JSON array of strings as a std::set.  Used for the visible_layers
+// field which arrives as ["metal1", "metal2", ...].  Throws when the value
+// is not an array of strings — that's a contract violation.
+std::set<std::string> arrayAsStringSet(const boost::json::value& v)
 {
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return {};
+  std::set<std::string> out;
+  for (const auto& item : v.as_array()) {
+    out.emplace(item.as_string());
   }
-  pos = json.find(':', pos + needle.size());
-  if (pos == std::string::npos) {
-    return {};
-  }
-  auto quote_start = json.find('"', pos + 1);
-  if (quote_start == std::string::npos) {
-    return {};
-  }
-  // Find closing quote, skipping escaped quotes
-  std::string result;
-  for (size_t i = quote_start + 1; i < json.size(); i++) {
-    if (json[i] == '\\' && i + 1 < json.size()) {
-      switch (json[i + 1]) {
-        case '"':
-          result += '"';
-          break;
-        case '\\':
-          result += '\\';
-          break;
-        case 'n':
-          result += '\n';
-          break;
-        case 'r':
-          result += '\r';
-          break;
-        case 't':
-          result += '\t';
-          break;
-        default:
-          result += json[i + 1];
-          break;
-      }
-      i++;  // skip the escaped char
-    } else if (json[i] == '"') {
-      break;  // closing quote
-    } else {
-      result += json[i];
-    }
-  }
-  return result;
+  return out;
 }
 
-std::set<std::string> extract_string_array(const std::string& json,
-                                           const std::string& key)
+// Build a JSON-array bbox: [xMin, yMin, xMax, yMax].
+boost::json::array bboxArray(const odb::Rect& r)
 {
-  std::set<std::string> result;
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return result;
-  }
-  pos = json.find('[', pos + needle.size());
-  if (pos == std::string::npos) {
-    return result;
-  }
-  auto end = json.find(']', pos);
-  if (end == std::string::npos) {
-    return result;
-  }
-  // Extract each quoted string between [ and ]
-  for (auto i = pos; i < end;) {
-    auto qs = json.find('"', i);
-    if (qs == std::string::npos || qs >= end) {
-      break;
-    }
-    auto qe = json.find('"', qs + 1);
-    if (qe == std::string::npos || qe >= end) {
-      break;
-    }
-    result.insert(json.substr(qs + 1, qe - qs - 1));
-    i = qe + 1;
-  }
-  return result;
+  return boost::json::array{r.xMin(), r.yMin(), r.xMax(), r.yMax()};
 }
 
-int extract_int(const std::string& json, const std::string& key)
+// Build a JSON-array RGBA: [r, g, b, a].
+boost::json::array colorArray(const gui::Painter::Color& c)
 {
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return 0;
-  }
-  pos = json.find(':', pos + needle.size());
-  if (pos == std::string::npos) {
-    return 0;
-  }
-  // Skip whitespace after colon
-  pos++;
-  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
-    pos++;
-  }
-  try {
-    return std::stoi(json.substr(pos));
-  } catch (...) {
-    return 0;
-  }
+  return boost::json::array{c.r, c.g, c.b, c.a};
 }
 
-int extract_int_or(const std::string& json,
-                   const std::string& key,
-                   const int default_val)
+// Serialize a boost::json::value into a WebSocketResponse's payload.
+void writePayload(WebSocketResponse& resp, const boost::json::value& v)
 {
-  const std::string needle = "\"" + key + "\"";
-  if (json.find(needle) == std::string::npos) {
-    return default_val;
-  }
-  return extract_int(json, key);
+  std::string s = boost::json::serialize(v);
+  resp.payload.assign(s.begin(), s.end());
 }
 
-float extract_float_or(const std::string& json,
-                       const std::string& key,
-                       float default_val)
-{
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return default_val;
-  }
-  pos = json.find(':', pos + needle.size());
-  if (pos == std::string::npos) {
-    return default_val;
-  }
-  pos++;
-  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
-    pos++;
-  }
-  try {
-    return std::stof(json.substr(pos));
-  } catch (...) {
-    return default_val;
-  }
-}
+}  // namespace
 
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
@@ -238,19 +133,8 @@ static int storeSelectable(std::vector<gui::Selected>& selectables,
   return id;
 }
 
-// Emit a bbox as a JSON array field: "key": [xMin, yMin, xMax, yMax]
-static void writeBBox(JsonBuilder& builder, const char* key, const odb::Rect& r)
-{
-  builder.beginArray(key);
-  builder.value(r.xMin());
-  builder.value(r.yMin());
-  builder.value(r.xMax());
-  builder.value(r.yMax());
-  builder.endArray();
-}
-
-static void serializeAnyValue(JsonBuilder& builder,
-                              const char* field_name,
+static void serializeAnyValue(boost::json::object& out,
+                              std::string_view field_name,
                               const std::any& value,
                               std::vector<gui::Selected>& selectables,
                               bool short_name = false)
@@ -260,54 +144,52 @@ static void serializeAnyValue(JsonBuilder& builder,
       const std::string name
           = short_name ? sel->getShortName() : sel->getName();
       int id = storeSelectable(selectables, *sel);
-      builder.field(field_name, name);
-      const std::string id_key = std::string(field_name) + "_select_id";
-      builder.field(id_key, id);
+      out[field_name] = name;
+      out[std::string(field_name) + "_select_id"] = id;
       return;
     }
   }
-  std::string str = gui::Descriptor::Property::toString(value);
-  builder.field(field_name, str);
+  out[field_name] = gui::Descriptor::Property::toString(value);
 }
 
-static void serializeProperty(JsonBuilder& builder,
-                              const gui::Descriptor::Property& prop,
-                              std::vector<gui::Selected>& selectables)
+static boost::json::object serializeProperty(
+    const gui::Descriptor::Property& prop,
+    std::vector<gui::Selected>& selectables)
 {
-  builder.beginObject();
-  builder.field("name", prop.name);
+  boost::json::object o;
+  o["name"] = prop.name;
 
   if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
-    builder.beginArray("children");
+    boost::json::array children;
+    children.reserve(plist->size());
     for (const auto& [key, val] : *plist) {
-      builder.beginObject();
-      serializeAnyValue(builder, "name", key, selectables, /*short_name=*/true);
-      serializeAnyValue(builder, "value", val, selectables);
-      builder.endObject();
+      boost::json::object child;
+      serializeAnyValue(child, "name", key, selectables, /*short_name=*/true);
+      serializeAnyValue(child, "value", val, selectables);
+      children.emplace_back(std::move(child));
     }
-    builder.endArray();
+    o["children"] = std::move(children);
   } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
-    builder.beginArray("children");
+    boost::json::array children;
+    children.reserve(sel_set->size());
     for (const auto& sel : *sel_set) {
-      builder.beginObject();
+      boost::json::object child;
       int id = storeSelectable(selectables, sel);
-      builder.field("name", sel.getName());
-      builder.field("name_select_id", id);
-      builder.endObject();
+      child["name"] = sel.getName();
+      child["name_select_id"] = id;
+      children.emplace_back(std::move(child));
     }
-    builder.endArray();
+    o["children"] = std::move(children);
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
-      builder.field("value", sel->getName());
-      builder.field("value_select_id", id);
+      o["value"] = sel->getName();
+      o["value_select_id"] = id;
     }
   } else {
-    const std::string val_str = prop.toString();
-    builder.field("value", val_str);
+    o["value"] = prop.toString();
   }
-
-  builder.endObject();
+  return o;
 }
 
 static void collectHighlightShapes(const gui::Selected& sel,
@@ -325,99 +207,70 @@ static void collectHighlightShapes(const gui::Selected& sel,
   polys = std::move(collector.polys);
 }
 
-static void writeInspectPayload(JsonBuilder& builder,
+static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
                                 bool can_navigate_back)
 {
-  builder.field("can_navigate_back", can_navigate_back ? 1 : 0);
+  o["can_navigate_back"] = can_navigate_back ? 1 : 0;
   if (!sel) {
-    builder.field("error", "invalid select_id");
+    o["error"] = "invalid select_id";
     return;
   }
 
   auto props = sel.getProperties();
-  builder.field("name", sel.getName());
-  builder.field("type", sel.getTypeName());
-  builder.beginArray("properties");
+  o["name"] = sel.getName();
+  o["type"] = sel.getTypeName();
+  boost::json::array prop_arr;
+  prop_arr.reserve(props.size());
   for (const auto& prop : props) {
-    serializeProperty(builder, prop, new_selectables);
+    prop_arr.emplace_back(serializeProperty(prop, new_selectables));
   }
-  builder.endArray();
+  o["properties"] = std::move(prop_arr);
 
   odb::Rect bbox;
   if (sel.getBBox(bbox)) {
-    writeBBox(builder, "bbox", bbox);
+    o["bbox"] = bboxArray(bbox);
   }
 
   if (sel.isNet()) {
     auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
     if (net && !net->getGuides().empty()) {
-      builder.field("has_guides", 1);
+      o["has_guides"] = 1;
     }
   }
 }
 
-static double extract_double_value(const std::string& json)
-{
-  return extract_float_or(json, "value", 0.0F);
-}
-
-static bool extract_bool_value(const std::string& json)
-{
-  if (json.find("\"value\":true") != std::string::npos) {
-    return true;
-  }
-  if (json.find("\"value\":false") != std::string::npos) {
-    return false;
-  }
-  return extract_int_or(json, "value", 0) != 0;
-}
-
-static void writeColorArray(JsonBuilder& builder,
-                            const char* key,
-                            const gui::Painter::Color& color)
-{
-  builder.beginArray(key);
-  builder.value(color.r);
-  builder.value(color.g);
-  builder.value(color.b);
-  builder.value(color.a);
-  builder.endArray();
-}
-
-static void serializeHeatMapOption(
-    JsonBuilder& builder,
+static boost::json::object serializeHeatMapOption(
     const gui::HeatMapDataSource::MapSetting& option)
 {
-  builder.beginObject();
+  boost::json::object o;
   if (std::holds_alternative<gui::HeatMapDataSource::MapSettingBoolean>(
           option)) {
     const auto& setting
         = std::get<gui::HeatMapDataSource::MapSettingBoolean>(option);
-    builder.field("type", "bool");
-    builder.field("name", setting.name);
-    builder.field("label", setting.label);
-    builder.field("value", setting.getter());
+    o["type"] = "bool";
+    o["name"] = setting.name;
+    o["label"] = setting.label;
+    o["value"] = setting.getter();
   } else {
     const auto& setting
         = std::get<gui::HeatMapDataSource::MapSettingMultiChoice>(option);
-    builder.field("type", "choice");
-    builder.field("name", setting.name);
-    builder.field("label", setting.label);
-    builder.field("value", setting.getter());
-    builder.beginArray("choices");
+    o["type"] = "choice";
+    o["name"] = setting.name;
+    o["label"] = setting.label;
+    o["value"] = setting.getter();
+    boost::json::array choices;
     for (const auto& choice : setting.choices()) {
-      builder.value(choice);
+      choices.emplace_back(choice);
     }
-    builder.endArray();
+    o["choices"] = std::move(choices);
   }
-  builder.endObject();
+  return o;
 }
 
-static void serializeHeatMap(JsonBuilder& builder,
-                             gui::HeatMapDataSource& source,
-                             const bool active)
+static boost::json::object serializeHeatMap(gui::HeatMapDataSource& source,
+                                            const bool active)
 {
   if (active) {
     source.ensureMap();
@@ -425,78 +278,72 @@ static void serializeHeatMap(JsonBuilder& builder,
   const bool populated = source.isPopulated();
   const bool has_data = source.hasData();
 
-  builder.beginObject();
-  builder.field("name", source.getShortName());
-  builder.field("title", source.getName());
-  builder.field("active", active);
-  builder.field("settings_group", source.getSettingsGroupName());
-  builder.field("has_data", has_data);
-  builder.field("can_adjust_grid", source.canAdjustGrid());
-  builder.field("show_numbers", source.getShowNumbers());
-  builder.field("show_legend", source.getShowLegend());
-  builder.field("supports_numbers", true);
-  builder.field("units", source.getValueUnits());
-  builder.field("display_range_increment", source.getDisplayRangeIncrement());
-  builder.field("display_min",
-                source.convertPercentToValue(source.getDisplayRangeMin()));
-  builder.field("display_max",
-                source.convertPercentToValue(source.getDisplayRangeMax()));
-  builder.field(
-      "display_min_limit",
-      source.convertPercentToValue(source.getDisplayRangeMinimumValue()));
-  builder.field(
-      "display_max_limit",
-      source.convertPercentToValue(source.getDisplayRangeMaximumValue()));
-  builder.field("draw_below_min", source.getDrawBelowRangeMin());
-  builder.field("draw_above_max", source.getDrawAboveRangeMax());
-  builder.field("log_scale", source.getLogScale());
-  builder.field("reverse_log", source.getReverseLogScale());
-  builder.field("grid_x", source.getGridXSize());
-  builder.field("grid_y", source.getGridYSize());
-  builder.field("grid_min", source.getGridSizeMinimumValue());
-  builder.field("grid_max", source.getGridSizeMaximumValue());
-  builder.field("alpha", source.getColorAlpha());
-  builder.field("alpha_min", source.getColorAlphaMinimum());
-  builder.field("alpha_max", source.getColorAlphaMaximum());
-  writeBBox(builder, "bounds", source.getBounds());
+  boost::json::object o;
+  o["name"] = source.getShortName();
+  o["title"] = source.getName();
+  o["active"] = active;
+  o["settings_group"] = source.getSettingsGroupName();
+  o["has_data"] = has_data;
+  o["can_adjust_grid"] = source.canAdjustGrid();
+  o["show_numbers"] = source.getShowNumbers();
+  o["show_legend"] = source.getShowLegend();
+  o["supports_numbers"] = true;
+  o["units"] = source.getValueUnits();
+  o["display_range_increment"] = source.getDisplayRangeIncrement();
+  o["display_min"] = source.convertPercentToValue(source.getDisplayRangeMin());
+  o["display_max"] = source.convertPercentToValue(source.getDisplayRangeMax());
+  o["display_min_limit"]
+      = source.convertPercentToValue(source.getDisplayRangeMinimumValue());
+  o["display_max_limit"]
+      = source.convertPercentToValue(source.getDisplayRangeMaximumValue());
+  o["draw_below_min"] = source.getDrawBelowRangeMin();
+  o["draw_above_max"] = source.getDrawAboveRangeMax();
+  o["log_scale"] = source.getLogScale();
+  o["reverse_log"] = source.getReverseLogScale();
+  o["grid_x"] = source.getGridXSize();
+  o["grid_y"] = source.getGridYSize();
+  o["grid_min"] = source.getGridSizeMinimumValue();
+  o["grid_max"] = source.getGridSizeMaximumValue();
+  o["alpha"] = source.getColorAlpha();
+  o["alpha_min"] = source.getColorAlphaMinimum();
+  o["alpha_max"] = source.getColorAlphaMaximum();
+  o["bounds"] = bboxArray(source.getBounds());
 
-  builder.beginArray("options");
+  boost::json::array options;
   for (const auto& option : source.getMapSettings()) {
-    serializeHeatMapOption(builder, option);
+    options.emplace_back(serializeHeatMapOption(option));
   }
-  builder.endArray();
+  o["options"] = std::move(options);
 
-  builder.beginArray("legend");
+  boost::json::array legend;
   if (populated) {
     const auto& generator = source.getColorGenerator();
     const int color_count = generator.getColorCount();
     for (const auto& [color_index, color_value] : source.getLegendValues()) {
-      builder.beginObject();
-      builder.field("value", source.formatValue(color_value, true));
+      boost::json::object entry;
+      entry["value"] = source.formatValue(color_value, true);
       const gui::Painter::Color color
           = generator.getColor(100.0 * color_index / std::max(1, color_count),
                                source.getColorAlpha());
-      writeColorArray(builder, "color", color);
-      builder.endObject();
+      entry["color"] = colorArray(color);
+      legend.emplace_back(std::move(entry));
     }
   }
-  builder.endArray();
-
-  builder.endObject();
+  o["legend"] = std::move(legend);
+  return o;
 }
 
 static std::string buildHeatMapsPayloadLocked(SessionState& state)
 {
-  JsonBuilder builder;
-  builder.beginObject();
-  builder.field("active", state.active_heatmap);
-  builder.beginArray("heatmaps");
+  boost::json::object root;
+  root["active"] = state.active_heatmap;
+  boost::json::array heatmaps;
   for (const auto& [name, source] : state.heatmaps) {
-    serializeHeatMap(builder, *source, name == state.active_heatmap);
+    heatmaps.emplace_back(
+        serializeHeatMap(*source, name == state.active_heatmap));
   }
-  builder.endArray();
-  builder.endObject();
-  return builder.str();
+  root["heatmaps"] = std::move(heatmaps);
+  return boost::json::serialize(root);
 }
 
 WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
@@ -505,10 +352,7 @@ WebSocketResponse TileHandler::serializeBounds(const uint32_t id,
   WebSocketResponse resp;
   resp.id = id;
   resp.type = WebSocketResponse::kJson;
-  JsonBuilder builder;
-  serializeBoundsResponse(builder, gen, gen.shapesReady());
-  const std::string& json = builder.str();
-  resp.payload.assign(json.begin(), json.end());
+  writePayload(resp, serializeBoundsResponse(gen, gen.shapesReady()));
   return resp;
 }
 
@@ -518,10 +362,7 @@ WebSocketResponse TileHandler::serializeTech(const uint32_t id,
   WebSocketResponse resp;
   resp.id = id;
   resp.type = WebSocketResponse::kJson;
-  JsonBuilder builder;
-  serializeTechResponse(builder, gen);
-  const std::string& json = builder.str();
-  resp.payload.assign(json.begin(), json.end());
+  writePayload(resp, serializeTechResponse(gen));
   return resp;
 }
 
@@ -630,31 +471,35 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
   resp.id = req.id;
   try {
     TileVisibility vis;
-    vis.parseFromJson(req.raw_json);
+    vis.parseFromJson(req.json);
+    // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
+    // double on the wire and truncate to selectAt's integer zoom level.
+    const auto& zoom_v = req.json.at("zoom");
+    const int zoom = zoom_v.is_int64() ? static_cast<int>(zoom_v.get_int64())
+                                       : static_cast<int>(zoom_v.as_double());
     auto results
-        = gen_->selectAt(extract_int(req.raw_json, "dbu_x"),
-                         extract_int(req.raw_json, "dbu_y"),
-                         extract_int_or(req.raw_json, "zoom", 0),
+        = gen_->selectAt(static_cast<int>(req.json.at("dbu_x").as_int64()),
+                         static_cast<int>(req.json.at("dbu_y").as_int64()),
+                         zoom,
                          vis,
-                         extract_string_array(req.raw_json, "visible_layers"));
+                         arrayAsStringSet(req.json.at("visible_layers")));
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
 
-    // Build JSON response with selection and properties
     resp.type = WebSocketResponse::kJson;
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("selected");
+    boost::json::object root;
+    boost::json::array selected;
+    selected.reserve(results.size());
     for (const auto& r : results) {
-      builder.beginObject();
-      builder.field("name", r.name);
-      builder.field("type", r.type_name);
-      writeBBox(builder, "bbox", r.bbox);
-      builder.endObject();
+      boost::json::object item;
+      item["name"] = r.name;
+      item["type"] = r.type_name;
+      item["bbox"] = bboxArray(r.bbox);
+      selected.emplace_back(std::move(item));
     }
-    builder.endArray();
+    root["selected"] = std::move(selected);
 
     // Pick which result to inspect, cycling through overlapping objects.
     // If the currently inspected object is in the results, select the next one.
@@ -681,9 +526,9 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       }
       inspected_sel = registry->makeSelected(results[pick].object);
       writeInspectPayload(
-          builder, inspected_sel, new_selectables, /*can_navigate_back=*/false);
+          root, inspected_sel, new_selectables, /*can_navigate_back=*/false);
     } else {
-      builder.field("can_navigate_back", 0);
+      root["can_navigate_back"] = 0;
     }
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -700,9 +545,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       state.navigation_history.clear();
     }
 
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -719,7 +562,8 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   try {
     gui::Selected sel;
     {
-      const int select_id = extract_int(req.raw_json, "select_id");
+      const int select_id
+          = static_cast<int>(req.json.at("select_id").as_int64());
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       if (select_id >= 0
           && select_id < static_cast<int>(state.selectables.size())) {
@@ -748,17 +592,14 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     }
 
     resp.type = WebSocketResponse::kJson;
-    JsonBuilder builder;
-    builder.beginObject();
+    boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(builder, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
     }
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -796,17 +637,14 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     }
 
     resp.type = WebSocketResponse::kJson;
-    JsonBuilder builder;
-    builder.beginObject();
+    boost::json::object root;
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(builder, sel, new_selectables, can_navigate_back);
+    writeInspectPayload(root, sel, new_selectables, can_navigate_back);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
     }
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -827,7 +665,8 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
 
-      const int select_id = extract_int(req.raw_json, "select_id");
+      const int select_id
+          = static_cast<int>(req.json.at("select_id").as_int64());
       if (select_id >= 0) {
         gui::Selected sel;
         {
@@ -855,23 +694,16 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     }
 
     resp.type = WebSocketResponse::kJson;
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("ok", 1);
-    builder.field("count", count);
-    builder.beginArray("rects");
+    boost::json::object root;
+    root["ok"] = 1;
+    root["count"] = count;
+    boost::json::array rects;
+    rects.reserve(hover_rects.size());
     for (const auto& rect : hover_rects) {
-      builder.beginArray();
-      builder.value(rect.xMin());
-      builder.value(rect.yMin());
-      builder.value(rect.xMax());
-      builder.value(rect.yMax());
-      builder.endArray();
+      rects.emplace_back(bboxArray(rect));
     }
-    builder.endArray();
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    root["rects"] = std::move(rects);
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -887,8 +719,9 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string action = extract_string(req.raw_json, "action");
-    const std::string net_name = extract_string(req.raw_json, "net_name");
+    const std::string action = std::string(req.json.at("action").as_string());
+    const std::string net_name
+        = std::string(req.json.at("net_name").as_string());
     std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
     if (action == "clear") {
       state.focus_net_ids.clear();
@@ -903,10 +736,10 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
         }
       }
     }
-    const int count = static_cast<int>(state.focus_net_ids.size());
-    const std::string json
-        = R"({"ok":1,"count":)" + std::to_string(count) + "}";
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["ok"] = 1;
+    root["count"] = static_cast<int>(state.focus_net_ids.size());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -923,8 +756,9 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string action = extract_string(req.raw_json, "action");
-    const std::string net_name = extract_string(req.raw_json, "net_name");
+    const std::string action = std::string(req.json.at("action").as_string());
+    const std::string net_name
+        = std::string(req.json.at("net_name").as_string());
     std::lock_guard<std::mutex> lock(state.route_guides_mutex);
     if (action == "clear") {
       state.route_guide_net_ids.clear();
@@ -939,10 +773,10 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
         }
       }
     }
-    const int count = static_cast<int>(state.route_guide_net_ids.size());
-    const std::string json
-        = R"({"ok":1,"count":)" + std::to_string(count) + "}";
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["ok"] = 1;
+    root["count"] = static_cast<int>(state.route_guide_net_ids.size());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -958,36 +792,26 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     TileVisibility vis;
-    vis.parseFromJson(req.raw_json);
-    auto snap
-        = gen_->snapAt(extract_int(req.raw_json, "dbu_x"),
-                       extract_int(req.raw_json, "dbu_y"),
-                       extract_int(req.raw_json, "radius"),
-                       extract_int_or(req.raw_json, "point_threshold", 10),
-                       extract_int_or(req.raw_json, "horizontal", 1) != 0,
-                       extract_int_or(req.raw_json, "vertical", 1) != 0,
-                       vis,
-                       extract_string_array(req.raw_json, "visible_layers"));
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("found", snap.found);
+    vis.parseFromJson(req.json);
+    auto snap = gen_->snapAt(
+        static_cast<int>(req.json.at("dbu_x").as_int64()),
+        static_cast<int>(req.json.at("dbu_y").as_int64()),
+        static_cast<int>(req.json.at("radius").as_int64()),
+        static_cast<int>(req.json.at("point_threshold").as_int64()),
+        req.json.at("horizontal").as_bool(),
+        req.json.at("vertical").as_bool(),
+        vis,
+        arrayAsStringSet(req.json.at("visible_layers")));
+    boost::json::object root;
+    root["found"] = snap.found;
     if (snap.found) {
       const bool is_point = snap.edge.first == snap.edge.second;
-      builder.field("is_point", is_point);
-      builder.beginArray("edge");
-      builder.beginArray();
-      builder.value(snap.edge.first.x());
-      builder.value(snap.edge.first.y());
-      builder.endArray();
-      builder.beginArray();
-      builder.value(snap.edge.second.x());
-      builder.value(snap.edge.second.y());
-      builder.endArray();
-      builder.endArray();
+      root["is_point"] = is_point;
+      root["edge"] = boost::json::array{
+          boost::json::array{snap.edge.first.x(), snap.edge.first.y()},
+          boost::json::array{snap.edge.second.x(), snap.edge.second.y()}};
     }
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("snap error: ") + e.what();
@@ -1017,9 +841,12 @@ WebSocketResponse SelectHandler::handleSchematicCone(
   static constexpr int kMaxNetFanout = 30;
 
   try {
-    const std::string inst_name = extract_string(req.raw_json, "inst_name");
-    const int fanin_depth = extract_int_or(req.raw_json, "fanin_depth", 1);
-    const int fanout_depth = extract_int_or(req.raw_json, "fanout_depth", 1);
+    const std::string inst_name
+        = std::string(req.json.at("inst_name").as_string());
+    const int fanin_depth
+        = static_cast<int>(req.json.at("fanin_depth").as_int64());
+    const int fanout_depth
+        = static_cast<int>(req.json.at("fanout_depth").as_int64());
     odb::dbBlock* block = gen_->getBlock();
     if (!block) {
       throw std::runtime_error("No block loaded");
@@ -1130,92 +957,67 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       }
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginObject("modules");
-    builder.beginObject("top");
+    boost::json::object top;
+    top["attributes"] = boost::json::object{};
 
-    // Module-level attributes (required by Yosys JSON schema)
-    builder.beginObject("attributes");
-    builder.endObject();
-
-    // Top-level ports (dbBTerm) connected to any visited net
-    builder.beginObject("ports");
+    boost::json::object ports;
     for (const auto& [net, _id] : net_to_id) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
-        builder.beginObject(bterm->getName());
-        builder.field("direction", ioTypeToDirection(bterm->getIoType()));
-        builder.beginArray("bits");
-        builder.value(net_to_id[net]);
-        builder.endArray();
-        builder.endObject();
+        boost::json::object p;
+        p["direction"] = ioTypeToDirection(bterm->getIoType());
+        p["bits"] = boost::json::array{net_to_id[net]};
+        ports[bterm->getName()] = std::move(p);
       }
     }
-    builder.endObject();
+    top["ports"] = std::move(ports);
 
-    // Cells (instances)
-    builder.beginObject("cells");
+    boost::json::object cells;
     for (odb::dbInst* inst : all_insts) {
-      builder.beginObject(inst->getName());
-      builder.field("hide_name", 0);
-      // Use master cell name as type; fall back to "$unknown" for safety
-      const std::string cell_type = inst->getMaster()
-                                        ? inst->getMaster()->getName()
-                                        : std::string("$unknown");
-      builder.field("type", cell_type);
-      // Required Yosys JSON fields (netlistsvg guards these with || {}, but
-      // providing them avoids any version-specific surprises)
-      builder.beginObject("attributes");
-      builder.endObject();
-      builder.beginObject("parameters");
-      builder.endObject();
+      boost::json::object cell;
+      cell["hide_name"] = 0;
+      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
+                                       : std::string("$unknown");
+      cell["attributes"] = boost::json::object{};
+      cell["parameters"] = boost::json::object{};
 
-      builder.beginObject("port_directions");
+      boost::json::object port_directions;
       for (odb::dbITerm* iterm : inst->getITerms()) {
         if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
           continue;
         }
-        builder.field(iterm->getMTerm()->getName(),
-                      ioTypeToDirection(iterm->getIoType()));
+        port_directions[iterm->getMTerm()->getName()]
+            = ioTypeToDirection(iterm->getIoType());
       }
-      builder.endObject();
+      cell["port_directions"] = std::move(port_directions);
 
-      builder.beginObject("connections");
+      boost::json::object connections;
       for (odb::dbITerm* iterm : inst->getITerms()) {
         odb::dbNet* net = iterm->getNet();
         if (!net || !net_to_id.contains(net)) {
           continue;
         }
-        builder.beginArray(iterm->getMTerm()->getName());
-        builder.value(net_to_id[net]);
-        builder.endArray();
+        connections[iterm->getMTerm()->getName()]
+            = boost::json::array{net_to_id[net]};
       }
-      builder.endObject();
+      cell["connections"] = std::move(connections);
 
-      builder.endObject();
+      cells[inst->getName()] = std::move(cell);
     }
-    builder.endObject();
+    top["cells"] = std::move(cells);
 
-    // Net names for better labeling
-    builder.beginObject("netnames");
+    boost::json::object netnames;
     for (const auto& [net, net_id] : net_to_id) {
-      builder.beginObject(net->getName());
-      builder.field("hide_name", 0);
-      builder.beginArray("bits");
-      builder.value(net_id);
-      builder.endArray();
-      builder.beginObject("attributes");
-      builder.endObject();
-      builder.endObject();
+      boost::json::object n;
+      n["hide_name"] = 0;
+      n["bits"] = boost::json::array{net_id};
+      n["attributes"] = boost::json::object{};
+      netnames[net->getName()] = std::move(n);
     }
-    builder.endObject();
+    top["netnames"] = std::move(netnames);
 
-    builder.endObject();  // top
-    builder.endObject();  // modules
-    builder.endObject();  // root
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["modules"] = boost::json::object{{"top", std::move(top)}};
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1243,87 +1045,69 @@ WebSocketResponse SelectHandler::handleSchematicFull(
       net_to_id[net] = next_net_id++;
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginObject("modules");
-    builder.beginObject("top");
+    boost::json::object top;
+    top["attributes"] = boost::json::object{};
 
-    builder.beginObject("attributes");
-    builder.endObject();
-
-    builder.beginObject("ports");
+    boost::json::object ports;
     for (odb::dbBTerm* bterm : block->getBTerms()) {
       odb::dbNet* net = bterm->getNet();
       if (!net) {
         continue;
       }
-      builder.beginObject(bterm->getName());
-      builder.field("direction", ioTypeToDirection(bterm->getIoType()));
-      builder.beginArray("bits");
-      builder.value(net_to_id[net]);
-      builder.endArray();
-      builder.endObject();
+      boost::json::object p;
+      p["direction"] = ioTypeToDirection(bterm->getIoType());
+      p["bits"] = boost::json::array{net_to_id[net]};
+      ports[bterm->getName()] = std::move(p);
     }
-    builder.endObject();
+    top["ports"] = std::move(ports);
 
-    builder.beginObject("cells");
+    boost::json::object cells;
     for (odb::dbInst* inst : block->getInsts()) {
-      builder.beginObject(inst->getName());
-      builder.field("hide_name", 0);
-      const std::string cell_type = inst->getMaster()
-                                        ? inst->getMaster()->getName()
-                                        : std::string("$unknown");
-      builder.field("type", cell_type);
-      builder.beginObject("attributes");
-      builder.endObject();
-      builder.beginObject("parameters");
-      builder.endObject();
+      boost::json::object cell;
+      cell["hide_name"] = 0;
+      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
+                                       : std::string("$unknown");
+      cell["attributes"] = boost::json::object{};
+      cell["parameters"] = boost::json::object{};
 
-      builder.beginObject("port_directions");
+      boost::json::object port_directions;
       for (odb::dbITerm* iterm : inst->getITerms()) {
         if (!iterm->getNet()) {
           continue;
         }
-        builder.field(iterm->getMTerm()->getName(),
-                      ioTypeToDirection(iterm->getIoType()));
+        port_directions[iterm->getMTerm()->getName()]
+            = ioTypeToDirection(iterm->getIoType());
       }
-      builder.endObject();
+      cell["port_directions"] = std::move(port_directions);
 
-      builder.beginObject("connections");
+      boost::json::object connections;
       for (odb::dbITerm* iterm : inst->getITerms()) {
         odb::dbNet* net = iterm->getNet();
         if (!net) {
           continue;
         }
-        builder.beginArray(iterm->getMTerm()->getName());
-        builder.value(net_to_id[net]);
-        builder.endArray();
+        connections[iterm->getMTerm()->getName()]
+            = boost::json::array{net_to_id[net]};
       }
-      builder.endObject();
+      cell["connections"] = std::move(connections);
 
-      builder.endObject();
+      cells[inst->getName()] = std::move(cell);
     }
-    builder.endObject();
+    top["cells"] = std::move(cells);
 
-    builder.beginObject("netnames");
+    boost::json::object netnames;
     for (odb::dbNet* net : block->getNets()) {
-      builder.beginObject(net->getName());
-      builder.field("hide_name", 0);
-      builder.beginArray("bits");
-      builder.value(net_to_id[net]);
-      builder.endArray();
-      builder.beginObject("attributes");
-      builder.endObject();
-      builder.endObject();
+      boost::json::object n;
+      n["hide_name"] = 0;
+      n["bits"] = boost::json::array{net_to_id[net]};
+      n["attributes"] = boost::json::object{};
+      netnames[net->getName()] = std::move(n);
     }
-    builder.endObject();
+    top["netnames"] = std::move(netnames);
 
-    builder.endObject();  // top
-    builder.endObject();  // modules
-    builder.endObject();  // root
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["modules"] = boost::json::object{{"top", std::move(top)}};
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1341,7 +1125,8 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const std::string inst_name = extract_string(req.raw_json, "inst_name");
+    const std::string inst_name
+        = std::string(req.json.at("inst_name").as_string());
     odb::dbBlock* block = gen_->getBlock();
     if (!block) {
       throw std::runtime_error("No block loaded");
@@ -1368,19 +1153,16 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.navigation_history.clear();
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
+    boost::json::object root;
     std::vector<gui::Selected> new_selectables;
     writeInspectPayload(
-        builder, sel, new_selectables, /*can_navigate_back=*/false);
+        root, sel, new_selectables, /*can_navigate_back=*/false);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
     }
-    builder.endObject();
 
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1418,15 +1200,25 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    auto result = tcl_eval_->eval(extract_string(req.raw_json, "cmd"));
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("output", result.output);
-    builder.field("result", result.result);
-    builder.field("is_error", result.is_error);
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    auto result = tcl_eval_->eval(std::string(req.json.at("cmd").as_string()));
+    // tclExitHandler (web_serve.cpp) sets this sentinel as the Tcl
+    // result whenever `exit`/`quit` is evaluated through the override —
+    // whether typed bare in the browser or buried in `eval`/`source`.
+    // Convert it to a clean shutdown signal for the browser; the actual
+    // teardown is already requested by tclExitHandler via requestStop().
+    const bool is_exit = (result.result == kExitResultMsg);
+    boost::json::object root;
+    if (is_exit) {
+      tcl_eval_->logger->info(
+          utl::WEB, 40, "Exit requested from web GUI; shutting down.");
+      root["result"] = "Exiting OpenROAD.";
+      root["is_error"] = false;
+      root["action"] = "shutdown";
+    } else {
+      root["result"] = result.result;
+      root["is_error"] = result.is_error;
+    }
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1511,8 +1303,8 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string line = extract_string(req.raw_json, "line");
-    int cursor_pos = extract_int_or(req.raw_json, "cursor_pos", -1);
+    const std::string line = std::string(req.json.at("line").as_string());
+    int cursor_pos = static_cast<int>(req.json.at("cursor_pos").as_int64());
     if (cursor_pos < 0) {
       cursor_pos = static_cast<int>(line.size());
     }
@@ -1617,20 +1409,18 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
       }
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("completions");
+    boost::json::object root;
+    boost::json::array comp_arr;
+    comp_arr.reserve(completions.size());
     for (const auto& c : completions) {
-      builder.value(c);
+      comp_arr.emplace_back(c);
     }
-    builder.endArray();
-    builder.field("mode", mode);
-    builder.field("prefix", prefix);
-    builder.field("replace_start", word_start);
-    builder.field("replace_end", cursor_pos);
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    root["completions"] = std::move(comp_arr);
+    root["mode"] = mode;
+    root["prefix"] = prefix;
+    root["replace_start"] = word_start;
+    root["replace_end"] = cursor_pos;
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1684,16 +1474,13 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto paths = timing_report_->getReport(
-        extract_int_or(req.raw_json, "is_setup", 1),
-        extract_int_or(req.raw_json, "max_paths", 100),
-        extract_float_or(
-            req.raw_json, "slack_min", -std::numeric_limits<float>::max()),
-        extract_float_or(
-            req.raw_json, "slack_max", std::numeric_limits<float>::max()));
-    JsonBuilder builder;
-    serializeTimingPaths(builder, paths);
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+        req.json.at("is_setup").as_bool(),
+        static_cast<int>(req.json.at("max_paths").as_int64()),
+        static_cast<float>(jsonOr<double>(
+            req.json, "slack_min", -std::numeric_limits<float>::max())),
+        static_cast<float>(jsonOr<double>(
+            req.json, "slack_max", std::numeric_limits<float>::max())));
+    writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1710,19 +1497,22 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const int path_index = extract_int_or(req.raw_json, "path_index", -1);
-    const bool is_setup = extract_int_or(req.raw_json, "is_setup", 1);
-    const std::string pin_name = extract_string(req.raw_json, "pin_name");
+    const int path_index
+        = static_cast<int>(req.json.at("path_index").as_int64());
     std::vector<ColoredRect> new_rects;
     std::vector<FlightLine> new_lines;
 
+    // path_index < 0 is the clear-highlight signal (no other fields used).
     if (path_index >= 0) {
+      const bool is_setup = req.json.at("is_setup").as_bool();
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(is_setup);
       if (path_index < static_cast<int>(paths.size())) {
         odb::dbBlock* block = gen_->getBlock();
         collectTimingPathShapes(block, paths[path_index], new_rects, new_lines);
 
+        const std::string pin_name
+            = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
           auto [iterm, bterm] = resolvePin(block, pin_name);
@@ -1775,13 +1565,10 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto histogram = timing_report_->getSlackHistogram(
-        extract_int_or(req.raw_json, "is_setup", 1),
-        extract_string(req.raw_json, "path_group"),
-        extract_string(req.raw_json, "clock_name"));
-    JsonBuilder builder;
-    serializeSlackHistogram(builder, histogram);
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+        req.json.at("is_setup").as_bool(),
+        jsonOr<std::string>(req.json, "path_group", ""),
+        jsonOr<std::string>(req.json, "clock_name", ""));
+    writePayload(resp, serializeSlackHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1798,10 +1585,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto filters = timing_report_->getChartFilters();
-    JsonBuilder builder;
-    serializeChartFilters(builder, filters);
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, serializeChartFilters(filters));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1846,38 +1630,37 @@ WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto clocks = clock_report_->getReport();
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("clocks");
+    boost::json::object root;
+    boost::json::array clk_arr;
+    clk_arr.reserve(clocks.size());
     for (const auto& clk : clocks) {
-      builder.beginObject();
-      builder.field("name", clk.clock_name);
-      builder.field("min_arrival", clk.min_arrival);
-      builder.field("max_arrival", clk.max_arrival);
-      builder.field("time_unit", clk.time_unit);
-      builder.beginArray("nodes");
+      boost::json::object o;
+      o["name"] = clk.clock_name;
+      o["min_arrival"] = clk.min_arrival;
+      o["max_arrival"] = clk.max_arrival;
+      o["time_unit"] = clk.time_unit;
+      boost::json::array nodes;
+      nodes.reserve(clk.nodes.size());
       for (const auto& n : clk.nodes) {
-        builder.beginObject();
-        builder.field("id", n.id);
-        builder.field("parent_id", n.parent_id);
-        builder.field("name", n.name);
-        builder.field("pin_name", n.pin_name);
-        builder.field("type", ClockTreeNode::typeToString(n.type));
-        builder.field("arrival", n.arrival);
-        builder.field("delay", n.delay);
-        builder.field("fanout", n.fanout);
-        builder.field("level", n.level);
-        builder.field("dbu_x", n.dbu_x);
-        builder.field("dbu_y", n.dbu_y);
-        builder.endObject();
+        boost::json::object node;
+        node["id"] = n.id;
+        node["parent_id"] = n.parent_id;
+        node["name"] = n.name;
+        node["pin_name"] = n.pin_name;
+        node["type"] = ClockTreeNode::typeToString(n.type);
+        node["arrival"] = n.arrival;
+        node["delay"] = n.delay;
+        node["fanout"] = n.fanout;
+        node["level"] = n.level;
+        node["dbu_x"] = n.dbu_x;
+        node["dbu_y"] = n.dbu_y;
+        nodes.emplace_back(std::move(node));
       }
-      builder.endArray();
-      builder.endObject();
+      o["nodes"] = std::move(nodes);
+      clk_arr.emplace_back(std::move(o));
     }
-    builder.endArray();
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    root["clocks"] = std::move(clk_arr);
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -1894,7 +1677,8 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string inst_name = extract_string(req.raw_json, "inst_name");
+    const std::string inst_name
+        = std::string(req.json.at("inst_name").as_string());
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     state.highlight_rects.clear();
     state.highlight_polys.clear();
@@ -2011,7 +1795,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   }
 
   TileVisibility vis;
-  vis.parseFromJson(req.raw_json);
+  vis.parseFromJson(req.json);
   // When debug renderers are active, instance positions change between
   // frames.  Re-derive highlight shapes from the current inspected
   // object so the selection tracks the moving instance.
@@ -2075,10 +1859,10 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       = route_guides.empty() ? nullptr : &route_guides;
 
   return renderTile(req.id,
-                    extract_string(req.raw_json, "layer"),
-                    extract_int(req.raw_json, "z"),
-                    extract_int(req.raw_json, "x"),
-                    extract_int(req.raw_json, "y"),
+                    std::string(req.json.at("layer").as_string()),
+                    static_cast<int>(req.json.at("z").as_int64()),
+                    static_cast<int>(req.json.at("x").as_int64()),
+                    static_cast<int>(req.json.at("y").as_int64()),
                     vis,
                     *gen_,
                     rects,
@@ -2100,11 +1884,7 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
     odb::dbBlock* block = gen_->getBlock();
     HierarchyReport report(block, gen_->getSta());
     auto result = report.getReport();
-
-    JsonBuilder builder;
-    serializeHierarchyResult(builder, result);
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, serializeHierarchyResult(result));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -2121,7 +1901,7 @@ WebSocketResponse TileHandler::handleSetModuleColors(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   std::map<uint32_t, Color> colors;
-  const std::string data = extract_string(req.raw_json, "colors");
+  const std::string data = std::string(req.json.at("colors").as_string());
   if (!data.empty()) {
     size_t pos = 0;
     while (pos < data.size()) {
@@ -2187,7 +1967,7 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string name = extract_string(req.raw_json, "name");
+    const std::string name = std::string(req.json.at("name").as_string());
     std::lock_guard<std::mutex> lock(state.heatmap_mutex);
     if (!state.active_heatmap.empty()) {
       auto current = state.heatmaps.find(state.active_heatmap);
@@ -2223,8 +2003,8 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    const std::string name = extract_string(req.raw_json, "name");
-    const std::string option = extract_string(req.raw_json, "option");
+    const std::string name = std::string(req.json.at("name").as_string());
+    const std::string option = std::string(req.json.at("option").as_string());
     std::lock_guard<std::mutex> lock(state.heatmap_mutex);
     auto source_itr = state.heatmaps.find(name);
     if (source_itr == state.heatmaps.end()) {
@@ -2243,14 +2023,21 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
       }
 
       const auto& current_value = setting_itr->second;
+      const auto& value_v = req.json.at("value");
       if (std::holds_alternative<bool>(current_value)) {
-        settings[option] = extract_bool_value(req.raw_json);
+        settings[option] = value_v.as_bool();
       } else if (std::holds_alternative<int>(current_value)) {
-        settings[option] = extract_int(req.raw_json, "value");
+        // The frontend's addNumber control runs every value through
+        // parseFloat, so int settings can arrive as JSON doubles.  Accept
+        // either and round.
+        settings[option]
+            = value_v.is_int64()
+                  ? static_cast<int>(value_v.get_int64())
+                  : static_cast<int>(std::round(value_v.as_double()));
       } else if (std::holds_alternative<double>(current_value)) {
-        settings[option] = extract_double_value(req.raw_json);
+        settings[option] = value_v.as_double();
       } else {
-        settings[option] = extract_string(req.raw_json, "value");
+        settings[option] = std::string(value_v.as_string());
       }
       source.setSettings(settings);
     }
@@ -2272,10 +2059,10 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kPng;
   try {
-    const std::string req_name = extract_string(req.raw_json, "name");
-    const int z = extract_int(req.raw_json, "z");
-    const int x = extract_int(req.raw_json, "x");
-    const int y = extract_int(req.raw_json, "y");
+    const std::string req_name = std::string(req.json.at("name").as_string());
+    const int z = static_cast<int>(req.json.at("z").as_int64());
+    const int x = static_cast<int>(req.json.at("x").as_int64());
+    const int y = static_cast<int>(req.json.at("y").as_int64());
     std::shared_ptr<gui::HeatMapDataSource> source;
     {
       std::lock_guard<std::mutex> lock(state.heatmap_mutex);
@@ -2305,7 +2092,7 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const std::string dir_str = extract_string(req.raw_json, "path");
+    const std::string dir_str = std::string(req.json.at("path").as_string());
     fs::path dir_path
         = dir_str.empty() ? fs::current_path() : fs::path(dir_str);
     dir_path = fs::canonical(dir_path);
@@ -2345,25 +2132,22 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
       return a.name < b.name;
     });
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("path", dir_path.string());
-    builder.field("parent", dir_path.parent_path().string());
-    builder.beginArray("entries");
+    boost::json::object root;
+    root["path"] = dir_path.string();
+    root["parent"] = dir_path.parent_path().string();
+    boost::json::array arr;
+    arr.reserve(entries.size());
     for (const auto& entry : entries) {
-      builder.beginObject();
-      builder.field("name", entry.name);
-      builder.field("is_dir", entry.is_dir);
+      boost::json::object o;
+      o["name"] = entry.name;
+      o["is_dir"] = entry.is_dir;
       if (!entry.is_dir) {
-        builder.field("size", static_cast<int>(entry.size));
+        o["size"] = static_cast<int>(entry.size);
       }
-      builder.endObject();
+      arr.emplace_back(std::move(o));
     }
-    builder.endArray();
-    builder.endObject();
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    root["entries"] = std::move(arr);
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("list_dir error: ") + e.what();
@@ -2569,28 +2353,24 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
   try {
     auto [block, chip] = getBlockAndChip();
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("categories");
+    boost::json::object root;
+    boost::json::array categories;
     for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
-      builder.beginObject();
-      builder.field("name", std::string(category->getName()));
-      builder.field("count", category->getMarkerCount());
+      boost::json::object o;
+      o["name"] = std::string(category->getName());
+      o["count"] = category->getMarkerCount();
       const std::string desc = category->getDescription();
       if (!desc.empty()) {
-        builder.field("description", desc);
+        o["description"] = desc;
       }
       const std::string source = category->getSource();
       if (!source.empty()) {
-        builder.field("source", source);
+        o["source"] = source;
       }
-      builder.endObject();
+      categories.emplace_back(std::move(o));
     }
-    builder.endArray();
-    builder.endObject();
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    root["categories"] = std::move(categories);
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_categories error: ") + e.what();
@@ -2600,97 +2380,90 @@ WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
 }
 
 // Recursive helper to serialize a marker category tree.
-static void serializeMarkerCategory(JsonBuilder& builder,
-                                    odb::dbMarkerCategory* category)
+static boost::json::object serializeMarkerCategory(
+    odb::dbMarkerCategory* category)
 {
-  builder.beginObject();
-  builder.field("name", std::string(category->getName()));
-  builder.field("count", category->getMarkerCount());
+  boost::json::object o;
+  o["name"] = std::string(category->getName());
+  o["count"] = category->getMarkerCount();
 
   // Subcategories
   auto subcats = category->getMarkerCategories();
   if (subcats.begin() != subcats.end()) {
-    builder.beginArray("subcategories");
+    boost::json::array arr;
     for (odb::dbMarkerCategory* sub : subcats) {
-      serializeMarkerCategory(builder, sub);
+      arr.emplace_back(serializeMarkerCategory(sub));
     }
-    builder.endArray();
+    o["subcategories"] = std::move(arr);
   }
 
   // Markers directly in this category
   auto markers = category->getMarkers();
   if (markers.begin() != markers.end()) {
-    builder.beginArray("markers");
+    boost::json::array marker_arr;
     int idx = 1;
     for (odb::dbMarker* marker : markers) {
-      builder.beginObject();
-      builder.field("id", static_cast<int>(marker->getId()));
-      builder.field("index", idx++);
-      builder.field("name", marker->getName());
-      builder.field("visited", marker->isVisited());
-      builder.field("visible", marker->isVisible());
-      builder.field("waived", marker->isWaived());
+      boost::json::object m;
+      m["id"] = static_cast<int>(marker->getId());
+      m["index"] = idx++;
+      m["name"] = marker->getName();
+      m["visited"] = marker->isVisited();
+      m["visible"] = marker->isVisible();
+      m["waived"] = marker->isWaived();
+      m["bbox"] = bboxArray(marker->getBBox());
 
-      odb::Rect bbox = marker->getBBox();
-      writeBBox(builder, "bbox", bbox);
-
-      odb::dbTechLayer* layer = marker->getTechLayer();
-      if (layer) {
-        builder.field("layer", std::string(layer->getName()));
+      if (odb::dbTechLayer* layer = marker->getTechLayer()) {
+        m["layer"] = std::string(layer->getName());
       }
 
       const std::string comment = marker->getComment();
       if (!comment.empty()) {
-        builder.field("comment", comment);
+        m["comment"] = comment;
       }
 
-      // Sources
       auto sources = marker->getSources();
       if (!sources.empty()) {
-        builder.beginArray("sources");
+        boost::json::array src_arr;
         for (odb::dbObject* src : sources) {
-          builder.beginObject();
+          boost::json::object s;
           switch (src->getObjectType()) {
             case odb::dbNetObj: {
-              auto* net = static_cast<odb::dbNet*>(src);
-              builder.field("type", "Net");
-              builder.field("name", std::string(net->getName()));
+              s["type"] = "Net";
+              s["name"] = std::string(static_cast<odb::dbNet*>(src)->getName());
               break;
             }
             case odb::dbInstObj: {
-              auto* inst = static_cast<odb::dbInst*>(src);
-              builder.field("type", "Inst");
-              builder.field("name", std::string(inst->getName()));
+              s["type"] = "Inst";
+              s["name"]
+                  = std::string(static_cast<odb::dbInst*>(src)->getName());
               break;
             }
             case odb::dbITermObj: {
-              auto* iterm = static_cast<odb::dbITerm*>(src);
-              builder.field("type", "ITerm");
-              builder.field("name", std::string(iterm->getName()));
+              s["type"] = "ITerm";
+              s["name"]
+                  = std::string(static_cast<odb::dbITerm*>(src)->getName());
               break;
             }
             case odb::dbBTermObj: {
-              auto* bterm = static_cast<odb::dbBTerm*>(src);
-              builder.field("type", "BTerm");
-              builder.field("name", std::string(bterm->getName()));
+              s["type"] = "BTerm";
+              s["name"]
+                  = std::string(static_cast<odb::dbBTerm*>(src)->getName());
               break;
             }
             default:
-              builder.field("type", "Object");
-              builder.field("name", "unknown");
+              s["type"] = "Object";
+              s["name"] = "unknown";
               break;
           }
-          builder.endObject();
+          src_arr.emplace_back(std::move(s));
         }
-        builder.endArray();
+        m["sources"] = std::move(src_arr);
       }
-
-      builder.endObject();
+      marker_arr.emplace_back(std::move(m));
     }
-    builder.endArray();
+    o["markers"] = std::move(marker_arr);
   }
-
-  builder.endObject();
+  return o;
 }
 
 WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
@@ -2703,7 +2476,8 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
   try {
     auto [block, chip] = getBlockAndChip();
 
-    const std::string cat_name = extract_string(req.raw_json, "category");
+    const std::string cat_name
+        = std::string(req.json.at("category").as_string());
 
     // Update active category and overlay
     {
@@ -2712,31 +2486,20 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
       refreshDRCOverlay(state);
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
-
+    boost::json::object root;
     if (cat_name.empty()) {
-      builder.beginArray("subcategories");
-      builder.endArray();
+      root["subcategories"] = boost::json::array{};
     } else {
       odb::dbMarkerCategory* category
           = chip->findMarkerCategory(cat_name.c_str());
       if (!category) {
-        builder.field("error", "Category not found: " + cat_name);
+        root["error"] = "Category not found: " + cat_name;
       } else {
-        builder.field("name", std::string(category->getName()));
-        builder.field("total_count", category->getMarkerCount());
-        builder.beginArray("subcategories");
-        for (odb::dbMarkerCategory* sub : category->getMarkerCategories()) {
-          serializeMarkerCategory(builder, sub);
-        }
-        builder.endArray();
+        root = serializeMarkerCategory(category);
+        root["total_count"] = category->getMarkerCount();
       }
     }
-
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_markers error: ") + e.what();
@@ -2755,7 +2518,7 @@ WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
   try {
     auto [block, chip] = getBlockAndChip();
 
-    const std::string path = extract_string(req.raw_json, "path");
+    const std::string path = std::string(req.json.at("path").as_string());
     if (path.empty()) {
       throw std::runtime_error("No file path provided");
     }
@@ -2772,13 +2535,12 @@ WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
       throw std::runtime_error("Unsupported file format: " + path);
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
+    boost::json::object root;
     if (category) {
       const std::string name = category->getName();
-      builder.field("ok", 1);
-      builder.field("category", name);
-      builder.field("count", category->getMarkerCount());
+      root["ok"] = 1;
+      root["category"] = name;
+      root["count"] = category->getMarkerCount();
 
       // Auto-select the loaded category
       {
@@ -2787,13 +2549,10 @@ WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
         refreshDRCOverlay(state);
       }
     } else {
-      builder.field("ok", 0);
-      builder.field("error", "No violations found in report");
+      root["ok"] = 0;
+      root["error"] = "No violations found in report";
     }
-    builder.endObject();
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_load_report error: ") + e.what();
@@ -2810,9 +2569,9 @@ WebSocketResponse DRCHandler::handleDRCUpdateMarker(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const int marker_id = extract_int(req.raw_json, "marker_id");
-    const std::string field = extract_string(req.raw_json, "field");
-    const bool field_value = extract_int_or(req.raw_json, "value", 0) != 0;
+    const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
+    const std::string field = std::string(req.json.at("field").as_string());
+    const bool field_value = req.json.at("value").as_bool();
     auto [block, chip] = getBlockAndChip();
 
     odb::dbMarker* target = findMarkerById(state, chip, marker_id);
@@ -2831,16 +2590,12 @@ WebSocketResponse DRCHandler::handleDRCUpdateMarker(const WebSocketRequest& req,
       throw std::runtime_error("Unknown field: " + field);
     }
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("ok", 1);
-    builder.field("id", marker_id);
-    builder.field("field", field);
-    builder.field("value", field_value);
-    builder.endObject();
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["ok"] = 1;
+    root["id"] = marker_id;
+    root["field"] = field;
+    root["value"] = field_value;
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_update_marker error: ") + e.what();
@@ -2858,8 +2613,9 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const std::string cat_name = extract_string(req.raw_json, "category");
-    const bool visible = extract_int_or(req.raw_json, "visible", 1) != 0;
+    const std::string cat_name
+        = std::string(req.json.at("category").as_string());
+    const bool visible = req.json.at("visible").as_bool();
     auto [block, chip] = getBlockAndChip();
 
     std::lock_guard<std::mutex> lock(state.drc_mutex);
@@ -2876,16 +2632,12 @@ WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
     }
     refreshDRCOverlay(state);
 
-    JsonBuilder builder;
-    builder.beginObject();
-    builder.field("ok", 1);
-    builder.field("category", cat_name);
-    builder.field("visible", visible);
-    builder.field("count", count);
-    builder.endObject();
-
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    boost::json::object root;
+    root["ok"] = 1;
+    root["category"] = cat_name;
+    root["visible"] = visible;
+    root["count"] = count;
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err
@@ -2903,14 +2655,12 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
-    const int marker_id = extract_int_or(req.raw_json, "marker_id", -1);
+    const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
     auto [block, chip] = getBlockAndChip();
 
     odb::dbMarker* target = findMarkerById(state, chip, marker_id);
 
-    JsonBuilder builder;
-    builder.beginObject();
-
+    boost::json::object root;
     if (target) {
       target->setVisited(true);
       odb::Rect bbox = target->getBBox();
@@ -2923,14 +2673,12 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
         state.highlight_rects.push_back(bbox);
       }
 
-      builder.field("ok", 1);
-      writeBBox(builder, "bbox", bbox);
-      builder.field("name", target->getName());
-      builder.field("visited", true);
-
-      odb::dbTechLayer* layer = target->getTechLayer();
-      if (layer) {
-        builder.field("layer", std::string(layer->getName()));
+      root["ok"] = 1;
+      root["bbox"] = bboxArray(bbox);
+      root["name"] = target->getName();
+      root["visited"] = true;
+      if (odb::dbTechLayer* layer = target->getTechLayer()) {
+        root["layer"] = std::string(layer->getName());
       }
     } else {
       // Clear highlight if marker_id is -1 (deselect)
@@ -2939,12 +2687,9 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
         state.highlight_rects.clear();
         state.highlight_polys.clear();
       }
-      builder.field("ok", 0);
+      root["ok"] = 0;
     }
-
-    builder.endObject();
-    const std::string& json = builder.str();
-    resp.payload.assign(json.begin(), json.end());
+    writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     std::string err = std::string("drc_highlight error: ") + e.what();

@@ -540,6 +540,30 @@ html, body {
     pointer-events: none;
 }
 
+/* Scale bar (bottom-left, above coord bar) */
+#scale-bar {
+    position: absolute;
+    bottom: 26px;
+    left: 4px;
+    z-index: 900;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    pointer-events: none;
+}
+.scale-bar-line {
+    height: 8px;
+    min-width: 20px;
+    border: 2px solid white;
+    border-top: none;
+}
+.scale-bar-label {
+    color: white;
+    font: 11px monospace;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    line-height: 1;
+}
+
 /* Loading overlay */
 #loading-overlay {
     position: fixed;
@@ -644,13 +668,11 @@ html, body {
 .display-controls .vis-group-children {
     padding-left: 22px;
 }
-.display-controls .vis-group-children > label {
-    margin-left: 14px;
-}
 .display-controls .vis-group-children.collapsed {
     display: none;
 }
-.display-controls .vis-group-children.disabled {
+.display-controls .vis-group-children.disabled,
+.display-controls .vis-group-children > label.disabled {
     opacity: 0.4;
     pointer-events: none;
 }

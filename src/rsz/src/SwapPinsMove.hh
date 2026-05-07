@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "BaseMove.hh"
+#include "gtest/gtest_prod.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -26,6 +27,10 @@ class SwapPinsMove : public BaseMove
   void reportSwappablePins();
 
  private:
+  // Allow the unit test to drive swapPins() directly without going
+  // through full repair_timing. Test class must live in namespace rsz.
+  FRIEND_TEST(TestResizer, SwapPinsFeedthroughModNet);
+
   using LibertyPortVec = std::vector<sta::LibertyPort*>;
   bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,

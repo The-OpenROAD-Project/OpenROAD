@@ -4,6 +4,7 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -2410,6 +2411,27 @@ void HierRTLMP::commitMacroPlacementToDb()
 void HierRTLMP::commitClusteringDataToDb() const
 {
   createGroupForCluster(tree_->root.get(), nullptr);
+
+  // Check that all instances are in a group
+  int ungrouped_instances = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getGroup() == nullptr) {
+      debugPrint(logger_,
+                 MPL,
+                 "commit_clustering_data",
+                 1,
+                 "Instance {} is not in any group.",
+                 inst->getName());
+      ungrouped_instances++;
+    }
+  }
+  if (ungrouped_instances > 0) {
+    logger_->error(MPL,
+                   49,
+                   "{} instances are not in any group after committing "
+                   "clustering data to the database.",
+                   ungrouped_instances);
+  }
 }
 
 void HierRTLMP::createGroupForCluster(Cluster* cluster,
@@ -2427,21 +2449,27 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+    assert(inst->getGroup() == nullptr);
     cluster_group->addInst(inst);
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    assert(macro->getGroup() == nullptr);
     cluster_group->addInst(macro);
-  }
-
-  for (odb::dbModule* module : cluster->getDbModules()) {
-    for (odb::dbInst* inst : module->getLeafInsts()) {
-      cluster_group->addInst(inst);
-    }
   }
 
   for (const auto& child : cluster->getChildren()) {
     createGroupForCluster(child.get(), cluster_group);
+  }
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      if (inst->getGroup() != nullptr) {
+        // Skip if it is part of a child cluster
+        continue;
+      }
+      cluster_group->addInst(inst);
+    }
   }
 }
 

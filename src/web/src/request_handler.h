@@ -3,12 +3,17 @@
 
 #pragma once
 
+#include <boost/json/object.hpp>
+#include <boost/json/value.hpp>
+#include <boost/json/value_to.hpp>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -26,16 +31,29 @@ class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
 
-// Thread-safe Tcl command evaluation with output capture.
+// Sentinel string set as the Tcl result by WebServer::tclExitHandler
+// when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
+// detects this in handleTclEval and converts the response to a clean
+// shutdown signal for the browser.
+inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
+
+// Thread-safe Tcl command evaluation.  Log output emitted while the
+// command runs is captured by WebLogSink (registered on the logger via
+// addSink) and pushed to clients as {"type":"log",...} messages — do
+// NOT redirect the logger to a string here.  redirectStringBegin clears
+// the entire sink list, which would unhook WebLogSink (and any other
+// sink) for the duration of the command and break log streaming.  After
+// each eval the optional drain_output hook is invoked so any buffered
+// log output reaches clients before the eval response is sent.
 struct TclEvaluator
 {
   Tcl_Interp* interp;
   utl::Logger* logger;
   std::mutex mutex;
+  std::function<void()> drain_output;
 
   struct Result
   {
-    std::string output;
     std::string result;
     bool is_error;
   };
@@ -48,12 +66,13 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    logger->redirectStringBegin();
     const int rc = Tcl_Eval(interp, cmd.c_str());
     Result r;
-    r.output = logger->redirectStringEnd();
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
+    if (drain_output) {
+      drain_output();
+    }
     return r;
   }
 };
@@ -103,7 +122,15 @@ struct WebSocketRequest
 
   uint32_t id = 0;
   Type type = kUnknown;
-  std::string raw_json;  // original JSON message for field extraction
+  boost::json::object json;  // parsed payload; empty on parse failure
+  // Original `"type"` string from the JSON, even when not registered.
+  // Used by the kUnknown error path for diagnosability.  Empty when
+  // the message was malformed (parse threw) or had no `type` field.
+  std::string raw_type;
+  // Set to the boost::json exception message when JSON parsing or one
+  // of the required envelope reads (id/type) failed.  Surfaced in the
+  // kUnknown error payload so WEB-0043 names the actual parse error.
+  std::string parse_error;
 };
 
 struct WebSocketResponse
@@ -118,6 +145,10 @@ struct WebSocketResponse
   uint32_t id = 0;
   PayloadType type = kJson;
   std::vector<unsigned char> payload;
+  // Original `"type"` string from the request, used by the kError
+  // logging path for diagnosability.  Annotated by WebSocketSession::on_read
+  // after the handler returns; handlers do not need to set it.
+  std::string request_type;
 };
 
 // Shared mutable state for a WebSocket session.
@@ -156,17 +187,23 @@ struct SessionState
   std::string active_heatmap;
 };
 
-// Minimal JSON field extraction (no JSON library dependency).
-std::string extract_string(const std::string& json, const std::string& key);
-int extract_int(const std::string& json, const std::string& key);
-int extract_int_or(const std::string& json,
-                   const std::string& key,
-                   int default_val);
-float extract_float_or(const std::string& json,
-                       const std::string& key,
-                       float default_val);
-std::set<std::string> extract_string_array(const std::string& json,
-                                           const std::string& key);
+// Optional-field accessor: returns the JSON value at `key` converted to T,
+// or `default_val` when the key is missing.  Throws
+// (boost::system::system_error) when the key is present but the JSON type
+// doesn't convert to T — that's a frontend/backend contract violation, surface
+// it.
+//
+// For required fields, prefer the bare boost::json idiom
+// `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
+// which throws on either missing or wrong-typed input.
+template <class T>
+T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
+{
+  if (auto* v = obj.if_contains(key)) {
+    return boost::json::value_to<T>(*v);
+  }
+  return default_val;
+}
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler

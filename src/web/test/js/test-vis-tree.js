@@ -175,4 +175,59 @@ describe('VisTree', () => {
             assert.ok(kids.classList.contains('disabled'));
         });
     });
+
+    describe('pin visibility with disabledBy', () => {
+        it('pin_names is grayed when pins is off', () => {
+            visibility.pins = false;
+            visibility.pin_names = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'pins', label: 'Pins' },
+                { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            assert.equal(visibility.pins, false);
+            // pin_names value preserved but its label should be disabled.
+            const labels = container.querySelectorAll('label');
+            const pinNamesLabel = [...labels].find(l => l.textContent.includes('Pin Names'));
+            assert.ok(pinNamesLabel.classList.contains('disabled'));
+        });
+
+        it('pin_names is enabled when pins is on', () => {
+            visibility.pins = true;
+            visibility.pin_names = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'pins', label: 'Pins' },
+                { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+            const labels = container.querySelectorAll('label');
+            const pinNamesLabel = [...labels].find(l => l.textContent.includes('Pin Names'));
+            assert.ok(!pinNamesLabel.classList.contains('disabled'));
+        });
+
+        it('toggling pins updates pin_names disabled state', () => {
+            visibility.pins = true;
+            visibility.pin_names = true;
+            tree.add({ label: 'Group', children: [
+                { key: 'pins', label: 'Pins' },
+                { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
+            ]});
+            const container = document.createElement('div');
+            tree.render(container);
+
+            // Uncheck pins.
+            const labels = container.querySelectorAll('label');
+            const pinsLabel = [...labels].find(l =>
+                l.textContent.includes('Pins') && !l.textContent.includes('Names'));
+            const pinsCb = pinsLabel.querySelector('input');
+            pinsCb.checked = false;
+            pinsCb.dispatchEvent(new dom.window.Event('change'));
+
+            assert.equal(visibility.pins, false);
+            const pinNamesLabel = [...labels].find(l => l.textContent.includes('Pin Names'));
+            assert.ok(pinNamesLabel.classList.contains('disabled'));
+        });
+    });
 });
