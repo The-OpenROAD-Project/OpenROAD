@@ -237,16 +237,4 @@ or_integration_tests(
     cpp_tests
 )
 
-# Keep the slowest rsz regressions out of the default ctest -R rsz path.
-# Measured locally in tools/OpenROAD/build:
-# - rsz.repair_fanout6.tcl: ~52s
-# - rsz.repair_design3.tcl: ~27s
-# - rsz.repair_design3_verbose.tcl: ~27s
-set_tests_properties(
-  rsz.repair_fanout6.tcl
-  rsz.repair_design3.tcl
-  rsz.repair_design3_verbose.tcl
-  PROPERTIES DISABLED TRUE
-)
-
 add_subdirectory(cpp)

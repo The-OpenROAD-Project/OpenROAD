@@ -1,15 +1,22 @@
-# fanout 8000 max_fanout 20 stress test
+# fanout 500 max_fanout 20 regression test
 # modified to use large default max_transition, max_capacitance
 source "helpers.tcl"
+source "hi_fanout.tcl"
 if { ![info exists repair_args] } {
   set repair_args {}
 }
 read_liberty repair_fanout6.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef
-read_def repair_fanout6.def
 
-create_clock -period 5 clk
+set def_file [make_result_file "repair_fanout6.def"]
+write_hi_fanout_def1 $def_file 500 \
+  "source" "sky130_fd_sc_hd__dfxtp_1" "CLK" "Q" \
+  "sink" "sky130_fd_sc_hd__dfxtp_1" "CLK" "D" 5000 \
+  "met3" 1000
+read_def $def_file
+
+create_clock -period 0.1 clk1
 set_max_fanout 20 [current_design]
 
 source sky130hd/sky130hd.vars
