@@ -5080,10 +5080,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  // Make a non-const copy for dbNet API
-  const std::set<odb::dbObject*>& loads_copy = loads;
-
-  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads_copy,
+  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads,
                                                           buffer_cell,
                                                           loc,
                                                           new_buf_base_name,
