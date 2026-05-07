@@ -36,11 +36,14 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "search/Levelize.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphCmp.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -53,6 +56,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
 #include "sta/Transition.hh"
@@ -286,6 +290,74 @@ void dbSta::makeNetwork()
 void dbSta::makeSdcNetwork()
 {
   sdc_network_ = new dbSdcNetwork(network_);
+}
+
+// Levelize::setObserver takes ownership and deletes the prior observer,
+// so this composite must replicate the StaLevelizeObserver behavior that
+// Sta::makeObservers installs (forwarding to Search and GraphDelayCalc)
+// in addition to invalidating dbSta's cache.
+class DbStaLevelizeObserver : public LevelizeObserver
+{
+ public:
+  explicit DbStaLevelizeObserver(dbSta* sta) : sta_(sta) {}
+  void levelsChangedBefore() override
+  {
+    sta_->search()->levelsChangedBefore();
+    sta_->graphDelayCalc()->levelsChangedBefore();
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+  void levelChangedBefore(Vertex* vertex) override
+  {
+    sta_->search()->levelChangedBefore(vertex);
+    sta_->graphDelayCalc()->levelChangedBefore(vertex);
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+
+ private:
+  dbSta* sta_;
+};
+
+void dbSta::makeObservers()
+{
+  Sta::makeObservers();
+  levelize_->setObserver(new DbStaLevelizeObserver(this));
+}
+
+void dbSta::invalidateLevelizedDrvrVertices()
+{
+  if (drvr_vertices_level_valid_) {
+    drvr_vertices_level_valid_ = false;
+    levelized_drvr_vertices_.clear();
+  }
+}
+
+const VertexSeq& dbSta::levelizedDrvrVertices()
+{
+  ensureLevelized();
+  if (!drvr_vertices_level_valid_) {
+    Graph* g = graph();
+    // Approx half of vertices are drivers.
+    levelized_drvr_vertices_.reserve(g->vertexCount() / 2);
+    Network* net = network();
+    VertexIterator vertex_iter(g);
+    while (vertex_iter.hasNext()) {
+      Vertex* vertex = vertex_iter.next();
+      if (vertex->isDriver(net)) {
+        levelized_drvr_vertices_.push_back(vertex);
+      }
+    }
+    VertexNameLess name_less(net);
+    std::sort(levelized_drvr_vertices_.begin(),
+              levelized_drvr_vertices_.end(),
+              [&name_less](const Vertex* a, const Vertex* b) {
+                if (a->level() != b->level()) {
+                  return a->level() < b->level();
+                }
+                return name_less(a, b);
+              });
+    drvr_vertices_level_valid_ = true;
+  }
+  return levelized_drvr_vertices_;
 }
 
 void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)

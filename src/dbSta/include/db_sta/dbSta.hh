@@ -83,6 +83,7 @@ class dbSta;
 class dbNetwork;
 class dbStaReport;
 class dbStaCbk;
+class DbStaLevelizeObserver;
 class PatternMatch;
 class TestCell;
 
@@ -222,10 +223,17 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   using Sta::replaceCell;
   using Sta::slack;
 
+  // Drivers sorted by (level, name) for determinism.
+  const VertexSeq& levelizedDrvrVertices();
+
  private:
+  friend class DbStaLevelizeObserver;
+
   void makeReport() override;
   void makeNetwork() override;
   void makeSdcNetwork() override;
+  void makeObservers() override;
+  void invalidateLevelizedDrvrVertices();
 
   void replaceCell(Instance* inst,
                    Cell* to_cell,
@@ -238,6 +246,9 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
+
+  VertexSeq levelized_drvr_vertices_;
+  bool drvr_vertices_level_valid_ = false;
 };
 
 // Utilities for TestCell
