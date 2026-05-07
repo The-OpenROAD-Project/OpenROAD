@@ -4,19 +4,21 @@
 #pragma once
 
 #include <any>
+#include <boost/json/object.hpp>
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "color.h"
 #include "glyph_cache.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "web_painter.h"
@@ -104,12 +106,22 @@ struct TileVisibility
   bool net_scan = true;
   bool net_analog = true;
 
-  // Shapes
-  bool routing = true;
-  bool special_nets = true;
-  bool pins = true;
-  bool pin_markers = true;
+  // Shapes — routing sub-types
+  bool routing = true;            // parent flag (kept for backward compat)
+  bool routing_segments = true;   // regular wire segments
+  bool routing_vias = true;       // regular vias
+  bool special_nets = true;       // parent flag (kept for backward compat)
+  bool srouting_segments = true;  // special-net segments/straps
+  bool srouting_vias = true;      // special-net vias
+  bool pins = true;               // BTerm (IO pin) shapes on tech layers
+  bool pin_markers = true;        // BTerm direction markers on _pins layer
+  bool pin_names = true;          // BTerm name labels on _pins layer
   bool blockages = true;
+
+  // Instance sub-shapes
+  bool inst_names = true;      // Instance name labels on _instances layer
+  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
+  bool inst_pin_names = true;  // ITerm name labels
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -117,7 +129,9 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json;  // stored for dynamic per-site lookups
+  // Per-site visibility, populated from any "site_<name>" int keys in the
+  // payload during parseFromJson().
+  std::unordered_map<std::string, bool> sites;
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)
@@ -139,7 +153,12 @@ struct TileVisibility
   // occasional inconsistency for smoother visualization.
   bool debug_live = false;
 
-  void parseFromJson(const std::string& json);
+  // Per-metal-layer visibility: when has_visible_layers is true, pin marker
+  // rendering skips BPin boxes whose tech layer is not in this set.
+  std::set<std::string> visible_layers;
+  bool has_visible_layers = false;
+
+  void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
@@ -162,6 +181,10 @@ class TileGenerator
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
+
+  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // lazily and cached; the cache is rebuilt only if the tech changes.
+  const std::map<odb::dbTechLayer*, Color>& getLayerColorMap() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -188,6 +211,7 @@ class TileGenerator
 
   odb::dbBlock* getBlock() const;
   odb::dbChip* getChip() const;
+  odb::dbTech* getTech() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -362,6 +386,14 @@ class TileGenerator
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
   int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
+
+  // Cached layer-color map keyed by tech (see getLayerColorMap).  Each tech is
+  // computed once and kept; std::map reference stability means a returned ref
+  // stays valid even if another tech is added later.
+  mutable std::mutex layer_colors_mutex_;
+  mutable std::map<odb::dbTech*, std::map<odb::dbTechLayer*, Color>>
+      layer_colors_by_tech_;
+
   static constexpr int kTileSizeInPixel = 256;
 };
 
@@ -386,9 +418,8 @@ void collectTimingPathShapes(odb::dbBlock* block,
 
 // ── JSON serialization helpers for TileGenerator responses ──
 
-void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen);
-void serializeBoundsResponse(JsonBuilder& b,
-                             const TileGenerator& gen,
-                             bool shapes_ready);
+boost::json::object serializeTechResponse(const TileGenerator& gen);
+boost::json::object serializeBoundsResponse(const TileGenerator& gen,
+                                            bool shapes_ready);
 
 }  // namespace web

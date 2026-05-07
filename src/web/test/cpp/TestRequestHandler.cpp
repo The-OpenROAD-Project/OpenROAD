@@ -2,15 +2,18 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <any>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 
 #include "gtest/gtest.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tile_generator.h"
@@ -102,46 +105,40 @@ std::string payloadStr(const WebSocketResponse& resp)
   return std::string(resp.payload.begin(), resp.payload.end());
 }
 
-//------------------------------------------------------------------------------
-// json_escape tests (no fixture needed)
-//------------------------------------------------------------------------------
-
-TEST(JsonEscapeTest, PlainString)
+// Helper to parse a JSON literal into a boost::json::object for tests.
+boost::json::object parseObj(std::string_view json)
 {
-  EXPECT_EQ(json_escape("hello"), "hello");
-}
-
-TEST(JsonEscapeTest, EscapesSpecialChars)
-{
-  EXPECT_EQ(json_escape("a\"b"), "a\\\"b");
-  EXPECT_EQ(json_escape("a\\b"), "a\\\\b");
-  EXPECT_EQ(json_escape("a\nb"), "a\\nb");
-  EXPECT_EQ(json_escape("a\tb"), "a\\tb");
-  EXPECT_EQ(json_escape("a\rb"), "a\\rb");
-}
-
-TEST(JsonEscapeTest, ControlChars)
-{
-  std::string input(1, '\x01');
-  EXPECT_EQ(json_escape(input), "\\u0001");
+  return boost::json::parse(json).as_object();
 }
 
 //------------------------------------------------------------------------------
-// JsonBuilder overload tests
+// jsonOr<T> template tests (optional-field accessor)
 //------------------------------------------------------------------------------
 
-// Verify that field(std::string, const char*) writes a JSON string, not a bool.
-// Without an explicit overload, C++ prefers the standard pointer-to-bool
-// conversion over the user-defined const char*-to-std::string conversion,
-// silently writing "true" instead of the intended string value.
-TEST(JsonBuilderTest, FieldStringKeyCharPtrValueWritesString)
+TEST(JsonOrTest, MissingKeyReturnsDefault)
 {
-  JsonBuilder b;
-  b.beginObject();
-  b.field(std::string("dir"), "input");
-  b.endObject();
-  EXPECT_NE(b.str().find("\"input\""), std::string::npos);
-  EXPECT_EQ(b.str().find("true"), std::string::npos);
+  auto obj = parseObj(R"({"a":1})");
+  EXPECT_EQ(jsonOr<int>(obj, "missing", 42), 42);
+  EXPECT_EQ(jsonOr<std::string>(obj, "missing", "default"), "default");
+  EXPECT_DOUBLE_EQ(jsonOr<double>(obj, "missing", 3.14), 3.14);
+  EXPECT_TRUE(jsonOr<bool>(obj, "missing", true));
+}
+
+TEST(JsonOrTest, PresentKeyReturnsValue)
+{
+  auto obj = parseObj(R"({"i":7,"d":2.5,"s":"hi","b":true})");
+  EXPECT_EQ(jsonOr<int>(obj, "i", 0), 7);
+  EXPECT_DOUBLE_EQ(jsonOr<double>(obj, "d", 0.0), 2.5);
+  EXPECT_EQ(jsonOr<std::string>(obj, "s", ""), "hi");
+  EXPECT_TRUE(jsonOr<bool>(obj, "b", false));
+}
+
+// jsonOr is intentionally strict on type: a present-but-wrongly-typed
+// value is a contract violation, not an "use the default" case.
+TEST(JsonOrTest, WrongTypePresentValueThrows)
+{
+  auto obj = parseObj(R"({"i":"not an int"})");
+  EXPECT_THROW(jsonOr<int>(obj, "i", 0), std::exception);
 }
 
 //------------------------------------------------------------------------------
@@ -201,7 +198,8 @@ TEST_F(TileHandlerTest, TileReturnsPng)
   WebSocketRequest req;
   req.id = 99;
   req.type = WebSocketRequest::kTile;
-  req.raw_json = R"({"layer":"metal1","z":0,"x":0,"y":0})";
+  req.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.id, 99u);
@@ -220,7 +218,8 @@ TEST_F(TileHandlerTest, EmptyTile)
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kTile;
-  req.raw_json = R"({"layer":"metal1","z":0,"x":0,"y":0})";
+  req.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);  // PNG
@@ -238,7 +237,8 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   WebSocketRequest req;
   req.id = 2;
   req.type = WebSocketRequest::kTile;
-  req.raw_json = R"({"layer":"_instances","z":0,"x":0,"y":0})";
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   // Should not crash and should return valid PNG
   auto resp = handler_->handleTile(req, state_);
@@ -273,7 +273,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
   WebSocketRequest active_req;
   active_req.type = WebSocketRequest::kSetActiveHeatmap;
-  active_req.raw_json = R"({"name":"Pin"})";
+  active_req.json = parseObj(R"({"name":"Pin"})");
 
   EXPECT_EQ(handler_->handleSetActiveHeatMap(active_req, state1).type, 0);
   EXPECT_EQ(handler_->handleSetActiveHeatMap(active_req, state2).type, 0);
@@ -281,7 +281,8 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
   WebSocketRequest set_req;
   set_req.id = 4;
   set_req.type = WebSocketRequest::kSetHeatmap;
-  set_req.raw_json = R"({"name":"Pin","option":"DisplayMin","value":12.5})";
+  set_req.json
+      = parseObj(R"({"name":"Pin","option":"DisplayMin","value":12.5})");
 
   auto set_resp = handler_->handleSetHeatMap(set_req, state1);
   EXPECT_EQ(set_resp.type, WebSocketResponse::kJson);
@@ -306,7 +307,8 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
   WebSocketRequest set_req;
   set_req.id = 8;
   set_req.type = WebSocketRequest::kSetHeatmap;
-  set_req.raw_json = R"({"name":"Pin","option":"ShowNumbers","value":true})";
+  set_req.json
+      = parseObj(R"({"name":"Pin","option":"ShowNumbers","value":true})");
 
   auto set_resp = handler_->handleSetHeatMap(set_req, state_);
   EXPECT_EQ(set_resp.type, WebSocketResponse::kJson);
@@ -314,6 +316,30 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
     std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
+  }
+}
+
+// The browser's number input runs every value through parseFloat, so an
+// int-typed setting like Alpha can arrive as a JSON double (e.g. user typed
+// 150.5).  The handler must round to int rather than rejecting the request.
+// Regression test for the click-to-select breakage's heatmap-side cousin.
+TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 9;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"Alpha","value":150.5})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    // 150.5 rounds to 151 (std::round half-away-from-zero).
+    EXPECT_EQ(state_.heatmaps.at("Pin")->getColorAlpha(), 151);
   }
 }
 
@@ -341,7 +367,7 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   WebSocketRequest active_req;
   active_req.id = 7;
   active_req.type = WebSocketRequest::kSetActiveHeatmap;
-  active_req.raw_json = R"({"name":"LazyMeta"})";
+  active_req.json = parseObj(R"({"name":"LazyMeta"})");
 
   auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
   EXPECT_EQ(active_resp.type, WebSocketResponse::kJson);
@@ -403,7 +429,8 @@ TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
   WebSocketRequest req;
   req.id = 10;
   req.type = WebSocketRequest::kSelect;
-  req.raw_json = R"({"dbu_x":1000,"dbu_y":1000,"zoom":0})";
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
 
   auto resp = handler_->handleSelect(req, state_);
   EXPECT_EQ(resp.id, 10u);
@@ -418,13 +445,44 @@ TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
   WebSocketRequest req;
   req.id = 11;
   req.type = WebSocketRequest::kSelect;
-  req.raw_json = R"({"dbu_x":99000,"dbu_y":99000,"zoom":10})";
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
 
   auto resp = handler_->handleSelect(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"selected\": []"), std::string::npos);
+  EXPECT_NE(json.find("\"selected\":[]"), std::string::npos);
+}
+
+// Leaflet's zoomSnap=0 lets the client send fractional zoom values; the
+// handler must accept them without erroring out.  Regression test for the
+// click-to-select breakage after strict-typing the request fields.
+TEST_F(SelectHandlerTest, SelectAcceptsFractionalZoom)
+{
+  WebSocketRequest req;
+  req.id = 12;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":1000,"dbu_y":1000,"zoom":1.5,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+}
+
+// A missing required field surfaces as kError (the handler's catch block
+// turns the boost::json exception into an error response) rather than UB.
+TEST_F(SelectHandlerTest, SelectWithMissingFieldReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 13;
+  req.type = WebSocketRequest::kSelect;
+  // dbu_x is required but missing.
+  req.json = parseObj(R"({"dbu_y":1000,"zoom":1,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("server error"), std::string::npos);
 }
 
 TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
@@ -432,7 +490,7 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
   WebSocketRequest req;
   req.id = 12;
   req.type = WebSocketRequest::kInspect;
-  req.raw_json = R"({"select_id":999})";
+  req.json = parseObj(R"({"select_id":999})");
 
   auto resp = handler_->handleInspect(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -446,14 +504,14 @@ TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
   WebSocketRequest req;
   req.id = 13;
   req.type = WebSocketRequest::kHover;
-  req.raw_json = R"({"select_id":999})";
+  req.json = parseObj(R"({"select_id":999})");
 
   auto resp = handler_->handleHover(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
-  EXPECT_NE(json.find("\"count\": 0"), std::string::npos);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":0"), std::string::npos);
 }
 
 TEST_F(SelectHandlerTest, SelectClearsTimingState)
@@ -471,7 +529,8 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
   WebSocketRequest req;
   req.id = 14;
   req.type = WebSocketRequest::kSelect;
-  req.raw_json = R"({"dbu_x":1000,"dbu_y":1000,"zoom":0})";
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
 
   handler_->handleSelect(req, state_);
 
@@ -492,14 +551,15 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
   WebSocketRequest req;
   req.id = 15;
   req.type = WebSocketRequest::kSelect;
-  req.raw_json = R"({"dbu_x":99000,"dbu_y":99000,"zoom":10})";
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
 
   auto resp = handler_->handleSelect(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   const std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"can_navigate_back\": 0"), std::string::npos);
-  EXPECT_NE(json.find("\"selected\": []"), std::string::npos);
+  EXPECT_NE(json.find("\"can_navigate_back\":0"), std::string::npos);
+  EXPECT_NE(json.find("\"selected\":[]"), std::string::npos);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_FALSE(state_.current_inspected);
@@ -525,11 +585,11 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
   WebSocketRequest inspect_req;
   inspect_req.id = 17;
   inspect_req.type = WebSocketRequest::kInspect;
-  inspect_req.raw_json = R"({"select_id":0})";
+  inspect_req.json = parseObj(R"({"select_id":0})");
 
   auto inspect_resp = handler_->handleInspect(inspect_req, state_);
   EXPECT_EQ(inspect_resp.type, WebSocketResponse::kJson);
-  EXPECT_NE(payloadStr(inspect_resp).find("\"can_navigate_back\": 1"),
+  EXPECT_NE(payloadStr(inspect_resp).find("\"can_navigate_back\":1"),
             std::string::npos);
 
   {
@@ -546,7 +606,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
   auto back_resp = handler_->handleInspectBack(back_req, state_);
   EXPECT_EQ(back_resp.type, WebSocketResponse::kJson);
-  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\": 0"),
+  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\":0"),
             std::string::npos);
   EXPECT_NE(payloadStr(back_resp).find(initial_selected.getName()),
             std::string::npos);
@@ -573,7 +633,7 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 
   auto back_resp = handler_->handleInspectBack(back_req, state_);
   EXPECT_EQ(back_resp.type, WebSocketResponse::kJson);
-  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\": 0"),
+  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\":0"),
             std::string::npos);
   EXPECT_NE(payloadStr(back_resp).find(initial_selected.getName()),
             std::string::npos);
@@ -597,7 +657,7 @@ TEST_F(SelectHandlerTest, FocusNetAddValid)
   WebSocketRequest req;
   req.id = 20;
   req.type = WebSocketRequest::kSetFocusNets;
-  req.raw_json = R"({"action":"add","net_name":"clk"})";
+  req.json = parseObj(R"({"action":"add","net_name":"clk"})");
 
   auto resp = handler_->handleSetFocusNets(req, state_);
   EXPECT_EQ(resp.id, 20u);
@@ -616,7 +676,7 @@ TEST_F(SelectHandlerTest, FocusNetAddInvalidNetReturnsZeroCount)
   WebSocketRequest req;
   req.id = 21;
   req.type = WebSocketRequest::kSetFocusNets;
-  req.raw_json = R"({"action":"add","net_name":"nonexistent_net"})";
+  req.json = parseObj(R"({"action":"add","net_name":"nonexistent_net"})");
 
   auto resp = handler_->handleSetFocusNets(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -641,7 +701,7 @@ TEST_F(SelectHandlerTest, FocusNetRemove)
   WebSocketRequest req;
   req.id = 22;
   req.type = WebSocketRequest::kSetFocusNets;
-  req.raw_json = R"({"action":"remove","net_name":"data"})";
+  req.json = parseObj(R"({"action":"remove","net_name":"data"})");
 
   auto resp = handler_->handleSetFocusNets(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -667,7 +727,7 @@ TEST_F(SelectHandlerTest, FocusNetClear)
   WebSocketRequest req;
   req.id = 23;
   req.type = WebSocketRequest::kSetFocusNets;
-  req.raw_json = R"({"action":"clear","net_name":""})";
+  req.json = parseObj(R"({"action":"clear","net_name":""})");
 
   auto resp = handler_->handleSetFocusNets(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -687,13 +747,13 @@ TEST_F(SelectHandlerTest, FocusNetAddMultiple)
   WebSocketRequest req1;
   req1.id = 24;
   req1.type = WebSocketRequest::kSetFocusNets;
-  req1.raw_json = R"({"action":"add","net_name":"clk"})";
+  req1.json = parseObj(R"({"action":"add","net_name":"clk"})");
   handler_->handleSetFocusNets(req1, state_);
 
   WebSocketRequest req2;
   req2.id = 25;
   req2.type = WebSocketRequest::kSetFocusNets;
-  req2.raw_json = R"({"action":"add","net_name":"reset"})";
+  req2.json = parseObj(R"({"action":"add","net_name":"reset"})");
   auto resp = handler_->handleSetFocusNets(req2, state_);
 
   std::string json = payloadStr(resp);
@@ -710,7 +770,7 @@ TEST_F(SelectHandlerTest, FocusNetAddDuplicateNoop)
   WebSocketRequest req;
   req.id = 26;
   req.type = WebSocketRequest::kSetFocusNets;
-  req.raw_json = R"({"action":"add","net_name":"clk"})";
+  req.json = parseObj(R"({"action":"add","net_name":"clk"})");
 
   handler_->handleSetFocusNets(req, state_);
   auto resp = handler_->handleSetFocusNets(req, state_);
@@ -732,7 +792,8 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   WebSocketRequest req;
   req.id = 27;
   req.type = WebSocketRequest::kTile;
-  req.raw_json = R"({"layer":"metal1","z":0,"x":0,"y":0})";
+  req.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   // Should not crash and should return valid PNG
   auto resp = tile_handler->handleTile(req, state_);
@@ -768,6 +829,17 @@ class DRCHandlerTest : public tst::Nangate45Fixture
     return top;
   }
 
+  odb::dbMarkerCategory* createDirectMarkerCategory(const char* name,
+                                                    int num_markers)
+  {
+    auto* top = odb::dbMarkerCategory::create(chip_, name);
+    for (int i = 0; i < num_markers; ++i) {
+      auto* marker = odb::dbMarker::create(top);
+      marker->addShape(odb::Rect(i * 1000, 0, i * 1000 + 500, 500));
+    }
+    return top;
+  }
+
   std::shared_ptr<TileGenerator> gen_;
   std::unique_ptr<DRCHandler> handler_;
   SessionState state_;
@@ -786,7 +858,7 @@ TEST_F(DRCHandlerTest, CategoriesEmpty)
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"categories\""), std::string::npos);
   // Should be an empty array
-  EXPECT_NE(json.find("\"categories\": []"), std::string::npos);
+  EXPECT_NE(json.find("\"categories\":[]"), std::string::npos);
 }
 
 TEST_F(DRCHandlerTest, CategoriesWithMarkers)
@@ -813,7 +885,7 @@ TEST_F(DRCHandlerTest, MarkersForCategory)
   WebSocketRequest req;
   req.id = 102;
   req.type = WebSocketRequest::kDrcMarkers;
-  req.raw_json = R"({"category":"DRC"})";
+  req.json = parseObj(R"({"category":"DRC"})");
 
   auto resp = handler_->handleDRCMarkers(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -825,18 +897,36 @@ TEST_F(DRCHandlerTest, MarkersForCategory)
   EXPECT_EQ(state_.active_drc_category, "DRC");
 }
 
-TEST_F(DRCHandlerTest, MarkersForEmptyCategory)
+TEST_F(DRCHandlerTest, MarkersDirectlyUnderCategory)
 {
+  createDirectMarkerCategory("DRC", 2);
+
   WebSocketRequest req;
-  req.id = 103;
+  req.id = 109;
   req.type = WebSocketRequest::kDrcMarkers;
-  req.raw_json = R"({"category":""})";
+  req.json = parseObj(R"({"category":"DRC"})");
 
   auto resp = handler_->handleDRCMarkers(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"subcategories\": []"), std::string::npos);
+  EXPECT_NE(json.find("\"name\":\"DRC\""), std::string::npos);
+  EXPECT_NE(json.find("\"markers\""), std::string::npos);
+  EXPECT_NE(json.find("\"total_count\":2"), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, MarkersForEmptyCategory)
+{
+  WebSocketRequest req;
+  req.id = 103;
+  req.type = WebSocketRequest::kDrcMarkers;
+  req.json = parseObj(R"({"category":""})");
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"subcategories\":[]"), std::string::npos);
 }
 
 TEST_F(DRCHandlerTest, MarkersForNonExistentCategory)
@@ -844,7 +934,7 @@ TEST_F(DRCHandlerTest, MarkersForNonExistentCategory)
   WebSocketRequest req;
   req.id = 104;
   req.type = WebSocketRequest::kDrcMarkers;
-  req.raw_json = R"({"category":"NonExistent"})";
+  req.json = parseObj(R"({"category":"NonExistent"})");
 
   auto resp = handler_->handleDRCMarkers(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -865,21 +955,21 @@ TEST_F(DRCHandlerTest, UpdateMarkerVisited)
   {
     WebSocketRequest cat_req;
     cat_req.type = WebSocketRequest::kDrcMarkers;
-    cat_req.raw_json = R"({"category":"DRC"})";
+    cat_req.json = parseObj(R"({"category":"DRC"})");
     handler_->handleDRCMarkers(cat_req, state_);
   }
 
   WebSocketRequest req;
   req.id = 105;
   req.type = WebSocketRequest::kDrcUpdateMarker;
-  req.raw_json = R"({"marker_id":)" + std::to_string(marker->getId())
-                 + R"(,"field":"visited","value":1})";
+  req.json = parseObj(R"({"marker_id":)" + std::to_string(marker->getId())
+                      + R"(,"field":"visited","value":true})");
 
   auto resp = handler_->handleDRCUpdateMarker(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
   EXPECT_TRUE(marker->isVisited());
 }
 
@@ -894,15 +984,15 @@ TEST_F(DRCHandlerTest, UpdateMarkerVisible)
   {
     WebSocketRequest cat_req;
     cat_req.type = WebSocketRequest::kDrcMarkers;
-    cat_req.raw_json = R"({"category":"DRC"})";
+    cat_req.json = parseObj(R"({"category":"DRC"})");
     handler_->handleDRCMarkers(cat_req, state_);
   }
 
   WebSocketRequest req;
   req.id = 106;
   req.type = WebSocketRequest::kDrcUpdateMarker;
-  req.raw_json = R"({"marker_id":)" + std::to_string(marker->getId())
-                 + R"(,"field":"visible","value":0})";
+  req.json = parseObj(R"({"marker_id":)" + std::to_string(marker->getId())
+                      + R"(,"field":"visible","value":false})");
 
   auto resp = handler_->handleDRCUpdateMarker(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -923,20 +1013,21 @@ TEST_F(DRCHandlerTest, HighlightMarker)
   {
     WebSocketRequest cat_req;
     cat_req.type = WebSocketRequest::kDrcMarkers;
-    cat_req.raw_json = R"({"category":"DRC"})";
+    cat_req.json = parseObj(R"({"category":"DRC"})");
     handler_->handleDRCMarkers(cat_req, state_);
   }
 
   WebSocketRequest req;
   req.id = 107;
   req.type = WebSocketRequest::kDrcHighlight;
-  req.raw_json = R"({"marker_id":)" + std::to_string(marker->getId()) + "}";
+  req.json
+      = parseObj(R"({"marker_id":)" + std::to_string(marker->getId()) + "}");
 
   auto resp = handler_->handleDRCHighlight(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
   EXPECT_NE(json.find("\"bbox\""), std::string::npos);
 
   // Marker should now be visited
@@ -958,13 +1049,13 @@ TEST_F(DRCHandlerTest, HighlightClear)
   WebSocketRequest req;
   req.id = 108;
   req.type = WebSocketRequest::kDrcHighlight;
-  req.raw_json = R"({"marker_id":-1})";
+  req.json = parseObj(R"({"marker_id":-1})");
 
   auto resp = handler_->handleDRCHighlight(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"ok\": 0"), std::string::npos);
+  EXPECT_NE(json.find("\"ok\":0"), std::string::npos);
 
   // Highlights should be cleared
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -977,7 +1068,7 @@ TEST_F(DRCHandlerTest, DRCOverlayIncludesVisibleMarkers)
 
   WebSocketRequest req;
   req.type = WebSocketRequest::kDrcMarkers;
-  req.raw_json = R"({"category":"DRC"})";
+  req.json = parseObj(R"({"category":"DRC"})");
   handler_->handleDRCMarkers(req, state_);
 
   // All 3 markers should appear in the DRC overlay
@@ -993,7 +1084,7 @@ TEST_F(DRCHandlerTest, SelectEmptyCategoryClearsOverlay)
   {
     WebSocketRequest req;
     req.type = WebSocketRequest::kDrcMarkers;
-    req.raw_json = R"({"category":"DRC"})";
+    req.json = parseObj(R"({"category":"DRC"})");
     handler_->handleDRCMarkers(req, state_);
   }
 
@@ -1001,7 +1092,7 @@ TEST_F(DRCHandlerTest, SelectEmptyCategoryClearsOverlay)
   {
     WebSocketRequest req;
     req.type = WebSocketRequest::kDrcMarkers;
-    req.raw_json = R"({"category":""})";
+    req.json = parseObj(R"({"category":""})");
     handler_->handleDRCMarkers(req, state_);
   }
 
@@ -1018,7 +1109,7 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
   {
     WebSocketRequest req;
     req.type = WebSocketRequest::kDrcMarkers;
-    req.raw_json = R"({"category":"DRC"})";
+    req.json = parseObj(R"({"category":"DRC"})");
     handler_->handleDRCMarkers(req, state_);
   }
 
@@ -1033,14 +1124,14 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     WebSocketRequest req;
     req.id = 200;
     req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
-    req.raw_json = R"({"category":"DRC","visible":0})";
+    req.json = parseObj(R"({"category":"DRC","visible":false})");
 
     auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
     std::string json = payloadStr(resp);
-    EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
-    EXPECT_NE(json.find("\"count\": 3"), std::string::npos);
+    EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+    EXPECT_NE(json.find("\"count\":3"), std::string::npos);
   }
 
   // All markers should now be hidden
@@ -1060,7 +1151,7 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     WebSocketRequest req;
     req.id = 201;
     req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
-    req.raw_json = R"({"category":"DRC","visible":1})";
+    req.json = parseObj(R"({"category":"DRC","visible":true})");
 
     auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson);

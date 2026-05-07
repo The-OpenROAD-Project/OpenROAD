@@ -23,9 +23,11 @@ ALL_TESTS = [
     "get_ports1_hier",
     "hier2",
     "hier3",
+    "hier_escape_port",
     "hierclock",
     "hierwrite",
     "hier_deep",
+    "hier_weird_port",
     "make_port",
     "network_edit1",
     "power1",
@@ -56,6 +58,7 @@ ALL_TESTS = [
     "sdc_get1",
     "sdc_names1",
     "sdc_names2",
+    "spef_def_names",
     "sta1",
     "sta2",
     "sta3",
@@ -198,6 +201,10 @@ filegroup(
             "sdc_names1": [
                 "hier1.def",
             ],
+            "spef_def_names": [
+                "example1_slow.lib",
+                "example1.lef",
+            ],
             "sta1": [
                 "example1_slow.lib",
                 "example1.def",
@@ -293,6 +300,7 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
+        "cpp/TestDbSta_StalePrevPath.v",
     ],
     deps = [
         "//src/dbSta",

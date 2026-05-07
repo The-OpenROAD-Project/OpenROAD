@@ -22,6 +22,19 @@ cc_library(
 )
 
 cc_library(
+    name = "base_types",
+    srcs = ["src/frBaseTypes.cpp"],
+    hdrs = ["src/frBaseTypes.h"],
+    includes = ["src"],
+    deps = [
+        "//src/odb",
+        "//src/utl",
+        "@boost.geometry",
+        "@boost.serialization",
+    ],
+)
+
+cc_library(
     name = "db_hdrs",
     hdrs = [
         "src/db/drObj/drAccessPattern.h",
@@ -78,8 +91,14 @@ cc_library(
         "src/db/tech/frTechObject.h",
         "src/db/tech/frViaDef.h",
         "src/db/tech/frViaRuleGenerate.h",
+        "src/dr/FlexMazeTypes.h",
     ],
-    deps = ["@boost.polygon"],
+    deps = [
+        ":base_types",
+        "//src/odb",
+        "//src/utl",
+        "@boost.polygon",
+    ],
 )
 
 cc_library(
@@ -128,10 +147,7 @@ cc_library(
         "src/dr/FlexGridGraph.cpp",
         "src/dr/FlexGridGraph.h",
         "src/dr/FlexGridGraph_maze.cpp",
-        "src/dr/FlexMazeTypes.h",
         "src/dr/FlexWavefront.h",
-        "src/frBaseTypes.cpp",
-        "src/frBaseTypes.h",
         "src/frDesign.h",
         "src/frProfileTask.h",
         "src/frRTree.h",
@@ -188,6 +204,7 @@ cc_library(
         "src",
     ],
     deps = [
+        ":base_types",
         ":db_hdrs",
         ":pin_access_service",
         "//src/dst",
@@ -222,9 +239,7 @@ cc_library(
         "src/dr/FlexDR_graphics.cpp",
         "src/dr/FlexDR_graphics.h",
         "src/dr/FlexGridGraph.h",
-        "src/dr/FlexMazeTypes.h",
         "src/dr/FlexWavefront.h",
-        "src/frBaseTypes.h",
         "src/frDesign.h",
         "src/frRegionQuery.h",
         "src/gc/FlexGC.h",
@@ -252,6 +267,7 @@ cc_library(
         "src",
     ],
     deps = [
+        ":base_types",
         ":db_hdrs",
         ":drt",
         ":pin_access_service",

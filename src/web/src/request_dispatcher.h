@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <boost/json/parse.hpp>
+#include <boost/json/value.hpp>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -17,8 +20,9 @@ namespace web {
 // functions.  Each handler class registers its own request types via
 // registerRequests(), keeping dispatch logic co-located with the handler.
 //
-// Handlers extract their own fields from req.raw_json using the extract_*
-// utilities, so WebSocketRequest carries only {id, type, raw_json}.
+// The dispatcher parses the incoming message exactly once and stores the
+// resulting object on req.json; handlers read fields directly via the
+// getJson* helpers in request_handler.h.
 class RequestDispatcher
 {
  public:
@@ -43,21 +47,25 @@ class RequestDispatcher
         = &by_name_.emplace(type_name, std::move(entry)).first->second;
   }
 
-  // Parse a raw JSON message into a WebSocketRequest.
-  // Extracts {id, type, raw_json} only -- handlers parse their own fields.
+  // Parse a raw JSON message into a WebSocketRequest.  On any failure
+  // (malformed JSON, non-object root, missing/wrongly-typed `id` or `type`)
+  // the request type is kUnknown and req.json is left empty.
   WebSocketRequest parse(const std::string& msg) const
   {
     WebSocketRequest req;
-    req.id = static_cast<uint32_t>(extract_int(msg, "id"));
-    req.raw_json = msg;
-
-    const std::string type_str = extract_string(msg, "type");
-    auto it = by_name_.find(type_str);
-    if (it != by_name_.end()) {
-      req.type = it->second.type;
-    } else {
-      req.type = WebSocketRequest::kUnknown;
+    try {
+      boost::json::value parsed = boost::json::parse(msg);
+      req.json = std::move(parsed.as_object());
+      req.id = static_cast<uint32_t>(req.json.at("id").as_int64());
+      req.raw_type = std::string(req.json.at("type").as_string());
+      if (auto it = by_name_.find(req.raw_type); it != by_name_.end()) {
+        req.type = it->second.type;
+        return req;
+      }
+    } catch (const std::exception& e) {
+      req.parse_error = e.what();
     }
+    req.type = WebSocketRequest::kUnknown;
     return req;
   }
 

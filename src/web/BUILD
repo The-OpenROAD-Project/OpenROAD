@@ -123,7 +123,7 @@ cc_library(
         "src/glyph_cache.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
-        "src/json_builder.h",
+        "src/module_color_palette.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
@@ -150,6 +150,7 @@ cc_library(
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
+        "-DBOOST_JSON_HEADER_ONLY",
     ],
     includes = [
         "include",
@@ -167,6 +168,8 @@ cc_library(
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
+        "@boost.json",
+        "@boost.system",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
