@@ -2,7 +2,7 @@ source "helpers.tcl"
 source asap7/asap7.vars
 
 set ::env(RSZ_VTSWAP_CANDIDATES) 10
-set ::env(RSZ_VTSWAP_MAX_MOVES) 100
+set ::env(RSZ_VTSWAP_MAX_MOVES) 30
 
 proc capture_setup_ppa { } {
   set scene [sta::cmd_scene]
