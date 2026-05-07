@@ -129,16 +129,16 @@ class RepairSetup : public sta::dbStaState
                          float setup_slack_margin);
 
   // Shared endpoint optimization loop used by repairSetupReroute.
-  bool repairEndpoints(int max_end_count,
-                       int max_passes,
-                       int max_iterations,
-                       float setup_slack_margin,
-                       bool verbose,
-                       float initial_tns,
-                       int& opto_iteration,
-                       int& num_viols,
-                       const char* phase_name,
-                       char phase_marker);
+  bool repairEndpointsWithReroute(int max_end_count,
+                                  int max_passes,
+                                  int max_iterations,
+                                  float setup_slack_margin,
+                                  bool verbose,
+                                  float initial_tns,
+                                  int& opto_iteration,
+                                  int& num_viols,
+                                  const char* phase_name,
+                                  char phase_marker);
   int fanout(sta::Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 

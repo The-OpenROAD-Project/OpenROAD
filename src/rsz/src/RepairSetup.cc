@@ -154,10 +154,6 @@ void RepairSetup::setupMoveSequence(const std::vector<MoveType>& sequence,
     }
   } else {
     move_sequence_.clear();
-    if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
-        && resizer_->resistanceAware()) {
-      move_sequence_.push_back(resizer_->reroute_move_.get());
-    }
     if (!skip_buffer_removal) {
       move_sequence_.push_back(resizer_->unbuffer_move_.get());
     }
@@ -922,16 +918,16 @@ bool RepairSetup::repairEndpoint(sta::Pin* end_pin,
 
 // Shared endpoint optimization loop for repairSetupReroute.
 // Iterates over violating endpoints and calls repairPathReroute for each.
-bool RepairSetup::repairEndpoints(const int max_end_count,
-                                  const int max_passes,
-                                  const int max_iterations,
-                                  const float setup_slack_margin,
-                                  const bool verbose,
-                                  const float initial_tns,
-                                  int& opto_iteration,
-                                  int& num_viols,
-                                  const char* phase_name,
-                                  const char phase_marker)
+bool RepairSetup::repairEndpointsWithReroute(const int max_end_count,
+                                             const int max_passes,
+                                             const int max_iterations,
+                                             const float setup_slack_margin,
+                                             const bool verbose,
+                                             const float initial_tns,
+                                             int& opto_iteration,
+                                             int& num_viols,
+                                             const char* phase_name,
+                                             const char phase_marker)
 {
   constexpr int digits = 3;
   bool any_changed = false;
@@ -1844,16 +1840,16 @@ void RepairSetup::repairSetup_Reroute(const float setup_slack_margin,
 
   // num_viols is decremented inside repairEndpoints as endpoints are fixed.
   int num_viols = max_endpoint_count;
-  repairEndpoints(max_endpoint_count,
-                  max_passes,
-                  max_iterations,
-                  setup_slack_margin,
-                  verbose,
-                  initial_tns,
-                  opto_iteration,
-                  num_viols,
-                  "REROUTE",
-                  phase_marker);
+  repairEndpointsWithReroute(max_endpoint_count,
+                             max_passes,
+                             max_iterations,
+                             setup_slack_margin,
+                             verbose,
+                             initial_tns,
+                             opto_iteration,
+                             num_viols,
+                             "REROUTE",
+                             phase_marker);
 
   printProgress(opto_iteration, true, false, phase_marker);
 

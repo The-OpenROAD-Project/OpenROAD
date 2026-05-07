@@ -173,14 +173,6 @@ set_max_utilization(double max_utilization)
 }
 
 void
-set_resistance_aware(bool aware)
-{
-  ensureLinked();
-  Resizer *resizer = getResizer();
-  resizer->setResistanceAware(aware);
-}
-
-void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {

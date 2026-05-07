@@ -236,7 +236,6 @@ repair_timing
     [-max_utilization util]
     [-max_buffer_percent buffer_percent]
     [-match_cell_footprint]
-    [-resistance_aware]
     [-verbose]
 ```
 
@@ -266,7 +265,6 @@ repair_timing
 | `-max_iterations` | Defines the maximum number of iterations executed when repairing setup and hold violations. The default is `-1`, which disables the limit of iterations. |
 | `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. The default value is `20`, and the allowed values are integers `[0, 100]`. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
-| `-resistance_aware` | Include RerouteMove to the default move sequence (experimental). |
 | `-verbose` | Enable verbose logging of the repair progress. |
 
 Use`-recover_power` to specify the percent of paths with positive slack which

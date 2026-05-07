@@ -258,9 +258,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                       const odb::dbNameUniquifyType& uniquify
                                       = odb::dbNameUniquifyType::ALWAYS);
 
-  void setResistanceAware(bool aware) { resistance_aware_ = aware; }
-  bool resistanceAware() const { return resistance_aware_; }
-
   ///
   /// Wrapper for odb::dbNet::insertBufferBeforeLoads().
   /// - This accepts STA objects instead of db objects.
@@ -935,8 +932,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Clock buffer pattern configuration
   std::string clock_buffer_string_;
   std::string clock_buffer_footprint_;
-
-  bool resistance_aware_ = false;
 
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;
