@@ -14,12 +14,9 @@ A `Net` represents a single-bit signal. Three constants are available:
 
 All other Nets are produced as instance outputs by `Graph::add`.
 
-Two additional out-of-band values exist for transient use. They do not refer to real instance outputs, and a finalized, normalized graph contains neither:
+One additional out-of-band value exists for transient use. It does not refer to a real instance output:
 
-- `Net::sentinel()` -- a placeholder for a bit that is reserved but not yet wired up. Frontends fill a `Bundle` with sentinels while assembling an instance and replace them as connections are made; any leftover sentinel runs are then swept into explicit `Dangling` instances.
-- `Net::mark()` -- an algorithmic dead/unset/end-of-list marker for pass-internal use. For example, `normalize()` initializes its old-to-new net map to `mark()` everywhere and overwrites entries as instances are emitted; the cut-enumeration pass uses `mark()` to terminate fixed-size cut arrays.
-
-Both names alias the same underlying value (`UINT32_MAX`); the distinction is purely conventional, separating the construction-placeholder idiom from the pass-internal marker idiom. `Net::isMark()` matches either.
+- `Net::sentinel()` -- an algorithmic dead/unset/end-of-list marker for pass-internal use. For example, `normalize()` initializes its old-to-new net map to `sentinel()` everywhere and overwrites entries as instances are emitted; the cut-enumeration pass uses `sentinel()` to terminate fixed-size cut arrays; frontends fill a `Bundle` with sentinels initially and replace them as connections are made, any leftover sentinel runs are then swept into explicit `Dangling` instances.
 
 ### Bundle
 
