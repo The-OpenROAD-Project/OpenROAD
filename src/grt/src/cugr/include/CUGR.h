@@ -95,6 +95,27 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void routeIncremental();
 
+  // Per-layer routing resources (for resource and congestion reporting).
+  // Returns one value per CUGR layer (0-based; layer i corresponds to
+  // routing-level i+1 in OpenDB). The accessors that are not Original
+  // require a prior call to computeCongestionInformation().
+  std::vector<int> getOriginalResources() const;
+  void computeCongestionInformation();
+  std::vector<int> getTotalCapacityPerLayer() const;
+  std::vector<int> getTotalUsagePerLayer() const;
+  std::vector<int> getTotalOverflowPerLayer() const;
+  std::vector<int> getMaxHorizontalOverflows() const;
+  std::vector<int> getMaxVerticalOverflows() const;
+
+  // Total overflow summed across all layers. Mirrors FastRoute's
+  // totalOverflow() so GlobalRouter can decide whether to mark the run
+  // as congested.
+  int totalOverflow();
+  // Creates DRC marker categories ("Global route" → "Horizontal/Vertical
+  // congestion") for every congested 2D tile in the grid graph,
+  // mirroring FastRoute's saveCongestion behaviour.
+  void saveCongestion();
+
  private:
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);

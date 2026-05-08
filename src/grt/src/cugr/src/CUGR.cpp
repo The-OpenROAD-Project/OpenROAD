@@ -670,6 +670,74 @@ void CUGR::updateNet(odb::dbNet* db_net)
   }
 }
 
+std::vector<int> CUGR::getOriginalResources() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getOriginalResources();
+}
+
+void CUGR::computeCongestionInformation()
+{
+  if (!grid_graph_) {
+    return;
+  }
+  grid_graph_->computeCongestionInformation();
+}
+
+std::vector<int> CUGR::getTotalCapacityPerLayer() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getTotalCapacityPerLayer();
+}
+
+std::vector<int> CUGR::getTotalUsagePerLayer() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getTotalUsagePerLayer();
+}
+
+std::vector<int> CUGR::getTotalOverflowPerLayer() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getTotalOverflowPerLayer();
+}
+
+std::vector<int> CUGR::getMaxHorizontalOverflows() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getMaxHorizontalOverflows();
+}
+
+std::vector<int> CUGR::getMaxVerticalOverflows() const
+{
+  if (!grid_graph_) {
+    return {};
+  }
+  return grid_graph_->getMaxVerticalOverflows();
+}
+
+int CUGR::totalOverflow()
+{
+  if (!grid_graph_) {
+    return 0;
+  }
+  grid_graph_->computeCongestionInformation();
+  int total = 0;
+  for (int layer_overflow : grid_graph_->getTotalOverflowPerLayer()) {
+    total += layer_overflow;
+  }
+  return total;
+}
 void CUGR::routeIncremental()
 {
   if (nets_to_route_.empty()) {

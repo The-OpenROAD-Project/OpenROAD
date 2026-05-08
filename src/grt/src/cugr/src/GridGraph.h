@@ -105,6 +105,46 @@ class GridGraph
     return graph_edges_[layer_index][x][y];
   }
 
+  // Initial (pre-blockage, pre-adjustment) per-edge capacity in tracks.
+  // For horizontal layers indexed by row y; for vertical by column x.
+  CapacityT getInitialEdgeCapacity(int layer_index, int x, int y) const
+  {
+    const int direction = layer_directions_[layer_index];
+    const int perp = (direction == MetalLayer::H) ? y : x;
+    return grid_tracks_[layer_index][perp];
+  }
+
+  // Per-layer routing-resource accessors. "Original" is the capacity
+  // before user-defined adjustments (but after blockages). The remaining
+  // accessors return values populated by computeCongestionInformation()
+  // and require a prior call to that method. Indexed by routing-layer-index
+  // (CUGR's 0-based layer index, matching routing_level - 1).
+  std::vector<int> getOriginalResources() const
+  {
+    return original_resources_per_layer_;
+  }
+  void computeCongestionInformation();
+  const std::vector<int>& getTotalCapacityPerLayer() const
+  {
+    return cap_per_layer_;
+  }
+  const std::vector<int>& getTotalUsagePerLayer() const
+  {
+    return usage_per_layer_;
+  }
+  const std::vector<int>& getTotalOverflowPerLayer() const
+  {
+    return overflow_per_layer_;
+  }
+  const std::vector<int>& getMaxHorizontalOverflows() const
+  {
+    return max_h_overflow_;
+  }
+  const std::vector<int>& getMaxVerticalOverflows() const
+  {
+    return max_v_overflow_;
+  }
+
   // Costs
   int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
@@ -202,6 +242,21 @@ class GridGraph
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
+  // Per-layer initial track count keyed by perpendicular index
+  // (row for H layers, column for V layers). Used to recover the
+  // pre-blockage / pre-adjustment capacity of each edge.
+  std::vector<std::vector<int>> grid_tracks_;
+  // Per-layer capacity sums captured before user-defined adjustments are
+  // applied (i.e. only blockage reductions are accounted for). Used by
+  // resource reporting so that the report can show the reduction from
+  // user adjustments analogous to FastRoute's real_cap vs cap.
+  std::vector<int> original_resources_per_layer_;
+  // Per-layer caches populated by computeCongestionInformation().
+  std::vector<int> cap_per_layer_;
+  std::vector<int> usage_per_layer_;
+  std::vector<int> overflow_per_layer_;
+  std::vector<int> max_h_overflow_;
+  std::vector<int> max_v_overflow_;
   const Constants constants_;
 };
 
