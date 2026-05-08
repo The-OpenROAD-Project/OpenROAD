@@ -96,6 +96,8 @@ or_integration_tests(
     repair_setup_invalid_phase
     repair_setup_move_tracker_level1
     repair_setup_pin_command
+    repair_setup_reroute1
+    repair_setup_reroute2
     repair_setup_sizedown_only
     repair_setup_sizeup_match_only
     repair_setup_split_load_hier_only

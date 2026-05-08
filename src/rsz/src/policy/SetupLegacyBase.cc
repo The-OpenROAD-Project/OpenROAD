@@ -189,6 +189,9 @@ void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
         case MoveType::kSizeUpMatch:
           move_sequence_.push_back(MoveType::kSizeUpMatch);
           break;
+        case MoveType::kReroute:
+          move_sequence_.push_back(MoveType::kReroute);
+          break;
         case MoveType::kCount:
           break;
       }

@@ -58,7 +58,7 @@ void SetupLegacyPolicy::iterate()
     runMainRepairLoop(violating_ends, main_state);
   }
   committer_.printTrackerPhaseSummary(
-      "LEGACY Phase Summary", "LEGACY Phase Endpoint Profiler", true);
+      phaseSummaryTitle(), phaseEndpointProfilerTitle(), true);
 
   // Propagate accumulator deltas back to the sequencer.
   setup_context_.iteration = main_state.opto_iteration;
@@ -81,7 +81,8 @@ bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
                RSZ,
                "repair_setup",
                1,
-               "LEGACY{} Phase: No violating endpoints, exiting",
+               "{}{} Phase: No violating endpoints, exiting",
+               phaseName(),
                main_state.phase_marker);
     return false;
   }
@@ -90,7 +91,8 @@ bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
              RSZ,
              "repair_setup",
              1,
-             "LEGACY{} Phase: {} violating endpoints found",
+             "{}{} Phase: {} violating endpoints found",
+             phaseName(),
              main_state.phase_marker,
              violating_ends.size());
 
@@ -125,8 +127,9 @@ bool SetupLegacyPolicy::beginEndpointRepair(
              RSZ,
              "repair_setup",
              1,
-             "LEGACY{} Phase: Doing endpoint {} ({}/{}) WNS = {}, "
+             "{}{} Phase: Doing endpoint {} ({}/{}) WNS = {}, "
              "endpoint slack = {}, TNS = {}",
+             phaseName(),
              main_state.phase_marker,
              endpoint_state.end->name(network_),
              main_state.end_index,
@@ -156,7 +159,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                           main_state.fix_rate_threshold,
                           main_state.end_index,
                           main_state.max_end_count,
-                          "LEGACY",
+                          phaseName(),
                           main_state.phase_marker)) {
       recordTermination(main_state.prev_termination,
                         main_state.two_cons_terminations);
@@ -165,8 +168,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
           RSZ,
           "repair_setup",
           2,
-          "LEGACY{} Phase: Restoring best slack; endpoint slack = {}, "
+          "{}{} Phase: Restoring best slack; endpoint slack = {}, "
           "WNS = {}",
+          phaseName(),
           main_state.phase_marker,
           delayAsString(endpoint_state.prev_end_slack, kDelayDigits, sta_),
           delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_));
@@ -184,8 +188,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  RSZ,
                  "repair_setup",
                  1,
-                 "LEGACY{} Phase: Endpoint slack {} meets slack margin {}, "
+                 "{}{} Phase: Endpoint slack {} meets slack margin {}, "
                  "done",
+                 phaseName(),
                  main_state.phase_marker,
                  delayAsString(endpoint_state.worst_slack, kDelayDigits, sta_),
                  delayAsString(setup_slack_margin, kDelayDigits, sta_));
@@ -208,8 +213,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                    RSZ,
                    "repair_setup",
                    2,
-                   "LEGACY{} Phase: No change after {} decreasing slack "
+                   "{}{} Phase: No change after {} decreasing slack "
                    "passes.",
+                   phaseName(),
                    main_state.phase_marker,
                    endpoint_state.decreasing_slack_passes);
         debugPrint(
@@ -217,8 +223,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
             RSZ,
             "repair_setup",
             2,
-            "LEGACY{} Phase: Restoring best slack; endpoint slack = "
+            "{}{} Phase: Restoring best slack; endpoint slack = "
             "{}, WNS = {}",
+            phaseName(),
             main_state.phase_marker,
             delayAsString(endpoint_state.prev_end_slack, kDelayDigits, sta_),
             delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_));
@@ -227,7 +234,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  RSZ,
                  "repair_setup",
                  1,
-                 "LEGACY{} Phase: No change possible for endpoint {} ",
+                 "{}{} Phase: No change possible for endpoint {} ",
+                 phaseName(),
                  main_state.phase_marker,
                  endpoint_state.end->name(network_));
       finishEndpointSearch(endpoint_state);
@@ -251,8 +259,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
           RSZ,
           "repair_setup",
           3,
-          "LEGACY{} Phase: {} after changes: WNS ({} -> {}) TNS "
+          "{}{} Phase: {} after changes: WNS ({} -> {}) TNS "
           "({} -> {}) Endpoint slack ({} -> {})",
+          phaseName(),
           main_state.phase_marker,
           better ? "Improved" : "Worsened",
           delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_),
@@ -280,8 +289,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                    RSZ,
                    "repair_setup",
                    2,
-                   "LEGACY{} Phase: Endpoint {} stuck after {} "
+                   "{}{} Phase: Endpoint {} stuck after {} "
                    "non-improving passes (limit {})",
+                   phaseName(),
                    main_state.phase_marker,
                    network_->pathName(endpoint_state.end->pin()),
                    endpoint_state.decreasing_slack_passes,
@@ -291,8 +301,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
             RSZ,
             "repair_setup",
             2,
-            "LEGACY{} Phase: Restoring best slack; endpoint slack = "
+            "{}{} Phase: Restoring best slack; endpoint slack = "
             "{}, WNS = {}",
+            phaseName(),
             main_state.phase_marker,
             delayAsString(endpoint_state.prev_end_slack, kDelayDigits, sta_),
             delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_));
@@ -303,7 +314,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  RSZ,
                  "repair_setup",
                  3,
-                 "LEGACY{} Phase: Allowing decreasing slack for {}/{} passes",
+                 "{}{} Phase: Allowing decreasing slack for {}/{} passes",
+                 phaseName(),
                  main_state.phase_marker,
                  endpoint_state.decreasing_slack_passes,
                  decreasing_slack_max_passes_);
@@ -315,7 +327,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  RSZ,
                  "repair_setup",
                  1,
-                 "LEGACY{} Phase: Over max area, exiting",
+                 "{}{} Phase: Over max area, exiting",
+                 phaseName(),
                  main_state.phase_marker);
       acceptEndpointState(endpoint_state);
       break;
@@ -347,7 +360,8 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
       RSZ,
       "repair_setup",
       10,
-      fmt::format("LEGACY{} Phase Time: {{}}", main_state.phase_marker));
+      fmt::format(
+          "{}{} Phase Time: {{}}", phaseName(), main_state.phase_marker));
   for (const pair<sta::Vertex*, sta::Slack>& end_original_slack :
        violating_ends) {
     EndpointRepairState endpoint_state;
@@ -365,8 +379,9 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
                  RSZ,
                  "repair_setup",
                  1,
-                 "LEGACY{} Phase: Exiting due to no TNS progress for two "
+                 "{}{} Phase: Exiting due to no TNS progress for two "
                  "opto cycles",
+                 phaseName(),
                  main_state.phase_marker);
       break;
     }
@@ -382,7 +397,8 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
                RSZ,
                "repair_setup",
                1,
-               "LEGACY{} Phase complete. WNS: {}, TNS: {}",
+               "{}{} Phase complete. WNS: {}, TNS: {}",
+               phaseName(),
                main_state.phase_marker,
                delayAsString(final_wns, kDelayDigits, sta_),
                delayAsString(final_tns, 1, sta_));

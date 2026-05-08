@@ -80,6 +80,7 @@ void SetupMt1Policy::buildMoveGenerators(
       case MoveType::kSwapPins:
       case MoveType::kUnbuffer:
       case MoveType::kSplitLoad:
+      case MoveType::kReroute:
       case MoveType::kCount:
         break;
     }

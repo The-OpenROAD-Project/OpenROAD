@@ -43,6 +43,15 @@ class SetupLegacyPolicy : public SetupLegacyBase
       EndpointRepairState& endpoint_state);
   virtual void repairEndpoint(EndpointRepairState& endpoint_state,
                               MainRepairState& main_state);
+  virtual const char* phaseName() const { return "LEGACY"; }
+  virtual const char* phaseSummaryTitle() const
+  {
+    return "LEGACY Phase Summary";
+  }
+  virtual const char* phaseEndpointProfilerTitle() const
+  {
+    return "LEGACY Phase Endpoint Profiler";
+  }
   bool pathImproved(int end_index,
                     sta::Slack end_slack,
                     sta::Slack worst_slack,

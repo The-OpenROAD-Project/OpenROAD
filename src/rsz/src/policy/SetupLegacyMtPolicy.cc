@@ -17,6 +17,7 @@
 #include "MoveGenerator.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
+#include "RerouteGenerator.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SizeUpMtGenerator.hh"
@@ -89,6 +90,9 @@ void SetupLegacyMtPolicy::buildMoveGenerators(
         break;
       case MoveType::kUnbuffer:
         generator = std::make_unique<UnbufferGenerator>(context);
+        break;
+      case MoveType::kReroute:
+        generator = std::make_unique<RerouteGenerator>(context);
         break;
       case MoveType::kCount:
         break;

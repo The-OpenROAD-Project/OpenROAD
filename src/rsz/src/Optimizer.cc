@@ -20,6 +20,7 @@
 #include "SetupLegacyMtPolicy.hh"
 #include "SetupLegacyPolicy.hh"
 #include "SetupMt1Policy.hh"
+#include "SetupReroutePolicy.hh"
 #include "SetupTnsPolicy.hh"
 #include "SetupWnsPolicy.hh"
 #include "est/EstimateParasitics.h"
@@ -82,6 +83,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupCritVtSwapPolicy>(
         resizer_, committer_, setup_context, config_);
   }
+  if (phase_name == "REROUTE") {
+    return std::make_unique<SetupReroutePolicy>(
+        resizer_, committer_, setup_context, config_);
+  }
   if (phase_name == "MT1") {
     return std::make_unique<SetupMt1Policy>(
         resizer_, committer_, setup_context, config_);
@@ -97,7 +102,7 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
       217,
       "Unknown phase name '{}'. Valid phase names are: LEGACY, WNS, "
       "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-      "LAST_GASP, CRIT_VT_SWAP",
+      "LAST_GASP, CRIT_VT_SWAP, REROUTE",
       phase_name);
   return nullptr;
 }

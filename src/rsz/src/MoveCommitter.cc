@@ -422,7 +422,7 @@ void MoveCommitter::logPendingMoves(const char* action,
              "opt_moves",
              2,
              "{} {} moves: up {} up_match {} down {} buffer {} clone {} swap "
-             "{} vt_swap {} unbuf {} split {}",
+             "{} vt_swap {} unbuf {} split {} reroute {}",
              action,
              move_count,
              pendingMoves(MoveType::kSizeUp),
@@ -433,7 +433,8 @@ void MoveCommitter::logPendingMoves(const char* action,
              pendingMoves(MoveType::kSwapPins),
              pendingMoves(MoveType::kVtSwap),
              pendingMoves(MoveType::kUnbuffer),
-             pendingMoves(MoveType::kSplitLoad));
+             pendingMoves(MoveType::kSplitLoad),
+             pendingMoves(MoveType::kReroute));
 }
 
 void MoveCommitter::logCommittedTotals() const
@@ -444,7 +445,7 @@ void MoveCommitter::logCommittedTotals() const
       "opt_moves",
       1,
       "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
-      "{} clone {} swap {} vt_swap {} unbuf {} split {}",
+      "{} clone {} swap {} vt_swap {} unbuf {} split {} reroute {}",
       resizer_.acceptedLegacyMoveCount() + resizer_.rejectedLegacyMoveCount(),
       resizer_.acceptedLegacyMoveCount(),
       resizer_.rejectedLegacyMoveCount(),
@@ -456,7 +457,8 @@ void MoveCommitter::logCommittedTotals() const
       committedMoves(MoveType::kSwapPins),
       committedMoves(MoveType::kVtSwap),
       committedMoves(MoveType::kUnbuffer),
-      committedMoves(MoveType::kSplitLoad));
+      committedMoves(MoveType::kSplitLoad),
+      committedMoves(MoveType::kReroute));
 }
 
 void MoveCommitter::beginJournal()

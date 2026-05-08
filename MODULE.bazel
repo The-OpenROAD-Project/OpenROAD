@@ -61,6 +61,7 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
 bazel_dep(name = "spdlog", version = "1.15.1")
@@ -90,7 +91,6 @@ bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
 bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
@@ -102,7 +102,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "f5e20547f93729a4f67929902aaa3386d933bad0"
+BAZEL_ORFS_COMMIT = "78f19f25cec73bdec3517a76465dec7ce17ce227"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -118,6 +118,40 @@ git_override(
     commit = BAZEL_ORFS_COMMIT,
     remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "verilog",
+)
+
+# bazel-orfs pulls in orfs without a version and patches yosys, relying on
+# overrides that only apply when bazel-orfs is the root module. Mirror them
+# here so OpenROAD-as-root can resolve the module graph.
+#
+# Use archive_override (HTTPS tarball) rather than git_override so the
+# build resolves on networks that block direct git access to github.com.
+ORFS_COMMIT = "10a2baea2171059ec14cda9a5855aa26dd7572c6"
+
+bazel_dep(name = "orfs", dev_dependency = True)
+archive_override(
+    module_name = "orfs",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
+    ],
+    sha256 = "8325c6755215857a87a84db078d47dfbb2dfcbef70eaf0dd376fe5a7a363cd58",
+    strip_prefix = "OpenROAD-flow-scripts-" + ORFS_COMMIT,
+    urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
+)
+
+bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
+
+# yosys-slang is not on BCR. Pin to a commit on povik/yosys-slang master
+# that has the upstream Bazel build (povik/yosys-slang#310) and the
+# slang.so visibility fix (povik/yosys-slang#311). Submodules pull in
+# vendored slang and fmt sources.
+bazel_dep(name = "yosys-slang", dev_dependency = True)
+git_override(
+    module_name = "yosys-slang",
+    commit = "7753ea70431d85929292b90c33b32f6dbdb3b048",
+    init_submodules = True,
+    remote = "https://github.com/povik/yosys-slang.git",
 )
 
 # --- Extensions ---
@@ -174,16 +208,13 @@ npm.npm_translate_lock(
 use_repo(npm, "npm")
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
-    # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
-    # Use OpenROAD of this repo instead of from the docker image
+    # Use OpenROAD of this repo instead of the one bundled with @orfs
     openroad = "//:openroad",
-    sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
+    # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
+    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
+    yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
 )
-use_repo(orfs, "docker_orfs")
 
 # --- Overrides ---
 

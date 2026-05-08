@@ -101,6 +101,7 @@ enum class MoveType : uint8_t
   kVtSwap,
   kUnbuffer,
   kSplitLoad,
+  kReroute,
   kCount
 };
 
@@ -201,6 +202,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::Graph* graph() const { return graph_; }
   sta::dbNetwork* dbNetwork() const { return db_network_; }
   odb::dbBlock* block() const { return block_; }
+  grt::GlobalRouter* globalRouter() const { return global_router_; }
   est::EstimateParasitics* estimateParasitics() const
   {
     return estimate_parasitics_;

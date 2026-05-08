@@ -449,6 +449,8 @@ inline const char* moveName(const MoveType move_type)
       return "UnbufferMove";
     case MoveType::kSplitLoad:
       return "SplitLoadMove";
+    case MoveType::kReroute:
+      return "RerouteMove";
     case MoveType::kCount:
       break;
   }

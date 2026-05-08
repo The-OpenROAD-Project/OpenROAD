@@ -18,6 +18,7 @@
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
+#include "RerouteGenerator.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
@@ -197,6 +198,8 @@ bool OptimizationPolicy::reportRepairSummary() const
   const int vt_swap_moves = committer_.summaryCommittedMoves(MoveType::kVtSwap);
   const int size_up_match_moves
       = committer_.summaryCommittedMoves(MoveType::kSizeUpMatch);
+  const int reroute_moves
+      = committer_.summaryCommittedMoves(MoveType::kReroute);
 
   if (unbuffer_moves > 0) {
     repaired = true;
@@ -237,6 +240,11 @@ bool OptimizationPolicy::reportRepairSummary() const
   if (clone_moves > 0) {
     repaired = true;
     logger_->info(utl::RSZ, 49, "Cloned {} instances.", clone_moves);
+  }
+  if (reroute_moves > 0) {
+    repaired = true;
+    logger_->info(
+        utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
   }
 
   const sta::Slack worst_slack = sta_->worstSlack(max_);
@@ -314,6 +322,9 @@ void OptimizationPolicy::buildMoveGenerators(
         break;
       case MoveType::kUnbuffer:
         generator = std::make_unique<UnbufferGenerator>(context);
+        break;
+      case MoveType::kReroute:
+        generator = std::make_unique<RerouteGenerator>(context);
         break;
       case MoveType::kCount:
         break;

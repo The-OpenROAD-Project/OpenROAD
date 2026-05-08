@@ -3,7 +3,6 @@
 
 #include "hierarchy_report.h"
 
-#include <boost/json/array.hpp>
 #include <cstdint>
 #include <map>
 #include <set>
@@ -11,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/array.hpp"
 #include "db_sta/dbSta.hh"
 #include "module_color_palette.h"
 #include "odb/db.h"

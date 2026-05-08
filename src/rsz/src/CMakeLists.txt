@@ -35,6 +35,7 @@ add_library(rsz_lib
     policy/SetupTnsPolicy.cc
     policy/SetupWnsPolicy.cc
     policy/SetupMt1Policy.cc
+    policy/SetupReroutePolicy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
@@ -48,6 +49,8 @@ add_library(rsz_lib
     move/MeasuredVtSwapGenerator.cc
     move/MoveCandidate.cc
     move/MoveGenerator.cc
+    move/RerouteCandidate.cc
+    move/RerouteGenerator.cc
     move/SizeDownCandidate.cc
     move/SizeDownGenerator.cc
     move/SizeUpCandidate.cc

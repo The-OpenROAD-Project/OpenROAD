@@ -5832,12 +5832,15 @@ bool Resizer::swapPins(sta::Instance* inst,
     odb::dbDatabase::beginEco(block_);
   }
 
+  // Keep the dbNet/dbModNet swap local to these iterms. Feed-through
+  // structures can legitimately have mixed modnet names on the same flat
+  // net, so pin swap must not trigger a global hier/flat reassociation.
   sta_->disconnectPin(found_pin1);
   db_network_->connectPin(
-      found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2);
+      found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2, false);
   sta_->disconnectPin(found_pin2);
   db_network_->connectPin(
-      found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
+      found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1, false);
 
   if (!journal) {
     odb::dbDatabase::commitEco(block_);
@@ -6052,6 +6055,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "vt_swap") {
     return MoveType::kVtSwap;
+  }
+  if (lower == "reroute") {
+    return MoveType::kReroute;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }
