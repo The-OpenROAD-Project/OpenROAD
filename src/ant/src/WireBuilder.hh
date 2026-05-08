@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -110,7 +111,7 @@ class WireBuilder
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};
-  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias_;
+  odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias_;
 };
 
 }  // namespace ant

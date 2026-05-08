@@ -22,6 +22,7 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
+#include "odb/OdbPtrSetMap.h"
 #include "utl/Logger.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
@@ -283,7 +284,9 @@ void dumpAPs(odb::dbBlock* block, const std::string& file_name)
       }
 
       auto mterm = iterm->getMTerm();
-      auto aps = iterm->getAccessPoints();
+      auto aps_map = iterm->getAccessPoints();
+      odb::OdbPtrMap<odb::dbMPin, std::vector<odb::dbAccessPoint*>> aps(
+          aps_map.begin(), aps_map.end());
       os << "  iterm: " << mterm->getName() << "\n";
 
       for (auto mpin : mterm->getMPins()) {

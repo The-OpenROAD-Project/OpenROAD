@@ -4,6 +4,7 @@
 #pragma once
 
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 
 #include "Coordinates.h"
@@ -32,8 +33,8 @@ class Padding
   DbuX paddedWidth(const Node* cell) const;
 
  private:
-  using InstPaddingMap = std::map<odb::dbInst*, std::pair<GridX, GridX>>;
-  using MasterPaddingMap = std::map<odb::dbMaster*, std::pair<GridX, GridX>>;
+  using InstPaddingMap = odb::OdbPtrMap<odb::dbInst, std::pair<GridX, GridX>>;
+  using MasterPaddingMap = odb::OdbPtrMap<odb::dbMaster, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

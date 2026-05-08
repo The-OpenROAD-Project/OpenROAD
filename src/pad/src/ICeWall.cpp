@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -673,7 +674,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
   }
 
   // Check if bumps are present and have assignments
-  std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections;
+  odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>> iterm_connections;
   for (auto* inst : insts) {
     for (auto* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
@@ -1002,7 +1003,7 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
 
   odb::Rect bond_rect;
   odb::dbTechLayer* bond_layer = nullptr;
-  std::map<odb::dbTechLayer*, int> shape_count;
+  odb::OdbPtrMap<odb::dbTechLayer, int> shape_count;
   for (auto* mterm : bond->getMTerms()) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
@@ -1189,7 +1190,7 @@ void ICeWall::connectByAbutment()
              connections.size());
 
   // begin connections for current signals
-  std::set<odb::dbNet*> special_nets = connectByAbutment(connections);
+  odb::OdbPtrSet<odb::dbNet> special_nets = connectByAbutment(connections);
 
   // make nets for newly formed nets
   for (const auto& [iterm0, iterm1] : connections) {
@@ -1210,11 +1211,11 @@ void ICeWall::connectByAbutment()
   }
 }
 
-std::set<odb::dbNet*> ICeWall::connectByAbutment(
+odb::OdbPtrSet<odb::dbNet> ICeWall::connectByAbutment(
     const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
     const
 {
-  std::set<odb::dbNet*> special_nets;
+  odb::OdbPtrSet<odb::dbNet> special_nets;
   bool changed = false;
   int iter = 0;
 
@@ -1307,7 +1308,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return {};
   }
 
-  using ShapeMap = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
+  using ShapeMap = odb::OdbPtrMap<odb::dbTechLayer, std::set<odb::Rect>>;
   auto populate_map = [](odb::dbITerm* iterm) -> ShapeMap {
     ShapeMap map;
     const odb::dbTransform xform = iterm->getInst()->getTransform();
@@ -1326,7 +1327,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return map;
   };
 
-  std::map<odb::dbITerm*, ShapeMap> iterm_map;
+  odb::OdbPtrMap<odb::dbITerm, ShapeMap> iterm_map;
   for (auto* iterm : inst0->getITerms()) {
     iterm_map[iterm] = populate_map(iterm);
   }

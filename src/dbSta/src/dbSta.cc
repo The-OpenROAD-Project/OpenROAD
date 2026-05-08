@@ -8,6 +8,7 @@
 // Edits from tcl, Sta api and db edits are all supported.
 
 #include "db_sta/dbSta.hh"
+#include "odb/OdbPtrSetMap.h"
 
 #include <algorithm>  // min
 #include <cctype>
@@ -329,11 +330,11 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
   return slack(net, min_max);
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets()
+odb::OdbPtrSet<odb::dbNet> dbSta::findClkNets()
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::OdbPtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {
     const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
@@ -350,11 +351,11 @@ std::set<odb::dbNet*> dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets(const Clock* clk)
+odb::OdbPtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::OdbPtrSet<odb::dbNet> clk_nets;
   const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
@@ -645,7 +646,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    std::map<odb::dbMaster*, TypeStats> usage_count;
+    odb::OdbPtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];

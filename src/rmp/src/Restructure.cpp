@@ -438,7 +438,7 @@ void Restructure::removeConstCells()
 
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
-  std::set<odb::dbInst*> const_insts;
+  odb::OdbPtrSet<odb::dbInst> const_insts;
   int const_cnt = 1;
   for (auto inst : block_->getInsts()) {
     int outputs = 0;

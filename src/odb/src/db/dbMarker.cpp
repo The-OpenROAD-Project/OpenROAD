@@ -25,6 +25,7 @@
 // User Code Begin Includes
 #include <fstream>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <variant>
 #include <vector>
 
@@ -809,13 +810,13 @@ Rect dbMarker::getBBox() const
   return bbox;
 }
 
-std::set<dbObject*> dbMarker::getSources() const
+odb::OdbPtrSet<dbObject> dbMarker::getSources() const
 {
   _dbMarker* marker = (_dbMarker*) this;
   _dbBlock* block = marker->getBlock();
   _dbChip* chip = marker->getChip();
 
-  std::set<dbObject*> objs;
+  odb::OdbPtrSet<dbObject> objs;
   if (block) {
     for (const auto& [db_type, id] : marker->sources_) {
       dbObjectTable* table = block->getObjectTable(db_type);

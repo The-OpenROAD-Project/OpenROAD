@@ -5,6 +5,7 @@
 
 #include <array>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -107,9 +108,9 @@ class GridSwitchedPower
   struct InstanceInfo
   {
     std::set<int> sites;
-    std::set<odb::dbRow*> rows;
+    odb::OdbPtrSet<odb::dbRow> rows;
   };
-  std::map<odb::dbInst*, InstanceInfo> insts_;
+  odb::OdbPtrMap<odb::dbInst, InstanceInfo> insts_;
 
   Straps* getLowestStrap() const;
 
@@ -142,7 +143,7 @@ class GridSwitchedPower
   using RowTree
       = bgi::rtree<odb::dbRow*, bgi::quadratic<16>, RowIndexableGetter>;
   RowTree buildRowTree() const;
-  std::set<odb::dbRow*> getInstanceRows(odb::dbInst* inst,
+  odb::OdbPtrSet<odb::dbRow> getInstanceRows(odb::dbInst* inst,
                                         const RowTree& row_search) const;
 
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;

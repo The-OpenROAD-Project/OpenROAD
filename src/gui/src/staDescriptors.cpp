@@ -16,6 +16,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 
@@ -108,7 +109,7 @@ void LibertyLibraryDescriptor::highlight(const std::any& object,
   auto network = sta_->getDbNetwork();
 
   sta::LibertyCellIterator cell_iter(library);
-  std::set<odb::dbMaster*> masters;
+  odb::OdbPtrSet<odb::dbMaster> masters;
   while (cell_iter.hasNext()) {
     auto* master = network->staToDb(cell_iter.next());
     if (master != nullptr) {

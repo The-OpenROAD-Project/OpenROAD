@@ -7,6 +7,7 @@
 #include <array>
 #include <cstring>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -282,7 +283,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
   sta::Port* port = network->dbToSta(input);
   sta::LibertyPort* lib_port = network->libertyPort(port);
 
-  std::set<odb::dbMTerm*> outputs;
+  odb::OdbPtrSet<odb::dbMTerm> outputs;
   for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
     const sta::TimingRole* role = arc_set->role();
     if (role->isTimingCheck() || role->isAsyncTimingCheck()

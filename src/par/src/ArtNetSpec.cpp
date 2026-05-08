@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <stdexcept>
@@ -438,7 +439,7 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
 {
   std::vector<odb::dbInst*> insts;
   insts.reserve(cluster->getNumInsts());
-  std::map<odb::dbInst*, int> inst_vertex_id_map;
+  odb::OdbPtrMap<odb::dbInst, int> inst_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
   int large_net_threshold = 50;

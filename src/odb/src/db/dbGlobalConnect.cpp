@@ -14,6 +14,7 @@
 // User Code Begin Includes
 #include <map>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -258,16 +259,16 @@ void _dbGlobalConnect::testRegex(utl::Logger* logger,
   }
 }
 
-std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
+odb::OdbPtrMap<dbMaster, odb::OdbPtrSet<dbMTerm>> _dbGlobalConnect::getMTermMapping()
 {
   const std::regex pin_regex = std::regex(pin_pattern_);
 
-  std::map<dbMaster*, std::set<dbMTerm*>> mapping;
+  odb::OdbPtrMap<dbMaster, odb::OdbPtrSet<dbMTerm>> mapping;
 
   dbDatabase* db = (dbDatabase*) getImpl()->getDatabase();
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
-      std::set<dbMTerm*> mterms = getMTermMapping(master, pin_regex);
+      odb::OdbPtrSet<dbMTerm> mterms = getMTermMapping(master, pin_regex);
 
       if (!mterms.empty()) {
         mapping[master] = mterms;
@@ -278,11 +279,11 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   return mapping;
 }
 
-std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
+odb::OdbPtrSet<dbMTerm> _dbGlobalConnect::getMTermMapping(
     dbMaster* master,
     const std::regex& pin_regex) const
 {
-  std::set<dbMTerm*> mterms;
+  odb::OdbPtrSet<dbMTerm> mterms;
   for (dbMTerm* mterm : master->getMTerms()) {
     if (std::regex_match(mterm->getConstName(), pin_regex)) {
       mterms.insert(mterm);
@@ -292,7 +293,7 @@ std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
   return mterms;
 }
 
-std::pair<std::set<dbITerm*>, std::set<dbITerm*>> _dbGlobalConnect::connect(
+std::pair<odb::OdbPtrSet<dbITerm>, odb::OdbPtrSet<dbITerm>> _dbGlobalConnect::connect(
     const std::vector<dbInst*>& insts,
     bool force)
 {
@@ -300,8 +301,8 @@ std::pair<std::set<dbITerm*>, std::set<dbITerm*>> _dbGlobalConnect::connect(
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
   dbNet* net = odb::dbNet::getNet(block, net_);
 
-  std::set<dbITerm*> iterms;
-  std::set<dbITerm*> iterms_skipped;
+  odb::OdbPtrSet<dbITerm> iterms;
+  odb::OdbPtrSet<dbITerm> iterms_skipped;
 
   if (net->isDoNotTouch()) {
     logger->warn(

@@ -9,6 +9,7 @@
 #include <memory>
 #include <numeric>  // accumulate
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -24,6 +25,7 @@
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
@@ -187,7 +189,7 @@ class Opendp
   // row height -> GapFillers, by implant layer
   using GapFillersByHeight = std::map<DbuY, GapFillers>;
 
-  using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
+  using MasterByImplant = odb::OdbPtrMap<odb::dbTechLayer, dbMasterSeq>;
 
   using YCoordToGap = std::map<DbuY, std::vector<std::unique_ptr<GapInfo>>>;
 
@@ -376,8 +378,8 @@ class Opendp
 
   // Filler placement.
   // gap (in sites) -> seq of masters by implant and row height
-  std::map<odb::dbTechLayer*, GapFillersByHeight> gap_fillers_;
-  std::map<odb::dbMaster*, int> filler_count_;
+  odb::OdbPtrMap<odb::dbTechLayer, GapFillersByHeight> gap_fillers_;
+  odb::OdbPtrMap<odb::dbMaster, int> filler_count_;
   bool have_fillers_ = false;
 
   // Decap placement.

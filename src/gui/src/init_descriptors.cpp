@@ -7,6 +7,7 @@
 // pull in dbDescriptors / staDescriptors and their heavy dependencies.
 
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 
 #include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
@@ -50,7 +51,7 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
 
   // Static empty sets for DbNetDescriptor — in the full GUI build,
   // MainWindow::init() re-registers with real widget-owned sets.
-  static const std::set<odb::dbNet*> empty_net_set;
+  static const odb::OdbPtrSet<odb::dbNet> empty_net_set;
 
   registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db, sta));
   registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db, sta));

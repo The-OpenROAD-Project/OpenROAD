@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -40,7 +41,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
     DUMMY,
     TREE
   };
-  using MasterCount = std::map<odb::dbMaster*, int>;
+  using MasterCount = odb::OdbPtrMap<odb::dbMaster, int>;
 
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)

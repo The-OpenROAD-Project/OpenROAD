@@ -1243,7 +1243,7 @@ void RenderThread::drawChip(QPainter* painter,
 
   dbTech* tech = block->getTech();
   if (tech != nullptr) {
-    std::set<dbTech*> child_techs;
+    odb::OdbPtrSet<odb::dbTech> child_techs;
     for (auto child : block->getChildren()) {
       dbTech* child_tech = child->getTech();
       if (child_tech != tech) {
@@ -1435,7 +1435,7 @@ void RenderThread::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
 }
 
 void RenderThread::drawNetsRouteGuides(Painter& painter,
-                                       const std::set<odb::dbNet*>& nets,
+                                       const odb::OdbPtrSet<odb::dbNet>& nets,
                                        odb::dbTechLayer* layer)
 {
   painter.setPen(layer);
@@ -1624,7 +1624,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
     const int minimum_font_size = drawing_font_size - 1;
 
     int largest_text_width = 0;
-    std::set<odb::dbBTerm*> checked;
+    odb::OdbPtrSet<odb::dbBTerm> checked;
     odb::dbTech* tech = block->getTech();
     for (odb::dbTechLayer* layer : tech->getLayers()) {
       if (restart_) {

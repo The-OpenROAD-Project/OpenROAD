@@ -6,6 +6,7 @@
 #include <atomic>
 #include <limits>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -60,7 +61,7 @@ class Search : public odb::dbBlockCallBackObj
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::OdbPtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -349,7 +350,7 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  odb::OdbPtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

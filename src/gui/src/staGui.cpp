@@ -843,7 +843,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // draw instances
-  std::map<odb::dbInst*, TimingPathNode*> instances;
+  odb::OdbPtrMap<odb::dbInst, TimingPathNode*> instances;
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       if (pin->isPinITerm()) {

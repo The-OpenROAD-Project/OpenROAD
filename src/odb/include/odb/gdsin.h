@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "odb/gdsUtil.h"
 #include "odb/geom.h"
@@ -147,7 +148,7 @@ class GDSReader
       reading the gds.  We will make an empty structure but it isn't
       yet defined.  We keep track of defined structures to catch any
       duplicates.*/
-  std::set<dbGDSStructure*> defined_;
+  odb::OdbPtrSet<dbGDSStructure> defined_;
 
   utl::Logger* logger_{nullptr};
 };

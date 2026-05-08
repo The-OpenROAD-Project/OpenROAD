@@ -167,7 +167,7 @@ std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
 
 std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
 {
-  std::set<odb::dbRow*> claimed_rows;
+  odb::OdbPtrSet<odb::dbRow> claimed_rows;
   for (auto* domain : pdngen_->getDomains()) {
     if (domain == this) {
       continue;
@@ -225,7 +225,7 @@ void VoltageDomain::report() const
 
 odb::dbNet* VoltageDomain::findDomainNet(const odb::dbSigType& type) const
 {
-  std::set<odb::dbNet*> nets;
+  odb::OdbPtrSet<odb::dbNet> nets;
 
   for (auto* net : block_->getNets()) {
     if (net->getSigType() == type) {

@@ -13,6 +13,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/OdbPtrSetMap.h"
 
 namespace ant {
 
@@ -51,7 +52,7 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
 }
 
 void wiresToPolygonSetMap(odb::dbWire* wires,
-                          std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
+                          odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator+=;
 
@@ -85,7 +86,7 @@ void wiresToPolygonSetMap(odb::dbWire* wires,
 }
 
 void avoidPinIntersection(odb::dbNet* db_net,
-                          std::map<odb::dbTechLayer*, PolygonSet>& set_by_layer)
+                          odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator-=;
 

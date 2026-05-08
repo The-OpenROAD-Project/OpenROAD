@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -814,12 +815,12 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   }
 }
 
-std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+odb::OdbPtrMap<dbMPin, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();
   uint32_t pin_access_idx = getInst()->getPinAccessIdx();
-  std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
+  odb::OdbPtrMap<dbMPin, std::vector<dbAccessPoint*>> aps;
   for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
     if (pin->aps_.size() > pin_access_idx) {

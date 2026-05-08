@@ -12,6 +12,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 
@@ -52,8 +53,8 @@ class _dbModule : public _dbObject
   void removeInst(dbInst* inst);
 
   // Copy and uniquify a given module based on current instance
-  using modBTMap = std::map<dbModBTerm*, dbModBTerm*>;
-  using ITMap = std::map<dbITerm*, dbITerm*>;
+  using modBTMap = odb::OdbPtrMap<dbModBTerm, dbModBTerm*>;
+  using ITMap = odb::OdbPtrMap<dbITerm, dbITerm*>;
 
   static void copy(dbModule* old_module,
                    dbModule* new_module,

@@ -22,6 +22,7 @@
 #include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
+#include "odb/OdbPtrSetMap.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
@@ -251,7 +252,7 @@ class FastRouteCore
     snapshot_batched_width_ = snapshot_batched_width;
   }
   int getSnapshotBatchedWidth() const { return snapshot_batched_width_; }
-  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
+  void getCongestionNets(odb::OdbPtrSet<odb::dbNet>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -358,7 +359,7 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+  void findNetsNearPosition(odb::OdbPtrSet<odb::dbNet>& congestion_nets,
                             const odb::Point& position,
                             bool is_horizontal,
                             int& radius);

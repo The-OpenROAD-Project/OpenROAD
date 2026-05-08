@@ -23,8 +23,8 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
-#include <functional>
-#include <set>
+#include <iterator>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <string_view>
 #include <vector>
@@ -506,7 +506,7 @@ dbNet* dbModNet::findRelatedNet() const
   //
   // Slow path: traverse hierarchy
   //
-  std::set<const dbModNet*> visited_modnets;
+  odb::OdbPtrSet<const dbModNet> visited_modnets;
   boost::container::small_vector<const dbModNet*, 16> modnets_to_visit;
 
   // Helper to add a modnet to the visit queue if it's new.
@@ -575,7 +575,7 @@ void dbModNet::checkSanityNameCollision() const
 
   // Check if any flat net in this module scope has a base name
   // matching this ModNet's name without being associated.
-  std::set<dbNet*> checked;
+  odb::OdbPtrSet<dbNet> checked;
   for (dbInst* inst : module->getInsts()) {
     for (dbITerm* iterm : inst->getITerms()) {
       dbNet* net = iterm->getNet();
@@ -592,7 +592,7 @@ void dbModNet::checkSanityNameCollision() const
       }
       // Check if this flat net is associated with this ModNet
       // by traversing the hierarchy.
-      std::set<dbModNet*> related_modnets;
+      odb::OdbPtrSet<dbModNet> related_modnets;
       net->findRelatedModNets(related_modnets);
       bool associated = false;
       for (dbModNet* mn : related_modnets) {
@@ -823,7 +823,7 @@ dbModNet* dbModNet::findInHierarchy(
     dbHierSearchDir dir) const
 {
   boost::container::small_vector<dbModNet*, 16> worklist;
-  std::set<dbModNet*> visited;
+  odb::OdbPtrSet<dbModNet> visited;
   worklist.push_back(const_cast<dbModNet*>(this));
   visited.insert(const_cast<dbModNet*>(this));
 

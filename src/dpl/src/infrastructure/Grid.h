@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_set>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -176,7 +177,7 @@ class Grid
 
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
+  using SiteToOrientation = odb::OdbPtrMap<odb::dbSite, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>

@@ -3,6 +3,7 @@
 
 %{
 #include "ifp/InitFloorplan.hh"
+#include "odb/OdbPtrSetMap.h"
 %}
 
 %include "../../Exception-py.i"
@@ -42,7 +43,7 @@
 // before these definitions
 namespace std {
   %template(site_list)    std::vector<odb::dbSite*>;
-  %template(site_set)     std::set<odb::dbSite*>;
+  %template(site_set)     std::set<odb::dbSite*, odb::ODBPtrLess>;
 }
 
 %include "ifp/InitFloorplan.hh"

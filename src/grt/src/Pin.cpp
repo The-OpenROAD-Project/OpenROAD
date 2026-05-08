@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -19,7 +20,7 @@ Pin::Pin(
     odb::dbITerm* iterm,
     const odb::Point& position,
     const std::vector<odb::dbTechLayer*>& layers,
-    const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
+    const odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::Rect>>& boxes_per_layer,
     bool connected_to_pad_or_macro)
     : iterm(iterm),
       position_(position),
@@ -47,7 +48,7 @@ Pin::Pin(
     odb::dbBTerm* bterm,
     const odb::Point& position,
     const std::vector<odb::dbTechLayer*>& layers,
-    const std::map<odb::dbTechLayer*, std::vector<odb::Rect>>& boxes_per_layer,
+    const odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::Rect>>& boxes_per_layer,
     const odb::Point& die_center)
     : bterm(bterm),
       position_(position),

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <sstream>
@@ -59,7 +60,7 @@ CUGR::~CUGR() = default;
 
 void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
-                const std::set<odb::dbNet*>& clock_nets)
+                const odb::OdbPtrSet<odb::dbNet>& clock_nets)
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
@@ -605,7 +606,7 @@ void CUGR::updateDbCongestion()
 
 void CUGR::getITermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbITerm*, odb::Point3D>& access_points)
+    odb::OdbPtrMap<odb::dbITerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
@@ -617,7 +618,7 @@ void CUGR::getITermsAccessPoints(
 
 void CUGR::getBTermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
+    odb::OdbPtrMap<odb::dbBTerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {

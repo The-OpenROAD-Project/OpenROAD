@@ -9,6 +9,7 @@
 #include <optional>
 #include <random>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -163,7 +164,7 @@ class Restructure
   std::string input_blif_file_name_;
   std::string output_blif_file_name_;
   std::vector<std::string> lib_file_names_;
-  std::set<odb::dbInst*> path_insts_;
+  odb::OdbPtrSet<odb::dbInst> path_insts_;
 
   Mode opt_mode_{Mode::kDelay1};
   bool is_area_mode_{false};

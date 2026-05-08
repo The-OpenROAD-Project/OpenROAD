@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstring>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -82,7 +83,7 @@ bool ConcreteSwapArithModules::replaceArithModules(const int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  std::set<dbModInst*> arithInsts;
+  odb::OdbPtrSet<dbModInst> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
     return false;
@@ -96,7 +97,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
     const int path_count,
     const std::string& target,
     const float slack_threshold,
-    std::set<dbModInst*>& insts)
+    odb::OdbPtrSet<dbModInst>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -156,7 +157,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     const Path* path,
-    std::set<dbModInst*>& arithInsts)
+    odb::OdbPtrSet<dbModInst>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -252,11 +253,11 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
+bool ConcreteSwapArithModules::doSwapInstances(odb::OdbPtrSet<dbModInst>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
-  std::set<dbModInst*> swappedInsts;
+  odb::OdbPtrSet<dbModInst> swappedInsts;
 
   for (dbModInst* inst : insts) {
     dbModule* old_master = inst->getMaster();

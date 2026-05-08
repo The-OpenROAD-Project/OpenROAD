@@ -10,6 +10,7 @@
 #include <iterator>
 #include <map>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -49,7 +50,7 @@ Blif::Blif(utl::Logger* logger,
   open_sta_ = sta;
 }
 
-void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
+void Blif::setReplaceableInstances(odb::OdbPtrSet<odb::dbInst>& insts)
 {
   instances_to_optimize_ = insts;
 }
@@ -75,7 +76,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     return false;
   }
 
-  std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
+  odb::OdbPtrSet<odb::dbInst>& insts = this->instances_to_optimize_;
   std::map<uint32_t, odb::dbInst*> inst_map;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
@@ -413,7 +414,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getFlopCount());
 
   for (auto& inst : instances_to_optimize_) {
-    std::set<odb::dbNet*> connected_nets;
+    odb::OdbPtrSet<odb::dbNet> connected_nets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();

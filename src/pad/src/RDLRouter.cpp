@@ -10,6 +10,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <queue>
 #include <set>
@@ -123,7 +124,7 @@ RDLRouter::RDLRouter(utl::Logger* logger,
                      odb::dbTechLayer* layer,
                      odb::dbTechVia* bump_via,
                      odb::dbTechVia* pad_via,
-                     const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
+                     const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
                      int width,
                      int spacing,
                      bool allow45,
@@ -215,7 +216,7 @@ void RDLRouter::buildIntialRouteSet()
 
 int RDLRouter::getRoutingTermCount() const
 {
-  std::set<odb::dbITerm*> terms;
+  odb::OdbPtrSet<odb::dbITerm> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
       const auto& routed_terminals = route->getRoutedTerminals();
@@ -229,9 +230,9 @@ int RDLRouter::getRoutingTermCount() const
   return terms.size();
 }
 
-std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
+odb::OdbPtrSet<odb::dbITerm> RDLRouter::getRoutedTerms() const
 {
-  std::set<odb::dbITerm*> terms;
+  odb::OdbPtrSet<odb::dbITerm> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
       const auto& routed_terminals = route->getRoutedTerminals();
@@ -244,7 +245,7 @@ std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
 std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
 {
   // record sucessful
-  std::set<odb::dbITerm*> success_covers;
+  odb::OdbPtrSet<odb::dbITerm> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
       for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
@@ -272,10 +273,10 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
 }
 
 int RDLRouter::reportFailedRoutes(
-    const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const
+    const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const
 {
-  std::map<odb::dbNet*, std::set<odb::dbITerm*>> failed;
-  std::map<odb::dbITerm*, RDLRoute*> route_map;
+  odb::OdbPtrMap<odb::dbNet, odb::OdbPtrSet<odb::dbITerm>> failed;
+  odb::OdbPtrMap<odb::dbITerm, RDLRoute*> route_map;
   for (const auto& route : getFailedRoutes()) {
     route_map[route->getTerminal()] = route.get();
     failed[route->getNet()].insert(route->getTerminal());
@@ -386,14 +387,14 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
   // track sets of routes, so we don't route the reverse by accident
-  std::map<odb::dbITerm*, odb::dbITerm*> routed_pairs;
+  odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*> routed_pairs;
   // track cover instances we dont route the same one twice
-  std::set<odb::dbITerm*> routed_covers;
+  odb::OdbPtrSet<odb::dbITerm> routed_covers;
   // track non-cover iterms we dont route the same one twice
-  std::set<odb::dbITerm*> routed_non_covers;
+  odb::OdbPtrSet<odb::dbITerm> routed_non_covers;
   // track iteration information
   int iteration_count = 0;
-  std::set<odb::dbITerm*> last_itr_routed;
+  odb::OdbPtrSet<odb::dbITerm> last_itr_routed;
 
   // add initial queue
   for (const auto& route : routes_) {
@@ -1837,7 +1838,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
-  std::map<odb::dbMaster*, std::vector<odb::Polygon>> master_obstruction_map;
+  odb::OdbPtrMap<odb::dbMaster, std::vector<odb::Polygon>> master_obstruction_map;
 
   // Get placed instanced obstructions
   for (auto* inst : block_->getInsts()) {
@@ -2024,10 +2025,10 @@ odb::dbTechLayer* RDLRouter::getOtherLayer(odb::dbTechVia* via) const
   return nullptr;
 }
 
-std::map<odb::dbITerm*, std::vector<RouteTarget>>
+odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>>
 RDLRouter::generateRoutingTargets(odb::dbNet* net) const
 {
-  std::map<odb::dbITerm*, std::vector<RouteTarget>> targets;
+  odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>> targets;
   odb::dbTechLayer* bump_pin_layer = getOtherLayer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = getOtherLayer(pad_accessvia_);
 

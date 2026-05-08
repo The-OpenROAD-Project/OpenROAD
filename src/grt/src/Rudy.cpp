@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <optional>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 
 #include "grt/GRoute.h"
@@ -115,7 +116,7 @@ void Rudy::getResourceReductions()
   }
 }
 
-void Rudy::calculateRudy(std::optional<std::set<odb::dbNet*>*> selection)
+void Rudy::calculateRudy(std::optional<odb::OdbPtrSet<odb::dbNet>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {

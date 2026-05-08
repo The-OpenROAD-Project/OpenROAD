@@ -35,6 +35,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
+#include "odb/OdbPtrSetMap.h"
 
 namespace odb {
 class dbDatabase;
@@ -553,7 +554,7 @@ class DisplayControls : public QDockWidget,
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
-  std::set<odb::dbTech*> techs_;
+  odb::OdbPtrSet<odb::dbTech> techs_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
   DbInstDescriptor* inst_descriptor_;

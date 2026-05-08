@@ -7,6 +7,7 @@
 #include <any>
 #include <cstdlib>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -84,7 +85,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   // Create a set of selected instances for fast lookup
-  std::set<odb::dbInst*> selected_insts;
+  odb::OdbPtrSet<odb::dbInst> selected_insts;
   auto selection = gui::Gui::get()->selection();
   for (const auto& selected : selection) {
     if (selected.isInst()) {

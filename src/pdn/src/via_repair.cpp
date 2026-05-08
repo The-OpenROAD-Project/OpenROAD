@@ -21,7 +21,7 @@
 
 namespace pdn {
 
-ViaRepair::ViaRepair(utl::Logger* logger, const std::set<odb::dbNet*>& nets)
+ViaRepair::ViaRepair(utl::Logger* logger, const odb::OdbPtrSet<odb::dbNet>& nets)
     : logger_(logger), nets_(nets)
 {
 }
@@ -57,8 +57,8 @@ void ViaRepair::repair()
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
   using Pt = Polygon90::point_type;
 
-  std::map<odb::dbTechLayer*, std::set<odb::dbSBox*>> tech_vias_to_remove;
-  std::map<odb::dbTechLayer*, std::set<odb::dbSBox*>> block_vias_to_remove;
+  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrSet<odb::dbSBox>> tech_vias_to_remove;
+  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrSet<odb::dbSBox>> block_vias_to_remove;
   for (const auto& [layer, layer_obs] : combined_obs) {
     Polygon90Set layer_obstructions;
     for (const auto& obs : layer_obs) {

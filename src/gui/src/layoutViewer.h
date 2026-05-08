@@ -23,6 +23,7 @@
 #include <chrono>
 #include <functional>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -120,10 +121,10 @@ class LayoutViewer : public QWidget
                const HighlightSet& highlighted,
                const Rulers& rulers,
                const Labels& labels,
-               const std::map<odb::dbModule*, ModuleSettings>& module_settings,
-               const std::set<odb::dbNet*>& focus_nets,
-               const std::set<odb::dbNet*>& route_guides,
-               const std::set<odb::dbNet*>& net_tracks,
+               const odb::OdbPtrMap<odb::dbModule, ModuleSettings>& module_settings,
+               const odb::OdbPtrSet<odb::dbNet>& focus_nets,
+               const odb::OdbPtrSet<odb::dbNet>& route_guides,
+               const odb::OdbPtrSet<odb::dbNet>& net_tracks,
                Gui* gui,
                const std::function<bool()>& using_dbu,
                const std::function<bool()>& show_ruler_as_euclidian,
@@ -132,7 +133,7 @@ class LayoutViewer : public QWidget
 
   odb::dbBlock* getBlock() const { return chip_->getBlock(); }
   odb::dbChip* getChip() const { return chip_; }
-  std::map<odb::dbChipInst*, odb::dbChip*> getChips() const;
+  odb::OdbPtrMap<odb::dbChipInst, odb::dbChip*> getChips() const;
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -279,11 +280,11 @@ class LayoutViewer : public QWidget
   struct Boxes
   {
     std::vector<QPolygon> obs;
-    std::map<odb::dbMTerm*, std::vector<QPolygon>> mterms;
+    odb::OdbPtrMap<odb::dbMTerm, std::vector<QPolygon>> mterms;
   };
 
-  using LayerBoxes = std::map<odb::dbTechLayer*, Boxes>;
-  using CellBoxes = std::map<odb::dbMaster*, LayerBoxes>;
+  using LayerBoxes = odb::OdbPtrMap<odb::dbTechLayer, Boxes>;
+  using CellBoxes = odb::OdbPtrMap<odb::dbMaster, LayerBoxes>;
 
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
@@ -392,7 +393,7 @@ class LayoutViewer : public QWidget
   std::function<bool()> show_ruler_as_euclidian_;
   std::function<bool()> show_db_view_;
 
-  const std::map<odb::dbModule*, ModuleSettings>& modules_;
+  const odb::OdbPtrMap<odb::dbModule, ModuleSettings>& modules_;
 
   bool building_ruler_;
   std::unique_ptr<odb::Point> ruler_start_;
@@ -434,11 +435,11 @@ class LayoutViewer : public QWidget
   // Cache of the maximum cut size per layer (units: dbu).
   // Used to determine when cuts are too small to be seen and should not be
   // drawn.
-  std::map<odb::dbTechLayer*, int> cut_maximum_size_;
+  odb::OdbPtrMap<odb::dbTechLayer, int> cut_maximum_size_;
 
-  const std::set<odb::dbNet*>& focus_nets_;
-  const std::set<odb::dbNet*>& route_guides_;
-  const std::set<odb::dbNet*>& net_tracks_;
+  const odb::OdbPtrSet<odb::dbNet>& focus_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& route_guides_;
+  const odb::OdbPtrSet<odb::dbNet>& net_tracks_;
 
   RenderThread viewer_thread_;
   QPixmap draw_pixmap_;

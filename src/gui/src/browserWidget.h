@@ -16,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -40,7 +41,7 @@ class BrowserWidget : public QDockWidget,
   Q_OBJECT
 
  public:
-  BrowserWidget(const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+  BrowserWidget(const odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
                     modulesettings,
                 DisplayControls* controls,
                 QWidget* parent = nullptr);
@@ -114,7 +115,7 @@ class BrowserWidget : public QDockWidget,
   QPushButton* display_controls_warning_;
   QCheckBox* include_physical_cells_;
 
-  const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
+  const odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings>& modulesettings_;
 
   QTreeView* view_;
   QStandardItemModel* model_;
@@ -127,14 +128,14 @@ class BrowserWidget : public QDockWidget,
   Selected menu_item_;
   static const int kSortRole;
 
-  std::set<odb::dbModule*> getChildren(odb::dbModule* parent);
-  std::set<odb::dbModule*> getAllChildren(odb::dbModule* parent);
+  odb::OdbPtrSet<odb::dbModule> getChildren(odb::dbModule* parent);
+  odb::OdbPtrSet<odb::dbModule> getAllChildren(odb::dbModule* parent);
   SelectionSet getMenuItemChildren();
 
   void updateChildren(odb::dbModule* module, const QColor& color);
   void resetChildren(odb::dbModule* module);
 
-  std::map<odb::dbModule*, QStandardItem*> modulesmap_;
+  odb::OdbPtrMap<odb::dbModule, QStandardItem*> modulesmap_;
 
   struct ModuleStats;
 

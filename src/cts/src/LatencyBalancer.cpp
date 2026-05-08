@@ -9,6 +9,7 @@
 #include <map>
 #include <ranges>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <stack>
 #include <string>
 #include <utility>
@@ -529,7 +530,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     odb::dbInst* lastBuffer = nullptr;
 
     // Use load pins buffering at the end
-    std::set<odb::dbObject*> load_pins;
+    odb::OdbPtrSet<odb::dbObject> load_pins;
     for (odb::dbITerm* sinkInput : sinksInput) {
       load_pins.insert(sinkInput);
     }

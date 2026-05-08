@@ -18,6 +18,7 @@
 #include <functional>
 #include <limits>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <optional>
 #include <queue>
 #include <regex>
@@ -749,7 +750,7 @@ void DbInstDescriptor::makeMasterOptions(
     odb::dbMaster* master,
     std::vector<EditorOption>& options) const
 {
-  std::set<odb::dbMaster*> masters;
+  odb::OdbPtrSet<odb::dbMaster> masters;
   DbMasterDescriptor::getMasterEquivalent(sta_, master, masters);
   for (auto master : masters) {
     options.push_back({master->getConstName(), master});
@@ -854,7 +855,7 @@ void DbMasterDescriptor::highlight(const std::any& object,
                                    Painter& painter) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
-  std::set<odb::dbInst*> insts;
+  odb::OdbPtrSet<odb::dbInst> insts;
   getInstances(master, insts);
   for (auto inst : insts) {
     if (!inst->getPlacementStatus().isPlaced()) {
@@ -895,7 +896,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   props.emplace_back("Symmetry", symmetry);
 
   SelectionSet equivalent;
-  std::set<odb::dbMaster*> equivalent_masters;
+  odb::OdbPtrSet<odb::dbMaster> equivalent_masters;
   getMasterEquivalent(sta_, master, equivalent_masters);
   for (auto other_master : equivalent_masters) {
     if (other_master != master) {
@@ -904,7 +905,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
   }
   props.emplace_back("Equivalent", equivalent);
   SelectionSet instances;
-  std::set<odb::dbInst*> insts;
+  odb::OdbPtrSet<odb::dbInst> insts;
   getInstances(master, insts);
   for (auto inst : insts) {
     instances.insert(gui->makeSelected(inst));
@@ -932,7 +933,7 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
 // get list of equivalent masters as EditorOptions
 void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
                                              odb::dbMaster* master,
-                                             std::set<odb::dbMaster*>& masters)
+                                             odb::OdbPtrSet<odb::dbMaster>& masters)
 {
   // mirrors method used in Resizer.cpp
   auto network = sta->getDbNetwork();
@@ -964,7 +965,7 @@ void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
 
 // get list of instances of that type
 void DbMasterDescriptor::getInstances(odb::dbMaster* master,
-                                      std::set<odb::dbInst*>& insts)
+                                      odb::OdbPtrSet<odb::dbInst>& insts)
 {
   for (auto inst : master->getDb()->getChip()->getBlock()->getInsts()) {
     if (inst->getMaster() == master) {
@@ -987,9 +988,9 @@ void DbMasterDescriptor::visitAllObjects(
 
 DbNetDescriptor::DbNetDescriptor(odb::dbDatabase* db,
                                  sta::dbSta* sta,
-                                 const std::set<odb::dbNet*>& focus_nets,
-                                 const std::set<odb::dbNet*>& guide_nets,
-                                 const std::set<odb::dbNet*>& tracks_nets)
+                                 const odb::OdbPtrSet<odb::dbNet>& focus_nets,
+                                 const odb::OdbPtrSet<odb::dbNet>& guide_nets,
+                                 const odb::OdbPtrSet<odb::dbNet>& tracks_nets)
     : BaseDbDescriptor<odb::dbNet>(db),
       sta_(sta),
       focus_nets_(focus_nets),
@@ -1472,9 +1473,9 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
     bool is_sink;
     bool is_source;
   };
-  std::map<odb::dbObject*, DbIO> io_map;
+  odb::OdbPtrMap<odb::dbObject, DbIO> io_map;
 
-  std::map<odb::dbTechLayer*, std::map<odb::dbObject*, std::set<odb::Rect>>>
+  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrMap<odb::dbObject, std::set<odb::Rect>>>
       terms;
   for (odb::dbITerm* term : net->getITerms()) {
     if (!term->getInst()->isPlaced()) {
@@ -1873,7 +1874,7 @@ Descriptor::Properties DbNetDescriptor::getDBProperties(odb::dbNet* net) const
   }
   props.emplace_back("BTerms", bterms);
 
-  std::set<odb::dbModNet*> modnet_set;
+  odb::OdbPtrSet<odb::dbModNet> modnet_set;
   if (net->findRelatedModNets(modnet_set)) {
     SelectionSet mod_nets;
     for (odb::dbModNet* mod_net : modnet_set) {
@@ -2030,7 +2031,7 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
            if (dialog.exec() == QDialog::Accepted) {
              odb::dbMaster* master = dialog.getSelectedMaster();
              odb::dbObject* driver = nullptr;
-             std::set<odb::dbObject*> loads;
+             odb::OdbPtrSet<odb::dbObject> loads;
              dialog.getSelection(driver, loads);
 
              std::string buf_name = dialog.getBufferName().toStdString();
@@ -4192,7 +4193,7 @@ Descriptor::Properties DbTechViaDescriptor::getDBProperties(
 
   Properties props({{"Tech", gui->makeSelected(via->getTech())}});
 
-  std::map<odb::dbTechLayer*, odb::Rect> shapes;
+  odb::OdbPtrMap<odb::dbTechLayer, odb::Rect> shapes;
   odb::dbTechLayer* cut_layer = nullptr;
   for (auto* box : via->getBoxes()) {
     auto* box_layer = box->getTechLayer();
@@ -5787,7 +5788,7 @@ void DbMasterEdgeTypeDescriptor::highlightEdge(
     painter.setPenWidth(pen_width.value());
   }
 
-  std::set<odb::dbInst*> insts;
+  odb::OdbPtrSet<odb::dbInst> insts;
   DbMasterDescriptor::getInstances(master, insts);
   for (auto inst : insts) {
     if (!inst->getPlacementStatus().isPlaced()) {

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -93,7 +94,7 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
 
-  std::map<odb::dbInst*, odb::Rect> guidance_regions_;
+  odb::OdbPtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };
 
 }  // namespace mpl

@@ -17,6 +17,7 @@
 #include <optional>
 #include <ranges>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -437,10 +438,10 @@ void Resizer::unbufferNet(sta::Net* net)
 }
 
 void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
-                         const std::set<odb::dbSite*>& base_sites)
+                         const odb::OdbPtrSet<odb::dbSite>& base_sites)
 {
   // Maps sites to the total width of all instances using that site
-  map<odb::dbSite*, uint64_t> sites;
+  odb::OdbPtrMap<odb::dbSite, uint64_t> sites;
   uint64_t total_width = 0;
   for (auto inst : bin) {
     auto master = inst->getMaster();
@@ -516,7 +517,7 @@ void Resizer::balanceRowUsage()
   const int x_step = core_width / num_bins + 1;
   const int y_step = core_height / num_bins + 1;
 
-  std::set<odb::dbSite*> base_sites;
+  odb::OdbPtrSet<odb::dbSite> base_sites;
   for (odb::dbRow* row : block_->getRows()) {
     odb::dbSite* site = row->getSite();
     if (site->hasRowPattern()) {
@@ -2899,8 +2900,8 @@ void Resizer::reportDontTouch()
 {
   initBlock();
 
-  std::set<odb::dbInst*> insts;
-  std::set<odb::dbNet*> nets;
+  odb::OdbPtrSet<odb::dbInst> insts;
+  odb::OdbPtrSet<odb::dbNet> nets;
 
   for (auto* inst : block_->getInsts()) {
     if (inst->isDoNotTouch()) {
@@ -5043,7 +5044,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  std::set<odb::dbObject*> db_loads;
+  odb::OdbPtrSet<odb::dbObject> db_loads;
   if (loads) {
     for (const sta::Pin* pin : *loads) {
       db_loads.insert(db_network_->staToDb(pin));
@@ -5065,7 +5066,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 
 odb::dbInst* Resizer::insertBufferBeforeLoads(
     odb::dbNet* net,
-    const std::set<odb::dbObject*>& loads,
+    const odb::OdbPtrSet<odb::dbObject>& loads,
     odb::dbMaster* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
@@ -5093,10 +5094,7 @@ odb::dbInst* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  // Make a non-const copy for dbNet API
-  const std::set<odb::dbObject*>& loads_copy = loads;
-
-  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads_copy,
+  odb::dbInst* buffer_inst = net->insertBufferBeforeLoads(loads,
                                                           buffer_cell,
                                                           loc,
                                                           new_buf_base_name,

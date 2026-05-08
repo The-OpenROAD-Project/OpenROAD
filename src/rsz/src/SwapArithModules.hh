@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -44,7 +45,7 @@ class SwapArithModules : public sta::dbStaState
                                    float slack_threshold)
       = 0;
   virtual void collectArithInstsOnPath(const sta::Path* path,
-                                       std::set<odb::dbModInst*>& arithInsts)
+                                       odb::OdbPtrSet<odb::dbModInst>& arithInsts)
       = 0;
   virtual bool isArithInstance(const sta::Instance* inst,
                                odb::dbModInst*& mod_inst)
@@ -53,9 +54,9 @@ class SwapArithModules : public sta::dbStaState
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     std::set<odb::dbModInst*>& insts)
+                                     odb::OdbPtrSet<odb::dbModInst>& insts)
       = 0;
-  virtual bool doSwapInstances(std::set<odb::dbModInst*>& insts,
+  virtual bool doSwapInstances(odb::OdbPtrSet<odb::dbModInst>& insts,
                                const std::string& target)
       = 0;
 

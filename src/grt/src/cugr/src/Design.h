@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <unordered_map>
 #include <vector>
 
@@ -39,7 +40,7 @@ class Design
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
-         const std::set<odb::dbNet*>& clock_nets);
+         const odb::OdbPtrSet<odb::dbNet>& clock_nets);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -110,7 +111,7 @@ class Design
   const Constants constants_;
   const int min_routing_layer_;
   const int max_routing_layer_;
-  std::set<odb::dbNet*> clock_nets_;
+  odb::OdbPtrSet<odb::dbNet> clock_nets_;
 };
 
 }  // namespace grt

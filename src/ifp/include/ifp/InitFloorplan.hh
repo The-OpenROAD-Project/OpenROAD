@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -42,27 +43,29 @@ class InitFloorplan
   // utilization is in [0, 100]%
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
-  void initFloorplan(double utilization,
-                     double aspect_ratio,
-                     int core_space_bottom,
-                     int core_space_top,
-                     int core_space_left,
-                     int core_space_right,
-                     odb::dbSite* base_site,
-                     const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::kNone,
-                     const std::set<odb::dbSite*>& flipped_sites = {},
-                     int gap = std::numeric_limits<std::int32_t>::min());
+  void initFloorplan(
+      double utilization,
+      double aspect_ratio,
+      int core_space_bottom,
+      int core_space_top,
+      int core_space_left,
+      int core_space_right,
+      odb::dbSite* base_site,
+      const std::vector<odb::dbSite*>& additional_sites = {},
+      RowParity row_parity = RowParity::kNone,
+      const std::set<odb::dbSite*, odb::ODBPtrLess>& flipped_sites = {},
+      int gap = std::numeric_limits<std::int32_t>::min());
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
-  void initFloorplan(const odb::Rect& die,
-                     const odb::Rect& core,
-                     odb::dbSite* base_site,
-                     const std::vector<odb::dbSite*>& additional_sites = {},
-                     RowParity row_parity = RowParity::kNone,
-                     const std::set<odb::dbSite*>& flipped_sites = {},
-                     int gap = std::numeric_limits<std::int32_t>::min());
+  void initFloorplan(
+      const odb::Rect& die,
+      const odb::Rect& core,
+      odb::dbSite* base_site,
+      const std::vector<odb::dbSite*>& additional_sites = {},
+      RowParity row_parity = RowParity::kNone,
+      const std::set<odb::dbSite*, odb::ODBPtrLess>& flipped_sites = {},
+      int gap = std::numeric_limits<std::int32_t>::min());
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
@@ -84,16 +87,16 @@ class InitFloorplan
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern. core space is the padding on each side
   // to inset the rows.
-  void makeRowsWithSpacing(int core_space_bottom,
-                           int core_space_top,
-                           int core_space_left,
-                           int core_space_right,
-                           odb::dbSite* base_site,
-                           const std::vector<odb::dbSite*>& additional_sites
-                           = {},
-                           RowParity row_parity = RowParity::kNone,
-                           const std::set<odb::dbSite*>& flipped_sites = {},
-                           int gap = std::numeric_limits<std::int32_t>::min());
+  void makeRowsWithSpacing(
+      int core_space_bottom,
+      int core_space_top,
+      int core_space_left,
+      int core_space_right,
+      odb::dbSite* base_site,
+      const std::vector<odb::dbSite*>& additional_sites = {},
+      RowParity row_parity = RowParity::kNone,
+      const std::set<odb::dbSite*, odb::ODBPtrLess>& flipped_sites = {},
+      int gap = std::numeric_limits<std::int32_t>::min());
 
   // The base_site determines the single-height rows.  For hybrid rows it is
   // a site containing a row pattern.
@@ -101,16 +104,18 @@ class InitFloorplan
                 odb::dbSite* base_site,
                 const std::vector<odb::dbSite*>& additional_sites = {},
                 RowParity row_parity = RowParity::kNone,
-                const std::set<odb::dbSite*>& flipped_sites = {},
+                const std::set<odb::dbSite*, odb::ODBPtrLess>& flipped_sites
+                = {},
                 int gap = std::numeric_limits<std::int32_t>::min());
 
   // Create rows for a polygon core area using true polygon-aware generation
-  void makePolygonRows(const odb::Polygon& core_polygon,
-                       odb::dbSite* base_site,
-                       const std::vector<odb::dbSite*>& additional_sites = {},
-                       RowParity row_parity = RowParity::kNone,
-                       const std::set<odb::dbSite*>& flipped_sites = {},
-                       int gap = std::numeric_limits<std::int32_t>::min());
+  void makePolygonRows(
+      const odb::Polygon& core_polygon,
+      odb::dbSite* base_site,
+      const std::vector<odb::dbSite*>& additional_sites = {},
+      RowParity row_parity = RowParity::kNone,
+      const std::set<odb::dbSite*, odb::ODBPtrLess>& flipped_sites = {},
+      int gap = std::numeric_limits<std::int32_t>::min());
 
   void makeTracks();
   void makeTracks(odb::dbTechLayer* layer,
@@ -141,7 +146,7 @@ class InitFloorplan
                        const SitesByName& sites_by_name,
                        const odb::Rect& core,
                        RowParity row_parity,
-                       const std::set<odb::dbSite*>& flipped_sites);
+                       const odb::OdbPtrSet<odb::dbSite>& flipped_sites);
   void makeHybridRows(odb::dbSite* base_hybrid_site,
                       const SitesByName& sites_by_name,
                       const odb::Rect& core);
@@ -165,7 +170,7 @@ class InitFloorplan
                                odb::dbSite* base_site,
                                const SitesByName& sites_by_name,
                                RowParity row_parity,
-                               const std::set<odb::dbSite*>& flipped_sites,
+                               const odb::OdbPtrSet<odb::dbSite>& flipped_sites,
                                int gap);
 
   std::vector<odb::Rect> intersectRowWithPolygon(const odb::Rect& row,
@@ -175,7 +180,7 @@ class InitFloorplan
                               const odb::Polygon& core_polygon,
                               const odb::Rect& core_bbox,
                               RowParity row_parity,
-                              const std::set<odb::dbSite*>& flipped_sites);
+                              const odb::OdbPtrSet<odb::dbSite>& flipped_sites);
 
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};

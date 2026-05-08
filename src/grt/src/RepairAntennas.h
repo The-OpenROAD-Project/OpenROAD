@@ -5,6 +5,7 @@
 
 #include <map>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -46,7 +47,7 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-using AntennaViolations = std::map<odb::dbNet*, std::vector<ant::Violation>>;
+using AntennaViolations = odb::OdbPtrMap<odb::dbNet, std::vector<ant::Violation>>;
 
 struct RoutePtPins
 {

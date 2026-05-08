@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <variant>
@@ -232,7 +233,7 @@ class HeatMapDataSource
 
   // Returns the set of selected dbInst* objects when use_selected_only_ is
   // enabled, or an empty set (meaning no filtering) when it is disabled.
-  std::set<odb::dbInst*> getSelectedInsts() const;
+  odb::OdbPtrSet<odb::dbInst> getSelectedInsts() const;
 
  private:
   const std::string name_;

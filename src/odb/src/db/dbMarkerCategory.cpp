@@ -18,6 +18,7 @@
 #include <fstream>
 #include <regex>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -253,7 +254,7 @@ void _dbMarkerCategory::writeJSON(
     return;
   }
 
-  std::set<dbMarkerCategory*> ordered_categories;
+  odb::OdbPtrSet<dbMarkerCategory> ordered_categories;
   for (_dbMarkerCategory* category : categories) {
     ordered_categories.insert((dbMarkerCategory*) category);
   }
@@ -476,7 +477,7 @@ void dbMarkerCategory::writeTR(std::ofstream& report) const
   obj->writeTR(report);
 }
 
-std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
+odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(dbChip* chip,
                                                        const std::string& path)
 {
   std::ifstream report(path);
@@ -487,14 +488,14 @@ std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
     logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
   }
 
-  std::set<dbMarkerCategory*> categories = fromJSON(chip, path.c_str(), report);
+  odb::OdbPtrSet<dbMarkerCategory> categories = fromJSON(chip, path.c_str(), report);
 
   report.close();
 
   return categories;
 }
 
-std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
+odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(dbChip* chip,
                                                        const char* source,
                                                        std::ifstream& report)
 {
@@ -508,7 +509,7 @@ std::set<dbMarkerCategory*> dbMarkerCategory::fromJSON(dbChip* chip,
     logger->error(utl::ODB, 238, "Unable to parse JSON file: {}", e1.what());
   }
 
-  std::set<dbMarkerCategory*> categories;
+  odb::OdbPtrSet<dbMarkerCategory> categories;
   for (const auto& [name, subtree] : tree) {
     dbMarkerCategory* top_category
         = dbMarkerCategory::createOrReplace(chip, name.c_str());
@@ -760,12 +761,12 @@ dbMarkerCategory* dbMarkerCategory::fromTR(dbChip* chip,
   return marker_category;
 }
 
-std::set<dbMarker*> dbMarkerCategory::getAllMarkers() const
+odb::OdbPtrSet<dbMarker> dbMarkerCategory::getAllMarkers() const
 {
-  std::set<dbMarker*> markers;
+  odb::OdbPtrSet<dbMarker> markers;
 
   for (dbMarkerCategory* category : getMarkerCategories()) {
-    const std::set<dbMarker*> category_markers = category->getAllMarkers();
+    const odb::OdbPtrSet<dbMarker> category_markers = category->getAllMarkers();
     markers.insert(category_markers.begin(), category_markers.end());
   }
 

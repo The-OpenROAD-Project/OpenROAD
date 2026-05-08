@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -50,15 +51,15 @@ class LayoutTabs : public QTabWidget
 
   void setLogger(utl::Logger* logger);
 
-  const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>&
+  const odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
   getModuleSettings()
   {
     return modules_;
   }
 
-  const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
-  const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
-  const std::set<odb::dbNet*>& getNetTracks() { return net_tracks_; }
+  const odb::OdbPtrSet<odb::dbNet>& getFocusNets() { return focus_nets_; }
+  const odb::OdbPtrSet<odb::dbNet>& getRouteGuides() { return route_guides_; }
+  const odb::OdbPtrSet<odb::dbNet>& getNetTracks() { return net_tracks_; }
 
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
@@ -128,7 +129,7 @@ class LayoutTabs : public QTabWidget
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   const std::vector<std::unique_ptr<Label>>& labels_;
-  std::map<odb::dbModule*, LayoutViewer::ModuleSettings> modules_;
+  odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings> modules_;
   Gui* gui_;
   std::function<bool()> using_dbu_;
   std::function<bool()> using_poly_decomp_view_;
@@ -139,11 +140,11 @@ class LayoutTabs : public QTabWidget
   bool command_executing_ = false;
 
   // Set of nets to focus drawing on, if empty draw everything
-  std::set<odb::dbNet*> focus_nets_;
+  odb::OdbPtrSet<odb::dbNet> focus_nets_;
   // Set of nets to draw route guides for, if empty draw nothing
-  std::set<odb::dbNet*> route_guides_;
+  odb::OdbPtrSet<odb::dbNet> route_guides_;
   // Set of nets to draw assigned tracks for, if empty draw nothing
-  std::set<odb::dbNet*> net_tracks_;
+  odb::OdbPtrSet<odb::dbNet> net_tracks_;
 };
 
 }  // namespace gui

@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <set>
@@ -64,8 +65,8 @@ class IRSolver
     std::set<ITermNode*, Node::Compare> unconnected_iterms;
   };
 
-  using UserVoltages = std::map<odb::dbNet*, std::map<sta::Scene*, Voltage>>;
-  using UserPowers = std::map<odb::dbInst*, std::map<sta::Scene*, Power>>;
+  using UserVoltages = odb::OdbPtrMap<odb::dbNet, std::map<sta::Scene*, Voltage>>;
+  using UserPowers = odb::OdbPtrMap<odb::dbInst, std::map<sta::Scene*, Power>>;
 
   IRSolver(odb::dbNet* net,
            bool floorplanning,
@@ -137,7 +138,7 @@ class IRSolver
   bool checkBTerms() const;
   bool checkShort() const;
 
-  std::map<odb::dbInst*, Power> getInstancePower(sta::Scene* corner) const;
+  odb::OdbPtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
   Connection::ConnectionMap<Current> generateCurrentMap(

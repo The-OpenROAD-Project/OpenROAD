@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -37,7 +38,7 @@ struct Section;
 struct Slot;
 
 // A list of pins that will be placed together in the die boundary
-using PinSet = std::set<odb::dbBTerm*>;
+using PinSet = odb::OdbPtrSet<odb::dbBTerm>;
 using PinList = std::vector<odb::dbBTerm*>;
 
 struct PinGroupByIndex

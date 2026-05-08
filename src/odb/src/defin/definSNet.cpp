@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <vector>
 
 #include "create_box.h"
@@ -565,7 +566,7 @@ void definSNet::connect_all(dbNet* net, const char* term)
   dbSet<dbITerm> iterms = _block->getITerms();
 
   net->setWildConnected();
-  std::map<dbMTerm*, int> matched_mterms;
+  odb::OdbPtrMap<dbMTerm, int> matched_mterms;
   std::vector<dbMaster*> masters;
   _block->getMasters(masters);
   std::vector<dbMaster*>::iterator mitr;

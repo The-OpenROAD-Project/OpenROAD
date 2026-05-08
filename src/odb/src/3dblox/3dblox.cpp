@@ -6,13 +6,16 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "bmapParser.h"
@@ -803,7 +806,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   };
 
   // Populate where the bpins should be made
-  std::map<odb::dbMaster*, BPinInfo> bpininfo;
+  odb::OdbPtrMap<odb::dbMaster, BPinInfo> bpininfo;
   for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.contains(master)) {

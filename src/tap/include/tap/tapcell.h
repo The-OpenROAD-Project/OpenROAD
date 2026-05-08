@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -139,7 +140,7 @@ class Tapcell
   };
   using Polygon = boost::polygon::polygon_90_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
+  using CornerMap = odb::OdbPtrMap<odb::dbRow, odb::OdbPtrSet<odb::dbInst>>;
 
   struct InstIndexableGetter
   {
@@ -165,7 +166,7 @@ class Tapcell
   std::optional<int> findValidLocation(int x,
                                        int width,
                                        const odb::dbOrientType& orient,
-                                       const std::set<odb::dbInst*>& row_insts,
+                                       const odb::OdbPtrSet<odb::dbInst>& row_insts,
                                        int site_width,
                                        int tap_width,
                                        int row_urx,
@@ -173,7 +174,7 @@ class Tapcell
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
-                     const std::set<odb::dbInst*>& row_insts);
+                     const odb::OdbPtrSet<odb::dbInst>& row_insts);
   int placeTapcells(odb::dbMaster* tapcell_master, int dist);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
@@ -222,7 +223,7 @@ class Tapcell
 
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type,
                                  const std::string& option_name) const;
-  std::set<odb::dbMaster*> findMasterByType(
+  odb::OdbPtrSet<odb::dbMaster> findMasterByType(
       const odb::dbMasterType& type) const;
   odb::dbBlock* getBlock() const;
 

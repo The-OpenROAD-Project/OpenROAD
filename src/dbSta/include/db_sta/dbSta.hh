@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -165,8 +166,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
-  std::set<odb::dbNet*> findClkNets();
-  std::set<odb::dbNet*> findClkNets(const Clock* clk);
+  odb::OdbPtrSet<odb::dbNet> findClkNets();
+  odb::OdbPtrSet<odb::dbNet> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;
   void deleteNet(Net* net) override;

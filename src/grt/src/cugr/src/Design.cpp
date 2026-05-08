@@ -23,7 +23,7 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               const std::set<odb::dbNet*>& clock_nets)
+               const odb::OdbPtrSet<odb::dbNet>& clock_nets)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),

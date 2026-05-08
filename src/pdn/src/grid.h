@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -67,7 +68,7 @@ class Grid
 
   void removeStrap(Straps* strap);
 
-  std::set<odb::dbTechLayer*> connectableLayers(odb::dbTechLayer* layer) const;
+  odb::OdbPtrSet<odb::dbTechLayer> connectableLayers(odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins
   void setPinLayers(const std::vector<odb::dbTechLayer*>& layers)
@@ -75,7 +76,7 @@ class Grid
     pin_layers_.clear();
     pin_layers_.insert(layers.begin(), layers.end());
   }
-  const std::set<odb::dbTechLayer*>& getPinLayers() const
+  const odb::OdbPtrSet<odb::dbTechLayer>& getPinLayers() const
   {
     return pin_layers_;
   }
@@ -139,15 +140,15 @@ class Grid
   void resetShapes();
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
-      const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
+      const odb::OdbPtrMap<odb::dbNet, odb::dbSWire*>& net_map,
       bool do_pins,
       const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
   static void makeInitialObstructions(odb::dbBlock* block,
                                       ShapeVectorMap& obs,
-                                      const std::set<odb::dbInst*>& skip_insts,
-                                      const std::set<odb::dbNet*>& skip_nets,
+                                      const odb::OdbPtrSet<odb::dbInst>& skip_insts,
+                                      const odb::OdbPtrSet<odb::dbNet>& skip_nets,
                                       utl::Logger* logger);
   static void makeInitialShapes(odb::dbBlock* block,
                                 ShapeVectorMap& shapes,
@@ -161,7 +162,7 @@ class Grid
 
   void ripup();
 
-  virtual std::set<odb::dbInst*> getInstances() const;
+  virtual odb::OdbPtrSet<odb::dbInst> getInstances() const;
 
   bool hasShapes() const;
   bool hasVias() const;
@@ -186,7 +187,7 @@ class Grid
   std::vector<std::unique_ptr<Straps>> straps_;
   std::vector<std::unique_ptr<Connect>> connect_;
 
-  std::set<odb::dbTechLayer*> pin_layers_;
+  odb::OdbPtrSet<odb::dbTechLayer> pin_layers_;
   std::vector<odb::dbTechLayer*> obstruction_layers_;
 
   Via::ViaTree vias_;
@@ -234,7 +235,7 @@ class InstanceGrid : public Grid
   Type type() const override { return Grid::kInstance; }
 
   odb::dbInst* getInstance() const { return inst_; }
-  std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
+  odb::OdbPtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
 
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 

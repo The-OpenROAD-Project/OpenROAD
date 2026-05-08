@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -139,7 +140,7 @@ class RenderThread : public QThread
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
   void drawNetsRouteGuides(Painter& painter,
-                           const std::set<odb::dbNet*>& nets,
+                           const odb::OdbPtrSet<odb::dbNet>& nets,
                            odb::dbTechLayer* layer);
   void drawNetRouteGuides(Painter& painter,
                           odb::dbNet* net,

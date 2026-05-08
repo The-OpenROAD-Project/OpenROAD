@@ -179,7 +179,7 @@ void GlobalConnectDialog::runRulesWithForce()
 void GlobalConnectDialog::clearRules()
 {
   auto rule_set = block_->getGlobalConnects();
-  std::set<odb::dbGlobalConnect*> rules(rule_set.begin(), rule_set.end());
+  odb::OdbPtrSet<odb::dbGlobalConnect> rules(rule_set.begin(), rule_set.end());
   for (auto* rule : rules) {
     deleteRule(rule);
   }

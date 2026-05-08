@@ -8,6 +8,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <variant>
@@ -136,10 +137,10 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
 
   static void getMasterEquivalent(sta::dbSta* sta,
                                   odb::dbMaster* master,
-                                  std::set<odb::dbMaster*>& masters);
+                                  odb::OdbPtrSet<odb::dbMaster>& masters);
 
   static void getInstances(odb::dbMaster* master,
-                           std::set<odb::dbInst*>& insts);
+                           odb::OdbPtrSet<odb::dbInst>& insts);
 
  protected:
   Properties getDBProperties(odb::dbMaster* master) const override;
@@ -159,9 +160,9 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
 
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  const std::set<odb::dbNet*>& focus_nets,
-                  const std::set<odb::dbNet*>& guide_nets,
-                  const std::set<odb::dbNet*>& tracks_nets);
+                  const odb::OdbPtrSet<odb::dbNet>& focus_nets,
+                  const odb::OdbPtrSet<odb::dbNet>& guide_nets,
+                  const odb::OdbPtrSet<odb::dbNet>& tracks_nets);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -227,9 +228,9 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
-  const std::set<odb::dbNet*>& focus_nets_;
-  const std::set<odb::dbNet*>& guide_nets_;
-  const std::set<odb::dbNet*>& tracks_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& focus_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& guide_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& tracks_nets_;
 
   odb::dbObject* getSink(const std::any& object) const;
 

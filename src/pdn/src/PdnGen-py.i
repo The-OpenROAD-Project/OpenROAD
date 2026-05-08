@@ -5,6 +5,7 @@
 %{
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include <array>
 #include <string>
 #include <memory>
@@ -34,14 +35,14 @@ namespace std {
   %template(split_cuts_stuff) std::vector<int>;
 #endif
   %template(stuff)        std::array<int, 4>;
-  %template(split_map)    std::map<odb::dbTechLayer *, std::pair<int, bool>>;
+  %template(split_map)    std::map<odb::dbTechLayer *, std::pair<int, bool>, odb::ODBPtrLess>;
   %template(grid_list)    std::vector<pdn::Grid *>;
   %template(domain_list)  std::vector<pdn::VoltageDomain *>;
   %template(net_list)     std::vector<odb::dbNet *>;
   %template(viagen_list)  std::vector<odb::dbTechViaGenerateRule *>;
   %template(techvia_list) std::vector<odb::dbTechVia *>;
   %template(layer_list)   std::vector<odb::dbTechLayer *>;
-  %template(net_set)      std::set<odb::dbNet*>;
+  %template(net_set)      std::set<odb::dbNet*, odb::ODBPtrLess>;
 }
 
 %include "../../Exception-py.i"

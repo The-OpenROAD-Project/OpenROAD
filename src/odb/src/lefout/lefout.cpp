@@ -69,13 +69,13 @@ void lefout::writeVersion(std::ostream& out, const std::string& version)
 }
 
 template <typename GenericBox>
-std::set<dbVia*> lefout::writeBoxes(std::ostream& out,
-                                    dbBlock* block,
-                                    dbSet<GenericBox>& boxes,
-                                    const char* indent)
+odb::OdbPtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
+                                         dbBlock* block,
+                                         dbSet<GenericBox>& boxes,
+                                         const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
-  std::set<dbVia*> vias;
+  odb::OdbPtrSet<dbVia> vias;
 
   for (GenericBox* generic_box : boxes) {
     if (generic_box == nullptr) {
@@ -125,10 +125,10 @@ std::set<dbVia*> lefout::writeBoxes(std::ostream& out,
 }
 
 template <>
-std::set<dbVia*> lefout::writeBoxes(std::ostream& out,
-                                    dbBlock* block,
-                                    dbSet<dbPolygon>& boxes,
-                                    const char* indent)
+odb::OdbPtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
+                                         dbBlock* block,
+                                         dbSet<dbPolygon>& boxes,
+                                         const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
 
@@ -507,7 +507,7 @@ void lefout::writeBlock(std::ostream& out, dbBlock* db_block)
   fmt::print(macro_stream, "  FOREIGN {} 0 0 ;\n", db_block->getName().c_str());
   fmt::print(macro_stream, "  CLASS BLOCK ;\n");
   fmt::print(macro_stream, "  SIZE {:.11g} BY {:.11g} ;\n", size_x, size_y);
-  const std::set<dbVia*> vias = writePins(macro_stream, db_block);
+  const odb::OdbPtrSet<dbVia> vias = writePins(macro_stream, db_block);
 
   writeObstructions(macro_stream, db_block);
   fmt::print(macro_stream, "END {}\n", db_block->getName().c_str());
@@ -520,9 +520,9 @@ void lefout::writeBlock(std::ostream& out, dbBlock* db_block)
   out << macro_stream.str();
 }
 
-std::set<dbVia*> lefout::writePins(std::ostream& out, dbBlock* db_block)
+odb::OdbPtrSet<dbVia> lefout::writePins(std::ostream& out, dbBlock* db_block)
 {
-  std::set<dbVia*> vias;
+  odb::OdbPtrSet<dbVia> vias;
 
   const auto power_vias = writePowerPins(out, db_block);
   vias.insert(power_vias.begin(), power_vias.end());
@@ -533,9 +533,9 @@ std::set<dbVia*> lefout::writePins(std::ostream& out, dbBlock* db_block)
   return vias;
 }
 
-std::set<dbVia*> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_block)
+odb::OdbPtrSet<dbVia> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_block)
 {
-  std::set<dbVia*> vias;
+  odb::OdbPtrSet<dbVia> vias;
   for (dbBTerm* b_term : db_block->getBTerms()) {
     fmt::print(out, "  PIN {}\n", b_term->getName().c_str());
     fmt::print(out, "    DIRECTION {} ;\n", b_term->getIoType().getString());
@@ -580,9 +580,9 @@ std::set<dbVia*> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_block)
   return vias;
 }
 
-std::set<dbVia*> lefout::writePowerPins(std::ostream& out, dbBlock* db_block)
+odb::OdbPtrSet<dbVia> lefout::writePowerPins(std::ostream& out, dbBlock* db_block)
 {
-  std::set<dbVia*> vias;
+  odb::OdbPtrSet<dbVia> vias;
 
   // Power Ground.
   for (dbNet* net : db_block->getNets()) {

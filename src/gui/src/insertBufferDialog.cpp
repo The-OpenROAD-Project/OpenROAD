@@ -228,7 +228,7 @@ odb::dbMaster* InsertBufferDialog::getSelectedMaster() const
 }
 
 void InsertBufferDialog::getSelection(odb::dbObject*& driver,
-                                      std::set<odb::dbObject*>& loads) const
+                                      odb::OdbPtrSet<odb::dbObject>& loads) const
 {
   driver = nullptr;
   loads.clear();

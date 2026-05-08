@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <tuple>
 #include <vector>
 
@@ -44,7 +45,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   const auto& vertex_map = router_->getVertexMap();
 
-  std::map<odb::dbITerm*, RDLRoute*> routes;
+  odb::OdbPtrMap<odb::dbITerm, RDLRoute*> routes;
   for (const auto& route : router_->getRoutes()) {
     routes[route->getTerminal()] = route.get();
   }

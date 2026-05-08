@@ -6,6 +6,7 @@
 #include <any>
 #include <functional>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -34,16 +35,16 @@ class BufferTree
 
   const std::string& getName() const { return name_; }
   const std::vector<odb::dbNet*>& getNets() const { return nets_; }
-  const std::set<odb::dbInst*>& getInsts() const { return insts_; }
-  const std::set<odb::dbITerm*>& getITerms() const { return iterm_terms_; }
-  const std::set<odb::dbBTerm*>& getBTerms() const { return bterm_terms_; }
+  const odb::OdbPtrSet<odb::dbInst>& getInsts() const { return insts_; }
+  const odb::OdbPtrSet<odb::dbITerm>& getITerms() const { return iterm_terms_; }
+  const odb::OdbPtrSet<odb::dbBTerm>& getBTerms() const { return bterm_terms_; }
 
  private:
   // Use vector for nets since painting for order matters
   std::vector<odb::dbNet*> nets_;
-  std::set<odb::dbInst*> insts_;
-  std::set<odb::dbITerm*> iterm_terms_;
-  std::set<odb::dbBTerm*> bterm_terms_;
+  odb::OdbPtrSet<odb::dbInst> insts_;
+  odb::OdbPtrSet<odb::dbITerm> iterm_terms_;
+  odb::OdbPtrSet<odb::dbBTerm> bterm_terms_;
   std::string name_;
 
   static sta::dbSta* sta_;
@@ -56,9 +57,9 @@ class BufferTreeDescriptor : public Descriptor
  public:
   BufferTreeDescriptor(odb::dbDatabase* db,
                        sta::dbSta* sta,
-                       const std::set<odb::dbNet*>& focus_nets,
-                       const std::set<odb::dbNet*>& guide_nets,
-                       const std::set<odb::dbNet*>& tracks_nets);
+                       const odb::OdbPtrSet<odb::dbNet>& focus_nets,
+                       const odb::OdbPtrSet<odb::dbNet>& guide_nets,
+                       const odb::OdbPtrSet<odb::dbNet>& tracks_nets);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -77,9 +78,9 @@ class BufferTreeDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   const Descriptor* net_descriptor_;
-  const std::set<odb::dbNet*>& focus_nets_;
-  const std::set<odb::dbNet*>& guide_nets_;
-  const std::set<odb::dbNet*>& tracks_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& focus_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& guide_nets_;
+  const odb::OdbPtrSet<odb::dbNet>& tracks_nets_;
 };
 
 }  // namespace gui

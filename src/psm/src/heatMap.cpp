@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <limits>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
@@ -122,7 +123,7 @@ bool IRDropDataSource::populateMap()
   }
   ensureLayer();
 
-  std::map<odb::dbTechLayer*, PDNSim::IRDropByPoint> ir_drops;
+  odb::OdbPtrMap<odb::dbTechLayer, PDNSim::IRDropByPoint> ir_drops;
 
   for (auto* layer : tech_->getLayers()) {
     psm_->getIRDropForLayer(net_, corner_, layer, ir_drops[layer]);

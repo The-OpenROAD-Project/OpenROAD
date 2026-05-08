@@ -2174,7 +2174,7 @@ void DisplayControls::setCurrentChip(odb::dbChip* chip)
     return;
   }
 
-  std::set<odb::dbTech*> visible_techs;
+  odb::OdbPtrSet<odb::dbTech> visible_techs;
 
   std::function<void(odb::dbChip*)> collect_techs = [&](odb::dbChip* chip) {
     auto tech = chip->getTech();

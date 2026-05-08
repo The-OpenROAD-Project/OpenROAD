@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <utility>
@@ -437,9 +438,9 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   setColorAlpha(color_alpha_);
 }
 
-std::set<odb::dbInst*> HeatMapDataSource::getSelectedInsts() const
+odb::OdbPtrSet<odb::dbInst> HeatMapDataSource::getSelectedInsts() const
 {
-  std::set<odb::dbInst*> selected_insts;
+  odb::OdbPtrSet<odb::dbInst> selected_insts;
 #ifdef ENABLE_QT
   if (!useSelectedOnly() || !gui::Gui::enabled()) {
     return selected_insts;
@@ -1161,7 +1162,7 @@ bool PowerDensityDataSource::populateMap()
   }
 
   // Collect selected instances if filter is enabled
-  const std::set<odb::dbInst*> selected_insts = getSelectedInsts();
+  const odb::OdbPtrSet<odb::dbInst> selected_insts = getSelectedInsts();
   const bool filter = !selected_insts.empty();
 
   const bool include_all

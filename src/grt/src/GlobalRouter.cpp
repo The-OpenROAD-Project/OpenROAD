@@ -17,6 +17,7 @@
 #include <queue>
 #include <random>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -394,7 +395,7 @@ void GlobalRouter::globalRoute(bool save_guides)
 
     std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
     if (use_cugr_) {
-      std::set<odb::dbNet*> clock_nets;
+      odb::OdbPtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
       cugr_->init(min_layer, max_layer, clock_nets);
       cugr_->route();
@@ -1365,8 +1366,8 @@ void GlobalRouter::computePinPositionOnGrid(
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    std::map<odb::dbITerm*, odb::Point3D> iterm_to_aps;
-    std::map<odb::dbBTerm*, odb::Point3D> bterm_to_aps;
+    odb::OdbPtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
+    odb::OdbPtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
     cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
     cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
 
@@ -1674,7 +1675,7 @@ void GlobalRouter::computeTrackConsumption(
 
 std::vector<LayerId> GlobalRouter::findTransitionLayers()
 {
-  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+  odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
       = block_->getDefaultVias();
   std::vector<LayerId> transition_layers;
   for (const auto [tech_layer, via] : default_vias) {
@@ -4161,7 +4162,7 @@ void GlobalRouter::initGrid(int max_layer)
 }
 
 static void getViaDims(
-    std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
+    odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias,
     odb::dbTechLayer* tech_layer,
     odb::dbTechLayer* bottom_layer,
     int& width_up,
@@ -4195,7 +4196,7 @@ static void getViaDims(
 
 std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
 {
-  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+  odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
       = block_->getDefaultVias();
   odb::dbTech* tech = db_->getTech();
   std::vector<std::pair<int, int>> pitches(tech->getRoutingLayerCount() + 1);
@@ -4445,7 +4446,7 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 }
 
 void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
-                                 std::set<odb::dbNet*>& clock_nets)
+                                 odb::OdbPtrSet<odb::dbNet>& clock_nets)
 {
   for (Net* net : nets) {
     if (net->isClockNet()) {
@@ -4552,7 +4553,7 @@ int GlobalRouter::getTileSize() const
 
 void GlobalRouter::initClockNets()
 {
-  std::set<odb::dbNet*> clock_nets;
+  odb::OdbPtrSet<odb::dbNet> clock_nets;
 
   auto db_network = sta_->getDbNetwork();
   if (db_network != nullptr && db_network->isLinked()
@@ -4632,7 +4633,7 @@ void GlobalRouter::makeItermPins(Net* net,
 
     odb::Point pin_pos;
     std::vector<odb::dbTechLayer*> pin_layers;
-    std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
+    odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::Rect>> pin_boxes;
 
     for (odb::dbMPin* mterm : mterm->getMPins()) {
       int last_layer = -1;
@@ -4690,7 +4691,7 @@ void GlobalRouter::makeBtermPins(Net* net,
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
 
-    std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
+    odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::Rect>> pin_boxes;
 
     const std::string pin_name = bterm->getConstName();
     odb::Point pin_pos;
@@ -6059,7 +6060,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       // area will be added
       int add_max = 30;
       // The set will contain the nets for routing
-      std::set<odb::dbNet*> congestion_nets;
+      odb::OdbPtrSet<odb::dbNet> congestion_nets;
       // The dirty nets that could not be routed are added
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
@@ -6132,7 +6133,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 }
 
 // Get the nets that pass through the congestion area based on their wires
-void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+void GlobalRouter::getCongestionNets(odb::OdbPtrSet<odb::dbNet>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
   // Get GCell positions with congestion

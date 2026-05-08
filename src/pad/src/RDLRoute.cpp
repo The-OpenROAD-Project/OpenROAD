@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -313,7 +314,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     return;
   }
 
-  std::map<odb::dbITerm*, Polygon90Set> iterms_geoms;
+  odb::OdbPtrMap<odb::dbITerm, Polygon90Set> iterms_geoms;
 
   // Create geom of all shapes
   for (odb::dbITerm* iterm : terminals_) {
@@ -376,13 +377,13 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   }
 }
 
-std::set<odb::dbITerm*> RDLRoute::getRoutedTerminals() const
+odb::OdbPtrSet<odb::dbITerm> RDLRoute::getRoutedTerminals() const
 {
   if (!routed_terminals_.empty()) {
     return routed_terminals_;
   }
 
-  std::set<odb::dbITerm*> terms;
+  odb::OdbPtrSet<odb::dbITerm> terms;
   if (route_source_) {
     terms.insert(route_source_->terminal);
   }

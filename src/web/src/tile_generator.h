@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <mutex>
 #include <set>
@@ -184,7 +185,7 @@ class TileGenerator
 
   // Per-layer colors matching gui::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
-  const std::map<odb::dbTechLayer*, Color>& getLayerColorMap() const;
+  const odb::OdbPtrMap<odb::dbTechLayer, Color>& getLayerColorMap() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -391,7 +392,7 @@ class TileGenerator
   // computed once and kept; std::map reference stability means a returned ref
   // stays valid even if another tech is added later.
   mutable std::mutex layer_colors_mutex_;
-  mutable std::map<odb::dbTech*, std::map<odb::dbTechLayer*, Color>>
+  mutable odb::OdbPtrMap<odb::dbTech, odb::OdbPtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
 
   static constexpr int kTileSizeInPixel = 256;

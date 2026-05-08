@@ -134,7 +134,7 @@ bool RUDYDataSource::populateMap()
   }
 
   if (selection_only_ && gui::Gui::enabled()) {
-    std::set<odb::dbNet*> selection;
+    odb::OdbPtrSet<odb::dbNet> selection;
     for (const gui::Selected& item : gui::Gui::get()->selection()) {
       if (item.isNet()) {
         selection.insert(std::any_cast<odb::dbNet*>(item.getObject()));

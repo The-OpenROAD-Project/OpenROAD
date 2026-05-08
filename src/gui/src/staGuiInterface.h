@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -279,7 +280,7 @@ class ClockTree
   sta::Delay getMinimumDriverDelay(bool visibility) const;
   int getSinkCount() const;
 
-  std::set<odb::dbNet*> getNets(bool visibility) const;
+  odb::OdbPtrSet<odb::dbNet> getNets(bool visibility) const;
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 

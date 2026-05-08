@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -31,7 +32,7 @@ void VerilogWriter::writeChiplet(const std::string& filename, odb::dbChip* chip)
   }
 
   // chip_inst -> list of (port_name, net_name)
-  std::map<dbChipInst*, std::vector<std::pair<std::string, std::string>>>
+  odb::OdbPtrMap<dbChipInst, std::vector<std::pair<std::string, std::string>>>
       inst_connections;
 
   for (dbChipNet* net : chip->getChipNets()) {

@@ -12,6 +12,7 @@
 #include <QString>
 #include <QWidget>
 #include <map>
+#include "odb/OdbPtrSetMap.h"
 
 #include "odb/db.h"
 
@@ -55,7 +56,7 @@ class GlobalConnectDialog : public QDialog
     QPushButton* run;
     QPushButton* remove;
   };
-  std::map<odb::dbGlobalConnect*, GlobalConnectWidgets> rules_;
+  odb::OdbPtrMap<odb::dbGlobalConnect, GlobalConnectWidgets> rules_;
 
   QLineEdit* inst_pattern_;
   QLineEdit* pin_pattern_;

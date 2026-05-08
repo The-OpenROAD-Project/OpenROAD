@@ -4,6 +4,7 @@
 #pragma once
 
 #include <set>
+#include "odb/OdbPtrSetMap.h"
 #include <unordered_map>
 
 #include "AbstractGrouteRenderer.h"
@@ -31,7 +32,7 @@ class GrouteRenderer : public gui::Renderer, public AbstractGrouteRenderer
                    gui::Painter& painter);
   GlobalRouter* groute_;
   odb::dbTech* tech_;
-  std::set<odb::dbNet*> nets_;
+  odb::OdbPtrSet<odb::dbNet> nets_;
   std::unordered_map<odb::dbNet*, bool> show_segments_;
   std::unordered_map<odb::dbNet*, bool> show_pin_locations_;
 };

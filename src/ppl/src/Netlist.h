@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
@@ -177,7 +178,7 @@ class Netlist
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
   std::vector<PinGroupByIndex> io_groups_;
-  std::map<odb::dbBTerm*, int> db_pin_idx_map_;
+  odb::OdbPtrMap<odb::dbBTerm, int> db_pin_idx_map_;
 };
 
 }  // namespace ppl
