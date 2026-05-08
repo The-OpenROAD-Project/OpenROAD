@@ -15,12 +15,10 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
-#include "VtSwapGenerator.hh"
+#include "VtSwapCandidate.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
@@ -83,19 +81,24 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
              "identified {} critical instances",
              crit_insts.size());
 
-  VtSwapGenerator generator(makeGeneratorContext(), &notSwappable);
-  for (auto crit_inst_slack : crit_insts) {
-    sta::Pin* output_pin = worstOutputPin(crit_inst_slack.first);
-    if (output_pin == nullptr) {
+  for (const std::pair<sta::Instance* const, float>& crit_inst_slack :
+       crit_insts) {
+    sta::Instance* inst = crit_inst_slack.first;
+    sta::LibertyCell* best_cell = nullptr;
+    if (!resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_cell)) {
       continue;
     }
+    sta::LibertyCell* current_cell = network_->libertyCell(inst);
+
+    sta::Pin* output_pin = nullptr;
+    if (committer_.moveTrackerEnabled(2)) {
+      output_pin = outputPin(inst);
+    }
+
     Target target;
     target.views = kInstanceView;
     target.driver_pin = output_pin;
     target.slack = crit_inst_slack.second;
-    if (!generator.isApplicable(target)) {
-      continue;
-    }
 
     if (committer_.moveTrackerEnabled(2)) {
       committer_.setCurrentEndpoint(output_pin);
@@ -105,25 +108,18 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
                                              *target_collector_);
     }
 
-    auto candidates = generator.generate(target);
-    for (auto& candidate : candidates) {
-      const Estimate estimate = candidate->estimate();
-      if (!estimate.legal) {
-        continue;
-      }
-
-      committer_.trackMoveAttempt(output_pin, MoveType::kVtSwap);
-      const MoveResult result = committer_.commit(*candidate);
-      if (result.accepted) {
-        changed = true;
-        debugPrint(logger_,
-                   RSZ,
-                   "swap_crit_vt",
-                   1,
-                   "inst {} did crit VT swap",
-                   network_->pathName(crit_inst_slack.first));
-        break;
-      }
+    VtSwapCandidate candidate(
+        resizer_, target, output_pin, inst, current_cell, best_cell);
+    committer_.trackMoveAttempt(output_pin, MoveType::kVtSwap);
+    const MoveResult result = committer_.commit(candidate);
+    if (result.accepted) {
+      changed = true;
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_crit_vt",
+                 1,
+                 "inst {} did crit VT swap",
+                 network_->pathName(inst));
     }
   }
   if (changed) {
@@ -234,10 +230,8 @@ sta::Slack SetupCritVtSwapPolicy::getInstanceSlack(sta::Instance* inst)
   return worst_slack;
 }
 
-sta::Pin* SetupCritVtSwapPolicy::worstOutputPin(sta::Instance* inst)
+sta::Pin* SetupCritVtSwapPolicy::outputPin(sta::Instance* inst)
 {
-  sta::Pin* worst_pin = nullptr;
-  sta::Slack worst_slack = std::numeric_limits<float>::max();
   sta::InstancePinIterator* pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
@@ -245,20 +239,12 @@ sta::Pin* SetupCritVtSwapPolicy::worstOutputPin(sta::Instance* inst)
       continue;
     }
 
-    sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-    if (vertex == nullptr) {
-      continue;
-    }
-
-    const sta::Slack pin_slack = sta_->slack(vertex, max_);
-    if (worst_pin == nullptr || pin_slack < worst_slack) {
-      worst_pin = pin;
-      worst_slack = pin_slack;
-    }
+    delete pin_iter;
+    return pin;
   }
   delete pin_iter;
 
-  return worst_pin;
+  return nullptr;
 }
 
 }  // namespace rsz

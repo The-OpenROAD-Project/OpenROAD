@@ -20,7 +20,7 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
 
  private:
   bool swapVTCritCells(int& num_viols);
-  sta::Pin* worstOutputPin(sta::Instance* inst);
+  sta::Pin* outputPin(sta::Instance* inst);
   void traverseFaninCone(sta::Vertex* endpoint,
                          std::unordered_map<sta::Instance*, float>& crit_insts,
                          std::unordered_set<sta::Vertex*>& visited,
