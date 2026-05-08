@@ -165,6 +165,7 @@ class OptPolicy
   std::unique_ptr<utl::ThreadPool> thread_pool_;
   bool converged_{false};
   bool result_{false};
+  bool is_experimental{false};
 };
 
 }  // namespace rsz

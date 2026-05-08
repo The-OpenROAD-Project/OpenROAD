@@ -36,6 +36,7 @@ SetupMt1Policy::SetupMt1Policy(Resizer& resizer,
                                const OptimizerRunConfig& config)
     : OptPolicy(resizer, committer, setup_context, config)
 {
+  is_experimental = true;
 }
 
 SetupMt1Policy::~SetupMt1Policy() = default;

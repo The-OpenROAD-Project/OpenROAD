@@ -8,6 +8,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupMt1Policy' selected. Do not use this for production.
 [INFO RSZ-2023] SetupMt1Policy committed 1 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 2 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 3 / 100 moves.
@@ -108,7 +109,14 @@
 [INFO RSZ-2023] SetupMt1Policy committed 98 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 99 / 100 moves.
 [INFO RSZ-2023] SetupMt1Policy committed 100 / 100 moves.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+------------------------------------------------------------------------------------------------------------------------------
+    final |       0 |     100 |        0 |      0 |     0 |    +1.1% |  -44.102 |     -593.3 |     -520.9 |     41 | resp_msg[15]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 100 instances: 14 up, 0 up match, 0 down, 86 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
 Pre-ECO:   WNS= -66.849   TNS=-1781.146   Area=      45 um^2   Power= 1.273356e-03 W
-Post-ECO:  WNS= -44.102   TNS=-527.721   Area=      47 um^2   Power= 1.475839e-03 W
-Delta:     WNS=  22.748   TNS=1253.426   Area=      +2 um^2   Power=+2.024830e-04 W
+Post-ECO:  WNS= -44.102   TNS=-520.900   Area=      46 um^2   Power= 1.386178e-03 W
+Delta:     WNS=  22.747   TNS=1260.247   Area=      +1 um^2   Power=+1.128220e-04 W
 pass

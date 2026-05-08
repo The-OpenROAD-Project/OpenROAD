@@ -93,6 +93,13 @@ bool OptPolicy::start()
   max_ = resizer_.maxAnalysisMode();
   resetRun();
   loadPolicyEnvars();
+  if (is_experimental) {
+    logger_->warn(utl::RSZ,
+                  2024,
+                  "Experimental repair setup policy '{}' selected. Do not "
+                  "use this for production.",
+                  name());
+  }
   return true;
 }
 

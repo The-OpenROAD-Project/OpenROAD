@@ -38,6 +38,7 @@ SetupLegacyMtPolicy::SetupLegacyMtPolicy(Resizer& resizer,
                                          const OptimizerRunConfig& config)
     : SetupLegacyPolicy(resizer, committer, setup_context, config)
 {
+  is_experimental = true;
 }
 
 SetupLegacyMtPolicy::~SetupLegacyMtPolicy() = default;

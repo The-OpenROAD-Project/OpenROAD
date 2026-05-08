@@ -8,6 +8,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'MeasuredVtSwapPolicy' selected. Do not use this for production.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 1 / 30 moves.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 2 / 30 moves.
 [INFO RSZ-2023] MeasuredVtSwapPolicy committed 3 / 30 moves.

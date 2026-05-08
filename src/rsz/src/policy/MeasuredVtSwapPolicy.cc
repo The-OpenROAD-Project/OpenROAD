@@ -37,6 +37,7 @@ MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
                                            const OptimizerRunConfig& config)
     : OptPolicy(resizer, committer, setup_context, config)
 {
+  is_experimental = true;
 }
 
 MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
