@@ -44,7 +44,6 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 
  */
 #include "db_sta/dbNetwork.hh"
-#include "odb/OdbPtrSetMap.h"
 
 #include <algorithm>
 #include <cassert>
@@ -63,6 +62,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"

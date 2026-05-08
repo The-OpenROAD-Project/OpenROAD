@@ -11,8 +11,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 

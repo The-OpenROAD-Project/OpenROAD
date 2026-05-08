@@ -18,7 +18,6 @@
 #include <fstream>
 #include <functional>
 #include <ios>
-#include "odb/OdbPtrSetMap.h"
 #include <iterator>
 #include <list>
 #include <map>
@@ -119,6 +118,7 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -879,8 +879,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::*module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+    dbId<_dbModule> T_impl::* module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {

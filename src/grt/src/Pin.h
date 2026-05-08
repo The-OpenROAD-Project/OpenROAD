@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

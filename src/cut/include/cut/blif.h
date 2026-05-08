@@ -8,10 +8,10 @@
 #include <cstdio>
 #include <map>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 
 namespace ord {

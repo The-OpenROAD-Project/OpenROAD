@@ -4,13 +4,13 @@
 #include <map>
 #include <optional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -163,14 +163,15 @@ class Tapcell
                             int x,
                             int y,
                             const std::string& prefix);
-  std::optional<int> findValidLocation(int x,
-                                       int width,
-                                       const odb::dbOrientType& orient,
-                                       const odb::OdbPtrSet<odb::dbInst>& row_insts,
-                                       int site_width,
-                                       int tap_width,
-                                       int row_urx,
-                                       bool disallow_one_site_gaps);
+  std::optional<int> findValidLocation(
+      int x,
+      int width,
+      const odb::dbOrientType& orient,
+      const odb::OdbPtrSet<odb::dbInst>& row_insts,
+      int site_width,
+      int tap_width,
+      int row_urx,
+      bool disallow_one_site_gaps);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,

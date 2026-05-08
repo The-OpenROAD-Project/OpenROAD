@@ -1046,7 +1046,8 @@ void PadDirectConnectionStraps::makeShapesFacingCore(
   }
 
   odb::OdbPtrSet<odb::dbTechLayer> pin_layers;
-  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrSet<odb::dbTechLayer>> connectable_layers;
+  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrSet<odb::dbTechLayer>>
+      connectable_layers;
   for (const auto& [layer, shapes] : other_shapes) {
     for (const auto& shape : shapes) {
       if (isTargetShape(shape.get())) {

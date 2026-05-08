@@ -742,10 +742,11 @@ void dbInsertBuffer::advanceToParentModule(dbObject*& load_obj,
   top_mod_iterm = next_mod_iterm;
 }
 
-bool dbInsertBuffer::tryReuseParentPath(dbObject*& load_obj,
-                                        dbModule*& current_module,
-                                        dbModITerm*& top_mod_iterm,
-                                        const odb::OdbPtrSet<dbObject>& load_pins)
+bool dbInsertBuffer::tryReuseParentPath(
+    dbObject*& load_obj,
+    dbModule*& current_module,
+    dbModITerm*& top_mod_iterm,
+    const odb::OdbPtrSet<dbObject>& load_pins)
 {
   // Check if there's an existing hierarchical connection to reuse.
   dbModNet* existing_mod_net = getModNet(load_obj);
@@ -891,9 +892,10 @@ void dbInsertBuffer::performFinalConnections(dbITerm* load_pin,
   load_pin->connect(drvr_term->getNet());
 }
 
-bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
-                                        dbITerm* drvr_term,
-                                        const odb::OdbPtrSet<dbObject>& load_pins)
+bool dbInsertBuffer::stitchLoadToDriver(
+    dbITerm* load_pin,
+    dbITerm* drvr_term,
+    const odb::OdbPtrSet<dbObject>& load_pins)
 {
   dbModule* target_module = drvr_term->getInst()->getModule();
   dbModule* current_module = load_pin->getInst()->getModule();
@@ -1477,7 +1479,8 @@ void dbInsertBuffer::createNewFlatAndHierNets(
   }
 }
 
-void dbInsertBuffer::rewireBufferLoadPins(const odb::OdbPtrSet<dbObject>& load_pins)
+void dbInsertBuffer::rewireBufferLoadPins(
+    const odb::OdbPtrSet<dbObject>& load_pins)
 {
   // 1.1. Connect Buffer Input to the Original Net
   buf_input_iterm_->connect(net_);
@@ -1617,9 +1620,10 @@ void dbInsertBuffer::markFaninModNetsNotReusable(dbModNet* net)
   }
 }
 
-void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
-                                           const dbObject* drvr_pin,
-                                           const odb::OdbPtrSet<dbObject>& load_pins)
+void dbInsertBuffer::placeBufferAtCentroid(
+    dbInst* buffer_inst,
+    const dbObject* drvr_pin,
+    const odb::OdbPtrSet<dbObject>& load_pins)
 {
   Point placement_loc;
   if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
@@ -1641,9 +1645,10 @@ void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)
   }
 }
 
-void dbInsertBuffer::dlogBeforeLoadsParams(const odb::OdbPtrSet<dbObject>& load_pins,
-                                           const Point* loc,
-                                           bool loads_on_diff_nets) const
+void dbInsertBuffer::dlogBeforeLoadsParams(
+    const odb::OdbPtrSet<dbObject>& load_pins,
+    const Point* loc,
+    bool loads_on_diff_nets) const
 {
   debugPrint(
       logger_,
@@ -1700,7 +1705,8 @@ void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
   }
 }
 
-void dbInsertBuffer::dlogDumpNets(const odb::OdbPtrSet<dbNet>& other_dbnets) const
+void dbInsertBuffer::dlogDumpNets(
+    const odb::OdbPtrSet<dbNet>& other_dbnets) const
 {
   if (logger_->debugCheck(utl::ODB, "insert_buffer", 2)) {
     debugPrint(logger_, utl::ODB, "insert_buffer", 2, "[Dump this dbNet]");

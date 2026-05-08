@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <set>
@@ -17,6 +16,7 @@
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -121,7 +121,8 @@ class PadPlacer
   LayerTermObsTree term_obstructions_;
 
   // overlap cache
-  odb::OdbPtrMap<odb::dbMaster, std::optional<odb::Polygon>> master_overlap_cache_;
+  odb::OdbPtrMap<odb::dbMaster, std::optional<odb::Polygon>>
+      master_overlap_cache_;
 };
 
 class CheckerOnlyPadPlacer : public PadPlacer
@@ -189,7 +190,8 @@ class BumpAlignedPadPlacer : public PadPlacer
   void place() override;
 
   void setConnections(
-      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>& iterm_connections)
+      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>&
+          iterm_connections)
   {
     iterm_connections_ = iterm_connections;
   }
@@ -223,7 +225,8 @@ class PlacerPadPlacer : public PadPlacer
   void place() override;
 
   void setConnections(
-      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>& iterm_connections)
+      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>&
+          iterm_connections)
   {
     iterm_connections_ = iterm_connections;
   }
@@ -269,8 +272,8 @@ class PlacerPadPlacer : public PadPlacer
   void placeInstances(const odb::OdbPtrMap<odb::dbInst, int>& positions,
                       bool center_ref) const;
   void placeInstances(
-      const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions)
-      const;
+      const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>&
+          positions) const;
   int64_t estimateWirelengths() const;
   int getNumberOfRoutes() const;
   void debugPause(const std::string& msg) const;

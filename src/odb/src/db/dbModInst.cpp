@@ -33,10 +33,10 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "dbSwapMasterSanityChecker.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
-#include "odb/OdbPtrSetMap.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {

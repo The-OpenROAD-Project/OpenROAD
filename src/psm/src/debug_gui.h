@@ -4,7 +4,6 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -16,6 +15,7 @@
 #include "gui/gui.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -207,7 +207,7 @@ class DebugGui : public gui::Renderer
   odb::OdbPtrMap<odb::dbTechLayer, ITermNodeTree> iterm_nodes_;
   odb::OdbPtrMap<odb::dbTechLayer, BPinNodeTree> bpin_nodes_;
   odb::OdbPtrMap<odb::dbTechLayer, ConnectionTree> connections_;
- 
+
   odb::OdbPtrMap<odb::dbTechLayer, NodeTree> sources_;
   odb::OdbPtrMap<odb::dbTechLayer, RectTree> source_shapes_;
 

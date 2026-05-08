@@ -23,7 +23,6 @@
 #include <chrono>
 #include <functional>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -33,6 +32,7 @@
 
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -115,21 +115,22 @@ class LayoutViewer : public QWidget
   // makeSelected is so that we don't have to pass in the whole
   // MainWindow just to get access to one method.  Communication
   // should happen through signals & slots in all other cases.
-  LayoutViewer(Options* options,
-               ScriptWidget* output_widget,
-               const SelectionSet& selected,
-               const HighlightSet& highlighted,
-               const Rulers& rulers,
-               const Labels& labels,
-               const odb::OdbPtrMap<odb::dbModule, ModuleSettings>& module_settings,
-               const odb::OdbPtrSet<odb::dbNet>& focus_nets,
-               const odb::OdbPtrSet<odb::dbNet>& route_guides,
-               const odb::OdbPtrSet<odb::dbNet>& net_tracks,
-               Gui* gui,
-               const std::function<bool()>& using_dbu,
-               const std::function<bool()>& show_ruler_as_euclidian,
-               const std::function<bool()>& show_db_view,
-               QWidget* parent = nullptr);
+  LayoutViewer(
+      Options* options,
+      ScriptWidget* output_widget,
+      const SelectionSet& selected,
+      const HighlightSet& highlighted,
+      const Rulers& rulers,
+      const Labels& labels,
+      const odb::OdbPtrMap<odb::dbModule, ModuleSettings>& module_settings,
+      const odb::OdbPtrSet<odb::dbNet>& focus_nets,
+      const odb::OdbPtrSet<odb::dbNet>& route_guides,
+      const odb::OdbPtrSet<odb::dbNet>& net_tracks,
+      Gui* gui,
+      const std::function<bool()>& using_dbu,
+      const std::function<bool()>& show_ruler_as_euclidian,
+      const std::function<bool()>& show_db_view,
+      QWidget* parent = nullptr);
 
   odb::dbBlock* getBlock() const { return chip_->getBlock(); }
   odb::dbChip* getChip() const { return chip_; }

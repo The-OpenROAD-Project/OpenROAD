@@ -13,8 +13,8 @@
 
 #include "absl/synchronization/mutex.h"
 #include "ant/AntennaChecker.hh"
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/dbWireGraph.h"
 
 namespace utl {

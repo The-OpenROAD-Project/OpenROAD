@@ -61,7 +61,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   struct BoolField
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
 
@@ -511,7 +511,8 @@ std::vector<std::string> TileGenerator::getLayers() const
 // same design.  Walks every dbTechLayer in tech order (not just routing/cut)
 // because the random fallback shares one PRNG and the iteration order is what
 // determines which layer gets which random color.
-static odb::OdbPtrMap<odb::dbTechLayer, Color> buildLayerColorMap(odb::dbTech* tech)
+static odb::OdbPtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
+    odb::dbTech* tech)
 {
   odb::OdbPtrMap<odb::dbTechLayer, Color> colors;
   if (!tech) {

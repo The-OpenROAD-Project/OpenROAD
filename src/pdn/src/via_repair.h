@@ -5,10 +5,10 @@
 
 #include <map>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 
 #include "boost/geometry/geometry.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"

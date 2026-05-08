@@ -5,7 +5,6 @@
 
 #include <functional>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -13,6 +12,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

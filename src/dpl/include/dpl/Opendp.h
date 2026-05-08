@@ -9,7 +9,6 @@
 #include <memory>
 #include <numeric>  // accumulate
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,11 +20,12 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "utl/Logger.h"
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

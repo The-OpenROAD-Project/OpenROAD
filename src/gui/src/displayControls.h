@@ -32,10 +32,10 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
-#include "odb/OdbPtrSetMap.h"
 
 namespace odb {
 class dbDatabase;

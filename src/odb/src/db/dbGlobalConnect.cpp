@@ -14,7 +14,6 @@
 // User Code Begin Includes
 #include <map>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -23,6 +22,7 @@
 #include "dbLib.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -259,7 +259,8 @@ void _dbGlobalConnect::testRegex(utl::Logger* logger,
   }
 }
 
-odb::OdbPtrMap<dbMaster, odb::OdbPtrSet<dbMTerm>> _dbGlobalConnect::getMTermMapping()
+odb::OdbPtrMap<dbMaster, odb::OdbPtrSet<dbMTerm>>
+_dbGlobalConnect::getMTermMapping()
 {
   const std::regex pin_regex = std::regex(pin_pattern_);
 
@@ -293,9 +294,8 @@ odb::OdbPtrSet<dbMTerm> _dbGlobalConnect::getMTermMapping(
   return mterms;
 }
 
-std::pair<odb::OdbPtrSet<dbITerm>, odb::OdbPtrSet<dbITerm>> _dbGlobalConnect::connect(
-    const std::vector<dbInst*>& insts,
-    bool force)
+std::pair<odb::OdbPtrSet<dbITerm>, odb::OdbPtrSet<dbITerm>>
+_dbGlobalConnect::connect(const std::vector<dbInst*>& insts, bool force)
 {
   utl::Logger* logger = getImpl()->getLogger();
   dbBlock* block = (dbBlock*) getImpl()->getOwner();

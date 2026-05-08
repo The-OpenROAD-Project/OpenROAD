@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
@@ -22,7 +23,6 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
-#include "odb/OdbPtrSetMap.h"
 #include "utl/Logger.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
@@ -285,16 +285,14 @@ void dumpAPs(odb::dbBlock* block, const std::string& file_name)
 
       auto mterm = iterm->getMTerm();
       auto aps_map = iterm->getAccessPoints();
-      odb::OdbPtrMap<odb::dbMPin, std::vector<odb::dbAccessPoint*>> aps(
-          aps_map.begin(), aps_map.end());
       os << "  iterm: " << mterm->getName() << "\n";
 
       for (auto mpin : mterm->getMPins()) {
         auto bbox = mpin->getBBox();
         os << "    pin (" << bbox.xMin() << ", " << bbox.yMin() << "):\n";
 
-        auto pin_aps_it = aps.find(mpin);
-        if (pin_aps_it == aps.end()) {
+        auto pin_aps_it = aps_map.find(mpin);
+        if (pin_aps_it == aps_map.end()) {
           continue;
         }
         for (auto ap : pin_aps_it->second) {

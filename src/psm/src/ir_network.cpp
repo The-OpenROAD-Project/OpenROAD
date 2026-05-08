@@ -1135,7 +1135,8 @@ IRNetwork::NodeTree IRNetwork::getTopLayerNodeTree() const
   return getNodeTree(getTopLayer());
 }
 
-odb::OdbPtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping() const
+odb::OdbPtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping()
+    const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate instance node map: {}");

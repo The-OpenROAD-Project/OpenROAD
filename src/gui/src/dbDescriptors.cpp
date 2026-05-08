@@ -18,7 +18,6 @@
 #include <functional>
 #include <limits>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <optional>
 #include <queue>
 #include <regex>
@@ -35,6 +34,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #ifdef ENABLE_QT
 #include "insertBufferDialog.h"
 #endif
@@ -931,9 +931,10 @@ Descriptor::Properties DbMasterDescriptor::getDBProperties(
 }
 
 // get list of equivalent masters as EditorOptions
-void DbMasterDescriptor::getMasterEquivalent(sta::dbSta* sta,
-                                             odb::dbMaster* master,
-                                             odb::OdbPtrSet<odb::dbMaster>& masters)
+void DbMasterDescriptor::getMasterEquivalent(
+    sta::dbSta* sta,
+    odb::dbMaster* master,
+    odb::OdbPtrSet<odb::dbMaster>& masters)
 {
   // mirrors method used in Resizer.cpp
   auto network = sta->getDbNetwork();
@@ -1475,7 +1476,8 @@ std::set<odb::Line> DbNetDescriptor::convertGuidesToLines(
   };
   odb::OdbPtrMap<odb::dbObject, DbIO> io_map;
 
-  odb::OdbPtrMap<odb::dbTechLayer, odb::OdbPtrMap<odb::dbObject, std::set<odb::Rect>>>
+  odb::OdbPtrMap<odb::dbTechLayer,
+                 odb::OdbPtrMap<odb::dbObject, std::set<odb::Rect>>>
       terms;
   for (odb::dbITerm* term : net->getITerms()) {
     if (!term->getInst()->isPlaced()) {

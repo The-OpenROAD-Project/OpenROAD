@@ -1241,7 +1241,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(expand_clk_,
           &QCheckBox::toggled,
           this,
-          &TimingControlsDialog ::expandClock);
+          &TimingControlsDialog::expandClock);
 
   sta_->setIncludeCapturePaths(true);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#pragma once
+// IWYU pragma: private, include "db.h"
 
 // Explicitly delete specializations of std::less for all instantiable,
 // dbObject-derived types. This makes it impossible to accidentally

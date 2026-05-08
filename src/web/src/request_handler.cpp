@@ -11,7 +11,6 @@
 #include <exception>
 #include <filesystem>
 #include <limits>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <mutex>
 #include <regex>
@@ -35,6 +34,7 @@
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"

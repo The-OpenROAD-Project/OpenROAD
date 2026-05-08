@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -20,6 +19,7 @@
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
 #include "boost/polygon/rectangle_data.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"

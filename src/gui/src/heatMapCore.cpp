@@ -15,7 +15,6 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <utility>
@@ -29,6 +28,7 @@
 #include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"

@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <functional>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <mutex>
 #include <set>
@@ -20,6 +19,7 @@
 #include "boost/json/object.hpp"
 #include "color.h"
 #include "glyph_cache.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "web_painter.h"

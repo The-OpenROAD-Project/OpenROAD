@@ -9,12 +9,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <vector>
 
 #include "create_box.h"
 #include "definPolygon.h"
 #include "definTypes.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"

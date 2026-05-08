@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <queue>
 #include <set>
@@ -17,6 +16,7 @@
 
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -36,7 +36,8 @@ namespace mpl {
 class MplObserver;
 
 using InstToHardMap = odb::OdbPtrMap<odb::dbInst, std::unique_ptr<HardMacro>>;
-using ModuleToMetricsMap = odb::OdbPtrMap<odb::dbModule, std::unique_ptr<Metrics>>;
+using ModuleToMetricsMap
+    = odb::OdbPtrMap<odb::dbModule, std::unique_ptr<Metrics>>;
 using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
 struct PhysicalHierarchyMaps
@@ -104,8 +105,9 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                const odb::OdbPtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setHalos(
+      const HardMacro::Halo& base_halo,
+      const odb::OdbPtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.

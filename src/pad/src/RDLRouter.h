@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <tuple>
@@ -17,6 +16,7 @@
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/graph/adjacency_list.hpp"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -103,7 +103,7 @@ class RDLRouter
 
   using NetRoutingTargetMap
       = odb::OdbPtrMap<odb::dbNet,
-                 odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
+                       odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
 
   using RDLRoutePtr = std::shared_ptr<RDLRoute>;
 

@@ -4,7 +4,6 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <queue>
 #include <string>
@@ -14,6 +13,7 @@
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -293,7 +293,7 @@ class HierRTLMP
                                             0.0f /* guidance */,
                                             0.0f /* fence */};
 
-  std::map<std::string, odb::Rect> fences_;   // macro_name, fence
+  std::map<std::string, odb::Rect> fences_;        // macro_name, fence
   odb::OdbPtrMap<odb::dbInst, odb::Rect> guides_;  // Macro -> Guidance Region
 
   HardMacro::Halo base_halo_;

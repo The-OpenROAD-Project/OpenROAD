@@ -1054,7 +1054,7 @@ std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
   std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
 
   odb::OdbPtrSet<odb::dbTechLayer> pin_layers(pin_layers_.begin(),
-                                         pin_layers_.end());
+                                              pin_layers_.end());
   for (auto* component : getGridComponents()) {
     const auto db_shapes = component->writeToDb(net_map, do_pins, pin_layers);
     shape_map.insert(db_shapes.begin(), db_shapes.end());
@@ -1122,11 +1122,12 @@ void Grid::getGridLevelObstructions(ShapeVectorMap& obstructions) const
   }
 }
 
-void Grid::makeInitialObstructions(odb::dbBlock* block,
-                                   ShapeVectorMap& obs,
-                                   const odb::OdbPtrSet<odb::dbInst>& skip_insts,
-                                   const odb::OdbPtrSet<odb::dbNet>& skip_nets,
-                                   utl::Logger* logger)
+void Grid::makeInitialObstructions(
+    odb::dbBlock* block,
+    ShapeVectorMap& obs,
+    const odb::OdbPtrSet<odb::dbInst>& skip_insts,
+    const odb::OdbPtrSet<odb::dbNet>& skip_nets,
+    utl::Logger* logger)
 {
   debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
   // routing obs

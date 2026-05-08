@@ -1,7 +1,6 @@
 #pragma once
 
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <unordered_map>
 #include <vector>
 
@@ -10,6 +9,7 @@
 #include "Layers.h"
 #include "Netlist.h"
 #include "geo.h"
+#include "odb/OdbPtrSetMap.h"
 
 namespace odb {
 class dbBlock;

@@ -8,11 +8,11 @@
 #include <cstdint>
 #include <optional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

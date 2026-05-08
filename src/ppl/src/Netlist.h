@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"

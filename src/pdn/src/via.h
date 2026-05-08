@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -16,6 +15,7 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -112,8 +112,7 @@ class DbVia
                                  int x,
                                  int y,
                                  const odb::OdbPtrSet<odb::dbTechLayer>& ongrid,
-                                 utl::Logger* logger)
-      = 0;
+                                 utl::Logger* logger) = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -148,8 +147,7 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom,
-                               bool include_top) const
-      = 0;
+                               bool include_top) const = 0;
 
   odb::Rect getViaRect(bool include_enclosure,
                        bool include_via_shape,
@@ -477,8 +475,7 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const
-      = 0;
+                                 int col_pitch) const = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }

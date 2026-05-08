@@ -2,7 +2,6 @@
 
 #include <csignal>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -10,6 +9,7 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/geom.h"
 
 namespace odb {

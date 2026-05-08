@@ -18,7 +18,6 @@
 #include <fstream>
 #include <regex>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -26,6 +25,7 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbHashTable.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 #include "utl/Logger.h"
@@ -477,8 +477,9 @@ void dbMarkerCategory::writeTR(std::ofstream& report) const
   obj->writeTR(report);
 }
 
-odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(dbChip* chip,
-                                                       const std::string& path)
+odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(
+    dbChip* chip,
+    const std::string& path)
 {
   std::ifstream report(path);
   if (!report.is_open()) {
@@ -488,16 +489,18 @@ odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(dbChip* chip,
     logger->error(utl::ODB, 31, "Unable to open marker report: {}", path);
   }
 
-  odb::OdbPtrSet<dbMarkerCategory> categories = fromJSON(chip, path.c_str(), report);
+  odb::OdbPtrSet<dbMarkerCategory> categories
+      = fromJSON(chip, path.c_str(), report);
 
   report.close();
 
   return categories;
 }
 
-odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(dbChip* chip,
-                                                       const char* source,
-                                                       std::ifstream& report)
+odb::OdbPtrSet<dbMarkerCategory> dbMarkerCategory::fromJSON(
+    dbChip* chip,
+    const char* source,
+    std::ifstream& report)
 {
   _dbChip* _chip = (_dbChip*) chip;
   utl::Logger* logger = _chip->getLogger();

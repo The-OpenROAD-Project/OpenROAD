@@ -7,13 +7,13 @@
 #include <array>
 #include <cstring>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "ord/Design.h"
 #include "ord/OpenRoad.hh"

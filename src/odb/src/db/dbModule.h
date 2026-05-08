@@ -12,12 +12,12 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 
 #include "dbHashTable.h"
 #include "dbModulePortItr.h"
+#include "odb/OdbPtrSetMap.h"
 // User Code End Includes
 
 namespace odb {

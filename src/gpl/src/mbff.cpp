@@ -11,7 +11,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <tuple>
 #include <utility>
@@ -23,6 +22,7 @@
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/network_simplex.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

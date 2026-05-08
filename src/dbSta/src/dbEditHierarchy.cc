@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"

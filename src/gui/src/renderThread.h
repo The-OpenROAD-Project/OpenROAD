@@ -12,13 +12,13 @@
 #include <cstdint>
 #include <map>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
 #include "label.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ruler.h"

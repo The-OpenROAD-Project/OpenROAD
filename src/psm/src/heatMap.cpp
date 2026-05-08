@@ -6,11 +6,11 @@
 #include <algorithm>
 #include <limits>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
 #include "gui/heatMap.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Sta.hh"

@@ -10,7 +10,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -26,6 +25,7 @@
 #include "dbxParser.h"
 #include "dbxWriter.h"
 #include "objects.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

@@ -20,6 +20,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+
 #include "odb/OdbPtrSetMap.h"
 // User Code End Includes
 
@@ -55,7 +56,7 @@ class _dbGlobalConnect : public _dbObject
                         const std::string& type);
   odb::OdbPtrMap<dbMaster, odb::OdbPtrSet<dbMTerm>> getMTermMapping();
   odb::OdbPtrSet<dbMTerm> getMTermMapping(dbMaster* master,
-                                     const std::regex& pin_regex) const;
+                                          const std::regex& pin_regex) const;
   std::pair<odb::OdbPtrSet<dbITerm>, odb::OdbPtrSet<dbITerm>> connect(
       const std::vector<dbInst*>& insts,
       bool force);

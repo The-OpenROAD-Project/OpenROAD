@@ -7,10 +7,10 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -68,7 +68,8 @@ class Grid
 
   void removeStrap(Straps* strap);
 
-  odb::OdbPtrSet<odb::dbTechLayer> connectableLayers(odb::dbTechLayer* layer) const;
+  odb::OdbPtrSet<odb::dbTechLayer> connectableLayers(
+      odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins
   void setPinLayers(const std::vector<odb::dbTechLayer*>& layers)
@@ -145,11 +146,12 @@ class Grid
       const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 
-  static void makeInitialObstructions(odb::dbBlock* block,
-                                      ShapeVectorMap& obs,
-                                      const odb::OdbPtrSet<odb::dbInst>& skip_insts,
-                                      const odb::OdbPtrSet<odb::dbNet>& skip_nets,
-                                      utl::Logger* logger);
+  static void makeInitialObstructions(
+      odb::dbBlock* block,
+      ShapeVectorMap& obs,
+      const odb::OdbPtrSet<odb::dbInst>& skip_insts,
+      const odb::OdbPtrSet<odb::dbNet>& skip_nets,
+      utl::Logger* logger);
   static void makeInitialShapes(odb::dbBlock* block,
                                 ShapeVectorMap& shapes,
                                 utl::Logger* logger);

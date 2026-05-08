@@ -24,7 +24,6 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <string_view>
 #include <vector>
@@ -36,6 +35,7 @@
 #include "dbModuleModNetITermItr.h"
 #include "dbModuleModNetModBTermItr.h"
 #include "dbModuleModNetModITermItr.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"

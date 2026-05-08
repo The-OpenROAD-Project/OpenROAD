@@ -8,12 +8,12 @@
 
 #include "AntennaCheckerImpl.hh"
 #include "boost/polygon/polygon.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/OdbPtrSetMap.h"
 
 namespace ant {
 
@@ -51,8 +51,9 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
   return ids;
 }
 
-void wiresToPolygonSetMap(odb::dbWire* wires,
-                          odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
+void wiresToPolygonSetMap(
+    odb::dbWire* wires,
+    odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator+=;
 
@@ -85,8 +86,9 @@ void wiresToPolygonSetMap(odb::dbWire* wires,
   }
 }
 
-void avoidPinIntersection(odb::dbNet* db_net,
-                          odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
+void avoidPinIntersection(
+    odb::dbNet* db_net,
+    odb::OdbPtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer)
 {
   using gtl::operators::operator-=;
 

@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/gdsUtil.h"
 #include "odb/geom.h"

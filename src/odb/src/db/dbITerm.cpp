@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -30,6 +29,7 @@
 #include "dbModNet.h"
 #include "dbNet.h"
 #include "dbTable.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -815,7 +815,8 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   }
 }
 
-odb::OdbPtrMap<dbMPin, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+odb::OdbPtrMap<dbMPin, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints()
+    const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();

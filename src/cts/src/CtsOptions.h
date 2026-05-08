@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -16,6 +15,7 @@
 
 #include "CtsObserver.h"
 #include "Util.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "utl/Logger.h"

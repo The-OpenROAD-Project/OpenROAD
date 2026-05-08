@@ -728,8 +728,7 @@ void BumpAlignedPadPlacer::place()
   // iterate over pads in order
   for (auto itr = insts.begin(); itr != insts.end();) {
     // get bump aligned pad group
-    const auto min_terms
-        = getBumpAlignmentGroup(offset, itr, insts.end());
+    const auto min_terms = getBumpAlignmentGroup(offset, itr, insts.end());
 
     // build position map
     // for pads connected to bumps, this will ensure they are centered by the
@@ -990,7 +989,8 @@ void PlacerPadPlacer::placeInstances(
 }
 
 void PlacerPadPlacer::placeInstances(
-    const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions) const
+    const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions)
+    const
 {
   for (const auto& [inst, anchor] : positions) {
     placeInstanceSimple(inst, anchor->center, true);

@@ -10,7 +10,6 @@
 #include <functional>
 #include <list>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <queue>
 #include <set>
@@ -27,6 +26,7 @@
 #include "boost/graph/astar_search.hpp"
 #include "boost/graph/lookup_edge.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -119,17 +119,18 @@ class RDLRouterGoalVisitor : public boost::default_astar_visitor
 
 //////////////////////////////////////////////////////////////
 
-RDLRouter::RDLRouter(utl::Logger* logger,
-                     odb::dbBlock* block,
-                     odb::dbTechLayer* layer,
-                     odb::dbTechVia* bump_via,
-                     odb::dbTechVia* pad_via,
-                     const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
-                     int width,
-                     int spacing,
-                     bool allow45,
-                     float turn_penalty,
-                     int max_iterations)
+RDLRouter::RDLRouter(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    odb::dbTechLayer* layer,
+    odb::dbTechVia* bump_via,
+    odb::dbTechVia* pad_via,
+    const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
+    int width,
+    int spacing,
+    bool allow45,
+    float turn_penalty,
+    int max_iterations)
     : logger_(logger),
       block_(block),
       layer_(layer),
@@ -1838,7 +1839,8 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator-=;
-  odb::OdbPtrMap<odb::dbMaster, std::vector<odb::Polygon>> master_obstruction_map;
+  odb::OdbPtrMap<odb::dbMaster, std::vector<odb::Polygon>>
+      master_obstruction_map;
 
   // Get placed instanced obstructions
   for (auto* inst : block_->getInsts()) {

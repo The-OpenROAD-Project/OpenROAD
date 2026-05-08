@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <set>
@@ -16,6 +15,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"

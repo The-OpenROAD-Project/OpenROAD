@@ -12,7 +12,6 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <stdexcept>
@@ -26,6 +25,7 @@
 #include "Utilities.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"

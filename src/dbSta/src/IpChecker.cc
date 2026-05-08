@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

@@ -4,10 +4,10 @@
 #pragma once
 
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 
 #include "SwapArithModules.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -25,8 +25,9 @@ class ConcreteSwapArithModules : public SwapArithModules
   bool replaceArithModules(int path_count,
                            const std::string& target,
                            float slack_threshold) override;
-  void collectArithInstsOnPath(const sta::Path* path,
-                               odb::OdbPtrSet<odb::dbModInst>& arithInsts) override;
+  void collectArithInstsOnPath(
+      const sta::Path* path,
+      odb::OdbPtrSet<odb::dbModInst>& arithInsts) override;
   bool isArithInstance(const sta::Instance* inst,
                        odb::dbModInst*& mod_inst) override;
   bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) override;

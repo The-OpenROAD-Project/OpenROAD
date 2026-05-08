@@ -12,8 +12,8 @@
 #include "ant/AntennaChecker.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 #include "odb/geom.h"
 
 namespace ant {

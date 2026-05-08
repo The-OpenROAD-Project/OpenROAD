@@ -4,8 +4,9 @@
 #include <cassert>
 #include <optional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
+
+#include "odb/OdbPtrSetMap.h"
 // #define _CRTDBG_MAP_ALLOC
 
 #pragma once

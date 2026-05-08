@@ -8,7 +8,6 @@
 // Edits from tcl, Sta api and db edits are all supported.
 
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
 
 #include <algorithm>  // min
 #include <cctype>
@@ -33,6 +32,7 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"

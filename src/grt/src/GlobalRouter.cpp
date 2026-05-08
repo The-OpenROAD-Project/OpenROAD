@@ -17,7 +17,6 @@
 #include <queue>
 #include <random>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -44,6 +43,7 @@
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
 #include "gui/heatMap.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -6133,7 +6133,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 }
 
 // Get the nets that pass through the congestion area based on their wires
-void GlobalRouter::getCongestionNets(odb::OdbPtrSet<odb::dbNet>& congestion_nets)
+void GlobalRouter::getCongestionNets(
+    odb::OdbPtrSet<odb::dbNet>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
   // Get GCell positions with congestion

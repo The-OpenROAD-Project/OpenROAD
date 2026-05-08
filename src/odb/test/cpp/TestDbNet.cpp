@@ -1,9 +1,9 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#include "odb/OdbPtrSetMap.h"
 
 #include "gtest/gtest.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "tst/fixture.h"

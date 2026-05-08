@@ -6,7 +6,6 @@
 #include <atomic>
 #include <limits>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <set>
 #include <shared_mutex>
 #include <string>
@@ -17,6 +16,7 @@
 
 #include "boost/asio/post.hpp"
 #include "boost/asio/thread_pool.hpp"
+#include "odb/OdbPtrSetMap.h"
 
 namespace utl {
 class Logger;

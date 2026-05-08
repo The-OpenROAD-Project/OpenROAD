@@ -10,11 +10,11 @@
 #include <string>
 
 #include "dbNet.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/OdbPtrSetMap.h"
 
 namespace odb {
 
@@ -209,8 +209,9 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   void validateArgumentsBeforeLoads(const odb::OdbPtrSet<dbObject>& load_pins,
                                     const dbMaster* buffer_master) const;
-  dbModule* validateLoadPinsAndFindLCA(const odb::OdbPtrSet<dbObject>& load_pins,
-                                       bool loads_on_diff_nets) const;
+  dbModule* validateLoadPinsAndFindLCA(
+      const odb::OdbPtrSet<dbObject>& load_pins,
+      bool loads_on_diff_nets) const;
   void createNewFlatAndHierNets(const odb::OdbPtrSet<dbObject>& load_pins);
   void rewireBufferLoadPins(const odb::OdbPtrSet<dbObject>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);

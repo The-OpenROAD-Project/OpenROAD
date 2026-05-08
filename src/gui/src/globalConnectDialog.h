@@ -12,8 +12,8 @@
 #include <QString>
 #include <QWidget>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 
 namespace gui {

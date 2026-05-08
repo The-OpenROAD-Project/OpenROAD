@@ -12,7 +12,6 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,6 +22,7 @@
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

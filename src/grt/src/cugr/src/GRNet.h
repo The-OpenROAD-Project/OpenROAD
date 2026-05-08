@@ -11,8 +11,8 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
-#include "odb/db.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/db.h"
 
 namespace grt {
 

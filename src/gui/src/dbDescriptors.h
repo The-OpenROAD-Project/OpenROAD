@@ -8,7 +8,6 @@
 #include <map>
 #include <optional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <variant>
@@ -16,6 +15,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"

@@ -7,7 +7,6 @@
 #include <any>
 #include <cstdlib>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -17,6 +16,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

@@ -17,7 +17,6 @@
 #include <iterator>
 #include <limits>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <ranges>
 #include <set>
@@ -36,6 +35,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"

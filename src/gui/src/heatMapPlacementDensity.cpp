@@ -4,11 +4,11 @@
 #include "heatMapPlacementDensity.h"
 
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
 #include "gui/heatMap.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

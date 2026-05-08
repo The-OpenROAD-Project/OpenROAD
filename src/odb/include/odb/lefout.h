@@ -7,11 +7,11 @@
 #include <map>
 #include <ostream>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <unordered_map>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -72,7 +72,8 @@ class lefout
   std::ostream& out() { return _out; }
 
  private:
-  using ObstructionMap = odb::OdbPtrMap<dbTechLayer, boost::polygon::polygon_90_set_data<int>>;
+  using ObstructionMap
+      = odb::OdbPtrMap<dbTechLayer, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
   odb::OdbPtrSet<dbVia> writeBoxes(std::ostream& out,

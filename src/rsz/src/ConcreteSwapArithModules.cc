@@ -7,12 +7,12 @@
 #include <cstddef>
 #include <cstring>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"

@@ -4,11 +4,11 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <optional>
 #include <string>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 

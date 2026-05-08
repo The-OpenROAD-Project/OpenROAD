@@ -18,8 +18,8 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include "odb/OdbPtrSetMap.h"
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/dbBlockSet.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbDatabaseObserver.h"
@@ -8403,10 +8403,10 @@ class dbMarkerCategory : public dbObject
   void writeTR(std::ofstream& report) const;
 
   static odb::OdbPtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
-                                              const std::string& path);
+                                                   const std::string& path);
   static odb::OdbPtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
-                                              const char* source,
-                                              std::ifstream& report);
+                                                   const char* source,
+                                                   std::ifstream& report);
   static dbMarkerCategory* fromTR(dbChip* chip,
                                   const char* name,
                                   const std::string& path);

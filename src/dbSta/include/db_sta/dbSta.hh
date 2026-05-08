@@ -7,11 +7,11 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
 #include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"

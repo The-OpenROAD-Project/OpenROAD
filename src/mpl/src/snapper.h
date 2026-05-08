@@ -4,8 +4,9 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <vector>
+
+#include "odb/OdbPtrSetMap.h"
 
 namespace odb {
 class dbInst;

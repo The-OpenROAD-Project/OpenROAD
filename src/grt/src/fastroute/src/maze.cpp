@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -17,6 +16,7 @@
 #include "FastRoute.h"
 #include "Graph2D.h"
 #include "grt/GRoute.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -1990,10 +1990,11 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::findNetsNearPosition(odb::OdbPtrSet<odb::dbNet>& congestion_nets,
-                                         const odb::Point& position,
-                                         bool is_horizontal,
-                                         int& radius)
+void FastRouteCore::findNetsNearPosition(
+    odb::OdbPtrSet<odb::dbNet>& congestion_nets,
+    const odb::Point& position,
+    bool is_horizontal,
+    int& radius)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
@@ -2130,7 +2131,8 @@ bool FastRouteCore::computeSuggestedAdjustment(int& suggested_adjustment)
 }
 
 // The function will add the new nets to the congestion_nets set
-void FastRouteCore::getCongestionNets(odb::OdbPtrSet<odb::dbNet>& congestion_nets)
+void FastRouteCore::getCongestionNets(
+    odb::OdbPtrSet<odb::dbNet>& congestion_nets)
 {
   // Get overflow position -- [(x,y), is horizontal]
   std::vector<std::pair<odb::Point, bool>> overflow_positions;

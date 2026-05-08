@@ -36,9 +36,7 @@ WireBuilder::~WireBuilder() = default;
 void WireBuilder::makeNetWiresFromGuides()
 {
   const int gcell_dimension = block_->getGCellTileSize();
-  auto default_vias_map = block_->getDefaultVias();
-  default_vias_ = odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*>(
-      default_vias_map.begin(), default_vias_map.end());
+  default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : block_->getNets()) {
     const bool is_detailed_routed
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();
@@ -54,9 +52,7 @@ void WireBuilder::makeNetWiresFromGuides()
 void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
 {
   const int gcell_dimension = block_->getGCellTileSize();
-  auto default_vias_map = block_->getDefaultVias();
-  default_vias_ = odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*>(
-      default_vias_map.begin(), default_vias_map.end());
+  default_vias_ = block_->getDefaultVias();
   for (odb::dbNet* db_net : nets) {
     const bool is_detailed_routed
         = db_net->getWireType() == odb::dbWireType::ROUTED && db_net->getWire();

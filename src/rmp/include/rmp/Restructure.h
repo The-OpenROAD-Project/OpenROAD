@@ -9,11 +9,11 @@
 #include <optional>
 #include <random>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/OdbPtrSetMap.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"

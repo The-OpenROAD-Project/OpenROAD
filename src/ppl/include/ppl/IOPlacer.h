@@ -8,10 +8,10 @@
 #include <memory>
 #include <set>
 #include <string>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ppl/Parameters.h"

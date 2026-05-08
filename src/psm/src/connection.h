@@ -4,7 +4,6 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
@@ -12,6 +11,7 @@
 #include <vector>
 
 #include "node.h"
+#include "odb/OdbPtrSetMap.h"
 
 namespace utl {
 class Logger;

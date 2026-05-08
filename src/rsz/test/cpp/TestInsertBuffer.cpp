@@ -8,10 +8,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "odb/OdbPtrSetMap.h"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 

@@ -99,7 +99,8 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
-void Connect::setSplitCuts(const odb::OdbPtrMap<odb::dbTechLayer, SplitCut>& splits)
+void Connect::setSplitCuts(
+    const odb::OdbPtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack

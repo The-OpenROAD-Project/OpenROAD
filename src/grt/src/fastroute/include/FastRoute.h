@@ -21,8 +21,8 @@
 #include "boost/icl/interval_set.hpp"
 #include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
-#include "odb/geom.h"
 #include "odb/OdbPtrSetMap.h"
+#include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {

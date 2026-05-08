@@ -5,13 +5,13 @@
 
 #include <array>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -144,7 +144,7 @@ class GridSwitchedPower
       = bgi::rtree<odb::dbRow*, bgi::quadratic<16>, RowIndexableGetter>;
   RowTree buildRowTree() const;
   odb::OdbPtrSet<odb::dbRow> getInstanceRows(odb::dbInst* inst,
-                                        const RowTree& row_search) const;
+                                             const RowTree& row_search) const;
 
   bool checkInstanceOverlap(odb::dbInst* inst0, odb::dbInst* inst1) const;
   void updateControlNetwork();

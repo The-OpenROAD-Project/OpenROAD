@@ -11,7 +11,6 @@
 #include <cstring>
 #include <iterator>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -51,6 +50,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -3113,13 +3113,14 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                                uniquify);
 }
 
-dbInst* dbNet::insertBufferBeforeLoads(const odb::OdbPtrSet<dbObject>& load_pins,
-                                       const dbMaster* buffer_master,
-                                       const Point* loc,
-                                       const char* new_buf_base_name,
-                                       const char* new_net_base_name,
-                                       const dbNameUniquifyType& uniquify,
-                                       bool loads_on_diff_nets)
+dbInst* dbNet::insertBufferBeforeLoads(
+    const odb::OdbPtrSet<dbObject>& load_pins,
+    const dbMaster* buffer_master,
+    const Point* loc,
+    const char* new_buf_base_name,
+    const char* new_net_base_name,
+    const dbNameUniquifyType& uniquify,
+    bool loads_on_diff_nets)
 {
   dbInsertBuffer insert_buffer(this);
   return insert_buffer.insertBufferBeforeLoads(load_pins,

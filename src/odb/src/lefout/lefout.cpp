@@ -533,7 +533,8 @@ odb::OdbPtrSet<dbVia> lefout::writePins(std::ostream& out, dbBlock* db_block)
   return vias;
 }
 
-odb::OdbPtrSet<dbVia> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_block)
+odb::OdbPtrSet<dbVia> lefout::writeBlockTerms(std::ostream& out,
+                                              dbBlock* db_block)
 {
   odb::OdbPtrSet<dbVia> vias;
   for (dbBTerm* b_term : db_block->getBTerms()) {
@@ -580,7 +581,8 @@ odb::OdbPtrSet<dbVia> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_blo
   return vias;
 }
 
-odb::OdbPtrSet<dbVia> lefout::writePowerPins(std::ostream& out, dbBlock* db_block)
+odb::OdbPtrSet<dbVia> lefout::writePowerPins(std::ostream& out,
+                                             dbBlock* db_block)
 {
   odb::OdbPtrSet<dbVia> vias;
 

@@ -10,7 +10,6 @@
 #include <memory>
 #include <optional>
 #include <unordered_set>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 #include <vector>
 
@@ -18,6 +17,7 @@
 #include "Objects.h"
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

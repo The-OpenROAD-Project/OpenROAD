@@ -9,7 +9,6 @@
 #include <map>
 #include <ranges>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <stack>
 #include <string>
 #include <utility>
@@ -20,6 +19,7 @@
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "cts/TritonCTS.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"

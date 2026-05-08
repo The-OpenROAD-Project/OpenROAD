@@ -14,10 +14,10 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
-#include "odb/OdbPtrSetMap.h"
 #include "odb/geom_boost.h"
 
 namespace gui {

@@ -6,11 +6,11 @@
 #include <any>
 #include <functional>
 #include <set>
-#include "odb/OdbPtrSetMap.h"
 #include <string>
 #include <vector>
 
 #include "gui/gui.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 

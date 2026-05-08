@@ -10,7 +10,6 @@
 #include <iterator>
 #include <limits>
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <memory>
 #include <set>
 #include <sstream>
@@ -32,6 +31,7 @@
 #include "est/ParasiticsService.h"
 #include "geo.h"
 #include "grt/GRoute.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"

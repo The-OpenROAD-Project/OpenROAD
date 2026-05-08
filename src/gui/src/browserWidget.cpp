@@ -856,7 +856,8 @@ odb::OdbPtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
   return children;
 }
 
-odb::OdbPtrSet<odb::dbModule> BrowserWidget::getAllChildren(odb::dbModule* parent)
+odb::OdbPtrSet<odb::dbModule> BrowserWidget::getAllChildren(
+    odb::dbModule* parent)
 {
   odb::OdbPtrSet<odb::dbModule> children;
   for (auto* child : getChildren(parent)) {

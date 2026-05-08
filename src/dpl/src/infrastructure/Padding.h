@@ -4,11 +4,11 @@
 #pragma once
 
 #include <map>
-#include "odb/OdbPtrSetMap.h"
 #include <utility>
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "odb/OdbPtrSetMap.h"
 #include "odb/db.h"
 
 namespace dpl {
@@ -34,7 +34,8 @@ class Padding
 
  private:
   using InstPaddingMap = odb::OdbPtrMap<odb::dbInst, std::pair<GridX, GridX>>;
-  using MasterPaddingMap = odb::OdbPtrMap<odb::dbMaster, std::pair<GridX, GridX>>;
+  using MasterPaddingMap
+      = odb::OdbPtrMap<odb::dbMaster, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

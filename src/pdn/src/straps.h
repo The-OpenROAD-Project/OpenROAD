@@ -179,7 +179,8 @@ class PadDirectConnectionStraps : public Straps
 
   std::vector<odb::dbBox*> getPinsFacingCore();
   std::vector<odb::dbBox*> getPinsFormingRing();
-  odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> getPinsByLayer() const;
+  odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> getPinsByLayer()
+      const;
 
   void makeShapesFacingCore(const Shape::ShapeTreeMap& other_shapes);
   void makeShapesOverPads(const Shape::ShapeTreeMap& other_shapes);
