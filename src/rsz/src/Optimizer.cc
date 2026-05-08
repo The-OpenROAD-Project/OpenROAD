@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "MeasuredVtSwapPolicy.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "SetupCritVtSwapPolicy.hh"
@@ -42,7 +42,7 @@ void Optimizer::configure(const OptimizerRunConfig& config)
   config_ = config;
 }
 
-std::unique_ptr<OptPolicy> Optimizer::makePolicyForPhase(
+std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     const std::string_view phase_name,
     RepairSetupContext& setup_context)
 {
@@ -124,12 +124,12 @@ bool Optimizer::run()
   const int phase_count = phase_names.size();
 
   // Phase loop - Run multiple policies sequentially.
-  std::unique_ptr<OptPolicy> last_policy;
+  std::unique_ptr<OptimizationPolicy> last_policy;
   RepairSetupContext setup_context(resizer_);
   setup_context.phase_pipeline_active = true;
   for (int i = 0; i < phase_count; ++i) {
     setup_context.phase_index = i;
-    std::unique_ptr<OptPolicy> policy
+    std::unique_ptr<OptimizationPolicy> policy
         = makePolicyForPhase(phase_names[i], setup_context);
     if (!policy->start()) {
       return false;

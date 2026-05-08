@@ -38,7 +38,7 @@ struct GeneratorContext
   Resizer& resizer;
   MoveCommitter& committer;  // For move conflict check in pending moves.
   const OptimizerRunConfig& run_config;
-  const OptPolicyConfig& policy_config;
+  const OptimizationPolicyConfig& policy_config;
 };
 
 // === Move generator interface ==============================================
@@ -47,10 +47,10 @@ struct GeneratorContext
 //
 // Responsibilities:
 //   1. prepareRequirements() -- declare which per-target PrepareCacheMask bits
-//      this type reads.  The policy computes flags per target so OptPolicy
-//      only prepares data for generators that can consume that target.  The
-//      default says "I need nothing"; override in types that read prepared
-//      Target fields.
+//      this type reads.  The policy computes flags per target so
+//      OptimizationPolicy only prepares data for generators that can consume
+//      that target.  The default says "I need nothing"; override in types that
+//      read prepared Target fields.
 //   2. isApplicable() -- caller-facing target filter.  The base method checks
 //      requiredViews(); derived generators call it first, then add
 //      move-specific legality checks.
@@ -113,7 +113,7 @@ class MoveGenerator
   Resizer& resizer_;
   MoveCommitter& committer_;
   const OptimizerRunConfig& run_config_;
-  const OptPolicyConfig& policy_config_;
+  const OptimizationPolicyConfig& policy_config_;
 };
 
 }  // namespace rsz

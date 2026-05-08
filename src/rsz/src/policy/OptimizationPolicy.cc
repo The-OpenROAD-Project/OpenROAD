@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -69,10 +69,10 @@ char phaseMarkerForIndex(int phase_index)
   return '?';
 }
 
-OptPolicy::OptPolicy(Resizer& resizer,
-                     MoveCommitter& committer,
-                     RepairSetupContext& setup_context,
-                     const OptimizerRunConfig& config)
+OptimizationPolicy::OptimizationPolicy(Resizer& resizer,
+                                       MoveCommitter& committer,
+                                       RepairSetupContext& setup_context,
+                                       const OptimizerRunConfig& config)
     : resizer_(resizer),
       committer_(committer),
       setup_context_(setup_context),
@@ -81,9 +81,9 @@ OptPolicy::OptPolicy(Resizer& resizer,
 {
 }
 
-OptPolicy::~OptPolicy() = default;
+OptimizationPolicy::~OptimizationPolicy() = default;
 
-bool OptPolicy::start()
+bool OptimizationPolicy::start()
 {
   logger_ = resizer_.logger();
   sta_ = resizer_.sta();
@@ -103,7 +103,7 @@ bool OptPolicy::start()
   return true;
 }
 
-bool OptPolicy::finalizeAndReport(const double initial_design_area)
+bool OptimizationPolicy::finalizeAndReport(const double initial_design_area)
 {
   RepairTargetCollector final_targets(&resizer_);
   final_targets.init(config_.setup_slack_margin,
@@ -113,7 +113,7 @@ bool OptPolicy::finalizeAndReport(const double initial_design_area)
   return reportRepairSummary();
 }
 
-void OptPolicy::printProgressHeader() const
+void OptimizationPolicy::printProgressHeader() const
 {
   if (setup_context_.progress_header_printed) {
     return;
@@ -130,7 +130,7 @@ void OptPolicy::printProgressHeader() const
       "---------------------------------------------------------------");
 }
 
-void OptPolicy::printFinalProgress(
+void OptimizationPolicy::printFinalProgress(
     const RepairTargetCollector& target_collector,
     const double initial_design_area) const
 {
@@ -174,12 +174,12 @@ void OptPolicy::printFinalProgress(
       "---------------------------------------------------------------");
 }
 
-const std::vector<const sta::Pin*>& OptPolicy::finalReportPins() const
+const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
 {
   return target_collector_->getViolatingPins();
 }
 
-bool OptPolicy::reportRepairSummary() const
+bool OptimizationPolicy::reportRepairSummary() const
 {
   bool repaired = false;
 
@@ -251,12 +251,13 @@ bool OptPolicy::reportRepairSummary() const
   return repaired;
 }
 
-void OptPolicy::loadPolicyEnvars()
+void OptimizationPolicy::loadPolicyEnvars()
 {
   // VtSwap candidate cap (per target, per generator); 0 means unlimited.
   policy_config_.max_candidate_generation
       = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 0);
-  // Hard cap on accepted moves; 0 means unlimited (per OptPolicyConfig docs).
+  // Hard cap on accepted moves; 0 means unlimited (per OptimizationPolicyConfig
+  // docs).
   policy_config_.max_committed_moves
       = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 0);
   // Number of fanin/fanout stages included in MT delay estimation; 0 keeps
@@ -269,7 +270,7 @@ void OptPolicy::loadPolicyEnvars()
       = utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 1) > 0;
 }
 
-GeneratorContext OptPolicy::makeGeneratorContext() const
+GeneratorContext OptimizationPolicy::makeGeneratorContext() const
 {
   return GeneratorContext{.resizer = resizer_,
                           .committer = committer_,
@@ -277,8 +278,9 @@ GeneratorContext OptPolicy::makeGeneratorContext() const
                           .policy_config = policy_config_};
 }
 
-void OptPolicy::buildMoveGenerators(const std::vector<MoveType>& move_types,
-                                    const GeneratorContext& context)
+void OptimizationPolicy::buildMoveGenerators(
+    const std::vector<MoveType>& move_types,
+    const GeneratorContext& context)
 {
   // Default move generator creation
   move_generators_.clear();
@@ -322,7 +324,7 @@ void OptPolicy::buildMoveGenerators(const std::vector<MoveType>& move_types,
   }
 }
 
-PrepareCacheMask OptPolicy::accumulatePrepareRequirements() const
+PrepareCacheMask OptimizationPolicy::accumulatePrepareRequirements() const
 {
   PrepareCacheMask prepare_mask = kNoPrepareCache;
   for (const std::unique_ptr<MoveGenerator>& generator : move_generators_) {
@@ -334,7 +336,7 @@ PrepareCacheMask OptPolicy::accumulatePrepareRequirements() const
   return prepare_mask;
 }
 
-MoveGenerator* OptPolicy::findGenerator(const MoveType type) const
+MoveGenerator* OptimizationPolicy::findGenerator(const MoveType type) const
 {
   for (const std::unique_ptr<MoveGenerator>& generator : move_generators_) {
     if (generator->type() == type) {
@@ -344,7 +346,7 @@ MoveGenerator* OptPolicy::findGenerator(const MoveType type) const
   return nullptr;
 }
 
-void OptPolicy::prepareTargets(std::vector<Target>& targets) const
+void OptimizationPolicy::prepareTargets(std::vector<Target>& targets) const
 {
   const PrepareCacheMask mask = accumulatePrepareRequirements();
   for (Target& target : targets) {
@@ -352,14 +354,15 @@ void OptPolicy::prepareTargets(std::vector<Target>& targets) const
   }
 }
 
-Target OptPolicy::prepareTarget(const Target& target) const
+Target OptimizationPolicy::prepareTarget(const Target& target) const
 {
   Target prepared_target = target;
   prepareTarget(prepared_target, accumulatePrepareRequirements());
   return prepared_target;
 }
 
-void OptPolicy::prewarmTargets(const std::vector<Target>& targets) const
+void OptimizationPolicy::prewarmTargets(
+    const std::vector<Target>& targets) const
 {
   const bool prewarm_swappable_cells
       = findGenerator(MoveType::kSizeUp) != nullptr;
@@ -372,24 +375,25 @@ void OptPolicy::prewarmTargets(const std::vector<Target>& targets) const
   }
 }
 
-bool OptPolicy::targetPrewarmEnabled() const
+bool OptimizationPolicy::targetPrewarmEnabled() const
 {
   return false;
 }
 
-bool OptPolicy::generatorEnabled(const MoveType) const
+bool OptimizationPolicy::generatorEnabled(const MoveType) const
 {
   return true;
 }
 
-void OptPolicy::prepareTarget(Target& target, const PrepareCacheMask mask) const
+void OptimizationPolicy::prepareTarget(Target& target,
+                                       const PrepareCacheMask mask) const
 {
   if ((mask & kArcDelayStateCache) != 0) {
     prepareArcDelayState(target);
   }
 }
 
-void OptPolicy::prepareArcDelayState(Target& target) const
+void OptimizationPolicy::prepareArcDelayState(Target& target) const
 {
   if (target.isPrepared(kArcDelayStateCache) || !target.canBePathDriver()) {
     return;
@@ -404,7 +408,7 @@ void OptPolicy::prepareArcDelayState(Target& target) const
       policy_config_.delay_estimator_sta_slew_bias);
 }
 
-void OptPolicy::prewarmTargetLibertyCaches(
+void OptimizationPolicy::prewarmTargetLibertyCaches(
     const std::vector<Target>& targets,
     const bool prewarm_swappable_cells,
     const bool prewarm_vt_equiv_cells) const
@@ -456,19 +460,19 @@ void OptPolicy::prewarmTargetLibertyCaches(
   }
 }
 
-bool OptPolicy::hasSetupViolations(const OptimizerRunConfig& config,
-                                   const sta::MinMax* max) const
+bool OptimizationPolicy::hasSetupViolations(const OptimizerRunConfig& config,
+                                            const sta::MinMax* max) const
 {
   return sta::fuzzyLess(resizer_.sta()->worstSlack(max),
                         config.setup_slack_margin);
 }
 
-sta::Slack OptPolicy::totalNegativeSlack(const sta::MinMax* max) const
+sta::Slack OptimizationPolicy::totalNegativeSlack(const sta::MinMax* max) const
 {
   return resizer_.sta()->totalNegativeSlack(max);
 }
 
-void OptPolicy::prewarmTargetDriverCaches(
+void OptimizationPolicy::prewarmTargetDriverCaches(
     const std::vector<Target>& targets) const
 {
   std::unordered_set<const sta::Pin*> pins;
@@ -492,7 +496,7 @@ void OptPolicy::prewarmTargetDriverCaches(
   }
 }
 
-void OptPolicy::prewarmStaForPrepareStage() const
+void OptimizationPolicy::prewarmStaForPrepareStage() const
 {
   sta::dbSta* sta = resizer_.sta();
   // Capacitance checks do not run their own preamble, so refresh only that
@@ -500,7 +504,8 @@ void OptPolicy::prewarmStaForPrepareStage() const
   sta->checkCapacitancesPreamble(sta->scenes());
 }
 
-std::unique_ptr<utl::ThreadPool> OptPolicy::makeWorkerThreadPool() const
+std::unique_ptr<utl::ThreadPool> OptimizationPolicy::makeWorkerThreadPool()
+    const
 {
   // Honor OpenROAD thread budget and keep the main thread for orchestration.
   // Zero workers fall back to caller-thread execution.

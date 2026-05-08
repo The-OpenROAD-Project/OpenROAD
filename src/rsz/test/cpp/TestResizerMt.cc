@@ -144,7 +144,7 @@ class TestResizerMt : public tst::IntegratedFixture
       Resizer& resizer,
       MoveCommitter& committer,
       const OptimizerRunConfig& run_config,
-      const OptPolicyConfig& policy_config) const
+      const OptimizationPolicyConfig& policy_config) const
   {
     return GeneratorContext{.resizer = resizer,
                             .committer = committer,

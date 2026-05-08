@@ -16,7 +16,7 @@
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "db_sta/dbNetwork.hh"
@@ -49,10 +49,11 @@ namespace rsz {
 // Shared single-threaded setup-repair implementation used by the legacy phase
 // policies.  It owns the legacy move sequence, target construction, endpoint
 // journal handling, progress reporting, and repair_setup_pin flow.
-class SetupLegacyBase : public OptPolicy
+class SetupLegacyBase : public OptimizationPolicy
 {
  public:
-  // === OptPolicy entry points ==============================================
+  // === OptimizationPolicy entry points
+  // ==============================================
   SetupLegacyBase(Resizer& resizer,
                   MoveCommitter& committer,
                   RepairSetupContext& setup_context,

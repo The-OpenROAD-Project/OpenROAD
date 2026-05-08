@@ -21,8 +21,8 @@ add_library(rsz_lib
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
     MoveTracker.cc
-    policy/OptPolicy.cc
-    policy/OptPolicy.hh
+    policy/OptimizationPolicy.cc
+    policy/OptimizationPolicy.hh
     Optimizer.cc
     OptimizerTypes.cc
     policy/MeasuredVtSwapPolicy.cc

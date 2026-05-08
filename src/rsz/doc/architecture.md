@@ -22,7 +22,7 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 | Area | Change |
 |---|---|
 | Move implementation | Replaced monolithic `*Move` classes with `MoveGenerator` + `MoveCandidate` pairs. |
-| Phase policy | Added `OptPolicy` and concrete setup-repair phase policies. `repair_timing -phases` selects the ordered phase pipeline. |
+| Phase policy | Added `OptimizationPolicy` and concrete setup-repair phase policies. `repair_timing -phases` selects the ordered phase pipeline. |
 | MT support | Added common `utl::ThreadPool` and MT-capable policies/generators. |
 | Prewarm stage | Added policy-level Liberty-cell and driver-cache warmup before target preparation. Required to complete lazy updates and ensure thread safety. |
 | Prepare stage | Added per-target `ArcDelayState` caching for expensive STA-derived data before MT generation/estimation. Required to reduce redundant computations in MT policies. |
@@ -47,7 +47,7 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
   last_policy->finalizeAndReport()
 
 
-[OptPolicy::iterate()]
+[OptimizationPolicy::iterate()]
 
 LEGACY / SetupLegacyPolicy:
   select legacy target -> generate -> estimate -> commit first accepted move      <- [ST]
@@ -79,9 +79,9 @@ MT1 / SetupMt1Policy (EXPERIMENTAL):
 Optimizer
   Owns one repair_setup run
   Owns MoveCommitter
-  Parses phase tokens and creates one OptPolicy per phase
+  Parses phase tokens and creates one OptimizationPolicy per phase
 
-OptPolicy (interface)
+OptimizationPolicy (interface)
   SetupLegacyPolicy     : Reproduces legacy repair-setup behavior
   SetupWnsPolicy        : Legacy WNS phase
   SetupTnsPolicy        : Legacy TNS phase
@@ -145,9 +145,9 @@ return optimizer.run();
 |---|---|---|
 | Configure | `Resizer::repairSetup()` | Freeze Tcl/API options into `OptimizerRunConfig`. |
 | Parse phases | `Optimizer::run()` | Tokenize `config.phases`, or use the default `LEGACY LAST_GASP CRIT_VT_SWAP`. |
-| Create policy | `Optimizer::makePolicyForPhase()` | Map one phase token to one concrete `OptPolicy`. |
-| Run policy | `OptPolicy` | Select targets, prewarm/prepare data, generate candidates, estimate, commit, and decide convergence. |
-| Final report | `OptPolicy` | Emit final progress, move tracker reports, and repair summary after the last phase. |
+| Create policy | `Optimizer::makePolicyForPhase()` | Map one phase token to one concrete `OptimizationPolicy`. |
+| Run policy | `OptimizationPolicy` | Select targets, prewarm/prepare data, generate candidates, estimate, commit, and decide convergence. |
+| Final report | `OptimizationPolicy` | Emit final progress, move tracker reports, and repair summary after the last phase. |
 
 The optimizer does not implement move logic directly. Repair behavior belongs to policies and move implementations.
 
@@ -278,10 +278,10 @@ New prepared attributes can also be added to support new move types.
 
 ## Policy Model
 
-`OptPolicy` is the abstract base for setup-repair strategies.
+`OptimizationPolicy` is the abstract base for setup-repair strategies.
 
 ```cpp
-class OptPolicy
+class OptimizationPolicy
 {
  public:
   virtual bool start();
@@ -295,7 +295,7 @@ class OptPolicy
 ```
 
 Each phase policy receives the same `RepairSetupContext`, `MoveCommitter`, and
-run configuration. `OptPolicy::start()` returns `false` only when the full
+run configuration. `OptimizationPolicy::start()` returns `false` only when the full
 optimizer run should stop before any iteration. Otherwise, `iterate()` is called
 until `converged()` becomes true.
 
@@ -305,7 +305,7 @@ const int phase_count = phase_names.size();
 RepairSetupContext setup_context(resizer_);
 for (int i = 0; i < phase_count; ++i) {
   setup_context.phase_index = i;
-  std::unique_ptr<OptPolicy> policy
+  std::unique_ptr<OptimizationPolicy> policy
       = makePolicyForPhase(phase_names[i], setup_context);
   if (!policy->start()) {
     return false;
@@ -438,10 +438,10 @@ Current prepare masks:
 For example, retrieving load capacitance via STA API is not cheap as follows:
 
 ```text
-OptPolicy::prepareTargets()
-  or OptPolicy::prepareTarget(const Target&)
-  -> OptPolicy::prepareTarget(target, mask)
-     -> OptPolicy::prepareArcDelayState()
+OptimizationPolicy::prepareTargets()
+  or OptimizationPolicy::prepareTarget(const Target&)
+  -> OptimizationPolicy::prepareTarget(target, mask)
+     -> OptimizationPolicy::prepareArcDelayState()
         -> DelayEstimator::buildContext()
            -> GraphDelayCalc::loadCap(driver_pin, scene, min_max)   // STA API
               -> for RiseFall::range():
@@ -597,7 +597,7 @@ Current generator/candidate families:
 `utl::ThreadPool` was added as a common utility, not an rsz-local class.
 
 ```cpp
-std::unique_ptr<utl::ThreadPool> OptPolicy::makeWorkerThreadPool() const
+std::unique_ptr<utl::ThreadPool> OptimizationPolicy::makeWorkerThreadPool() const
 {
   const int thread_count = static_cast<int>(resizer_.staState()->threadCount());
   const int worker_thread_count = std::max(0, thread_count - 1);
@@ -644,7 +644,7 @@ SetupMt1Policy:
 | Status | File(s) | Replacement / Purpose |
 |---|---|---|
 | Removed | `BaseMove.cc`, `BaseMove.hh` | Shared helpers moved into `Resizer`, `MoveCommitter`, `DelayEstimator`, and generator/candidate classes. |
-| Removed | `RepairSetup.cc`, `RepairSetup.hh` | Replaced by `Optimizer`, `policy/OptPolicy`, `policy/SetupLegacyBase`, `policy/SetupLegacyPolicy`, and derived policies. |
+| Removed | `RepairSetup.cc`, `RepairSetup.hh` | Replaced by `Optimizer`, `policy/OptimizationPolicy`, `policy/SetupLegacyBase`, `policy/SetupLegacyPolicy`, and derived policies. |
 | Removed | `BufferMove.cc`, `BufferMove.hh` | Replaced by `move/BufferGenerator.*`, `move/BufferCandidate.*`. |
 | Removed | `CloneMove.cc`, `CloneMove.hh` | Replaced by `move/CloneGenerator.*`, `move/CloneCandidate.*`. |
 | Removed | `SizeUpMove.cc`, `SizeUpMove.hh` | Replaced by `move/SizeUpGenerator.*`, `move/SizeUpCandidate.*`, `move/SizeUpMt*`, `move/SizeUpMatch*`. |
@@ -655,7 +655,7 @@ SetupMt1Policy:
 | Removed | `SplitLoadMove.cc`, `SplitLoadMove.hh` | Replaced by `move/SplitLoadGenerator.*`, `move/SplitLoadCandidate.*`. |
 | Renamed/refactored | `ViolatorCollector.*` -> `RepairTargetCollector.*` | Setup-repair target and violator collection. |
 | Added | `Optimizer.cc`, `Optimizer.hh` | Top-level repair setup driver and phase sequencing. |
-| Added | `policy/OptPolicy.cc`, `policy/OptPolicy.hh` | Abstract policy base and shared setup helpers. |
+| Added | `policy/OptimizationPolicy.cc`, `policy/OptimizationPolicy.hh` | Abstract policy base and shared setup helpers. |
 | Added | `RepairSetupContext.hh` | Shared per-run setup state passed across phase policies. |
 | Added | `policy/SetupLegacyBase.cc`, `policy/SetupLegacyBase.hh` | Shared legacy setup-repair implementation used by legacy phase policies. |
 | Added | `policy/SetupLegacyPolicy.*`, `policy/SetupWnsPolicy.*`, `policy/SetupTnsPolicy.*`, `policy/SetupDirectionalPolicy.*`, `policy/SetupLastGaspPolicy.*`, `policy/SetupCritVtSwapPolicy.*` | Legacy-compatible repair setup phase policies. |

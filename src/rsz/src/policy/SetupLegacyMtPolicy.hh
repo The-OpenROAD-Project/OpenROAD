@@ -33,7 +33,8 @@ class VtSwapMtGenerator;
 class SetupLegacyMtPolicy : public SetupLegacyPolicy
 {
  public:
-  // === OptPolicy entry points ==============================================
+  // === OptimizationPolicy entry points
+  // ==============================================
   SetupLegacyMtPolicy(Resizer& resizer,
                       MoveCommitter& committer,
                       RepairSetupContext& setup_context,

@@ -7,7 +7,7 @@
 #include <unordered_set>
 
 #include "MoveCommitter.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
@@ -49,10 +49,11 @@ class MeasuredVtSwapGenerator;
 // accepted VT swap, when the positive max_committed_moves cap is reached, or
 // when every endpoint/instance has been exhausted (tracked in
 // exhausted_endpoints_ / exhausted_instances_).
-class MeasuredVtSwapPolicy : public OptPolicy
+class MeasuredVtSwapPolicy : public OptimizationPolicy
 {
  public:
-  // === OptPolicy entry points ==============================================
+  // === OptimizationPolicy entry points
+  // ==============================================
   MeasuredVtSwapPolicy(Resizer& resizer,
                        MoveCommitter& committer,
                        RepairSetupContext& setup_context,

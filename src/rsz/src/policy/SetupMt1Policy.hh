@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "MoveCommitter.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
@@ -50,10 +50,11 @@ class MoveGenerator;
 // max_committed_moves cap is reached, or no legal candidate is found.
 //
 // Currently supports VtSwapMt and SizeUpMt types only.
-class SetupMt1Policy : public OptPolicy
+class SetupMt1Policy : public OptimizationPolicy
 {
  public:
-  // === OptPolicy entry points ==============================================
+  // === OptimizationPolicy entry points
+  // ==============================================
   SetupMt1Policy(Resizer& resizer,
                  MoveCommitter& committer,
                  RepairSetupContext& setup_context,

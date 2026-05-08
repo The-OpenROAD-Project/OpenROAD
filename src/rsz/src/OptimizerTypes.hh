@@ -407,7 +407,7 @@ struct OptimizerRunConfig
 
 // Policy-to-generator configuration channel for tunable knobs that do not
 // belong in the OptimizerRunConfig.
-struct OptPolicyConfig
+struct OptimizationPolicyConfig
 {
   // Cap on how many per-target candidates a generator expands. A value of 0
   // means unlimited.

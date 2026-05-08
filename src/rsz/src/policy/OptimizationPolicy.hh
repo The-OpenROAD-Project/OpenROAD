@@ -50,27 +50,27 @@ char phaseMarkerForIndex(int phase_index);
 //                             generators, or drive generators directly on the
 //                             main thread (legacy path)
 //
-// Optimizer (sequencer) creates one or more OptPolicy instances per run and
-// drives each through start() -> iterate()* -> converged()/result() in that
-// order.  start() returns false when the policy determines that the optimizer
-// run should stop before iterate().  Policies share run-level setup state
-// through RepairSetupContext.
+// Optimizer (sequencer) creates one or more OptimizationPolicy instances per
+// run and drives each through start() -> iterate()* -> converged()/result() in
+// that order.  start() returns false when the policy determines that the
+// optimizer run should stop before iterate().  Policies share run-level setup
+// state through RepairSetupContext.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
 // generatorEnabled) are intentionally placed on the base so the policies do
 // not re-implement wiring boilerplate.
-class OptPolicy
+class OptimizationPolicy
 {
  public:
   using GeneratorVector = std::vector<std::unique_ptr<MoveGenerator>>;
 
   // === Policy interface =====================================================
-  OptPolicy(Resizer& resizer,
-            MoveCommitter& committer,
-            RepairSetupContext& setup_context,
-            const OptimizerRunConfig& config);
-  virtual ~OptPolicy();
+  OptimizationPolicy(Resizer& resizer,
+                     MoveCommitter& committer,
+                     RepairSetupContext& setup_context,
+                     const OptimizerRunConfig& config);
+  virtual ~OptimizationPolicy();
 
   virtual const char* name() const = 0;
   virtual bool start();
@@ -158,7 +158,7 @@ class OptPolicy
   sta::Graph* graph_{nullptr};
   est::EstimateParasitics* estimate_parasitics_{nullptr};
   const sta::MinMax* max_{nullptr};
-  OptPolicyConfig policy_config_{};
+  OptimizationPolicyConfig policy_config_{};
   RepairTargetCollector* target_collector_;
   GeneratorVector move_generators_;
   std::vector<MoveType> move_sequence_;

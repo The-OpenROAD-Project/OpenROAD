@@ -15,7 +15,7 @@
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
 #include "SizeUpMtGenerator.hh"
@@ -34,7 +34,7 @@ SetupMt1Policy::SetupMt1Policy(Resizer& resizer,
                                MoveCommitter& committer,
                                RepairSetupContext& setup_context,
                                const OptimizerRunConfig& config)
-    : OptPolicy(resizer, committer, setup_context, config)
+    : OptimizationPolicy(resizer, committer, setup_context, config)
 {
   is_experimental = true;
 }
@@ -43,7 +43,7 @@ SetupMt1Policy::~SetupMt1Policy() = default;
 
 bool SetupMt1Policy::start()
 {
-  OptPolicy::start();
+  OptimizationPolicy::start();
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);
@@ -120,7 +120,7 @@ void SetupMt1Policy::iterate()
   prewarmTargets(target_pins);
 
   // Prepare necessary per-target data for parallel execution.
-  OptPolicy::prepareTargets(target_pins);
+  OptimizationPolicy::prepareTargets(target_pins);
 
   // Generate and estimate each prepared target.  Target-level scheduling stays
   // serial because some generator-side STA queries are not thread-safe; each

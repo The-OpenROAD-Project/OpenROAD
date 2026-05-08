@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "MoveCommitter.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "rsz/Resizer.hh"
 
@@ -27,8 +27,8 @@ struct RepairSetupContext;
 //      tracker-report context.
 //
 // The Optimizer owns `committer_` for the full run; the shared setup context
-// and each phase/top-level OptPolicy live for the duration of the dispatch
-// loop only.
+// and each phase/top-level OptimizationPolicy live for the duration of the
+// dispatch loop only.
 class Optimizer
 {
  public:
@@ -49,7 +49,7 @@ class Optimizer
   // Default token list when the user did not supply -phases/-policy/-policies.
   static constexpr const char* kDefaultPhases = "LEGACY LAST_GASP CRIT_VT_SWAP";
 
-  std::unique_ptr<OptPolicy> makePolicyForPhase(
+  std::unique_ptr<OptimizationPolicy> makePolicyForPhase(
       std::string_view phase_name,
       RepairSetupContext& setup_context);
 

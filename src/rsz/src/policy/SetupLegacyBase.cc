@@ -21,7 +21,7 @@
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
 #include "RepairTargetCollector.hh"
@@ -62,13 +62,13 @@ SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
                                  MoveCommitter& committer,
                                  RepairSetupContext& setup_context,
                                  const OptimizerRunConfig& config)
-    : OptPolicy(resizer, committer, setup_context, config)
+    : OptimizationPolicy(resizer, committer, setup_context, config)
 {
 }
 
 bool SetupLegacyBase::start()
 {
-  OptPolicy::start();
+  OptimizationPolicy::start();
   setup_context_.max_repairs_per_pass = config_.max_repairs_per_pass;
   if (!setup_context_.phase_pipeline_active) {
     return true;

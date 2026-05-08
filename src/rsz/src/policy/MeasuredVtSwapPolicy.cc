@@ -10,7 +10,7 @@
 #include "MeasuredVtSwapGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
 #include "rsz/Resizer.hh"
@@ -35,7 +35,7 @@ MeasuredVtSwapPolicy::MeasuredVtSwapPolicy(Resizer& resizer,
                                            MoveCommitter& committer,
                                            RepairSetupContext& setup_context,
                                            const OptimizerRunConfig& config)
-    : OptPolicy(resizer, committer, setup_context, config)
+    : OptimizationPolicy(resizer, committer, setup_context, config)
 {
   is_experimental = true;
 }
@@ -44,7 +44,7 @@ MeasuredVtSwapPolicy::~MeasuredVtSwapPolicy() = default;
 
 bool MeasuredVtSwapPolicy::start()
 {
-  OptPolicy::start();
+  OptimizationPolicy::start();
   generator_
       = std::make_unique<MeasuredVtSwapGenerator>(makeGeneratorContext());
   committed_moves_ = 0;

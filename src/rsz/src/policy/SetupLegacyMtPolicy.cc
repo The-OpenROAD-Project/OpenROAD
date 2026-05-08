@@ -15,7 +15,7 @@
 #include "CloneGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
-#include "OptPolicy.hh"
+#include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
@@ -295,7 +295,7 @@ bool SetupLegacyMtPolicy::tryRepairTarget(
 {
   // Preserve SetupLegacyBase's single-target, move-sequence ordering.  Only
   // the VtSwap/SizeUp move types score their generated candidates in parallel.
-  const Target prepared_target = OptPolicy::prepareTarget(target);
+  const Target prepared_target = OptimizationPolicy::prepareTarget(target);
 
   for (const std::unique_ptr<MoveGenerator>& generator_ptr : move_generators_) {
     MoveGenerator& generator = *generator_ptr;
