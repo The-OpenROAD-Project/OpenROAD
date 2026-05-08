@@ -937,7 +937,10 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
 
   if (!exists) {
     logger_->error(
-        GRT, 127, "net_id for db_net {} not found", db_net->getConstName());
+        GRT,
+        127,
+        "net_id for db_net {} not found while updating GRT resources usage.",
+        db_net->getConstName());
   }
 
   net = nets_[net_id];
