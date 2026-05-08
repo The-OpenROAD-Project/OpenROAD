@@ -21,6 +21,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -123,6 +124,21 @@ class RepairSetup : public sta::dbStaState
       = nullptr,
       std::vector<std::pair<const sta::Pin*, BaseMove*>>* chosen_moves
       = nullptr);
+  bool repairPathReroute(sta::Path* path,
+                         sta::Slack path_slack,
+                         float setup_slack_margin);
+
+  // Shared endpoint optimization loop used by repairSetupReroute.
+  bool repairEndpointsWithReroute(int max_end_count,
+                                  int max_passes,
+                                  int max_iterations,
+                                  float setup_slack_margin,
+                                  bool verbose,
+                                  float initial_tns,
+                                  int& opto_iteration,
+                                  int& num_viols,
+                                  const char* phase_name,
+                                  char phase_marker);
   int fanout(sta::Vertex* vertex);
   bool hasTopLevelOutputPort(sta::Net* net);
 
@@ -159,6 +175,15 @@ class RepairSetup : public sta::dbStaState
                           float initial_tns,
                           float& prev_tns,
                           char phase_marker = 'L');
+  void repairSetup_Reroute(float setup_slack_margin,
+                           int max_passes,
+                           int max_iterations,
+                           int max_repairs_per_pass,
+                           bool verbose,
+                           int& opto_iteration,
+                           float initial_tns,
+                           float& prev_tns,
+                           char phase_marker = 'R');
   void repairSetup_Wns(float setup_slack_margin,
                        int max_passes_per_endpoint,
                        int max_repairs_per_pass,
