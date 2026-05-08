@@ -225,8 +225,13 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  is_congested_ = fastroute_->totalOverflow() > 0;
-  fastroute_->saveCongestion();
+  if (use_cugr_) {
+    is_congested_ = cugr_->totalOverflow() > 0;
+    cugr_->saveCongestion();
+  } else {
+    is_congested_ = fastroute_->totalOverflow() > 0;
+    fastroute_->saveCongestion();
+  }
 }
 
 NetRouteMap& GlobalRouter::getRoutes()
@@ -274,7 +279,11 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_;
+  // Empirically, CUGR's congested routes still let DRT produce better
+  // results than a zero-overflow FastRoute run, so treat CUGR overflow
+  // the same as -allow_congestion.
+  bool congested_routes
+      = is_congested_ && !allow_congestion_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -454,7 +463,10 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (is_congested_) {
     // Suggest adjustment value
     suggestAdjustment();
-    if (allow_congestion_) {
+    // CUGR overflow is downgraded to a warning even without
+    // -allow_congestion: empirically DRT produces better results from
+    // CUGR's congested routes than from a zero-overflow FastRoute run.
+    if (allow_congestion_ || use_cugr_) {
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "
