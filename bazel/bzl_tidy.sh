@@ -5,8 +5,9 @@
 # Auto-format all Bazel files in-place using buildifier.
 set -euo pipefail
 TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LIST_SOURCES="$SCRIPT_DIR/list_sources.sh"
+[ -x "$LIST_SOURCES" ] || LIST_SOURCES="$SCRIPT_DIR/bazel/list_sources.sh"
 cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
-# `git ls-files` skips submodule contents (src/sta, third-party/abc),
-# so we never rewrite files owned by another repo.
-git ls-files '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' -z \
+"$LIST_SOURCES" -z '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' \
     | xargs -0 "$TOOL" -mode=fix -lint=fix

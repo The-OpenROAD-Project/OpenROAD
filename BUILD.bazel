@@ -476,6 +476,7 @@ sh_test(
     args = ["$(rootpath //bazel:tclint)"],
     data = [
         "tclint.toml",
+        "//bazel:list_sources.sh",
         "//bazel:tclint",
     ],
     tags = ["local"],
@@ -490,6 +491,7 @@ sh_test(
     args = ["$(rootpath //bazel:tclfmt)"],
     data = [
         "tclint.toml",
+        "//bazel:list_sources.sh",
         "//bazel:tclfmt",
     ],
     tags = ["local"],
@@ -504,6 +506,7 @@ sh_binary(
     args = ["$(rootpath //bazel:tclfmt)"],
     data = [
         "tclint.toml",
+        "//bazel:list_sources.sh",
         "//bazel:tclfmt",
     ],
 )
@@ -517,6 +520,7 @@ sh_test(
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
         "MODULE.bazel",
+        "//bazel:list_sources.sh",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -531,6 +535,7 @@ sh_test(
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
         "MODULE.bazel",
+        "//bazel:list_sources.sh",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -544,6 +549,7 @@ sh_binary(
     srcs = ["//bazel:bzl_tidy.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "//bazel:list_sources.sh",
         "@buildifier_prebuilt//:buildifier",
     ],
 )
@@ -581,6 +587,7 @@ sh_binary(
         "tclint.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:list_sources.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
