@@ -43,6 +43,51 @@ void Optimizer::configure(const OptimizerRunConfig& config)
   config_ = config;
 }
 
+namespace {
+
+bool isLegacyCompatiblePhase(const std::string_view phase_name)
+{
+  return phase_name == "LEGACY" || phase_name == "LEGACY_MT"
+         || phase_name == "WNS" || phase_name == "WNS_PATH"
+         || phase_name == "WNS_CONE" || phase_name == "TNS"
+         || phase_name == "ENDPOINT_FANIN" || phase_name == "STARTPOINT_FANOUT"
+         || phase_name == "LAST_GASP";
+}
+
+bool containsPhase(const std::vector<std::string>& phase_names,
+                   const std::string_view phase_name)
+{
+  for (const std::string& candidate : phase_names) {
+    if (candidate == phase_name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<std::string> appendImplicitCritVtSwapForLegacyPhases(
+    const std::vector<std::string>& requested_phase_names)
+{
+  std::vector<std::string> effective_phase_names = requested_phase_names;
+  bool needs_implicit_crit_vt_swap = false;
+  for (const std::string& phase_name : requested_phase_names) {
+    if (isLegacyCompatiblePhase(phase_name)) {
+      needs_implicit_crit_vt_swap = true;
+      break;
+    }
+  }
+  if (needs_implicit_crit_vt_swap
+      && !containsPhase(effective_phase_names, "CRIT_VT_SWAP")) {
+    // Preserve the legacy setup-repair contract: any legacy-compatible phase
+    // pipeline gets one post-phase critical VT swap unless the user already
+    // requested CRIT_VT_SWAP explicitly.
+    effective_phase_names.push_back("CRIT_VT_SWAP");
+  }
+  return effective_phase_names;
+}
+
+}  // namespace
+
 std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     const std::string_view phase_name,
     RepairSetupContext& setup_context)
@@ -122,10 +167,14 @@ bool Optimizer::run()
   est::IncrementalParasiticsGuard parasitics_guard(
       resizer_.estimateParasitics());
 
-  // Get phase string from -phases/-policy/-policies
+  // Get the requested phase string from -phases/-policy/-policies, then
+  // restore the legacy implicit critical-VT-swap tail when needed.
   const std::string token_list
       = !config_.phases.empty() ? config_.phases : kDefaultPhases;
-  const std::vector<std::string> phase_names = sta::parseTokens(token_list);
+  const std::vector<std::string> requested_phase_names
+      = sta::parseTokens(token_list);
+  const std::vector<std::string> phase_names
+      = appendImplicitCritVtSwapForLegacyPhases(requested_phase_names);
   const int phase_count = phase_names.size();
 
   // Phase loop - Run multiple policies sequentially.
