@@ -837,10 +837,19 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
       return lhs_layer < rhs_layer;
     }
 
-    const int net_cmp
-        = lhs->getNet()->getName().compare(rhs->getNet()->getName());
-    if (net_cmp != 0) {
-      return net_cmp < 0;
+    auto* lhs_net = lhs->getNet();
+    auto* rhs_net = rhs->getNet();
+    if (lhs_net != rhs_net) {
+      if (lhs_net == nullptr) {
+        return true;
+      }
+      if (rhs_net == nullptr) {
+        return false;
+      }
+      const int net_cmp = lhs_net->getName().compare(rhs_net->getName());
+      if (net_cmp != 0) {
+        return net_cmp < 0;
+      }
     }
 
     return lhs->getRect() < rhs->getRect();
