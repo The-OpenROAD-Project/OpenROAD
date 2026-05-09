@@ -148,10 +148,8 @@ cc_library(
     deps = [
         ":utl",
         "//:ord",
-        "//src/sta:opensta_lib",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
