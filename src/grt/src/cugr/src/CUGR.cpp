@@ -660,59 +660,41 @@ void CUGR::updateNet(odb::dbNet* db_net)
   }
 }
 
-std::vector<int> CUGR::getOriginalResources() const
+// The accessors below are only called after init() has constructed
+// grid_graph_, so we rely on the GridGraph's cached vectors directly
+// without extra null-checks (matching the rest of the file).
+const std::vector<int>& CUGR::getOriginalResources() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getOriginalResources();
 }
 
 void CUGR::computeCongestionInformation()
 {
-  if (!grid_graph_) {
-    return;
-  }
   grid_graph_->computeCongestionInformation();
 }
 
-std::vector<int> CUGR::getTotalCapacityPerLayer() const
+const std::vector<int>& CUGR::getTotalCapacityPerLayer() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getTotalCapacityPerLayer();
 }
 
-std::vector<int> CUGR::getTotalUsagePerLayer() const
+const std::vector<int>& CUGR::getTotalUsagePerLayer() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getTotalUsagePerLayer();
 }
 
-std::vector<int> CUGR::getTotalOverflowPerLayer() const
+const std::vector<int>& CUGR::getTotalOverflowPerLayer() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getTotalOverflowPerLayer();
 }
 
-std::vector<int> CUGR::getMaxHorizontalOverflows() const
+const std::vector<int>& CUGR::getMaxHorizontalOverflows() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getMaxHorizontalOverflows();
 }
 
-std::vector<int> CUGR::getMaxVerticalOverflows() const
+const std::vector<int>& CUGR::getMaxVerticalOverflows() const
 {
-  if (!grid_graph_) {
-    return {};
-  }
   return grid_graph_->getMaxVerticalOverflows();
 }
 

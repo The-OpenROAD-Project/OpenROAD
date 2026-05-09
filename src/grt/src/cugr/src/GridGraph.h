@@ -112,7 +112,7 @@ class GridGraph
     return grid_tracks_[layer_index][perp];
   }
 
-  std::vector<int> getOriginalResources() const
+  const std::vector<int>& getOriginalResources() const
   {
     return original_resources_per_layer_;
   }

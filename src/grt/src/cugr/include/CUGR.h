@@ -95,13 +95,13 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void routeIncremental();
 
-  std::vector<int> getOriginalResources() const;
+  const std::vector<int>& getOriginalResources() const;
   void computeCongestionInformation();
-  std::vector<int> getTotalCapacityPerLayer() const;
-  std::vector<int> getTotalUsagePerLayer() const;
-  std::vector<int> getTotalOverflowPerLayer() const;
-  std::vector<int> getMaxHorizontalOverflows() const;
-  std::vector<int> getMaxVerticalOverflows() const;
+  const std::vector<int>& getTotalCapacityPerLayer() const;
+  const std::vector<int>& getTotalUsagePerLayer() const;
+  const std::vector<int>& getTotalOverflowPerLayer() const;
+  const std::vector<int>& getMaxHorizontalOverflows() const;
+  const std::vector<int>& getMaxVerticalOverflows() const;
 
  private:
   float calculatePartialSlack();
