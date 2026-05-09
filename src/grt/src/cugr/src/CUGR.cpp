@@ -591,17 +591,17 @@ void CUGR::updateDbCongestion()
     const int direction = grid_graph_->getLayerDirection(layer);
     if (direction == MetalLayer::H) {
       for (int y = 0; y < y_size; y++) {
-        float last_cap = 0;
-        float last_use = 0;
+        double last_cap = 0;
+        double last_use = 0;
         for (int x = 0; x < x_size; x++) {
-          float cap, use;
+          double cap, use;
           if (x == x_size - 1) {
             cap = last_cap;
             use = last_use;
           } else {
             const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
-            const float initial = grid_graph_->getInitialEdgeCapacity(
-                layer, x, y);
+            const double initial
+                = grid_graph_->getInitialEdgeCapacity(layer, x, y);
             cap = initial;
             use = edge.demand + (initial - edge.capacity);
           }
@@ -613,17 +613,17 @@ void CUGR::updateDbCongestion()
       }
     } else {
       for (int x = 0; x < x_size; x++) {
-        float last_cap = 0;
-        float last_use = 0;
+        double last_cap = 0;
+        double last_use = 0;
         for (int y = 0; y < y_size; y++) {
-          float cap, use;
+          double cap, use;
           if (y == y_size - 1) {
             cap = last_cap;
             use = last_use;
           } else {
             const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
-            const float initial = grid_graph_->getInitialEdgeCapacity(
-                layer, x, y);
+            const double initial
+                = grid_graph_->getInitialEdgeCapacity(layer, x, y);
             cap = initial;
             use = edge.demand + (initial - edge.capacity);
           }
@@ -794,6 +794,10 @@ void CUGR::saveCongestion()
   }
 
   // Identify congested tiles per direction.
+  if (totalOverflow() == 0) {
+    return;
+  }
+
   std::vector<std::tuple<int, int, int, int>> congested_h;  // x, y, cap, use
   std::vector<std::tuple<int, int, int, int>> congested_v;
   for (int x = 0; x + 1 < x_size; x++) {

@@ -279,11 +279,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  // Empirically, CUGR's congested routes still let DRT produce better
-  // results than a zero-overflow FastRoute run, so treat CUGR overflow
-  // the same as -allow_congestion.
-  bool congested_routes
-      = is_congested_ && !allow_congestion_ && !use_cugr_;
+  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -463,9 +459,8 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (is_congested_) {
     // Suggest adjustment value
     suggestAdjustment();
-    // CUGR overflow is downgraded to a warning even without
-    // -allow_congestion: empirically DRT produces better results from
-    // CUGR's congested routes than from a zero-overflow FastRoute run.
+    // CUGR overflow is downgraded to a warning even without -allow_congestion,
+    // since it produces good results on detailed routing.
     if (allow_congestion_ || use_cugr_) {
       logger_->warn(GRT,
                     115,
