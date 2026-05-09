@@ -6,8 +6,8 @@
 
 set -euo pipefail
 
-TOOL="$(realpath "$1")"
-GIT="$(realpath "$2")"
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+GIT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"

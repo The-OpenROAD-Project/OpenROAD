@@ -647,12 +647,51 @@ sh_binary(
     ],
 )
 
+# --- Python formatting check (black --check) ------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_py_test",
+    srcs = ["//bazel:py_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "//bazel:black",
+        "@git",
+    ],
+    # This test reads Git workspace state that is not a declared Bazel input.
+    tags = [
+        "external",
+        "local",
+    ],
+)
+
+# --- Python auto-format only (black) --------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_py",
+    srcs = ["//bazel:py_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:black)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "//bazel:black",
+        "@git",
+    ],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
         ":fmt_bzl_test",
+        ":fmt_py_test",
         ":fmt_tcl_test",
         ":lint_bzl_test",
         ":lint_tcl_test",
@@ -675,12 +714,19 @@ sh_binary(
         "$(rootpath //bazel:bzl_lint_test.sh)",
         "$(rootpath @buildifier_prebuilt//:buildifier)",
         "$(rootpath @git)",
+        "$(rootpath //bazel:py_tidy.sh)",
+        "$(rootpath //bazel:black)",
+        "$(rootpath //bazel:py_fmt_test.sh)",
+        "$(rootpath //bazel:black)",
     ],
     data = [
         "MODULE.bazel",
         "tclint.toml",
+        "//bazel:black",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:py_fmt_test.sh",
+        "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",

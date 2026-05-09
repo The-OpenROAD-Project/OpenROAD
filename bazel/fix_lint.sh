@@ -15,6 +15,10 @@ BZL_FMT_BUILDIFIER="$6"
 BZL_LINT_SH="$7"
 BZL_LINT_BUILDIFIER="$8"
 GIT="$9"
+PY_TIDY_SH="${10}"
+PY_BLACK="${11}"
+PY_FMT_SH="${12}"
+PY_FMT_BLACK="${13}"
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # TCL: auto-format then lint
@@ -24,6 +28,10 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # Bazel: auto-format then lint
 "${BZL_TIDY_SH}" "${BZL_FMT_BUILDIFIER}" "${GIT}"
 "${BZL_LINT_SH}" "${BZL_LINT_BUILDIFIER}" "${GIT}" || rc=$?
+
+# Python: auto-format then check formatting
+"${PY_TIDY_SH}" "${PY_BLACK}" "${GIT}"
+"${PY_FMT_SH}" "${PY_FMT_BLACK}" "${GIT}" || rc=$?
 
 "${GIT}" -C "$BUILD_WORKSPACE_DIRECTORY" status
 
