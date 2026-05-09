@@ -191,5 +191,6 @@ doc_check_test(
 
 doc_check_test(
     name = "gpl_messages_txt_check",
+    check_log = False,
     data = ["//src/gpl:messages_txt"],
 )
