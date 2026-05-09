@@ -18,7 +18,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "Graphics.hh"
 #include "ord/OpenRoad.hh"
-#include "DelayEstimatorReporter.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -633,24 +632,13 @@ void report_delay_estimator_accuracy_for_sizing_cmd(Instance* inst,
 
 bool is_valid_accuracy_estimator_cmd(const char* name)
 {
-  return rsz::DelayEstimatorReporter::parseEstimatorKind(std::string(name))
-      .has_value();
+  return Resizer::isValidDelayEstimatorName(std::string(name));
 }
 
 const char* accuracy_estimator_names_cmd()
 {
-  // Single-source list: built from DelayEstimatorReporter::knownEstimatorNames
-  // so the Tcl help text and the C++ validator never drift.
   static const std::string names = []() {
-    std::string joined;
-    for (const std::string_view& name :
-         rsz::DelayEstimatorReporter::knownEstimatorNames()) {
-      if (!joined.empty()) {
-        joined += ", ";
-      }
-      joined += std::string(name);
-    }
-    return joined;
+    return Resizer::delayEstimatorNames();
   }();
   return names.c_str();
 }

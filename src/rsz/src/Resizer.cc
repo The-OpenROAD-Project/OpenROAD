@@ -2006,6 +2006,24 @@ void Resizer::reportDelayEstimatorAccuracyForSizing(
   reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);
 }
 
+bool Resizer::isValidDelayEstimatorName(const std::string& name)
+{
+  return DelayEstimatorReporter::parseEstimatorKind(name).has_value();
+}
+
+std::string Resizer::delayEstimatorNames()
+{
+  std::string joined;
+  for (const std::string_view& name :
+       DelayEstimatorReporter::knownEstimatorNames()) {
+    if (!joined.empty()) {
+      joined += ", ";
+    }
+    joined += std::string(name);
+  }
+  return joined;
+}
+
 void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
 {
   if (!lib_data_) {

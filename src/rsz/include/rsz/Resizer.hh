@@ -518,6 +518,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                              sta::LibertyCell* replacement,
                                              const std::string& estimator,
                                              int delay_levels);
+  static bool isValidDelayEstimatorName(const std::string& name);
+  static std::string delayEstimatorNames();
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
