@@ -105,8 +105,6 @@ class GridGraph
     return graph_edges_[layer_index][x][y];
   }
 
-  // Initial (pre-blockage, pre-adjustment) per-edge capacity in tracks.
-  // For horizontal layers indexed by row y; for vertical by column x.
   CapacityT getInitialEdgeCapacity(int layer_index, int x, int y) const
   {
     const int direction = layer_directions_[layer_index];
@@ -114,11 +112,6 @@ class GridGraph
     return grid_tracks_[layer_index][perp];
   }
 
-  // Per-layer routing-resource accessors. "Original" is the capacity
-  // before user-defined adjustments (but after blockages). The remaining
-  // accessors return values populated by computeCongestionInformation()
-  // and require a prior call to that method. Indexed by routing-layer-index
-  // (CUGR's 0-based layer index, matching routing_level - 1).
   std::vector<int> getOriginalResources() const
   {
     return original_resources_per_layer_;

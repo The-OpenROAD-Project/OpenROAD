@@ -526,8 +526,7 @@ void CUGR::printStatistics() const
 
   // Overflow is computed from edge.demand (which includes via-stub
   // demand). This is the metric CUGR's own checkOverflow,
-  // updateOverflowNets, and extractCongestionView use, and it agrees
-  // with Min resource below and with the GRT-0096 table.
+  // updateOverflowNets, and extractCongestionView use
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
   GRPoint bottleneck(-1, -1, -1);
@@ -717,18 +716,6 @@ std::vector<int> CUGR::getMaxVerticalOverflows() const
   return grid_graph_->getMaxVerticalOverflows();
 }
 
-int CUGR::totalOverflow()
-{
-  if (!grid_graph_) {
-    return 0;
-  }
-  grid_graph_->computeCongestionInformation();
-  int total = 0;
-  for (int layer_overflow : grid_graph_->getTotalOverflowPerLayer()) {
-    total += layer_overflow;
-  }
-  return total;
-}
 void CUGR::routeIncremental()
 {
   if (nets_to_route_.empty()) {

@@ -397,6 +397,9 @@ void GlobalRouter::globalRoute(bool save_guides)
       std::set<odb::dbNet*> clock_nets;
       findClockNets(nets, clock_nets);
       cugr_->init(min_layer, max_layer, clock_nets);
+      if (verbose_) {
+        reportResources();
+      }
       cugr_->route();
       routes_ = cugr_->getRoutes();
       updatePinAccessPoints();
@@ -432,7 +435,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   updateDbCongestion();
   saveCongestion();
 
-  if (verbose_ && !use_cugr_) {
+  if (verbose_) {
     reportCongestion();
   }
   computeWirelength();
@@ -5513,9 +5516,17 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 
 void GlobalRouter::reportResources()
 {
-  fastroute_->computeCongestionInformation();
-  std::vector<int> original_resources = fastroute_->getOriginalResources();
-  std::vector<int> derated_resources = fastroute_->getTotalCapacityPerLayer();
+  std::vector<int> original_resources;
+  std::vector<int> derated_resources;
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+    original_resources = cugr_->getOriginalResources();
+    derated_resources = cugr_->getTotalCapacityPerLayer();
+  } else {
+    fastroute_->computeCongestionInformation();
+    original_resources = fastroute_->getOriginalResources();
+    derated_resources = fastroute_->getTotalCapacityPerLayer();
+  }
 
   logger_->report("");
   logger_->info(GRT, 53, "Routing resources analysis:");
@@ -5554,14 +5565,26 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  fastroute_->computeCongestionInformation();
-  const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
-  const std::vector<int>& demands = fastroute_->getTotalUsagePerLayer();
-  const std::vector<int>& overflows = fastroute_->getTotalOverflowPerLayer();
-  const std::vector<int>& max_h_overflows
-      = fastroute_->getMaxHorizontalOverflows();
-  const std::vector<int>& max_v_overflows
-      = fastroute_->getMaxVerticalOverflows();
+  std::vector<int> resources;
+  std::vector<int> demands;
+  std::vector<int> overflows;
+  std::vector<int> max_h_overflows;
+  std::vector<int> max_v_overflows;
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+    resources = cugr_->getTotalCapacityPerLayer();
+    demands = cugr_->getTotalUsagePerLayer();
+    overflows = cugr_->getTotalOverflowPerLayer();
+    max_h_overflows = cugr_->getMaxHorizontalOverflows();
+    max_v_overflows = cugr_->getMaxVerticalOverflows();
+  } else {
+    fastroute_->computeCongestionInformation();
+    resources = fastroute_->getTotalCapacityPerLayer();
+    demands = fastroute_->getTotalUsagePerLayer();
+    overflows = fastroute_->getTotalOverflowPerLayer();
+    max_h_overflows = fastroute_->getMaxHorizontalOverflows();
+    max_v_overflows = fastroute_->getMaxVerticalOverflows();
+  }
 
   int total_resource = 0;
   int total_demand = 0;

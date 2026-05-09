@@ -234,9 +234,6 @@ GridGraph::GridGraph(const Design* design,
     }
   }
 
-  // Snapshot per-layer capacity sums BEFORE applying user-defined
-  // adjustments. This mirrors FastRoute's real_cap, which is captured at
-  // the equivalent point in its initialization flow.
   original_resources_per_layer_.assign(num_layers_, 0);
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
     const int direction = layer_directions_[layer_index];
