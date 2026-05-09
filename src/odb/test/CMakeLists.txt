@@ -44,6 +44,7 @@ or_integration_tests(
     read_3dbx
     read_db
     read_def
+    read_def_virtual
     read_def58
     read_lef
     read_zipped
