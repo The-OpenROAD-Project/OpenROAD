@@ -12,7 +12,7 @@ $decoder begin $wire
 
 set ops {}
 set points {}
-while {1} {
+while { 1 } {
   set op [$decoder next]
   if { $op == $odb::dbWireDecoder_END_DECODE } {
     break
@@ -30,7 +30,7 @@ while {1} {
 }
 
 check "wire opcode sequence" {join $ops " "} "PATH POINT POINT VWIRE POINT RECT POINT"
-check "wire points" {join $points " "} "{0 0} {2000 0} {2000 1000} {2000 2000}"
+check "wire points" {join $points " "} "0 0 2000 0 2000 1000 2000 2000"
 
 set out_def [make_result_file "read_def_virtual.def"]
 write_def $out_def
