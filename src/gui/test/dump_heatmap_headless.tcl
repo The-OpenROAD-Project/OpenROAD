@@ -1,4 +1,4 @@
-source "helpers.tcl"
+source [file join [file dirname [info script]] .. .. .. test helpers.tcl]
 
 if { ![gui::supported] } {
   puts "Pass"
