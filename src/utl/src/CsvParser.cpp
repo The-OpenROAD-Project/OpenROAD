@@ -20,7 +20,7 @@ std::vector<std::vector<std::string>> readCsv(const std::string& file_path,
 {
   std::ifstream in(file_path);
   if (!in.is_open()) {
-    logger->error(utl::UTL, 201, "Unable to open {}", file_path);
+    logger->error(utl::UTL, 204, "Unable to open {}", file_path);
     return {};
   }
 

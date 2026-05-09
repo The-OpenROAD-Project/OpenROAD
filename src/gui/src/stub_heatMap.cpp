@@ -229,7 +229,8 @@ ExternalHeatMapDataSource::ExternalHeatMapDataSource(
     utl::Logger* /* logger */,
     const std::string& /* name */,
     const std::string& unique_short_name,
-    std::vector<Entry> /* data */)
+    std::vector<
+        Entry> /* data */)  // NOLINT(performance-unnecessary-value-param)
     : HeatMapDataSource(nullptr, "", unique_short_name, "")
 {
 }
