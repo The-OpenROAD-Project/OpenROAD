@@ -1060,6 +1060,7 @@ class Gui
 
  private:
   Gui();
+  void syncHeatMapChips();
 
   void registerDescriptor(const std::type_info& type,
                           const Descriptor* descriptor);

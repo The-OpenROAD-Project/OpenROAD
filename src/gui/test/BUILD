@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
+    "dump_heatmap_headless",
     "supported",
 ]
 
