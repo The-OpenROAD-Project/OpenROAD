@@ -1,7 +1,7 @@
 # Verify that running CUGR on a heavily-adjusted design populates the
 # "Global route" -> "Horizontal/Vertical congestion" dbMarkerCategory tree
 # with markers that are layer-tagged, carry the
-# "capacity:N usage:M overflow:K (wires|vias|wires + vias)" comment
+# "capacity:N usage:M congestion:K (wires|vias|wires + vias)" comment
 # format, and list at least one source net.
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
@@ -40,7 +40,7 @@ if { $tool_category != "" } {
       }
       if {
         [regexp \
-          {capacity:[0-9]+ usage:[0-9]+ overflow:-?[0-9]+ \((wires|vias|wires \+ vias)\)} \
+          {capacity:[0-9]+ usage:[0-9]+ congestion:-?[0-9]+ \((wires|vias|wires \+ vias)\)} \
           [$marker getComment]]
       } {
         incr markers_with_comment
@@ -66,7 +66,7 @@ check "Marker tree is non-empty" {
   expr { $total_markers > 0 }
 } 1
 
-check "Every marker comment matches capacity/usage/overflow (kind) format" {
+check "Every marker comment matches capacity/usage/congestion (kind) format" {
   expr { $markers_with_comment == $total_markers }
 } 1
 
