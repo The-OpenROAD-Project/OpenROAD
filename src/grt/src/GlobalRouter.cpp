@@ -5575,9 +5575,9 @@ void GlobalRouter::reportCongestion()
   const std::vector<int>& resources
       = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
                   : fastroute_->getTotalCapacityPerLayer();
-  const std::vector<int>& demands
-      = use_cugr_ ? cugr_->getTotalUsagePerLayer()
-                  : fastroute_->getTotalUsagePerLayer();
+  const std::vector<int>& demands = use_cugr_
+                                        ? cugr_->getTotalUsagePerLayer()
+                                        : fastroute_->getTotalUsagePerLayer();
   const std::vector<int>& overflows
       = use_cugr_ ? cugr_->getTotalOverflowPerLayer()
                   : fastroute_->getTotalOverflowPerLayer();
