@@ -2687,7 +2687,7 @@ void dbNetwork::connectPinAfter(Pin* pin)
 {
   // Update only an existing cache entry; do not prime the cache here --
   // drivers() will lazily populate on the first read.
-  if (isDriver(pin) || isHierarchical(pin)) {
+  if (isDriver(pin) || (isHierarchical(pin) && direction(pin)->isAnyOutput())) {
     addDriverToCacheIfPresent(net(pin), pin);
   }
 }
