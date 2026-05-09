@@ -29,6 +29,9 @@ cc_library(
     name = "swig_common",
     srcs = ["common/swig_common.cpp"],
     hdrs = ["common/swig_common.h"],
+    includes = [
+        "common",
+    ],
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",

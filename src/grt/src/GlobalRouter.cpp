@@ -891,6 +891,36 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
+void GlobalRouter::setNetIsResAware(odb::dbNet* db_net, bool res_aware)
+{
+  Net* net = db_net_map_[db_net];
+  if (net) {
+    net->setIsResAware(res_aware);
+  } else {
+    logger_->warn(GRT,
+                  103,
+                  "Net {} has no GRT representation. It may have been ignored "
+                  "or excluded",
+                  db_net->getConstName());
+  }
+}
+
+bool GlobalRouter::isNetResAware(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    return it->second->isResAware();
+  }
+
+  logger_->warn(
+      GRT,
+      100,
+      "Net {} has no GRT representation. It may have been ignored or excluded",
+      db_net->getConstName());
+
+  return false;
+}
+
 void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
   int min_layer, max_layer;
@@ -903,8 +933,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
-        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
+    if (net->isResAware()
+        || (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
+            && (!net->isMergedNet()
+                || !netIsCovered(db_net, pins_not_covered)))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       if (net->areSegmentsRestored()) {
         updateNetResources(net, true);
@@ -2261,6 +2293,7 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
+  fastroute_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -3478,6 +3511,19 @@ float GlobalRouter::getViaResistance(int from_layer, int to_layer)
   }
 
   return total_via_resistance;
+}
+
+float GlobalRouter::getFRNetResistance(odb::dbNet* db_net)
+{
+  return fastroute_->getNetResistance(db_net);
+}
+
+float GlobalRouter::getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net)
+{
+  int min_layer = getMinLayerForClock() > 0 ? getMinLayerForClock()
+                                            : getMinRoutingLayer();
+  // FastRouteCore uses 0-based layer indices; routing layer numbers are 1-based
+  return fastroute_->getNetResistanceOnLayer(db_net, min_layer - 1);
 }
 
 float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,

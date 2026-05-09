@@ -40,6 +40,8 @@ cc_library(
         "src/RepairHold.hh",
         "src/RepairSetup.cc",
         "src/RepairSetup.hh",
+        "src/RerouteMove.cc",
+        "src/RerouteMove.hh",
         "src/Resizer.cc",
         "src/ResizerObserver.hh",
         "src/SizeDownMove.cc",
@@ -80,6 +82,7 @@ cc_library(
         "//src/utl",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@googletest//:gtest_prod",
         "@spdlog",
     ],
 )

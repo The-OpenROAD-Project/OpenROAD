@@ -35,6 +35,7 @@
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
+#include "RerouteMove.hh"
 #include "ResizerObserver.hh"
 #include "SizeDownMove.hh"
 #include "SizeUpMove.hh"
@@ -147,6 +148,7 @@ Resizer::Resizer(utl::Logger* logger,
   vt_swap_speed_move_ = std::make_unique<VTSwapSpeedMove>(this);
   unbuffer_move_ = std::make_unique<UnbufferMove>(this);
   split_load_move_ = std::make_unique<SplitLoadMove>(this);
+  reroute_move_ = std::make_unique<RerouteMove>(this);
 
   recover_power_ = std::make_unique<RecoverPower>(this);
   repair_design_ = std::make_unique<RepairDesign>(this);
@@ -3330,6 +3332,22 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
                      new_tie_loc,
                      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
 
+  // If the load pin's instance is not placed, the computed location is
+  // meaningless; mark the new tie cell as unplaced
+  if (!db_network_->isPlaced(load_pin)) {
+    dbInst* new_tie_db_inst = db_network_->staToDb(new_tie_inst);
+    new_tie_db_inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "repair_tie_fanout",
+             1,
+             "Created tie instance {} for load pin {} at location ({}, {})",
+             network_->name(new_tie_inst),
+             sdc_network_->pathName(load_pin),
+             dbuToMeters(new_tie_loc.getX()),
+             dbuToMeters(new_tie_loc.getY()));
+
   // If the load pin is not in the top module, move the new tie instance
   sta::Instance* load_inst = network_->instance(load_pin);
   if (!network_->isTopInstance(load_inst)) {
@@ -4386,6 +4404,7 @@ bool Resizer::repairSetup(double setup_margin,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+
   return repair_setup_->repairSetup(setup_margin,
                                     repair_tns_end_percent,
                                     max_passes,
@@ -4548,6 +4567,7 @@ void Resizer::journalBegin()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
+  reroute_move_->undoMoves();
 }
 
 void Resizer::journalEnd()
@@ -4568,13 +4588,14 @@ void Resizer::journalEnd()
   move_count_ += swap_pins_move_->numPendingMoves();
   move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
+  move_count_ += reroute_move_->numPendingMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              2,
              "COMMIT {} moves: up {} up_match {} down {} buffer {} clone {} "
-             "swap {} vt_swap {} unbuf {}",
+             "swap {} vt_swap {} unbuf {} reroute {}",
              move_count_,
              size_up_move_->numPendingMoves(),
              size_up_match_move_->numPendingMoves(),
@@ -4583,7 +4604,8 @@ void Resizer::journalEnd()
              clone_move_->numPendingMoves(),
              swap_pins_move_->numPendingMoves(),
              vt_swap_speed_move_->numPendingMoves(),
-             unbuffer_move_->numPendingMoves());
+             unbuffer_move_->numPendingMoves(),
+             reroute_move_->numPendingMoves());
 
   accepted_move_count_ += move_count_;
 
@@ -4596,13 +4618,14 @@ void Resizer::journalEnd()
   vt_swap_speed_move_->commitMoves();
   unbuffer_move_->commitMoves();
   split_load_move_->commitMoves();
+  reroute_move_->commitMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              1,
              "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
-             "{} clone {} swap {} vt_swap {} unbuf {}",
+             "{} clone {} swap {} vt_swap {} unbuf {} reroute {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
@@ -4613,7 +4636,8 @@ void Resizer::journalEnd()
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
              vt_swap_speed_move_->numCommittedMoves(),
-             unbuffer_move_->numCommittedMoves());
+             unbuffer_move_->numCommittedMoves(),
+             reroute_move_->numCommittedMoves());
 }
 
 void Resizer::journalMakeBuffer(sta::Instance* buffer)
@@ -4657,7 +4681,7 @@ void Resizer::journalRestore()
              "journal",
              1,
              "Undid {} up {} up_match {} down {} buffer {} clone {} swap {} "
-             "vt_swap {} unbuf",
+             "vt_swap {} unbuf {} reroute",
              size_up_move_->numPendingMoves(),
              size_up_match_move_->numPendingMoves(),
              size_down_move_->numPendingMoves(),
@@ -4665,7 +4689,8 @@ void Resizer::journalRestore()
              clone_move_->numPendingMoves(),
              swap_pins_move_->numPendingMoves(),
              vt_swap_speed_move_->numPendingMoves(),
-             unbuffer_move_->numPendingMoves());
+             unbuffer_move_->numPendingMoves(),
+             reroute_move_->numPendingMoves());
 
   int move_count_ = 0;
   move_count_ += size_up_move_->numPendingMoves();
@@ -4676,13 +4701,14 @@ void Resizer::journalRestore()
   move_count_ += swap_pins_move_->numPendingMoves();
   move_count_ += vt_swap_speed_move_->numPendingMoves();
   move_count_ += unbuffer_move_->numPendingMoves();
+  move_count_ += reroute_move_->numPendingMoves();
 
   debugPrint(logger_,
              RSZ,
              "opt_moves",
              2,
              "UNDO {} moves: up {} up_match {} down {} buffer {} clone {} swap "
-             "{} vt_swap {} unbuf {}",
+             "{} vt_swap {} unbuf {} reroute {}",
              move_count_,
              size_up_move_->numPendingMoves(),
              size_up_match_move_->numPendingMoves(),
@@ -4691,7 +4717,8 @@ void Resizer::journalRestore()
              clone_move_->numPendingMoves(),
              swap_pins_move_->numPendingMoves(),
              vt_swap_speed_move_->numPendingMoves(),
-             unbuffer_move_->numPendingMoves());
+             unbuffer_move_->numPendingMoves(),
+             reroute_move_->numPendingMoves());
 
   rejected_move_count_ += move_count_;
 
@@ -4703,6 +4730,7 @@ void Resizer::journalRestore()
   swap_pins_move_->undoMoves();
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
+  reroute_move_->undoMoves();
   split_load_move_->undoMoves();
 
   debugPrint(logger_,
@@ -4710,7 +4738,7 @@ void Resizer::journalRestore()
              "opt_moves",
              1,
              "TOTAL {} moves (acc {} rej {}): up {} up_match {} down {} buffer "
-             "{} clone {} swap {} vt_swap {} unbuf {}",
+             "{} clone {} swap {} vt_swap {} unbuf {} reroute {}",
              accepted_move_count_ + rejected_move_count_,
              accepted_move_count_,
              rejected_move_count_,
@@ -4721,7 +4749,8 @@ void Resizer::journalRestore()
              clone_move_->numCommittedMoves(),
              swap_pins_move_->numCommittedMoves(),
              vt_swap_speed_move_->numCommittedMoves(),
-             unbuffer_move_->numCommittedMoves());
+             unbuffer_move_->numCommittedMoves(),
+             reroute_move_->numCommittedMoves());
 
   debugPrint(logger_, RSZ, "journal", 1, "journal restore ends <<<");
 }
@@ -5496,6 +5525,9 @@ MoveType Resizer::parseMove(const std::string& s)
   }
   if (lower == "vt_swap") {
     return rsz::MoveType::VTSWAP_SPEED;
+  }
+  if (lower == "reroute") {
+    return rsz::MoveType::REROUTE;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }

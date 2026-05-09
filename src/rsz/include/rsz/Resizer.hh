@@ -84,6 +84,7 @@ class SwapPinsMove;
 class UnbufferMove;
 class VTSwapSpeedMove;
 class SizeUpMatchMove;
+class RerouteMove;
 class RegisterOdbCallbackGuard;
 
 class NetHash
@@ -106,7 +107,8 @@ enum class MoveType
   CLONE,
   SPLIT,
   VTSWAP_SPEED,  // VT swap for timing (need VT swap for power also)
-  SIZEUP_MATCH   // sizeup to match drive strength vs. prev stage
+  SIZEUP_MATCH,  // sizeup to match drive strength vs. prev stage
+  REROUTE        // resistance aware reroute
 };
 
 // Voltage Threshold (VT) category identifier
@@ -955,6 +957,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<UnbufferMove> unbuffer_move_;
   std::unique_ptr<VTSwapSpeedMove> vt_swap_speed_move_;
   std::unique_ptr<SizeUpMatchMove> size_up_match_move_;
+  std::unique_ptr<RerouteMove> reroute_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
@@ -974,6 +977,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class SwapPinsMove;
   friend class UnbufferMove;
   friend class SizeUpMatchMove;
+  friend class RerouteMove;
   friend class VTSwapSpeedMove;
   friend class SwapArithModules;
   friend class ConcreteSwapArithModules;

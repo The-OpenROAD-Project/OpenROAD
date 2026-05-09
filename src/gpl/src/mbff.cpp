@@ -39,6 +39,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
+#include "sta/InternalPower.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -53,6 +54,7 @@
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
 #include "sta/StringUtil.hh"
+#include "sta/TableModel.hh"
 #include "utl/Logger.h"
 
 namespace gpl {

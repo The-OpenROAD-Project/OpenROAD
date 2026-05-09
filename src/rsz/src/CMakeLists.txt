@@ -22,6 +22,7 @@ add_library(rsz_lib
     RepairHold.cc
     RepairSetup.cc
     Rebuffer.cc
+    RerouteMove.cc
     SizeDownMove.cc
     SizeUpMove.cc
     SplitLoadMove.cc
@@ -64,6 +65,17 @@ target_link_libraries(rsz_lib
     dbSta_lib
     grt_lib
     utl_lib
+)
+
+find_path(GTEST_PROD_INCLUDE_DIR
+  NAMES gtest/gtest_prod.h
+  HINTS ${GTest_ROOT}
+  PATH_SUFFIXES include
+)
+
+target_include_directories(rsz_lib
+  PRIVATE
+    ${GTEST_PROD_INCLUDE_DIR}
 )
 
 target_link_libraries(rsz

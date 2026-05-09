@@ -313,7 +313,6 @@ proc repair_timing { args } {
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
-
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)

@@ -18,6 +18,9 @@ cc_library(
         "src/OdbCallBack.h",
         "src/SteinerRenderer.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//src/grt:groute",
