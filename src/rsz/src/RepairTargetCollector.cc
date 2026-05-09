@@ -470,7 +470,7 @@ sta::Slack RepairTargetCollector::getPathSlackByIndex(
                               true);  // checks
 
   // Return the slack of the requested path index
-  if (path_index < static_cast<int>(path_ends.size())) {
+  if (std::cmp_less(path_index, path_ends.size())) {
     return path_ends[path_index]->slack(search_);
   }
 
@@ -684,7 +684,7 @@ void RepairTargetCollector::sortPins(int numPins, ViolatorSortType sort_type)
   }
 
   // Truncate to keep only the top numPins pins (unless numPins is -1)
-  if (numPins > 0 && numPins < static_cast<int>(violating_pins_.size())) {
+  if (numPins > 0 && std::cmp_less(numPins, violating_pins_.size())) {
     debugPrint(logger_,
                RSZ,
                "violator_collector",

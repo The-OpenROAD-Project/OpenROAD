@@ -655,7 +655,7 @@ void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
 
   // Add empty base_sites
   for (odb::dbSite* site : base_sites) {
-    if (sites.find(site) == sites.end()) {
+    if (!sites.contains(site)) {
       sites[site] = 0;
     }
   }
@@ -1748,7 +1748,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
     std::unordered_set<sta::LibertyCell*> real_equiv_cells_set(
         real_equiv_cells.begin(), real_equiv_cells.end());
     for (sta::LibertyCell* cell : equiv_cells) {
-      if (real_equiv_cells_set.find(cell) == real_equiv_cells_set.end()) {
+      if (!real_equiv_cells_set.contains(cell)) {
         excluded_cells.insert(cell);
       }
     }
@@ -1802,7 +1802,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         "=======");
     for (sta::LibertyCell* equiv_cell : equiv_cells) {
       std::string cell_name = equiv_cell->name();
-      if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
+      if (excluded_cells.contains(equiv_cell)) {
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
@@ -1842,7 +1842,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         "==============================================================");
     for (sta::LibertyCell* equiv_cell : equiv_cells) {
       std::string cell_name = equiv_cell->name();
-      if (excluded_cells.find(equiv_cell) != excluded_cells.end()) {
+      if (excluded_cells.contains(equiv_cell)) {
         cell_name.insert(cell_name.begin(), '*');
       }
       odb::dbMaster* equiv_master = db_network_->staToDb(equiv_cell);
@@ -2130,8 +2130,7 @@ sta::LibertyCellSeq Resizer::getFastBufferSizes(
 
 sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
 {
-  if (swappable_cells_cache_.find(source_cell)
-      != swappable_cells_cache_.end()) {
+  if (swappable_cells_cache_.contains(source_cell)) {
     return swappable_cells_cache_[source_cell];
   }
 
@@ -2514,7 +2513,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
     return new_it->second;
   }
 
-  if (vt_hash_map_.find(hash1) == vt_hash_map_.end()) {
+  if (!vt_hash_map_.contains(hash1)) {
     int vt_id = vt_hash_map_.size() + 1;
     vt_hash_map_[hash1] = vt_id;
   }
@@ -6130,7 +6129,7 @@ bool Resizer::checkAndMarkVTSwappable(
     sta::LibertyCell*& best_lib_cell)
 {
   best_lib_cell = nullptr;
-  if (notSwappable.find(inst) != notSwappable.end()) {
+  if (notSwappable.contains(inst)) {
     return false;
   }
   if (dontTouch(inst) || !isLogicStdCell(inst)) {

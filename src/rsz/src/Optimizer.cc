@@ -81,7 +81,7 @@ std::vector<std::string> appendImplicitCritVtSwapForLegacyPhases(
     // Preserve the legacy setup-repair contract: any legacy-compatible phase
     // pipeline gets one post-phase critical VT swap unless the user already
     // requested CRIT_VT_SWAP explicitly.
-    effective_phase_names.push_back("CRIT_VT_SWAP");
+    effective_phase_names.emplace_back("CRIT_VT_SWAP");
   }
   return effective_phase_names;
 }

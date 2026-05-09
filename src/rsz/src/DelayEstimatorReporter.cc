@@ -380,10 +380,10 @@ void DelayEstimatorReporter::printSummary(
   const float golden_stage_impr
       = golden_before_stage_delay - golden_after_stage_delay;
   const size_t stage_count
-      = std::max(std::max(estimator_profile.current_stages.size(),
-                          estimator_profile.candidate_stages.size()),
-                 std::max(golden_profile.before_stages.size(),
-                          golden_profile.after_stages.size()));
+      = std::max({estimator_profile.current_stages.size(),
+                  estimator_profile.candidate_stages.size(),
+                  golden_profile.before_stages.size(),
+                  golden_profile.after_stages.size()});
   const std::string stage_count_label
       = fmt::format("{}-stage", static_cast<int>(stage_count));
   const float candidate_stage_delay_for_table
@@ -582,8 +582,7 @@ DelayEstimatorReporter::findWorstTargetForInstance(sta::Instance* inst,
     for (int i = expanded.startIndex(); i < expanded.size(); ++i) {
       const sta::Path* stage_path = expanded.path(i);
       sta::Pin* stage_pin = stage_path->pin(resizer_.staState());
-      if (std::find(output_pins.begin(), output_pins.end(), stage_pin)
-              != output_pins.end()
+      if (std::ranges::find(output_pins, stage_pin) != output_pins.end()
           && stage_path->prevArc(resizer_.staState()) != nullptr
           && stage_path->prevEdge(resizer_.staState()) != nullptr) {
         driver_pin = stage_pin;
@@ -796,7 +795,7 @@ DelayEstimatorReporter::buildDelayEstimatorProfile(
 
   // current_stages: per-stage snapshot of the pre-swap context.
   profile.current_stages.reserve(stages.size());
-  for (int stage_index = 0; stage_index < static_cast<int>(stages.size());
+  for (int stage_index = 0; std::cmp_less(stage_index, stages.size());
        ++stage_index) {
     profile.current_stages.push_back(buildEstimatedCurrentStageRow(
         expanded, stages[stage_index], stage_index, target_index));
@@ -804,7 +803,7 @@ DelayEstimatorReporter::buildDelayEstimatorProfile(
 
   // candidate_stages: pull per-stage compute directly from the trace.
   profile.candidate_stages.reserve(trace.size());
-  for (int stage_index = 0; stage_index < static_cast<int>(trace.size());
+  for (int stage_index = 0; std::cmp_less(stage_index, trace.size());
        ++stage_index) {
     const StageEvaluation& eval = trace[stage_index];
     profile.candidate_stages.push_back(
@@ -842,7 +841,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
   const int target_index = context->target_stage_index;
   sta::PathExpanded expanded(target.endpoint_path, resizer_.staState());
   fixed_stages.reserve(stages.size());
-  for (int stage_index = 0; stage_index < static_cast<int>(stages.size());
+  for (int stage_index = 0; std::cmp_less(stage_index, stages.size());
        ++stage_index) {
     const DelayStageState& stage = stages[stage_index];
     const sta::Path* driver_path = expanded.path(stage.path_index);

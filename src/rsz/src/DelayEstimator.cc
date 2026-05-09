@@ -1143,7 +1143,7 @@ ArcDelayState collectPathStages(const Resizer& resizer,
     fanin_stages.push_back(*stage);
     ++found_fanin_stages;
   }
-  std::reverse(fanin_stages.begin(), fanin_stages.end());
+  std::ranges::reverse(fanin_stages);
 
   context.path_stages = std::move(fanin_stages);
   context.target_stage_index = static_cast<int>(context.path_stages.size());
@@ -1225,7 +1225,7 @@ DelayEstimate estimateWindow(const ArcDelayState& context,
     trace->reserve(stages.size());
   }
 
-  for (int stage_index = 0; stage_index < static_cast<int>(stages.size());
+  for (int stage_index = 0; std::cmp_less(stage_index, stages.size());
        ++stage_index) {
     const DelayStageState& stage = stages[stage_index];
 

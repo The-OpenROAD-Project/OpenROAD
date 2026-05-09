@@ -55,7 +55,6 @@ struct PinInfo
 
   PinInfo()
       : pin_name("unknown"),
-        endpoint_name(""),
         gate_type("unknown"),
         load_delay(0.0),
         intrinsic_delay(0.0),

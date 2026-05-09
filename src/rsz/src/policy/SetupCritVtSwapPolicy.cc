@@ -140,7 +140,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     std::unordered_set<sta::Vertex*>& visited,
     std::unordered_set<sta::Instance*>& notSwappable)
 {
-  if (visited.find(endpoint) != visited.end()) {
+  if (visited.contains(endpoint)) {
     return;
   }
 
@@ -187,7 +187,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
         continue;
       }
 
-      if (visited.find(fanin_vertex) == visited.end()) {
+      if (!visited.contains(fanin_vertex)) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (sta::fuzzyLess(fanin_slack, config_.setup_slack_margin)) {
           queue.push(fanin_vertex);

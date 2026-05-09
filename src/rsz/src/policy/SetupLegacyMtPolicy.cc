@@ -270,7 +270,7 @@ bool SetupLegacyMtPolicy::estimateAndCommitSizeDownBatch(
     }
 
     accepted_batch = true;
-    accepted_move_type = *batch_accepted_type;
+    accepted_move_type = batch_accepted_type;
   }
 
   if (!accepted_batch) {
@@ -278,7 +278,7 @@ bool SetupLegacyMtPolicy::estimateAndCommitSizeDownBatch(
   }
 
   changed += repairProgressIncrement(*accepted_move_type, repairs_per_pass);
-  accepted_type = *accepted_move_type;
+  accepted_type = accepted_move_type;
   return true;
 }
 

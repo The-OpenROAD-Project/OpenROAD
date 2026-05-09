@@ -176,8 +176,8 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
     if (!endpoint_pass_counts.contains(endpoint_pin)) {
       endpoint_pass_counts[endpoint_pin] = 0;
     }
-    if (static_cast<int>(endpoint_pass_counts.size())
-        > setup_context_.max_end_repairs) {
+    if (std::cmp_greater(endpoint_pass_counts.size(),
+                         setup_context_.max_end_repairs)) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
