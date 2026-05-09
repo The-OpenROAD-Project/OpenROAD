@@ -1023,7 +1023,7 @@ class Gui
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
-  const std::set<HeatMapDataSource*>& getHeatMaps() { return heat_maps_; }
+  const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
   // returns the Gui singleton

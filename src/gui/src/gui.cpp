@@ -1032,6 +1032,12 @@ void Gui::syncHeatMapChips()
   }
 }
 
+const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
+{
+  syncHeatMapChips();
+  return heat_maps_;
+}
+
 HeatMapDataSource* Gui::getHeatMap(const std::string& name)
 {
   syncHeatMapChips();
