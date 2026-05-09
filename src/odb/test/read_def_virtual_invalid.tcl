@@ -8,7 +8,7 @@ if { $status != 1 } {
   exit 1
 }
 
-if { [string first "DEF parser returns an error" $msg] < 0 } {
+if { $msg != "ODB-0421" } {
   puts "fail: unexpected error: $msg"
   exit 1
 }

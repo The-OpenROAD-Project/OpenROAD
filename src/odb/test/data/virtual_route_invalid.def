@@ -7,8 +7,7 @@ DIEAREA ( 0 0 ) ( 20000 20000 ) ;
 
 NETS 1 ;
 - net1
-  + ROUTED metal1 VIRTUAL ( 2000 1000 )
-    ( 2000 2000 ) ;
+  + ROUTED metal1 M2_M1_via VIRTUAL ( 2000 1000 ) ;
 END NETS
 
 END DESIGN
