@@ -51,6 +51,7 @@ COMPULSORY_TESTS = [
     "core_grid_start_power_strap_ground",
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
+    "core_grid_swire_order",
     "core_grid_via_snap",
     "core_grid_with_M6_min_area",
     "core_grid_with_M7_pins",
@@ -144,6 +145,7 @@ ALL_TESTS = COMPULSORY_TESTS
 PY_TESTS = [
     "asap7_taper",
     "core_grid",
+    "core_grid_swire_order",
     "core_grid_with_rings",
     "core_grid_with_routing_obstructions",
     "existing",

@@ -769,17 +769,26 @@ void PdnGen::createSrouteWires(
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
   std::map<odb::dbNet*, odb::dbSWire*> net_map;
+  std::vector<odb::dbNet*> net_order;
+
+  auto add_net = [&net_map, &net_order](odb::dbNet* net) {
+    if (net_map.find(net) != net_map.end()) {
+      return;
+    }
+    net_map[net] = nullptr;
+    net_order.push_back(net);
+  };
 
   auto domains = getDomains();
   for (auto* domain : domains) {
     for (auto* net : domain->getNets()) {
-      net_map[net] = nullptr;
+      add_net(net);
     }
   }
 
-  for (auto& [net, swire] : net_map) {
+  for (auto* net : net_order) {
     net->setSpecial();
-    swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+    net_map[net] = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 
   // collect all the SWires from the block
@@ -793,7 +802,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   net_shapes_vec.clear();
 
   // Remove existing non-fixed bpins
-  for (auto& [net, swire] : net_map) {
+  for (auto* net : net_order) {
     for (auto* bterm : net->getBTerms()) {
       auto bpins = bterm->getBPins();
       std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
@@ -815,9 +824,31 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
-  // Cleanup floating shapes due to failed vias
-  for (const auto& [shape, db_shapes] : shape_map) {
+  // Cleanup floating shapes due to failed vias.
+  std::vector<Shape*> shape_order;
+  shape_order.reserve(shape_map.size());
+  for (const auto& shape_entry : shape_map) {
+    shape_order.push_back(shape_entry.first);
+  }
+  std::ranges::sort(shape_order, [](const Shape* lhs, const Shape* rhs) {
+    const int lhs_layer = lhs->getLayer()->getNumber();
+    const int rhs_layer = rhs->getLayer()->getNumber();
+    if (lhs_layer != rhs_layer) {
+      return lhs_layer < rhs_layer;
+    }
+
+    const int net_cmp
+        = lhs->getNet()->getName().compare(rhs->getNet()->getName());
+    if (net_cmp != 0) {
+      return net_cmp < 0;
+    }
+
+    return lhs->getRect() < rhs->getRect();
+  });
+
+  for (auto* shape : shape_order) {
     if (!shape->isLocked() && !shape->hasInternalConnections()) {
+      const auto& db_shapes = shape_map.at(shape);
       for (odb::dbBox* db_box : db_shapes) {
         if (db_box == nullptr) {
           continue;
@@ -832,7 +863,8 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   }
 
   // Remove empty swires
-  for (auto& [net, swire] : net_map) {
+  for (auto* net : net_order) {
+    auto* swire = net_map.at(net);
     if (swire->getWires().empty()) {
       odb::dbSWire::destroy(swire);
       logger_->warn(
