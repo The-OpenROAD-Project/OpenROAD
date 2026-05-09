@@ -175,6 +175,14 @@ bool Optimizer::run()
       = sta::parseTokens(token_list);
   const std::vector<std::string> phase_names
       = appendImplicitCritVtSwapForLegacyPhases(requested_phase_names);
+  if (phase_names.empty()) {
+    resizer_.logger()->error(
+        utl::RSZ,
+        223,
+        "No phase names specified. Valid phase names are: LEGACY, WNS, "
+        "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
+        "LAST_GASP, CRIT_VT_SWAP, REROUTE");
+  }
   const int phase_count = phase_names.size();
 
   // Phase loop - Run multiple policies sequentially.

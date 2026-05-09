@@ -9,6 +9,13 @@ set_wire_rc -signal -layer metal3
 set_wire_rc -clock -layer metal5
 estimate_parasitics -placement
 set status [catch {
+  repair_timing -setup -phases " "
+} error]
+if { $status == 0 } {
+  error "Expected repair_timing to reject empty phase list"
+}
+puts "Caught expected empty phase error: $error"
+set status [catch {
   repair_timing -setup -phases "WNS_PATH BAD_PHASE LAST_GASP"
 } error]
 if { $status == 0 } {
