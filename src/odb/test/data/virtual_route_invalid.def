@@ -1,0 +1,14 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN virtual_route_invalid ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 20000 20000 ) ;
+
+NETS 1 ;
+- net1
+  + ROUTED metal1 VIRTUAL ( 2000 1000 )
+    ( 2000 2000 ) ;
+END NETS
+
+END DESIGN

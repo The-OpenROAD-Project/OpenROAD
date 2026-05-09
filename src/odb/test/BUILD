@@ -218,6 +218,7 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -305,6 +306,7 @@ filegroup(
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",
         "data/virtual_route.def",
+        "data/virtual_route_invalid.def",
         "dump_netlists.tcl",
         "dump_netlists_withfill.tcl",
         "fake_macros.def",
