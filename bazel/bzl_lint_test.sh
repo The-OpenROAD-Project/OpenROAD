@@ -5,9 +5,6 @@
 # Lint all Bazel files using buildifier (check-only, with lint warnings).
 set -euo pipefail
 TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LIST_SOURCES="$SCRIPT_DIR/list_sources.sh"
-[ -x "$LIST_SOURCES" ] || LIST_SOURCES="$SCRIPT_DIR/bazel/list_sources.sh"
 # MODULE.bazel must be in the sh_test `data` deps so it appears as a
 # runfiles symlink pointing at the real workspace. `readlink` (no -f,
 # for macOS portability) resolves the absolute path Bazel wrote.
@@ -15,5 +12,5 @@ LIST_SOURCES="$SCRIPT_DIR/list_sources.sh"
 WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
 # Explicit -mode=check overrides the repo-root .buildifier.json default.
-"$LIST_SOURCES" -z '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' \
+git ls-files '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' -z \
     | xargs -0 "$TOOL" -mode=check -lint=warn

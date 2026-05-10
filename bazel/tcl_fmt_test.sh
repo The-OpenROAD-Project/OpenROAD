@@ -5,9 +5,6 @@
 # Check that all TCL files are properly formatted.
 set -euo pipefail
 TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LIST_SOURCES="$SCRIPT_DIR/list_sources.sh"
-[ -x "$LIST_SOURCES" ] || LIST_SOURCES="$SCRIPT_DIR/bazel/list_sources.sh"
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"
-"$LIST_SOURCES" -z '*.tcl' '*.sdc' '*.upf' | xargs -0 "$TOOL" --check
+git ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "$TOOL" --check

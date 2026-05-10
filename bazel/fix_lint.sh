@@ -16,11 +16,7 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 "$5" "$6"
 "$7" "$8" || rc=$?
 
-if command -v git >/dev/null 2>&1; then
-    git -C "$BUILD_WORKSPACE_DIRECTORY" status
-else
-    echo "git not found; skipping workspace status report." >&2
-fi
+git -C "$BUILD_WORKSPACE_DIRECTORY" status
 
 if [ "${rc:-0}" -ne 0 ]; then
     echo "Error: lint violations remain that require manual fixes." >&2
