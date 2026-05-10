@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
@@ -478,6 +479,14 @@ sh_test(
     srcs = ["//etc:find_dup_ids.sh"],
     data = ["//etc:find_messages.py"],
     tags = ["local"],
+)
+
+# Make sure the Qt GUI variant keeps building. :openroad is exercised by
+# downstream rule libraries that pull it as a tool; :openroad-qt has no
+# such consumer in CI, so a build_test pins its compilability.
+build_test(
+    name = "openroad_qt_build_test",
+    targets = [":openroad-qt"],
 )
 
 # ---------------------------------------------------------------------------
