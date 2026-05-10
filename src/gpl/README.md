@@ -95,6 +95,7 @@ global_placement
     [-timing_driven_net_reweight_overflow]
     [-timing_driven_net_weight_max]
     [-timing_driven_nets_percentage]
+    [-timing_driven_negative_slack_area_tradeoff]
     [-keep_resize_below_overflow]
     [-disable_revert_if_diverge]
     [-disable_pin_density_adjust]
@@ -147,6 +148,7 @@ global_placement
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `5`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
+| `-timing_driven_negative_slack_area_tradeoff` | How much worse area-optimized buffering solutions are allowed to be. The default value is `0.05`. Valid values are floats `[0, 1]`. |
 
 ### Cluster Flops
 

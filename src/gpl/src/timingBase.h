@@ -23,12 +23,21 @@ namespace gpl {
 
 class NesterovBaseCommon;
 class GNet;
+struct PlaceOptions;
+
+struct TimingBaseVars
+{
+  TimingBaseVars(const PlaceOptions& options);
+
+  const float negativeSlackAreaTradeoff;
+};
 
 class TimingBase
 {
  public:
-  TimingBase();
-  TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+  // TimingBase();
+  TimingBase(TimingBaseVars tbVars,
+             std::shared_ptr<NesterovBaseCommon> nbc,
              grt::GlobalRouter* grt,
              rsz::Resizer* rs,
              utl::Logger* log);
@@ -49,6 +58,7 @@ class TimingBase
   bool executeTimingDriven(bool run_journal_restore);
 
  private:
+  TimingBaseVars tbVars_;
   grt::GlobalRouter* grt_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   utl::Logger* log_ = nullptr;

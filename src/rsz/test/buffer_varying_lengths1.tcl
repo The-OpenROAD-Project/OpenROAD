@@ -97,7 +97,8 @@ estimate_parasitics -placement
 
 # first, repair design to normalize slews
 repair_design
-# second, trigger placement buffering
+# second, trigger placement buffering (call twice to reach fixedpoint)
+rsz::fully_rebuffer NULL
 rsz::fully_rebuffer NULL
 
 # characterize solution
@@ -107,6 +108,8 @@ summarize_solution
 
 # now relax timing
 set_input_delay -clock clk 0.0 [all_inputs]
+remove_buffers
+repair_design
 # ripup and rebuffer
 rsz::fully_rebuffer NULL
 

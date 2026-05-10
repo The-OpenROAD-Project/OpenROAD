@@ -486,10 +486,10 @@ resize_slack_preamble()
 }
 
 void
-find_resize_slacks()
+find_resize_slacks(float ns_area_tradeoff)
 {
   Resizer *resizer = getResizer();
-  resizer->findResizeSlacks(true);
+  resizer->findResizeSlacks(true, ns_area_tradeoff);
 }
 
 TmpNetSeq *
@@ -653,12 +653,12 @@ void swap_arith_modules_cmd(int path_count,
 
 // Test stub
 void
-fully_rebuffer(Pin *pin)
+fully_rebuffer_cmd(Pin *pin, float ns_area_tradeoff)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resizeSlackPreamble();
-  resizer->fullyRebuffer(pin);
+  resizer->fullyRebuffer(pin, ns_area_tradeoff);
 }
 
 Instance*

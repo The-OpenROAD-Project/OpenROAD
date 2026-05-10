@@ -269,7 +269,8 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   }
 
   if (!tb_) {
-    tb_ = std::make_shared<TimingBase>(nbc_, fr_, rs_, log_);
+    const TimingBaseVars tbVars(options);
+    tb_ = std::make_shared<TimingBase>(tbVars, nbc_, fr_, rs_, log_);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
   }
@@ -393,6 +394,11 @@ void PlaceOptions::validate(utl::Logger* logger)
   val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
   val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
   val.check_range("Target density", density, 0.0f, 1.0f, 328);
+  val.check_range("Timing Driven Negative Slack Area Tradeoff",
+                  timingNegativeSlackAreaTradeoff,
+                  0.0f,
+                  1.0f,
+                  329);
 }
 
 void PlaceOptions::skipIo()
