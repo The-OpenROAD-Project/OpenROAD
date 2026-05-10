@@ -199,7 +199,6 @@ void Pusher::pushMacroClusterToCoreBoundaries(
                macro_cluster->getName(),
                toString(boundary));
 
-
     if (overlapsWithHardMacro(cluster_box, macro_cluster->getId())
         || overlapsWithIOBlockage(cluster_box)) {
       // Move back to original position.
