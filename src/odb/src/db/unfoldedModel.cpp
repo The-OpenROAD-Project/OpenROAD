@@ -3,6 +3,8 @@
 
 #include "odb/unfoldedModel.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <map>
@@ -56,15 +58,41 @@ UnfoldedRegionSide mirrorSide(UnfoldedRegionSide side)
 
 }  // namespace
 
+Cuboid UnfoldedChip::getCuboid() const
+{
+  Cuboid cuboid = chip_inst_path.back()->getMasterChip()->getCuboid();
+  transform.apply(cuboid);
+  return cuboid;
+}
+
+std::string UnfoldedChip::getFullName() const
+{
+  return getFullPathName(chip_inst_path);
+}
+
+Cuboid UnfoldedRegion::getCuboid() const
+{
+  Cuboid cuboid = region_inst->getChipRegion()->getCuboid();
+  parent_chip->transform.apply(cuboid);
+  return cuboid;
+}
+
 int UnfoldedRegion::getSurfaceZ() const
 {
   if (isTop()) {
-    return cuboid.zMax();
+    return getCuboid().zMax();
   }
   if (isBottom()) {
-    return cuboid.zMin();
+    return getCuboid().zMin();
   }
-  return cuboid.zCenter();
+  return getCuboid().zCenter();
+}
+
+Point3D UnfoldedBump::getGlobalPosition() const
+{
+  Point global_xy = bump_inst->getChipBump()->getInst()->getLocation();
+  parent_region->parent_chip->transform.apply(global_xy);
+  return Point3D(global_xy.x(), global_xy.y(), parent_region->getSurfaceZ());
 }
 
 UnfoldedRegion* UnfoldedChip::findUnfoldedRegion(dbChipRegionInst* inst)
@@ -134,27 +162,23 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
     return nullptr;
   }
 
-  UnfoldedChip uf_chip;
-  uf_chip.name = getFullPathName(path);
-  uf_chip.chip_inst_path = path;
-  uf_chip.transform = total;
-  uf_chip.cuboid = master->getCuboid();
-
-  // Transform cuboid to global space
-  uf_chip.transform.apply(uf_chip.cuboid);
-  unfoldRegions(uf_chip, inst);
+  std::unique_ptr<UnfoldedChip> uf_chip = std::make_unique<UnfoldedChip>();
+  auto uf_chip_ptr = uf_chip.get();
+  uf_chip->chip_inst_path = path;
+  uf_chip->transform = total;
 
   unfolded_chips_.push_back(std::move(uf_chip));
-  UnfoldedChip* created_chip = &unfolded_chips_.back();
-  registerUnfoldedChip(created_chip);
+  unfoldRegions(uf_chip_ptr, inst);
+
+  registerUnfoldedChip(uf_chip_ptr);
 
   path.pop_back();
-  return created_chip;
+  return uf_chip_ptr;
 }
 
 void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
 {
-  chip_map_[chip->name] = chip;
+  chip_map_[chip->getFullName()] = chip;
   for (auto& region : chip->regions) {
     region.parent_chip = chip;
     chip->region_map[region.region_inst] = &region;
@@ -165,7 +189,7 @@ void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
   }
 }
 
-void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
+void UnfoldedModel::unfoldRegions(UnfoldedChip* uf_chip, dbChipInst* inst)
 {
   auto regions = inst->getRegions();
 
@@ -188,34 +212,30 @@ void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
         break;
     }
 
-    if (uf_chip.transform.isMirrorZ()) {
+    if (uf_chip->transform.isMirrorZ()) {
       side = mirrorSide(side);
     }
 
     UnfoldedRegion uf_region;
     uf_region.region_inst = region_inst;
     uf_region.effective_side = side;
-    uf_region.cuboid = region->getCuboid();
+    uf_region.parent_chip = uf_chip;
 
-    uf_chip.transform.apply(uf_region.cuboid);
-    uf_chip.regions.push_back(std::move(uf_region));
-    unfoldBumps(uf_chip.regions.back(), uf_chip.transform);
+    uf_chip->regions.push_back(std::move(uf_region));
+    unfoldBumps(uf_chip->regions.back(), uf_chip->transform);
   }
 }
 
 void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
                                 const dbTransform& transform)
 {
-  const int z = uf_region.getSurfaceZ();
   for (auto* bump_inst : uf_region.region_inst->getChipBumpInsts()) {
     dbChipBump* bump = bump_inst->getChipBump();
-    if (auto* inst = bump->getInst()) {
-      Point global_xy = inst->getLocation();
-      transform.apply(global_xy);
-      uf_region.bumps.push_back(
-          {.bump_inst = bump_inst,
-           .parent_region = nullptr,  // set later in registerUnfoldedChip
-           .global_position = Point3D(global_xy.x(), global_xy.y(), z)});
+    if (bump->getInst()) {
+      uf_region.bumps.push_back({
+          .bump_inst = bump_inst,
+          .parent_region = nullptr  // set later in registerUnfoldedChip
+      });
     }
   }
 }

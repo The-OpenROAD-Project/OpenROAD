@@ -69,14 +69,15 @@ bool isValid(const UnfoldedConnection& conn)
   if (!conn.top_region || !conn.bottom_region) {
     return true;
   }
-  if (!conn.top_region->cuboid.xyIntersects(conn.bottom_region->cuboid)) {
+  if (!conn.top_region->getCuboid().xyIntersects(
+          conn.bottom_region->getCuboid())) {
     return false;
   }
   if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
-    return std::max(conn.top_region->cuboid.zMin(),
-                    conn.bottom_region->cuboid.zMin())
-           <= std::min(conn.top_region->cuboid.zMax(),
-                       conn.bottom_region->cuboid.zMax());
+    return std::max(conn.top_region->getCuboid().zMin(),
+                    conn.bottom_region->getCuboid().zMin())
+           <= std::min(conn.top_region->getCuboid().zMax(),
+                       conn.bottom_region->getCuboid().zMax());
   }
 
   auto surfaces = getMatingSurfaces(conn);
@@ -121,7 +122,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
 
   std::unordered_map<const UnfoldedChip*, size_t> chip_map;
   for (size_t i = 0; i < chips.size(); ++i) {
-    chip_map[&chips[i]] = i;
+    chip_map[chips[i].get()] = i;
   }
 
   for (const auto& conn : model->getConnections()) {
@@ -149,7 +150,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
 
   std::vector<std::vector<const UnfoldedChip*>> groups(chips.size() + 1);
   for (size_t i = 0; i < chips.size(); ++i) {
-    groups[uf.find(i)].push_back(&chips[i]);
+    groups[uf.find(i)].push_back(chips[i].get());
   }
   auto ground_leader = uf.find(ground_node);
   const bool ground_empty = groups[ground_leader].empty();
@@ -176,10 +177,11 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     for (const auto& group : groups | std::views::reverse) {
       auto* marker = dbMarker::create(cat);
       for (auto* chip : group) {
-        marker->addShape(chip->cuboid);
+        marker->addShape(chip->getCuboid());
         marker->addSource(chip->chip_inst_path.back());
       }
-      marker->setComment("Isolated chip set starting with " + group[0]->name);
+      marker->setComment("Isolated chip set starting with "
+                         + group[0]->getFullName());
     }
   }
 }
@@ -191,18 +193,18 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
   std::vector<int> sorted(chips.size());
   std::iota(sorted.begin(), sorted.end(), 0);
   std::ranges::sort(sorted, [&](int a, int b) {
-    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+    return chips[a]->getCuboid().xMin() < chips[b]->getCuboid().xMin();
   });
 
   std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
   for (size_t i = 0; i < sorted.size(); ++i) {
-    auto* c1 = &chips[sorted[i]];
+    auto* c1 = chips[sorted[i]].get();
     for (size_t j = i + 1; j < sorted.size(); ++j) {
-      auto* c2 = &chips[sorted[j]];
-      if (c2->cuboid.xMin() >= c1->cuboid.xMax()) {
+      auto* c2 = chips[sorted[j]].get();
+      if (c2->getCuboid().xMin() >= c1->getCuboid().xMax()) {
         break;
       }
-      if (c1->cuboid.overlaps(c2->cuboid)) {
+      if (c1->getCuboid().overlaps(c2->getCuboid())) {
         overlaps.emplace_back(c1, c2);
       }
     }
@@ -213,12 +215,13 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
     logger_->warn(utl::ODB, 156, "Found {} overlapping chips", overlaps.size());
     for (const auto& [inst1, inst2] : overlaps) {
       auto* marker = dbMarker::create(cat);
-      auto intersection = inst1->cuboid.intersect(inst2->cuboid);
+      auto intersection = inst1->getCuboid().intersect(inst2->getCuboid());
       marker->addShape(intersection);
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
-      marker->setComment(
-          fmt::format("Chips {} and {} overlap", inst1->name, inst2->name));
+      marker->setComment(fmt::format("Chips {} and {} overlap",
+                                     inst1->getFullName(),
+                                     inst2->getFullName()));
     }
   }
 }
@@ -228,7 +231,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 {
   dbMarkerCategory* cat = nullptr;
   for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
+    for (const auto& region : chip->regions) {
       if (region.isInternalExt() && !region.isUsed) {
         if (!cat) {
           cat = dbMarkerCategory::createOrReplace(top_cat,
@@ -240,7 +243,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
                       region.region_inst->getChipRegion()->getName());
         auto* marker = dbMarker::create(cat);
         marker->addSource(region.region_inst);
-        marker->addShape(region.cuboid);
+        marker->addShape(region.getCuboid());
         marker->setComment(
             fmt::format("Unused internal_ext region: {}",
                         region.region_inst->getChipRegion()->getName()));
@@ -254,12 +257,10 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
 {
   auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
     marker->addSource(r->region_inst);
-    marker->addShape(Rect(r->cuboid.xMin(),
-                          r->cuboid.yMin(),
-                          r->cuboid.xMax(),
-                          r->cuboid.yMax()));
+    const Cuboid& cuboid = r->getCuboid();
+    marker->addShape(cuboid.getEnclosingRect());
     return fmt::format("{}/{} (faces {})",
-                       r->parent_chip->name,
+                       r->parent_chip->getFullName(),
                        r->region_inst->getChipRegion()->getName(),
                        sideToString(r->effective_side));
   };
@@ -292,10 +293,10 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
   for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
+    for (const auto& region : chip->regions) {
       for (const auto& bump : region.bumps) {
-        const auto& p = bump.global_position;
-        if (!region.cuboid.getEnclosingRect().intersects({p.x(), p.y()})) {
+        const Point3D p = bump.getGlobalPosition();
+        if (!region.getCuboid().getEnclosingRect().intersects({p.x(), p.y()})) {
           violation_count++;
           if (!cat) {
             cat = dbMarkerCategory::createOrReplace(top_cat, "Bump Alignment");
@@ -355,12 +356,14 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
 
     std::map<Point, const UnfoldedBump*> bot_bumps;
     for (const auto& bump : conn.bottom_region->bumps) {
-      Point p(bump.global_position.x(), bump.global_position.y());
+      const Point3D pos = bump.getGlobalPosition();
+      Point p(pos.x(), pos.y());
       bot_bumps[p] = &bump;
     }
 
     for (const auto& top_bump : conn.top_region->bumps) {
-      Point p(top_bump.global_position.x(), top_bump.global_position.y());
+      const Point3D top_pos = top_bump.getGlobalPosition();
+      Point p(top_pos.x(), top_pos.y());
       auto it = bot_bumps.find(p);
       if (it != bot_bumps.end()) {
         const UnfoldedBump* bot_bump = it->second;
@@ -382,8 +385,8 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
           auto* marker = dbMarker::create(cat);
           marker->addSource(top_bump.bump_inst);
           marker->addSource(bot_bump->bump_inst);
-          marker->addShape(conn.top_region->cuboid.intersect(
-              conn.bottom_region->cuboid));  // Mark overlap region
+          marker->addShape(conn.top_region->getCuboid().intersect(
+              conn.bottom_region->getCuboid()));  // Mark overlap region
 
           std::string msg = fmt::format(
               "Bumps at ({}, {}) align physically but logical connectivity "
