@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
@@ -45,29 +44,6 @@ exports_files([
     "src/Exception.i",
     "src/options.i",
 ])
-
-string_flag(
-    name = "platform",
-    build_setting_default = "cli",
-    values = [
-        "cli",
-        "gui",
-    ],
-)
-
-config_setting(
-    name = "platform_cli",
-    flag_values = {
-        ":platform": "cli",
-    },
-)
-
-config_setting(
-    name = "platform_gui",
-    flag_values = {
-        ":platform": "gui",
-    },
-)
 
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
@@ -130,12 +106,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/web:ui",
     "@abc",
     ":ord",
-] + select(
-    {
-        ":platform_cli": ["//src/gui"],
-        ":platform_gui": ["//src/gui:gui_qt"],
-    },
-)
+]
 
 # Flags applied to top-level OpenROAD targets only. Flags that apply
 # globally to every cc_* target (-Wall, -Wextra, -Wno-sign-compare,
@@ -204,37 +175,86 @@ cc_binary(
     ],
 )
 
-GUI_BUILD_FLAGS = select(
-    {
-        ":platform_cli": ["BUILD_GUI=false"],
-        ":platform_gui": ["BUILD_GUI=true"],
-    },
-)
-
-cc_library(
-    name = "openroad_lib",
+# Qt GUI variant. Build explicitly when the interactive GUI is wanted:
+#   bazelisk build //:openroad-qt
+# `:openroad` (CLI) is what build-time tool consumers (rule libraries
+# pulling OpenROAD via cfg = "exec") should depend on.
+cc_binary(
+    name = "openroad-qt",
     srcs = [
-        "src/Design.cc",
-        "src/OpenRoad.cc",
-        "src/Tech.cc",
-        "src/Timing.cc",
-        ":openroad_swig",
-        ":openroad_tcl",
+        "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
-    defines = OPENROAD_DEFINES + GUI_BUILD_FLAGS,
+    features = ["-use_header_modules"],
+    malloc = select({
+        "@platforms//os:linux": "@tcmalloc//tcmalloc",
+        "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":openroad_lib_qt",
+        ":openroad_version",
+        ":opt_notification",
+        ":ord",
+        ":tcl_readline_setup",
+        "//bazel:tcl_library_init",
+        "//src/cut",
+        "//src/gui:gui_qt",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "//src/web",
+        "@boost.stacktrace",
+        "@rules_cc//cc/runfiles",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+OPENROAD_LIB_SRCS = [
+    "src/Design.cc",
+    "src/OpenRoad.cc",
+    "src/Tech.cc",
+    "src/Timing.cc",
+    ":openroad_swig",
+    ":openroad_tcl",
+]
+
+OPENROAD_LIB_COMMON_DEPS = [
+    "//src/sta:opensta_lib",
+    "@abseil-cpp//absl/base:core_headers",
+    "@abseil-cpp//absl/synchronization",
+    "@boost.stacktrace",
+    "@tcl_lang//:tcl",
+] + OPENROAD_LIBRARY_DEPS
+
+# CLI variant: the default. What downstream rule libraries pull as a
+# build-time tool, and what `bazelisk build //:openroad` produces.
+cc_library(
+    name = "openroad_lib",
+    srcs = OPENROAD_LIB_SRCS,
+    copts = OPENROAD_COPTS,
+    defines = OPENROAD_DEFINES + ["BUILD_GUI=false"],
     features = ["-use_header_modules"],
     includes = [
         "include",
     ],
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//src/sta:opensta_lib",
-        "@abseil-cpp//absl/base:core_headers",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.stacktrace",
-        "@tcl_lang//:tcl",
-    ] + OPENROAD_LIBRARY_DEPS,
+    deps = OPENROAD_LIB_COMMON_DEPS + ["//src/gui"],
+)
+
+# Qt variant: same sources, linked against the Qt GUI implementation.
+# Used only by :openroad-qt. Compiled separately (different `BUILD_GUI`
+# define + different gui dep) when that target is requested.
+cc_library(
+    name = "openroad_lib_qt",
+    srcs = OPENROAD_LIB_SRCS,
+    copts = OPENROAD_COPTS,
+    defines = OPENROAD_DEFINES + ["BUILD_GUI=true"],
+    features = ["-use_header_modules"],
+    includes = [
+        "include",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = OPENROAD_LIB_COMMON_DEPS + ["//src/gui:gui_qt"],
 )
 
 cc_library(
