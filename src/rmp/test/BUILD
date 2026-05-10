@@ -156,23 +156,18 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb",
-        "//src/rmp",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -187,23 +182,18 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb",
-        "//src/rmp",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 
