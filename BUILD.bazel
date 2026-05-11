@@ -152,6 +152,7 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
@@ -186,6 +187,7 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
