@@ -260,10 +260,13 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-verbose]}
 
 proc repair_timing { args } {
+  # `-phases` is the public spelling listed in -help / define_cmd_args.
+  # `-policy` and `-policies` are accepted-but-undocumented aliases for the
+  # same phase sequence; only one of the three may be supplied per call.
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases \
+            -phases -policy -policies \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -297,10 +300,20 @@ proc repair_timing { args } {
     set sequence ""
   }
 
-  if { [info exists keys(-phases)] } {
-    set phases $keys(-phases)
-  } else {
-    set phases ""
+  # Resolve -phases / -policy / -policies aliases to a single `phases` value.
+  # All three carry identical semantics; rejecting more than one prevents
+  # silent precedence surprises if the user mixes spellings.
+  set phases ""
+  set phase_alias_count 0
+  foreach alias_key {-phases -policy -policies} {
+    if { [info exists keys($alias_key)] } {
+      incr phase_alias_count
+      set phases $keys($alias_key)
+    }
+  }
+  if { $phase_alias_count > 1 } {
+    utl::error RSZ 222 \
+      "specify at most one of -phases / -policy / -policies"
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -784,6 +797,59 @@ proc report_buffers { args } {
   sta::parse_key_args "report_buffers" args keys {} flags {-filtered}
   set filtered [info exists flags(-filtered)]
   rsz::report_buffers_cmd $filtered
+}
+
+sta::define_cmd_args "report_delay_estimator_accuracy" {\
+  -inst instance \
+  -lib_cell lib_cell \
+  -estimator estimator \
+  [-delay_levels level] }
+
+proc report_delay_estimator_accuracy { args } {
+  sta::parse_key_args "report_delay_estimator_accuracy" args \
+    keys {-inst -lib_cell -estimator -delay_levels} flags {}
+  sta::check_argc_eq0 "report_delay_estimator_accuracy" $args
+
+  foreach required_key {-inst -lib_cell -estimator} {
+    if { ![info exists keys($required_key)] } {
+      utl::error RSZ 3203 "$required_key is required."
+    }
+  }
+
+  set inst [sta::get_instance_error "-inst" $keys(-inst)]
+  set lib_cells [sta::get_lib_cells_arg \
+    "report_delay_estimator_accuracy" $keys(-lib_cell) sta::sta_warn]
+  if { [llength $lib_cells] != 1 } {
+    utl::error RSZ 3204 "-lib_cell must resolve to exactly one liberty cell."
+  }
+  set lib_cell [lindex $lib_cells 0]
+
+  # Estimator name validation is delegated to C++ so that the canonical list
+  # lives in DelayEstimatorReporter::knownEstimatorNames only.
+  set estimator $keys(-estimator)
+  if { ![rsz::is_valid_accuracy_estimator_cmd $estimator] } {
+    utl::error RSZ 3205 \
+      "-estimator must be one of: [rsz::accuracy_estimator_names_cmd]."
+  }
+
+  set delay_levels 0
+  if { [info exists keys(-delay_levels)] } {
+    if { ![string is integer -strict $keys(-delay_levels)] } {
+      utl::error RSZ 3206 "-delay_levels must be an integer."
+    }
+    set delay_levels $keys(-delay_levels)
+    if { $delay_levels < 0 || $delay_levels > 2 } {
+      utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
+    }
+    if { $estimator eq "legacy" } {
+      utl::error RSZ 3208 \
+        "-delay_levels is only valid for non-legacy estimators."
+    }
+  }
+
+  est::check_parasitics
+  rsz::report_delay_estimator_accuracy_cmd \
+    $inst $lib_cell $estimator $delay_levels
 }
 
 sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \
