@@ -757,7 +757,19 @@ int CUGR::totalOverflow()
 
 void CUGR::saveCongestion()
 {
-  if (!grid_graph_ || !design_ || totalOverflow() == 0) {
+  if (!grid_graph_ || !design_) {
+    return;
+  }
+
+  // Always start from a fresh "Global route" tree so that stale markers
+  // from a previous routing pass don't linger in the GUI / .rpt when the
+  // current pass has no overflow.
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbMarkerCategory* tool_category
+      = odb::dbMarkerCategory::createOrReplace(block, "Global route");
+  tool_category->setSource("GRT");
+
+  if (totalOverflow() == 0) {
     return;
   }
 
@@ -840,10 +852,6 @@ void CUGR::saveCongestion()
         });
   }
 
-  odb::dbBlock* block = db_->getChip()->getBlock();
-  odb::dbMarkerCategory* tool_category
-      = odb::dbMarkerCategory::createOrReplace(block, "Global route");
-  tool_category->setSource("GRT");
   odb::dbMarkerCategory* h_subcat = nullptr;
   odb::dbMarkerCategory* v_subcat = nullptr;
 
