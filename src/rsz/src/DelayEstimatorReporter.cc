@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -30,8 +31,10 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"

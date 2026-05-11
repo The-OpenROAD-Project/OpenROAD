@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "RepairSetupContext.hh"
 #include "SetupLegacyBase.hh"
 
 namespace rsz {

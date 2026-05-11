@@ -8,6 +8,7 @@
 #include "DelayEstimator.hh"
 #include "MoveCandidate.hh"
 #include "OptimizerTypes.hh"
+#include "rsz/Resizer.hh"
 #include "sta/NetworkClass.hh"
 
 namespace sta {
