@@ -43,7 +43,8 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        # TODO Don't export main in @abc
+        # TODO Workaround for a bug where `main` is taken from abc leading to false positives
+        # Remove when https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/abc/0.64-yosyshq.bcr.1/overlay/BUILD.bazel will be synchronized with https://github.com/The-OpenROAD-Project/abc/blob/master/BUILD
         # buildifier: leave-alone
         "@abc",
     ],
@@ -85,7 +86,8 @@ cc_test(
         "//third-party:mockturtle",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        # TODO Don't export main in @abc
+        # TODO Workaround for a bug where `main` is taken from abc leading to false positives
+        # Remove when https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/abc/0.64-yosyshq.bcr.1/overlay/BUILD.bazel will be synchronized with https://github.com/The-OpenROAD-Project/abc/blob/master/BUILD
         # buildifier: leave-alone
         "@abc",
     ],
@@ -130,7 +132,8 @@ cc_test(
         "//third-party:mockturtle",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        # TODO Don't export main in @abc
+        # TODO Workaround for a bug where `main` is taken from abc leading to false positives
+        # Remove when https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/abc/0.64-yosyshq.bcr.1/overlay/BUILD.bazel will be synchronized with https://github.com/The-OpenROAD-Project/abc/blob/master/BUILD
         # buildifier: leave-alone
         "@abc",
     ],
