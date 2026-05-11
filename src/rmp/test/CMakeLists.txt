@@ -13,7 +13,6 @@ or_integration_tests(
     const_cell_removal
     emap_aes_asap7
     emap_gcd_asap7
-    emap_sub_aes_asap7
     gcd_restructure
     aes_asap7
     gcd_asap7

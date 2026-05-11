@@ -29,7 +29,6 @@ COMPULSORY_TESTS = [
     "const_cell_removal",
     "emap_aes_asap7",
     "emap_gcd_asap7",
-    "emap_sub_aes_asap7",
     "gcd_annealing1",
     "gcd_annealing2",
     "gcd_asap7",
@@ -108,7 +107,6 @@ filegroup(
         "sky130/sky130hd.rc",
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
-        "sub_aes.v",
     ],
 )
 

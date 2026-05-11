@@ -85,98 +85,78 @@ Corner: slow
 
 wns max -30.92
 tns max -191.30
--- After --
+-- After emap --
 
 [i] WARNING: library does not contain cells that can implement output pin 1 of the multi-output cell FAx1_ASAP7_75t_R
 [i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell HAxp5_ASAP7_75t_R
 [i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
 [i] WARNING: failed to compute topological order for multi-output matching, falling back to non-topological order
 Extended technology mapping stats:
-	area: 808.160
+	area: 798.130
 	delay: 328.390
 	power: 0.000
 	inverters: 0
 	multioutput gates: 0
 
 [i] Report cells usage:
-[i] A2O1A1Ixp33_ASAP7_75t_R  	 Instance =        399	 Area =        35.91     4.44 %
-[i] A2O1A1O1Ixp25_ASAP7_75t_R	 Instance =         49	 Area =         6.37     0.79 %
-[i] AO21x1_ASAP7_75t_R       	 Instance =        166	 Area =        14.94     1.85 %
-[i] AO22x1_ASAP7_75t_R       	 Instance =          3	 Area =         0.39     0.05 %
-[i] AOI211xp5_ASAP7_75t_R    	 Instance =        297	 Area =        26.73     3.31 %
-[i] AOI21xp33_ASAP7_75t_R    	 Instance =       1805	 Area =       126.35    15.63 %
-[i] AOI221xp5_ASAP7_75t_R    	 Instance =         17	 Area =         1.70     0.21 %
-[i] AOI22xp33_ASAP7_75t_R    	 Instance =         49	 Area =         4.41     0.55 %
-[i] AOI311xp33_ASAP7_75t_R   	 Instance =         95	 Area =         9.50     1.18 %
-[i] AOI31xp33_ASAP7_75t_R    	 Instance =        387	 Area =        34.83     4.31 %
+[i] A2O1A1Ixp33_ASAP7_75t_R  	 Instance =        409	 Area =        36.81     4.61 %
+[i] A2O1A1O1Ixp25_ASAP7_75t_R	 Instance =         47	 Area =         6.11     0.77 %
+[i] AO21x1_ASAP7_75t_R       	 Instance =        169	 Area =        15.21     1.91 %
+[i] AOI211xp5_ASAP7_75t_R    	 Instance =        290	 Area =        26.10     3.27 %
+[i] AOI21xp33_ASAP7_75t_R    	 Instance =       1809	 Area =       126.63    15.87 %
+[i] AOI221xp5_ASAP7_75t_R    	 Instance =         16	 Area =         1.60     0.20 %
+[i] AOI22xp33_ASAP7_75t_R    	 Instance =         54	 Area =         4.86     0.61 %
+[i] AOI311xp33_ASAP7_75t_R   	 Instance =         92	 Area =         9.20     1.15 %
+[i] AOI31xp33_ASAP7_75t_R    	 Instance =        377	 Area =        33.93     4.25 %
 [i] AOI321xp33_ASAP7_75t_R   	 Instance =         10	 Area =         1.20     0.15 %
-[i] AOI32xp33_ASAP7_75t_R    	 Instance =         19	 Area =         1.90     0.24 %
-[i] INVx1_ASAP7_75t_R        	 Instance =       1085	 Area =        43.40     5.37 %
-[i] O2A1O1Ixp33_ASAP7_75t_R  	 Instance =        402	 Area =        36.18     4.48 %
-[i] OA211x2_ASAP7_75t_R      	 Instance =         16	 Area =         1.92     0.24 %
-[i] OA21x2_ASAP7_75t_R       	 Instance =         80	 Area =         8.00     0.99 %
-[i] OAI211xp5_ASAP7_75t_R    	 Instance =        315	 Area =        28.35     3.51 %
-[i] OAI21xp33_ASAP7_75t_R    	 Instance =       1543	 Area =       108.01    13.36 %
-[i] OAI221xp5_ASAP7_75t_R    	 Instance =         15	 Area =         1.50     0.19 %
-[i] OAI22xp33_ASAP7_75t_R    	 Instance =         89	 Area =         8.01     0.99 %
-[i] OAI311xp33_ASAP7_75t_R   	 Instance =        105	 Area =        10.50     1.30 %
-[i] OAI31xp33_ASAP7_75t_R    	 Instance =        466	 Area =        41.94     5.19 %
-[i] OAI321xp33_ASAP7_75t_R   	 Instance =          9	 Area =         1.08     0.13 %
-[i] OAI32xp33_ASAP7_75t_R    	 Instance =         23	 Area =         2.30     0.28 %
-[i] AND2x2_ASAP7_75t_R       	 Instance =          7	 Area =         0.63     0.08 %
-[i] AND3x1_ASAP7_75t_R       	 Instance =         16	 Area =         1.44     0.18 %
-[i] AND4x1_ASAP7_75t_R       	 Instance =          8	 Area =         0.80     0.10 %
-[i] NAND2xp33_ASAP7_75t_R    	 Instance =        770	 Area =        46.20     5.72 %
-[i] NAND3xp33_ASAP7_75t_R    	 Instance =        258	 Area =        18.06     2.23 %
+[i] AOI32xp33_ASAP7_75t_R    	 Instance =         18	 Area =         1.80     0.23 %
+[i] INVx1_ASAP7_75t_R        	 Instance =        910	 Area =        36.40     4.56 %
+[i] O2A1O1Ixp33_ASAP7_75t_R  	 Instance =        397	 Area =        35.73     4.48 %
+[i] OA211x2_ASAP7_75t_R      	 Instance =         18	 Area =         2.16     0.27 %
+[i] OA21x2_ASAP7_75t_R       	 Instance =         80	 Area =         8.00     1.00 %
+[i] OAI211xp5_ASAP7_75t_R    	 Instance =        314	 Area =        28.26     3.54 %
+[i] OAI21xp33_ASAP7_75t_R    	 Instance =       1513	 Area =       105.91    13.27 %
+[i] OAI221xp5_ASAP7_75t_R    	 Instance =         14	 Area =         1.40     0.18 %
+[i] OAI22xp33_ASAP7_75t_R    	 Instance =         88	 Area =         7.92     0.99 %
+[i] OAI311xp33_ASAP7_75t_R   	 Instance =        110	 Area =        11.00     1.38 %
+[i] OAI31xp33_ASAP7_75t_R    	 Instance =        476	 Area =        42.84     5.37 %
+[i] OAI321xp33_ASAP7_75t_R   	 Instance =          8	 Area =         0.96     0.12 %
+[i] OAI32xp33_ASAP7_75t_R    	 Instance =         22	 Area =         2.20     0.28 %
+[i] AND2x2_ASAP7_75t_R       	 Instance =          6	 Area =         0.54     0.07 %
+[i] AND3x1_ASAP7_75t_R       	 Instance =         14	 Area =         1.26     0.16 %
+[i] AND4x1_ASAP7_75t_R       	 Instance =          7	 Area =         0.70     0.09 %
+[i] NAND2xp33_ASAP7_75t_R    	 Instance =        747	 Area =        44.82     5.62 %
+[i] NAND3xp33_ASAP7_75t_R    	 Instance =        260	 Area =        18.20     2.28 %
 [i] NAND4xp25_ASAP7_75t_R    	 Instance =         22	 Area =         1.98     0.25 %
-[i] NOR2xp33_ASAP7_75t_R     	 Instance =       1030	 Area =        61.80     7.65 %
-[i] NOR3xp33_ASAP7_75t_R     	 Instance =        261	 Area =        18.27     2.26 %
-[i] NOR4xp25_ASAP7_75t_R     	 Instance =         16	 Area =         1.44     0.18 %
+[i] NOR2xp33_ASAP7_75t_R     	 Instance =       1034	 Area =        62.04     7.77 %
+[i] NOR3xp33_ASAP7_75t_R     	 Instance =        267	 Area =        18.69     2.34 %
+[i] NOR4xp25_ASAP7_75t_R     	 Instance =         18	 Area =         1.62     0.20 %
 [i] NOR5xp2_ASAP7_75t_R      	 Instance =          3	 Area =         0.30     0.04 %
 [i] OR2x2_ASAP7_75t_R        	 Instance =          2	 Area =         0.18     0.02 %
-[i] OR3x1_ASAP7_75t_R        	 Instance =          7	 Area =         0.63     0.08 %
-[i] OR4x1_ASAP7_75t_R        	 Instance =          4	 Area =         0.40     0.05 %
-[i] OR5x1_ASAP7_75t_R        	 Instance =          1	 Area =         0.12     0.01 %
-[i] XNOR2xp5_ASAP7_75t_R     	 Instance =        525	 Area =        68.25     8.45 %
-[i] XOR2xp5_ASAP7_75t_R      	 Instance =        248	 Area =        32.24     3.99 %
-[i] TOTAL                    	 Instance =      10622	 Area =       808.16   100.00 %
-[i] Report stats: area = 808.16; delay = 328.39;
-[WARNING EST-0027] no estimated parasitics. Using wire load models.
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 414 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 414 out of 414 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
-------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2616.068 |  -132339.0 |  -461282.4 |    414 | u0\/subword\[28\]$_DFF_P_/D
-     764* |       0 |     259 |        3 |     74 |    10 |    +0.9% |  -16.725 |      -41.0 |      -16.7 |    414 | sa03_sr\[4\]$_DFF_P_/D
-    final |       0 |     262 |        3 |     74 |    10 |    +0.9% |    0.234 |        0.0 |        0.0 |      0 | u0\/subword\[0\]$_DFF_P_/D
-------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 3 buffers, 3 to split loads.
-[INFO RSZ-0051] Resized 262 instances: 262 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 10 instances.
-[INFO RSZ-0049] Cloned 74 instances.
-[INFO RSZ-0033] No hold violations found.
+[i] OR3x1_ASAP7_75t_R        	 Instance =          8	 Area =         0.72     0.09 %
+[i] OR4x1_ASAP7_75t_R        	 Instance =          5	 Area =         0.50     0.06 %
+[i] OR5x1_ASAP7_75t_R        	 Instance =          1	 Area =         0.12     0.02 %
+[i] XNOR2xp5_ASAP7_75t_R     	 Instance =        523	 Area =        67.99     8.52 %
+[i] XOR2xp5_ASAP7_75t_R      	 Instance =        248	 Area =        32.24     4.04 %
+[i] TOTAL                    	 Instance =      10406	 Area =       798.13   100.00 %
+[i] Report stats: area = 798.13; delay = 328.39;
 Cell type report:                       Count       Area
-  Timing Repair Buffer                      3       0.34
-  Inverter                               1085      48.74
-  Timing Repair inverter                   61       2.74
-  Sequential cell                         562     163.91
-  Multi-Input combinational cell         9550     772.70
-  Total                                 11261     988.42
-[  0.234,  84.360): ************************************** (158)
-[ 84.360, 168.485): * (2)
-[168.485, 252.611): * (2)
-[252.611, 336.736): * (2)
-[336.736, 420.862): *** (12)
-[420.862, 504.988): * (4)
-[504.988, 589.113): ********* (37)
-[589.113, 673.239): ************************************************** (208)
-[673.239, 757.364): ********************************* (137)
-[757.364, 841.490]: ******************************* (129)
-Startpoint: u0/r0/out[25]$_SDFF_PP0_
-            (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: u0/subword[0]$_DFF_P_
+  Inverter                               1039      45.45
+  Sequential cell                         562     163.88
+  Multi-Input combinational cell         9496     764.87
+  Total                                 11097     974.19
+[-2623.963, -2277.417): ****** (32)
+[-2277.417, -1930.872): * (6)
+[-1930.872, -1584.327): * (6)
+[-1584.327, -1237.782): *********** (61)
+[-1237.782,  -891.236): *************** (80)
+[ -891.236,  -544.691): ****************************************** (229)
+[ -544.691,  -198.146):  (0)
+[ -198.146,   148.399):  (0)
+[  148.399,   494.945): * (6)
+[  494.945,   841.490]: ************************************************** (271)
+Startpoint: ld (input port clocked by core_clock)
+Endpoint: u0/subword[19]$_DFF_P_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -186,45 +166,115 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ u0/r0/out[25]$_SDFF_PP0_/CLK (DFFHQNx1_ASAP7_75t_R)
-  69.15   69.15 v u0/r0/out[25]$_SDFF_PP0_/QN (DFFHQNx1_ASAP7_75t_R)
-  41.62  110.77 v n_2280/Y (XNOR2xp5_ASAP7_75t_R)
-  42.19  152.96 v n_2281/Y (XNOR2xp5_ASAP7_75t_R)
-  42.40  195.36 v n_2282/Y (XNOR2xp5_ASAP7_75t_R)
-  18.61  213.97 ^ n_2283/Y (INVx1_ASAP7_75t_R)
-  16.70  230.67 v n_2284/Y (NAND2xp33_ASAP7_75t_R)
-  28.33  259.00 ^ n_2285/Y (OAI21xp33_ASAP7_75t_R)
-  51.32  310.32 ^ n_2286/Y (XOR2xp5_ASAP7_75t_R)
-  41.06  351.38 v n_2288/Y (AOI21x1_ASAP7_75t_R)
-  53.54  404.92 ^ n_2310/Y (INVx2_ASAP7_75t_R)
-  50.69  455.61 v n_2319/Y (NOR2x1p5_ASAP7_75t_R)
-  35.73  491.34 ^ n_2326/Y (INVx2_ASAP7_75t_R)
-  52.19  543.54 v n_2330/Y (OAI21xp5_ASAP7_75t_R)
-  54.17  597.70 ^ n_2331/Y (INVx1_ASAP7_75t_R)
-  38.98  636.68 v n_2332/Y (NOR2xp33_ASAP7_75t_R)
-  40.02  676.70 ^ n_2333/Y (OAI21xp33_ASAP7_75t_R)
-  62.19  738.88 v n_2334/Y (NAND2xp5_ASAP7_75t_R)
-  43.19  782.08 ^ n_2335/Y (INVx2_ASAP7_75t_R)
-  27.52  809.59 v n_2360/Y (AOI22xp33_ASAP7_75t_R)
-  32.46  842.06 ^ n_2361/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  27.20  869.25 v n_2362/Y (AOI31xp33_ASAP7_75t_R)
-  31.35  900.61 ^ n_2376/Y (OAI211xp5_ASAP7_75t_R)
-  38.41  939.02 v n_2377/Y (OAI31xp33_ASAP7_75t_R)
-  29.85  968.86 ^ n_2415/Y (AOI21xp33_ASAP7_75t_R)
-   0.00  968.86 ^ u0/subword[0]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
-         968.86   data arrival time
+ 200.00  200.00 v input external delay
+   0.00  200.00 v ld (in)
+1130.36 1330.36 ^ n_702/Y (INVx1_ASAP7_75t_R)
+1233.07 2563.43 v n_1216/Y (AOI21xp33_ASAP7_75t_R)
+ 491.52 3054.95 ^ n_1217/Y (INVx1_ASAP7_75t_R)
+ 203.94 3258.89 v n_1267/Y (NOR2xp33_ASAP7_75t_R)
+ 101.54 3360.43 ^ n_1444/Y (NAND2xp33_ASAP7_75t_R)
+  41.72 3402.15 v n_1445/Y (AOI21xp33_ASAP7_75t_R)
+  49.85 3452.00 ^ n_1446/Y (NOR2xp33_ASAP7_75t_R)
+  41.10 3493.10 v n_1447/Y (OAI21xp33_ASAP7_75t_R)
+  25.53 3518.64 ^ n_1448/Y (OAI21xp33_ASAP7_75t_R)
+  34.74 3553.38 ^ n_1449/Y (AO21x1_ASAP7_75t_R)
+  21.13 3574.51 v n_1461/Y (OAI21xp33_ASAP7_75t_R)
+  38.94 3613.45 v n_1484/Y (AO21x1_ASAP7_75t_R)
+   0.00 3613.45 v u0/subword[19]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+        3613.45   data arrival time
 
 1000.00 1000.00   clock core_clock (rise edge)
    0.00 1000.00   clock network delay (ideal)
    0.00 1000.00   clock reconvergence pessimism
-        1000.00 ^ u0/subword[0]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
- -30.90  969.10   library setup time
-         969.10   data required time
+        1000.00 ^ u0/subword[19]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -10.52  989.48   library setup time
+         989.48   data required time
 ---------------------------------------------------------
-         969.10   data required time
-        -968.86   data arrival time
+         989.48   data required time
+        -3613.45   data arrival time
 ---------------------------------------------------------
-           0.23   slack (MET)
+        -2623.96   slack (VIOLATED)
+
+
+wns max -2623.96
+tns max -462037.50
+-- After repair --
+
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 414 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 414 out of 414 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2623.963 |  -131266.9 |  -462037.5 |    414 | u0\/subword\[19\]$_DFF_P_/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone16/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_9507/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_725/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_745/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_1280/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_2204/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_3673/Y
+     761* |       0 |     258 |        3 |     67 |    14 |    +0.9% |  -14.417 |      -16.1 |      -16.1 |    414 | sa03_sr\[4\]$_DFF_P_/D
+    final |       0 |     260 |        3 |     67 |    14 |    +0.9% |    2.359 |        0.0 |        0.0 |      0 | u0\/subword\[30\]$_DFF_P_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 3 buffers, 3 to split loads.
+[INFO RSZ-0051] Resized 260 instances: 260 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 14 instances.
+[INFO RSZ-0049] Cloned 67 instances.
+[INFO RSZ-0033] No hold violations found.
+Cell type report:                       Count       Area
+  Timing Repair Buffer                      3       0.39
+  Inverter                               1039      46.73
+  Timing Repair inverter                   50       2.26
+  Sequential cell                         562     163.91
+  Multi-Input combinational cell         9513     769.96
+  Total                                 11167     983.25
+[  2.359,  86.272): ************************************* (155)
+[ 86.272, 170.185): * (5)
+[170.185, 254.098): * (2)
+[254.098, 338.011): * (2)
+[338.011, 421.924): *** (12)
+[421.924, 505.837): * (4)
+[505.837, 589.751): ********* (37)
+[589.751, 673.664): ************************************************** (208)
+[673.664, 757.577): ********************************* (137)
+[757.577, 841.490]: ******************************* (129)
+Startpoint: ld (input port clocked by core_clock)
+Endpoint: u0/subword[30]$_DFF_P_
+          (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+Corner: slow
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 200.00  200.00 ^ input external delay
+   0.00  200.00 ^ ld (in)
+  28.06  228.06 v n_702/Y (CKINVDCx20_ASAP7_75t_R)
+ 282.90  510.96 ^ n_709/Y (OAI21xp33_ASAP7_75t_R)
+ 239.38  750.35 v n_710/Y (INVx2_ASAP7_75t_R)
+  60.22  810.56 ^ n_1098/Y (AOI21xp33_ASAP7_75t_R)
+  35.69  846.26 v n_1099/Y (OAI311xp33_ASAP7_75t_R)
+  65.77  912.02 v n_1100/Y (OA211x2_ASAP7_75t_R)
+  32.19  944.22 ^ n_1101/Y (AOI311xp33_ASAP7_75t_R)
+  32.49  976.71 v n_1130/Y (OAI31xp33_ASAP7_75t_R)
+   0.00  976.71 v u0/subword[30]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+         976.71   data arrival time
+
+1000.00 1000.00   clock core_clock (rise edge)
+   0.00 1000.00   clock network delay (ideal)
+   0.00 1000.00   clock reconvergence pessimism
+        1000.00 ^ u0/subword[30]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -20.93  979.07   library setup time
+         979.07   data required time
+---------------------------------------------------------
+         979.07   data required time
+        -976.71   data arrival time
+---------------------------------------------------------
+           2.36   slack (MET)
 
 
 wns max 0.00

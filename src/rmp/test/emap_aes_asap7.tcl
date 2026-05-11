@@ -43,12 +43,19 @@ report_tns
 
 write_verilog_for_eqy $test_name before "None"
 
-puts "-- After --\n"
+puts "-- After emap --\n"
 
 resynth_emap -scene fast \
   -map_multioutput
 
-suppress_message RSZ 75
+report_cell_usage
+report_timing_histogram
+report_checks
+report_wns
+report_tns
+
+puts "-- After repair --\n"
+
 repair_timing
 
 report_cell_usage
