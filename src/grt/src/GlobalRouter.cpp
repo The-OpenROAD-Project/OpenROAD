@@ -232,6 +232,14 @@ void GlobalRouter::saveCongestion()
     is_congested_ = fastroute_->totalOverflow() > 0;
     fastroute_->saveCongestion();
   }
+
+  if (congestion_file_name_ != nullptr) {
+    odb::dbMarkerCategory* tool_category
+        = block_->findMarkerCategory("Global route");
+    if (tool_category != nullptr) {
+      tool_category->writeTR(congestion_file_name_);
+    }
+  }
 }
 
 NetRouteMap& GlobalRouter::getRoutes()
