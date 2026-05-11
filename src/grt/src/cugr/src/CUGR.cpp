@@ -42,6 +42,26 @@ using utl::GRT;
 
 namespace grt {
 
+namespace {
+
+// Per-3D-edge key used by saveCongestion() to attribute wires and via
+// stubs to specific edges.
+using EdgeKey = std::tuple<int, int, int>;  // (layer, x, y)
+struct EdgeKeyHash
+{
+  size_t operator()(const EdgeKey& k) const
+  {
+    // boost::hash_combine pattern.
+    size_t h = 0;
+    h ^= std::hash<int>{}(std::get<0>(k)) + 0x9e3779b9 + (h << 6) + (h >> 2);
+    h ^= std::hash<int>{}(std::get<1>(k)) + 0x9e3779b9 + (h << 6) + (h >> 2);
+    h ^= std::hash<int>{}(std::get<2>(k)) + 0x9e3779b9 + (h << 6) + (h >> 2);
+    return h;
+  }
+};
+
+}  // namespace
+
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
            utl::ServiceRegistry* service_registry,
@@ -588,50 +608,33 @@ void CUGR::updateDbCongestion()
     //   usage    = routing demand + lost capacity (blockage + adjustment)
     // Boundary cells without a corresponding edge replicate the previous
     // cell's value, again matching FastRoute's last_cell_cap fall-through.
+    // Iterate along the layer's preferred direction in the inner loop so
+    // the fall-through carries forward correctly for both H and V.
     const int direction = grid_graph_->getLayerDirection(layer);
-    if (direction == MetalLayer::H) {
-      for (int y = 0; y < y_size; y++) {
-        double last_cap = 0;
-        double last_use = 0;
-        for (int x = 0; x < x_size; x++) {
-          double cap, use;
-          if (x == x_size - 1) {
-            cap = last_cap;
-            use = last_use;
-          } else {
-            const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
-            const double initial
-                = grid_graph_->getInitialEdgeCapacity(layer, x, y);
-            cap = initial;
-            use = edge.demand + (initial - edge.capacity);
-          }
-          db_gcell->setCapacity(db_layer, x, y, cap);
-          db_gcell->setUsage(db_layer, x, y, use);
-          last_cap = cap;
-          last_use = use;
+    const bool is_h = direction == MetalLayer::H;
+    const int outer_size = is_h ? y_size : x_size;
+    const int inner_size = is_h ? x_size : y_size;
+    for (int o = 0; o < outer_size; o++) {
+      double last_cap = 0;
+      double last_use = 0;
+      for (int i = 0; i < inner_size; i++) {
+        const int x = is_h ? i : o;
+        const int y = is_h ? o : i;
+        double cap, use;
+        if (i == inner_size - 1) {
+          cap = last_cap;
+          use = last_use;
+        } else {
+          const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
+          const double initial
+              = grid_graph_->getInitialEdgeCapacity(layer, x, y);
+          cap = initial;
+          use = edge.demand + (initial - edge.capacity);
         }
-      }
-    } else {
-      for (int x = 0; x < x_size; x++) {
-        double last_cap = 0;
-        double last_use = 0;
-        for (int y = 0; y < y_size; y++) {
-          double cap, use;
-          if (y == y_size - 1) {
-            cap = last_cap;
-            use = last_use;
-          } else {
-            const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
-            const double initial
-                = grid_graph_->getInitialEdgeCapacity(layer, x, y);
-            cap = initial;
-            use = edge.demand + (initial - edge.capacity);
-          }
-          db_gcell->setCapacity(db_layer, x, y, cap);
-          db_gcell->setUsage(db_layer, x, y, use);
-          last_cap = cap;
-          last_use = use;
-        }
+        db_gcell->setCapacity(db_layer, x, y, cap);
+        db_gcell->setUsage(db_layer, x, y, use);
+        last_cap = cap;
+        last_use = use;
       }
     }
   }
@@ -783,10 +786,9 @@ void CUGR::saveCongestion()
   //   - via_nets:   the nets that own vias whose stub demand commitVia()
   //                 attributes to this edge (the same neighbours commitVia
   //                 itself touches)
-  using EdgeKey = std::tuple<int, int, int>;  // (layer, x, y)
-  std::map<EdgeKey, int> wire_count;
-  std::map<EdgeKey, std::set<odb::dbNet*>> wire_nets;
-  std::map<EdgeKey, std::set<odb::dbNet*>> via_nets;
+  std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
+  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> wire_nets;
+  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> via_nets;
 
   auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
     // commitVia(via_layer, loc) adds stub demand on edges adjacent to
