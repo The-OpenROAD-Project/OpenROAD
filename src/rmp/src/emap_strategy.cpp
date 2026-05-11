@@ -151,13 +151,12 @@ EmapStrategy::FindLibertyCellByMasterName(sta::Sta* sta,
 }
 
 std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
-    const odb::dbSet<odb::dbLib>& libs,
     sta::dbSta* sta,
     bool value)
 {
   std::vector<TieMaster> candidates;
 
-  for (const auto& lib : libs) {
+  for (const auto& lib : sta->db()->getLibs()) {
     for (auto* master : lib->getMasters()) {
       int sig_in = 0, sig_out = 0;
       std::string out_name;
@@ -212,7 +211,6 @@ std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
 
 odb::dbNet* EmapStrategy::EnsureConstNet(bool value,
                                          odb::dbBlock* block,
-                                         const odb::dbSet<odb::dbLib>& libs,
                                          sta::dbSta* sta,
                                          utl::Logger* logger)
 {
@@ -232,7 +230,7 @@ odb::dbNet* EmapStrategy::EnsureConstNet(bool value,
     logger->error(utl::RMP, 87, "Failed to create const net");
   }
 
-  auto tie = FindTieMaster(libs, sta, value);
+  auto tie = FindTieMaster(sta, value);
   if (!tie) {
     logger->error(
         utl::RMP,
@@ -264,12 +262,10 @@ odb::dbNet* EmapStrategy::EnsureConstNet(bool value,
   return net;
 }
 
-void EmapStrategy::ImportMockturtleMappedNetwork(
-    sta::dbSta* sta,
-    const BlockNtk& ntk,
-    const odb::dbSet<odb::dbLib>& libs,
-    cut::LogicCut& cut,
-    utl::Logger* logger)
+void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
+                                                 const BlockNtk& ntk,
+                                                 cut::LogicCut& cut,
+                                                 utl::Logger* logger)
 {
   auto topo_ntk = mockturtle::topo_view(ntk);
 
@@ -340,7 +336,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(
 
     CellMapping mapping = MapCellFromStdCell(topo_ntk, n, logger);
     odb::dbMaster* master = nullptr;
-    for (const auto& lib : libs) {
+    for (const auto& lib : sta->db()->getLibs()) {
       master = lib->findMaster(mapping.master_name.c_str());
       if (master) {
         break;
@@ -445,8 +441,8 @@ void EmapStrategy::ImportMockturtleMappedNetwork(
                           mapping.input_pins.size());
           }
 
-          odb::dbNet* src_net = GetDriverNet(
-              topo_ntk, block, libs, sta, logger, node_out_nets, f);
+          odb::dbNet* src_net
+              = GetDriverNet(topo_ntk, block, sta, logger, node_out_nets, f);
           const std::string& pin_name = mapping.input_pins[fanin_idx];
           odb::dbITerm* it = inst->findITerm(pin_name.c_str());
           if (!it) {
@@ -482,7 +478,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(
     odb::dbNet* boundary_net = it->second;
     ;
     odb::dbNet* driver_net
-        = GetDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
+        = GetDriverNet(topo_ntk, block, sta, logger, node_out_nets, f);
     if (driver_net && boundary_net && driver_net != boundary_net) {
       driver_net->mergeNet(boundary_net);
     }
@@ -493,7 +489,6 @@ template <typename Ntk>
 odb::dbNet* EmapStrategy::GetDriverNet(
     mockturtle::topo_view<Ntk, false>& topo_ntk,
     odb::dbBlock* block,
-    const odb::dbSet<odb::dbLib>& libs,
     sta::dbSta* sta,
     utl::Logger* logger,
     std::vector<std::vector<odb::dbNet*>>& node_out_nets,
@@ -518,7 +513,7 @@ odb::dbNet* EmapStrategy::GetDriverNet(
     };
 
     bool value = get_constant_value(src_node, f);
-    return EnsureConstNet(value, block, libs, sta, logger);
+    return EnsureConstNet(value, block, sta, logger);
   }
   const uint32_t src_idx = topo_ntk.node_to_index(src_node);
   const uint32_t out_pin_idx
@@ -753,17 +748,13 @@ void EmapStrategy::OptimizeDesign(sta::dbSta* sta,
   mapped_ntk.report_cells_usage();
   mapped_ntk.report_stats();
 
-  // Import mapped network back to OpenROAD
-  odb::dbDatabase* db = sta->db();
-  auto libs = db->getLibs();
-
   // Clear const network cache
   net0_cache_ = nullptr;
   net1_cache_ = nullptr;
 
-  ImportMockturtleMappedNetwork(sta, mapped_ntk, libs, cut, logger);
+  ImportMockturtleMappedNetwork(sta, mapped_ntk, cut, logger);
 
-  db->triggerPostReadDb();
+  sta->db()->triggerPostReadDb();
 }
 
 }  // namespace rmp

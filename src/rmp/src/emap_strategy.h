@@ -67,7 +67,6 @@ class EmapStrategy : public ResynthesisStrategy
   template <typename Ntk>
   odb::dbNet* GetDriverNet(mockturtle::topo_view<Ntk, false>& topo_ntk,
                            odb::dbBlock* block,
-                           const odb::dbSet<odb::dbLib>& libs,
                            sta::dbSta* sta,
                            utl::Logger* logger,
                            std::vector<std::vector<odb::dbNet*>>& node_out_nets,
@@ -83,19 +82,15 @@ class EmapStrategy : public ResynthesisStrategy
       sta::Sta* sta,
       const std::string& cell_name);
 
-  std::optional<TieMaster> FindTieMaster(const odb::dbSet<odb::dbLib>& libs,
-                                         sta::dbSta* sta,
-                                         bool value);
+  std::optional<TieMaster> FindTieMaster(sta::dbSta* sta, bool value);
 
   odb::dbNet* EnsureConstNet(bool value,
                              odb::dbBlock* block,
-                             const odb::dbSet<odb::dbLib>& libs,
                              sta::dbSta* sta,
                              utl::Logger* logger);
 
   void ImportMockturtleMappedNetwork(sta::dbSta* sta,
                                      const BlockNtk& ntk,
-                                     const odb::dbSet<odb::dbLib>& libs,
                                      cut::LogicCut& cut,
                                      utl::Logger* logger);
 
