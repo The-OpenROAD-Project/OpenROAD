@@ -46,7 +46,8 @@ class SwapArithModules : public sta::dbStaState
       = 0;
   virtual void collectArithInstsOnPath(
       const sta::Path* path,
-      odb::OdbPtrSet<odb::dbModInst>& arithInsts) = 0;
+      odb::OdbPtrSet<odb::dbModInst>& arithInsts)
+      = 0;
   virtual bool isArithInstance(const sta::Instance* inst,
                                odb::dbModInst*& mod_inst)
       = 0;
@@ -54,9 +55,11 @@ class SwapArithModules : public sta::dbStaState
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     odb::OdbPtrSet<odb::dbModInst>& insts) = 0;
+                                     odb::OdbPtrSet<odb::dbModInst>& insts)
+      = 0;
   virtual bool doSwapInstances(odb::OdbPtrSet<odb::dbModInst>& insts,
-                               const std::string& target) = 0;
+                               const std::string& target)
+      = 0;
 
  protected:
   virtual void init() = 0;
