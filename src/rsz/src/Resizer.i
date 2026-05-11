@@ -619,14 +619,14 @@ void report_buffers_cmd(bool filtered)
   resizer->reportBuffers(filtered);
 }
 
-void report_delay_estimator_accuracy_for_sizing_cmd(Instance* inst,
-                                                    LibertyCell* replacement,
-                                                    const char* estimator,
-                                                    int delay_levels)
+void report_delay_estimator_accuracy_cmd(Instance* inst,
+                                         LibertyCell* replacement,
+                                         const char* estimator,
+                                         int delay_levels)
 {
   ensureLinked();
   Resizer* resizer = getResizer();
-  resizer->reportDelayEstimatorAccuracyForSizing(
+  resizer->reportDelayEstimatorAccuracy(
       inst, replacement, std::string(estimator), delay_levels);
 }
 

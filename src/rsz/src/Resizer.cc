@@ -1996,11 +1996,10 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("{:*>80}", "");
 }
 
-void Resizer::reportDelayEstimatorAccuracyForSizing(
-    sta::Instance* inst,
-    sta::LibertyCell* replacement,
-    const std::string& estimator,
-    const int delay_levels)
+void Resizer::reportDelayEstimatorAccuracy(sta::Instance* inst,
+                                           sta::LibertyCell* replacement,
+                                           const std::string& estimator,
+                                           const int delay_levels)
 {
   DelayEstimatorReporter reporter(*this);
   reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);

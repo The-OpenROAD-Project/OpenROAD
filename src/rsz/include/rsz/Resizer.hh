@@ -514,10 +514,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
-  void reportDelayEstimatorAccuracyForSizing(sta::Instance* inst,
-                                             sta::LibertyCell* replacement,
-                                             const std::string& estimator,
-                                             int delay_levels);
+  void reportDelayEstimatorAccuracy(sta::Instance* inst,
+                                    sta::LibertyCell* replacement,
+                                    const std::string& estimator,
+                                    int delay_levels);
   static bool isValidDelayEstimatorName(const std::string& name);
   static std::string delayEstimatorNames();
   void getBufferList(sta::LibertyCellSeq& buffer_list);

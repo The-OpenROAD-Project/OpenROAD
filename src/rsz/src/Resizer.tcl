@@ -799,16 +799,16 @@ proc report_buffers { args } {
   rsz::report_buffers_cmd $filtered
 }
 
-sta::define_cmd_args "report_delay_estimator_accuracy_for_sizing" {\
+sta::define_cmd_args "report_delay_estimator_accuracy" {\
   -inst instance \
   -lib_cell lib_cell \
   -estimator estimator \
   [-delay_levels level] }
 
-proc report_delay_estimator_accuracy_for_sizing { args } {
-  sta::parse_key_args "report_delay_estimator_accuracy_for_sizing" args \
+proc report_delay_estimator_accuracy { args } {
+  sta::parse_key_args "report_delay_estimator_accuracy" args \
     keys {-inst -lib_cell -estimator -delay_levels} flags {}
-  sta::check_argc_eq0 "report_delay_estimator_accuracy_for_sizing" $args
+  sta::check_argc_eq0 "report_delay_estimator_accuracy" $args
 
   foreach required_key {-inst -lib_cell -estimator} {
     if { ![info exists keys($required_key)] } {
@@ -818,7 +818,7 @@ proc report_delay_estimator_accuracy_for_sizing { args } {
 
   set inst [sta::get_instance_error "-inst" $keys(-inst)]
   set lib_cells [sta::get_lib_cells_arg \
-    "report_delay_estimator_accuracy_for_sizing" $keys(-lib_cell) sta::sta_warn]
+    "report_delay_estimator_accuracy" $keys(-lib_cell) sta::sta_warn]
   if { [llength $lib_cells] != 1 } {
     utl::error RSZ 3204 "-lib_cell must resolve to exactly one liberty cell."
   }
@@ -848,7 +848,7 @@ proc report_delay_estimator_accuracy_for_sizing { args } {
   }
 
   est::check_parasitics
-  rsz::report_delay_estimator_accuracy_for_sizing_cmd \
+  rsz::report_delay_estimator_accuracy_cmd \
     $inst $lib_cell $estimator $delay_levels
 }
 

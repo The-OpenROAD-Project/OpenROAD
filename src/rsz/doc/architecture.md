@@ -509,14 +509,14 @@ Current estimator approximations:
 | STA slew bias | `RSZ_MT_SLEW_BIAS > 0` enables three-point load-dependent sampling on the main thread and interpolation in workers. |
 
 `DelayEstimatorReporter` is a diagnostic layer, not part of the MT contract. It
-is used by Tcl command `report_delay_estimator_accuracy_for_sizing` to compare
+is used by Tcl command `report_delay_estimator_accuracy` to compare
 estimator prediction against a measured STA result:
 
 ```tcl
-report_delay_estimator_accuracy_for_sizing \
+report_delay_estimator_accuracy \
   -inst u1 -lib_cell BUF_X4 -estimator delay_estimator -delay_levels 1
 
-report_delay_estimator_accuracy_for_sizing \
+report_delay_estimator_accuracy \
   -inst u1 -lib_cell BUF_X4 -estimator legacy
 ```
 

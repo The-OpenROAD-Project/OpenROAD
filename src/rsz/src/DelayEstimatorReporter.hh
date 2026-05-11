@@ -42,7 +42,7 @@ class Resizer;
 // are obtained by actually swapping the cell inside an ECO journal and then
 // undoing the swap.
 //
-// Used by the Tcl command `report_delay_estimator_accuracy_for_sizing`.
+// Used by the Tcl command `report_delay_estimator_accuracy`.
 // All compute paths are main-thread-only; no MT contract here.
 class DelayEstimatorReporter
 {

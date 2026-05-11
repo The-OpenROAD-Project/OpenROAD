@@ -489,13 +489,13 @@ report_buffers
 
 ### Reporting Delay Estimator Accuracy
 
-The `report_delay_estimator_accuracy_for_sizing` command compares a delay
+The `report_delay_estimator_accuracy` command compares a delay
 estimator's predictions against the reference STA delay for a candidate
 library cell at the given instance.  It is intended as a developer aid
 for evaluating estimator accuracy when sizing.
 
 ```tcl
-report_delay_estimator_accuracy_for_sizing
+report_delay_estimator_accuracy
     -inst instance
     -lib_cell lib_cell
     -estimator estimator
