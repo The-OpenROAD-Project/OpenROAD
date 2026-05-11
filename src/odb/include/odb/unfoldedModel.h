@@ -87,9 +87,6 @@ struct UnfoldedChip
 
   std::deque<UnfoldedRegion> regions;
 
-  std::unordered_map<dbChipRegionInst*, UnfoldedRegion*> region_map;
-  std::unordered_map<dbChipBumpInst*, UnfoldedBump*> bump_inst_map;
-
   UnfoldedRegion* findUnfoldedRegion(dbChipRegionInst* region_inst);
   UnfoldedBump* findUnfoldedBump(dbChipBumpInst* bump_inst);
   Cuboid getCuboid() const;
@@ -123,18 +120,17 @@ class UnfoldedModel
   {
     return unfolded_chips_;
   }
-  const std::vector<UnfoldedConnection>& getConnections() const
+  const std::deque<UnfoldedConnection>& getConnections() const
   {
     return unfolded_connections_;
   }
-  const std::vector<UnfoldedNet>& getNets() const { return unfolded_nets_; }
+  const std::deque<UnfoldedNet>& getNets() const { return unfolded_nets_; }
   UnfoldedChip* findUnfoldedChip(const std::string& path);
 
  private:
   UnfoldedChip* buildUnfoldedChip(dbChipInst* chip_inst,
                                   std::vector<dbChipInst*>& path,
                                   const dbTransform& parent_xform);
-  void registerUnfoldedChip(UnfoldedChip* uf_chip);
   void unfoldRegions(UnfoldedChip* uf_chip, dbChipInst* inst);
   void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
   void unfoldConnections(dbChip* chip,
@@ -149,9 +145,9 @@ class UnfoldedModel
 
   utl::Logger* logger_;
   std::vector<std::unique_ptr<UnfoldedChip>> unfolded_chips_;
-  std::vector<UnfoldedConnection> unfolded_connections_;
-  std::vector<UnfoldedNet> unfolded_nets_;
-  std::map<std::string, UnfoldedChip*> chip_map_;
+  std::deque<UnfoldedConnection> unfolded_connections_;
+  std::deque<UnfoldedNet> unfolded_nets_;
+  std::unordered_map<std::string, UnfoldedChip*> chip_map_;
 
   // Use deque so observer addresses are stable; ~CallBackObj removes
   // ownership automatically when the model is destroyed.

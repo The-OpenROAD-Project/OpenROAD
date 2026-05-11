@@ -97,14 +97,39 @@ Point3D UnfoldedBump::getGlobalPosition() const
 
 UnfoldedRegion* UnfoldedChip::findUnfoldedRegion(dbChipRegionInst* inst)
 {
-  auto it = region_map.find(inst);
-  return it != region_map.end() ? it->second : nullptr;
+  if (inst == nullptr) {
+    return nullptr;
+  }
+  auto comp
+      = [](const UnfoldedRegion& uf_region, const dbChipRegionInst* inst) {
+          return uf_region.region_inst->getId() < inst->getId();
+        };
+
+  auto it = std::lower_bound(regions.begin(), regions.end(), inst, comp);
+  if (it != regions.end() && (*it).region_inst == inst) {
+    return &(*it);
+  }
+  return nullptr;
 }
 
 UnfoldedBump* UnfoldedChip::findUnfoldedBump(dbChipBumpInst* bump_inst)
 {
-  auto it = bump_inst_map.find(bump_inst);
-  return it != bump_inst_map.end() ? it->second : nullptr;
+  if (bump_inst == nullptr) {
+    return nullptr;
+  }
+  auto region = findUnfoldedRegion(bump_inst->getChipRegionInst());
+  if (region == nullptr) {
+    return nullptr;
+  }
+  auto comp = [](const UnfoldedBump& uf_bump, const dbChipBumpInst* bump_inst) {
+    return uf_bump.bump_inst->getId() < bump_inst->getId();
+  };
+  auto it = std::lower_bound(
+      region->bumps.begin(), region->bumps.end(), bump_inst, comp);
+  if (it != region->bumps.end() && (*it).bump_inst == bump_inst) {
+    return &(*it);
+  }
+  return nullptr;
 }
 
 UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
@@ -170,30 +195,25 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   unfolded_chips_.push_back(std::move(uf_chip));
   unfoldRegions(uf_chip_ptr, inst);
 
-  registerUnfoldedChip(uf_chip_ptr);
+  chip_map_[uf_chip_ptr->getFullName()] = uf_chip_ptr;
 
   path.pop_back();
   return uf_chip_ptr;
 }
 
-void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
-{
-  chip_map_[chip->getFullName()] = chip;
-  for (auto& region : chip->regions) {
-    region.parent_chip = chip;
-    chip->region_map[region.region_inst] = &region;
-    for (auto& bump : region.bumps) {
-      bump.parent_region = &region;
-      chip->bump_inst_map[bump.bump_inst] = &bump;
-    }
-  }
-}
-
 void UnfoldedModel::unfoldRegions(UnfoldedChip* uf_chip, dbChipInst* inst)
 {
-  auto regions = inst->getRegions();
+  std::vector<dbChipRegionInst*> region_insts;
+  for (auto* region_inst : inst->getRegions()) {
+    region_insts.push_back(region_inst);
+  }
+  std::sort(region_insts.begin(),
+            region_insts.end(),
+            [](const dbChipRegionInst* a, const dbChipRegionInst* b) {
+              return a->getId() < b->getId();
+            });
 
-  for (auto* region_inst : regions) {
+  for (auto* region_inst : region_insts) {
     auto region = region_inst->getChipRegion();
 
     UnfoldedRegionSide side = UnfoldedRegionSide::INTERNAL;
@@ -229,13 +249,20 @@ void UnfoldedModel::unfoldRegions(UnfoldedChip* uf_chip, dbChipInst* inst)
 void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
                                 const dbTransform& transform)
 {
+  std::vector<dbChipBumpInst*> bump_insts;
   for (auto* bump_inst : uf_region.region_inst->getChipBumpInsts()) {
+    bump_insts.push_back(bump_inst);
+  }
+  std::sort(bump_insts.begin(),
+            bump_insts.end(),
+            [](const dbChipBumpInst* a, const dbChipBumpInst* b) {
+              return a->getId() < b->getId();
+            });
+  for (auto* bump_inst : bump_insts) {
     dbChipBump* bump = bump_inst->getChipBump();
     if (bump->getInst()) {
-      uf_region.bumps.push_back({
-          .bump_inst = bump_inst,
-          .parent_region = nullptr  // set later in registerUnfoldedChip
-      });
+      uf_region.bumps.push_back(
+          UnfoldedBump{.bump_inst = bump_inst, .parent_region = &uf_region});
     }
   }
 }
