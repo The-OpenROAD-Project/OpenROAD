@@ -44,8 +44,7 @@ class TestPusher : public MplTest
     auto root = std::make_unique<Cluster>(next_id_++, "root", &logger_);
     root->setClusterType(MixedCluster);
 
-    auto cluster
-        = std::make_unique<Cluster>(next_id_++, "std_cells", &logger_);
+    auto cluster = std::make_unique<Cluster>(next_id_++, "std_cells", &logger_);
     cluster->setClusterType(StdCellCluster);
     auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
     soft_macro->setShapeF(macro_width_, macro_height_);
