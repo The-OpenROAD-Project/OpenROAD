@@ -38,9 +38,11 @@ if { $tool_category != "" } {
       if { [llength [$marker getSources]] > 0 } {
         incr markers_with_sources
       }
-      if { [regexp \
-              {capacity:[0-9]+ usage:[0-9]+ overflow:-?[0-9]+ \((wires|vias|wires \+ vias)\)} \
-              [$marker getComment]] } {
+      if {
+        [regexp \
+          {capacity:[0-9]+ usage:[0-9]+ overflow:-?[0-9]+ \((wires|vias|wires \+ vias)\)} \
+          [$marker getComment]]
+      } {
         incr markers_with_comment
       }
       if { [$marker getTechLayer] != "NULL" } {
