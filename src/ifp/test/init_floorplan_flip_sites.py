@@ -16,6 +16,7 @@ try:
     flipped_sites = openroad.site_set()
 except AttributeError:
     import ifp
+
     flipped_sites = ifp.site_set()
 flipped_sites.insert(site)
 

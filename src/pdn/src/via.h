@@ -112,7 +112,8 @@ class DbVia
                                  int x,
                                  int y,
                                  const odb::OdbPtrSet<odb::dbTechLayer>& ongrid,
-                                 utl::Logger* logger) = 0;
+                                 utl::Logger* logger)
+      = 0;
 
   virtual bool requiresPatch() const { return false; }
 
