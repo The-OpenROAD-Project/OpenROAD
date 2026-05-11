@@ -21,14 +21,18 @@ web_server_cmd(int port)
   server->serve(port);
 }
 
+// Block the calling Tcl_Eval until web_server -stop or browser-typed
+// `exit`.  Used by web_server when called interactively so the
+// launching terminal's prompt is suppressed while the server is
+// running.  Tears the server down before returning; on exit-request,
+// performs std::exit(0) here on the main thread.
 void
 web_server_wait_cmd()
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
-  server->waitForStop();
-  // If `exit` was typed in the browser tcl widget, do the real process
-  // exit here on the main thread (workers are already joined).
-  if (server->exitRequested()) {
+  const bool was_exit = server->runEventLoopUntilStop();
+  server->stop();
+  if (was_exit) {
     std::exit(EXIT_SUCCESS);
   }
 }
@@ -37,6 +41,10 @@ void
 web_server_stop_cmd()
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  // requestStop() just sets a flag and wakes the main-thread Tcl
+  // event loop so it can tear the server down.  Safe from any thread:
+  // the worker thread that ran this command never tries to join
+  // itself.
   server->requestStop();
 }
 

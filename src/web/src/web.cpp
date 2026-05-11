@@ -876,14 +876,6 @@ void WebServer::stopAndJoinIoThreads()
 
 WebServer::~WebServer()
 {
-  // Wake any thread blocked in waitForStop() so it can return before
-  // we tear down the io_context.
-  {
-    std::lock_guard<std::mutex> lock(stop_mutex_);
-    stop_requested_ = true;
-  }
-  stop_cv_.notify_one();
-
   // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
   // By this point the Tcl interpreter is partially torn down and static
   // objects may be destroyed.  We avoid the full stop() path (which

@@ -393,7 +393,11 @@ class SelectHandlerTest : public tst::Nangate45Fixture
                       .bbox = {100, 100, 200, 200}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
-    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(
+        /*interp=*/nullptr,
+        getLogger(),
+        tcl_mutex_,
+        /*main_thread_id=*/nullptr);
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
   }
 
@@ -416,6 +420,7 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   }
 
   std::shared_ptr<TileGenerator> gen_;
+  std::mutex tcl_mutex_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::unique_ptr<SelectHandler> handler_;
   SessionState state_;

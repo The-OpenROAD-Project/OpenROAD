@@ -418,6 +418,8 @@ static int tclAppInit(int& argc,
     // directly on the main thread, like the non-GUI path.
     const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
 
+    auto* web_server = ord::OpenRoad::openRoad()->getWebServer();
+
     if (read_odb_filename) {
       std::string cmd = fmt::format("read_db {{{}}}", read_odb_filename);
       if (!gui_enabled) {
@@ -476,15 +478,16 @@ static int tclAppInit(int& argc,
       }
     }
 
-    // Block until the web server is stopped (like QApplication::exec()
-    // for the GUI).  After this returns, fall through to readline.
-    if (web_enabled) {
-      auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      server->waitForStop();
-      // `exit` typed in the browser Tcl widget signalled stop; do the
-      // real process exit now from the main thread (worker threads are
-      // already joined by stop()).
-      if (server->exitRequested()) {
+    // If the web server is running at this point — either because of
+    // -web (implicit serve before script) or because the script itself
+    // called `web_server` — park the main thread in Tcl_DoOneEvent so
+    // worker threads can drive browser-typed tcl_eval requests.  The
+    // wait exits when a browser-typed `exit` (requestExit) or
+    // `web_server -stop` (requestStop) wakes the loop.
+    if (web_server->isRunning()) {
+      const bool was_exit = web_server->runEventLoopUntilStop();
+      web_server->stop();
+      if (was_exit) {
         exit(EXIT_SUCCESS);
       }
     }
