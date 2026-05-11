@@ -735,10 +735,7 @@ void BinGrid::initBins()
   idealBinCnt = std::max(idealBinCnt, 4);
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(GPL,
-             23,
-             "Placement target density:   {:10.4f}",
-             targetDensity_);
+  log_->info(GPL, 23, "Placement target density:   {:10.4f}", targetDensity_);
   log_->info(GPL,
              24,
              "Movable insts average area: {:10.3f} um^2",
