@@ -270,6 +270,11 @@ GridGraph::GridGraph(const Design* design,
 
 void GridGraph::computeCongestionInformation()
 {
+  if (!congestion_info_dirty_) {
+    return;
+  }
+  congestion_info_dirty_ = false;
+
   cap_per_layer_.assign(num_layers_, 0);
   usage_per_layer_.assign(num_layers_, 0);
   overflow_per_layer_.assign(num_layers_, 0);
@@ -647,6 +652,7 @@ void GridGraph::commit(const int layer_index,
                        const CapacityT demand)
 {
   graph_edges_[layer_index][lower.x()][lower.y()].demand += demand;
+  congestion_info_dirty_ = true;
 }
 
 void GridGraph::commitWire(const int layer_index,
