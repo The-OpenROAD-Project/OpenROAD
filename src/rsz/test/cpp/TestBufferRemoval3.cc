@@ -857,8 +857,8 @@ endmodule
 //   and child_mod's data_o connects to a top-level output port.
 //   Inside child_mod, data_i -> BUF_X1 -> data_o (feedthrough buffer).
 //
-// When remove_buffers removes the feedthrough buffer, the fix in
-// UnbufferMove.cc detects the feedthrough and keeps the input ModNet
+// When remove_buffers removes the feedthrough buffer, the buffer
+// removal logic detects the feedthrough and keeps the input ModNet
 // as the survivor.  This ensures VerilogWriter emits
 // "assign data_o = data_i;" correctly.
 TEST_F(BufRemTest3, FeedthroughAssign)
@@ -880,7 +880,7 @@ TEST_F(BufRemTest3, FeedthroughAssign)
   EXPECT_NE(bt_in->getModNet(), bt_out->getModNet())
       << "ModNets should be separate before remove_buffers";
 
-  // Run remove_buffers — the fix in UnbufferMove.cc detects the
+  // Run remove_buffers — the buffer removal logic detects the
   // feedthrough and forces the input ModNet to survive.
   resizer_.removeBuffers({});
 

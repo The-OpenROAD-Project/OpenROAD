@@ -397,6 +397,9 @@ void GlobalRouter::globalRoute(bool save_guides)
       std::set<odb::dbNet*> clock_nets;
       findClockNets(nets, clock_nets);
       cugr_->init(min_layer, max_layer, clock_nets);
+      if (verbose_) {
+        reportResources();
+      }
       cugr_->route();
       routes_ = cugr_->getRoutes();
       updatePinAccessPoints();
@@ -432,7 +435,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   updateDbCongestion();
   saveCongestion();
 
-  if (verbose_ && !use_cugr_) {
+  if (verbose_) {
     reportCongestion();
   }
   computeWirelength();
@@ -891,6 +894,36 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
+void GlobalRouter::setNetIsResAware(odb::dbNet* db_net, bool res_aware)
+{
+  Net* net = db_net_map_[db_net];
+  if (net) {
+    net->setIsResAware(res_aware);
+  } else {
+    logger_->warn(GRT,
+                  103,
+                  "Net {} has no GRT representation. It may have been ignored "
+                  "or excluded",
+                  db_net->getConstName());
+  }
+}
+
+bool GlobalRouter::isNetResAware(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    return it->second->isResAware();
+  }
+
+  logger_->warn(
+      GRT,
+      100,
+      "Net {} has no GRT representation. It may have been ignored or excluded",
+      db_net->getConstName());
+
+  return false;
+}
+
 void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
   int min_layer, max_layer;
@@ -903,8 +936,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
-        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
+    if (net->isResAware()
+        || (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
+            && (!net->isMergedNet()
+                || !netIsCovered(db_net, pins_not_covered)))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       if (net->areSegmentsRestored()) {
         updateNetResources(net, true);
@@ -2261,6 +2296,7 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
+  fastroute_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -3478,6 +3514,19 @@ float GlobalRouter::getViaResistance(int from_layer, int to_layer)
   }
 
   return total_via_resistance;
+}
+
+float GlobalRouter::getFRNetResistance(odb::dbNet* db_net)
+{
+  return fastroute_->getNetResistance(db_net);
+}
+
+float GlobalRouter::getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net)
+{
+  int min_layer = getMinLayerForClock() > 0 ? getMinLayerForClock()
+                                            : getMinRoutingLayer();
+  // FastRouteCore uses 0-based layer indices; routing layer numbers are 1-based
+  return fastroute_->getNetResistanceOnLayer(db_net, min_layer - 1);
 }
 
 float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
@@ -5467,9 +5516,18 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 
 void GlobalRouter::reportResources()
 {
-  fastroute_->computeCongestionInformation();
-  std::vector<int> original_resources = fastroute_->getOriginalResources();
-  std::vector<int> derated_resources = fastroute_->getTotalCapacityPerLayer();
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+  } else {
+    fastroute_->computeCongestionInformation();
+  }
+
+  const std::vector<int>& original_resources
+      = use_cugr_ ? cugr_->getOriginalResources()
+                  : fastroute_->getOriginalResources();
+  const std::vector<int>& derated_resources
+      = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
+                  : fastroute_->getTotalCapacityPerLayer();
 
   logger_->report("");
   logger_->info(GRT, 53, "Routing resources analysis:");
@@ -5508,14 +5566,27 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  fastroute_->computeCongestionInformation();
-  const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
-  const std::vector<int>& demands = fastroute_->getTotalUsagePerLayer();
-  const std::vector<int>& overflows = fastroute_->getTotalOverflowPerLayer();
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+  } else {
+    fastroute_->computeCongestionInformation();
+  }
+
+  const std::vector<int>& resources
+      = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
+                  : fastroute_->getTotalCapacityPerLayer();
+  const std::vector<int>& demands = use_cugr_
+                                        ? cugr_->getTotalUsagePerLayer()
+                                        : fastroute_->getTotalUsagePerLayer();
+  const std::vector<int>& overflows
+      = use_cugr_ ? cugr_->getTotalOverflowPerLayer()
+                  : fastroute_->getTotalOverflowPerLayer();
   const std::vector<int>& max_h_overflows
-      = fastroute_->getMaxHorizontalOverflows();
+      = use_cugr_ ? cugr_->getMaxHorizontalOverflows()
+                  : fastroute_->getMaxHorizontalOverflows();
   const std::vector<int>& max_v_overflows
-      = fastroute_->getMaxVerticalOverflows();
+      = use_cugr_ ? cugr_->getMaxVerticalOverflows()
+                  : fastroute_->getMaxVerticalOverflows();
 
   int total_resource = 0;
   int total_demand = 0;
