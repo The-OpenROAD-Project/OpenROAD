@@ -4,7 +4,6 @@
 #include "timing_report.h"
 
 #include <algorithm>
-#include <boost/json/array.hpp>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -13,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/array.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"

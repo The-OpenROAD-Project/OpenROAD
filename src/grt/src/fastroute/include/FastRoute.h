@@ -304,6 +304,9 @@ class FastRouteCore
 
   void writeCongestionMap(const std::string& filename);
 
+  float getNetResistance(odb::dbNet* db_net);
+  float getNetResistanceOnLayer(odb::dbNet* db_net, int layer);
+
  private:
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
@@ -600,7 +603,6 @@ class FastRouteCore
   float getViaResistance(int from_layer, int to_layer);
   int getWireCost(int layer, int length, FrNet* net);
   int getViaCost(int from_layer, int to_layer);
-  float getNetResistance(FrNet* net, bool assume_layer = false);
   float getResAwareScore(FrNet* net);
   void updateWorstMetrics(FrNet* net);
   void resetWorstMetrics();

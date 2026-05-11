@@ -5,11 +5,8 @@
 
 #include <algorithm>
 #include <any>
-#include <boost/json/array.hpp>
-#include <boost/json/object.hpp>
-#include <boost/json/serialize.hpp>
-#include <boost/json/value.hpp>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -23,10 +20,15 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
 #include "gui/descriptor_registry.h"
