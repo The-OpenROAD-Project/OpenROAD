@@ -1,6 +1,5 @@
 import os
 
-
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 messages_path = os.path.join(cur_dir, "../messages.txt")
 
