@@ -1565,7 +1565,8 @@ bool ViaGenerator::checkMinEnclosure() const
                "Bottom rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) bottom_passed |= pass;
+               pass) bottom_passed
+        |= pass;
   }
 
   const bool top_has_rules = !top_rules.empty();
@@ -1591,7 +1592,8 @@ bool ViaGenerator::checkMinEnclosure() const
                "Top rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) top_passed |= pass;
+               pass) top_passed
+        |= pass;
   }
 
   return (!bottom_has_rules || bottom_passed) && (!top_has_rules || top_passed);

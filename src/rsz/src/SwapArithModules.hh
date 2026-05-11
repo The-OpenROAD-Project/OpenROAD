@@ -42,12 +42,14 @@ class SwapArithModules : public sta::dbStaState
 
   virtual bool replaceArithModules(int path_count,
                                    const std::string& target,
-                                   float slack_threshold) = 0;
+                                   float slack_threshold)
+      = 0;
   virtual void collectArithInstsOnPath(
       const sta::Path* path,
       odb::OdbPtrSet<odb::dbModInst>& arithInsts) = 0;
   virtual bool isArithInstance(const sta::Instance* inst,
-                               odb::dbModInst*& mod_inst) = 0;
+                               odb::dbModInst*& mod_inst)
+      = 0;
   virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
@@ -60,7 +62,8 @@ class SwapArithModules : public sta::dbStaState
   virtual void init() = 0;
   virtual void produceNewModuleName(const std::string& old_name,
                                     std::string& new_name,
-                                    const std::string& target) = 0;
+                                    const std::string& target)
+      = 0;
 
   // Member variables
   Resizer* resizer_;
