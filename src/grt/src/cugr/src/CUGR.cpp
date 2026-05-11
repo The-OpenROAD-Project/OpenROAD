@@ -138,12 +138,17 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
       net_indices.push_back(net->getIndex());
     }
   }
-  logger_->report("Nets with overflow: {}.", net_indices.size());
+  const int num_nets = gr_nets_.size();
+  logger_->info(utl::GRT,
+                1258,
+                "{} / {} nets have overflow.",
+                netIndices.size(),
+                num_nets);
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
 {
-  logger_->report("Stage 1: Pattern routing.");
+  logger_->info(utl::GRT, 1259, "Stage 1: pattern routing.");
 
   if (critical_nets_percentage_ != 0) {
     setInitialNetSlacks();
@@ -173,7 +178,8 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("Stage 2: Pattern routing with detours.");
+  logger_->info(
+      utl::GRT, 1260, "Stage 2: pattern routing with possible detours.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -207,7 +213,8 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("Stage 3: Maze routing on sparsified graph.");
+  logger_->info(
+      utl::GRT, 1261, "Stage 3: maze routing on sparsified routing graph.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -220,19 +227,16 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   grid_graph_->extractWireCostView(wire_cost_view);
   sortNetIndices(net_indices);
   SparseGrid grid(10, 10, 0, 0);
-  for (const int net_index : net_indices) {
-    GRNet* net = gr_nets_[net_index].get();
-    if (net->getNumPins() < 2) {
-      continue;
-    }
-    MazeRoute maze_route(net, grid_graph_.get(), logger_);
-    maze_route.constructSparsifiedGraph(wire_cost_view, grid);
-    maze_route.run();
-    std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
+  for (const int netIndex : netIndices) {
+    GRNet* net = gr_nets_[netIndex].get();
+    MazeRoute mazeRoute(net, grid_graph_.get(), logger_);
+    mazeRoute.constructSparsifiedGraph(wireCostView, grid);
+    mazeRoute.run();
+    std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
     if (tree == nullptr) {
-      logger_->error(GRT,
-                     610,
-                     "Failed to generate Steiner tree for net {}.",
+      logger_->error(utl::GRT,
+                     1270,
+                     "Steiner tree is null for net {} during maze routing.",
                      net->getName());
     }
 
@@ -295,10 +299,14 @@ void CUGR::write(const std::string& guide_file)
     }
     ss << ")\n";
   }
-  logger_->report("Total area of pin access patches: {}.",
-                  area_of_pin_patches_);
-  logger_->report("Total area of wire segment patches: {}.",
-                  area_of_wire_patches_);
+  logger_->info(utl::GRT,
+                1262,
+                "Total area of pin access patches: {}.",
+                area_of_pin_patches_);
+  logger_->info(utl::GRT,
+                1263,
+                "Total area of wire segment patches: {}.",
+                area_of_wire_patches_);
   std::ofstream fout(guide_file);
   fout << ss.str();
   fout.close();
@@ -425,10 +433,11 @@ void CUGR::getGuides(const GRNet* net,
 
   // 1. Pin access patches
   if (constants_.min_routing_layer + 1 >= grid_graph_->getNumLayers()) {
-    logger_->error(GRT,
-                   611,
-                   "Min routing layer {} exceeds available layers.",
-                   constants_.min_routing_layer);
+    logger_->error(utl::GRT,
+                   1271,
+                   "Min routing layer {} exceeds number of layers {}.",
+                   constants_.min_routing_layer,
+                   grid_graph_->getNumLayers());
   }
   for (auto& gpts : net->getPinAccessPoints()) {
     for (auto& gpt : gpts) {
@@ -500,7 +509,7 @@ void CUGR::getGuides(const GRNet* net,
 
 void CUGR::printStatistics() const
 {
-  logger_->report("Routing statistics");
+  logger_->info(utl::GRT, 1264, "Routing statistics:");
 
   // wire length and via count
   uint64_t wire_length = 0;
@@ -560,12 +569,15 @@ void CUGR::printStatistics() const
     }
   }
 
-  logger_->report("Wire length:           {}",
-                  wire_length / grid_graph_->getM2Pitch());
-  logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total wire overflow:   {}", (int) overflow);
-  logger_->report("Min resource:          {}", min_resource);
-  logger_->report("Bottleneck:            {}", bottleneck);
+  logger_->info(utl::GRT,
+                1265,
+                "Wire length (metric): {}.",
+                wireLength / grid_graph_->getM2Pitch());
+  logger_->info(utl::GRT, 1266, "Total via count: {}.", viaCount);
+  logger_->info(utl::GRT, 1267, "Total wire overflow: {}.", (int) overflow);
+
+  logger_->info(utl::GRT, 1268, "Min resource: {}.", minResource);
+  logger_->info(utl::GRT, 1269, "Bottleneck: {}.", bottleneck);
 }
 
 void CUGR::updateDbCongestion()
