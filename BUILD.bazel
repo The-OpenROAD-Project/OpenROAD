@@ -212,28 +212,18 @@ cc_binary(
     ],
 )
 
-OPENROAD_LIB_SRCS = [
-    "src/Design.cc",
-    "src/OpenRoad.cc",
-    "src/Tech.cc",
-    "src/Timing.cc",
-    ":openroad_swig",
-    ":openroad_tcl",
-]
-
-OPENROAD_LIB_COMMON_DEPS = [
-    "//src/sta:opensta_lib",
-    "@abseil-cpp//absl/base:core_headers",
-    "@abseil-cpp//absl/synchronization",
-    "@boost.stacktrace",
-    "@tcl_lang//:tcl",
-] + OPENROAD_LIBRARY_DEPS
-
 # CLI variant: the default. What downstream rule libraries pull as a
 # build-time tool, and what `bazelisk build //:openroad` produces.
 cc_library(
     name = "openroad_lib",
-    srcs = OPENROAD_LIB_SRCS,
+    srcs = [
+        "src/Design.cc",
+        "src/OpenRoad.cc",
+        "src/Tech.cc",
+        "src/Timing.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+    ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + ["BUILD_GUI=false"],
     features = ["-use_header_modules"],
@@ -241,7 +231,14 @@ cc_library(
         "include",
     ],
     visibility = ["//:__subpackages__"],
-    deps = OPENROAD_LIB_COMMON_DEPS + ["//src/gui"],
+    deps = [
+        "//src/gui",
+        "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.stacktrace",
+        "@tcl_lang//:tcl",
+    ] + OPENROAD_LIBRARY_DEPS,
 )
 
 # Qt variant: same sources, linked against the Qt GUI implementation.
@@ -249,7 +246,14 @@ cc_library(
 # define + different gui dep) when that target is requested.
 cc_library(
     name = "openroad_lib_qt",
-    srcs = OPENROAD_LIB_SRCS,
+    srcs = [
+        "src/Design.cc",
+        "src/OpenRoad.cc",
+        "src/Tech.cc",
+        "src/Timing.cc",
+        ":openroad_swig",
+        ":openroad_tcl",
+    ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES + ["BUILD_GUI=true"],
     features = ["-use_header_modules"],
@@ -257,7 +261,14 @@ cc_library(
         "include",
     ],
     visibility = ["//:__subpackages__"],
-    deps = OPENROAD_LIB_COMMON_DEPS + ["//src/gui:gui_qt"],
+    deps = [
+        "//src/gui:gui_qt",
+        "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.stacktrace",
+        "@tcl_lang//:tcl",
+    ] + OPENROAD_LIBRARY_DEPS,
 )
 
 cc_library(
