@@ -507,7 +507,7 @@ class ODBGenerator:
                 shutil.copy(gen_path, target_path)
 
             if item != "CMakeLists.txt":
-                if call(["clang-format", "-i", str(target_path)]) != 0:
+                if call(["clang-format-18", "-i", str(target_path)]) != 0:
                     print(f"Failed to format {target_path}")
             print(f"Generated: {target_path}")
 
