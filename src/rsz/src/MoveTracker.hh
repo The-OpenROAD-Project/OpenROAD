@@ -222,7 +222,6 @@ class MoveTracker : public odb::dbBlockCallBackObj
                      const std::string& count_label = "Count");
 
   // === Shared services ======================================================
-  Resizer& resizer_;
   utl::Logger* logger_;
   sta::Sta* sta_;
   sta::dbNetwork* db_network_;
