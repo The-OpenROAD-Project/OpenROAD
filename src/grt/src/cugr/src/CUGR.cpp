@@ -757,7 +757,7 @@ int CUGR::totalOverflow()
 
 void CUGR::saveCongestion()
 {
-  if (!grid_graph_ || !design_) {
+  if (!grid_graph_ || !design_ || totalOverflow() == 0) {
     return;
   }
 
@@ -765,63 +765,42 @@ void CUGR::saveCongestion()
   const int y_size = grid_graph_->getYSize();
   const int num_layers = grid_graph_->getNumLayers();
 
-  // 2D aggregation per direction. Cell (x, y) for the H map represents
-  // the edge from (x, y) to (x+1, y) summed across all H layers; same
-  // idea for the V map.
-  std::vector<std::vector<int>> h_cap(x_size, std::vector<int>(y_size, 0));
-  std::vector<std::vector<int>> h_usage(x_size, std::vector<int>(y_size, 0));
-  std::vector<std::vector<int>> v_cap(x_size, std::vector<int>(y_size, 0));
-  std::vector<std::vector<int>> v_usage(x_size, std::vector<int>(y_size, 0));
-  for (int l = 0; l < num_layers; l++) {
-    const int dir = grid_graph_->getLayerDirection(l);
-    if (dir == MetalLayer::H) {
-      for (int x = 0; x + 1 < x_size; x++) {
-        for (int y = 0; y < y_size; y++) {
-          const auto& e = grid_graph_->getEdge(l, x, y);
-          h_cap[x][y] += static_cast<int>(std::round(e.capacity));
-          h_usage[x][y] += static_cast<int>(std::round(e.demand));
+  // Walk every routed net's tree to gather per 3D edge (layer, x, y):
+  //   - wire_count: number of same-layer wire segments crossing the edge
+  //   - wire_nets:  the nets that own those wires
+  //   - via_nets:   the nets that own vias whose stub demand commitVia()
+  //                 attributes to this edge (the same neighbours commitVia
+  //                 itself touches)
+  using EdgeKey = std::tuple<int, int, int>;  // (layer, x, y)
+  std::map<EdgeKey, int> wire_count;
+  std::map<EdgeKey, std::set<odb::dbNet*>> wire_nets;
+  std::map<EdgeKey, std::set<odb::dbNet*>> via_nets;
+
+  auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
+    // commitVia(via_layer, loc) adds stub demand on edges adjacent to
+    // (vx, vy) on layers via_layer and via_layer+1, in each layer's
+    // preferred direction. Mirror that to know which nets touched
+    // which edges.
+    for (int l = via_layer; l <= via_layer + 1 && l < num_layers; l++) {
+      const int dir = grid_graph_->getLayerDirection(l);
+      if (dir == MetalLayer::H) {
+        if (vx > 0) {
+          via_nets[{l, vx - 1, vy}].insert(db_net);
+        }
+        if (vx + 1 < x_size) {
+          via_nets[{l, vx, vy}].insert(db_net);
+        }
+      } else {
+        if (vy > 0) {
+          via_nets[{l, vx, vy - 1}].insert(db_net);
+        }
+        if (vy + 1 < y_size) {
+          via_nets[{l, vx, vy}].insert(db_net);
         }
       }
-    } else {
-      for (int x = 0; x < x_size; x++) {
-        for (int y = 0; y + 1 < y_size; y++) {
-          const auto& e = grid_graph_->getEdge(l, x, y);
-          v_cap[x][y] += static_cast<int>(std::round(e.capacity));
-          v_usage[x][y] += static_cast<int>(std::round(e.demand));
-        }
-      }
     }
-  }
+  };
 
-  // Identify congested tiles per direction.
-  if (totalOverflow() == 0) {
-    return;
-  }
-
-  std::vector<std::tuple<int, int, int, int>> congested_h;  // x, y, cap, use
-  std::vector<std::tuple<int, int, int, int>> congested_v;
-  for (int x = 0; x + 1 < x_size; x++) {
-    for (int y = 0; y < y_size; y++) {
-      if (h_usage[x][y] > h_cap[x][y]) {
-        congested_h.emplace_back(x, y, h_cap[x][y], h_usage[x][y]);
-      }
-    }
-  }
-  for (int x = 0; x < x_size; x++) {
-    for (int y = 0; y + 1 < y_size; y++) {
-      if (v_usage[x][y] > v_cap[x][y]) {
-        congested_v.emplace_back(x, y, v_cap[x][y], v_usage[x][y]);
-      }
-    }
-  }
-  if (congested_h.empty() && congested_v.empty()) {
-    return;
-  }
-
-  // Walk every routed net's tree and record which nets cross each
-  // congested 2D tile. Mirrors FastRoute's findCongestedEdgesNets.
-  std::map<std::pair<int, int>, std::set<odb::dbNet*>> h_nets;
-  std::map<std::pair<int, int>, std::set<odb::dbNet*>> v_nets;
   for (const auto& gr_net : gr_nets_) {
     if (!gr_net->getRoutingTree()) {
       continue;
@@ -831,22 +810,31 @@ void CUGR::saveCongestion()
         gr_net->getRoutingTree(),
         [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
-            if (node->getLayerIdx() != child->getLayerIdx()) {
-              continue;
-            }
-            const int dir
-                = grid_graph_->getLayerDirection(node->getLayerIdx());
-            if (dir == MetalLayer::H) {
-              const int y = node->y();
-              const auto [lx, hx] = std::minmax({node->x(), child->x()});
-              for (int x = lx; x < hx; x++) {
-                h_nets[{x, y}].insert(db_net);
+            if (node->getLayerIdx() == child->getLayerIdx()) {
+              const int l = node->getLayerIdx();
+              const int dir = grid_graph_->getLayerDirection(l);
+              if (dir == MetalLayer::H) {
+                const int y = node->y();
+                const auto [lx, hx] = std::minmax({node->x(), child->x()});
+                for (int x = lx; x < hx; x++) {
+                  wire_count[{l, x, y}]++;
+                  wire_nets[{l, x, y}].insert(db_net);
+                }
+              } else {
+                const int x = node->x();
+                const auto [ly, hy] = std::minmax({node->y(), child->y()});
+                for (int y = ly; y < hy; y++) {
+                  wire_count[{l, x, y}]++;
+                  wire_nets[{l, x, y}].insert(db_net);
+                }
               }
             } else {
-              const int x = node->x();
-              const auto [ly, hy] = std::minmax({node->y(), child->y()});
-              for (int y = ly; y < hy; y++) {
-                v_nets[{x, y}].insert(db_net);
+              const int min_l
+                  = std::min(node->getLayerIdx(), child->getLayerIdx());
+              const int max_l
+                  = std::max(node->getLayerIdx(), child->getLayerIdx());
+              for (int via_l = min_l; via_l < max_l; via_l++) {
+                attribute_via(via_l, node->x(), node->y(), db_net);
               }
             }
           }
@@ -857,7 +845,10 @@ void CUGR::saveCongestion()
   odb::dbMarkerCategory* tool_category
       = odb::dbMarkerCategory::createOrReplace(block, "Global route");
   tool_category->setSource("GRT");
+  odb::dbMarkerCategory* h_subcat = nullptr;
+  odb::dbMarkerCategory* v_subcat = nullptr;
 
+  odb::dbTech* tech = db_->getTech();
   const int gridline_size = design_->getGridlineSize();
   auto cell_box = [&](int x, int y) -> odb::Rect {
     const int lx = grid_graph_->getGridline(0, x);
@@ -865,35 +856,73 @@ void CUGR::saveCongestion()
     return {lx, ly, lx + gridline_size, ly + gridline_size};
   };
 
-  auto emit = [&](const char* category_name,
-                  const std::vector<std::tuple<int, int, int, int>>& cells,
-                  const std::map<std::pair<int, int>,
-                                 std::set<odb::dbNet*>>& nets_by_cell) {
-    if (cells.empty()) {
-      return;
-    }
-    odb::dbMarkerCategory* category
-        = odb::dbMarkerCategory::create(tool_category, category_name);
-    for (const auto& [x, y, cap, use] : cells) {
-      odb::dbMarker* marker = odb::dbMarker::create(category);
-      if (marker == nullptr) {
-        continue;
-      }
-      marker->addShape(cell_box(x, y));
-      marker->setComment("capacity:" + std::to_string(cap)
-                         + " usage:" + std::to_string(use)
-                         + " overflow:" + std::to_string(use - cap));
-      auto it = nets_by_cell.find({x, y});
-      if (it != nets_by_cell.end()) {
-        for (odb::dbNet* net : it->second) {
+  // Emit one marker per congested 3D edge, tagged with its routing
+  // layer. Comment carries capacity/usage/overflow and the source of
+  // the overflow (wire segments, via stubs, or both).
+  for (int l = 0; l < num_layers; l++) {
+    const int direction = grid_graph_->getLayerDirection(l);
+    odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
+    const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
+    const int y_max = (direction == MetalLayer::H) ? y_size : y_size - 1;
+    for (int x = 0; x < x_max; x++) {
+      for (int y = 0; y < y_max; y++) {
+        const GraphEdge& e = grid_graph_->getEdge(l, x, y);
+        const double cap = std::max(e.capacity, 0.0);
+        const double demand = e.demand;
+        if (demand <= cap) {
+          continue;
+        }
+        const int cap_int = static_cast<int>(std::round(cap));
+        const int demand_int = static_cast<int>(std::round(demand));
+        const int overflow_int = demand_int - cap_int;
+        if (overflow_int <= 0) {
+          continue;
+        }
+
+        const auto wc_it = wire_count.find({l, x, y});
+        const int wires = wc_it != wire_count.end() ? wc_it->second : 0;
+        const bool wires_overflow = static_cast<double>(wires) > cap;
+        const bool vias_contribute = (demand - wires) > 0;
+        const char* kind = wires_overflow
+                               ? (vias_contribute ? "wires + vias" : "wires")
+                               : "vias";
+
+        odb::dbMarkerCategory*& subcat
+            = direction == MetalLayer::H ? h_subcat : v_subcat;
+        if (subcat == nullptr) {
+          subcat = odb::dbMarkerCategory::create(
+              tool_category,
+              direction == MetalLayer::H ? "Horizontal congestion"
+                                         : "Vertical congestion");
+        }
+        odb::dbMarker* marker = odb::dbMarker::create(subcat);
+        if (marker == nullptr) {
+          continue;
+        }
+        marker->addShape(cell_box(x, y));
+        if (db_layer != nullptr) {
+          marker->setTechLayer(db_layer);
+        }
+        marker->setComment("capacity:" + std::to_string(cap_int)
+                           + " usage:" + std::to_string(demand_int)
+                           + " overflow:" + std::to_string(overflow_int)
+                           + " (" + kind + ")");
+
+        std::set<odb::dbNet*> sources;
+        auto wn_it = wire_nets.find({l, x, y});
+        if (wn_it != wire_nets.end()) {
+          sources.insert(wn_it->second.begin(), wn_it->second.end());
+        }
+        auto vn_it = via_nets.find({l, x, y});
+        if (vn_it != via_nets.end()) {
+          sources.insert(vn_it->second.begin(), vn_it->second.end());
+        }
+        for (odb::dbNet* net : sources) {
           marker->addSource(net);
         }
       }
     }
-  };
-
-  emit("Horizontal congestion", congested_h, h_nets);
-  emit("Vertical congestion", congested_v, v_nets);
+  }
 }
 
 void CUGR::routeIncremental()
