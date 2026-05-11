@@ -879,8 +879,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::* module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
+    dbId<_dbModule> T_impl::*module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {
