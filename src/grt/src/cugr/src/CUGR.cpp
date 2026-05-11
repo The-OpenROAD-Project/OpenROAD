@@ -807,8 +807,7 @@ void CUGR::saveCongestion()
     }
     odb::dbNet* db_net = gr_net->getDbNet();
     GRTreeNode::preorder(
-        gr_net->getRoutingTree(),
-        [&](const std::shared_ptr<GRTreeNode>& node) {
+        gr_net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
             if (node->getLayerIdx() == child->getLayerIdx()) {
               const int l = node->getLayerIdx();
@@ -883,17 +882,18 @@ void CUGR::saveCongestion()
         const int wires = wc_it != wire_count.end() ? wc_it->second : 0;
         const bool wires_overflow = static_cast<double>(wires) > cap;
         const bool vias_contribute = (demand - wires) > 0;
-        const char* kind = wires_overflow
-                               ? (vias_contribute ? "wires + vias" : "wires")
-                               : "vias";
+        std::string kind = "vias";
+        if (wires_overflow) {
+          kind = vias_contribute ? "wires + vias" : "wires";
+        }
 
         odb::dbMarkerCategory*& subcat
             = direction == MetalLayer::H ? h_subcat : v_subcat;
         if (subcat == nullptr) {
-          subcat = odb::dbMarkerCategory::create(
-              tool_category,
-              direction == MetalLayer::H ? "Horizontal congestion"
-                                         : "Vertical congestion");
+          subcat = odb::dbMarkerCategory::create(tool_category,
+                                                 direction == MetalLayer::H
+                                                     ? "Horizontal congestion"
+                                                     : "Vertical congestion");
         }
         odb::dbMarker* marker = odb::dbMarker::create(subcat);
         if (marker == nullptr) {
@@ -903,10 +903,9 @@ void CUGR::saveCongestion()
         if (db_layer != nullptr) {
           marker->setTechLayer(db_layer);
         }
-        marker->setComment("capacity:" + std::to_string(cap_int)
-                           + " usage:" + std::to_string(demand_int)
-                           + " overflow:" + std::to_string(overflow_int)
-                           + " (" + kind + ")");
+        marker->setComment("capacity:" + std::to_string(cap_int) + " usage:"
+                           + std::to_string(demand_int) + " overflow:"
+                           + std::to_string(overflow_int) + " (" + kind + ")");
 
         std::set<odb::dbNet*> sources;
         auto wn_it = wire_nets.find({l, x, y});
