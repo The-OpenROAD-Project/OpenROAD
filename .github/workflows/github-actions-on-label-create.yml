@@ -51,11 +51,37 @@ jobs:
         deployToken: ${{ secrets.STAGING_GITHUB_TOKEN }}
         force: true
 
+    - id: resolve_key
+      name: Compute per-user secret key
+      env:
+        PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      run: |
+        key=$(echo "$PR_AUTHOR" | tr 'a-z-' 'A-Z_')
+        echo "key=$key" >> "$GITHUB_OUTPUT"
+
+    - id: resolve_token
+      name: Pick per-user PAT or fall back to bot token
+      env:
+        USER_PAT: ${{ secrets[format('PAT_{0}', steps.resolve_key.outputs.key)] }}
+        BOT_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+      run: |
+        if [ -n "$USER_PAT" ]; then
+          echo "::add-mask::$USER_PAT"
+          echo "token=$USER_PAT" >> "$GITHUB_OUTPUT"
+          echo "source=user-pat" >> "$GITHUB_OUTPUT"
+          echo "Using per-user PAT for PR creation"
+        else
+          echo "::add-mask::$BOT_TOKEN"
+          echo "token=$BOT_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "source=bot-fallback" >> "$GITHUB_OUTPUT"
+          echo "No per-user PAT found; falling back to bot token"
+        fi
+
     - id: send_pr
       name: Create PR if needed.
       uses: The-OpenROAD-Project/actions/send_pr@main
       env:
-        STAGING_GITHUB_TOKEN: ${{ secrets.STAGING_GITHUB_TOKEN }}
+        STAGING_GITHUB_TOKEN: ${{ steps.resolve_token.outputs.token }}
 
     - name: Linking to PR using deployment.
       uses: The-OpenROAD-Project/actions/link_pr@main

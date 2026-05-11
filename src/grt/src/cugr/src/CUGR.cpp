@@ -505,11 +505,6 @@ void CUGR::printStatistics() const
   // wire length and via count
   uint64_t wire_length = 0;
   int via_count = 0;
-  std::vector<std::vector<std::vector<int>>> wire_usage;
-  wire_usage.assign(grid_graph_->getNumLayers(),
-                    std::vector<std::vector<int>>(
-                        grid_graph_->getSize(0),
-                        std::vector<int>(grid_graph_->getSize(1), 0)));
   for (const auto& net : gr_nets_) {
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
@@ -519,12 +514,8 @@ void CUGR::printStatistics() const
                   = grid_graph_->getLayerDirection(node->getLayerIdx());
               const int l = std::min((*node)[direction], (*child)[direction]);
               const int h = std::max((*node)[direction], (*child)[direction]);
-              const int r = (*node)[1 - direction];
               for (int c = l; c < h; c++) {
                 wire_length += grid_graph_->getEdgeLength(direction, c);
-                const int x = direction == MetalLayer::H ? c : r;
-                const int y = direction == MetalLayer::H ? r : c;
-                wire_usage[node->getLayerIdx()][x][y] += 1;
               }
             } else {
               via_count += abs(node->getLayerIdx() - child->getLayerIdx());
@@ -533,9 +524,10 @@ void CUGR::printStatistics() const
         });
   }
 
-  // resource
-  CapacityT overflow = 0;
-
+  // Overflow is computed from edge.demand (which includes via-stub
+  // demand). This is the metric CUGR's own checkOverflow,
+  // updateOverflowNets, and extractCongestionView use
+  CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
   GRPoint bottleneck(-1, -1, -1);
   for (int layer_index = constants_.min_routing_layer;
@@ -544,17 +536,15 @@ void CUGR::printStatistics() const
     const int direction = grid_graph_->getLayerDirection(layer_index);
     for (int x = 0; x < grid_graph_->getSize(0) - 1 + direction; x++) {
       for (int y = 0; y < grid_graph_->getSize(1) - direction; y++) {
-        const CapacityT resource
-            = grid_graph_->getEdge(layer_index, x, y).getResource();
+        const auto& edge = grid_graph_->getEdge(layer_index, x, y);
+        const CapacityT resource = edge.getResource();
         if (resource < min_resource) {
           min_resource = resource;
           bottleneck = {layer_index, x, y};
         }
-        const CapacityT usage = wire_usage[layer_index][x][y];
-        const CapacityT capacity
-            = std::max(grid_graph_->getEdge(layer_index, x, y).capacity, 0.0);
-        if (usage > 0.0 && usage > capacity) {
-          overflow += usage - capacity;
+        const CapacityT capacity = std::max(edge.capacity, 0.0);
+        if (edge.demand > capacity) {
+          total_overflow += edge.demand - capacity;
         }
       }
     }
@@ -563,7 +553,7 @@ void CUGR::printStatistics() const
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
   logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total wire overflow:   {}", (int) overflow);
+  logger_->report("Total overflow:        {}", (int) total_overflow);
   logger_->report("Min resource:          {}", min_resource);
   logger_->report("Bottleneck:            {}", bottleneck);
 }
@@ -668,6 +658,44 @@ void CUGR::updateNet(odb::dbNet* db_net)
     db_net_map_[db_net] = gr_nets_.back().get();
     nets_to_route_.push_back(new_index);
   }
+}
+
+// The accessors below are only called after init() has constructed
+// grid_graph_, so we rely on the GridGraph's cached vectors directly
+// without extra null-checks (matching the rest of the file).
+const std::vector<int>& CUGR::getOriginalResources() const
+{
+  return grid_graph_->getOriginalResources();
+}
+
+void CUGR::computeCongestionInformation()
+{
+  grid_graph_->computeCongestionInformation();
+}
+
+const std::vector<int>& CUGR::getTotalCapacityPerLayer() const
+{
+  return grid_graph_->getTotalCapacityPerLayer();
+}
+
+const std::vector<int>& CUGR::getTotalUsagePerLayer() const
+{
+  return grid_graph_->getTotalUsagePerLayer();
+}
+
+const std::vector<int>& CUGR::getTotalOverflowPerLayer() const
+{
+  return grid_graph_->getTotalOverflowPerLayer();
+}
+
+const std::vector<int>& CUGR::getMaxHorizontalOverflows() const
+{
+  return grid_graph_->getMaxHorizontalOverflows();
+}
+
+const std::vector<int>& CUGR::getMaxVerticalOverflows() const
+{
+  return grid_graph_->getMaxVerticalOverflows();
 }
 
 void CUGR::routeIncremental()

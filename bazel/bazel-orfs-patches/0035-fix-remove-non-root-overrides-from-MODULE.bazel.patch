@@ -47,4 +47,3 @@ diff --git a/MODULE.bazel b/MODULE.bazel
 -use_repo(orfs, "docker_orfs")
 --
 2.51.0
-
