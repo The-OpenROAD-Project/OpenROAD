@@ -351,8 +351,7 @@ void definNet::pathVirtualPoint(int x, int y)
     _wire_encoder.newPathVirtualWire(
         _prev_junction_id, _cur_layer, _wire_type, _taper_rule);
   } else {
-    _wire_encoder.newPathVirtualWire(
-        _prev_junction_id, _cur_layer, _wire_type);
+    _wire_encoder.newPathVirtualWire(_prev_junction_id, _cur_layer, _wire_type);
   }
 
   _prev_x = dbdist(x);
