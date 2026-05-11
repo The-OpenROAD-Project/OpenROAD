@@ -24,6 +24,19 @@ Design statistics
 Nets:                348
 Special nets:        0
 Routing layers:      6
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical        25000         25000          0.00%
+met1       Horizontal      30634          6127          80.00%
+met2       Vertical        25000          5000          80.00%
+met3       Horizontal      16240          3248          80.00%
+met4       Vertical        12480          2496          80.00%
+met5       Horizontal       3600           720          80.00%
+---------------------------------------------------------------
+
 Stage 1: Pattern routing.
 Nets with overflow: 293.
 Stage 2: Pattern routing with detours.
@@ -33,9 +46,22 @@ Nets with overflow: 296.
 Routing statistics
 Wire length:           45938
 Total via count:       2656
-Total wire overflow:   244
+Total overflow:        400
 Min resource:          -3.5555556747648467
 Bottleneck:            (3, 14, 15)
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1              25000            39            0.16%             0 /  0 /  0
+met1              6127           222            3.62%             0 /  0 /  0
+met2              5000          1190           23.80%             0 /  3 / 88
+met3              3248          1420           43.72%             4 /  0 / 313
+met4              2496            32            1.28%             0 /  0 /  0
+met5               720             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            42591          2903            6.82%             4 /  3 / 401
+
 [INFO GRT-0018] Total wirelength: 23868 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.
