@@ -837,18 +837,6 @@ class FlexGridGraph
   {
     nodes_[getIdx(x, y, z)].hasGridCostUp = true;
   }
-  void setApCostE(frMIdx x, frMIdx y, frMIdx z)
-  {
-    nodes_[getIdx(x, y, z)].hasApCostEast = true;
-  }
-  void setApCostN(frMIdx x, frMIdx y, frMIdx z)
-  {
-    nodes_[getIdx(x, y, z)].hasApCostNorth = true;
-  }
-  void setApCostU(frMIdx x, frMIdx y, frMIdx z)
-  {
-    nodes_[getIdx(x, y, z)].hasApCostUp = true;
-  }
   // unsafe access, no idx check
   void resetSrc(frMIdx x, frMIdx y, frMIdx z)
   {
