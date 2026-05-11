@@ -137,18 +137,23 @@ resynth_genetic
 
 ### Resynth with extended technology mapping
 
-Resynthesize parts of the design with `mockturtle` and map multioutput cells such as adders.
-The design is exported into mockturtle via logic cut, then mockturtle's [`emap`](https://mockturtle.readthedocs.io/en/latest/algorithms/mapper.html) is called,
-finally mapped logic is imported back to openroad.
+Resynthesize parts of the design with `mockturtle` extended technology mapping.
+The selected logic is exported through a logic cut, mapped with
+[`emap`](https://mockturtle.readthedocs.io/en/latest/algorithms/mapper.html)
+against the currently loaded library, and then imported back into OpenROAD.
+With `-map_multioutput`, mapping can use multioutput cells such as adders.
 
-Currently, multioutput gates are supported with up to 9 inputs.
+Currently, cells with up to 9 inputs are supported.
 
 ```tcl
 resynth_emap
     [-scene scene]
     [-map_multioutput]
     [-verbose]
-    [-work_dir workdir_name]
+    [-create_po_buffers]
+    [-insert_buffers]
+    [-min_drive_resistance min_drive_resistance]
+    [-max_drive_resistance max_drive_resistance]
 ```
 
 #### Options
@@ -157,8 +162,11 @@ resynth_emap
 | ----- | ----- |
 | `-scene` | Process scene to use. |
 | `-map_multioutput` | Map multioutput cells. |
-| `-verbose` | Print mapping statistics from mockturtle. |
-| `-work_dir` | Name of the working directory for temporary files. If not provided, `run` directory would be used. |
+| `-verbose` | Enable verbose output from `mockturtle` during mapping. |
+| `-create_po_buffers` | Allow `mockturtle` to create buffers on primary outputs. |
+| `-insert_buffers` | Allow `mockturtle` to insert buffers during mapping. |
+| `-min_drive_resistance` | Keep only library cells whose average drive resistance is greater than or equal to the given threshold. Takes precedence over `-max_drive_resistance`. |
+| `-max_drive_resistance` | Keep only library cells whose average drive resistance is less than or equal to the given threshold. |
 
 ## Example scripts
 

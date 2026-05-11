@@ -723,22 +723,15 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   return status;
 }
 
-void Restructure::resynthEmap(sta::Scene* scene,
-                              bool map_multioutput,
-                              bool verbose,
-                              bool create_po_buffers,
-                              bool insert_buffers,
-                              double min_drive_resistance,
-                              double max_drive_resistance,
-                              char* workdir_name)
+void Restructure::resynthEmap(sta::Scene* scene)
 {
   EmapStrategy emap_strategy(scene,
-                             map_multioutput,
-                             verbose,
-                             create_po_buffers,
-                             insert_buffers,
-                             min_drive_resistance,
-                             max_drive_resistance);
+                             emap_map_multioutput_,
+                             emap_verbose_,
+                             emap_create_po_buffers_,
+                             emap_insert_buffers_,
+                             emap_min_drive_resistance_,
+                             emap_max_drive_resistance_);
 
   emap_strategy.OptimizeDesign(open_sta_, name_generator_, resizer_, logger_);
 }
