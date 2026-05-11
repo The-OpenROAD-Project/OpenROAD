@@ -24,7 +24,7 @@
 #include "cut/abc_init.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
-#include "extended_technology_mapping.h"
+#include "emap_strategy.h"
 #include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -732,15 +732,15 @@ void Restructure::resynthEmap(sta::Scene* scene,
                               double max_drive_resistance,
                               char* workdir_name)
 {
-  auto emap = ExtendedTechnologyMapping(scene,
-                                        map_multioutput,
-                                        verbose,
-                                        create_po_buffers,
-                                        insert_buffers,
-                                        min_drive_resistance,
-                                        max_drive_resistance);
+  EmapStrategy emap_strategy(scene,
+                             map_multioutput,
+                             verbose,
+                             create_po_buffers,
+                             insert_buffers,
+                             min_drive_resistance,
+                             max_drive_resistance);
 
-  emap.map(open_sta_, db_, resizer_, logger_);
+  emap_strategy.OptimizeDesign(open_sta_, name_generator_, resizer_, logger_);
 }
 
 }  // namespace rmp

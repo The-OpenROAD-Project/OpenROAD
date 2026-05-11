@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "extended_technology_mapping.h"
+#include "emap_strategy.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -31,7 +31,6 @@
 #include "mockturtle/views/topo_view.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
-#include "ord/OpenRoad.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -52,12 +51,11 @@ Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
 namespace rmp {
 
 std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
-ExtendedTechnologyMapping::ExtractLogicToMockturtle(
-    sta::dbSta* sta,
-    sta::Scene* scene,
-    rsz::Resizer* resizer,
-    mockturtle::tech_library<9u>& tech_lib,
-    utl::Logger* logger)
+EmapStrategy::ExtractLogicToMockturtle(sta::dbSta* sta,
+                                       sta::Scene* scene,
+                                       rsz::Resizer* resizer,
+                                       mockturtle::tech_library<9u>& tech_lib,
+                                       utl::Logger* logger)
 {
   using abc::Abc_Ntk_t;
   using abc::Abc_NtkDelete;
@@ -86,8 +84,7 @@ ExtendedTechnologyMapping::ExtractLogicToMockturtle(
   return {ntk, cut};
 }
 
-std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::GetSignalOutputs(
-    odb::dbMaster* master)
+std::vector<odb::dbMTerm*> EmapStrategy::GetSignalOutputs(odb::dbMaster* master)
 {
   std::vector<odb::dbMTerm*> outs;
 
@@ -113,10 +110,10 @@ std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::GetSignalOutputs(
   return outs;
 }
 
-ExtendedTechnologyMapping::CellMapping
-ExtendedTechnologyMapping::MapCellFromStdCell(const BlockNtk& ntk,
-                                              const BlockNtk::node& n,
-                                              utl::Logger* logger)
+EmapStrategy::CellMapping EmapStrategy::MapCellFromStdCell(
+    const BlockNtk& ntk,
+    const BlockNtk::node& n,
+    utl::Logger* logger)
 {
   CellMapping m;
 
@@ -140,9 +137,8 @@ ExtendedTechnologyMapping::MapCellFromStdCell(const BlockNtk& ntk,
 }
 
 std::optional<const sta::LibertyCell*>
-ExtendedTechnologyMapping::FindLibertyCellByMasterName(
-    sta::Sta* sta,
-    const std::string& cell_name)
+EmapStrategy::FindLibertyCellByMasterName(sta::Sta* sta,
+                                          const std::string& cell_name)
 {
   auto* libs = sta->network()->libertyLibraryIterator();
   while (libs->hasNext()) {
@@ -154,10 +150,10 @@ ExtendedTechnologyMapping::FindLibertyCellByMasterName(
   return std::nullopt;
 }
 
-std::optional<ExtendedTechnologyMapping::TieMaster>
-ExtendedTechnologyMapping::FindTieMaster(const odb::dbSet<odb::dbLib>& libs,
-                                         sta::dbSta* sta,
-                                         bool value)
+std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
+    const odb::dbSet<odb::dbLib>& libs,
+    sta::dbSta* sta,
+    bool value)
 {
   std::vector<TieMaster> candidates;
 
@@ -214,12 +210,11 @@ ExtendedTechnologyMapping::FindTieMaster(const odb::dbSet<odb::dbLib>& libs,
   return std::nullopt;
 }
 
-odb::dbNet* ExtendedTechnologyMapping::EnsureConstNet(
-    bool value,
-    odb::dbBlock* block,
-    const odb::dbSet<odb::dbLib>& libs,
-    sta::dbSta* sta,
-    utl::Logger* logger)
+odb::dbNet* EmapStrategy::EnsureConstNet(bool value,
+                                         odb::dbBlock* block,
+                                         const odb::dbSet<odb::dbLib>& libs,
+                                         sta::dbSta* sta,
+                                         utl::Logger* logger)
 {
   odb::dbNet*& net = value ? net1_cache_ : net0_cache_;
 
@@ -269,7 +264,7 @@ odb::dbNet* ExtendedTechnologyMapping::EnsureConstNet(
   return net;
 }
 
-void ExtendedTechnologyMapping::ImportMockturtleMappedNetwork(
+void EmapStrategy::ImportMockturtleMappedNetwork(
     sta::dbSta* sta,
     const BlockNtk& ntk,
     const odb::dbSet<odb::dbLib>& libs,
@@ -495,7 +490,7 @@ void ExtendedTechnologyMapping::ImportMockturtleMappedNetwork(
 }
 
 template <typename Ntk>
-odb::dbNet* ExtendedTechnologyMapping::GetDriverNet(
+odb::dbNet* EmapStrategy::GetDriverNet(
     mockturtle::topo_view<Ntk, false>& topo_ntk,
     odb::dbBlock* block,
     const odb::dbSet<odb::dbLib>& libs,
@@ -639,10 +634,10 @@ static void FilterDriverResistanceMax(std::vector<mockturtle::gate>& gates,
   }
 }
 
-void ExtendedTechnologyMapping::map(sta::dbSta* sta,
-                                    odb::dbDatabase* db,
-                                    rsz::Resizer* resizer,
-                                    utl::Logger* logger)
+void EmapStrategy::OptimizeDesign(sta::dbSta* sta,
+                                  utl::UniqueName& name_generator,
+                                  rsz::Resizer* resizer,
+                                  utl::Logger* logger)
 {
   sta->ensureGraph();
   sta->ensureLevelized();
@@ -759,6 +754,7 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
   mapped_ntk.report_stats();
 
   // Import mapped network back to OpenROAD
+  odb::dbDatabase* db = sta->db();
   auto libs = db->getLibs();
 
   // Clear const network cache

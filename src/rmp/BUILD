@@ -15,38 +15,50 @@ package(
 )
 
 cc_library(
-    name = "rmp",
+    name = "utils",
+    srcs = ["src/utils.cpp"],
+    hdrs = ["src/utils.h"],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
+    ],
+)
+
+cc_library(
+    name = "optimization_strategies",
     srcs = [
-        "src/Restructure.cpp",
         "src/annealing_strategy.cpp",
-        "src/annealing_strategy.h",
         "src/delay_optimization_strategy.cpp",
-        "src/delay_optimization_strategy.h",
-        "src/extended_technology_mapping.cpp",
-        "src/extended_technology_mapping.h",
+        "src/emap_strategy.cpp",
         "src/genetic_strategy.cpp",
-        "src/genetic_strategy.h",
         "src/gia.cpp",
+        "src/slack_tuning_strategy.cpp",
+        "src/zero_slack_strategy.cpp",
+    ],
+    hdrs = [
+        "src/annealing_strategy.h",
+        "src/delay_optimization_strategy.h",
+        "src/emap_strategy.h",
+        "src/genetic_strategy.h",
         "src/gia.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
-        "src/slack_tuning_strategy.cpp",
         "src/slack_tuning_strategy.h",
-        "src/utils.cpp",
-        "src/utils.h",
-        "src/zero_slack_strategy.cpp",
         "src/zero_slack_strategy.h",
     ],
-    hdrs = [
-        "include/rmp/Restructure.h",
-    ],
     defines = ["ABC_NAMESPACE=abc"],
-    includes = [
-        "include",
-        "src",
-    ],
+    includes = ["src"],
+    visibility = ["//src/rmp/test:__pkg__"],
     deps = [
-        "//:ord",
+        ":utils",
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -60,13 +72,32 @@ cc_library(
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
-        "@boost.bind",
-        "@boost.config",
-        "@boost.fusion",
-        "@boost.lambda",
-        "@boost.optional",
-        "@boost.phoenix",
-        "@boost.spirit",
+    ],
+)
+
+cc_library(
+    name = "rmp",
+    srcs = [
+        "src/Restructure.cpp",
+    ],
+    hdrs = [
+        "include/rmp/Restructure.h",
+    ],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":optimization_strategies",
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
     ],
 )
 
@@ -88,9 +119,7 @@ cc_library(
         ":rmp",
         "//:ord",
         "//src/cut",
-        "//src/dbSta",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -110,10 +139,9 @@ cc_binary(
     linkshared = True,
     deps = [
         ":rmp",
+        "//:ord",
         "//src/cut",
-        "//src/dbSta",
         "//src/odb",
-        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",

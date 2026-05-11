@@ -8,25 +8,26 @@
 #include "mockturtle/utils/tech_library.hpp"
 #include "mockturtle/views/cell_view.hpp"
 #include "mockturtle/views/names_view.hpp"
+#include "resynthesis_strategy.h"
 #include "rsz/Resizer.hh"
 #include "sta/Scene.hh"
 #include "utl/Logger.h"
 
 namespace rmp {
 
-class ExtendedTechnologyMapping
+class EmapStrategy : public ResynthesisStrategy
 {
   using BlockNtk = mockturtle::names_view<
       mockturtle::cell_view<mockturtle::block_network>>;
 
  public:
-  explicit ExtendedTechnologyMapping(sta::Scene* scene,
-                                     bool map_multioutput,
-                                     bool verbose,
-                                     bool create_po_buffers,
-                                     bool insert_buffers,
-                                     double min_drive_resistance,
-                                     double max_drive_resistance)
+  explicit EmapStrategy(sta::Scene* scene,
+                        bool map_multioutput,
+                        bool verbose,
+                        bool create_po_buffers,
+                        bool insert_buffers,
+                        double min_drive_resistance,
+                        double max_drive_resistance)
       : scene_(scene),
         map_multioutput_(map_multioutput),
         verbose_(verbose),
@@ -36,12 +37,11 @@ class ExtendedTechnologyMapping
         max_drive_resistance_(max_drive_resistance)
   {
   }
-  ~ExtendedTechnologyMapping() = default;
 
-  void map(sta::dbSta* sta,
-           odb::dbDatabase* db,
-           rsz::Resizer* resizer,
-           utl::Logger* logger);
+  void OptimizeDesign(sta::dbSta* sta,
+                      utl::UniqueName& name_generator,
+                      rsz::Resizer* resizer,
+                      utl::Logger* logger) override;
 
  private:
   // Mapping info for one cell instance
