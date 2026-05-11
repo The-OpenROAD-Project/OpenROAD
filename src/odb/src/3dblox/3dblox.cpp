@@ -11,6 +11,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -454,6 +455,22 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
+    std::error_code ec;
+    const bool def_exists
+        = std::filesystem::exists(chiplet.external.def_file, ec);
+    if (ec) {
+      logger_->error(utl::ODB,
+                     558,
+                     "Cannot access DEF file {}: {}",
+                     chiplet.external.def_file,
+                     ec.message());
+    }
+    if (!def_exists) {
+      logger_->error(utl::ODB,
+                     557,
+                     "DEF file does not exist: {}",
+                     chiplet.external.def_file);
+    }
     odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
     std::vector<odb::dbLib*> search_libs;
     for (odb::dbLib* lib : db_->getLibs()) {

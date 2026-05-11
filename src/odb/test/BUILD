@@ -217,6 +217,7 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "read_3dbx-fail",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -280,6 +281,8 @@ filegroup(
         "data/example2.bmap",
         "data/example3.bmap",
         "data/example4.bmap",
+        "data/fail.3dbx",
+        "data/fail_def.3dbv",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
