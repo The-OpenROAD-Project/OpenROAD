@@ -84,7 +84,9 @@ const sta::TimingArc* selectedPathArc(const sta::PathExpanded& expanded,
                                       const sta::StaState* sta,
                                       FailReason* fail_reason)
 {
-  if (path_index < expanded.startIndex() || path_index >= expanded.size()) {
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  if (path_index < start_index || path_index >= path_count) {
     setFailReason(fail_reason, FailReason::kPathIndexOutOfRange);
     return nullptr;
   }
@@ -1082,7 +1084,9 @@ std::optional<DelayStageState> buildDelayStageStateFromPath(
     const sta::MinMax* min_max,
     FailReason* fail_reason)
 {
-  if (path_index < expanded.startIndex() || path_index >= expanded.size()) {
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  if (path_index < start_index || path_index >= path_count) {
     setFailReason(fail_reason, FailReason::kPathIndexOutOfRange);
     return std::nullopt;
   }
@@ -1130,9 +1134,11 @@ ArcDelayState collectPathStages(const Resizer& resizer,
 
   std::vector<DelayStageState> fanin_stages;
   fanin_stages.reserve(delay_levels);
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
   int found_fanin_stages = 0;
   for (int path_index = target_path_index - 1;
-       path_index >= expanded.startIndex() && found_fanin_stages < delay_levels;
+       path_index >= start_index && found_fanin_stages < delay_levels;
        --path_index) {
     FailReason ignored_reason = FailReason::kNone;
     const std::optional<DelayStageState> stage = buildDelayStageStateFromPath(
@@ -1152,7 +1158,7 @@ ArcDelayState collectPathStages(const Resizer& resizer,
 
   int found_fanout_stages = 0;
   for (int path_index = target_path_index + 1;
-       path_index < expanded.size() && found_fanout_stages < delay_levels;
+       path_index < path_count && found_fanout_stages < delay_levels;
        ++path_index) {
     FailReason ignored_reason = FailReason::kNone;
     const std::optional<DelayStageState> stage = buildDelayStageStateFromPath(

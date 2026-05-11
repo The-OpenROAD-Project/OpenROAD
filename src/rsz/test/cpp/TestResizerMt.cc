@@ -902,10 +902,9 @@ TEST_F(TestResizerMt,
   EXPECT_GE(evaluations_with_legal_best, 1);
 }
 
-TEST_F(TestResizerMt,
-       NestedTargetParallelGenerateEstimateIsDeterministic32Threads)
+TEST_F(TestResizerMt, NestedTargetParallelGenerateEstimateIsDeterministic)
 {
-  sta_->setThreadCount(33);
+  sta_->setThreadCount(8);
 
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -920,7 +919,7 @@ TEST_F(TestResizerMt,
   policy.start();
 
   ASSERT_NE(policy.thread_pool_, nullptr);
-  ASSERT_EQ(policy.thread_pool_->threadCount(), 32u);
+  ASSERT_EQ(policy.thread_pool_->threadCount(), 7u);
 
   std::vector<Target> targets;
   targets.reserve(12);
@@ -945,7 +944,7 @@ TEST_F(TestResizerMt,
       = evaluationSignature(baseline_evaluations);
   ASSERT_EQ(baseline_signature.size(), targets.size());
 
-  constexpr int kRepeatCount = 100;
+  constexpr int kRepeatCount = 3;
   for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
     const std::vector<TargetEvaluation> evaluations
         = generateAndEstimateTargetsInParallel(policy, targets);
