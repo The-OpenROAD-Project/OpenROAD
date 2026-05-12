@@ -17,6 +17,7 @@
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
+#include "odb/dbChipCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -156,6 +157,10 @@ void dbChipInst::setOrient(dbOrientType3D orient)
 void dbChipInst::setLoc(const Point3D& loc)
 {
   _dbChipInst* obj = (_dbChipInst*) this;
+  _dbChip* parent = (_dbChip*) getParentChip();
+  for (auto cb : parent->callbacks_) {
+    cb->inDbPreMoveDbChipInst(this);
+  }
   dbChip* chip = getMasterChip();
   Cuboid cuboid = chip->getCuboid();
   dbTransform t(getOrient());
@@ -165,6 +170,9 @@ void dbChipInst::setLoc(const Point3D& loc)
   const int dz = loc.z() - cuboid.lll().z();
   cuboid.moveDelta(dx, dy, dz);
   obj->origin_ = Point3D(dx, dy, dz);
+  for (auto cb : parent->callbacks_) {
+    cb->inDbPostMoveDbChipInst(this);
+  }
 }
 
 Point3D dbChipInst::getLoc() const
@@ -278,6 +286,9 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   }
   // reverse the chip_region_insts_ list
   ((dbChipInst*) chipinst)->getRegions().reverse();
+  for (auto cb : _parent->callbacks_) {
+    cb->inDbChipInstCreate((dbChipInst*) chipinst);
+  }
   return (dbChipInst*) chipinst;
 }
 
@@ -289,6 +300,11 @@ void dbChipInst::destroy(dbChipInst* chipInst)
 
   _dbChipInst* inst = (_dbChipInst*) chipInst;
   _dbDatabase* db = (_dbDatabase*) inst->getOwner();
+
+  _dbChip* parent_chip = db->chip_tbl_->getPtr(inst->parent_chip_);
+  for (auto cb : parent_chip->callbacks_) {
+    cb->inDbChipInstDestroy(chipInst);
+  }
 
   // remove regions
   uint32_t region_inst_id = inst->chip_region_insts_;
@@ -307,7 +323,7 @@ void dbChipInst::destroy(dbChipInst* chipInst)
     }
   }
   // Get parent chip
-  _dbChip* parent = db->chip_tbl_->getPtr(inst->parent_chip_);
+  _dbChip* parent = parent_chip;
   parent->chipinsts_map_.erase(inst->name_);
 
   // Remove from parent's linked list

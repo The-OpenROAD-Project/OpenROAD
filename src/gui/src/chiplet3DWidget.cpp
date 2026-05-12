@@ -102,7 +102,7 @@ void Chiplet3DWidget::buildGeometries()
 
   int index = 0;
   for (const auto& chip : model->getChips()) {
-    odb::Cuboid draw_cuboid = chip.cuboid;
+    odb::Cuboid draw_cuboid = chip->getCuboid();
     center_transform.apply(draw_cuboid);
     // Color by Depth (proportional to Z)
     const QVector3D color = kColorPalette[index++ % kColorPalette.size()];
