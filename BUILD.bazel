@@ -2,6 +2,7 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
@@ -45,6 +46,29 @@ exports_files([
     "src/Exception.i",
     "src/options.i",
 ])
+
+string_flag(
+    name = "platform",
+    build_setting_default = "cli",
+    values = [
+        "cli",
+        "gui",
+    ],
+)
+
+config_setting(
+    name = "platform_cli",
+    flag_values = {
+        ":platform": "cli",
+    },
+)
+
+config_setting(
+    name = "platform_gui",
+    flag_values = {
+        ":platform": "gui",
+    },
+)
 
 OPENROAD_LIBRARY_DEPS = [
     ":openroad_version",
@@ -160,27 +184,37 @@ cc_binary(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        ":openroad_lib",
         ":openroad_version",
         ":opt_notification",
         ":ord",
         ":tcl_readline_setup",
         "//bazel:tcl_library_init",
         "//src/cut",
-        "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//src/web",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
-    ],
+    ] + select(
+        {
+            ":platform_cli": [
+                ":openroad_lib",
+                "//src/gui",
+            ],
+            ":platform_gui": [
+                ":openroad_lib_qt",
+                "//src/gui:gui_qt",
+            ],
+        },
+    ),
 )
 
 # Qt GUI variant. Build explicitly when the interactive GUI is wanted:
 #   bazelisk build //:openroad-qt
-# `:openroad` (CLI) is what build-time tool consumers (rule libraries
-# pulling OpenROAD via cfg = "exec") should depend on.
+# Additive to the existing `--//:platform=gui //:openroad` flag path —
+# this target is preferable for ad-hoc GUI builds because it does not
+# invalidate `:openroad`'s cache the way flipping the flag does.
 cc_binary(
     name = "openroad-qt",
     srcs = [
@@ -242,8 +276,8 @@ cc_library(
 )
 
 # Qt variant: same sources, linked against the Qt GUI implementation.
-# Used only by :openroad-qt. Compiled separately (different `BUILD_GUI`
-# define + different gui dep) when that target is requested.
+# Used by :openroad-qt, and by :openroad when --//:platform=gui is set.
+# Compiled separately (different `BUILD_GUI` define + different gui dep).
 cc_library(
     name = "openroad_lib_qt",
     srcs = [
