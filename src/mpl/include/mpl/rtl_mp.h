@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -94,7 +94,7 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
 
-  odb::OdbPtrMap<odb::dbInst, odb::Rect> guidance_regions_;
+  odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };
 
 }  // namespace mpl

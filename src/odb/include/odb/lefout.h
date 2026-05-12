@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 #include "boost/polygon/polygon.hpp"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -73,13 +73,13 @@ class lefout
 
  private:
   using ObstructionMap
-      = odb::OdbPtrMap<dbTechLayer, boost::polygon::polygon_90_set_data<int>>;
+      = odb::PtrMap<dbTechLayer, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
-  odb::OdbPtrSet<dbVia> writeBoxes(std::ostream& out,
-                                   dbBlock* block,
-                                   dbSet<GenericBox>& boxes,
-                                   const char* indent);
+  odb::PtrSet<dbVia> writeBoxes(std::ostream& out,
+                                dbBlock* block,
+                                dbSet<GenericBox>& boxes,
+                                const char* indent);
 
   void writeTechBody(std::ostream& out, dbTech* tech);
   void writeLayer(std::ostream& out, dbTechLayer* layer);
@@ -136,9 +136,9 @@ class lefout
   void findLayerViaObstructions(ObstructionMap& obstructions,
                                 dbSBox* box) const;
   void writeBlock(std::ostream& out, dbBlock* db_block);
-  odb::OdbPtrSet<dbVia> writePins(std::ostream& out, dbBlock* db_block);
-  odb::OdbPtrSet<dbVia> writePowerPins(std::ostream& out, dbBlock* db_block);
-  odb::OdbPtrSet<dbVia> writeBlockTerms(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writePins(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writePowerPins(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writeBlockTerms(std::ostream& out, dbBlock* db_block);
 
   inline void writeObjectPropertyDefinitions(
       std::ostream& out,

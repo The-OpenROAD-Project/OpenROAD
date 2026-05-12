@@ -8,7 +8,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -606,7 +606,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case1)
 
   // Find load pin for buffer insertion
   dbITerm* buf0_a = buf0_inst->findITerm("A");
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(buf0_a);
 
   // Insert buffer
@@ -663,13 +663,13 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case2)
 
   // Insert buffer 1
   dbITerm* buf0_a = buf0_inst->findITerm("A");
-  odb::OdbPtrSet<dbObject> loads1;
+  odb::PtrSet<dbObject> loads1;
   loads1.insert(buf0_a);
   dbInst* new_buf1 = n1->insertBufferBeforeLoads(loads1, buffer_master);
   ASSERT_TRUE(new_buf1);
 
   // Insert buffer 2
-  odb::OdbPtrSet<dbObject> loads2;
+  odb::PtrSet<dbObject> loads2;
   loads2.insert(out_port);
   dbInst* new_buf2 = n2->insertBufferBeforeLoads(loads2, buffer_master);
   ASSERT_TRUE(new_buf2);
@@ -758,14 +758,14 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case3)
   // Insert buffer 1
   dbITerm* buf0_a = mod0_module->findDbInst("buf0")->findITerm("A");
   ASSERT_TRUE(buf0_a);
-  odb::OdbPtrSet<dbObject> loads1;
+  odb::PtrSet<dbObject> loads1;
   loads1.insert(buf0_a);
   dbInst* new_buf1 = buf0_a->getNet()->insertBufferBeforeLoads(
       loads1, buffer_master, nullptr, "new_buf1");
   ASSERT_TRUE(new_buf1);
 
   // Insert buffer 2
-  odb::OdbPtrSet<dbObject> loads2;
+  odb::PtrSet<dbObject> loads2;
   loads2.insert(out_port);
   dbInst* new_buf2 = out_port->getNet()->insertBufferBeforeLoads(
       loads2, buffer_master, nullptr, "new_buf2");
@@ -830,7 +830,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
   // Insert buffer 1
   dbITerm* load0_a = load0->findITerm("A");
   dbITerm* load1_a = load1->findITerm("A");
-  odb::OdbPtrSet<dbObject> loads1;
+  odb::PtrSet<dbObject> loads1;
   loads1.insert(load0_a);
   loads1.insert(load1_a);
   dbInst* new0
@@ -840,7 +840,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case4)
   // Insert buffer 2
   dbITerm* new0_a = new0->findITerm("A");
   dbITerm* load2_a = load2->findITerm("A");
-  odb::OdbPtrSet<dbObject> loads2;
+  odb::PtrSet<dbObject> loads2;
   loads2.insert(new0_a);
   loads2.insert(load2_a);
   dbInst* new1
@@ -937,7 +937,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
   dbITerm* load1_a = mod2->findDbInst("load1")->findITerm("A");
   ASSERT_TRUE(load1_a);
 
-  odb::OdbPtrSet<dbObject> loads1;
+  odb::PtrSet<dbObject> loads1;
   loads1.insert(load0_a);
   loads1.insert(load1_a);
   dbInst* new0
@@ -950,7 +950,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case5)
   dbITerm* load2_a = mod3->findDbInst("load2")->findITerm("A");
   ASSERT_TRUE(load2_a);
 
-  odb::OdbPtrSet<dbObject> loads2;
+  odb::PtrSet<dbObject> loads2;
   loads2.insert(new0_a);
   loads2.insert(load2_a);
   dbInst* new1
@@ -1068,7 +1068,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case6)
   // Insert buffer
   // - Targets: load5 (in H2/H1), load2 (in H3), load3 (in H4/H5)
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load5_a);
   targets.insert(load2_a);
   targets.insert(load3_a);
@@ -1236,7 +1236,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case7)
   // Insert buffer
   // - Targets: load4 (Top), load2 (H1), load3 (H2/H3)
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load4_a);
   targets.insert(load2_a);
   targets.insert(load3_a);
@@ -1343,7 +1343,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case8)
   load1_a->connect(n1);
 
   // Insert Buffer
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
   dbInst* new_buf
       = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
@@ -1396,7 +1396,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case9)
   drvr_z->connect(n1);
 
   // Insert Buffer
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(out_port);
   dbInst* new_buf
       = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
@@ -1443,7 +1443,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case10)
   out_port->setIoType(dbIoType::OUTPUT);
 
   // Insert Buffer
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(out_port);
   dbInst* new_buf
       = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
@@ -1498,7 +1498,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case11)
   load2_a->connect(n1);
 
   // Insert Buffer for load1 only
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
   dbInst* new_buf
       = n1->insertBufferBeforeLoads(targets, buffer_master, nullptr, "new_buf");
@@ -1554,7 +1554,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case12)
   load1_a->connect(n1);
 
   // Insert Buffer for both
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
   targets.insert(out_port);
   dbInst* new_buf
@@ -1610,7 +1610,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case13)
   ASSERT_NE(n1, nullptr);
 
   // Targets
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);   // Leaf on top
   targets.insert(out_port);  // Output Port
   targets.insert(load2_a);   // Hierarchical Leaf
@@ -1683,7 +1683,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case14)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_pre.v");
 
   // 2. Insert Buffer
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(load1_inst->findITerm("A"));
   loads.insert(load2_inst->findITerm("A"));
 
@@ -1769,7 +1769,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case15)
   // Insert buffer
   // - Targets: load1, u1/load2, u1/load3
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
   targets.insert(u1_load2_a);
   targets.insert(u1_load3_a);
@@ -1913,7 +1913,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case16)
   // Insert buffer
   // - Targets: load0, h0/load1
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load0_a);
   targets.insert(h0_load1_a);
 
@@ -1984,7 +1984,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case17)
   // - Targets: load0, h0/load1
   // - Note that the two loads are on different dbNets.
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load0_a);
   targets.insert(h0_load1_a);
 
@@ -2065,7 +2065,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case18)
   // - Targets: load0, h0/load1
   // - Note that the two loads are on different dbNets.
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load0_a);
   targets.insert(h0_load1_a);
 
@@ -2166,7 +2166,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case19)
   // - Targets: load0, h0/mem/w_mask_in[2:0]
   // - Note that the two loads are on different dbNets.
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load0_a);
   targets.insert(h0_mem_w_mask_in0);
   targets.insert(h0_mem_w_mask_in1);
@@ -2257,7 +2257,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case20)
   // - Targets: load0, h0/mem/w_mask_in[2:0]
   // - Note that the two loads are on different dbNets.
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(h0_load0_a);
   targets.insert(h0_h1_load1_a);
   targets.insert(h2_mem_we_in);
@@ -2335,7 +2335,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case21)
   // - Targets: h1/h2/load0, h3/load1, h3/load2
   // - Note that the two loads are on different dbNets.
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(h1_h2_load0_a);
   targets.insert(h3_load1_a);
   targets.insert(h3_load2_a);
@@ -2406,7 +2406,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case22)
   // Insert buffer
   // - Targets: load_internal_a, load_exec_a
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(load_internal_a);
   loads.insert(load_exec_a);
 
@@ -2475,7 +2475,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case23)
   // Insert buffer
   // - Targets: load_a
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(load_a);
 
   dbInst* new_buf
@@ -2583,9 +2583,9 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   ASSERT_EQ(modnet_h0_out, nullptr);
 
   // Verify we have multiple modnets in target module for this flat net
-  odb::OdbPtrSet<odb::dbModNet> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   target_net->findRelatedModNets(related_modnets);
-  odb::OdbPtrSet<odb::dbModNet> modnets_in_top;
+  odb::PtrSet<odb::dbModNet> modnets_in_top;
   dbModule* top_module = block_->getTopModule();
   for (dbModNet* modnet : related_modnets) {
     if (modnet->getParent() == top_module) {
@@ -2609,7 +2609,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case24)
   // - The fix ensures buffer input connects to driver's modnet ('n1'),
   //   not the load's modnet ('w1')
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(h0_internal_buf_a);
   loads.insert(h1_internal_load_a);
 
@@ -2693,7 +2693,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case25)
   //----------------------------------------------------
   // Insert buffer
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(h0_load0_a);
   loads.insert(load1_a);
 
@@ -2764,7 +2764,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case26)
   //----------------------------------------------------
   // Insert buffer
   //----------------------------------------------------
-  odb::OdbPtrSet<dbObject> loads;
+  odb::PtrSet<dbObject> loads;
   loads.insert(h1_load0_a);
   loads.insert(h1_load1_a);
 
@@ -2822,7 +2822,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case27)
   EXPECT_EQ(num_warning, 0);
 
   // Insert buffer before load1/A
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
 
   dbInst* new_buf = target_net->insertBufferBeforeLoads(
@@ -2902,7 +2902,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case28)
   // Buffer output will need to punch a port into H1 to reach load1.
   // Since H1 already has internal net "h1/_019_", the punched port name
   // should be renamed to avoid collision (e.g., "_019__0")
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load1_a);
   targets.insert(load4_a);
 
@@ -2991,7 +2991,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case29)
   EXPECT_EQ(num_warning, 0);
 
   // Insert buffer before load1/A (in H1) AND load0/A (in top)
-  odb::OdbPtrSet<dbObject> targets;
+  odb::PtrSet<dbObject> targets;
   targets.insert(load0_a);
   targets.insert(load1_a);
 
@@ -3126,7 +3126,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case31)
   EXPECT_EQ(num_warning, 0);
 
   // Prepare load set - only loads on net848 (hierarchical loads in swerv/ifu)
-  odb::OdbPtrSet<dbObject> load_pins;
+  odb::PtrSet<dbObject> load_pins;
   load_pins.insert(load0_a);
   load_pins.insert(load1_a);
 
@@ -3185,7 +3185,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case32)
   EXPECT_EQ(num_warning, 0);
 
   // Prepare load set
-  odb::OdbPtrSet<dbObject> load_pins;
+  odb::PtrSet<dbObject> load_pins;
   load_pins.insert(load0_a);
   load_pins.insert(load1_a);
 
@@ -3337,7 +3337,7 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case34)
   dbITerm* load2_a = block_->findITerm("sub0/load2/A");
   ASSERT_NE(load2_a, nullptr);
 
-  odb::OdbPtrSet<dbObject> load_pins;
+  odb::PtrSet<dbObject> load_pins;
   load_pins.insert(load2_a);
 
   dbInst* new_buf

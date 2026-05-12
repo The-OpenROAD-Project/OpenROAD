@@ -8,7 +8,7 @@
 
 #include "Coordinates.h"
 #include "dpl/Opendp.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace dpl {
@@ -33,9 +33,8 @@ class Padding
   DbuX paddedWidth(const Node* cell) const;
 
  private:
-  using InstPaddingMap = odb::OdbPtrMap<odb::dbInst, std::pair<GridX, GridX>>;
-  using MasterPaddingMap
-      = odb::OdbPtrMap<odb::dbMaster, std::pair<GridX, GridX>>;
+  using InstPaddingMap = odb::PtrMap<odb::dbInst, std::pair<GridX, GridX>>;
+  using MasterPaddingMap = odb::PtrMap<odb::dbMaster, std::pair<GridX, GridX>>;
 
   GridX pad_left_{0};
   GridX pad_right_{0};

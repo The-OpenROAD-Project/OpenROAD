@@ -100,7 +100,7 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
 }
 
 void Connect::setSplitCuts(
-    const odb::OdbPtrMap<odb::dbTechLayer, SplitCut>& splits)
+    const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack
@@ -896,7 +896,7 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
   if (layer_count != 3) {
     return false;
   }
-  odb::OdbPtrSet<odb::dbTechLayer> rule_layers;
+  odb::PtrSet<odb::dbTechLayer> rule_layers;
   for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }

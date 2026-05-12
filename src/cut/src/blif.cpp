@@ -17,7 +17,7 @@
 #include "cut/blifParser.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -50,7 +50,7 @@ Blif::Blif(utl::Logger* logger,
   open_sta_ = sta;
 }
 
-void Blif::setReplaceableInstances(odb::OdbPtrSet<odb::dbInst>& insts)
+void Blif::setReplaceableInstances(odb::PtrSet<odb::dbInst>& insts)
 {
   instances_to_optimize_ = insts;
 }
@@ -76,7 +76,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     return false;
   }
 
-  odb::OdbPtrSet<odb::dbInst>& insts = this->instances_to_optimize_;
+  odb::PtrSet<odb::dbInst>& insts = this->instances_to_optimize_;
   std::map<uint32_t, odb::dbInst*> inst_map;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
@@ -414,7 +414,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getFlopCount());
 
   for (auto& inst : instances_to_optimize_) {
-    odb::OdbPtrSet<odb::dbNet> connected_nets;
+    odb::PtrSet<odb::dbNet> connected_nets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();

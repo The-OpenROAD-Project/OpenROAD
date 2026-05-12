@@ -179,7 +179,7 @@ void GlobalConnectDialog::runRulesWithForce()
 void GlobalConnectDialog::clearRules()
 {
   auto rule_set = block_->getGlobalConnects();
-  odb::OdbPtrSet<odb::dbGlobalConnect> rules(rule_set.begin(), rule_set.end());
+  odb::PtrSet<odb::dbGlobalConnect> rules(rule_set.begin(), rule_set.end());
   for (auto* rule : rules) {
     deleteRule(rule);
   }

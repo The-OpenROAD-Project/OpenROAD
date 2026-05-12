@@ -122,7 +122,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   }
 
   // 3. Create new net for one side of the buffer
-  odb::OdbPtrSet<dbObject> terms;
+  odb::PtrSet<dbObject> terms;
   terms.insert(term_obj);
   new_flat_net_ = createNewFlatNet(terms);
 
@@ -145,7 +145,7 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
 }
 
 dbInst* dbInsertBuffer::insertBufferBeforeLoads(
-    const odb::OdbPtrSet<dbObject>& load_pins,
+    const odb::PtrSet<dbObject>& load_pins,
     const dbMaster* buffer_master,
     const Point* loc,
     const char* new_buf_base_name,
@@ -401,7 +401,7 @@ bool dbInsertBuffer::getPinLocation(const dbObject* pin, int& x, int& y) const
 }
 
 bool dbInsertBuffer::computeCentroid(const dbObject* drvr_pin,
-                                     const odb::OdbPtrSet<dbObject>& load_pins,
+                                     const odb::PtrSet<dbObject>& load_pins,
                                      Point& result) const
 {
   uint64_t sum_x = 0;
@@ -436,7 +436,7 @@ bool dbInsertBuffer::computeCentroid(const dbObject* drvr_pin,
 }
 
 dbNet* dbInsertBuffer::createNewFlatNet(
-    const odb::OdbPtrSet<dbObject>& connected_terms)
+    const odb::PtrSet<dbObject>& connected_terms)
 {
   // Create a new net for buffering in the target module.
   //
@@ -582,7 +582,7 @@ std::optional<bool> dbInsertBuffer::getCachedReusability(dbModNet* net) const
 
 bool dbInsertBuffer::checkAllLoadsAreTargets(
     dbModNet* start_net,
-    const odb::OdbPtrSet<dbObject>& load_pins) const
+    const odb::PtrSet<dbObject>& load_pins) const
 {
   if (start_net == nullptr) {
     return true;
@@ -593,7 +593,7 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
     return *result;
   }
 
-  odb::OdbPtrSet<dbModNet> visited;
+  odb::PtrSet<dbModNet> visited;
 
   std::function<bool(dbModNet*)> worker = [&](dbModNet* net) -> bool {
     if (net == nullptr) {
@@ -664,7 +664,7 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
 }
 
 void dbInsertBuffer::populateReusableModNets(
-    const odb::OdbPtrSet<dbObject>& load_pins)
+    const odb::PtrSet<dbObject>& load_pins)
 {
   // Algorithm:
   // 1. Iterate through each leaf-level load pin.
@@ -742,11 +742,10 @@ void dbInsertBuffer::advanceToParentModule(dbObject*& load_obj,
   top_mod_iterm = next_mod_iterm;
 }
 
-bool dbInsertBuffer::tryReuseParentPath(
-    dbObject*& load_obj,
-    dbModule*& current_module,
-    dbModITerm*& top_mod_iterm,
-    const odb::OdbPtrSet<dbObject>& load_pins)
+bool dbInsertBuffer::tryReuseParentPath(dbObject*& load_obj,
+                                        dbModule*& current_module,
+                                        dbModITerm*& top_mod_iterm,
+                                        const odb::PtrSet<dbObject>& load_pins)
 {
   // Check if there's an existing hierarchical connection to reuse.
   dbModNet* existing_mod_net = getModNet(load_obj);
@@ -892,10 +891,9 @@ void dbInsertBuffer::performFinalConnections(dbITerm* load_pin,
   load_pin->connect(drvr_term->getNet());
 }
 
-bool dbInsertBuffer::stitchLoadToDriver(
-    dbITerm* load_pin,
-    dbITerm* drvr_term,
-    const odb::OdbPtrSet<dbObject>& load_pins)
+bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
+                                        dbITerm* drvr_term,
+                                        const odb::PtrSet<dbObject>& load_pins)
 {
   dbModule* target_module = drvr_term->getInst()->getModule();
   dbModule* current_module = load_pin->getInst()->getModule();
@@ -946,7 +944,7 @@ bool dbInsertBuffer::stitchLoadToDriver(
 }
 
 dbModNet* dbInsertBuffer::getFirstDriverModNetInTargetModule(
-    const odb::OdbPtrSet<dbModNet>& modnets_in_target_module) const
+    const odb::PtrSet<dbModNet>& modnets_in_target_module) const
 {
   // 1. Find the driver terminal of this flat net
   dbObject* driver_term = net_->getFirstDriverTerm();
@@ -1336,10 +1334,10 @@ void dbInsertBuffer::hierarchicalConnect(dbObject* driver, dbObject* load)
 }
 
 dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
-    const odb::OdbPtrSet<dbObject>& load_pins,
+    const odb::PtrSet<dbObject>& load_pins,
     bool loads_on_diff_nets) const
 {
-  odb::OdbPtrSet<dbNet> other_dbnets;
+  odb::PtrSet<dbNet> other_dbnets;
   dbModule* target_module = nullptr;
   bool first = true;
 
@@ -1438,10 +1436,10 @@ dbModule* dbInsertBuffer::validateLoadPinsAndFindLCA(
 }
 
 void dbInsertBuffer::createNewFlatAndHierNets(
-    const odb::OdbPtrSet<dbObject>& load_pins)
+    const odb::PtrSet<dbObject>& load_pins)
 {
   // Create a new flat net
-  odb::OdbPtrSet<dbObject> connected_terms;
+  odb::PtrSet<dbObject> connected_terms;
   connected_terms.insert(load_pins.begin(), load_pins.end());
   new_flat_net_ = createNewFlatNet(connected_terms);
 
@@ -1480,7 +1478,7 @@ void dbInsertBuffer::createNewFlatAndHierNets(
 }
 
 void dbInsertBuffer::rewireBufferLoadPins(
-    const odb::OdbPtrSet<dbObject>& load_pins)
+    const odb::PtrSet<dbObject>& load_pins)
 {
   // 1.1. Connect Buffer Input to the Original Net
   buf_input_iterm_->connect(net_);
@@ -1488,10 +1486,10 @@ void dbInsertBuffer::rewireBufferLoadPins(
 
   // 1.2. Also connect to ModNet
   if (block_->getDb()->hasHierarchy()) {
-    odb::OdbPtrSet<dbModNet> related_modnets;
+    odb::PtrSet<dbModNet> related_modnets;
     net_->findRelatedModNets(related_modnets);
     dbModNet* orig_mod_net = nullptr;
-    odb::OdbPtrSet<dbModNet> modnets_in_target_module;
+    odb::PtrSet<dbModNet> modnets_in_target_module;
     for (dbModNet* modnet : related_modnets) {
       if (modnet->getParent() == target_module_) {
         modnets_in_target_module.insert(modnet);
@@ -1623,7 +1621,7 @@ void dbInsertBuffer::markFaninModNetsNotReusable(dbModNet* net)
 void dbInsertBuffer::placeBufferAtCentroid(
     dbInst* buffer_inst,
     const dbObject* drvr_pin,
-    const odb::OdbPtrSet<dbObject>& load_pins)
+    const odb::PtrSet<dbObject>& load_pins)
 {
   Point placement_loc;
   if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
@@ -1646,7 +1644,7 @@ void dbInsertBuffer::setBufferAttributes(dbInst* buffer_inst)
 }
 
 void dbInsertBuffer::dlogBeforeLoadsParams(
-    const odb::OdbPtrSet<dbObject>& load_pins,
+    const odb::PtrSet<dbObject>& load_pins,
     const Point* loc,
     bool loads_on_diff_nets) const
 {
@@ -1705,8 +1703,7 @@ void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
   }
 }
 
-void dbInsertBuffer::dlogDumpNets(
-    const odb::OdbPtrSet<dbNet>& other_dbnets) const
+void dbInsertBuffer::dlogDumpNets(const odb::PtrSet<dbNet>& other_dbnets) const
 {
   if (logger_->debugCheck(utl::ODB, "insert_buffer", 2)) {
     debugPrint(logger_, utl::ODB, "insert_buffer", 2, "[Dump this dbNet]");
@@ -1877,7 +1874,7 @@ void dbInsertBuffer::validateArgumentsSimple(
 }
 
 void dbInsertBuffer::validateArgumentsBeforeLoads(
-    const odb::OdbPtrSet<dbObject>& load_pins,
+    const odb::PtrSet<dbObject>& load_pins,
     const dbMaster* buffer_master) const
 {
   if (load_pins.empty()) {

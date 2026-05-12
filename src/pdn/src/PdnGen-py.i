@@ -5,7 +5,7 @@
 %{
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include <array>
 #include <string>
 #include <memory>

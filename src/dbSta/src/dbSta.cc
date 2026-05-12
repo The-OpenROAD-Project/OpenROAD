@@ -32,7 +32,7 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -330,11 +330,11 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
   return slack(net, min_max);
 }
 
-odb::OdbPtrSet<odb::dbNet> dbSta::findClkNets()
+odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  odb::OdbPtrSet<odb::dbNet> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {
     const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
@@ -351,11 +351,11 @@ odb::OdbPtrSet<odb::dbNet> dbSta::findClkNets()
   return clk_nets;
 }
 
-odb::OdbPtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  odb::OdbPtrSet<odb::dbNet> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
@@ -646,7 +646,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    odb::OdbPtrMap<odb::dbMaster, TypeStats> usage_count;
+    odb::PtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];

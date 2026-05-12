@@ -184,11 +184,11 @@ GridSwitchedPower::RowTree GridSwitchedPower::buildRowTree() const
   return row_search;
 }
 
-odb::OdbPtrSet<odb::dbRow> GridSwitchedPower::getInstanceRows(
+odb::PtrSet<odb::dbRow> GridSwitchedPower::getInstanceRows(
     odb::dbInst* inst,
     const RowTree& row_search) const
 {
-  odb::OdbPtrSet<odb::dbRow> rows;
+  odb::PtrSet<odb::dbRow> rows;
 
   odb::Rect box = inst->getBBox()->getBox();
 

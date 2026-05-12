@@ -6,7 +6,7 @@
 #include <map>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbSet.h"
 
 namespace odb {

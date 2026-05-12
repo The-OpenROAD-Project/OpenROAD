@@ -34,7 +34,7 @@
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -859,14 +859,14 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       throw std::runtime_error("Instance not found: " + inst_name);
     }
 
-    odb::OdbPtrSet<odb::dbInst> all_insts;
+    odb::PtrSet<odb::dbInst> all_insts;
     all_insts.insert(target_inst);
     bool cone_full = false;
 
     // Fanin BFS: follow input pins upstream to their driving instances.
     {
       std::vector<odb::dbInst*> level = {target_inst};
-      odb::OdbPtrSet<odb::dbNet> seen_nets;
+      odb::PtrSet<odb::dbNet> seen_nets;
       for (int d = 0; d < fanin_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
@@ -908,7 +908,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     // Fanout BFS: follow output pins downstream to their load instances.
     {
       std::vector<odb::dbInst*> level = {target_inst};
-      odb::OdbPtrSet<odb::dbNet> seen_nets;
+      odb::PtrSet<odb::dbNet> seen_nets;
       for (int d = 0; d < fanout_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
@@ -948,7 +948,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     }
 
     // Collect all nets that touch any visited instance.
-    odb::OdbPtrMap<odb::dbNet, int> net_to_id;
+    odb::PtrMap<odb::dbNet, int> net_to_id;
     int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
     for (odb::dbInst* inst : all_insts) {
       for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -1041,7 +1041,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
       throw std::runtime_error("No block loaded");
     }
 
-    odb::OdbPtrMap<odb::dbNet, int> net_to_id;
+    odb::PtrMap<odb::dbNet, int> net_to_id;
     int next_net_id = 2;
     for (odb::dbNet* net : block->getNets()) {
       net_to_id[net] = next_net_id++;

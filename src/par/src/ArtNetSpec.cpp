@@ -25,7 +25,7 @@
 #include "Utilities.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
@@ -439,7 +439,7 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
 {
   std::vector<odb::dbInst*> insts;
   insts.reserve(cluster->getNumInsts());
-  odb::OdbPtrMap<odb::dbInst, int> inst_vertex_id_map;
+  odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
   int large_net_threshold = 50;

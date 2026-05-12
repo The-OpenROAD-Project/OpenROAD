@@ -15,7 +15,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
@@ -44,7 +44,7 @@ class IRNetwork
   using NodePtrMap = std::map<Node*, std::vector<T*>>;
 
   template <typename T>
-  using LayerMap = odb::OdbPtrMap<odb::dbTechLayer, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
@@ -99,7 +99,7 @@ class IRNetwork
   odb::dbTechLayer* getTopLayer() const;
   const std::vector<std::unique_ptr<Node>>& getTopLayerNodes() const;
   NodeTree getTopLayerNodeTree() const;
-  odb::OdbPtrSet<odb::dbTechLayer> getLayers() const;
+  odb::PtrSet<odb::dbTechLayer> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
 
@@ -108,7 +108,7 @@ class IRNetwork
   const Connections& getConnections() const { return connections_; }
   NodePtrMap<Connection> getConnectionMap() const;
 
-  odb::OdbPtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
   // For debug only
@@ -196,7 +196,7 @@ class IRNetwork
   std::vector<std::unique_ptr<ITermNode>> iterm_nodes_;
   std::vector<std::unique_ptr<BPinNode>> bpin_nodes_;
 
-  odb::OdbPtrMap<odb::dbTechLayer, int> min_node_pitch_;
+  odb::PtrMap<odb::dbTechLayer, int> min_node_pitch_;
 
   static constexpr int kMinNodePitchMultiplier = 10;
   static constexpr double kMinNodePitchInUm = 10.0;

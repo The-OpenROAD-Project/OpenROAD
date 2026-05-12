@@ -25,7 +25,7 @@
 #include "dbxParser.h"
 #include "dbxWriter.h"
 #include "objects.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -806,7 +806,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   };
 
   // Populate where the bpins should be made
-  odb::OdbPtrMap<odb::dbMaster, BPinInfo> bpininfo;
+  odb::PtrMap<odb::dbMaster, BPinInfo> bpininfo;
   for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.contains(master)) {

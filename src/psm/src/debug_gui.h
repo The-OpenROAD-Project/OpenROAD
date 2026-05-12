@@ -15,7 +15,7 @@
 #include "gui/gui.h"
 #include "ir_network.h"
 #include "node.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -34,21 +34,21 @@ class SolverDescriptor : public gui::Descriptor
 {
  public:
   SolverDescriptor(
-      const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
+      const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
 
  protected:
   IRSolver* getSolver(Node* node) const;
   IRSolver* getSolver(Connection* connection) const;
 
  private:
-  const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers_;
+  const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers_;
 };
 
 class NodeDescriptor : public SolverDescriptor
 {
  public:
   NodeDescriptor(
-      const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
+      const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Node"; }
@@ -70,7 +70,7 @@ class ITermNodeDescriptor : public NodeDescriptor
 {
  public:
   ITermNodeDescriptor(
-      const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
+      const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM ITerm Node"; }
@@ -88,7 +88,7 @@ class BPinNodeDescriptor : public NodeDescriptor
 {
  public:
   BPinNodeDescriptor(
-      const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
+      const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM BPin Node"; }
@@ -106,7 +106,7 @@ class ConnectionDescriptor : public SolverDescriptor
 {
  public:
   ConnectionDescriptor(
-      const odb::OdbPtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
+      const odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>>& solvers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override { return "PSM Connection"; }
@@ -202,14 +202,14 @@ class DebugGui : public gui::Renderer
 
   bool found_select_;
 
-  odb::OdbPtrMap<odb::dbTechLayer, ShapeTree> shapes_;
-  odb::OdbPtrMap<odb::dbTechLayer, NodeTree> nodes_;
-  odb::OdbPtrMap<odb::dbTechLayer, ITermNodeTree> iterm_nodes_;
-  odb::OdbPtrMap<odb::dbTechLayer, BPinNodeTree> bpin_nodes_;
-  odb::OdbPtrMap<odb::dbTechLayer, ConnectionTree> connections_;
+  odb::PtrMap<odb::dbTechLayer, ShapeTree> shapes_;
+  odb::PtrMap<odb::dbTechLayer, NodeTree> nodes_;
+  odb::PtrMap<odb::dbTechLayer, ITermNodeTree> iterm_nodes_;
+  odb::PtrMap<odb::dbTechLayer, BPinNodeTree> bpin_nodes_;
+  odb::PtrMap<odb::dbTechLayer, ConnectionTree> connections_;
 
-  odb::OdbPtrMap<odb::dbTechLayer, NodeTree> sources_;
-  odb::OdbPtrMap<odb::dbTechLayer, RectTree> source_shapes_;
+  odb::PtrMap<odb::dbTechLayer, NodeTree> sources_;
+  odb::PtrMap<odb::dbTechLayer, RectTree> source_shapes_;
 
   std::set<const Shape*> selected_shapes_;
   std::set<const Node*> selected_nodes_;

@@ -18,7 +18,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace odb {
@@ -233,7 +233,7 @@ class HeatMapDataSource
 
   // Returns the set of selected dbInst* objects when use_selected_only_ is
   // enabled, or an empty set (meaning no filtering) when it is disabled.
-  odb::OdbPtrSet<odb::dbInst> getSelectedInsts() const;
+  odb::PtrSet<odb::dbInst> getSelectedInsts() const;
 
  private:
   const std::string name_;

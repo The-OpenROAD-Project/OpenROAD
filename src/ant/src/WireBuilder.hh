@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
@@ -111,7 +111,7 @@ class WireBuilder
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};
-  odb::OdbPtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias_;
+  odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias_;
 };
 
 }  // namespace ant

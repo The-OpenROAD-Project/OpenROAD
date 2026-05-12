@@ -342,9 +342,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 }
 
 std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
-    const odb::OdbPtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+    const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
     bool add_pins,
-    const odb::OdbPtrSet<odb::dbTechLayer>& convert_layer_to_pin) const
+    const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {

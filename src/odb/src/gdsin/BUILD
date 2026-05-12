@@ -12,7 +12,7 @@ cc_library(
     name = "gdsin",
     srcs = glob(["*.cpp"]),
     hdrs = [
-        "//src/odb:include/odb/OdbPtrSetMap.h",
+        "//src/odb:include/odb/PtrSetMap.h",
         "//src/odb:include/odb/gdsUtil.h",
         "//src/odb:include/odb/gdsin.h",
     ],

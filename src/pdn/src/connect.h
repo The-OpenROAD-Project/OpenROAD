@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -46,7 +46,7 @@ class Connect
 
   void setOnGrid(const std::vector<odb::dbTechLayer*>& layers);
 
-  void setSplitCuts(const odb::OdbPtrMap<odb::dbTechLayer, SplitCut>& splits);
+  void setSplitCuts(const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits);
   int getSplitCutPitch(odb::dbTechLayer* layer) const;
   bool getSplitCutStagger(odb::dbTechLayer* layer) const;
 
@@ -108,8 +108,8 @@ class Connect
   int max_rows_ = 0;
   int max_columns_ = 0;
 
-  odb::OdbPtrSet<odb::dbTechLayer> ongrid_;
-  odb::OdbPtrMap<odb::dbTechLayer, SplitCut> split_cuts_;
+  odb::PtrSet<odb::dbTechLayer> ongrid_;
+  odb::PtrMap<odb::dbTechLayer, SplitCut> split_cuts_;
 
   // map of built vias, where the key is the width and height of the via
   // intersection, and the value points of the associated via stack.

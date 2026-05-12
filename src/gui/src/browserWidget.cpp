@@ -100,7 +100,7 @@ struct BrowserWidget::ModuleStats
 ///////
 
 BrowserWidget::BrowserWidget(
-    const odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+    const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
         modulesettings,
     DisplayControls* controls,
     QWidget* parent)
@@ -847,19 +847,18 @@ void BrowserWidget::updateModuleColorIcon(odb::dbModule* module,
   }
 }
 
-odb::OdbPtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getChildren(odb::dbModule* parent)
 {
-  odb::OdbPtrSet<odb::dbModule> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : parent->getChildren()) {
     children.insert(child->getMaster());
   }
   return children;
 }
 
-odb::OdbPtrSet<odb::dbModule> BrowserWidget::getAllChildren(
-    odb::dbModule* parent)
+odb::PtrSet<odb::dbModule> BrowserWidget::getAllChildren(odb::dbModule* parent)
 {
-  odb::OdbPtrSet<odb::dbModule> children;
+  odb::PtrSet<odb::dbModule> children;
   for (auto* child : getChildren(parent)) {
     children.insert(child);
     const auto next_children = getAllChildren(child);

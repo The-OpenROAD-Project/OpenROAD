@@ -35,7 +35,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -498,7 +498,7 @@ ClockInst* TritonCTS::getClockFromInst(odb::dbInst* inst)
 
 void TritonCTS::writeDataToDb()
 {
-  odb::OdbPtrSet<odb::dbNet> clkLeafNets;
+  odb::PtrSet<odb::dbNet> clkLeafNets;
   std::unordered_set<odb::dbInst*> clkDummies;
 
   for (auto& builder : builders_) {
@@ -1205,15 +1205,15 @@ void TritonCTS::populateTritonCTS()
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.
-  std::vector<std::pair<odb::OdbPtrSet<odb::dbNet>, std::string>> clockNetsInfo;
+  std::vector<std::pair<odb::PtrSet<odb::dbNet>, std::string>> clockNetsInfo;
 
   // Checks the user input in case there are other nets that need to be added to
   // the set.
   std::vector<odb::dbNet*> inputClkNets = options_->getClockNetsObjs();
 
-  odb::OdbPtrSet<odb::dbNet> allClkNets;
+  odb::PtrSet<odb::dbNet> allClkNets;
   if (!inputClkNets.empty()) {
-    odb::OdbPtrSet<odb::dbNet> clockNets;
+    odb::PtrSet<odb::dbNet> clockNets;
     for (odb::dbNet* net : inputClkNets) {
       // Since a set is unique, only the nets not found by dbSta are added.
       clockNets.insert(net);
@@ -1225,7 +1225,7 @@ void TritonCTS::populateTritonCTS()
     sta::Sdc* sdc = openSta_->cmdMode()->sdc();
     for (auto clk : sdc->clocks()) {
       std::string clkName = clk->name();
-      odb::OdbPtrSet<odb::dbNet> clkNets;
+      odb::PtrSet<odb::dbNet> clkNets;
       findClockRoots(clk, clkNets);
       for (auto net : clkNets) {
         if (allClkNets.find(net) != allClkNets.end()) {
@@ -1250,7 +1250,7 @@ void TritonCTS::populateTritonCTS()
   std::unordered_set<odb::dbNet*> clkGateCloneVisitedNets;
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
-    odb::OdbPtrSet<odb::dbNet> clockNets = clockInfo.first;
+    odb::PtrSet<odb::dbNet> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
@@ -1627,7 +1627,7 @@ void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
 }
 
 void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
-                                   odb::OdbPtrSet<odb::dbNet>& clkLeafNets)
+                                   odb::PtrSet<odb::dbNet>& clkLeafNets)
 {
   Clock& clockNet = builder->getClock();
   odb::dbNet* topClockNet = clockNet.getNetObj();
@@ -2140,7 +2140,7 @@ bool TritonCTS::masterExists(const std::string& master) const
 };
 
 void TritonCTS::findClockRoots(sta::Clock* clk,
-                               odb::OdbPtrSet<odb::dbNet>& clockNets)
+                               odb::PtrSet<odb::dbNet>& clockNets)
 {
   std::vector<odb::dbNet*> skipNets = options_->getSkipNets();
   for (const sta::Pin* pin : clk->leafPins()) {

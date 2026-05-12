@@ -138,7 +138,7 @@ make_rows_with_spacing(ord::Design* design,
           const std::vector<odb::dbSite*>& flipped_sites,
           const int gap)
 {
-  odb::OdbPtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
+  odb::PtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
                                                  flipped_sites.end());
   design->getFloorplan().makeRowsWithSpacing(spacing_lx, spacing_ly, 
                                              spacing_ux, spacing_uy,
@@ -162,7 +162,7 @@ make_rows(ord::Design* design,
           const int gap)
 {
   
-  odb::OdbPtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
+  odb::PtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
                                                  flipped_sites.end());
   design->getFloorplan().makeRows({core_lx, core_ly, core_ux, core_uy},
                                   site,
@@ -210,7 +210,7 @@ void make_polygon_rows_simple(ord::Design* design,
                               const int gap)
 {
   odb::Polygon polygon(core_polygon);
-  odb::OdbPtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
+  odb::PtrSet<odb::dbSite> flipped_sites_set(flipped_sites.begin(),
                                                  flipped_sites.end());
   design->getFloorplan().makePolygonRows(polygon, base_site, additional_sites, row_parity, flipped_sites_set, gap);
 }

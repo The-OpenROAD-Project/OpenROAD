@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -83,7 +83,7 @@ bool ConcreteSwapArithModules::replaceArithModules(const int path_count,
 
   // Identify critical mod instances based on target, path_count and
   // slack_threshold
-  odb::OdbPtrSet<dbModInst> arithInsts;
+  odb::PtrSet<dbModInst> arithInsts;
   findCriticalInstances(path_count, target, slack_threshold, arithInsts);
   if (arithInsts.empty()) {
     return false;
@@ -97,7 +97,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
     const int path_count,
     const std::string& target,
     const float slack_threshold,
-    odb::OdbPtrSet<dbModInst>& insts)
+    odb::PtrSet<dbModInst>& insts)
 {
   logger_->info(RSZ,
                 152,
@@ -157,7 +157,7 @@ void ConcreteSwapArithModules::findCriticalInstances(
 
 void ConcreteSwapArithModules::collectArithInstsOnPath(
     const Path* path,
-    odb::OdbPtrSet<dbModInst>& arithInsts)
+    odb::PtrSet<dbModInst>& arithInsts)
 {
   PathExpanded expanded(path, sta_);
   if (expanded.size() > 1) {
@@ -253,11 +253,11 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
   return false;
 }
 
-bool ConcreteSwapArithModules::doSwapInstances(odb::OdbPtrSet<dbModInst>& insts,
+bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
-  odb::OdbPtrSet<dbModInst> swappedInsts;
+  odb::PtrSet<dbModInst> swappedInsts;
 
   for (dbModInst* inst : insts) {
     dbModule* old_master = inst->getMaster();

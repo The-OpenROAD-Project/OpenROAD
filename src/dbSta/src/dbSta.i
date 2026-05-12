@@ -6,7 +6,7 @@
 %{
 
 #include "odb/db.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/IpChecker.hh"
@@ -65,7 +65,7 @@ find_all_clk_nets()
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  odb::OdbPtrSet<odb::dbNet> clk_nets = sta->findClkNets();
+  odb::PtrSet<odb::dbNet> clk_nets = sta->findClkNets();
   std::vector<odb::dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
   return clk_nets1;
 }
@@ -75,7 +75,7 @@ find_clk_nets(const Clock *clk)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
-  odb::OdbPtrSet<odb::dbNet> clk_nets = sta->findClkNets(clk);
+  odb::PtrSet<odb::dbNet> clk_nets = sta->findClkNets(clk);
   std::vector<odb::dbNet*> clk_nets1(clk_nets.begin(), clk_nets.end());
   return clk_nets1;
 }

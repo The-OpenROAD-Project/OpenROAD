@@ -16,7 +16,7 @@
 
 #include "mpl-util.h"
 #include "object.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -35,9 +35,8 @@ class dbNetwork;
 namespace mpl {
 class MplObserver;
 
-using InstToHardMap = odb::OdbPtrMap<odb::dbInst, std::unique_ptr<HardMacro>>;
-using ModuleToMetricsMap
-    = odb::OdbPtrMap<odb::dbModule, std::unique_ptr<Metrics>>;
+using InstToHardMap = odb::PtrMap<odb::dbInst, std::unique_ptr<HardMacro>>;
+using ModuleToMetricsMap = odb::PtrMap<odb::dbModule, std::unique_ptr<Metrics>>;
 using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
 struct PhysicalHierarchyMaps
@@ -105,9 +104,8 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(
-      const HardMacro::Halo& base_halo,
-      const odb::OdbPtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setHalos(const HardMacro::Halo& base_halo,
+                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -123,7 +121,7 @@ class ClusteringEngine
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
                                std::map<int, int>& cluster_to_macro,
-                               odb::OdbPtrSet<odb::dbMaster>& masters);
+                               odb::PtrSet<odb::dbMaster>& masters);
   void clearTempMacroClusterMapping(const UniqueClusterVector& macro_clusters);
 
   int getNumberOfIOs(Cluster* target) const;
@@ -256,7 +254,7 @@ class ClusteringEngine
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
   HardMacro::Halo base_halo_;
-  odb::OdbPtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
+  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl

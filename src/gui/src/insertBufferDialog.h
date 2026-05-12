@@ -12,7 +12,7 @@
 #include <QVBoxLayout>
 #include <set>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 
@@ -33,7 +33,7 @@ class InsertBufferDialog : public QDialog
 
   odb::dbMaster* getSelectedMaster() const;
   void getSelection(odb::dbObject*& driver,
-                    odb::OdbPtrSet<odb::dbObject>& loads) const;
+                    odb::PtrSet<odb::dbObject>& loads) const;
   QString getBufferName() const;
   QString getNetName() const;
 

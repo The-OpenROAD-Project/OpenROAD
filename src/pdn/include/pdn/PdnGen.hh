@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

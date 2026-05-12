@@ -12,7 +12,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -32,7 +32,7 @@ class Via;
 using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
 
-using ShapeVectorMap = odb::OdbPtrMap<odb::dbTechLayer, std::vector<ShapePtr>>;
+using ShapeVectorMap = odb::PtrMap<odb::dbTechLayer, std::vector<ShapePtr>>;
 
 class Grid;
 class GridComponent;
@@ -78,8 +78,8 @@ class Shape
   using ObstructionTree = bgi::
       rtree<ShapePtr, bgi::quadratic<16>, Shape::ObstructionIndexableGetter>;
 
-  using ShapeTreeMap = odb::OdbPtrMap<odb::dbTechLayer, ShapeTree>;
-  using ObstructionTreeMap = odb::OdbPtrMap<odb::dbTechLayer, ObstructionTree>;
+  using ShapeTreeMap = odb::PtrMap<odb::dbTechLayer, ShapeTree>;
+  using ObstructionTreeMap = odb::PtrMap<odb::dbTechLayer, ObstructionTree>;
 
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
@@ -280,7 +280,7 @@ class FollowPinShape : public Shape
            std::vector<std::unique_ptr<Shape>>& replacements) const override;
 
  private:
-  odb::OdbPtrSet<odb::dbRow> rows_;
+  odb::PtrSet<odb::dbRow> rows_;
 };
 
 class GridObsShape : public Shape

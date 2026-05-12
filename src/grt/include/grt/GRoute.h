@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -54,7 +54,7 @@ struct TileCongestion
 
 struct TileInformation
 {
-  odb::OdbPtrSet<odb::dbNet> nets;
+  odb::PtrSet<odb::dbNet> nets;
   TileCongestion congestion;
 };
 
@@ -64,7 +64,7 @@ struct CongestionInformation
 {
   GSegment segment;
   TileCongestion congestion;
-  odb::OdbPtrSet<odb::dbNet> sources;
+  odb::PtrSet<odb::dbNet> sources;
 };
 
 struct CapacityReduction
@@ -79,7 +79,7 @@ using SegmentIndex = uint16_t;
 
 // class Route is defined in fastroute core.
 using GRoute = std::vector<GSegment>;
-using NetRouteMap = odb::OdbPtrMap<odb::dbNet, GRoute>;
+using NetRouteMap = odb::PtrMap<odb::dbNet, GRoute>;
 void print(GRoute& groute);
 
 }  // namespace grt

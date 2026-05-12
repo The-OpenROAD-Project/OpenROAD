@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -35,16 +35,16 @@ class BufferTree
 
   const std::string& getName() const { return name_; }
   const std::vector<odb::dbNet*>& getNets() const { return nets_; }
-  const odb::OdbPtrSet<odb::dbInst>& getInsts() const { return insts_; }
-  const odb::OdbPtrSet<odb::dbITerm>& getITerms() const { return iterm_terms_; }
-  const odb::OdbPtrSet<odb::dbBTerm>& getBTerms() const { return bterm_terms_; }
+  const odb::PtrSet<odb::dbInst>& getInsts() const { return insts_; }
+  const odb::PtrSet<odb::dbITerm>& getITerms() const { return iterm_terms_; }
+  const odb::PtrSet<odb::dbBTerm>& getBTerms() const { return bterm_terms_; }
 
  private:
   // Use vector for nets since painting for order matters
   std::vector<odb::dbNet*> nets_;
-  odb::OdbPtrSet<odb::dbInst> insts_;
-  odb::OdbPtrSet<odb::dbITerm> iterm_terms_;
-  odb::OdbPtrSet<odb::dbBTerm> bterm_terms_;
+  odb::PtrSet<odb::dbInst> insts_;
+  odb::PtrSet<odb::dbITerm> iterm_terms_;
+  odb::PtrSet<odb::dbBTerm> bterm_terms_;
   std::string name_;
 
   static sta::dbSta* sta_;
@@ -57,9 +57,9 @@ class BufferTreeDescriptor : public Descriptor
  public:
   BufferTreeDescriptor(odb::dbDatabase* db,
                        sta::dbSta* sta,
-                       const odb::OdbPtrSet<odb::dbNet>& focus_nets,
-                       const odb::OdbPtrSet<odb::dbNet>& guide_nets,
-                       const odb::OdbPtrSet<odb::dbNet>& tracks_nets);
+                       const odb::PtrSet<odb::dbNet>& focus_nets,
+                       const odb::PtrSet<odb::dbNet>& guide_nets,
+                       const odb::PtrSet<odb::dbNet>& tracks_nets);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -78,9 +78,9 @@ class BufferTreeDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   const Descriptor* net_descriptor_;
-  const odb::OdbPtrSet<odb::dbNet>& focus_nets_;
-  const odb::OdbPtrSet<odb::dbNet>& guide_nets_;
-  const odb::OdbPtrSet<odb::dbNet>& tracks_nets_;
+  const odb::PtrSet<odb::dbNet>& focus_nets_;
+  const odb::PtrSet<odb::dbNet>& guide_nets_;
+  const odb::PtrSet<odb::dbNet>& tracks_nets_;
 };
 
 }  // namespace gui

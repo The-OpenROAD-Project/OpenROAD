@@ -15,7 +15,7 @@
 
 #include "gui/gui.h"
 #include "layoutViewer.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -51,15 +51,15 @@ class LayoutTabs : public QTabWidget
 
   void setLogger(utl::Logger* logger);
 
-  const odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+  const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
   getModuleSettings()
   {
     return modules_;
   }
 
-  const odb::OdbPtrSet<odb::dbNet>& getFocusNets() { return focus_nets_; }
-  const odb::OdbPtrSet<odb::dbNet>& getRouteGuides() { return route_guides_; }
-  const odb::OdbPtrSet<odb::dbNet>& getNetTracks() { return net_tracks_; }
+  const odb::PtrSet<odb::dbNet>& getFocusNets() { return focus_nets_; }
+  const odb::PtrSet<odb::dbNet>& getRouteGuides() { return route_guides_; }
+  const odb::PtrSet<odb::dbNet>& getNetTracks() { return net_tracks_; }
 
   void addFocusNet(odb::dbNet* net);
   void removeFocusNet(odb::dbNet* net);
@@ -129,7 +129,7 @@ class LayoutTabs : public QTabWidget
   const HighlightSet& highlighted_;
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
   const std::vector<std::unique_ptr<Label>>& labels_;
-  odb::OdbPtrMap<odb::dbModule, LayoutViewer::ModuleSettings> modules_;
+  odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings> modules_;
   Gui* gui_;
   std::function<bool()> using_dbu_;
   std::function<bool()> using_poly_decomp_view_;
@@ -140,11 +140,11 @@ class LayoutTabs : public QTabWidget
   bool command_executing_ = false;
 
   // Set of nets to focus drawing on, if empty draw everything
-  odb::OdbPtrSet<odb::dbNet> focus_nets_;
+  odb::PtrSet<odb::dbNet> focus_nets_;
   // Set of nets to draw route guides for, if empty draw nothing
-  odb::OdbPtrSet<odb::dbNet> route_guides_;
+  odb::PtrSet<odb::dbNet> route_guides_;
   // Set of nets to draw assigned tracks for, if empty draw nothing
-  odb::OdbPtrSet<odb::dbNet> net_tracks_;
+  odb::PtrSet<odb::dbNet> net_tracks_;
 };
 
 }  // namespace gui

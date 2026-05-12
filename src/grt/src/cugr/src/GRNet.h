@@ -11,7 +11,7 @@
 #include "GridGraph.h"
 #include "Netlist.h"
 #include "geo.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace grt {
@@ -50,11 +50,11 @@ class GRNet
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
   void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
-  const odb::OdbPtrMap<odb::dbBTerm, AccessPoint>& getBTermAccessPoints() const
+  const odb::PtrMap<odb::dbBTerm, AccessPoint>& getBTermAccessPoints() const
   {
     return bterm_to_ap_;
   }
-  const odb::OdbPtrMap<odb::dbITerm, AccessPoint>& getITermAccessPoints() const
+  const odb::PtrMap<odb::dbITerm, AccessPoint>& getITermAccessPoints() const
   {
     return iterm_to_ap_;
   }
@@ -66,8 +66,8 @@ class GRNet
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
-  odb::OdbPtrMap<odb::dbBTerm, AccessPoint> bterm_to_ap_;
-  odb::OdbPtrMap<odb::dbITerm, AccessPoint> iterm_to_ap_;
+  odb::PtrMap<odb::dbBTerm, AccessPoint> bterm_to_ap_;
+  odb::PtrMap<odb::dbITerm, AccessPoint> iterm_to_ap_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;
   LayerRange layer_range_;

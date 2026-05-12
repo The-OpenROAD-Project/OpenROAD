@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -68,7 +68,7 @@ class Grid
 
   void removeStrap(Straps* strap);
 
-  odb::OdbPtrSet<odb::dbTechLayer> connectableLayers(
+  odb::PtrSet<odb::dbTechLayer> connectableLayers(
       odb::dbTechLayer* layer) const;
 
   // specify the layers to convert to pins
@@ -77,7 +77,7 @@ class Grid
     pin_layers_.clear();
     pin_layers_.insert(layers.begin(), layers.end());
   }
-  const odb::OdbPtrSet<odb::dbTechLayer>& getPinLayers() const
+  const odb::PtrSet<odb::dbTechLayer>& getPinLayers() const
   {
     return pin_layers_;
   }
@@ -141,7 +141,7 @@ class Grid
   void resetShapes();
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
-      const odb::OdbPtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+      const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
       bool do_pins,
       const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
@@ -149,8 +149,8 @@ class Grid
   static void makeInitialObstructions(
       odb::dbBlock* block,
       ShapeVectorMap& obs,
-      const odb::OdbPtrSet<odb::dbInst>& skip_insts,
-      const odb::OdbPtrSet<odb::dbNet>& skip_nets,
+      const odb::PtrSet<odb::dbInst>& skip_insts,
+      const odb::PtrSet<odb::dbNet>& skip_nets,
       utl::Logger* logger);
   static void makeInitialShapes(odb::dbBlock* block,
                                 ShapeVectorMap& shapes,
@@ -164,7 +164,7 @@ class Grid
 
   void ripup();
 
-  virtual odb::OdbPtrSet<odb::dbInst> getInstances() const;
+  virtual odb::PtrSet<odb::dbInst> getInstances() const;
 
   bool hasShapes() const;
   bool hasVias() const;
@@ -189,7 +189,7 @@ class Grid
   std::vector<std::unique_ptr<Straps>> straps_;
   std::vector<std::unique_ptr<Connect>> connect_;
 
-  odb::OdbPtrSet<odb::dbTechLayer> pin_layers_;
+  odb::PtrSet<odb::dbTechLayer> pin_layers_;
   std::vector<odb::dbTechLayer*> obstruction_layers_;
 
   Via::ViaTree vias_;
@@ -237,7 +237,7 @@ class InstanceGrid : public Grid
   Type type() const override { return Grid::kInstance; }
 
   odb::dbInst* getInstance() const { return inst_; }
-  odb::OdbPtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
+  odb::PtrSet<odb::dbInst> getInstances() const override { return {inst_}; }
 
   std::vector<odb::dbNet*> getNets(bool starts_with_power) const override;
 

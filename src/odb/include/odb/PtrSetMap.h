@@ -19,9 +19,9 @@ struct ODBPtrLess
 };
 
 template <typename T>
-using OdbPtrSet = std::set<T*, ODBPtrLess>;
+using PtrSet = std::set<T*, ODBPtrLess>;
 
 template <typename K, typename V>
-using OdbPtrMap = std::map<K*, V, ODBPtrLess>;
+using PtrMap = std::map<K*, V, ODBPtrLess>;
 
 }  // namespace odb

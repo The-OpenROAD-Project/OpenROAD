@@ -292,7 +292,7 @@ void IRSolver::reportUnconnectedNodes() const
         marker->addShape(node->getPoint());
       }
     }
-    odb::OdbPtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
+    odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
     odb::dbMarkerCategory* category
         = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
 
@@ -338,7 +338,7 @@ void IRSolver::reportUnconnectedNodes() const
   }
 
   if (!results.unconnected_iterms.empty()) {
-    odb::OdbPtrSet<odb::dbInst> insts;
+    odb::PtrSet<odb::dbInst> insts;
     for (const auto& node : results.unconnected_iterms) {
       insts.insert(node->getITerm()->getInst());
       logger_->warn(utl::PSM,
@@ -818,7 +818,7 @@ IRSolver::Power IRSolver::buildNodeCurrentMap(
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
-  odb::OdbPtrMap<odb::dbInst, Power> instance_powers;
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
@@ -1153,13 +1153,13 @@ void IRSolver::solve(sta::Scene* corner,
   solution_power_[corner] = total_power;
 }
 
-odb::OdbPtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
     sta::Scene* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Power calculation: {}");
 
-  odb::OdbPtrMap<odb::dbInst, IRSolver::Power> inst_power;
+  odb::PtrMap<odb::dbInst, IRSolver::Power> inst_power;
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> inst_iter(

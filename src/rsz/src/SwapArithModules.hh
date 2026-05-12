@@ -9,7 +9,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
@@ -44,9 +44,8 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
-  virtual void collectArithInstsOnPath(
-      const sta::Path* path,
-      odb::OdbPtrSet<odb::dbModInst>& arithInsts)
+  virtual void collectArithInstsOnPath(const sta::Path* path,
+                                       odb::PtrSet<odb::dbModInst>& arithInsts)
       = 0;
   virtual bool isArithInstance(const sta::Instance* inst,
                                odb::dbModInst*& mod_inst)
@@ -55,9 +54,9 @@ class SwapArithModules : public sta::dbStaState
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     odb::OdbPtrSet<odb::dbModInst>& insts)
+                                     odb::PtrSet<odb::dbModInst>& insts)
       = 0;
-  virtual bool doSwapInstances(odb::OdbPtrSet<odb::dbModInst>& insts,
+  virtual bool doSwapInstances(odb::PtrSet<odb::dbModInst>& insts,
                                const std::string& target)
       = 0;
 

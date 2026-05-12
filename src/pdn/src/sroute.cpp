@@ -641,7 +641,7 @@ void SRoute::createSrouteWires(
         }
       }
     }
-    odb::OdbPtrMap<odb::dbNet, odb::dbSWire*> net_map;
+    odb::PtrMap<odb::dbNet, odb::dbSWire*> net_map;
 
     net_map[net] = nwsw;
     auto domains = getDomains();

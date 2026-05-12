@@ -32,7 +32,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "options.h"
@@ -554,7 +554,7 @@ class DisplayControls : public QDockWidget,
   std::map<std::string, Renderer::Settings> custom_controls_settings_;
   std::map<QStandardItem*, Qt::CheckState> saved_state_;
 
-  odb::OdbPtrSet<odb::dbTech> techs_;
+  odb::PtrSet<odb::dbTech> techs_;
   utl::Logger* logger_;
   sta::dbSta* sta_;
   DbInstDescriptor* inst_descriptor_;

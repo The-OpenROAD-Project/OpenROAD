@@ -18,7 +18,7 @@
 #include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
 #include "label.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ruler.h"
@@ -140,7 +140,7 @@ class RenderThread : public QThread
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
   void drawNetsRouteGuides(Painter& painter,
-                           const odb::OdbPtrSet<odb::dbNet>& nets,
+                           const odb::PtrSet<odb::dbNet>& nets,
                            odb::dbTechLayer* layer);
   void drawNetRouteGuides(Painter& painter,
                           odb::dbNet* net,

@@ -179,7 +179,7 @@ class PadDirectConnectionStraps : public Straps
 
   std::vector<odb::dbBox*> getPinsFacingCore();
   std::vector<odb::dbBox*> getPinsFormingRing();
-  odb::OdbPtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> getPinsByLayer()
+  odb::PtrMap<odb::dbTechLayer, std::vector<odb::dbBox*>> getPinsByLayer()
       const;
 
   void makeShapesFacingCore(const Shape::ShapeTreeMap& other_shapes);
@@ -217,7 +217,7 @@ class RepairChannelStraps : public Straps
                       Straps* target,
                       odb::dbTechLayer* connect_to,
                       const Shape::ObstructionTreeMap& other_shapes,
-                      const odb::OdbPtrSet<odb::dbNet>& nets,
+                      const odb::PtrSet<odb::dbNet>& nets,
                       const odb::Rect& area,
                       const odb::Rect& available_area,
                       const odb::Rect& obs_check_area);
@@ -242,7 +242,7 @@ class RepairChannelStraps : public Straps
 
   bool isAutoInserted() const override { return true; }
 
-  void addNets(const odb::OdbPtrSet<odb::dbNet>& nets)
+  void addNets(const odb::PtrSet<odb::dbNet>& nets)
   {
     nets_.insert(nets.begin(), nets.end());
   }
@@ -263,13 +263,13 @@ class RepairChannelStraps : public Straps
     odb::Rect obs_area;
     Straps* target;
     odb::dbTechLayer* connect_to;
-    odb::OdbPtrSet<odb::dbNet> nets;
+    odb::PtrSet<odb::dbNet> nets;
   };
   // find all straps in grid that are not connected for anything
   static std::vector<RepairChannelArea> findRepairChannels(Grid* grid);
 
  private:
-  odb::OdbPtrSet<odb::dbNet> nets_;
+  odb::PtrSet<odb::dbNet> nets_;
   odb::dbTechLayer* connect_to_;
   odb::Rect area_;
   odb::Rect available_area_;

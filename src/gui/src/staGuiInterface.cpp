@@ -741,9 +741,9 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
   return minimum;
 }
 
-odb::OdbPtrSet<odb::dbNet> ClockTree::getNets(bool visibility = false) const
+odb::PtrSet<odb::dbNet> ClockTree::getNets(bool visibility = false) const
 {
-  odb::OdbPtrSet<odb::dbNet> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   if (!visibility or subtree_visibility_) {
     if (net_ != nullptr) {

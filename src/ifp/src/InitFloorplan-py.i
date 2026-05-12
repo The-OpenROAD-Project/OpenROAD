@@ -3,7 +3,7 @@
 
 %{
 #include "ifp/InitFloorplan.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 %}
 
 %include "../../Exception-py.i"

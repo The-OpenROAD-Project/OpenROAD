@@ -122,7 +122,7 @@ void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
 }
 
 void HierRTLMP::setGuidanceRegions(
-    const odb::OdbPtrMap<odb::dbInst, odb::Rect>& guidance_regions)
+    const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
 }
@@ -1833,7 +1833,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   std::vector<HardMacro> sa_macros;
   std::map<int, int> cluster_to_macro;
-  odb::OdbPtrSet<odb::dbMaster> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   clustering_engine_->createTempMacroClusters(
       hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 

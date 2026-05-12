@@ -330,7 +330,7 @@ PadPlacer::LayerTermObsTree PadPlacer::getInstanceObstructions(
     odb::dbInst* inst,
     bool bloat) const
 {
-  odb::OdbPtrMap<odb::dbTechLayer, std::vector<TermObsValue>> shapes;
+  odb::PtrMap<odb::dbTechLayer, std::vector<TermObsValue>> shapes;
 
   // populate map as needed
   const auto xform = inst->getTransform();
@@ -375,7 +375,7 @@ void PadPlacer::populateObstructions()
 
   const odb::Rect row = row_->getBBox();
 
-  odb::OdbPtrSet<odb::dbInst> covers;
+  odb::PtrSet<odb::dbInst> covers;
   auto* block = getBlock();
   if (block) {
     // Get placement blockages
@@ -735,7 +735,7 @@ void BumpAlignedPadPlacer::place()
     // bump if pad is not connected to a bump, place in the next available
     // position
     odb::dbInst* inst = *itr;
-    odb::OdbPtrMap<odb::dbInst, int> inst_pos;
+    odb::PtrMap<odb::dbInst, int> inst_pos;
     if (!min_terms.empty()) {
       int group_center = 0;
       switch (getRowEdge()) {
@@ -827,7 +827,7 @@ int64_t BumpAlignedPadPlacer::computePadBumpDistance(odb::dbInst* inst,
   return std::numeric_limits<int64_t>::max();
 }
 
-odb::OdbPtrMap<odb::dbInst, odb::dbITerm*>
+odb::PtrMap<odb::dbInst, odb::dbITerm*>
 BumpAlignedPadPlacer::getBumpAlignmentGroup(
     int offset,
     const std::vector<odb::dbInst*>::const_iterator& itr,
@@ -837,7 +837,7 @@ BumpAlignedPadPlacer::getBumpAlignmentGroup(
 
   // build map of bump aligned pads (ie. pads connected to bumps in the same row
   // or column)
-  odb::OdbPtrMap<odb::dbInst, odb::dbITerm*> min_terms;
+  odb::PtrMap<odb::dbInst, odb::dbITerm*> min_terms;
   auto sitr = itr;
   for (; sitr != inst_end; sitr++) {
     odb::dbInst* check_inst = *sitr;
@@ -898,9 +898,9 @@ BumpAlignedPadPlacer::getBumpAlignmentGroup(
 
 int64_t BumpAlignedPadPlacer::estimateWirelengths(
     odb::dbInst* inst,
-    const odb::OdbPtrSet<odb::dbITerm>& iterms) const
+    const odb::PtrSet<odb::dbITerm>& iterms) const
 {
-  odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*> terms;
+  odb::PtrMap<odb::dbITerm, odb::dbITerm*> terms;
   for (auto* iterm : iterms) {
     for (auto* net_iterm : iterm->getNet()->getITerms()) {
       if (net_iterm->getInst() == inst) {
@@ -980,7 +980,7 @@ PlacerPadPlacer::PlacerPadPlacer(utl::Logger* logger,
 }
 
 void PlacerPadPlacer::placeInstances(
-    const odb::OdbPtrMap<odb::dbInst, int>& positions,
+    const odb::PtrMap<odb::dbInst, int>& positions,
     bool center_ref) const
 {
   for (const auto& [inst, pos] : positions) {
@@ -989,7 +989,7 @@ void PlacerPadPlacer::placeInstances(
 }
 
 void PlacerPadPlacer::placeInstances(
-    const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions)
+    const odb::PtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions)
     const
 {
   for (const auto& [inst, anchor] : positions) {
@@ -1011,7 +1011,7 @@ void PlacerPadPlacer::placeInstanceSimple(odb::dbInst* inst,
   inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
-odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
+odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
 {
   const auto& insts = getInsts();
 
@@ -1040,7 +1040,7 @@ odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
     }
   }
 
-  odb::OdbPtrMap<odb::dbInst, int> mapping;
+  odb::PtrMap<odb::dbInst, int> mapping;
   for (int i = 0; i < insts.size(); i++) {
     odb::dbInst* inst = insts[i];
     mapping[inst] = position[i];
@@ -1204,8 +1204,8 @@ void PlacerPadPlacer::computeIdealPostions()
   addChartData(-2, estimateWirelengths(), 0);
 }
 
-odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::poolAdjacentViolators(
-    const odb::OdbPtrMap<odb::dbInst, int>& initial_positions) const
+odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::poolAdjacentViolators(
+    const odb::PtrMap<odb::dbInst, int>& initial_positions) const
 {
   const double dbus = getBlock()->getDbUnitsPerMicron();
   const auto& insts = getInsts();
@@ -1289,7 +1289,7 @@ odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::poolAdjacentViolators(
                k,
                updated);
 
-    odb::OdbPtrMap<odb::dbInst, int> positions;
+    odb::PtrMap<odb::dbInst, int> positions;
     for (int i = 0; i < insts.size(); i++) {
       positions[insts[i]] = position[i];
     }
@@ -1302,7 +1302,7 @@ odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::poolAdjacentViolators(
     }
   }
 
-  odb::OdbPtrMap<odb::dbInst, int> positions;
+  odb::PtrMap<odb::dbInst, int> positions;
 
   for (int i = 0; i < insts.size(); i++) {
     odb::dbInst* inst = insts[i];
@@ -1325,8 +1325,8 @@ odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::poolAdjacentViolators(
 }
 
 bool PlacerPadPlacer::padSpreading(
-    odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions,
-    const odb::OdbPtrMap<odb::dbInst, int>& initial_positions,
+    odb::PtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions,
+    const odb::PtrMap<odb::dbInst, int>& initial_positions,
     int itr,
     float spring,
     float repel,
@@ -1554,13 +1554,13 @@ bool PlacerPadPlacer::padSpreading(
   return !has_violations;
 }
 
-odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
-    const odb::OdbPtrMap<odb::dbInst, int>& initial_positions) const
+odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
+    const odb::PtrMap<odb::dbInst, int>& initial_positions) const
 {
   const auto& inst_widths = getInstWidths();
 
   // Snap all positions to row index
-  odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>> positions;
+  odb::PtrMap<odb::dbInst, std::unique_ptr<InstAnchors>> positions;
   for (const auto& [inst, pos] : initial_positions) {
     auto anchors = std::make_unique<InstAnchors>();
     anchors->width = inst_widths.at(inst);
@@ -1588,7 +1588,7 @@ odb::OdbPtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
   }
 
   // convert to regular placement information
-  odb::OdbPtrMap<odb::dbInst, int> real_positions;
+  odb::PtrMap<odb::dbInst, int> real_positions;
   for (const auto& [inst, anchor] : positions) {
     real_positions[inst] = anchor->min;
   }

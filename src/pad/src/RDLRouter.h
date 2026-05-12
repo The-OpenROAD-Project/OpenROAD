@@ -16,7 +16,7 @@
 #include "boost/geometry/index/rtree.hpp"
 #include "boost/graph/adjacency_list.hpp"
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -102,8 +102,8 @@ class RDLRouter
   };
 
   using NetRoutingTargetMap
-      = odb::OdbPtrMap<odb::dbNet,
-                       odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
+      = odb::PtrMap<odb::dbNet,
+                    odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>>>;
 
   using RDLRoutePtr = std::shared_ptr<RDLRoute>;
 
@@ -112,7 +112,7 @@ class RDLRouter
             odb::dbTechLayer* layer,
             odb::dbTechVia* bump_via,
             odb::dbTechVia* pad_via,
-            const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
+            const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routing_map,
             int width,
             int spacing,
             bool allow45,
@@ -206,15 +206,15 @@ class RDLRouter
                                       const RouteTarget& source);
   void removeTerminalAccess(const TerminalAccess& access);
 
-  odb::OdbPtrMap<odb::dbITerm, std::vector<RouteTarget>> generateRoutingTargets(
+  odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>> generateRoutingTargets(
       odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
   std::set<GridGraphEdge> getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
   int reportFailedRoutes(
-      const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const;
-  odb::OdbPtrSet<odb::dbITerm> getRoutedTerms() const;
+      const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routed_pairs) const;
+  odb::PtrSet<odb::dbITerm> getRoutedTerms() const;
   int getRoutingTermCount() const;
 
   int getBloatFactor() const;
@@ -233,7 +233,7 @@ class RDLRouter
   float turn_penalty_;
   int max_router_iterations_;
 
-  const odb::OdbPtrMap<odb::dbITerm, odb::dbITerm*>& routing_map_;
+  const odb::PtrMap<odb::dbITerm, odb::dbITerm*>& routing_map_;
 
   GridGraph graph_;
   GridWeightMap graph_weight_;
@@ -243,7 +243,7 @@ class RDLRouter
   std::unordered_map<odb::Point, GridGraphVertex> point_vertex_map_;
   GridTree vertex_grid_tree_;
   std::unordered_map<GridGraphVertex, odb::Point> vertex_point_map_;
-  odb::OdbPtrMap<odb::dbITerm, std::vector<Edge>> iterm_edges_;
+  odb::PtrMap<odb::dbITerm, std::vector<Edge>> iterm_edges_;
 
   // Routing grid
   std::vector<int> x_grid_;

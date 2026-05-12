@@ -15,7 +15,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbWireGraph.h"
@@ -137,10 +137,10 @@ class DbMasterDescriptor : public BaseDbDescriptor<odb::dbMaster>
 
   static void getMasterEquivalent(sta::dbSta* sta,
                                   odb::dbMaster* master,
-                                  odb::OdbPtrSet<odb::dbMaster>& masters);
+                                  odb::PtrSet<odb::dbMaster>& masters);
 
   static void getInstances(odb::dbMaster* master,
-                           odb::OdbPtrSet<odb::dbInst>& insts);
+                           odb::PtrSet<odb::dbInst>& insts);
 
  protected:
   Properties getDBProperties(odb::dbMaster* master) const override;
@@ -160,9 +160,9 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
 
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
-                  const odb::OdbPtrSet<odb::dbNet>& focus_nets,
-                  const odb::OdbPtrSet<odb::dbNet>& guide_nets,
-                  const odb::OdbPtrSet<odb::dbNet>& tracks_nets);
+                  const odb::PtrSet<odb::dbNet>& focus_nets,
+                  const odb::PtrSet<odb::dbNet>& guide_nets,
+                  const odb::PtrSet<odb::dbNet>& tracks_nets);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -228,9 +228,9 @@ class DbNetDescriptor : public BaseDbDescriptor<odb::dbNet>
 
   void buildNodeMap(odb::dbWireGraph* graph, NodeMap& node_map) const;
 
-  const odb::OdbPtrSet<odb::dbNet>& focus_nets_;
-  const odb::OdbPtrSet<odb::dbNet>& guide_nets_;
-  const odb::OdbPtrSet<odb::dbNet>& tracks_nets_;
+  const odb::PtrSet<odb::dbNet>& focus_nets_;
+  const odb::PtrSet<odb::dbNet>& guide_nets_;
+  const odb::PtrSet<odb::dbNet>& tracks_nets_;
 
   odb::dbObject* getSink(const std::any& object) const;
 

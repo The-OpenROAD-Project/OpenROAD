@@ -16,7 +16,7 @@
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "gui/gui.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -77,7 +77,7 @@ class PadPlacer
   using TermObsTree
       = boost::geometry::index::rtree<TermObsValue,
                                       boost::geometry::index::quadratic<16>>;
-  using LayerTermObsTree = odb::OdbPtrMap<odb::dbTechLayer, TermObsTree>;
+  using LayerTermObsTree = odb::PtrMap<odb::dbTechLayer, TermObsTree>;
 
   int placeInstance(int index,
                     odb::dbInst* inst,
@@ -91,7 +91,7 @@ class PadPlacer
       bool return_intersect = true) const;
   int snapToRowSite(int location) const;
   int convertRowIndexToPos(int index) const;
-  const odb::OdbPtrMap<odb::dbInst, int>& getInstWidths() const
+  const odb::PtrMap<odb::dbInst, int>& getInstWidths() const
   {
     return inst_widths_;
   }
@@ -113,7 +113,7 @@ class PadPlacer
   odb::dbRow* row_;
 
   // Computed values
-  odb::OdbPtrMap<odb::dbInst, int> inst_widths_;
+  odb::PtrMap<odb::dbInst, int> inst_widths_;
 
   // Fixed obstructions
   BlockageObsTree blockage_obstructions_;
@@ -121,8 +121,7 @@ class PadPlacer
   LayerTermObsTree term_obstructions_;
 
   // overlap cache
-  odb::OdbPtrMap<odb::dbMaster, std::optional<odb::Polygon>>
-      master_overlap_cache_;
+  odb::PtrMap<odb::dbMaster, std::optional<odb::Polygon>> master_overlap_cache_;
 };
 
 class CheckerOnlyPadPlacer : public PadPlacer
@@ -189,27 +188,26 @@ class BumpAlignedPadPlacer : public PadPlacer
 
   void place() override;
 
-  void setConnections(
-      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>&
-          iterm_connections)
+  void setConnections(const odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>>&
+                          iterm_connections)
   {
     iterm_connections_ = iterm_connections;
   }
 
  private:
   int64_t estimateWirelengths(odb::dbInst* inst,
-                              const odb::OdbPtrSet<odb::dbITerm>& iterms) const;
+                              const odb::PtrSet<odb::dbITerm>& iterms) const;
   int64_t computePadBumpDistance(odb::dbInst* inst,
                                  int inst_width,
                                  odb::dbITerm* bump,
                                  int center_pos) const;
-  odb::OdbPtrMap<odb::dbInst, odb::dbITerm*> getBumpAlignmentGroup(
+  odb::PtrMap<odb::dbInst, odb::dbITerm*> getBumpAlignmentGroup(
       int offset,
       const std::vector<odb::dbInst*>::const_iterator& itr,
       const std::vector<odb::dbInst*>::const_iterator& inst_end) const;
   void performPadFlip(odb::dbInst* inst) const;
 
-  odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>> iterm_connections_;
+  odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>> iterm_connections_;
 };
 
 class PlacerPadPlacer : public PadPlacer
@@ -224,9 +222,8 @@ class PlacerPadPlacer : public PadPlacer
 
   void place() override;
 
-  void setConnections(
-      const odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>>&
-          iterm_connections)
+  void setConnections(const odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>>&
+                          iterm_connections)
   {
     iterm_connections_ = iterm_connections;
   }
@@ -253,14 +250,14 @@ class PlacerPadPlacer : public PadPlacer
   };
 
   void computeIdealPostions();
-  odb::OdbPtrMap<odb::dbInst, int> initialPoolMapping() const;
-  odb::OdbPtrMap<odb::dbInst, int> poolAdjacentViolators(
-      const odb::OdbPtrMap<odb::dbInst, int>& initial_positions) const;
-  odb::OdbPtrMap<odb::dbInst, int> padSpreading(
-      const odb::OdbPtrMap<odb::dbInst, int>& initial_positions) const;
+  odb::PtrMap<odb::dbInst, int> initialPoolMapping() const;
+  odb::PtrMap<odb::dbInst, int> poolAdjacentViolators(
+      const odb::PtrMap<odb::dbInst, int>& initial_positions) const;
+  odb::PtrMap<odb::dbInst, int> padSpreading(
+      const odb::PtrMap<odb::dbInst, int>& initial_positions) const;
   bool padSpreading(
-      odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions,
-      const odb::OdbPtrMap<odb::dbInst, int>& initial_positions,
+      odb::PtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions,
+      const odb::PtrMap<odb::dbInst, int>& initial_positions,
       int itr,
       float spring,
       float repel,
@@ -269,11 +266,11 @@ class PlacerPadPlacer : public PadPlacer
   void placeInstanceSimple(odb::dbInst* inst,
                            int position,
                            bool center_ref) const;
-  void placeInstances(const odb::OdbPtrMap<odb::dbInst, int>& positions,
+  void placeInstances(const odb::PtrMap<odb::dbInst, int>& positions,
                       bool center_ref) const;
   void placeInstances(
-      const odb::OdbPtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>&
-          positions) const;
+      const odb::PtrMap<odb::dbInst, std::unique_ptr<InstAnchors>>& positions)
+      const;
   int64_t estimateWirelengths() const;
   int getNumberOfRoutes() const;
   void debugPause(const std::string& msg) const;
@@ -294,8 +291,8 @@ class PlacerPadPlacer : public PadPlacer
   void debugCheckPlacement() const;
   std::string instNameList(const std::vector<odb::dbInst*>& insts) const;
 
-  odb::OdbPtrMap<odb::dbInst, odb::OdbPtrSet<odb::dbITerm>> iterm_connections_;
-  odb::OdbPtrMap<odb::dbInst, int> ideal_positions_;
+  odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>> iterm_connections_;
+  odb::PtrMap<odb::dbInst, int> ideal_positions_;
 
   // debug
   gui::Chart* chart_{nullptr};

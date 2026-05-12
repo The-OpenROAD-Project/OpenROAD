@@ -30,7 +30,7 @@
 
 #include "dbChip.h"
 #include "dbCore.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -810,13 +810,13 @@ Rect dbMarker::getBBox() const
   return bbox;
 }
 
-odb::OdbPtrSet<dbObject> dbMarker::getSources() const
+odb::PtrSet<dbObject> dbMarker::getSources() const
 {
   _dbMarker* marker = (_dbMarker*) this;
   _dbBlock* block = marker->getBlock();
   _dbChip* chip = marker->getChip();
 
-  odb::OdbPtrSet<dbObject> objs;
+  odb::PtrSet<dbObject> objs;
   if (block) {
     for (const auto& [db_type, id] : marker->sources_) {
       dbObjectTable* table = block->getObjectTable(db_type);

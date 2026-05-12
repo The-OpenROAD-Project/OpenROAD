@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -164,7 +164,7 @@ class Restructure
   std::string input_blif_file_name_;
   std::string output_blif_file_name_;
   std::vector<std::string> lib_file_names_;
-  odb::OdbPtrSet<odb::dbInst> path_insts_;
+  odb::PtrSet<odb::dbInst> path_insts_;
 
   Mode opt_mode_{Mode::kDelay1};
   bool is_area_mode_{false};

@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"

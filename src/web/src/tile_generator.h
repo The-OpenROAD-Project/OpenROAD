@@ -19,7 +19,7 @@
 #include "boost/json/object.hpp"
 #include "color.h"
 #include "glyph_cache.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "web_painter.h"
@@ -185,7 +185,7 @@ class TileGenerator
 
   // Per-layer colors matching gui::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
-  const odb::OdbPtrMap<odb::dbTechLayer, Color>& getLayerColorMap() const;
+  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -392,7 +392,7 @@ class TileGenerator
   // computed once and kept; std::map reference stability means a returned ref
   // stays valid even if another tech is added later.
   mutable std::mutex layer_colors_mutex_;
-  mutable odb::OdbPtrMap<odb::dbTech, odb::OdbPtrMap<odb::dbTechLayer, Color>>
+  mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
 
   static constexpr int kTileSizeInPixel = 256;

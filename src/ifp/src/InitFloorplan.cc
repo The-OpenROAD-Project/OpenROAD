@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"

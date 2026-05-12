@@ -77,9 +77,9 @@ class GridComponent
   virtual void cutShapes(const Shape::ObstructionTreeMap& obstructions);
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
-      const odb::OdbPtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+      const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
       bool add_pins,
-      const odb::OdbPtrSet<odb::dbTechLayer>& convert_layer_to_pin) const;
+      const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const;
 
   virtual void report() const = 0;
   virtual Type type() const = 0;

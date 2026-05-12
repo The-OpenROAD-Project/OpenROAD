@@ -50,7 +50,7 @@
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -1814,7 +1814,7 @@ void dbNet::destroyCCSegs()
 
 void dbNet::getCouplingNets(const uint32_t corner,
                             const double ccThreshold,
-                            odb::OdbPtrSet<dbNet>& cnets)
+                            odb::PtrSet<dbNet>& cnets)
 {
   std::vector<dbNet*> inets;
   std::vector<double> netccap;
@@ -2484,7 +2484,7 @@ dbModule* dbNet::findMainParentModule() const
   return getBlock()->getTopModule();
 }
 
-bool dbNet::findRelatedModNets(odb::OdbPtrSet<dbModNet>& modnet_set) const
+bool dbNet::findRelatedModNets(odb::PtrSet<dbModNet>& modnet_set) const
 {
   modnet_set.clear();
 
@@ -2566,7 +2566,7 @@ void dbNet::dump(bool show_modnets) const
   logger->report("--------------------------------------------------");
 
   if (show_modnets) {
-    odb::OdbPtrSet<dbModNet> modnets;
+    odb::PtrSet<dbModNet> modnets;
     findRelatedModNets(modnets);
     for (dbModNet* modnet : modnets) {
       modnet->dump();
@@ -2597,7 +2597,7 @@ bool dbNet::isDeeperThan(const dbNet* net) const
 
 dbModNet* dbNet::findModNetInHighestHier() const
 {
-  odb::OdbPtrSet<dbModNet> modnets;
+  odb::PtrSet<dbModNet> modnets;
   if (!findRelatedModNets(modnets)) {
     return nullptr;
   }
@@ -2655,26 +2655,26 @@ void dbNet::checkSanityModNetConsistency() const
   utl::Logger* logger = getImpl()->getLogger();
 
   // 1. Find all related dbModNets with this dbNet.
-  odb::OdbPtrSet<dbModNet> related_modnets;
+  odb::PtrSet<dbModNet> related_modnets;
   findRelatedModNets(related_modnets);
   if (related_modnets.empty()) {
     return;
   }
 
   // 2. Find all ITerms and BTerms connected with this dbNet.
-  odb::OdbPtrSet<dbITerm> flat_iterms;
+  odb::PtrSet<dbITerm> flat_iterms;
   for (dbITerm* iterm : getITerms()) {
     flat_iterms.insert(iterm);
   }
 
-  odb::OdbPtrSet<dbBTerm> flat_bterms;
+  odb::PtrSet<dbBTerm> flat_bterms;
   for (dbBTerm* bterm : getBTerms()) {
     flat_bterms.insert(bterm);
   }
 
   // 3. Find all ITerms and BTerms connected with all the related dbModNets.
-  odb::OdbPtrSet<dbITerm> hier_iterms;
-  odb::OdbPtrSet<dbBTerm> hier_bterms;
+  odb::PtrSet<dbITerm> hier_iterms;
+  odb::PtrSet<dbBTerm> hier_bterms;
   for (dbModNet* modnet : related_modnets) {
     for (dbITerm* iterm : modnet->getITerms()) {
       hier_iterms.insert(iterm);
@@ -2784,7 +2784,7 @@ void dbNet::checkSanityNameCollision() const
   // Check if this flat net is associated with the colliding ModNet
   // by traversing the hierarchy. If any related ModNet has the same
   // name in the same module, it's the same logical signal.
-  odb::OdbPtrSet<dbModNet> related_modnets;
+  odb::PtrSet<dbModNet> related_modnets;
   findRelatedModNets(related_modnets);
   for (dbModNet* mn : related_modnets) {
     if (mn->getParent() == module
@@ -2848,7 +2848,7 @@ void dbNet::dumpConnectivity(int level) const
   std::set<const dbObject*> visited;
   _dbNet::dumpNetConnectivity(this, level, 1, visited, logger);
 
-  odb::OdbPtrSet<dbModNet> modnets;
+  odb::PtrSet<dbModNet> modnets;
   if (findRelatedModNets(modnets)) {
     for (dbModNet* modnet : modnets) {
       _dbNet::dumpModNetConnectivity(modnet, level, 1, visited, logger);
@@ -3113,14 +3113,13 @@ dbInst* dbNet::insertBufferAfterDriver(dbObject* drvr_output_term,
                                                uniquify);
 }
 
-dbInst* dbNet::insertBufferBeforeLoads(
-    const odb::OdbPtrSet<dbObject>& load_pins,
-    const dbMaster* buffer_master,
-    const Point* loc,
-    const char* new_buf_base_name,
-    const char* new_net_base_name,
-    const dbNameUniquifyType& uniquify,
-    bool loads_on_diff_nets)
+dbInst* dbNet::insertBufferBeforeLoads(const odb::PtrSet<dbObject>& load_pins,
+                                       const dbMaster* buffer_master,
+                                       const Point* loc,
+                                       const char* new_buf_base_name,
+                                       const char* new_net_base_name,
+                                       const dbNameUniquifyType& uniquify,
+                                       bool loads_on_diff_nets)
 {
   dbInsertBuffer insert_buffer(this);
   return insert_buffer.insertBufferBeforeLoads(load_pins,
@@ -3140,7 +3139,7 @@ dbInst* dbNet::insertBufferBeforeLoads(const std::vector<dbObject*>& load_pins,
                                        const dbNameUniquifyType& uniquify,
                                        bool loads_on_diff_nets)
 {
-  odb::OdbPtrSet<dbObject> load_pins_set(load_pins.begin(), load_pins.end());
+  odb::PtrSet<dbObject> load_pins_set(load_pins.begin(), load_pins.end());
   return insertBufferBeforeLoads(load_pins_set,
                                  buffer_master,
                                  loc,

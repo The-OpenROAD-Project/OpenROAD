@@ -71,13 +71,13 @@ void PdnGen::buildGrids(bool trim)
   const std::vector<Grid*> grids = getGrids();
 
   // connect instances already assigned to grids
-  odb::OdbPtrSet<odb::dbInst> insts_in_grids;
+  odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
     auto insts_in_grid = grid->getInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
-  odb::OdbPtrSet<odb::dbNet> grid_nets;
+  odb::PtrSet<odb::dbNet> grid_nets;
   for (auto* grid : grids) {
     const auto nets = grid->getNets();
     grid_nets.insert(nets.begin(), nets.end());
@@ -200,7 +200,7 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
 
-  odb::OdbPtrMap<odb::dbTechLayer, std::unique_ptr<TechLayer>> tech_layers;
+  odb::PtrMap<odb::dbTechLayer, std::unique_ptr<TechLayer>> tech_layers;
 
   for (auto* grid : grids) {
     if (grid->type() == Grid::kExisting) {
@@ -687,7 +687,7 @@ void PdnGen::makeConnect(
   con->setMaxColumns(max_columns);
   con->setOnGrid(ongrid);
 
-  odb::OdbPtrMap<odb::dbTechLayer, Connect::SplitCut> split_cuts_map;
+  odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> split_cuts_map;
   for (const auto& [layer, cut_def] : split_cuts) {
     split_cuts_map[layer]
         = Connect::SplitCut{std::get<0>(cut_def), std::get<1>(cut_def)};
@@ -769,7 +769,7 @@ void PdnGen::createSrouteWires(
 
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
-  odb::OdbPtrMap<odb::dbNet, odb::dbSWire*> net_map;
+  odb::PtrMap<odb::dbNet, odb::dbSWire*> net_map;
 
   auto domains = getDomains();
   for (auto* domain : domains) {
@@ -797,7 +797,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   for (auto& [net, swire] : net_map) {
     for (auto* bterm : net->getBTerms()) {
       auto bpins = bterm->getBPins();
-      odb::OdbPtrSet<odb::dbBPin> pins(bpins.begin(), bpins.end());
+      odb::PtrSet<odb::dbBPin> pins(bpins.begin(), bpins.end());
       for (auto* bpin : pins) {
         if (!bpin->getPlacementStatus().isFixed()) {
           odb::dbBPin::destroy(bpin);
@@ -865,7 +865,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 {
   if (net == nullptr) {
     resetShapes();
-    odb::OdbPtrSet<odb::dbNet> nets;
+    odb::PtrSet<odb::dbNet> nets;
     ensureCoreDomain();
     for (auto* domain : getDomains()) {
       for (auto* net : domain->getNets()) {
@@ -889,9 +889,9 @@ void PdnGen::ripUp(odb::dbNet* net)
   Shape::ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
 
   // remove bterms that connect to swires
-  odb::OdbPtrSet<odb::dbBTerm> terms;
+  odb::PtrSet<odb::dbBTerm> terms;
   for (auto* bterm : net->getBTerms()) {
-    odb::OdbPtrSet<odb::dbBPin> pins;
+    odb::PtrSet<odb::dbBPin> pins;
     for (auto* pin : bterm->getBPins()) {
       bool remove = false;
       for (auto* box : pin->getBoxes()) {

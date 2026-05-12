@@ -16,7 +16,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -123,7 +123,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
     }
   }
 
-  odb::OdbPtrSet<odb::dbRow> edge_rows;
+  odb::PtrSet<odb::dbRow> edge_rows;
   for (const auto& edge : edges) {
     const auto rows = getRows(edge, tapcell_master->getSite());
     edge_rows.insert(rows.begin(), rows.end());
@@ -185,7 +185,7 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
   const odb::Rect row_bb = row->getBBox();
   odb::Rect query_box;
   row_bb.bloat(-1, query_box);
-  odb::OdbPtrSet<odb::dbInst> row_insts(
+  odb::PtrSet<odb::dbInst> row_insts(
       fixed_instances.qbegin(boost::geometry::index::intersects(query_box)),
       fixed_instances.qend());
 
@@ -242,7 +242,7 @@ std::optional<int> Tapcell::findValidLocation(
     int x,
     int width,
     const odb::dbOrientType& orient,
-    const odb::OdbPtrSet<odb::dbInst>& row_insts,
+    const odb::PtrSet<odb::dbInst>& row_insts,
     int site_width,
     const int tap_width,
     const int row_urx,
@@ -297,7 +297,7 @@ std::optional<int> Tapcell::findValidLocation(
 bool Tapcell::isOverlapping(const int x,
                             const int width,
                             const odb::dbOrientType& orient,
-                            const odb::OdbPtrSet<odb::dbInst>& row_insts)
+                            const odb::PtrSet<odb::dbInst>& row_insts)
 {
   int x_start;
   int x_end;
@@ -1448,7 +1448,7 @@ EndcapCellOptions Tapcell::correctEndcapOptions(
 odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type,
                                         const std::string& option_name) const
 {
-  const odb::OdbPtrSet<odb::dbMaster> masters = findMasterByType(type);
+  const odb::PtrSet<odb::dbMaster> masters = findMasterByType(type);
 
   if (masters.size() > 1) {
     std::string masters_names;
@@ -1470,10 +1470,10 @@ odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type,
   return *masters.begin();
 }
 
-odb::OdbPtrSet<odb::dbMaster> Tapcell::findMasterByType(
+odb::PtrSet<odb::dbMaster> Tapcell::findMasterByType(
     const odb::dbMasterType& type) const
 {
-  odb::OdbPtrSet<odb::dbMaster> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   for (auto* lib : db_->getLibs()) {
     for (auto* master : lib->getMasters()) {
       if (master->getType() == type) {

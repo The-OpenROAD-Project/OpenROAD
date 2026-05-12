@@ -12,7 +12,7 @@
 
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
-#include "odb/OdbPtrSetMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -116,7 +116,7 @@ void Rudy::getResourceReductions()
   }
 }
 
-void Rudy::calculateRudy(std::optional<odb::OdbPtrSet<odb::dbNet>*> selection)
+void Rudy::calculateRudy(std::optional<odb::PtrSet<odb::dbNet>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {

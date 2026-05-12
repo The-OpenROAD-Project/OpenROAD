@@ -114,7 +114,7 @@ class TritonCTS
   void populateTritonCTS();
   void destroyClockModNet(sta::Pin* pin_driver);
   void writeClockNetsToDb(TreeBuilder* builder,
-                          odb::OdbPtrSet<odb::dbNet>& clkLeafNets);
+                          odb::PtrSet<odb::dbNet>& clkLeafNets);
   void writeClockNDRsToDb(TreeBuilder* builder);
   int getNetSpacing(odb::dbTechLayer* layer, int width1, int width2);
   void incrementNumClocks() { ++numberOfClocks_; }
@@ -187,7 +187,7 @@ class TritonCTS
                                         Clock& clockNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   odb::dbITerm* getSingleOutput(odb::dbInst* inst, odb::dbITerm* input) const;
-  void findClockRoots(sta::Clock* clk, odb::OdbPtrSet<odb::dbNet>& clockNets);
+  void findClockRoots(sta::Clock* clk, odb::PtrSet<odb::dbNet>& clockNets);
   float getInputPinCap(odb::dbITerm* iterm);
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
@@ -224,11 +224,11 @@ class TritonCTS
   rsz::Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
-  odb::OdbPtrSet<odb::dbNet> staClockNets_;
-  odb::OdbPtrSet<odb::dbNet> visitedClockNets_;
-  odb::OdbPtrMap<odb::dbInst, ClockInst*> inst2clkbuf_;
+  odb::PtrSet<odb::dbNet> staClockNets_;
+  odb::PtrSet<odb::dbNet> visitedClockNets_;
+  odb::PtrMap<odb::dbInst, ClockInst*> inst2clkbuf_;
   std::map<ClockInst*, ClockSubNet*> driver2subnet_;
-  odb::OdbPtrMap<odb::dbNet, TreeBuilder*> net2builder_;
+  odb::PtrMap<odb::dbNet, TreeBuilder*> net2builder_;
 
   // db vars
   odb::dbDatabase* db_ = nullptr;
