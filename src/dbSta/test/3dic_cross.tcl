@@ -1,15 +1,15 @@
 source "helpers.tcl"
 
-# Stage 6: end-to-end cross-chiplet timing path. Two instances of
-# flop_chip (DFF inside each) wired top-side so chipA.q -> chipB.d.
-# buildChipNetsFromVerilog reads 3dic_cross_top.v and creates a
-# dbChipNet per top-level wire. STA's graph builder traverses via
-# term() (Stage 4) + DbNetPinIterator (Stage 5).
+# Cross-chiplet timing path. Two distinct chiplet masters (flop_chip_a,
+# flop_chip_b), each with DFF + INV + BUF, wired top-side so chipA.q ->
+# bridge -> chipB.d. buildChipNetsFromVerilog reads 3dic_cross_top.v and
+# creates a dbChipNet per top-level wire. STA traverses via term()
+# (Stage 4 bridge) + DbNetPinIterator (Stage 5) + visitConnectedPins
+# chip-net descent (Stage 7) so wire edges form across the boundary.
 set_thread_count 1
 
 read_3dbx 3dic_cross.3dbx
 
-# Verify chip-nets were built from the top verilog.
 proc chip_net_names { } {
   set names {}
   foreach n [get_nets *] {
@@ -26,18 +26,14 @@ check "bridge spans both chiplets" {
   lsort -unique $insts
 } {chipA chipB}
 
-# Stage 6.5: drive STA on top of the chip-net topology. Smoke test —
-# create_clock on clk_top chip-net (Stage 5 findNetAllScopes chip-aware)
-# and call report_checks. Real cross-chiplet timing paths need
-# chiplet-internal block access (Stage 7); for now we just confirm STA
-# doesn't crash on the chip-aware accessors.
+# Anchor the clock on the chiplet-internal CK pins. Anchoring on the
+# chip-bump pins of clk_top doesn't propagate arrivals through the
+# BIDIRECT chip-bump (no Liberty feed-through arc on the synthetic
+# chip-master Cell), so STA finds no launch/capture pair. Inner CK
+# anchor bypasses the boundary and yields a full constrained setup
+# check across chiplets.
 create_clock -name clk -period 1.0 \
-  [get_pins -of_objects [get_nets clk_top]]
-# True flop-to-flop constrained paths across the chip-net need dual-
-# vertex hierarchical pins (load + driver per chip-bump). That's Stage 7.
-# For now -unconstrained reports the longest data chains STA can trace,
-# which now include real Liberty delays for inv/buf in each chiplet.
-report_checks -unconstrained -path_delay max -group_path_count 4
+  [list [get_pins chipA/ff/CK] [get_pins chipB/ff/CK]]
+report_checks -path_delay max -group_path_count 4
 
 exit_summary
-

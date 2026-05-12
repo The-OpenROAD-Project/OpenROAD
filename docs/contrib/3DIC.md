@@ -255,31 +255,76 @@ share a master `dbChip` because their inner dbInst pointers alias.
 Supporting shared masters requires a virtual `(chip_inst, dbInst)`
 instance encoding, deferred post-v1.
 
-## Hierarchical boundary pins need dual vertices (Stage 7 work)
+## Closing the flop-to-flop loop — Stage 7 wiring (LANDED)
 
 A chip-bump and its chiplet-side inner BTerm form a single hierarchical
-boundary. Each side has dual role:
+boundary. STA's `isDriver(pin) = (isLeaf && output) || (isTopInstance &&
+input)` requires the pin to be a driver to participate in wire-edge
+formation. With a load-only direction on either side of the boundary,
+`Graph::makeWireEdgesFromPin` skips the bump and no cross-chiplet edge
+forms in one direction.
 
-| Pin | Outside view (chip-net side) | Inside view (chiplet net side) |
-|---|---|---|
-| `chipB.bump_d` (INPUT) | load of `bridge` | driver of `d`-bterm |
-| `chipB.d-bterm` (INPUT IoType) | driven by `bump_d` | driver of `chipB` internal `d` net |
+**Fix (two parts):**
 
-STA's `isDriver(pin) = (isLeaf && output) || (isTopInstance && input)`
-classifies based on one direction value. With `direction = INPUT` and
-`instance = chip-inst` (leaf), both pins are loads — no
-`makeWireEdgesFromPin` runs from either side, so no edges from `bump_d` to
-`d-bterm` or from `d-bterm` to `ff.D` get created. The launch-side works
-(driver `chipA.bump_q` reaches both bridge loads and chipA's q-net
-loads via `term()` descent), but capture-side stops at `chipB/d`.
+1. `direction(chip_bump_pin) = PortDirection::bidirect()`. Bidirect is
+   both driver and load, so `makeWireEdgesFromPin` runs on every chip
+   bump regardless of the underlying BTerm's IoType. As a side effect,
+   `Graph::makePinVertices` allocates dual vertices (load + driver) for
+   each chip-bump.
+2. `dbNetwork::visitConnectedPins(Net*)` chip-net branch: after
+   `visitor(bump_pin)`, recurse via `term(bump_pin) → net(term) →
+   visitConnectedPins(inner_net, ...)` so STA's **fat-net** wire-edge
+   model sees the chiplet's leaf loads through the boundary. Without
+   this, the visitor stops at the bump and the path terminates at
+   `chipB/d` (the inner BTerm).
 
-The correct STA model is **two vertices per hierarchical pin** — a
-load-side vertex and a driver-side vertex — connected by an internal arc.
-STA already supports this via `direction(pin)->isBidirect() == true`:
-`Graph::makePinVertices` allocates `vertex` and `bidir_drvr_vertex`
-both. Stage 7 will override `dbNetwork::direction(chip_bump_pin)` to
-return BIDIRECT and verify the resulting edge structure closes the
-flop-to-flop loop.
+The fat-net model collapses the boundary: a wire edge goes directly from
+`chipA/buf/Z` (inner driver) to `chipB/buf/A` (inner load across the
+chip-net), skipping bump pins entirely. So an inner-LibertyCell-less
+chip-bump never needs its own timing arc to carry the *data* path — the
+edges form across it.
+
+After Stage 7 the test reports a constrained `chipA/ff → chipB/ff`
+setup check with real Liberty delays.
+
+## Anchoring create_clock on chiplet inner CK pins (workaround)
+
+The chip-bump anchor case is **NOT** closed by Stage 7. If a user does
+
+```tcl
+create_clock -name clk -period 1.0 [get_pins -of_objects [get_nets clk_top]]
+```
+
+`all_registers -clock_pins` correctly tags both `chipA/ff/CK` and
+`chipB/ff/CK` as clock pins (ClkNetwork BFS reaches them), but
+`Search::seedClkArrivals` never produces a real `ClockEdge` arrival on
+those vertices. Symptoms: `report_clock_skew` reports "No launch/capture
+paths found"; constrained `report_checks` reports "No paths found";
+unconstrained reports paths but without "clocked by clk" tagging on the
+chipA-side launch flop.
+
+Workaround: anchor the clock on the chiplet-internal CK pins directly.
+With the Stage 7 `findInstance` path-split fix, `get_pins <chip_inst>/
+<flop>/CK` resolves correctly:
+
+```tcl
+create_clock -name clk -period 1.0 \
+  [list [get_pins chipA/ff/CK] [get_pins chipB/ff/CK]]
+```
+
+Then constrained mode produces a normal `Path Group: clk` setup check.
+
+The underlying cause is that the chip-bump's synthetic master Cell has
+no Liberty model, so STA's `seedClkArrival` (which seeds an arrival ON
+the anchor pin and forward-propagates) cannot fan its launch tags
+through the boundary the way it does for a Liberty cell with a real
+clock-pass-through arc. The data path works (because fat-net wire-edge
+formation skips the boundary entirely), but the clock-arrival /
+ClockEdge tagging machinery needs the arrival to start at a leaf cell
+pin or propagate via a Liberty arc to one. Post-v1 fix: synthesize a
+minimal clock-pass-through arc on the chip-bump master Cell (or anchor
+implicit clock tags directly on each ff/CK reached by the clock
+fanout).
 
 ## term(Pin*) history (Stage 4–6.5)
 

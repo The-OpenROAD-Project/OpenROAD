@@ -1,3 +1,7 @@
+OpenROAD 26Q2-893-g9d38d7fbba 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [INFO ODB-0227] LEF file: ../../odb/test/Nangate45/fake_bumps.lef, created 1 library cells

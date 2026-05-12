@@ -1428,11 +1428,23 @@ Instance* dbNetwork::findInstance(std::string_view path_name) const
 {
   std::string path_name_str(path_name);
   if (has3DicChip()) {
-    // In 3DIC the top has no dbBlock. Top-level lookups match chip-insts;
-    // deeper descent is Stage 5+.
-    for (dbChipInst* chip_inst : top_chip_->getChipInsts()) {
-      if (chip_inst->getName() == path_name_str) {
-        return dbToSta(chip_inst);
+    // Top-level chip-inst lookup (O(1) via odb's name-indexed map).
+    if (dbChipInst* chip_inst = top_chip_->findChipInst(path_name_str)) {
+      return dbToSta(chip_inst);
+    }
+    // "<chip_inst>/<inner_inst>" — escape-aware split at the last divider.
+    std::string chip_name, inner_name;
+    pathNameLast(path_name_str, chip_name, inner_name);
+    if (chip_name.empty()) {
+      return nullptr;
+    }
+    dbChipInst* chip_inst = top_chip_->findChipInst(chip_name);
+    if (chip_inst == nullptr || !blockOwnedUniquelyBy(chip_inst)) {
+      return nullptr;
+    }
+    if (dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
+      if (dbInst* inner = mb->findInst(inner_name.c_str())) {
+        return dbToSta(inner);
       }
     }
     return nullptr;
@@ -2019,8 +2031,13 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
   }
 
   if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
-    if (odb::dbBTerm* bterm = bump->getChipBump()->getBTerm()) {
-      return dbToSta(bterm->getSigType(), bterm->getIoType());
+    // Report BIDIRECT so Graph::makeWireEdgesFromPin runs on every bump
+    // regardless of the underlying bterm's IoType. Without this an INPUT
+    // bump (e.g. clk) has no outgoing wire edges and a clock anchored on
+    // it never reaches the chiplet's internal loads.
+    odb::dbChipBump* chip_bump = bump->getChipBump();
+    if (chip_bump != nullptr && chip_bump->getBTerm() != nullptr) {
+      return PortDirection::bidirect();
     }
     return nullptr;
   }
@@ -2413,15 +2430,27 @@ void dbNetwork::visitConnectedPins(const Net* net,
 
   visited_nets.insert(net);
 
-  // Cross-chiplet net: visit each bump-inst Pin. Descending into the
-  // chiplet's inner net (via term()) requires Vertices to exist for
-  // chiplet-internal pins — that's Stage 7 work.
+  // Cross-chiplet net: visit each bump-inst Pin AND descend into the
+  // chiplet's inner net (via term()) so the visitor sees driver/load pins
+  // inside every chiplet sharing this chip-net. STA's wire-edge model is a
+  // fat net — direct drvr → load edges across hierarchy — so descending
+  // here lets Graph::makeWireEdgesFromPin form cross-chiplet wire edges
+  // (e.g. chipA/buf/Z → chipB/buf/A) without needing dual vertices on the
+  // chip-bump pin itself.
   if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
     const uint32_t n = chip_net->getNumBumpInsts();
     std::vector<dbChipInst*> path;
     for (uint32_t i = 0; i < n; ++i) {
-      if (odb::dbChipBumpInst* bump = chip_net->getBumpInst(i, path)) {
-        visitor(dbToSta(bump));
+      odb::dbChipBumpInst* bump = chip_net->getBumpInst(i, path);
+      if (bump == nullptr) {
+        continue;
+      }
+      Pin* bump_pin = dbToSta(bump);
+      visitor(bump_pin);
+      if (Term* inner_term = term(bump_pin)) {
+        if (Net* inner_net = this->net(inner_term)) {
+          visitConnectedPins(inner_net, visitor, visited_nets);
+        }
       }
     }
     return;
