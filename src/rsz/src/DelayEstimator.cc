@@ -7,8 +7,10 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "OptimizerTypes.hh"
@@ -19,6 +21,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"

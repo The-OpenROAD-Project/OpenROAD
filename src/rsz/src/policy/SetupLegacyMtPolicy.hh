@@ -12,7 +12,9 @@
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "SetupLegacyPolicy.hh"
+#include "rsz/Resizer.hh"
 
 namespace rsz {
 

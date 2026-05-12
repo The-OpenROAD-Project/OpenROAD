@@ -7,6 +7,9 @@
 #include <unordered_set>
 
 #include "SetupLegacyBase.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
 
 namespace rsz {
 
