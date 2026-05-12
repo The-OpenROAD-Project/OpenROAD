@@ -1,0 +1,34 @@
+# CODEOWNERS — auto-request reviewers based on file paths
+# See: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default for everything
+* @The-OpenROAD-Project/maintainers
+
+# Build system
+/BUILD @The-OpenROAD-Project/maintainers
+/*.bazel @The-OpenROAD-Project/maintainers
+/MODULE.bazel @The-OpenROAD-Project/maintainers
+/cmake/ @The-OpenROAD-Project/maintainers
+
+# CI/CD
+/.github/workflows/ @The-OpenROAD-Project/maintainers
+/jenkins/ @The-OpenROAD-Project/maintainers
+
+# Core database
+/src/odb/ @The-OpenROAD-Project/maintainers
+
+# Web interface (security-sensitive)
+/src/web/ @The-OpenROAD-Project/maintainers
+
+# Documentation
+/doc/ @The-OpenROAD-Project/maintainers
+
+# Tests
+/test/ @The-OpenROAD-Project/maintainers
+
+# Packaging & Docker
+/packaging/ @The-OpenROAD-Project/maintainers
+/Dockerfile @The-OpenROAD-Project/maintainers
+
+# Supply chain (security-sensitive)
+/etc/DependencyInstaller.sh @The-OpenROAD-Project/maintainers
