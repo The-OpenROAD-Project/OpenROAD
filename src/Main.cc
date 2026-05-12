@@ -500,6 +500,14 @@ static int tclAppInit(int& argc,
   return TCL_OK;
 }
 
+[[noreturn]] static void exitTclAppInitError(Tcl_Interp* interp)
+{
+  fprintf(stderr,
+          "application-specific initialization failed: %s\n",
+          Tcl_GetStringResult(interp));
+  exit(EXIT_FAILURE);
+}
+
 int ord::tclAppInit(Tcl_Interp* interp)
 {
   the_tech_and_design.tech = std::make_unique<ord::Tech>(interp);
@@ -513,7 +521,11 @@ int ord::tclAppInit(Tcl_Interp* interp)
   // This should replace the use of the singleton OpenRoad::openRoad().
   Tcl_SetAssocData(interp, "design", nullptr, the_tech_and_design.design.get());
 
-  return ord::tclInit(interp);
+  const int result = ord::tclInit(interp);
+  if (result != TCL_OK) {
+    exitTclAppInitError(interp);
+  }
+  return TCL_OK;
 }
 
 int ord::tclInit(Tcl_Interp* interp)

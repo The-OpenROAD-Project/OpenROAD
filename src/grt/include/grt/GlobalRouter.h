@@ -158,6 +158,9 @@ class GlobalRouter
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
   int getSnapshotBatchCount() const;
+  bool isResistanceAware() { return resistance_aware_; };
+  void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
+  bool isNetResAware(odb::dbNet* db_net);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
@@ -308,6 +311,8 @@ class GlobalRouter
   // Report wire resistance
   float getLayerResistance(int layer, int length, odb::dbNet* net);
   float getViaResistance(int from_layer, int to_layer);
+  float getFRNetResistance(odb::dbNet* db_net);
+  float getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net);
   double dbuToMicrons(int dbu);
   float estimatePathResistance(odb::dbObject* pin1,
                                odb::dbObject* pin2,

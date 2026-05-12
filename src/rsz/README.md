@@ -250,7 +250,7 @@ repair_timing
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
-| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP". |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
@@ -486,6 +486,30 @@ report_buffers
 | Switch Name | Description |
 | ----- | ----- |
 | `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
+
+### Reporting Delay Estimator Accuracy
+
+The `report_delay_estimator_accuracy` command compares a delay
+estimator's predictions against the reference STA delay for a candidate
+library cell at the given instance.  It is intended as a developer aid
+for evaluating estimator accuracy when sizing.
+
+```tcl
+report_delay_estimator_accuracy
+    -inst instance
+    -lib_cell lib_cell
+    -estimator estimator
+    [-delay_levels level]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
+| `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
+| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
 
 ### Optimizing Arithmetic Modules
 

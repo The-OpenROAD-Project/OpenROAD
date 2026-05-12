@@ -18,6 +18,7 @@ or_integration_tests(
     hierwrite
     hier_deep
     hier_weird_port
+    levelize_drvr_vertices1
     make_port
     network_edit1
     power1
