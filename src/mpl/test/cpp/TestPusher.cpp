@@ -66,6 +66,8 @@ class TestPusher : public MplTest
     auto cluster = std::make_unique<Cluster>(next_id_++, name, &logger_);
     cluster->setClusterType(HardMacroCluster);
 
+    // The SoftMaro is the physical absraction for a cluster, needed for the
+    // cluster to have any meaningful spatical information
     auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
     soft_macro->setLocationF(x, y);
     soft_macro->setShapeF(width, height);
@@ -160,7 +162,7 @@ TEST_F(TestPusher, MacroPushedToLeftBoundary)
 }
 
 // A macro cluster whose distance to the right boundary is less than one
-// macro width should be pushed to the left edge of the core.
+// macro width should be pushed to the right edge of the core.
 TEST_F(TestPusher, MacroPushedToRightBoundary)
 {
   auto root = makeRootWithStdCells();
@@ -177,7 +179,7 @@ TEST_F(TestPusher, MacroPushedToRightBoundary)
 }
 
 // A macro cluster whose distance to the bottom boundary is less than one
-// macro height should be pushed to the left edge of the core.
+// macro height should be pushed to the bottom edge of the core.
 TEST_F(TestPusher, MacroPushedToBottomBoundary)
 {
   auto root = makeRootWithStdCells();
@@ -193,7 +195,7 @@ TEST_F(TestPusher, MacroPushedToBottomBoundary)
 }
 
 // A macro cluster whose distance to the top boundary is less than one
-// macro height should be pushed to the left edge of the core.
+// macro height should be pushed to the top edge of the core.
 TEST_F(TestPusher, MacroPushedToTopBoundary)
 {
   auto root = makeRootWithStdCells();
@@ -295,7 +297,7 @@ TEST_F(TestPusher, PushRevertedVertical)
 // When pushing a macro cluster toward its closest boundaries would cause an
 // overlap with a macro diagonal to the pushed macro, push the macro the bottom
 // The Pusher is biased by the Boundary enum ordering of boundaries (B > L > T >
-// R), the current behaviour results in overlapping macros
+// R), the current behaviour results in overlapping macros.
 // TODO: update the overlap code
 TEST_F(TestPusher, PushRevertedBiased)
 {
