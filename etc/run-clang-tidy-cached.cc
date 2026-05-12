@@ -126,6 +126,9 @@ struct ConfigValues
   // that is included by a lot of other files results in lots of reprocessing.
   bool revisit_if_any_include_changes = true;
 
+  // Run clang-tidy with Unix `nice`, so that it does not bog down the system.
+  bool run_with_nice = true;
+
   // Clang tidy configuration: clang tidy files with checks. This can be
   // overriden with environment variable CLANG_TIDY_CONFIG
   std::string_view clang_tidy_file = ".clang-tidy";
@@ -304,6 +307,7 @@ class ClangTidyRunner
     if (work_queue->empty()) {
       return;
     }
+    const std::string nice_cmd = kConfig.run_with_nice ? "nice " : "";
     const char* jobs_env_str = getenv("CLANG_TIDY_JOBS");
     const int jobs_env_num = jobs_env_str ? atoi(jobs_env_str) : -1;
     const int kJobs = (jobs_env_num > 0 ? jobs_env_num
@@ -342,9 +346,9 @@ class ClangTidyRunner
         const std::string tmp_out = final_out.string() + uniquifier + ".tmp";
         // Putting the file to clang-tidy early in the command line so that
         // it is easy to find with `ps` or `top`.
-        const std::string command = clang_tidy_ + " '" + work.first.string()
-                                    + "'" + clang_tidy_args_ + "> '" + tmp_out
-                                    + "' 2>&1";
+        const std::string command
+            = nice_cmd + clang_tidy_ + " '" + work.first.string() + "'"
+              + clang_tidy_args_ + "> '" + tmp_out + "' 2>&1";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN

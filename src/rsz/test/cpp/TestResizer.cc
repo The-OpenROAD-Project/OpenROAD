@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-#include "SwapPinsMove.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
@@ -84,9 +83,8 @@ TEST_F(TestResizer, SwapPinsFeedthroughModNet)
   ASSERT_NE(port_a1, nullptr);
   ASSERT_NE(port_a2, nullptr);
 
-  // This is the exact reconnect path used by repair_timing's SwapPinsMove.
-  SwapPinsMove swap_move(&resizer_);
-  ASSERT_TRUE(swap_move.swapPins(sta_gate, port_a1, port_a2));
+  // This is the exact reconnect path used by repair_timing's swap-pins move.
+  ASSERT_TRUE(resizer_.swapPins(sta_gate, port_a1, port_a2));
 
   // The correct post-swap state should keep the output-side modnet local to
   // the swapped gate input. The rest of the flat src_net should preserve
