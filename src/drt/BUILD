@@ -93,6 +93,9 @@ cc_library(
         "src/db/tech/frViaRuleGenerate.h",
         "src/dr/FlexMazeTypes.h",
     ],
+    includes = [
+        "src",
+    ],
     deps = [
         ":base_types",
         "//src/odb",
