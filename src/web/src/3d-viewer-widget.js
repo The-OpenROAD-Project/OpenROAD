@@ -110,7 +110,22 @@ export class ThreeDViewerWidget {
     this._camera = new THREE.PerspectiveCamera(45, 1, 10, 100000);
     this._camera.position.set(0, 0, 1000);
 
-    this._renderer = new THREE.WebGLRenderer({antialias : true});
+    try {
+      this._renderer = new THREE.WebGLRenderer({antialias : true});
+    } catch (err) {
+      // WebGL context creation can fail when the browser has no working GPU
+      // (software renderer + sandbox limits, GPU process crash, too many
+      // contexts on the page). Show a clear in-widget message instead of
+      // leaving the panel empty with only a console error.
+      console.error('3D viewer: failed to create WebGL context:', err);
+      this._showWebGLUnavailable(err);
+      if (this._themeObserver) {
+        this._themeObserver.disconnect();
+        this._themeObserver = null;
+      }
+      this._destroyed = true;
+      return;
+    }
     this._renderer.setPixelRatio(window.devicePixelRatio);
     this._renderer.setSize(container.width, container.height);
     this._canvasContainer.appendChild(this._renderer.domElement);
@@ -534,6 +549,30 @@ export class ThreeDViewerWidget {
 
   _showInfo(message) {
     this._showOverlay('three-d-info', message, 'var(--fg-muted, #888)');
+  }
+
+  _showWebGLUnavailable(err) {
+    const div = document.createElement('div');
+    div.className = 'three-d-error';
+    div.style.cssText =
+        'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+        'font-family:monospace;text-align:center;max-width:80%;' +
+        'color:var(--error);';
+    const detail = err && err.message ? err.message : String(err || '');
+    div.innerHTML =
+        '<div style="font-size:1.1em;margin-bottom:0.5em;">' +
+        '3D viewer unavailable: WebGL context could not be created.</div>' +
+        '<div style="color:var(--fg-muted, #888);font-size:0.9em;' +
+        'text-align:left;display:inline-block;">' +
+        'In Chrome, open <code>chrome://flags/#ignore-gpu-blocklist</code> ' +
+        'and set <b>Override software rendering list</b> to <b>Enabled</b>, ' +
+        'then relaunch the browser.<br>' +
+        'Otherwise enable hardware acceleration or try a different browser. ' +
+        'See <code>chrome://gpu</code> for details.</div>' +
+        (detail ? '<div style="color:var(--fg-muted, #888);font-size:0.8em;' +
+                  'margin-top:0.5em;">' + detail + '</div>'
+                : '');
+    this._element.appendChild(div);
   }
 
   // ─── Scene Construction ────────────────────────────────────────────

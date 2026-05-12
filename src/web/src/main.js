@@ -632,6 +632,11 @@ const defaultLayoutConfig = {
                                 componentType: 'SchematicWidget',
                                 title: 'Schematic',
                             },
+                            {
+                                type: 'component',
+                                componentType: '3DViewer',
+                                title: '3D Viewer',
+                            },
                         ],
                     },
                     {
