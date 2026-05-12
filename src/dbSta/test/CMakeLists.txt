@@ -1,6 +1,8 @@
 or_integration_tests(
   "dbSta"
   TESTS
+    3dic_cross
+    3dic_get_cells
     block_sta1
     check_axioms
     clock_pin

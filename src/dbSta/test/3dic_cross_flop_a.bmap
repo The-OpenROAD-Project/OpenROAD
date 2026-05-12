@@ -1,0 +1,3 @@
+bump_clk BUMP 5.0 2.5 clk -
+bump_d BUMP 5.0 7.5 d -
+bump_q BUMP 15.0 7.5 q -

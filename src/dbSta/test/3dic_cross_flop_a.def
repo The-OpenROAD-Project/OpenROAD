@@ -1,0 +1,31 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN flop_chip_a ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 3 ;
+    - ff DFF_X1 + PLACED ( 5000 10000 ) N ;
+    - inv INV_X1 + PLACED ( 15000 10000 ) N ;
+    - buf BUF_X1 + PLACED ( 25000 10000 ) N ;
+END COMPONENTS
+
+PINS 3 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 0 5000 ) N ;
+    - d + NET d + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 0 15000 ) N ;
+    - q + NET q + DIRECTION OUTPUT + USE SIGNAL
+      + LAYER metal1 ( 0 0 ) ( 200 200 ) + PLACED ( 40000 15000 ) N ;
+END PINS
+
+NETS 5 ;
+    - clk ( PIN clk ) ( ff CK ) + USE SIGNAL ;
+    - d ( PIN d ) ( ff D ) + USE SIGNAL ;
+    - n1 ( ff Q ) ( inv A ) + USE SIGNAL ;
+    - n2 ( inv ZN ) ( buf A ) + USE SIGNAL ;
+    - q ( PIN q ) ( buf Z ) + USE SIGNAL ;
+END NETS
+
+END DESIGN

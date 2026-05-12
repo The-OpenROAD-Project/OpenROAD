@@ -307,7 +307,27 @@ void dbSta::postReadDef(odb::dbBlock* block)
 
 void dbSta::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to do timing on chiplets yet
+  debugPrint(logger_,
+             utl::STA,
+             "3dic",
+             1,
+             "3Dbx callback received for chip {}.",
+             chip ? chip->getName() : "<null>");
+  if (chip == nullptr) {
+    return;
+  }
+  db_network_->setTopChip(chip);
+  if (db_->getUnfoldedModel() == nullptr) {
+    db_->constructUnfoldedModel();
+  }
+  // Per-chiplet edit callbacks fire on each chiplet's dbBlock; chip-level
+  // dbChipCallBackObj carries no chip-inst/bump/net signals today.
+  for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    if (odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst)) {
+      db_cbk_->addOwner(chiplet_block);
+    }
+  }
+  db_cbk_->setNetwork(db_network_);
 }
 
 void dbSta::postReadDb(odb::dbDatabase* db)
