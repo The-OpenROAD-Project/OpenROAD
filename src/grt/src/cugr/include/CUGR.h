@@ -103,6 +103,9 @@ class CUGR
   const std::vector<int>& getMaxHorizontalOverflows() const;
   const std::vector<int>& getMaxVerticalOverflows() const;
 
+  int totalOverflow();
+  void saveCongestion();
+
  private:
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);

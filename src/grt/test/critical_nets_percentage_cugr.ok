@@ -64,4 +64,5 @@ Total            42591          2903            6.82%             4 /  3 / 401
 
 [INFO GRT-0018] Total wirelength: 23868 um
 [INFO GRT-0014] Routed nets: 348
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
