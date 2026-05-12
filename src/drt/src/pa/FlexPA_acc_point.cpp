@@ -900,7 +900,7 @@ void FlexPA::filterViaAccess(
 			int groups_used = 0;
 			for (const auto& [cut_count, via_set] : layer_num_to_via_defs_[adj_layer_num]) {
 			
-				if (groups_used >= router_cfg->VIA_MAX_CUT)
+				if (groups_used >= router_cfg_->VIA_MAX_CUT)
 					break;
 
 				for (auto& [tup, via_def] : via_set) {
@@ -909,7 +909,7 @@ void FlexPA::filterViaAccess(
 					continue;
 				  }
 				  via_defs.emplace_back(via_defs.size(), via_def);
-				  if (via_defs.size() >= router_cfg_->VIA_CANDIDATE_PER_CUT*(groups_used+1)  && !deep_search) {
+				  if (via_defs.size() >= max_trial*(groups_used+1)  && !deep_search) {
 					break;
 				  }
 				}
@@ -919,11 +919,11 @@ void FlexPA::filterViaAccess(
     };
 
     // UP Vias
-    collect_vias(layer_num + 1, max_num_via_trial);
+    collect_vias(layer_num + 1, router_cfg_->VIA_CANDIDATE_PER_CUT);
 
     // DOWN Vias
     if (isIOTerm(inst_term)) {
-      collect_vias(layer_num - 1, max_num_via_trial);
+      collect_vias(layer_num - 1, router_cfg_->VIA_CANDIDATE_PER_CUT);
     }
   }
 
