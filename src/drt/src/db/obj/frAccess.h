@@ -104,30 +104,38 @@ class frAccessPoint : public frBlockObject
   const std::vector<const frViaDef*>& getViaDefs(int numCut = 1) const
   {
     // Prioritize requested numCut:
-    if (hasViaDef(numCut, 0)) return viaDefs_[numCut - 1];
+    if (hasViaDef(numCut, 0)) {
+      return viaDefs_[numCut - 1];
+    }
 
-	// Otherwise, look for a valid one:
-	for (int vi = 0; vi < 2; vi++) {
-		if (hasViaDef(vi+1, 0)) return viaDefs_[(vi+1) - 1];
-	}
+    // Otherwise, look for a valid one:
+    for (int vi = 0; vi < 2; vi++) {
+      if (hasViaDef(vi + 1, 0)) {
+        return viaDefs_[(vi + 1) - 1];
+      }
+    }
 
-	// No valid vias exist
-	static std::vector<const frViaDef*> empty;
-	return empty;
+    // No valid vias exist
+    static std::vector<const frViaDef*> empty;
+    return empty;
   }
   std::vector<const frViaDef*>& getViaDefs(int numCut = 1)
   {
-	// Prioritize requested numCut:
-    if (hasViaDef(numCut, 0)) return viaDefs_[numCut - 1];
+    // Prioritize requested numCut:
+    if (hasViaDef(numCut, 0)) {
+      return viaDefs_[numCut - 1];
+    }
 
-	// Otherwise, look for a valid one:
-	for (int vi = 0; vi < 2; vi++) {
-		if (hasViaDef(vi+1, 0)) return viaDefs_[(vi+1) - 1];
-	}
+    // Otherwise, look for a valid one:
+    for (int vi = 0; vi < 2; vi++) {
+      if (hasViaDef(vi + 1, 0)) {
+        return viaDefs_[(vi + 1) - 1];
+      }
+    }
 
-	// No valid vias exist
-	static std::vector<const frViaDef*> empty;
-	return empty;
+    // No valid vias exist
+    static std::vector<const frViaDef*> empty;
+    return empty;
   }
   const std::vector<std::vector<const frViaDef*>>& getAllViaDefs() const
   {
@@ -150,14 +158,18 @@ class frAccessPoint : public frBlockObject
   const frViaDef* getViaDef(int numCut = 1, int idx = 0) const
   {
     // Prioritize requested numCut:
-	if (hasViaDef(numCut, idx)) return viaDefs_[numCut - 1][idx];
+    if (hasViaDef(numCut, idx)) {
+      return viaDefs_[numCut - 1][idx];
+    }
 
-	// Otherwise, look for a valid one:
-	for (int vi = 0; vi < 2; vi++) {
-		if (hasViaDef(vi+1, idx)) return viaDefs_[(vi+1) - 1][idx];
-	}
+    // Otherwise, look for a valid one:
+    for (int vi = 0; vi < 2; vi++) {
+      if (hasViaDef(vi + 1, idx)) {
+        return viaDefs_[(vi + 1) - 1][idx];
+      }
+    }
 
-	// No valid vias exist
+    // No valid vias exist
     return nullptr;
   }
   frPinAccess* getPinAccess() const { return aps_; }
