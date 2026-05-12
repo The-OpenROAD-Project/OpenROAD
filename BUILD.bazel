@@ -170,6 +170,26 @@ cc_library(
     ],
 )
 
+# Deps shared by :openroad and :openroad-qt. Kept as a Starlark list
+# rather than a cc_library wrapper because layering_check is enabled
+# package-wide: a deps-only cc_library does not re-export its deps'
+# headers to consumers, so direct binary deps are what each Main.cc
+# include needs to see.
+OPENROAD_MAIN_DEPS = [
+    ":openroad_version",
+    ":opt_notification",
+    ":ord",
+    ":tcl_readline_setup",
+    "//bazel:tcl_library_init",
+    "//src/cut",
+    "//src/sta:opensta_lib",
+    "//src/utl",
+    "//src/web",
+    "@boost.stacktrace",
+    "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
+    "@tcl_lang//:tcl",
+]
+
 cc_binary(
     name = "openroad",
     srcs = [
@@ -183,20 +203,7 @@ cc_binary(
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
     visibility = ["//visibility:public"],
-    deps = [
-        ":openroad_version",
-        ":opt_notification",
-        ":ord",
-        ":tcl_readline_setup",
-        "//bazel:tcl_library_init",
-        "//src/cut",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web",
-        "@boost.stacktrace",
-        "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
-        "@tcl_lang//:tcl",
-    ] + select(
+    deps = OPENROAD_MAIN_DEPS + select(
         {
             ":platform_cli": [
                 ":openroad_lib",
@@ -228,21 +235,9 @@ cc_binary(
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
     visibility = ["//visibility:public"],
-    deps = [
+    deps = OPENROAD_MAIN_DEPS + [
         ":openroad_lib_qt",
-        ":openroad_version",
-        ":opt_notification",
-        ":ord",
-        ":tcl_readline_setup",
-        "//bazel:tcl_library_init",
-        "//src/cut",
         "//src/gui:gui_qt",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web",
-        "@boost.stacktrace",
-        "@rules_cc//cc/runfiles",
-        "@tcl_lang//:tcl",
     ],
 )
 
