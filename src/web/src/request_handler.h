@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <regex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -39,7 +40,7 @@ inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
 
 // Thread-safe Tcl command evaluation.  Log output emitted while the
 // command runs is captured by WebLogSink (registered on the logger via
-// addSink) and pushed to clients as {"type":"log",...} messages - do
+// addSink) and pushed to clients as {"type":"log",...} messages — do
 // NOT redirect the logger to a string here.  redirectStringBegin clears
 // the entire sink list, which would unhook WebLogSink (and any other
 // sink) for the duration of the command and break log streaming.  After
@@ -55,29 +56,32 @@ struct TclEvaluator
   struct Result
   {
     std::string result;
-    bool is_error = false;
-    // Defaults
-    Result() = default;
-    Result(const Result&) = default;
-    Result& operator=(const Result&) = default;
+    bool is_error;
   };
+
+  TclEvaluator(Tcl_Interp* interp, utl::Logger* logger)
+      : interp(interp), logger(logger)
+  {
+  }
 
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
 
-    // Block dangerous Tcl commands over the web interface.
-    // This provides defense-in-depth alongside the 127.0.0.1 bind.
-    static const std::vector<std::string> blocked = {
-        "exec ", "open ", "socket ", "load ", "source "};
-    for (const auto& pattern : blocked) {
-      if (cmd.find(pattern) != std::string::npos) {
-        Result r;
-        r.is_error = true;
-        r.result = "Blocked for security: '" + pattern
-                   + "' is not allowed over the web interface.";
-        return r;
-      }
+    // Defense-in-depth: reject dangerous Tcl commands that could
+    // escape the web interface sandbox.
+    // This is a best-effort block on command-word boundaries, covering
+    // common patterns like "exec ls", "; exec ls", "\nexec ls", and
+    // "[exec ls]".  The primary protection is the 127.0.0.1 bind.
+    static const std::regex dangerous(
+        R"((^|[\r\n;\[\s])\s*(exec|open|socket|load|source)\s)",
+        std::regex::ECMAScript | std::regex::optimize);
+    if (std::regex_search(cmd, dangerous)) {
+      Result r;
+      r.result = "Blocked by web server security: dangerous Tcl command "
+                 "(exec/open/socket/load/source) not allowed.";
+      r.is_error = true;
+      return r;
     }
 
     const int rc = Tcl_Eval(interp, cmd.c_str());
@@ -90,3 +94,303 @@ struct TclEvaluator
     return r;
   }
 };
+
+struct WebSocketRequest
+{
+  enum Type
+  {
+    kTile,
+    kBounds,
+    kTech,
+    kSelect,
+    kInspect,
+    kInspectBack,
+    kHover,
+    kTclEval,
+    kTclComplete,
+    kTimingReport,
+    kTimingHighlight,
+    kClockTree,
+    kClockTreeHighlight,
+    kSlackHistogram,
+    kChartFilters,
+    kModuleHierarchy,
+    kSetModuleColors,
+    kSetFocusNets,
+    kSetRouteGuides,
+    kHeatmaps,
+    kSetActiveHeatmap,
+    kSetHeatmap,
+    kHeatmapTile,
+    kListDir,
+    kSnap,
+    kSchematicCone,
+    kSchematicFull,
+    kSchematicInspect,
+    kDrcCategories,
+    kDrcMarkers,
+    kDrcLoadReport,
+    kDrcUpdateMarker,
+    kDrcUpdateCategoryVisibility,
+    kDrcHighlight,
+    kDebugContinue,
+    kDebugCharts,
+    kUnknown
+  };
+
+  uint32_t id = 0;
+  Type type = kUnknown;
+  boost::json::object json;  // parsed payload; empty on parse failure
+  // Original `"type"` string from the JSON, even when not registered.
+  // Used by the kUnknown error path for diagnosability.  Empty when
+  // the message was malformed (parse threw) or had no `type` field.
+  std::string raw_type;
+  // Set to the boost::json exception message when JSON parsing or one
+  // of the required envelope reads (id/type) failed.  Surfaced in the
+  // kUnknown error payload so WEB-0043 names the actual parse error.
+  std::string parse_error;
+};
+
+struct WebSocketResponse
+{
+  enum PayloadType : uint8_t
+  {
+    kJson = 0,
+    kPng = 1,
+    kError = 2
+  };
+
+  uint32_t id = 0;
+  PayloadType type = kJson;
+  std::vector<unsigned char> payload;
+  // Original `"type"` string from the request, used by the kError
+  // logging path for diagnosability.  Annotated by WebSocketSession::on_read
+  // after the handler returns; handlers do not need to set it.
+  std::string request_type;
+};
+
+// Shared mutable state for a WebSocket session.
+// Handlers receive a reference; WebSocketSession owns the instance.
+struct SessionState
+{
+  std::mutex selection_mutex;
+  std::vector<odb::Rect> highlight_rects;
+  std::vector<odb::Polygon> highlight_polys;
+  std::vector<odb::Rect> hover_rects;
+  std::vector<ColoredRect> timing_rects;
+  std::vector<FlightLine> timing_lines;
+
+  std::mutex selectables_mutex;
+  std::vector<gui::Selected> selectables;
+
+  gui::Selected current_inspected;
+  std::vector<gui::Selected> navigation_history;
+
+  std::mutex module_colors_mutex;
+  std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
+
+  std::mutex focus_nets_mutex;
+  std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
+
+  std::mutex route_guides_mutex;
+  std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
+
+  std::mutex drc_mutex;
+  std::string active_drc_category;     // name of active top-level category
+  std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
+  std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
+
+  std::mutex heatmap_mutex;
+  std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
+  std::string active_heatmap;
+};
+
+// Optional-field accessor: returns the JSON value at `key` converted to T,
+// or `default_val` when the key is missing.  Throws
+// (boost::system::system_error) when the key is present but the JSON type
+// doesn't convert to T — that's a frontend/backend contract violation, surface
+// it.
+//
+// For required fields, prefer the bare boost::json idiom
+// `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
+// which throws on either missing or wrong-typed input.
+template <class T>
+T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
+{
+  if (auto* v = obj.if_contains(key)) {
+    return boost::json::value_to<T>(*v);
+  }
+  return default_val;
+}
+
+// Handles SELECT, INSPECT, and HOVER requests.
+class SelectHandler
+{
+ public:
+  SelectHandler(std::shared_ptr<TileGenerator> gen,
+                std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleSelect(const WebSocketRequest& req,
+                                 SessionState& state);
+  WebSocketResponse handleInspect(const WebSocketRequest& req,
+                                  SessionState& state);
+  WebSocketResponse handleInspectBack(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleHover(const WebSocketRequest& req,
+                                SessionState& state);
+  WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
+                                         SessionState& state);
+  WebSocketResponse handleSnap(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
+                                           SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles TCL_EVAL requests.
+class TclHandler
+{
+ public:
+  explicit TclHandler(std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleTclEval(const WebSocketRequest& req);
+  WebSocketResponse handleTclComplete(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles TIMING_REPORT and TIMING_HIGHLIGHT requests.
+class TimingHandler
+{
+ public:
+  TimingHandler(std::shared_ptr<TileGenerator> gen,
+                std::shared_ptr<TimingReport> timing_report,
+                std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleTimingReport(const WebSocketRequest& req);
+  WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleChartFilters(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TimingReport> timing_report_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles CLOCK_TREE and CLOCK_TREE_HIGHLIGHT requests.
+class ClockTreeHandler
+{
+ public:
+  ClockTreeHandler(std::shared_ptr<TileGenerator> gen,
+                   std::shared_ptr<ClockTreeReport> clock_report,
+                   std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleClockTree(const WebSocketRequest& req);
+  WebSocketResponse handleClockTreeHighlight(const WebSocketRequest& req,
+                                             SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<ClockTreeReport> clock_report_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles TILE/BOUNDS/TECH requests.
+class TileHandler
+{
+ public:
+  explicit TileHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  void initializeHeatMaps(SessionState& state);
+  WebSocketResponse handleTile(const WebSocketRequest& req,
+                               SessionState& state);
+  WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
+                                   SessionState& state);
+  WebSocketResponse handleSetActiveHeatMap(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleSetHeatMap(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
+                                      SessionState& state);
+
+ private:
+  static WebSocketResponse serializeBounds(uint32_t id,
+                                           const TileGenerator& gen);
+  static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);
+  static WebSocketResponse renderTile(
+      uint32_t id,
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis,
+      const TileGenerator& gen,
+      const std::vector<odb::Rect>& highlight_rects,
+      const std::vector<odb::Polygon>& highlight_polys,
+      const std::vector<ColoredRect>& colored_rects,
+      const std::vector<FlightLine>& flight_lines,
+      const std::map<uint32_t, Color>* module_colors,
+      const std::set<uint32_t>* focus_net_ids,
+      const std::set<uint32_t>* route_guide_net_ids);
+
+  std::shared_ptr<TileGenerator> gen_;
+};
+
+// Handles DRC_CATEGORIES, DRC_MARKERS, DRC_LOAD_REPORT,
+// DRC_UPDATE_MARKER, and DRC_HIGHLIGHT requests.
+class DRCHandler
+{
+ public:
+  explicit DRCHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleDRCCategories(const WebSocketRequest& req);
+  WebSocketResponse handleDRCMarkers(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleDRCLoadReport(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleDRCUpdateMarker(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleDRCUpdateCategoryVisibility(
+      const WebSocketRequest& req,
+      SessionState& state);
+  WebSocketResponse handleDRCHighlight(const WebSocketRequest& req,
+                                       SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  int min_box_ = -1;  // cached tech pitch for marker rendering threshold
+
+  // Returns block and chip, throwing if either is null.
+  std::pair<odb::dbBlock*, odb::dbChip*> getBlockAndChip();
+
+  // Find a marker by ID in the active category. Returns nullptr if not found.
+  odb::dbMarker* findMarkerById(SessionState& state,
+                                odb::dbChip* chip,
+                                int marker_id);
+
+  // Recompute DRC overlay rects from the active category's visible markers.
+  void refreshDRCOverlay(SessionState& state);
+};
+
+// Handles LIST_DIR requests (server-side file browsing).
+WebSocketResponse handleListDir(const WebSocketRequest& req);
+
+}  // namespace web
