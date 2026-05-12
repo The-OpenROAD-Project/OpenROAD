@@ -97,7 +97,6 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@coin-or-lemon//:lemon",
-        "@tcl_lang//:tcl",
     ],
 )
 

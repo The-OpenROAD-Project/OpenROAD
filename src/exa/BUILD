@@ -26,7 +26,6 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
-        "@tcl_lang//:tcl",
     ],
 )
 

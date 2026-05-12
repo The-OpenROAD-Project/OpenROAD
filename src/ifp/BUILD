@@ -24,7 +24,6 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
@@ -51,9 +50,7 @@ cc_library(
     deps = [
         "//:ord",
         "//src/dbSta",
-        "//src/gui",
         "//src/odb",
-        "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

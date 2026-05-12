@@ -17,7 +17,10 @@ cc_library(
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb",
+    ],
 )
 
 cc_library(
@@ -29,7 +32,10 @@ cc_library(
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb",
+    ],
 )
 
 cc_library(
@@ -46,13 +52,11 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
-        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
@@ -82,9 +86,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
-        "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
-        "@spdlog",
-        "@tcl_lang//:tcl",
     ],
 )

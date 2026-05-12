@@ -39,12 +39,12 @@ cc_library(
         "//:ord",
         "//src/cut",
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",
     ],
 )
 

@@ -53,7 +53,6 @@ cc_library(
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.multi_array",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )

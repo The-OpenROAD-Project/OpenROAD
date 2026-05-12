@@ -113,7 +113,6 @@ cc_library(
     deps = [
         ":rcx",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

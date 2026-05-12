@@ -57,7 +57,6 @@ cc_library(
     ],
     deps = [
         ":snapper",
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
         "//src/par",
@@ -91,7 +90,6 @@ cc_library(
         "src",
     ],
     deps = [
-        ":mpl",
         "//:ord",
         "//src/gui",
         "//src/odb",

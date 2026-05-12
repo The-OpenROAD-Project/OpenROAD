@@ -155,7 +155,6 @@ cc_test(
     deps = [
         "//:openroad_lib",
         "//src/ant",
-        "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",
