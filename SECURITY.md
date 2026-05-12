@@ -3,7 +3,14 @@
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in OpenROAD, please do NOT open a public GitHub issue.
-Instead, send details to the OpenROAD maintainers through the project's communication channels.
+Instead, report it privately using one of these methods:
+
+1. **GitHub Private Vulnerability Reporting** (recommended):
+   Use the "Report a vulnerability" button under the repository's Security tab.
+   This creates a private advisory that only maintainers can see.
+
+2. **Email**: Send details to the OpenROAD maintainers through the project's
+   communication channels listed in the repository description.
 
 ### What we need from you
 
@@ -22,9 +29,9 @@ Instead, send details to the OpenROAD maintainers through the project's communic
 
 | Version | Supported |
 |---------|-----------|
-| master  | ✅ Active development |
-| latest release | ✅ Security patches |
-| older releases | ❌ No support |
+| master  | Active development |
+| latest release | Security patches |
+| older releases | No support |
 
 ## Disclosure Policy
 

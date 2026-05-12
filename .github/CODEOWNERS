@@ -21,7 +21,7 @@
 /src/web/ @The-OpenROAD-Project/maintainers
 
 # Documentation
-/doc/ @The-OpenROAD-Project/maintainers
+/docs/ @The-OpenROAD-Project/maintainers
 
 # Tests
 /test/ @The-OpenROAD-Project/maintainers
