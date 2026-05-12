@@ -74,10 +74,11 @@ struct TclEvaluator
     // - Namespace prefix: ::exec
     // - Script blocks: [exec ls]
     // - Terminators: exec\n, exec;
-    // - Whitespace variations
     // The primary protection is the 127.0.0.1 bind.
+    // NOTE: In R"(...)" raw strings, backslashes are literal,
+    // so \s in the pattern is the regex whitespace class \s, etc.
     static const std::regex dangerous(
-        R"((^|[\\s;\\[\\{])(::)?(exec|open|socket|load|source)([\\s;\\]\\}]|$))",
+        R"((^|[\s;\[\{])(::)?(exec|open|socket|load|source)([\s;\]\}]|$))",
         std::regex::ECMAScript | std::regex::optimize);
     if (std::regex_search(cmd, dangerous)) {
       Result r;
@@ -143,8 +144,14 @@ struct WebSocketRequest
 
   uint32_t id = 0;
   Type type = kUnknown;
-  boost::json::object json;
+  boost::json::object json;  // parsed payload; empty on parse failure
+  // Original `"type"` string from the JSON, even when not registered.
+  // Used by the kUnknown error path for diagnosability.  Empty when
+  // the message was malformed (parse threw) or had no `type` field.
   std::string raw_type;
+  // Set to the boost::json exception message when JSON parsing or one
+  // of the required envelope reads (id/type) failed.  Surfaced in the
+  // kUnknown error payload so WEB-0043 names the actual parse error.
   std::string parse_error;
 };
 
@@ -160,10 +167,14 @@ struct WebSocketResponse
   uint32_t id = 0;
   PayloadType type = kJson;
   std::vector<unsigned char> payload;
+  // Original `"type"` string from the request, used by the kError
+  // logging path for diagnosability.  Annotated by WebSocketSession::on_read
+  // after the handler returns; handlers do not need to set it.
   std::string request_type;
 };
 
 // Shared mutable state for a WebSocket session.
+// Handlers receive a reference; WebSocketSession owns the instance.
 struct SessionState
 {
   std::mutex selection_mutex;
@@ -180,18 +191,18 @@ struct SessionState
   std::vector<gui::Selected> navigation_history;
 
   std::mutex module_colors_mutex;
-  std::map<uint32_t, Color> module_colors;
+  std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
 
   std::mutex focus_nets_mutex;
-  std::set<uint32_t> focus_net_ids;
+  std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
 
   std::mutex route_guides_mutex;
-  std::set<uint32_t> route_guide_net_ids;
+  std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
 
   std::mutex drc_mutex;
-  std::string active_drc_category;
-  std::vector<ColoredRect> drc_rects;
-  std::vector<FlightLine> drc_lines;
+  std::string active_drc_category;     // name of active top-level category
+  std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
+  std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
 
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
@@ -360,12 +371,17 @@ class DRCHandler
 
  private:
   std::shared_ptr<TileGenerator> gen_;
-  int min_box_ = -1;
+  int min_box_ = -1;  // cached tech pitch for marker rendering threshold
 
+  // Returns block and chip, throwing if either is null.
   std::pair<odb::dbBlock*, odb::dbChip*> getBlockAndChip();
+
+  // Find a marker by ID in the active category. Returns nullptr if not found.
   odb::dbMarker* findMarkerById(SessionState& state,
                                 odb::dbChip* chip,
                                 int marker_id);
+
+  // Recompute DRC overlay rects from the active category's visible markers.
   void refreshDRCOverlay(SessionState& state);
 };
 
