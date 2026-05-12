@@ -789,8 +789,8 @@ void CUGR::saveCongestion()
   //                 attributes to this edge (the same neighbours commitVia
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> wire_nets;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> via_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
   auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
     // commitVia(via_layer, loc) adds stub demand on edges adjacent to
@@ -919,7 +919,7 @@ void CUGR::saveCongestion()
                            + std::to_string(demand_int) + " overflow:"
                            + std::to_string(overflow_int) + " (" + kind + ")");
 
-        std::set<odb::dbNet*> sources;
+        odb::PtrSet<odb::dbNet> sources;
         auto wn_it = wire_nets.find({l, x, y});
         if (wn_it != wire_nets.end()) {
           sources.insert(wn_it->second.begin(), wn_it->second.end());
