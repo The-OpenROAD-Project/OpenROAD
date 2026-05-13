@@ -479,7 +479,14 @@ static int tclAppInit(int& argc,
     // Block until the web server is stopped (like QApplication::exec()
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
-      ord::OpenRoad::openRoad()->getWebServer()->waitForStop();
+      auto* server = ord::OpenRoad::openRoad()->getWebServer();
+      server->waitForStop();
+      // `exit` typed in the browser Tcl widget signalled stop; do the
+      // real process exit now from the main thread (worker threads are
+      // already joined by stop()).
+      if (server->exitRequested()) {
+        exit(EXIT_SUCCESS);
+      }
     }
   }
 #ifdef ENABLE_READLINE
@@ -491,6 +498,14 @@ static int tclAppInit(int& argc,
   }
 #endif
   return TCL_OK;
+}
+
+[[noreturn]] static void exitTclAppInitError(Tcl_Interp* interp)
+{
+  fprintf(stderr,
+          "application-specific initialization failed: %s\n",
+          Tcl_GetStringResult(interp));
+  exit(EXIT_FAILURE);
 }
 
 int ord::tclAppInit(Tcl_Interp* interp)
@@ -506,7 +521,11 @@ int ord::tclAppInit(Tcl_Interp* interp)
   // This should replace the use of the singleton OpenRoad::openRoad().
   Tcl_SetAssocData(interp, "design", nullptr, the_tech_and_design.design.get());
 
-  return ord::tclInit(interp);
+  const int result = ord::tclInit(interp);
+  if (result != TCL_OK) {
+    exitTclAppInitError(interp);
+  }
+  return TCL_OK;
 }
 
 int ord::tclInit(Tcl_Interp* interp)

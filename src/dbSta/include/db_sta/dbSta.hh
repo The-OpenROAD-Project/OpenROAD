@@ -17,6 +17,7 @@
 #include "odb/dbObject.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Sta.hh"
@@ -83,6 +84,7 @@ class dbSta;
 class dbNetwork;
 class dbStaReport;
 class dbStaCbk;
+class DbStaLevelizeObserver;
 class PatternMatch;
 class TestCell;
 
@@ -222,10 +224,18 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   using Sta::replaceCell;
   using Sta::slack;
 
+  // Drivers sorted by (level, name) for determinism.
+  const VertexSeq& levelizedDrvrVertices();
+  // Discard the cached driver-vertex list. Callers that mutate the timing
+  // graph outside the LevelizeObserver path (e.g. dbStaCbk on dbInst
+  // create/destroy) must invalidate so the next query rebuilds.
+  void invalidateLevelizedDrvrVertices();
+
  private:
   void makeReport() override;
   void makeNetwork() override;
   void makeSdcNetwork() override;
+  void makeObservers() override;
 
   void replaceCell(Instance* inst,
                    Cell* to_cell,
@@ -238,6 +248,9 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbStaReport* db_report_ = nullptr;
   std::unique_ptr<dbStaCbk> db_cbk_;
   std::set<dbStaState*> sta_states_;
+
+  VertexSeq levelized_drvr_vertices_;
+  bool drvr_vertices_level_valid_ = false;
 };
 
 // Utilities for TestCell

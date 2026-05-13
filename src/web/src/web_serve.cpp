@@ -18,18 +18,25 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/error.hpp"
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/asio/steady_timer.hpp"
+#include "boost/asio/strand.hpp"
+#include "boost/system/error_code.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "boost/beast/core.hpp"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "boost/beast/websocket.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
 #include "gui/gui.h"
-#include "json_builder.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
+#include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
@@ -43,6 +50,10 @@ namespace web {
 
 namespace net = boost::asio;
 using Tcp = net::ip::tcp;
+
+// Tcl command name used to stash the original `exit` while our override
+// is installed.  Mirrors gui::TclCmdInputWidget's kCommandRenamePrefix.
+static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
 
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
@@ -98,8 +109,10 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
     if (pending_.empty()) {
       return;
     }
-    hook_->sessions().broadcast(R"({"type":"log","text":")"
-                                + json_escape(pending_) + R"("})");
+    boost::json::object msg;
+    msg["type"] = "log";
+    msg["text"] = pending_;
+    hook_->sessions().broadcast(boost::json::serialize(msg));
     pending_.clear();
   }
 
@@ -130,6 +143,22 @@ void WebServer::serve(int port)
 
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
+    // Override Tcl's `exit` so a user typing `exit` in the browser tcl
+    // widget doesn't run Tcl_Exit on the worker thread (which triggers
+    // ~WebServer's self-join → std::terminate).  Same pattern as
+    // gui::TclCmdInputWidget.  The handler signals waitForStop() and
+    // sets exit_requested_; the main thread does the real exit.
+    // TclHandler::handleTclEval detects kExitResultMsg in the Tcl
+    // result and sends `action: "shutdown"` to the browser.
+    exit_requested_ = false;
+    {
+      const std::string rename_orig
+          = std::string("rename exit ") + kRenamedExitCmd;
+      Tcl_Eval(interp_, rename_orig.c_str());
+      Tcl_CreateCommand(
+          interp_, "exit", &WebServer::tclExitHandler, this, nullptr);
+    }
+
     viewer_hook_ = std::make_unique<WebViewerHook>();
     gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
     gui::Gui::get()->setChartFactory(
@@ -144,6 +173,13 @@ void WebServer::serve(int port)
     logger_->addSink(log_sink_);
     viewer_hook_->setDrainLogsFn(
         [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
+    // Flush WebLogSink at the end of every Tcl eval so log output
+    // emitted during a command reaches clients before the response
+    // carrying the Tcl result.  viewer_hook_ outlives every io thread
+    // that can run a request handler (stop() joins io threads before
+    // resetting viewer_hook_), so the raw pointer capture is safe.
+    tcl_eval->drain_output
+        = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
 
     TileGenerator::setDebugOverlayCallback(
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
@@ -186,6 +222,17 @@ void WebServer::serve(int port)
 
     const std::string url = "http://localhost:" + std::to_string(handle.port);
 
+    // Bind the timer to a strand so all timer operations (expires_after,
+    // async_wait, cancel) run serialized on a single io thread.  Without
+    // this, stop()'s cancel from the caller thread would race with the
+    // async_wait handler rescheduling on a worker thread — the same
+    // steady_timer cannot be safely mutated from multiple threads.  The
+    // initial scheduleLogDrain() below runs before io threads start, so
+    // it is single-threaded by construction.
+    log_drain_timer_ = std::make_unique<net::steady_timer>(
+        net::make_strand(ioc_->get_executor()));
+    scheduleLogDrain();
+
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
       threads_.emplace_back([this] { ioc_->run(); });
@@ -196,7 +243,15 @@ void WebServer::serve(int port)
 #elif defined(_WIN32)
     std::string open_cmd = "start " + url + " > nul 2>&1";
 #else
-    std::string open_cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
+    // `setsid -f` forks the launcher into a new session, severing the
+    // SIGHUP cascade from openroad's controlling pty.  Without this,
+    // running openroad from inside an emacs shell-mode buffer kills
+    // the browser tab as soon as openroad exits, because emacs holds
+    // the pty master and SIGHUPs every process in the session.  Also
+    // redirect stdin from /dev/null so xdg-open never blocks on input
+    // inherited from the pty.
+    std::string open_cmd
+        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null 2>&1";
 #endif
     int ret = std::system(open_cmd.c_str());
     (void) ret;
@@ -228,6 +283,47 @@ void WebServer::waitForStop()
   stop();
 }
 
+int WebServer::tclExitHandler(ClientData clientData,
+                              Tcl_Interp* interp,
+                              int /*argc*/,
+                              const char* /*argv*/[])
+{
+  auto* self = static_cast<WebServer*>(clientData);
+  self->exit_requested_ = true;
+  // Wake waitForStop() on the main thread so it can join the worker
+  // threads (including the one currently executing this handler) and
+  // exit cleanly via std::exit() from the main thread.
+  self->requestStop();
+  Tcl_SetResult(interp, const_cast<char*>(kExitResultMsg), TCL_STATIC);
+  return TCL_ERROR;
+}
+
+// Drain interval chosen to keep the browser console feeling live without
+// burning CPU when nothing is logged.  An idle tick costs one mutex
+// acquire + empty-buffer check inside WebLogSink::drainToClients.
+static constexpr auto kLogDrainInterval = std::chrono::milliseconds(250);
+
+void WebServer::scheduleLogDrain()
+{
+  if (!log_drain_timer_) {
+    return;
+  }
+  log_drain_timer_->expires_after(kLogDrainInterval);
+  log_drain_timer_->async_wait([this](const boost::system::error_code& ec) {
+    // operation_aborted means cancel() was called from stop().  Any
+    // other error (or none) means the timer fired normally — drain and
+    // reschedule.  ioc_->stop() in stop() will discard a re-armed timer
+    // before its next firing, so no UAF risk on shutdown.
+    if (ec == net::error::operation_aborted) {
+      return;
+    }
+    if (viewer_hook_) {
+      viewer_hook_->drainLogs();
+    }
+    scheduleLogDrain();
+  });
+}
+
 void WebServer::requestStop()
 {
   if (!isRunning()) {
@@ -243,6 +339,16 @@ void WebServer::requestStop()
 
 void WebServer::stop()
 {
+  // Restore the original Tcl `exit` command before tearing down — pairs
+  // with the rename in serve().  Skip if not installed (stop() is safe
+  // to call multiple times).
+  if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
+    Tcl_DeleteCommand(interp_, "exit");
+    const std::string restore
+        = std::string("rename ") + kRenamedExitCmd + " exit";
+    Tcl_Eval(interp_, restore.c_str());
+  }
+
   if (viewer_hook_) {
     TileGenerator::setDebugOverlayCallback({});
     if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
@@ -259,18 +365,34 @@ void WebServer::stop()
     shutdown_listener_();
     shutdown_listener_ = {};
   }
-  if (ioc_) {
-    ioc_->stop();
+  // Cancel the periodic log drain so its handler stops re-arming.  The
+  // cancel is posted onto the timer's strand so it runs serialized with
+  // scheduleLogDrain — calling cancel() directly from the caller thread
+  // would race with the async_wait handler mutating the timer on an io
+  // thread.  Any in-flight handler completes normally; a re-armed timer
+  // is discarded by ioc_->stop() below.
+  if (log_drain_timer_) {
+    auto* timer = log_drain_timer_.get();
+    net::post(timer->get_executor(), [timer] { timer->cancel(); });
   }
-  for (auto& t : threads_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  threads_.clear();
+  stopAndJoinIoThreads();
+  // Reset only after threads are joined so no handler can dereference
+  // the timer mid-shutdown.
+  log_drain_timer_.reset();
+  // Release without destroying — destroying io_context can crash on
+  // residual async handlers. Leak is bounded (at most one io_context
+  // per serve/stop cycle).
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
   generator_.reset();
+  // Remove the log sink before destroying viewer_hook_ — the sink
+  // stores a raw pointer into it and the CLI thread may emit a log
+  // line at any moment.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   viewer_hook_.reset();
+  logger_->info(utl::WEB, 41, "Web session closed.");
 }
 
 }  // namespace web

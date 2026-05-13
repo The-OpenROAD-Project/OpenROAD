@@ -26,6 +26,7 @@ global_route
     [-critical_nets_percentage percent]
     [-skip_large_fanout_nets fanout]
     [-allow_congestion]
+    [-snapshot_batched_width width]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -52,6 +53,7 @@ global_route
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
 | `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
+| `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
 
 ### Set Routing Layers
 
