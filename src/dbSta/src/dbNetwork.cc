@@ -62,6 +62,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "liberty/LibertyBuilder.hh"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -79,6 +80,8 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/StringUtil.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "sta/VertexId.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -194,6 +197,47 @@ PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
 // lower 4  bits used to encode type
 //
 
+// 3DIC chiplets each own a private dbBlock that numbers its
+// iterms/bterms/insts/nets from 1, so two "clk" nets (one per chiplet)
+// hash to the same id and collide in NetSet/PinSet. Steal the top
+// kBlockTagWidth bits for a per-block discriminator allocated in
+// setTopChip().
+static constexpr unsigned kBlockTagWidth = 4;
+static constexpr ObjectId kBlockTagMask = (1U << kBlockTagWidth) - 1;
+static constexpr unsigned kBlockTagShift = 32 - kBlockTagWidth;
+
+ObjectId dbNetwork::blockDiscBits(const dbObject* obj, dbObjectType typ) const
+{
+  if (block_disc_.empty()) {
+    return 0;
+  }
+  odb::dbBlock* blk = nullptr;
+  switch (typ) {
+    case dbITermObj:
+      blk = static_cast<const dbITerm*>(obj)->getBlock();
+      break;
+    case dbBTermObj:
+      blk = static_cast<const dbBTerm*>(obj)->getBlock();
+      break;
+    case dbInstObj:
+      blk = static_cast<const dbInst*>(obj)->getBlock();
+      break;
+    case dbNetObj:
+      blk = static_cast<const dbNet*>(obj)->getBlock();
+      break;
+    default:
+      return 0;
+  }
+  if (blk == nullptr) {
+    return 0;
+  }
+  auto it = block_disc_.find(blk);
+  if (it == block_disc_.end()) {
+    return 0;
+  }
+  return (it->second & kBlockTagMask) << kBlockTagShift;
+}
+
 ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 {
   const dbObjectType typ = object->getObjectType();
@@ -204,16 +248,16 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 
   switch (typ) {
     case dbITermObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBITERM_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBITERM_ID;
     } break;
     case dbBTermObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBBTERM_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBBTERM_ID;
     } break;
     case dbInstObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBINST_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBINST_ID;
     } break;
     case dbNetObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBNET_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBNET_ID;
     } break;
     case dbModITermObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBMODITERM_ID);
@@ -861,6 +905,7 @@ void dbNetwork::setTopChip(dbChip* chip)
   top_chip_ = chip;
   bump_to_chip_net_.clear();
   block_to_chip_inst_.clear();
+  block_disc_.clear();
   if (chip == nullptr) {
     return;
   }
@@ -869,10 +914,14 @@ void dbNetwork::setTopChip(dbChip* chip)
   // descend into the same dbBlock (inner dbInst pointers would alias)
   // and stay treated as leaves.
   std::map<odb::dbBlock*, int> block_refcount;
+  uint32_t next_disc = 1;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     if (odb::dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
       block_refcount[mb]++;
       block_to_chip_inst_[mb] = chip_inst;
+      if (block_disc_.emplace(mb, next_disc).second) {
+        ++next_disc;
+      }
     }
   }
   for (auto& [block, cnt] : block_refcount) {
@@ -920,21 +969,28 @@ void dbNetwork::makeTopCellForChip(dbChip* chip)
     Library* old_lib = library(top_cell_);
     deleteLibrary(old_lib);
   }
+  if (chip_bump_lib_) {
+    deleteLibrary(reinterpret_cast<Library*>(chip_bump_lib_));
+    chip_bump_lib_ = nullptr;
+  }
   chip_master_cells_.clear();
   const char* design_name = chip->getName();
   Library* top_lib = makeLibrary(design_name, "");
   top_cell_ = makeCell(top_lib, design_name, false, "");
-  // Synthesize one Cell per distinct dbChip master so cell(chip_inst)
-  // returns a valid (libertyCell=null) Cell. STA's libertyCell(Cell*) does
-  // not null-check, so a null return from cell() segfaults downstream.
-  // Mirror each master's bumps as Ports so port(chip_bump_pin) resolves and
-  // name/pathName flow through the default Network helpers.
+  // Per-master LibertyCell with a self-arc per chip-bump port. Without
+  // the self-arc Graph::makeInstanceEdges builds no load<->bidir_drvr
+  // edge for the BIDIRECT bump pin, blocking create_clock propagation
+  // through the chip-bump.
+  chip_bump_lib_ = makeLibertyLibrary("3dic_chip_bump_lib", "");
+  LibertyBuilder builder(debug_, report_);
   for (dbChipInst* chip_inst : chip->getChipInsts()) {
     dbChip* master = chip_inst->getMasterChip();
     if (master == nullptr || chip_master_cells_.count(master)) {
       continue;
     }
-    Cell* master_cell = makeCell(top_lib, master->getName(), false, "");
+    LibertyCell* lc
+        = builder.makeCell(chip_bump_lib_, master->getName(), "3dic-synth");
+    Cell* master_cell = reinterpret_cast<Cell*>(lc);
     chip_master_cells_[master] = master_cell;
     for (odb::dbChipRegion* region : master->getChipRegions()) {
       for (odb::dbChipBump* bump : region->getChipBumps()) {
@@ -942,11 +998,16 @@ void dbNetwork::makeTopCellForChip(dbChip* chip)
         if (bterm == nullptr) {
           continue;
         }
-        Port* port = makePort(master_cell, bterm->getConstName());
-        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
-        registerConcretePort(port);
+        LibertyPort* lp = builder.makePort(lc, bterm->getConstName());
+        lp->setDirection(dbToSta(bterm->getSigType(), bterm->getIoType()));
+        registerConcretePort(reinterpret_cast<Port*>(lp));
+        auto attrs = std::make_shared<TimingArcAttrs>();
+        attrs->setTimingType(TimingType::combinational);
+        lc->makeTimingArcSet(
+            lp, lp, nullptr, TimingRole::combinational(), attrs);
       }
     }
+    lc->finish(false, report_, debug_);
   }
 }
 
@@ -991,6 +1052,8 @@ void dbNetwork::clear()
   bump_to_chip_net_.clear();
   chip_bump_vertex_ids_.clear();
   block_to_chip_inst_.clear();
+  block_disc_.clear();
+  chip_bump_lib_ = nullptr;
 }
 
 Instance* dbNetwork::topInstance() const
@@ -2228,7 +2291,12 @@ ObjectId dbNetwork::id(const Net* net) const
   odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
-  if (hasHierarchy()) {
+  // In 3DIC mode every chiplet block numbers its own nets from 1, so
+  // raw dnet->getId() collides across blocks. Route through the tagged
+  // encoder (which mixes the block id in) to keep NetSet/visited_nets
+  // dedup working when visitConnectedPins descends into multiple
+  // chiplet inner nets.
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(net);
     return getDbNwkObjectId(obj);
   }

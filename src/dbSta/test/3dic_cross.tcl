@@ -26,14 +26,11 @@ check "bridge spans both chiplets" {
   lsort -unique $insts
 } {chipA chipB}
 
-# Anchor the clock on the chiplet-internal CK pins. Anchoring on the
-# chip-bump pins of clk_top doesn't propagate arrivals through the
-# BIDIRECT chip-bump (no Liberty feed-through arc on the synthetic
-# chip-master Cell), so STA finds no launch/capture pair. Inner CK
-# anchor bypasses the boundary and yields a full constrained setup
-# check across chiplets.
+# Anchor the clock on the chip-bump pins of clk_top — the natural form
+# users will write. Propagation through the BIDIRECT bump relies on the
+# synthesized LibertyCell self-arc built in makeTopCellForChip.
 create_clock -name clk -period 1.0 \
-  [list [get_pins chipA/ff/CK] [get_pins chipB/ff/CK]]
+  [get_pins -of_objects [get_nets clk_top]]
 report_checks -path_delay max -group_path_count 4
 
 exit_summary

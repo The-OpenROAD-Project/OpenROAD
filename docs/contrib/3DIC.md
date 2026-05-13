@@ -287,44 +287,56 @@ edges form across it.
 After Stage 7 the test reports a constrained `chipA/ff → chipB/ff`
 setup check with real Liberty delays.
 
-## Anchoring create_clock on chiplet inner CK pins (workaround)
+## Anchoring create_clock on chip-bump pins (LANDED)
 
-The chip-bump anchor case is **NOT** closed by Stage 7. If a user does
+The natural anchor form
 
 ```tcl
 create_clock -name clk -period 1.0 [get_pins -of_objects [get_nets clk_top]]
 ```
 
-`all_registers -clock_pins` correctly tags both `chipA/ff/CK` and
-`chipB/ff/CK` as clock pins (ClkNetwork BFS reaches them), but
-`Search::seedClkArrivals` never produces a real `ClockEdge` arrival on
-those vertices. Symptoms: `report_clock_skew` reports "No launch/capture
-paths found"; constrained `report_checks` reports "No paths found";
-unconstrained reports paths but without "clocked by clk" tagging on the
-chipA-side launch flop.
+now produces a constrained `Path Group: clk` setup check identical to
+the inner-CK form. Two fixes were required on top of Stage 7:
 
-Workaround: anchor the clock on the chiplet-internal CK pins directly.
-With the Stage 7 `findInstance` path-split fix, `get_pins <chip_inst>/
-<flop>/CK` resolves correctly:
+**Fix A — Synthesize a LibertyCell per chip-master with a self-arc per
+chip-bump port.** `dbNetwork::makeTopCellForChip` builds the chip-master
+Cell *as* a `LibertyCell` (via `LibertyBuilder`) on a private
+`LibertyLibrary`. For each chip-bump bterm it creates a `LibertyPort`
+and a combinational self-arc (`lc->makeTimingArcSet(lp, lp, ...)`).
+`Graph::makeInstanceEdges` consumes the arc and creates:
 
-```tcl
-create_clock -name clk -period 1.0 \
-  [list [get_pins chipA/ff/CK] [get_pins chipB/ff/CK]]
-```
+- `bump_load → bump_bidir_drvr` (forward combinational, traversable by
+  `SearchAdj`)
+- `bump_bidir_drvr → bump_load` (flagged `isBidirectInstPath`, filtered
+  by default predicate but harmless)
 
-Then constrained mode produces a normal `Path Group: clk` setup check.
+The forward arc closes the gap between the load and driver vertices of
+the BIDIRECT chip-bump pin, so a clock arrival seeded on the load (or
+the driver) fans out via the regular wire-edge model. Zero arc delay
+preserves the inner-CK anchor's reported slack.
 
-The underlying cause is that the chip-bump's synthetic master Cell has
-no Liberty model, so STA's `seedClkArrival` (which seeds an arrival ON
-the anchor pin and forward-propagates) cannot fan its launch tags
-through the boundary the way it does for a Liberty cell with a real
-clock-pass-through arc. The data path works (because fat-net wire-edge
-formation skips the boundary entirely), but the clock-arrival /
-ClockEdge tagging machinery needs the arrival to start at a leaf cell
-pin or propagate via a Liberty arc to one. Post-v1 fix: synthesize a
-minimal clock-pass-through arc on the chip-bump master Cell (or anchor
-implicit clock tags directly on each ff/CK reached by the clock
-fanout).
+**Fix B — Per-block discriminator in `getDbNwkObjectId`.** Each chiplet
+`dbBlock` numbers its iterms/bterms/insts/nets from 1. Without
+disambiguation, "clk" net (db_id=1) in chipA collides with "clk" net
+(db_id=1) in chipB — `NetSet::contains()` (and `PinSet::contains()`)
+sort by `id()` and treat them as equal. `visitConnectedPins`'s
+`visited_nets` then dedupes them, so the second chiplet's inner clk
+net is silently skipped during chip-net descent, and wire edges from
+the clk_top bump driver only reach chipA-side loads.
+
+`dbNetwork::setTopChip` allocates a 1..N discriminator per chiplet
+block in `block_disc_`. `blockDiscBits(obj, typ)` stamps the disc into
+the upper 4 bits of the encoded `ObjectId` for iterm/bterm/inst/net
+when `block_disc_` is non-empty. `id(Net*)` now routes through the
+tagged encoder whenever `has3DicChip()` is true (the legacy path
+bypassed the encoder in non-hierarchy mode and returned raw
+`dnet->getId()`).
+
+Without both fixes the symptom is the same: `all_registers -clock_pins`
+still finds both ff/CK pins via `ClkNetwork`'s static BFS, but
+`report_clock_skew` reports "No launch/capture paths found" and
+constrained `report_checks` reports "No paths found" because the
+dynamic Search BFS can't reach the second chiplet's CK pin.
 
 ## term(Pin*) history (Stage 4–6.5)
 

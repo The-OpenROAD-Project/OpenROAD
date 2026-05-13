@@ -475,6 +475,7 @@ class dbNetwork : public ConcreteNetwork
   void makeAccessHashes();
   bool portMsbFirst(std::string_view port_name, std::string_view cell_name);
   ObjectId getDbNwkObjectId(const odb::dbObject* object) const;
+  ObjectId blockDiscBits(const odb::dbObject* obj, odb::dbObjectType typ) const;
 
   ////////////////////////////////////////////////////////////////
   // Debug functions
@@ -502,6 +503,15 @@ class dbNetwork : public ConcreteNetwork
   // the same chiplet) are skipped, since their inner dbInsts would alias
   // across chip-insts and break STA's per-pin Vertex assumption.
   std::map<odb::dbBlock*, odb::dbChipInst*> block_to_chip_inst_;
+  // Per-block discriminator stamped into upper bits of getDbNwkObjectId
+  // so iterms/bterms/insts/nets from different chiplet blocks (each
+  // numbered from 1) don't collide in NetSet/PinSet keys.
+  std::map<odb::dbBlock*, uint32_t> block_disc_;
+  // Synthetic LibertyLibrary for chip-master Cells. Each carries a
+  // self-arc per chip-bump port so Graph::makeInstanceEdges builds the
+  // internal load<->bidir_drvr edges that let create_clock anchors on
+  // chip-bump pins propagate into the chiplet body.
+  LibertyLibrary* chip_bump_lib_ = nullptr;
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;
