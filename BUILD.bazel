@@ -80,7 +80,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/dbSta",
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:dbSdcNetwork",
     "//src/dbSta:IpChecker",
     "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",

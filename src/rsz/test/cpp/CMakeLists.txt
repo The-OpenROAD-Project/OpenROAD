@@ -87,6 +87,35 @@ gtest_discover_tests(TestBufferRemoval3
 add_dependencies(build_and_test TestBufferRemoval3
 )
 
+add_executable(TestResizer TestResizer.cc)
+target_link_libraries(TestResizer
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestResizer
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestResizer
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestResizer
+)
+
 add_executable(TestInsertBuffer TestInsertBuffer.cpp)
 target_link_libraries(TestInsertBuffer
         OpenSTA
@@ -112,4 +141,32 @@ gtest_discover_tests(TestInsertBuffer
 )
 
 add_dependencies(build_and_test TestInsertBuffer
+)
+
+add_executable(TestResizerMt TestResizerMt.cc)
+target_link_libraries(TestResizerMt
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestResizerMt
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/policy
+)
+
+gtest_discover_tests(TestResizerMt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestResizerMt
 )

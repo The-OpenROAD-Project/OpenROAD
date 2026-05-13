@@ -91,6 +91,10 @@ cc_library(
         "src/db/tech/frTechObject.h",
         "src/db/tech/frViaDef.h",
         "src/db/tech/frViaRuleGenerate.h",
+        "src/dr/FlexMazeTypes.h",
+    ],
+    includes = [
+        "src",
     ],
     deps = [
         ":base_types",
@@ -146,7 +150,6 @@ cc_library(
         "src/dr/FlexGridGraph.cpp",
         "src/dr/FlexGridGraph.h",
         "src/dr/FlexGridGraph_maze.cpp",
-        "src/dr/FlexMazeTypes.h",
         "src/dr/FlexWavefront.h",
         "src/frDesign.h",
         "src/frProfileTask.h",
@@ -239,7 +242,6 @@ cc_library(
         "src/dr/FlexDR_graphics.cpp",
         "src/dr/FlexDR_graphics.h",
         "src/dr/FlexGridGraph.h",
-        "src/dr/FlexMazeTypes.h",
         "src/dr/FlexWavefront.h",
         "src/frDesign.h",
         "src/frRegionQuery.h",

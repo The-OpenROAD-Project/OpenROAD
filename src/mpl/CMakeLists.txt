@@ -13,7 +13,7 @@ add_library(mpl_snapper
 
 target_include_directories(mpl_snapper
   PUBLIC
-    include
+    src
 )
 
 target_link_libraries(mpl_snapper

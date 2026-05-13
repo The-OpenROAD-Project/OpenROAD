@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
 #include "tcl.h"
 #include "utl/Logger.h"
@@ -132,6 +133,13 @@ class WebServer
   // Background I/O context and worker threads (non-null while running).
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::vector<std::thread> threads_;
+
+  // Periodic timer that drains WebLogSink so log output produced by
+  // long-running Tcl commands streams to clients without waiting for a
+  // debug pause/redraw or for the command to return.  Reschedules
+  // itself; cancelled in stop() before ioc_ is shut down.
+  std::unique_ptr<boost::asio::steady_timer> log_drain_timer_;
+  void scheduleLogDrain();
 
   // Closes the Listener's acceptor before the io_context is destroyed,
   // avoiding a crash where the acceptor references a half-destroyed
