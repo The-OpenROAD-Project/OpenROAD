@@ -18,17 +18,14 @@
 #include "rsz/Resizer.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
@@ -292,7 +289,7 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
       const sta::Path* drvr_path = expanded.path(drvr_index);
       sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
       // If we already tried this vertex and got a worse result, skip it.
-      if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {
+      if (bad_vertices_.contains(drvr_vertex)) {
         continue;
       }
       const sta::Pin* drvr_pin = drvr_vertex->pin();

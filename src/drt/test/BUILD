@@ -168,6 +168,7 @@ cc_test(
     ],
     deps = [
         "//src/drt",
+        "//src/drt:base_types",
         "//src/drt:db_hdrs",
         "//src/odb",
         "//src/utl",

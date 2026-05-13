@@ -187,6 +187,12 @@ The module has two parts:
   resizable panels. Communicates with the server over a binary WebSocket
   protocol.
 
+## Server API
+
+The browser↔server protocol (WebSocket message types, request fields,
+response shapes, error contract) is documented in
+[`docs/server-api.md`](docs/server-api.md).
+
 ## Example scripts
 
 ```tcl

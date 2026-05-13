@@ -46,7 +46,7 @@ void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
              "inDbNetDestroy {}",
              net->getName());
   Net* sta_net = db_network_->dbToSta(net);
-  if (resizer_->net_slack_map_.count(sta_net)) {
+  if (resizer_->net_slack_map_.contains(sta_net)) {
     resizer_->net_slack_map_.erase(sta_net);
   }
 }

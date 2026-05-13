@@ -31,7 +31,6 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <zlib.h>
 
 #include <climits>
 #include <cstdio>
@@ -39,6 +38,7 @@
 #include <cstring>
 
 #include "lefrReader.hpp"
+#include "zlib.h"
 
 /*
  * Private functions:

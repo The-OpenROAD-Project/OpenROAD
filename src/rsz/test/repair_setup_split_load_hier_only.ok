@@ -1,0 +1,115 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:               138.054 um^2
+[INFO IFP-0104] Effective utilization:                0.003
+[INFO IFP-0105] Number of instances:                     47
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 8754
+[INFO PPL-0002] Number of I/O             2
+[INFO PPL-0003] Number of I/O w/sink      2
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 40.28 um.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0036] Movable instances area:        138.054 um^2
+[INFO GPL-0037] Total instances area:          138.054 um^2
+[INFO GPL-0035] Pin density area adjust:       -11.922 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:                47
+[INFO GPL-0007] Movable instances:                  47
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     23
+[INFO GPL-0011] Number of pins:                     97
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        126.132 um^2
+[INFO GPL-0019] Utilization:                     0.263 %
+[INFO GPL-0020] Standard cells area:           126.132 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 47	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000001 HPWL: 2586120
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 207311
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 203741
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 204306
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 204308
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 138.05 um^2, Utilization: 0.3%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                      47
+Diamond Move Success:             47 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement        365.8 u
+average displacement        7.8 u
+max displacement           10.9 u
+original HPWL               6.9 u
+legalized HPWL            287.1 u
+delta HPWL                 4082 %
+
+worst slack max -0.68
+tns max -10.567
+[INFO RSZ-0100] Repair move sequence: SplitLoadMove 
+[INFO RSZ-0094] Found 26 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.676 |       -0.7 |      -10.6 |     26 | u1/r21/D
+       3* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       4* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       5* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       6* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       7* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       8* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+       9* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      10* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      10* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      11* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      12* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      13* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      14* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      15* |       0 |       0 |        2 |      0 |     0 |    +1.5% |   -0.564 |       -0.6 |       -8.7 |     26 | u1/r21/D
+      17* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      18* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      19* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      20* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      20* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      21* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      22* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      23* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      24* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      25* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      26* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      27* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      28* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      29* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+      29* |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+    final |       0 |       0 |        3 |      0 |     0 |    +2.1% |   -0.564 |       -0.6 |       -9.3 |     26 | u1/r21/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 3 buffers, 3 to split loads.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.56
+tns max -9.250

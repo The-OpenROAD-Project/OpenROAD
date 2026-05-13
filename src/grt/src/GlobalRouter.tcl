@@ -148,6 +148,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-critical_nets_percentage percent] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
+                                  [-snapshot_batched_width width] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
@@ -159,8 +160,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step\
-          -skip_large_fanout_nets
+          -grid_origin -critical_nets_percentage -congestion_report_iter_step \
+          -skip_large_fanout_nets -snapshot_batched_width
          } \
     flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
           -end_incremental -use_cugr}
@@ -228,6 +229,15 @@ proc global_route { args } {
 
   set resistance_aware [info exists flags(-resistance_aware)]
   grt::set_resistance_aware $resistance_aware
+
+  if { [info exists keys(-snapshot_batched_width)] } {
+    set snapshot_batched_width $keys(-snapshot_batched_width)
+    sta::check_positive_integer "-snapshot_batched_width" \
+      $snapshot_batched_width
+  } else {
+    set snapshot_batched_width 0
+  }
+  grt::set_snapshot_batched_width $snapshot_batched_width
 
   set infinite_cap [info exists flags(-infinite_cap)]
   grt::set_infinite_cap $infinite_cap

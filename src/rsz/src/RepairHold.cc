@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "BufferMove.hh"
-#include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -22,6 +20,7 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -650,8 +649,8 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               // Despite checking for setup slack to insert the bufffer,
               // increased slews downstream can increase delays and
               // reduce setup slack in ways that are too expensive to
-              // predict. Use the journal to back out the change if
-              // the hold buffer blows through the setup margin.
+              // predict. Open a journal so a failed hold fix can be
+              // rolled back via journalRestore().
               resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
               sta::Slew slew_before = sta_->slew(path_vertex,

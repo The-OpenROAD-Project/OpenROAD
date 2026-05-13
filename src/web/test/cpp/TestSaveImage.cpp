@@ -184,7 +184,7 @@ TEST_F(SaveImageTest, VisibilityStdcellsOff)
   EXPECT_FALSE(hasNonTransparentPixel(pixels));
 }
 
-TEST_F(SaveImageTest, VisibilityPinMarkersOff)
+TEST_F(SaveImageTest, VisibilityPinsOff_Markers)
 {
   // Place a BTerm to generate pin markers.
   makeBTermAtEdge("clk", "metal1", 0, 50000, 200, 200);
@@ -198,18 +198,45 @@ TEST_F(SaveImageTest, VisibilityPinMarkersOff)
   const std::string path_off = tempPng("pins_off");
   TileVisibility vis_off;
   vis_off.stdcells = false;
-  vis_off.pin_markers = false;
+  vis_off.pins = false;
   tile_gen_->saveImage(path_off, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
 
   unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
   auto pixels_on = decodePngFile(path_on, w1, h1);
   auto pixels_off = decodePngFile(path_off, w2, h2);
 
-  // With pin_markers on, there should be visible content from the marker.
-  // With it off, less or no content.
+  // With pins on, there should be visible content from the marker.
+  // With it off, no content.
   EXPECT_TRUE(hasNonTransparentPixel(pixels_on));
-  // The two images should differ.
   EXPECT_NE(pixels_on, pixels_off);
+}
+
+TEST_F(SaveImageTest, VisibilityPinsOff)
+{
+  // BTerm shapes (tech layers + markers) should be hidden when vis.pins=false.
+  makeBTermAtEdge("clk", "metal1", 0, 50000, 5000, 5000);
+  makeTileGen();
+
+  const std::string path_on = tempPng("bterm_on");
+  TileVisibility vis_on;
+  vis_on.stdcells = false;
+  vis_on.pins = true;
+  tile_gen_->saveImage(path_on, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  const std::string path_off = tempPng("bterm_off");
+  TileVisibility vis_off;
+  vis_off.stdcells = false;
+  vis_off.pins = false;
+  tile_gen_->saveImage(path_off, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto pixels_on = decodePngFile(path_on, w1, h1);
+  auto pixels_off = decodePngFile(path_off, w2, h2);
+
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_on))
+      << "BTerm shapes should appear with vis.pins=true";
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "BTerm shapes should be hidden with vis.pins=false";
 }
 
 // ─── Edge cases ──────────────────────────────────────────────────────────────

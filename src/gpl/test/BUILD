@@ -188,3 +188,9 @@ doc_check_test(
     ],
     visibility = ["//visibility:public"],
 )
+
+doc_check_test(
+    name = "gpl_messages_txt_check",
+    check_log = False,
+    data = ["//src/gpl:messages_txt"],
+)

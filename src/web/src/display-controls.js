@@ -5,6 +5,7 @@
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
+import { getCookie, setCookie } from './theme.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -16,8 +17,8 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
-// Layer color palette (must match server-side palette in web.cpp)
-const layerPalette = [
+// Fallback color used when the server didn't supply a layer color.
+const fallbackLayerPalette = [
     [70, 130, 210],  // moderate blue
     [200, 50, 50],   // red
     [50, 180, 80],   // green
@@ -65,6 +66,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     const leafletLayers = [];  // index → WebSocketTileLayer
     const layerIds = [];       // index → model node id
 
+    // Restore saved hidden-layers set from previous session.
+    let savedHiddenLayers = new Set();
+    try {
+        const raw = getCookie('or_hidden_layers');
+        if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
+    } catch (_) { /* ignore */ }
+
     const layerSpec = {
         id: 'layers_parent',
         children: techData.layers.map((name, index) => {
@@ -72,14 +80,17 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                 opacity: 0.7,
                 zIndex: index + 3,
             });
-            layer.addTo(app.map);
+            const visible = !savedHiddenLayers.has(name);
+            if (visible) {
+                layer.addTo(app.map);
+                app.visibleLayers.add(name);
+            }
             app.allLayers.push(layer);
             leafletLayers.push(layer);
-            app.visibleLayers.add(name);
 
             const id = `layer_${index}`;
             layerIds.push(id);
-            return { id, data: { name, layer, colorIndex: index }, checked: true };
+            return { id, data: { name, layer, colorIndex: index }, checked: visible };
         }),
     };
 
@@ -100,6 +111,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                 }
             }
         });
+        // Refresh pins layer so it filters by the updated visible_layers.
+        if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
+            app.pinsLayer.refreshTiles();
+        }
+        // Persist hidden layers to cookie.
+        const hidden = techData.layers.filter(n => !app.visibleLayers.has(n));
+        setCookie('or_hidden_layers', encodeURIComponent(JSON.stringify(hidden)));
     });
     layerModel.addFromSpec(layerSpec);
 
@@ -117,7 +135,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     const parentNode = layerModel.get('layers_parent');
     const parentCb = document.createElement('input');
     parentCb.type = 'checkbox';
-    parentCb.checked = true;
+    parentCb.checked = parentNode.checked;
+    parentCb.indeterminate = parentNode.indeterminate;
     parentNode.cb = parentCb;
     parentCb.addEventListener('change', () => {
         layerModel.check('layers_parent', parentCb.checked);
@@ -137,7 +156,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = true;
+        checkbox.checked = modelNode.checked;
         modelNode.cb = checkbox;
         checkbox.addEventListener('change', () => {
             layerModel.check(id, checkbox.checked);
@@ -146,7 +165,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
         const colorSwatch = document.createElement('span');
         colorSwatch.className = 'layer-color';
-        const c = layerPalette[index % layerPalette.length];
+        const c = (techData.layer_colors && techData.layer_colors[index])
+            || fallbackLayerPalette[index % fallbackLayerPalette.length];
         colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
         label.appendChild(colorSwatch);
 
@@ -220,8 +240,18 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
     app.displayControlsEl.appendChild(layerGroup);
 
-    // --- Visibility tree (Instances, Nets, Shapes, Debug) ---
+    // --- Visibility tree (ordered to match Qt GUI display controls) ---
     const visTree = new VisTree(visibility, redrawAllLayers);
+    visTree.add({ label: 'Nets', children: [
+        { key: 'net_signal', label: 'Signal' },
+        { key: 'net_power', label: 'Power' },
+        { key: 'net_ground', label: 'Ground' },
+        { key: 'net_clock', label: 'Clock' },
+        { key: 'net_reset', label: 'Reset' },
+        { key: 'net_tieoff', label: 'Tie off' },
+        { key: 'net_scan', label: 'Scan' },
+        { key: 'net_analog', label: 'Analog' },
+    ]});
     visTree.add({ label: 'Instances', children: [
         { label: 'Std Cells', visKey: 'stdcells', disabled: !app.hasLiberty, children: [
             { label: 'Bufs/Invs', children: [
@@ -257,23 +287,6 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'phys_other', label: 'Other' },
         ]},
     ]});
-    visTree.add({ label: 'Nets', children: [
-        { key: 'net_signal', label: 'Signal' },
-        { key: 'net_power', label: 'Power' },
-        { key: 'net_ground', label: 'Ground' },
-        { key: 'net_clock', label: 'Clock' },
-        { key: 'net_reset', label: 'Reset' },
-        { key: 'net_tieoff', label: 'Tie off' },
-        { key: 'net_scan', label: 'Scan' },
-        { key: 'net_analog', label: 'Analog' },
-    ]});
-    visTree.add({ label: 'Shapes', children: [
-        { key: 'routing', label: 'Routing' },
-        { key: 'special_nets', label: 'Special Nets' },
-        { key: 'pins', label: 'Pins' },
-        { key: 'pin_markers', label: 'Pin Markers' },
-        { key: 'blockages', label: 'Blockages' },
-    ]});
     visTree.add({ label: 'Blockages', children: [
         { key: 'placement_blockages', label: 'Placement' },
         { key: 'routing_obstructions', label: 'Routing' },
@@ -288,6 +301,27 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     visTree.add({ label: 'Tracks', children: [
         { key: 'tracks_pref', label: 'Pref' },
         { key: 'tracks_non_pref', label: 'Non Pref' },
+    ]});
+    visTree.add({ label: 'Shapes', children: [
+        { label: 'Routing', visKey: 'routing', children: [
+            { key: 'routing_segments', label: 'Segments' },
+            { key: 'routing_vias', label: 'Vias' },
+        ]},
+        { label: 'Special Routing', visKey: 'special_nets', children: [
+            { key: 'srouting_segments', label: 'Segments' },
+            { key: 'srouting_vias', label: 'Vias' },
+        ]},
+        { key: 'pins', label: 'Pins' },
+        { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
+    ]});
+    visTree.add({ label: 'Misc', children: [
+        { label: 'Instances', children: [
+            { key: 'inst_names', label: 'Names' },
+            { key: 'inst_pins', label: 'Pins' },
+            { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
+            { key: 'blockages', label: 'Blockages' },
+        ]},
+        { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });

@@ -182,8 +182,8 @@ export class TimingWidget {
         this._updateBtn.textContent = 'Loading...';
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: 1, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: 0, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
             ]);
             this._setupPaths = setupData.paths || [];
             this._holdPaths = holdData.paths || [];
@@ -219,7 +219,7 @@ export class TimingWidget {
         this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: highlightIdx,
-            is_setup: this._currentTab === 'setup' ? 1 : 0,
+            is_setup: this._currentTab === 'setup',
         }).then(() => this._redrawAllLayers())
           .catch(err => console.error('timing_highlight error:', err));
     }
@@ -304,7 +304,7 @@ export class TimingWidget {
         this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: highlightIdx,
-            is_setup: this._currentTab === 'setup' ? 1 : 0,
+            is_setup: this._currentTab === 'setup',
             pin_name: nodes[idx].pin,
         }).then(() => this._redrawAllLayers());
     }

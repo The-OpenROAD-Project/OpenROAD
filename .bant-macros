@@ -1,0 +1,82 @@
+# -*- Python -*-
+# https://github.com/hzeller/bant#macros
+#
+# Tell bant (that is not looking at *.bzl files) how custom rules behave, just
+# enough for it to see through them to provide features such as dwyu.
+#
+# To print a rule and apply the macro transformations, use the `-m` option
+# to bant. e.g.
+# bant print //src/gui:gui_qt -m
+#
+# If bant is not installed locally, use
+# $(etc/get-bant-path.sh) //src/gui:gui_qt -m
+#
+# File can be formatted using regular buildifier.
+
+python_wrap_cc = genrule(
+    name = name,
+    outs = [
+        out,  # if defined
+        name + ".cc",
+        module + ".py",
+    ],
+)
+
+tcl_wrap_cc = genrule(
+    name = name,
+    outs = [
+        out,  # if defined
+        runtime_header,  # if defined
+        name + ".cc",
+    ],
+)
+
+tcl_encode = genrule(
+    name = name,
+    outs = [
+        out,
+        name + ".cc",
+    ],
+)
+
+tcl_encode_sta = genrule(
+    name = name,
+    outs = [
+        out,
+        name + ".cc",
+    ],
+)
+
+# gist extracted from @qt-bazel//:build_defs.bzl
+qt6_library = (
+    [
+        genrule(
+            name = uisrc.rsplit("/", 1)[0].replace("/", "_") + "_ui_" + uisrc.rsplit("/", 1)[1][0:-3],
+            srcs = [uisrc],
+            outs = [uisrc.rsplit("/", 1)[0] + "/ui_" + uisrc.rsplit("/", 1)[1][0:-3] + ".h"],
+        )
+        for uisrc in uic_srcs
+    ],
+    cc_library(
+        name = name,
+        srcs = srcs,
+        hdrs = hdrs + moc_hdrs + [
+            uisrc.rsplit("/", 1)[0] + "/ui_" + uisrc.rsplit("/", 1)[1][0:-3] + ".h"
+            for uisrc in uic_srcs
+        ],
+        includes = includes,
+        deps = deps,
+    ),
+)
+
+genlex = genrule(
+    name = name,
+    srcs = [src],
+    outs = [out],
+)
+
+genyacc = genrule(
+    name = name,
+    srcs = [src],
+    outs = [header_out, source_out] + extra_outs,
+)

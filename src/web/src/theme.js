@@ -5,7 +5,7 @@
 // Cookies are used instead of localStorage because the port changes on
 // every restart (port 0 = OS-assigned) and localStorage is origin-scoped.
 
-function getCookie(name) {
+export function getCookie(name) {
     const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
     return m ? m[1] : null;
 }

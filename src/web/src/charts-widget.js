@@ -312,7 +312,7 @@ export class ChartsWidget {
         try {
             const req = {
                 type: 'slack_histogram',
-                is_setup: this._currentTab === 'setup' ? 1 : 0,
+                is_setup: this._currentTab === 'setup',
             };
             if (this._pathGroupSelect.value) {
                 req.path_group = this._pathGroupSelect.value;
@@ -537,7 +537,7 @@ export class ChartsWidget {
         try {
             const resp = await this._app.websocketManager.request({
                 type: 'timing_report',
-                is_setup: this._currentTab === 'setup' ? 1 : 0,
+                is_setup: this._currentTab === 'setup',
                 max_paths: 50,
                 slack_min: bar.lower,
                 slack_max: bar.upper,

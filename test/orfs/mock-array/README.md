@@ -63,9 +63,6 @@ power reporting. It has exposed:
   names (`475eb39584`).
 - Verilator reported 17k UNDRIVEN warnings on hierarchical output
   (issue #8108).
-- Equivalence checking (eqy) failures from `write_verilog` output and
-  FILLER/TAPCELL cell interactions (issues #8869, #8905, #9035; fix
-  PR #8966).
 
 ## What mock-array does NOT test
 
@@ -147,7 +144,4 @@ bazelisk build //test/orfs/mock-array:Element_4x4_slang_synth
 # Full: place-and-route (takes minutes)
 bazelisk test //test/orfs/mock-array:MockArray_4x4_base_test
 bazelisk test //test/orfs/mock-array:MockArray_4x4_flat_test
-
-# Power and equivalence (slowest)
-bazelisk test //test/orfs/mock-array:eqy_tests
 ```
