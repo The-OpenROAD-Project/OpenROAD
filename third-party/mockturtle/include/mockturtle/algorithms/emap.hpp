@@ -439,6 +439,12 @@ public:
     }
   }
 
+  static bool same_cut( CutType const& cut1, CutType const& cut2 )
+  {
+    return cut1.size() == cut2.size() && cut1.signature() == cut2.signature()
+           && std::equal( cut1.begin(), cut1.end(), cut2.begin() );
+  }
+
   /*! \brief Inserts a cut into a set without checking dominance.
    *
    * This method will insert a cut into a set and maintain an order.  This
@@ -489,13 +495,13 @@ public:
         --jpos;
         if ( ( *jpos )->size() < cut.size() )
           break;
-        if ( ( *jpos )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *jpos )->begin() ) )
+        if ( same_cut( cut, **jpos ) )
           return;
       }
     }
     else if ( ipos != _pcuts.begin() )
     {
-      if ( ( *( ipos - 1 ) )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *( ipos - 1 ) )->begin() ) )
+      if ( same_cut( cut, **( ipos - 1 ) ) )
       {
         return;
       }
@@ -662,7 +668,7 @@ public:
 
     while ( ipos != _pend )
     {
-      if ( ( *ipos )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *ipos )->begin() ) )
+      if ( same_cut( cut, **ipos ) )
         return true;
       ++ipos;
     }
