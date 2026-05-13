@@ -69,21 +69,19 @@ struct TclEvaluator
     std::lock_guard<std::mutex> lock(mutex);
 
     // Defense-in-depth: reject dangerous Tcl commands that could
-    // escape the web interface sandbox.
-    // Uses regex with word-boundary matching to handle:
-    // - Namespace prefix: ::exec
-    // - Script blocks: [exec ls]
-    // - Terminators: exec\n, exec;
-    // The primary protection is the 127.0.0.1 bind.
-    // NOTE: In R"(...)" raw strings, backslashes are literal,
-    // so \s in the pattern is the regex whitespace class \s, etc.
+    // escape the web interface sandbox.  This is a best-effort
+    // blocklist; the primary protection is the 127.0.0.1 bind.
+    // Only exec and socket are blocked — source and load are
+    // intentionally allowed for legitimate web workflows.
+    // NOTE: In R"(...)" raw strings, backslashes are literal, so
+    // \s in the pattern becomes the regex escape \s (whitespace).
     static const std::regex dangerous(
-        R"((^|[\s;\[\{])(::)?(exec|open|socket|load|source)([\s;\]\}]|$))",
+        R"((^|[\s;\[\{])(::)?(exec|socket)([\s;\]\}]|$))",
         std::regex::ECMAScript | std::regex::optimize);
     if (std::regex_search(cmd, dangerous)) {
       Result r;
-      r.result = "Blocked by web server security: dangerous Tcl command "
-                 "(exec/open/socket/load/source) not allowed.";
+      r.result = "Blocked by web server security: exec and socket are "
+                 "not allowed over the web interface.";
       r.is_error = true;
       return r;
     }
