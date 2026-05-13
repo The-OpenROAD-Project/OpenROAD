@@ -23,7 +23,7 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )
@@ -75,7 +75,7 @@ cc_library(
         ":snapper",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/par",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -108,7 +108,7 @@ cc_library(
         ":pusher",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

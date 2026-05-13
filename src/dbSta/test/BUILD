@@ -295,7 +295,8 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
@@ -315,7 +316,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -328,7 +329,7 @@ cc_test(
     srcs = ["cpp/TestReadVerilog.cpp"],
     data = glob(["cpp/TestReadVerilog*.v"]),
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
