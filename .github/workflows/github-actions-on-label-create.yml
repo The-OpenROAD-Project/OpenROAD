@@ -88,3 +88,74 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         UPSTREAM_PR: ${{ steps.send_pr.outputs.pr }}
+
+    - name: Request CODEOWNERS reviewers on upstream PR
+      if: steps.send_pr.outputs.pr != ''
+      env:
+        GH_TOKEN: ${{ steps.resolve_token.outputs.token }}
+        PR: ${{ steps.send_pr.outputs.pr }}
+        UPSTREAM: ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}
+      run: |
+        set -euo pipefail
+        python3 -m pip install --quiet pathspec
+        python3 <<'PY'
+        import base64, json, os, subprocess, sys
+        from pathspec import GitIgnoreSpec
+
+        pr = os.environ["PR"]
+        upstream = os.environ["UPSTREAM"]
+
+        pr_json = subprocess.check_output(
+            ["gh", "api", f"repos/{upstream}/pulls/{pr}"], text=True)
+        pr_data = json.loads(pr_json)
+        author = pr_data["user"]["login"]
+        base_ref = pr_data["base"]["ref"]
+
+        # Authoritative CODEOWNERS is the one on the PR base branch.
+        raw = subprocess.check_output(
+            ["gh", "api", "--method", "GET",
+             f"repos/{upstream}/contents/.github/CODEOWNERS",
+             "-f", f"ref={base_ref}", "--jq", ".content"], text=True).strip()
+        codeowners = base64.b64decode(raw).decode()
+
+        rules = []
+        for line in codeowners.splitlines():
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            pattern, *rule_owners = line.split()
+            rules.append((GitIgnoreSpec.from_lines([pattern]), rule_owners))
+
+        # GitHub caps /pulls/{n}/files at 3000 even with --paginate; truly
+        # enormous PRs will under-request owners for the overflow.
+        files = subprocess.check_output(
+            ["gh", "api", f"repos/{upstream}/pulls/{pr}/files", "--paginate",
+             "--jq", ".[].filename"], text=True).splitlines()
+
+        owners = set()
+        for path in files:
+            matched = None
+            for spec, rule_owners in rules:
+                if spec.match_file(path):
+                    matched = rule_owners  # last match wins
+            if matched:
+                owners.update(o.lstrip("@") for o in matched)
+
+        teams = sorted(o for o in owners if "/" in o)
+        users = sorted(o for o in owners
+                       if "/" not in o and o.lower() != author.lower())
+        reviewers = teams + users
+
+        if not reviewers:
+            print("No CODEOWNERS-matched reviewers.")
+            sys.exit(0)
+
+        # GitHub's request-reviewers endpoint caps each array at 15; chunk so
+        # PRs that match many owner teams don't get 422'd.
+        for i in range(0, len(reviewers), 15):
+            batch = reviewers[i:i + 15]
+            print("Requesting:", batch)
+            subprocess.check_call(
+                ["gh", "pr", "edit", pr, "--repo", upstream,
+                 "--add-reviewer", ",".join(batch)])
+        PY
