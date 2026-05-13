@@ -256,7 +256,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl:snapper",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -272,7 +272,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

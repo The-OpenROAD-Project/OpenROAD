@@ -87,7 +87,7 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
@@ -127,7 +127,7 @@ cc_library(
         ":dpl",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.icl",
         "@boost.stacktrace",
