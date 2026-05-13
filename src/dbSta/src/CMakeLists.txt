@@ -22,6 +22,9 @@ target_include_directories(dbSta_lib
     # needs liberty/LibertyBuilder.hh (synthetic chip-bump arc creation)
     # which lives under ${OPENSTA_HOME}, and that header includes
     # "MinMax.hh" without an sta/ prefix, requiring ${OPENSTA_HOME}/include/sta.
+    # Needed for search/Levelize.hh and the unprefixed transitive
+    # OpenSTA headers it includes (e.g. Graph.hh) which are not part of
+    # OpenSTA's public include.
     ${OPENSTA_HOME}
     ${OPENSTA_HOME}/include/sta
 )
@@ -46,7 +49,7 @@ swig_lib(NAME          dbSta
                        ${OPENSTA_HOME}/tcl/CmdUtil.tcl
                        ${OPENSTA_HOME}/tcl/Property.tcl
                        ${OPENSTA_HOME}/spice/WriteSpice.tcl
-                       ${OPENSTA_HOME}/tcl/Variables.tcl
+                       ${OPENSTA_HOME}/sdc/Variables.tcl
                        ${OPENSTA_HOME}/tcl/Sta.tcl
                        ${OPENSTA_HOME}/tcl/Splash.tcl
                        ${OPENSTA_HOME}/dcalc/DelayCalc.tcl

@@ -31,7 +31,6 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <zlib.h>
 
 #include <climits>
 #include <cstdio>
@@ -41,6 +40,7 @@
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"
 #include "defrReader.hpp"
+#include "zlib.h"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
