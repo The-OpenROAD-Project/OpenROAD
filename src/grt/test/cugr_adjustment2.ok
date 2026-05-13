@@ -45,7 +45,6 @@ metal10    Vertical         2142           857          59.99%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Nets with overflow: 0.
 Routing statistics
 Wire length:           36727
 Total via count:       2627
