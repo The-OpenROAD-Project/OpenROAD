@@ -122,9 +122,12 @@ void TimingBase::setTimingNetsPercentage(float percentage)
   nets_percentage_ = percentage;
 }
 
-bool TimingBase::executeTimingDriven(bool run_journal_restore, bool second)
+bool TimingBase::executeTimingDriven(bool run_journal_restore,
+                                     bool enable_repair_timing)
 {
-  rs_->findResizeSlacks(run_journal_restore, second, repair_tns_end_percent_);
+  rs_->findResizeSlacks(run_journal_restore,
+                        (enable_repair_timing && repair_timing_),
+                        repair_tns_end_percent_);
 
   if (!run_journal_restore) {
     nbc_->fixPointers();

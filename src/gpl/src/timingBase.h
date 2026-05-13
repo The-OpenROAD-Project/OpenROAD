@@ -43,13 +43,20 @@ class TimingBase
 
   void setTimingNetWeightMax(float max);
   void setTimingNetsPercentage(float percentage);
-  void setRepairTiming(bool run_repair_timing) { repair_timing_ = run_repair_timing; }
-  void setRepairTnsEndPercent(float percent) { repair_tns_end_percent_ = percent; }
+  void setRepairTiming(bool run_repair_timing)
+  {
+    repair_timing_ = run_repair_timing;
+  }
+  void setRepairTnsEndPercent(float percent)
+  {
+    repair_tns_end_percent_ = percent;
+  }
 
   // updateNetWeight.
   // True: successfully reweighted gnets
   // False: no slacks found
-  bool executeTimingDriven(bool run_journal_restore, bool second = false);
+  bool executeTimingDriven(bool run_journal_restore,
+                           bool run_repair_timing = false);
 
  private:
   grt::GlobalRouter* grt_ = nullptr;
