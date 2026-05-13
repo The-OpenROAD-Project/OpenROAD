@@ -165,6 +165,27 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
 
+  /**
+   * @brief Diagnoses whether residual overflow is spreadable.
+   *
+   * For each `(direction, x, y)` tile, sums capacity and demand across
+   * all same-direction routing layers and classifies the tile:
+   *
+   *   - **2D-aggregate overflow** (`sum_demand > sum_capacity`): true
+   *     planar congestion — no layer-assignment policy can avoid it.
+   *   - **3D-only overflow** (per-layer overflow but the aggregate has
+   *     slack): some same-direction layer at the same tile still has
+   *     unused capacity. The router could in principle redistribute
+   *     the demand there.
+   *
+   * Reports `3D overflow / 2D-aggregate / spreadable = 3D − 2D` (the
+   * gap is the upper bound on how much overflow a perfect layer
+   * assignment could clear). Gated on `debugPrint(GRT, "rrr_2d", 1)`,
+   * so default builds pay only the gate check. Enable via Tcl with
+   * `set_debug_level GRT rrr_2d 1`.
+   */
+  void debugCongestion2D() const;
+
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
   std::vector<int> net_indices_;

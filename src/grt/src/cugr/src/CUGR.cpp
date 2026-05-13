@@ -300,9 +300,108 @@ void CUGR::route()
   iterativeRRR(net_indices);
 
   printStatistics();
+  debugCongestion2D();
   if (constants_.write_heatmap) {
     grid_graph_->write();
   }
+}
+
+void CUGR::debugCongestion2D() const
+{
+  if (!logger_->debugCheck(utl::GRT, "rrr_2d", 1)) {
+    return;
+  }
+
+  const int x_size = grid_graph_->getXSize();
+  const int y_size = grid_graph_->getYSize();
+  const int num_layers = grid_graph_->getNumLayers();
+
+  double total_3d_overflow = 0.0;
+  double total_2d_overflow = 0.0;
+  int tiles_3d_only = 0;
+  int tiles_2d = 0;
+
+  for (int direction = 0; direction < 2; ++direction) {
+    std::vector<int> same_dir_layers;
+    for (int l = constants_.min_routing_layer; l < num_layers; ++l) {
+      if (grid_graph_->getLayerDirection(l) == direction) {
+        same_dir_layers.push_back(l);
+      }
+    }
+    if (same_dir_layers.empty()) {
+      continue;
+    }
+
+    // For an H layer, an edge spans gcells (x, y)→(x+1, y), so the
+    // valid edge index range is x < x_size - 1. Mirror for V.
+    const int x_max
+        = (direction == MetalLayer::H) ? x_size - 1 : x_size;
+    const int y_max
+        = (direction == MetalLayer::H) ? y_size : y_size - 1;
+
+    for (int x = 0; x < x_max; ++x) {
+      for (int y = 0; y < y_max; ++y) {
+        double sum_cap = 0.0;
+        double sum_dem = 0.0;
+        double per_layer_overflow_sum = 0.0;
+        for (int l : same_dir_layers) {
+          const auto& edge = grid_graph_->getEdge(l, x, y);
+          sum_cap += std::max(edge.capacity, 0.0);
+          sum_dem += edge.demand;
+          const double ovf = edge.demand - edge.capacity;
+          if (ovf > 0.0) {
+            per_layer_overflow_sum += ovf;
+          }
+        }
+        const double tile_2d_overflow = std::max(0.0, sum_dem - sum_cap);
+        total_3d_overflow += per_layer_overflow_sum;
+        total_2d_overflow += tile_2d_overflow;
+        if (tile_2d_overflow > 0.0) {
+          ++tiles_2d;
+        } else if (per_layer_overflow_sum > 0.0) {
+          ++tiles_3d_only;
+        }
+      }
+    }
+  }
+
+  const auto rnd = [](double v) { return static_cast<int>(std::round(v)); };
+  const int spreadable = rnd(total_3d_overflow - total_2d_overflow);
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "2D-aggregate congestion check:");
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  3D overflow:               {} units",
+             rnd(total_3d_overflow));
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  2D-aggregate overflow:     {} units (unavoidable)",
+             rnd(total_2d_overflow));
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  Spreadable overflow:       {} units (could move to other layers)",
+             spreadable);
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  Tiles with 3D-only ovf:    {}",
+             tiles_3d_only);
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  Tiles with 2D ovf:         {} (true planar congestion)",
+             tiles_2d);
 }
 
 // Iterative rip-up & re-route. Wraps the maze stage in a loop
