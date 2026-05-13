@@ -101,10 +101,8 @@ LogicCut::BuildMappedMockturtleNetwork(
   }
 
   // Build a set of CUT instances for quick membership checks
-  std::unordered_set<const sta::Instance*> cut_instances_set;
-  for (const sta::Instance* inst : cut_instances_) {
-    cut_instances_set.insert(inst);
-  }
+  std::unordered_set<const sta::Instance*> cut_instances_set(
+      cut_instances_.begin(), cut_instances_.end());
 
   // Net -> AIG signal memoization
   std::unordered_map<const sta::Net*, signal> net_to_signal;

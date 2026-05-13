@@ -84,10 +84,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     }
   }
 
-  // Collect instances whose any output pin is already in the cut
-  std::unordered_set<const sta::Instance*> insts;
-  insts.reserve(cut_vertices.size());
-
+  // Add all output pin vertices to the cut
   for (sta::Vertex* v : cut_vertices) {
     sta::Pin* pin = v->pin();
     if (!pin) {
@@ -99,13 +96,11 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
       continue;
     }
 
-    if (sta::Instance* inst = network->instance(pin)) {
-      insts.insert(inst);
+    sta::Instance* inst = network->instance(pin);
+    if (!inst) {
+      continue;
     }
-  }
 
-  // For those instances, add all output pins vertices to the cut
-  for (const sta::Instance* inst : insts) {
     auto pin_it
         = std::unique_ptr<sta::InstancePinIterator>(network->pinIterator(inst));
 
@@ -148,10 +143,8 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
     pins.insert(vertex->pin());
   }
 
-  std::unordered_set<sta::Vertex*> endpoint_vertex;
-  for (sta::Vertex* vertex : endpoints_) {
-    endpoint_vertex.insert(vertex);
-  }
+  std::unordered_set<sta::Vertex*> endpoint_vertex(endpoints_.begin(),
+                                                   endpoints_.end());
 
   std::vector<sta::Pin*> primary_inputs;
   for (sta::Vertex* vertex : cut_vertices) {
@@ -300,8 +293,7 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
 
-  std::unordered_set<sta::Net*> primary_input_nets;
-  primary_input_nets.reserve(primary_io_pins.size());
+  std::set<sta::Net*> primary_input_nets;
   for (sta::Pin* pin : primary_io_pins) {
     sta::Net* net = nullptr;
     // check if this pin is a terminal

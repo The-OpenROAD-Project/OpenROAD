@@ -315,9 +315,8 @@ std::vector<sta::Pin*> LogicExtractorFactory::AddMisingTopIO(
       network->pinIterator(network->topInstance()));
   while (pin_iterator->hasNext()) {
     sta::Pin* pin = pin_iterator->next();
-    if (pred(pin) && !used_pins.contains(pin)) {
+    if (pred(pin) && used_pins.insert(pin).second) {
       result.push_back(pin);
-      used_pins.insert(pin);
     }
   }
 
