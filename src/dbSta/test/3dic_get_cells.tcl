@@ -3,6 +3,11 @@ source "helpers.tcl"
 # Hierarchical top dbChip must expose its dbChipInst children via
 # dbNetwork::DbInstanceChildIterator, so `get_cells *` returns the chiplet
 # instance names.
+#
+# example.bmap leaves both bumps unmapped (col-4 = "-"), so STA-3002
+# fires on read_3dbx. That is intentional here — this fixture exercises
+# the structural iteration APIs (get_cells / get_pins / get_nets), not
+# signal traversal. The expected warning is part of the golden .ok.
 read_3dbx ../../odb/test/data/example.3dbx
 
 proc cell_names { } {

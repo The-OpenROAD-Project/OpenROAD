@@ -197,5 +197,39 @@ proc check_ip { args } {
   return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
 }
 
+define_cmd_args "report_3dic_summary" {}
+
+proc report_3dic_summary { args } {
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::warn STA 3003 "No chip loaded; nothing to report."
+    return
+  }
+  set chip_insts [$chip getChipInsts]
+  set chip_nets [$chip getChipNets]
+  set chip_conns [$chip getChipConns]
+  set inst_count [llength $chip_insts]
+  set net_count [llength $chip_nets]
+  set conn_count [llength $chip_conns]
+  set bump_inst_count 0
+  foreach n $chip_nets {
+    incr bump_inst_count [$n getNumBumpInsts]
+  }
+  utl::report "3DIC summary for chip [$chip getName]:"
+  utl::report "  chiplets        : $inst_count"
+  utl::report "  top-level nets  : $net_count"
+  utl::report "  3D bond regions : $conn_count"
+  utl::report "  bump pads       : $bump_inst_count"
+  if { $inst_count > 0 } {
+    utl::report "  chiplet instances:"
+    foreach ci $chip_insts {
+      set ref [$ci getMasterChip]
+      set ref_name [expr { $ref == "NULL" ? "<unbound>" : [$ref getName] }]
+      utl::report "    [$ci getName] (reference: $ref_name)"
+    }
+  }
+}
+
 # namespace
 }

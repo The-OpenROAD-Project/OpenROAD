@@ -399,6 +399,64 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
     }
   }
   db_cbk_->setNetwork(db_network_);
+
+  // Diagnostics: surface chip-inst / chip-net / chip-conn counts and flag
+  // structural issues that would silently block cross-chiplet paths.
+  const size_t inst_count = chip->getChipInsts().size();
+  const size_t net_count = chip->getChipNets().size();
+  const size_t conn_count = chip->getChipConns().size();
+  size_t total_bump_insts = 0;
+  for (odb::dbChipNet* chip_net : chip->getChipNets()) {
+    const uint32_t n = chip_net->getNumBumpInsts();
+    total_bump_insts += n;
+    // Single-bump chip-nets are legitimate (top-level IO that connects a
+    // chiplet bump to the top boundary); only flag truly orphan nets.
+    if (n == 0) {
+      logger_->warn(utl::STA,
+                    3001,
+                    "3DIC top-level net '{}' has no bump pads attached; "
+                    "net is orphan and carries no STA pin.",
+                    chip_net->getName());
+    }
+  }
+  // Aggregate unbound chip-bumps per master into one summary warning so
+  // designs that intentionally leave non-signal bumps unbound (e.g. PG
+  // bumps) don't spam the log.
+  std::set<odb::dbChip*> seen_masters;
+  for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    odb::dbChip* master = chip_inst->getMasterChip();
+    if (master == nullptr || !seen_masters.insert(master).second) {
+      continue;
+    }
+    size_t bumps_total = 0;
+    size_t bumps_unbound = 0;
+    for (odb::dbChipRegion* region : master->getChipRegions()) {
+      for (odb::dbChipBump* bump : region->getChipBumps()) {
+        ++bumps_total;
+        if (bump->getBTerm() == nullptr) {
+          ++bumps_unbound;
+        }
+      }
+    }
+    if (bumps_unbound > 0) {
+      logger_->warn(utl::STA,
+                    3002,
+                    "3DIC chiplet '{}': {}/{} bump pads not mapped to "
+                    "a chiplet port (missing name in .bmap col 4). "
+                    "Paths through them drop.",
+                    master->getName(),
+                    bumps_unbound,
+                    bumps_total);
+    }
+  }
+  logger_->info(utl::STA,
+                3000,
+                "3DIC STA active: {} chiplets, {} top-level nets, "
+                "{} 3D bond regions, {} bump pads.",
+                inst_count,
+                net_count,
+                conn_count,
+                total_bump_insts);
 }
 
 void dbSta::postReadDb(odb::dbDatabase* db)

@@ -403,6 +403,73 @@ that has a backing `dbBTerm`. This is needed because:
 The map `chip_master_cells_` is reset in `dbNetwork::clear()` since
 `ConcreteNetwork::clear()` destroys the libraries that own those Cells.
 
+## Diagnostics
+
+`dbSta::postRead3Dbx` emits a one-line structural summary plus two
+warning kinds so missing-data problems surface immediately on
+`read_3dbx` rather than as silent "No paths found" later.
+
+| Msg | Level | When |
+|---|---|---|
+| STA-3000 | INFO  | Always. `3DIC STA active: <N> chiplets, <M> top-level nets, <K> 3D bond regions, <B> bump pads.` Counts taken at end of `postRead3Dbx`. Tcl-created chip-nets that show up after `read_3dbx` will not be in this count. |
+| STA-3001 | WARN  | A `dbChipNet` has zero bump pads attached → orphan net. Single-bump nets are legitimate top IO and stay silent. |
+| STA-3002 | WARN  | One unique chiplet definition has one or more bumps with no chiplet-port mapping (4th column of `.bmap` is `-`). Aggregated per definition to avoid per-bump spam. Intentional in fixtures (e.g. `dbSta/test/3dic_get_cells.tcl`) — see test comment. |
+
+Tcl helper `report_3dic_summary` (in `dbSta.tcl`) prints the same
+counts plus per-chiplet-instance reference names — useful as a
+post-read sanity check or to dump the structural state mid-flow.
+
+## Fixture authoring notes
+
+Non-obvious gotchas when adding new 3DIC tests:
+
+1. **`.bmap` 4th column binds bump → chiplet port.**
+   Format per line: `<bump_inst_name> <BUMP_macro> <x> <y> <bterm_name> <signal>`.
+   `bterm_name = "-"` leaves the bump unbound — STA cannot cross that
+   boundary. Always set the 4th column to a real chiplet `dbBTerm` name
+   unless the test specifically exercises unmapped bumps.
+
+2. **`BUMP` macro center offset constrains `.bmap` XY range.**
+   `ThreeDBlox::createBump` (`src/odb/src/3dblox/3dblox.cpp:599-602`)
+   computes the bump `dbInst` origin as
+   `bmap.x * dbu_per_micron - bbox.xCenter() + chip.offset.x`. With
+   `fake_bumps.lef`'s `BUMP` macro at `SIZE 29 BY 29`, `bbox.xCenter() =
+   29000 DBU`. So `.bmap` XY must be ≥ ~14.5µm to keep the origin
+   non-negative, and the chiplet region must be large enough to contain
+   the resulting origin — otherwise `Checker::checkBumpPhysicalAlignment`
+   fires ODB-0463.
+
+3. **`Connection:` block grounds chiplets.**
+   `Checker::checkLogicalConnectivity` requires every chiplet to be
+   transitively reachable from a "ground" node (PCB / package side).
+   Declare one virtual one-sided `Connection:` with `bot: ~` (or `top:
+   ~`) for the bottom-most chiplet:
+   ```yaml
+   Connection:
+     to_pkg:
+       top: chipA.regions.front_reg
+       bot: ~
+   ```
+   Without this, ODB-0206 (no ground group) + ODB-0151 (floating chip
+   sets) fire. The 3DBlox YAML parser rejects a Connection that
+   omits either `top` or `bot` outright — use `~` for the null side.
+
+4. **Physical bump alignment vs logical net assignment.**
+   When two chiplets stack with `orient: MZ` and share a bump XY,
+   `Checker::checkBumpPhysicalAlignment` requires both bumps at that XY
+   to belong to the same top-level `dbChipNet`. Mismatch → ODB-0208.
+   Verify by reading the top Verilog and the per-chiplet `.bmap` files
+   together: e.g. `chipA.q → bridge` must share its `.bmap` XY with
+   `chipB.d → bridge`, not with `chipB.q → out_top`.
+
+5. **Distinct `dbBlock` per chiplet definition is recommended.**
+   Two `dbChipInst`s of the same `dbChip` master share the master's
+   `dbBlock`. dbSta filters such shared-master blocks out of
+   `block_to_chip_inst_` (see "block_to_chip_inst_ and the
+   shared-master limitation"), so inner `dbInst`s of a shared master
+   become invisible to `leafInstanceIterator`. For path tests, give
+   each chiplet its own `ChipletDef:` with a distinct `.def`.
+
 ## File map
 
 | Purpose                              | File                                       |

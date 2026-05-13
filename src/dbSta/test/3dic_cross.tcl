@@ -10,6 +10,11 @@ set_thread_count 1
 
 read_3dbx 3dic_cross.3dbx
 
+# Stage 8: structural summary helper. Exercises the dbChip/dbChipNet/
+# dbChipConn iteration paths and surfaces user-facing counts in 3DBlox
+# terminology.
+report_3dic_summary
+
 proc chip_net_names { } {
   set names {}
   foreach n [get_nets *] {

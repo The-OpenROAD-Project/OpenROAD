@@ -25,3 +25,11 @@ Stack:
     loc: [0.0, 0.0]
     z: 300.0
     orient: MZ
+
+Connection:
+  bond_a_to_b:
+    top: chipB.regions.front_reg
+    bot: chipA.regions.front_reg
+  to_pkg:
+    top: chipA.regions.front_reg
+    bot: ~
