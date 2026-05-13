@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Setup xcode
-        uses: maxim-lobanov/setup-xcode@1242409711ff5721add51979e9e11e23ebb7e5a4 # v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1
         with:
           xcode-version: latest-stable
       - name: Check out repository code
