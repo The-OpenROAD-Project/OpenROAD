@@ -29,6 +29,26 @@ cc_library(
 )
 
 cc_library(
+    name = "pusher",
+    srcs = [
+        "src/object.cpp",
+        "src/pusher.cpp",
+        "src/shapes.cpp",
+    ],
+    hdrs = [
+        "src/mpl-util.h",
+        "src/object.h",
+        "src/pusher.h",
+        "src/shapes.h",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/utl",
+        "@boost.random",
+    ],
+)
+
+cc_library(
     name = "mpl",
     srcs = [
         "src/MplObserver.h",
@@ -42,12 +62,7 @@ cc_library(
         "src/clusterEngine.h",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
-        "src/mpl-util.h",
-        "src/object.cpp",
-        "src/object.h",
         "src/rtl_mp.cpp",
-        "src/shapes.cpp",
-        "src/shapes.h",
     ],
     hdrs = [
         "include/mpl/rtl_mp.h",
@@ -56,6 +71,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":pusher",
         ":snapper",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -77,9 +93,6 @@ cc_library(
         "src/clusterEngine.h",
         "src/graphics.cpp",
         "src/graphics.h",
-        "src/mpl-util.h",
-        "src/object.h",
-        "src/shapes.h",
         ":swig",
         ":tcl",
     ],
@@ -92,6 +105,7 @@ cc_library(
     ],
     deps = [
         ":mpl",
+        ":pusher",
         "//:ord",
         "//src/gui",
         "//src/odb",
