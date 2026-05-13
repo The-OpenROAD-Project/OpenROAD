@@ -65,9 +65,10 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
-    absl::synchronization
-    absl::hash
     absl::city
+    absl::hash
+    absl::random_random
+    absl::synchronization
 )
 
 target_link_libraries(rmp

@@ -66,6 +66,24 @@ namespace cut {
 using cut::LogicCut;
 using cut::LogicExtractorFactory;
 using ::testing::Contains;
+using ::testing::ElementsAre;
+using ::testing::Pair;
+
+namespace {
+
+std::vector<std::pair<uint64_t, uint64_t>> GetAigFanins(
+    const mockturtle::aig_network& ntk,
+    mockturtle::aig_network::node node)
+{
+  std::vector<std::pair<uint64_t, uint64_t>> fanins;
+  ntk.foreach_fanin(node, [&](const auto& signal) {
+    fanins.emplace_back(signal.index, signal.complement);
+  });
+
+  return fanins;
+}
+
+}  // namespace
 
 class MockturtleTest : public CutFixture
 {
@@ -145,6 +163,52 @@ TEST_F(MockturtleTest, ExtractSideOutputsCorrectly)
   // Since a single net feeds both of these outputs should expect just 1 output
   EXPECT_EQ(cut.primary_outputs().size(), 1);
   EXPECT_THAT(primary_output_names, Contains("flop_net"));
+}
+
+TEST(MockturtleAigTest, CreateIteBuildsDeterministicIntermediateSignals)
+{
+  mockturtle::aig_network ntk;
+
+  const auto cond = ntk.create_pi();
+  const auto f_then = ntk.create_pi();
+  const auto f_else = ntk.create_pi();
+
+  const auto ite = ntk.create_ite(cond, f_then, f_else);
+
+  EXPECT_EQ(ntk.num_gates(), 3);
+  EXPECT_EQ(ite.index, 6);
+  EXPECT_EQ(ite.complement, 1);
+
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(4)),
+              ElementsAre(Pair(1, 0), Pair(2, 0)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(5)),
+              ElementsAre(Pair(1, 1), Pair(3, 0)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(6)),
+              ElementsAre(Pair(4, 1), Pair(5, 1)));
+}
+
+TEST(MockturtleAigTest, CreateMajBuildsDeterministicIntermediateSignals)
+{
+  mockturtle::aig_network ntk;
+
+  const auto a = ntk.create_pi();
+  const auto b = ntk.create_pi();
+  const auto c = ntk.create_pi();
+
+  const auto maj = ntk.create_maj(a, b, c);
+
+  EXPECT_EQ(ntk.num_gates(), 4);
+  EXPECT_EQ(maj.index, 7);
+  EXPECT_EQ(maj.complement, 1);
+
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(4)),
+              ElementsAre(Pair(1, 0), Pair(2, 0)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(5)),
+              ElementsAre(Pair(1, 1), Pair(2, 1)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(6)),
+              ElementsAre(Pair(3, 0), Pair(5, 1)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(7)),
+              ElementsAre(Pair(4, 1), Pair(6, 1)));
 }
 
 }  // namespace cut

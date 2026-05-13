@@ -361,12 +361,16 @@ public:
       f_compl = true;
     }
 
-    return create_and( !create_and( !cond, f_else ), !create_and( cond, f_then ) ) ^ !f_compl;
+    auto a1 = !create_and( !cond, f_else );
+    auto a2 = !create_and( cond, f_then );
+    return create_and( a1, a2 ) ^ !f_compl;
   }
 
   signal create_maj( signal const& a, signal const& b, signal const& c )
   {
-    return create_or( create_and( a, b ), create_and( c, !create_and( !a, !b ) ) );
+    auto a1 = create_and( a, b );
+    auto a2 = create_and( c, !create_and( !a, !b ) );
+    return create_or( a1, a2 );
   }
 
   signal create_xor3( signal const& a, signal const& b, signal const& c )
