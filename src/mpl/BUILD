@@ -42,7 +42,7 @@ cc_library(
         "src/shapes.h",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.random",
     ],
