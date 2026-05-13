@@ -29,11 +29,7 @@ class _dbChipBumpInst : public _dbObject
   dbId<_dbChipBump> chip_bump_;
   dbId<_dbChipRegionInst> chip_region_inst_;
   dbId<_dbChipBumpInst> region_next_;
-  // dbSta encodes Pin* via lower-3-bits pointer tag; the base pointer must
-  // be 8-byte aligned. _dbObject(8B) + three dbId(4B) = 20B leaves the
-  // dbTable storage stride at 20, alternating 8- and 4-aligned addresses.
-  // Padding to 24 restores 8-alignment for every object.
-  uint32_t pad_for_pointer_tag_alignment_ = 0;
+  uint32_t pad_for_pointer_tag_alignment_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipBumpInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipBumpInst& obj);

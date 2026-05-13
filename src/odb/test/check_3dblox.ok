@@ -5,7 +5,7 @@
 [INFO ODB-0128] Design: fake_macros
 [INFO ODB-0131]     Created 10 components and 32 component-terminals.
 [INFO ODB-0133]     Created 12 nets and 24 connections.
-[WARNING STA-3002] 3DIC chiplet 'SoC': 2/2 bump pads not mapped to a chiplet port (missing name in .bmap col 4). Paths through them drop.
+[WARNING STA-3002] 3DIC chiplet 'SoC': 2/2 bump pads not mapped to a chiplet port (missing name in .bmap col 5). Paths through them drop.
 [INFO STA-3000] 3DIC STA active: 2 chiplets, 0 top-level nets, 2 3D bond regions, 0 bump pads.
 [WARNING ODB-0151] Found 1 floating chip sets
 [WARNING ODB-0207] Invalid connection soc_to_soc: soc_inst_duplicate/front_reg (faces BOTTOM) to soc_inst/front_reg (faces TOP)

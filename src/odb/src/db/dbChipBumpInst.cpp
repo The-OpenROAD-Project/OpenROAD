@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbChipBumpInst.h"
 
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -42,6 +44,7 @@ bool _dbChipBumpInst::operator<(const _dbChipBumpInst& rhs) const
 
 _dbChipBumpInst::_dbChipBumpInst(_dbDatabase* db)
 {
+  pad_for_pointer_tag_alignment_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipBumpInst& obj)
