@@ -592,10 +592,18 @@ void PatternRoute::calculateRoutingCosts(
     via_costs[layer_index] = via_costs[layer_index - 1]
                              + grid_graph_->getViaCost(layer_index - 1, *node);
   }
+
+  const LayerRange& net_range = net_->getLayerRange();
   IntervalT fixed_layers(node->getFixedLayers());
-  fixed_layers.set(
-      std::min(fixed_layers.low(), grid_graph_->getNumLayers() - 1),
-      std::max(fixed_layers.high(), constants_.min_routing_layer));
+  if (fixed_layers.isValid()) {
+    fixed_layers.set(
+        std::min(fixed_layers.low(), grid_graph_->getNumLayers() - 1),
+        std::max(fixed_layers.high(), net_range.min_layer));
+  } else {
+    // Steiner node with no pin attached: any layer the net is allowed
+    // on is acceptable.
+    fixed_layers.set(net_range.min_layer, net_range.max_layer);
+  }
 
   for (int low_layer_index = 0; low_layer_index <= fixed_layers.low();
        low_layer_index++) {

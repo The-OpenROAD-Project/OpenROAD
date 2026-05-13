@@ -47,6 +47,10 @@ class GRNet
   bool isCritical() const { return is_critical_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
+  // Per-net (0-based) routing layer range: signal nets get
+  // [signal_min, signal_max]; clock nets get [clk_min, clk_max] when
+  // the user set them via `set_routing_layers -clock`.
+  const LayerRange& getLayerRange() const { return layer_range_; }
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
   void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
