@@ -2,8 +2,6 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <any>
-#include <boost/json/object.hpp>
-#include <boost/json/parse.hpp>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -11,6 +9,8 @@
 #include <string>
 #include <string_view>
 
+#include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -1062,18 +1062,22 @@ TEST_F(DRCHandlerTest, HighlightClear)
   EXPECT_TRUE(state_.highlight_rects.empty());
 }
 
-TEST_F(DRCHandlerTest, DRCOverlayIncludesVisibleMarkers)
+TEST_F(DRCHandlerTest, SelectCategoryStartsWithEmptyOverlay)
 {
-  createTestCategory("DRC", 3);
+  auto* top = createTestCategory("DRC", 3);
 
   WebSocketRequest req;
   req.type = WebSocketRequest::kDrcMarkers;
   req.json = parseObj(R"({"category":"DRC"})");
   handler_->handleDRCMarkers(req, state_);
 
-  // All 3 markers should appear in the DRC overlay
+  // Selecting a category clears all markers' visibility — the user must
+  // explicitly check individual markers (or use the batch toggle) to see them.
+  for (odb::dbMarker* m : top->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
+  }
   std::lock_guard<std::mutex> lock(state_.drc_mutex);
-  EXPECT_EQ(state_.drc_rects.size(), 3u);
+  EXPECT_TRUE(state_.drc_rects.empty());
 }
 
 TEST_F(DRCHandlerTest, SelectEmptyCategoryClearsOverlay)
@@ -1105,7 +1109,7 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
 {
   auto* top = createTestCategory("DRC", 3);
 
-  // Select category to populate overlay
+  // Select category — handleDRCMarkers starts every marker invisible.
   {
     WebSocketRequest req;
     req.type = WebSocketRequest::kDrcMarkers;
@@ -1113,18 +1117,21 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     handler_->handleDRCMarkers(req, state_);
   }
 
-  // All 3 markers should be in overlay
+  // Overlay starts empty (all markers invisible by design).
   {
     std::lock_guard<std::mutex> lock(state_.drc_mutex);
-    EXPECT_EQ(state_.drc_rects.size(), 3u);
+    EXPECT_TRUE(state_.drc_rects.empty());
+  }
+  for (odb::dbMarker* m : top->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
   }
 
-  // Hide all markers in one batch request
+  // Show all markers in one batch request
   {
     WebSocketRequest req;
     req.id = 200;
     req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
-    req.json = parseObj(R"({"category":"DRC","visible":false})");
+    req.json = parseObj(R"({"category":"DRC","visible":true})");
 
     auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson);
@@ -1134,36 +1141,35 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     EXPECT_NE(json.find("\"count\":3"), std::string::npos);
   }
 
-  // All markers should now be hidden
-  auto all_markers = top->getAllMarkers();
-  for (odb::dbMarker* m : all_markers) {
-    EXPECT_FALSE(m->isVisible());
+  // All markers should now be visible
+  for (odb::dbMarker* m : top->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
   }
 
-  // Overlay should be empty
+  // Overlay should hold all 3 rects
   {
     std::lock_guard<std::mutex> lock(state_.drc_mutex);
-    EXPECT_TRUE(state_.drc_rects.empty());
+    EXPECT_EQ(state_.drc_rects.size(), 3u);
   }
 
-  // Show them again
+  // Hide them again
   {
     WebSocketRequest req;
     req.id = 201;
     req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
-    req.json = parseObj(R"({"category":"DRC","visible":true})");
+    req.json = parseObj(R"({"category":"DRC","visible":false})");
 
     auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson);
   }
 
   for (odb::dbMarker* m : top->getAllMarkers()) {
-    EXPECT_TRUE(m->isVisible());
+    EXPECT_FALSE(m->isVisible());
   }
 
   {
     std::lock_guard<std::mutex> lock(state_.drc_mutex);
-    EXPECT_EQ(state_.drc_rects.size(), 3u);
+    EXPECT_TRUE(state_.drc_rects.empty());
   }
 }
 

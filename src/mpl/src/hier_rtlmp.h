@@ -323,42 +323,4 @@ class HierRTLMP
   bool is_debug_only_final_result_{false};
 };
 
-class Pusher
-{
- public:
-  Pusher(utl::Logger* logger,
-         Cluster* root,
-         odb::dbBlock* block,
-         const std::vector<odb::Rect>& io_blockages);
-
-  void pushMacrosToCoreBoundaries();
-
- private:
-  void setIOBlockages(const std::vector<odb::Rect>& io_blockages);
-  bool designHasSingleCentralizedMacroArray();
-  void pushMacroClusterToCoreBoundaries(
-      Cluster* macro_cluster,
-      const std::map<Boundary, int>& boundaries_distance);
-  void fetchMacroClusters(Cluster* parent,
-                          std::vector<Cluster*>& macro_clusters);
-  std::map<Boundary, int> getDistanceToCloseBoundaries(Cluster* macro_cluster);
-  void moveHardMacro(HardMacro* hard_macro, Boundary boundary, int distance);
-  void moveMacroClusterBox(odb::Rect& cluster_box,
-                           Boundary boundary,
-                           int distance);
-  bool overlapsWithHardMacro(
-      const odb::Rect& cluster_box,
-      const std::vector<HardMacro*>& cluster_hard_macros);
-  bool overlapsWithIOBlockage(const odb::Rect& cluster_box) const;
-
-  utl::Logger* logger_;
-
-  Cluster* root_;
-  odb::dbBlock* block_;
-  odb::Rect core_;
-
-  std::vector<odb::Rect> io_blockages_;
-  std::vector<HardMacro*> hard_macros_;
-};
-
 }  // namespace mpl

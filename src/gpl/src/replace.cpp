@@ -82,7 +82,7 @@ void Replace::checkHasCoreRows()
 void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
-  log_->info(GPL, 6, "Execute incremental mode global placement.");
+  log_->info(GPL, 83, "Execute incremental mode global placement.");
   int placed_cnt = 0;
   int unplaced_cnt = 0;
   bool is_pbc_new = (pbc_ == nullptr);
@@ -317,7 +317,7 @@ int Replace::doNesterovPlace(const int threads,
     return 0;
   }
 
-  log_->info(GPL, 7, "---- Execute Nesterov Global Placement.");
+  log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
   if (options.timingDrivenMode) {
     rs_->resizeSlackPreamble();
   }

@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <boost/json/object.hpp>
-#include <boost/json/value.hpp>
-#include <boost/json/value_to.hpp>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -17,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/object.hpp"
+#include "boost/json/value.hpp"
+#include "boost/json/value_to.hpp"
 #include "color.h"
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -117,6 +117,7 @@ struct WebSocketRequest
     kDrcHighlight,
     kDebugContinue,
     kDebugCharts,
+    kGet3DData,
     kUnknown
   };
 
@@ -230,6 +231,7 @@ class SelectHandler
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
+  WebSocketResponse handleGet3DData(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

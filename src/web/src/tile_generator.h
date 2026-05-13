@@ -4,7 +4,6 @@
 #pragma once
 
 #include <any>
-#include <boost/json/object.hpp>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -17,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/object.hpp"
 #include "color.h"
 #include "glyph_cache.h"
 #include "odb/db.h"
