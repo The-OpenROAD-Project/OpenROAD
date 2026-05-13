@@ -18,6 +18,9 @@ cc_library(
         "src/OdbCallBack.h",
         "src/SteinerRenderer.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//src/grt:groute",
@@ -61,8 +64,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
-        "@boost.container_hash",
-        "@boost.multi_array",
         "@spdlog",
     ],
 )
@@ -98,8 +99,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
-        "@boost.container_hash",
-        "@boost.multi_array",
         "@boost.stacktrace",
         "@spdlog",
         "@tcl_lang//:tcl",

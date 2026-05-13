@@ -6,10 +6,10 @@ OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** 
 
 **Every new test MUST be registered in BOTH build systems. Missing either one is a build break.**
 
-| Build System | Registration File | Block/Macro |
-|-------------|-------------------|-------------|
-| **CMake** | `src/<module>/test/CMakeLists.txt` | `or_integration_tests(...)` |
-| **Bazel** | `src/<module>/test/BUILD` | `regression_test(...)` |
+| Build System | Registration File                  | Block/Macro                 |
+| ------------ | ---------------------------------- | --------------------------- |
+| **CMake**    | `src/<module>/test/CMakeLists.txt` | `or_integration_tests(...)` |
+| **Bazel**    | `src/<module>/test/BUILD`          | `regression_test(...)`      |
 
 Forgetting the Bazel `BUILD` file is the most common mistake -- CMake-only registration
 silently passes local `make test` but the **test will be missing from Bazel CI**.
@@ -36,6 +36,12 @@ ctest -R "rsz\.buffer_ports1\.tcl"
 ### Creating a New Integration Test
 
 Best practice reference: `src/rsz/test/repair_tie12_hier.tcl`
+
+#### Issue Reproduction Tests
+
+For issue reproductions, keep the test case minimal and focused on the failing tool behavior. When floorplanning or placement is not part of the bug, encode the small problem design directly in DEF and use `read_def` after loading the necessary LEF and Liberty files instead of running floorplanning or global placement. This keeps the test simpler and more stable across unrelated OpenROAD behavior changes. Use floorplanning or placement steps when those stages are part of the behavior under test.
+
+#### Checklist
 
 1. **Header comment**: First line must explain the test purpose
    ```tcl

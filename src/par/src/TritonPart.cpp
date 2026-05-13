@@ -21,6 +21,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Coarsener.h"
@@ -56,6 +57,34 @@
 using utl::PAR;
 
 namespace par {
+
+namespace {
+
+std::vector<odb::dbBTerm*> getSortedBTerms(odb::dbBlock* block)
+{
+  auto terms = block->getBTerms();
+  std::vector<odb::dbBTerm*> sorted_terms(terms.begin(), terms.end());
+  std::ranges::sort(sorted_terms, compareDbObjectsByNameAndId<odb::dbBTerm>);
+  return sorted_terms;
+}
+
+std::vector<odb::dbInst*> getSortedInsts(odb::dbBlock* block)
+{
+  auto insts = block->getInsts();
+  std::vector<odb::dbInst*> sorted_insts(insts.begin(), insts.end());
+  std::ranges::sort(sorted_insts, compareDbObjectsByNameAndId<odb::dbInst>);
+  return sorted_insts;
+}
+
+std::vector<odb::dbNet*> getSortedNets(odb::dbBlock* block)
+{
+  auto nets = block->getNets();
+  std::vector<odb::dbNet*> sorted_nets(nets.begin(), nets.end());
+  std::ranges::sort(sorted_nets, compareDbObjectsByNameAndId<odb::dbNet>);
+  return sorted_nets;
+}
+
+}  // namespace
 
 // -----------------------------------------------------------------------------------
 // Public functions
@@ -377,7 +406,9 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
 
   // Write out the solution.
   // Format 1: write the clustered netlist in verilog directly
-  for (auto term : block_->getBTerms()) {
+  const auto sorted_terms = getSortedBTerms(block_);
+  const auto sorted_insts = getSortedInsts(block_);
+  for (auto term : sorted_terms) {
     auto vertex_id_property = odb::dbIntProperty::find(term, "vertex_id");
     const int vertex_id = vertex_id_property->getValue();
     if (vertex_id == -1) {
@@ -391,7 +422,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     }
   }
 
-  for (auto inst : block_->getInsts()) {
+  for (auto inst : sorted_insts) {
     auto vertex_id_property = odb::dbIntProperty::find(inst, "vertex_id");
     const int vertex_id = vertex_id_property->getValue();
     if (vertex_id == -1) {
@@ -425,14 +456,14 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     std::ofstream file_output;
     file_output.open(solution_file_name);
 
-    for (auto term : block_->getBTerms()) {
+    for (auto term : sorted_terms) {
       if (auto property = odb::dbIntProperty::find(term, "partition_id")) {
         file_output << term->getName() << "  ";
         file_output << property->getValue() << "  \n";
       }
     }
 
-    for (auto inst : block_->getInsts()) {
+    for (auto inst : sorted_insts) {
       if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
         file_output << inst->getName() << "  ";
         file_output << property->getValue() << "  \n";
@@ -1215,10 +1246,12 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   placement_attr_.clear();
   // traverse all the instances
   int vertex_id = 0;
+  const auto sorted_terms = getSortedBTerms(block_);
+  const auto sorted_insts = getSortedInsts(block_);
   // check if the fence constraint is specified
   if (fence_flag_) {
     // check IO ports
-    for (auto term : block_->getBTerms()) {
+    for (auto term : sorted_terms) {
       // -1 means that the instance is not used by the partitioner
       odb::dbIntProperty::create(term, "vertex_id", -1);
       odb::Rect box = term->getBBox();
@@ -1238,7 +1271,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       }
     }
     // check instances
-    for (auto inst : block_->getInsts()) {
+    for (auto inst : sorted_insts) {
       // -1 means that the instance is not used by the partitioner
       odb::dbIntProperty::create(inst, "vertex_id", -1);
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -1273,7 +1306,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       }
     }
   } else {
-    for (auto term : block_->getBTerms()) {
+    for (auto term : sorted_terms) {
       odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
       vertex_types_.emplace_back(kPort);
       std::vector<float> vwts(vertex_dimensions_, 0.0);
@@ -1286,7 +1319,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       }
     }
 
-    for (auto inst : block_->getInsts()) {
+    for (auto inst : sorted_insts) {
       // -1 means that the instance is not used by the partitioner
       odb::dbIntProperty::create(inst, "vertex_id", -1);
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
@@ -1411,7 +1444,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   // Traverse the hyperedge and assign hyperedge_id to each net
   // the hyperedge_id property will be removed after partitioning
   int hyperedge_id = 0;
-  for (auto net : block_->getNets()) {
+  for (auto net : getSortedNets(block_)) {
     odb::dbIntProperty::create(net, "hyperedge_id", -1);
     // ignore all the power net
     if (net->getSigType().isSupply()) {
@@ -1673,6 +1706,11 @@ void TritonPart::BuildTimingPaths()
       "netlist",
       1,
       "Normalizing the slack of each path based on maximum clock period");
+  std::ranges::sort(timing_paths_,
+                    [](const TimingPath& lhs, const TimingPath& rhs) {
+                      return std::tie(lhs.slack, lhs.path, lhs.arcs)
+                             < std::tie(rhs.slack, rhs.path, rhs.arcs);
+                    });
   // resize the hyperedge_slacks_
   hyperedge_slacks_.clear();
   hyperedge_slacks_.resize(num_hyperedges_);
@@ -1684,7 +1722,7 @@ void TritonPart::BuildTimingPaths()
              "Normalizing the slack of each net based on maximum clock period");
   int num_unconstrained_hyperedges = 0;
   // check the slack on each net
-  for (auto db_net : block_->getNets()) {
+  for (auto db_net : getSortedNets(block_)) {
     const int hyperedge_id
         = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
     if (hyperedge_id == -1) {

@@ -11,7 +11,10 @@
 #include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
+#include "sta/Graph.hh"
+#include "sta/Network.hh"
 #include "sta/Property.hh"
+#include "sta/Report.hh"
 #include "sta/VerilogWriter.hh"
 
 namespace ord {
@@ -220,6 +223,35 @@ replace_hier_module_cmd(odb::dbModInst* mod_inst, odb::dbModule* module)
 
 
 namespace sta {
+
+void
+report_levelized_drvr_vertices(int max_count)
+{
+  ord::OpenRoad *openroad = ord::getOpenRoad();
+  sta::dbSta *sta = openroad->getSta();
+  sta->ensureGraph();
+  const sta::VertexSeq &drvrs = sta->levelizedDrvrVertices();
+  sta::Report *report = sta->report();
+  const sta::Network *network = sta->network();
+  report->report("driver vertex count {}", drvrs.size());
+  sta::Level prev_level = -1;
+  int n = 0;
+  for (sta::Vertex *vertex : drvrs) {
+    sta::Level level = vertex->level();
+    if (level < prev_level) {
+      report->report("level order violated {} {} < {}",
+                     network->pathName(vertex->pin()),
+                     level, prev_level);
+    }
+    if (n < max_count) {
+      report->report("{} level={}",
+                     network->pathName(vertex->pin()),
+                     level);
+    }
+    prev_level = level;
+    n++;
+  }
+}
 
 void check_axioms_cmd()
 {

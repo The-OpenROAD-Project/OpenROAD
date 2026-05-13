@@ -2,6 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 %{
+#include <cstdlib>
+
 #include "ord/OpenRoad.hh"
 #include "web/web.h"
 %}
@@ -13,10 +15,29 @@
 namespace web {
 
 void
-web_server_cmd(int port, const char* doc_root)
+web_server_cmd(int port)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
-  server->serve(port, doc_root);
+  server->serve(port);
+}
+
+void
+web_server_wait_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->waitForStop();
+  // If `exit` was typed in the browser tcl widget, do the real process
+  // exit here on the main thread (workers are already joined).
+  if (server->exitRequested()) {
+    std::exit(EXIT_SUCCESS);
+  }
+}
+
+void
+web_server_stop_cmd()
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->requestStop();
 }
 
 void

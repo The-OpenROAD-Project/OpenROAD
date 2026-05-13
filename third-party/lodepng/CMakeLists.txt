@@ -7,5 +7,5 @@ add_library(lodepng
 
 target_include_directories(lodepng
   PUBLIC
-    .
+    ${OPENROAD_HOME}
 )

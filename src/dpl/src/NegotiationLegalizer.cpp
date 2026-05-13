@@ -793,7 +793,7 @@ bool NegotiationLegalizer::initFromDb()
         logger_,
         utl::DPL,
         "negotiation",
-        1,
+        2,
         "DEBUG cell init: {} height={} flippable={} rail_type={} "
         "rail_type_flipped={}",
         db_inst->getName(),
@@ -1093,7 +1093,7 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       logger_,
       utl::DPL,
       "negotiation",
-      1,
+      2,
       "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
       "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
       rowIdx,

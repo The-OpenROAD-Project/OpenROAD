@@ -57,12 +57,11 @@ class WireLengthEvaluator
   WireLengthEvaluator(dbBlock* block) : block_(block) {}
   int64_t hpwl() const;
   int64_t hpwl(int64_t& hpwl_x, int64_t& hpwl_y) const;
+  int64_t hpwl(dbNet* net, int64_t& hpwl_x, int64_t& hpwl_y) const;
   void reportEachNetHpwl(utl::Logger* logger) const;
   void reportHpwl(utl::Logger* logger) const;
 
  private:
-  int64_t hpwl(dbNet* net, int64_t& hpwl_x, int64_t& hpwl_y) const;
-
   dbBlock* block_;
 };
 

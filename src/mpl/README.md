@@ -153,6 +153,21 @@ set_macro_halo
 | `-macro_name` | The name of a macro of the design. |
 | `-halo` | The left, bottom, right and top halo or the width (sets both left and right) and height (sets both bottom and top), in microns. Consider the macro orientation as R0 when setting the halo. |
 
+### Block Macro Channels
+
+Creates soft placement blockages around all fixed macros in the design, based on their halos.
+Macros with soft DEF halos are skipped, as other placement-aware tools already honor them.
+
+For each macro, the halo used is resolved by this priority:
+
+1. The per-macro halo set with `set_macro_halo`, if defined.
+2. The DEF halo, floored by the base halo set with `set_macro_base_halo`.
+3. The base halo.
+
+```tcl
+block_macro_channels
+```
+
 ## Example scripts
 
 Example of a script demonstrating how to run `mpl` on a sample design of `bp_fe_top` as follows:

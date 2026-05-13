@@ -4,7 +4,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 
+#include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "clock_tree_report.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -19,6 +22,12 @@ namespace {
 std::string payloadStr(const WebSocketResponse& resp)
 {
   return std::string(resp.payload.begin(), resp.payload.end());
+}
+
+// Helper to parse a JSON literal into a boost::json::object for tests.
+boost::json::object parseObj(std::string_view json)
+{
+  return boost::json::parse(json).as_object();
 }
 
 //------------------------------------------------------------------------------
@@ -136,11 +145,11 @@ TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "clkbuf1";
+  req.json = parseObj(R"({"inst_name":"clkbuf1"})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
   EXPECT_EQ(resp.id, 1u);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"ok\""), std::string::npos);
@@ -157,10 +166,10 @@ TEST_F(ClockTreeHighlightTest, HighlightNonExistentInstance)
   WebSocketRequest req;
   req.id = 2;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "does_not_exist";
+  req.json = parseObj(R"({"inst_name":"does_not_exist"})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // No instance found → no highlight rects
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -182,10 +191,10 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
   WebSocketRequest req;
   req.id = 3;
   req.type = WebSocketRequest::kClockTreeHighlight;
-  req.clock_tree_inst_name = "";
+  req.json = parseObj(R"({"inst_name":""})");
 
   auto resp = handler->handleClockTreeHighlight(req, state_);
-  EXPECT_EQ(resp.type, 0);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
 
   // All state should be cleared
   std::lock_guard<std::mutex> lock(state_.selection_mutex);

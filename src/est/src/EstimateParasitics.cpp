@@ -677,7 +677,6 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
       = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics->incrCap(n1, wire_cap / 2.0);
 
   // Reduce resistance if the net has NDR with increased width
   odb::dbTechNonDefaultRule* ndr
@@ -690,6 +689,7 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
     wire_res /= ndr_ratio;
   }
 
+  parasitics->incrCap(n1, wire_cap / 2.0);
   parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
   parasitics->incrCap(n2, wire_cap / 2.0);
 }

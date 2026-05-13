@@ -8,15 +8,26 @@
 
 std::vector<std::string_view> arguments(int argc, char* argv[])
 {
-  std::vector<std::string_view> x = {};
+  std::vector<std::string_view> filtered_args = {};
   for (int i = 1; i < argc; ++i) {
     auto arg = std::string_view(argv[i]);
     if (arg.starts_with("+verilator")) {
       continue;
     }
-    x.push_back(arg);
+    filtered_args.push_back(arg);
   }
-  return x;
+  return filtered_args;
+}
+
+// Write a 64-bit value into a specific 64-bit slot of a wide bus.
+// Yosys flattens unpacked arrays into wide packed buses, so
+// io_ins_down[N] becomes io_ins_down[N*64-1:0] with element i at
+// bits [i*64+63 : i*64].
+static void write_slot(WData* bus, int slot, QData value)
+{
+  int word = slot * 2;  // 64 bits = 2 x 32-bit words
+  bus[word] = static_cast<IData>(value);
+  bus[word + 1] = static_cast<IData>(value >> 32);
 }
 
 int main(int argc, char** argv)
@@ -37,29 +48,39 @@ int main(int argc, char** argv)
   top->reset = 1;
   top->clock = 0;
 
-  // There's no great way to do this, we need to
-  // refer to static names from Verilator generated code,
-  // inject them on the command line.
-  QData* inputs[] = {ARRAY_COLS, ARRAY_ROWS};
-
   top->trace(vcd, 99);  // Trace all levels of hierarchy
   vcd->open(args.front().data());
 
   int tick = 0;
-  for (auto input : inputs) {
-    for (int i = 0; i < 5; i++) {
-      if (Verilated::gotFinish()) {
-        goto done;
-      }
-      *input = tick ^ ((tick / 2) % 2 ? 0 : 0xffffffffffffffffUL);
-      if (tick == 9) {
-        top->reset = 0;
-      }
 
-      for (int k = 0; k < 2; k++) {
-        top->eval();
-        vcd->dump(tick++ * 125);
-        top->clock = !top->clock;
+  // Stimulate column buses (down/up), then row buses (left/right)
+  struct
+  {
+    WData* bus1;
+    WData* bus2;
+    int count;
+  } stimuli[] = {
+      {top->io_ins_down.data(), top->io_ins_up.data(), ARRAY_COLS},
+      {top->io_ins_left.data(), top->io_ins_right.data(), ARRAY_ROWS},
+  };
+
+  for (auto& s : stimuli) {
+    for (int idx = 0; idx < s.count; idx++) {
+      for (int i = 0; i < 5; i++) {
+        if (Verilated::gotFinish()) {
+          goto done;
+        }
+        QData value = tick ^ ((tick / 2) % 2 ? 0 : 0xffffffffffffffffUL);
+        write_slot(s.bus1, idx, value);
+        write_slot(s.bus2, idx, value);
+        if (tick == 9) {
+          top->reset = 0;
+        }
+        for (int k = 0; k < 2; k++) {
+          top->eval();
+          vcd->dump(tick++ * 125);
+          top->clock = !top->clock;
+        }
       }
     }
   }
@@ -68,6 +89,7 @@ done:
   vcd->close();
 
   top->final();
+  delete vcd;
   delete top;
   return 0;
 }

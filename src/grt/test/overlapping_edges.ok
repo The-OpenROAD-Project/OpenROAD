@@ -137,24 +137,24 @@ met5       Horizontal      11536          5880          49.03%
 [INFO GRT-0102] Start extra iteration 3/50
 [INFO GRT-0102] Start extra iteration 4/50
 [INFO GRT-0102] Start extra iteration 5/50
-[INFO GRT-0197] Via related to pin nodes: 42939
-[INFO GRT-0198] Via related Steiner nodes: 1068
+[INFO GRT-0197] Via related to pin nodes: 42902
+[INFO GRT-0198] Via related Steiner nodes: 1080
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 55942
-[INFO GRT-0112] Final usage 3D: 216205
+[INFO GRT-0111] Final number of vias: 55872
+[INFO GRT-0112] Final usage 3D: 216003
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             51023         15754           30.88%             0 /  0 /  0
-met2             51565         23068           44.74%             0 /  0 /  0
-met3             38776          3838            9.90%             0 /  0 /  0
-met4             23329          5631           24.14%             0 /  0 /  0
-met5              5880            88            1.50%             0 /  0 /  0
+met1             51023         15790           30.95%             0 /  0 /  0
+met2             51565         23071           44.74%             0 /  0 /  0
+met3             38776          3829            9.87%             0 /  0 /  0
+met4             23329          5626           24.12%             0 /  0 /  0
+met5              5880            71            1.21%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           170573         48379           28.36%             0 /  0 /  0
+Total           170573         48387           28.37%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 468330 um
+[INFO GRT-0018] Total wirelength: 468323 um
 [INFO GRT-0014] Routed nets: 7064
 No differences found.

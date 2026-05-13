@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "TritonPart.h"
+#include "Utilities.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -323,7 +324,10 @@ void PartitionMgr::getRents(float& r_ratio, float& p, float& q, float& avg_k)
       = std::make_shared<TritonPart>(db_network_, db_, sta_, logger_);
   double tot_pins = 0;
   int id = 0;
-  for (dbInst* inst : block->getInsts()) {
+  std::vector<dbInst*> insts(block->getInsts().begin(),
+                             block->getInsts().end());
+  std::ranges::sort(insts, compareDbObjectsByNameAndId<dbInst>);
+  for (dbInst* inst : insts) {
     for (dbITerm* inst_iterm : inst->getITerms()) {
       if (inst_iterm->getIoType() == dbIoType::INPUT
           || inst_iterm->getIoType() == dbIoType::OUTPUT) {
@@ -447,7 +451,9 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   vertex_weight.reserve(num_insts);
   cluster_nets.reserve(num_insts);
 
-  for (odb::dbInst* inst : cluster->getInsts()) {
+  auto cluster_insts = cluster->getInsts();
+  std::ranges::sort(cluster_insts, compareDbObjectsByNameAndId<odb::dbInst>);
+  for (odb::dbInst* inst : cluster_insts) {
     inst_vertex_id_map[inst] = vertex_id++;
     vertex_weight.push_back(1.0f);
     auto inst_prop = odb::dbIntProperty::find(inst, "inst_id");
@@ -468,13 +474,14 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   // Make the iteration order stable
   std::vector<odb::dbNet*> cluster_nets_sorted(cluster_nets.begin(),
                                                cluster_nets.end());
-  std::ranges::sort(cluster_nets_sorted);
-  /*
-  std::sort(
-      cluster_nets_sorted.begin(),
-      cluster_nets_sorted.end(),
-      [](odb::dbNet* a, odb::dbNet* b) { return a->getName() < b->getName(); });
-  */
+  std::ranges::sort(cluster_nets_sorted, [](odb::dbNet* lhs, odb::dbNet* rhs) {
+    const std::string lhs_name = lhs->getName();
+    const std::string rhs_name = rhs->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return lhs->getId() < rhs->getId();
+  });
   for (odb::dbNet* net : cluster_nets_sorted) {
     int driver_id = -1;
     std::set<int> loads_id;
@@ -559,6 +566,7 @@ int PartitionMgr::getClusterIONum(std::vector<bool>& inside,
 {
   std::vector<odb::dbInst*> c_insts = cluster->getInsts();
   std::unordered_set<odb::dbNet*> c_nets;
+  std::ranges::sort(c_insts, compareDbObjectsByNameAndId<odb::dbInst>);
 
   for (odb::dbInst* inst : c_insts) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -571,6 +579,8 @@ int PartitionMgr::getClusterIONum(std::vector<bool>& inside,
   }
 
   int terms = 0;
+  std::vector<odb::dbNet*> sorted_nets(c_nets.begin(), c_nets.end());
+  std::ranges::sort(sorted_nets, compareDbObjectsByNameAndId<odb::dbNet>);
   for (odb::dbNet* net : c_nets) {
     if (!net) {
       continue;

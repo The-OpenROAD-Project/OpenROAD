@@ -167,6 +167,12 @@ set_macro_placement_file(std::string file_name)
   getMacroPlacer()->setMacroPlacementFile(file_name);
 }
 
+void
+block_macro_channels()
+{
+  getMacroPlacer()->blockMacroChannels();
+}
+
 } // namespace
 
 %} // inline

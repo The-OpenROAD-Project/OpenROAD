@@ -3,7 +3,7 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
-export function createWebSocketTileLayer(visibility) {
+export function createWebSocketTileLayer(visibility, visibleLayers) {
     return L.GridLayer.extend({
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
@@ -37,14 +37,19 @@ export function createWebSocketTileLayer(visibility) {
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = v ? 1 : 0;
+                vf[k] = !!v;
             }
+            // Store the request ID so _removeTile() can cancel it
+            // when the tile is discarded (e.g. during zoom).
+            tile._websocketRequestId = this._websocketManager.nextId;
+
             this._websocketManager.request({
                 type: 'tile',
                 layer: this._layerName,
                 z: coords.z,
                 x: coords.x,
                 y: coords.y,
+                visible_layers: visibleLayers ? [...visibleLayers] : [],
                 ...vf,
             }).then(data => {
                 if (typeof data === 'string') {
@@ -66,7 +71,7 @@ export function createWebSocketTileLayer(visibility) {
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = v ? 1 : 0;
+                vf[k] = !!v;
             }
 
             for (const key in this._tiles) {
@@ -90,6 +95,7 @@ export function createWebSocketTileLayer(visibility) {
                     z: coords.z,
                     x: coords.x,
                     y: coords.y,
+                    visible_layers: visibleLayers ? [...visibleLayers] : [],
                     ...vf,
                 }).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {

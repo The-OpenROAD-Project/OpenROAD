@@ -15,7 +15,7 @@ cc_library(
     data = [
         "//test:nangate45_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [":tst"],
 )
@@ -27,7 +27,7 @@ cc_library(
     data = [
         "//test:sky130hd_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [":tst"],
 )
@@ -66,7 +66,7 @@ cc_library(
         "//test:nangate45_data",
         "//test:sky130hd_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [
         ":tst",

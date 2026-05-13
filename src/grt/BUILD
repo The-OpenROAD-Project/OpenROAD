@@ -18,15 +18,21 @@ cc_library(
         "src/fastroute/include/AbstractFastRouteRenderer.h",
         "src/fastroute/include/DataType.h",
     ],
+    includes = ["src/fastroute/include"],
     visibility = ["//visibility:private"],
     deps = [
         "//src/stt",
+        "//src/utl",
     ],
 )
 
 cc_library(
     name = "groute",
     hdrs = ["include/grt/GRoute.h"],
+    includes = [
+        "include",
+    ],
+    deps = ["//src/odb"],
 )
 
 cc_library(
@@ -46,6 +52,9 @@ cc_library(
         "src/fastroute/include/FastRoute.h",
         "src/fastroute/include/FastRouteRenderer.h",
         "src/fastroute/include/Graph2D.h",
+    ],
+    copts = [
+        "-fopenmp",
     ],
     includes = [
         "include",
@@ -102,7 +111,6 @@ cc_library(
     ],
     deps = [
         ":groute",
-        "//:ord",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
@@ -149,7 +157,6 @@ cc_library(
         ":groute",
         "//src/ant",
         "//src/dbSta",
-        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/drt:pin_access_service",
@@ -196,26 +203,15 @@ cc_library(
         "src",
     ],
     deps = [
-        ":abstract-fastroute",
-        ":cugr",
         ":fastroute",
         ":groute",
         ":grt",
         "//:ord",
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dpl",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",
-        "//src/stt",
         "//src/utl",
-        "@boost.geometry",
-        "@boost.graph",
-        "@boost.icl",
-        "@boost.iterator",
         "@boost.stacktrace",
-        "@openmp",
         "@tcl_lang//:tcl",
     ],
 )

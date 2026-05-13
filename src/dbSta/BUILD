@@ -28,7 +28,6 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
         "@boost.json",
         "@spdlog",
         "@tcl_lang//:tcl",
@@ -84,8 +83,9 @@ cc_library(
         "src/dbSdcNetwork.hh",
     ],
     includes = [
-        "include",
+        "src",
     ],
+    visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
         "@spdlog",
@@ -106,9 +106,7 @@ cc_library(
     deps = [
         ":dbSta",
         "//src/odb",
-        "//src/sta:opensta_lib",
         "//src/utl",
-        "@spdlog",
     ],
 )
 

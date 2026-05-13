@@ -80,7 +80,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/dbSta",
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:dbSdcNetwork",
     "//src/dbSta:IpChecker",
     "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
@@ -163,6 +162,7 @@ cc_library(
     name = "tcl_readline_setup",
     srcs = ["src/tcl_readline_setup.cc"],
     hdrs = ["src/tcl_readline_setup.h"],
+    includes = ["src"],
     visibility = ["//src/sta:__pkg__"],
     deps = [
         "@tcl_lang//:tcl",
@@ -197,6 +197,7 @@ cc_binary(
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
@@ -251,7 +252,10 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
-    deps = ["@abseil-cpp//absl/synchronization"],
+    deps = [
+        "@abseil-cpp//absl/synchronization",
+        "@tcl_lang//:tcl",
+    ],
 )
 
 cc_library(
@@ -512,6 +516,7 @@ sh_test(
     srcs = ["//bazel:bzl_lint_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -525,6 +530,7 @@ sh_test(
     srcs = ["//bazel:bzl_fmt_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
     data = [
+        "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
     tags = ["local"],
@@ -571,6 +577,7 @@ sh_binary(
         "$(rootpath @buildifier_prebuilt//:buildifier)",
     ],
     data = [
+        "MODULE.bazel",
         "tclint.toml",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",

@@ -57,7 +57,6 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <set>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -786,6 +785,21 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
+std::string dbNetwork::stripParentPrefix(const std::string& name)
+{
+  size_t pos = name.length();
+  while ((pos = name.rfind('/', pos)) != std::string::npos) {
+    if (pos > 0 && name[pos - 1] == '\\') {
+      // Escaped slash inside a Verilog escaped identifier; not a
+      // hierarchy separator.  Keep searching to the left.
+      pos--;
+    } else {
+      return name.substr(pos + 1);
+    }
+  }
+  return name;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -808,10 +822,7 @@ std::string dbNetwork::name(const Port* port) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -855,21 +866,7 @@ std::string dbNetwork::name(const Instance* instance) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = std::string::npos;
-    size_t pos = name.length();
-    while ((pos = name.rfind('/', pos)) != std::string::npos) {
-      if (pos > 0 && name[pos - 1] == '\\') {
-        // This is an escaped slash, so we should ignore it and continue
-        // searching.
-        pos--;
-      } else {
-        last_idx = pos;
-        break;
-      }
-    }
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -2540,7 +2537,10 @@ It also checks the legallity of the pin/net combination.
 
 */
 
-void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+void dbNetwork::connectPin(Pin* pin,
+                           Net* flat_net,
+                           Net* hier_net,
+                           bool reassociate_hier_flat)
 {
   // get the type of the pin
   odb::dbITerm* iterm = nullptr;
@@ -2599,9 +2599,9 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
-      // do the house keeping. Mod net must always have the flat net associated
-      // with it.
-      if (flat_net_db) {
+      // Do the house keeping. A mod net must have the correct flat-net
+      // association when the caller is performing a hierarchy edit.
+      if (flat_net_db && reassociate_hier_flat) {
         reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
       }
     }
@@ -2685,12 +2685,10 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 // Incrementally update drivers.
 void dbNetwork::connectPinAfter(Pin* pin)
 {
-  if (isDriver(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
-  } else if (isHierarchical(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
+  // Update only an existing cache entry; do not prime the cache here --
+  // drivers() will lazily populate on the first read.
+  if (isDriver(pin) || (isHierarchical(pin) && direction(pin)->isAnyOutput())) {
+    addDriverToCacheIfPresent(net(pin), pin);
   }
 }
 
@@ -5122,16 +5120,16 @@ PinSet* dbNetwork::drivers(const Net* net)
     return nullptr;
   }
 
-  // Get or create drvrs pin set
-  auto drvrs_entry = net_drvr_pin_map_.find(net);
-  if (drvrs_entry == net_drvr_pin_map_.end()) {
-    std::tie(drvrs_entry, std::ignore)
-        = net_drvr_pin_map_.insert({net, new PinSet(this)});
+  // Cache hit: return the stored set
+  NetDrvrPinsMap::iterator drvrs_entry = net_drvr_pin_map_.find(net);
+  if (drvrs_entry != net_drvr_pin_map_.end()) {
+    return drvrs_entry->second;
   }
 
-  PinSet* drvrs = drvrs_entry->second;
+  // Cache miss: populate
+  PinSet* drvrs = new PinSet(this);
+  net_drvr_pin_map_.insert({net, drvrs});
 
-  // Insert the driver pin of the net
   dbNet* db_net = findFlatDbNet(net);
   if (db_net == nullptr) {
     return drvrs;
@@ -5145,9 +5143,17 @@ PinSet* dbNetwork::drivers(const Net* net)
   return drvrs;
 }
 
+void dbNetwork::addDriverToCacheIfPresent(const Net* net, const Pin* drvr)
+{
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    entry->second->insert(drvr);
+  }
+}
+
 void dbNetwork::removeDriverFromCache(const Net* net)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     delete entry->second;
     net_drvr_pin_map_.erase(entry);
@@ -5156,7 +5162,7 @@ void dbNetwork::removeDriverFromCache(const Net* net)
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     entry->second->erase(drvr);
   }

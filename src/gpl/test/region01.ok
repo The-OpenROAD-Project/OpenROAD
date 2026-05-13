@@ -111,7 +111,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          32 ,     32
 [INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
 [INFO GPL-0030] Number of bins:                   1024
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.76e-15 |  (spm_inst_0_domain)
         0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.36e-15 |  (spm_inst_1_domain)
        10 |   0.9825 |  5.884226e+03 |   -0.64% |  4.49e-15 |  (spm_inst_0_domain)
