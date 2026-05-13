@@ -120,7 +120,7 @@ class ThreadPool
     // get() patterns without manually handling worker starvation.
     {
       std::lock_guard<std::mutex> lock(lock_);
-      tasks_.push([packaged_task]() { (*packaged_task)(); });
+      tasks_.emplace([task = std::move(packaged_task)]() { (*task)(); });
     }
     cv_.notify_one();
     return ThreadPoolFuture<Result>(this, lifetime_, std::move(future));
