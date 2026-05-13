@@ -152,6 +152,7 @@ class dbStaReport : public sta::ReportTcl
 
 class dbStaCbk : public odb::dbBlockCallBackObj
 {
+  
  public:
   dbStaCbk(dbSta* sta);
   void setNetwork(dbNetwork* network);
