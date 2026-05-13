@@ -982,7 +982,7 @@ void dbNetwork::makeTopCellForChip(dbChip* chip)
   LibertyBuilder builder(debug_, report_);
   for (dbChipInst* chip_inst : chip->getChipInsts()) {
     dbChip* master = chip_inst->getMasterChip();
-    if (master == nullptr || chip_master_cells_.count(master)) {
+    if (master == nullptr || chip_master_cells_.contains(master)) {
       continue;
     }
     LibertyCell* lc

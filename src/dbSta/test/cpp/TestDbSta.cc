@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 
