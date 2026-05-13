@@ -57,6 +57,7 @@ ALL_TESTS = [
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
+    "sdc_modinst_slash",
     "sdc_names1",
     "sdc_names2",
     "spef_def_names",
@@ -295,7 +296,8 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
@@ -315,7 +317,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -328,7 +330,7 @@ cc_test(
     srcs = ["cpp/TestReadVerilog.cpp"],
     data = glob(["cpp/TestReadVerilog*.v"]),
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

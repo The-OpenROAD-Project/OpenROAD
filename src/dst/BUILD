@@ -35,7 +35,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
@@ -66,7 +66,7 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.asio",
         "@boost.stacktrace",

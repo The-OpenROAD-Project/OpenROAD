@@ -176,7 +176,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
@@ -208,7 +208,7 @@ cc_library(
     deps = [
         ":web",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
