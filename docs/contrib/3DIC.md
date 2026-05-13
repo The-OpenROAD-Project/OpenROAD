@@ -5,6 +5,15 @@ Living developer-facing doc for the 3DIC STA enablement work landing in
 not obvious from reading the code alone. Update incrementally as new
 stages land.
 
+**v1 scope.** This PR lands cross-chiplet STA for **single-level**
+hierarchies (one top `dbChip` with direct `dbChipInst` children, no
+nested chiplets) under a **zero-delay** bond model. Two known gaps —
+multi-hierarchical 3DIC support and `dbChipConn` RC parasitics —
+are out of scope here and documented as concrete follow-up work in
+[`3DIC_TODO.md`](3DIC_TODO.md). The single-level assumption is
+load-bearing in `dbNetwork::parent(Instance*)`,
+`DbInstanceChildIterator`, and `dbNetwork::isLeaf(Instance*)`.
+
 ## Mental model: how a chiplet bump becomes an STA Pin
 
 OpenSTA reasons in terms of `Network` abstractions: Instance, Pin, Net,

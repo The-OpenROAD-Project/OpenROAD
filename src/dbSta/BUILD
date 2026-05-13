@@ -120,17 +120,6 @@ cc_library(
     hdrs = [
         "include/db_sta/dbNetwork.hh",
     ],
-    # dbNetwork.cc uses LibertyBuilder (OpenSTA's liberty/LibertyBuilder.hh)
-    # to synthesize per-chip-master LibertyCells with self-arcs on chip-bump
-    # ports — closes the Stage 7 chip-bump clock-anchor caveat. The header
-    # lives outside the public sta/* set, so clang's module system on MacOS
-    # flags it as private. OpenSTA's own BUILD opts out of header modules
-    # (src/sta/BUILD:380 `features = ["-use_header_modules"]`); mirror that
-    # here, and drop the package-level layering_check.
-    features = [
-        "-layering_check",
-        "-use_header_modules",
-    ],
     includes = [
         "include",
     ],
