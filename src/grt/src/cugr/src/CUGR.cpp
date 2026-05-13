@@ -1042,10 +1042,16 @@ void CUGR::saveCongestion()
         }
         const int cap_int = static_cast<int>(std::round(cap));
         const int demand_int = static_cast<int>(std::round(demand));
-        const int overflow_int = demand_int - cap_int;
-        if (overflow_int <= 0) {
-          continue;
-        }
+        // Compute overflow on the unrounded values so a fractional
+        // demand > capacity excess (common after the floor-to-1
+        // adjustment when via-stub demand pushes an integer-capacity
+        // edge slightly over) still produces a marker. Display value
+        // is rounded up to the nearest integer so the comment never
+        // shows "overflow:0" on a tile we just flagged.
+        // TODO: update congestion report and ODB markers with double
+        // for capacities and usages.
+        const int overflow_int
+            = std::max(1, static_cast<int>(std::ceil(demand - cap)));
 
         const auto wc_it = wire_count.find({l, x, y});
         const int wires = wc_it != wire_count.end() ? wc_it->second : 0;
