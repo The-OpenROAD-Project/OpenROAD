@@ -17,8 +17,10 @@
 #include <utility>
 #include <vector>
 
+#include "BaseMove.hh"
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
+#include "RerouteMove.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -1094,21 +1096,50 @@ void RepairDesign::repairNet(sta::Net* net,
                    delayAsString(max_slew1, 3, this));
 
         slew_violation = true;
-        if (repairDriverSlew(corner1, drvr_pin)) {
-          resize_count_++;
+
+        // Try rerouting to a lower-resistance layer first. If the reroute
+        // reduces wire resistance enough, it may fix the slew violation
+        // without requiring driver resizing or buffer insertion.
+        BaseMove* reroute_move = resizer_->reroute_move_.get();
+        if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
+            && reroute_move->doMove(drvr_pin, 0.0f)) {
           estimate_parasitics_->updateParasitics();
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_net",
+                     2,
+                     "after reroute: drvr slew pin={} slew={} max_slew={}",
+                     network_->name(drvr_pin),
+                     delayAsString(slew1, 3, this),
+                     delayAsString(max_slew1, 3, this));
+          logger_->report(
+              "repair_net after reroute: drvr slew pin={} slew={} max_slew={}",
+              network_->name(drvr_pin),
+              delayAsString(slew1, 3, this),
+              delayAsString(max_slew1, 3, this));
         }
 
-        // sta::Slew violation persists after resizing the driver, derive
-        // the max cap we need to apply to remove the slew violation
+        // If slew violation persists after reroute, fall back to driver
+        // resizing and, if still needed, buffer insertion.
         if (slew_slack1 < 0.0f) {
-          sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-          if (drvr_port) {
-            max_cap = findSlewLoadCap(drvr_port, max_slew1, corner1);
-            corner = corner1;
-            repair_cap = true;
+          if (repairDriverSlew(corner1, drvr_pin)) {
+            resize_count_++;
+            estimate_parasitics_->updateParasitics();
+            sta_->findDelays(drvr);
+            checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
+          }
+
+          // sta::Slew violation persists after resizing the driver, derive
+          // the max cap we need to apply to remove the slew violation
+          if (slew_slack1 < 0.0f) {
+            sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+            if (drvr_port) {
+              max_cap = findSlewLoadCap(drvr_port, max_slew1, corner1);
+              corner = corner1;
+              repair_cap = true;
+            }
           }
         }
       }
@@ -1127,16 +1158,63 @@ void RepairDesign::repairNet(sta::Net* net,
                      network_->name(drvr_pin),
                      delayAsString(slew1, 3, this),
                      delayAsString(max_slew1, 3, this));
-          slew_violation = true;
-          repair_load_slew = true;
-          // If repair_cap is true, corner is already set to correspond
-          // to a max_cap violation, do not override in that case
-          if (!repair_cap) {
-            corner = corner1;
+
+          // Try rerouting to a lower-resistance layer before inserting
+          // buffers. RerouteMove rejects nets already rerouted, so this is
+          // safe to call even if we already tried it for a driver slew above.
+          BaseMove* reroute_move = resizer_->reroute_move_.get();
+          if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
+              && reroute_move->doMove(drvr_pin, 0.0f)) {
+            estimate_parasitics_->updateParasitics();
+            sta_->findDelays(drvr);
+            resizer_->checkLoadSlews(
+                drvr_pin, slew_margin_, slew1, max_slew1, slew_slack1, corner1);
+            debugPrint(
+                logger_,
+                RSZ,
+                "repair_net",
+                2,
+                "after reroute: load slew pin={} load_slew={} max_slew={}",
+                network_->name(drvr_pin),
+                delayAsString(slew1, 3, this),
+                delayAsString(max_slew1, 3, this));
+            logger_->report(
+                "repair_net after reroute: drvr slew pin={} slew={} "
+                "max_slew={}",
+                network_->name(drvr_pin),
+                delayAsString(slew1, 3, this),
+                delayAsString(max_slew1, 3, this));
+          }
+
+          if (slew_slack1 < 0.0f) {
+            slew_violation = true;
+            repair_load_slew = true;
+            // If repair_cap is true, corner is already set to correspond
+            // to a max_cap violation, do not override in that case
+            if (!repair_cap) {
+              corner = corner1;
+            }
           }
         } else if (corner_w_load_slew_viol) {
-          // There's a violation hidden by an annotation. Repair still
+          // There's a violation hidden by an annotation. The forward pass
+          // clamped the load pin slew to the limit, so checkLoadSlews above
+          // saw slack==0 and didn't fire. Try rerouting before falling back
+          // to buffer insertion. Even though we can't re-verify the slew here
+          // (the annotation is still active), an improved parasitic from
+          // rerouting will reduce how many buffers are needed.
           slew_violation = true;
+          BaseMove* reroute_move = resizer_->reroute_move_.get();
+          if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
+              && reroute_move->doMove(drvr_pin, 0.0f)) {
+            estimate_parasitics_->updateParasitics();
+            sta_->findDelays(drvr);
+            debugPrint(logger_,
+                       RSZ,
+                       "repair_net",
+                       2,
+                       "rerouted annotated-slew net {}",
+                       network_->name(drvr_pin));
+          }
           repair_load_slew = true;
           if (!repair_cap) {
             corner = corner_w_load_slew_viol;
