@@ -110,10 +110,52 @@ class CUGR
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks();
-  void updateOverflowNets(std::vector<int>& net_indices);
+  /**
+   * @brief Builds the rip-up set of nets touching a congested edge.
+   *
+   * Populates `net_indices` with the indices of every net whose
+   * routing tree contains at least one edge whose
+   * `demand > capacity * threshold`. At threshold == 1.0 the result is
+   * the strict-overflow set (the default used by the pattern/maze
+   * stages); at threshold < 1.0 it widens to include near-overflow
+   * edges, which is how the iterative RRR loop catches the "many nets
+   * piled onto one layer, only a few overflow" failure mode.
+   *
+   * @param net_indices Output: cleared and refilled with the selected
+   *                    net indices.
+   * @param threshold   Per-edge utilization cutoff in [0.0, 1.0]
+   *                    (default 1.0 = strict overflow).
+   */
+  void updateCongestedNets(std::vector<int>& net_indices,
+                           double threshold = 1.0);
+
   void patternRoute(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   void mazeRoute(std::vector<int>& net_indices);
+
+  /**
+   * @brief Stage 4 — iterative rip-up and re-route.
+   *
+   * Wraps the maze stage in a loop that sharpens the logistic cost
+   * slope each pass (so `PatternRoute` and the maze cost surface
+   * penalise full edges more aggressively) and widens the rip-up set
+   * to nets sitting on near-full edges (not just strictly-overflowed
+   * ones). Designed for the per-layer over-concentration failure mode
+   * where many nets pile onto a single low layer while upper layers
+   * stay idle.
+   *
+   * Early-exits when the integer overflow metric (`totalOverflow()`)
+   * is already zero, so designs that finished stage 3 clean pay no
+   * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
+   * remains when the loop ends.
+   *
+   * See `src/grt/doc/01-iterative-rrr.md` for the cost-model audit
+   * and the rationale for the chosen defaults.
+   *
+   * @param net_indices Reused scratch buffer (cleared on entry by
+   *                    `updateCongestedNets`).
+   */
+  void iterativeRRR(std::vector<int>& net_indices);
   void sortNetIndices(std::vector<int>& net_indices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
