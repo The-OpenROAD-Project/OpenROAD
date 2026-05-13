@@ -73,7 +73,7 @@ Stage 1: Pattern routing.
 Nets with overflow: 0.
 Routing statistics
 Wire length:           2841
-Total via count:       193
+Total via count:       186
 Total overflow:        0
 Min resource:          1
 Bottleneck:            (5, 0, 0)
@@ -82,13 +82,13 @@ Bottleneck:            (5, 0, 0)
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1              21571             3            0.01%             0 /  0 /  0
-met1              5511            16            0.29%             0 /  0 /  0
-met2              6471            72            1.11%             0 /  0 /  0
-met3              7012            81            1.16%             0 /  0 /  0
+met1              5511            20            0.36%             0 /  0 /  0
+met2              6471            71            1.10%             0 /  0 /  0
+met3              7012            76            1.08%             0 /  0 /  0
 met4              5402            15            0.28%             0 /  0 /  0
 met5              1554             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            47521           187            0.39%             0 /  0 /  0
+Total            47521           185            0.39%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1584 um
 [INFO GRT-0014] Routed nets: 15

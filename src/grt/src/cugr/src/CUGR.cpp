@@ -82,6 +82,7 @@ void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
                 const std::set<odb::dbNet*>& clock_nets)
 {
+  constants_.min_routing_layer = min_routing_layer - 1;
   design_ = std::make_unique<Design>(db_,
                                      logger_,
                                      constants_,
