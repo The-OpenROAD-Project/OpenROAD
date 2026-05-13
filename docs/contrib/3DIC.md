@@ -338,6 +338,18 @@ still finds both ff/CK pins via `ClkNetwork`'s static BFS, but
 constrained `report_checks` reports "No paths found" because the
 dynamic Search BFS can't reach the second chiplet's CK pin.
 
+## Wire-load model — fanout includes BIDIRECT chip-bump load vertices
+
+STA does **not** build a per-segment drvr → load chain. `Graph::makeWireEdgesFromPin(drvr_pin)` runs `visitConnectedPins(drvr_pin)` to aggregate **every** drvr and **every** load reachable across the fat net (chipnet + term-descended inner nets), then emits pairwise `drvr × load` wire edges via `makeWireEdge`. Implications for 3DIC:
+
+1. **Cross-chiplet data edge has no intermediate bump-pin hop.** The wire edge `chipA/buf/Z → chipB/buf/A` is created in one shot when `chipA/q_bump` (the BIDIRECT driver iterated from chipA's chip_inst pin walk) is processed. The visitor descends into chipA's inner q dbNet (yielding `chipA/buf/Z`, `chipA.q_bterm`) and chipB's inner d dbNet (yielding `chipB/buf/A`, `chipB.d_bterm`). `FindNetDrvrLoads` then classifies — `chipA/buf/Z` joins `drvrs`, `chipB/buf/A` joins `loads` — and the pairwise loop emits the cross-chip wire edge.
+
+2. **Every BIDIRECT chip-bump appears in BOTH drvrs and loads.** `isDriver` and `isLoad` both return true for `direction == bidirect`. So `chipA/q_bump` and `chipB/d_bump` show up as loads in the aggregated set too, and `chipA/buf/Z` gets extra outgoing wire edges to their **load-side vertices** in addition to the real load `chipB/buf/A`. These edges are harmless for path search — the bump load vertex's only outgoing arc is the synthesized `load → bidir_drvr` self-arc, which then re-enters the same chipnet, and `SearchPred` (forward search) only emits paths via the `bidir_drvr_vertex`. No spurious paths form.
+
+3. **Wire-delay calc sees fanout count.** STA's default wire-load lookup uses fanout count (or summed pin caps; chip-bump LibertyPort cap defaults to 0). Every distinct load on a fat net contributes to the count. If two loads dedup on identity (`PinSet`/`NetSet` sort by `id()` — see the per-block discriminator section above), the fanout under-counts and wire delay drops by one tier.
+
+The Stage 7 golden `slack 0.83` was produced under exactly that under-count: cross-block iterm/bterm/net id collisions in `visited_drvrs` / `visited_nets` silently dropped some chip-side loads. After the `block_disc_` fix the load set is correctly sized, fanout grows, and the wire edge `chipA/buf/Z → chipB/buf/A` picks up an extra +0.01 ns, landing at `slack 0.82`. The regen captures the physical-topology-correct value.
+
 ## term(Pin*) history (Stage 4–6.5)
 
 `Network::visitConnectedPins(Pin*, visitor)` (sta base, **not virtual**)
