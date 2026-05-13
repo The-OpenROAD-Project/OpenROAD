@@ -250,7 +250,6 @@ class NegotiationLegalizer
   Network* network_{nullptr};
 
   int site_width_{0};
-  int row_height_{0};
   int die_xlo_{0};
   int die_ylo_{0};
   int die_xhi_{0};

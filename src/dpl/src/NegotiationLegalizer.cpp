@@ -522,13 +522,8 @@ bool NegotiationLegalizer::initFromDb()
   die_xhi_ = core_area.xMax();
   die_yhi_ = core_area.yMax();
 
-  // Site width from the DPL grid; row height from the first DB row.
   site_width_ = dpl_grid->getSiteWidth().v;
-  for (auto* row : block->getRows()) {
-    row_height_ = row->getSite()->getHeight();
-    break;
-  }
-  assert(site_width_ > 0 && row_height_ > 0);
+  assert(site_width_ > 0);
 
   // Grid dimensions from the DPL grid (accounts for actual DB rows).
   grid_w_ = dpl_grid->getRowSiteCount().v;
@@ -537,15 +532,22 @@ bool NegotiationLegalizer::initFromDb()
   // Assign power-rail types from DB row orientations.
   // R0/MY = right-side-up → VSS rail at bottom; MX/R180 = flipped → VDD at
   // bottom.  Rows missing from the DB default to VSS.
+  // Use gridSnapDownY() so this works on hybrid-row designs (where rows do
+  // not share a common height).
   row_rail_.clear();
   row_rail_.resize(grid_h_, NLPowerRailType::kVss);
   for (auto* db_row : block->getRows()) {
     const int y_dbu = db_row->getOrigin().y() - die_ylo_;
-    if (y_dbu < 0 || y_dbu % row_height_ != 0) {
+    if (y_dbu < 0) {
       continue;
     }
-    const int r = y_dbu / row_height_;
-    if (r >= grid_h_) {
+    const int r = dpl_grid->gridSnapDownY(DbuY{y_dbu}).v;
+    if (r < 0 || r >= grid_h_) {
+      continue;
+    }
+    // Verify the row's origin actually lands on a grid row boundary
+    // (otherwise the orientation we'd assign would be ambiguous).
+    if (dpl_grid->gridYToDbu(GridY{r}).v != y_dbu) {
       continue;
     }
     const auto orient = db_row->getOrient();
@@ -598,10 +600,7 @@ bool NegotiationLegalizer::initFromDb()
         1,
         static_cast<int>(
             std::round(static_cast<double>(master->getWidth()) / site_width_)));
-    cell.height = std::max(
-        1,
-        static_cast<int>(std::round(static_cast<double>(master->getHeight())
-                                    / row_height_)));
+    cell.height = dpl_grid->gridHeight(master).v;
 
     // Clamp to valid grid range – gridRoundY can return grid_h_ when the
     // instance is near the top edge.  Use (grid_w_ - width) so the full
@@ -667,9 +666,9 @@ bool NegotiationLegalizer::initFromDb()
           for (auto* box : odb_region->getBoundaries()) {
             RegionRectInline r;
             r.xlo = (box->xMin() - die_xlo_) / site_width_;
-            r.ylo = (box->yMin() - die_ylo_) / row_height_;
+            r.ylo = dpl_grid->gridSnapDownY(DbuY{box->yMin() - die_ylo_}).v;
             r.xhi = (box->xMax() - die_xlo_) / site_width_;
-            r.yhi = (box->yMax() - die_ylo_) / row_height_;
+            r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
             rects.push_back(r);
           }
           it = region_rect_cache.emplace(odb_region, std::move(rects)).first;
@@ -704,11 +703,12 @@ bool NegotiationLegalizer::initFromDb()
                    db_x,
                    db_y,
                    die_xlo_ + cell.init_x * site_width_,
-                   die_ylo_ + cell.init_y * row_height_);
+                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
         // Priority queue keyed on physical Manhattan distance (DBU) so the
         // search expands in true physical proximity, not grid-unit proximity.
-        // One step in X = site_width_ DBU; one step in Y = row_height_ DBU.
+        // One step in X = site_width_ DBU; Y distance is computed via the
+        // DPL grid since pixel rows may have non-uniform heights.
         using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
         std::
             priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>>
@@ -724,8 +724,10 @@ bool NegotiationLegalizer::initFromDb()
           if (!visited.insert(gy * grid_w_ + gx).second) {
             return;
           }
+          const int dy_dbu = dpl_grid->gridYToDbu(GridY{gy}).v
+                             - dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
           const int dist = std::abs(gx - cell.init_x) * site_width_
-                           + std::abs(gy - cell.init_y) * row_height_;
+                           + std::abs(dy_dbu);
           pq.emplace(dist, gx, gy);
         };
 
@@ -878,12 +880,13 @@ void NegotiationLegalizer::initFenceRegions()
     FenceRegion fr;
     fr.id = region->getId();
 
+    const Grid* dpl_grid = opendp_->grid_.get();
     for (auto* box : region->getBoundaries()) {
       FenceRect r;
       r.xlo = (box->xMin() - die_xlo_) / site_width_;
-      r.ylo = (box->yMin() - die_ylo_) / row_height_;
+      r.ylo = dpl_grid->gridSnapDownY(DbuY{box->yMin() - die_ylo_}).v;
       r.xhi = (box->xMax() - die_xlo_) / site_width_;
-      r.yhi = (box->yMax() - die_ylo_) / row_height_;
+      r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
       fr.rects.push_back(r);
     }
 
