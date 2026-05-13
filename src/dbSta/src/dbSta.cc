@@ -442,7 +442,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
       logger_->warn(utl::STA,
                     3002,
                     "3DIC chiplet '{}': {}/{} bump pads not mapped to "
-                    "a chiplet port (missing name in .bmap col 4). "
+                    "a chiplet port (missing name in .bmap col 5). "
                     "Paths through them drop.",
                     master->getName(),
                     bumps_unbound,

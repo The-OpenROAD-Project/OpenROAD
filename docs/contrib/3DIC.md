@@ -413,7 +413,7 @@ warning kinds so missing-data problems surface immediately on
 |---|---|---|
 | STA-3000 | INFO  | Always. `3DIC STA active: <N> chiplets, <M> top-level nets, <K> 3D bond regions, <B> bump pads.` Counts taken at end of `postRead3Dbx`. Tcl-created chip-nets that show up after `read_3dbx` will not be in this count. |
 | STA-3001 | WARN  | A `dbChipNet` has zero bump pads attached → orphan net. Single-bump nets are legitimate top IO and stay silent. |
-| STA-3002 | WARN  | One unique chiplet definition has one or more bumps with no chiplet-port mapping (4th column of `.bmap` is `-`). Aggregated per definition to avoid per-bump spam. Intentional in fixtures (e.g. `dbSta/test/3dic_get_cells.tcl`) — see test comment. |
+| STA-3002 | WARN  | One unique chiplet definition has one or more bumps with no chiplet-port mapping (5th column of `.bmap` is `-`). Aggregated per definition to avoid per-bump spam. Intentional in fixtures (e.g. `dbSta/test/3dic_get_cells.tcl`) — see test comment. |
 
 Tcl helper `report_3dic_summary` (in `dbSta.tcl`) prints the same
 counts plus per-chiplet-instance reference names — useful as a
@@ -423,10 +423,10 @@ post-read sanity check or to dump the structural state mid-flow.
 
 Non-obvious gotchas when adding new 3DIC tests:
 
-1. **`.bmap` 4th column binds bump → chiplet port.**
+1. **`.bmap` 5th column binds bump → chiplet port.**
    Format per line: `<bump_inst_name> <BUMP_macro> <x> <y> <bterm_name> <signal>`.
    `bterm_name = "-"` leaves the bump unbound — STA cannot cross that
-   boundary. Always set the 4th column to a real chiplet `dbBTerm` name
+   boundary. Always set the 5th column to a real chiplet `dbBTerm` name
    unless the test specifically exercises unmapped bumps.
 
 2. **`BUMP` macro center offset constrains `.bmap` XY range.**

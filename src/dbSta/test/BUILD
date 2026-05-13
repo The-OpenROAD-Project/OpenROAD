@@ -109,7 +109,6 @@ filegroup(
         ) + {
             "3dic_cross": [
                 "//src/odb/test:regression_resources",
-                "3dic_cross.3dbx",
                 "3dic_cross_flop.3dbv",
                 "3dic_cross_flop_a.bmap",
                 "3dic_cross_flop_a.def",
