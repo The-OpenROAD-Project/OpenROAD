@@ -143,21 +143,31 @@ jobs:
             if matched:
                 owners.update(o.lstrip("@") for o in matched)
 
-        teams = sorted(o for o in owners if "/" in o)
+        # CODEOWNERS lists teams as "org/slug"; the REST endpoint wants the
+        # bare slug in team_reviewers.
+        team_slugs = sorted(t.split("/", 1)[1] for t in owners if "/" in t)
         users = sorted(o for o in owners
                        if "/" not in o and o.lower() != author.lower())
-        reviewers = teams + users
 
-        if not reviewers:
+        if not (team_slugs or users):
             print("No CODEOWNERS-matched reviewers.")
             sys.exit(0)
 
-        # GitHub's request-reviewers endpoint caps each array at 15; chunk so
-        # PRs that match many owner teams don't get 422'd.
-        for i in range(0, len(reviewers), 15):
-            batch = reviewers[i:i + 15]
-            print("Requesting:", batch)
-            subprocess.check_call(
-                ["gh", "pr", "edit", pr, "--repo", upstream,
-                 "--add-reviewer", ",".join(batch)])
+        # Use the REST POST endpoint directly: `gh pr edit --add-reviewer`
+        # runs a GraphQL query that needs read:org, which our tokens don't
+        # have. POST /pulls/{n}/requested_reviewers only writes, so the
+        # existing repo / pull-requests:write scope is enough. Each array
+        # is capped at 15 per call.
+        def request(body):
+            print("Requesting:", body)
+            subprocess.run(
+                ["gh", "api", "--method", "POST",
+                 f"repos/{upstream}/pulls/{pr}/requested_reviewers",
+                 "--input", "-"],
+                input=json.dumps(body), text=True, check=True)
+
+        for i in range(0, len(team_slugs), 15):
+            request({"team_reviewers": team_slugs[i:i + 15]})
+        for i in range(0, len(users), 15):
+            request({"reviewers": users[i:i + 15]})
         PY
