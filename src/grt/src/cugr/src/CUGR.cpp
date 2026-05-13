@@ -321,20 +321,25 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     return;
   }
 
-  constexpr int kMaxRRRIterations = 5;
+  // Multiplier ramps up to saturate around slope=6 — beyond that the
+  // logistic cost surface degenerates into a step function with no
+  // gradient information, and the maze starts thrashing.
   constexpr double kMultiplierStep = 1.0;
+  constexpr double kMultiplierCap = 6.0;
   constexpr double kCongestionThreshold = 0.9;
 
   double multiplier = 1.0;
-  for (int i = 1; i <= kMaxRRRIterations; ++i) {
+  for (int i = 1; i <= congestion_iterations_; ++i) {
     updateCongestedNets(net_indices, kCongestionThreshold);
     if (net_indices.empty()) {
       break;
     }
-    multiplier += kMultiplierStep;
+    if (multiplier < kMultiplierCap) {
+      multiplier += kMultiplierStep;
+    }
     grid_graph_->setCostMultiplier(multiplier);
     logger_->info(
-        GRT, 117, "Start extra iteration {}/{}", i, kMaxRRRIterations);
+        GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     mazeRoute(net_indices);
   }
   grid_graph_->setCostMultiplier(1.0);

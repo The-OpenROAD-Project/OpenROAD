@@ -783,9 +783,7 @@ int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
         const int x = (direction == MetalLayer::H) ? c : r;
         const int y = (direction == MetalLayer::H) ? r : c;
         const auto& edge = graph_edges_[layer][x][y];
-        // Strict-greater multiplicative predicate: collapses to
-        // `demand > capacity` (checkOverflow's condition) at
-        // threshold == 1.0, and stays well-defined for capacity == 0.
+
         if (edge.demand > edge.capacity * threshold) {
           ++num;
         }

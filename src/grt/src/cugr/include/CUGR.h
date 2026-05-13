@@ -91,6 +91,10 @@ class CUGR
   {
     critical_nets_percentage_ = percentage;
   }
+  void setCongestionIterations(int iterations)
+  {
+    congestion_iterations_ = iterations;
+  }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
   void routeIncremental();
@@ -180,6 +184,7 @@ class CUGR
   int area_of_wire_patches_ = 0;
 
   float critical_nets_percentage_ = 0;
+  int congestion_iterations_ = 5;
 
   std::vector<int> nets_to_route_;
 };
