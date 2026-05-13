@@ -85,8 +85,8 @@ void Design::readNetlist()
 
     auto pins = makeNetPins(db_net);
 
-    LayerRange layer_range
-        = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+    LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                              .max_layer = max_routing_layer_ - 1};
     const int min_clk_layer = block_->getMinLayerForClock();
     const int max_clk_layer = block_->getMaxLayerForClock();
     if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
@@ -159,8 +159,8 @@ void Design::updateNet(odb::dbNet* db_net)
 
   auto pins = makeNetPins(db_net);
 
-  LayerRange layer_range
-      = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+  LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                            .max_layer = max_routing_layer_ - 1};
   if (clock_nets_.find(db_net) != clock_nets_.end()) {
     layer_range.min_layer = block_->getMinLayerForClock() - 1;
     layer_range.max_layer = block_->getMaxLayerForClock() - 1;
