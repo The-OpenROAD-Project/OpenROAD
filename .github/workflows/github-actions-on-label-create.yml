@@ -97,8 +97,10 @@ jobs:
         UPSTREAM: ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}
       run: |
         set -euo pipefail
-        python3 -m pip install --quiet pathspec
-        python3 <<'PY'
+        # System Python on the runner is PEP 668 externally-managed; use a venv.
+        python3 -m venv /tmp/codeowners-venv
+        /tmp/codeowners-venv/bin/pip install --quiet pathspec
+        /tmp/codeowners-venv/bin/python <<'PY'
         import base64, json, os, subprocess, sys
         from pathspec import GitIgnoreSpec
 
