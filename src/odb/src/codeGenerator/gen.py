@@ -120,7 +120,16 @@ def add_field_attributes(
     hdr = STD_TYPE_HDR.get(field.type)
     if hdr:
         klass.h_sys_includes.append(hdr)
-        klass.cpp_sys_includes.append(hdr)
+        # Only include in cpp when at least one body emission references the
+        # type by name (cmp, serial, or get). A fully-suppressed field (e.g.
+        # an alignment pad) needs the type only in the header.
+        cpp_emits_type = not (
+            "no-cmp" in field.flags
+            and "no-serial" in field.flags
+            and "no-get" in field.flags
+        )
+        if cpp_emits_type:
+            klass.cpp_sys_includes.append(hdr)
 
     if field.type.startswith("std::"):
         for t in re.findall(r"std::(\w+)", field.type):
