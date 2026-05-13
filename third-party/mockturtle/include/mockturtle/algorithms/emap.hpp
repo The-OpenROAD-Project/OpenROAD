@@ -5176,7 +5176,13 @@ private:
     }
 
     std::stable_sort( class_list.begin(), class_list.end(), [&]( auto const& a, auto const& b ) {
-      return a.first[2] > b.first[2];
+        if (a.first == b.first) {
+          for (std::size_t i = 0; i < std::min(a.second.size(), b.second.size()); ++i) {
+            if (a.second[i].data > b.second[i].data) return true;
+          }
+          return a.second.size() > b.second.size();
+        }
+      return a.first > b.first;
     } );
 
     /* combine and match: specific code for 2-output cells */
