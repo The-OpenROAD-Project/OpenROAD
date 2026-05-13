@@ -170,7 +170,7 @@ cc_test(
         "//src/drt",
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
