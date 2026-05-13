@@ -355,8 +355,7 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
   // leafInstanceIterator then sees both populations as leaves and
   // Graph::makePinVertices creates Vertices for chip-bump pins and inner
   // ITerm/BTerm pins both.
-  if (network->has3DicChip()
-      && instance == network->topInstance()) {
+  if (network->has3DicChip() && instance == network->topInstance()) {
     top_ = true;
     chip_walk_ = true;
     dbSet<odb::dbChipInst> chip_insts = network->topChip()->getChipInsts();
@@ -419,8 +418,7 @@ bool DbInstanceChildIterator::hasNext()
     return chipinst_iter_ != chipinst_end_
            || flat_inner_idx_ < flat_inner_insts_.size();
   }
-  return !((dbinst_iter_ == dbinst_end_)
-           && (modinst_iter_ == modinst_end_));
+  return !((dbinst_iter_ == dbinst_end_) && (modinst_iter_ == modinst_end_));
 }
 
 Instance* DbInstanceChildIterator::next()
@@ -2029,8 +2027,7 @@ Port* dbNetwork::port(const Pin* pin) const
     if (bterm == nullptr) {
       return nullptr;
     }
-    dbChip* master
-        = bump->getChipRegionInst()->getChipInst()->getMasterChip();
+    dbChip* master = bump->getChipRegionInst()->getChipInst()->getMasterChip();
     auto it = chip_master_cells_.find(master);
     if (it == chip_master_cells_.end()) {
       return nullptr;
@@ -4034,8 +4031,7 @@ dbChipInst* dbNetwork::staToDbChipInst(const Instance* instance) const
   if (instance == nullptr || instance == top_instance_) {
     return nullptr;
   }
-  dbObject* obj
-      = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
   if (obj->getObjectType() != dbChipInstObj) {
     return nullptr;
   }

@@ -332,8 +332,7 @@ TEST_F(TestDbSta, Chip3DicEncodeDecodeRoundTrip)
   // Round-trip uses fake aligned storage; encode/decode are pure pointer
   // arithmetic with no dereference of the bump-inst pointer.
   alignas(16) char fake_storage[sizeof(void*) * 4] = {};
-  auto* fake_bump
-      = reinterpret_cast<odb::dbChipBumpInst*>(&fake_storage[0]);
+  auto* fake_bump = reinterpret_cast<odb::dbChipBumpInst*>(&fake_storage[0]);
 
   Pin* pin = db_network_->dbToSta(fake_bump);
   ASSERT_NE(pin, nullptr);
