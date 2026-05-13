@@ -185,6 +185,109 @@ TSV, microbump) contribute non-trivial RC.
 
 ---
 
+## TODO 3 — ETM-bound chiplets (use real Liberty when available)
+
+### Problem
+
+v1 always synthesizes a stub `LibertyCell` per chiplet master with a
+zero-delay self-arc per chip-bump port. That works when the chiplet
+ships only as DEF + bump map. When the chiplet vendor instead ships an
+**Extracted Timing Model (ETM)** — a real `.lib` whose `cell` matches
+the chiplet name and whose ports match the chip-bump bterm names —
+the stub is wrong: it hides the ETM's real clock-to-q, setup/hold,
+and internal arcs.
+
+3DBlox already supports this via `external.liberty_file:` under
+`ChipletDef:`. dbSta just doesn't consult it.
+
+### Concrete changes
+
+1. **Lookup before synthesis in `makeTopCellForChip`.**
+   - File: `src/dbSta/src/dbNetwork.cc`. Inside the per-master loop:
+     ```cpp
+     LibertyCell* etm = network_->findLibertyCell(master->getName());
+     if (etm) {
+       chip_master_cells_[master] = reinterpret_cast<Cell*>(etm);
+       continue;  // skip stub synthesis
+     }
+     // no ETM — fall through to LibertyBuilder stub.
+     ```
+   - The ETM `LibertyCell`'s `LibertyPort`s must match the chip-bump
+     bterm names. Validate via a sanity pass:
+     ```cpp
+     for (each bump bterm) {
+       if (!etm->findLibertyPort(bterm->name)) warn(STA-3006, ...);
+     }
+     ```
+
+2. **Suppress the BIDIRECT direction override when ETM is present.**
+   - `dbNetwork::direction(chip_bump_pin)` currently returns BIDIRECT
+     unconditionally so wire-edge formation runs on every bump. With an
+     ETM, port direction should come from the ETM's `LibertyPort`
+     (which encodes the real INPUT/OUTPUT/INOUT semantics). The ETM
+     model itself drives clock-edge propagation through real arcs, no
+     BIDIRECT trick needed.
+
+3. **Skip the `chip_bump_lib_` private LibertyLibrary entirely** when
+   every chiplet master has an ETM.
+
+4. **Diagnostic.**
+   - STA-3000 INFO line: append `, ETM-bound: <K>/<N> chiplets` so the
+     user sees how many chiplets are running on real Liberty vs stubs.
+   - STA-3006 WARN: ETM cell found but bump bterm name has no matching
+     LibertyPort.
+
+### Test plan
+
+- Generate a tiny ETM `.lib` for `flop_chip_a` (one cell, clock/d/q
+  ports with realistic delays).
+- Extend `3dic_cross.tcl` to read the ETM and verify the slack number
+  includes the ETM's internal delay, not zero.
+
+### Why this matters
+
+ETM-based chiplet flows are how production 3DIC designs actually ship.
+v1's stub synthesis is fine for early bring-up; downstream RTL-to-GDS
+flows that integrate vendor chiplets will need this path.
+
+---
+
+## TODO 4 — Callback-driven cache invalidation for `bump_to_chip_net_`
+
+### Problem
+
+`dbNetwork::refreshBumpToChipNetCache()` currently rebuilds the
+bump-inst → chip-net map only when the odb chip-net **count** changes.
+That catches `dbChipNet_create` between lookups (the common case in
+Tcl test fixtures), but it MISSES in-place rewires:
+
+- `existing_chip_net->addBumpInst(bump, path)` on a chip-net that's
+  already in the cache → cache stays stale for the new bump.
+- `existing_chip_net->removeBumpInst(bump)` similarly.
+
+A user who builds chip-nets dynamically (without creating new ones)
+will silently get null `net(bump_pin)` for the rewired bumps.
+
+### Concrete change
+
+Wire `dbNetwork` to listen on a `dbBlockCallBackObj`-style hook that
+fires on `dbChipNet` and `dbChipBumpInst` edits (create / destroy /
+addBumpInst / removeBumpInst). On any such signal, invalidate the
+cache (e.g. clear and reset the size counter). dbCbk currently emits
+no chip-net / bump-inst signals — adding those is the prerequisite.
+
+### Files
+
+- `src/odb/include/odb/dbBlockCallBackObj.h` — add the new hook
+  methods.
+- `src/odb/src/db/...` (the dbChipNet / dbChipBumpInst impl) — fire
+  the new callbacks.
+- `src/dbSta/src/dbSta.cc::dbStaCbk` — implement the hooks to
+  invalidate `bump_to_chip_net_` and reset
+  `bump_to_chip_net_cache_size_` to 0.
+
+---
+
 ## File / module references
 
 - `src/dbSta/include/db_sta/dbNetwork.hh` — `chip_bump_vertex_ids_`,

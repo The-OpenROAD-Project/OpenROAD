@@ -491,11 +491,14 @@ class dbNetwork : public ConcreteNetwork
   // Cell has no LibertyCell binding; STA property queries that go through
   // libertyCell(Cell*) need a non-null Cell* to avoid a null deref.
   std::map<odb::dbChip*, Cell*> chip_master_cells_;
-  // Reverse lookup: bump-inst -> owning chip-net. Populated lazily by
-  // ensureBumpToChipNetCache() so chip-nets created via the odb API after
-  // setTopChip() are still found.
+  // Reverse lookup: bump-inst -> owning chip-net. ensureBumpToChipNet-
+  // CacheFresh() rebuilds it on chip-net-count change so net(chip_bump_
+  // _pin) sees chip-nets created via the odb API post-setTopChip().
+  // Caveat: in-place addBumpInst/removeBumpInst on an existing chip-net
+  // (no count change) is NOT detected — see 3DIC_TODO.md TODO 4.
   mutable std::map<odb::dbChipBumpInst*, odb::dbChipNet*> bump_to_chip_net_;
-  void ensureBumpToChipNetCache() const;
+  mutable size_t bump_to_chip_net_cache_size_ = 0;
+  void ensureBumpToChipNetCacheFresh() const;
   // STA vertex-id storage for chip-bump-inst pins. _dbChipBumpInst has no
   // staVertexId field on the odb side; keep the mapping here.
   std::map<odb::dbChipBumpInst*, VertexId> chip_bump_vertex_ids_;

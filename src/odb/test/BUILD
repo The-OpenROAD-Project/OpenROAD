@@ -237,6 +237,7 @@ filegroup(
     # Dependencies could be specified more narrowly per test case,
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
+    visibility = ["//visibility:public"],
     srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",

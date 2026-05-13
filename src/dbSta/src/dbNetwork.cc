@@ -200,8 +200,10 @@ PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
 // iterms/bterms/insts/nets from 1, so two "clk" nets (one per chiplet)
 // hash to the same id and collide in NetSet/PinSet. Steal the top
 // kBlockTagWidth bits for a per-block discriminator allocated in
-// setTopChip().
-static constexpr unsigned kBlockTagWidth = 4;
+// setTopChip(). 8 bits = 255 unique chiplet blocks (0 reserved for
+// non-3DIC); leaves 20 bits for the per-block db_id (~1M objects per
+// block, ample for typical chiplet sizes).
+static constexpr unsigned kBlockTagWidth = 8;
 static constexpr ObjectId kBlockTagMask = (1U << kBlockTagWidth) - 1;
 static constexpr unsigned kBlockTagShift = 32 - kBlockTagWidth;
 
@@ -241,7 +243,14 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 {
   const dbObjectType typ = object->getObjectType();
   const ObjectId db_id = object->getId();
-  if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
+  // In 3DIC mode the top kBlockTagWidth bits encode block_disc, leaving
+  // 32 - DBIDTAG_WIDTH - kBlockTagWidth bits for the per-block db_id.
+  // In non-3DIC mode block_disc is always 0, so the full
+  // (32 - DBIDTAG_WIDTH) bits are available.
+  const unsigned db_id_bits = has3DicChip()
+                                  ? (32 - DBIDTAG_WIDTH - kBlockTagWidth)
+                                  : (32 - DBIDTAG_WIDTH);
+  if (db_id > ((1ULL << db_id_bits) - 1)) {
     logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
 
@@ -901,6 +910,7 @@ void dbNetwork::setTopChip(dbChip* chip)
 {
   top_chip_ = chip;
   bump_to_chip_net_.clear();
+  bump_to_chip_net_cache_size_ = 0;
   block_to_chip_inst_.clear();
   block_disc_.clear();
   if (chip == nullptr) {
@@ -912,11 +922,27 @@ void dbNetwork::setTopChip(dbChip* chip)
   // and stay treated as leaves.
   std::map<odb::dbBlock*, int> block_refcount;
   uint32_t next_disc = 1;
+  // block_disc values are masked to kBlockTagWidth bits when stamped
+  // into the ObjectId. Beyond the mask, distinct chiplet blocks alias
+  // to one another in NetSet/PinSet keys, silently merging pins/nets
+  // across chiplets. Error out so wrong timing isn't produced quietly.
+  constexpr uint32_t kMaxBlockDisc = (1U << kBlockTagWidth) - 1;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     if (odb::dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
       block_refcount[mb]++;
       block_to_chip_inst_[mb] = chip_inst;
       if (block_disc_.emplace(mb, next_disc).second) {
+        if (next_disc > kMaxBlockDisc) {
+          logger_->error(utl::STA,
+                         3004,
+                         "3DIC design has more than {} unique chiplet "
+                         "blocks; per-block ObjectId discriminator "
+                         "({} bits) overflows. Widen kBlockTagWidth in "
+                         "dbNetwork.cc or reduce unique chiplet "
+                         "definitions.",
+                         kMaxBlockDisc,
+                         kBlockTagWidth);
+        }
         ++next_disc;
       }
     }
@@ -940,15 +966,26 @@ void dbNetwork::setTopChip(dbChip* chip)
   }
 }
 
-void dbNetwork::ensureBumpToChipNetCache() const
+void dbNetwork::ensureBumpToChipNetCacheFresh() const
 {
   if (top_chip_ == nullptr) {
     return;
   }
-  if (!bump_to_chip_net_.empty()) {
+  // Detect chip-nets added between cache builds by tracking the odb
+  // chip-net count. Rebuild on any size mismatch — covers tcl/C++
+  // callers that dbChipNet_create + addBumpInst after read_3dbx.
+  //
+  // Caveat: this still misses in-place bump-inst rewires on an EXISTING
+  // chip-net (addBumpInst without creating a new net first). dbCbk
+  // currently emits no chip-net / bump-inst signals, so callback-driven
+  // invalidation isn't possible yet. See 3DIC_TODO.md.
+  const dbSet<odb::dbChipNet> chip_nets = top_chip_->getChipNets();
+  if (bump_to_chip_net_cache_size_ == chip_nets.size()
+      && !bump_to_chip_net_.empty()) {
     return;
   }
-  for (odb::dbChipNet* chip_net : top_chip_->getChipNets()) {
+  bump_to_chip_net_.clear();
+  for (odb::dbChipNet* chip_net : chip_nets) {
     const uint32_t n = chip_net->getNumBumpInsts();
     std::vector<dbChipInst*> path;
     for (uint32_t i = 0; i < n; ++i) {
@@ -958,6 +995,7 @@ void dbNetwork::ensureBumpToChipNetCache() const
       }
     }
   }
+  bump_to_chip_net_cache_size_ = chip_nets.size();
 }
 
 void dbNetwork::makeTopCellForChip(dbChip* chip)
@@ -1047,6 +1085,7 @@ void dbNetwork::clear()
   // dangling pointers.
   chip_master_cells_.clear();
   bump_to_chip_net_.clear();
+  bump_to_chip_net_cache_size_ = 0;
   chip_bump_vertex_ids_.clear();
   block_to_chip_inst_.clear();
   block_disc_.clear();
@@ -1893,7 +1932,7 @@ Instance* dbNetwork::instance(const Pin* pin) const
 Net* dbNetwork::net(const Pin* pin) const
 {
   if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
-    ensureBumpToChipNetCache();
+    ensureBumpToChipNetCacheFresh();
     auto it = bump_to_chip_net_.find(bump);
     return it != bump_to_chip_net_.end() ? dbToSta(it->second) : nullptr;
   }
