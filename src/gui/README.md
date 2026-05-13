@@ -958,7 +958,7 @@ timing groups display the internal clock latency inline:
 To view this, run the MockArray example and look at reg2reg paths:
 
 ```
-bazelisk run --//:platform=gui //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
+bazelisk run //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
 ```
 
 ## License
