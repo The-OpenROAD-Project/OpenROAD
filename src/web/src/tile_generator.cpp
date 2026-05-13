@@ -27,6 +27,7 @@
 #include "glyph_cache.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"

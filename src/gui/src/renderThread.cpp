@@ -27,6 +27,7 @@
 #include "gui/gui.h"
 #include "label.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"

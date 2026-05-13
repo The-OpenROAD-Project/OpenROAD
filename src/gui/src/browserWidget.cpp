@@ -29,6 +29,7 @@
 #include "displayControls.h"
 #include "gui/gui.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

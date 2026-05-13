@@ -23,6 +23,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/pending/disjoint_sets.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

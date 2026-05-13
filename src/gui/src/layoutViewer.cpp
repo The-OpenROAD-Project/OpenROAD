@@ -47,6 +47,7 @@
 #include "highlightGroupDialog.h"
 #include "label.h"
 #include "mainWindow.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"

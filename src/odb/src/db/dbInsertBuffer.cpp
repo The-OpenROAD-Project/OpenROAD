@@ -15,6 +15,7 @@
 #include "dbInst.h"
 #include "dbModule.h"
 #include "dbNet.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"

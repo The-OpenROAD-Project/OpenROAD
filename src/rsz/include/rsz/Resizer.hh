@@ -25,6 +25,7 @@
 #include "est/EstimateParasitics.h"
 #include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"

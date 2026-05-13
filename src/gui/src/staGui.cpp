@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"

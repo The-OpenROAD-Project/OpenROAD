@@ -18,6 +18,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

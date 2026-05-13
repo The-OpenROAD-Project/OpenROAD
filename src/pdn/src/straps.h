@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "grid_component.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

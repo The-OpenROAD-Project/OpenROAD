@@ -23,6 +23,7 @@
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"

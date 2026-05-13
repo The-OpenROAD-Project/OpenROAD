@@ -17,6 +17,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "domain.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"

@@ -13,6 +13,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "domain.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"

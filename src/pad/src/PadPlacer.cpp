@@ -19,6 +19,7 @@
 
 #include "boost/geometry/index/predicates.hpp"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
