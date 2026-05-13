@@ -255,13 +255,25 @@ GridGraph::GridGraph(const Design* design,
         = static_cast<int>(std::round(sum));
   }
 
-  // Apply user-defined capacity adjustment
+  // Apply user-defined capacity adjustment.
+  //
+  // Mirrors the floor-to-1 rule FastRoute applies in
+  // GlobalRouter::computeUserLayerAdjustments: if the edge had any
+  // capacity before the adjustment and the user did not explicitly
+  // ask for full removal (adjustment == 1.0), keep at least one
+  // usable track.
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
     const float adjustment = design->getLayer(layer_index).getAdjustment();
-    if (adjustment != 0.0) {
-      for (size_t x = 0; x < x_size_; x++) {
-        for (size_t y = 0; y < y_size_; y++) {
-          graph_edges_[layer_index][x][y].capacity *= (1.0 - adjustment);
+    if (adjustment == 0.0) {
+      continue;
+    }
+    for (size_t x = 0; x < x_size_; x++) {
+      for (size_t y = 0; y < y_size_; y++) {
+        auto& edge = graph_edges_[layer_index][x][y];
+        const CapacityT orig_cap = edge.capacity;
+        edge.capacity *= (1.0 - adjustment);
+        if (orig_cap > 0.0 && adjustment != 1.0f) {
+          edge.capacity = std::max<CapacityT>(edge.capacity, 1.0);
         }
       }
     }
