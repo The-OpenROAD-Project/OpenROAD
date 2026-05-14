@@ -67,7 +67,7 @@ void MoveCommitter::init()
   std::ranges::fill(committed_by_type_, 0);
   for (size_t index = 0; index < pending_instances_by_type_.size(); ++index) {
     pending_instances_by_type_[index].clear();
-    all_instances_by_type_[index].clear();
+    committed_instances_by_type_[index].clear();
   }
 
   const bool report_enabled
@@ -375,7 +375,7 @@ void MoveCommitter::recordAcceptedResult(const MoveResult& result)
     // Preserve legacy BaseMove semantics: once a move type touched an
     // instance in this repair session, later guards still see it even if the
     // journal branch is restored.
-    all_instances_by_type_[index].insert(inst);
+    committed_instances_by_type_[index].insert(inst);
   }
 }
 
@@ -527,7 +527,7 @@ void MoveCommitter::acceptPendingMoves()
     }
     committed_by_type_[index] += pending_by_type_[index];
     pending_by_type_[index] = 0;
-    all_instances_by_type_[index].insert(
+    committed_instances_by_type_[index].insert(
         pending_instances_by_type_[index].begin(),
         pending_instances_by_type_[index].end());
     pending_instances_by_type_[index].clear();
@@ -585,7 +585,7 @@ bool MoveCommitter::hasPendingMoves(const MoveType type,
 bool MoveCommitter::hasMoves(const MoveType type, sta::Instance* inst) const
 {
   const size_t index = typeIndex(type);
-  return all_instances_by_type_[index].contains(inst)
+  return committed_instances_by_type_[index].contains(inst)
          || pending_instances_by_type_[index].contains(inst);
 }
 

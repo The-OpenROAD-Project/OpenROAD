@@ -163,7 +163,7 @@ class MoveCommitter
   std::array<std::unordered_set<sta::Instance*>, kTypeCount>
       pending_instances_by_type_{};
   std::array<std::unordered_set<sta::Instance*>, kTypeCount>
-      all_instances_by_type_{};
+      committed_instances_by_type_{};
 
   // === MoveTracker state ====================================================
   std::unique_ptr<MoveTracker> move_tracker_;
