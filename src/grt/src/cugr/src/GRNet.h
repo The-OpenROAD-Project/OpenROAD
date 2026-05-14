@@ -61,17 +61,15 @@ class GRNet
 
   double getNdrCost(int layer_index) const
   {
-    if (layer_index < 0
-        || layer_index >= static_cast<int>(ndr_costs_.size())) {
+    if (layer_index < 0 || layer_index >= static_cast<int>(ndr_costs_.size())) {
       return 1.0;
     }
     return ndr_costs_[layer_index];
   }
 
-  void setNdrCosts(std::vector<double> costs)
-  {
-    ndr_costs_ = std::move(costs);
-  }
+  void setNdrCosts(std::vector<double> costs) { ndr_costs_ = std::move(costs); }
+
+  const std::vector<double>& getNdrCosts() const { return ndr_costs_; }
 
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
