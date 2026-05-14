@@ -128,6 +128,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
