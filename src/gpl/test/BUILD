@@ -161,7 +161,7 @@ cc_test(
         "//src/est",
         "//src/gpl",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",
         "//src/tst",

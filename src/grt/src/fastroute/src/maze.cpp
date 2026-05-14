@@ -2171,7 +2171,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+        logger_->report(
+            "H 2D Congestion x{} y{} ({} {})", x, y, x_real, y_real);
       }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2187,7 +2188,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+        logger_->report(
+            "V 2D Congestion x{} y{} ({} {})", x, y, x_real, y_real);
       }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2200,15 +2202,15 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   *maxOverflow = max_overflow;
 
   if (logger_->debugCheck(GRT, "congestion2D", 1)) {
-    logger_->report("Overflow report:");
-    logger_->report("Total usage          : {}", total_usage);
-    logger_->report("Max H overflow       : {}", max_H_overflow);
-    logger_->report("Max V overflow       : {}", max_V_overflow);
-    logger_->report("Max overflow         : {}", max_overflow);
-    logger_->report("Number overflow edges: {}", numedges);
-    logger_->report("H   overflow         : {}", H_overflow);
-    logger_->report("V   overflow         : {}", V_overflow);
-    logger_->report("Final overflow       : {}\n", total_overflow_);
+    logger_->report("Congestion report:");
+    logger_->report("Total usage            : {}", total_usage);
+    logger_->report("Max H congestion       : {}", max_H_overflow);
+    logger_->report("Max V congestion       : {}", max_V_overflow);
+    logger_->report("Max congestion         : {}", max_overflow);
+    logger_->report("Number congestion edges: {}", numedges);
+    logger_->report("H   congestion         : {}", H_overflow);
+    logger_->report("V   congestion         : {}", V_overflow);
+    logger_->report("Final congestion       : {}\n", total_overflow_);
   }
 
   *tUsage = total_usage;
@@ -2247,7 +2249,8 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report("H 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+        logger_->report(
+            "H 2D Congestion x{} y{} ({} {})", x, y, x_real, y_real);
       }
       H_overflow += overflow;
       max_H_overflow = std::max(max_H_overflow, overflow);
@@ -2264,7 +2267,8 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
         // Convert to real coordinates
         int x_real = tile_size_ * (x + 0.5) + x_corner_;
         int y_real = tile_size_ * (y + 0.5) + y_corner_;
-        logger_->report("V 2D Overflow x{} y{} ({} {})", x, y, x_real, y_real);
+        logger_->report(
+            "V 2D Congestion x{} y{} ({} {})", x, y, x_real, y_real);
       }
       V_overflow += overflow;
       max_V_overflow = std::max(max_V_overflow, overflow);
@@ -2283,17 +2287,17 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
   }
 
   if (logger_->debugCheck(GRT, "congestion2D", 1)) {
-    logger_->report("Overflow report.");
-    logger_->report("Total hCap               : {}", hCap);
-    logger_->report("Total vCap               : {}", vCap);
-    logger_->report("Total usage              : {}", total_usage);
-    logger_->report("Max H overflow           : {}", max_H_overflow);
-    logger_->report("Max V overflow           : {}", max_V_overflow);
-    logger_->report("Max overflow             : {}", max_overflow);
-    logger_->report("Number of overflow edges : {}", numedges);
-    logger_->report("H   overflow             : {}", H_overflow);
-    logger_->report("V   overflow             : {}", V_overflow);
-    logger_->report("Final overflow           : {}\n", total_overflow_);
+    logger_->report("Congestion report.");
+    logger_->report("Total hCap                 : {}", hCap);
+    logger_->report("Total vCap                 : {}", vCap);
+    logger_->report("Total usage                : {}", total_usage);
+    logger_->report("Max H congestion           : {}", max_H_overflow);
+    logger_->report("Max V congestion           : {}", max_V_overflow);
+    logger_->report("Max congestion             : {}", max_overflow);
+    logger_->report("Number of congestion edges : {}", numedges);
+    logger_->report("H   congestion             : {}", H_overflow);
+    logger_->report("V   congestion             : {}", V_overflow);
+    logger_->report("Final congestion           : {}\n", total_overflow_);
   }
 
   return total_overflow_;
@@ -2321,7 +2325,7 @@ int FastRouteCore::getOverflow3D()
           int x_real = tile_size_ * (x + 0.5) + x_corner_;
           int y_real = tile_size_ * (y + 0.5) + y_corner_;
           logger_->report(
-              ">>> 3D H Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              ">>> 3D H Congestion: x{} y{} l{} - Real coordinates: ({}, {})",
               x,
               y,
               k + 1,
@@ -2341,7 +2345,7 @@ int FastRouteCore::getOverflow3D()
           int x_real = tile_size_ * (x + 0.5) + x_corner_;
           int y_real = tile_size_ * (y + 0.5) + y_corner_;
           logger_->report(
-              ">>> 3D V Overflow: x{} y{} l{} - Real coordinates: ({}, {})",
+              ">>> 3D V Congestion: x{} y{} l{} - Real coordinates: ({}, {})",
               x,
               y,
               k + 1,
@@ -2357,12 +2361,12 @@ int FastRouteCore::getOverflow3D()
   total_overflow_ = H_overflow + V_overflow;
 
   if (logger_->debugCheck(GRT, "checkRoute3D", 1) && total_overflow_) {
-    logger_->report("=== Total 3D Overflow Summary ===");
-    logger_->report("Total H overflow: {}", H_overflow);
-    logger_->report("Total V overflow: {}", V_overflow);
-    logger_->report("Max H overflow: {}", max_H_overflow);
-    logger_->report("Max V overflow: {}", max_V_overflow);
-    logger_->report("Total overflow: {}", total_overflow_);
+    logger_->report("=== Total 3D Congestion Summary ===");
+    logger_->report("Total H congestion: {}", H_overflow);
+    logger_->report("Total V congestion: {}", V_overflow);
+    logger_->report("Max H congestion: {}", max_H_overflow);
+    logger_->report("Max V congestion: {}", max_V_overflow);
+    logger_->report("Total congestion: {}", total_overflow_);
   }
 
   return total_usage;

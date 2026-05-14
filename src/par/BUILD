@@ -56,7 +56,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.format",

@@ -39,7 +39,7 @@ cc_library(
     deps = [
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.graph",
