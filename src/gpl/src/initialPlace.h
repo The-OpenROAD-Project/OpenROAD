@@ -28,7 +28,6 @@ struct InitialPlaceVars
   const int maxIter;
   const int minDiffLength;
   const int maxSolverIter;
-  const int maxFanout;
   const float netWeightScale;
   const bool debug;
   const bool forceCenter;

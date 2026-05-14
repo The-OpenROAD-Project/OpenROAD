@@ -79,9 +79,9 @@ global_placement
     [-reference_hpwl reference_hpwl]
     [-overflow overflow]
     [-initial_place_max_iter initial_place_max_iter]
-    [-initial_place_max_fanout initial_place_max_fanout]
     [-pad_left pad_left]
     [-pad_right pad_right]
+    [-fanout_limit fanout_limit]
     [-skip_io]
     [-skip_nesterov_place]
     [-routability_use_grt]
@@ -118,9 +118,9 @@ global_placement
 | `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are `[1.00-1.20, float]`. |
 | `-overflow` | Set target overflow for termination condition. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
 | `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is `20`. Allowed values are integers `[0, MAX_INT]`. |
-| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
+| `-fanout_limit` | Set the fanout limit. Nets with higher fanout than this will be ignored during placement. The default value is `200`, and the allowed values are integers `[1, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |

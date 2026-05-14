@@ -7,16 +7,21 @@
 #include <climits>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "sta/MinMax.hh"
+#include "sta/Scene.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -553,9 +558,10 @@ Pin::~Pin()
 
 Net::Net() = default;
 
-Net::Net(odb::dbNet* net, bool skipIoMode) : Net()
+Net::Net(odb::dbNet* net, bool skipIoMode, bool ignore_net) : Net()
 {
   net_ = net;
+  ignore_net_ = ignore_net;
   updateBox(skipIoMode);
 }
 
@@ -724,7 +730,8 @@ int64_t Die::coreArea() const
 }
 
 PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
-    : padLeft(options.padLeft),
+    : fanoutLimit(options.fanoutLimit),
+      padLeft(options.padLeft),
       padRight(options.padRight),
       skipIoMode(options.skipIoMode),
       disablePinDensityAdjust(options.disablePinDensityAdjust)
@@ -735,11 +742,13 @@ PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
 // PlacerBaseCommon
 
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
+                                   sta::dbSta* sta,
                                    PlacerBaseVars pbVars,
                                    utl::Logger* log)
     : pbVars_(pbVars)
 {
   db_ = db;
+  sta_ = sta;
   log_ = log;
   init();
 }
@@ -924,12 +933,74 @@ void PlacerBaseCommon::init()
   // nets fill
   dbSet<dbNet> db_nets = block->getNets();
   netStor_.reserve(db_nets.size());
+
+  // Only check fanout if network is linked and liberty is available
+  const bool enable_sta_fanout_check
+      = (sta_->network() != nullptr && sta_->network()->isLinked()
+         && sta_->network()->defaultLibertyLibrary() != nullptr);
+
+  if (enable_sta_fanout_check) {
+    sta_->checkFanoutPreamble();
+  }
+
   for (dbNet* db_net : db_nets) {
     dbSigType net_type = db_net->getSigType();
 
-    // escape nets with VDD/VSS/reset nets
-    if (net_type == dbSigType::SIGNAL || net_type == dbSigType::CLOCK) {
-      Net temp_net(db_net, pbVars_.skipIoMode);
+    // escape nets with VDD/VSS nets
+    if (net_type == dbSigType::SIGNAL || net_type == dbSigType::CLOCK
+        || net_type == dbSigType::RESET) {
+      // Check fanout of the net.
+      const float simple_fanout
+          = (db_net->getITerms().size() + db_net->getBTerms().size()) - 1.0f;
+      // A net with no fanout is ignored
+      bool ignore_net = simple_fanout <= 0;
+      if (!ignore_net) {
+        // Do a simple fanout check first
+        // This also catches block pin fanout
+        float fanout_limit = pbVars_.fanoutLimit;
+        float fanout_slack = fanout_limit - simple_fanout;
+        if (enable_sta_fanout_check && fanout_slack > 0.0) {
+          for (dbITerm* iTerm : db_net->getITerms()) {
+            if (iTerm->isOutputSignal(true)) {
+              sta::Pin* sta_pin = sta_->getDbNetwork()->dbToSta(iTerm);
+              if (sta_pin == nullptr) {
+                log_->warn(GPL,
+                           88,
+                           "Unable to find STA pin for {}.",
+                           iTerm->getName());
+              }
+
+              for (sta::Mode* mode : sta_->modes()) {
+                float pin_fanout = 0.0;
+                float pin_fanout_slack = 0.0;
+                float pin_fanout_limit = 0.0;
+                sta_->checkFanout(sta_pin,
+                                  mode,
+                                  sta::MinMax::max(),
+                                  pin_fanout,
+                                  pin_fanout_limit,
+                                  pin_fanout_slack);
+
+                fanout_slack = std::min(fanout_slack, pin_fanout_slack);
+                fanout_limit = std::min(fanout_limit, pin_fanout_limit);
+              }
+            }
+          }
+        }
+        if (fanout_slack < 0.0) {
+          log_->warn(GPL,
+                     93,
+                     "Net {} will be ignored during placement because it has "
+                     "high fanout {} (fanout slack: {}, fanout limit: {}).",
+                     db_net->getName(),
+                     simple_fanout,
+                     fanout_slack,
+                     fanout_limit);
+          ignore_net = true;
+        }
+      }
+
+      Net temp_net(db_net, pbVars_.skipIoMode, ignore_net);
       netStor_.push_back(temp_net);
 
       // this is safe because of "reserve"

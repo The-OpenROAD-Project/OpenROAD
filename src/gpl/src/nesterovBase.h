@@ -1360,8 +1360,8 @@ class GCellHandle
 
 inline bool isValidSigType(const odb::dbSigType& db_type)
 {
-  return (db_type == odb::dbSigType::SIGNAL
-          || db_type == odb::dbSigType::CLOCK);
+  return (db_type == odb::dbSigType::SIGNAL || db_type == odb::dbSigType::CLOCK
+          || db_type == odb::dbSigType::RESET);
 }
 
 inline constexpr const char* format_label_int = "{:27} {:10}";

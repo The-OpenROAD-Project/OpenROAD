@@ -37,7 +37,6 @@ static gpl::PlaceOptions getOptions(
     options.initialPlaceMaxIter = 0;
   });
   checkKey(keys, "-initial_place_max_iter", options.initialPlaceMaxIter);
-  checkKey(keys, "-initial_place_max_fanout", options.initialPlaceMaxFanout);
   checkKey(
       keys, "-routability_check_overflow", options.routabilityCheckOverflow);
   checkKey(
@@ -73,6 +72,7 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
   checkKey(keys, "-init_wirelength_coef", options.initWireLengthCoef);
   checkKey(keys, "-reference_hpwl", options.referenceHpwl);
+  checkKey(keys, "-fanout_limit", options.fanoutLimit);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {

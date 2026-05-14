@@ -32,6 +32,9 @@ class Rect;
 class Point;
 
 }  // namespace odb
+namespace sta {
+class dbSta;
+}
 
 namespace utl {
 class Logger;
@@ -195,7 +198,7 @@ class Net
 {
  public:
   Net();
-  Net(odb::dbNet* net, bool skipIoMode);
+  Net(odb::dbNet* net, bool skipIoMode, bool ignore_net);
   ~Net();
 
   int lx() const;
@@ -204,6 +207,8 @@ class Net
   int uy() const;
   int cx() const;
   int cy() const;
+
+  bool shouldIgnore() const { return ignore_net_; }
 
   // HPWL: half-parameter-wire-length
   int64_t getHpwl() const;
@@ -224,6 +229,7 @@ class Net
   int ly_ = 0;
   int ux_ = 0;
   int uy_ = 0;
+  bool ignore_net_ = false;
 };
 
 class Die
@@ -273,6 +279,7 @@ struct PlacerBaseVars
 {
   PlacerBaseVars(const PlaceOptions& options);
 
+  const int fanoutLimit;
   const int padLeft;
   const int padRight;
   const bool skipIoMode;
@@ -285,6 +292,7 @@ class PlacerBaseCommon
  public:
   // temp padLeft/Right before OpenDB supporting...
   PlacerBaseCommon(odb::dbDatabase* db,
+                   sta::dbSta* sta,
                    PlacerBaseVars pbVars,
                    utl::Logger* log);
   ~PlacerBaseCommon();
@@ -320,6 +328,7 @@ class PlacerBaseCommon
 
  private:
   odb::dbDatabase* db_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   utl::Logger* log_ = nullptr;
 
   PlacerBaseVars pbVars_;
