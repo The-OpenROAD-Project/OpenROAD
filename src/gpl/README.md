@@ -119,8 +119,8 @@ global_placement
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |
 | `-init_wirelength_coef` | Set initial wirelength coefficient. The default value is `0.25`. Allowed values are floats. |
-| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Suggested values are positive floats `[0.95, 1.05]`. |
-| `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are `[1.00-1.20, float]`. |
+| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Allowed values are positive floats. Recommended values are in the range `[0.95, 1.05]`. |
+| `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are positive floats. Recommended values are in the range `[1.00-1.20, float]`. |
 | `-reference_hpwl` | Set $\Delta HPWL_{ref}$. Default value is `466e6`. Allowed values are positive floats. See Eq. 36 in [ePlace](https://cseweb.ucsd.edu/~jlu/papers/eplace-todaes14/paper.pdf) |
 | `-overflow` | Set target overflow for termination condition. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
