@@ -47,10 +47,32 @@ class GRNet
   bool isCritical() const { return is_critical_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
-  // Per-net (0-based) routing layer range: signal nets get
-  // [signal_min, signal_max]; clock nets get [clk_min, clk_max] when
-  // the user set them via `set_routing_layers -clock`.
+
+  /**
+   * @brief Returns the per-net 0-based routing layer range.
+   *
+   * Signal nets get `[signal_min, signal_max]`; clock nets get
+   * `[clk_min, clk_max]` when the user set them via
+   * `set_routing_layers -clock`.
+   *
+   * @returns Reference to the net's layer range.
+   */
   const LayerRange& getLayerRange() const { return layer_range_; }
+
+  double getNdrCost(int layer_index) const
+  {
+    if (layer_index < 0
+        || layer_index >= static_cast<int>(ndr_costs_.size())) {
+      return 1.0;
+    }
+    return ndr_costs_[layer_index];
+  }
+
+  void setNdrCosts(std::vector<double> costs)
+  {
+    ndr_costs_ = std::move(costs);
+  }
+
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
   void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);
@@ -77,6 +99,7 @@ class GRNet
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
+  std::vector<double> ndr_costs_;
 };
 
 }  // namespace grt
