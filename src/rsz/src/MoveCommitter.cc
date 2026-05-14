@@ -59,7 +59,7 @@ MoveCommitter::MoveCommitter(Resizer& resizer) : resizer_(resizer)
 
 void MoveCommitter::init()
 {
-  journal_open_ = false;
+  pending_move_results_ = std::stack<std::vector<MoveResult>>{};
   std::ranges::fill(summary_carried_by_type_, 0);
   summary_carried_by_type_[typeIndex(MoveType::kSizeUpMatch)]
       = persisted_summary_by_type_[typeIndex(MoveType::kSizeUpMatch)];
@@ -90,6 +90,12 @@ MoveResult MoveCommitter::commit(MoveCandidate& candidate)
   MoveResult result = candidate.apply();
   if (result.accepted) {
     recordAcceptedResult(result);
+    // Only the journaled path needs the per-level result trail; non-journaled
+    // commits (e.g. MeasuredVtSwapPolicy) flush via acceptPendingMoves and
+    // never restore.
+    if (!pending_move_results_.empty()) {
+      pending_move_results_.top().push_back(result);
+    }
   }
   return result;
 }
@@ -366,8 +372,7 @@ bool MoveCommitter::canManageJournal() const
 
 void MoveCommitter::recordAcceptedResult(const MoveResult& result)
 {
-  // Track committed instances by move type so later passes can avoid
-  // conflicts.
+  // Track committed instances by move type so later passes can avoid conflicts
   const size_t index = typeIndex(result.type);
   pending_by_type_[index] += result.move_count;
   for (sta::Instance* inst : result.touched_instances) {
@@ -375,7 +380,20 @@ void MoveCommitter::recordAcceptedResult(const MoveResult& result)
     // Preserve legacy BaseMove semantics: once a move type touched an
     // instance in this repair session, later guards still see it even if the
     // journal branch is restored.
+    // FIXME: This should be removed after policies start using the nested
+    // journaling capability.
     committed_instances_by_type_[index].insert(inst);
+  }
+}
+
+void MoveCommitter::unrecordAcceptedResult(const MoveResult& result)
+{
+  // Remove the reverted move results
+  const size_t index = typeIndex(result.type);
+  pending_by_type_[index] -= result.move_count;
+  for (sta::Instance* inst : result.touched_instances) {
+    pending_instances_by_type_[index].erase(
+        pending_instances_by_type_[index].find(inst));
   }
 }
 
@@ -463,29 +481,54 @@ void MoveCommitter::beginJournal()
   if (!canManageJournal()) {
     return;
   }
-  // Start one reversible ECO batch for the current search branch.
+  // Start one reversible ECO batch for the current search branch. Stacks
+  // naturally: odb's beginEco pushes the current journal aside, and we mirror
+  // that with a fresh per-level result vector here.
   beginEcoJournal();
-  journal_open_ = true;
+  pending_move_results_.emplace();
 }
 
 void MoveCommitter::commitJournal()
 {
-  if (!canManageJournal() || !journal_open_) {
+  if (!canManageJournal() || pending_move_results_.empty()) {
     return;
   }
-  // Refresh timing only once after a batch of ECO edits becomes permanent.
+  // Refresh timing only once after a batch of ECO edits becomes permanent
   if (ecoHasPendingChanges()) {
     resizer_.updateParasiticsAndTiming();
   }
-  // Close the reversible batch and fold the accepted moves into the totals.
+  // Close the reversible batch. odb::commitEco appends the inner journal to its
+  // parent when one exists, otherwise the changes become permanent.
   commitEcoJournal();
-  acceptPendingMoves();
-  journal_open_ = false;
+
+  std::vector<MoveResult> top = std::move(pending_move_results_.top());
+  pending_move_results_.pop();
+
+  if (pending_move_results_.empty()) {
+    // Outermost commit: fold the accumulated pending counters into the
+    // committed totals and flush the tracker.
+    acceptPendingMoves();
+  } else {
+    // Nested commit: the moves remain pending against the parent journal,
+    // so the parent restore can still undo them. Merge our results into
+    // the parent's vector; pending_by_type_ / pending_instances_by_type_
+    // already reflect the cumulative state and stay untouched.
+    debugPrint(resizer_.logger(),
+               RSZ,
+               "journal",
+               2,
+               "nested journal commit: merged {} results into parent",
+               top.size());
+    auto& parent = pending_move_results_.top();
+    for (MoveResult& result : top) {
+      parent.push_back(std::move(result));
+    }
+  }
 }
 
 void MoveCommitter::restoreJournal()
 {
-  if (!canManageJournal() || !journal_open_) {
+  if (!canManageJournal() || pending_move_results_.empty()) {
     return;
   }
   // Undo both database edits and in-memory accounting for the rejected branch
@@ -495,21 +538,43 @@ void MoveCommitter::restoreJournal()
 
   const bool had_eco_changes = ecoHasPendingChanges();
   restoreEcoJournal();
-  if (!had_eco_changes) {
-    rejectPendingMoves();
-    journal_open_ = false;
+
+  // Unrecord just this level's accepted results; the parent's accumulated
+  // pending state (if any) must survive.
+  std::vector<MoveResult> top = std::move(pending_move_results_.top());
+  pending_move_results_.pop();
+  int reverted_moves = 0;
+  for (const MoveResult& result : top) {
+    reverted_moves += result.move_count;
+  }
+  resizer_.addRejectedLegacyMoveCount(reverted_moves);
+  if (pending_move_results_.empty()) {
+    // pending_by_type_ still holds the about-to-be-reverted counts at this
+    // point; log the per-type breakdown before draining them.
+    logPendingMoves("UNDO", reverted_moves);
+  } else {
     debugPrint(resizer_.logger(),
                RSZ,
                "journal",
-               1,
-               "journal restore ends due to empty ECO >>>");
-    return;
+               2,
+               "nested journal restore: reverted {} moves",
+               reverted_moves);
+  }
+  for (const MoveResult& result : top) {
+    unrecordAcceptedResult(result);
   }
 
-  resizer_.updateParasiticsAndTiming();
-  resizer_.invalidateVertexOrdering();
-  rejectPendingMoves();
-  journal_open_ = false;
+  if (had_eco_changes) {
+    resizer_.updateParasiticsAndTiming();
+    resizer_.invalidateVertexOrdering();
+  }
+
+  if (pending_move_results_.empty()) {
+    // Outermost restore: the tracker's pending entries are no longer
+    // load-bearing. Flush them and emit the totals snapshot.
+    rejectTrackedMoves();
+    logCommittedTotals();
+  }
 
   debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal restore ends <<<");
 }
@@ -543,7 +608,7 @@ void MoveCommitter::rejectPendingMoves()
   resizer_.addRejectedLegacyMoveCount(move_count);
 
   std::ranges::fill(pending_by_type_, 0);
-  for (std::unordered_set<sta::Instance*>& pending_instances :
+  for (std::unordered_multiset<sta::Instance*>& pending_instances :
        pending_instances_by_type_) {
     pending_instances.clear();
   }
