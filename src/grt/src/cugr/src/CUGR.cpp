@@ -334,10 +334,8 @@ void CUGR::debugCongestion2D() const
 
     // For an H layer, an edge spans gcells (x, y)→(x+1, y), so the
     // valid edge index range is x < x_size - 1. Mirror for V.
-    const int x_max
-        = (direction == MetalLayer::H) ? x_size - 1 : x_size;
-    const int y_max
-        = (direction == MetalLayer::H) ? y_size : y_size - 1;
+    const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
+    const int y_max = (direction == MetalLayer::H) ? y_size : y_size - 1;
 
     for (int x = 0; x < x_max; ++x) {
       for (int y = 0; y < y_max; ++y) {
@@ -367,11 +365,7 @@ void CUGR::debugCongestion2D() const
 
   const auto rnd = [](double v) { return static_cast<int>(std::round(v)); };
   const int spreadable = rnd(total_3d_overflow - total_2d_overflow);
-  debugPrint(logger_,
-             GRT,
-             "rrr_2d",
-             1,
-             "2D-aggregate congestion check:");
+  debugPrint(logger_, GRT, "rrr_2d", 1, "2D-aggregate congestion check:");
   debugPrint(logger_,
              GRT,
              "rrr_2d",
@@ -384,12 +378,13 @@ void CUGR::debugCongestion2D() const
              1,
              "  2D-aggregate overflow:     {} units (unavoidable)",
              rnd(total_2d_overflow));
-  debugPrint(logger_,
-             GRT,
-             "rrr_2d",
-             1,
-             "  Spreadable overflow:       {} units (could move to other layers)",
-             spreadable);
+  debugPrint(
+      logger_,
+      GRT,
+      "rrr_2d",
+      1,
+      "  Spreadable overflow:       {} units (could move to other layers)",
+      spreadable);
   debugPrint(logger_,
              GRT,
              "rrr_2d",
