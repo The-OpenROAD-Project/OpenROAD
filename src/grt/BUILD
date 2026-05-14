@@ -32,7 +32,7 @@ cc_library(
     includes = [
         "include",
     ],
-    deps = ["//src/odb"],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
@@ -67,7 +67,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -114,7 +114,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -161,7 +161,7 @@ cc_library(
         "//src/dpl",
         "//src/drt:pin_access_service",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -208,7 +208,7 @@ cc_library(
         ":grt",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",

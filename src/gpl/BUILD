@@ -65,7 +65,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -96,7 +96,7 @@ cc_binary(
     linkshared = True,
     deps = [
         "//src/gpl",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",

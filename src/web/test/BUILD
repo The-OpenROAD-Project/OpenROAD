@@ -170,7 +170,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -187,7 +187,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -203,7 +203,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
@@ -221,7 +221,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//third-party/lodepng",
@@ -237,7 +237,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
@@ -261,7 +261,7 @@ cc_test(
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -275,7 +275,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "@boost.json",
