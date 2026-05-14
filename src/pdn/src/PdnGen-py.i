@@ -14,6 +14,8 @@
 using namespace pdn;
 %}
 
+%include "odb/PtrSetMap.h"
+
 %include <std_vector.i>
 %include <std_array.i>
 %include <std_map.i>
@@ -44,6 +46,9 @@ namespace std {
   %template(layer_list)   std::vector<odb::dbTechLayer *>;
   %template(net_set)      std::set<odb::dbNet*, odb::ODBPtrLess>;
 }
+
+%apply const std::map<odb::dbTechLayer*, std::pair<int, bool>, odb::ODBPtrLess>& { const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& };
+%apply const std::set<odb::dbNet*, odb::ODBPtrLess>& { const odb::PtrSet<odb::dbNet>& };
 
 %include "../../Exception-py.i"
 %include "pdn/PdnGen.hh"

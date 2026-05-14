@@ -669,8 +669,7 @@ void PdnGen::makeConnect(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
-    const std::map<odb::dbTechLayer*, std::pair<int, bool>, odb::ODBPtrLess>&
-        split_cuts,
+    const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
     const std::string& dont_use_vias)
 {
   auto con = std::make_unique<Connect>(grid, layer0, layer1);
@@ -1001,7 +1000,7 @@ void PdnGen::checkSetup() const
   }
 }
 
-void PdnGen::repairVias(const std::set<odb::dbNet*, odb::ODBPtrLess>& nets)
+void PdnGen::repairVias(const odb::PtrSet<odb::dbNet>& nets)
 {
   ViaRepair repair(logger_, nets);
   repair.repair();

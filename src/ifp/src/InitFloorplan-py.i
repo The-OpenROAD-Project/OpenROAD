@@ -6,6 +6,8 @@
 #include "odb/PtrSetMap.h"
 %}
 
+%include "odb/PtrSetMap.h"
+
 %include "../../Exception-py.i"
 
 %include <std_string.i>
@@ -45,5 +47,7 @@ namespace std {
   %template(site_list)    std::vector<odb::dbSite*>;
   %template(site_set)     std::set<odb::dbSite*, odb::ODBPtrLess>;
 }
+
+%apply const std::set<odb::dbSite*, odb::ODBPtrLess>& { const odb::PtrSet<odb::dbSite>& };
 
 %include "ifp/InitFloorplan.hh"
