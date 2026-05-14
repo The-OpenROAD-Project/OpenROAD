@@ -268,9 +268,7 @@ void SetupLegacyBase::acceptEndpointState(
   if (!endpoint_state.journal_open) {
     return;
   }
-
   committer_.commitJournal();
-  committer_.acceptPendingMoves();
   endpoint_state.journal_open = false;
 }
 
@@ -280,9 +278,7 @@ void SetupLegacyBase::restoreEndpointState(
   if (!endpoint_state.journal_open) {
     return;
   }
-
   committer_.restoreJournal();
-  committer_.rejectPendingMoves();
   endpoint_state.journal_open = false;
 }
 

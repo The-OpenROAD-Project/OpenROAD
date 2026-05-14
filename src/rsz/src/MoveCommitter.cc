@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <stack>
 #include <string>
 #include <unordered_set>
 #include <utility>
