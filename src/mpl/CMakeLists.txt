@@ -53,7 +53,6 @@ target_include_directories(mpl_lib
 )
 
 target_link_libraries(mpl_lib
-  PUBLIC
     mpl_pusher
     mpl_snapper
     utl_lib
