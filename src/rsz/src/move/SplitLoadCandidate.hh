@@ -8,6 +8,7 @@
 #include "MoveCandidate.hh"
 #include "OptimizerTypes.hh"
 #include "odb/geom.h"
+#include "rsz/Resizer.hh"
 #include "sta/NetworkClass.hh"
 
 namespace sta {

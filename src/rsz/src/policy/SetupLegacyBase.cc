@@ -5,13 +5,10 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <limits>
-#include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -32,7 +29,6 @@
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
@@ -40,7 +36,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
@@ -524,7 +519,7 @@ bool SetupLegacyBase::repairPins(
                       driver_pin, focus_path, focus_slack, target)
                 : makePinTarget(driver_pin, focus_slack, target);
       if (has_target) {
-        prewarm_targets.push_back(target);
+        prewarm_targets.push_back(std::move(target));
       }
     }
     prewarmTargets(prewarm_targets);
@@ -761,7 +756,7 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
     static_cast<void>(ignored);
     Target target;
     makePathDriverTarget(path, expanded, drvr_index, path_slack, target);
-    targets.push_back(target);
+    targets.push_back(std::move(target));
   }
 
   // Prewarm for legacy MT policy

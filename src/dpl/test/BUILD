@@ -297,7 +297,8 @@ cc_test(
     srcs = ["dpl_test.cc"],
     deps = [
         "//src/dpl",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
+#include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -17,6 +19,7 @@
 #include <vector>
 
 #include "DelayEstimator.hh"
+#include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
 #define private public
 #define protected public

@@ -100,7 +100,8 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/defout",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.polygon",

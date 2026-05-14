@@ -225,8 +225,21 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  is_congested_ = fastroute_->totalOverflow() > 0;
-  fastroute_->saveCongestion();
+  if (use_cugr_) {
+    is_congested_ = cugr_->totalOverflow() > 0;
+    cugr_->saveCongestion();
+  } else {
+    is_congested_ = fastroute_->totalOverflow() > 0;
+    fastroute_->saveCongestion();
+  }
+
+  if (congestion_file_name_ != nullptr) {
+    odb::dbMarkerCategory* tool_category
+        = block_->findMarkerCategory("Global route");
+    if (tool_category != nullptr) {
+      tool_category->writeTR(congestion_file_name_);
+    }
+  }
 }
 
 NetRouteMap& GlobalRouter::getRoutes()
@@ -274,7 +287,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_;
+  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -454,7 +467,9 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (is_congested_) {
     // Suggest adjustment value
     suggestAdjustment();
-    if (allow_congestion_) {
+    // CUGR overflow is downgraded to a warning even without -allow_congestion,
+    // since it produces good results on detailed routing.
+    if (allow_congestion_ || use_cugr_) {
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "
@@ -5600,7 +5615,7 @@ void GlobalRouter::reportCongestion()
       "Layer         Resource        Demand        Usage (%)    Max H / "
       "Max "
       "V "
-      "/ Total Overflow");
+      "/ Total Congestion");
   logger_->report(
       "--------------------------------------------------------------------"
       "--"

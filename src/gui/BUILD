@@ -47,7 +47,7 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
@@ -104,7 +104,8 @@ QT_GUI_PLATFORMS = {
             "//:ord",
             "//src/dbSta",
             "//src/dbSta:dbNetwork",
-            "//src/odb",
+            "//src/odb/src/db",
+            "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
             "//third-party/gif-h:gif_h",

@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "sta/Delay.hh"
 
 namespace odb {
 class dbBlock;

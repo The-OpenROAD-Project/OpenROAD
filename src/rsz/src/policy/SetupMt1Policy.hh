@@ -12,6 +12,7 @@
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 
 namespace sta {
 class MinMax;

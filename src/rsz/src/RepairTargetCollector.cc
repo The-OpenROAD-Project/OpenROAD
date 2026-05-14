@@ -936,7 +936,7 @@ std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
       if (visited_pins.contains(pin) || !is_valid_target(pin)) {
         continue;
       }
-      targets.push_back(target);
+      targets.push_back(std::move(target));
       visited_pins.insert(pin);
     }
   }
@@ -1472,7 +1472,7 @@ vector<const sta::Pin*> RepairTargetCollector::collectViolatorsByFaninTraversal(
     // Populate pin_data for sorting and filtering
     pinData pd;
     updatePinData(pin, pd);
-    pin_data_[pin] = pd;
+    pin_data_[pin] = std::move(pd);
   }
 
   int pins_before_filter = violating_pins_.size();
@@ -1631,7 +1631,7 @@ RepairTargetCollector::collectViolatorsByFanoutTraversal(
     // Populate pin_data for sorting and filtering
     pinData pd;
     updatePinData(pin, pd);
-    pin_data_[pin] = pd;
+    pin_data_[pin] = std::move(pd);
   }
 
   int pins_before_filter = violating_pins_.size();
@@ -1785,7 +1785,7 @@ RepairTargetCollector::collectViolatorsByFaninTraversalForEndpoint(
     // Populate pin_data for sorting and filtering
     pinData pd;
     updatePinData(pin, pd);
-    pin_data_[pin] = pd;
+    pin_data_[pin] = std::move(pd);
   }
 
   int pins_before_filter = violating_pins_.size();
@@ -2001,7 +2001,7 @@ sta::Slack RepairTargetCollector::computeAdaptiveThreshold(
                   delayAsString(chosen_threshold, 3, sta_),
                   pin_count,
                   cone_size,
-                  cone_size > 0 ? 100.0 * pin_count / cone_size : 0.0);
+                  100.0 * pin_count / cone_size);
   } else {
     chosen_threshold = -1e30;
     logger_->info(RSZ,
@@ -2027,7 +2027,7 @@ void RepairTargetCollector::collectPinsWithThreshold(
 
       pinData pd;
       updatePinData(pin_slack_pair.first, pd);
-      pin_data_[pin_slack_pair.first] = pd;
+      pin_data_[pin_slack_pair.first] = std::move(pd);
     }
   }
 }

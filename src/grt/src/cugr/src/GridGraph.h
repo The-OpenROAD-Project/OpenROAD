@@ -244,12 +244,16 @@ class GridGraph
   // resource reporting so that the report can show the reduction from
   // user adjustments analogous to FastRoute's real_cap vs cap.
   std::vector<int> original_resources_per_layer_;
-  // Per-layer caches populated by computeCongestionInformation().
+  // Per-layer caches populated by computeCongestionInformation(). Kept
+  // valid by congestion_info_dirty_: any commit() that mutates demand
+  // marks the caches stale, so the next computeCongestionInformation()
+  // refreshes them; otherwise it returns immediately.
   std::vector<int> cap_per_layer_;
   std::vector<int> usage_per_layer_;
   std::vector<int> overflow_per_layer_;
   std::vector<int> max_h_overflow_;
   std::vector<int> max_v_overflow_;
+  bool congestion_info_dirty_ = true;
   const Constants constants_;
 };
 

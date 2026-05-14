@@ -28,6 +28,7 @@ genrule(
     srcs = [
         "src/style.css",
         "src/theme.js",
+        "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
         "src/checkbox-tree-model.js",
@@ -53,6 +54,7 @@ genrule(
           " --output $@" +
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
+          " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
           " $(location src/checkbox-tree-model.js)" +
@@ -79,6 +81,7 @@ _WEB_ASSET_FILES = [
     "src/index.html",
     "src/style.css",
     "src/theme.js",
+    "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",
     "src/checkbox-tree-model.js",
@@ -173,7 +176,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
@@ -205,7 +208,7 @@ cc_library(
     deps = [
         ":web",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

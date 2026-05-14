@@ -4,6 +4,8 @@
 #pragma once
 
 #include "SetupLegacyPolicy.hh"
+#include "sta/Delay.hh"
+#include "sta/Path.hh"
 
 namespace rsz {
 

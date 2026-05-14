@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  snl_ff2x1
+  snl_invx2
+  snl_lenqnx1
+  snl_lqx1
+  snl_mux21x1
+  snl_nand02x1
+  snl_nand02x2
+  snl_oa012x1
+  snl_or02x1
+  snl_tbufx1
+  snl_xor2x1
+modinst name: 'i\/sub'
+get_pins i/sub/buf1/A -> i/sub/buf1/A
+clk i/sub/buf1/A constraint
+i/sub/buf1 A Z constraint
+after-create get_pins -> new_buf/A
+buf1 inst stored name: 'i\/sub/buf1'
+after-rename get_pins i/sub/buf1/A -> 
+after-rename get_pins i/sub/buf_renamed/A -> i/sub/buf_renamed/A
+after-reparent get_pins i/sub/buf_renamed/A ->  
+after-reparent get_pins buf_renamed/A -> buf_renamed/A
+after-destroy get_pins new_buf/A -> 
+loop 0 get_pins loop_buf_0/A -> loop_buf_0/A
+loop 1 get_pins loop_buf_1/A -> loop_buf_1/A
+loop 2 get_pins loop_buf_2/A -> loop_buf_2/A
+loop 3 get_pins loop_buf_3/A -> loop_buf_3/A
+loop 4 get_pins loop_buf_4/A -> loop_buf_4/A
