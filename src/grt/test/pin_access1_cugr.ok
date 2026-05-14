@@ -73,12 +73,12 @@ Stage 1: Pattern routing.
 Routing statistics
 Wire length:           2841
 Total via count:       186
-Total overflow:        0
+Total congestion:      0
 Min resource:          1
 Bottleneck:            (5, 0, 0)
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1              21571             3            0.01%             0 /  0 /  0
 met1              5511            20            0.36%             0 /  0 /  0

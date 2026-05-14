@@ -49,12 +49,12 @@ Stage 3: Maze routing on sparsified graph.
 Routing statistics
 Wire length:           47113
 Total via count:       2165
-Total overflow:        67
+Total congestion:      67
 Min resource:          -1.1850001867612208
 Bottleneck:            (1, 30, 18)
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1              25000            39            0.16%             0 /  0 /  0
 met1              6127          1067           17.41%             1 /  0 / 31

@@ -5616,7 +5616,7 @@ void GlobalRouter::reportCongestion()
       "Layer         Resource        Demand        Usage (%)    Max H / "
       "Max "
       "V "
-      "/ Total Overflow");
+      "/ Total Congestion");
   logger_->report(
       "--------------------------------------------------------------------"
       "--"
