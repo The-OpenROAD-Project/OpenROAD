@@ -27,16 +27,48 @@ Design statistics
 Nets:                579
 Special nets:        0
 Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal      24480          9792          60.00%
+metal2     Vertical        17918          7167          60.00%
+metal3     Horizontal      24480          9792          60.00%
+metal4     Vertical        12172          4869          60.00%
+metal5     Horizontal      12240          4896          60.00%
+metal6     Vertical        12172          4869          60.00%
+metal7     Horizontal       4284          1714          59.99%
+metal8     Vertical         4284          1714          59.99%
+metal9     Horizontal       2142           857          59.99%
+metal10    Vertical         2142           857          59.99%
+---------------------------------------------------------------
+
 Stage 1: Pattern routing.
-Nets with overflow: 4.
-Stage 2: Pattern routing with detours.
 Nets with overflow: 0.
 Routing statistics
-Wire length:           36817
-Total via count:       4420
-Total wire overflow:   0
+Wire length:           36727
+Total via count:       2627
+Total overflow:        0
 Min resource:          0.3999999761581421
 Bottleneck:            (8, 0, 4)
-[INFO GRT-0018] Total wirelength: 10374 um
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1            9792             0            0.00%             0 /  0 /  0
+metal2            7167          1102           15.38%             0 /  0 /  0
+metal3            9792          1251           12.78%             0 /  0 /  0
+metal4            4869            60            1.23%             0 /  0 /  0
+metal5            4896            12            0.25%             0 /  0 /  0
+metal6            4869            20            0.41%             0 /  0 /  0
+metal7            1714             0            0.00%             0 /  0 /  0
+metal8            1714             0            0.00%             0 /  0 /  0
+metal9             857             0            0.00%             0 /  0 /  0
+metal10            857             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            46527          2445            5.26%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

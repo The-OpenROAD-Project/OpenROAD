@@ -3,6 +3,8 @@
 
 #include "MoveCandidate.hh"
 
+#include "rsz/Resizer.hh"
+
 namespace rsz {
 
 MoveCandidate::MoveCandidate(Resizer& resizer, const Target& target)

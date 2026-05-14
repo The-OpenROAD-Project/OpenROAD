@@ -28,6 +28,7 @@ ALL_TESTS = [
     "hierwrite",
     "hier_deep",
     "hier_weird_port",
+    "levelize_drvr_vertices1",
     "make_port",
     "network_edit1",
     "power1",
@@ -56,6 +57,7 @@ ALL_TESTS = [
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
+    "sdc_modinst_slash",
     "sdc_names1",
     "sdc_names2",
     "spef_def_names",
@@ -132,6 +134,16 @@ filegroup(
             "hierclock": [
                 "hierclock_gate.v",
                 "hierclock_out.vok",
+            ],
+            "levelize_drvr_vertices1": [
+                "gcd_asap7.v",
+                "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+                "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
+                "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
             ],
             "network_edit1": [
                 "reg3.def",
@@ -284,7 +296,8 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
@@ -304,7 +317,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
@@ -317,7 +330,7 @@ cc_test(
     srcs = ["cpp/TestReadVerilog.cpp"],
     data = glob(["cpp/TestReadVerilog*.v"]),
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

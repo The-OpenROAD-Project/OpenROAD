@@ -22,12 +22,17 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//src/stt",
+        "//src/utl",
     ],
 )
 
 cc_library(
     name = "groute",
     hdrs = ["include/grt/GRoute.h"],
+    includes = [
+        "include",
+    ],
+    deps = ["//src/odb/src/db"],
 )
 
 cc_library(
@@ -62,14 +67,13 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
         "@boost.container_hash",
         "@boost.icl",
         "@boost.multi_array",
-        "@openmp",
     ],
 )
 
@@ -107,11 +111,10 @@ cc_library(
     ],
     deps = [
         ":groute",
-        "//:ord",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est:parasitics_service",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -154,12 +157,11 @@ cc_library(
         ":groute",
         "//src/ant",
         "//src/dbSta",
-        "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
         "//src/drt:pin_access_service",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
@@ -206,7 +208,7 @@ cc_library(
         ":grt",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",

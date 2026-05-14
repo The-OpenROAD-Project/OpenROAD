@@ -7,8 +7,10 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "OptimizerTypes.hh"
@@ -19,6 +21,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/Parasitics.hh"
@@ -1151,9 +1154,11 @@ ArcDelayState collectPathStages(const Resizer& resizer,
   }
   std::ranges::reverse(fanin_stages);
 
-  context.path_stages = std::move(fanin_stages);
+  context.path_stages.reserve(fanin_stages.size() + 1 + delay_levels);
+  for (DelayStageState& stage : fanin_stages) {
+    context.path_stages.push_back(std::move(stage));
+  }
   context.target_stage_index = static_cast<int>(context.path_stages.size());
-  context.path_stages.reserve(context.path_stages.size() + 1 + delay_levels);
   context.path_stages.push_back(target_stage);
 
   int found_fanout_stages = 0;

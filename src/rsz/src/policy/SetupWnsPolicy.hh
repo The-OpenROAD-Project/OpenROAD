@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "RepairSetupContext.hh"
+#include "RepairTargetCollector.hh"
 #include "SetupLegacyBase.hh"
 
 namespace rsz {

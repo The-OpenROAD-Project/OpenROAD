@@ -62,8 +62,7 @@ std::string histogramBar(const int count, const int count_per_hash)
 }  // namespace
 
 MoveTracker::MoveTracker(Resizer& resizer, const bool report_enabled)
-    : resizer_(resizer),
-      logger_(resizer.logger()),
+    : logger_(resizer.logger()),
       sta_(resizer.sta()),
       db_network_(resizer.dbNetwork()),
       report_enabled_(report_enabled),

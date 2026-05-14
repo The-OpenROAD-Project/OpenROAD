@@ -57,18 +57,44 @@ Design statistics
 Nets:                411
 Special nets:        2
 Routing layers:      6
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical        25000         25000          0.00%
+met1       Horizontal      25777          5155          80.00%
+met2       Vertical        24693          7408          70.00%
+met3       Horizontal      15984          7992          50.00%
+met4       Vertical        11697          5849          50.00%
+met5       Horizontal       3600          1800          50.00%
+---------------------------------------------------------------
+
 Stage 1: Pattern routing.
-Nets with overflow: 108.
+Nets with overflow: 51.
 Stage 2: Pattern routing with detours.
-Nets with overflow: 62.
+Nets with overflow: 9.
 Stage 3: Maze routing on sparsified graph.
-Nets with overflow: 20.
+Nets with overflow: 4.
 Routing statistics
-Wire length:           62020
-Total via count:       3233
-Total wire overflow:   0
-Min resource:          -0.5555555555555571
-Bottleneck:            (3, 13, 14)
-[INFO GRT-0018] Total wirelength: 31082 um
+Wire length:           60099
+Total via count:       2916
+Total overflow:        0
+Min resource:          -0.06722240103615684
+Bottleneck:            (1, 16, 28)
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+li1              25000            47            0.19%             0 /  0 /  0
+met1              5155           666           12.92%             0 /  0 /  0
+met2              7408          1494           20.17%             0 /  0 /  0
+met3              7992          1253           15.68%             0 /  0 /  0
+met4              5849           221            3.78%             0 /  0 /  0
+met5              1800             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            53204          3681            6.92%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 30160 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

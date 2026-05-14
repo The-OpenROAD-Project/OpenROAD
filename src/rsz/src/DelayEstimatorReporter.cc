@@ -5,11 +5,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -30,8 +32,10 @@
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -292,11 +296,16 @@ void DelayEstimatorReporter::reportAccuracyForSizing(
       {
         odb::dbDatabase::beginEco(reporter.block_);
       }
-      ~EcoJournalScope()
+      ~EcoJournalScope() noexcept
       {
-        reporter.resizer_.initForJournalRestore();
-        odb::dbDatabase::undoEco(reporter.block_);
-        reporter.resizer_.updateParasiticsAndTiming();
+        try {
+          reporter.resizer_.initForJournalRestore();
+          odb::dbDatabase::undoEco(reporter.block_);
+          reporter.resizer_.updateParasiticsAndTiming();
+        } catch (...) {
+          // Destructors must not throw during diagnostic ECO cleanup.
+          return;
+        }
       }
     };
 
@@ -699,25 +708,31 @@ DelayEstimatorReporter::buildLegacyProfile(const Target& target,
   }
 
   sta::PathExpanded expanded(target.endpoint_path, resizer_.staState());
-  StageProfileRow current_row{
-      .path_index = target.path_index,
-      .role = Role::kTarget,
-      .pin_name = stagePinName(expanded, target.path_index),
-      .cell_name = driver_port->libertyCell()->name(),
-      .input_slew = context->target().input_slew,
-      .cell_delay = current_cell_delay,
-      .wire_delay = pathWireDelay(expanded, target.path_index),
-      .load_cap = load_cap,
-      .output_slew = context->target().current_slew,
-      .extra_delay = current_fanin_penalty};
-  profile.current_stages.push_back(current_row);
+  const std::string target_pin_name = stagePinName(expanded, target.path_index);
+  const float target_wire_delay = pathWireDelay(expanded, target.path_index);
+  StageProfileRow current_row{.path_index = target.path_index,
+                              .role = Role::kTarget,
+                              .pin_name = target_pin_name,
+                              .cell_name = driver_port->libertyCell()->name(),
+                              .input_slew = context->target().input_slew,
+                              .cell_delay = current_cell_delay,
+                              .wire_delay = target_wire_delay,
+                              .load_cap = load_cap,
+                              .output_slew = context->target().current_slew,
+                              .extra_delay = current_fanin_penalty};
+  profile.current_stages.push_back(std::move(current_row));
 
-  StageProfileRow candidate_row = current_row;
-  candidate_row.cell_name = replacement->name();
-  candidate_row.cell_delay = candidate_cell_delay;
-  candidate_row.output_slew = kMissingValue;
-  candidate_row.extra_delay = candidate_fanin_penalty;
-  profile.candidate_stages.push_back(candidate_row);
+  StageProfileRow candidate_row{.path_index = target.path_index,
+                                .role = Role::kTarget,
+                                .pin_name = target_pin_name,
+                                .cell_name = replacement->name(),
+                                .input_slew = context->target().input_slew,
+                                .cell_delay = candidate_cell_delay,
+                                .wire_delay = target_wire_delay,
+                                .load_cap = load_cap,
+                                .output_slew = kMissingValue,
+                                .extra_delay = candidate_fanin_penalty};
+  profile.candidate_stages.push_back(std::move(candidate_row));
 
   return profile;
 }
@@ -874,7 +889,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
       fixed_stage.next_pin_name = network_->pathName(next_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
   return fixed_stages;
 }
@@ -1175,28 +1190,36 @@ void DelayEstimatorReporter::printStageWindowDetail(
     const bool has_golden_before = row_index < golden_before.size();
     const bool has_golden_after = row_index < golden_after.size();
 
-    const Role role = has_estimated_current     ? estimated_current_row.role
-                      : has_estimated_candidate ? estimated_candidate_row.role
-                      : has_golden_before       ? golden_before_row.role
-                                                : golden_after_row.role;
-    const int path_index
-        = has_estimated_current     ? estimated_current_row.path_index
-          : has_estimated_candidate ? estimated_candidate_row.path_index
-          : has_golden_before       ? golden_before_row.path_index
-                                    : golden_after_row.path_index;
-    const std::string& pin_name
-        = has_estimated_current     ? estimated_current_row.pin_name
-          : has_estimated_candidate ? estimated_candidate_row.pin_name
-          : has_golden_before       ? golden_before_row.pin_name
-                                    : golden_after_row.pin_name;
-    const std::string& pre_cell
-        = has_estimated_current ? estimated_current_row.cell_name
-          : has_golden_before   ? golden_before_row.cell_name
-                                : kDashCell;
-    const std::string& post_cell
-        = has_estimated_candidate ? estimated_candidate_row.cell_name
-          : has_golden_after      ? golden_after_row.cell_name
-                                  : kDashCell;
+    const StageProfileRow* reference_row = &golden_after_row;
+    if (has_golden_before) {
+      reference_row = &golden_before_row;
+    }
+    if (has_estimated_candidate) {
+      reference_row = &estimated_candidate_row;
+    }
+    if (has_estimated_current) {
+      reference_row = &estimated_current_row;
+    }
+
+    const std::string* pre_cell = &kDashCell;
+    if (has_golden_before) {
+      pre_cell = &golden_before_row.cell_name;
+    }
+    if (has_estimated_current) {
+      pre_cell = &estimated_current_row.cell_name;
+    }
+
+    const std::string* post_cell = &kDashCell;
+    if (has_golden_after) {
+      post_cell = &golden_after_row.cell_name;
+    }
+    if (has_estimated_candidate) {
+      post_cell = &estimated_candidate_row.cell_name;
+    }
+
+    const Role role = reference_row->role;
+    const int path_index = reference_row->path_index;
+    const std::string& pin_name = reference_row->pin_name;
 
     const float estimated_current_delay
         = has_estimated_current
@@ -1278,8 +1301,8 @@ void DelayEstimatorReporter::printStageWindowDetail(
     const bool post_arc_relaxed
         = has_estimated_candidate && estimated_candidate_row.arc_match_relaxed;
     logger_->report("    cell: pre={}  post={}{}",
-                    pre_cell,
-                    post_cell,
+                    *pre_cell,
+                    *post_cell,
                     post_arc_relaxed ? "  arc_match: relaxed" : "");
     logger_->report("");
     logger_->report("    {:<31} {:>10}   {:>10}   {:>10}",

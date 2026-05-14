@@ -3,7 +3,11 @@
 
 #pragma once
 
+#include <utility>
+
 #include "SetupLegacyBase.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
 
 namespace rsz {
 

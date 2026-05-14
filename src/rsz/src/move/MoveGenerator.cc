@@ -3,6 +3,7 @@
 
 #include "MoveGenerator.hh"
 
+#include <string>
 #include <tuple>
 
 #include "rsz/Resizer.hh"
