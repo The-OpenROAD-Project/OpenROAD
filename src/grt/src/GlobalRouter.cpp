@@ -6094,7 +6094,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     mergeResults(new_route);
 
     bool reroutingOverflow = true;
-    if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    if (fastroute_->totalOverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
@@ -6104,7 +6104,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
+      while (fastroute_->totalOverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to
         // the set
         // if the nets have wires
@@ -6147,10 +6147,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         mergeResults(new_route);
         add_max--;
       }
-      if (fastroute_->has2Doverflow()) {
+      if (fastroute_->totalOverflow()) {
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
+        reportCongestion();
         // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,

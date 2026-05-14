@@ -984,14 +984,14 @@ void FastRouteCore::addTreeEdge(int x1,
   TreeEdge new_edge;
   if (x1 == x2) {
     for (int y = y1; y < y2; y++) {
-      graph2d_.addUsageV(x1, y, edge_cost);
+      graph2d_.updateUsageV(x1, y, net, edge_cost);
       v_edges_3D_[k][y][x1].usage += layer_edge_cost;
       new_edge.route.grids.push_back(GPoint3D(x1, y, k));
     }
     new_edge.route.grids.push_back(GPoint3D(x2, y2, k));
   } else if (y1 == y2) {
     for (int x = x1; x < x2; x++) {
-      graph2d_.addUsageH(x, y1, edge_cost);
+      graph2d_.updateUsageH(x, y1, net, edge_cost);
       h_edges_3D_[k][y1][x].usage += layer_edge_cost;
       new_edge.route.grids.push_back(GPoint3D(x, y1, k));
     }
@@ -2380,6 +2380,8 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
+  disableNDRNets(net_ids_);
+
   NetRouteMap routes = getRoutes();
   net_ids_.clear();
   return routes;
@@ -2474,6 +2476,103 @@ void FastRouteCore::computeCongestedNDRnets()
 void FastRouteCore::updateSoftNDRNetUsage(const int net_id, const int edge_cost)
 {
   updatePlanarNetUsage(sttrees_[net_id], nets_[net_id], edge_cost);
+}
+
+// Update 3D edge usage for a net by multiplying each segment's layer_edge_cost
+// by `cost` (use +1 to add, -1 to subtract). Via transitions are skipped.
+void FastRouteCore::updateSoftNDRNet3DUsage(const int net_id, const int cost)
+{
+  FrNet* net = nets_[net_id];
+  const auto& treeedges = sttrees_[net_id].edges;
+  const int num_edges = sttrees_[net_id].num_edges();
+
+  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+    const TreeEdge& treeedge = treeedges[edgeID];
+    if (treeedge.route.routelen <= 0 || treeedge.route.grids.empty()) {
+      continue;
+    }
+    const std::vector<GPoint3D>& grids = treeedge.route.grids;
+    for (int i = 0; i < treeedge.route.routelen; i++) {
+      // Skip via transitions (layer changes)
+      if (grids[i].layer != grids[i + 1].layer) {
+        continue;
+      }
+      const int8_t layer_cost = net->getLayerEdgeCost(grids[i].layer);
+      if (grids[i].x == grids[i + 1].x) {  // vertical segment
+        const int min_y = std::min(grids[i].y, grids[i + 1].y);
+        v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage
+            += cost * layer_cost;
+      } else if (grids[i].y == grids[i + 1].y) {  // horizontal segment
+        const int min_x = std::min(grids[i].x, grids[i + 1].x);
+        h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage
+            += cost * layer_cost;
+      }
+    }
+  }
+}
+
+// Disable NDR for any net in `net_ids` that has an active NDR rule and is
+// found to occupy at least one congested 2D edge. 3D edge usage in
+// h_edges_3D_ / v_edges_3D_ is also updated when running in incremental GRT
+// mode or after layer assignment (3D stage).
+void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
+{
+  // Collect NDR nets from the supplied list that sit on a congested 2D edge
+  std::vector<int> congested_ndr_ids;
+  for (const int net_id : net_ids) {
+    FrNet* net = nets_[net_id];
+
+    // Skip non-NDR nets and nets already demoted to soft-NDR
+    if (net->getDbNet()->getNonDefaultRule() == nullptr || net->isSoftNDR()) {
+      continue;
+    }
+
+    const int num_edges = sttrees_[net_id].num_edges();
+    bool is_congested = false;
+
+    for (int edgeID = 0; edgeID < num_edges && !is_congested; edgeID++) {
+      const TreeEdge& treeedge = sttrees_[net_id].edges[edgeID];
+      if (treeedge.len <= 0 && treeedge.route.routelen <= 0) {
+        continue;
+      }
+      const std::vector<GPoint3D>& grids = treeedge.route.grids;
+      for (int i = 0; i < treeedge.route.routelen && !is_congested; i++) {
+        if (grids[i].x == grids[i + 1].x) {  // vertical segment
+          const int min_y = std::min(grids[i].y, grids[i + 1].y);
+          is_congested = graph2d_.getOverflowV(grids[i].x, min_y) > 0;
+        } else {  // horizontal segment
+          const int min_x = std::min(grids[i].x, grids[i + 1].x);
+          is_congested = graph2d_.getOverflowH(min_x, grids[i].y) > 0;
+        }
+      }
+    }
+
+    if (is_congested) {
+      congested_ndr_ids.push_back(net_id);
+    }
+  }
+
+  if (congested_ndr_ids.empty()) {
+    return;
+  }
+
+  // Whether to also correct 3D edge usage (true once 3D routes exist)
+  const bool update_3d = is_incremental_grt_ || is_3d_step_;
+
+  for (const int net_id : congested_ndr_ids) {
+    if (update_3d) {
+      // Remove old per-layer NDR cost from 3D edges before edge cost changes
+      updateSoftNDRNet3DUsage(net_id, -1);
+    }
+
+    // Update 2D usage, reset edge cost to 1, and emit the warning
+    applySoftNDR({net_id});
+
+    if (update_3d) {
+      // Re-add 3D usage with the new unit cost (getLayerEdgeCost now returns 1)
+      updateSoftNDRNet3DUsage(net_id, 1);
+    }
+  }
 }
 
 void FastRouteCore::setVerbose(bool v)
