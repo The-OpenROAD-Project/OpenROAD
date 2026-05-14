@@ -562,11 +562,14 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layer_index) != direction) {
           continue;
         }
-        CostT cost
-            = net_->isInsideLayerRange(layer_index)
-                  ? path->getCosts()[layer_index]
-                        + grid_graph_->getWireCost(layer_index, *node, *path)
-                  : std::numeric_limits<CostT>::max();
+        CostT cost = net_->isInsideLayerRange(layer_index)
+                         ? path->getCosts()[layer_index]
+                               + grid_graph_->getWireCost(
+                                   layer_index,
+                                   *node,
+                                   *path,
+                                   net_->getNdrCost(layer_index))
+                         : std::numeric_limits<CostT>::max();
         if (cost < costs[layer_index].first) {
           costs[layer_index] = std::make_pair(cost, path_index);
         }
@@ -590,7 +593,8 @@ void PatternRoute::calculateRoutingCosts(
   for (int layer_index = 1; layer_index < grid_graph_->getNumLayers();
        layer_index++) {
     via_costs[layer_index] = via_costs[layer_index - 1]
-                             + grid_graph_->getViaCost(layer_index - 1, *node);
+                             + grid_graph_->getViaCost(
+                                 layer_index - 1, *node, net_->getNdrCosts());
   }
 
   const LayerRange& net_range = net_->getLayerRange();
