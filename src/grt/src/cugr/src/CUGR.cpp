@@ -97,6 +97,7 @@ void CUGR::init(const int min_routing_layer,
   int index = 0;
   for (const CUGRNet& base_net : base_nets) {
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
+    gr_nets_.back()->setNdrCosts(computeNdrCosts(base_net.getDbNet()));
     net_indices_.push_back(index);
     db_net_map_[base_net.getDbNet()] = gr_nets_.back().get();
     index++;
@@ -150,6 +151,39 @@ void CUGR::setInitialNetSlacks()
     float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
   }
+}
+
+std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
+{
+  const int num_layers = grid_graph_->getNumLayers();
+  std::vector<double> factors(std::max(num_layers, 0), 1.0);
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr == nullptr) {
+    return factors;
+  }
+  std::vector<odb::dbTechLayerRule*> layer_rules;
+  ndr->getLayerRules(layer_rules);
+  for (odb::dbTechLayerRule* lr : layer_rules) {
+    odb::dbTechLayer* tl = lr->getLayer();
+    if (tl == nullptr || tl->getType() != odb::dbTechLayerType::ROUTING) {
+      continue;
+    }
+    const int layer_idx = tl->getRoutingLevel() - 1;  // 0-based
+    if (layer_idx < 0 || layer_idx >= num_layers) {
+      continue;
+    }
+    const int default_width = tl->getWidth();
+    const int default_pitch = tl->getPitch();
+    if (default_pitch <= 0) {
+      continue;
+    }
+    const int ndr_pitch
+        = lr->getWidth() / 2 + lr->getSpacing() + default_width / 2;
+    const double f
+        = static_cast<double>(ndr_pitch) / static_cast<double>(default_pitch);
+    factors[layer_idx] = std::max(1.0, f);
+  }
+  return factors;
 }
 
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
