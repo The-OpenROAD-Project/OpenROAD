@@ -529,7 +529,6 @@ class GlobalRouter
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
 
-  std::vector<odb::dbNet*> ordered_nets_;
   odb::PtrMap<odb::dbNet, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;

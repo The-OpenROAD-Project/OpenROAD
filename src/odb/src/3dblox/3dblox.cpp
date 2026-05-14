@@ -7,15 +7,12 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <map>
 #include <memory>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
-#include <variant>
-#include <vector>
 
 #include "bmapParser.h"
 #include "bmapWriter.h"
