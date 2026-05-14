@@ -38,20 +38,20 @@ met5       Horizontal       3600           720          80.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Nets with overflow: 252.
+Nets with congestion: 252.
 Stage 2: Pattern routing with detours.
-Nets with overflow: 226.
+Nets with congestion: 226.
 Stage 3: Maze routing on sparsified graph.
-Nets with overflow: 221.
+Nets with congestion: 221.
 Routing statistics
 Wire length:           44927
 Total via count:       1890
-Total overflow:        120
+Total congestion:      120
 Min resource:          -2.6650001788139344
 Bottleneck:            (2, 15, 15)
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1              25000            39            0.16%             0 /  0 /  0
 met1              6127          1367           22.31%             2 /  0 / 68

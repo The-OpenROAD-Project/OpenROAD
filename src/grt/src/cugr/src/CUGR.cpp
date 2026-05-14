@@ -160,7 +160,7 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
       net_indices.push_back(net->getIndex());
     }
   }
-  logger_->report("Nets with overflow: {}.", net_indices.size());
+  logger_->report("Nets with congestion: {}.", net_indices.size());
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
@@ -575,7 +575,7 @@ void CUGR::printStatistics() const
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
   logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total overflow:        {}", (int) total_overflow);
+  logger_->report("Total congestion:      {}", (int) total_overflow);
   logger_->report("Min resource:          {}", min_resource);
   logger_->report("Bottleneck:            {}", bottleneck);
 }
@@ -868,8 +868,8 @@ void CUGR::saveCongestion()
   };
 
   // Emit one marker per congested 3D edge, tagged with its routing
-  // layer. Comment carries capacity/usage/overflow and the source of
-  // the overflow (wire segments, via stubs, or both).
+  // layer. Comment carries capacity/usage/congestion and the source of
+  // the congestion (wire segments, via stubs, or both).
   for (int l = 0; l < num_layers; l++) {
     const int direction = grid_graph_->getLayerDirection(l);
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
@@ -916,7 +916,7 @@ void CUGR::saveCongestion()
           marker->setTechLayer(db_layer);
         }
         marker->setComment("capacity:" + std::to_string(cap_int) + " usage:"
-                           + std::to_string(demand_int) + " overflow:"
+                           + std::to_string(demand_int) + " congestion:"
                            + std::to_string(overflow_int) + " (" + kind + ")");
 
         std::set<odb::dbNet*> sources;

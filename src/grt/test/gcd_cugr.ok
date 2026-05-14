@@ -45,16 +45,16 @@ metal10    Vertical         2142          2142          0.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Nets with overflow: 0.
+Nets with congestion: 0.
 Routing statistics
 Wire length:           36727
 Total via count:       2460
-Total overflow:        0
+Total congestion:      0
 Min resource:          1
 Bottleneck:            (8, 0, 4)
 
 [INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1           24480             0            0.00%             0 /  0 /  0
 metal2           17918          1182            6.60%             0 /  0 /  0
