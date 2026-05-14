@@ -87,11 +87,11 @@ class SetupLegacyMtPolicy : public SetupLegacyPolicy
       int repairs_per_pass,
       int& changed,
       std::optional<MoveType>& accepted_type);
-  bool estimateAndCommitSizeDownBatch(MoveGenerator& generator,
-                                      const Target& target,
-                                      int repairs_per_pass,
-                                      int& changed,
-                                      std::optional<MoveType>& accepted_type);
+  bool estimateAndCommitReduceLoadBatch(MoveGenerator& generator,
+                                        const Target& target,
+                                        int repairs_per_pass,
+                                        int& changed,
+                                        std::optional<MoveType>& accepted_type);
   MoveResult commitCandidate(const Target& target,
                              MoveType type,
                              MoveCandidate& candidate);

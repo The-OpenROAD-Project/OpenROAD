@@ -173,8 +173,8 @@ void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
         case MoveType::kSizeUp:
           move_sequence_.push_back(MoveType::kSizeUp);
           break;
-        case MoveType::kSizeDown:
-          pushMoveIfEnabled(!config_.skip_size_down, MoveType::kSizeDown);
+        case MoveType::kReduceLoad:
+          pushMoveIfEnabled(!config_.skip_reduce_load, MoveType::kReduceLoad);
           break;
         case MoveType::kClone:
           pushMoveIfEnabled(!config_.skip_gate_cloning, MoveType::kClone);
@@ -201,7 +201,7 @@ void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
     pushMoveIfEnabled(!config_.skip_vt_swap && hasVtSwapCells(),
                       MoveType::kVtSwap);
     move_sequence_.push_back(MoveType::kSizeUp);
-    if (!config_.skip_size_down) {
+    if (!config_.skip_reduce_load) {
       // Disabled by default for legacy parity.
     }
     pushMoveIfEnabled(!config_.skip_pin_swap, MoveType::kSwapPins);
@@ -605,7 +605,7 @@ int SetupLegacyBase::repairProgressIncrement(const MoveType type,
 
 bool SetupLegacyBase::allowsBatchRepair(const MoveType type)
 {
-  return type == MoveType::kSizeDown;
+  return type == MoveType::kReduceLoad;
 }
 
 bool SetupLegacyBase::tryCandidateSequence(
@@ -635,11 +635,11 @@ bool SetupLegacyBase::tryCandidateSequence(
   return false;
 }
 
-bool SetupLegacyBase::trySizeDownBatch(MoveGenerator& generator,
-                                       const Target& target,
-                                       const int repairs_per_pass,
-                                       int& changed,
-                                       std::optional<MoveType>& accepted_type)
+bool SetupLegacyBase::tryReduceLoadBatch(MoveGenerator& generator,
+                                         const Target& target,
+                                         const int repairs_per_pass,
+                                         int& changed,
+                                         std::optional<MoveType>& accepted_type)
 {
   bool accepted_batch = false;
   while (tryCandidateSequence(
@@ -692,11 +692,11 @@ bool SetupLegacyBase::tryRepairTarget(
                network_->pathName(live_target.driver_pin));
 
     if (allowsBatchRepair(type)) {
-      if (trySizeDownBatch(generator,
-                           live_target,
-                           repairs_per_pass,
-                           changed,
-                           accepted_type)) {
+      if (tryReduceLoadBatch(generator,
+                             live_target,
+                             repairs_per_pass,
+                             changed,
+                             accepted_type)) {
         return true;
       }
       continue;
@@ -841,7 +841,7 @@ void SetupLegacyBase::printProgress(const int iteration,
       "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
       itr_field,
       totalMoves(MoveType::kUnbuffer),
-      totalMoves(MoveType::kSizeUp) + totalMoves(MoveType::kSizeDown)
+      totalMoves(MoveType::kSizeUp) + totalMoves(MoveType::kReduceLoad)
           + totalMoves(MoveType::kSizeUpMatch) + totalMoves(MoveType::kVtSwap),
       totalMoves(MoveType::kBuffer) + totalMoves(MoveType::kSplitLoad),
       totalMoves(MoveType::kClone),

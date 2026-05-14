@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SizeDownGenerator.hh"
+#include "ReduceLoadGenerator.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,7 +14,7 @@
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
-#include "SizeDownCandidate.hh"
+#include "ReduceLoadCandidate.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ContainerHelpers.hh"
@@ -36,9 +36,9 @@ namespace {
 
 using utl::RSZ;
 
-constexpr int kSizeDownMaxFanout = 10;
+constexpr int kReduceLoadMaxFanout = 10;
 
-struct SizeDownContext
+struct ReduceLoadContext
 {
   Resizer& resizer;
   MoveCommitter& committer;
@@ -50,7 +50,7 @@ struct SizeDownContext
   const sta::MinMax* min_max{nullptr};
 };
 
-struct SizeDownLoadContext
+struct ReduceLoadLoadContext
 {
   sta::Pin* load_pin{nullptr};
   sta::LibertyPort* load_port{nullptr};
@@ -62,7 +62,7 @@ struct SizeDownLoadContext
   float input_cap{0.0f};
 };
 
-struct SizeDownOutputProfile
+struct ReduceLoadOutputProfile
 {
   std::vector<const sta::Pin*> output_pins;
   std::vector<float> output_caps;
@@ -71,22 +71,22 @@ struct SizeDownOutputProfile
   std::vector<std::string> output_port_names;
 };
 
-bool resolveDriverContext(SizeDownContext& ctx)
+bool resolveDriverContext(ReduceLoadContext& ctx)
 {
   ctx.drvr_pin = ctx.target.resolvedPin(ctx.resizer);
   ctx.drvr_vertex = ctx.target.vertex(ctx.resizer);
   if (ctx.drvr_pin == nullptr || ctx.drvr_vertex == nullptr) {
     return false;
   }
-  if (ctx.target.fanout >= kSizeDownMaxFanout) {
+  if (ctx.target.fanout >= kReduceLoadMaxFanout) {
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                2,
-               "REJECT SizeDownMove {}: Fanout {} >= {} max fanout",
+               "REJECT ReduceLoadMove {}: Fanout {} >= {} max fanout",
                ctx.resizer.network()->pathName(ctx.drvr_pin),
                ctx.target.fanout,
-               kSizeDownMaxFanout);
+               kReduceLoadMaxFanout);
     return false;
   }
 
@@ -98,7 +98,7 @@ bool resolveDriverContext(SizeDownContext& ctx)
 }
 
 std::vector<std::pair<sta::Vertex*, sta::Slack>> sortedFanoutSlacks(
-    const SizeDownContext& ctx)
+    const ReduceLoadContext& ctx)
 {
   std::vector<std::pair<sta::Vertex*, sta::Slack>> fanout_slacks;
   sta::VertexOutEdgeIterator edge_iter(ctx.drvr_vertex, ctx.resizer.graph());
@@ -112,7 +112,7 @@ std::vector<std::pair<sta::Vertex*, sta::Slack>> sortedFanoutSlacks(
     sta::Pin* fanout_pin = fanout_vertex->pin();
     sta::Instance* fanout_inst = ctx.resizer.network()->instance(fanout_pin);
     if (fanout_inst != nullptr
-        && ctx.committer.hasMoves(MoveType::kSizeDown, fanout_inst)) {
+        && ctx.committer.hasMoves(MoveType::kReduceLoad, fanout_inst)) {
       continue;
     }
 
@@ -131,7 +131,7 @@ std::vector<std::pair<sta::Vertex*, sta::Slack>> sortedFanoutSlacks(
   for (const auto& [fanout_vertex, fanout_slack] : fanout_slacks) {
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                2,
                " fanout {} slack: {} drvr slack: {}",
                ctx.resizer.network()->pathName(fanout_vertex->pin()),
@@ -142,7 +142,7 @@ std::vector<std::pair<sta::Vertex*, sta::Slack>> sortedFanoutSlacks(
   return fanout_slacks;
 }
 
-std::vector<const sta::Pin*> getOutputPins(const SizeDownContext& ctx,
+std::vector<const sta::Pin*> getOutputPins(const ReduceLoadContext& ctx,
                                            const sta::Instance* inst)
 {
   std::vector<const sta::Pin*> outputs;
@@ -157,10 +157,10 @@ std::vector<const sta::Pin*> getOutputPins(const SizeDownContext& ctx,
   return outputs;
 }
 
-bool resolveLoadContext(const SizeDownContext& ctx,
+bool resolveLoadContext(const ReduceLoadContext& ctx,
                         sta::Vertex* load_vertex,
                         const sta::Slack load_slack,
-                        SizeDownLoadContext& load_ctx)
+                        ReduceLoadLoadContext& load_ctx)
 {
   load_ctx.load_pin = load_vertex->pin();
   load_ctx.load_port = ctx.resizer.network()->libertyPort(load_ctx.load_pin);
@@ -198,7 +198,7 @@ sta::ArcDelay getWorstIntrinsicDelay(const sta::LibertyPort* input_port)
                                                        : max_intrinsic;
 }
 
-sta::Slack getWorstInputSlack(const SizeDownContext& ctx, sta::Instance* inst)
+sta::Slack getWorstInputSlack(const ReduceLoadContext& ctx, sta::Instance* inst)
 {
   sta::Slack worst_slack = sta::INF;
   auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
@@ -217,7 +217,8 @@ sta::Slack getWorstInputSlack(const SizeDownContext& ctx, sta::Instance* inst)
   return worst_slack;
 }
 
-sta::Slack getWorstOutputSlack(const SizeDownContext& ctx, sta::Instance* inst)
+sta::Slack getWorstOutputSlack(const ReduceLoadContext& ctx,
+                               sta::Instance* inst)
 {
   sta::Slack worst_slack = sta::INF;
   auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
@@ -236,7 +237,7 @@ sta::Slack getWorstOutputSlack(const SizeDownContext& ctx, sta::Instance* inst)
   return worst_slack;
 }
 
-bool checkMaxCapViolation(const SizeDownContext& ctx,
+bool checkMaxCapViolation(const ReduceLoadContext& ctx,
                           const sta::Pin* output_pin,
                           sta::LibertyPort* output_port,
                           const float output_cap)
@@ -260,7 +261,7 @@ bool checkMaxCapViolation(const SizeDownContext& ctx,
   return false;
 }
 
-float computeElmoreSlewFactor(const SizeDownContext& ctx,
+float computeElmoreSlewFactor(const ReduceLoadContext& ctx,
                               const sta::Pin* output_pin,
                               sta::LibertyPort* output_port,
                               const float output_load_cap)
@@ -276,7 +277,7 @@ float computeElmoreSlewFactor(const SizeDownContext& ctx,
              : 0.0f;
 }
 
-bool checkMaxSlewViolation(const SizeDownContext& ctx,
+bool checkMaxSlewViolation(const ReduceLoadContext& ctx,
                            const sta::Pin* output_pin,
                            sta::LibertyPort* output_port,
                            const float output_slew_factor,
@@ -306,8 +307,8 @@ bool checkMaxSlewViolation(const SizeDownContext& ctx,
   return false;
 }
 
-sta::LibertyCellSeq rankSwappableCells(const SizeDownContext& ctx,
-                                       const SizeDownLoadContext& load_ctx)
+sta::LibertyCellSeq rankSwappableCells(const ReduceLoadContext& ctx,
+                                       const ReduceLoadLoadContext& load_ctx)
 {
   const std::string& load_port_name = load_ctx.load_port->name();
   sta::LibertyCellSeq swappable_cells
@@ -338,11 +339,11 @@ sta::LibertyCellSeq rankSwappableCells(const SizeDownContext& ctx,
   return swappable_cells;
 }
 
-void logSwappableCells(const SizeDownContext& ctx,
-                       const SizeDownLoadContext& load_ctx,
+void logSwappableCells(const ReduceLoadContext& ctx,
+                       const ReduceLoadLoadContext& load_ctx,
                        const sta::LibertyCellSeq& swappable_cells)
 {
-  if (ctx.resizer.logger()->debugCheck(RSZ, "size_down_move", 3)) {
+  if (ctx.resizer.logger()->debugCheck(RSZ, "reduce_load_move", 3)) {
     std::string swappable_names;
     for (sta::LibertyCell* swappable : swappable_cells) {
       if (!swappable_names.empty()) {
@@ -358,18 +359,19 @@ void logSwappableCells(const SizeDownContext& ctx,
     }
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                3,
-               "size_down fanout {} swaps={}",
+               "reduce_load fanout {} swaps={}",
                ctx.resizer.network()->pathName(load_ctx.load_pin),
                swappable_names.c_str());
   }
 }
 
-SizeDownOutputProfile buildOutputProfile(const SizeDownContext& ctx,
-                                         const SizeDownLoadContext& load_ctx)
+ReduceLoadOutputProfile buildOutputProfile(
+    const ReduceLoadContext& ctx,
+    const ReduceLoadLoadContext& load_ctx)
 {
-  SizeDownOutputProfile profile;
+  ReduceLoadOutputProfile profile;
   profile.output_pins = getOutputPins(ctx, load_ctx.load_inst);
   profile.output_caps.reserve(profile.output_pins.size());
   profile.output_slew_factors.reserve(profile.output_pins.size());
@@ -399,7 +401,7 @@ SizeDownOutputProfile buildOutputProfile(const SizeDownContext& ctx,
 
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                4,
                " current {}->{} gate={} delay={} cap={} slew={} slack={}",
                ctx.resizer.network()->pathName(load_ctx.load_pin),
@@ -414,8 +416,8 @@ SizeDownOutputProfile buildOutputProfile(const SizeDownContext& ctx,
   return profile;
 }
 
-sta::Slack computeDelayBudget(const SizeDownContext& ctx,
-                              const SizeDownLoadContext& load_ctx)
+sta::Slack computeDelayBudget(const ReduceLoadContext& ctx,
+                              const ReduceLoadLoadContext& load_ctx)
 {
   if (load_ctx.load_cell->hasSequentials()) {
     const sta::Slack worst_output_slack
@@ -423,7 +425,7 @@ sta::Slack computeDelayBudget(const SizeDownContext& ctx,
     debugPrint(
         ctx.resizer.logger(),
         RSZ,
-        "size_down_move",
+        "reduce_load_move",
         4,
         " Sequential element: using worst output slack: {} (pin slack: {})",
         delayAsString(worst_output_slack, 3, ctx.resizer.staState()),
@@ -437,7 +439,7 @@ sta::Slack computeDelayBudget(const SizeDownContext& ctx,
       = std::min(load_ctx.load_slack, worst_input_slack);
   debugPrint(ctx.resizer.logger(),
              RSZ,
-             "size_down_move",
+             "reduce_load_move",
              4,
              " Combinational gate: using worst input slack: {} (pin slack: {}, "
              "worst input: {})",
@@ -447,7 +449,7 @@ sta::Slack computeDelayBudget(const SizeDownContext& ctx,
   return delay_budget;
 }
 
-float candidateInputCap(const SizeDownLoadContext& load_ctx,
+float candidateInputCap(const ReduceLoadLoadContext& load_ctx,
                         sta::LibertyCell* cell)
 {
   return static_cast<const sta::LibertyPort*>(
@@ -456,7 +458,7 @@ float candidateInputCap(const SizeDownLoadContext& load_ctx,
       ->capacitance();
 }
 
-bool isWorseCapOrArea(const SizeDownLoadContext& load_ctx,
+bool isWorseCapOrArea(const ReduceLoadLoadContext& load_ctx,
                       sta::LibertyCell* best_cell,
                       sta::LibertyCell* swappable)
 {
@@ -465,8 +467,8 @@ bool isWorseCapOrArea(const SizeDownLoadContext& load_ctx,
          || swappable->area() > best_cell->area();
 }
 
-bool violatesOutputLimits(const SizeDownContext& ctx,
-                          const SizeDownOutputProfile& profile,
+bool violatesOutputLimits(const ReduceLoadContext& ctx,
+                          const ReduceLoadOutputProfile& profile,
                           sta::LibertyCell* swappable)
 {
   for (size_t i = 0; i < profile.output_pins.size(); ++i) {
@@ -485,17 +487,17 @@ bool violatesOutputLimits(const SizeDownContext& ctx,
   return false;
 }
 
-float computeDriverDelayDelta(const SizeDownContext& ctx,
-                              const SizeDownLoadContext& load_ctx,
+float computeDriverDelayDelta(const ReduceLoadContext& ctx,
+                              const ReduceLoadLoadContext& load_ctx,
                               sta::LibertyCell* swappable)
 {
   return -ctx.drvr_port->driveResistance()
          * (load_ctx.input_cap - candidateInputCap(load_ctx, swappable));
 }
 
-float computeWorstDelayChange(const SizeDownContext& ctx,
-                              const SizeDownLoadContext& load_ctx,
-                              const SizeDownOutputProfile& profile,
+float computeWorstDelayChange(const ReduceLoadContext& ctx,
+                              const ReduceLoadLoadContext& load_ctx,
+                              const ReduceLoadOutputProfile& profile,
                               sta::LibertyCell* swappable)
 {
   const float drvr_delta_delay
@@ -517,9 +519,9 @@ float computeWorstDelayChange(const SizeDownContext& ctx,
   return worst_delay_change;
 }
 
-bool fitsDelayBudget(const SizeDownContext& ctx,
-                     const SizeDownLoadContext& load_ctx,
-                     const SizeDownOutputProfile& profile,
+bool fitsDelayBudget(const ReduceLoadContext& ctx,
+                     const ReduceLoadLoadContext& load_ctx,
+                     const ReduceLoadOutputProfile& profile,
                      sta::LibertyCell* swappable)
 {
   const float drvr_delta_delay
@@ -534,7 +536,7 @@ bool fitsDelayBudget(const SizeDownContext& ctx,
   debugPrint(
       ctx.resizer.logger(),
       RSZ,
-      "size_down_move",
+      "reduce_load_move",
       4,
       " new delay {}->{} gate={} drvr_delta {} + new_delay {} - old_delay "
       "{} < slack {} ({} < {})",
@@ -556,7 +558,7 @@ bool fitsDelayBudget(const SizeDownContext& ctx,
     debugPrint(
         ctx.resizer.logger(),
         RSZ,
-        "size_down_move",
+        "reduce_load_move",
         4,
         " skip based on delay {}->{} gate={} drvr_delta {} + new_delay {} "
         "- old_delay {} < slack {} ({} < {})",
@@ -574,10 +576,10 @@ bool fitsDelayBudget(const SizeDownContext& ctx,
 }
 
 sta::LibertyCell* selectReplacementCell(
-    const SizeDownContext& ctx,
-    const SizeDownLoadContext& load_ctx,
+    const ReduceLoadContext& ctx,
+    const ReduceLoadLoadContext& load_ctx,
     const sta::LibertyCellSeq& swappable_cells,
-    const SizeDownOutputProfile& profile)
+    const ReduceLoadOutputProfile& profile)
 {
   sta::LibertyCell* best_cell = load_ctx.load_cell;
   for (sta::LibertyCell* swappable : swappable_cells) {
@@ -587,7 +589,7 @@ sta::LibertyCell* selectReplacementCell(
 
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                4,
                " considering swap {} {} -> {}",
                ctx.resizer.network()->pathName(load_ctx.load_pin),
@@ -597,7 +599,7 @@ sta::LibertyCell* selectReplacementCell(
     if (isWorseCapOrArea(load_ctx, best_cell, swappable)) {
       debugPrint(ctx.resizer.logger(),
                  RSZ,
-                 "size_down_move",
+                 "reduce_load_move",
                  4,
                  "  skip based on cap/area {} gate={} cap={}>{} area={}>{}",
                  ctx.resizer.network()->pathName(load_ctx.load_pin),
@@ -617,7 +619,7 @@ sta::LibertyCell* selectReplacementCell(
     best_cell = swappable;
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                3,
                " new best size down {} -> {} ({} -> {})",
                ctx.resizer.network()->pathName(load_ctx.load_pin),
@@ -629,11 +631,11 @@ sta::LibertyCell* selectReplacementCell(
   return best_cell != load_ctx.load_cell ? best_cell : nullptr;
 }
 
-std::unique_ptr<MoveCandidate> buildCandidate(const SizeDownContext& ctx,
+std::unique_ptr<MoveCandidate> buildCandidate(const ReduceLoadContext& ctx,
                                               sta::Vertex* load_vertex,
                                               const sta::Slack load_slack)
 {
-  SizeDownLoadContext load_ctx;
+  ReduceLoadLoadContext load_ctx;
   if (!resolveLoadContext(ctx, load_vertex, load_slack, load_ctx)) {
     return nullptr;
   }
@@ -641,15 +643,15 @@ std::unique_ptr<MoveCandidate> buildCandidate(const SizeDownContext& ctx,
   load_ctx.delay_budget = computeDelayBudget(ctx, load_ctx);
   const sta::LibertyCellSeq swappable_cells = rankSwappableCells(ctx, load_ctx);
   logSwappableCells(ctx, load_ctx, swappable_cells);
-  const SizeDownOutputProfile profile = buildOutputProfile(ctx, load_ctx);
+  const ReduceLoadOutputProfile profile = buildOutputProfile(ctx, load_ctx);
   sta::LibertyCell* replacement
       = selectReplacementCell(ctx, load_ctx, swappable_cells, profile);
   if (replacement == nullptr) {
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                3,
-               "REJECT SizeDownMove {} -> {}: ({} -> {}) slack={}",
+               "REJECT ReduceLoadMove {} -> {}: ({} -> {}) slack={}",
                ctx.resizer.network()->pathName(ctx.drvr_pin),
                ctx.resizer.network()->pathName(load_ctx.load_pin),
                load_ctx.load_cell->name(),
@@ -658,22 +660,22 @@ std::unique_ptr<MoveCandidate> buildCandidate(const SizeDownContext& ctx,
     return nullptr;
   }
 
-  return std::make_unique<SizeDownCandidate>(ctx.resizer,
-                                             ctx.target,
-                                             ctx.drvr_pin,
-                                             load_ctx.load_inst,
-                                             load_ctx.load_pin,
-                                             load_ctx.load_cell,
-                                             replacement,
-                                             load_ctx.load_slack);
+  return std::make_unique<ReduceLoadCandidate>(ctx.resizer,
+                                               ctx.target,
+                                               ctx.drvr_pin,
+                                               load_ctx.load_inst,
+                                               load_ctx.load_pin,
+                                               load_ctx.load_cell,
+                                               replacement,
+                                               load_ctx.load_slack);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
-    const SizeDownContext& ctx)
+    const ReduceLoadContext& ctx)
 {
   debugPrint(ctx.resizer.logger(),
              RSZ,
-             "size_down_move",
+             "reduce_load_move",
              2,
              "sizing down for crit fanout {}",
              ctx.resizer.network()->pathName(ctx.drvr_pin));
@@ -690,9 +692,9 @@ std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
   if (candidates.empty()) {
     debugPrint(ctx.resizer.logger(),
                RSZ,
-               "size_down_move",
+               "reduce_load_move",
                2,
-               "REJECT SizeDownMove {}: Couldn't size down any gates",
+               "REJECT ReduceLoadMove {}: Couldn't size down any gates",
                ctx.resizer.network()->pathName(ctx.drvr_pin));
   }
   return candidates;
@@ -700,15 +702,15 @@ std::vector<std::unique_ptr<MoveCandidate>> buildCandidates(
 
 }  // namespace
 
-SizeDownGenerator::SizeDownGenerator(const GeneratorContext& context)
+ReduceLoadGenerator::ReduceLoadGenerator(const GeneratorContext& context)
     : MoveGenerator(context)
 {
 }
 
-std::vector<std::unique_ptr<MoveCandidate>> SizeDownGenerator::generate(
+std::vector<std::unique_ptr<MoveCandidate>> ReduceLoadGenerator::generate(
     const Target& target)
 {
-  SizeDownContext ctx{
+  ReduceLoadContext ctx{
       .resizer = resizer_, .committer = committer_, .target = target};
   if (!resolveDriverContext(ctx)) {
     return {};

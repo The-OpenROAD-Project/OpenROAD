@@ -244,7 +244,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-phases phases]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
-                                        [-skip_size_down]\
+                                        [-skip_reduce_load]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
                                         [-skip_last_gasp]\
@@ -269,7 +269,7 @@ proc repair_timing { args } {
             -phases -policy -policies \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-             -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
+             -skip_reduce_load -skip_buffering -skip_buffer_removal -skip_last_gasp \
              -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
@@ -319,7 +319,7 @@ proc repair_timing { args } {
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
   set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
-  set skip_size_down [info exists flags(-skip_size_down)]
+  set skip_reduce_load [info exists flags(-skip_reduce_load)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
@@ -385,7 +385,7 @@ proc repair_timing { args } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence $phases \
-        $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
+        $skip_pin_swap $skip_gate_cloning $skip_reduce_load $skip_buffering \
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
     if { $hold } {

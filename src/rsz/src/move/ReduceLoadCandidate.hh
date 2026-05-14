@@ -19,22 +19,22 @@ namespace rsz {
 // The generator pre-screens loads on the driver's net and picks a weaker
 // cell that reduces area/leakage while staying within the available slack
 // budget. apply() performs the cell swap via Resizer::replaceCell.
-class SizeDownCandidate : public MoveCandidate
+class ReduceLoadCandidate : public MoveCandidate
 {
  public:
   // === Construction =========================================================
-  SizeDownCandidate(Resizer& resizer,
-                    const Target& target,
-                    sta::Pin* drvr_pin,
-                    sta::Instance* inst,
-                    sta::Pin* load_pin,
-                    sta::LibertyCell* current_cell,
-                    sta::LibertyCell* replacement,
-                    sta::Slack slack);
+  ReduceLoadCandidate(Resizer& resizer,
+                      const Target& target,
+                      sta::Pin* drvr_pin,
+                      sta::Instance* inst,
+                      sta::Pin* load_pin,
+                      sta::LibertyCell* current_cell,
+                      sta::LibertyCell* replacement,
+                      sta::Slack slack);
 
   // === MoveCandidate API ====================================================
   MoveResult apply() override;
-  MoveType type() const override { return MoveType::kSizeDown; }
+  MoveType type() const override { return MoveType::kReduceLoad; }
 
  private:
   // === Candidate state ======================================================

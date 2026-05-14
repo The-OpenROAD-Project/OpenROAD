@@ -17,8 +17,8 @@
 #include "MoveGenerator.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
+#include "ReduceLoadGenerator.hh"
 #include "RerouteGenerator.hh"
-#include "SizeDownGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SizeUpMtGenerator.hh"
 #include "SplitLoadGenerator.hh"
@@ -82,8 +82,8 @@ void SetupLegacyMtPolicy::buildMoveGenerators(
       case MoveType::kSplitLoad:
         generator = std::make_unique<SplitLoadGenerator>(context);
         break;
-      case MoveType::kSizeDown:
-        generator = std::make_unique<SizeDownGenerator>(context);
+      case MoveType::kReduceLoad:
+        generator = std::make_unique<ReduceLoadGenerator>(context);
         break;
       case MoveType::kSwapPins:
         generator = std::make_unique<SwapPinsGenerator>(context);
@@ -243,7 +243,7 @@ bool SetupLegacyMtPolicy::estimateAndCommitSerialCandidates(
   return false;
 }
 
-bool SetupLegacyMtPolicy::estimateAndCommitSizeDownBatch(
+bool SetupLegacyMtPolicy::estimateAndCommitReduceLoadBatch(
     MoveGenerator& generator,
     const Target& target,
     const int repairs_per_pass,
@@ -309,11 +309,11 @@ bool SetupLegacyMtPolicy::tryRepairTarget(
 
     logConsideringGenerator(generator, prepared_target);
     if (allowsBatchRepair(generator.type())) {
-      if (estimateAndCommitSizeDownBatch(generator,
-                                         prepared_target,
-                                         repairs_per_pass,
-                                         changed,
-                                         accepted_type)) {
+      if (estimateAndCommitReduceLoadBatch(generator,
+                                           prepared_target,
+                                           repairs_per_pass,
+                                           changed,
+                                           accepted_type)) {
         return true;
       }
       continue;
