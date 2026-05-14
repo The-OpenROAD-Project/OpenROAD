@@ -4,12 +4,8 @@ import odb
 import helpers
 import ifp_helpers as ifph
 
-try:
-    site_set = openroad.site_set
-except AttributeError:
-    import ifp
-
-    site_set = ifp.site_set
+import ifp
+site_set = ifp.site_set
 
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")

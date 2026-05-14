@@ -12,12 +12,8 @@ design.link("top")
 
 floorplan = design.getFloorplan()
 site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")
-try:
-    flipped_sites = openroad.site_set()
-except AttributeError:
-    import ifp
-
-    flipped_sites = ifp.site_set()
+import ifp
+flipped_sites = ifp.site_set()
 flipped_sites.insert(site)
 
 floorplan.initFloorplan(
