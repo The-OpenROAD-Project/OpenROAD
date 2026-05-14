@@ -127,7 +127,7 @@ cc_test(
         "//src/cut/test/cpp/helper",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
