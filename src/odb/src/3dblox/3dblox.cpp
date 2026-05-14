@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
