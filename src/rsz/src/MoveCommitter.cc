@@ -392,16 +392,13 @@ void MoveCommitter::beginEcoJournal() const
 
 void MoveCommitter::commitEcoJournal() const
 {
-  debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal end");
-  // Refresh timing only once after a batch of ECO edits becomes permanent.
-  if (ecoHasPendingChanges()) {
-    resizer_.updateParasiticsAndTiming();
-  }
+  debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal commit");
   odb::dbDatabase::commitEco(resizer_.block());
 }
 
 void MoveCommitter::restoreEcoJournal() const
 {
+  debugPrint(resizer_.logger(), RSZ, "journal", 1, "journal restore");
   odb::dbDatabase::undoEco(resizer_.block());
 }
 
@@ -466,7 +463,6 @@ void MoveCommitter::beginJournal()
   if (!canManageJournal()) {
     return;
   }
-
   // Start one reversible ECO batch for the current search branch.
   beginEcoJournal();
   journal_open_ = true;
@@ -477,7 +473,10 @@ void MoveCommitter::commitJournal()
   if (!canManageJournal() || !journal_open_) {
     return;
   }
-
+  // Refresh timing only once after a batch of ECO edits becomes permanent.
+  if (ecoHasPendingChanges()) {
+    resizer_.updateParasiticsAndTiming();
+  }
   // Close the reversible batch and fold the accepted moves into the totals.
   commitEcoJournal();
   acceptPendingMoves();
@@ -489,8 +488,7 @@ void MoveCommitter::restoreJournal()
   if (!canManageJournal() || !journal_open_) {
     return;
   }
-
-  // Undo both database edits and in-memory accounting for the rejected branch.
+  // Undo both database edits and in-memory accounting for the rejected branch
   debugPrint(
       resizer_.logger(), RSZ, "journal", 1, "journal restore starts >>>");
   resizer_.initForJournalRestore();
@@ -509,6 +507,7 @@ void MoveCommitter::restoreJournal()
   }
 
   resizer_.updateParasiticsAndTiming();
+  resizer_.invalidateVertexOrdering();
   rejectPendingMoves();
   journal_open_ = false;
 

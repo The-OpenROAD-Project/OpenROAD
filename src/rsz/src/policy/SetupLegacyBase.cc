@@ -247,7 +247,7 @@ bool SetupLegacyBase::beginJournaledEndpointSearch(
   endpoint_state.pass = 1;
   endpoint_state.decreasing_slack_passes = 0;
   endpoint_state.force_single_repair = false;
-  resizer_.journalBegin();
+  committer_.beginJournal();
   endpoint_state.journal_open = true;
   return true;
 }
@@ -269,7 +269,7 @@ void SetupLegacyBase::acceptEndpointState(
     return;
   }
 
-  resizer_.journalEnd();
+  committer_.commitJournal();
   committer_.acceptPendingMoves();
   endpoint_state.journal_open = false;
 }
@@ -281,7 +281,7 @@ void SetupLegacyBase::restoreEndpointState(
     return;
   }
 
-  resizer_.journalRestore();
+  committer_.restoreJournal();
   committer_.rejectPendingMoves();
   endpoint_state.journal_open = false;
 }
@@ -300,7 +300,7 @@ void SetupLegacyBase::saveImprovedCheckpoint(
     SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
   acceptEndpointState(endpoint_state);
-  resizer_.journalBegin();
+  committer_.beginJournal();
   endpoint_state.journal_open = true;
 }
 
