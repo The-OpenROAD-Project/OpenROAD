@@ -22,6 +22,7 @@
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/network_simplex.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -2283,7 +2284,7 @@ void MBFF::SetVars(const std::vector<Flop>& flops)
   single_bit_width_ = std::numeric_limits<float>::max();
   single_bit_power_ = std::numeric_limits<float>::max();
   const float activity = clockActivity();
-  std::map<dbMaster*, float> energy_cache;
+  odb::PtrMap<dbMaster, float> energy_cache;
   for (const Flop& flop : flops) {
     dbMaster* master = insts_[flop.idx]->getMaster();
     single_bit_height_
@@ -2358,7 +2359,7 @@ void MBFF::SetRatios(const Mask& array_mask)
 void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
 {
   // group by block clock name
-  std::map<dbNet*, std::vector<int>> clk_terms;
+  odb::PtrMap<odb::dbNet, std::vector<int>> clk_terms;
   for (size_t i = 0; i < flops_.size(); i++) {
     if (insts_[i]->isDoNotTouch()) {
       continue;

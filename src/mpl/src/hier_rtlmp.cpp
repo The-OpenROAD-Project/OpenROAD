@@ -31,6 +31,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -123,7 +124,7 @@ void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
 }
 
 void HierRTLMP::setGuidanceRegions(
-    const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
+    const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
 }
@@ -1834,7 +1835,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   std::vector<HardMacro> sa_macros;
   std::map<int, int> cluster_to_macro;
-  std::set<odb::dbMaster*> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   clustering_engine_->createTempMacroClusters(
       hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 

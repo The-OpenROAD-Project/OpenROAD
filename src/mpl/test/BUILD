@@ -288,7 +288,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl:pusher",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

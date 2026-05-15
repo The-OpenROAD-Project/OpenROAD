@@ -42,6 +42,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
+#include "drt/TritonRoute.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
