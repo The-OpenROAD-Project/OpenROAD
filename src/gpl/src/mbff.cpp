@@ -2777,6 +2777,9 @@ MBFF::MBFF(odb::dbDatabase* db,
 {
   graphics_->setDebugOn(debug_graphics);
 
+  // Register "orig_name" report_path field: original pin name before
+  // multi-bit clustering. Reads "orig_name" property off the path
+  // vertex's iterm.
   if (sta_->findReportPathField(kOrigNameProp) == nullptr) {
     sta::dbNetwork* network = network_;
     sta_->makeReportPathField(
