@@ -32,6 +32,7 @@
 #include "est/ParasiticsService.h"
 #include "geo.h"
 #include "grt/GRoute.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
@@ -80,8 +81,9 @@ CUGR::~CUGR() = default;
 
 void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
-                const std::set<odb::dbNet*>& clock_nets)
+                const odb::PtrSet<odb::dbNet>& clock_nets)
 {
+  constants_.min_routing_layer = min_routing_layer - 1;
   design_ = std::make_unique<Design>(db_,
                                      logger_,
                                      constants_,
@@ -159,7 +161,7 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
       net_indices.push_back(net->getIndex());
     }
   }
-  logger_->report("Nets with overflow: {}.", net_indices.size());
+  logger_->report("Nets with congestion: {}.", net_indices.size());
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
@@ -574,7 +576,7 @@ void CUGR::printStatistics() const
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
   logger_->report("Total via count:       {}", via_count);
-  logger_->report("Total overflow:        {}", (int) total_overflow);
+  logger_->report("Total congestion:      {}", (int) total_overflow);
   logger_->report("Min resource:          {}", min_resource);
   logger_->report("Bottleneck:            {}", bottleneck);
 }
@@ -643,7 +645,7 @@ void CUGR::updateDbCongestion()
 
 void CUGR::getITermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbITerm*, odb::Point3D>& access_points)
+    odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
@@ -655,7 +657,7 @@ void CUGR::getITermsAccessPoints(
 
 void CUGR::getBTermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
+    odb::PtrMap<odb::dbBTerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
@@ -788,8 +790,8 @@ void CUGR::saveCongestion()
   //                 attributes to this edge (the same neighbours commitVia
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> wire_nets;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> via_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
   auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
     // commitVia(via_layer, loc) adds stub demand on edges adjacent to
@@ -867,8 +869,8 @@ void CUGR::saveCongestion()
   };
 
   // Emit one marker per congested 3D edge, tagged with its routing
-  // layer. Comment carries capacity/usage/overflow and the source of
-  // the overflow (wire segments, via stubs, or both).
+  // layer. Comment carries capacity/usage/congestion and the source of
+  // the congestion (wire segments, via stubs, or both).
   for (int l = 0; l < num_layers; l++) {
     const int direction = grid_graph_->getLayerDirection(l);
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
@@ -915,10 +917,10 @@ void CUGR::saveCongestion()
           marker->setTechLayer(db_layer);
         }
         marker->setComment("capacity:" + std::to_string(cap_int) + " usage:"
-                           + std::to_string(demand_int) + " overflow:"
+                           + std::to_string(demand_int) + " congestion:"
                            + std::to_string(overflow_int) + " (" + kind + ")");
 
-        std::set<odb::dbNet*> sources;
+        odb::PtrSet<odb::dbNet> sources;
         auto wn_it = wire_nets.find({l, x, y});
         if (wn_it != wire_nets.end()) {
           sources.insert(wn_it->second.begin(), wn_it->second.end());

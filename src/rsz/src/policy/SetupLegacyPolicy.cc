@@ -5,22 +5,12 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
-#include <limits>
-#include <map>
-#include <queue>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
-#include <vector>
 
-#include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
-#include "VtSwapGenerator.hh"
 #include "est/EstimateParasitics.h"
 #include "policy/OptimizationPolicy.hh"
 #include "rsz/Resizer.hh"
@@ -30,7 +20,6 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -335,12 +324,10 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       acceptEndpointState(endpoint_state);
       break;
     }
-    if (main_state.end_index == 1) {
+    if (main_state.end_index == 1 && endpoint_state.worst_vertex != nullptr) {
       endpoint_state.end = endpoint_state.worst_vertex;
-      if (endpoint_state.end != nullptr) {
-        target_collector_->useWorstEndpoint(endpoint_state.end);
-        committer_.setCurrentEndpoint(endpoint_state.end->pin());
-      }
+      target_collector_->useWorstEndpoint(endpoint_state.end);
+      committer_.setCurrentEndpoint(endpoint_state.end->pin());
     }
 
     ++endpoint_state.pass;

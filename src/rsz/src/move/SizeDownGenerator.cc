@@ -271,9 +271,11 @@ float computeElmoreSlewFactor(const SizeDownContext& ctx,
                                 ctx.resizer.sta()->scenes(),
                                 ctx.resizer.maxAnalysisMode());
   const float output_res = output_port->driveResistance();
-  return output_res > 0.0f && output_load_cap > 0.0f
-             ? slew / (output_res * output_load_cap)
-             : 0.0f;
+  if (output_res <= 0.0f || output_load_cap <= 0.0f) {
+    return 0.0f;
+  }
+  const float elmore_denominator = output_res * output_load_cap;
+  return slew / elmore_denominator;
 }
 
 bool checkMaxSlewViolation(const SizeDownContext& ctx,
