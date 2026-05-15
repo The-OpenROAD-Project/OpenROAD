@@ -168,7 +168,7 @@ class MoveCommitter
   std::array<int, kTypeCount> summary_carried_by_type_{};
   std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>
       pending_instances_by_type_{};
-  std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>
+  std::array<std::unordered_set<sta::Instance*>, kTypeCount>
       committed_instances_by_type_{};
 
   // === MoveTracker state ====================================================
