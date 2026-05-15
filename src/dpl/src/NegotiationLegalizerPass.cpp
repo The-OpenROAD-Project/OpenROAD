@@ -640,11 +640,11 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                utl::DPL,
                "negotiation",
                1,
-                  "Negotiation: best location for cell '{}' at iteration {} "
-                  "is its current position; cell is kept where it was and "
-                  "may remain illegal.",
-                  cell.db_inst->getName(),
-                  iter);
+               "Negotiation: best location for cell '{}' at iteration {} "
+               "is its current position; cell is kept where it was and "
+               "may remain illegal.",
+               cell.db_inst->getName(),
+               iter);
   }
 
   return {best_x, best_y};
