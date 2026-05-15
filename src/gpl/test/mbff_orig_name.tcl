@@ -80,5 +80,5 @@ report_checks -path_delay max -fields {orig_name} \
 close $rf
 
 puts "=== Reload-from-db phase ==="
-catch {exec [info nameofexecutable] -no_init -exit $reload_tcl 2>@1} reload_out
+catch {exec [info nameofexecutable] -no_init -exit $reload_tcl 2>@1 } reload_out
 puts $reload_out
