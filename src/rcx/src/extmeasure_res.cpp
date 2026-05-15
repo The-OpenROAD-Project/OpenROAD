@@ -249,7 +249,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint32_t dist1, uint32_t dist2)
     return rc1;
   }
 
-  if (dist1 >= maxDist_ && dist2 >= maxDist_) {
+  if (dist1 > maxDist_ && dist2 > maxDist_) {
     // Anything beyond the bounds of the RESOVER
     // table is not considered neighborhood.
     return rc1;
