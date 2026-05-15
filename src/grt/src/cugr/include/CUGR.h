@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "grt/GRoute.h"
+#include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -76,17 +77,17 @@ class CUGR
   ~CUGR();
   void init(int min_routing_layer,
             int max_routing_layer,
-            const std::set<odb::dbNet*>& clock_nets);
+            const odb::PtrSet<odb::dbNet>& clock_nets);
   void route();
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,
-      std::map<odb::dbITerm*, odb::Point3D>& access_points);
+      odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points);
   void getBTermsAccessPoints(
       odb::dbNet* net,
-      std::map<odb::dbBTerm*, odb::Point3D>& access_points);
+      odb::PtrMap<odb::dbBTerm, odb::Point3D>& access_points);
   void setCriticalNetsPercentage(float percentage)
   {
     critical_nets_percentage_ = percentage;
@@ -190,7 +191,7 @@ class CUGR
   std::unique_ptr<GridGraph> grid_graph_;
   std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
-  std::map<odb::dbNet*, GRNet*> db_net_map_;
+  odb::PtrMap<odb::dbNet, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

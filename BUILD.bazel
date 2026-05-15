@@ -14,7 +14,7 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     features = [
-        "-parse_headers",
+        "parse_headers",
         "layering_check",
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",

@@ -17,6 +17,7 @@ cc_library(
         "*.inc",
     ]),
     hdrs = [
+        "//src/odb:include/odb/PtrSetMap.h",
         "//src/odb:include/odb/db.h",
         "//src/odb:include/odb/dbBlockCallBackObj.h",
         "//src/odb:include/odb/dbBlockSet.h",

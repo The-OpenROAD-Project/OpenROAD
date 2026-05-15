@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -99,7 +100,8 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
-void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits)
+void Connect::setSplitCuts(
+    const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack
@@ -895,7 +897,7 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
   if (layer_count != 3) {
     return false;
   }
-  std::set<odb::dbTechLayer*> rule_layers;
+  odb::PtrSet<odb::dbTechLayer> rule_layers;
   for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }

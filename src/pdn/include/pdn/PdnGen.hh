@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -148,7 +149,7 @@ class PdnGen
       int max_rows,
       int max_columns,
       const std::vector<odb::dbTechLayer*>& ongrid,
-      const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+      const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
       const std::string& dont_use_vias);
 
   void writeToDb(bool add_pins, const std::string& report_file = "") const;
@@ -161,7 +162,7 @@ class PdnGen
 
   void checkSetup() const;
 
-  void repairVias(const std::set<odb::dbNet*>& nets);
+  void repairVias(const odb::PtrSet<odb::dbNet>& nets);
 
   void createSrouteWires(const char* net,
                          const char* outer_net,
