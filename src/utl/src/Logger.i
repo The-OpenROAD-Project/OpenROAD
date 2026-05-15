@@ -107,6 +107,18 @@ void startPrometheusEndpoint(uint16_t port)
   logger->startPrometheusEndpoint(port);
 }
 
+void setSourceLinesOff()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->setSourceLinesVisible(false);
+}
+
+void setSourceLinesOn()
+{
+  utl::Logger* logger = ord::getLogger();
+  logger->setSourceLinesVisible(true);
+}
+
 } // namespace
 
 %} // inline

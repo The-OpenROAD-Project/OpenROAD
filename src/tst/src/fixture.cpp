@@ -38,7 +38,7 @@ Fixture::Fixture()
     throw std::runtime_error("Could not create Runfiles object: " + error);
   }
 #endif
-
+  logger_.setSourceLinesVisible(false);
   std::call_once(init_sta_flag, []() { sta::initSta(); });
 
   db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),

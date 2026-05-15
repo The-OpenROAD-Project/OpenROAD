@@ -97,6 +97,7 @@ def make_design(tech):
     if os.environ.get("TEST_SRCDIR", ""):
         tech.thisown = False
     logger = design.getLogger()
+    logger.setSourceLinesVisible(False)
 
     # Reading DEF file
     logger.suppressMessage(utl.ODB, 127)

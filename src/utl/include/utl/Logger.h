@@ -157,17 +157,19 @@ class Logger
   template <typename... Args>
   void debug(ToolId tool,
              const char* group,
-             const std::string& message,
+             const LogMessage& log_message,
              const Args&... args)
   {
-    // Message counters do NOT apply to debug messages.
-    logger_->log(
-        spdlog::level::level_enum::debug,
-        FMT_RUNTIME("[{} {}-{}] " + message + spdlog::details::os::default_eol),
-        level_names[spdlog::level::level_enum::debug],
-        tool_names_[tool],
-        group,
-        args...);
+    auto formatted = fmt::format(FMT_RUNTIME(log_message.message), args...);
+    logger_->log(spdlog::level::level_enum::debug,
+                 "[{} {}-{}] {} [{}:{}]{}",
+                 level_names[spdlog::level::level_enum::debug],
+                 tool_names_[tool],
+                 group,
+                 formatted,
+                 log_message.loc.file_name(),
+                 log_message.loc.line(),
+                 spdlog::details::os::default_eol);
     logger_->flush();
   }
 
@@ -275,6 +277,8 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  void setSourceLinesVisible(bool visible) { source_lines_enabled_ = visible; };
+
   int getWarningCount() const { return warning_count_; }
 
   void startPrometheusEndpoint(uint16_t port);
@@ -333,7 +337,7 @@ class Logger
            int id,
            std::source_location loc,
            const std::string& message,
-           bool source_lines_disabled,
+           bool per_message_source_disabled,
            const Args&... args)
   {
     assert(id >= 0 && id <= max_message_id);
@@ -341,17 +345,18 @@ class Logger
     auto& counter = message_counters_[tool][id];
     auto count = counter++;
     if (count < max_message_print) {
-      if (source_lines_enabled_ && !source_lines_disabled
+      if (source_lines_enabled_ && !per_message_source_disabled
           && level >= spdlog::level::warn) {
+        auto formatted = fmt::format(FMT_RUNTIME(message), args...);
         logger_->log(level,
-                     FMT_RUNTIME("[{} {}-{:04d}] [{}:{}] " + message
-                                 + spdlog::details::os::default_eol),
+                     "[{} {}-{:04d}] {} [{}:{}]{}",
                      level_names[level],
                      tool_names_[tool],
                      id,
+                     formatted,
                      loc.file_name(),
                      loc.line(),
-                     args...);
+                     spdlog::details::os::default_eol);
       } else {
         logger_->log(level,
                      FMT_RUNTIME("[{} {}-{:04d}] " + message
