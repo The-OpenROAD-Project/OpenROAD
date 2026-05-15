@@ -32,6 +32,7 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -157,6 +158,8 @@ class dbStaCbk : public odb::dbBlockCallBackObj
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbPostInstRename(odb::dbInst* inst, const char* old_name) override;
+  void inDbPostInstParentChange(odb::dbInst* inst) override;
   void inDbModuleCreate(odb::dbModule* module) override;
   void inDbModuleDestroy(odb::dbModule* module) override;
   void inDbInstSwapMasterBefore(odb::dbInst* inst,
@@ -189,6 +192,8 @@ class dbStaCbk : public odb::dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
+  // Cached so the per-edit callbacks don't pay a dynamic_cast each time.
+  dbSdcNetwork* sdc_network_ = nullptr;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -400,11 +405,11 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
   return slack(net, min_max);
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets()
+odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {
     const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
@@ -421,11 +426,11 @@ std::set<odb::dbNet*> dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets(const Clock* clk)
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
@@ -716,7 +721,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    std::map<odb::dbMaster*, TypeStats> usage_count;
+    odb::PtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];
@@ -1166,10 +1171,19 @@ dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 void dbStaCbk::setNetwork(dbNetwork* network)
 {
   network_ = network;
+  sdc_network_ = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
 }
+
+// Keep the dbSdcNetwork's lazy literal-lookup map consistent across
+// hierarchy edits. Incremental updates avoid the O(N) DFS rebuild that
+// blanket invalidation forced on every edit — the create-then-query
+// loop in repair_timing used to be O(N^2) here.
 
 void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(inst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(inst));
   // New driver vertices may exist; invalidate cached driver-vertex list.
   sta_->invalidateLevelizedDrvrVertices();
@@ -1177,6 +1191,9 @@ void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 
 void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstDestroyed(network_->dbToSta(inst));
+  }
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
@@ -1184,6 +1201,22 @@ void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
   // directly (bypassing the LevelizeObserver), so the dbSta cache must be
   // invalidated explicitly here to avoid a dangling Vertex* on next query.
   sta_->invalidateLevelizedDrvrVertices();
+}
+
+void dbStaCbk::inDbPostInstRename(odb::dbInst* inst, const char* /*old_name*/)
+{
+  if (sdc_network_) {
+    sdc_network_->onInstRenamed(network_->dbToSta(inst));
+  }
+}
+
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
+{
+  // Reparenting moves a whole subtree at once and can flip descendants'
+  // pathological status. Drop the cache; reparent is rare.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
 }
 
 void dbStaCbk::inDbModuleCreate(odb::dbModule* module)
@@ -1330,11 +1363,19 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(modinst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(modinst));
 }
 
 void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 {
+  // A modInst destroy takes its whole subtree with it. Surgical erase
+  // would need to walk every cached descendant entry; full invalidate.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
   sta_->deleteInstanceBefore(network_->dbToSta(modinst));
 }
 

@@ -54,7 +54,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
@@ -85,7 +85,7 @@ cc_library(
         ":stt",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

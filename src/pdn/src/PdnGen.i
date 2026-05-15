@@ -278,7 +278,7 @@ void make_connect(const char* grid_name,
                   const char* dont_use_vias)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  std::map<odb::dbTechLayer*, std::pair<int, bool>> split_cuts;
+  odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>> split_cuts;
   for (size_t i = 0; i < split_cuts_layers.size(); i++) {
     split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
@@ -367,7 +367,7 @@ pdn::PowerCell* find_switched_power_cell(const char* name)
 void repair_pdn_vias(const std::vector<odb::dbNet*>& nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  std::set<odb::dbNet*> net_set(nets.begin(), nets.end());
+  odb::PtrSet<odb::dbNet> net_set(nets.begin(), nets.end());
   pdngen->repairVias(net_set);
 }
 

@@ -25,7 +25,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSdcNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
@@ -48,7 +48,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -68,7 +68,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -105,7 +105,7 @@ cc_library(
     ],
     deps = [
         ":dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )
@@ -124,7 +124,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -154,7 +154,7 @@ cc_library(
         ":dbNetwork",
         ":dbSta",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",

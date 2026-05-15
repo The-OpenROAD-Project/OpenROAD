@@ -27,6 +27,7 @@
 #include "glyph_cache.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -511,9 +512,10 @@ std::vector<std::string> TileGenerator::getLayers() const
 // same design.  Walks every dbTechLayer in tech order (not just routing/cut)
 // because the random fallback shares one PRNG and the iteration order is what
 // determines which layer gets which random color.
-static std::map<odb::dbTechLayer*, Color> buildLayerColorMap(odb::dbTech* tech)
+static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
+    odb::dbTech* tech)
 {
-  std::map<odb::dbTechLayer*, Color> colors;
+  odb::PtrMap<odb::dbTechLayer, Color> colors;
   if (!tech) {
     return colors;
   }
@@ -585,7 +587,7 @@ static std::map<odb::dbTechLayer*, Color> buildLayerColorMap(odb::dbTech* tech)
   return colors;
 }
 
-const std::map<odb::dbTechLayer*, Color>& TileGenerator::getLayerColorMap()
+const odb::PtrMap<odb::dbTechLayer, Color>& TileGenerator::getLayerColorMap()
     const
 {
   std::lock_guard lock(layer_colors_mutex_);
@@ -691,7 +693,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   });
 
   // Search nets via routing shapes on each layer
-  std::set<odb::dbNet*> seen_nets;
+  odb::PtrSet<odb::dbNet> seen_nets;
   odb::dbTech* tech = db_->getTech();
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     if (layer->getRoutingLevel() <= 0
@@ -3014,7 +3016,7 @@ void collectTimingPathShapes(odb::dbBlock* block,
       .r = 0, .g = 255, .b = 0, .a = 180};  // Green
 
   // Track nets already collected to avoid duplicates
-  std::set<odb::dbNet*> seen_nets;
+  odb::PtrSet<odb::dbNet> seen_nets;
 
   auto process_nodes = [&](const std::vector<TimingNode>& nodes,
                            const Color& clk_color,
