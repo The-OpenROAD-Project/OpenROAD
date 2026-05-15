@@ -935,10 +935,10 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       if (is_d && d_pin) {
         tray_iterm = tray_inst[tray_idx]->findITerm(d_pin->name().c_str());
       } else if (is_q) {
-        if (is_qn_inv && qn_pin) {
-          tray_iterm = tray_inst[tray_idx]->findITerm(qn_pin->name().c_str());
-        } else if (q_pin) {
-          tray_iterm = tray_inst[tray_idx]->findITerm(q_pin->name().c_str());
+        const sta::LibertyPort* tray_port = is_qn_inv ? qn_pin : q_pin;
+        if (tray_port) {
+          tray_iterm
+              = tray_inst[tray_idx]->findITerm(tray_port->name().c_str());
         }
       }
       if (tray_iterm) {
