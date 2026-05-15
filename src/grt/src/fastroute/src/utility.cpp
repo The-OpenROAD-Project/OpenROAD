@@ -20,13 +20,14 @@
 #include "FastRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -95,14 +96,13 @@ void FastRouteCore::ConvertToFull3DType2()
 // Resistance-aware score calculation to order critical nets
 float FastRouteCore::getResAwareScore(FrNet* net)
 {
-  const float kResistanceWeight = 2.0f;
+  const float kResistanceWeight = 1.0f;
   const float kSlackWeight = 4.0f;
-  const float kFanoutWeight = 1.0f;
-  const float kNetLengthWeight = 1.0f;
+  const float kFanoutWeight = 3.0f;
+  const float kNetLengthWeight = 2.0f;
 
   return net->getResistance() / worst_net_resistance_ * kResistanceWeight
-         + (!is_incremental_grt_ ? kSlackWeight * net->getSlack() / worst_slack_
-                                 : 0)
+         + net->getSlack() / worst_slack_ * kSlackWeight
          + static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight
          + static_cast<float>(net->getNetLength()) / worst_net_length_
                * kNetLengthWeight;
@@ -288,29 +288,48 @@ void FastRouteCore::fillVIA()
           treeedge.route.type = RouteType::MazeRoute;
           treeedge.route.routelen = newCNT - 1;
         }
-      } else if ((treenodes[treeedge.n1].hID == BIG_INT
-                  && treenodes[treeedge.n1].lID == BIG_INT)
-                 || (treenodes[treeedge.n2].hID == BIG_INT
-                     && treenodes[treeedge.n2].lID == BIG_INT)) {
+      } else {
+        // Handle zero-length edges (len == 0) that may need via grids.
+        // These arise when two pins share the same gcell (x,y) but sit on
+        // different layers.  STT creates zero-length Steiner edges between
+        // them (directly or through a Steiner node at the same position).
+        //
+        // For Steiner nodes co-located with terminals, layerAssignment
+        // updates botL/topL on the stackAlias (a terminal), not on the
+        // Steiner node itself.  Resolve through stackAlias to obtain
+        // meaningful layer information.
         int node1 = treeedge.n1;
         int node2 = treeedge.n2;
-        if ((treenodes[node1].botL == num_layers_
-             && treenodes[node1].topL == -1)
-            || (treenodes[node2].botL == num_layers_
-                && treenodes[node2].topL == -1)) {
+        int effective_node1 = (treenodes[node1].botL == num_layers_
+                               && treenodes[node1].topL == -1)
+                                  ? treenodes[node1].stackAlias
+                                  : node1;
+        int effective_node2 = (treenodes[node2].botL == num_layers_
+                               && treenodes[node2].topL == -1)
+                                  ? treenodes[node2].stackAlias
+                                  : node2;
+
+        // Skip if both resolved nodes still lack layer information.
+        if ((treenodes[effective_node1].botL == num_layers_
+             && treenodes[effective_node1].topL == -1)
+            && (treenodes[effective_node2].botL == num_layers_
+                && treenodes[effective_node2].topL == -1)) {
           continue;
         }
 
-        int16_t l1 = treenodes[node1].botL;
-        int16_t l2 = treenodes[node2].botL;
-        int16_t bottom_layer = std::min(l1, l2);
-        int16_t top_layer = std::max(l1, l2);
-        if (node1 < num_terminals) {
-          extendLayerRange(node1, bottom_layer, top_layer);
+        int16_t bottom_layer = std::min(treenodes[effective_node1].botL,
+                                        treenodes[effective_node2].botL);
+        int16_t top_layer = std::max(treenodes[effective_node1].botL,
+                                     treenodes[effective_node2].botL);
+        if (effective_node1 < num_terminals) {
+          extendLayerRange(effective_node1, bottom_layer, top_layer);
+        }
+        if (effective_node2 < num_terminals) {
+          extendLayerRange(effective_node2, bottom_layer, top_layer);
         }
 
-        if (node2 < num_terminals) {
-          extendLayerRange(node2, bottom_layer, top_layer);
+        if (top_layer <= bottom_layer) {
+          continue;
         }
 
         treeedge.route.grids.resize(top_layer - bottom_layer + 1);
@@ -533,10 +552,15 @@ int FastRouteCore::getWireCost(const int layer, const int length, FrNet* net)
 
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
-  double default_resistance = default_layer->getResistance();
-  float final_resistance = getWireResistance(layer, length, net);
+  const double default_resistance = default_layer->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_resistance <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(final_resistance / default_resistance);
+  const float final_resistance = getWireResistance(layer, length, net);
+  const double cost = std::ceil(final_resistance / default_resistance);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 // Get via resistance in ohms going from layer A to layer B
@@ -569,10 +593,15 @@ int FastRouteCore::getViaCost(const int from_layer, const int to_layer)
   }
 
   // Calculate total resistance
-  float total_via_resistance = getViaResistance(from_layer, to_layer);
-  float default_res = getTechLayer(0, true)->getResistance();
+  const float default_res = getTechLayer(0, true)->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_res <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(total_via_resistance / default_res);
+  const float total_via_resistance = getViaResistance(from_layer, to_layer);
+  const double cost = std::ceil(total_via_resistance / default_res);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 void FastRouteCore::updateWorstMetrics(FrNet* net)
@@ -591,39 +620,47 @@ void FastRouteCore::resetWorstMetrics()
   worst_fanout_ = 0;
 }
 
-// Calculate entire net resistance considering wire and via resistance
-// If assume_layer is true, it will assume the net is routed on the min layer
-float FastRouteCore::getNetResistance(FrNet* net, bool assume_layer)
+float FastRouteCore::getNetResistance(odb::dbNet* db_net)
 {
-  float total_resistance = 0;
-  int netID = db_net_id_map_[net->getDbNet()];
-  const auto& treeedges = sttrees_[netID].edges;
+  return getNetResistanceOnLayer(db_net, -1);
+}
 
-  for (const auto& edge : treeedges) {
+// Calculate net resistance using the existing Steiner tree topology.
+// layer >= 0: all wire segments are costed on that layer (used to estimate
+//             what resistance would be if the net were rerouted on a higher
+//             layer, e.g. the minimum clock layer).
+// layer == -1: each wire segment uses its actual routed layer.
+// Via resistance always uses the actual layer transitions from the route.
+float FastRouteCore::getNetResistanceOnLayer(odb::dbNet* db_net, int layer)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+  if (!exists) {
+    return 0.0f;
+  }
+
+  FrNet* net = nets_[net_id];
+  float total_resistance = 0.0f;
+  for (const auto& edge : sttrees_[net_id].edges) {
     if (edge.len == 0 && edge.route.routelen == 0) {
       continue;
     }
-
     const std::vector<GPoint3D>& grids = edge.route.grids;
-    int routeLen = edge.route.routelen;
-
-    for (int i = 0; i < routeLen; i++) {
+    const int route_len = edge.route.routelen;
+    for (int i = 0; i < route_len; i++) {
       if (grids[i].layer == grids[i + 1].layer) {
-        int length = std::abs(grids[i].x - grids[i + 1].x)
-                     + std::abs(grids[i].y - grids[i + 1].y);
-        total_resistance += getWireResistance(
-            assume_layer ? net->getMinLayer() : grids[i].layer,
-            length * tile_size_,
-            net);
+        const int seg_len = std::abs(grids[i].x - grids[i + 1].x)
+                            + std::abs(grids[i].y - grids[i + 1].y);
+        const int wire_layer = (layer >= 0) ? layer : grids[i].layer;
+        total_resistance
+            += getWireResistance(wire_layer, seg_len * tile_size_, net);
       } else {
-        if (!assume_layer) {
-          total_resistance
-              += getViaResistance(grids[i].layer, grids[i + 1].layer);
-        }
+        total_resistance
+            += getViaResistance(grids[i].layer, grids[i + 1].layer);
       }
     }
   }
-
   return total_resistance;
 }
 
@@ -643,7 +680,9 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
-    callback_handler_->triggerOnEstimateParasiticsRequired();
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+      estimator->estimateAllGlobalRouteParasitics();
+    }
   }
 
   resetWorstMetrics();
@@ -673,8 +712,8 @@ void FastRouteCore::updateSlacks(float percentage)
       continue;
     }
 
-    const float net_resistance
-        = is_3d_step_ ? getNetResistance(net) : getNetResistance(net, true);
+    const float net_resistance = getNetResistanceOnLayer(
+        net->getDbNet(), is_3d_step_ ? -1 : net->getMinLayer());
     net->setResistance(net_resistance);
 
     updateWorstMetrics(net);
@@ -1547,7 +1586,9 @@ float FastRouteCore::CalculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  callback_handler_->triggerOnEstimateParasiticsRequired();
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    estimator->estimateAllGlobalRouteParasitics();
+  }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
@@ -2722,7 +2763,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2746,7 +2787,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2757,19 +2798,18 @@ void FastRouteCore::saveCongestion(const int iter)
     }
   }
 
-  // check if the file name is defined
-  if (congestion_file_name_.empty()) {
+  // The final-report file-write (iter == -1) is handled in
+  // GlobalRouter::saveCongestion so both routing engines share the
+  // same code path. Per-iteration reports stay here because only
+  // FastRoute knows the current iteration index.
+  if (iter == -1 || congestion_file_name_.empty()) {
     return;
   }
 
-  // Modify the file name for each iteration
+  // delete rpt extension and add iteration number
   std::string file_name = congestion_file_name_;
-  if (iter != -1) {
-    // delete rpt extension
-    file_name = file_name.substr(0, file_name.size() - 4);
-    // add iteration number
-    file_name += "-" + std::to_string(iter) + ".rpt";
-  }
+  file_name = file_name.substr(0, file_name.size() - 4);
+  file_name += "-" + std::to_string(iter) + ".rpt";
 
   odb::dbMarkerCategory* tool_category
       = db_->getChip()->getBlock()->findMarkerCategory(

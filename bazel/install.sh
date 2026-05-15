@@ -3,7 +3,7 @@ set -e
 
 # Install binary and runfiles from bazel build
 
-TARFILE=$(cd $BUILD_WORKSPACE_DIRECTORY; bazelisk info bazel-bin)/openroad.tar
+TARFILE=$(cd $BUILD_WORKSPACE_DIRECTORY; bazelisk info bazel-bin)/packaging/openroad.tar
 
 DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/../install/OpenROAD/bin}
 
@@ -18,6 +18,5 @@ if [ -e openroad.repo_mapping ]; then
     chmod u+w openroad.repo_mapping
     rm -rf openroad.repo_mapping
 fi
-rm -rf openroad.runfiles/_main
 
 echo "OpenROAD binary installed to $(realpath "$DEST_DIR")"

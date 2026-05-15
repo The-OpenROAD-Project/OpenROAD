@@ -18,17 +18,14 @@
 #include "rsz/Resizer.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
@@ -61,7 +58,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   init();
   constexpr int digits = 3;
   resize_count_ = 0;
-  resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
   sta::VertexSet& endpoints = sta_->endpoints();
@@ -293,7 +289,7 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
       const sta::Path* drvr_path = expanded.path(drvr_index);
       sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
       // If we already tried this vertex and got a worse result, skip it.
-      if (bad_vertices_.find(drvr_vertex) != bad_vertices_.end()) {
+      if (bad_vertices_.contains(drvr_vertex)) {
         continue;
       }
       const sta::Pin* drvr_pin = drvr_vertex->pin();
@@ -328,10 +324,11 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
   sta::Instance* drvr = network_->instance(drvr_pin);
   const float load_cap = graph_delay_calc_->loadCap(
       drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
-  const int in_index = drvr_index - 1;
-  const sta::Path* in_path = expanded->path(in_index);
-  const sta::Pin* in_pin = in_path->pin(sta_);
-  const sta::LibertyPort* in_port = network_->libertyPort(in_pin);
+  const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
+  const sta::LibertyPort* in_port = in_arc ? in_arc->from() : nullptr;
+  if (in_port == nullptr) {
+    return false;
+  }
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive = 0.0;
     if (drvr_index >= 2) {
@@ -399,8 +396,8 @@ sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
-    const char* in_port_name = in_port->name();
-    const char* drvr_port_name = drvr_port->name();
+    const std::string& in_port_name = in_port->name();
+    const std::string& drvr_port_name = drvr_port->name();
     sta::sort(
         &swappable_cells,
         [=, this](const sta::LibertyCell* cell1,

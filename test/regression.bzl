@@ -29,8 +29,10 @@ export TEST_FILE={TEST_FILE}
 export TEST_TYPE={TEST_TYPE}
 export OPENROAD_EXE={OPENROAD_EXE}
 export REGRESSION_TEST={REGRESSION_TEST}
+export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
@@ -39,29 +41,35 @@ exec "{bazel_test_sh}" "$@"
             TEST_TYPE = test_type,
             OPENROAD_EXE = ctx.executable.openroad.short_path,
             REGRESSION_TEST = ctx.file.regression_test.short_path,
+            TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
+            TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
         ),
         is_executable = True,
     )
 
     # Return the test script as the executable
+    data_runfiles = [
+        dep[DefaultInfo].default_runfiles
+        for dep in ctx.attr.data
+        if DefaultInfo in dep
+    ]
+
+    runfiles_files = [
+        ctx.file.test_file,
+        ctx.file.bazel_test_sh,
+        ctx.file.regression_test,
+        ctx.executable.openroad,
+    ] + ctx.files.data
+    if ctx.file.golden_file:
+        runfiles_files.append(ctx.file.golden_file)
+
     return DefaultInfo(
         executable = test_script,
         runfiles = ctx.runfiles(
-            transitive_files = depset(
-                ctx.files.data + [
-                    ctx.file.test_file,
-                    ctx.file.bazel_test_sh,
-                    ctx.file.regression_test,
-                    ctx.executable.openroad,
-                ],
-                transitive = [
-                    ctx.attr.openroad[DefaultInfo].default_runfiles.files,
-                    ctx.attr.openroad[DefaultInfo].default_runfiles.symlinks,
-                ],
-            ),
-        ),
+            files = runfiles_files,
+        ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
     )
 
 regression_rule_test = rule(
@@ -82,6 +90,14 @@ regression_rule_test = rule(
         "data": attr.label_list(
             doc = "Additional test files required for the test.",
             allow_files = True,
+        ),
+        "expected_exit_code": attr.int(
+            doc = "Expected command exit code for the regression.",
+            default = 0,
+        ),
+        "golden_file": attr.label(
+            doc = "Optional expected output file used for log diffing.",
+            allow_single_file = True,
         ),
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
@@ -140,15 +156,21 @@ exec "{bazel_test_sh}" "$@"
         is_executable = True,
     )
 
+    data_runfiles = [
+        dep[DefaultInfo].default_runfiles
+        for dep in ctx.attr.data
+        if DefaultInfo in dep
+    ]
+
     return DefaultInfo(
         executable = test_script,
         runfiles = ctx.runfiles(
-            files = ctx.files.data + [
+            files = [
                 ctx.file.test_file,
                 ctx.file.bazel_test_sh,
                 ctx.file.regression_test,
-            ],
-        ),
+            ] + ctx.files.data,
+        ).merge_all(data_runfiles),
     )
 
 doc_check_rule_test = rule(
@@ -191,6 +213,17 @@ def _pop(kwargs, key, default):
             return popped
     return default
 
+def _dedupe_list(items):
+    """Return items with duplicates removed while preserving order."""
+    seen = {}
+    unique = []
+    for item in items:
+        if item in seen:
+            continue
+        seen[item] = True
+        unique.append(item)
+    return unique
+
 def doc_check_test(name, **kwargs):
     """Macro for lightweight Python doc check tests (no OpenROAD dependency).
 
@@ -220,7 +253,7 @@ def doc_check_test(name, **kwargs):
         **kwargs
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
+def messages_txt(name = "messages_txt", src_patterns = None, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
@@ -230,6 +263,9 @@ def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
         src_patterns: Glob patterns for source files. Defaults to all
             common C++/Tcl extensions. Override for modules with
             non-standard layouts (e.g., recursive globs for odb).
+        extra_srcs: Additional source labels from other packages (e.g.,
+            filegroups in sub-packages). When provided, files are passed
+            directly to find_messages.py instead of directory walking.
         visibility: Bazel visibility.
     """
     if src_patterns == None:
@@ -241,11 +277,23 @@ def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
             "src/*.tcl",
         ]
 
+    srcs = native.glob(src_patterns, allow_empty = True)
+    if extra_srcs:
+        srcs = srcs + extra_srcs
+
+    # When extra_srcs are present, sources span multiple directories so
+    # the dirname-of-first-src trick doesn't work.  Pass every file
+    # path as a positional arg to find_messages.py instead.
+    if extra_srcs:
+        cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
+    else:
+        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@"
+
     native.genrule(
         name = name,
-        srcs = native.glob(src_patterns, allow_empty = True),
+        srcs = srcs,
         outs = ["messages.txt"],
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+        cmd = cmd,
         toolchains = ["@rules_python//python:current_py_toolchain"],
         tools = ["//etc:find_messages.py"],
         visibility = visibility,
@@ -282,19 +330,21 @@ def regression_test(
     for test_file in test_files:
         ext = test_file.split(".")[-1]
 
-        # Python tests that need openroad -python are disabled because
-        # the Bazel build doesn't include Python embedding support.
-        # Tests with test_type="standalone_python" can still run.
-        is_openroad_python_test = ext == "py" and test_type != "standalone_python"
-        test_tags = tags + (["manual"] if is_openroad_python_test else [])
+        test_data = [
+            "//test:regression_resources",
+        ] + test_files + data
+        effective_test_type = test_type
+        if ext == "py" and not effective_test_type:
+            effective_test_type = "python"
+            test_data += native.glob(["*.py"]) + ["//python/openroad:openroadpy"]
+        test_data = _dedupe_list(test_data)
+
         regression_rule_test(
             name = name + "-" + ext + "_test",
             test_file = test_file,
             test_name = name,
-            test_type = test_type,
-            data = [
-                "//test:regression_resources",
-            ] + test_files + data,
+            test_type = effective_test_type,
+            data = test_data,
             bazel_test_sh = "//test:bazel_test.sh",
             openroad = "//:openroad",
             regression_test = "//test:regression_test.sh",
@@ -304,6 +354,6 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = size,
-            tags = test_tags,
+            tags = tags,
             **kwargs
         )

@@ -19,9 +19,11 @@
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "cts/TritonCTS.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -202,7 +204,10 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                     0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
                 if (rise != 0 || fall != 0) {
-                  insDelay = (rise + fall) / 2.0;
+                  insDelay = (rise + fall);
+                  if (rise != 0 && fall != 0) {
+                    insDelay /= 2.0;
+                  }
                 }
               }
             }
@@ -344,7 +349,10 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                   0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
               if (rise != 0 || fall != 0) {
-                insDelay = (rise + fall) / 2.0;
+                insDelay = (rise + fall);
+                if (rise != 0 && fall != 0) {
+                  insDelay /= 2.0;
+                }
               }
             }
           }
@@ -522,7 +530,7 @@ odb::dbITerm* LatencyBalancer::insertDelayBuffers(
     odb::dbInst* lastBuffer = nullptr;
 
     // Use load pins buffering at the end
-    std::set<odb::dbObject*> load_pins;
+    odb::PtrSet<odb::dbObject> load_pins;
     for (odb::dbITerm* sinkInput : sinksInput) {
       load_pins.insert(sinkInput);
     }

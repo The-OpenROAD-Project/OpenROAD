@@ -11,7 +11,9 @@
 [INFO IFP-0103] Total instances area:                94.962 um^2
 [INFO IFP-0104] Effective utilization:                0.012
 [INFO IFP-0105] Number of instances:                     21
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 7635.80 um^2, Instances area: 94.96 um^2, Utilization: 1.2%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21

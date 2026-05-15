@@ -11,6 +11,7 @@ TESTS = [
     "clock_route_alpha",
     "clock_route_error1",
     "clock_route_error2",
+    "colocated_pins",
     "congestion1",
     "congestion2",
     "congestion3",
@@ -131,6 +132,58 @@ MANUAL_FOR_BAZEL_TESTS = [
     data = [":test_resources"],
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "snapshot_batched_bus_route",
+    check_log = False,
+    check_passfail = True,
+    data = [
+        "bus_route.tcl",
+        ":test_resources",
+    ],
+)
+
+regression_test(
+    name = "snapshot_batched_incremental_state",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_markers_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_report_file_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
 
 py_test(
     name = "grt_man_tcl_check",

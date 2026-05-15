@@ -86,6 +86,7 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
     Parasitics* parasitics = corner->parasitics(min_max_);
     Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
 
+    resistor_id_ = 1;
     makeRouteParasitics(
         parasitics, net, route, sta_net, corner, parasitic, node_map);
     makeParasiticsToPins(
@@ -128,6 +129,7 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
     Parasitics* parasitics = corner->parasitics(min_max_);
     Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
 
+    resistor_id_ = 1;
     makeRouteParasitics(
         parasitics, net, route, sta_net, corner, parasitic, node_map);
     makePartialParasiticsToPins(
@@ -168,7 +170,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
 {
   const int min_routing_layer = global_router_->getMinRoutingLayer();
 
-  size_t resistor_id_ = 1;
   for (grt::GSegment& segment : route) {
     const int wire_length_dbu = segment.length();
 

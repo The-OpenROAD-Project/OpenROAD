@@ -19,6 +19,7 @@
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockSet.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbDatabaseObserver.h"
@@ -42,7 +43,6 @@ class Logger;
 namespace odb {
 
 class dbShape;
-class lefout;
 class dbViaParams;
 class dbTransform;
 
@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -1372,7 +1373,7 @@ class dbBlock : public dbObject
 
   void clearUserInstFlags();
 
-  std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
+  odb::PtrMap<dbTechLayer, dbTechVia*> getDefaultVias();
 
   ///
   /// Destroy all the routing wires from signal and clock nets in this block.
@@ -2369,7 +2370,7 @@ class dbNet : public dbObject
   ///
   void getCouplingNets(uint32_t corner,
                        double ccThreshold,
-                       std::set<dbNet*>& cnets);
+                       odb::PtrSet<dbNet>& cnets);
 
   ///
   /// delete the capacitor-coupled segments.
@@ -2545,7 +2546,7 @@ class dbNet : public dbObject
   /// two objects in different parts of the hierarchy, each connected
   /// by different dbModNets in different parts of the hierarchy).
   ///
-  bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
+  bool findRelatedModNets(odb::PtrSet<dbModNet>& modnet_set) const;
 
   ///
   /// Find the modnet in the highest hierarchy related to this net.
@@ -2638,7 +2639,7 @@ class dbNet : public dbObject
   ///   contain an irrelevant load.
   ///
   dbInst* insertBufferBeforeLoads(
-      const std::set<dbObject*>& load_pins,
+      const odb::PtrSet<dbObject>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -3479,7 +3480,7 @@ class dbITerm : public dbObject
   ///
   /// Returns all access points for each pin.
   ///
-  std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
+  odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> getAccessPoints() const;
 
   ///
   /// Destroys all access points of each pin.
@@ -5784,10 +5785,19 @@ class dbMTerm : public dbObject
   bool hasOxide2AntennaModel() const;
   dbTechAntennaPinModel* getDefaultAntennaModel() const;
   dbTechAntennaPinModel* getOxide2AntennaModel() const;
-  void writeAntennaLef(lefout& writer) const;
 
   // From LEF's ANTENNADIFFAREA on the MACRO's PIN
   void getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALMETALAREA on the MACRO's PIN
+  void getPartialMetalArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALMETALSIDEAREA on the MACRO's PIN
+  void getPartialMetalSideArea(
+      std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALCUTAREA on the MACRO's PIN
+  void getPartialCutArea(std::vector<std::pair<double, dbTechLayer*>>& data);
 
   void* staPort();
   void staSetPort(void* port);
@@ -6492,7 +6502,6 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
   uint32_t getCutArea() const;
-  void writeLef(lefout& writer) const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6560,7 +6569,6 @@ class dbTechMinCutRule : public dbObject
   void setLengthForCuts(uint32_t length, uint32_t distance);
   bool isAboveOnly() const;
   bool isBelowOnly() const;
-  void writeLef(lefout& writer) const;
   static dbTechMinCutRule* create(dbTechLayer* inly);
   static dbTechMinCutRule* getMinCutRule(dbTechLayer* inly, uint32_t dbid);
 };
@@ -6581,7 +6589,6 @@ class dbTechMinEncRule : public dbObject
   void setEnclosure(uint32_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
-  void writeLef(lefout& writer) const;
 
   static dbTechMinEncRule* create(dbTechLayer* inly);
   static dbTechMinEncRule* getMinEncRule(dbTechLayer* inly, uint32_t dbid);
@@ -6606,7 +6613,6 @@ class dbTechV55InfluenceEntry : public dbObject
   void setV55InfluenceEntry(const uint32_t& width,
                             const uint32_t& within,
                             const uint32_t& spacing);
-  void writeLef(lefout& writer) const;
 
   static dbTechV55InfluenceEntry* create(dbTechLayer* inly);
   static dbTechV55InfluenceEntry* getV55InfluenceEntry(dbTechLayer* inly,
@@ -6623,7 +6629,6 @@ class dbTechLayerAntennaRule : public dbObject
 {
  public:
   bool isValid() const;
-  void writeLef(lefout& writer) const;
 
   void setGatePlusDiffFactor(double factor);
   void setAreaMinusDiffFactor(double factor);
@@ -6669,6 +6674,7 @@ class dbTechLayerAntennaRule : public dbObject
   pwl_pair getDiffPSR() const;
   pwl_pair getDiffCSR() const;
   pwl_pair getAreaDiffReduce() const;
+  pwl_pair getGatePlusDiffPWL() const;
 
   // PWL
   void setDiffPAR(const std::vector<double>& diff_idx,
@@ -6679,6 +6685,8 @@ class dbTechLayerAntennaRule : public dbObject
                   const std::vector<double>& ratios);
   void setDiffCSR(const std::vector<double>& diff_idx,
                   const std::vector<double>& ratios);
+  void setGatePlusDiffPWL(const std::vector<double>& diff_idx,
+                          const std::vector<double>& ratios);
 
   // Single value
   void setDiffPAR(double ratio);
@@ -6710,8 +6718,6 @@ class dbTechAntennaPinModel : public dbObject
   void getMaxAreaCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
   void getMaxSideAreaCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
   void getMaxCutCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
-
-  void writeLef(dbTech* tech, lefout& writer) const;
 
   static dbTechAntennaPinModel* getAntennaPinModel(dbMaster* master,
                                                    uint32_t dbid);
@@ -7265,6 +7271,10 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
+  dbChipPath* findChipPath(const char* name) const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7439,6 +7449,34 @@ class dbChipNet : public dbObject
 
   static void destroy(dbChipNet* net);
   // User Code End dbChipNet
+};
+
+class dbChipPath : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  // User Code Begin dbChipPath
+  struct Entry
+  {
+    std::vector<dbChipInst*> chip_inst_path;  // hierarchical path to the region
+    dbChipRegionInst* region;
+    bool negated;  // do not touch this region, i.e., the path must be connected
+                   // without crossing this region
+  };
+
+  dbChip* getChip() const;
+
+  std::vector<Entry> getEntries() const;
+
+  void addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                dbChipRegionInst* region,
+                bool negated);
+
+  static dbChipPath* create(dbChip* chip, const char* name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
 };
 
 class dbChipRegion : public dbObject
@@ -8307,7 +8345,7 @@ class dbMarker : public dbObject
   dbTechLayer* getTechLayer() const;
   Rect getBBox() const;
 
-  std::set<dbObject*> getSources() const;
+  odb::PtrSet<dbObject> getSources() const;
 
   void addShape(const Point& pt);
   void addShape(const Line& line);
@@ -8353,7 +8391,7 @@ class dbMarkerCategory : public dbObject
   dbObject* getParent() const;
   std::string getSource() const;
 
-  std::set<dbMarker*> getAllMarkers() const;
+  odb::PtrSet<dbMarker> getAllMarkers() const;
 
   bool rename(const char* name);
 
@@ -8364,11 +8402,11 @@ class dbMarkerCategory : public dbObject
   void writeTR(const std::string& path) const;
   void writeTR(std::ofstream& report) const;
 
-  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
-                                              const std::string& path);
-  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
-                                              const char* source,
-                                              std::ifstream& report);
+  static odb::PtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
+                                                const std::string& path);
+  static odb::PtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
+                                                const char* source,
+                                                std::ifstream& report);
   static dbMarkerCategory* fromTR(dbChip* chip,
                                   const char* name,
                                   const std::string& path);
@@ -9271,7 +9309,6 @@ class dbTechLayer : public dbObject
   bool hasV55SpacingRules() const;
   bool getV55SpacingWidthsAndLengths(std::vector<uint32_t>& width_idx,
                                      std::vector<uint32_t>& length_idx) const;
-  void printV55SpacingRules(lefout& writer) const;
   bool getV55SpacingTable(std::vector<std::vector<uint32_t>>& sptbl) const;
 
   void initV55LengthIndex(uint32_t numelems);
@@ -9290,7 +9327,6 @@ class dbTechLayer : public dbObject
   /// with index tables
   ///
   bool hasTwoWidthsSpacingRules() const;
-  void printTwoWidthsSpacingRules(lefout& writer) const;
   bool getTwoWidthsSpacingTable(
       std::vector<std::vector<uint32_t>>& sptbl) const;
   uint32_t getTwoWidthsSpacingTableNumWidths() const;
@@ -9310,6 +9346,7 @@ class dbTechLayer : public dbObject
   ///
   dbTechLayerAntennaRule* createDefaultAntennaRule();
   dbTechLayerAntennaRule* createOxide2AntennaRule();
+  dbTechLayerAntennaRule* getOrCreateAntennaModel(int oxide_idx);
 
   ///
   /// Access and write antenna rule models -- get functions will return nullptr
@@ -9319,7 +9356,6 @@ class dbTechLayer : public dbObject
   bool hasOxide2AntennaRule() const;
   dbTechLayerAntennaRule* getDefaultAntennaRule() const;
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
-  void writeAntennaRulesLef(lefout& writer) const;
 
   ///
   /// Get collection of minimum cuts, minimum enclosure rules, if exist

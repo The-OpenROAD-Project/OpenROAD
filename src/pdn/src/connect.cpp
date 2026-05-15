@@ -10,11 +10,13 @@
 #include <memory>
 #include <regex>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -98,7 +100,8 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
-void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits)
+void Connect::setSplitCuts(
+    const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack
@@ -619,7 +622,7 @@ void Connect::makeVia(odb::dbSWire* wire,
   }
 
   if (shapes.bottom.empty() && shapes.top.empty()) {
-    addFailedVia(failedViaReason::RECHECK, intersection, wire->getNet());
+    addFailedVia(FailedViaReason::kRecheck, intersection, wire->getNet());
   }
 }
 
@@ -894,7 +897,7 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
   if (layer_count != 3) {
     return false;
   }
-  std::set<odb::dbTechLayer*> rule_layers;
+  odb::PtrSet<odb::dbTechLayer> rule_layers;
   for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }
@@ -973,7 +976,7 @@ void Connect::printViaReport() const
   }
 }
 
-void Connect::addFailedVia(failedViaReason reason,
+void Connect::addFailedVia(FailedViaReason reason,
                            const odb::Rect& rect,
                            odb::dbNet* net)
 {
@@ -998,22 +1001,22 @@ void Connect::recordFailedVias() const
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
     switch (reason) {
-      case failedViaReason::OBSTRUCTED:
+      case FailedViaReason::kObstructed:
         reason_str = "Obstructed";
         break;
-      case failedViaReason::OVERLAPPING:
+      case FailedViaReason::kOverlapping:
         reason_str = "Overlapping";
         break;
-      case failedViaReason::BUILD:
+      case FailedViaReason::kBuild:
         reason_str = "Build";
         break;
-      case failedViaReason::RIPUP:
+      case FailedViaReason::kRipup:
         reason_str = "Ripup";
         break;
-      case failedViaReason::RECHECK:
+      case FailedViaReason::kRecheck:
         // Do not report recheck vias
         continue;
-      case failedViaReason::OTHER:
+      case FailedViaReason::kOther:
         reason_str = "Other";
         break;
     }

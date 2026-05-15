@@ -14,6 +14,7 @@
 #include "boost/geometry/geometry.hpp"
 #include "connect.h"
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -47,15 +48,15 @@ VoltageDomain* GridComponent::getDomain() const
 std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
-    case Ring:
+    case kRing:
       return "Ring";
-    case Strap:
+    case kStrap:
       return "Strap";
-    case Followpin:
+    case kFollowpin:
       return "Followpin";
-    case PadConnect:
+    case kPadConnect:
       return "Pad connect";
-    case RepairChannel:
+    case kRepairChannel:
       return "Repair channel";
   }
 
@@ -342,9 +343,9 @@ void GridComponent::cutShapes(const Shape::ObstructionTreeMap& obstructions)
 }
 
 std::map<Shape*, std::vector<odb::dbBox*>> GridComponent::writeToDb(
-    const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
+    const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
     bool add_pins,
-    const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const
+    const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const
 {
   std::vector<ShapePtr> all_shapes;
   for (const auto& [layer, shapes] : shapes_) {

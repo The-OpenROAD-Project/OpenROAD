@@ -20,6 +20,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -709,9 +710,9 @@ std::set<Node*> IRNetwork::getSharedShapeNodes() const
     const auto layer_shapes = getShapeTree(layer);
 
     for (const auto& node : nodes) {
-      const Point pt(node->getPoint().x(), node->getPoint().y());
       const auto shapes = std::distance(
-          layer_shapes.qbegin(boost::geometry::index::intersects(pt)),
+          layer_shapes.qbegin(
+              boost::geometry::index::intersects(node->getPoint())),
           layer_shapes.qend());
       if (shapes > 1) {
         shared_nodes.insert(node.get());
@@ -804,7 +805,7 @@ void IRNetwork::sortNodes()
 
   for (auto& [layer, nodes] : nodes_) {
     std::ranges::stable_sort(nodes, [](const auto& lhs, const auto& rhs) {
-      return lhs->compare(rhs);
+      return lhs->compare(rhs) < 0;
     });
   }
 }
@@ -813,10 +814,9 @@ void IRNetwork::sortConnections()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Sorting connections: {}");
-  std::ranges::stable_sort(
-      connections_,
-
-      [](const auto& lhs, const auto& rhs) { return lhs->compare(rhs); });
+  std::ranges::stable_sort(connections_, [](const auto& lhs, const auto& rhs) {
+    return lhs->compare(rhs);
+  });
 }
 
 int IRNetwork::getEffectiveNumberOfCuts(const odb::dbShape& shape) const
@@ -1112,9 +1112,9 @@ odb::dbTechLayer* IRNetwork::getTopLayer() const
   return nodes_.rbegin()->first;
 }
 
-std::set<odb::dbTechLayer*> IRNetwork::getLayers() const
+odb::PtrSet<odb::dbTechLayer> IRNetwork::getLayers() const
 {
-  std::set<odb::dbTechLayer*> layers;
+  odb::PtrSet<odb::dbTechLayer> layers;
   for (const auto& [layer, nodes] : nodes_) {
     layers.insert(layer);
   }
@@ -1136,12 +1136,13 @@ IRNetwork::NodeTree IRNetwork::getTopLayerNodeTree() const
   return getNodeTree(getTopLayer());
 }
 
-std::map<odb::dbInst*, Node::NodeSet> IRNetwork::getInstanceNodeMapping() const
+odb::PtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping()
+    const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate instance node map: {}");
 
-  std::map<odb::dbInst*, Node::NodeSet> inst_nodes;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> inst_nodes;
   for (const auto& node : iterm_nodes_) {
     odb::dbITerm* iterm = node->getITerm();
     odb::dbInst* inst = iterm->getInst();
@@ -1275,7 +1276,7 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
     return {};
   }
 
-  std::map<odb::dbTechLayer*, std::set<odb::Rect>> nodes;
+  odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>> nodes;
   for (const auto& bpin : bpin_nodes_) {
     if (bpin->shouldConnect()) {
       nodes[bpin->getLayer()].insert(bpin->getShape());
@@ -1297,6 +1298,21 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
   }
 
   return pin_nodes;
+}
+
+void IRNetwork::clearVisitedNodes()
+{
+  for (const auto& [layer, nodes] : nodes_) {
+    for (const auto& node : nodes) {
+      node->setVisited(false);
+    }
+  }
+  for (const auto& node : iterm_nodes_) {
+    node->setVisited(false);
+  }
+  for (const auto& node : bpin_nodes_) {
+    node->setVisited(false);
+  }
 }
 
 }  // namespace psm

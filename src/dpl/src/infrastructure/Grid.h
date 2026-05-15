@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -16,6 +17,7 @@
 #include "Objects.h"
 #include "boost/icl/interval_map.hpp"
 #include "dpl/Opendp.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -48,6 +50,13 @@ struct Pixel
   uint8_t blocked_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
+
+  // Hybrid negotiation data
+  int capacity = 0;  // 1 if site exists, 0 if blockage
+  int usage = 0;
+  double hist_cost = 1.0;
+
+  [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
 };
 
 // Return value for grid searches.
@@ -168,7 +177,7 @@ class Grid
 
  private:
   // Maps a site to the right orientation to use in a given row
-  using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
+  using SiteToOrientation = odb::PtrMap<odb::dbSite, odb::dbOrientType>;
 
   // Used to combine the SiteToOrientation for two intervals when merged
   template <typename MapType>

@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -843,7 +844,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // draw instances
-  std::map<odb::dbInst*, TimingPathNode*> instances;
+  odb::PtrMap<odb::dbInst, TimingPathNode*> instances;
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       if (pin->isPinITerm()) {
@@ -1043,7 +1044,7 @@ void PinSetWidget::updatePins()
   if (!pins_.empty()) {
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
-      auto* item = new QListWidgetItem(network->name(pin));
+      auto* item = new QListWidgetItem(network->name(pin).c_str());
       item->setData(Qt::UserRole, QVariant::fromValue((void*) pin));
       box_->addItem(item);
     }
@@ -1241,7 +1242,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(expand_clk_,
           &QCheckBox::toggled,
           this,
-          &TimingControlsDialog ::expandClock);
+          &TimingControlsDialog::expandClock);
 
   sta_->setIncludeCapturePaths(true);
 }
@@ -1325,7 +1326,7 @@ void TimingControlsDialog::populate()
   scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
-    QString clk_name = clk->name();
+    QString clk_name = clk->name().c_str();
 
     if (qstring_to_clk_.count(clk_name) != 1) {
       qstring_to_clk_[clk_name] = clk;

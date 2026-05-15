@@ -65,6 +65,11 @@ build --cxxopt "-Wno-dangling"  --host_cxxopt "-Wno-dangling"
 build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
 
+# This avoid problems with building -c dbg which enables asserts.
+# Without this libstdc++ vs libc++ differences cause link errors.
+build --per_file_copt=.*external/abc.*@-stdlib=libc++
+build --host_per_file_copt=.*external/abc.*@-stdlib=libc++
+
 ##### Platform-specific configs (auto-selected) #############
 # --enable_platform_specific_config makes bazel automatically apply
 # build:macos on macOS, build:linux on Linux, etc.

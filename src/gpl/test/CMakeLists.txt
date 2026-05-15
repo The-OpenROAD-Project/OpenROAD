@@ -7,13 +7,13 @@ or_integration_tests(
     clust02
     clust03
     cluster_place01
+    mbff_orig_name
     convergence01
     core01
     density01
     diverge01
     error01
     incremental01
-    incremental02
     nograd01
     simple01
     simple01-obs
@@ -36,6 +36,8 @@ or_integration_tests(
     simple09
     simple10
     region01
+  PASSFAIL_TESTS
+    incremental02
 )
 
 

@@ -6,8 +6,8 @@
 #include <atomic>
 #include <limits>
 #include <map>
-#include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -16,6 +16,7 @@
 
 #include "boost/asio/post.hpp"
 #include "boost/asio/thread_pool.hpp"
+#include "odb/PtrSetMap.h"
 
 namespace utl {
 class Logger;
@@ -54,13 +55,13 @@ class Search : public odb::dbBlockCallBackObj
  public:
   enum RouteBoxType
   {
-    WIRE,
-    VIA,
-    BTERM
+    kWire,
+    kVia,
+    kBterm
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -75,7 +76,7 @@ class Search : public odb::dbBlockCallBackObj
   template <typename T>
   struct BBoxIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
     odb::Rect operator()(const SNetValue<T>& t) const
     {
@@ -89,7 +90,7 @@ class Search : public odb::dbBlockCallBackObj
 
   struct FillIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbFill* t) const
     {
       odb::Rect fill;
@@ -132,14 +133,14 @@ class Search : public odb::dbBlockCallBackObj
     Iterator begin_;
     Iterator end_;
   };
-  using InstRange = Range<RtreeDBox<odb::dbInst*>>;
-  using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
-  using SNetSBoxRange = Range<RtreeSNetDBoxShapes<odb::dbNet*>>;
-  using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
-  using FillRange = Range<RtreeFill>;
-  using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
-  using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
-  using RowRange = Range<RtreeRect<odb::dbRow*>>;
+  using InstRange = std::vector<odb::dbInst*>;
+  using RoutingRange = std::vector<RouteBoxValue<odb::dbNet*>>;
+  using SNetSBoxRange = std::vector<SNetDBoxValue<odb::dbNet*>>;
+  using SNetShapeRange = std::vector<SNetValue<odb::dbNet*>>;
+  using FillRange = std::vector<odb::dbFill*>;
+  using ObstructionRange = std::vector<odb::dbObstruction*>;
+  using BlockageRange = std::vector<odb::dbBlockage*>;
+  using RowRange = std::vector<RectValue<odb::dbRow*>>;
 
   explicit Search(utl::Logger* logger);
   ~Search() override;
@@ -325,12 +326,12 @@ class Search : public odb::dbBlockCallBackObj
     RtreeDBox<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
-    std::mutex shapes_init_mutex;
-    std::mutex fills_init_mutex;
-    std::mutex insts_init_mutex;
-    std::mutex blockages_init_mutex;
-    std::mutex obstructions_init_mutex;
-    std::mutex rows_init_mutex;
+    std::shared_mutex shapes_init_mutex;
+    std::shared_mutex fills_init_mutex;
+    std::shared_mutex insts_init_mutex;
+    std::shared_mutex blockages_init_mutex;
+    std::shared_mutex obstructions_init_mutex;
+    std::shared_mutex rows_init_mutex;
 
     // The net is used for filter shapes by net type
     LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;
@@ -349,7 +350,7 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  odb::PtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

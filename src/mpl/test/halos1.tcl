@@ -8,7 +8,7 @@ read_lef "./testcases/orientation_improve1.lef"
 read_def "./testcases/halos1.def"
 
 set_thread_count 0
-rtl_macro_placer -use_def_halo -report_directory [make_result_dir]
+rtl_macro_placer -report_directory [make_result_dir]
 
 set def_file [make_result_file halos1.def]
 write_def $def_file

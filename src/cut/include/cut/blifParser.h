@@ -15,9 +15,9 @@ namespace cut {
 
 enum class GateType
 {
-  None,
-  Mlatch,
-  Gate
+  kNone,
+  kMlatch,
+  kGate
 };
 
 struct Gate

@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2026, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -12,25 +15,64 @@ package(
 )
 
 cc_library(
+    name = "utils",
+    srcs = ["src/utils.cpp"],
+    hdrs = ["src/utils.h"],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
+    ],
+)
+
+cc_library(
+    name = "optimization_strategies",
+    srcs = [
+        "src/delay_optimization_strategy.cpp",
+        "src/zero_slack_strategy.cpp",
+    ],
+    hdrs = [
+        "src/delay_optimization_strategy.h",
+        "src/logic_optimization_strategy.h",
+        "src/resynthesis_strategy.h",
+        "src/zero_slack_strategy.h",
+    ],
+    defines = ["ABC_NAMESPACE=abc"],
+    includes = ["src"],
+    visibility = ["//src/rmp/test:__pkg__"],
+    deps = [
+        ":utils",
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abc",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+    ],
+)
+
+cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
         "src/annealing_strategy.cpp",
         "src/annealing_strategy.h",
-        "src/delay_optimization_strategy.cpp",
-        "src/delay_optimization_strategy.h",
         "src/genetic_strategy.cpp",
         "src/genetic_strategy.h",
         "src/gia.cpp",
         "src/gia.h",
-        "src/logic_optimization_strategy.h",
-        "src/resynthesis_strategy.h",
         "src/slack_tuning_strategy.cpp",
         "src/slack_tuning_strategy.h",
-        "src/utils.cpp",
-        "src/utils.h",
-        "src/zero_slack_strategy.cpp",
-        "src/zero_slack_strategy.h",
     ],
     hdrs = [
         "include/rmp/Restructure.h",
@@ -41,26 +83,18 @@ cc_library(
         "src",
     ],
     deps = [
-        "//:ord",
+        ":optimization_strategies",
+        ":utils",
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/random:distributions",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.bind",
-        "@boost.config",
-        "@boost.fusion",
-        "@boost.lambda",
-        "@boost.optional",
-        "@boost.phoenix",
-        "@boost.spirit",
     ],
 )
 
@@ -82,14 +116,42 @@ cc_library(
         ":rmp",
         "//:ord",
         "//src/cut",
-        "//src/dbSta",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
+)
+
+cc_binary(
+    name = "_rmp_py.so",
+    srcs = [":swig-py"],
+    defines = [
+        "BAZEL=1",
+        PYTHON_STABLE_API_DEFINE,
+    ],
+    includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        ":rmp",
+        "//:ord",
+        "//src/cut",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+py_library(
+    name = "rmp_py",
+    srcs = [":swig-py"],
+    data = [":_rmp_py.so"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
 )
 
 tcl_encode(
@@ -117,6 +179,27 @@ tcl_wrap_cc(
     ],
     deps = [
         "//src/odb:swig",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "src/rmp-py.i",
+        "//:error_swig-py",
+    ],
+    module = "rmp_py",
+    root_swig_src = "src/rmp-py.i",
+    swig_includes = [
+        "../../include",
+        "../cut/include",
+        "../sta/include",
+        "include",
+        "src",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/odb:swig-py",
     ],
 )
 

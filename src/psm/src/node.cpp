@@ -18,30 +18,50 @@ Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
 {
 }
 
-Node::CompareInformation Node::compareTuple() const
-{
-  const int x = pt_.getX();
-  const int y = pt_.getY();
-  const int layer = layer_->getNumber();
-
-  return {layer, x, y, getType(), getTypeCompareInfo()};
-}
-
-Node::CompareInformation Node::dummyCompareTuple()
-{
-  return {-1, 0, 0, NodeType::kUnknown, -1};
-}
-
-bool Node::compare(const Node* other) const
+int Node::compare(const Node* other) const
 {
   if (other == nullptr) {
-    return true;
+    return 1;
   }
 
-  return compareTuple() < other->compareTuple();
+  // Compare layer
+  const int layer1 = layer_->getNumber();
+  const int layer2 = other->layer_->getNumber();
+  if (layer1 != layer2) {
+    return layer1 < layer2 ? -1 : 1;
+  }
+
+  // Compare x coordinate
+  const int x1 = pt_.getX();
+  const int x2 = other->pt_.getX();
+  if (x1 != x2) {
+    return x1 < x2 ? -1 : 1;
+  }
+
+  // Compare y coordinate
+  const int y1 = pt_.getY();
+  const int y2 = other->pt_.getY();
+  if (y1 != y2) {
+    return y1 < y2 ? -1 : 1;
+  }
+
+  // Compare node type
+  const NodeType type1 = getType();
+  const NodeType type2 = other->getType();
+  if (type1 != type2) {
+    return type1 < type2 ? -1 : 1;
+  }
+
+  // Compare type-specific info
+  const int info1 = getTypeCompareInfo();
+  const int info2 = other->getTypeCompareInfo();
+  if (info1 == info2) {
+    return 0;
+  }
+  return info1 < info2 ? -1 : 1;
 }
 
-bool Node::compare(const std::unique_ptr<Node>& other) const
+int Node::compare(const std::unique_ptr<Node>& other) const
 {
   return compare(other.get());
 }

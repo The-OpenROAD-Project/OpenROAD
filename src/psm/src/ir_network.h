@@ -15,6 +15,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
@@ -25,14 +26,14 @@ namespace psm {
 template <typename T>
 struct RectIndexableGetter
 {
-  using result_type = odb::Rect;
+  using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
   odb::Rect operator()(const T* t) const { return t->getShape(); }
 };
 
 template <typename T>
 struct PointIndexableGetter
 {
-  using result_type = odb::Point;
+  using result_type = odb::Point;  // NOLINT(readability-identifier-naming)
   odb::Point operator()(const T* t) const { return t->getPoint(); }
 };
 
@@ -43,11 +44,7 @@ class IRNetwork
   using NodePtrMap = std::map<Node*, std::vector<T*>>;
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
-
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
@@ -102,14 +99,16 @@ class IRNetwork
   odb::dbTechLayer* getTopLayer() const;
   const std::vector<std::unique_ptr<Node>>& getTopLayerNodes() const;
   NodeTree getTopLayerNodeTree() const;
-  std::set<odb::dbTechLayer*> getLayers() const;
+  odb::PtrSet<odb::dbTechLayer> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
+
+  void clearVisitedNodes();
 
   const Connections& getConnections() const { return connections_; }
   NodePtrMap<Connection> getConnectionMap() const;
 
-  std::map<odb::dbInst*, Node::NodeSet> getInstanceNodeMapping() const;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
   // For debug only
@@ -197,7 +196,7 @@ class IRNetwork
   std::vector<std::unique_ptr<ITermNode>> iterm_nodes_;
   std::vector<std::unique_ptr<BPinNode>> bpin_nodes_;
 
-  std::map<odb::dbTechLayer*, int> min_node_pitch_;
+  odb::PtrMap<odb::dbTechLayer, int> min_node_pitch_;
 
   static constexpr int kMinNodePitchMultiplier = 10;
   static constexpr double kMinNodePitchInUm = 10.0;

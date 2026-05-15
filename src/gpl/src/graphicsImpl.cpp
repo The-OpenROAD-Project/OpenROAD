@@ -223,7 +223,7 @@ void GraphicsImpl::drawInitial(gui::Painter& painter)
   }
 }
 
-void GraphicsImpl::drawForce(gui::Painter& painter)
+void GraphicsImpl::drawField(gui::Painter& painter)
 {
   for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
     const auto& nb = nbVec_[nb_idx];
@@ -240,13 +240,13 @@ void GraphicsImpl::drawForce(gui::Painter& painter)
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : bins) {
       efMax = std::max(efMax,
-                       std::hypot(bin.electroForceX(), bin.electroForceY()));
+                       std::hypot(bin.electroFieldX(), bin.electroFieldY()));
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
     for (auto& bin : bins) {
-      float fx = bin.electroForceX();
-      float fy = bin.electroForceY();
+      float fx = bin.electroFieldX();
+      float fy = bin.electroFieldY();
       float f = std::hypot(fx, fy);
       float ratio = f / efMax;
       float dx = fx / f * max_len * ratio;
@@ -417,7 +417,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     }
 
     // Draw gradient direction lines in the GUI from the GCell center.
-    // We scale vectors to fit nicely within the cell (similar to drawForce()).
+    // We scale vectors to fit nicely within the cell (similar to drawField()).
     const GCell* gcell = nbc_->getGCellByIndex(selected_);
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
@@ -486,9 +486,9 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     }
   }
 
-  // Draw force direction lines
+  // Draw field lines
   if (draw_bins_) {
-    drawForce(painter);
+    drawField(painter);
   }
 }
 
@@ -604,37 +604,42 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
   }
   stepLength_chart_->addPoint(iter, values);
 
-  values.clear();
-  if (!nbVec_.empty() && nbVec_[0]) {
-    values.push_back(static_cast<double>(rb_->getRudyAverage()));
-    values.push_back(
-        block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
-    const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
-    values.push_back(total_tiles > 0.0
-                         ? (static_cast<double>(rb_->getOverflowedTilesCount())
-                            / total_tiles * 100.0)
-                         : 0.0);
-    values.push_back((rb_->getTotalRudyOverflow()));
-  } else {
-    values.push_back(0.0);
-    values.push_back(0.0);
-    values.push_back(0.0);
-    values.push_back(0.0);
-    values.push_back(0.0);
+  if (routing_chart_) {
+    values.clear();
+    if (!nbVec_.empty() && nbVec_[0] && rb_) {
+      values.push_back(static_cast<double>(rb_->getRudyAverage()));
+      values.push_back(
+          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+      const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
+      values.push_back(total_tiles > 0.0 ? (static_cast<double>(
+                                                rb_->getOverflowedTilesCount())
+                                            / total_tiles * 100.0)
+                                         : 0.0);
+      values.push_back((rb_->getTotalRudyOverflow()));
+    } else {
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+      values.push_back(0.0);
+    }
+    routing_chart_->addPoint(iter, values);
   }
-  routing_chart_->addPoint(iter, values);
 }
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
-  routing_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  if (routing_chart_) {
+    routing_chart_->addVerticalMarker(iter, gui::Painter::kTurquoise);
+  }
 }
 
 void GraphicsImpl::addRoutabilitySnapshot(int iter)
 {
   main_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
-  routing_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  if (routing_chart_) {
+    routing_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  }
 }
 
 void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
@@ -642,8 +647,10 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
-  routing_chart_->addVerticalMarker(
-      iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
+  if (routing_chart_ && rb_) {
+    routing_chart_->addVerticalMarker(
+        iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
+  }
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)

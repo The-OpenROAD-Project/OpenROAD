@@ -11,7 +11,7 @@ namespace gpl {
 class FFT
 {
  public:
-  FFT(int binCntX, int binCntY, float binSizeX, float binSizeY);
+  FFT(int bin_cnt_x, int bin_cnt_y, float bin_size_x, float bin_size_y);
   ~FFT();
 
   // input func
@@ -21,37 +21,37 @@ class FFT
   void doFFT();
 
   // returning func
-  std::pair<float, float> getElectroForce(int x, int y) const;
+  std::pair<float, float> getElectroField(int x, int y) const;
   float getElectroPhi(int x, int y) const;
 
  private:
   // 2D array; width: binCntX_, height: binCntY_;
   // No hope to use Vector at this moment...
-  float** binDensity_ = nullptr;
-  float** electroPhi_ = nullptr;
-  float** electroForceX_ = nullptr;
-  float** electroForceY_ = nullptr;
+  float** bin_density_ = nullptr;
+  float** electro_phi_ = nullptr;
+  float** electro_field_x_ = nullptr;
+  float** electro_field_y_ = nullptr;
 
   // cos/sin table (prev: w_2d)
   // length:  max(binCntX, binCntY) * 3 / 2
-  std::vector<float> csTable_;
+  std::vector<float> cs_table_;
 
   // wx. length:  binCntX_
   std::vector<float> wx_;
-  std::vector<float> wxSquare_;
+  std::vector<float> wx_square_;
 
   // wy. length:  binCntY_
   std::vector<float> wy_;
-  std::vector<float> wySquare_;
+  std::vector<float> wy_square_;
 
   // work area for bit reversal (prev: ip)
   // length: round(sqrt( max(binCntX_, binCntY_) )) + 2
-  std::vector<int> workArea_;
+  std::vector<int> work_area_;
 
-  int binCntX_ = 0;
-  int binCntY_ = 0;
-  float binSizeX_ = 0;
-  float binSizeY_ = 0;
+  int bin_cnt_X_ = 0;
+  int bin_cnt_y_ = 0;
+  float bin_size_x_ = 0;
+  float bin_size_y_ = 0;
 };
 
 //

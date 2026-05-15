@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "nesterovPlace.h"
@@ -43,8 +44,6 @@ static float calculateBiVariateNormalCDF(biNormalParameters i);
 static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron);
-
-static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 
 static float getDistance(const std::vector<FloatPoint>& a,
                          const std::vector<FloatPoint>& b);
@@ -558,14 +557,14 @@ float Bin::getTargetDensity() const
   return targetDensity_;
 }
 
-float Bin::electroForceX() const
+float Bin::electroFieldX() const
 {
-  return electroForceX_;
+  return electroFieldX_;
 }
 
-float Bin::electroForceY() const
+float Bin::electroFieldY() const
 {
-  return electroForceY_;
+  return electroFieldY_;
 }
 
 float Bin::electroPhi() const
@@ -583,10 +582,10 @@ void Bin::setBinTargetDensity(float density)
   targetDensity_ = density;
 }
 
-void Bin::setElectroForce(float electroForceX, float electroForceY)
+void Bin::setElectroField(float electroFieldX, float electroFieldY)
 {
-  electroForceX_ = electroForceX;
-  electroForceY_ = electroForceY;
+  electroFieldX_ = electroFieldX;
+  electroFieldY_ = electroFieldY;
 }
 
 void Bin::setElectroPhi(float phi)
@@ -736,23 +735,19 @@ void BinGrid::initBins()
   idealBinCnt = std::max(idealBinCnt, 4);
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(
-      GPL, 23, format_label_float, "Placement target density:", targetDensity_);
+  log_->info(GPL, 23, "Placement target density:   {:10.4f}", targetDensity_);
   log_->info(GPL,
              24,
-             format_label_um2,
-             "Movable insts average area:",
+             "Movable insts average area: {:10.3f} um^2",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             format_label_um2,
-             "Ideal bin area:",
+             "Ideal bin area:             {:10.3f} um^2",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, format_label_int, "Ideal bin count:", idealBinCnt);
+  log_->info(GPL, 26, "Ideal bin count:            {:10}", idealBinCnt);
   log_->info(GPL,
              27,
-             format_label_um2,
-             "Total bin area:",
+             "Total bin area:             {:10.3f} um^2",
              block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
@@ -822,7 +817,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, format_label_int, "Number of bins:", bins_.size());
+  log_->info(GPL, 30, "Number of bins:             {:10}", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -835,26 +830,93 @@ void BinGrid::updateBinsNonPlaceArea()
     bin.setNonPlaceAreaUnscaled(0);
   }
 
+  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+  using BoostRect = boost::polygon::rectangle_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator&=;
+
+  // For each bin, collect indices of non-place instances whose bbox
+  // overlaps it. The per-bin geometric union (which dedupes overlapping
+  // fixed macros / blockages) only depends on those instances, so we
+  // avoid copying a full design-wide polygon set per bin.
+  const auto& non_place_insts = pb_->nonPlaceInsts();
+  std::vector<std::vector<int>> bin_insts(bins_.size());
+  for (size_t i = 0; i < non_place_insts.size(); ++i) {
+    const Instance* inst = non_place_insts[i];
+    if (inst->lx() >= inst->ux() || inst->ly() >= inst->uy()) {
+      continue;
+    }
+    std::pair<int, int> pairX = getMinMaxIdxX(inst);
+    std::pair<int, int> pairY = getMinMaxIdxY(inst);
+    for (int y = pairY.first; y < pairY.second; y++) {
+      for (int x = pairX.first; x < pairX.second; x++) {
+        bin_insts[y * binCntX_ + x].push_back(static_cast<int>(i));
+      }
+    }
+  }
+
+  // Per-bin geometric union area (deduplicated across overlapping
+  // fixed instances). Drives nonPlaceAreaUnscaled and the cap below.
+  std::vector<int64_t> unionArea(bins_.size(), 0);
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    const auto& touching = bin_insts[i];
+    if (touching.empty()) {
+      continue;
+    }
+    Bin& bin = bins_[i];
+    if (touching.size() == 1) {
+      // Single instance: union == clipped overlap, skip Boost.Polygon.
+      const Instance* inst = non_place_insts[touching.front()];
+      const int rectLx = std::max(bin.lx(), inst->lx());
+      const int rectLy = std::max(bin.ly(), inst->ly());
+      const int rectUx = std::min(bin.ux(), inst->ux());
+      const int rectUy = std::min(bin.uy(), inst->uy());
+      if (rectLx < rectUx && rectLy < rectUy) {
+        unionArea[i] = static_cast<int64_t>(rectUx - rectLx)
+                       * static_cast<int64_t>(rectUy - rectLy);
+      }
+    } else {
+      Polygon90Set local_set;
+      for (int idx : touching) {
+        const Instance* inst = non_place_insts[idx];
+        local_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
+      }
+      local_set &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
+      unionArea[i] = boost::polygon::area(local_set);
+    }
+    // Note that nonPlaceArea should have scale-down with target
+    // density. See MS-replace paper.
+    bin.setNonPlaceAreaUnscaled(
+        static_cast<int64_t>(unionArea[i] * bin.getTargetDensity()));
+  }
+
+  // Per-macro Gaussian smoothing in getOverlapArea spreads density
+  // around the macro center; preserve that for non-overlapping cases
+  // by accumulating per-instance, then clamp at union-area * 1.10
+  // (the same headroom getOverlapArea allows for a single macro) so
+  // overlapping macros cannot exceed a single-macro contribution.
+  const int dbu_per_micron
+      = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
-
-        // Note that nonPlaceArea should have scale-down with
-        // target density.
-        // See MS-replace paper
-        //
-        bin.addNonPlaceArea(
-            getOverlapArea(
-                &bin,
-                inst,
-                pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron())
-            * bin.getTargetDensity());
-        bin.addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(&bin, inst)
-                                    * bin.getTargetDensity());
+        bin.addNonPlaceArea(getOverlapArea(&bin, inst, dbu_per_micron)
+                            * bin.getTargetDensity());
       }
+    }
+  }
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    if (bin_insts[i].empty()) {
+      continue;
+    }
+    Bin& bin = bins_[i];
+    const int64_t cap
+        = static_cast<int64_t>(unionArea[i] * bin.getTargetDensity() * 1.10f);
+    if (bin.getNonPlaceArea() > cap) {
+      bin.setNonPlaceArea(cap);
     }
   }
 }
@@ -2513,7 +2575,7 @@ FloatPoint NesterovBase::getDensityPreconditioner(const GCell* gCell) const
   return FloatPoint(areaVal, areaVal);
 }
 
-// get GCells' electroForcePair
+// get GCells' electroFieldPair
 // i.e. get DensityGradient with given GCell
 FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 {
@@ -2528,16 +2590,16 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
       float overlapArea
           = getOverlapDensityArea(bin, gCell) * gCell->getDensityScale();
 
-      electroForce.x += overlapArea * bin.electroForceX();
-      electroForce.y += overlapArea * bin.electroForceY();
+      electroForce.x += overlapArea * bin.electroFieldX();
+      electroForce.y += overlapArea * bin.electroFieldY();
     }
   }
 
   return electroForce;
 }
 
-// Density force cals
-void NesterovBase::updateDensityForceBin()
+// Density field calls
+void NesterovBase::updateDensityFieldBin()
 {
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
@@ -2550,15 +2612,15 @@ void NesterovBase::updateDensityForceBin()
   // do FFT
   fft_->doFFT();
 
-  // update electroPhi and electroForce
+  // update electroPhi and electroField
   // update sumPhi_ for nesterov loop
   sumPhi_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : sumPhi_)
   for (auto it = getBins().begin(); it < getBins().end(); ++it) {
     auto& bin = *it;  // old-style loop for old OpenMP
-    auto eForcePair = fft_->getElectroForce(bin.x(), bin.y());
-    bin.setElectroForce(eForcePair.first, eForcePair.second);
+    auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
+    bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
     float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
     bin.setElectroPhi(electroPhi);
@@ -2621,7 +2683,7 @@ void NesterovBase::initDensity1()
   prev_hpwl_ = nbc_->getHpwl();
 
   // FFT update
-  updateDensityForceBin();
+  updateDensityFieldBin();
 
   baseWireLengthCoef_
       = npVars_->initWireLengthCoef
@@ -2681,7 +2743,7 @@ float NesterovBase::getStepLength(
 // to execute following function,
 //
 // nb_->updateGCellDensityCenterLocation(coordi); // bin update
-// nb_->updateDensityForceBin(); // bin Force update
+// nb_->updateDensityFieldBin(); // bin Field update
 //
 // nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_); // WL
 // update
@@ -3100,7 +3162,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
 
   // Update Density
   updateGCellDensityCenterLocation(nextSLPCoordi_);
-  updateDensityForceBin();
+  updateDensityFieldBin();
 }
 
 void NesterovBase::nesterovAdjustPhi()
@@ -3170,7 +3232,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
           GPL, 1001, "Global placement finished at iteration {}", final_iter);
       if (npVars_->routability_driven_mode) {
         log_->info(GPL,
-                   1003,
+                   1017,
                    "Routability mode iteration count: {}",
                    routability_gpl_iter_count);
       }
@@ -3187,14 +3249,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
     log_->info(GPL,
                1002,
-               format_label_float,
-               "Placed Cell Area",
+               "Placed Cell Area            {:10.4f}",
                block->dbuAreaToMicrons(getNesterovInstsArea()));
 
     log_->info(GPL,
                1003,
-               format_label_float,
-               "Available Free Area",
+               "Available Free Area         {:10.4f}",
                block->dbuAreaToMicrons(whiteSpaceArea_));
 
     log_->info(GPL,
@@ -3302,7 +3362,7 @@ bool NesterovBase::revertToSnapshot()
   stepLength_ = snapshotStepLength_;
 
   updateGCellDensityCenterLocation(curCoordi_);
-  updateDensityForceBin();
+  updateDensityFieldBin();
 
   isDiverged_ = false;
 
@@ -4285,20 +4345,6 @@ static int64_t getOverlapArea(const Bin* bin,
   }
   return static_cast<float>(rectUx - rectLx)
          * static_cast<float>(rectUy - rectLy);
-}
-
-static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
-{
-  const int rectLx = std::max(bin->lx(), inst->lx());
-  const int rectLy = std::max(bin->ly(), inst->ly());
-  const int rectUx = std::min(bin->ux(), inst->ux());
-  const int rectUy = std::min(bin->uy(), inst->uy());
-
-  if (rectLx >= rectUx || rectLy >= rectUy) {
-    return 0;
-  }
-  return static_cast<int64_t>(rectUx - rectLx)
-         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a

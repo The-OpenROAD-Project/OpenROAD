@@ -32,6 +32,7 @@ set(OPENROAD_SOURCE
   Design.cc
   Timing.cc
   Tech.cc
+  tcl_readline_setup.cc
   OpenRoad.cc
   Main.cc
   )
@@ -43,6 +44,8 @@ else()
 endif()
 
 if(USE_SYSTEM_OPENSTA)
+  find_package(CUDD REQUIRED)
+
   if(NOT OPENSTA_LIBRARY)
     find_library(OPENSTA_LIBRARY NAMES OpenSTA
                  PATHS
@@ -64,12 +67,9 @@ if(USE_SYSTEM_OPENSTA)
   add_library(OpenSTA STATIC IMPORTED)
   set_target_properties(OpenSTA PROPERTIES
     IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${OPENSTA_INCLUDE_DIR}"
+    INTERFACE_LINK_LIBRARIES CUDD::CUDD
   )
-  if(CUDD_LIB)
-    set_target_properties(OpenSTA PROPERTIES
-      INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
-    )
-  endif()
 else()
   # local build of opensta
   set(OPENSTA_LIBRARY "sta_swig")
@@ -138,10 +138,7 @@ if (BUILD_TCLX AND TCLX_H)
   message(STATUS "TclX header: ${TCLX_H}")
 endif()
 
-find_package(SWIG 4.0 REQUIRED)
-if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
-  message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
-endif()
+find_package(SWIG 4.3 REQUIRED)
 include(UseSWIG)
 
 find_package(Boost CONFIG REQUIRED)
@@ -347,7 +344,6 @@ target_link_libraries(openroad
   cut
   grt
   tap
-  gui
   drt
   dst
   psm
@@ -360,6 +356,7 @@ target_link_libraries(openroad
   par
   est
   web
+  gui
   absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
@@ -393,7 +390,9 @@ if (ZLIB_FOUND)
 endif()
 
 # Optional CUDD library for OpenSTA
-if (CUDD_LIB)
+if (TARGET CUDD::CUDD)
+  target_link_libraries(openroad CUDD::CUDD)
+elseif (CUDD_LIB)
   target_link_libraries(openroad ${CUDD_LIB})
 endif()
 
@@ -437,6 +436,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     stt_py
     psm_py
     pdn_py
+    rsz_py
     dft_py
     par_py
     web_py

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "boost/property_tree/json_parser.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -43,7 +44,7 @@ class DensityFill
                  const odb::Rect& fill_bounds);
 
   odb::dbDatabase* db_;
-  std::map<odb::dbTechLayer*, DensityFillLayerConfig> layers_;
+  odb::PtrMap<odb::dbTechLayer, DensityFillLayerConfig> layers_;
   std::unique_ptr<Graphics> graphics_;
   utl::Logger* logger_;
 };

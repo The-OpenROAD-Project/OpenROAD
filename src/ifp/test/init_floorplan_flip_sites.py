@@ -1,4 +1,5 @@
 from openroad import Tech, Design
+import openroad
 import helpers
 
 tech = Tech()
@@ -11,13 +12,18 @@ design.link("top")
 
 floorplan = design.getFloorplan()
 site = floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")
+import ifp
+
+flipped_sites = ifp.site_set()
+flipped_sites.insert(site)
+
 floorplan.initFloorplan(
     helpers.make_rect(design, 0, 0, 1000, 1000),
     helpers.make_rect(design, 100, 100, 900, 900),
     site,
     [],
     "NONE",
-    [site],
+    flipped_sites,
 )
 
 def_file = helpers.make_result_file("init_floorplan_flip_sites.def")

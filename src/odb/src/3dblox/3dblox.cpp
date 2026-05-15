@@ -6,14 +6,11 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <map>
-#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
-#include <vector>
 
 #include "bmapParser.h"
 #include "bmapWriter.h"
@@ -23,6 +20,7 @@
 #include "dbxParser.h"
 #include "dbxWriter.h"
 #include "objects.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -120,7 +118,7 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       temp_network.netIterator(top_inst));
   while (net_iter->hasNext()) {
     auto* net = net_iter->next();
-    const char* net_name = temp_network.name(net);
+    const std::string net_name = temp_network.name(net);
     auto* chip_net = dbChipNet::create(chip, net_name);
 
     debugPrint(logger_,
@@ -146,10 +144,10 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
         continue;
       }
 
-      const char* port_name = temp_network.name(temp_network.port(pin));
+      const std::string port_name = temp_network.name(temp_network.port(pin));
       dbChip* master = chip_inst->getMasterChip();
 
-      dbBTerm* bterm = master->getBlock()->findBTerm(port_name);
+      dbBTerm* bterm = master->getBlock()->findBTerm(port_name.c_str());
       if (!bterm) {
         continue;
       }
@@ -189,6 +187,15 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
     createConnection(connection);
   }
   calculateSize(chip);
+  for (const auto& [_, assertion] : data.path_assertions) {
+    dbChipPath* chip_path = dbChipPath::create(chip, assertion.name.c_str());
+    for (const auto& entry : assertion.entries) {
+      // Resolve the dotted path string to a live DB object
+      std::vector<dbChipInst*> path_insts;
+      dbChipRegionInst* region_inst = resolvePath(entry.region, path_insts);
+      chip_path->addEntry(path_insts, region_inst, entry.negated);
+    }
+  }
 }
 
 void ThreeDBlox::check()
@@ -794,7 +801,7 @@ void ThreeDBlox::readBMap(const std::string& bmap_file)
   };
 
   // Populate where the bpins should be made
-  std::map<odb::dbMaster*, BPinInfo> bpininfo;
+  odb::PtrMap<odb::dbMaster, BPinInfo> bpininfo;
   for (const auto& [inst, bterm] : bumps) {
     dbMaster* master = inst->getMaster();
     if (bpininfo.contains(master)) {

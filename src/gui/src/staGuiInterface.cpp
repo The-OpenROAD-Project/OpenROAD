@@ -15,6 +15,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -678,7 +679,7 @@ int ClockTree::getMaxLeaves(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       minimum = std::min(minimum, arrival);
@@ -700,7 +701,7 @@ sta::Delay ClockTree::getMinimumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 {
-  sta::Delay maximum = std::numeric_limits<sta::Delay>::min();
+  sta::Delay maximum = std::numeric_limits<float>::min();
   if (!visibility or isVisible()) {
     for (const auto& [driver, arrival] : drivers_) {
       maximum = std::max(maximum, arrival);
@@ -722,7 +723,7 @@ sta::Delay ClockTree::getMaximumArrival(bool visibility = false) const
 
 sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
 {
-  sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+  sta::Delay minimum = std::numeric_limits<float>::max();
   if (!visibility or isVisible()) {
     if (parent_ != nullptr) {
       for (const auto& [driver, arrival] : drivers_) {
@@ -741,9 +742,9 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
   return minimum;
 }
 
-std::set<odb::dbNet*> ClockTree::getNets(bool visibility = false) const
+odb::PtrSet<odb::dbNet> ClockTree::getNets(bool visibility = false) const
 {
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbNet> nets;
 
   if (!visibility or subtree_visibility_) {
     if (net_ != nullptr) {

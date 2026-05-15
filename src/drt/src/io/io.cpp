@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -27,7 +28,7 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
-#include "db/obj/frNode.h"
+#include "db/obj/frMPin.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
@@ -40,6 +41,7 @@
 #include "frProfileTask.h"
 #include "frRTree.h"
 #include "global.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -360,7 +362,7 @@ void io::Parser::setVias(odb::dbBlock* block)
             utl::DRT, 337, "Duplicated via definition for {}", via->getName());
       }
     } else {
-      std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
+      std::map<frLayerNum, odb::PtrSet<odb::dbBox>> lNum2Int;
       for (auto box : via->getBoxes()) {
         if (getTech()->name2layer_.find(box->getTechLayer()->getName())
             == getTech()->name2layer_.end()) {
@@ -592,13 +594,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
     auto frbterm = getBlock()->name2term_[term->getName()];  // frBTerm*
     frbterm->addToNet(netIn);
     netIn->addBTerm(frbterm);
-    if (!net->isSpecial()) {
-      // graph enablement
-      auto termNode = std::make_unique<frNode>();
-      termNode->setPin(frbterm);
-      termNode->setType(frNodeTypeEnum::frcPin);
-      netIn->addNode(termNode);
-    }
   }
   for (auto term : net->getITerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
@@ -629,13 +624,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 
     instTerm->addToNet(netIn);
     netIn->addInstTerm(instTerm);
-    if (!net->isSpecial()) {
-      // graph enablement
-      auto instTermNode = std::make_unique<frNode>();
-      instTermNode->setPin(instTerm);
-      instTermNode->setType(frNodeTypeEnum::frcPin);
-      netIn->addNode(instTermNode);
-    }
   }
   if (!net->isSpecial() && net->getTermCount() > LARGE_NET_FANOUT_THRESHOLD) {
     logger_->warn(
@@ -1111,7 +1099,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     auto uTermIn = std::make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setType(term->getSigType());
-    termIn->setDirection(term->getIoType());
     auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
 
@@ -1220,7 +1207,7 @@ void io::Parser::setBTerms_addPinFig_helper(frBPin* pinIn,
 
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
 {
-  std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
+  odb::PtrMap<odb::dbAccessPoint, frAccessPoint*> ap_map;
   for (auto& master : getDesign()->getMasters()) {
     auto db_master = db->findMaster(master->getName().c_str());
     for (auto& term : master->getTerms()) {
@@ -1269,7 +1256,7 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
       }
 
       auto db_aps = db_term->getPrefAccessPoints();
-      std::map<odb::dbMPin*, odb::dbAccessPoint*> db_aps_map;
+      odb::PtrMap<odb::dbMPin, odb::dbAccessPoint*> db_aps_map;
       for (auto db_ap : db_aps) {
         if (ap_map.find(db_ap) == ap_map.end()) {
           logger_->error(DRT,
@@ -1579,7 +1566,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
   }
-  if (router_cfg_->unidirectional_layers_.contains(layer)) {
+  if (router_cfg_->unidirectional_layer_names_.find(layer->getName())
+      != router_cfg_->unidirectional_layer_names_.end()) {
     tmpLayer->setUnidirectional(true);
   }
   if (layer->isRectOnly()) {
@@ -2667,7 +2655,6 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         tmpMaster->addTerm(std::move(uTerm));
 
         term->setType(_term->getSigType());
-        term->setDirection(_term->getIoType());
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {
@@ -3153,7 +3140,6 @@ void io::Parser::updateDesign()
       netIn = addNet(db_net);
     }
     netIn->clearConns();
-    netIn->clearRPins();
     netIn->clearGuides();
     netIn->clearOrigGuides();
     updateNetRouting(netIn, db_net);

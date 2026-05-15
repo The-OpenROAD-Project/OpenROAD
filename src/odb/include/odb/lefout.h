@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -22,6 +23,12 @@ namespace odb {
 
 class dbTech;
 class dbTechLayer;
+class dbTechLayerAntennaRule;
+class dbTechLayerSpacingRule;
+class dbTechMinCutRule;
+class dbTechMinEncRule;
+class dbTechV55InfluenceEntry;
+class dbTechAntennaPinModel;
 class dbTechVia;
 class dbLib;
 class dbMaster;
@@ -66,16 +73,26 @@ class lefout
 
  private:
   using ObstructionMap
-      = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
+      = odb::PtrMap<dbTechLayer, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
-  std::set<dbVia*> writeBoxes(std::ostream& out,
-                              dbBlock* block,
-                              dbSet<GenericBox>& boxes,
-                              const char* indent);
+  odb::PtrSet<dbVia> writeBoxes(std::ostream& out,
+                                dbBlock* block,
+                                dbSet<GenericBox>& boxes,
+                                const char* indent);
 
   void writeTechBody(std::ostream& out, dbTech* tech);
   void writeLayer(std::ostream& out, dbTechLayer* layer);
+  void writeSpacingRuleLef(std::ostream& out, dbTechLayerSpacingRule* rule);
+  void writeV55SpacingRules(std::ostream& out, dbTechLayer* layer);
+  void writeV55InfluenceEntryLef(std::ostream& out,
+                                 dbTechV55InfluenceEntry* entry);
+  void writeMinCutRuleLef(std::ostream& out, dbTechMinCutRule* rule);
+  void writeMinEncRuleLef(std::ostream& out, dbTechMinEncRule* rule);
+  void writeAntennaRulesLef(std::ostream& out, dbTechLayer* layer);
+  void writeAntennaRuleLef(std::ostream& out, dbTechLayerAntennaRule* rule);
+  void writeAntennaPinModelLef(std::ostream& out, dbTechAntennaPinModel* model);
+  void writeMTermAntennaLef(std::ostream& out, dbMTerm* mterm);
   void writeVia(std::ostream& out, dbTechVia* via);
   void writeBlockVia(std::ostream& out, dbBlock* db_block, dbVia* via);
   void writeHeader(std::ostream& out, dbLib* lib);
@@ -119,9 +136,9 @@ class lefout
   void findLayerViaObstructions(ObstructionMap& obstructions,
                                 dbSBox* box) const;
   void writeBlock(std::ostream& out, dbBlock* db_block);
-  std::set<dbVia*> writePins(std::ostream& out, dbBlock* db_block);
-  std::set<dbVia*> writePowerPins(std::ostream& out, dbBlock* db_block);
-  std::set<dbVia*> writeBlockTerms(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writePins(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writePowerPins(std::ostream& out, dbBlock* db_block);
+  odb::PtrSet<dbVia> writeBlockTerms(std::ostream& out, dbBlock* db_block);
 
   inline void writeObjectPropertyDefinitions(
       std::ostream& out,

@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: multi_height_power_align.lef, created 1 library cells
+[INFO ODB-0128] Design: multi_height_power_align
+[INFO ODB-0131]     Created 2 components and 9 component-terminals.
+[INFO DPL-0006] Core area: 31.92 um^2, Instances area: 3.19 um^2, Utilization: 10.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                       2
+Diamond Move Success:              2 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          1.4 u
+average displacement        0.7 u
+max displacement            1.4 u
+original HPWL               0.0 u
+legalized HPWL              0.0 u
+delta HPWL                    0 %
+
+No differences found.

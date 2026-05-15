@@ -541,14 +541,14 @@ class Bin
   int dy() const;
 
   float electroPhi() const;
-  float electroForceX() const;
-  float electroForceY() const;
+  float electroFieldX() const;
+  float electroFieldY() const;
   float getTargetDensity() const;
   float getDensity() const;
 
   void setDensity(float density);
   void setBinTargetDensity(float density);
-  void setElectroForce(float electroForceX, float electroForceY);
+  void setElectroField(float electroFieldX, float electroFieldY);
   void setElectroPhi(float phi);
 
   void setNonPlaceArea(int64_t area);
@@ -594,8 +594,8 @@ class Bin
   float density_ = 0;
   float targetDensity_ = 0;  // will enable bin-wise density screening
   float electroPhi_ = 0;
-  float electroForceX_ = 0;
-  float electroForceY_ = 0;
+  float electroFieldX_ = 0;
+  float electroFieldY_ = 0;
 };
 
 inline int Bin::cx() const
@@ -1036,8 +1036,8 @@ class NesterovBase
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
 
-  // update electrostatic forces within Bin
-  void updateDensityForceBin();
+  // update electrostatic field within Bin
+  void updateDensityFieldBin();
 
   BinGrid& getBinGrid() { return bg_; }
 

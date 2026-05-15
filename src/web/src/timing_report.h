@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "boost/json/object.hpp"
+
 namespace sta {
 class dbSta;
 class Path;
@@ -93,5 +95,14 @@ class TimingReport
 
   sta::dbSta* sta_;
 };
+
+// ── JSON serialization helpers (shared by request_handler and saveReport) ──
+
+boost::json::object serializeTimingNode(const TimingNode& n);
+boost::json::object serializeTimingPath(const TimingPathSummary& p);
+boost::json::object serializeTimingPaths(
+    const std::vector<TimingPathSummary>& paths);
+boost::json::object serializeSlackHistogram(const SlackHistogramResult& h);
+boost::json::object serializeChartFilters(const ChartFilters& f);
 
 }  // namespace web
