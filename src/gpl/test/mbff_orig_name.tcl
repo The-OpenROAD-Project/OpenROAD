@@ -38,4 +38,4 @@ cluster_flops -tray_weight 40.0 \
 # in the path report. After clustering the tray pin descriptions show
 # the bankN/ff_x/D mapping in the Orig Name column.
 report_checks -path_delay max -fields {orig_name} \
-  -through [get_pins -of_objects [get_cells _tray_size4_*] ]
+  -through [get_pins -of_objects [get_cells _tray_size4_*]]
