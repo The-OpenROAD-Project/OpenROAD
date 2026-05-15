@@ -185,7 +185,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                   "Utilization: {:.1f}%",
                   block_->dbuAreaToMicrons(total_inst_area),
                   total_utilization);
-    logger_->metric("utilizatin__before__dpl", utilization);
+    logger_->metric("utilization__before__dpl", utilization);
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
