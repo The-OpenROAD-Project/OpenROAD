@@ -138,7 +138,6 @@ void Graphics::drawObjects(gui::Painter& painter)
     int dy = final_location.y() - initial_location.y();
     gui::Painter::Color line_color;
 
-    // Check if the instance is selected
     if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
 
@@ -151,7 +150,6 @@ void Graphics::drawObjects(gui::Painter& painter)
                             final_location.x() + width,
                             final_location.y() + height);
       auto outline_color = gui::Painter::kCyan;
-      // outline_color.a = 150;
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
       painter.drawRect(target_bbox);
@@ -171,7 +169,7 @@ void Graphics::drawObjects(gui::Painter& painter)
                        ? ((dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed)
                        : ((dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue);
     } else {
-      // Moved in a previous iteration — grey to reduce visual noise.
+      // Moved in a previous iteration.
       line_color = gui::Painter::kGray;
     }
 
