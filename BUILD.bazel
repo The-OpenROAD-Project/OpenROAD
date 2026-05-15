@@ -255,7 +255,6 @@ cc_library(
     ],
     includes = [
         "include",
-        "include/ord",
     ],
     visibility = ["//:__subpackages__"],
     deps = [
