@@ -252,7 +252,6 @@ cc_library(
         "include/ord/OpenRoad.hh",
         "include/ord/Tech.h",
         "include/ord/Timing.h",
-        "include/ord/Version.hh",
     ],
     includes = [
         "include",
@@ -269,6 +268,9 @@ cc_library(
     name = "openroad_version",
     hdrs = [
         ":OpenRoadVersion",
+    ],
+    includes = [
+        "include",
     ],
 )
 
