@@ -146,7 +146,7 @@ class NegotiationLegalizer
   void legalize();
 
   // Pass positions back to the DPL original structure.
-  void setDplPositions();
+  void commitNegotiationPosToDpl();
 
   // Tuning knobs (all have paper-default values)
   void setRunAbacus(bool run) { run_abacus_ = run; }
@@ -168,7 +168,7 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  void flushToDb();  // Write current cell positions to ODB (for GUI updates)
+  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 

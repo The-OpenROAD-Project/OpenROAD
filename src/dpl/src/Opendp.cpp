@@ -249,7 +249,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
     negotiation.legalize();
-    negotiation.setDplPositions();
+    negotiation.commitNegotiationPosToDpl();
 
     if (negotiation.numViolations() > 0) {
       logger_->warn(DPL,

@@ -422,7 +422,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
       && ((iter - opendp_->negotiation_debug_start_)
               % opendp_->negotiation_debug_interval_
           == 0)) {
-    setDplPositions();
+    commitNegotiationPosToDpl();
     pushNegotiationPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);
     debug_observer_->redrawAndPause();

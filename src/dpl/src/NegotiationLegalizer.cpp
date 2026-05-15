@@ -223,10 +223,10 @@ void NegotiationLegalizer::legalize()
   }
 
   if (debug_observer_) {
-    setDplPositions();
+    commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    flushToDb();
+    commitNegotiationPosToOdb();
     pushNegotiationPixels();
     logger_->report("Pause after Abacus pass.");
     debug_observer_->redrawAndPause();
@@ -301,12 +301,6 @@ void NegotiationLegalizer::legalize()
       nViol);
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {}");
-    flushToDb();
-  }
-
-  {
     utl::DebugScopedTimer t(orient_s,
                             logger_,
                             utl::DPL,
@@ -330,6 +324,12 @@ void NegotiationLegalizer::legalize()
     }
   }
 
+  {
+    utl::DebugScopedTimer t(
+        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "commitNegotiationPosToOdb: {}");
+    commitNegotiationPosToOdb();
+  }
+
   const double total_s = total_timer.elapsed();
   auto pct
       = [total_s](double t) { return total_s > 0 ? 100.0 * t / total_s : 0.0; };
@@ -346,7 +346,7 @@ void NegotiationLegalizer::legalize()
              "negotiation {:.1f}ms ({:.0f}%), "
              "postNegSync {:.1f}ms ({:.0f}%), "
              "metrics {:.1f}ms ({:.0f}%), "
-             "flushToDb {:.1f}ms ({:.0f}%), "
+             "commitNegotiationPosToOdb {:.1f}ms ({:.0f}%), "
              "orientUpdate {:.1f}ms ({:.0f}%)",
              to_ms(total_s),
              to_ms(init_from_db_s),
@@ -372,10 +372,10 @@ void NegotiationLegalizer::legalize()
 }
 
 // ===========================================================================
-// flushToDb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI reflects them
 // ===========================================================================
 
-void NegotiationLegalizer::flushToDb()
+void NegotiationLegalizer::commitNegotiationPosToOdb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
@@ -454,17 +454,17 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
   if (!debug_observer_) {
     return;
   }
-  setDplPositions();
+  commitNegotiationPosToDpl();
   pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
 }
 
 // ===========================================================================
-// setDplPositions – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure (Node)
 // ===========================================================================
 
-void NegotiationLegalizer::setDplPositions()
+void NegotiationLegalizer::commitNegotiationPosToDpl()
 {
   if (!network_) {
     return;
