@@ -635,6 +635,18 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                prof_candidates_filtered_);
   }
 
+  if (best_x == cell.x && best_y == cell.y) {
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+                  "Negotiation: best location for cell '{}' at iteration {} "
+                  "is its current position; cell is kept where it was and "
+                  "may remain illegal.",
+                  cell.db_inst->getName(),
+                  iter);
+  }
+
   return {best_x, best_y};
 }
 
