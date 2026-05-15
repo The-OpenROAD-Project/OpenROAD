@@ -47,7 +47,7 @@
 #include <kitty/print.hpp>
 #include <kitty/static_truth_table.hpp>
 
-#include <parallel_hashmap/phmap.h>
+#include "absl/container/flat_hash_map.h"
 
 #include "../io/genlib_reader.hpp"
 #include "include/supergate.hpp"
@@ -174,9 +174,9 @@ private:
   static constexpr uint32_t invalid_index = UINT32_MAX;
   using supergates_list_t = std::vector<supergate<NInputs>>;
   using composed_list_t = std::vector<composed_gate<NInputs>>;
-  using lib_rule = phmap::flat_hash_map<kitty::dynamic_truth_table, std::vector<dsd_node>, kitty::hash<kitty::dynamic_truth_table>>;
+  using lib_rule = absl::flat_hash_map<kitty::dynamic_truth_table, std::vector<dsd_node>, kitty::hash<kitty::dynamic_truth_table>>;
   using rule = std::vector<dsd_node>;
-  using lib_table = phmap::flat_hash_map<std::tuple<signal, signal>, uint32_t, tuple_s_hash>;
+  using lib_table = absl::flat_hash_map<std::tuple<signal, signal>, uint32_t, tuple_s_hash>;
   using map_label_gate = std::unordered_map<uint32_t, supergates_list_t>;
 
 public:

@@ -44,7 +44,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <parallel_hashmap/phmap.h>
+#include "absl/container/flat_hash_map.h"
 
 namespace mockturtle
 {
@@ -229,7 +229,7 @@ struct storage
   std::vector<uint64_t> inputs;
   std::vector<typename node_type::pointer_type> outputs;
 
-  phmap::flat_hash_map<node_type, uint64_t, NodeHasher> hash;
+  absl::flat_hash_map<node_type, uint64_t, NodeHasher> hash;
 
   T data;
 };

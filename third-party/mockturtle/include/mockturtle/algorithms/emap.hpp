@@ -44,8 +44,7 @@
 #include <kitty/hash.hpp>
 #include <kitty/static_truth_table.hpp>
 
-#include <fmt/format.h>
-#include <parallel_hashmap/phmap.h>
+#include "absl/container/flat_hash_map.h"
 
 #include "../networks/aig.hpp"
 #include "../networks/block.hpp"
@@ -784,7 +783,7 @@ public:
   using multi_cut_t = typename multi_cuts_t::cut_t;
   using multi_leaves_set_t = std::array<uint32_t, max_multioutput_cut_size>;
   using multi_output_set_t = std::vector<multi_match_data>;
-  using multi_hash_t = phmap::flat_hash_map<multi_leaves_set_t, multi_output_set_t, emap_triple_hash<max_multioutput_cut_size>>;
+  using multi_hash_t = absl::flat_hash_map<multi_leaves_set_t, multi_output_set_t, emap_triple_hash<max_multioutput_cut_size>>;
   using multi_match_t = std::array<multi_match_data, max_multioutput_output_size>;
   using multi_cut_set_t = std::vector<std::array<cut_t, max_multioutput_output_size>>;
   using multi_single_matches_t = std::vector<multi_match_t>;
