@@ -518,6 +518,31 @@ cc_test(
 )
 
 cc_test(
+    name = "TestNestedJournal",
+    srcs = ["cpp/TestNestedJournal.cc"],
+    copts = [
+        "-Isrc/rsz/src",
+        "-Isrc/rsz/src/move",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "cpp/TestBufferRemoval3_0.v",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/dbSta",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestResizerMt",
     srcs = ["cpp/TestResizerMt.cc"],
     args = ["--gtest_filter=TestResizerMtThreadPool.*"],
