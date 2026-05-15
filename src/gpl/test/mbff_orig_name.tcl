@@ -14,7 +14,17 @@ read_lib ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X_LVT_TT_nldm_FAKE.lib
 read_lef ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef
 read_lib ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
 
-read_def ./$test_name.def
+read_verilog ./$test_name.v
+link_design -hier tray_test
+
+initialize_floorplan -die_area "0 0 10 10" \
+  -core_area "1 1 9 9" \
+  -site asap7sc7p5t
+
+place_inst -name bank0/ff_a -origin {6 6} -status PLACED
+place_inst -name bank0/ff_b -origin {4 6} -status PLACED
+place_inst -name bank1/ff_a -origin {4 4} -status PLACED
+place_inst -name bank1/ff_b -origin {6 4} -status PLACED
 
 create_clock -name clk -period 1000 [get_ports clk1]
 set_input_delay -clock clk 0 [get_ports {d1 d2 d3 d4}]
@@ -24,6 +34,8 @@ cluster_flops -tray_weight 40.0 \
   -max_split_size -1 \
   -num_paths 0
 
-# Report timing to verify original FF names appear in the path report.
-# After clustering the tray pin descriptions should show in the Orig Name column.
-report_checks -path_delay max -fields {orig_name} -through [get_pins _tray_size4_7/D1]
+# Report timing to verify original (hierarchical) FF pin names appear
+# in the path report. After clustering the tray pin descriptions show
+# the bankN/ff_x/D mapping in the Orig Name column.
+report_checks -path_delay max -fields {orig_name} \
+  -through [get_pins -of_objects [get_cells _tray_size4_*] ]
