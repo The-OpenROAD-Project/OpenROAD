@@ -325,8 +325,12 @@ void NegotiationLegalizer::legalize()
   }
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "commitNegotiationPosToOdb: {}");
+    utl::DebugScopedTimer t(flush_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "commitNegotiationPosToOdb: {}");
     commitNegotiationPosToOdb();
   }
 
@@ -372,7 +376,8 @@ void NegotiationLegalizer::legalize()
 }
 
 // ===========================================================================
-// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI
+// reflects them
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToOdb()
@@ -461,7 +466,8 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
 }
 
 // ===========================================================================
-// commitNegotiationPosToDpl – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure
+// (Node)
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToDpl()
@@ -728,8 +734,8 @@ bool NegotiationLegalizer::initFromDb()
           }
           const int dy_dbu = dpl_grid->gridYToDbu(GridY{gy}).v
                              - dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-          const int dist = std::abs(gx - cell.init_x) * site_width_
-                           + std::abs(dy_dbu);
+          const int dist
+              = std::abs(gx - cell.init_x) * site_width_ + std::abs(dy_dbu);
           pq.emplace(dist, gx, gy);
         };
 

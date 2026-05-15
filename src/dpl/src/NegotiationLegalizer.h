@@ -168,7 +168,8 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for GUI updates)
+  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
+                                     // GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 
