@@ -61,8 +61,6 @@ add_library(mockturtle INTERFACE)
 
 find_package(spdlog REQUIRED)
 
-# Mockturtle uses abseil random, but we don't add it here to avoid conflicts
-# with or-tools vendored version.
 target_link_libraries(mockturtle
   INTERFACE
     spdlog::spdlog
@@ -73,8 +71,11 @@ target_include_directories(mockturtle
     ./mockturtle/include/
     ./mockturtle/lib/kitty/
     ./mockturtle/lib/lorina/
-    ./mockturtle/lib/parallel_hashmap/
 )
+
+# Mockturtle uses abseil, but we don't add it here to avoid conflicts
+# with or-tools vendored version.
+set(MOCKTURTLE_LIBRARY "mockturtle" "absl::flat_hash_map" "absl::random_random" CACHE STRING "")
 
 add_subdirectory(lodepng)
 add_subdirectory(stb_truetype)

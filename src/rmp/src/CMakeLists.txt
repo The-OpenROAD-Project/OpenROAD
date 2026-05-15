@@ -56,7 +56,7 @@ target_include_directories(rmp_lib
 
 target_link_libraries(rmp_lib
   PRIVATE
-    mockturtle
+    ${MOCKTURTLE_LIBRARY}
   PUBLIC
     odb
     dbSta_lib

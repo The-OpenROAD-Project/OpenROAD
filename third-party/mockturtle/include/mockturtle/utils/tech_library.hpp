@@ -47,7 +47,7 @@
 #include <kitty/print.hpp>
 #include <kitty/static_truth_table.hpp>
 
-#include <parallel_hashmap/phmap.h>
+#include "absl/container/flat_hash_map.h"
 
 #include "../io/genlib_reader.hpp"
 #include "../io/super_reader.hpp"
@@ -212,13 +212,13 @@ private:
   using TT = kitty::static_truth_table<NInputs>;
   using tt_hash = kitty::hash<TT>;
   using multi_tt_hash = detail::tuple_tt_hash<NInputs, max_multi_outputs>;
-  using index_t = phmap::flat_hash_map<TT, uint32_t, tt_hash>;
-  using lib_t = phmap::flat_hash_map<TT, supergates_list_t, tt_hash>;
+  using index_t = absl::flat_hash_map<TT, uint32_t, tt_hash>;
+  using lib_t = absl::flat_hash_map<TT, supergates_list_t, tt_hash>;
   using multi_relation_t = std::array<TT, max_multi_outputs>;
   using multi_supergates_list_t = std::array<std::vector<supergate<NInputs>>, max_multi_outputs>;
-  using multi_lib_t = phmap::flat_hash_map<multi_relation_t, multi_supergates_list_t, multi_tt_hash>;
-  using multi_func_t = phmap::flat_hash_map<uint64_t, uint64_t>;
-  using struct_lib_t = phmap::flat_hash_map<uint32_t, supergates_list_t>;
+  using multi_lib_t = absl::flat_hash_map<multi_relation_t, multi_supergates_list_t, multi_tt_hash>;
+  using multi_func_t = absl::flat_hash_map<uint64_t, uint64_t>;
+  using struct_lib_t = absl::flat_hash_map<uint32_t, supergates_list_t>;
 
 public:
   explicit tech_library( std::vector<gate> const& gates, tech_library_params const ps = {}, super_lib const& supergates_spec = {} )

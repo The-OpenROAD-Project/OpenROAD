@@ -40,7 +40,7 @@
 #include <kitty/operations.hpp>
 #include <kitty/operators.hpp>
 
-#include <parallel_hashmap/phmap.h>
+#include "absl/container/flat_hash_map.h"
 
 namespace mockturtle
 {
@@ -118,7 +118,7 @@ public:
   void resize( uint32_t capacity );
 
 private:
-  phmap::flat_hash_map<TT, uint32_t, kitty::hash<TT>> _indexes;
+  absl::flat_hash_map<TT, uint32_t, kitty::hash<TT>> _indexes;
   std::vector<TT> _data;
 };
 
