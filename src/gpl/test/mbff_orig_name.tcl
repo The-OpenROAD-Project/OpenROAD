@@ -48,4 +48,3 @@ cluster_flops -tray_weight 40.0 \
 # mapping in the Orig Name column.
 report_checks -path_delay max -fields {orig_name} \
   -through [get_pins -of_objects [get_cells _tray_size4_*]]
-
