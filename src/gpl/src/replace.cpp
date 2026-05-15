@@ -25,6 +25,7 @@
 #include "sta/Graph.hh"
 #include "sta/Path.hh"
 #include "sta/StaMain.hh"
+#include "sta/StaState.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
