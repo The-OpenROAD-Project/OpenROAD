@@ -399,13 +399,6 @@ void CUGR::debugCongestion2D() const
              tiles_2d);
 }
 
-// Iterative rip-up & re-route. Wraps the maze stage in a loop
-// that sharpens the logistic cost slope each pass (so PatternRoute and
-// the maze cost surface penalise full edges more aggressively) and
-// widens the rip-up set to nets sitting on near-full layers (not just
-// strictly-overflowed ones). Designed for the per-layer concentration
-// failure mode where many nets pile onto a single layer and ripping up
-// only the few overflowed ones cannot redistribute the load.
 void CUGR::iterativeRRR(std::vector<int>& net_indices)
 {
   // Gate on the integer overflow metric (the one users see in
@@ -439,12 +432,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   grid_graph_->setCostMultiplier(1.0);
 
   // Final summary: the last mazeRoute already printed "Nets with
-  // overflow" via updateOverflowNets, so just warn (if anything remains)
+  // congestion" via updateCongestedNets, so just warn (if anything remains)
   // using the same metric without re-printing the count.
   if (const int residual = totalOverflow(); residual > 0) {
     logger_->warn(GRT,
                   118,
-                  "Iterative RRR finished with overflow remaining ({}).",
+                  "Iterative RRR finished with congestion remaining ({}).",
                   residual);
   }
 }
