@@ -14,14 +14,10 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <type_traits>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "BufferMove.hh"
 #include "BufferedNet.hh"
-#include "UnbufferMove.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -44,6 +40,7 @@
 #include "sta/Search.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -1495,10 +1492,10 @@ void Rebuffer::init()
     sta::LibertyPort *in, *out;
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
-        cell,
-        FixedDelay(out->intrinsicDelay(sta_), resizer_),
-        /*margined_max_cap=*/0.0f,
-        out->driveResistance(),
+        .cell = cell,
+        .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
+        .margined_max_cap = 0.0f,
+        .driver_resistance = out->driveResistance(),
     });
   }
 
@@ -1681,7 +1678,7 @@ BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
             sta::Instance* inst = network_->instance(pin);
             if (!resizer_->isLogicStdCell(inst)
                 || isPortBuffer(db_network_, inst)
-                || !resizer_->unbuffer_move_->canRemoveBuffer(inst, true)) {
+                || !resizer_->canRemoveBuffer(inst, true)) {
               return node;
             }
 
@@ -2262,7 +2259,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
         area_opt_tree, db_network_->dbToSta(db_net), 1, parent, "place");
 
     for (auto* inst : insts) {
-      resizer_->unbuffer_move_->removeBuffer(inst);
+      resizer_->removeBuffer(inst);
       removed_count_++;
     }
 
@@ -2439,20 +2436,12 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
   return 0;
 }
 
-// Return inserted buffer count.
-int BufferMove::rebuffer(const sta::Pin* drvr_pin)
+void Rebuffer::rebufferNet(const sta::Pin* drvr_pin)
 {
-  return resizer_->rebuffer_->rebufferPin(drvr_pin);
-}
-
-// For testing.
-void BufferMove::rebufferNet(const sta::Pin* drvr_pin)
-{
-  auto& rebuffer = resizer_->rebuffer_;
-  rebuffer->init();
-  rebuffer->initOnCorner(sta_->cmdScene());
+  init();
+  initOnCorner(sta_->cmdScene());
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-  int inserted_buffer_count = rebuffer->rebufferPin(drvr_pin);
+  const int inserted_buffer_count = rebufferPin(drvr_pin);
   logger_->report("Inserted {} buffers.", inserted_buffer_count);
 }
 

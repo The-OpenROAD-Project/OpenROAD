@@ -161,7 +161,7 @@ cc_test(
         "//src/est",
         "//src/gpl",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",
         "//src/tst",
@@ -187,4 +187,10 @@ doc_check_test(
         "//src/gpl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+doc_check_test(
+    name = "gpl_messages_txt_check",
+    check_log = False,
+    data = ["//src/gpl:messages_txt"],
 )

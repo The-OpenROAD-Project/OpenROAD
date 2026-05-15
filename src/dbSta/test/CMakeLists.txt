@@ -13,9 +13,12 @@ or_integration_tests(
     get_ports1_hier
     hier2
     hier3
+    hier_escape_port
     hierclock
     hierwrite
     hier_deep
+    hier_weird_port
+    levelize_drvr_vertices1
     make_port
     network_edit1
     power1
@@ -44,8 +47,10 @@ or_integration_tests(
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
+    sdc_modinst_slash
     sdc_names1
     sdc_names2
+    spef_def_names
     sta1
     sta2
     sta3

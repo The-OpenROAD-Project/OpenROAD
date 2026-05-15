@@ -99,125 +99,125 @@ COMPONENTS 218 ;
     - decoder_5.buf_port0 BUF_X1 + PLACED ( 3838 700 ) FS ;
     - decoder_6.and_layer0 AND2_X1 + PLACED ( 3762 840 ) N ;
     - decoder_6.buf_port0 BUF_X1 + PLACED ( 3838 840 ) N ;
-    - storage_0_0.bit0.bit DFF_X1 + PLACED ( 19 0 ) N ;
-    - storage_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 0 ) N ;
-    - storage_0_0.bit1.bit DFF_X1 + PLACED ( 494 0 ) N ;
-    - storage_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 0 ) N ;
-    - storage_0_0.bit2.bit DFF_X1 + PLACED ( 988 0 ) N ;
-    - storage_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 0 ) N ;
-    - storage_0_0.bit3.bit DFF_X1 + PLACED ( 1463 0 ) N ;
-    - storage_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 0 ) N ;
-    - storage_0_0.bit4.bit DFF_X1 + PLACED ( 1957 0 ) N ;
-    - storage_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 0 ) N ;
-    - storage_0_0.bit5.bit DFF_X1 + PLACED ( 2432 0 ) N ;
-    - storage_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 0 ) N ;
-    - storage_0_0.bit6.bit DFF_X1 + PLACED ( 2926 0 ) N ;
-    - storage_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 0 ) N ;
-    - storage_0_0.cg CLKGATE_X1 + PLACED ( 3401 0 ) N ;
-    - storage_0_0.gcand AND2_X1 + PLACED ( 3648 0 ) N ;
-    - storage_0_0.select_inv_0 INV_X1 + PLACED ( 3724 0 ) N ;
-    - storage_1_0.bit0.bit DFF_X1 + PLACED ( 19 140 ) FS ;
-    - storage_1_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 140 ) FS ;
-    - storage_1_0.bit1.bit DFF_X1 + PLACED ( 494 140 ) FS ;
-    - storage_1_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 140 ) FS ;
-    - storage_1_0.bit2.bit DFF_X1 + PLACED ( 988 140 ) FS ;
-    - storage_1_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 140 ) FS ;
-    - storage_1_0.bit3.bit DFF_X1 + PLACED ( 1463 140 ) FS ;
-    - storage_1_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 140 ) FS ;
-    - storage_1_0.bit4.bit DFF_X1 + PLACED ( 1957 140 ) FS ;
-    - storage_1_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 140 ) FS ;
-    - storage_1_0.bit5.bit DFF_X1 + PLACED ( 2432 140 ) FS ;
-    - storage_1_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 140 ) FS ;
-    - storage_1_0.bit6.bit DFF_X1 + PLACED ( 2926 140 ) FS ;
-    - storage_1_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 140 ) FS ;
-    - storage_1_0.cg CLKGATE_X1 + PLACED ( 3401 140 ) FS ;
-    - storage_1_0.gcand AND2_X1 + PLACED ( 3648 140 ) FS ;
-    - storage_1_0.select_inv_0 INV_X1 + PLACED ( 3724 140 ) FS ;
-    - storage_2_0.bit0.bit DFF_X1 + PLACED ( 19 280 ) N ;
-    - storage_2_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 280 ) N ;
-    - storage_2_0.bit1.bit DFF_X1 + PLACED ( 494 280 ) N ;
-    - storage_2_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 280 ) N ;
-    - storage_2_0.bit2.bit DFF_X1 + PLACED ( 988 280 ) N ;
-    - storage_2_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 280 ) N ;
-    - storage_2_0.bit3.bit DFF_X1 + PLACED ( 1463 280 ) N ;
-    - storage_2_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 280 ) N ;
-    - storage_2_0.bit4.bit DFF_X1 + PLACED ( 1957 280 ) N ;
-    - storage_2_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 280 ) N ;
-    - storage_2_0.bit5.bit DFF_X1 + PLACED ( 2432 280 ) N ;
-    - storage_2_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 280 ) N ;
-    - storage_2_0.bit6.bit DFF_X1 + PLACED ( 2926 280 ) N ;
-    - storage_2_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 280 ) N ;
-    - storage_2_0.cg CLKGATE_X1 + PLACED ( 3401 280 ) N ;
-    - storage_2_0.gcand AND2_X1 + PLACED ( 3648 280 ) N ;
-    - storage_2_0.select_inv_0 INV_X1 + PLACED ( 3724 280 ) N ;
-    - storage_3_0.bit0.bit DFF_X1 + PLACED ( 19 420 ) FS ;
-    - storage_3_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 420 ) FS ;
-    - storage_3_0.bit1.bit DFF_X1 + PLACED ( 494 420 ) FS ;
-    - storage_3_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 420 ) FS ;
-    - storage_3_0.bit2.bit DFF_X1 + PLACED ( 988 420 ) FS ;
-    - storage_3_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 420 ) FS ;
-    - storage_3_0.bit3.bit DFF_X1 + PLACED ( 1463 420 ) FS ;
-    - storage_3_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 420 ) FS ;
-    - storage_3_0.bit4.bit DFF_X1 + PLACED ( 1957 420 ) FS ;
-    - storage_3_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 420 ) FS ;
-    - storage_3_0.bit5.bit DFF_X1 + PLACED ( 2432 420 ) FS ;
-    - storage_3_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 420 ) FS ;
-    - storage_3_0.bit6.bit DFF_X1 + PLACED ( 2926 420 ) FS ;
-    - storage_3_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 420 ) FS ;
-    - storage_3_0.cg CLKGATE_X1 + PLACED ( 3401 420 ) FS ;
-    - storage_3_0.gcand AND2_X1 + PLACED ( 3648 420 ) FS ;
-    - storage_3_0.select_inv_0 INV_X1 + PLACED ( 3724 420 ) FS ;
-    - storage_4_0.bit0.bit DFF_X1 + PLACED ( 19 560 ) N ;
-    - storage_4_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 560 ) N ;
-    - storage_4_0.bit1.bit DFF_X1 + PLACED ( 494 560 ) N ;
-    - storage_4_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 560 ) N ;
-    - storage_4_0.bit2.bit DFF_X1 + PLACED ( 988 560 ) N ;
-    - storage_4_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 560 ) N ;
-    - storage_4_0.bit3.bit DFF_X1 + PLACED ( 1463 560 ) N ;
-    - storage_4_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 560 ) N ;
-    - storage_4_0.bit4.bit DFF_X1 + PLACED ( 1957 560 ) N ;
-    - storage_4_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 560 ) N ;
-    - storage_4_0.bit5.bit DFF_X1 + PLACED ( 2432 560 ) N ;
-    - storage_4_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 560 ) N ;
-    - storage_4_0.bit6.bit DFF_X1 + PLACED ( 2926 560 ) N ;
-    - storage_4_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 560 ) N ;
-    - storage_4_0.cg CLKGATE_X1 + PLACED ( 3401 560 ) N ;
-    - storage_4_0.gcand AND2_X1 + PLACED ( 3648 560 ) N ;
-    - storage_4_0.select_inv_0 INV_X1 + PLACED ( 3724 560 ) N ;
-    - storage_5_0.bit0.bit DFF_X1 + PLACED ( 19 700 ) FS ;
-    - storage_5_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 700 ) FS ;
-    - storage_5_0.bit1.bit DFF_X1 + PLACED ( 494 700 ) FS ;
-    - storage_5_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 700 ) FS ;
-    - storage_5_0.bit2.bit DFF_X1 + PLACED ( 988 700 ) FS ;
-    - storage_5_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 700 ) FS ;
-    - storage_5_0.bit3.bit DFF_X1 + PLACED ( 1463 700 ) FS ;
-    - storage_5_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 700 ) FS ;
-    - storage_5_0.bit4.bit DFF_X1 + PLACED ( 1957 700 ) FS ;
-    - storage_5_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 700 ) FS ;
-    - storage_5_0.bit5.bit DFF_X1 + PLACED ( 2432 700 ) FS ;
-    - storage_5_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 700 ) FS ;
-    - storage_5_0.bit6.bit DFF_X1 + PLACED ( 2926 700 ) FS ;
-    - storage_5_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 700 ) FS ;
-    - storage_5_0.cg CLKGATE_X1 + PLACED ( 3401 700 ) FS ;
-    - storage_5_0.gcand AND2_X1 + PLACED ( 3648 700 ) FS ;
-    - storage_5_0.select_inv_0 INV_X1 + PLACED ( 3724 700 ) FS ;
-    - storage_6_0.bit0.bit DFF_X1 + PLACED ( 19 840 ) N ;
-    - storage_6_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 840 ) N ;
-    - storage_6_0.bit1.bit DFF_X1 + PLACED ( 494 840 ) N ;
-    - storage_6_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 840 ) N ;
-    - storage_6_0.bit2.bit DFF_X1 + PLACED ( 988 840 ) N ;
-    - storage_6_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 840 ) N ;
-    - storage_6_0.bit3.bit DFF_X1 + PLACED ( 1463 840 ) N ;
-    - storage_6_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 840 ) N ;
-    - storage_6_0.bit4.bit DFF_X1 + PLACED ( 1957 840 ) N ;
-    - storage_6_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 840 ) N ;
-    - storage_6_0.bit5.bit DFF_X1 + PLACED ( 2432 840 ) N ;
-    - storage_6_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 840 ) N ;
-    - storage_6_0.bit6.bit DFF_X1 + PLACED ( 2926 840 ) N ;
-    - storage_6_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 840 ) N ;
-    - storage_6_0.cg CLKGATE_X1 + PLACED ( 3401 840 ) N ;
-    - storage_6_0.gcand AND2_X1 + PLACED ( 3648 840 ) N ;
-    - storage_6_0.select_inv_0 INV_X1 + PLACED ( 3724 840 ) N ;
+    - storage_0_0_0.bit0.bit DFF_X1 + PLACED ( 19 0 ) N ;
+    - storage_0_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 0 ) N ;
+    - storage_0_0_0.bit1.bit DFF_X1 + PLACED ( 494 0 ) N ;
+    - storage_0_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 0 ) N ;
+    - storage_0_0_0.bit2.bit DFF_X1 + PLACED ( 988 0 ) N ;
+    - storage_0_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 0 ) N ;
+    - storage_0_0_0.bit3.bit DFF_X1 + PLACED ( 1463 0 ) N ;
+    - storage_0_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 0 ) N ;
+    - storage_0_0_0.bit4.bit DFF_X1 + PLACED ( 1957 0 ) N ;
+    - storage_0_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 0 ) N ;
+    - storage_0_0_0.bit5.bit DFF_X1 + PLACED ( 2432 0 ) N ;
+    - storage_0_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 0 ) N ;
+    - storage_0_0_0.bit6.bit DFF_X1 + PLACED ( 2926 0 ) N ;
+    - storage_0_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 0 ) N ;
+    - storage_0_0_0.cg CLKGATE_X1 + PLACED ( 3401 0 ) N ;
+    - storage_0_0_0.gcand AND2_X1 + PLACED ( 3648 0 ) N ;
+    - storage_0_0_0.select_inv_0 INV_X1 + PLACED ( 3724 0 ) N ;
+    - storage_1_0_0.bit0.bit DFF_X1 + PLACED ( 19 140 ) FS ;
+    - storage_1_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 140 ) FS ;
+    - storage_1_0_0.bit1.bit DFF_X1 + PLACED ( 494 140 ) FS ;
+    - storage_1_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 140 ) FS ;
+    - storage_1_0_0.bit2.bit DFF_X1 + PLACED ( 988 140 ) FS ;
+    - storage_1_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 140 ) FS ;
+    - storage_1_0_0.bit3.bit DFF_X1 + PLACED ( 1463 140 ) FS ;
+    - storage_1_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 140 ) FS ;
+    - storage_1_0_0.bit4.bit DFF_X1 + PLACED ( 1957 140 ) FS ;
+    - storage_1_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 140 ) FS ;
+    - storage_1_0_0.bit5.bit DFF_X1 + PLACED ( 2432 140 ) FS ;
+    - storage_1_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 140 ) FS ;
+    - storage_1_0_0.bit6.bit DFF_X1 + PLACED ( 2926 140 ) FS ;
+    - storage_1_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 140 ) FS ;
+    - storage_1_0_0.cg CLKGATE_X1 + PLACED ( 3401 140 ) FS ;
+    - storage_1_0_0.gcand AND2_X1 + PLACED ( 3648 140 ) FS ;
+    - storage_1_0_0.select_inv_0 INV_X1 + PLACED ( 3724 140 ) FS ;
+    - storage_2_0_0.bit0.bit DFF_X1 + PLACED ( 19 280 ) N ;
+    - storage_2_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 280 ) N ;
+    - storage_2_0_0.bit1.bit DFF_X1 + PLACED ( 494 280 ) N ;
+    - storage_2_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 280 ) N ;
+    - storage_2_0_0.bit2.bit DFF_X1 + PLACED ( 988 280 ) N ;
+    - storage_2_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 280 ) N ;
+    - storage_2_0_0.bit3.bit DFF_X1 + PLACED ( 1463 280 ) N ;
+    - storage_2_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 280 ) N ;
+    - storage_2_0_0.bit4.bit DFF_X1 + PLACED ( 1957 280 ) N ;
+    - storage_2_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 280 ) N ;
+    - storage_2_0_0.bit5.bit DFF_X1 + PLACED ( 2432 280 ) N ;
+    - storage_2_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 280 ) N ;
+    - storage_2_0_0.bit6.bit DFF_X1 + PLACED ( 2926 280 ) N ;
+    - storage_2_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 280 ) N ;
+    - storage_2_0_0.cg CLKGATE_X1 + PLACED ( 3401 280 ) N ;
+    - storage_2_0_0.gcand AND2_X1 + PLACED ( 3648 280 ) N ;
+    - storage_2_0_0.select_inv_0 INV_X1 + PLACED ( 3724 280 ) N ;
+    - storage_3_0_0.bit0.bit DFF_X1 + PLACED ( 19 420 ) FS ;
+    - storage_3_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 420 ) FS ;
+    - storage_3_0_0.bit1.bit DFF_X1 + PLACED ( 494 420 ) FS ;
+    - storage_3_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 420 ) FS ;
+    - storage_3_0_0.bit2.bit DFF_X1 + PLACED ( 988 420 ) FS ;
+    - storage_3_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 420 ) FS ;
+    - storage_3_0_0.bit3.bit DFF_X1 + PLACED ( 1463 420 ) FS ;
+    - storage_3_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 420 ) FS ;
+    - storage_3_0_0.bit4.bit DFF_X1 + PLACED ( 1957 420 ) FS ;
+    - storage_3_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 420 ) FS ;
+    - storage_3_0_0.bit5.bit DFF_X1 + PLACED ( 2432 420 ) FS ;
+    - storage_3_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 420 ) FS ;
+    - storage_3_0_0.bit6.bit DFF_X1 + PLACED ( 2926 420 ) FS ;
+    - storage_3_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 420 ) FS ;
+    - storage_3_0_0.cg CLKGATE_X1 + PLACED ( 3401 420 ) FS ;
+    - storage_3_0_0.gcand AND2_X1 + PLACED ( 3648 420 ) FS ;
+    - storage_3_0_0.select_inv_0 INV_X1 + PLACED ( 3724 420 ) FS ;
+    - storage_4_0_0.bit0.bit DFF_X1 + PLACED ( 19 560 ) N ;
+    - storage_4_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 560 ) N ;
+    - storage_4_0_0.bit1.bit DFF_X1 + PLACED ( 494 560 ) N ;
+    - storage_4_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 560 ) N ;
+    - storage_4_0_0.bit2.bit DFF_X1 + PLACED ( 988 560 ) N ;
+    - storage_4_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 560 ) N ;
+    - storage_4_0_0.bit3.bit DFF_X1 + PLACED ( 1463 560 ) N ;
+    - storage_4_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 560 ) N ;
+    - storage_4_0_0.bit4.bit DFF_X1 + PLACED ( 1957 560 ) N ;
+    - storage_4_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 560 ) N ;
+    - storage_4_0_0.bit5.bit DFF_X1 + PLACED ( 2432 560 ) N ;
+    - storage_4_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 560 ) N ;
+    - storage_4_0_0.bit6.bit DFF_X1 + PLACED ( 2926 560 ) N ;
+    - storage_4_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 560 ) N ;
+    - storage_4_0_0.cg CLKGATE_X1 + PLACED ( 3401 560 ) N ;
+    - storage_4_0_0.gcand AND2_X1 + PLACED ( 3648 560 ) N ;
+    - storage_4_0_0.select_inv_0 INV_X1 + PLACED ( 3724 560 ) N ;
+    - storage_5_0_0.bit0.bit DFF_X1 + PLACED ( 19 700 ) FS ;
+    - storage_5_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 700 ) FS ;
+    - storage_5_0_0.bit1.bit DFF_X1 + PLACED ( 494 700 ) FS ;
+    - storage_5_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 700 ) FS ;
+    - storage_5_0_0.bit2.bit DFF_X1 + PLACED ( 988 700 ) FS ;
+    - storage_5_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 700 ) FS ;
+    - storage_5_0_0.bit3.bit DFF_X1 + PLACED ( 1463 700 ) FS ;
+    - storage_5_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 700 ) FS ;
+    - storage_5_0_0.bit4.bit DFF_X1 + PLACED ( 1957 700 ) FS ;
+    - storage_5_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 700 ) FS ;
+    - storage_5_0_0.bit5.bit DFF_X1 + PLACED ( 2432 700 ) FS ;
+    - storage_5_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 700 ) FS ;
+    - storage_5_0_0.bit6.bit DFF_X1 + PLACED ( 2926 700 ) FS ;
+    - storage_5_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 700 ) FS ;
+    - storage_5_0_0.cg CLKGATE_X1 + PLACED ( 3401 700 ) FS ;
+    - storage_5_0_0.gcand AND2_X1 + PLACED ( 3648 700 ) FS ;
+    - storage_5_0_0.select_inv_0 INV_X1 + PLACED ( 3724 700 ) FS ;
+    - storage_6_0_0.bit0.bit DFF_X1 + PLACED ( 19 840 ) N ;
+    - storage_6_0_0.bit0.obuf0 TBUF_X1 + PLACED ( 342 840 ) N ;
+    - storage_6_0_0.bit1.bit DFF_X1 + PLACED ( 494 840 ) N ;
+    - storage_6_0_0.bit1.obuf0 TBUF_X1 + PLACED ( 817 840 ) N ;
+    - storage_6_0_0.bit2.bit DFF_X1 + PLACED ( 988 840 ) N ;
+    - storage_6_0_0.bit2.obuf0 TBUF_X1 + PLACED ( 1311 840 ) N ;
+    - storage_6_0_0.bit3.bit DFF_X1 + PLACED ( 1463 840 ) N ;
+    - storage_6_0_0.bit3.obuf0 TBUF_X1 + PLACED ( 1786 840 ) N ;
+    - storage_6_0_0.bit4.bit DFF_X1 + PLACED ( 1957 840 ) N ;
+    - storage_6_0_0.bit4.obuf0 TBUF_X1 + PLACED ( 2280 840 ) N ;
+    - storage_6_0_0.bit5.bit DFF_X1 + PLACED ( 2432 840 ) N ;
+    - storage_6_0_0.bit5.obuf0 TBUF_X1 + PLACED ( 2755 840 ) N ;
+    - storage_6_0_0.bit6.bit DFF_X1 + PLACED ( 2926 840 ) N ;
+    - storage_6_0_0.bit6.obuf0 TBUF_X1 + PLACED ( 3249 840 ) N ;
+    - storage_6_0_0.cg CLKGATE_X1 + PLACED ( 3401 840 ) N ;
+    - storage_6_0_0.gcand AND2_X1 + PLACED ( 3648 840 ) N ;
+    - storage_6_0_0.select_inv_0 INV_X1 + PLACED ( 3724 840 ) N ;
     - tapcell.cell0_0 TAPCELL_X1 + PLACED ( 0 0 ) N ;
     - tapcell.cell0_1 TAPCELL_X1 + PLACED ( 0 140 ) FS ;
     - tapcell.cell0_2 TAPCELL_X1 + PLACED ( 0 280 ) N ;
@@ -263,7 +263,7 @@ PINS 21 ;
     - D[0] + NET D[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -7 -7 ) ( 7 7 )
-        + PLACED ( 121 1113 ) N ;
+        + PLACED ( 9 1113 ) N ;
     - D[1] + NET D[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -7 -7 ) ( 7 7 )
@@ -356,26 +356,26 @@ PINS 21 ;
         + LAYER metal1 ( 345 -1117 ) ( 352 -1109 )
         + LAYER metal1 ( -3600 -1117 ) ( -3593 -1109 )
         + FIXED ( 3600 1113 ) N ;
-    - addr[0] + NET addr[0] + DIRECTION INPUT + USE SIGNAL
+    - addr_rw[0] + NET addr_rw[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 3948 230 ) N ;
-    - addr[1] + NET addr[1] + DIRECTION INPUT + USE SIGNAL
+    - addr_rw[1] + NET addr_rw[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 3948 342 ) N ;
-    - addr[2] + NET addr[2] + DIRECTION INPUT + USE SIGNAL
+    - addr_rw[2] + NET addr_rw[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
-        + PLACED ( 3948 118 ) N ;
+        + PLACED ( 3948 62 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
-        + PLACED ( 3948 146 ) N ;
+        + PLACED ( 3948 90 ) N ;
     - we[0] + NET we[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
-        + PLACED ( 3948 174 ) N ;
+        + PLACED ( 3948 118 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VDD ( PIN VDD ) ( tapcell.cell4_7 VDD ) ( tapcell.cell4_6 VDD ) ( tapcell.cell4_5 VDD ) ( tapcell.cell4_4 VDD ) ( tapcell.cell4_3 VDD ) ( tapcell.cell4_2 VDD )
@@ -384,22 +384,22 @@ SPECIALNETS 2 ;
       ( tapcell.cell2_1 VDD ) ( tapcell.cell2_0 VDD ) ( tapcell.cell1_7 VDD ) ( tapcell.cell1_6 VDD ) ( tapcell.cell1_5 VDD ) ( tapcell.cell1_4 VDD ) ( tapcell.cell1_3 VDD ) ( tapcell.cell1_2 VDD )
       ( tapcell.cell1_1 VDD ) ( tapcell.cell1_0 VDD ) ( tapcell.cell0_7 VDD ) ( tapcell.cell0_6 VDD ) ( tapcell.cell0_5 VDD ) ( tapcell.cell0_4 VDD ) ( tapcell.cell0_3 VDD ) ( tapcell.cell0_2 VDD )
       ( tapcell.cell0_1 VDD ) ( tapcell.cell0_0 VDD ) ( decoder.inv_0 VDD ) ( decoder.inv_1 VDD ) ( decoder.inv_2 VDD ) ( buffer.in[6] VDD ) ( buffer.in[5] VDD ) ( buffer.in[4] VDD )
-      ( buffer.in[3] VDD ) ( buffer.in[2] VDD ) ( buffer.in[1] VDD ) ( buffer.in[0] VDD ) ( storage_6_0.select_inv_0 VDD ) ( storage_6_0.gcand VDD ) ( storage_6_0.cg VDD ) ( storage_6_0.bit6.obuf0 VDD )
-      ( storage_6_0.bit6.bit VDD ) ( storage_6_0.bit5.obuf0 VDD ) ( storage_6_0.bit5.bit VDD ) ( storage_6_0.bit4.obuf0 VDD ) ( storage_6_0.bit4.bit VDD ) ( storage_6_0.bit3.obuf0 VDD ) ( storage_6_0.bit3.bit VDD ) ( storage_6_0.bit2.obuf0 VDD )
-      ( storage_6_0.bit2.bit VDD ) ( storage_6_0.bit1.obuf0 VDD ) ( storage_6_0.bit1.bit VDD ) ( storage_6_0.bit0.obuf0 VDD ) ( storage_6_0.bit0.bit VDD ) ( storage_5_0.select_inv_0 VDD ) ( storage_5_0.gcand VDD ) ( storage_5_0.cg VDD )
-      ( storage_5_0.bit6.obuf0 VDD ) ( storage_5_0.bit6.bit VDD ) ( storage_5_0.bit5.obuf0 VDD ) ( storage_5_0.bit5.bit VDD ) ( storage_5_0.bit4.obuf0 VDD ) ( storage_5_0.bit4.bit VDD ) ( storage_5_0.bit3.obuf0 VDD ) ( storage_5_0.bit3.bit VDD )
-      ( storage_5_0.bit2.obuf0 VDD ) ( storage_5_0.bit2.bit VDD ) ( storage_5_0.bit1.obuf0 VDD ) ( storage_5_0.bit1.bit VDD ) ( storage_5_0.bit0.obuf0 VDD ) ( storage_5_0.bit0.bit VDD ) ( storage_4_0.select_inv_0 VDD ) ( storage_4_0.gcand VDD )
-      ( storage_4_0.cg VDD ) ( storage_4_0.bit6.obuf0 VDD ) ( storage_4_0.bit6.bit VDD ) ( storage_4_0.bit5.obuf0 VDD ) ( storage_4_0.bit5.bit VDD ) ( storage_4_0.bit4.obuf0 VDD ) ( storage_4_0.bit4.bit VDD ) ( storage_4_0.bit3.obuf0 VDD )
-      ( storage_4_0.bit3.bit VDD ) ( storage_4_0.bit2.obuf0 VDD ) ( storage_4_0.bit2.bit VDD ) ( storage_4_0.bit1.obuf0 VDD ) ( storage_4_0.bit1.bit VDD ) ( storage_4_0.bit0.obuf0 VDD ) ( storage_4_0.bit0.bit VDD ) ( storage_3_0.select_inv_0 VDD )
-      ( storage_3_0.gcand VDD ) ( storage_3_0.cg VDD ) ( storage_3_0.bit6.obuf0 VDD ) ( storage_3_0.bit6.bit VDD ) ( storage_3_0.bit5.obuf0 VDD ) ( storage_3_0.bit5.bit VDD ) ( storage_3_0.bit4.obuf0 VDD ) ( storage_3_0.bit4.bit VDD )
-      ( storage_3_0.bit3.obuf0 VDD ) ( storage_3_0.bit3.bit VDD ) ( storage_3_0.bit2.obuf0 VDD ) ( storage_3_0.bit2.bit VDD ) ( storage_3_0.bit1.obuf0 VDD ) ( storage_3_0.bit1.bit VDD ) ( storage_3_0.bit0.obuf0 VDD ) ( storage_3_0.bit0.bit VDD )
-      ( storage_2_0.select_inv_0 VDD ) ( storage_2_0.gcand VDD ) ( storage_2_0.cg VDD ) ( storage_2_0.bit6.obuf0 VDD ) ( storage_2_0.bit6.bit VDD ) ( storage_2_0.bit5.obuf0 VDD ) ( storage_2_0.bit5.bit VDD ) ( storage_2_0.bit4.obuf0 VDD )
-      ( storage_2_0.bit4.bit VDD ) ( storage_2_0.bit3.obuf0 VDD ) ( storage_2_0.bit3.bit VDD ) ( storage_2_0.bit2.obuf0 VDD ) ( storage_2_0.bit2.bit VDD ) ( storage_2_0.bit1.obuf0 VDD ) ( storage_2_0.bit1.bit VDD ) ( storage_2_0.bit0.obuf0 VDD )
-      ( storage_2_0.bit0.bit VDD ) ( storage_1_0.select_inv_0 VDD ) ( storage_1_0.gcand VDD ) ( storage_1_0.cg VDD ) ( storage_1_0.bit6.obuf0 VDD ) ( storage_1_0.bit6.bit VDD ) ( storage_1_0.bit5.obuf0 VDD ) ( storage_1_0.bit5.bit VDD )
-      ( storage_1_0.bit4.obuf0 VDD ) ( storage_1_0.bit4.bit VDD ) ( storage_1_0.bit3.obuf0 VDD ) ( storage_1_0.bit3.bit VDD ) ( storage_1_0.bit2.obuf0 VDD ) ( storage_1_0.bit2.bit VDD ) ( storage_1_0.bit1.obuf0 VDD ) ( storage_1_0.bit1.bit VDD )
-      ( storage_1_0.bit0.obuf0 VDD ) ( storage_1_0.bit0.bit VDD ) ( storage_0_0.select_inv_0 VDD ) ( storage_0_0.gcand VDD ) ( storage_0_0.cg VDD ) ( storage_0_0.bit6.obuf0 VDD ) ( storage_0_0.bit6.bit VDD ) ( storage_0_0.bit5.obuf0 VDD )
-      ( storage_0_0.bit5.bit VDD ) ( storage_0_0.bit4.obuf0 VDD ) ( storage_0_0.bit4.bit VDD ) ( storage_0_0.bit3.obuf0 VDD ) ( storage_0_0.bit3.bit VDD ) ( storage_0_0.bit2.obuf0 VDD ) ( storage_0_0.bit2.bit VDD ) ( storage_0_0.bit1.obuf0 VDD )
-      ( storage_0_0.bit1.bit VDD ) ( storage_0_0.bit0.obuf0 VDD ) ( storage_0_0.bit0.bit VDD ) ( decoder_6.buf_port0 VDD ) ( decoder_6.and_layer0 VDD ) ( decoder_5.buf_port0 VDD ) ( decoder_5.and_layer0 VDD ) ( decoder_4.buf_port0 VDD )
+      ( buffer.in[3] VDD ) ( buffer.in[2] VDD ) ( buffer.in[1] VDD ) ( buffer.in[0] VDD ) ( storage_6_0_0.select_inv_0 VDD ) ( storage_6_0_0.gcand VDD ) ( storage_6_0_0.cg VDD ) ( storage_6_0_0.bit6.obuf0 VDD )
+      ( storage_6_0_0.bit6.bit VDD ) ( storage_6_0_0.bit5.obuf0 VDD ) ( storage_6_0_0.bit5.bit VDD ) ( storage_6_0_0.bit4.obuf0 VDD ) ( storage_6_0_0.bit4.bit VDD ) ( storage_6_0_0.bit3.obuf0 VDD ) ( storage_6_0_0.bit3.bit VDD ) ( storage_6_0_0.bit2.obuf0 VDD )
+      ( storage_6_0_0.bit2.bit VDD ) ( storage_6_0_0.bit1.obuf0 VDD ) ( storage_6_0_0.bit1.bit VDD ) ( storage_6_0_0.bit0.obuf0 VDD ) ( storage_6_0_0.bit0.bit VDD ) ( storage_5_0_0.select_inv_0 VDD ) ( storage_5_0_0.gcand VDD ) ( storage_5_0_0.cg VDD )
+      ( storage_5_0_0.bit6.obuf0 VDD ) ( storage_5_0_0.bit6.bit VDD ) ( storage_5_0_0.bit5.obuf0 VDD ) ( storage_5_0_0.bit5.bit VDD ) ( storage_5_0_0.bit4.obuf0 VDD ) ( storage_5_0_0.bit4.bit VDD ) ( storage_5_0_0.bit3.obuf0 VDD ) ( storage_5_0_0.bit3.bit VDD )
+      ( storage_5_0_0.bit2.obuf0 VDD ) ( storage_5_0_0.bit2.bit VDD ) ( storage_5_0_0.bit1.obuf0 VDD ) ( storage_5_0_0.bit1.bit VDD ) ( storage_5_0_0.bit0.obuf0 VDD ) ( storage_5_0_0.bit0.bit VDD ) ( storage_4_0_0.select_inv_0 VDD ) ( storage_4_0_0.gcand VDD )
+      ( storage_4_0_0.cg VDD ) ( storage_4_0_0.bit6.obuf0 VDD ) ( storage_4_0_0.bit6.bit VDD ) ( storage_4_0_0.bit5.obuf0 VDD ) ( storage_4_0_0.bit5.bit VDD ) ( storage_4_0_0.bit4.obuf0 VDD ) ( storage_4_0_0.bit4.bit VDD ) ( storage_4_0_0.bit3.obuf0 VDD )
+      ( storage_4_0_0.bit3.bit VDD ) ( storage_4_0_0.bit2.obuf0 VDD ) ( storage_4_0_0.bit2.bit VDD ) ( storage_4_0_0.bit1.obuf0 VDD ) ( storage_4_0_0.bit1.bit VDD ) ( storage_4_0_0.bit0.obuf0 VDD ) ( storage_4_0_0.bit0.bit VDD ) ( storage_3_0_0.select_inv_0 VDD )
+      ( storage_3_0_0.gcand VDD ) ( storage_3_0_0.cg VDD ) ( storage_3_0_0.bit6.obuf0 VDD ) ( storage_3_0_0.bit6.bit VDD ) ( storage_3_0_0.bit5.obuf0 VDD ) ( storage_3_0_0.bit5.bit VDD ) ( storage_3_0_0.bit4.obuf0 VDD ) ( storage_3_0_0.bit4.bit VDD )
+      ( storage_3_0_0.bit3.obuf0 VDD ) ( storage_3_0_0.bit3.bit VDD ) ( storage_3_0_0.bit2.obuf0 VDD ) ( storage_3_0_0.bit2.bit VDD ) ( storage_3_0_0.bit1.obuf0 VDD ) ( storage_3_0_0.bit1.bit VDD ) ( storage_3_0_0.bit0.obuf0 VDD ) ( storage_3_0_0.bit0.bit VDD )
+      ( storage_2_0_0.select_inv_0 VDD ) ( storage_2_0_0.gcand VDD ) ( storage_2_0_0.cg VDD ) ( storage_2_0_0.bit6.obuf0 VDD ) ( storage_2_0_0.bit6.bit VDD ) ( storage_2_0_0.bit5.obuf0 VDD ) ( storage_2_0_0.bit5.bit VDD ) ( storage_2_0_0.bit4.obuf0 VDD )
+      ( storage_2_0_0.bit4.bit VDD ) ( storage_2_0_0.bit3.obuf0 VDD ) ( storage_2_0_0.bit3.bit VDD ) ( storage_2_0_0.bit2.obuf0 VDD ) ( storage_2_0_0.bit2.bit VDD ) ( storage_2_0_0.bit1.obuf0 VDD ) ( storage_2_0_0.bit1.bit VDD ) ( storage_2_0_0.bit0.obuf0 VDD )
+      ( storage_2_0_0.bit0.bit VDD ) ( storage_1_0_0.select_inv_0 VDD ) ( storage_1_0_0.gcand VDD ) ( storage_1_0_0.cg VDD ) ( storage_1_0_0.bit6.obuf0 VDD ) ( storage_1_0_0.bit6.bit VDD ) ( storage_1_0_0.bit5.obuf0 VDD ) ( storage_1_0_0.bit5.bit VDD )
+      ( storage_1_0_0.bit4.obuf0 VDD ) ( storage_1_0_0.bit4.bit VDD ) ( storage_1_0_0.bit3.obuf0 VDD ) ( storage_1_0_0.bit3.bit VDD ) ( storage_1_0_0.bit2.obuf0 VDD ) ( storage_1_0_0.bit2.bit VDD ) ( storage_1_0_0.bit1.obuf0 VDD ) ( storage_1_0_0.bit1.bit VDD )
+      ( storage_1_0_0.bit0.obuf0 VDD ) ( storage_1_0_0.bit0.bit VDD ) ( storage_0_0_0.select_inv_0 VDD ) ( storage_0_0_0.gcand VDD ) ( storage_0_0_0.cg VDD ) ( storage_0_0_0.bit6.obuf0 VDD ) ( storage_0_0_0.bit6.bit VDD ) ( storage_0_0_0.bit5.obuf0 VDD )
+      ( storage_0_0_0.bit5.bit VDD ) ( storage_0_0_0.bit4.obuf0 VDD ) ( storage_0_0_0.bit4.bit VDD ) ( storage_0_0_0.bit3.obuf0 VDD ) ( storage_0_0_0.bit3.bit VDD ) ( storage_0_0_0.bit2.obuf0 VDD ) ( storage_0_0_0.bit2.bit VDD ) ( storage_0_0_0.bit1.obuf0 VDD )
+      ( storage_0_0_0.bit1.bit VDD ) ( storage_0_0_0.bit0.obuf0 VDD ) ( storage_0_0_0.bit0.bit VDD ) ( decoder_6.buf_port0 VDD ) ( decoder_6.and_layer0 VDD ) ( decoder_5.buf_port0 VDD ) ( decoder_5.and_layer0 VDD ) ( decoder_4.buf_port0 VDD )
       ( decoder_4.and_layer0 VDD ) ( decoder_3.buf_port0 VDD ) ( decoder_3.and_layer0 VDD ) ( decoder_2.buf_port0 VDD ) ( decoder_2.and_layer0 VDD ) ( decoder_1.buf_port0 VDD ) ( decoder_1.and_layer0 VDD ) ( decoder_0.buf_port0 VDD )
       ( decoder_0.and_layer0 VDD ) + USE POWER
       + ROUTED metal4 14 + SHAPE STRIPE ( 3150 0 ) ( 3150 1120 )
@@ -464,22 +464,22 @@ SPECIALNETS 2 ;
       ( tapcell.cell2_1 VSS ) ( tapcell.cell2_0 VSS ) ( tapcell.cell1_7 VSS ) ( tapcell.cell1_6 VSS ) ( tapcell.cell1_5 VSS ) ( tapcell.cell1_4 VSS ) ( tapcell.cell1_3 VSS ) ( tapcell.cell1_2 VSS )
       ( tapcell.cell1_1 VSS ) ( tapcell.cell1_0 VSS ) ( tapcell.cell0_7 VSS ) ( tapcell.cell0_6 VSS ) ( tapcell.cell0_5 VSS ) ( tapcell.cell0_4 VSS ) ( tapcell.cell0_3 VSS ) ( tapcell.cell0_2 VSS )
       ( tapcell.cell0_1 VSS ) ( tapcell.cell0_0 VSS ) ( decoder.inv_0 VSS ) ( decoder.inv_1 VSS ) ( decoder.inv_2 VSS ) ( buffer.in[6] VSS ) ( buffer.in[5] VSS ) ( buffer.in[4] VSS )
-      ( buffer.in[3] VSS ) ( buffer.in[2] VSS ) ( buffer.in[1] VSS ) ( buffer.in[0] VSS ) ( storage_6_0.select_inv_0 VSS ) ( storage_6_0.gcand VSS ) ( storage_6_0.cg VSS ) ( storage_6_0.bit6.obuf0 VSS )
-      ( storage_6_0.bit6.bit VSS ) ( storage_6_0.bit5.obuf0 VSS ) ( storage_6_0.bit5.bit VSS ) ( storage_6_0.bit4.obuf0 VSS ) ( storage_6_0.bit4.bit VSS ) ( storage_6_0.bit3.obuf0 VSS ) ( storage_6_0.bit3.bit VSS ) ( storage_6_0.bit2.obuf0 VSS )
-      ( storage_6_0.bit2.bit VSS ) ( storage_6_0.bit1.obuf0 VSS ) ( storage_6_0.bit1.bit VSS ) ( storage_6_0.bit0.obuf0 VSS ) ( storage_6_0.bit0.bit VSS ) ( storage_5_0.select_inv_0 VSS ) ( storage_5_0.gcand VSS ) ( storage_5_0.cg VSS )
-      ( storage_5_0.bit6.obuf0 VSS ) ( storage_5_0.bit6.bit VSS ) ( storage_5_0.bit5.obuf0 VSS ) ( storage_5_0.bit5.bit VSS ) ( storage_5_0.bit4.obuf0 VSS ) ( storage_5_0.bit4.bit VSS ) ( storage_5_0.bit3.obuf0 VSS ) ( storage_5_0.bit3.bit VSS )
-      ( storage_5_0.bit2.obuf0 VSS ) ( storage_5_0.bit2.bit VSS ) ( storage_5_0.bit1.obuf0 VSS ) ( storage_5_0.bit1.bit VSS ) ( storage_5_0.bit0.obuf0 VSS ) ( storage_5_0.bit0.bit VSS ) ( storage_4_0.select_inv_0 VSS ) ( storage_4_0.gcand VSS )
-      ( storage_4_0.cg VSS ) ( storage_4_0.bit6.obuf0 VSS ) ( storage_4_0.bit6.bit VSS ) ( storage_4_0.bit5.obuf0 VSS ) ( storage_4_0.bit5.bit VSS ) ( storage_4_0.bit4.obuf0 VSS ) ( storage_4_0.bit4.bit VSS ) ( storage_4_0.bit3.obuf0 VSS )
-      ( storage_4_0.bit3.bit VSS ) ( storage_4_0.bit2.obuf0 VSS ) ( storage_4_0.bit2.bit VSS ) ( storage_4_0.bit1.obuf0 VSS ) ( storage_4_0.bit1.bit VSS ) ( storage_4_0.bit0.obuf0 VSS ) ( storage_4_0.bit0.bit VSS ) ( storage_3_0.select_inv_0 VSS )
-      ( storage_3_0.gcand VSS ) ( storage_3_0.cg VSS ) ( storage_3_0.bit6.obuf0 VSS ) ( storage_3_0.bit6.bit VSS ) ( storage_3_0.bit5.obuf0 VSS ) ( storage_3_0.bit5.bit VSS ) ( storage_3_0.bit4.obuf0 VSS ) ( storage_3_0.bit4.bit VSS )
-      ( storage_3_0.bit3.obuf0 VSS ) ( storage_3_0.bit3.bit VSS ) ( storage_3_0.bit2.obuf0 VSS ) ( storage_3_0.bit2.bit VSS ) ( storage_3_0.bit1.obuf0 VSS ) ( storage_3_0.bit1.bit VSS ) ( storage_3_0.bit0.obuf0 VSS ) ( storage_3_0.bit0.bit VSS )
-      ( storage_2_0.select_inv_0 VSS ) ( storage_2_0.gcand VSS ) ( storage_2_0.cg VSS ) ( storage_2_0.bit6.obuf0 VSS ) ( storage_2_0.bit6.bit VSS ) ( storage_2_0.bit5.obuf0 VSS ) ( storage_2_0.bit5.bit VSS ) ( storage_2_0.bit4.obuf0 VSS )
-      ( storage_2_0.bit4.bit VSS ) ( storage_2_0.bit3.obuf0 VSS ) ( storage_2_0.bit3.bit VSS ) ( storage_2_0.bit2.obuf0 VSS ) ( storage_2_0.bit2.bit VSS ) ( storage_2_0.bit1.obuf0 VSS ) ( storage_2_0.bit1.bit VSS ) ( storage_2_0.bit0.obuf0 VSS )
-      ( storage_2_0.bit0.bit VSS ) ( storage_1_0.select_inv_0 VSS ) ( storage_1_0.gcand VSS ) ( storage_1_0.cg VSS ) ( storage_1_0.bit6.obuf0 VSS ) ( storage_1_0.bit6.bit VSS ) ( storage_1_0.bit5.obuf0 VSS ) ( storage_1_0.bit5.bit VSS )
-      ( storage_1_0.bit4.obuf0 VSS ) ( storage_1_0.bit4.bit VSS ) ( storage_1_0.bit3.obuf0 VSS ) ( storage_1_0.bit3.bit VSS ) ( storage_1_0.bit2.obuf0 VSS ) ( storage_1_0.bit2.bit VSS ) ( storage_1_0.bit1.obuf0 VSS ) ( storage_1_0.bit1.bit VSS )
-      ( storage_1_0.bit0.obuf0 VSS ) ( storage_1_0.bit0.bit VSS ) ( storage_0_0.select_inv_0 VSS ) ( storage_0_0.gcand VSS ) ( storage_0_0.cg VSS ) ( storage_0_0.bit6.obuf0 VSS ) ( storage_0_0.bit6.bit VSS ) ( storage_0_0.bit5.obuf0 VSS )
-      ( storage_0_0.bit5.bit VSS ) ( storage_0_0.bit4.obuf0 VSS ) ( storage_0_0.bit4.bit VSS ) ( storage_0_0.bit3.obuf0 VSS ) ( storage_0_0.bit3.bit VSS ) ( storage_0_0.bit2.obuf0 VSS ) ( storage_0_0.bit2.bit VSS ) ( storage_0_0.bit1.obuf0 VSS )
-      ( storage_0_0.bit1.bit VSS ) ( storage_0_0.bit0.obuf0 VSS ) ( storage_0_0.bit0.bit VSS ) ( decoder_6.buf_port0 VSS ) ( decoder_6.and_layer0 VSS ) ( decoder_5.buf_port0 VSS ) ( decoder_5.and_layer0 VSS ) ( decoder_4.buf_port0 VSS )
+      ( buffer.in[3] VSS ) ( buffer.in[2] VSS ) ( buffer.in[1] VSS ) ( buffer.in[0] VSS ) ( storage_6_0_0.select_inv_0 VSS ) ( storage_6_0_0.gcand VSS ) ( storage_6_0_0.cg VSS ) ( storage_6_0_0.bit6.obuf0 VSS )
+      ( storage_6_0_0.bit6.bit VSS ) ( storage_6_0_0.bit5.obuf0 VSS ) ( storage_6_0_0.bit5.bit VSS ) ( storage_6_0_0.bit4.obuf0 VSS ) ( storage_6_0_0.bit4.bit VSS ) ( storage_6_0_0.bit3.obuf0 VSS ) ( storage_6_0_0.bit3.bit VSS ) ( storage_6_0_0.bit2.obuf0 VSS )
+      ( storage_6_0_0.bit2.bit VSS ) ( storage_6_0_0.bit1.obuf0 VSS ) ( storage_6_0_0.bit1.bit VSS ) ( storage_6_0_0.bit0.obuf0 VSS ) ( storage_6_0_0.bit0.bit VSS ) ( storage_5_0_0.select_inv_0 VSS ) ( storage_5_0_0.gcand VSS ) ( storage_5_0_0.cg VSS )
+      ( storage_5_0_0.bit6.obuf0 VSS ) ( storage_5_0_0.bit6.bit VSS ) ( storage_5_0_0.bit5.obuf0 VSS ) ( storage_5_0_0.bit5.bit VSS ) ( storage_5_0_0.bit4.obuf0 VSS ) ( storage_5_0_0.bit4.bit VSS ) ( storage_5_0_0.bit3.obuf0 VSS ) ( storage_5_0_0.bit3.bit VSS )
+      ( storage_5_0_0.bit2.obuf0 VSS ) ( storage_5_0_0.bit2.bit VSS ) ( storage_5_0_0.bit1.obuf0 VSS ) ( storage_5_0_0.bit1.bit VSS ) ( storage_5_0_0.bit0.obuf0 VSS ) ( storage_5_0_0.bit0.bit VSS ) ( storage_4_0_0.select_inv_0 VSS ) ( storage_4_0_0.gcand VSS )
+      ( storage_4_0_0.cg VSS ) ( storage_4_0_0.bit6.obuf0 VSS ) ( storage_4_0_0.bit6.bit VSS ) ( storage_4_0_0.bit5.obuf0 VSS ) ( storage_4_0_0.bit5.bit VSS ) ( storage_4_0_0.bit4.obuf0 VSS ) ( storage_4_0_0.bit4.bit VSS ) ( storage_4_0_0.bit3.obuf0 VSS )
+      ( storage_4_0_0.bit3.bit VSS ) ( storage_4_0_0.bit2.obuf0 VSS ) ( storage_4_0_0.bit2.bit VSS ) ( storage_4_0_0.bit1.obuf0 VSS ) ( storage_4_0_0.bit1.bit VSS ) ( storage_4_0_0.bit0.obuf0 VSS ) ( storage_4_0_0.bit0.bit VSS ) ( storage_3_0_0.select_inv_0 VSS )
+      ( storage_3_0_0.gcand VSS ) ( storage_3_0_0.cg VSS ) ( storage_3_0_0.bit6.obuf0 VSS ) ( storage_3_0_0.bit6.bit VSS ) ( storage_3_0_0.bit5.obuf0 VSS ) ( storage_3_0_0.bit5.bit VSS ) ( storage_3_0_0.bit4.obuf0 VSS ) ( storage_3_0_0.bit4.bit VSS )
+      ( storage_3_0_0.bit3.obuf0 VSS ) ( storage_3_0_0.bit3.bit VSS ) ( storage_3_0_0.bit2.obuf0 VSS ) ( storage_3_0_0.bit2.bit VSS ) ( storage_3_0_0.bit1.obuf0 VSS ) ( storage_3_0_0.bit1.bit VSS ) ( storage_3_0_0.bit0.obuf0 VSS ) ( storage_3_0_0.bit0.bit VSS )
+      ( storage_2_0_0.select_inv_0 VSS ) ( storage_2_0_0.gcand VSS ) ( storage_2_0_0.cg VSS ) ( storage_2_0_0.bit6.obuf0 VSS ) ( storage_2_0_0.bit6.bit VSS ) ( storage_2_0_0.bit5.obuf0 VSS ) ( storage_2_0_0.bit5.bit VSS ) ( storage_2_0_0.bit4.obuf0 VSS )
+      ( storage_2_0_0.bit4.bit VSS ) ( storage_2_0_0.bit3.obuf0 VSS ) ( storage_2_0_0.bit3.bit VSS ) ( storage_2_0_0.bit2.obuf0 VSS ) ( storage_2_0_0.bit2.bit VSS ) ( storage_2_0_0.bit1.obuf0 VSS ) ( storage_2_0_0.bit1.bit VSS ) ( storage_2_0_0.bit0.obuf0 VSS )
+      ( storage_2_0_0.bit0.bit VSS ) ( storage_1_0_0.select_inv_0 VSS ) ( storage_1_0_0.gcand VSS ) ( storage_1_0_0.cg VSS ) ( storage_1_0_0.bit6.obuf0 VSS ) ( storage_1_0_0.bit6.bit VSS ) ( storage_1_0_0.bit5.obuf0 VSS ) ( storage_1_0_0.bit5.bit VSS )
+      ( storage_1_0_0.bit4.obuf0 VSS ) ( storage_1_0_0.bit4.bit VSS ) ( storage_1_0_0.bit3.obuf0 VSS ) ( storage_1_0_0.bit3.bit VSS ) ( storage_1_0_0.bit2.obuf0 VSS ) ( storage_1_0_0.bit2.bit VSS ) ( storage_1_0_0.bit1.obuf0 VSS ) ( storage_1_0_0.bit1.bit VSS )
+      ( storage_1_0_0.bit0.obuf0 VSS ) ( storage_1_0_0.bit0.bit VSS ) ( storage_0_0_0.select_inv_0 VSS ) ( storage_0_0_0.gcand VSS ) ( storage_0_0_0.cg VSS ) ( storage_0_0_0.bit6.obuf0 VSS ) ( storage_0_0_0.bit6.bit VSS ) ( storage_0_0_0.bit5.obuf0 VSS )
+      ( storage_0_0_0.bit5.bit VSS ) ( storage_0_0_0.bit4.obuf0 VSS ) ( storage_0_0_0.bit4.bit VSS ) ( storage_0_0_0.bit3.obuf0 VSS ) ( storage_0_0_0.bit3.bit VSS ) ( storage_0_0_0.bit2.obuf0 VSS ) ( storage_0_0_0.bit2.bit VSS ) ( storage_0_0_0.bit1.obuf0 VSS )
+      ( storage_0_0_0.bit1.bit VSS ) ( storage_0_0_0.bit0.obuf0 VSS ) ( storage_0_0_0.bit0.bit VSS ) ( decoder_6.buf_port0 VSS ) ( decoder_6.and_layer0 VSS ) ( decoder_5.buf_port0 VSS ) ( decoder_5.and_layer0 VSS ) ( decoder_4.buf_port0 VSS )
       ( decoder_4.and_layer0 VSS ) ( decoder_3.buf_port0 VSS ) ( decoder_3.and_layer0 VSS ) ( decoder_2.buf_port0 VSS ) ( decoder_2.and_layer0 VSS ) ( decoder_1.buf_port0 VSS ) ( decoder_1.and_layer0 VSS ) ( decoder_0.buf_port0 VSS )
       ( decoder_0.and_layer0 VSS ) + USE GROUND
       + ROUTED metal4 14 + SHAPE STRIPE ( 3600 -7 ) ( 3600 1127 )
@@ -554,9 +554,9 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 NETS 120 ;
     - D[0] ( PIN D[0] ) ( buffer.in[0] A ) + USE SIGNAL
-      + ROUTED metal4 ( 121 1057 ) ( * 1113 0 )
-      NEW metal3 ( 28 1057 ) ( 121 * )
-      NEW metal3 ( 121 1057 ) via3_2
+      + ROUTED metal4 ( 9 1057 ) ( * 1113 0 )
+      NEW metal3 ( 9 1057 ) ( 28 * )
+      NEW metal3 ( 9 1057 ) via3_2
       NEW metal1 ( 28 1057 ) via1_4
       NEW metal2 ( 28 1057 ) via2_5 ;
     - D[1] ( PIN D[1] ) ( buffer.in[1] A ) + USE SIGNAL
@@ -595,8 +595,8 @@ NETS 120 ;
       NEW metal3 ( 2921 1057 ) via3_2
       NEW metal1 ( 2935 1057 ) via1_4
       NEW metal2 ( 2935 1057 ) via2_5 ;
-    - D_nets[0].net ( buffer.in[0] Z ) ( storage_6_0.bit0.bit D ) ( storage_5_0.bit0.bit D ) ( storage_4_0.bit0.bit D ) ( storage_3_0.bit0.bit D ) ( storage_2_0.bit0.bit D ) ( storage_1_0.bit0.bit D )
-      ( storage_0_0.bit0.bit D ) + USE SIGNAL
+    - D_nets.b0 ( buffer.in[0] Z ) ( storage_6_0_0.bit0.bit D ) ( storage_5_0_0.bit0.bit D ) ( storage_4_0_0.bit0.bit D ) ( storage_3_0_0.bit0.bit D ) ( storage_2_0_0.bit0.bit D ) ( storage_1_0_0.bit0.bit D )
+      ( storage_0_0_0.bit0.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 104 903 ) ( * 1001 )
       NEW metal2 ( 66 1001 ) ( 104 * )
       NEW metal2 ( 104 777 ) ( * 903 )
@@ -613,8 +613,8 @@ NETS 120 ;
       NEW metal1 ( 104 343 ) via1_4
       NEW metal1 ( 104 217 ) via1_4
       NEW metal1 ( 104 63 ) via1_4 ;
-    - D_nets[1].net ( buffer.in[1] Z ) ( storage_6_0.bit1.bit D ) ( storage_5_0.bit1.bit D ) ( storage_4_0.bit1.bit D ) ( storage_3_0.bit1.bit D ) ( storage_2_0.bit1.bit D ) ( storage_1_0.bit1.bit D )
-      ( storage_0_0.bit1.bit D ) + USE SIGNAL
+    - D_nets.b1 ( buffer.in[1] Z ) ( storage_6_0_0.bit1.bit D ) ( storage_5_0_0.bit1.bit D ) ( storage_4_0_0.bit1.bit D ) ( storage_3_0_0.bit1.bit D ) ( storage_2_0_0.bit1.bit D ) ( storage_1_0_0.bit1.bit D )
+      ( storage_0_0_0.bit1.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 579 903 ) ( * 1001 )
       NEW metal2 ( 541 1001 ) ( 579 * )
       NEW metal2 ( 579 777 ) ( * 903 )
@@ -631,8 +631,8 @@ NETS 120 ;
       NEW metal1 ( 579 343 ) via1_4
       NEW metal1 ( 579 217 ) via1_4
       NEW metal1 ( 579 63 ) via1_4 ;
-    - D_nets[2].net ( buffer.in[2] Z ) ( storage_6_0.bit2.bit D ) ( storage_5_0.bit2.bit D ) ( storage_4_0.bit2.bit D ) ( storage_3_0.bit2.bit D ) ( storage_2_0.bit2.bit D ) ( storage_1_0.bit2.bit D )
-      ( storage_0_0.bit2.bit D ) + USE SIGNAL
+    - D_nets.b2 ( buffer.in[2] Z ) ( storage_6_0_0.bit2.bit D ) ( storage_5_0_0.bit2.bit D ) ( storage_4_0_0.bit2.bit D ) ( storage_3_0_0.bit2.bit D ) ( storage_2_0_0.bit2.bit D ) ( storage_1_0_0.bit2.bit D )
+      ( storage_0_0_0.bit2.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 1073 903 ) ( * 1001 )
       NEW metal2 ( 1035 1001 ) ( 1073 * )
       NEW metal2 ( 1073 777 ) ( * 903 )
@@ -649,8 +649,8 @@ NETS 120 ;
       NEW metal1 ( 1073 343 ) via1_4
       NEW metal1 ( 1073 217 ) via1_4
       NEW metal1 ( 1073 63 ) via1_4 ;
-    - D_nets[3].net ( buffer.in[3] Z ) ( storage_6_0.bit3.bit D ) ( storage_5_0.bit3.bit D ) ( storage_4_0.bit3.bit D ) ( storage_3_0.bit3.bit D ) ( storage_2_0.bit3.bit D ) ( storage_1_0.bit3.bit D )
-      ( storage_0_0.bit3.bit D ) + USE SIGNAL
+    - D_nets.b3 ( buffer.in[3] Z ) ( storage_6_0_0.bit3.bit D ) ( storage_5_0_0.bit3.bit D ) ( storage_4_0_0.bit3.bit D ) ( storage_3_0_0.bit3.bit D ) ( storage_2_0_0.bit3.bit D ) ( storage_1_0_0.bit3.bit D )
+      ( storage_0_0_0.bit3.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 1548 903 ) ( * 1001 )
       NEW metal2 ( 1510 1001 ) ( 1548 * )
       NEW metal2 ( 1548 777 ) ( * 903 )
@@ -667,8 +667,8 @@ NETS 120 ;
       NEW metal1 ( 1548 343 ) via1_4
       NEW metal1 ( 1548 217 ) via1_4
       NEW metal1 ( 1548 63 ) via1_4 ;
-    - D_nets[4].net ( buffer.in[4] Z ) ( storage_6_0.bit4.bit D ) ( storage_5_0.bit4.bit D ) ( storage_4_0.bit4.bit D ) ( storage_3_0.bit4.bit D ) ( storage_2_0.bit4.bit D ) ( storage_1_0.bit4.bit D )
-      ( storage_0_0.bit4.bit D ) + USE SIGNAL
+    - D_nets.b4 ( buffer.in[4] Z ) ( storage_6_0_0.bit4.bit D ) ( storage_5_0_0.bit4.bit D ) ( storage_4_0_0.bit4.bit D ) ( storage_3_0_0.bit4.bit D ) ( storage_2_0_0.bit4.bit D ) ( storage_1_0_0.bit4.bit D )
+      ( storage_0_0_0.bit4.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2042 903 ) ( * 1001 )
       NEW metal2 ( 2004 1001 ) ( 2042 * )
       NEW metal2 ( 2042 777 ) ( * 903 )
@@ -685,8 +685,8 @@ NETS 120 ;
       NEW metal1 ( 2042 343 ) via1_4
       NEW metal1 ( 2042 217 ) via1_4
       NEW metal1 ( 2042 63 ) via1_4 ;
-    - D_nets[5].net ( buffer.in[5] Z ) ( storage_6_0.bit5.bit D ) ( storage_5_0.bit5.bit D ) ( storage_4_0.bit5.bit D ) ( storage_3_0.bit5.bit D ) ( storage_2_0.bit5.bit D ) ( storage_1_0.bit5.bit D )
-      ( storage_0_0.bit5.bit D ) + USE SIGNAL
+    - D_nets.b5 ( buffer.in[5] Z ) ( storage_6_0_0.bit5.bit D ) ( storage_5_0_0.bit5.bit D ) ( storage_4_0_0.bit5.bit D ) ( storage_3_0_0.bit5.bit D ) ( storage_2_0_0.bit5.bit D ) ( storage_1_0_0.bit5.bit D )
+      ( storage_0_0_0.bit5.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2517 903 ) ( * 1001 )
       NEW metal2 ( 2479 1001 ) ( 2517 * )
       NEW metal2 ( 2517 777 ) ( * 903 )
@@ -703,8 +703,8 @@ NETS 120 ;
       NEW metal1 ( 2517 343 ) via1_4
       NEW metal1 ( 2517 217 ) via1_4
       NEW metal1 ( 2517 63 ) via1_4 ;
-    - D_nets[6].net ( buffer.in[6] Z ) ( storage_6_0.bit6.bit D ) ( storage_5_0.bit6.bit D ) ( storage_4_0.bit6.bit D ) ( storage_3_0.bit6.bit D ) ( storage_2_0.bit6.bit D ) ( storage_1_0.bit6.bit D )
-      ( storage_0_0.bit6.bit D ) + USE SIGNAL
+    - D_nets.b6 ( buffer.in[6] Z ) ( storage_6_0_0.bit6.bit D ) ( storage_5_0_0.bit6.bit D ) ( storage_4_0_0.bit6.bit D ) ( storage_3_0_0.bit6.bit D ) ( storage_2_0_0.bit6.bit D ) ( storage_1_0_0.bit6.bit D )
+      ( storage_0_0_0.bit6.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 3011 903 ) ( * 1001 )
       NEW metal2 ( 2973 1001 ) ( 3011 * )
       NEW metal2 ( 3011 777 ) ( * 903 )
@@ -721,8 +721,8 @@ NETS 120 ;
       NEW metal1 ( 3011 343 ) via1_4
       NEW metal1 ( 3011 217 ) via1_4
       NEW metal1 ( 3011 63 ) via1_4 ;
-    - Q[0] ( PIN Q[0] ) ( storage_6_0.bit0.obuf0 Z ) ( storage_5_0.bit0.obuf0 Z ) ( storage_4_0.bit0.obuf0 Z ) ( storage_3_0.bit0.obuf0 Z ) ( storage_2_0.bit0.obuf0 Z ) ( storage_1_0.bit0.obuf0 Z )
-      ( storage_0_0.bit0.obuf0 Z ) + USE SIGNAL
+    - Q[0] ( PIN Q[0] ) ( storage_6_0_0.bit0.obuf0 Z ) ( storage_5_0_0.bit0.obuf0 Z ) ( storage_4_0_0.bit0.obuf0 Z ) ( storage_3_0_0.bit0.obuf0 Z ) ( storage_2_0_0.bit0.obuf0 Z ) ( storage_1_0_0.bit0.obuf0 Z )
+      ( storage_0_0_0.bit0.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 345 945 ) ( 351 * )
       NEW metal4 ( 345 945 ) ( * 1113 0 )
       NEW metal2 ( 351 805 ) ( * 945 )
@@ -740,8 +740,8 @@ NETS 120 ;
       NEW metal1 ( 351 385 ) via1_4
       NEW metal1 ( 351 245 ) via1_4
       NEW metal1 ( 351 105 ) via1_4 ;
-    - Q[1] ( PIN Q[1] ) ( storage_6_0.bit1.obuf0 Z ) ( storage_5_0.bit1.obuf0 Z ) ( storage_4_0.bit1.obuf0 Z ) ( storage_3_0.bit1.obuf0 Z ) ( storage_2_0.bit1.obuf0 Z ) ( storage_1_0.bit1.obuf0 Z )
-      ( storage_0_0.bit1.obuf0 Z ) + USE SIGNAL
+    - Q[1] ( PIN Q[1] ) ( storage_6_0_0.bit1.obuf0 Z ) ( storage_5_0_0.bit1.obuf0 Z ) ( storage_4_0_0.bit1.obuf0 Z ) ( storage_3_0_0.bit1.obuf0 Z ) ( storage_2_0_0.bit1.obuf0 Z ) ( storage_1_0_0.bit1.obuf0 Z )
+      ( storage_0_0_0.bit1.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 826 945 ) ( 849 * )
       NEW metal4 ( 849 945 ) ( * 1113 0 )
       NEW metal2 ( 826 805 ) ( * 945 )
@@ -759,8 +759,8 @@ NETS 120 ;
       NEW metal1 ( 826 385 ) via1_4
       NEW metal1 ( 826 245 ) via1_4
       NEW metal1 ( 826 105 ) via1_4 ;
-    - Q[2] ( PIN Q[2] ) ( storage_6_0.bit2.obuf0 Z ) ( storage_5_0.bit2.obuf0 Z ) ( storage_4_0.bit2.obuf0 Z ) ( storage_3_0.bit2.obuf0 Z ) ( storage_2_0.bit2.obuf0 Z ) ( storage_1_0.bit2.obuf0 Z )
-      ( storage_0_0.bit2.obuf0 Z ) + USE SIGNAL
+    - Q[2] ( PIN Q[2] ) ( storage_6_0_0.bit2.obuf0 Z ) ( storage_5_0_0.bit2.obuf0 Z ) ( storage_4_0_0.bit2.obuf0 Z ) ( storage_3_0_0.bit2.obuf0 Z ) ( storage_2_0_0.bit2.obuf0 Z ) ( storage_1_0_0.bit2.obuf0 Z )
+      ( storage_0_0_0.bit2.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 1297 945 ) ( 1320 * )
       NEW metal4 ( 1297 945 ) ( * 1113 0 )
       NEW metal2 ( 1320 805 ) ( * 945 )
@@ -778,33 +778,36 @@ NETS 120 ;
       NEW metal1 ( 1320 385 ) via1_4
       NEW metal1 ( 1320 245 ) via1_4
       NEW metal1 ( 1320 105 ) via1_4 ;
-    - Q[3] ( PIN Q[3] ) ( storage_6_0.bit3.obuf0 Z ) ( storage_5_0.bit3.obuf0 Z ) ( storage_4_0.bit3.obuf0 Z ) ( storage_3_0.bit3.obuf0 Z ) ( storage_2_0.bit3.obuf0 Z ) ( storage_1_0.bit3.obuf0 Z )
-      ( storage_0_0.bit3.obuf0 Z ) + USE SIGNAL
+    - Q[3] ( PIN Q[3] ) ( storage_6_0_0.bit3.obuf0 Z ) ( storage_5_0_0.bit3.obuf0 Z ) ( storage_4_0_0.bit3.obuf0 Z ) ( storage_3_0_0.bit3.obuf0 Z ) ( storage_2_0_0.bit3.obuf0 Z ) ( storage_1_0_0.bit3.obuf0 Z )
+      ( storage_0_0_0.bit3.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 1745 945 ) ( 1795 * )
       NEW metal4 ( 1745 945 ) ( * 1113 0 )
       NEW metal2 ( 1776 805 ) ( 1795 * )
-      NEW metal2 ( 1776 805 ) ( * 945 )
+      NEW metal2 ( 1776 805 ) ( * 875 )
+      NEW metal2 ( 1776 875 ) ( 1795 * )
       NEW metal2 ( 1795 665 ) ( * 805 )
       NEW metal2 ( 1776 525 ) ( 1795 * )
-      NEW metal2 ( 1776 525 ) ( * 665 )
-      NEW metal2 ( 1776 665 ) ( 1795 * )
+      NEW metal2 ( 1776 525 ) ( * 581 )
+      NEW metal2 ( 1776 581 ) ( 1795 * )
+      NEW metal2 ( 1795 581 ) ( * 665 )
       NEW metal2 ( 1795 385 ) ( * 525 )
       NEW metal2 ( 1776 245 ) ( 1795 * )
-      NEW metal2 ( 1776 245 ) ( * 385 )
-      NEW metal2 ( 1776 385 ) ( 1795 * )
+      NEW metal2 ( 1776 245 ) ( * 301 )
+      NEW metal2 ( 1776 301 ) ( 1795 * )
+      NEW metal2 ( 1795 301 ) ( * 385 )
       NEW metal2 ( 1795 105 ) ( * 245 )
       NEW metal1 ( 1795 945 ) via1_4
       NEW metal2 ( 1795 945 ) via2_5
       NEW metal3 ( 1745 945 ) via3_2
       NEW metal1 ( 1795 805 ) via1_4
-      NEW metal2 ( 1776 945 ) via2_5
+      NEW metal1 ( 1795 875 ) via1_4
       NEW metal1 ( 1795 665 ) via1_4
       NEW metal1 ( 1795 525 ) via1_4
       NEW metal1 ( 1795 385 ) via1_4
       NEW metal1 ( 1795 245 ) via1_4
       NEW metal1 ( 1795 105 ) via1_4 ;
-    - Q[4] ( PIN Q[4] ) ( storage_6_0.bit4.obuf0 Z ) ( storage_5_0.bit4.obuf0 Z ) ( storage_4_0.bit4.obuf0 Z ) ( storage_3_0.bit4.obuf0 Z ) ( storage_2_0.bit4.obuf0 Z ) ( storage_1_0.bit4.obuf0 Z )
-      ( storage_0_0.bit4.obuf0 Z ) + USE SIGNAL
+    - Q[4] ( PIN Q[4] ) ( storage_6_0_0.bit4.obuf0 Z ) ( storage_5_0_0.bit4.obuf0 Z ) ( storage_4_0_0.bit4.obuf0 Z ) ( storage_3_0_0.bit4.obuf0 Z ) ( storage_2_0_0.bit4.obuf0 Z ) ( storage_1_0_0.bit4.obuf0 Z )
+      ( storage_0_0_0.bit4.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 2289 945 ) ( 2305 * )
       NEW metal4 ( 2305 945 ) ( * 1113 0 )
       NEW metal2 ( 2289 805 ) ( * 945 )
@@ -822,8 +825,8 @@ NETS 120 ;
       NEW metal1 ( 2289 385 ) via1_4
       NEW metal1 ( 2289 245 ) via1_4
       NEW metal1 ( 2289 105 ) via1_4 ;
-    - Q[5] ( PIN Q[5] ) ( storage_6_0.bit5.obuf0 Z ) ( storage_5_0.bit5.obuf0 Z ) ( storage_4_0.bit5.obuf0 Z ) ( storage_3_0.bit5.obuf0 Z ) ( storage_2_0.bit5.obuf0 Z ) ( storage_1_0.bit5.obuf0 Z )
-      ( storage_0_0.bit5.obuf0 Z ) + USE SIGNAL
+    - Q[5] ( PIN Q[5] ) ( storage_6_0_0.bit5.obuf0 Z ) ( storage_5_0_0.bit5.obuf0 Z ) ( storage_4_0_0.bit5.obuf0 Z ) ( storage_3_0_0.bit5.obuf0 Z ) ( storage_2_0_0.bit5.obuf0 Z ) ( storage_1_0_0.bit5.obuf0 Z )
+      ( storage_0_0_0.bit5.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 2753 945 ) ( 2764 * )
       NEW metal4 ( 2753 945 ) ( * 1113 0 )
       NEW metal2 ( 2764 805 ) ( * 945 )
@@ -841,8 +844,8 @@ NETS 120 ;
       NEW metal1 ( 2764 385 ) via1_4
       NEW metal1 ( 2764 245 ) via1_4
       NEW metal1 ( 2764 105 ) via1_4 ;
-    - Q[6] ( PIN Q[6] ) ( storage_6_0.bit6.obuf0 Z ) ( storage_5_0.bit6.obuf0 Z ) ( storage_4_0.bit6.obuf0 Z ) ( storage_3_0.bit6.obuf0 Z ) ( storage_2_0.bit6.obuf0 Z ) ( storage_1_0.bit6.obuf0 Z )
-      ( storage_0_0.bit6.obuf0 Z ) + USE SIGNAL
+    - Q[6] ( PIN Q[6] ) ( storage_6_0_0.bit6.obuf0 Z ) ( storage_5_0_0.bit6.obuf0 Z ) ( storage_4_0_0.bit6.obuf0 Z ) ( storage_3_0_0.bit6.obuf0 Z ) ( storage_2_0_0.bit6.obuf0 Z ) ( storage_1_0_0.bit6.obuf0 Z )
+      ( storage_0_0_0.bit6.obuf0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 3257 945 ) ( 3258 * )
       NEW metal4 ( 3257 945 ) ( * 1113 0 )
       NEW metal2 ( 3258 805 ) ( * 945 )
@@ -860,7 +863,7 @@ NETS 120 ;
       NEW metal1 ( 3258 385 ) via1_4
       NEW metal1 ( 3258 245 ) via1_4
       NEW metal1 ( 3258 105 ) via1_4 ;
-    - addr[0] ( PIN addr[0] ) ( decoder.inv_0 A ) ( decoder_5.and_layer0 A1 ) ( decoder_3.and_layer0 A1 ) ( decoder_1.and_layer0 A1 ) + USE SIGNAL
+    - addr_rw[0] ( PIN addr_rw[0] ) ( decoder.inv_0 A ) ( decoder_5.and_layer0 A1 ) ( decoder_3.and_layer0 A1 ) ( decoder_1.and_layer0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 3771 217 ) ( * 231 )
       NEW metal3 ( 3771 231 ) ( 3948 * 0 )
       NEW metal2 ( 3771 483 ) ( * 497 )
@@ -882,7 +885,7 @@ NETS 120 ;
       NEW metal1 ( 3771 784 ) via1_7
       NEW metal2 ( 3771 791 ) via2_5
       NEW metal2 ( 3904 791 ) via2_5 ;
-    - addr[1] ( PIN addr[1] ) ( decoder.inv_1 A ) ( decoder_6.and_layer0 A2 ) ( decoder_3.and_layer0 A2 ) ( decoder_2.and_layer0 A2 ) + USE SIGNAL
+    - addr_rw[1] ( PIN addr_rw[1] ) ( decoder.inv_1 A ) ( decoder_6.and_layer0 A2 ) ( decoder_3.and_layer0 A2 ) ( decoder_2.and_layer0 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 3790 497 ) ( * 553 )
       NEW metal3 ( 3752 553 ) ( 3790 * )
       NEW metal2 ( 3752 553 ) ( * 651 )
@@ -904,44 +907,43 @@ NETS 120 ;
       NEW metal2 ( 3790 497 ) via2_5
       NEW metal1 ( 3790 343 ) via1_4
       NEW metal2 ( 3790 343 ) via2_5 ;
-    - addr[2] ( PIN addr[2] ) ( decoder.inv_2 A ) + USE SIGNAL
-      + ROUTED metal3 ( 3923 119 ) ( 3948 * 0 )
-      NEW metal2 ( 3923 63 ) ( * 119 )
-      NEW metal2 ( 3923 119 ) via2_5
-      NEW metal1 ( 3923 63 ) via1_4 ;
-    - clk ( PIN clk ) ( storage_6_0.cg CK ) ( storage_5_0.cg CK ) ( storage_4_0.cg CK ) ( storage_3_0.cg CK ) ( storage_2_0.cg CK ) ( storage_1_0.cg CK )
-      ( storage_0_0.cg CK ) + USE SIGNAL
-      + ROUTED metal2 ( 3581 147 ) ( * 231 )
-      NEW metal3 ( 3581 147 ) ( 3948 * 0 )
-      NEW metal2 ( 3581 49 ) ( * 147 )
+    - addr_rw[2] ( PIN addr_rw[2] ) ( decoder.inv_2 A ) + USE SIGNAL
+      + ROUTED metal3 ( 3923 63 ) ( 3948 * 0 )
+      NEW metal1 ( 3923 63 ) via1_4
+      NEW metal2 ( 3923 63 ) via2_5 ;
+    - clk ( PIN clk ) ( storage_6_0_0.cg CK ) ( storage_5_0_0.cg CK ) ( storage_4_0_0.cg CK ) ( storage_3_0_0.cg CK ) ( storage_2_0_0.cg CK ) ( storage_1_0_0.cg CK )
+      ( storage_0_0_0.cg CK ) + USE SIGNAL
+      + ROUTED metal2 ( 3581 49 ) ( * 91 )
+      NEW metal3 ( 3581 91 ) ( 3948 * 0 )
+      NEW metal2 ( 3581 91 ) ( * 231 )
       NEW metal2 ( 3581 231 ) ( * 329 )
       NEW metal2 ( 3581 329 ) ( * 511 )
       NEW metal2 ( 3581 511 ) ( * 609 )
       NEW metal2 ( 3581 609 ) ( * 791 )
       NEW metal2 ( 3581 791 ) ( * 889 )
-      NEW metal1 ( 3581 231 ) via1_7
-      NEW metal2 ( 3581 147 ) via2_5
       NEW metal1 ( 3581 49 ) via1_7
+      NEW metal2 ( 3581 91 ) via2_5
+      NEW metal1 ( 3581 231 ) via1_7
       NEW metal1 ( 3581 329 ) via1_7
       NEW metal1 ( 3581 511 ) via1_7
       NEW metal1 ( 3581 609 ) via1_7
       NEW metal1 ( 3581 791 ) via1_7
       NEW metal1 ( 3581 889 ) via1_7 ;
-    - decoder_0.decoder0 ( storage_0_0.select_inv_0 A ) ( storage_0_0.gcand A1 ) ( decoder_0.buf_port0 Z ) + USE SIGNAL
-      + ROUTED metal3 ( 3733 63 ) ( 3885 * )
-      NEW metal3 ( 3657 63 ) ( 3733 * )
+    - decoder_0.decoder0 ( storage_0_0_0.select_inv_0 A ) ( storage_0_0_0.gcand A1 ) ( decoder_0.buf_port0 Z ) + USE SIGNAL
+      + ROUTED metal2 ( 3733 35 ) ( * 63 )
+      NEW metal2 ( 3733 35 ) ( 3885 * )
+      NEW metal2 ( 3657 21 ) ( * 63 )
+      NEW metal2 ( 3657 21 ) ( 3733 * )
+      NEW metal2 ( 3733 21 ) ( * 35 )
       NEW metal1 ( 3733 63 ) via1_4
-      NEW metal2 ( 3733 63 ) via2_5
-      NEW metal1 ( 3885 63 ) via1_4
-      NEW metal2 ( 3885 63 ) via2_5
-      NEW metal1 ( 3657 63 ) via1_4
-      NEW metal2 ( 3657 63 ) via2_5 ;
+      NEW metal1 ( 3885 35 ) via1_4
+      NEW metal1 ( 3657 63 ) via1_4 ;
     - decoder_0.decoder_out ( decoder_0.buf_port0 A ) ( decoder_0.and_layer0 ZN ) + USE SIGNAL
       + ROUTED metal2 ( 3828 63 ) ( 3847 * )
       NEW metal1 ( 3847 63 ) via1_4
       NEW metal1 ( 3828 63 ) via1_4 ;
     - decoder_0.layer_in0 + USE SIGNAL ;
-    - decoder_1.decoder0 ( storage_1_0.select_inv_0 A ) ( storage_1_0.gcand A1 ) ( decoder_1.buf_port0 Z ) + USE SIGNAL
+    - decoder_1.decoder0 ( storage_1_0_0.select_inv_0 A ) ( storage_1_0_0.gcand A1 ) ( decoder_1.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 3733 217 ) ( 3885 * )
       NEW metal3 ( 3657 217 ) ( 3733 * )
       NEW metal1 ( 3733 217 ) via1_4
@@ -955,7 +957,7 @@ NETS 120 ;
       NEW metal1 ( 3847 217 ) via1_4
       NEW metal1 ( 3828 217 ) via1_4 ;
     - decoder_1.layer_in0 + USE SIGNAL ;
-    - decoder_2.decoder0 ( storage_2_0.select_inv_0 A ) ( storage_2_0.gcand A1 ) ( decoder_2.buf_port0 Z ) + USE SIGNAL
+    - decoder_2.decoder0 ( storage_2_0_0.select_inv_0 A ) ( storage_2_0_0.gcand A1 ) ( decoder_2.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal2 ( 3733 343 ) ( * 357 )
       NEW metal3 ( 3733 357 ) ( 3885 * )
       NEW metal2 ( 3657 343 ) ( * 357 )
@@ -971,7 +973,7 @@ NETS 120 ;
       NEW metal1 ( 3847 343 ) via1_4
       NEW metal1 ( 3828 343 ) via1_4 ;
     - decoder_2.layer_in0 + USE SIGNAL ;
-    - decoder_3.decoder0 ( storage_3_0.select_inv_0 A ) ( storage_3_0.gcand A1 ) ( decoder_3.buf_port0 Z ) + USE SIGNAL
+    - decoder_3.decoder0 ( storage_3_0_0.select_inv_0 A ) ( storage_3_0_0.gcand A1 ) ( decoder_3.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal2 ( 3733 497 ) ( * 511 )
       NEW metal3 ( 3733 511 ) ( 3885 * )
       NEW metal2 ( 3657 497 ) ( * 511 )
@@ -987,7 +989,7 @@ NETS 120 ;
       NEW metal1 ( 3847 497 ) via1_4
       NEW metal1 ( 3828 497 ) via1_4 ;
     - decoder_3.layer_in0 + USE SIGNAL ;
-    - decoder_4.decoder0 ( storage_4_0.select_inv_0 A ) ( storage_4_0.gcand A1 ) ( decoder_4.buf_port0 Z ) + USE SIGNAL
+    - decoder_4.decoder0 ( storage_4_0_0.select_inv_0 A ) ( storage_4_0_0.gcand A1 ) ( decoder_4.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 3733 623 ) ( 3885 * )
       NEW metal3 ( 3657 623 ) ( 3733 * )
       NEW metal1 ( 3733 623 ) via1_4
@@ -1002,7 +1004,7 @@ NETS 120 ;
       NEW metal1 ( 3847 616 ) via1_7
       NEW metal1 ( 3828 637 ) via1_4 ;
     - decoder_4.layer_in0 + USE SIGNAL ;
-    - decoder_5.decoder0 ( storage_5_0.select_inv_0 A ) ( storage_5_0.gcand A1 ) ( decoder_5.buf_port0 Z ) + USE SIGNAL
+    - decoder_5.decoder0 ( storage_5_0_0.select_inv_0 A ) ( storage_5_0_0.gcand A1 ) ( decoder_5.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 3733 777 ) ( 3885 * )
       NEW metal3 ( 3657 777 ) ( 3733 * )
       NEW metal1 ( 3733 777 ) via1_4
@@ -1016,7 +1018,7 @@ NETS 120 ;
       NEW metal1 ( 3847 777 ) via1_4
       NEW metal1 ( 3828 777 ) via1_4 ;
     - decoder_5.layer_in0 + USE SIGNAL ;
-    - decoder_6.decoder0 ( storage_6_0.select_inv_0 A ) ( storage_6_0.gcand A1 ) ( decoder_6.buf_port0 Z ) + USE SIGNAL
+    - decoder_6.decoder0 ( storage_6_0_0.select_inv_0 A ) ( storage_6_0_0.gcand A1 ) ( decoder_6.buf_port0 Z ) + USE SIGNAL
       + ROUTED metal3 ( 3733 903 ) ( 3885 * )
       NEW metal3 ( 3657 903 ) ( 3733 * )
       NEW metal1 ( 3733 903 ) via1_4
@@ -1030,7 +1032,7 @@ NETS 120 ;
       NEW metal1 ( 3847 903 ) via1_4
       NEW metal1 ( 3828 903 ) via1_4 ;
     - decoder_6.layer_in0 + USE SIGNAL ;
-    - inv.addr[0] ( decoder.inv_0 ZN ) ( decoder_6.and_layer0 A1 ) ( decoder_4.and_layer0 A1 ) ( decoder_2.and_layer0 A1 ) ( decoder_0.and_layer0 A1 ) + USE SIGNAL
+    - inv.addr0 ( decoder.inv_0 ZN ) ( decoder_6.and_layer0 A1 ) ( decoder_4.and_layer0 A1 ) ( decoder_2.and_layer0 A1 ) ( decoder_0.and_layer0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 3771 903 ) ( * 917 )
       NEW metal3 ( 3771 917 ) ( 3942 * )
       NEW metal2 ( 3771 623 ) ( * 637 )
@@ -1058,7 +1060,7 @@ NETS 120 ;
       NEW metal2 ( 3809 917 ) via2_5
       NEW metal1 ( 3771 343 ) via1_4
       NEW metal1 ( 3771 63 ) via1_4 ;
-    - inv.addr[1] ( decoder.inv_1 ZN ) ( decoder_5.and_layer0 A2 ) ( decoder_4.and_layer0 A2 ) ( decoder_1.and_layer0 A2 ) ( decoder_0.and_layer0 A2 ) + USE SIGNAL
+    - inv.addr1 ( decoder.inv_1 ZN ) ( decoder_5.and_layer0 A2 ) ( decoder_4.and_layer0 A2 ) ( decoder_1.and_layer0 A2 ) ( decoder_0.and_layer0 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 3790 63 ) ( * 217 )
       NEW metal2 ( 3942 315 ) ( * 441 )
       NEW metal3 ( 3790 315 ) ( 3942 * )
@@ -1079,86 +1081,88 @@ NETS 120 ;
       NEW metal1 ( 3790 623 ) via1_4
       NEW metal2 ( 3866 315 ) via2_5
       NEW metal1 ( 3790 777 ) via1_4 ;
-    - inv.addr[2] ( decoder.inv_2 ZN ) + USE SIGNAL ;
-    - storage_0_0.bit0.storage ( storage_0_0.bit0.obuf0 A ) ( storage_0_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal2 ( 294 63 ) ( 427 * )
-      NEW metal1 ( 294 63 ) via1_4
-      NEW metal1 ( 427 63 ) via1_4 ;
-    - storage_0_0.bit1.storage ( storage_0_0.bit1.obuf0 A ) ( storage_0_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 63 ) ( 902 * )
-      NEW metal1 ( 769 63 ) via1_4
-      NEW metal2 ( 769 63 ) via2_5
+    - inv.addr2 ( decoder.inv_2 ZN ) + USE SIGNAL ;
+    - storage_0_0_0.bit0.storage ( storage_0_0_0.bit0.obuf0 A ) ( storage_0_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 332 63 ) ( 427 * )
+      NEW metal1 ( 427 63 ) via1_4
+      NEW metal1 ( 332 63 ) via1_4 ;
+    - storage_0_0_0.bit1.storage ( storage_0_0_0.bit1.obuf0 A ) ( storage_0_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 63 ) ( 902 * )
       NEW metal1 ( 902 63 ) via1_4
-      NEW metal2 ( 902 63 ) via2_5 ;
-    - storage_0_0.bit2.storage ( storage_0_0.bit2.obuf0 A ) ( storage_0_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal2 ( 1263 63 ) ( 1396 * )
-      NEW metal1 ( 1263 63 ) via1_4
-      NEW metal1 ( 1396 63 ) via1_4 ;
-    - storage_0_0.bit3.storage ( storage_0_0.bit3.obuf0 A ) ( storage_0_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal2 ( 1738 63 ) ( 1871 * )
-      NEW metal1 ( 1738 63 ) via1_4
-      NEW metal1 ( 1871 63 ) via1_4 ;
-    - storage_0_0.bit4.storage ( storage_0_0.bit4.obuf0 A ) ( storage_0_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 63 ) ( 2365 * )
-      NEW metal1 ( 2232 63 ) via1_4
-      NEW metal2 ( 2232 63 ) via2_5
+      NEW metal2 ( 902 63 ) via2_5
+      NEW metal1 ( 807 63 ) via1_4
+      NEW metal2 ( 807 63 ) via2_5 ;
+    - storage_0_0_0.bit2.storage ( storage_0_0_0.bit2.obuf0 A ) ( storage_0_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 1301 63 ) ( 1396 * )
+      NEW metal1 ( 1396 63 ) via1_4
+      NEW metal1 ( 1301 63 ) via1_4 ;
+    - storage_0_0_0.bit3.storage ( storage_0_0_0.bit3.obuf0 A ) ( storage_0_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 1776 63 ) ( 1871 * )
+      NEW metal1 ( 1871 63 ) via1_4
+      NEW metal1 ( 1776 63 ) via1_4 ;
+    - storage_0_0_0.bit4.storage ( storage_0_0_0.bit4.obuf0 A ) ( storage_0_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 63 ) ( 2365 * )
       NEW metal1 ( 2365 63 ) via1_4
-      NEW metal2 ( 2365 63 ) via2_5 ;
-    - storage_0_0.bit5.storage ( storage_0_0.bit5.obuf0 A ) ( storage_0_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal2 ( 2707 63 ) ( 2840 * )
-      NEW metal1 ( 2707 63 ) via1_4
-      NEW metal1 ( 2840 63 ) via1_4 ;
-    - storage_0_0.bit6.storage ( storage_0_0.bit6.obuf0 A ) ( storage_0_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal2 ( 3201 63 ) ( 3334 * )
-      NEW metal1 ( 3201 63 ) via1_4
-      NEW metal1 ( 3334 63 ) via1_4 ;
-    - storage_0_0.gclock ( storage_0_0.cg GCK ) ( storage_0_0.bit6.bit CK ) ( storage_0_0.bit5.bit CK ) ( storage_0_0.bit4.bit CK ) ( storage_0_0.bit3.bit CK ) ( storage_0_0.bit2.bit CK ) ( storage_0_0.bit1.bit CK )
-      ( storage_0_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal2 ( 2365 63 ) via2_5
+      NEW metal1 ( 2270 63 ) via1_4
+      NEW metal2 ( 2270 63 ) via2_5 ;
+    - storage_0_0_0.bit5.storage ( storage_0_0_0.bit5.obuf0 A ) ( storage_0_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 2745 63 ) ( 2840 * )
+      NEW metal1 ( 2840 63 ) via1_4
+      NEW metal1 ( 2745 63 ) via1_4 ;
+    - storage_0_0_0.bit6.storage ( storage_0_0_0.bit6.obuf0 A ) ( storage_0_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 3239 63 ) ( 3334 * )
+      NEW metal1 ( 3334 63 ) via1_4
+      NEW metal1 ( 3239 63 ) via1_4 ;
+    - storage_0_0_0.gclock ( storage_0_0_0.cg GCK ) ( storage_0_0_0.bit6.bit CK ) ( storage_0_0_0.bit5.bit CK ) ( storage_0_0_0.bit4.bit CK ) ( storage_0_0_0.bit3.bit CK ) ( storage_0_0_0.bit2.bit CK ) ( storage_0_0_0.bit1.bit CK )
+      ( storage_0_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal3 ( 180 63 ) ( 655 * )
       NEW metal2 ( 1149 49 ) ( * 63 )
-      NEW metal3 ( 737 49 ) ( 1149 * )
-      NEW metal3 ( 737 49 ) ( * 63 )
-      NEW metal3 ( 655 63 ) ( 737 * )
-      NEW metal2 ( 3087 49 ) ( * 63 )
-      NEW metal2 ( 2593 49 ) ( * 63 )
-      NEW metal3 ( 2593 49 ) ( 3087 * )
+      NEW metal3 ( 765 49 ) ( 1149 * )
+      NEW metal3 ( 765 49 ) ( * 63 )
+      NEW metal3 ( 655 63 ) ( 765 * )
+      NEW metal3 ( 2593 63 ) ( 3087 * )
       NEW metal2 ( 2118 49 ) ( * 63 )
-      NEW metal3 ( 2118 49 ) ( 2593 * )
+      NEW metal3 ( 2118 49 ) ( 2389 * )
+      NEW metal3 ( 2389 49 ) ( * 63 )
+      NEW metal3 ( 2389 63 ) ( 2593 * )
       NEW metal2 ( 1624 49 ) ( * 63 )
       NEW metal3 ( 1624 49 ) ( 2118 * )
       NEW metal3 ( 1149 49 ) ( 1624 * )
-      NEW metal3 ( 3087 49 ) ( 3638 * )
+      NEW metal3 ( 3087 63 ) ( 3638 * )
       NEW metal1 ( 655 63 ) via1_4
       NEW metal2 ( 655 63 ) via2_5
       NEW metal1 ( 180 63 ) via1_4
       NEW metal2 ( 180 63 ) via2_5
       NEW metal1 ( 1149 63 ) via1_4
       NEW metal2 ( 1149 49 ) via2_5
-      NEW metal1 ( 3638 49 ) via1_4
-      NEW metal2 ( 3638 49 ) via2_5
+      NEW metal1 ( 3638 63 ) via1_4
+      NEW metal2 ( 3638 63 ) via2_5
       NEW metal1 ( 3087 63 ) via1_4
-      NEW metal2 ( 3087 49 ) via2_5
+      NEW metal2 ( 3087 63 ) via2_5
       NEW metal1 ( 2593 63 ) via1_4
-      NEW metal2 ( 2593 49 ) via2_5
+      NEW metal2 ( 2593 63 ) via2_5
       NEW metal1 ( 2118 63 ) via1_4
       NEW metal2 ( 2118 49 ) via2_5
       NEW metal1 ( 1624 63 ) via1_4
       NEW metal2 ( 1624 49 ) via2_5 ;
-    - storage_0_0.select0_b ( storage_0_0.select_inv_0 ZN ) ( storage_0_0.bit6.obuf0 EN ) ( storage_0_0.bit5.obuf0 EN ) ( storage_0_0.bit4.obuf0 EN ) ( storage_0_0.bit3.obuf0 EN ) ( storage_0_0.bit2.obuf0 EN ) ( storage_0_0.bit1.obuf0 EN )
-      ( storage_0_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_0_0_0.select0_b ( storage_0_0_0.select_inv_0 ZN ) ( storage_0_0_0.bit6.obuf0 EN ) ( storage_0_0_0.bit5.obuf0 EN ) ( storage_0_0_0.bit4.obuf0 EN ) ( storage_0_0_0.bit3.obuf0 EN ) ( storage_0_0_0.bit2.obuf0 EN ) ( storage_0_0_0.bit1.obuf0 EN )
+      ( storage_0_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 77 ) ( 940 * )
+      NEW metal3 ( 3677 63 ) ( * 77 )
+      NEW metal3 ( 3677 63 ) ( 3752 * )
       NEW metal3 ( 2878 77 ) ( 3372 * )
       NEW metal3 ( 2403 77 ) ( 2878 * )
       NEW metal3 ( 1909 77 ) ( 2403 * )
       NEW metal3 ( 1434 77 ) ( 1909 * )
       NEW metal3 ( 940 77 ) ( 1434 * )
-      NEW metal3 ( 3372 77 ) ( 3752 * )
+      NEW metal3 ( 3372 77 ) ( 3677 * )
       NEW metal1 ( 940 77 ) via1_4
       NEW metal2 ( 940 77 ) via2_5
       NEW metal1 ( 465 77 ) via1_4
       NEW metal2 ( 465 77 ) via2_5
-      NEW metal1 ( 3752 77 ) via1_4
-      NEW metal2 ( 3752 77 ) via2_5
+      NEW metal1 ( 3752 63 ) via1_4
+      NEW metal2 ( 3752 63 ) via2_5
       NEW metal1 ( 3372 77 ) via1_4
       NEW metal2 ( 3372 77 ) via2_5
       NEW metal1 ( 2878 77 ) via1_4
@@ -1169,57 +1173,57 @@ NETS 120 ;
       NEW metal2 ( 1909 77 ) via2_5
       NEW metal1 ( 1434 77 ) via1_4
       NEW metal2 ( 1434 77 ) via2_5 ;
-    - storage_0_0.we0 ( storage_0_0.gcand ZN ) ( storage_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal2 ( 3505 35 ) ( * 63 )
-      NEW metal3 ( 3505 35 ) ( 3714 * )
+    - storage_0_0_0.we0 ( storage_0_0_0.gcand ZN ) ( storage_0_0_0.cg E ) + USE SIGNAL
+      + ROUTED metal2 ( 3505 49 ) ( * 63 )
+      NEW metal3 ( 3505 49 ) ( 3714 * )
       NEW metal1 ( 3505 63 ) via1_4
-      NEW metal2 ( 3505 35 ) via2_5
-      NEW metal1 ( 3714 35 ) via1_4
-      NEW metal2 ( 3714 35 ) via2_5 ;
-    - storage_1_0.bit0.storage ( storage_1_0.bit0.obuf0 A ) ( storage_1_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 217 ) ( 427 * )
+      NEW metal2 ( 3505 49 ) via2_5
+      NEW metal1 ( 3714 49 ) via1_4
+      NEW metal2 ( 3714 49 ) via2_5 ;
+    - storage_1_0_0.bit0.storage ( storage_1_0_0.bit0.obuf0 A ) ( storage_1_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 217 ) ( 427 * )
       NEW metal1 ( 427 217 ) via1_4
       NEW metal2 ( 427 217 ) via2_5
-      NEW metal1 ( 294 217 ) via1_4
-      NEW metal2 ( 294 217 ) via2_5 ;
-    - storage_1_0.bit1.storage ( storage_1_0.bit1.obuf0 A ) ( storage_1_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 217 ) ( 902 * )
+      NEW metal1 ( 332 217 ) via1_4
+      NEW metal2 ( 332 217 ) via2_5 ;
+    - storage_1_0_0.bit1.storage ( storage_1_0_0.bit1.obuf0 A ) ( storage_1_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 217 ) ( 902 * )
       NEW metal1 ( 902 217 ) via1_4
       NEW metal2 ( 902 217 ) via2_5
-      NEW metal1 ( 769 217 ) via1_4
-      NEW metal2 ( 769 217 ) via2_5 ;
-    - storage_1_0.bit2.storage ( storage_1_0.bit2.obuf0 A ) ( storage_1_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 217 ) ( 1396 * )
+      NEW metal1 ( 807 217 ) via1_4
+      NEW metal2 ( 807 217 ) via2_5 ;
+    - storage_1_0_0.bit2.storage ( storage_1_0_0.bit2.obuf0 A ) ( storage_1_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 217 ) ( 1396 * )
       NEW metal1 ( 1396 217 ) via1_4
       NEW metal2 ( 1396 217 ) via2_5
-      NEW metal1 ( 1263 217 ) via1_4
-      NEW metal2 ( 1263 217 ) via2_5 ;
-    - storage_1_0.bit3.storage ( storage_1_0.bit3.obuf0 A ) ( storage_1_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 217 ) ( 1871 * )
+      NEW metal1 ( 1301 217 ) via1_4
+      NEW metal2 ( 1301 217 ) via2_5 ;
+    - storage_1_0_0.bit3.storage ( storage_1_0_0.bit3.obuf0 A ) ( storage_1_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1776 217 ) ( 1871 * )
       NEW metal1 ( 1871 217 ) via1_4
       NEW metal2 ( 1871 217 ) via2_5
-      NEW metal1 ( 1738 217 ) via1_4
-      NEW metal2 ( 1738 217 ) via2_5 ;
-    - storage_1_0.bit4.storage ( storage_1_0.bit4.obuf0 A ) ( storage_1_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 217 ) ( 2365 * )
+      NEW metal1 ( 1776 217 ) via1_4
+      NEW metal2 ( 1776 217 ) via2_5 ;
+    - storage_1_0_0.bit4.storage ( storage_1_0_0.bit4.obuf0 A ) ( storage_1_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 217 ) ( 2365 * )
       NEW metal1 ( 2365 217 ) via1_4
       NEW metal2 ( 2365 217 ) via2_5
-      NEW metal1 ( 2232 217 ) via1_4
-      NEW metal2 ( 2232 217 ) via2_5 ;
-    - storage_1_0.bit5.storage ( storage_1_0.bit5.obuf0 A ) ( storage_1_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 217 ) ( 2840 * )
+      NEW metal1 ( 2270 217 ) via1_4
+      NEW metal2 ( 2270 217 ) via2_5 ;
+    - storage_1_0_0.bit5.storage ( storage_1_0_0.bit5.obuf0 A ) ( storage_1_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 217 ) ( 2840 * )
       NEW metal1 ( 2840 217 ) via1_4
       NEW metal2 ( 2840 217 ) via2_5
-      NEW metal1 ( 2707 217 ) via1_4
-      NEW metal2 ( 2707 217 ) via2_5 ;
-    - storage_1_0.bit6.storage ( storage_1_0.bit6.obuf0 A ) ( storage_1_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 217 ) ( 3334 * )
+      NEW metal1 ( 2745 217 ) via1_4
+      NEW metal2 ( 2745 217 ) via2_5 ;
+    - storage_1_0_0.bit6.storage ( storage_1_0_0.bit6.obuf0 A ) ( storage_1_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 217 ) ( 3334 * )
       NEW metal1 ( 3334 217 ) via1_4
       NEW metal2 ( 3334 217 ) via2_5
-      NEW metal1 ( 3201 217 ) via1_4
-      NEW metal2 ( 3201 217 ) via2_5 ;
-    - storage_1_0.gclock ( storage_1_0.cg GCK ) ( storage_1_0.bit6.bit CK ) ( storage_1_0.bit5.bit CK ) ( storage_1_0.bit4.bit CK ) ( storage_1_0.bit3.bit CK ) ( storage_1_0.bit2.bit CK ) ( storage_1_0.bit1.bit CK )
-      ( storage_1_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal1 ( 3239 217 ) via1_4
+      NEW metal2 ( 3239 217 ) via2_5 ;
+    - storage_1_0_0.gclock ( storage_1_0_0.cg GCK ) ( storage_1_0_0.bit6.bit CK ) ( storage_1_0_0.bit5.bit CK ) ( storage_1_0_0.bit4.bit CK ) ( storage_1_0_0.bit3.bit CK ) ( storage_1_0_0.bit2.bit CK ) ( storage_1_0_0.bit1.bit CK )
+      ( storage_1_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 217 ) ( * 231 )
       NEW metal3 ( 180 231 ) ( 655 * )
       NEW metal2 ( 180 217 ) ( * 231 )
@@ -1250,8 +1254,8 @@ NETS 120 ;
       NEW metal2 ( 2118 231 ) via2_5
       NEW metal1 ( 1624 217 ) via1_4
       NEW metal2 ( 1624 231 ) via2_5 ;
-    - storage_1_0.select0_b ( storage_1_0.select_inv_0 ZN ) ( storage_1_0.bit6.obuf0 EN ) ( storage_1_0.bit5.obuf0 EN ) ( storage_1_0.bit4.obuf0 EN ) ( storage_1_0.bit3.obuf0 EN ) ( storage_1_0.bit2.obuf0 EN ) ( storage_1_0.bit1.obuf0 EN )
-      ( storage_1_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_1_0_0.select0_b ( storage_1_0_0.select_inv_0 ZN ) ( storage_1_0_0.bit6.obuf0 EN ) ( storage_1_0_0.bit5.obuf0 EN ) ( storage_1_0_0.bit4.obuf0 EN ) ( storage_1_0_0.bit3.obuf0 EN ) ( storage_1_0_0.bit2.obuf0 EN ) ( storage_1_0_0.bit1.obuf0 EN )
+      ( storage_1_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 189 ) ( 940 * )
       NEW metal2 ( 3733 161 ) ( * 189 )
       NEW metal2 ( 3733 161 ) ( 3752 * )
@@ -1277,57 +1281,57 @@ NETS 120 ;
       NEW metal2 ( 1909 189 ) via2_5
       NEW metal1 ( 1434 189 ) via1_4
       NEW metal2 ( 1434 189 ) via2_5 ;
-    - storage_1_0.we0 ( storage_1_0.gcand ZN ) ( storage_1_0.cg E ) + USE SIGNAL
+    - storage_1_0_0.we0 ( storage_1_0_0.gcand ZN ) ( storage_1_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 3505 203 ) ( * 217 )
       NEW metal3 ( 3505 203 ) ( 3714 * )
       NEW metal1 ( 3505 217 ) via1_4
       NEW metal2 ( 3505 203 ) via2_5
       NEW metal1 ( 3714 203 ) via1_4
       NEW metal2 ( 3714 203 ) via2_5 ;
-    - storage_2_0.bit0.storage ( storage_2_0.bit0.obuf0 A ) ( storage_2_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 343 ) ( 427 * )
-      NEW metal1 ( 294 343 ) via1_4
-      NEW metal2 ( 294 343 ) via2_5
+    - storage_2_0_0.bit0.storage ( storage_2_0_0.bit0.obuf0 A ) ( storage_2_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 343 ) ( 427 * )
       NEW metal1 ( 427 343 ) via1_4
-      NEW metal2 ( 427 343 ) via2_5 ;
-    - storage_2_0.bit1.storage ( storage_2_0.bit1.obuf0 A ) ( storage_2_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 343 ) ( 902 * )
-      NEW metal1 ( 769 343 ) via1_4
-      NEW metal2 ( 769 343 ) via2_5
+      NEW metal2 ( 427 343 ) via2_5
+      NEW metal1 ( 332 343 ) via1_4
+      NEW metal2 ( 332 343 ) via2_5 ;
+    - storage_2_0_0.bit1.storage ( storage_2_0_0.bit1.obuf0 A ) ( storage_2_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 343 ) ( 902 * )
       NEW metal1 ( 902 343 ) via1_4
-      NEW metal2 ( 902 343 ) via2_5 ;
-    - storage_2_0.bit2.storage ( storage_2_0.bit2.obuf0 A ) ( storage_2_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 343 ) ( 1396 * )
-      NEW metal1 ( 1263 343 ) via1_4
-      NEW metal2 ( 1263 343 ) via2_5
+      NEW metal2 ( 902 343 ) via2_5
+      NEW metal1 ( 807 343 ) via1_4
+      NEW metal2 ( 807 343 ) via2_5 ;
+    - storage_2_0_0.bit2.storage ( storage_2_0_0.bit2.obuf0 A ) ( storage_2_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 343 ) ( 1396 * )
       NEW metal1 ( 1396 343 ) via1_4
-      NEW metal2 ( 1396 343 ) via2_5 ;
-    - storage_2_0.bit3.storage ( storage_2_0.bit3.obuf0 A ) ( storage_2_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 343 ) ( 1871 * )
-      NEW metal1 ( 1738 343 ) via1_4
-      NEW metal2 ( 1738 343 ) via2_5
+      NEW metal2 ( 1396 343 ) via2_5
+      NEW metal1 ( 1301 343 ) via1_4
+      NEW metal2 ( 1301 343 ) via2_5 ;
+    - storage_2_0_0.bit3.storage ( storage_2_0_0.bit3.obuf0 A ) ( storage_2_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1776 343 ) ( 1871 * )
       NEW metal1 ( 1871 343 ) via1_4
-      NEW metal2 ( 1871 343 ) via2_5 ;
-    - storage_2_0.bit4.storage ( storage_2_0.bit4.obuf0 A ) ( storage_2_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 343 ) ( 2365 * )
-      NEW metal1 ( 2232 343 ) via1_4
-      NEW metal2 ( 2232 343 ) via2_5
+      NEW metal2 ( 1871 343 ) via2_5
+      NEW metal1 ( 1776 343 ) via1_4
+      NEW metal2 ( 1776 343 ) via2_5 ;
+    - storage_2_0_0.bit4.storage ( storage_2_0_0.bit4.obuf0 A ) ( storage_2_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 343 ) ( 2365 * )
       NEW metal1 ( 2365 343 ) via1_4
-      NEW metal2 ( 2365 343 ) via2_5 ;
-    - storage_2_0.bit5.storage ( storage_2_0.bit5.obuf0 A ) ( storage_2_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 343 ) ( 2840 * )
-      NEW metal1 ( 2707 343 ) via1_4
-      NEW metal2 ( 2707 343 ) via2_5
+      NEW metal2 ( 2365 343 ) via2_5
+      NEW metal1 ( 2270 343 ) via1_4
+      NEW metal2 ( 2270 343 ) via2_5 ;
+    - storage_2_0_0.bit5.storage ( storage_2_0_0.bit5.obuf0 A ) ( storage_2_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 343 ) ( 2840 * )
       NEW metal1 ( 2840 343 ) via1_4
-      NEW metal2 ( 2840 343 ) via2_5 ;
-    - storage_2_0.bit6.storage ( storage_2_0.bit6.obuf0 A ) ( storage_2_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 343 ) ( 3334 * )
-      NEW metal1 ( 3201 343 ) via1_4
-      NEW metal2 ( 3201 343 ) via2_5
+      NEW metal2 ( 2840 343 ) via2_5
+      NEW metal1 ( 2745 343 ) via1_4
+      NEW metal2 ( 2745 343 ) via2_5 ;
+    - storage_2_0_0.bit6.storage ( storage_2_0_0.bit6.obuf0 A ) ( storage_2_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 343 ) ( 3334 * )
       NEW metal1 ( 3334 343 ) via1_4
-      NEW metal2 ( 3334 343 ) via2_5 ;
-    - storage_2_0.gclock ( storage_2_0.cg GCK ) ( storage_2_0.bit6.bit CK ) ( storage_2_0.bit5.bit CK ) ( storage_2_0.bit4.bit CK ) ( storage_2_0.bit3.bit CK ) ( storage_2_0.bit2.bit CK ) ( storage_2_0.bit1.bit CK )
-      ( storage_2_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal2 ( 3334 343 ) via2_5
+      NEW metal1 ( 3239 343 ) via1_4
+      NEW metal2 ( 3239 343 ) via2_5 ;
+    - storage_2_0_0.gclock ( storage_2_0_0.cg GCK ) ( storage_2_0_0.bit6.bit CK ) ( storage_2_0_0.bit5.bit CK ) ( storage_2_0_0.bit4.bit CK ) ( storage_2_0_0.bit3.bit CK ) ( storage_2_0_0.bit2.bit CK ) ( storage_2_0_0.bit1.bit CK )
+      ( storage_2_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 329 ) ( * 343 )
       NEW metal3 ( 180 329 ) ( 655 * )
       NEW metal2 ( 180 329 ) ( * 343 )
@@ -1358,8 +1362,8 @@ NETS 120 ;
       NEW metal2 ( 2118 329 ) via2_5
       NEW metal1 ( 1624 343 ) via1_4
       NEW metal2 ( 1624 329 ) via2_5 ;
-    - storage_2_0.select0_b ( storage_2_0.select_inv_0 ZN ) ( storage_2_0.bit6.obuf0 EN ) ( storage_2_0.bit5.obuf0 EN ) ( storage_2_0.bit4.obuf0 EN ) ( storage_2_0.bit3.obuf0 EN ) ( storage_2_0.bit2.obuf0 EN ) ( storage_2_0.bit1.obuf0 EN )
-      ( storage_2_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_2_0_0.select0_b ( storage_2_0_0.select_inv_0 ZN ) ( storage_2_0_0.bit6.obuf0 EN ) ( storage_2_0_0.bit5.obuf0 EN ) ( storage_2_0_0.bit4.obuf0 EN ) ( storage_2_0_0.bit3.obuf0 EN ) ( storage_2_0_0.bit2.obuf0 EN ) ( storage_2_0_0.bit1.obuf0 EN )
+      ( storage_2_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 357 ) ( 940 * )
       NEW metal2 ( 3372 343 ) ( * 357 )
       NEW metal3 ( 2878 357 ) ( 3369 * )
@@ -1386,57 +1390,57 @@ NETS 120 ;
       NEW metal2 ( 1909 357 ) via2_5
       NEW metal1 ( 1434 357 ) via1_4
       NEW metal2 ( 1434 357 ) via2_5 ;
-    - storage_2_0.we0 ( storage_2_0.gcand ZN ) ( storage_2_0.cg E ) + USE SIGNAL
+    - storage_2_0_0.we0 ( storage_2_0_0.gcand ZN ) ( storage_2_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 3505 315 ) ( * 343 )
       NEW metal3 ( 3505 315 ) ( 3714 * )
       NEW metal1 ( 3505 343 ) via1_4
       NEW metal2 ( 3505 315 ) via2_5
       NEW metal1 ( 3714 315 ) via1_4
       NEW metal2 ( 3714 315 ) via2_5 ;
-    - storage_3_0.bit0.storage ( storage_3_0.bit0.obuf0 A ) ( storage_3_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 497 ) ( 427 * )
+    - storage_3_0_0.bit0.storage ( storage_3_0_0.bit0.obuf0 A ) ( storage_3_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 497 ) ( 427 * )
       NEW metal1 ( 427 497 ) via1_4
       NEW metal2 ( 427 497 ) via2_5
-      NEW metal1 ( 294 497 ) via1_4
-      NEW metal2 ( 294 497 ) via2_5 ;
-    - storage_3_0.bit1.storage ( storage_3_0.bit1.obuf0 A ) ( storage_3_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 497 ) ( 902 * )
+      NEW metal1 ( 332 497 ) via1_4
+      NEW metal2 ( 332 497 ) via2_5 ;
+    - storage_3_0_0.bit1.storage ( storage_3_0_0.bit1.obuf0 A ) ( storage_3_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 497 ) ( 902 * )
       NEW metal1 ( 902 497 ) via1_4
       NEW metal2 ( 902 497 ) via2_5
-      NEW metal1 ( 769 497 ) via1_4
-      NEW metal2 ( 769 497 ) via2_5 ;
-    - storage_3_0.bit2.storage ( storage_3_0.bit2.obuf0 A ) ( storage_3_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 497 ) ( 1396 * )
+      NEW metal1 ( 807 497 ) via1_4
+      NEW metal2 ( 807 497 ) via2_5 ;
+    - storage_3_0_0.bit2.storage ( storage_3_0_0.bit2.obuf0 A ) ( storage_3_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 497 ) ( 1396 * )
       NEW metal1 ( 1396 497 ) via1_4
       NEW metal2 ( 1396 497 ) via2_5
-      NEW metal1 ( 1263 497 ) via1_4
-      NEW metal2 ( 1263 497 ) via2_5 ;
-    - storage_3_0.bit3.storage ( storage_3_0.bit3.obuf0 A ) ( storage_3_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 497 ) ( 1871 * )
+      NEW metal1 ( 1301 497 ) via1_4
+      NEW metal2 ( 1301 497 ) via2_5 ;
+    - storage_3_0_0.bit3.storage ( storage_3_0_0.bit3.obuf0 A ) ( storage_3_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1776 497 ) ( 1871 * )
       NEW metal1 ( 1871 497 ) via1_4
       NEW metal2 ( 1871 497 ) via2_5
-      NEW metal1 ( 1738 497 ) via1_4
-      NEW metal2 ( 1738 497 ) via2_5 ;
-    - storage_3_0.bit4.storage ( storage_3_0.bit4.obuf0 A ) ( storage_3_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 497 ) ( 2365 * )
+      NEW metal1 ( 1776 497 ) via1_4
+      NEW metal2 ( 1776 497 ) via2_5 ;
+    - storage_3_0_0.bit4.storage ( storage_3_0_0.bit4.obuf0 A ) ( storage_3_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 497 ) ( 2365 * )
       NEW metal1 ( 2365 497 ) via1_4
       NEW metal2 ( 2365 497 ) via2_5
-      NEW metal1 ( 2232 497 ) via1_4
-      NEW metal2 ( 2232 497 ) via2_5 ;
-    - storage_3_0.bit5.storage ( storage_3_0.bit5.obuf0 A ) ( storage_3_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 497 ) ( 2840 * )
+      NEW metal1 ( 2270 497 ) via1_4
+      NEW metal2 ( 2270 497 ) via2_5 ;
+    - storage_3_0_0.bit5.storage ( storage_3_0_0.bit5.obuf0 A ) ( storage_3_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 497 ) ( 2840 * )
       NEW metal1 ( 2840 497 ) via1_4
       NEW metal2 ( 2840 497 ) via2_5
-      NEW metal1 ( 2707 497 ) via1_4
-      NEW metal2 ( 2707 497 ) via2_5 ;
-    - storage_3_0.bit6.storage ( storage_3_0.bit6.obuf0 A ) ( storage_3_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 497 ) ( 3334 * )
+      NEW metal1 ( 2745 497 ) via1_4
+      NEW metal2 ( 2745 497 ) via2_5 ;
+    - storage_3_0_0.bit6.storage ( storage_3_0_0.bit6.obuf0 A ) ( storage_3_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 497 ) ( 3334 * )
       NEW metal1 ( 3334 497 ) via1_4
       NEW metal2 ( 3334 497 ) via2_5
-      NEW metal1 ( 3201 497 ) via1_4
-      NEW metal2 ( 3201 497 ) via2_5 ;
-    - storage_3_0.gclock ( storage_3_0.cg GCK ) ( storage_3_0.bit6.bit CK ) ( storage_3_0.bit5.bit CK ) ( storage_3_0.bit4.bit CK ) ( storage_3_0.bit3.bit CK ) ( storage_3_0.bit2.bit CK ) ( storage_3_0.bit1.bit CK )
-      ( storage_3_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal1 ( 3239 497 ) via1_4
+      NEW metal2 ( 3239 497 ) via2_5 ;
+    - storage_3_0_0.gclock ( storage_3_0_0.cg GCK ) ( storage_3_0_0.bit6.bit CK ) ( storage_3_0_0.bit5.bit CK ) ( storage_3_0_0.bit4.bit CK ) ( storage_3_0_0.bit3.bit CK ) ( storage_3_0_0.bit2.bit CK ) ( storage_3_0_0.bit1.bit CK )
+      ( storage_3_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 497 ) ( * 511 )
       NEW metal3 ( 180 511 ) ( 655 * )
       NEW metal2 ( 180 497 ) ( * 511 )
@@ -1469,8 +1473,8 @@ NETS 120 ;
       NEW metal1 ( 1624 497 ) via1_4
       NEW metal2 ( 1624 483 ) via2_5
       NEW metal2 ( 1624 511 ) via2_5 ;
-    - storage_3_0.select0_b ( storage_3_0.select_inv_0 ZN ) ( storage_3_0.bit6.obuf0 EN ) ( storage_3_0.bit5.obuf0 EN ) ( storage_3_0.bit4.obuf0 EN ) ( storage_3_0.bit3.obuf0 EN ) ( storage_3_0.bit2.obuf0 EN ) ( storage_3_0.bit1.obuf0 EN )
-      ( storage_3_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_3_0_0.select0_b ( storage_3_0_0.select_inv_0 ZN ) ( storage_3_0_0.bit6.obuf0 EN ) ( storage_3_0_0.bit5.obuf0 EN ) ( storage_3_0_0.bit4.obuf0 EN ) ( storage_3_0_0.bit3.obuf0 EN ) ( storage_3_0_0.bit2.obuf0 EN ) ( storage_3_0_0.bit1.obuf0 EN )
+      ( storage_3_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 469 ) ( 940 * )
       NEW metal2 ( 3372 441 ) ( * 469 )
       NEW metal2 ( 2878 441 ) ( * 469 )
@@ -1500,56 +1504,56 @@ NETS 120 ;
       NEW metal1 ( 1434 469 ) via1_4
       NEW metal2 ( 1434 441 ) via2_5
       NEW metal2 ( 1434 469 ) via2_5 ;
-    - storage_3_0.we0 ( storage_3_0.gcand ZN ) ( storage_3_0.cg E ) + USE SIGNAL
+    - storage_3_0_0.we0 ( storage_3_0_0.gcand ZN ) ( storage_3_0_0.cg E ) + USE SIGNAL
       + ROUTED metal3 ( 3505 497 ) ( 3714 * )
       NEW metal1 ( 3505 497 ) via1_4
       NEW metal2 ( 3505 497 ) via2_5
       NEW metal1 ( 3714 497 ) via1_4
       NEW metal2 ( 3714 497 ) via2_5 ;
-    - storage_4_0.bit0.storage ( storage_4_0.bit0.obuf0 A ) ( storage_4_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 623 ) ( 427 * )
-      NEW metal1 ( 294 623 ) via1_4
-      NEW metal2 ( 294 623 ) via2_5
+    - storage_4_0_0.bit0.storage ( storage_4_0_0.bit0.obuf0 A ) ( storage_4_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 623 ) ( 427 * )
       NEW metal1 ( 427 623 ) via1_4
-      NEW metal2 ( 427 623 ) via2_5 ;
-    - storage_4_0.bit1.storage ( storage_4_0.bit1.obuf0 A ) ( storage_4_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 623 ) ( 902 * )
-      NEW metal1 ( 769 623 ) via1_4
-      NEW metal2 ( 769 623 ) via2_5
+      NEW metal2 ( 427 623 ) via2_5
+      NEW metal1 ( 332 623 ) via1_4
+      NEW metal2 ( 332 623 ) via2_5 ;
+    - storage_4_0_0.bit1.storage ( storage_4_0_0.bit1.obuf0 A ) ( storage_4_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 623 ) ( 902 * )
       NEW metal1 ( 902 623 ) via1_4
-      NEW metal2 ( 902 623 ) via2_5 ;
-    - storage_4_0.bit2.storage ( storage_4_0.bit2.obuf0 A ) ( storage_4_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 623 ) ( 1396 * )
-      NEW metal1 ( 1263 623 ) via1_4
-      NEW metal2 ( 1263 623 ) via2_5
+      NEW metal2 ( 902 623 ) via2_5
+      NEW metal1 ( 807 623 ) via1_4
+      NEW metal2 ( 807 623 ) via2_5 ;
+    - storage_4_0_0.bit2.storage ( storage_4_0_0.bit2.obuf0 A ) ( storage_4_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 623 ) ( 1396 * )
       NEW metal1 ( 1396 623 ) via1_4
-      NEW metal2 ( 1396 623 ) via2_5 ;
-    - storage_4_0.bit3.storage ( storage_4_0.bit3.obuf0 A ) ( storage_4_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 623 ) ( 1871 * )
-      NEW metal1 ( 1738 623 ) via1_4
-      NEW metal2 ( 1738 623 ) via2_5
+      NEW metal2 ( 1396 623 ) via2_5
+      NEW metal1 ( 1301 623 ) via1_4
+      NEW metal2 ( 1301 623 ) via2_5 ;
+    - storage_4_0_0.bit3.storage ( storage_4_0_0.bit3.obuf0 A ) ( storage_4_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1776 623 ) ( 1871 * )
       NEW metal1 ( 1871 623 ) via1_4
-      NEW metal2 ( 1871 623 ) via2_5 ;
-    - storage_4_0.bit4.storage ( storage_4_0.bit4.obuf0 A ) ( storage_4_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 623 ) ( 2365 * )
-      NEW metal1 ( 2232 623 ) via1_4
-      NEW metal2 ( 2232 623 ) via2_5
+      NEW metal2 ( 1871 623 ) via2_5
+      NEW metal1 ( 1776 623 ) via1_4
+      NEW metal2 ( 1776 623 ) via2_5 ;
+    - storage_4_0_0.bit4.storage ( storage_4_0_0.bit4.obuf0 A ) ( storage_4_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 623 ) ( 2365 * )
       NEW metal1 ( 2365 623 ) via1_4
-      NEW metal2 ( 2365 623 ) via2_5 ;
-    - storage_4_0.bit5.storage ( storage_4_0.bit5.obuf0 A ) ( storage_4_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 623 ) ( 2840 * )
-      NEW metal1 ( 2707 623 ) via1_4
-      NEW metal2 ( 2707 623 ) via2_5
+      NEW metal2 ( 2365 623 ) via2_5
+      NEW metal1 ( 2270 623 ) via1_4
+      NEW metal2 ( 2270 623 ) via2_5 ;
+    - storage_4_0_0.bit5.storage ( storage_4_0_0.bit5.obuf0 A ) ( storage_4_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 623 ) ( 2840 * )
       NEW metal1 ( 2840 623 ) via1_4
-      NEW metal2 ( 2840 623 ) via2_5 ;
-    - storage_4_0.bit6.storage ( storage_4_0.bit6.obuf0 A ) ( storage_4_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 623 ) ( 3334 * )
-      NEW metal1 ( 3201 623 ) via1_4
-      NEW metal2 ( 3201 623 ) via2_5
+      NEW metal2 ( 2840 623 ) via2_5
+      NEW metal1 ( 2745 623 ) via1_4
+      NEW metal2 ( 2745 623 ) via2_5 ;
+    - storage_4_0_0.bit6.storage ( storage_4_0_0.bit6.obuf0 A ) ( storage_4_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 623 ) ( 3334 * )
       NEW metal1 ( 3334 623 ) via1_4
-      NEW metal2 ( 3334 623 ) via2_5 ;
-    - storage_4_0.gclock ( storage_4_0.cg GCK ) ( storage_4_0.bit6.bit CK ) ( storage_4_0.bit5.bit CK ) ( storage_4_0.bit4.bit CK ) ( storage_4_0.bit3.bit CK ) ( storage_4_0.bit2.bit CK ) ( storage_4_0.bit1.bit CK )
-      ( storage_4_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal2 ( 3334 623 ) via2_5
+      NEW metal1 ( 3239 623 ) via1_4
+      NEW metal2 ( 3239 623 ) via2_5 ;
+    - storage_4_0_0.gclock ( storage_4_0_0.cg GCK ) ( storage_4_0_0.bit6.bit CK ) ( storage_4_0_0.bit5.bit CK ) ( storage_4_0_0.bit4.bit CK ) ( storage_4_0_0.bit3.bit CK ) ( storage_4_0_0.bit2.bit CK ) ( storage_4_0_0.bit1.bit CK )
+      ( storage_4_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 609 ) ( * 623 )
       NEW metal3 ( 180 609 ) ( 655 * )
       NEW metal2 ( 180 609 ) ( * 623 )
@@ -1580,8 +1584,8 @@ NETS 120 ;
       NEW metal2 ( 2118 609 ) via2_5
       NEW metal1 ( 1624 623 ) via1_4
       NEW metal2 ( 1624 609 ) via2_5 ;
-    - storage_4_0.select0_b ( storage_4_0.select_inv_0 ZN ) ( storage_4_0.bit6.obuf0 EN ) ( storage_4_0.bit5.obuf0 EN ) ( storage_4_0.bit4.obuf0 EN ) ( storage_4_0.bit3.obuf0 EN ) ( storage_4_0.bit2.obuf0 EN ) ( storage_4_0.bit1.obuf0 EN )
-      ( storage_4_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_4_0_0.select0_b ( storage_4_0_0.select_inv_0 ZN ) ( storage_4_0_0.bit6.obuf0 EN ) ( storage_4_0_0.bit5.obuf0 EN ) ( storage_4_0_0.bit4.obuf0 EN ) ( storage_4_0_0.bit3.obuf0 EN ) ( storage_4_0_0.bit2.obuf0 EN ) ( storage_4_0_0.bit1.obuf0 EN )
+      ( storage_4_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 637 ) ( 940 * )
       NEW metal2 ( 3372 651 ) ( * 679 )
       NEW metal2 ( 2878 651 ) ( * 679 )
@@ -1612,57 +1616,57 @@ NETS 120 ;
       NEW metal1 ( 1434 651 ) via1_4
       NEW metal2 ( 1434 679 ) via2_5
       NEW metal2 ( 1434 637 ) via2_5 ;
-    - storage_4_0.we0 ( storage_4_0.gcand ZN ) ( storage_4_0.cg E ) + USE SIGNAL
+    - storage_4_0_0.we0 ( storage_4_0_0.gcand ZN ) ( storage_4_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 3505 623 ) ( * 637 )
       NEW metal3 ( 3505 637 ) ( 3714 * )
       NEW metal1 ( 3505 623 ) via1_4
       NEW metal2 ( 3505 637 ) via2_5
       NEW metal1 ( 3714 637 ) via1_4
       NEW metal2 ( 3714 637 ) via2_5 ;
-    - storage_5_0.bit0.storage ( storage_5_0.bit0.obuf0 A ) ( storage_5_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 777 ) ( 427 * )
+    - storage_5_0_0.bit0.storage ( storage_5_0_0.bit0.obuf0 A ) ( storage_5_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 777 ) ( 427 * )
       NEW metal1 ( 427 777 ) via1_4
       NEW metal2 ( 427 777 ) via2_5
-      NEW metal1 ( 294 777 ) via1_4
-      NEW metal2 ( 294 777 ) via2_5 ;
-    - storage_5_0.bit1.storage ( storage_5_0.bit1.obuf0 A ) ( storage_5_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 777 ) ( 902 * )
+      NEW metal1 ( 332 777 ) via1_4
+      NEW metal2 ( 332 777 ) via2_5 ;
+    - storage_5_0_0.bit1.storage ( storage_5_0_0.bit1.obuf0 A ) ( storage_5_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 777 ) ( 902 * )
       NEW metal1 ( 902 777 ) via1_4
       NEW metal2 ( 902 777 ) via2_5
-      NEW metal1 ( 769 777 ) via1_4
-      NEW metal2 ( 769 777 ) via2_5 ;
-    - storage_5_0.bit2.storage ( storage_5_0.bit2.obuf0 A ) ( storage_5_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 777 ) ( 1396 * )
+      NEW metal1 ( 807 777 ) via1_4
+      NEW metal2 ( 807 777 ) via2_5 ;
+    - storage_5_0_0.bit2.storage ( storage_5_0_0.bit2.obuf0 A ) ( storage_5_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 777 ) ( 1396 * )
       NEW metal1 ( 1396 777 ) via1_4
       NEW metal2 ( 1396 777 ) via2_5
-      NEW metal1 ( 1263 777 ) via1_4
-      NEW metal2 ( 1263 777 ) via2_5 ;
-    - storage_5_0.bit3.storage ( storage_5_0.bit3.obuf0 A ) ( storage_5_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 777 ) ( 1871 * )
+      NEW metal1 ( 1301 777 ) via1_4
+      NEW metal2 ( 1301 777 ) via2_5 ;
+    - storage_5_0_0.bit3.storage ( storage_5_0_0.bit3.obuf0 A ) ( storage_5_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1776 777 ) ( 1871 * )
       NEW metal1 ( 1871 777 ) via1_4
       NEW metal2 ( 1871 777 ) via2_5
-      NEW metal1 ( 1738 777 ) via1_4
-      NEW metal2 ( 1738 777 ) via2_5 ;
-    - storage_5_0.bit4.storage ( storage_5_0.bit4.obuf0 A ) ( storage_5_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 777 ) ( 2365 * )
+      NEW metal1 ( 1776 777 ) via1_4
+      NEW metal2 ( 1776 777 ) via2_5 ;
+    - storage_5_0_0.bit4.storage ( storage_5_0_0.bit4.obuf0 A ) ( storage_5_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 777 ) ( 2365 * )
       NEW metal1 ( 2365 777 ) via1_4
       NEW metal2 ( 2365 777 ) via2_5
-      NEW metal1 ( 2232 777 ) via1_4
-      NEW metal2 ( 2232 777 ) via2_5 ;
-    - storage_5_0.bit5.storage ( storage_5_0.bit5.obuf0 A ) ( storage_5_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 777 ) ( 2840 * )
+      NEW metal1 ( 2270 777 ) via1_4
+      NEW metal2 ( 2270 777 ) via2_5 ;
+    - storage_5_0_0.bit5.storage ( storage_5_0_0.bit5.obuf0 A ) ( storage_5_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 777 ) ( 2840 * )
       NEW metal1 ( 2840 777 ) via1_4
       NEW metal2 ( 2840 777 ) via2_5
-      NEW metal1 ( 2707 777 ) via1_4
-      NEW metal2 ( 2707 777 ) via2_5 ;
-    - storage_5_0.bit6.storage ( storage_5_0.bit6.obuf0 A ) ( storage_5_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 777 ) ( 3334 * )
+      NEW metal1 ( 2745 777 ) via1_4
+      NEW metal2 ( 2745 777 ) via2_5 ;
+    - storage_5_0_0.bit6.storage ( storage_5_0_0.bit6.obuf0 A ) ( storage_5_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 777 ) ( 3334 * )
       NEW metal1 ( 3334 777 ) via1_4
       NEW metal2 ( 3334 777 ) via2_5
-      NEW metal1 ( 3201 777 ) via1_4
-      NEW metal2 ( 3201 777 ) via2_5 ;
-    - storage_5_0.gclock ( storage_5_0.cg GCK ) ( storage_5_0.bit6.bit CK ) ( storage_5_0.bit5.bit CK ) ( storage_5_0.bit4.bit CK ) ( storage_5_0.bit3.bit CK ) ( storage_5_0.bit2.bit CK ) ( storage_5_0.bit1.bit CK )
-      ( storage_5_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal1 ( 3239 777 ) via1_4
+      NEW metal2 ( 3239 777 ) via2_5 ;
+    - storage_5_0_0.gclock ( storage_5_0_0.cg GCK ) ( storage_5_0_0.bit6.bit CK ) ( storage_5_0_0.bit5.bit CK ) ( storage_5_0_0.bit4.bit CK ) ( storage_5_0_0.bit3.bit CK ) ( storage_5_0_0.bit2.bit CK ) ( storage_5_0_0.bit1.bit CK )
+      ( storage_5_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 777 ) ( * 791 )
       NEW metal3 ( 180 791 ) ( 655 * )
       NEW metal2 ( 180 777 ) ( * 791 )
@@ -1693,8 +1697,8 @@ NETS 120 ;
       NEW metal2 ( 2118 791 ) via2_5
       NEW metal1 ( 1624 777 ) via1_4
       NEW metal2 ( 1624 791 ) via2_5 ;
-    - storage_5_0.select0_b ( storage_5_0.select_inv_0 ZN ) ( storage_5_0.bit6.obuf0 EN ) ( storage_5_0.bit5.obuf0 EN ) ( storage_5_0.bit4.obuf0 EN ) ( storage_5_0.bit3.obuf0 EN ) ( storage_5_0.bit2.obuf0 EN ) ( storage_5_0.bit1.obuf0 EN )
-      ( storage_5_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_5_0_0.select0_b ( storage_5_0_0.select_inv_0 ZN ) ( storage_5_0_0.bit6.obuf0 EN ) ( storage_5_0_0.bit5.obuf0 EN ) ( storage_5_0_0.bit4.obuf0 EN ) ( storage_5_0_0.bit3.obuf0 EN ) ( storage_5_0_0.bit2.obuf0 EN ) ( storage_5_0_0.bit1.obuf0 EN )
+      ( storage_5_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 749 ) ( 940 * )
       NEW metal2 ( 3372 721 ) ( * 749 )
       NEW metal2 ( 2878 721 ) ( * 749 )
@@ -1724,57 +1728,55 @@ NETS 120 ;
       NEW metal1 ( 1434 749 ) via1_4
       NEW metal2 ( 1434 721 ) via2_5
       NEW metal2 ( 1434 749 ) via2_5 ;
-    - storage_5_0.we0 ( storage_5_0.gcand ZN ) ( storage_5_0.cg E ) + USE SIGNAL
+    - storage_5_0_0.we0 ( storage_5_0_0.gcand ZN ) ( storage_5_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 3505 763 ) ( * 777 )
       NEW metal3 ( 3505 763 ) ( 3714 * )
       NEW metal1 ( 3505 777 ) via1_4
       NEW metal2 ( 3505 763 ) via2_5
       NEW metal1 ( 3714 763 ) via1_4
       NEW metal2 ( 3714 763 ) via2_5 ;
-    - storage_6_0.bit0.storage ( storage_6_0.bit0.obuf0 A ) ( storage_6_0.bit0.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 294 903 ) ( 427 * )
-      NEW metal1 ( 294 903 ) via1_4
-      NEW metal2 ( 294 903 ) via2_5
+    - storage_6_0_0.bit0.storage ( storage_6_0_0.bit0.obuf0 A ) ( storage_6_0_0.bit0.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 332 903 ) ( 427 * )
       NEW metal1 ( 427 903 ) via1_4
-      NEW metal2 ( 427 903 ) via2_5 ;
-    - storage_6_0.bit1.storage ( storage_6_0.bit1.obuf0 A ) ( storage_6_0.bit1.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 769 903 ) ( 902 * )
-      NEW metal1 ( 769 903 ) via1_4
-      NEW metal2 ( 769 903 ) via2_5
+      NEW metal2 ( 427 903 ) via2_5
+      NEW metal1 ( 332 903 ) via1_4
+      NEW metal2 ( 332 903 ) via2_5 ;
+    - storage_6_0_0.bit1.storage ( storage_6_0_0.bit1.obuf0 A ) ( storage_6_0_0.bit1.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 807 903 ) ( 902 * )
       NEW metal1 ( 902 903 ) via1_4
-      NEW metal2 ( 902 903 ) via2_5 ;
-    - storage_6_0.bit2.storage ( storage_6_0.bit2.obuf0 A ) ( storage_6_0.bit2.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1263 903 ) ( 1396 * )
-      NEW metal1 ( 1263 903 ) via1_4
-      NEW metal2 ( 1263 903 ) via2_5
+      NEW metal2 ( 902 903 ) via2_5
+      NEW metal1 ( 807 903 ) via1_4
+      NEW metal2 ( 807 903 ) via2_5 ;
+    - storage_6_0_0.bit2.storage ( storage_6_0_0.bit2.obuf0 A ) ( storage_6_0_0.bit2.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 1301 903 ) ( 1396 * )
       NEW metal1 ( 1396 903 ) via1_4
-      NEW metal2 ( 1396 903 ) via2_5 ;
-    - storage_6_0.bit3.storage ( storage_6_0.bit3.obuf0 A ) ( storage_6_0.bit3.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 1738 903 ) ( 1871 * )
-      NEW metal1 ( 1738 903 ) via1_4
-      NEW metal2 ( 1738 903 ) via2_5
+      NEW metal2 ( 1396 903 ) via2_5
+      NEW metal1 ( 1301 903 ) via1_4
+      NEW metal2 ( 1301 903 ) via2_5 ;
+    - storage_6_0_0.bit3.storage ( storage_6_0_0.bit3.obuf0 A ) ( storage_6_0_0.bit3.bit Q ) + USE SIGNAL
+      + ROUTED metal2 ( 1776 903 ) ( 1871 * )
       NEW metal1 ( 1871 903 ) via1_4
-      NEW metal2 ( 1871 903 ) via2_5 ;
-    - storage_6_0.bit4.storage ( storage_6_0.bit4.obuf0 A ) ( storage_6_0.bit4.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2232 903 ) ( 2365 * )
-      NEW metal1 ( 2232 903 ) via1_4
-      NEW metal2 ( 2232 903 ) via2_5
+      NEW metal1 ( 1776 903 ) via1_4 ;
+    - storage_6_0_0.bit4.storage ( storage_6_0_0.bit4.obuf0 A ) ( storage_6_0_0.bit4.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2270 903 ) ( 2365 * )
       NEW metal1 ( 2365 903 ) via1_4
-      NEW metal2 ( 2365 903 ) via2_5 ;
-    - storage_6_0.bit5.storage ( storage_6_0.bit5.obuf0 A ) ( storage_6_0.bit5.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 2707 903 ) ( 2840 * )
-      NEW metal1 ( 2707 903 ) via1_4
-      NEW metal2 ( 2707 903 ) via2_5
+      NEW metal2 ( 2365 903 ) via2_5
+      NEW metal1 ( 2270 903 ) via1_4
+      NEW metal2 ( 2270 903 ) via2_5 ;
+    - storage_6_0_0.bit5.storage ( storage_6_0_0.bit5.obuf0 A ) ( storage_6_0_0.bit5.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 2745 903 ) ( 2840 * )
       NEW metal1 ( 2840 903 ) via1_4
-      NEW metal2 ( 2840 903 ) via2_5 ;
-    - storage_6_0.bit6.storage ( storage_6_0.bit6.obuf0 A ) ( storage_6_0.bit6.bit QN ) + USE SIGNAL
-      + ROUTED metal3 ( 3201 903 ) ( 3334 * )
-      NEW metal1 ( 3201 903 ) via1_4
-      NEW metal2 ( 3201 903 ) via2_5
+      NEW metal2 ( 2840 903 ) via2_5
+      NEW metal1 ( 2745 903 ) via1_4
+      NEW metal2 ( 2745 903 ) via2_5 ;
+    - storage_6_0_0.bit6.storage ( storage_6_0_0.bit6.obuf0 A ) ( storage_6_0_0.bit6.bit Q ) + USE SIGNAL
+      + ROUTED metal3 ( 3239 903 ) ( 3334 * )
       NEW metal1 ( 3334 903 ) via1_4
-      NEW metal2 ( 3334 903 ) via2_5 ;
-    - storage_6_0.gclock ( storage_6_0.cg GCK ) ( storage_6_0.bit6.bit CK ) ( storage_6_0.bit5.bit CK ) ( storage_6_0.bit4.bit CK ) ( storage_6_0.bit3.bit CK ) ( storage_6_0.bit2.bit CK ) ( storage_6_0.bit1.bit CK )
-      ( storage_6_0.bit0.bit CK ) + USE SIGNAL
+      NEW metal2 ( 3334 903 ) via2_5
+      NEW metal1 ( 3239 903 ) via1_4
+      NEW metal2 ( 3239 903 ) via2_5 ;
+    - storage_6_0_0.gclock ( storage_6_0_0.cg GCK ) ( storage_6_0_0.bit6.bit CK ) ( storage_6_0_0.bit5.bit CK ) ( storage_6_0_0.bit4.bit CK ) ( storage_6_0_0.bit3.bit CK ) ( storage_6_0_0.bit2.bit CK ) ( storage_6_0_0.bit1.bit CK )
+      ( storage_6_0_0.bit0.bit CK ) + USE SIGNAL
       + ROUTED metal2 ( 655 889 ) ( * 903 )
       NEW metal3 ( 180 889 ) ( 655 * )
       NEW metal2 ( 180 889 ) ( * 903 )
@@ -1805,8 +1807,8 @@ NETS 120 ;
       NEW metal2 ( 2118 889 ) via2_5
       NEW metal1 ( 1624 903 ) via1_4
       NEW metal2 ( 1624 889 ) via2_5 ;
-    - storage_6_0.select0_b ( storage_6_0.select_inv_0 ZN ) ( storage_6_0.bit6.obuf0 EN ) ( storage_6_0.bit5.obuf0 EN ) ( storage_6_0.bit4.obuf0 EN ) ( storage_6_0.bit3.obuf0 EN ) ( storage_6_0.bit2.obuf0 EN ) ( storage_6_0.bit1.obuf0 EN )
-      ( storage_6_0.bit0.obuf0 EN ) + USE SIGNAL
+    - storage_6_0_0.select0_b ( storage_6_0_0.select_inv_0 ZN ) ( storage_6_0_0.bit6.obuf0 EN ) ( storage_6_0_0.bit5.obuf0 EN ) ( storage_6_0_0.bit4.obuf0 EN ) ( storage_6_0_0.bit3.obuf0 EN ) ( storage_6_0_0.bit2.obuf0 EN ) ( storage_6_0_0.bit1.obuf0 EN )
+      ( storage_6_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 917 ) ( 940 * )
       NEW metal3 ( 940 917 ) ( 1425 * )
       NEW metal3 ( 2878 931 ) ( 3372 * )
@@ -1832,26 +1834,26 @@ NETS 120 ;
       NEW metal2 ( 1909 931 ) via2_5
       NEW metal1 ( 1434 931 ) via1_4
       NEW metal2 ( 1434 931 ) via2_5 ;
-    - storage_6_0.we0 ( storage_6_0.gcand ZN ) ( storage_6_0.cg E ) + USE SIGNAL
+    - storage_6_0_0.we0 ( storage_6_0_0.gcand ZN ) ( storage_6_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 3505 903 ) ( * 917 )
       NEW metal3 ( 3505 917 ) ( 3714 * )
       NEW metal1 ( 3505 903 ) via1_4
       NEW metal2 ( 3505 917 ) via2_5
       NEW metal1 ( 3714 917 ) via1_4
       NEW metal2 ( 3714 917 ) via2_5 ;
-    - we[0] ( PIN we[0] ) ( storage_6_0.gcand A2 ) ( storage_5_0.gcand A2 ) ( storage_4_0.gcand A2 ) ( storage_3_0.gcand A2 ) ( storage_2_0.gcand A2 ) ( storage_1_0.gcand A2 )
-      ( storage_0_0.gcand A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 3676 175 ) ( * 217 )
-      NEW metal3 ( 3676 175 ) ( 3948 * 0 )
-      NEW metal2 ( 3676 63 ) ( * 175 )
+    - we[0] ( PIN we[0] ) ( storage_6_0_0.gcand A2 ) ( storage_5_0_0.gcand A2 ) ( storage_4_0_0.gcand A2 ) ( storage_3_0_0.gcand A2 ) ( storage_2_0_0.gcand A2 ) ( storage_1_0_0.gcand A2 )
+      ( storage_0_0_0.gcand A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 3676 63 ) ( * 119 )
+      NEW metal3 ( 3676 119 ) ( 3948 * 0 )
+      NEW metal2 ( 3676 119 ) ( * 217 )
       NEW metal2 ( 3676 217 ) ( * 343 )
       NEW metal2 ( 3676 343 ) ( * 497 )
       NEW metal2 ( 3676 497 ) ( * 623 )
       NEW metal2 ( 3676 623 ) ( * 777 )
       NEW metal2 ( 3676 777 ) ( * 903 )
-      NEW metal1 ( 3676 217 ) via1_4
-      NEW metal2 ( 3676 175 ) via2_5
       NEW metal1 ( 3676 63 ) via1_4
+      NEW metal2 ( 3676 119 ) via2_5
+      NEW metal1 ( 3676 217 ) via1_4
       NEW metal1 ( 3676 343 ) via1_4
       NEW metal1 ( 3676 497 ) via1_4
       NEW metal1 ( 3676 623 ) via1_4

@@ -10,6 +10,7 @@ import { DrcWidget } from '../../src/drc-widget.js';
 function createMockApp(responses = {}) {
     return {
         websocketManager: {
+            readyPromise: Promise.resolve(),
             request(msg) {
                 const type = msg.type;
                 if (responses[type]) {
@@ -22,6 +23,7 @@ function createMockApp(responses = {}) {
         designMaxDXDY: 100000,
         designOriginX: 0,
         designOriginY: 0,
+        getDbuPerMicron() { return 1000; },
         map: {
             fitBounds() {},
         },
@@ -48,7 +50,7 @@ describe('DrcWidget', () => {
             assert.ok(select, 'category select exists');
 
             const buttons = toolbar.querySelectorAll('.drc-btn');
-            assert.ok(buttons.length >= 2, 'load and refresh buttons exist');
+            assert.ok(buttons.length >= 1, 'load button exists');
 
             // Should have info bar
             const infoBar = widget.element.querySelector('.drc-info-bar');
@@ -137,6 +139,37 @@ describe('DrcWidget', () => {
             // Info bar should show count
             const infoBar = widget.element.querySelector('.drc-info-bar');
             assert.ok(infoBar.textContent.includes('2'));
+        });
+
+        it('renders markers directly on the selected category', async () => {
+            const app = createMockApp({
+                drc_categories: () => ({
+                    categories: [{ name: 'DRC', count: 1 }],
+                }),
+                drc_markers: () => ({
+                    name: 'DRC',
+                    total_count: 1,
+                    markers: [
+                        { id: 1, index: 1, name: 'Top-level violation',
+                          visited: false, visible: true, waived: false,
+                          bbox: [0, 0, 100, 100], layer: 'metal1' },
+                    ],
+                }),
+            });
+            const widget = new DrcWidget(app, () => {});
+            await new Promise(r => setTimeout(r, 50));
+            widget.selectCategory('DRC');
+            await new Promise(r => setTimeout(r, 50));
+
+            const labels = widget.element.querySelectorAll('.drc-category-label');
+            assert.equal(labels[0].textContent, 'DRC');
+            labels[0].closest('.drc-tree-header').click();
+
+            const markerRows = widget.element.querySelectorAll('.drc-marker-row');
+            assert.equal(markerRows.length, 1);
+            assert.equal(
+                markerRows[0].querySelector('.drc-marker-name').textContent,
+                'Top-level violation');
         });
 
         it('marks unvisited markers as bold', async () => {

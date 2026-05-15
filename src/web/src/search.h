@@ -16,6 +16,7 @@
 
 #include "boost/asio/post.hpp"
 #include "boost/asio/thread_pool.hpp"
+#include "odb/PtrSetMap.h"
 
 namespace utl {
 class Logger;
@@ -60,7 +61,7 @@ class Search : public odb::dbBlockCallBackObj
   };
 
   template <typename T>
-  using LayerMap = std::map<odb::dbTechLayer*, T>;
+  using LayerMap = odb::PtrMap<odb::dbTechLayer, T>;
 
   template <typename T>
   using RectValue = std::pair<odb::Rect, T>;
@@ -133,13 +134,13 @@ class Search : public odb::dbBlockCallBackObj
     Iterator end_;
   };
   using InstRange = std::vector<odb::dbInst*>;
-  using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
-  using SNetSBoxRange = Range<RtreeSNetDBoxShapes<odb::dbNet*>>;
-  using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
+  using RoutingRange = std::vector<RouteBoxValue<odb::dbNet*>>;
+  using SNetSBoxRange = std::vector<SNetDBoxValue<odb::dbNet*>>;
+  using SNetShapeRange = std::vector<SNetValue<odb::dbNet*>>;
   using FillRange = std::vector<odb::dbFill*>;
-  using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
-  using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
-  using RowRange = Range<RtreeRect<odb::dbRow*>>;
+  using ObstructionRange = std::vector<odb::dbObstruction*>;
+  using BlockageRange = std::vector<odb::dbBlockage*>;
+  using RowRange = std::vector<RectValue<odb::dbRow*>>;
 
   explicit Search(utl::Logger* logger);
   ~Search() override;
@@ -349,7 +350,7 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
   };
-  std::map<odb::dbBlock*, BlockData> child_block_data_;
+  odb::PtrMap<odb::dbBlock, BlockData> child_block_data_;
   BlockData top_block_data_;
 };
 

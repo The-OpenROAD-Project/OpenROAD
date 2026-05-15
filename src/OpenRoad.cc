@@ -506,8 +506,8 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
-  check3DBlox();
   db_->triggerPostRead3Dbx(db_->getChip());
+  check3DBlox();
 }
 
 void OpenRoad::read3DBloxBMap(const std::string& filename)
@@ -668,6 +668,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+  if (global_router_ != nullptr) {
+    global_router_->setNumThreads(threads_);
+  }
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)
