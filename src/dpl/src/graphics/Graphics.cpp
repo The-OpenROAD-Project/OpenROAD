@@ -61,6 +61,10 @@ void Graphics::drawSelected(odb::dbInst* instance, bool force)
 
   auto selected = gui->makeSelected(instance);
   gui->setSelected(selected);
+  odb::Rect bbox = instance->getBBox()->getBox();
+  odb::Rect view;
+  bbox.bloat(std::max(bbox.dx(), bbox.dy()), view);
+  gui->zoomTo(view);
   gui->redraw();
   gui->pause();
 }
