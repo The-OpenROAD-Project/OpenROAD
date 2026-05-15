@@ -532,7 +532,7 @@ cc_test(
     features = ["-layering_check"],
     deps = [
         "//src/dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
