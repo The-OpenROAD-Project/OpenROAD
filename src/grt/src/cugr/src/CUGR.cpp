@@ -32,6 +32,7 @@
 #include "est/ParasiticsService.h"
 #include "geo.h"
 #include "grt/GRoute.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
@@ -80,7 +81,7 @@ CUGR::~CUGR() = default;
 
 void CUGR::init(const int min_routing_layer,
                 const int max_routing_layer,
-                const std::set<odb::dbNet*>& clock_nets)
+                const odb::PtrSet<odb::dbNet>& clock_nets)
 {
   constants_.min_routing_layer = min_routing_layer - 1;
   design_ = std::make_unique<Design>(db_,
@@ -644,7 +645,7 @@ void CUGR::updateDbCongestion()
 
 void CUGR::getITermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbITerm*, odb::Point3D>& access_points)
+    odb::PtrMap<odb::dbITerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [iterm, ap] : gr_net->getITermAccessPoints()) {
@@ -656,7 +657,7 @@ void CUGR::getITermsAccessPoints(
 
 void CUGR::getBTermsAccessPoints(
     odb::dbNet* net,
-    std::map<odb::dbBTerm*, odb::Point3D>& access_points)
+    odb::PtrMap<odb::dbBTerm, odb::Point3D>& access_points)
 {
   GRNet* gr_net = db_net_map_.at(net);
   for (const auto& [bterm, ap] : gr_net->getBTermAccessPoints()) {
@@ -789,8 +790,8 @@ void CUGR::saveCongestion()
   //                 attributes to this edge (the same neighbours commitVia
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> wire_nets;
-  std::unordered_map<EdgeKey, std::set<odb::dbNet*>, EdgeKeyHash> via_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
+  std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
   auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
     // commitVia(via_layer, loc) adds stub demand on edges adjacent to
@@ -919,7 +920,7 @@ void CUGR::saveCongestion()
                            + std::to_string(demand_int) + " congestion:"
                            + std::to_string(overflow_int) + " (" + kind + ")");
 
-        std::set<odb::dbNet*> sources;
+        odb::PtrSet<odb::dbNet> sources;
         auto wn_it = wire_nets.find({l, x, y});
         if (wn_it != wire_nets.end()) {
           sources.insert(wn_it->second.begin(), wn_it->second.end());

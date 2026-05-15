@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
@@ -167,8 +168,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postRead3Dbx(odb::dbChip* chip) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
-  std::set<odb::dbNet*> findClkNets();
-  std::set<odb::dbNet*> findClkNets(const Clock* clk);
+  odb::PtrSet<odb::dbNet> findClkNets();
+  odb::PtrSet<odb::dbNet> findClkNets(const Clock* clk);
 
   void deleteInstance(Instance* inst) override;
   void deleteNet(Net* net) override;

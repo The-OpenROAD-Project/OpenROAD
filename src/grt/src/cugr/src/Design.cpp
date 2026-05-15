@@ -10,6 +10,7 @@
 #include "GeoTypes.h"
 #include "Netlist.h"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -23,7 +24,7 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               const std::set<odb::dbNet*>& clock_nets)
+               const odb::PtrSet<odb::dbNet>& clock_nets)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),

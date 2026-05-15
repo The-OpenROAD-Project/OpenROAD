@@ -61,6 +61,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -2822,7 +2823,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     removeDriverFromCache(dbToSta(db_net));
 
     // Remove all related hier nets from cache
-    std::set<odb::dbModNet*> modnet_set;
+    odb::PtrSet<odb::dbModNet> modnet_set;
     db_net->findRelatedModNets(modnet_set);
     for (odb::dbModNet* modnet : modnet_set) {
       removeDriverFromCache(dbToSta(modnet));
@@ -2841,7 +2842,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   if (db_net) {
     // A dbNet can be associated with multiple dbModNets.
     // We need to update the cache for all of them.
-    std::set<odb::dbModNet*> related_mod_nets;
+    odb::PtrSet<odb::dbModNet> related_mod_nets;
     db_net->findRelatedModNets(related_mod_nets);
     for (odb::dbModNet* related_mod_net : related_mod_nets) {
       removeDriverFromCache(dbToSta(related_mod_net), pin);
@@ -4639,7 +4640,7 @@ void dbNetwork::checkSanityUnusedModules() const
   }
 
   // 2. Create a set of all instantiated module masters.
-  std::set<odb::dbModule*> instantiated_masters;
+  odb::PtrSet<odb::dbModule> instantiated_masters;
   for (odb::dbModule* module : all_modules) {
     for (odb::dbModInst* mod_inst : module->getModInsts()) {
       instantiated_masters.insert(mod_inst->getMaster());
@@ -4700,8 +4701,8 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   //
   if (obj != nullptr) {
     // Collect relevant nets from the provided object
-    std::set<odb::dbNet*> nets_to_check;
-    std::set<odb::dbModNet*> mod_nets_to_check;
+    odb::PtrSet<odb::dbNet> nets_to_check;
+    odb::PtrSet<odb::dbModNet> mod_nets_to_check;
 
     auto const obj_type = obj->getObjectType();
     if (obj_type == odb::dbNetObj) {
@@ -4844,7 +4845,7 @@ void dbNetwork::checkSanityNetNames() const
   // Check for name mismatch between flat net and hierchical net
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
-    std::set<odb::dbModNet*> mod_nets;
+    odb::PtrSet<odb::dbModNet> mod_nets;
     if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {

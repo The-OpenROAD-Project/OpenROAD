@@ -51,7 +51,7 @@ try:
 except ImportError:
     from openroadpy import *
 EOF
-	for module in ant cts drt grt rcx stt tap; do
+	for module in ant cts drt grt rcx stt tap ifp pdn; do
 		write_openroad_shim "${module}"
 	done
 
