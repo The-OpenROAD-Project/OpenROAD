@@ -2780,7 +2780,12 @@ MBFF::MBFF(odb::dbDatabase* db,
   if (sta_->findReportPathField(kOrigNameProp) == nullptr) {
     sta::dbNetwork* network = network_;
     sta_->makeReportPathField(
-        kOrigNameProp, kOrigNameProp, "Orig Name", 36, true, nullptr,
+        kOrigNameProp,
+        kOrigNameProp,
+        "Orig Name",
+        36,
+        true,
+        nullptr,
         [network](const sta::Path* path,
                   const sta::StaState* sta) -> std::string {
           if (path == nullptr) {
