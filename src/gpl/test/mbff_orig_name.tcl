@@ -15,16 +15,25 @@ read_lef ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef
 read_lib ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
 
 read_verilog ./$test_name.v
-link_design -hier tray_test
+link_design tray_test
+
+# Verify the "orig_name" report field is registered at session init
+# (Replace ctor), not deferred until cluster_flops. Required so an
+# already-clustered .odb loaded in a fresh session can still report
+# the saved orig_name properties via report_checks.
+if { [sta::find_report_path_field_abrev orig_name] == "" } {
+  utl::error GPL 330 "orig_name report_path field not registered at session init."
+}
+puts "orig_name field registered at session init (pre-cluster_flops)."
 
 initialize_floorplan -die_area "0 0 10 10" \
   -core_area "1 1 9 9" \
   -site asap7sc7p5t
 
-place_inst -name bank0/ff_a -origin {6 6} -status PLACED
-place_inst -name bank0/ff_b -origin {4 6} -status PLACED
-place_inst -name bank1/ff_a -origin {4 4} -status PLACED
-place_inst -name bank1/ff_b -origin {6 4} -status PLACED
+place_inst -name ff1 -origin {6 6} -status PLACED
+place_inst -name ff2 -origin {4 6} -status PLACED
+place_inst -name ff3 -origin {4 4} -status PLACED
+place_inst -name ff4 -origin {6 4} -status PLACED
 
 create_clock -name clk -period 1000 [get_ports clk1]
 set_input_delay -clock clk 0 [get_ports {d1 d2 d3 d4}]
@@ -34,8 +43,42 @@ cluster_flops -tray_weight 40.0 \
   -max_split_size -1 \
   -num_paths 0
 
-# Report timing to verify original (hierarchical) FF pin names appear
-# in the path report. After clustering the tray pin descriptions show
-# the bankN/ff_x/D mapping in the Orig Name column.
+# Report timing to verify original FF pin names appear in the path
+# report. After clustering the tray pin descriptions show the ffN/D
+# mapping in the Orig Name column.
 report_checks -path_delay max -fields {orig_name} \
   -through [get_pins -of_objects [get_cells _tray_size4_*]]
+
+# Reload-from-db scenario:
+# Persist the post-cluster_flops design, then spawn a fresh openroad
+# that reads the .odb and runs report_checks WITHOUT invoking
+# cluster_flops. Verifies that the "orig_name" report field is
+# registered at session init (Replace ctor) and that the iterm
+# properties persist across write_db / read_db so the saved mappings
+# remain reportable.
+set db_file [make_result_file $test_name.odb]
+write_db $db_file
+
+set reload_tcl [make_result_file ${test_name}_reload.tcl]
+set rf [open $reload_tcl w]
+puts $rf [subst -nocommands {
+read_lef ./asap7/asap7_tech_1x_201209.lef
+read_lef ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef
+read_lef ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef
+read_lef ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef
+read_lef ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef
+read_lib ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
+read_lib ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X_LVT_TT_nldm_FAKE.lib
+read_lib ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X_LVT_TT_nldm_FAKE.lib
+read_lib ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X_LVT_TT_nldm_FAKE.lib
+read_db $db_file
+create_clock -name clk -period 1000 [get_ports clk1]
+set_input_delay -clock clk 0 [get_ports {d1 d2 d3 d4}]
+report_checks -path_delay max -fields {orig_name} \
+  -through [get_pins -of_objects [get_cells _tray_size4_*]]
+}]
+close $rf
+
+puts "=== Reload-from-db phase ==="
+catch {exec [info nameofexecutable] -no_init -exit $reload_tcl 2>@1} reload_out
+puts $reload_out

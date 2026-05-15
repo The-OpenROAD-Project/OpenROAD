@@ -66,8 +66,6 @@ using odb::dbMTerm;
 using odb::dbNet;
 using utl::GPL;
 
-constexpr const char* kOrigNameProp = "orig_name";
-
 struct Point
 {
   float x;
@@ -2776,44 +2774,6 @@ MBFF::MBFF(odb::dbDatabase* db,
       test_idx_(-1)
 {
   graphics_->setDebugOn(debug_graphics);
-
-  // Register "orig_name" report_path field: original pin name before
-  // multi-bit clustering. Reads "orig_name" property off the path
-  // vertex's iterm.
-  if (sta_->findReportPathField(kOrigNameProp) == nullptr) {
-    sta::dbNetwork* network = network_;
-    sta_->makeReportPathField(
-        kOrigNameProp,
-        kOrigNameProp,
-        "Orig Name",
-        36,
-        true,
-        nullptr,
-        [network](const sta::Path* path,
-                  const sta::StaState* sta) -> std::string {
-          if (path == nullptr) {
-            return {};
-          }
-          sta::Vertex* vertex = path->vertex(sta);
-          if (vertex == nullptr) {
-            return {};
-          }
-          const sta::Pin* pin = vertex->pin();
-          if (pin == nullptr) {
-            return {};
-          }
-          odb::dbITerm* iterm = nullptr;
-          odb::dbBTerm* bterm = nullptr;
-          odb::dbModITerm* moditerm = nullptr;
-          network->staToDb(pin, iterm, bterm, moditerm);
-          if (iterm == nullptr) {
-            return {};
-          }
-          odb::dbStringProperty* prop
-              = odb::dbStringProperty::find(iterm, kOrigNameProp);
-          return prop ? prop->getValue() : std::string{};
-        });
-  }
 }
 
 MBFF::~MBFF() = default;
