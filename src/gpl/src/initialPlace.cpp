@@ -27,7 +27,6 @@ InitialPlaceVars::InitialPlaceVars(const PlaceOptions& options,
     : maxIter(options.initialPlaceMaxIter),
       minDiffLength(options.initialPlaceMinDiffLength),
       maxSolverIter(options.initialPlaceMaxSolverIter),
-      maxFanout(options.initialPlaceMaxFanout),
       netWeightScale(options.initialPlaceNetWeightScale),
       debug(debug),
       forceCenter(options.forceCenterInitialPlace)
@@ -294,14 +293,13 @@ void InitialPlace::createSparseMatrix()
 
   // for each net
   for (auto& net : pbc_->getNets()) {
-    // skip for small nets.
-    if (net->getPins().size() <= 1) {
+    // skip ignored nets
+    if (net->shouldIgnore()) {
       continue;
     }
 
-    // escape long time cals on huge fanout.
-    //
-    if (net->getPins().size() >= ipVars_.maxFanout) {
+    // skip for small nets.
+    if (net->getPins().size() <= 1) {
       continue;
     }
 

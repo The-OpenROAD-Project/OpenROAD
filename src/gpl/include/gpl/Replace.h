@@ -49,7 +49,6 @@ struct PlaceOptions
   int initialPlaceMaxIter = 20;
   int initialPlaceMinDiffLength = 1500;
   int initialPlaceMaxSolverIter = 100;
-  int initialPlaceMaxFanout = 200;
   float initialPlaceNetWeightScale = 800;
 
   bool skipIoMode = false;
@@ -75,6 +74,8 @@ struct PlaceOptions
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+
+  int fanoutLimit = 200;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;

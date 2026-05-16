@@ -302,14 +302,22 @@ void GCell::writeAttributesToCSV(std::ostream& out) const
 ////////////////////////////////////////////////
 // GNet
 
-GNet::GNet(Net* net)
+GNet::GNet(Net* net) : GNet(std::vector<Net*>{net})
 {
-  nets_.push_back(net);
 }
 
 GNet::GNet(const std::vector<Net*>& nets)
 {
   nets_ = nets;
+
+  // Check if all nets are set to ignore, if so, mark this GNet as don't care.
+  isDontCare_ = true;
+  for (const auto& net : nets_) {
+    if (!net->shouldIgnore()) {
+      isDontCare_ = false;
+      break;
+    }
+  }
 }
 
 Net* GNet::getPbNet() const
@@ -1307,6 +1315,10 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
     gNet->clearWaVars();
     gNet->updateBox();
 
+    if (gNet->isDontCare()) {
+      continue;
+    }
+
     for (auto& gPin : gNet->getGPins()) {
       // The WA terms are shift invariant:
       //
@@ -1416,6 +1428,11 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
   FloatPoint gradientPair;
 
   for (auto& gPin : gCell->gPins()) {
+    if (gPin->getGNet() == nullptr) {
+      // Can happen for ignored nets due to fanout violation.
+      continue;
+    }
+
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
 
     debugPrint(log_,
@@ -3575,7 +3592,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
 void NesterovBaseCommon::createCbkGNet(odb::dbNet* db_net, bool skip_io_mode)
 {
   debugPrint(log_, GPL, "callbacks", 3, "NBC createGNet");
-  Net gpl_net(db_net, skip_io_mode);
+  Net gpl_net(db_net, skip_io_mode, false);
   pb_nets_stor_.push_back(gpl_net);
   GNet gnet(&pb_nets_stor_.back());
   gNetStor_.push_back(gnet);
@@ -3794,16 +3811,16 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   }
 
   log_->info(GPL,
-             76,
-             "Removing fillers, count: Before: {}, After: {} ({:+.2f}%)",
-             num_filler_before_removal,
-             fillerStor_.size(),
+      76,
+      "Removing fillers, count: Before: {}, After: {} ({:+.2f}%)",
+      num_filler_before_removal,
+      fillerStor_.size(),
              (num_filler_before_removal != 0)
                  ? (static_cast<double>(
                         static_cast<int64_t>(fillerStor_.size())
-                        - static_cast<int64_t>(num_filler_before_removal))
-                    / num_filler_before_removal * 100.0)
-                 : 0.0);
+                              - static_cast<int64_t>(num_filler_before_removal))
+          / num_filler_before_removal * 100.0)
+                                       : 0.0);
 
   log_->info(
       GPL,

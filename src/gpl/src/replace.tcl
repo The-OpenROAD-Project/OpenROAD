@@ -20,7 +20,6 @@ sta::define_cmd_args "global_placement" {\
     [-reference_hpwl reference_hpwl]\
     [-overflow overflow]\
     [-initial_place_max_iter initial_place_max_iter]\
-    [-initial_place_max_fanout initial_place_max_fanout]\
     [-routability_use_grt]\
     [-routability_target_rc_metric routability_target_rc_metric]\
     [-routability_check_overflow routability_check_overflow]\
@@ -35,6 +34,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
+    [-fanout_limit fanout_limit]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
     [-enable_routing_congestion]
@@ -46,7 +46,7 @@ proc global_placement { args } {
       -init_density_penalty -init_wirelength_coef \
       -min_phi_coef -max_phi_coef -overflow \
       -reference_hpwl \
-      -initial_place_max_iter -initial_place_max_fanout \
+      -initial_place_max_iter \
       -routability_check_overflow -routability_snapshot_overflow \
       -routability_max_density \
       -routability_target_rc_metric \
@@ -57,7 +57,8 @@ proc global_placement { args } {
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
       -keep_resize_below_overflow \
-      -pad_left -pad_right} \
+      -pad_left -pad_right \
+      -fanout_limit} \
     flags {-skip_initial_place \
       -force_center_initial_place \
       -skip_nesterov_place \

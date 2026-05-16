@@ -88,7 +88,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   bool is_pbc_new = (pbc_ == nullptr);
 
   if (is_pbc_new) {
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, sta_, options, log_);
   }
 
   // Count placed vs unplaced, and conditionally lock them down
@@ -173,7 +173,7 @@ void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
   if (pbc_ == nullptr) {
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, sta_, options, log_);
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, true));
 
@@ -229,7 +229,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
                                 bool check_density)
 {
   if (!pbc_) {
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, sta_, options, log_);
 
     pbVec_.push_back(
         std::make_shared<PlacerBase>(db_, pbc_, log_, check_density));
@@ -390,9 +390,8 @@ void PlaceOptions::validate(utl::Logger* logger)
 {
   utl::Validator val(logger, GPL);
   val.check_non_negative("initialPlaceMaxIter", initialPlaceMaxIter, 326);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
   val.check_range("Target density", density, 0.0f, 1.0f, 328);
+  val.check_positive("fanoutLimit", fanoutLimit, 329);
 }
 
 void PlaceOptions::skipIo()
