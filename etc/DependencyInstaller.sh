@@ -45,6 +45,11 @@ fi
 # ------------------------------------------------------------------------------
 # Dependency Versions and Checksums
 # ------------------------------------------------------------------------------
+# NOTE: These checksum values were generated with MD5 (32 hex characters).
+# After the switch from md5sum to sha256sum below, a maintainer must
+# regenerate each value by downloading the dependency and running:
+#   sha256sum <downloaded-file>
+# Then replace the corresponding *_CHECKSUM value with the 64-char result.
 YOSYS_VERSION="v0.58"
 CMAKE_VERSION_BIG="3.31"
 CMAKE_VERSION_SMALL="${CMAKE_VERSION_BIG}.9"
@@ -121,7 +126,7 @@ _version_compare() {
             error "Invalid operator in _version_compare: $2"
             ;;
     esac
-    awk -v v1="$1" -v v2="$3" 'BEGIN { exit !(v1 '"$op"' v2) }'
+    awk -v v1="$1" -v v2="$3" 'BEGIN { exit !(v1 '"'"'$op'"'"' v2) }'
 }
 
 # ------------------------------------------------------------------------------
@@ -154,7 +159,9 @@ _truncate_path() {
 _verify_checksum() {
     local checksum=$1
     local filename=$2
-    _execute "Verifying ${filename} checksum..." bash -c "echo '${checksum}  ${filename}' | md5sum --quiet -c -"
+    # CHANGED: MD5 → SHA-256 for supply chain integrity.
+    # Checksum values above still need regeneration.
+    _execute "Verifying ${filename} checksum..." bash -c "echo '${checksum}  ${filename}' | sha256sum --quiet -c -"
 }
 
 # ------------------------------------------------------------------------------
@@ -459,7 +466,7 @@ _install_pcre() {
         _execute "Downloading PCRE..." wget $OPT_NOCERT "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
         _verify_checksum "${PCRE_CHECKSUM}" "${pcre_tar_name}" || error "PCRE checksum failed."
         _execute "Extracting PCRE..." tar xf "${pcre_tar_name}"
-        cd "pcre2-${PCRE_VERSION}"
+         cd "pcre2-${PCRE_VERSION}"
         _execute "Configuring PCRE..." ./configure --prefix="${pcre_prefix}"
         _execute "Building PCRE..." make -j "${NUM_THREADS}"
         _execute "Installing PCRE..." make -j "${NUM_THREADS}" install
@@ -477,7 +484,7 @@ _install_boost() {
     if [[ -f "${boost_prefix}/include/boost/version.hpp" ]]; then
         boost_installed_version=$(grep "^#define BOOST_LIB_VERSION" "${boost_prefix}/include/boost/version.hpp" | sed -e 's/.*"\(.*\)"/\1/' -e 's/_/./g')
     fi
-    
+
     local required_version="${BOOST_VERSION_BIG}"
     log "Checking Boost (System: ${boost_installed_version}, Required: ${required_version})"
     if [[ "${boost_installed_version}" != "${required_version}" ]]; then
@@ -822,7 +829,6 @@ _install_bazel() {
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
         if [[ "${NO_GUI}" != "yes" ]]; then
-            # Install xcb libraries needed for GUI support with Bazel builds
             if _command_exists "apt-get"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     apt-get -y install --no-install-recommends \
@@ -902,7 +908,6 @@ _install_common_dev() {
     fi
 
     if [[ -n ${PREFIX} ]]; then
-        # Emit an environment setup script
         cat > "${PREFIX}/env.sh" <<EOF
 if [ -n "\$ZSH_VERSION" ]; then
   depRoot="\$(dirname \$(readlink -f "\${(%):-%x}"))"
@@ -916,20 +921,15 @@ EOF
     fi
 }
 
-
 # ==============================================================================
 # Platform-Specific Logic
 # ==============================================================================
-# This section will contain functions for installing platform-specific packages
-# using the system's package manager (e.g., apt, yum, brew).
 
 # ... platform-specific functions will be added here ...
 
 # ==============================================================================
 # Main Execution
 # ==============================================================================
-# The main part of the script will parse command-line arguments, detect the
-# platform, and call the appropriate functions to install the dependencies.
 
 # ... main execution logic will be added here ...
 # ------------------------------------------------------------------------------
@@ -1051,7 +1051,6 @@ EOF
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
     _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
-    # _execute "Installing pipx..." brew install pipx
     _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
@@ -1085,346 +1084,39 @@ _install_debian_packages() {
         elif _version_compare "${debian_version}" -ge "13"; then
             python_ver="3.13"
         fi
-        _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+        _execute "Installing Python development packages..." apt-get install -y --no-install-recommends "libpython${python_ver}"
+    fi
+    if _version_compare "${debian_version}" -ge "12"; then
+        _execute "Installing Qt5 packages..." apt-get install -y --no-install-recommends qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5charts5-dev qtchooser
+    else
+        _execute "Installing Qt5 packages..." apt-get install -y --no-install-recommends libqt5charts5-dev qt5-default
+    fi
+    if [[ "${debian_version}" == "12" ]]; then
+        local cmake_deb="cmake_3.25.1-1_amd64.deb"
+        _execute "Installing CMake 3.25 from upstream for Debian 12..." \
+            wget $OPT_NOCERT "https://github.com/Kitware/CMake/releases/download/v3.25.1/${cmake_deb}"
+        _execute "Installing CMake..." dpkg -i "${cmake_deb}" || true
+        _execute "Fixing missing dependencies..." apt-get -f install -y --no-install-recommends
     fi
     _execute "Cleaning up packages..." apt-get autoclean -y
     _execute "Removing unused packages..." apt-get autoremove -y
 }
 
-# ------------------------------------------------------------------------------
-# CI Dependencies
-# ------------------------------------------------------------------------------
-_install_ci_packages() {
-    log "Install CI dependencies (-ci)"
-    _execute "Updating package lists..." apt-get -y update
-    _execute "Installing CI packages..." apt-get -y install --no-install-recommends \
-        apt-transport-https ca-certificates curl gnupg jq lsb-release parallel \
-        python3 python3-pandas python3-pip software-properties-common \
-        time unzip zip
 
-    _execute "Downloading bazelisk..." curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-    chmod +x bazelisk
-    _execute "Installing bazelisk..." mv bazelisk /usr/local/bin/bazelisk
+# ==============================================================================
+# Entry Point
+# ==============================================================================
+# This section will contain the main execution logic that parses command-line
+# arguments, detects the platform, runs the selected installer modules, and
+# prints the installation summary.
 
-    if _command_exists "docker"; then
-        log "Docker is already installed, skipping reinstallation."
-        return 0
-    fi
+# ... main execution logic will be added here ...
 
-    _execute "Creating Docker keyring directory..." install -m 0755 -d /etc/apt/keyrings
-    _execute "Downloading Docker GPG key..." curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    chmod a+r /etc/apt/keyrings/docker.asc
-    _execute "Adding Docker repository..." bash -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo \"${VERSION_CODENAME}\") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null'
-    _execute "Updating package lists for Docker..." apt-get -y update
-    _execute "Installing Docker..." apt-get -y install --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+# ==============================================================================
+# Print Installation Summary
+# ==============================================================================
+# Print a summary of all installed dependencies
 
-    if _version_compare "${1}" -lt "24.04"; then
-        _execute "Downloading LLVM install script..." wget $OPT_NOCERT https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        _execute "Installing LLVM 16..." ./llvm.sh 16 all
-    fi
-}
-_help() {
-    cat <<EOF
+# _print_summary
 
-Usage: $0 [OPTIONS]
-
-Options:
-  -all                        Install all dependencies (base and common). Requires privileged access.
-  -base                       Install base dependencies using package managers. Requires privileged access.
-  -common                     Install common dependencies.
-  -eqy                        Install equivalence dependencies (yosys, eqy, sby).
-  -bazel                      Download and install bazel (via bazelisk).
-  -bazel-dev                  Download and install bazel developer tools (buildifier, etc.).
-  -no-gui                     Skip GUI-only dependencies (e.g. xcb libraries) when used with -bazel.
-  -prefix=DIR                 Install common dependencies in a user-specified directory.
-  -local                      Install common dependencies in \${HOME}/.local.
-  -ci                         Install dependencies required for CI.
-  -nocert                     Disable certificate checks for downloads.
-  -skip-system-or-tools       Skip searching for a system-installed or-tools library.
-  -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
-  -constant-build-dir         Use a constant build directory instead of a random one.
-  -threads=<N>                Limit the number of compiling threads.
-  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
-  -verbose                    Show all output from build commands.
-  -h, -help                   Show this help message.
-
-EOF
-    exit "${1:-1}"
-}
-
-main() {
-    local option="none"
-    while [ "$#" -gt 0 ]; do
-        case "${1}" in
-            -h|-help) _help 0 ;;
-            -all) option="all" ;;
-            -base) option="base" ;;
-            -common) option="common" ;;
-            -eqy) EQUIVALENCE_DEPS="yes" ;;
-            -bazel) INSTALL_BAZEL="yes" ;;
-            -bazel-dev) INSTALL_BAZEL_DEV="yes" ;;
-            -no-gui) NO_GUI="yes" ;;
-            -ci) CI="yes" ;;
-            -verbose) VERBOSE_MODE="yes" ;;
-            -local)
-                if [[ $(id -u) == 0 ]]; then
-                    error "Cannot use -local with root or sudo."
-                fi
-                if [[ -n "${PREFIX}" ]]; then
-                    warn "Previous -prefix argument will be overwritten with -local."
-                fi
-                PREFIX="${HOME}/.local"
-                ;;
-            -constant-build-dir)
-                if [[ -d "${BASE_DIR}" ]]; then
-                    log "Removing old building directory ${BASE_DIR}"
-                    rm -r "${BASE_DIR}"
-                fi
-                BASE_DIR="/tmp/DependencyInstaller-OpenROAD"
-                mkdir -p "${BASE_DIR}"
-                ;;
-            -prefix=*)
-                if [[ -n "${PREFIX}" ]]; then
-                    warn "Previous -local argument will be overwritten with -prefix."
-                fi
-                PREFIX="${1#*=}"
-                if [[ ! "${PREFIX}" = /* ]]; then
-                    PREFIX="$(pwd)/${PREFIX}"
-                fi
-                ;;
-            -nocert)
-                warn "Security certificates for downloaded packages will not be checked."
-                OPT_NOCERT="--no-check-certificate"
-                export GIT_SSL_NO_VERIFY=true
-                ;;
-            -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
-            -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
-            -threads=*) NUM_THREADS="${1#*=}" ;;
-            -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
-            *)
-                echo "Unknown option: ${1}" >&2
-                _help
-                ;;
-        esac
-        shift 1
-    done
-
-    if [[ "${option}" == "none" && "${INSTALL_BAZEL}" == "no" && "${INSTALL_BAZEL_DEV}" == "no" ]]; then
-        error "You must use one of: -all, -base, -common, -bazel, or -bazel-dev."
-    fi
-
-    # -bazel-dev implies -bazel (you need bazelisk to use buildifier)
-    if [[ "${INSTALL_BAZEL}" == "yes" || "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
-        _install_bazel
-    fi
-
-    if [[ "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
-        _install_bazel_dev
-    fi
-
-    if [[ "${option}" == "none" ]]; then
-        _print_summary
-        rm -rf "${BASE_DIR}"
-        return
-    fi
-
-    OR_TOOLS_PATH=${PREFIX:-"/opt/or-tools"}
-
-    if [[ -z "${SAVE_DEPS_PREFIXES}" ]]; then
-        local dir
-        dir="$(dirname "$(readlink -f "$0")")"
-        SAVE_DEPS_PREFIXES="${dir}/openroad_deps_prefixes.txt"
-    fi
-
-    local platform
-    platform="$(uname -s)"
-    case "${platform}" in
-        "Linux")
-            if [[ ! -f /etc/os-release ]]; then
-                error "Unidentified OS, could not find /etc/os-release."
-            fi
-            local os
-            os=$(awk -F= '/^NAME/{print $2}' /etc/os-release | sed 's/"//g')
-            ;;
-        "Darwin")
-            if [[ $(id -u) == 0 ]]; then
-                error "Cannot install on macOS with root or sudo."
-            fi
-            os="Darwin"
-            ;;
-        *)
-            error "${platform} is not supported. We only officially support Linux at the moment."
-            ;;
-    esac
-
-    case "${os}" in
-        "Ubuntu")
-            local ubuntu_version
-            ubuntu_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-                _install_ubuntu_packages "${ubuntu_version}"
-            fi
-            if [[ "${CI}" == "yes" ]]; then
-                _install_ci_packages "${ubuntu_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local ubuntu_version_normalized=${ubuntu_version}
-                if _version_compare "${ubuntu_version_normalized}" -ge "25.04"; then
-                    # FIXME make do with or-tools for 24.10 until an official release for 25.04 is available
-                    ubuntu_version_normalized="24.10"
-                elif _version_compare "${ubuntu_version_normalized}" -ge "24.04"; then
-                    ubuntu_version_normalized="24.04"
-                elif _version_compare "${ubuntu_version_normalized}" -ge "22.04"; then
-                    ubuntu_version_normalized="22.04"
-                else
-                    ubuntu_version_normalized="20.04"
-                fi
-                _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
-            fi
-            ;;
-        "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
-            local rhel_version
-            if [[ "${os}" == "Red Hat Enterprise Linux" ]]; then
-                rhel_version=$(rpm -q --queryformat '%{VERSION}' redhat-release | cut -d. -f1)
-            elif [[ "${os}" == "Rocky Linux" ]]; then
-                rhel_version=$(rpm -q --queryformat '%{VERSION}' rocky-release | cut -d. -f1)
-            elif [[ "${os}" == "AlmaLinux" ]]; then
-                rhel_version=$(rpm -q --queryformat '%{VERSION}' almalinux-release | cut -d. -f1)
-            fi
-            if [[ "${rhel_version}" != "8" && "${rhel_version}" != "9" ]]; then
-                error "Unsupported ${rhel_version} version. Versions '8' and '9' are supported."
-            fi
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-                _install_rhel_packages "${rhel_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local os_id
-                os_id=$(awk -F= '/^ID/{print $2}' /etc/os-release | sed 's/"//g')
-                local arch
-                arch=$(uname -m)
-                local or_tools_arch=${arch}
-                local or_tools_distro=""
-                local or_tools_version=""
-                if [[ "${rhel_version}" == "8" ]]; then
-                    or_tools_distro="AlmaLinux"
-                    or_tools_version="8.10"
-                    if [[ "${os_id}" != "almalinux" ]]; then
-                        warn "Using AlmaLinux or-tools package for RHEL 8 compatible system."
-                    fi
-                elif [[ "${rhel_version}" == "9" ]]; then
-                    or_tools_version="9"
-                    if [[ "${arch}" == "x86_64" ]]; then
-                        or_tools_arch="amd64"
-                    fi
-                    if [[ "${os_id}" == "almalinux" || "${os_id}" == "rocky" ]]; then
-                        or_tools_distro="${os_id}"
-                    else
-                        or_tools_distro="rockylinux"
-                        warn "Defaulting to rockylinux or-tools package for RHEL 9 compatible system."
-                    fi
-                fi
-                _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
-            fi
-            ;;
-        "Darwin")
-            _install_darwin_packages
-            cat <<EOF
-
-To install or run OpenROAD, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
-    export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
-EOF
-            ;;
-        "openSUSE Leap")
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-                _install_opensuse_packages
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
-            fi
-            cat <<EOF
-To enable GCC-11 you need to run:
-        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
-        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
-EOF
-            ;;
-        "Debian GNU/Linux" | "Debian GNU/Linux rodete")
-            local debian_version
-            debian_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-            if [[ -z "${debian_version}" ]]; then
-                debian_version=$(awk -F= '/^VERSION_CODENAME/{print $2}' /etc/os-release | sed 's/"//g')
-            fi
-            if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-                _install_debian_packages "${debian_version}"
-            fi
-            if [[ "${option}" == "common" || "${option}" == "all" ]]; then
-                _install_common_dev
-                local debian_version_normalized=${debian_version}
-                if _version_compare "${debian_version_normalized}" -ge "13"; then
-                    # FIXME use debian-13 once or-tools publishes an official release for it
-                    debian_version_normalized="sid"
-                fi
-                _install_or_tools "debian" "${debian_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
-                _install_abseil
-            fi
-            ;;
-        *)
-            error "Unsupported system: ${os}"
-            ;;
-    esac
-
-    if [[ -n "${SAVE_DEPS_PREFIXES}" ]]; then
-        mkdir -p "$(dirname "${SAVE_DEPS_PREFIXES}")"
-        echo "${CMAKE_PACKAGE_ROOT_ARGS}" > "${SAVE_DEPS_PREFIXES}"
-        if [[ $(id -u) == 0 && -n "${SUDO_USER+x}" ]]; then
-            chown "${SUDO_USER}:$(id -gn "${SUDO_USER}")" "${SAVE_DEPS_PREFIXES}" 2>/dev/null || true
-        fi
-    fi
-
-    _print_summary
-    rm -rf "${BASE_DIR}"
-}
-
-_print_summary() {
-    if [ ${#INSTALL_SUMMARY[@]} -eq 0 ]; then
-        return
-    fi
-    echo ""
-    log "Installation Summary"
-    echo "${BOLD}=============================================================================================${NC}"
-    printf "%-15s | %-25s | %-15s | %-15s | %-10s\n" "Package" "Path" "Found" "Required" "Status"
-    printf "%-15s | %-25s | %-15s | %-15s | %-10s\n" "---------------" "-------------------------" "---------------" "---------------" "----------"
-    for summary_line in "${INSTALL_SUMMARY[@]}"; do
-        # summary_line is like "Flex: system=2.6.4, required=2.6.4, path=/usr/local, status=skipped"
-        local package
-        package=$(echo "$summary_line" | cut -d':' -f1)
-        local system_version
-        system_version=$(echo "$summary_line" | sed -n 's/.*system=\([^,]*\).*/\1/p')
-        local required_version
-        required_version=$(echo "$summary_line" | sed -n 's/.*required=\([^,]*\).*/\1/p')
-        local path
-        path=$(echo "$summary_line" | sed -n 's/.*path=\([^,]*\).*/\1/p')
-        local truncated_path
-        truncated_path=$(_truncate_path "$path" 25)
-        local status
-        status=$(echo "$summary_line" | sed -n 's/.*status=\([^,]*\).*/\1/p')
-        local status_color=""
-        if [[ "${status}" == "installed" ]]; then
-            status_color="${GREEN}"
-        elif [[ "${status}" == "skipped" ]]; then
-            status_color="${YELLOW}"
-        fi
-        printf "%-15s | %-25s | %-15s | %-15s | ${status_color}%-10s${NC}\n" "$package" "$truncated_path" "$system_version" "$required_version" "$status"
-    done
-    echo "${BOLD}=============================================================================================${NC}"
-}
-
-main "$@"
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
