@@ -4,6 +4,7 @@
 #include "FastRoute.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -2380,6 +2381,7 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
+  // Check if there is 2D-3D resources mismatch related to NDR nets
   disableNDRNets(net_ids_);
 
   NetRouteMap routes = getRoutes();
@@ -2480,7 +2482,7 @@ void FastRouteCore::updateSoftNDRNetUsage(const int net_id, const int edge_cost)
 
 // Update 3D edge usage for a net by multiplying each segment's layer_edge_cost
 // by `cost` (use +1 to add, -1 to subtract). Via transitions are skipped.
-void FastRouteCore::updateSoftNDRNet3DUsage(const int net_id, const int cost)
+void FastRouteCore::updateNet3DUsage(const int net_id, const int cost)
 {
   FrNet* net = nets_[net_id];
   const auto& treeedges = sttrees_[net_id].edges;
@@ -2562,7 +2564,7 @@ void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
   for (const int net_id : congested_ndr_ids) {
     if (update_3d) {
       // Remove old per-layer NDR cost from 3D edges before edge cost changes
-      updateSoftNDRNet3DUsage(net_id, -1);
+      updateNet3DUsage(net_id, -1);
     }
 
     // Update 2D usage, reset edge cost to 1, and emit the warning
@@ -2570,7 +2572,63 @@ void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
 
     if (update_3d) {
       // Re-add 3D usage with the new unit cost (getLayerEdgeCost now returns 1)
-      updateSoftNDRNet3DUsage(net_id, 1);
+      updateNet3DUsage(net_id, 1);
+    }
+  }
+}
+
+// Variant of disableNDRNets that uses pre-converted grid segments
+// (x0,y0,x1,y1,layer) instead of sttrees. Used when sttrees are not yet
+// populated (e.g., repairAntennas starting from an uninitialized state).
+void FastRouteCore::disableNDRNetsFromGridRoutes(
+    const std::vector<std::pair<int, std::vector<std::array<int, 5>>>>&
+        net_segs)
+{
+  for (const auto& [net_id, segs] : net_segs) {
+    FrNet* net = nets_[net_id];
+
+    // Skip nets already demoted to soft-NDR
+    if (net->isSoftNDR()) {
+      continue;
+    }
+
+    // Check if any grid segment occupies a congested 2D edge
+    bool is_congested = false;
+    for (const auto& seg : segs) {
+      const int x0 = seg[0], y0 = seg[1], x1 = seg[2], y1 = seg[3];
+      if (y0 == y1) {  // horizontal segment
+        for (int x = x0; x < x1 && !is_congested; x++) {
+          is_congested = graph2d_.getOverflowH(x, y0) > 0;
+        }
+      } else {  // vertical segment
+        for (int y = y0; y < y1 && !is_congested; y++) {
+          is_congested = graph2d_.getOverflowV(x0, y) > 0;
+        }
+      }
+    }
+
+    if (!is_congested) {
+      continue;
+    }
+
+    logger_->warn(GRT,
+                  296,
+                  "Disabled NDR (to reduce congestion) for net: {}",
+                  net->getName());
+
+    // Remove old 2D+3D usage with the current (NDR) edge cost
+    for (const auto& seg : segs) {
+      updateEdge2DAnd3DUsage(
+          seg[0], seg[1], seg[2], seg[3], seg[4], -1, net->getDbNet());
+    }
+
+    // Demote to soft-NDR (edge_cost → 1, is_soft_ndr → true)
+    setSoftNDR(net_id);
+
+    // Re-add 2D+3D usage with the new unit edge cost
+    for (const auto& seg : segs) {
+      updateEdge2DAnd3DUsage(
+          seg[0], seg[1], seg[2], seg[3], seg[4], 1, net->getDbNet());
     }
   }
 }

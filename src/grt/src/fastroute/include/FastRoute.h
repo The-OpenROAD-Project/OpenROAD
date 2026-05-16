@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -283,10 +284,15 @@ class FastRouteCore
   void clearNDRnets();
   void computeCongestedNDRnets();
   void updateSoftNDRNetUsage(int net_id, int edge_cost);
-  void updateSoftNDRNet3DUsage(int net_id, int cost);
+  void updateNet3DUsage(int net_id, int cost);
   void setSoftNDR(int net_id);
   void applySoftNDR(const std::vector<int>& net_ids);
   void disableNDRNets(const std::vector<int>& net_ids);
+  // Variant that works from pre-converted grid segments (x0,y0,x1,y1,layer)
+  // instead of sttrees, for use when sttrees are not yet populated.
+  void disableNDRNetsFromGridRoutes(
+      const std::vector<std::pair<int, std::vector<std::array<int, 5>>>>&
+          net_segs);
 
   int x_corner() const { return x_corner_; }
   int y_corner() const { return y_corner_; }
@@ -308,6 +314,7 @@ class FastRouteCore
 
   float getNetResistance(odb::dbNet* db_net);
   float getNetResistanceOnLayer(odb::dbNet* db_net, int layer);
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
 
  private:
   void convertGridsToSegments(
@@ -316,7 +323,6 @@ class FastRouteCore
       std::unordered_set<GSegment, GSegmentHash>& net_segs,
       GRoute& route);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);
   void clearNets();
   double dbuToMicrons(int dbu);
