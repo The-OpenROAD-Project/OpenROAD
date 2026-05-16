@@ -23,6 +23,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/pending/disjoint_sets.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -910,7 +911,7 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
   }
 
   std::unordered_map<odb::dbITerm*, int> num_diodes_added;
-  std::map<odb::dbTechLayer*, std::set<odb::dbITerm*>> pin_added;
+  odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbITerm>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
     for (const auto& [gate, violation_layers] : gates_with_violations) {
@@ -1051,7 +1052,7 @@ void AntennaChecker::Impl::buildLayerMaps(odb::dbNet* db_net,
 {
   odb::dbWire* wires = db_net->getWire();
 
-  std::map<odb::dbTechLayer*, PolygonSet> set_by_layer;
+  odb::PtrMap<odb::dbTechLayer, PolygonSet> set_by_layer;
 
   wiresToPolygonSetMap(wires, set_by_layer);
   avoidPinIntersection(db_net, set_by_layer);

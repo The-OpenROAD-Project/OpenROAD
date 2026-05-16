@@ -17,6 +17,7 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -239,7 +240,7 @@ class GlobalRouter
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   void updateCUGRNet(odb::dbNet* net);
-  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
   bool haveDbGuides();
@@ -354,7 +355,7 @@ class GlobalRouter
   void removeNet(odb::dbNet* db_net);
   void updateNetPins(Net* net);
 
-  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
+  void getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -488,7 +489,7 @@ class GlobalRouter
   void findTrackPitches(int max_layer);
   std::vector<Net*> findNets(bool init_clock_nets);
   void findClockNets(const std::vector<Net*>& nets,
-                     std::set<odb::dbNet*>& clock_nets);
+                     odb::PtrSet<odb::dbNet>& clock_nets);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -530,7 +531,7 @@ class GlobalRouter
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
 
-  std::map<odb::dbNet*, Net*> db_net_map_;
+  odb::PtrMap<odb::dbNet, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks> routing_tracks_;
@@ -566,7 +567,7 @@ class GlobalRouter
   int perturbation_amount_;
 
   // Variables for PADs obstructions handling
-  std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;
+  odb::PtrMap<odb::dbNet, std::vector<GSegment>> pad_pins_connections_;
 
   // Saving the positions used by nets
   std::map<odb::Point, std::vector<odb::dbNet*>> h_nets_in_pos_;
@@ -577,7 +578,7 @@ class GlobalRouter
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
 
-  std::set<odb::dbNet*> dirty_nets_;
+  odb::PtrSet<odb::dbNet> dirty_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
