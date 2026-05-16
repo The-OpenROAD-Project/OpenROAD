@@ -499,7 +499,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // DRC penalty escalates with iteration count: early iterations are
   // lenient (cells can tolerate DRC violations to resolve overlaps first),
   // later iterations strongly penalise DRC violations to force resolution.
-  const double kDrcPenalty = 1e3 * (1.0 + iter);
+  const double kDrcPenalty = 100 * (1.0 + iter);
 
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
