@@ -196,6 +196,11 @@ proc global_route { args } {
     set iterations $keys(-congestion_iterations)
     sta::check_positive_integer "-congestion_iterations" $iterations
     grt::set_congestion_iterations $iterations
+  } elseif { [info exists flags(-use_cugr)] } {
+    # CUGR's rip-up and re-route loop saturates around iteration 5, and
+    # each iteration runs a full 3D maze pass, so the default budget is
+    # tighter than FastRoute's 50.
+    grt::set_congestion_iterations 5
   } else {
     grt::set_congestion_iterations 50
   }

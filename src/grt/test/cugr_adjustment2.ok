@@ -40,18 +40,17 @@ metal5     Horizontal      12240          4896          60.00%
 metal6     Vertical        12172          4869          60.00%
 metal7     Horizontal       4284          1714          59.99%
 metal8     Vertical         4284          1714          59.99%
-metal9     Horizontal       2142           857          59.99%
-metal10    Vertical         2142           857          59.99%
+metal9     Horizontal       2142          1190          44.44%
+metal10    Vertical         2142          1190          44.44%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Nets with congestion: 0.
 Routing statistics
 Wire length:           36727
 Total via count:       2627
 Total congestion:      0
-Min resource:          0.3999999761581421
-Bottleneck:            (8, 0, 4)
+Min resource:          0.9999995231628418
+Bottleneck:            (2, 16, 16)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
@@ -64,10 +63,10 @@ metal5            4896            12            0.25%             0 /  0 /  0
 metal6            4869            20            0.41%             0 /  0 /  0
 metal7            1714             0            0.00%             0 /  0 /  0
 metal8            1714             0            0.00%             0 /  0 /  0
-metal9             857             0            0.00%             0 /  0 /  0
-metal10            857             0            0.00%             0 /  0 /  0
+metal9            1190             0            0.00%             0 /  0 /  0
+metal10           1190             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            46527          2445            5.26%             0 /  0 /  0
+Total            47193          2445            5.18%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
