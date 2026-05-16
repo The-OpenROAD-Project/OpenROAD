@@ -165,6 +165,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    rulers: true,
     scale_bar: true,
     // Debug
     debug: false,
@@ -311,7 +312,10 @@ function redrawAllLayers() {
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
     }
-    // Update scale bar visibility.
+    // Update ruler and scale bar visibility.
+    if (app.rulerManager) {
+        app.rulerManager.updateVisibility();
+    }
     if (app.updateScaleBar) {
         app.updateScaleBar();
     }

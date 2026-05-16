@@ -297,7 +297,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         }).addTo(app.map);
     }
 
-    function renderProperty(prop) {
+    function renderProperty(prop, data) {
         // Group with children (PropertyList or SelectionSet)
         if (prop.children) {
             const group = document.createElement('div');
@@ -324,7 +324,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
             arrow.textContent = autoExpand ? '▼' : '▶';
             for (const child of prop.children) {
-                kids.appendChild(renderProperty(child));
+                kids.appendChild(renderProperty(child, data));
             }
             group.appendChild(kids);
 
@@ -353,6 +353,22 @@ export function createInspectorPanel(app, redrawAllLayers) {
         valEl.textContent = prop.value || '';
         row.appendChild(nameEl);
         row.appendChild(valEl);
+
+        // Editable property: make value contentEditable with Enter/Escape keys.
+        if (prop.editable && data && data.onPropertyChange) {
+            valEl.contentEditable = true;
+            valEl.classList.add('inspector-editable');
+            valEl.addEventListener('blur', () => {
+                const newVal = valEl.textContent;
+                if (newVal !== prop.value) {
+                    data.onPropertyChange(prop.name, newVal);
+                }
+            });
+            valEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); valEl.blur(); }
+                if (e.key === 'Escape') { valEl.textContent = prop.value; valEl.blur(); }
+            });
+        }
 
         // For single-target rows like SelectionSet entries, make the whole row
         // interactive so hover is easy to hit.
@@ -449,7 +465,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         }
 
         for (const prop of data.properties) {
-            app.inspectorEl.appendChild(renderProperty(prop));
+            app.inspectorEl.appendChild(renderProperty(prop, data));
         }
     }
 

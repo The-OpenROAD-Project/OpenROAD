@@ -835,6 +835,16 @@ html, body {
     color: var(--fg-primary);
     word-break: break-all;
 }
+.inspector-editable {
+    cursor: text;
+    border-bottom: 1px dashed var(--fg-muted);
+    padding: 0 2px;
+}
+.inspector-editable:focus {
+    outline: none;
+    border-bottom: 1px solid var(--fg-primary);
+    background: var(--bg-input);
+}
 .inspector-group {
     margin: 1px 0;
 }

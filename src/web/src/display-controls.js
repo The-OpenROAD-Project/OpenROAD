@@ -321,6 +321,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
+        { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
