@@ -727,8 +727,17 @@ _is_dedicated_or_tools_dir() {
 # user files.
 _clean_or_tools_in_shared_prefix() {
     local prefix=$1
+    # On multiarch systems libortools.so may live at e.g.
+    # /usr/lib/x86_64-linux-gnu/, in which case realpath(dirname(lib)/..) gives
+    # /usr/lib rather than the true prefix /usr. Strip a trailing lib component.
+    if [[ "${prefix}" == */lib || "${prefix}" == */lib64 ]]; then
+        prefix=$(dirname "${prefix}")
+    fi
     local f
-    for f in "${prefix}"/lib/libortools.so* "${prefix}"/lib64/libortools.so*; do
+    # Match libortools.so* both directly under lib/ and one level deeper for
+    # multiarch layouts (e.g. lib/x86_64-linux-gnu/).
+    for f in "${prefix}"/lib/libortools.so*   "${prefix}"/lib/*/libortools.so* \
+             "${prefix}"/lib64/libortools.so* "${prefix}"/lib64/*/libortools.so*; do
         [[ -e "${f}" || -L "${f}" ]] && rm -f "${f}"
     done
     rm -rf "${prefix}/lib/cmake/ortools" "${prefix}/lib64/cmake/ortools"
