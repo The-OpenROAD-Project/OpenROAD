@@ -7,5 +7,6 @@ cc_library(
     name = "stb_truetype",
     srcs = ["stb_truetype.cpp"],
     hdrs = ["stb_truetype.h"],
+    tags = ["no-lint"],
     visibility = ["//visibility:public"],
 )
