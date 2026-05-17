@@ -2767,27 +2767,18 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-  // TODO: This OpenMP parallel section is causing non-determinism. Consider
-  // revisiting this in the future to restore determinism.
-  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
-  // wireLengthGradSum_, densityGradSum_, gradSum)
-  for (size_t i = 0; i < nb_gcells_.size(); i++) {
-    GCell* gCell = nb_gcells_.at(i);
+  // Two-phase: parallel per-cell compute, then deterministic serial reduce.
+  // The previous single-phase loop used `reduction(+: ...)`, whose combine
+  // order across threads is unspecified for floats, producing non-deterministic
+  // sums. Splitting the reduction out keeps results bit-identical regardless
+  // of thread count while still parallelizing the expensive gradient work.
+  const size_t numGCells = nb_gcells_.size();
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t i = 0; i < numGCells; i++) {
+    GCell* gCell = nb_gcells_[i];
     wireLengthGrads[i]
         = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
     densityGrads[i] = getDensityGradient(gCell);
-
-    // Different compiler has different results on the following formula.
-    // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-    //
-    // To prevent instability problem,
-    // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
-    //
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
-
-    densityGradSum_ += std::fabs(densityGrads[i].x);
-    densityGradSum_ += std::fabs(densityGrads[i].y);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2806,6 +2797,19 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
+  }
+
+  // Different compiler has different results on the following formula.
+  // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
+  //
+  // To prevent instability problem,
+  // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
+  for (size_t i = 0; i < numGCells; i++) {
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
+
+    densityGradSum_ += std::fabs(densityGrads[i].x);
+    densityGradSum_ += std::fabs(densityGrads[i].y);
 
     gradSum += std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
   }
