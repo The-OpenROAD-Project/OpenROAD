@@ -13,6 +13,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
