@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <any>
 #include <cmath>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -40,11 +41,108 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "tcl.h"
+#include "tclDecls.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
 
 namespace web {
+
+//------------------------------------------------------------------------------
+// TclEvaluator::eval — main-thread Tcl_Eval with cross-thread marshalling
+//------------------------------------------------------------------------------
+
+namespace {
+
+struct EvalState
+{
+  std::string cmd;
+  TclEvaluator::Result result;
+  std::mutex m;
+  std::condition_variable cv;
+  bool done = false;
+  TclEvaluator* evaluator;
+};
+
+struct EvalEvent : Tcl_Event
+{
+  EvalState* state;
+};
+
+// Run the actual Tcl_Eval under the shared mutex, then drain any
+// buffered log output to clients so the response arrives in-order with
+// the log lines.  Used both as the direct fast-path on the main thread
+// and as the body of the queued event proc when called from a worker.
+//
+// Evaluates at the GLOBAL namespace (TCL_EVAL_GLOBAL) regardless of
+// the current Tcl call-frame.  Without that flag, when web_server is
+// invoked from the launching terminal, web_server_wait_cmd parks in
+// Tcl_DoOneEvent while *still inside the web_server proc body*; the
+// event proc's Tcl_Eval would inherit that proc's local scope and a
+// browser-typed `puts $x` would fail to find globals set at the
+// terminal prompt (Tcl proc scopes don't auto-fall-through to global).
+// Browser commands behave as if typed at the top-level REPL.
+void runEvalLocked(TclEvaluator& e,
+                   const std::string& cmd,
+                   TclEvaluator::Result& out)
+{
+  std::lock_guard<std::mutex> lock(e.mutex);
+  const int rc
+      = Tcl_EvalEx(e.interp, cmd.c_str(), /*numBytes=*/-1, TCL_EVAL_GLOBAL);
+  out.result = Tcl_GetStringResult(e.interp);
+  out.is_error = (rc != TCL_OK);
+  if (e.drain_output) {
+    e.drain_output();
+  }
+}
+
+// Tcl event proc invoked on the main thread.  Runs Tcl_Eval, fills
+// the worker's EvalState, signals the cv so the worker can return.
+extern "C" int evalEventProc(Tcl_Event* ev_, int /*flags*/)
+{
+  auto* ev = static_cast<EvalEvent*>(ev_);
+  EvalState* s = ev->state;
+  runEvalLocked(*s->evaluator, s->cmd, s->result);
+  {
+    std::lock_guard<std::mutex> lk(s->m);
+    s->done = true;
+  }
+  s->cv.notify_one();
+  return 1;
+}
+
+}  // namespace
+
+TclEvaluator::Result TclEvaluator::eval(const std::string& cmd)
+{
+  // Direct fast path when the caller is already on the main thread
+  // (or we don't have a known main thread, e.g. unit tests built
+  // without a running server).
+  if (main_thread_id == nullptr || Tcl_GetCurrentThread() == main_thread_id) {
+    Result r;
+    runEvalLocked(*this, cmd, r);
+    return r;
+  }
+
+  // Worker thread: Tcl 9 isolates per-thread interp state, so
+  // Tcl_Eval here would not see globals set on the main thread.
+  // Marshal the request to the main thread and wait for the result.
+  EvalState state;
+  state.cmd = cmd;
+  state.evaluator = this;
+
+  auto* ev = reinterpret_cast<EvalEvent*>(Tcl_Alloc(sizeof(EvalEvent)));
+  ev->proc = &evalEventProc;
+  ev->nextPtr = nullptr;
+  ev->state = &state;
+  Tcl_ThreadQueueEvent(main_thread_id, ev, TCL_QUEUE_TAIL);
+  Tcl_ThreadAlert(main_thread_id);
+
+  std::unique_lock<std::mutex> lk(state.m);
+  state.cv.wait(lk, [&] { return state.done; });
+  return state.result;
+}
 
 //------------------------------------------------------------------------------
 // ShapeCollector — a gui::Painter that collects rectangles from
