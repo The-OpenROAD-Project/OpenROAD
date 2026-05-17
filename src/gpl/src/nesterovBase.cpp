@@ -3139,7 +3139,11 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // fill in nextCoordinates with given stepLength_
-  for (size_t k = 0; k < nb_gcells_.size(); k++) {
+  // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
+  // parallel, bit-identical to the serial version.
+  const size_t numGCells = nb_gcells_.size();
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t k = 0; k < numGCells; k++) {
     GCell* curGCell = nb_gcells_[k];
     if (curGCell->isLocked()) {
       nextCoordi_[k] = curCoordi_[k];
