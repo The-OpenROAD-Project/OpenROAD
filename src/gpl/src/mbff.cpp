@@ -1737,8 +1737,13 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
 
     // find new center locations
+    std::vector<int> empty_clusters;
     for (int i = 0; i < knn; i++) {
       const int cur_sz = clusters[i].size();
+      if (cur_sz == 0) {
+        empty_clusters.push_back(i);
+        continue;
+      }
       float cX = 0;
       float cY = 0;
 
@@ -1750,6 +1755,37 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       const float new_x = cX / float(cur_sz);
       const float new_y = cY / float(cur_sz);
       centers[i].pt = Point{new_x, new_y};
+    }
+
+    if (!empty_clusters.empty()) {
+      std::set<int> used_flops;
+      for (int empty_idx : empty_clusters) {
+        float max_dist = -1;
+        Point best_pt = centers[empty_idx].pt;
+        int best_idx = -1;
+
+        for (int j = 0; j < knn; j++) {
+          if (clusters[j].empty()) {
+            continue;
+          }
+          for (const Flop& flop : clusters[j]) {
+            if (used_flops.count(flop.idx)) {
+              continue;
+            }
+            const float dist = GetDist(flop.pt, centers[j].pt);
+            if (dist > max_dist) {
+              max_dist = dist;
+              best_pt = flop.pt;
+              best_idx = flop.idx;
+            }
+          }
+        }
+
+        if (best_idx != -1) {
+          centers[empty_idx].pt = best_pt;
+          used_flops.insert(best_idx);
+        }
+      }
     }
 
     // get total displacement
