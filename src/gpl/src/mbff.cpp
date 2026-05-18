@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
+#include "absl/container/inlined_vector.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "lemon/core.h"
@@ -1737,7 +1738,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
 
     // find new center locations
-    std::vector<int> empty_clusters;
+    absl::InlinedVector<int, 4> empty_clusters;
     for (int i = 0; i < knn; i++) {
       const int cur_sz = clusters[i].size();
       if (cur_sz == 0) {
@@ -1758,7 +1759,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
 
     if (!empty_clusters.empty()) {
-      std::set<int> used_flops;
+      absl::InlinedVector<int, 8> used_flops;
       for (int empty_idx : empty_clusters) {
         float max_dist = -1;
         Point best_pt = centers[empty_idx].pt;
@@ -1769,7 +1770,8 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
             continue;
           }
           for (const Flop& flop : clusters[j]) {
-            if (used_flops.count(flop.idx)) {
+            if (std::find(used_flops.begin(), used_flops.end(), flop.idx)
+                != used_flops.end()) {
               continue;
             }
             const float dist = GetDist(flop.pt, centers[j].pt);
@@ -1783,7 +1785,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
 
         if (best_idx != -1) {
           centers[empty_idx].pt = best_pt;
-          used_flops.insert(best_idx);
+          used_flops.push_back(best_idx);
         }
       }
     }
