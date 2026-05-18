@@ -487,6 +487,11 @@ void MoveCommitter::beginJournal()
   // that with a fresh per-level result vector here.
   beginEcoJournal();
   pending_move_results_.emplace();
+  // Mirror the journal level in the tracker so a nested restore rejects only
+  // its own moves.
+  if (move_tracker_) {
+    move_tracker_->beginJournal();
+  }
 }
 
 void MoveCommitter::commitJournal()
@@ -501,6 +506,11 @@ void MoveCommitter::commitJournal()
   // Close the reversible batch. odb::commitEco appends the inner journal to its
   // parent when one exists, otherwise the changes become permanent.
   commitEcoJournal();
+  // Mirror the journal commit in the tracker: an outermost commit finalizes
+  // the tracked moves, a nested commit merges them into the parent level.
+  if (move_tracker_) {
+    move_tracker_->commitJournal();
+  }
 
   std::vector<MoveResult> top = std::move(pending_move_results_.top());
   pending_move_results_.pop();
@@ -539,6 +549,11 @@ void MoveCommitter::restoreJournal()
 
   const bool had_eco_changes = ecoHasPendingChanges();
   restoreEcoJournal();
+  // Mirror the journal restore in the tracker so its moves are rejected,
+  // whether this is an outermost or a nested restore.
+  if (move_tracker_) {
+    move_tracker_->restoreJournal();
+  }
 
   // Unrecord just this level's accepted results; the parent's accumulated
   // pending state (if any) must survive.

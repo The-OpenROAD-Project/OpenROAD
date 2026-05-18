@@ -24,6 +24,7 @@
 
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
+#include "MoveTracker.hh"
 #include "OptimizerTypes.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
@@ -105,6 +106,19 @@ class NestedJournalTest : public tst::IntegratedFixture
                                                sta::Instance* inst)
   {
     return std::make_unique<FakeCandidate>(resizer_, target_, type, inst);
+  }
+
+  // First leaf-instance pin in the loaded design. MoveTracker::trackMove()
+  // asserts the pin was visited first, so the tracker tests need a real pin.
+  const sta::Pin* firstPin() const
+  {
+    for (odb::dbInst* db_inst : block_->getInsts()) {
+      odb::dbSet<odb::dbITerm> iterms = db_inst->getITerms();
+      if (iterms.begin() != iterms.end()) {
+        return db_network_->dbToSta(*iterms.begin());
+      }
+    }
+    return nullptr;
   }
 
   std::unique_ptr<MoveCommitter> committer_;
@@ -277,6 +291,76 @@ TEST_F(NestedJournalTest, CommitOutsideAnyJournalIsSafe)
   committer_->acceptPendingMoves();
   EXPECT_EQ(committer_->pendingMoves(MoveType::kSizeUp), 0);
   EXPECT_EQ(committer_->committedMoves(MoveType::kSizeUp), 1);
+}
+
+// === MoveTracker nested journal support ====================================
+
+// MoveCommitter mirrors its ECO journal stack into MoveTracker so a nested
+// restore rejects only its own moves. Without that, the sequence below reports
+// the reverted BufferMove as committed.
+TEST_F(NestedJournalTest, MoveTrackerNestedRestoreRejectsInnerMove)
+{
+  MoveTracker tracker(resizer_, /*report_enabled=*/true);
+  const sta::Pin* pin = firstPin();
+  ASSERT_NE(pin, nullptr);
+  tracker.trackViolator(pin);
+
+  // beginJournal / commit A / beginJournal / commit B / restoreJournal /
+  // commitJournal: the nested restore reverts B in ODB, so only A commits.
+  tracker.beginJournal();
+  tracker.trackMove(pin, "SizeUpMove", MoveStateType::ATTEMPT);
+  tracker.beginJournal();
+  tracker.trackMove(pin, "BufferMove", MoveStateType::ATTEMPT);
+  tracker.restoreJournal();
+  tracker.commitJournal();
+
+  int committed = 0;
+  int rejected = 0;
+  std::string committed_move;
+  std::string rejected_move;
+  for (const MoveStateData& move : tracker.moveLog()) {
+    if (move.state == MoveStateType::ATTEMPT_COMMIT) {
+      ++committed;
+      committed_move = move.move_type;
+    } else if (move.state == MoveStateType::ATTEMPT_REJECT) {
+      ++rejected;
+      rejected_move = move.move_type;
+    }
+  }
+  EXPECT_EQ(committed, 1);
+  EXPECT_EQ(rejected, 1);
+  EXPECT_EQ(committed_move, "SizeUpMove");
+  EXPECT_EQ(rejected_move, "BufferMove");
+}
+
+// A nested commit keeps its moves pending against the parent journal; the outer
+// commit then finalizes both.
+TEST_F(NestedJournalTest, MoveTrackerNestedCommitFinalizesAtOuterCommit)
+{
+  MoveTracker tracker(resizer_, /*report_enabled=*/true);
+  const sta::Pin* pin = firstPin();
+  ASSERT_NE(pin, nullptr);
+  tracker.trackViolator(pin);
+
+  tracker.beginJournal();
+  tracker.trackMove(pin, "SizeUpMove", MoveStateType::ATTEMPT);
+  tracker.beginJournal();
+  tracker.trackMove(pin, "BufferMove", MoveStateType::ATTEMPT);
+  tracker.commitJournal();  // nested: moves stay pending against the parent
+  EXPECT_TRUE(tracker.moveLog().empty());
+
+  tracker.commitJournal();  // outer: both moves are now committed
+  int committed = 0;
+  int rejected = 0;
+  for (const MoveStateData& move : tracker.moveLog()) {
+    if (move.state == MoveStateType::ATTEMPT_COMMIT) {
+      ++committed;
+    } else if (move.state == MoveStateType::ATTEMPT_REJECT) {
+      ++rejected;
+    }
+  }
+  EXPECT_EQ(committed, 2);
+  EXPECT_EQ(rejected, 0);
 }
 
 }  // namespace rsz
