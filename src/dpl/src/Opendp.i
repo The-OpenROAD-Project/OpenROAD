@@ -31,12 +31,14 @@ detailed_placement_cmd(int max_displacment_x,
                        bool use_old_diamond,
                        bool run_abacus,
                        int site_search_window,
-                       int row_search_window){
+                       int row_search_window,
+                       double drc_penalty){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
                             incremental, use_old_diamond, run_abacus,
-                            site_search_window, row_search_window);
+                            site_search_window, row_search_window,
+                            drc_penalty);
 }
 
 void

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -30,18 +31,19 @@ class Edge;
 // Constants  (defaults match the NBLG paper)
 // ---------------------------------------------------------------------------
 constexpr int kInfCost = std::numeric_limits<int>::max() / 2;
-constexpr int kSiteSearchWindow = 20;    // search width, current row (sites)
-constexpr int kRowSearchWindow = 5;       // search width, adjacent rows
-constexpr int kMaxIterNeg = 400;    // negotiation phase-1 limit
-constexpr int kMaxIterNeg2 = 1000;  // negotiation phase-2 limit
-constexpr int kIsolationPt = 1;     // isolation-point parameter I
-constexpr double kMfDefault = 1.5;  // max-disp penalty multiplier
-constexpr int kThDefault = 30;      // max-disp threshold (sites)
-constexpr double kHfDefault = 1.0;  // history-cost increment factor
-constexpr double kAlpha = 0.7;      // adaptive-pf α
-constexpr double kBeta = 10.0;      // adaptive-pf β
-constexpr double kGamma = 0.005;    // adaptive-pf γ
-constexpr int kIth = 300;           // pf ramp-up threshold iteration
+constexpr int kSiteSearchWindow = 20;  // search width, current row (sites)
+constexpr int kRowSearchWindow = 5;    // search width, adjacent rows
+constexpr double kDrcPenalty = 5.0;    // base DRC penalty (scaled per iter)
+constexpr int kMaxIterNeg = 400;       // negotiation phase-1 limit
+constexpr int kMaxIterNeg2 = 1000;     // negotiation phase-2 limit
+constexpr int kIsolationPt = 1;        // isolation-point parameter I
+constexpr double kMfDefault = 1.5;     // max-disp penalty multiplier
+constexpr int kThDefault = 30;         // max-disp threshold (sites)
+constexpr double kHfDefault = 1.0;     // history-cost increment factor
+constexpr double kAlpha = 0.7;         // adaptive-pf α
+constexpr double kBeta = 10.0;         // adaptive-pf β
+constexpr double kGamma = 0.005;       // adaptive-pf γ
+constexpr int kIth = 300;              // pf ramp-up threshold iteration
 
 // ---------------------------------------------------------------------------
 // NLPowerRailType
@@ -155,6 +157,7 @@ class NegotiationLegalizer
   void setMaxIterNeg(int n) { max_iter_neg_ = n; }
   void setSiteSearchWindow(int w) { site_search_window_ = w; }
   void setRowSearchWindow(int w) { row_search_window_ = w; }
+  void setDrcPenalty(double p) { drc_penalty_ = p; }
   void setNumThreads(int n) { num_threads_ = n; }
 
   // Metrics (valid after legalize())
@@ -196,6 +199,15 @@ class NegotiationLegalizer
   void updateHistoryCosts();
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
   void sortByNegotiationOrder(std::vector<int>& indices) const;
+
+  // Print a stuck-cell summary (overall counts + per-height breakdown).
+  // No-op when both counts are zero.
+  void printStuckSummary(
+      const char* label,
+      int no_cand_count,
+      int same_pos_count,
+      const std::unordered_map<int, int>& no_cand_by_height,
+      const std::unordered_map<int, int>& same_pos_by_height) const;
 
   // Post-optimisation
   void greedyImprove(int passes);
@@ -285,6 +297,7 @@ class NegotiationLegalizer
   // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
   int row_search_window_{kRowSearchWindow};
+  double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool run_abacus_{false};
 
@@ -296,6 +309,21 @@ class NegotiationLegalizer
   mutable double prof_drc_s_{0};
   mutable int prof_candidates_evaluated_{0};
   mutable int prof_candidates_filtered_{0};
+
+  // Stuck-cell tallies for the current runNegotiation call. Reset at the
+  // start of runNegotiation and printed at the end. The per-height maps are
+  // keyed by cell.height (row units).
+  mutable int stuck_no_candidate_count_{0};
+  mutable int stuck_same_pos_count_{0};
+  mutable std::unordered_map<int, int> stuck_no_candidate_by_height_;
+  mutable std::unordered_map<int, int> stuck_same_pos_by_height_;
+
+  // Per-iteration variants. Reset at the start of each negotiationIter and
+  // printed at the end of that iteration.
+  mutable int stuck_no_candidate_count_iter_{0};
+  mutable int stuck_same_pos_count_iter_{0};
+  mutable std::unordered_map<int, int> stuck_no_candidate_by_height_iter_;
+  mutable std::unordered_map<int, int> stuck_same_pos_by_height_iter_;
 };
 
 }  // namespace dpl

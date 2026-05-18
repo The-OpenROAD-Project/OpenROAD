@@ -112,7 +112,8 @@ class Opendp
                          bool use_old_diamond = false,
                          bool run_abacus = false,
                          int site_search_window = 0,
-                         int row_search_window = 0);
+                         int row_search_window = 0,
+                         double drc_penalty = 0.0);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
