@@ -40,7 +40,7 @@ global_route
 | Switch Name | Description | 
 | ----- | ----- |
 | `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
-| `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
+| `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
 | `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |

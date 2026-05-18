@@ -107,7 +107,9 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
         "src/cugr/include",
+        "src/cugr/src",
     ],
     deps = [
         ":groute",

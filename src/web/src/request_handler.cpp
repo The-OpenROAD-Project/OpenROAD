@@ -11,6 +11,7 @@
 #include <exception>
 #include <filesystem>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <regex>

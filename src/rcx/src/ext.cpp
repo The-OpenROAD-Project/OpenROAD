@@ -16,6 +16,7 @@
 #include "rcx/extModelGen.h"
 #include "rcx/extPattern.h"
 #include "rcx/extRCap.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 namespace rcx {

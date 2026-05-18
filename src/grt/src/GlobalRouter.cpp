@@ -410,6 +410,7 @@ void GlobalRouter::globalRoute(bool save_guides)
     if (use_cugr_) {
       odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
+      cugr_->setCongestionIterations(congestion_iterations_);
       cugr_->init(min_layer, max_layer, clock_nets);
       if (verbose_) {
         reportResources();
