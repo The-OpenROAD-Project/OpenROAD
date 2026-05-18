@@ -68,9 +68,6 @@ set(SLANG_INCLUDE_TESTS OFF CACHE BOOL "" FORCE)
 set(SLANG_INCLUDE_TOOLS OFF CACHE BOOL "" FORCE)
 set(SLANG_INCLUDE_INSTALL OFF CACHE BOOL "" FORCE)
 set(SLANG_USE_MIMALLOC OFF CACHE BOOL "" FORCE)
-set(FETCHCONTENT_SOURCE_DIR_FMT
-    ${CMAKE_CURRENT_SOURCE_DIR}/slang-elab/third_party/fmt
-    CACHE PATH "" FORCE)
 
 add_subdirectory(slang-elab/third_party/slang EXCLUDE_FROM_ALL)
 
@@ -83,5 +80,8 @@ include(GetGitRevisionDescription)
 # Build slang-elab's frontend-only library (slang_frontend); skip the Yosys
 # plugin, which we don't build in the OpenROAD tree.
 set(SLANG_ELAB_BUILD_YOSYS_PLUGIN OFF CACHE BOOL "" FORCE)
+
+find_package(fmt CONFIG REQUIRED)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/slang-elab/cmake")
 add_subdirectory(slang-elab/src EXCLUDE_FROM_ALL)
