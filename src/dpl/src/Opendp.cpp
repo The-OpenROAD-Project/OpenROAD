@@ -130,7 +130,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const bool use_negotiation,
                                const bool run_abacus,
                                const int site_search_window,
-                               const int row_search_window)
+                               const int row_search_window,
+                               const double drc_penalty)
 {
   incremental_ = incremental;
   use_negotiation_ |= use_negotiation;
@@ -255,6 +256,9 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     }
     if (row_search_window > 0) {
       negotiation.setRowSearchWindow(row_search_window);
+    }
+    if (drc_penalty > 0.0) {
+      negotiation.setDrcPenalty(drc_penalty);
     }
     negotiation.legalize();
     negotiation.commitNegotiationPosToDpl();

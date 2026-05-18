@@ -9,12 +9,13 @@ sta::define_cmd_args "detailed_placement" { \
                            [-use_negotiation] \
                            [-abacus] \
                            [-site_search_window sites] \
-                           [-row_search_window rows]}
+                           [-row_search_window rows] \
+                           [-drc_penalty penalty]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name \
-          -site_search_window -row_search_window} \
+          -site_search_window -row_search_window -drc_penalty} \
     flags {-disallow_one_site_gaps -incremental -use_negotiation -abacus}
 
   if { [info exists keys(-max_displacement)] } {
@@ -58,6 +59,12 @@ proc detailed_placement { args } {
     sta::check_positive_integer "-row_search_window" $row_search_window
   }
 
+  set drc_penalty 0.0
+  if { [info exists keys(-drc_penalty)] } {
+    set drc_penalty $keys(-drc_penalty)
+    sta::check_positive_float "-drc_penalty" $drc_penalty
+  }
+
   if { [ord::db_has_core_rows] } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
@@ -69,7 +76,7 @@ proc detailed_placement { args } {
       $file_name [info exists flags(-incremental)] \
       [info exists flags(-use_negotiation)] \
       [info exists flags(-abacus)] \
-      $site_search_window $row_search_window
+      $site_search_window $row_search_window $drc_penalty
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."

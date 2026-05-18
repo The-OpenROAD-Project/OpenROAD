@@ -95,9 +95,15 @@ void NegotiationLegalizer::legalize()
 
   logger_->info(utl::DPL,
                 1103,
-                "NegotiationLegalizer search window: +/-{} sites horizontally, +/-{} rows vertically.",
+                "NegotiationLegalizer search window: +/-{} sites horizontally, "
+                "+/-{} rows vertically.",
                 site_search_window_,
                 row_search_window_);
+
+  logger_->info(utl::DPL,
+                1104,
+                "NegotiationLegalizer DRC penalty: {}.",
+                drc_penalty_);
 
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
@@ -233,10 +239,12 @@ void NegotiationLegalizer::legalize()
     commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
+    logger_->report("Committing post-init positions to odb; debug move line drawings will exclude gpl-to-init displacement.");
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
-    logger_->report(run_abacus_ ? "Pause after initialization: Abacus executed."
-                                : "Pause after initialization: Abacus skipped.");
+    logger_->report(run_abacus_
+                        ? "Pause after initialization: Abacus executed."
+                        : "Pause after initialization: Abacus skipped.");
     debug_observer_->redrawAndPause();
   }
 
