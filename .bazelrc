@@ -119,8 +119,9 @@ build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
 
-# Setup remote cache
-build --remote_cache=https://bazel.precisioninno.com
+# Setup remote cache (GKE bazel-remote, gRPC + Remote Asset API)
+build --remote_cache=grpcs://bazel.precisioninno.com:443
+build --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 build --remote_cache_compression=true
 build --remote_upload_local_results=false
 
