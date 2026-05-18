@@ -14,6 +14,10 @@ package(
 cc_library(
     name = "syn",
     srcs = [
+        "src/flow/combinational_mapper.cc",
+        "src/flow/combinational_mapper.h",
+        "src/flow/combinational_mapper_npn.cc",
+        "src/flow/combinational_mapper_npn.h",
         "src/MakeSynthesis.cpp",
         "src/synthesis.cpp",
         ":swig",
