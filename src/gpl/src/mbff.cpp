@@ -813,6 +813,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   }
 
   dbNet* clk_net = nullptr;
+  odb::dbModNet* clk_mod_net = nullptr;
   for (int i = 0; i < num_flops; i++) {
     // single bit flop?
     if (new_mapping[i].first == std::numeric_limits<int>::max()) {
@@ -880,55 +881,73 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       const std::string orig_port_name = iterm->getMTerm()->getName();
 
       dbNet* net = iterm->getNet();
-      while (net) {
+      odb::dbModNet* mod_net = iterm->getModNet();
+      // dbITerm::connect(dbNet*, dbModNet*) dereferences the modnet
+      // unconditionally, so route through this helper to handle the
+      // flat-only case (mod_net == nullptr) safely.
+      auto connect_pair
+          = [&](dbITerm* tray_iterm, dbNet* n, odb::dbModNet* mn) {
+              if (mn) {
+                tray_iterm->connect(n, mn);
+              } else if (n) {
+                tray_iterm->connect(n);
+              }
+            };
+      while (net || mod_net) {
         iterm->disconnect();
 
         // standard pins
         if (is_d) {
-          tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
+          connect_pair(tray_inst[tray_idx]->findITerm(d_pin->name().c_str()),
+                       net,
+                       mod_net);
         }
         if (is_q) {
           if (is_qn_inv) {
-            tray_inst[tray_idx]
-                ->findITerm(qn_pin->name().c_str())
-                ->connect(net);
+            connect_pair(tray_inst[tray_idx]->findITerm(qn_pin->name().c_str()),
+                         net,
+                         mod_net);
           } else {
-            tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
+            connect_pair(tray_inst[tray_idx]->findITerm(q_pin->name().c_str()),
+                         net,
+                         mod_net);
           }
         }
         if (IsSupplyPin(iterm)) {
           if (iterm->getSigType() == odb::dbSigType::GROUND) {
             if (ground) {
-              ground->connect(net);
+              connect_pair(ground, net, mod_net);
             }
           } else {
             if (power) {
-              power->connect(net);
+              connect_pair(power, net, mod_net);
             }
           }
         }
         if (IsClockPin(iterm)) {
           // reconnect pins later
           clk_net = net;
+          clk_mod_net = mod_net;
         }
 
         // scan pins
         if (IsScanIn(iterm)) {
-          scan_in->connect(net);
+          connect_pair(scan_in, net, mod_net);
         }
         if (IsScanEnable(iterm)) {
-          scan_enable->connect(net);
+          connect_pair(scan_enable, net, mod_net);
         }
 
         // preset/clear pins
         if (IsPresetPin(iterm)) {
-          preset->connect(net);
+          connect_pair(preset, net, mod_net);
         }
         if (IsClearPin(iterm)) {
-          clear->connect(net);
+          connect_pair(clear, net, mod_net);
         }
 
         net = iterm->getNet();
+        mod_net = iterm->getModNet();
       }
 
       // Store original FF→tray pin mapping as a property on the tray
@@ -962,10 +981,15 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   std::vector<bool> isConnected(tray_inst.size());
   for (int i = 0; i < num_flops; i++) {
     if (new_mapping[i].first != std::numeric_limits<int>::max()) {
-      if (!isConnected[new_mapping[i].first] && clk_net != nullptr) {
+      if (!isConnected[new_mapping[i].first]
+          && (clk_net != nullptr || clk_mod_net != nullptr)) {
         for (dbITerm* iterm : tray_inst[new_mapping[i].first]->getITerms()) {
           if (IsClockPin(iterm)) {
-            iterm->connect(clk_net);
+            if (clk_mod_net) {
+              iterm->connect(clk_net, clk_mod_net);
+            } else {
+              iterm->connect(clk_net);
+            }
           }
         }
         isConnected[new_mapping[i].first] = true;
