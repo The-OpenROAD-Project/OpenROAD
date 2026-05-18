@@ -152,16 +152,20 @@ void CUGR::setInitialNetSlacks()
   }
 }
 
-void CUGR::updateOverflowNets(std::vector<int>& net_indices)
+void CUGR::updateCongestedNets(std::vector<int>& net_indices,
+                               const double threshold)
 {
   net_indices.clear();
   for (const auto& net : gr_nets_) {
-    if (net->getRoutingTree()
-        && grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
+    if (!net->getRoutingTree()) {
+      continue;
+    }
+    if (grid_graph_->checkCongestion(net->getRoutingTree(), threshold) > 0) {
       net_indices.push_back(net->getIndex());
     }
   }
-  logger_->report("Nets with congestion: {}.", net_indices.size());
+  debugPrint(
+      logger_, GRT, "rrr", 1, "Nets with congestion: {}.", net_indices.size());
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
@@ -188,7 +192,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree());
   }
 
-  updateOverflowNets(net_indices);
+  updateCongestedNets(net_indices);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -222,7 +226,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(net->getRoutingTree());
   }
 
-  updateOverflowNets(net_indices);
+  updateCongestedNets(net_indices);
 }
 
 void CUGR::mazeRoute(std::vector<int>& net_indices)
@@ -230,7 +234,6 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("Stage 3: Maze routing on sparsified graph.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -270,7 +273,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid.step();
   }
 
-  updateOverflowNets(net_indices);
+  updateCongestedNets(net_indices);
 }
 
 void CUGR::route()
@@ -290,11 +293,153 @@ void CUGR::route()
 
   patternRouteWithDetours(net_indices);
 
+  if (!net_indices.empty()) {
+    logger_->report("Stage 3: Maze routing on sparsified graph.");
+  }
   mazeRoute(net_indices);
 
+  iterativeRRR(net_indices);
+
   printStatistics();
+  debugCongestion2D();
   if (constants_.write_heatmap) {
     grid_graph_->write();
+  }
+}
+
+void CUGR::debugCongestion2D() const
+{
+  if (!logger_->debugCheck(utl::GRT, "rrr_2d", 1)) {
+    return;
+  }
+
+  const int x_size = grid_graph_->getXSize();
+  const int y_size = grid_graph_->getYSize();
+  const int num_layers = grid_graph_->getNumLayers();
+
+  double total_3d_overflow = 0.0;
+  double total_2d_overflow = 0.0;
+  int tiles_3d_only = 0;
+  int tiles_2d = 0;
+
+  for (int direction = 0; direction < 2; ++direction) {
+    std::vector<int> same_dir_layers;
+    for (int l = constants_.min_routing_layer; l < num_layers; ++l) {
+      if (grid_graph_->getLayerDirection(l) == direction) {
+        same_dir_layers.push_back(l);
+      }
+    }
+    if (same_dir_layers.empty()) {
+      continue;
+    }
+
+    // For an H layer, an edge spans gcells (x, y)→(x+1, y), so the
+    // valid edge index range is x < x_size - 1. Mirror for V.
+    const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
+    const int y_max = (direction == MetalLayer::H) ? y_size : y_size - 1;
+
+    for (int x = 0; x < x_max; ++x) {
+      for (int y = 0; y < y_max; ++y) {
+        double sum_cap = 0.0;
+        double sum_dem = 0.0;
+        double per_layer_overflow_sum = 0.0;
+        for (int l : same_dir_layers) {
+          const auto& edge = grid_graph_->getEdge(l, x, y);
+          sum_cap += std::max(edge.capacity, 0.0);
+          sum_dem += edge.demand;
+          const double ovf = edge.demand - edge.capacity;
+          if (ovf > 0.0) {
+            per_layer_overflow_sum += ovf;
+          }
+        }
+        const double tile_2d_overflow = std::max(0.0, sum_dem - sum_cap);
+        total_3d_overflow += per_layer_overflow_sum;
+        total_2d_overflow += tile_2d_overflow;
+        if (tile_2d_overflow > 0.0) {
+          ++tiles_2d;
+        } else if (per_layer_overflow_sum > 0.0) {
+          ++tiles_3d_only;
+        }
+      }
+    }
+  }
+
+  const auto rnd = [](double v) { return static_cast<int>(std::round(v)); };
+  const int spreadable = rnd(total_3d_overflow - total_2d_overflow);
+  debugPrint(logger_, GRT, "rrr_2d", 1, "2D-aggregate congestion check:");
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  3D overflow:               {} units",
+             rnd(total_3d_overflow));
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  2D-aggregate overflow:     {} units (unavoidable)",
+             rnd(total_2d_overflow));
+  debugPrint(
+      logger_,
+      GRT,
+      "rrr_2d",
+      1,
+      "  Spreadable overflow:       {} units (could move to other layers)",
+      spreadable);
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  Tiles with 3D-only ovf:    {}",
+             tiles_3d_only);
+  debugPrint(logger_,
+             GRT,
+             "rrr_2d",
+             1,
+             "  Tiles with 2D ovf:         {} (true planar congestion)",
+             tiles_2d);
+}
+
+void CUGR::iterativeRRR(std::vector<int>& net_indices)
+{
+  // Gate on the integer overflow metric (the one users see in
+  // printStatistics and GRT-0096). Sub-1 fractional overflow rounds to 0
+  // and cannot be driven lower by RRR, so don't waste iterations on it.
+  if (totalOverflow() == 0) {
+    return;
+  }
+
+  // Multiplier ramps up to saturate around slope=6 — beyond that the
+  // logistic cost surface degenerates into a step function with no
+  // gradient information, and the maze starts thrashing.
+  constexpr double kMultiplierStep = 1.0;
+  constexpr double kMultiplierCap = 6.0;
+  constexpr double kCongestionThreshold = 0.9;
+
+  double multiplier = 1.0;
+  for (int i = 1; i <= congestion_iterations_; ++i) {
+    updateCongestedNets(net_indices, kCongestionThreshold);
+    if (net_indices.empty()) {
+      break;
+    }
+    if (multiplier < kMultiplierCap) {
+      multiplier += kMultiplierStep;
+    }
+    grid_graph_->setCostMultiplier(multiplier);
+    logger_->info(
+        GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
+    mazeRoute(net_indices);
+  }
+  grid_graph_->setCostMultiplier(1.0);
+
+  // Final summary: the last mazeRoute already printed "Nets with
+  // congestion" via updateCongestedNets, so just warn (if anything remains)
+  // using the same metric without re-printing the count.
+  if (const int residual = totalOverflow(); residual > 0) {
+    logger_->warn(GRT,
+                  118,
+                  "Iterative RRR finished with congestion remaining ({}).",
+                  residual);
   }
 }
 
@@ -548,8 +693,8 @@ void CUGR::printStatistics() const
   }
 
   // Overflow is computed from edge.demand (which includes via-stub
-  // demand). This is the metric CUGR's own checkOverflow,
-  // updateOverflowNets, and extractCongestionView use
+  // demand). This is the same metric used by CUGR's checkCongestion,
+  // updateCongestedNets, and extractCongestionView.
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
   GRPoint bottleneck(-1, -1, -1);
@@ -886,10 +1031,16 @@ void CUGR::saveCongestion()
         }
         const int cap_int = static_cast<int>(std::round(cap));
         const int demand_int = static_cast<int>(std::round(demand));
-        const int overflow_int = demand_int - cap_int;
-        if (overflow_int <= 0) {
-          continue;
-        }
+        // Compute overflow on the unrounded values so a fractional
+        // demand > capacity excess (common after the floor-to-1
+        // adjustment when via-stub demand pushes an integer-capacity
+        // edge slightly over) still produces a marker. Display value
+        // is rounded up to the nearest integer so the comment never
+        // shows "overflow:0" on a tile we just flagged.
+        // TODO: update congestion report and ODB markers with double
+        // for capacities and usages.
+        const int overflow_int
+            = std::max(1, static_cast<int>(std::ceil(demand - cap)));
 
         const auto wc_it = wire_count.find({l, x, y});
         const int wires = wc_it != wire_count.end() ? wc_it->second : 0;
@@ -951,7 +1102,7 @@ void CUGR::routeIncremental()
   route();
 
   std::vector<int> overflow_nets;
-  updateOverflowNets(overflow_nets);
+  updateCongestedNets(overflow_nets);
   std::vector<int> secondary_nets;
   std::ranges::set_difference(
       overflow_nets, initial_nets, std::back_inserter(secondary_nets));
