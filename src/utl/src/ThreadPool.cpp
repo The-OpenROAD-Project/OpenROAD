@@ -3,6 +3,7 @@
 
 #include "utl/ThreadPool.h"
 
+#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -75,19 +76,23 @@ void ThreadPool::workerLoop()
   active_pool_ = this;
   while (true) {
     std::function<void()> task;
+    bool exit_worker = false;
     {
       std::unique_lock<std::mutex> lock(lock_);
       cv_.wait(lock, [this]() { return stop_ || !tasks_.empty(); });
       if (stop_ && tasks_.empty()) {
-        active_pool_ = previous_pool;
-        return;
+        exit_worker = true;
+      } else {
+        task = std::move(tasks_.front());
+        tasks_.pop();
       }
-
-      task = std::move(tasks_.front());
-      tasks_.pop();
+    }
+    if (exit_worker) {
+      break;
     }
     task();
   }
+  active_pool_ = previous_pool;
 }
 
 }  // namespace utl

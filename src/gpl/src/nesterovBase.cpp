@@ -2812,14 +2812,15 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   // Because of rounding errors, using the omp reduction causes non-determinism
   // So the values are stored in a vector and later are accumulated
-  std::vector<float> wire_length_grad(nb_gcells_.size() * 2),
+  const size_t numGCells = nb_gcells_.size();
+  std::vector<float> wire_length_grad(numGCells * 2),
       density_grad(nb_gcells_.size() * 2), grad_sum(nb_gcells_.size());
   float gradSum;
 #pragma omp parallel num_threads(nbc_->getNumThreads())
   {
 #pragma omp for
-    for (size_t i = 0; i < nb_gcells_.size(); i++) {
-      GCell* gCell = nb_gcells_.at(i);
+    for (size_t i = 0; i < numGCells; i++) {
+      GCell* gCell = nb_gcells_[i];
       wireLengthGrads[i]
           = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
       densityGrads[i] = getDensityGradient(gCell);

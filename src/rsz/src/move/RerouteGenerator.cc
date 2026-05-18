@@ -114,9 +114,10 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
   const float resistance = global_router->getFRNetResistance(db_net);
   const float estimated_resistance
       = global_router->getFRNetResistanceOnMinClockLayer(db_net);
-  const float reduction_ratio
-      = (resistance > 0.0f) ? (resistance - estimated_resistance) / resistance
-                            : 0.0f;
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
   if (reduction_ratio < kMinResistanceReduction) {
     debugPrint(resizer_.logger(),
                RSZ,

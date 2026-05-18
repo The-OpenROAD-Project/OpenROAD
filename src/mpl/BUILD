@@ -42,16 +42,30 @@ cc_library(
         "src/shapes.h",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.random",
+    ],
+)
+
+# Headers owned by :mpl but also consumed by :ui. Kept package-private so
+# nothing outside //src/mpl can depend on them.
+cc_library(
+    name = "mpl_private_hdrs",
+    hdrs = [
+        "src/MplObserver.h",
+        "src/clusterEngine.h",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":pusher",
+        "//src/odb/src/db",
     ],
 )
 
 cc_library(
     name = "mpl",
     srcs = [
-        "src/MplObserver.h",
         "src/SACoreHardMacro.cpp",
         "src/SACoreHardMacro.h",
         "src/SACoreSoftMacro.cpp",
@@ -59,7 +73,6 @@ cc_library(
         "src/SimulatedAnnealingCore.cpp",
         "src/SimulatedAnnealingCore.h",
         "src/clusterEngine.cpp",
-        "src/clusterEngine.h",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
         "src/rtl_mp.cpp",
@@ -71,6 +84,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":mpl_private_hdrs",
         ":pusher",
         ":snapper",
         "//src/dbSta",
@@ -87,10 +101,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/mpl/rtl_mp.h",
         "src/MakeMacroPlacer.cpp",
-        "src/MplObserver.h",
-        "src/clusterEngine.h",
         "src/graphics.cpp",
         "src/graphics.h",
         ":swig",
@@ -105,6 +116,7 @@ cc_library(
     ],
     deps = [
         ":mpl",
+        ":mpl_private_hdrs",
         ":pusher",
         "//:ord",
         "//src/gui",

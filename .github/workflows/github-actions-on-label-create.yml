@@ -88,3 +88,150 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         UPSTREAM_PR: ${{ steps.send_pr.outputs.pr }}
+
+    - name: Request CODEOWNERS reviewers on upstream PR
+      if: steps.send_pr.outputs.pr != ''
+      env:
+        GH_TOKEN: ${{ steps.resolve_token.outputs.token }}
+        PR: ${{ steps.send_pr.outputs.pr }}
+        UPSTREAM: ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}
+      run: |
+        set -euo pipefail
+        # System Python on the runner is PEP 668 externally-managed; use a venv.
+        python3 -m venv /tmp/codeowners-venv
+        /tmp/codeowners-venv/bin/pip install --quiet pathspec
+        /tmp/codeowners-venv/bin/python <<'PY'
+        import base64, json, os, subprocess, sys, time
+        from pathspec import GitIgnoreSpec
+
+        pr = os.environ["PR"]
+        upstream = os.environ["UPSTREAM"]
+
+        # GitHub computes PR mergeability asynchronously, so `mergeable` and
+        # `merge_commit_sha` are often null on the first read after PR
+        # creation. Poll until the background job finishes.
+        attempts = 10
+        delay = 3
+        for attempt in range(1, attempts + 1):
+            pr_json = subprocess.check_output(
+                ["gh", "api", f"repos/{upstream}/pulls/{pr}"], text=True)
+            pr_data = json.loads(pr_json)
+            if pr_data.get("mergeable") is not None \
+                    and pr_data.get("merge_commit_sha"):
+                break
+            print(f"Mergeability not yet computed "
+                  f"(attempt {attempt}/{attempts}); sleeping {delay}s")
+            time.sleep(delay)
+        else:
+            raise RuntimeError(
+                "PR merge commit SHA is unavailable after polling; refusing "
+                "to request CODEOWNERS reviewers from an incomplete "
+                "effective diff.")
+
+        author = pr_data["user"]["login"]
+        base_ref = pr_data["base"]["ref"]
+        base_repo = pr_data["base"]["repo"]["full_name"]
+        base_sha = pr_data["base"]["sha"]
+        head_repo = pr_data["head"]["repo"]["full_name"]
+        head_sha = pr_data["head"]["sha"]
+        merge_sha = pr_data["merge_commit_sha"]
+
+        print(f"Computing effective PR merge diff: {base_repo}@{base_sha}.."
+              f"{base_repo}@{merge_sha} (head {head_repo}@{head_sha})")
+
+        # Authoritative CODEOWNERS is the one on the PR base branch.
+        raw = subprocess.check_output(
+            ["gh", "api", "--method", "GET",
+             f"repos/{upstream}/contents/.github/CODEOWNERS",
+             "-f", f"ref={base_ref}", "--jq", ".content"], text=True).strip()
+        codeowners = base64.b64decode(raw).decode()
+
+        rules = []
+        for line in codeowners.splitlines():
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            pattern, *rule_owners = line.split()
+            rules.append((GitIgnoreSpec.from_lines([pattern]), rule_owners))
+
+        def commit_tree(repo, sha):
+            commit_json = subprocess.check_output(
+                ["gh", "api", f"repos/{repo}/git/commits/{sha}"],
+                text=True)
+            commit_data = json.loads(commit_json)
+            tree_sha = commit_data["tree"]["sha"]
+            tree_json = subprocess.check_output(
+                ["gh", "api",
+                 f"repos/{repo}/git/trees/{tree_sha}?recursive=1"],
+                text=True)
+            tree_data = json.loads(tree_json)
+            if tree_data.get("truncated"):
+                raise RuntimeError(
+                    f"Recursive tree for {repo}@{sha} was truncated; "
+                    "refusing to request partial CODEOWNERS reviewers.")
+
+            entries = {}
+            for entry in tree_data["tree"]:
+                if entry["type"] == "tree":
+                    continue
+                entries[entry["path"]] = (
+                    entry.get("sha"), entry.get("mode"), entry.get("type"))
+            return entries
+
+        # Use the effective merge-result delta rather than GitHub's PR file
+        # list or a direct base -> head tree comparison. The PR file list is
+        # merge-base based, so it can include already-landed upstream changes
+        # brought in by a merge from the base branch. A direct base -> head
+        # comparison has the opposite problem when the PR branch is behind the
+        # base branch: it reports base-only changes as if the PR changed them.
+        # Comparing base -> test-merge tree matches the content that would land
+        # if this PR merged now, including real conflict-resolution edits.
+        base_tree = commit_tree(base_repo, base_sha)
+        merge_tree = commit_tree(base_repo, merge_sha)
+        files = sorted(path for path in set(base_tree) | set(merge_tree)
+                       if base_tree.get(path) != merge_tree.get(path))
+
+        print("Effective changed files:")
+        for path in files:
+            print(f"  {path}")
+
+        owners = set()
+        for path in files:
+            matched = None
+            for spec, rule_owners in rules:
+                if spec.match_file(path):
+                    matched = rule_owners  # last match wins
+            if matched:
+                owners.update(o.lstrip("@") for o in matched)
+
+        # CODEOWNERS lists teams as "org/slug"; the REST endpoint wants the
+        # bare slug in team_reviewers.
+        team_slugs = sorted(t.split("/", 1)[1] for t in owners if "/" in t)
+        users = sorted(o for o in owners
+                       if "/" not in o and o.lower() != author.lower())
+
+        print("Matched CODEOWNERS teams:", ", ".join(team_slugs) or "<none>")
+        print("Matched CODEOWNERS users:", ", ".join(users) or "<none>")
+
+        if not (team_slugs or users):
+            print("No CODEOWNERS-matched reviewers.")
+            sys.exit(0)
+
+        # Use the REST POST endpoint directly: `gh pr edit --add-reviewer`
+        # runs a GraphQL query that needs read:org, which our tokens don't
+        # have. POST /pulls/{n}/requested_reviewers only writes, so the
+        # existing repo / pull-requests:write scope is enough. Each array
+        # is capped at 15 per call.
+        def request(body):
+            print("Requesting:", body)
+            subprocess.run(
+                ["gh", "api", "--method", "POST",
+                 f"repos/{upstream}/pulls/{pr}/requested_reviewers",
+                 "--input", "-"],
+                input=json.dumps(body), text=True, check=True)
+
+        for i in range(0, len(team_slugs), 15):
+            request({"team_reviewers": team_slugs[i:i + 15]})
+        for i in range(0, len(users), 15):
+            request({"reviewers": users[i:i + 15]})
+        PY

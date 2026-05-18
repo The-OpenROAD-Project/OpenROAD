@@ -84,7 +84,6 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/sta:opensta_lib",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",

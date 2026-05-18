@@ -1154,9 +1154,11 @@ ArcDelayState collectPathStages(const Resizer& resizer,
   }
   std::ranges::reverse(fanin_stages);
 
-  context.path_stages = std::move(fanin_stages);
+  context.path_stages.reserve(fanin_stages.size() + 1 + delay_levels);
+  for (DelayStageState& stage : fanin_stages) {
+    context.path_stages.push_back(std::move(stage));
+  }
   context.target_stage_index = static_cast<int>(context.path_stages.size());
-  context.path_stages.reserve(context.path_stages.size() + 1 + delay_levels);
   context.path_stages.push_back(target_stage);
 
   int found_fanout_stages = 0;
