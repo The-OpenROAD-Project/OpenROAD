@@ -118,13 +118,6 @@
       "schema": "kSchemaChipExtended"
     },
     {
-      "name": "alignment_marker_tolerance_",
-      "type": "int",
-      "default": "-1",
-      "schema": "kSchemaChipAlignmentMarker",
-      "public_comment": "// Max misalignment (DBU) between paired alignment markers on stacked chips; -1 disables the check."
-    },
-    {
       "name": "top_",
       "type": "dbId<_dbBlock>",
       "flags": ["private", "cmpgt"],

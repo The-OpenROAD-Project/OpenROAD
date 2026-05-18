@@ -66,7 +66,6 @@ class _dbChip : public _dbObject
   int scribe_line_north_;
   int scribe_line_south_;
   bool tsv_;
-  int alignment_marker_tolerance_;
   dbId<_dbBlock> top_;
   dbTable<_dbBlock>* block_tbl_;
   _dbNameCache* name_cache_;

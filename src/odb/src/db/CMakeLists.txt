@@ -91,6 +91,7 @@ add_library(db
     poly_decomp.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbAlignmentMarkerRule.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
     dbChip.cpp

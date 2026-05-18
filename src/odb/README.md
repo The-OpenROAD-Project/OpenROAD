@@ -441,26 +441,6 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
-### Set 3DBlox Alignment Markers
-
-This command marks the given masters as alignment markers used by the 3DBlox
-checker, and optionally sets a tolerance (in microns) for marker alignment
-across stacked dies.
-
-```tcl
-set_3dblox_alignment_markers
-    -masters masters
-    [-tolerance tolerance_um]
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-masters` | List of master cell names to flag as alignment markers. |
-| `-tolerance` | Optional alignment tolerance in microns (must be positive). |
-
-
 ## Example scripts
 
 After building successfully, run OpenDB Tcl shell using
@@ -484,6 +464,31 @@ This command checks if the IO pins of the design have a placement status of `PLA
 ```tcl
 all_pins_placed
 ```
+
+### Add 3DBlox Alignment Marker Rule
+
+This command registers a 3DBlox alignment marker rule between two cell masters. The 3DBlox checker uses these rules to verify that paired alignment marker instances on bonded chiplets are co-located and (optionally) match a relative orientation constraint.
+
+```tcl
+add_3dblox_alignment_marker_rule
+    [-lib_a lib_a]
+    -master_a master_a
+    [-lib_b lib_b]
+    -master_b master_b
+    [-tolerance tolerance_um]
+    [-relative_orientations relative_orientations]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-lib_a` | Optional library to scope `-master_a` lookup. Required only when the master name is ambiguous across libraries. |
+| `-master_a` | Cell master used as side A of the alignment pair. |
+| `-lib_b` | Optional library to scope `-master_b` lookup. |
+| `-master_b` | Cell master used as side B of the alignment pair. |
+| `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
+| `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
 
 ## Regression tests
 

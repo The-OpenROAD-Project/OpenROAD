@@ -448,6 +448,16 @@ struct less<odb::dbAccessPoint*>
 };
 
 template <>
+struct less<odb::dbAlignmentMarkerRule*>
+{
+  bool operator()(const odb::dbAlignmentMarkerRule* lhs,
+                  const odb::dbAlignmentMarkerRule* rhs) const
+  {
+    return odb::compare_by_id(lhs, rhs);
+  }
+};
+
+template <>
 struct less<odb::dbBusPort*>
 {
   bool operator()(const odb::dbBusPort* lhs, const odb::dbBusPort* rhs) const

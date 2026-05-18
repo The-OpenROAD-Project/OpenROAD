@@ -24,6 +24,8 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipNet;
 class dbInst;
+class dbMaster;
+class dbAlignmentMarkerRule;
 
 enum class UnfoldedRegionSide
 {
@@ -36,19 +38,21 @@ enum class UnfoldedRegionSide
 struct UnfoldedChip;
 struct UnfoldedRegion;
 
+struct UnfoldedAlignmentMarker
+{
+  UnfoldedChip* parent_chip = nullptr;
+  dbInst* inst = nullptr;
+
+  Rect getBBox() const;
+  dbOrientType getOrient() const;
+  Point getLocation() const;
+};
+
 struct UnfoldedBump
 {
   dbChipBumpInst* bump_inst = nullptr;
   UnfoldedRegion* parent_region = nullptr;
   Point3D global_position;
-};
-
-struct UnfoldedAlignmentMarker
-{
-  dbInst* inst = nullptr;
-  UnfoldedChip* parent_chip = nullptr;
-  Rect global_bbox;
-  dbOrientType global_orient;
 };
 
 struct UnfoldedRegion
@@ -116,6 +120,16 @@ class UnfoldedModel
   }
   const std::vector<UnfoldedNet>& getNets() const { return unfolded_nets_; }
   UnfoldedChip* findUnfoldedChip(const std::string& path);
+  const std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>&
+  getAlignmentMarkerRuleMap() const
+  {
+    return alignment_marker_rule_map_;
+  }
+  const std::vector<dbAlignmentMarkerRule*>& getAlignmentMarkerRules(
+      dbMaster* master) const
+  {
+    return alignment_marker_rule_map_.at(master);
+  }
 
  private:
   UnfoldedChip* buildUnfoldedChip(dbChipInst* chip_inst,
@@ -136,6 +150,8 @@ class UnfoldedModel
   std::vector<UnfoldedConnection> unfolded_connections_;
   std::vector<UnfoldedNet> unfolded_nets_;
   std::map<std::string, UnfoldedChip*> chip_map_;
+  std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>
+      alignment_marker_rule_map_;
 };
 
 }  // namespace odb

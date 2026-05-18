@@ -96,9 +96,6 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (tsv_ != rhs.tsv_) {
     return false;
   }
-  if (alignment_marker_tolerance_ != rhs.alignment_marker_tolerance_) {
-    return false;
-  }
   if (top_ != rhs.top_) {
     return false;
   }
@@ -172,7 +169,6 @@ _dbChip::_dbChip(_dbDatabase* db)
   scribe_line_north_ = 0;
   scribe_line_south_ = 0;
   tsv_ = false;
-  alignment_marker_tolerance_ = -1;
   prop_tbl_ = new dbTable<_dbProperty>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbPropertyObj);
   chip_region_tbl_ = new dbTable<_dbChipRegion>(
@@ -244,9 +240,6 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipExtended)) {
     stream >> obj.tsv_;
   }
-  if (obj.getDatabase()->isSchema(kSchemaChipAlignmentMarker)) {
-    stream >> obj.alignment_marker_tolerance_;
-  }
   stream >> obj.top_;
   if (obj.getDatabase()->isSchema(kSchemaChipInst)) {
     stream >> obj.chipinsts_;
@@ -311,7 +304,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.scribe_line_north_;
   stream << obj.scribe_line_south_;
   stream << obj.tsv_;
-  stream << obj.alignment_marker_tolerance_;
   stream << obj.top_;
   stream << obj.chipinsts_;
   stream << obj.conns_;
@@ -583,19 +575,6 @@ bool dbChip::isTsv() const
 {
   _dbChip* obj = (_dbChip*) this;
   return obj->tsv_;
-}
-
-void dbChip::setAlignmentMarkerTolerance(int alignment_marker_tolerance)
-{
-  _dbChip* obj = (_dbChip*) this;
-
-  obj->alignment_marker_tolerance_ = alignment_marker_tolerance;
-}
-
-int dbChip::getAlignmentMarkerTolerance() const
-{
-  _dbChip* obj = (_dbChip*) this;
-  return obj->alignment_marker_tolerance_;
 }
 
 dbSet<dbChipRegion> dbChip::getChipRegions() const

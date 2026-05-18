@@ -13,11 +13,13 @@
 #include <ranges>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"  // IWYU pragma: keep
 #include "odb/unfoldedModel.h"
@@ -103,7 +105,7 @@ std::vector<AlignmentMarkerIndex::Value> collectMarkersInRect(
 {
   std::vector<AlignmentMarkerIndex::Value> out;
   for (const auto& m : markers) {
-    const Point center = m.global_bbox.center();
+    const Point center = m.getBBox().center();
     if (rect.intersects(center)) {
       out.emplace_back(center, &m);
     }
@@ -117,73 +119,89 @@ using AlignmentViolationReporter
                          const std::string&)>;
 
 void matchMarkersBetweenChips(
+    const UnfoldedModel* model,
     const std::vector<AlignmentMarkerIndex::Value>& list_a,
     const std::vector<AlignmentMarkerIndex::Value>& list_b,
     const UnfoldedChip* c_a,
     const UnfoldedChip* c_b,
-    const int tolerance_dbu,
+    std::unordered_set<const UnfoldedAlignmentMarker*>& matched_markers,
     const AlignmentViolationReporter& report)
 {
-  const int64_t tol_sq = static_cast<int64_t>(tolerance_dbu) * tolerance_dbu;
   AlignmentMarkerIndex index_b(list_b);
 
-  for (const auto& [pa, a_marker] : list_a) {
-    const Rect qbox(pa.x() - tolerance_dbu,
-                    pa.y() - tolerance_dbu,
-                    pa.x() + tolerance_dbu,
-                    pa.y() + tolerance_dbu);
+  for (auto& [pa, marker] : list_a) {
+    int max_tolerance = 0;
+    const std::vector<dbAlignmentMarkerRule*>& rules
+        = model->getAlignmentMarkerRules(marker->inst->getMaster());
+    for (const auto* rule : rules) {
+      max_tolerance = std::max(max_tolerance, rule->getTolerance());
+    }
+    const Rect qbox(pa.x() - max_tolerance,
+                    pa.y() - max_tolerance,
+                    pa.x() + max_tolerance,
+                    pa.y() + max_tolerance);
     auto candidates = index_b.query(qbox);
-    std::erase_if(candidates, [&](const auto& v) {
-      const int64_t dx = static_cast<int64_t>(v.first.x()) - pa.x();
-      const int64_t dy = static_cast<int64_t>(v.first.y()) - pa.y();
-      return dx * dx + dy * dy > tol_sq;
-    });
 
-    if (candidates.empty()) {
-      report(
-          a_marker,
-          nullptr,
-          fmt::format("Alignment marker on {} has no counterpart on {} within "
-                      "tolerance",
-                      a_marker->parent_chip->name,
-                      c_b->name));
-    } else if (candidates.size() > 1) {
-      report(
-          a_marker,
-          nullptr,
-          fmt::format("Alignment marker on {} has {} candidates on {} within "
-                      "tolerance (ambiguous)",
-                      a_marker->parent_chip->name,
-                      candidates.size(),
-                      c_b->name));
+    std::set<AlignmentMarkerIndex::Value> counterparts;
+    for (const auto* rule : rules) {
       for (const auto& candidate : candidates) {
-        index_b.remove(candidate);
+        auto* a_marker = marker;
+        auto* b_marker = candidate.second;
+        if (rule->getMasterA() != a_marker->inst->getMaster()) {
+          std::swap(a_marker, b_marker);
+        }
+        if (b_marker->inst->getMaster() != rule->getMasterB()) {
+          continue;
+        }
+        if (odb::Point::manhattanDistance(a_marker->getBBox().center(),
+                                          b_marker->getBBox().center())
+            <= rule->getTolerance()) {
+          counterparts.insert(candidate);
+          // check the relative orientation
+          if (!rule->getRelativeOrientations().empty()) {
+            dbTransform rel_xform(a_marker->getOrient());
+            rel_xform.invert();
+            rel_xform.concat(dbTransform(b_marker->getOrient()));
+            const dbOrientType relative_orient = rel_xform.getOrient();
+            const auto& allowed_relative_orients
+                = rule->getRelativeOrientations();
+            if (std::find(allowed_relative_orients.begin(),
+                          allowed_relative_orients.end(),
+                          relative_orient)
+                == allowed_relative_orients.end()) {
+              // candidate violates the relative-orientation constraint
+              report(a_marker,
+                     b_marker,
+                     fmt::format(
+                         "Alignment marker on {} has mismatched "
+                         "relative orientation with counterpart on {} ({})",
+                         b_marker->parent_chip->name,
+                         a_marker->parent_chip->name,
+                         relative_orient.getString()));
+            }
+          }
+        }
       }
-    } else {
-      const auto* b_marker = candidates.front().second;
-      if (a_marker->global_orient != b_marker->global_orient) {
-        report(a_marker,
-               b_marker,
-               fmt::format("Alignment marker on {} ({}) has mismatched "
-                           "orientation with counterpart on {} ({})",
-                           a_marker->parent_chip->name,
-                           a_marker->global_orient.getString(),
-                           b_marker->parent_chip->name,
-                           b_marker->global_orient.getString()));
+    }
+    if (!counterparts.empty()) {
+      matched_markers.insert(marker);
+      if (counterparts.size() > 1) {
+        report(marker,
+               nullptr,
+               fmt::format(
+                   "Alignment marker on {} has {} counterparts on {} within "
+                   "tolerance",
+                   marker->parent_chip->name,
+                   counterparts.size(),
+                   c_b->name));
       }
-      index_b.remove(candidates.front());
+    }
+    for (const auto& counterpart : counterparts) {
+      matched_markers.insert(counterpart.second);
+      index_b.remove(counterpart);
     }
   }
-  for (const auto& [pt, m] : index_b) {
-    report(m,
-           nullptr,
-           fmt::format("Alignment marker on {} has no counterpart on {} within "
-                       "tolerance",
-                       m->parent_chip->name,
-                       c_a->name));
-  }
 }
-
 }  // namespace
 
 Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
@@ -425,11 +443,7 @@ void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
 void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
                                     const UnfoldedModel* model)
 {
-  const int tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
-  if (tolerance_dbu < 0) {
-    return;
-  }
-
+  std::unordered_set<const UnfoldedAlignmentMarker*> matched_markers;
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
   auto report = [&](const UnfoldedAlignmentMarker* m,
@@ -440,15 +454,18 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     }
     auto* marker = dbMarker::create(cat);
     // TODO: Add sources correctly
-    marker->addShape(m->global_bbox);
+    marker->addShape(m->getBBox());
     if (other) {
-      marker->addShape(other->global_bbox);
+      marker->addShape(other->getBBox());
     }
     marker->setComment(msg);
     violation_count++;
   };
 
   for (const auto& conn : model->getConnections()) {
+    if (!isValid(conn)) {
+      continue;
+    }
     const UnfoldedRegion* ra = conn.top_region;
     const UnfoldedRegion* rb = conn.bottom_region;
     if (!ra || !rb) {
@@ -471,7 +488,18 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
       continue;
     }
 
-    matchMarkersBetweenChips(list_a, list_b, c_a, c_b, tolerance_dbu, report);
+    matchMarkersBetweenChips(
+        model, list_a, list_b, c_a, c_b, matched_markers, report);
+  }
+  for (const auto& chip : model->getChips()) {
+    for (const auto& marker : chip.alignment_markers) {
+      if (matched_markers.find(&marker) == matched_markers.end()) {
+        report(&marker,
+               nullptr,
+               fmt::format("Alignment marker on {} has no counterpart",
+                           chip.name));
+      }
+    }
   }
 
   if (violation_count > 0) {

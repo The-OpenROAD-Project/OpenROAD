@@ -56,6 +56,21 @@ UnfoldedRegionSide mirrorSide(UnfoldedRegionSide side)
 
 }  // namespace
 
+Rect UnfoldedAlignmentMarker::getBBox() const
+{
+  Rect bbox = inst->getBBox()->getBox();
+  parent_chip->transform.apply(bbox);
+  return bbox;
+}
+
+dbOrientType UnfoldedAlignmentMarker::getOrient() const
+{
+  dbTransform inst_xform = inst->getTransform();
+  dbTransform total_xform = inst_xform;
+  total_xform.concat(parent_chip->transform);
+  return total_xform.getOrient();
+}
+
 int UnfoldedRegion::getSurfaceZ() const
 {
   if (isTop()) {
@@ -83,6 +98,14 @@ UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
     : logger_(logger)
 {
   std::vector<dbChipInst*> path;
+  for (dbAlignmentMarkerRule* rule : chip->getDb()->getAlignmentMarkerRules()) {
+    dbMaster* master_a = rule->getMasterA();
+    dbMaster* master_b = rule->getMasterB();
+    alignment_marker_rule_map_[master_a].push_back(rule);
+    if (master_b != master_a) {
+      alignment_marker_rule_map_[master_b].push_back(rule);
+    }
+  }
   for (dbChipInst* inst : chip->getChipInsts()) {
     buildUnfoldedChip(inst, path, dbTransform());
   }
@@ -204,24 +227,17 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
 
 void UnfoldedModel::unfoldAlignmentMarkers(UnfoldedChip& uf_chip)
 {
-  dbChip* master = uf_chip.chip_inst_path.back()->getMasterChip();
-  dbBlock* block = master->getBlock();
+  auto block = uf_chip.chip_inst_path.back()->getMasterChip()->getBlock();
   if (block == nullptr) {
     return;
   }
   for (dbInst* inst : block->getInsts()) {
-    if (!inst->getMaster()->isAlignmentMarker()) {
-      continue;
+    dbMaster* master = inst->getMaster();
+    if (alignment_marker_rule_map_.find(master)
+        != alignment_marker_rule_map_.end()) {
+      uf_chip.alignment_markers.push_back(
+          {.parent_chip = nullptr, .inst = inst});
     }
-    Rect bbox = inst->getBBox()->getBox();
-    uf_chip.transform.apply(bbox);
-    dbTransform global_transform(inst->getOrient());
-    global_transform.concat(uf_chip.transform);
-    uf_chip.alignment_markers.push_back(
-        {.inst = inst,
-         .parent_chip = nullptr,  // set later in registerUnfoldedChip
-         .global_bbox = bbox,
-         .global_orient = global_transform.getOrient()});
   }
 }
 
