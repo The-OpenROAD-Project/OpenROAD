@@ -49,6 +49,20 @@ struct FeatureSet
     return r;
   }
 
+  FeatureSet complementClear() const
+  {
+    FeatureSet r = *this;
+    r.clear_polarity = !r.clear_polarity;
+    return r;
+  }
+
+  FeatureSet complementSet() const
+  {
+    FeatureSet r = *this;
+    r.set_polarity = !r.set_polarity;
+    return r;
+  }
+
   bool operator==(const FeatureSet& o) const
   {
     return clock_polarity == o.clock_polarity && has_clear == o.has_clear
@@ -413,6 +427,7 @@ void mapSequentials(Graph& g,
       feats.clock_polarity = dff->clock().isPositive();
 
       bool clear_is_set = false;
+      bool complement_clear = false;
       if (!dff->clear().isAlways(false)) {
         Net cv = dff->clearValue()[i];
         if (cv == Net::zero()) {
@@ -426,6 +441,12 @@ void mapSequentials(Graph& g,
       }
 
       auto it = classes.find(feats);
+      if (it == classes.end()) {
+        it = classes.find(clear_is_set ? feats.complementSet()
+                                       : feats.complementClear());
+        complement_clear = true;
+      }
+
       if (it == classes.end()) {
         auto polString = [](bool has, bool polarity) {
           if (!has) {
@@ -452,9 +473,13 @@ void mapSequentials(Graph& g,
 
       if (!dff->clear().isAlways(false)) {
         if (!clear_is_set) {
-          inputs.mutableNet(mt.pins.clear_in) = dff->clear().net();
+          inputs.mutableNet(mt.pins.clear_in)
+              = complement_clear ? g.add<Not>(dff->clear().net()).asNet()
+                                 : dff->clear().net();
         } else {
-          inputs.mutableNet(mt.pins.set_in) = dff->clear().net();
+          inputs.mutableNet(mt.pins.set_in)
+              = complement_clear ? g.add<Not>(dff->clear().net()).asNet()
+                                 : dff->clear().net();
         }
       }
 
