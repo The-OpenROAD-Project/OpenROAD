@@ -1,13 +1,12 @@
 [INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
 [INFO ODB-0128] Design: gcd
-[INFO ODB-0130]     Created 54 pins.
-[INFO ODB-0131]     Created 1162 components and 5669 component-terminals.
-[INFO ODB-0133]     Created 348 nets and 1021 connections.
-[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
-[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0022] Global adjustment: 70%
 [INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
@@ -16,12 +15,12 @@
 [INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
 [INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 70
+[INFO GRT-0004] Blockages: 13
 [INFO GRT-0019] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
-[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0002] Maximum degree: 12
 Design statistics
-Nets:                348
+Nets:                15
 Special nets:        0
 Routing layers:      6
 
@@ -29,12 +28,12 @@ Routing layers:      6
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-li1        Vertical        25000         25000          0.00%
-met1       Horizontal      30634          6127          80.00%
-met2       Vertical        25000          5000          80.00%
-met3       Horizontal      16240          3248          80.00%
-met4       Vertical        12480          2496          80.00%
-met5       Horizontal       3600          1640          54.44%
+li1        Vertical        21571         21571          0.00%
+met1       Horizontal      27555         13777          50.00%
+met2       Vertical        21571         10786          50.00%
+met3       Horizontal      14023          4207          70.00%
+met4       Vertical        10804          3241          70.00%
+met5       Horizontal       3108          1413          54.54%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
@@ -45,27 +44,27 @@ Stage 3: Maze routing on sparsified graph.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (70).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (20).
 Routing statistics
-Wire length:           46827
-Total via count:       2207
-Total congestion:      69
-Min resource:          -1.1811113018459753
-Bottleneck:            (1, 24, 29)
+Wire length:           2918
+Total via count:       138
+Total congestion:      19
+Min resource:          -1.1638512321420666
+Bottleneck:            (3, 19, 21)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
-li1              25000            39            0.16%             0 /  0 /  0
-met1              6127          1012           16.52%             1 /  0 / 29
-met2              5000          1043           20.86%             0 /  1 / 19
-met3              3248           560           17.24%             1 /  0 / 21
-met4              2496           191            7.65%             0 /  1 /  1
-met5              1640             6            0.37%             0 /  0 /  0
+li1              21571             7            0.03%             0 /  0 /  0
+met1             13777           203            1.47%             0 /  0 /  0
+met2             10786           131            1.21%             0 /  0 /  0
+met3              4207            85            2.02%             1 /  0 / 13
+met4              3241            34            1.05%             0 /  1 /  7
+met5              1413             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            43511          2851            6.55%             2 /  2 / 70
+Total            54995           460            0.84%             1 /  1 / 20
 
-[INFO GRT-0018] Total wirelength: 24148 um
-[INFO GRT-0014] Routed nets: 348
+[INFO GRT-0018] Total wirelength: 1641 um
+[INFO GRT-0014] Routed nets: 15
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
