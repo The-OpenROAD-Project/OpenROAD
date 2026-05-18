@@ -29,11 +29,14 @@ detailed_placement_cmd(int max_displacment_x,
                        const char* report_file_name,
                        bool incremental,
                        bool use_negotiation,
-                       bool run_abacus){
+                       bool run_abacus,
+                       int site_search_window,
+                       int row_search_window){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, use_negotiation, run_abacus);
+                            incremental, use_negotiation, run_abacus,
+                            site_search_window, row_search_window);
 }
 
 void

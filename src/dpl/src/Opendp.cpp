@@ -128,7 +128,9 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name,
                                bool incremental,
                                const bool use_negotiation,
-                               const bool run_abacus)
+                               const bool run_abacus,
+                               const int site_search_window,
+                               const int row_search_window)
 {
   incremental_ = incremental;
   use_negotiation_ |= use_negotiation;
@@ -248,6 +250,12 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
+    if (site_search_window > 0) {
+      negotiation.setSiteSearchWindow(site_search_window);
+    }
+    if (row_search_window > 0) {
+      negotiation.setRowSearchWindow(row_search_window);
+    }
     negotiation.legalize();
     negotiation.commitNegotiationPosToDpl();
 

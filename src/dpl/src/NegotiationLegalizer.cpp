@@ -93,6 +93,12 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
+  logger_->info(utl::DPL,
+                1103,
+                "NegotiationLegalizer search window: +/-{} sites, +/-{} rows.",
+                site_search_window_,
+                row_search_window_);
+
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
       orient_s{0};
@@ -229,7 +235,8 @@ void NegotiationLegalizer::legalize()
     // clean debugging negotiation phase.
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
-    logger_->report("Pause after Abacus pass.");
+    logger_->report(run_abacus_ ? "Pause: Abacus executed."
+                                : "Pause: Abacus skipped.");
     debug_observer_->redrawAndPause();
   }
 

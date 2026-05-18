@@ -30,8 +30,8 @@ class Edge;
 // Constants  (defaults match the NBLG paper)
 // ---------------------------------------------------------------------------
 constexpr int kInfCost = std::numeric_limits<int>::max() / 2;
-constexpr int kHorizWindow = 20;    // search width, current row (sites)
-constexpr int kAdjWindow = 5;       // search width, adjacent rows
+constexpr int kSiteSearchWindow = 20;    // search width, current row (sites)
+constexpr int kRowSearchWindow = 5;       // search width, adjacent rows
 constexpr int kMaxIterNeg = 400;    // negotiation phase-1 limit
 constexpr int kMaxIterNeg2 = 1000;  // negotiation phase-2 limit
 constexpr int kIsolationPt = 1;     // isolation-point parameter I
@@ -153,8 +153,8 @@ class NegotiationLegalizer
   void setMf(double mf) { max_disp_multiplier_ = mf; }
   void setTh(int th) { max_disp_threshold_ = th; }
   void setMaxIterNeg(int n) { max_iter_neg_ = n; }
-  void setHorizWindow(int w) { horiz_window_ = w; }
-  void setAdjWindow(int w) { adj_window_ = w; }
+  void setSiteSearchWindow(int w) { site_search_window_ = w; }
+  void setRowSearchWindow(int w) { row_search_window_ = w; }
   void setNumThreads(int n) { num_threads_ = n; }
 
   // Metrics (valid after legalize())
@@ -272,7 +272,7 @@ class NegotiationLegalizer
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper
   int max_iter_neg_{kMaxIterNeg};
-  int horiz_window_{kHorizWindow};
+  int site_search_window_{kSiteSearchWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
 
   // Last-iteration stats, kept so runNegotiation can print the final row.
@@ -286,7 +286,7 @@ class NegotiationLegalizer
   // iteration. Passed to the debug observer so cells from prior iterations
   // are rendered in grey while current-iteration movers keep directional colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
-  int adj_window_{kAdjWindow};
+  int row_search_window_{kRowSearchWindow};
   int num_threads_{1};
   bool run_abacus_{false};
 

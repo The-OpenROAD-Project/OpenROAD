@@ -55,10 +55,11 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   for (int idx : illegalCells) {
     const NegCell& seed = cells_[idx];
-    const int xlo = seed.x - horiz_window_;
-    const int xhi = seed.x + seed.width + horiz_window_;
-    const int ylo = std::max(0, seed.y - adj_window_);
-    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + adj_window_);
+    const int xlo = seed.x - site_search_window_;
+    const int xhi = seed.x + seed.width + site_search_window_;
+    const int ylo = std::max(0, seed.y - row_search_window_);
+    const int yhi
+        = std::min(grid_h_ - 1, seed.y + seed.height + row_search_window_);
 
     for (int yy = ylo; yy <= yhi; ++yy) {
       const auto& bucket = row_buckets[yy];
@@ -565,8 +566,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // Search around the initial (GP) position.
   {
     utl::DebugScopedTimer t(prof_init_search_s_);
-    for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
-      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+    for (int dy = -row_search_window_; dy <= row_search_window_; ++dy) {
+      for (int dx = -site_search_window_; dx <= site_search_window_; ++dx) {
         tryLocation(cell.init_x + dx, cell.init_y + dy);
       }
     }
@@ -577,8 +578,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
   if (cell.x != cell.init_x || cell.y != cell.init_y) {
     utl::DebugScopedTimer t(prof_curr_search_s_);
-    for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
-      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+    for (int dy = -row_search_window_; dy <= row_search_window_; ++dy) {
+      for (int dx = -site_search_window_; dx <= site_search_window_; ++dx) {
         tryLocation(cell.x + dx, cell.y + dy);
       }
     }
@@ -594,16 +595,16 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       return core.yMin()
              + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
     };
-    const odb::Rect init_win(toX(cell.init_x - horiz_window_),
-                             toY(cell.init_y - adj_window_),
-                             toX(cell.init_x + horiz_window_ + 1),
-                             toY(cell.init_y + adj_window_ + 1));
+    const odb::Rect init_win(toX(cell.init_x - site_search_window_),
+                             toY(cell.init_y - row_search_window_),
+                             toX(cell.init_x + site_search_window_ + 1),
+                             toY(cell.init_y + row_search_window_ + 1));
     const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
     const odb::Rect curr_win = displaced
-                                   ? odb::Rect(toX(cell.x - horiz_window_),
-                                               toY(cell.y - adj_window_),
-                                               toX(cell.x + horiz_window_ + 1),
-                                               toY(cell.y + adj_window_ + 1))
+                                   ? odb::Rect(toX(cell.x - site_search_window_),
+                                               toY(cell.y - row_search_window_),
+                                               toX(cell.x + site_search_window_ + 1),
+                                               toY(cell.y + row_search_window_ + 1))
                                    : odb::Rect();
     debug_observer_->setNegotiationSearchWindow(
         cell.db_inst, init_win, curr_win);
@@ -917,7 +918,7 @@ void NegotiationLegalizer::greedyImprove(int passes)
         }
       };
 
-      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+      for (int dx = -site_search_window_; dx <= site_search_window_; ++dx) {
         tryLoc(cell.init_x + dx, cell.y);
         tryLoc(cell.init_x + dx, cell.y - cell.height);
         tryLoc(cell.init_x + dx, cell.y + cell.height);
