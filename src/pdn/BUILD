@@ -55,6 +55,7 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
