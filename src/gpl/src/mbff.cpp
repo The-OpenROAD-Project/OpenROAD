@@ -1759,10 +1759,14 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
 
     if (!empty_clusters.empty()) {
+      // To revive empty clusters and avoid division by zero, we re-seed their
+      // centers with active flops that are currently furthest from their
+      // assigned cluster centers. We use an inlined vector to track chosen
+      // flops and prevent promoting the same flop to multiple empty clusters.
       absl::InlinedVector<int, 8> used_flops;
       for (int empty_idx : empty_clusters) {
         float max_dist = -1;
-        Point best_pt = centers[empty_idx].pt;
+        Point best_pt = centers[empty_idx].pt;  // Fallback to previous center
         int best_idx = -1;
 
         for (int j = 0; j < knn; j++) {
@@ -1774,6 +1778,8 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
                 != used_flops.end()) {
               continue;
             }
+            // Find the flop that has the worst-fit (largest displacement)
+            // to its currently assigned center.
             const float dist = GetDist(flop.pt, centers[j].pt);
             if (dist > max_dist) {
               max_dist = dist;
@@ -1784,6 +1790,10 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
         }
 
         if (best_idx != -1) {
+          // Re-seeding the center directly onto the flop's coordinate.
+          // This guarantees that in the next iteration, the distance from this
+          // flop to this center is 0.0, forcing it to be assigned to this
+          // cluster and keeping it active.
           centers[empty_idx].pt = best_pt;
           used_flops.push_back(best_idx);
         }
