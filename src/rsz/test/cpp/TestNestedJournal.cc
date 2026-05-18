@@ -29,6 +29,7 @@
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "rsz/Resizer.hh"
 #include "tst/IntegratedFixture.h"
 
