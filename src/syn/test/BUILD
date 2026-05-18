@@ -37,3 +37,19 @@ cc_test(
         "@googletest//:gtest",
     ],
 )
+
+cc_test(
+    name = "elab_test",
+    srcs = [
+        "elab_test.cc",
+        "elab_testcases.h",
+        "equivalence_check.h",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/syn/src/elab",
+        "//src/syn/src/ir",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

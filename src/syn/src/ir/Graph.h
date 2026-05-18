@@ -215,6 +215,19 @@ class Graph
     });
   }
 
+  // Count instances of type T. Used in tests.
+  template <typename T>
+  int count() const
+  {
+    int n = 0;
+    forEachInstance([&](const Instance* inst) {
+      if (inst->is<T>()) {
+        n++;
+      }
+    });
+    return n;
+  }
+
   // Find the single instance of type T. Aborts if zero or more than one found.
   // Used in tests.
   template <typename T>
