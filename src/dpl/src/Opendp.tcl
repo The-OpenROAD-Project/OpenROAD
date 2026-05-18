@@ -7,11 +7,14 @@ sta::define_cmd_args "detailed_placement" { \
                            [-incremental] \
                            [-report_file_name file_name] \
                            [-use_old_diamond] \
-                           [-abacus]}
+                           [-abacus] \
+                           [-site_search_window sites] \
+                           [-row_search_window rows]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement -report_file_name} \
+    keys {-max_displacement -report_file_name \
+          -site_search_window -row_search_window} \
     flags {-disallow_one_site_gaps -incremental -use_old_diamond -abacus}
 
   if { [info exists keys(-max_displacement)] } {
@@ -43,6 +46,18 @@ proc detailed_placement { args } {
     utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
   }
 
+  set site_search_window 0
+  if { [info exists keys(-site_search_window)] } {
+    set site_search_window $keys(-site_search_window)
+    sta::check_positive_integer "-site_search_window" $site_search_window
+  }
+
+  set row_search_window 0
+  if { [info exists keys(-row_search_window)] } {
+    set row_search_window $keys(-row_search_window)
+    sta::check_positive_integer "-row_search_window" $row_search_window
+  }
+
   if { [ord::db_has_core_rows] } {
     set site [dpl::get_row_site]
     # Convert displacement from microns to sites.
@@ -53,7 +68,8 @@ proc detailed_placement { args } {
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
       [info exists flags(-use_old_diamond)] \
-      [info exists flags(-abacus)]
+      [info exists flags(-abacus)] \
+      $site_search_window $row_search_window
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."

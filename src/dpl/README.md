@@ -74,6 +74,8 @@ detailed_placement
     [-report_file_name filename]
     [-use_old_diamond]
     [-abacus]
+    [-site_search_window sites]
+    [-row_search_window rows]
 ```
 
 #### Options
@@ -87,6 +89,8 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_old_diamond` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
 | `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Not effective when `-use_old_diamond` is set. |
+| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`. |
+| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`. |
 
 ### Set Placement Padding
 

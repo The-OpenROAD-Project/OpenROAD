@@ -110,7 +110,9 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool use_old_diamond = false,
-                         bool run_abacus = false);
+                         bool run_abacus = false,
+                         int site_search_window = 0,
+                         int row_search_window = 0);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
