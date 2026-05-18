@@ -77,6 +77,7 @@ or_integration_tests(
     repair_antennas_only_diodes
     repair_antennas_only_jumpers
     repair_antennas_allow_congestion
+    repair_antennas_from_odb
     report_wire_length1
     report_wire_length2
     report_wire_length3
