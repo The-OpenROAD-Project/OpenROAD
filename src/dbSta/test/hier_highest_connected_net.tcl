@@ -60,7 +60,7 @@ read_verilog hier_highest_connected_net.v
 link_design top -hier
 
 create_clock -name clk -period 5 [get_ports clk]
-set_input_delay  -clock clk 0 [get_ports in]
+set_input_delay -clock clk 0 [get_ports in]
 set_output_delay -clock clk 0 [get_ports out]
 
 read_spef hier_highest_connected_net.spef
