@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <optional>
 #include <ostream>
 #include <utility>
 #include <vector>
@@ -88,6 +89,22 @@ inline Trit mux(Trit sel, Trit a, Trit b)
     return b;
   }
   return (a == b) ? a : Trit::Undef;
+}
+
+inline std::optional<Trit> refine(std::optional<Trit> a, std::optional<Trit> b)
+{
+  if (!a || !b) {
+    return std::nullopt;
+  }
+  if (*a != Trit::Undef && *b != Trit::Undef && *a != *b) {
+    // The values fight
+    return std::nullopt;
+  }
+  // Otherwise, values are compatible
+  if (*a != Trit::Undef) {
+    return *a;
+  }
+  return *b;
 }
 
 // Multi-bit constant value (LSB at index 0).

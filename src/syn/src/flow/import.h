@@ -14,11 +14,7 @@ class Logger;
 namespace syn {
 
 class Graph;
-class Synthesis;
 
-void mapCombinationals(Graph& g,
-                       sta::Network* network,
-                       utl::Logger* logger,
-                       const Synthesis& syn);
+void importTargets(Graph& g, sta::Network* network, utl::Logger* logger);
 
 }  // namespace syn

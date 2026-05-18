@@ -110,9 +110,9 @@ static bool cutUnion(Net* target,
 {
   len = 0;
   int j = 0;
-  for (int i = 0; i < kCutMaximum && cut1[i] != Net::mark(); i++) {
+  for (int i = 0; i < kCutMaximum && cut1[i] != Net::sentinel(); i++) {
     // Add smaller cut2 entries first
-    while (j < kCutMaximum && cut2[j] != Net::mark()
+    while (j < kCutMaximum && cut2[j] != Net::sentinel()
            && Graph::netId(cut2[j]) < Graph::netId(cut1[i])) {
       if (len == max_cut) {
         return false;
@@ -120,7 +120,7 @@ static bool cutUnion(Net* target,
       target[len++] = cut2[j++];
     }
     // Skip if a duplicate is found
-    if (j < kCutMaximum && cut2[j] != Net::mark() && cut2[j] == cut1[i]) {
+    if (j < kCutMaximum && cut2[j] != Net::sentinel() && cut2[j] == cut1[i]) {
       j++;
     }
     // Add cut1[i] into target.
@@ -130,7 +130,7 @@ static bool cutUnion(Net* target,
     target[len++] = cut1[i];
   }
   // Done with cut1; add whatever remains in cut2.
-  while (j < kCutMaximum && cut2[j] != Net::mark()) {
+  while (j < kCutMaximum && cut2[j] != Net::sentinel()) {
     if (len == max_cut) {
       return false;
     }
@@ -358,12 +358,12 @@ struct ClassMatch
 {
   Truth6 semiclass = 0;
   NPN npn;
-  Net cut[kCutMaximum] = {Net::mark(),
-                          Net::mark(),
-                          Net::mark(),
-                          Net::mark(),
-                          Net::mark(),
-                          Net::mark()};
+  Net cut[kCutMaximum] = {Net::sentinel(),
+                          Net::sentinel(),
+                          Net::sentinel(),
+                          Net::sentinel(),
+                          Net::sentinel(),
+                          Net::sentinel()};
 };
 
 struct NodePolarity
@@ -546,19 +546,19 @@ void Mapping::prepareMatches(const int npriority_cuts,
 
   struct PriorityCut
   {
-    Net cut[kCutMaximum] = {Net::mark(),
-                            Net::mark(),
-                            Net::mark(),
-                            Net::mark(),
-                            Net::mark(),
-                            Net::mark()};
+    Net cut[kCutMaximum] = {Net::sentinel(),
+                            Net::sentinel(),
+                            Net::sentinel(),
+                            Net::sentinel(),
+                            Net::sentinel(),
+                            Net::sentinel()};
     int ncut = 0;
     Truth6 function = 0;
   };
   struct NodeCache
   {
     std::span<PriorityCut> ps;
-    Net mark = Net::mark();
+    Net mark = Net::sentinel();
   };
 
   // Frontier computation: assign recyclable slot IDs
@@ -624,7 +624,7 @@ void Mapping::prepareMatches(const int npriority_cuts,
     }
 
     bool in1Compl = false, in2Compl = false, outCompl = false;
-    Net fanin1 = Net::mark(), fanin2 = Net::mark();
+    Net fanin1 = Net::sentinel(), fanin2 = Net::sentinel();
 
     auto [inst, offset] = subject_.graph.resolve(net);
     if (auto* op = inst->try_as<And>()) {
@@ -650,21 +650,21 @@ void Mapping::prepareMatches(const int npriority_cuts,
     assert(cache[n2->fid].mark == fanin2);
 
     Net t1[kCutMaximum] = {fanin1,
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark()};
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel()};
     Net t2[kCutMaximum] = {fanin2,
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark(),
-                           Net::mark()};
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel(),
+                           Net::sentinel()};
 
     auto cutLen = [](const Net* cut) {
       for (int i = 0; i < kCutMaximum; i++) {
-        if (cut[i] == Net::mark()) {
+        if (cut[i] == Net::sentinel()) {
           return i;
         }
       }
@@ -696,12 +696,12 @@ void Mapping::prepareMatches(const int npriority_cuts,
         }
 
         Net workingCut[kCutMaximum] = {
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
         };
         int workingLen = 0;
         if (!cutUnion(workingCut, workingLen, max_cut_len, n1Cut, n2Cut)) {
@@ -717,12 +717,12 @@ void Mapping::prepareMatches(const int npriority_cuts,
 
         // Remove unsupported variables
         Net reducedCut[kCutMaximum] = {
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
-            Net::mark(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
+            Net::sentinel(),
         };
         int reducedLen = 0;
         for (int idx = 0; idx < workingLen; idx++) {
@@ -774,7 +774,7 @@ void Mapping::prepareMatches(const int npriority_cuts,
             pc.cut[k] = reducedCut[k];
           }
           for (int k = reducedLen; k < kCutMaximum; k++) {
-            pc.cut[k] = Net::mark();
+            pc.cut[k] = Net::sentinel();
           }
           pc.function = cutFunction;
           psSlot++;
@@ -804,7 +804,7 @@ float Mapping::refCut(const Literal& lit)
   NPN localMap = target->via * match->npn;
 
   float sum = 0.0f;
-  for (int i = 0; i < kCutMaximum && match->cut[i] != Net::mark(); i++) {
+  for (int i = 0; i < kCutMaximum && match->cut[i] != Net::sentinel(); i++) {
     Literal cutLit
         = Literal::withPolarity(match->cut[i], !localMap.input_complement[i]);
     Node* cutNode = node(cutLit.net());
@@ -836,7 +836,7 @@ void Mapping::derefCut(const Literal& lit)
   assert(match != nullptr && target != nullptr);
   NPN localMap = target->via * match->npn;
 
-  for (int i = 0; i < kCutMaximum && match->cut[i] != Net::mark(); i++) {
+  for (int i = 0; i < kCutMaximum && match->cut[i] != Net::sentinel(); i++) {
     Literal cutLit
         = Literal::withPolarity(match->cut[i], !localMap.input_complement[i]);
     auto& cutPol = node(cutLit.net())->pol[!cutLit.isPositive()];
@@ -950,7 +950,7 @@ void Mapping::areaFlowRound(const float refs_blend, const bool initial)
 
           float area = target.cell->area();
           bool feasible = true;
-          for (int j = 0; j < kCutMaximum && m.cut[j] != Net::mark(); j++) {
+          for (int j = 0; j < kCutMaximum && m.cut[j] != Net::sentinel(); j++) {
             Literal cutLit = Literal::withPolarity(
                 m.cut[j], !localMap.input_complement[j]);
             auto& cutPol = node(cutLit.net())->pol[!cutLit.isPositive()];
@@ -1037,7 +1037,7 @@ void Mapping::exactRound()
 
           // Check feasibility
           bool feasible = true;
-          for (int j = 0; j < kCutMaximum && m.cut[j] != Net::mark(); j++) {
+          for (int j = 0; j < kCutMaximum && m.cut[j] != Net::sentinel(); j++) {
             const Literal cutLit = Literal::withPolarity(
                 m.cut[j], !localMap.input_complement[j]);
             const auto& cutPol = node(cutLit.net())->pol[!cutLit.isPositive()];
@@ -1195,6 +1195,8 @@ void mapCombinationals(Graph& g,
                        utl::Logger* logger,
                        const Synthesis& syn)
 {
+  g.normalize();
+
   auto index = std::make_shared<cm::TargetIndex>();
   cm::buildIndex(network, *index, logger, syn);
 

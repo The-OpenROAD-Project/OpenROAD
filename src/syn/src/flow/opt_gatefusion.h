@@ -16,9 +16,9 @@ namespace syn {
 class Graph;
 class Synthesis;
 
-void mapCombinationals(Graph& g,
-                       sta::Network* network,
-                       utl::Logger* logger,
-                       const Synthesis& syn);
+void gateFusionOpt(Graph& g,
+                   sta::Network* network,
+                   utl::Logger* logger,
+                   const Synthesis& syn);
 
 }  // namespace syn

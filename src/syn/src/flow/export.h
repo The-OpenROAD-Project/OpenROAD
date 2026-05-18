@@ -3,8 +3,12 @@
 
 #pragma once
 
+namespace odb {
+class dbDatabase;
+}
+
 namespace sta {
-class Network;
+class dbSta;
 }
 
 namespace utl {
@@ -14,11 +18,10 @@ class Logger;
 namespace syn {
 
 class Graph;
-class Synthesis;
 
-void mapCombinationals(Graph& g,
-                       sta::Network* network,
-                       utl::Logger* logger,
-                       const Synthesis& syn);
+void exportToOdb(Graph& g,
+                 odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 utl::Logger* logger);
 
 }  // namespace syn

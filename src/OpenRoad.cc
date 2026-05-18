@@ -231,7 +231,6 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       logger_, service_registry_, db_, sta_, stt_builder_, global_router_);
   est::initGui(estimate_parasitics_);
 
-  synthesis_ = new syn::Synthesis(db_, sta_, logger_);
   resizer_ = new rsz::Resizer(logger_,
                               db_,
                               sta_,
@@ -239,6 +238,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                               global_router_,
                               opendp_,
                               estimate_parasitics_);
+  synthesis_ = new syn::Synthesis(db_, sta_, resizer_, logger_);
   finale_ = new fin::Finale(db_, logger_);
   restructure_ = new rmp::Restructure(
       logger_, sta_, db_, resizer_, estimate_parasitics_);

@@ -14,25 +14,64 @@ package(
 cc_library(
     name = "syn",
     srcs = [
+        "src/synthesis.cpp",
+        "src/flow/abc.cc",
+        "src/flow/abc.h",
+        "src/flow/bitblast.cc",
+        "src/flow/bitblast.h",
         "src/flow/combinational_mapper.cc",
         "src/flow/combinational_mapper.h",
         "src/flow/combinational_mapper_npn.cc",
         "src/flow/combinational_mapper_npn.h",
+        "src/flow/export.cc",
+        "src/flow/export.h",
+        "src/flow/import.cc",
+        "src/flow/import.h",
+        "src/flow/liveness.cc",
+        "src/flow/liveness.h",
+        "src/flow/opt_gatefusion.cc",
+        "src/flow/opt_gatefusion.h",
+        "src/flow/constant_fold.cc",
+        "src/flow/constant_fold.h",
+        "src/flow/sequential_mapper.cc",
+        "src/flow/sequential_mapper.h",
+    ],
+    hdrs = [
+        "include/syn/synthesis.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/syn/src/elab",
+        "//src/syn/src/ir",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/sta:opensta_lib",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/utl",
+        "@abc",
+        "@boost.stacktrace",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
         "src/MakeSynthesis.cpp",
-        "src/synthesis.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
         "include/syn/MakeSynthesis.h",
-        "include/syn/synthesis.h",
     ],
     includes = [
         "include",
     ],
     deps = [
-        "//src/syn/src/elab",
-        "//src/syn/src/ir",
+        ":syn",
         "//:ord",
         "//src/dbSta",
         "//src/odb/src/db",
