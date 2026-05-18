@@ -18,6 +18,7 @@ or_integration_tests(
     hierwrite
     hier_deep
     hier_weird_port
+    levelize_drvr_vertices1
     make_port
     network_edit1
     power1
@@ -46,6 +47,7 @@ or_integration_tests(
     report_timing_histogram
     report_logic_depth_histogram
     sdc_get1
+    sdc_modinst_slash
     sdc_names1
     sdc_names2
     spef_def_names

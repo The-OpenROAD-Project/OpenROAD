@@ -82,7 +82,7 @@ void Replace::checkHasCoreRows()
 void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
-  log_->info(GPL, 6, "Execute incremental mode global placement.");
+  log_->info(GPL, 83, "Execute incremental mode global placement.");
   int placed_cnt = 0;
   int unplaced_cnt = 0;
   bool is_pbc_new = (pbc_ == nullptr);
@@ -272,6 +272,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_ = std::make_shared<TimingBase>(nbc_, fr_, rs_, log_);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
+    tb_->setTimingNetsPercentage(options.timingDrivenNetsPercentage);
   }
 
   if (!np_) {
@@ -317,7 +318,7 @@ int Replace::doNesterovPlace(const int threads,
     return 0;
   }
 
-  log_->info(GPL, 7, "---- Execute Nesterov Global Placement.");
+  log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
   if (options.timingDrivenMode) {
     rs_->resizeSlackPreamble();
   }
@@ -389,10 +390,57 @@ void Replace::setDebug(const int pause_iterations,
 void PlaceOptions::validate(utl::Logger* logger)
 {
   utl::Validator val(logger, GPL);
-  val.check_non_negative("initialPlaceMaxIter", initialPlaceMaxIter, 326);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
-  val.check_range("Target density", density, 0.0f, 1.0f, 328);
+
+  val.check_positive("bin_grid_count", binGridCntX, 400);
+  val.check_range("density", density, 0.0f, 1.0f, 401);
+  val.check_positive("init_density_penalty", initDensityPenaltyFactor, 402);
+  val.check_positive("init_wirelength_coef", initWireLengthCoef, 403);
+  val.check_positive("min_phi_coef", minPhiCoef, 404);
+  val.check_positive("max_phi_coef", maxPhiCoef, 405);
+  val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
+  val.check_non_negative("pad_left", padLeft, 407);
+  val.check_non_negative("pad_right", padRight, 408);
+  val.check_positive("reference_hpwl", referenceHpwl, 409);
+
+  val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
+  val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);
+
+  val.check_positive(
+      "routability_target_rc_metric", routabilityTargetRcMetric, 412);
+  val.check_range("routability_snapshot_overflow",
+                  routabilitySnapshotOverflow,
+                  0.0f,
+                  1.0f,
+                  413);
+  val.check_range(
+      "routability_check_overflow", routabilityCheckOverflow, 0.0f, 1.0f, 414);
+  val.check_range(
+      "routability_max_density", routabilityMaxDensity, 0.0f, 1.0f, 415);
+  val.check_positive(
+      "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
+  val.check_positive(
+      "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
+  val.check_non_negative(
+      "routability_rc_coefficients k1", routabilityRcK1, 418);
+  val.check_non_negative(
+      "routability_rc_coefficients k2", routabilityRcK2, 419);
+  val.check_non_negative(
+      "routability_rc_coefficients k3", routabilityRcK3, 420);
+  val.check_non_negative(
+      "routability_rc_coefficients k4", routabilityRcK4, 421);
+
+  for (const auto& timingNetOverflow : timingNetWeightOverflows) {
+    val.check_positive(
+        "timing_driven_net_reweight_overflow", timingNetOverflow, 422);
+  }
+  val.check_positive("timing_driven_net_weight_max", timingNetWeightMax, 423);
+  val.check_range("timing_driven_nets_percentage",
+                  timingDrivenNetsPercentage,
+                  0.0f,
+                  100.0f,
+                  424);
+  val.check_range(
+      "keep_resize_below_overflow", keepResizeBelowOverflow, 0.0f, 1.0f, 425);
 }
 
 void PlaceOptions::skipIo()

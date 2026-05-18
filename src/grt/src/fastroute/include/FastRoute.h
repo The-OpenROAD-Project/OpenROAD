@@ -21,6 +21,7 @@
 #include "boost/icl/interval_set.hpp"
 #include "boost/multi_array.hpp"
 #include "grt/GRoute.h"
+#include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
@@ -251,7 +252,7 @@ class FastRouteCore
     snapshot_batched_width_ = snapshot_batched_width;
   }
   int getSnapshotBatchedWidth() const { return snapshot_batched_width_; }
-  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
+  void getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -304,6 +305,9 @@ class FastRouteCore
 
   void writeCongestionMap(const std::string& filename);
 
+  float getNetResistance(odb::dbNet* db_net);
+  float getNetResistanceOnLayer(odb::dbNet* db_net, int layer);
+
  private:
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
@@ -355,7 +359,7 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void findNetsNearPosition(std::set<odb::dbNet*>& congestion_nets,
+  void findNetsNearPosition(odb::PtrSet<odb::dbNet>& congestion_nets,
                             const odb::Point& position,
                             bool is_horizontal,
                             int& radius);
@@ -600,7 +604,6 @@ class FastRouteCore
   float getViaResistance(int from_layer, int to_layer);
   int getWireCost(int layer, int length, FrNet* net);
   int getViaCost(int from_layer, int to_layer);
-  float getNetResistance(FrNet* net, bool assume_layer = false);
   float getResAwareScore(FrNet* net);
   void updateWorstMetrics(FrNet* net);
   void resetWorstMetrics();

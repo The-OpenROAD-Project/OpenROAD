@@ -7,8 +7,6 @@ sta::define_cmd_args "global_placement" {\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
     [-incremental]\
     [-skip_io]\
     [-bin_grid_count grid_count]\

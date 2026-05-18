@@ -33,5 +33,5 @@ jobs:
             const fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/clang-tidy-review.zip', Buffer.from(download.data));
       - name: 'Unzip artifact'
-        run: unzip clang-tidy-review.zip
+        run: unzip -o clang-tidy-review.zip
       - uses: The-OpenROAD-Project/clang-tidy-review/post@master
