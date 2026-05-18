@@ -144,6 +144,41 @@ class GridGraph
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
+  /**
+   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   *
+   * Scales `constants_.cost_logistic_slope` and
+   * `constants_.maze_logistic_slope` wherever they are read by
+   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
+   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
+   * between iterations. The default value 1.0 leaves the cost surface
+   * unchanged.
+   *
+   * @param m New multiplier value. Must be > 0.
+   */
+  void setCostMultiplier(double m) { cost_multiplier_ = m; }
+  double getCostMultiplier() const { return cost_multiplier_; }
+
+  /**
+   * @brief Counts congested edges traversed by a routing tree.
+   *
+   * Walks the tree's wire segments and returns how many edges satisfy
+   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
+   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
+   * widens to include near-overflow ("congested but not yet
+   * overflowing") edges. Edges sitting exactly at capacity are
+   * intentionally *not* flagged — being full is not the same as being
+   * congested. Used by the RRR loop to extend the rip-up set beyond
+   * strictly-overflowed nets.
+   *
+   * @param tree      Routing tree to walk.
+   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
+   *
+   * @returns Number of tree edges meeting the predicate (>= 0).
+   */
+  int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
+                      double threshold) const;
+
   // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
 
@@ -156,11 +191,6 @@ class GridGraph
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
-  int checkOverflow(int layer_index,
-                    PointT u,
-                    PointT v) const;  // Check wire overflow
-  int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
-      const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
@@ -255,6 +285,8 @@ class GridGraph
   std::vector<int> max_v_overflow_;
   bool congestion_info_dirty_ = true;
   const Constants constants_;
+  // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
+  double cost_multiplier_ = 1.0;
 };
 
 template <typename Type>

@@ -25,6 +25,7 @@
 #include "SwapPinsGenerator.hh"
 #include "UnbufferGenerator.hh"
 #include "VtSwapMtGenerator.hh"
+#include "policy/SetupLegacyPolicy.hh"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
