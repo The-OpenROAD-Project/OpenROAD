@@ -13,6 +13,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "ant/AntennaChecker.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
 
@@ -72,12 +73,12 @@ struct ViolationReport
   ViolationReport() { violated = false; }
 };
 
-using LayerToNodeInfo = std::map<odb::dbTechLayer*, NodeInfo>;
+using LayerToNodeInfo = odb::PtrMap<odb::dbTechLayer, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
-using LayerToGraphNodes = std::map<odb::dbTechLayer*, GraphNodes>;
-using GateToLayerToNodeInfo = std::map<odb::dbITerm*, LayerToNodeInfo>;
+using LayerToGraphNodes = odb::PtrMap<odb::dbTechLayer, GraphNodes>;
+using GateToLayerToNodeInfo = odb::PtrMap<odb::dbITerm, LayerToNodeInfo>;
 using GateToViolationLayers
-    = std::map<odb::dbITerm*, std::set<odb::dbTechLayer*>>;
+    = odb::PtrMap<odb::dbITerm, odb::PtrSet<odb::dbTechLayer>>;
 
 class AntennaChecker::Impl
 {
@@ -171,11 +172,11 @@ class AntennaChecker::Impl
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};
-  std::map<odb::dbTechLayer*, AntennaModel> layer_info_;
+  odb::PtrMap<odb::dbTechLayer, AntennaModel> layer_info_;
   int net_violation_count_{0};
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
-  std::map<odb::dbNet*, ViolationReport> net_to_report_;
+  odb::PtrMap<odb::dbNet, ViolationReport> net_to_report_;
   absl::Mutex map_mutex_;
   // consts
   static constexpr int kMaxDiodeCountPerGate = 10;

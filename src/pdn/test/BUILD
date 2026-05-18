@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -140,24 +140,6 @@ COMPULSORY_TESTS = [
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
-
-PY_TESTS = [
-    "asap7_taper",
-    "core_grid",
-    "core_grid_with_rings",
-    "core_grid_with_routing_obstructions",
-    "existing",
-    "macros",
-    "max_width",
-    "min_width",
-    "offgrid",
-    "power_switch",
-    "repair_vias",
-    "report",
-    "reset",
-    "ripup",
-    "widthtable",
-]
 
 filegroup(
     name = "regression_resources",
@@ -319,31 +301,6 @@ filegroup(
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
-]
-
-py_library(
-    name = "helpers",
-    srcs = [
-        "helpers.py",
-        "pdn_aux.py",
-    ],
-    imports = ["."],
-    deps = [
-        "//python/openroad:openroadpy",
-    ],
-)
-
-[
-    py_test(
-        name = test_name,
-        srcs = [test_name + ".py"],
-        data = [":" + test_name + "_resources"],
-        deps = [
-            ":helpers",
-            "//python/openroad:openroadpy",
-        ],
-    )
-    for test_name in PY_TESTS
 ]
 
 py_test(

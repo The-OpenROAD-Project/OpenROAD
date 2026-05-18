@@ -19,6 +19,7 @@
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
 #include "boost/polygon/rectangle_data.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -313,7 +314,7 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
     return;
   }
 
-  std::map<odb::dbITerm*, Polygon90Set> iterms_geoms;
+  odb::PtrMap<odb::dbITerm, Polygon90Set> iterms_geoms;
 
   // Create geom of all shapes
   for (odb::dbITerm* iterm : terminals_) {
@@ -376,13 +377,13 @@ void RDLRoute::preprocess(odb::dbTechLayer* layer, utl::Logger* logger)
   }
 }
 
-std::set<odb::dbITerm*> RDLRoute::getRoutedTerminals() const
+odb::PtrSet<odb::dbITerm> RDLRoute::getRoutedTerminals() const
 {
   if (!routed_terminals_.empty()) {
     return routed_terminals_;
   }
 
-  std::set<odb::dbITerm*> terms;
+  odb::PtrSet<odb::dbITerm> terms;
   if (route_source_) {
     terms.insert(route_source_->terminal);
   }

@@ -937,7 +937,10 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
 
   if (!exists) {
     logger_->error(
-        GRT, 127, "net_id for db_net {} not found", db_net->getConstName());
+        GRT,
+        127,
+        "net_id for db_net {} not found while updating GRT resources usage.",
+        db_net->getConstName());
   }
 
   net = nets_[net_id];
@@ -1965,7 +1968,7 @@ NetRouteMap FastRouteCore::run()
 
   graph2d_.InitLastUsage(upType);
   if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_) {
-    logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
+    logger_->info(GRT, 101, "Running extra iterations to remove congestion.");
   }
 
   if (useSnapshotBatchRouting(net_ids_.size())
@@ -1979,7 +1982,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
-        logger_->report("RST Tree before overflow iterations");
+        logger_->report("RST Tree before congestion iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -2001,7 +2004,7 @@ NetRouteMap FastRouteCore::run()
                                  GRT,
                                  "timer",
                                  1,
-                                 "Overflow iterations: {}");
+                                 "Congestion iterations: {}");
     while (total_overflow_ > 0 && i <= overflow_iterations_
            && overflow_increases <= max_overflow_increases) {
       if (verbose_) {
@@ -2219,8 +2222,8 @@ NetRouteMap FastRouteCore::run()
 
       if (logger_->debugCheck(GRT, "congestionIterations", 1)) {
         logger_->report(
-            "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
-            "OverflowIncreases {} - MaxOverIncr {} ===",
+            "=== Congestion Iteration {} - TotalCongestion {} - "
+            "CongestionIter {} - CongestionIncreases {} - MaxCongIncr {} ===",
             i,
             total_overflow_,
             overflow_iterations_,
@@ -2285,7 +2288,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->tree2D) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
-        logger_->report("Tree 2D after overflow iterations");
+        logger_->report("Tree 2D after congestion iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -2298,7 +2301,7 @@ NetRouteMap FastRouteCore::run()
                GRT,
                "congestionIterations",
                1,
-               "Minimal overflow {} occurring at round {}.",
+               "Minimal congestion {} occurring at round {}.",
                minofl,
                minoflrnd);
     copyBR();
@@ -2309,8 +2312,8 @@ NetRouteMap FastRouteCore::run()
       logger_->warn(
           GRT,
           230,
-          "Congestion iterations cannot increase overflow, reached the "
-          "maximum number of times the total overflow can be increased.");
+          "Congestion iterations cannot increase congestion, reached the "
+          "maximum number of times the total congestion can be increased.");
     }
   }
 
@@ -2678,7 +2681,7 @@ void FastRouteCore::writeCongestionMap(const std::string& filename)
 {
   std::ofstream cong_file;
   cong_file.open(filename);
-  cong_file << "x,y,l,capacity,reduction,usage,overflow\n";
+  cong_file << "x,y,l,capacity,reduction,usage,congestion\n";
   int total_overflow = 0;
   for (int l = 0; l < num_layers_; l++) {
     for (int x = 0; x < x_grid_; x++) {
@@ -2696,7 +2699,7 @@ void FastRouteCore::writeCongestionMap(const std::string& filename)
       }
     }
   }
-  cong_file << "Total overflow: " << total_overflow << "\n";
+  cong_file << "Total congestion: " << total_overflow << "\n";
   cong_file.close();
 }
 
