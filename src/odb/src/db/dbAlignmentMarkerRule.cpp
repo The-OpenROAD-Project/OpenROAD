@@ -15,10 +15,11 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cstddef>
+#include <ranges>
 
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
-#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbAlignmentMarkerRule>;
@@ -132,9 +133,8 @@ std::vector<dbOrientType> dbAlignmentMarkerRule::getRelativeOrientations() const
   _dbAlignmentMarkerRule* obj = (_dbAlignmentMarkerRule*) this;
   std::vector<dbOrientType> orients;
   orients.reserve(obj->rel_orients_.size());
-  for (std::size_t i = 0; i < obj->rel_orients_.size(); ++i) {
-    orients.emplace_back(
-        static_cast<dbOrientType::Value>(obj->rel_orients_[i]));
+  for (const auto rel_orient : obj->rel_orients_) {
+    orients.emplace_back(static_cast<dbOrientType::Value>(rel_orient));
   }
   // When masterA == masterB the rule cannot tell which marker plays "A" vs
   // "B", so the relative orientation `A^-1 * B` is interchangeable with its
@@ -147,7 +147,7 @@ std::vector<dbOrientType> dbAlignmentMarkerRule::getRelativeOrientations() const
       dbTransform xform(orients[i]);
       xform.invert();
       const dbOrientType inverse = xform.getOrient();
-      if (std::find(orients.begin(), orients.end(), inverse) == orients.end()) {
+      if (std::ranges::find(orients, inverse) == orients.end()) {
         orients.push_back(inverse);
       }
     }
@@ -161,9 +161,9 @@ void dbAlignmentMarkerRule::setRelativeOrientations(
   _dbAlignmentMarkerRule* obj = (_dbAlignmentMarkerRule*) this;
   obj->rel_orients_.clear();
   obj->rel_orients_.reserve(relative_orientations.size());
-  for (std::size_t i = 0; i < relative_orientations.size(); ++i) {
+  for (const auto& relative_orient : relative_orientations) {
     obj->rel_orients_.push_back(
-        static_cast<uint8_t>(relative_orientations[i].getValue()));
+        static_cast<uint8_t>(relative_orient.getValue()));
   }
 }
 
@@ -197,7 +197,7 @@ void dbAlignmentMarkerRule::destroy(
     dbAlignmentMarkerRule* alignment_marker_rule)
 {
   auto* obj = (_dbAlignmentMarkerRule*) alignment_marker_rule;
-  _dbDatabase* _db = static_cast<_dbDatabase*>(obj->getDatabase());
+  _dbDatabase* _db = obj->getDatabase();
   _db->alignment_marker_rule_tbl_->destroy(obj);
 }
 

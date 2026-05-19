@@ -5,12 +5,12 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <deque>
 #include <functional>
 #include <map>
 #include <numeric>
 #include <ranges>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -20,6 +20,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"  // IWYU pragma: keep
 #include "odb/unfoldedModel.h"
@@ -165,9 +166,7 @@ void matchMarkersBetweenChips(
             const dbOrientType relative_orient = rel_xform.getOrient();
             const auto& allowed_relative_orients
                 = rule->getRelativeOrientations();
-            if (std::find(allowed_relative_orients.begin(),
-                          allowed_relative_orients.end(),
-                          relative_orient)
+            if (std::ranges::find(allowed_relative_orients, relative_orient)
                 == allowed_relative_orients.end()) {
               // candidate violates the relative-orientation constraint
               report(a_marker,

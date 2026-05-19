@@ -277,14 +277,10 @@ TEST_F(AlignmentMarkersFixture, selfSymmetricRuleGetterClosesList)
   auto orients = rule->getRelativeOrientations();
   // R90's inverse is R270; closure must expose both.
   EXPECT_EQ(orients.size(), 2);
-  EXPECT_NE(
-      std::find(
-          orients.begin(), orients.end(), dbOrientType(dbOrientType::R90)),
-      orients.end());
-  EXPECT_NE(
-      std::find(
-          orients.begin(), orients.end(), dbOrientType(dbOrientType::R270)),
-      orients.end());
+  EXPECT_NE(std::ranges::find(orients, dbOrientType(dbOrientType::R90)),
+            orients.end());
+  EXPECT_NE(std::ranges::find(orients, dbOrientType(dbOrientType::R270)),
+            orients.end());
 }
 
 }  // namespace

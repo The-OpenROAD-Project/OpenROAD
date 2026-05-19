@@ -1211,7 +1211,7 @@ proc add_3dblox_alignment_marker_rule { args } {
 }
 
 namespace eval odb {
-proc resolve_master { cell {lib_name ""} } {
+proc resolve_master { cell { lib_name "" } } {
   set db [ord::get_db]
   if { $lib_name ne "" } {
     set lib [$db findLib $lib_name]
