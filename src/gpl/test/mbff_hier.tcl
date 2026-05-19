@@ -12,31 +12,20 @@ read_verilog ./mbff_hier.v
 link_design -hier mbff_hier
 
 set block [ord::get_db_block]
-set locs {{a/ff_a1 6000 6000} {a/ff_a2 4000 6000}
-          {b/ff_b1 4000 4000} {b/ff_b2 6000 4000}}
-foreach e $locs {
-  set inst [$block findInst [lindex $e 0]]
-  $inst setLocation [lindex $e 1] [lindex $e 2]
+set i 0
+foreach inst [$block getInsts] {
+  set x [expr 2000 + ($i % 4) * 2000]
+  set y [expr 2000 + ($i / 4) * 2000]
+  $inst setLocation $x $y
   $inst setPlacementStatus PLACED
+  incr i
 }
 
 create_clock -name clk -period 1000 [get_ports clk1]
 
-proc report_modules { tag } {
-  set block [ord::get_db_block]
-  puts "===== $tag ====="
-  foreach mod [list [$block getTopModule] \
-    [$block findModule sub_a] \
-    [$block findModule sub_b]] {
-    set names [list]
-    foreach inst [$mod getInsts] { lappend names [$inst getName] }
-    puts "[$mod getName]: [llength $names] inst(s): [lsort $names]"
-  }
-}
-
-report_modules "BEFORE cluster_flops"
-
 cluster_flops -tray_weight 40.0 -timing_weight 0.0 \
   -max_split_size -1 -num_paths 0
 
-report_modules "AFTER cluster_flops"
+set_wire_rc -layer M2
+estimate_parasitics -placement
+puts ESTIMATE_PARASITICS_OK
