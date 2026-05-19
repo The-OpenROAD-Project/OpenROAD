@@ -140,6 +140,11 @@ void RepairDesign::computeSlewRCFactor()
 // Repair long wires, max slew, max capacitance, max fanout violations
 // The whole enchilada.
 // max_wire_length zero for none (meters)
+bool RepairDesign::rerouteEnabled() const
+{
+  return reroute_;
+}
+
 void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
@@ -1101,8 +1106,7 @@ void RepairDesign::repairNet(sta::Net* net,
         // reduces wire resistance enough, it may fix the slew violation
         // without requiring driver resizing or buffer insertion.
         BaseMove* reroute_move = resizer_->reroute_move_.get();
-        if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
-            && reroute_move->doMove(drvr_pin, 0.0f)) {
+        if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
           estimate_parasitics_->updateParasitics();
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
@@ -1163,8 +1167,7 @@ void RepairDesign::repairNet(sta::Net* net,
           // buffers. RerouteMove rejects nets already rerouted, so this is
           // safe to call even if we already tried it for a driver slew above.
           BaseMove* reroute_move = resizer_->reroute_move_.get();
-          if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
-              && reroute_move->doMove(drvr_pin, 0.0f)) {
+          if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
             estimate_parasitics_->updateParasitics();
             sta_->findDelays(drvr);
             resizer_->checkLoadSlews(
@@ -1204,8 +1207,7 @@ void RepairDesign::repairNet(sta::Net* net,
           // rerouting will reduce how many buffers are needed.
           slew_violation = true;
           BaseMove* reroute_move = resizer_->reroute_move_.get();
-          if (resizer_->global_router_ && resizer_->global_router_->haveRoutes()
-              && reroute_move->doMove(drvr_pin, 0.0f)) {
+          if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
             estimate_parasitics_->updateParasitics();
             sta_->findDelays(drvr);
             debugPrint(logger_,

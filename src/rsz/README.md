@@ -149,6 +149,7 @@ repair_design
     [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
+    [-reroute]
     [-verbose]
 ```
 
@@ -163,6 +164,7 @@ repair_design
 | `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | Enable resistance-aware wire rerouting to fixing slew violations post-GRT (experimental). |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 #### Instance Name Prefixes

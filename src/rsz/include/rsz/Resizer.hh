@@ -404,6 +404,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
+      bool reroute,
       bool verbose);
   int repairDesignBufferCount() const;
   // for debugging

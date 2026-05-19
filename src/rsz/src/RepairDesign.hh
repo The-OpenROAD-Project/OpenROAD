@@ -66,6 +66,7 @@ class RepairDesign : sta::dbStaState
                     int& cap_violations,
                     int& fanout_violations,
                     int& length_violations);
+  bool rerouteEnabled() const;
   int insertedBufferCount() const { return inserted_buffer_count_; }
   void repairNet(sta::Net* net,
                  double max_wire_length,
@@ -263,6 +264,8 @@ class RepairDesign : sta::dbStaState
   double slew_margin_ = 0;
   double cap_margin_ = 0;
   const sta::Scene* corner_ = nullptr;
+
+  bool reroute_ = false;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;
