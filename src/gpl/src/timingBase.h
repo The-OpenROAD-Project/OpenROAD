@@ -42,6 +42,7 @@ class TimingBase
   size_t getTimingNetWeightOverflowSize() const;
 
   void setTimingNetWeightMax(float max);
+  void setTimingNetsPercentage(float percentage);
 
   // updateNetWeight.
   // True: successfully reweighted gnets
@@ -57,6 +58,7 @@ class TimingBase
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;
   float net_weight_max_ = 5;
+  float nets_percentage_ = 10;
   void initTimingOverflowChk();
 };
 

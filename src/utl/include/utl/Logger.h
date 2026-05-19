@@ -25,9 +25,11 @@
 #include <utility>
 #include <vector>
 
+#include "spdlog/common.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/logger.h"
 #include "utl/Metrics.h"
 #if FMT_VERSION >= 110000
 #include "spdlog/fmt/ranges.h"

@@ -16,6 +16,9 @@ cc_library(
         "//src/odb:include/odb/gdsUtil.h",
         "//src/odb:include/odb/gdsin.h",
     ],
+    includes = [
+        "../../include",
+    ],
     deps = [
         "//src/odb/src/db",
         "//src/utl",

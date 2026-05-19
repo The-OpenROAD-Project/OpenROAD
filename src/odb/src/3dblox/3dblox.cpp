@@ -6,11 +6,14 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "bmapParser.h"
 #include "bmapWriter.h"
