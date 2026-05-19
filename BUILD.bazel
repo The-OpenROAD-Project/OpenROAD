@@ -38,6 +38,7 @@ config_setting(
 )
 
 exports_files([
+    ".clang-tidy",
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
