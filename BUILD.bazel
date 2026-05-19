@@ -14,7 +14,7 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
 package(
     features = [
-        "-parse_headers",
+        "parse_headers",
         "layering_check",
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",
@@ -38,6 +38,7 @@ config_setting(
 )
 
 exports_files([
+    ".clang-tidy",
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
@@ -80,7 +81,6 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/dbSta",
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:dbSdcNetwork",
     "//src/dbSta:IpChecker",
     "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
@@ -104,7 +104,14 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/ifp:ui",
     "//src/mpl",
     "//src/mpl:ui",
-    "//src/odb",
+    "//src/odb/src/3dblox",
+    "//src/odb/src/cdl",
+    "//src/odb/src/db",
+    "//src/odb/src/defin",
+    "//src/odb/src/defout",
+    "//src/odb/src/lefin",
+    "//src/odb/src/lefout",
+    "//src/odb/src/swig:swig_common",
     "//src/odb:ui",
     "//src/pad",
     "//src/par",
@@ -246,11 +253,9 @@ cc_library(
         "include/ord/OpenRoad.hh",
         "include/ord/Tech.h",
         "include/ord/Timing.h",
-        "include/ord/Version.hh",
     ],
     includes = [
         "include",
-        "include/ord",
     ],
     visibility = ["//:__subpackages__"],
     deps = [
@@ -263,6 +268,9 @@ cc_library(
     name = "openroad_version",
     hdrs = [
         ":OpenRoadVersion",
+    ],
+    includes = [
+        "include",
     ],
 )
 
@@ -331,7 +339,7 @@ cc_binary(
         "//src/grt",
         "//src/gui",
         "//src/ifp",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/par",
         "//src/pdn",
         "//src/ppl",

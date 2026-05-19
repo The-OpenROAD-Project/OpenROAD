@@ -11,28 +11,64 @@ swig_lib(NAME      rsz
 )
 
 add_library(rsz_lib
-    BaseMove.cc
     BufferedNet.cc
-    BufferMove.cc
-    CloneMove.cc
-    MoveTracker.cc
     PreChecks.cc
     RecoverPower.cc
     RepairDesign.cc
     RepairHold.cc
-    RepairSetup.cc
     Rebuffer.cc
-    RerouteMove.cc
-    SizeDownMove.cc
-    SizeUpMove.cc
-    SplitLoadMove.cc
-    SwapPinsMove.cc
-    UnbufferMove.cc
-    VTSwapMove.cc
+    policy/SetupLegacyMtPolicy.cc
+    policy/SetupLegacyBase.cc
+    MoveCommitter.cc
+    MoveTracker.cc
+    policy/OptimizationPolicy.cc
+    policy/OptimizationPolicy.hh
+    Optimizer.cc
+    OptimizerTypes.cc
+    policy/MeasuredVtSwapPolicy.cc
+    DelayEstimator.cc
+    DelayEstimatorReporter.cc
+    policy/SetupCritVtSwapPolicy.cc
+    policy/SetupDirectionalPolicy.cc
+    policy/SetupLastGaspPolicy.cc
+    policy/SetupLegacyPolicy.cc
+    policy/SetupTnsPolicy.cc
+    policy/SetupWnsPolicy.cc
+    policy/SetupMt1Policy.cc
+    policy/SetupReroutePolicy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
-    ViolatorCollector.cc
+    RepairTargetCollector.cc
+
+    move/BufferCandidate.cc
+    move/BufferGenerator.cc
+    move/CloneCandidate.cc
+    move/CloneGenerator.cc
+    move/MeasuredVtSwapCandidate.cc
+    move/MeasuredVtSwapGenerator.cc
+    move/MoveCandidate.cc
+    move/MoveGenerator.cc
+    move/RerouteCandidate.cc
+    move/RerouteGenerator.cc
+    move/SizeDownCandidate.cc
+    move/SizeDownGenerator.cc
+    move/SizeUpCandidate.cc
+    move/SizeUpGenerator.cc
+    move/SizeUpMatchCandidate.cc
+    move/SizeUpMatchGenerator.cc
+    move/SizeUpMtCandidate.cc
+    move/SizeUpMtGenerator.cc
+    move/SplitLoadCandidate.cc
+    move/SplitLoadGenerator.cc
+    move/SwapPinsCandidate.cc
+    move/SwapPinsGenerator.cc
+    move/UnbufferCandidate.cc
+    move/UnbufferGenerator.cc
+    move/VtSwapCandidate.cc
+    move/VtSwapGenerator.cc
+    move/VtSwapMtCandidate.cc
+    move/VtSwapMtGenerator.cc
 )
 
 target_sources(rsz
@@ -49,11 +85,16 @@ target_include_directories(rsz
     ${OPENSTA_HOME}
     ${OPENSTA_HOME}/include/sta
     .
+    policy
 )
 
 target_include_directories(rsz_lib
   PUBLIC
     ../include
+  PRIVATE
+    .
+    move
+    policy
 )
 
 target_link_libraries(rsz_lib

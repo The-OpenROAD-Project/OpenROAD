@@ -2763,7 +2763,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2787,7 +2787,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2798,19 +2798,18 @@ void FastRouteCore::saveCongestion(const int iter)
     }
   }
 
-  // check if the file name is defined
-  if (congestion_file_name_.empty()) {
+  // The final-report file-write (iter == -1) is handled in
+  // GlobalRouter::saveCongestion so both routing engines share the
+  // same code path. Per-iteration reports stay here because only
+  // FastRoute knows the current iteration index.
+  if (iter == -1 || congestion_file_name_.empty()) {
     return;
   }
 
-  // Modify the file name for each iteration
+  // delete rpt extension and add iteration number
   std::string file_name = congestion_file_name_;
-  if (iter != -1) {
-    // delete rpt extension
-    file_name = file_name.substr(0, file_name.size() - 4);
-    // add iteration number
-    file_name += "-" + std::to_string(iter) + ".rpt";
-  }
+  file_name = file_name.substr(0, file_name.size() - 4);
+  file_name += "-" + std::to_string(iter) + ".rpt";
 
   odb::dbMarkerCategory* tool_category
       = db_->getChip()->getBlock()->findMarkerCategory(

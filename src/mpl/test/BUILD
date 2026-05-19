@@ -256,7 +256,7 @@ cc_test(
     ],
     deps = [
         "//src/mpl:snapper",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -272,7 +272,23 @@ cc_test(
     ],
     deps = [
         "//src/mpl",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mpl_pusher_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestPusher.cpp",
+    ],
+    deps = [
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

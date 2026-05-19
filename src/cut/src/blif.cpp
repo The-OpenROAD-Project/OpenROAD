@@ -17,6 +17,7 @@
 #include "cut/blifParser.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
@@ -49,7 +50,7 @@ Blif::Blif(utl::Logger* logger,
   open_sta_ = sta;
 }
 
-void Blif::setReplaceableInstances(std::set<odb::dbInst*>& insts)
+void Blif::setReplaceableInstances(odb::PtrSet<odb::dbInst>& insts)
 {
   instances_to_optimize_ = insts;
 }
@@ -75,7 +76,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
     return false;
   }
 
-  std::set<odb::dbInst*>& insts = this->instances_to_optimize_;
+  odb::PtrSet<odb::dbInst>& insts = this->instances_to_optimize_;
   std::map<uint32_t, odb::dbInst*> inst_map;
   std::vector<std::string> subckts;
   std::set<std::string> inputs, outputs, const0, const1, clocks;
@@ -357,7 +358,7 @@ bool Blif::inspectBlif(const char* file_name, int& num_instances)
   }
 
   std::string file_string((std::istreambuf_iterator<char>(f)),
-                         std::istreambuf_iterator<char>());
+                          std::istreambuf_iterator<char>());
 
   // Remove Comment Lines from Blif
   preprocessString(file_string);
@@ -381,7 +382,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
   }
 
   std::string file_string((std::istreambuf_iterator<char>(f)),
-                         std::istreambuf_iterator<char>());
+                          std::istreambuf_iterator<char>());
 
   // Remove Comment Lines from Blif
   preprocessString(file_string);
@@ -413,7 +414,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getFlopCount());
 
   for (auto& inst : instances_to_optimize_) {
-    std::set<odb::dbNet*> connected_nets;
+    odb::PtrSet<odb::dbNet> connected_nets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();
@@ -468,7 +469,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
       inst_ids[const_master]
           = (inst_ids[const_master]) ? inst_ids[const_master] + 1 : 1;
       std::string inst_name = const_master + "_" + std::to_string(call_id_)
-                             + std::to_string(inst_ids[const_master]);
+                              + std::to_string(inst_ids[const_master]);
       for (auto&& lib : block->getDb()->getLibs()) {
         master = lib->findMaster(const_master.c_str());
         if (master != nullptr) {
@@ -480,7 +481,7 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
         while (block->findInst(inst_name.c_str())) {
           inst_ids[const_master]++;
           inst_name = const_master + "_" + std::to_string(call_id_)
-                     + std::to_string(inst_ids[const_master]);
+                      + std::to_string(inst_ids[const_master]);
         }
         auto new_inst = odb::dbInst::create(block, master, inst_name.c_str());
         new_inst->findITerm(const_port.c_str())->connect(net);
@@ -501,11 +502,11 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
     inst_ids[master_name]
         = (inst_ids[master_name]) ? inst_ids[master_name] + 1 : 1;
     std::string inst_name = master_name + "_" + std::to_string(call_id_) + "_"
-                           + std::to_string(inst_ids[master_name]);
+                            + std::to_string(inst_ids[master_name]);
     while (block->findInst(inst_name.c_str())) {
       inst_ids[master_name]++;
       inst_name = master_name + "_" + std::to_string(call_id_) + "_"
-                 + std::to_string(inst_ids[master_name]);
+                  + std::to_string(inst_ids[master_name]);
     }
 
     auto new_inst = odb::dbInst::create(block, master, inst_name.c_str());

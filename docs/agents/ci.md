@@ -14,6 +14,20 @@ Exit code 8 means some checks are still pending -- not an error.
 ### Clang-Tidy CI
 Clang-Tidy CI can fail not only for code issues but also for **unresolved review comments** on the PR. Review threads cannot be resolved via API on public repos -- must be done on the GitHub web UI.
 
+### Running clang-tidy locally via Bazel
+Run clang-tidy hermetically using the toolchain Bazel already uses to compile:
+```bash
+# Single module:
+bazel build --config=lint //src/utl/...
+
+# Full lint scope (excludes submodules):
+bazel build --config=lint -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+```
+- Uses `clang-tidy` from `@llvm_toolchain` (the same binary `etc/run-clang-tidy.sh` uses).
+- Reports land at `$(bazel info bazel-bin)/<pkg>/<target>_rules_lint/<src>.AspectRulesLintClangTidy.out`.
+- Generated files (SWIG, bison, flex) are auto-skipped. Targets tagged `no-lint` are skipped.
+- Aspect + config defined in `tools/lint/` and `//:.bazelrc` (`--config=lint`).
+
 ## CI Artifacts
 
 - Use distinct filenames for public vs private artifacts (never overwrite one with the other)

@@ -38,6 +38,7 @@
 #include "db_sta/dbSta.hh"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -843,7 +844,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
   }
 
   // draw instances
-  std::map<odb::dbInst*, TimingPathNode*> instances;
+  odb::PtrMap<odb::dbInst, TimingPathNode*> instances;
   for (const auto& [level, pins] : map_) {
     for (const auto& pin : pins) {
       if (pin->isPinITerm()) {
@@ -1241,7 +1242,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
   connect(expand_clk_,
           &QCheckBox::toggled,
           this,
-          &TimingControlsDialog ::expandClock);
+          &TimingControlsDialog::expandClock);
 
   sta_->setIncludeCapturePaths(true);
 }

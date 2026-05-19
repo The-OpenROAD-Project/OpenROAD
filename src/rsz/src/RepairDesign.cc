@@ -841,10 +841,11 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     sta::Delay buffer_delay = resizer_->bufferDelay(
         *buf_cell, load_acc, resizer_->tgt_slew_corner_, max_);
 
-    auto new_pin = EnqueuedPin{new_input_pin,
-                               (group_end - 1)->required_path,
-                               (group_end - 1)->required_delay + buffer_delay,
-                               max_level + 1};
+    auto new_pin = EnqueuedPin{
+        .pin = new_input_pin,
+        .required_path = (group_end - 1)->required_path,
+        .required_delay = (group_end - 1)->required_delay + buffer_delay,
+        .level = max_level + 1};
 
     sinks.erase(sinks.begin(), group_end);
     sinks.insert(

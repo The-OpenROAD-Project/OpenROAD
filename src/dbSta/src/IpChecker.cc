@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -223,7 +224,7 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   // Collect minimum-width signal pin centers grouped by layer
   // key: layer, value: list of pin center positions along routing direction
-  std::map<odb::dbTechLayer*, std::vector<int>> layer_pin_centers;
+  odb::PtrMap<odb::dbTechLayer, std::vector<int>> layer_pin_centers;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     if (mterm->getSigType().isSupply()) {
