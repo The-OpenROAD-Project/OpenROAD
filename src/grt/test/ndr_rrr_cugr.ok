@@ -57,31 +57,31 @@ Stage 3: Maze routing on sparsified graph.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (25).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (9).
 Routing statistics
-Wire length:           38632
-Total via count:       4260
-Total congestion:      25
-Min resource:          -1.1785711901528493
-Bottleneck:            (4, 13, 13)
+Wire length:           38347
+Total via count:       4284
+Total congestion:      9
+Min resource:          -0.49999964237213135
+Bottleneck:            (1, 9, 20)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1            2448             0            0.00%             0 /  0 /  0
-metal2            1792           640           35.71%             0 /  0 / 22
-metal3            2448           824           33.66%             0 /  0 /  1
-metal4            1217           255           20.95%             0 /  1 /  1
-metal5            1224           242           19.77%             1 /  0 /  1
-metal6            1217           191           15.69%             0 /  0 /  0
-metal7            1190           186           15.63%             0 /  0 /  0
-metal8            1190           144           12.10%             0 /  0 /  0
-metal9            1190            37            3.11%             0 /  0 /  0
-metal10           1190            65            5.46%             0 /  0 /  0
+metal2            1792           584           32.59%             0 /  0 /  8
+metal3            2448           813           33.21%             0 /  0 /  1
+metal4            1217           255           20.95%             0 /  0 /  0
+metal5            1224           231           18.87%             0 /  0 /  0
+metal6            1217           213           17.50%             0 /  0 /  0
+metal7            1190           175           14.71%             0 /  0 /  0
+metal8            1190           135           11.34%             0 /  0 /  0
+metal9            1190            80            6.72%             0 /  0 /  0
+metal10           1190            77            6.47%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            15106          2584           17.11%             1 /  1 / 25
+Total            15106          2563           16.97%             0 /  0 /  9
 
-[INFO GRT-0018] Total wirelength: 10815 um
+[INFO GRT-0018] Total wirelength: 10758 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.

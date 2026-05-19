@@ -44,13 +44,13 @@ Stage 3: Maze routing on sparsified graph.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (20).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (69).
 Routing statistics
 Wire length:           2918
-Total via count:       138
-Total congestion:      19
-Min resource:          -1.1638512321420666
-Bottleneck:            (3, 19, 21)
+Total via count:       140
+Total congestion:      68
+Min resource:          -4.105105105105105
+Bottleneck:            (5, 0, 21)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
@@ -58,11 +58,11 @@ Layer         Resource        Demand        Usage (%)    Max H / Max V / Total C
 li1              21571             7            0.03%             0 /  0 /  0
 met1             13777           203            1.47%             0 /  0 /  0
 met2             10786           131            1.21%             0 /  0 /  0
-met3              4207            85            2.02%             1 /  0 / 13
-met4              3241            34            1.05%             0 /  1 /  7
-met5              1413             0            0.00%             0 /  0 /  0
+met3              4207            23            0.55%             1 /  0 /  5
+met4              3241            35            1.08%             0 /  1 /  7
+met5              1413            76            5.38%             4 /  0 / 57
 ---------------------------------------------------------------------------------------
-Total            54995           460            0.84%             1 /  1 / 20
+Total            54995           475            0.86%             5 /  1 / 69
 
 [INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15
