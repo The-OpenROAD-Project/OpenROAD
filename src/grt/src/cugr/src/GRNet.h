@@ -71,6 +71,26 @@ class GRNet
 
   const std::vector<double>& getNdrCosts() const { return ndr_costs_; }
 
+  /**
+   * @brief Checks whether the net has an active demand-scaling NDR.
+   *
+   * A null `dbTechNonDefaultRule` or a rule that only restricts
+   * layers (no width/spacing change) yields an all-1.0 cost vector,
+   * which this method reports as `false`. Used by the maze stage to
+   * decide whether to rebuild a per-net wire-cost view.
+   *
+   * @returns `true` iff any per-layer factor is strictly > 1.
+   */
+  bool hasNdr() const
+  {
+    for (double c : ndr_costs_) {
+      if (c > 1.0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
   void addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap);

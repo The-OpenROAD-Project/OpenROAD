@@ -282,13 +282,26 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   grid_graph_->extractWireCostView(wire_cost_view);
   sortNetIndices(net_indices);
   SparseGrid grid(10, 10, 0, 0);
+  // Hoisted out of the loop so the per-net NDR view reuses storage
+  // across NDR nets; `extractWireCostView` resizes only on shape
+  // change. Stays empty when no NDR net hits the maze.
+  GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
     }
+    // Default nets share `wire_cost_view`. NDR nets need a per-net
+    // view because the default surface is NDR-blind: it would steer
+    // an NDR-2x net into the same congested tiles a default net
+    // would pick.
+    if (net->hasNdr()) {
+      grid_graph_->extractWireCostView(ndr_wire_cost_view, net->getNdrCosts());
+    }
+    const GridGraphView<CostT>& view_for_net
+        = net->hasNdr() ? ndr_wire_cost_view : wire_cost_view;
     MazeRoute maze_route(net, grid_graph_.get(), logger_);
-    maze_route.constructSparsifiedGraph(wire_cost_view, grid);
+    maze_route.constructSparsifiedGraph(view_for_net, grid);
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
     if (tree == nullptr) {
