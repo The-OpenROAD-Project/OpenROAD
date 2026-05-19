@@ -4,17 +4,12 @@
 #include "NegotiationLegalizer.h"
 
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <functional>
 #include <limits>
 #include <map>
-#include <queue>
-#include <tuple>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -637,9 +632,11 @@ bool NegotiationLegalizer::initFromDb()
     // gridX() / gridRoundY() are purely arithmetic and don't check whether a
     // site actually exists at the computed position.  Instances near the chip
     // boundary or in sparse-row designs can land on invalid (is_valid=false)
-    // pixels pixels or on pixels that don't support this cell's site type.  Fix
-    // those with a diamond search from the initial position; we only check site
-    // validity here, not blockages — the negotiation part handles those.
+    // pixels or on pixels that don't support this cell's site type.  Fix those
+    // with a 4-direction linear search (modeled on Opendp::moveHopeless).  We
+    // only check site existence and hard blockages here (both encoded in
+    // pixel.is_valid).  Soft blockages, routing-layer blockages, and
+    // cell-vs-cell overlap are left to the negotiation loop.
     if (!cell.fixed) {
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
@@ -665,12 +662,8 @@ bool NegotiationLegalizer::initFromDb()
         return true;
       };
 
-      // The snapping here is actually quite similar to the "hopeless" approach
-      // in original DPL.
-      //  they achieve the same objective, and the previous is more simple,
-      //  consider replacing this.
       // For region-constrained cells, collect the region rects in grid
-      // coordinates so the BFS below can verify containment.
+      // coordinates so the snap below can verify containment.
       // initFenceRegions() has not run yet, so we read ODB directly.
       // Instances reach their region via a GROUP, not via dbInst::region_,
       // so we must check both paths.
@@ -717,10 +710,11 @@ bool NegotiationLegalizer::initFromDb()
 
       if (!isValidSite(cell.init_x, cell.init_y)
           || !isInRegionOk(cell.init_x, cell.init_y)) {
-        debugPrint(logger_,
-                   utl::DPL,
-                   "negotiation",
-                   1,
+        // debugPrint(logger_,
+        //            utl::DPL,
+        //            "negotiation",
+        //            1,
+        logger_->report(
                    "Instance {} at ({}, {}) snaps to invalid site at "
                    "({}, {}). Searching for nearest valid site.",
                    cell.db_inst->getName(),
@@ -729,48 +723,71 @@ bool NegotiationLegalizer::initFromDb()
                    die_xlo_ + cell.init_x * site_width_,
                    die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
-        // Priority queue keyed on physical Manhattan distance (DBU) so the
-        // search expands in true physical proximity, not grid-unit proximity.
-        // One step in X = site_width_ DBU; Y distance is computed via the
-        // DPL grid since pixel rows may have non-uniform heights.
-        using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
-        std::
-            priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>>
-                pq;
-        std::unordered_set<int> visited;
+        // Linear scan in the four cardinal directions (same shape as
+        // Opendp::moveHopeless).
+        int best_x = cell.init_x;
+        int best_y = cell.init_y;
+        int best_dist = std::numeric_limits<int>::max();
+        bool found = false;
+        const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
 
-        auto tryEnqueue = [&](int gx, int gy) {
-          // Leave room for the full cell footprint before enqueueing.
-          if (gx < 0 || gx + cell.width > grid_w_ || gy < 0
-              || gy + cell.height > grid_h_) {
-            return;
-          }
-          if (!visited.insert(gy * grid_w_ + gx).second) {
-            return;
-          }
-          const int dy_dbu = dpl_grid->gridYToDbu(GridY{gy}).v
-                             - dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-          const int dist
-              = std::abs(gx - cell.init_x) * site_width_ + std::abs(dy_dbu);
-          pq.emplace(dist, gx, gy);
-        };
-
-        tryEnqueue(cell.init_x, cell.init_y);
-        constexpr std::array<std::pair<int, int>, 4> kNeighbors{
-            {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
-        while (!pq.empty()) {
-          auto [dist, gx, gy] = pq.top();
-          pq.pop();
-          if (isValidSite(gx, gy)) {
-            cell.init_x = gx;
-            cell.init_y = gy;
-            cell.x = cell.init_x;
-            cell.y = cell.init_y;
+        for (int x = cell.init_x - 1; x >= 0; --x) {  // left
+          if (isValidSite(x, cell.init_y)
+              && isInRegionOk(x, cell.init_y)) {
+            best_dist = (cell.init_x - x) * site_width_;
+            best_x = x;
+            best_y = cell.init_y;
+            found = true;
             break;
           }
-          for (auto [ox, oy] : kNeighbors) {
-            tryEnqueue(gx + ox, gy + oy);
+        }
+        for (int x = cell.init_x + 1; x + cell.width <= grid_w_;
+             ++x) {  // right
+          if (isValidSite(x, cell.init_y)
+              && isInRegionOk(x, cell.init_y)) {
+            const int dist = (x - cell.init_x) * site_width_;
+            if (dist < best_dist) {
+              best_dist = dist;
+              best_x = x;
+              best_y = cell.init_y;
+              found = true;
+            }
+            break;
           }
+        }
+        for (int y = cell.init_y - 1; y >= 0; --y) {  // below
+          if (isValidSite(cell.init_x, y)
+              && isInRegionOk(cell.init_x, y)) {
+            const int dist = init_y_dbu - dpl_grid->gridYToDbu(GridY{y}).v;
+            if (dist < best_dist) {
+              best_dist = dist;
+              best_x = cell.init_x;
+              best_y = y;
+              found = true;
+            }
+            break;
+          }
+        }
+        for (int y = cell.init_y + 1; y + cell.height <= grid_h_;
+             ++y) {  // above
+          if (isValidSite(cell.init_x, y)
+              && isInRegionOk(cell.init_x, y)) {
+            const int dist = dpl_grid->gridYToDbu(GridY{y}).v - init_y_dbu;
+            if (dist < best_dist) {
+              best_dist = dist;
+              best_x = cell.init_x;
+              best_y = y;
+              found = true;
+            }
+            break;
+          }
+        }
+
+        if (found) {
+          cell.init_x = best_x;
+          cell.init_y = best_y;
+          cell.x = cell.init_x;
+          cell.y = cell.init_y;
         }
       }
     }
