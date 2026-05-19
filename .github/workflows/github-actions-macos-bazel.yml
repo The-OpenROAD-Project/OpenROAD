@@ -28,16 +28,21 @@ jobs:
         env:
           BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
-          # --config=ci (gRPC + Remote Asset API) requires auth. Fork PRs
-          # have no secret -> fall back to .bazelrc's anon HTTPS cache.
+          # --config=remote-auth (gRPC + Remote Asset API + uploads) requires
+          # auth. Fork PRs have no secret -> fall back to .bazelrc's anon
+          # HTTPS read-only cache.
           REMOTE_FLAGS=()
           if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
             TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+            # Mask the derived token so it cannot leak in build logs.
+            # GH auto-masks the raw secret but not base64-of-secret.
+            echo "::add-mask::${TOKEN_B64}"
             REMOTE_FLAGS=(
-              --config=ci
+              --config=remote-auth
               --remote_header="Authorization=Basic ${TOKEN_B64}"
             )
           fi
           bazelisk build \
             "${REMOTE_FLAGS[@]}" \
+            --remote_download_minimal \
             --//:platform=gui //:openroad
