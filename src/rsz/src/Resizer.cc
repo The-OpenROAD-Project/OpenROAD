@@ -3034,7 +3034,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
   if (run_repair_timing) {
     // Conservative repair_timing: only fix worst setup violations.
     bool repair_setup = repairSetup(
-        /*setup_slack_margin=*/0.0,
+        /*setup_margin=*/0.0,
         repair_tns_end_percent,
         /*max_passes=*/1,
         /*max_iterations=*/0,
@@ -3043,20 +3043,21 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*verbose=*/false,
         /*sequence=*/parseMoveSequence(""),
         /*phases=*/"",
-        /*skip_pin_swap=*/true,    // avoid changing connectivity during placement
-        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates density
+        /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
+        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
+                                     // density
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
-        /*skip_last_gasp=*/true,   // skip aggressive last-resort passes
-        /*skip_vt_swap=*/true,     // post-placement optimization
+        /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
+        /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
 
     if (!repair_setup) {
       logger_->warn(RSZ,
-                     165,
-                     "repair_setup failed during timing-driven global "
-                     "placement. No fixable setup violations were found.");
+                    165,
+                    "repair_setup failed during timing-driven global "
+                    "placement. No fixable setup violations were found.");
     }
 
     // Re-estimate parasitics after repair_setup

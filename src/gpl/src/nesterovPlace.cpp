@@ -437,9 +437,8 @@ void NesterovPlace::runTimingDriven(int iter,
     }
 
     bool enable_repair_timing = npVars_.timingDrivenIterCounter
-                                        == tb_->getTimingNetWeightOverflowSize()
-                                    ? true
-                                    : false;
+                                == tb_->getTimingNetWeightOverflowSize();
+
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // TODO remove fillers for TD iterations
