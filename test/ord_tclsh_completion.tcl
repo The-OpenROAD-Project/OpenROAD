@@ -123,7 +123,7 @@ if { [lsearch -exact $r puts] >= 0 } {
 # User-defined procs at global scope must be in the candidate list
 # ---------------------------------------------------------------------------
 
-proc ord_completion_test_proc {} {}
+proc ord_completion_test_proc { } { }
 set r [::tclreadline::complete "ord_completion_test_p" 21]
 if { [lsearch -exact $r ord_completion_test_proc] >= 0 } {
   puts "PASS: Test 10 user proc 'ord_completion_test_proc' appears in candidates"
