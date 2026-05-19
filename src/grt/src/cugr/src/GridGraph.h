@@ -262,6 +262,24 @@ class GridGraph
   void extractCongestionView(
       GridGraphView<bool>& view) const;  // 2D overflow look-up table
   void extractWireCostView(GridGraphView<CostT>& view) const;
+
+  /**
+   * @brief Builds a 2D wire-cost view tailored to one NDR net.
+   *
+   * For NDR nets, restricts each edge on the best single-layer headroom
+   * `max_l (capacity_l - demand_l)` and subtracts `(net_factor - 1)`.
+   * This prevents a 2D-vs-3D mismatch in which summed capacity hides
+   * per-layer granularity: an NDR wire with `net_factor` tracks
+   * worth of footprint can't span 3D layers, so an edge with
+   * `net_factor` free tracks spread across `net_factor` layers must
+   * not be reported as routable.`net_factor == 1` (empty `net_costs`)
+   * reproduces the default summed view exactly.
+   *
+   * @param view       Output cost map (2 * x_size * y_size).
+   * @param net_costs  Per-layer NDR factor; empty / all-1.0 = no NDR.
+   */
+  void extractWireCostView(GridGraphView<CostT>& view,
+                           const std::vector<double>& net_costs) const;
   void updateWireCostView(
       GridGraphView<CostT>& view,
       const std::shared_ptr<GRTreeNode>& routing_tree) const;

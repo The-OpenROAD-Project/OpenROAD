@@ -926,14 +926,33 @@ void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
 
 void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
 {
-  view.assign(
-      2,
-      std::vector<std::vector<CostT>>(
-          x_size_,
-          std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
+  extractWireCostView(view, {});
+}
+
+void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
+                                    const std::vector<double>& net_costs) const
+{
+  // Reuse existing storage when the caller has already sized `view`
+  // correctly.
+  const bool already_sized
+      = view.size() == 2 && view[0].size() == static_cast<size_t>(x_size_)
+        && (x_size_ == 0 || view[0][0].size() == static_cast<size_t>(y_size_));
+  if (!already_sized) {
+    view.assign(
+        2,
+        std::vector<std::vector<CostT>>(
+            x_size_,
+            std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
+  }
+
   for (int direction = 0; direction < 2; direction++) {
     std::vector<int> layer_indices;
     CostT unit_length_short_cost = std::numeric_limits<CostT>::max();
+    // Aggregate via max across the direction's layers: gives the
+    // strongest steering the 2D maze can express without per-layer
+    // information. Stays at 1.0 when `net_costs` is empty or when
+    // no in-direction layer has a factor > 1.
+    double net_factor = 1.0;
     for (int layer_index = constants_.min_routing_layer;
          layer_index < getNumLayers();
          layer_index++) {
@@ -941,8 +960,16 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
         layer_indices.emplace_back(layer_index);
         unit_length_short_cost = std::min(unit_length_short_cost,
                                           getUnitLengthShortCost(layer_index));
+        if (layer_index < static_cast<int>(net_costs.size())) {
+          net_factor = std::max(net_factor, net_costs[layer_index]);
+        }
       }
     }
+    // `ndr_active` is loop-invariant across (x, y); hoist the
+    // dispatch out so the default path skips the max-per-layer
+    // tracking entirely and the NDR path skips the unused demand
+    // sum.
+    const bool ndr_active = net_factor > 1.0;
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
         const int edge_index = direction == MetalLayer::H ? x : y;
@@ -950,11 +977,35 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
           continue;
         }
         CapacityT capacity = 0;
-        CapacityT demand = 0;
-        for (int layer_index : layer_indices) {
-          const auto& edge = getEdge(layer_index, x, y);
-          capacity += edge.capacity;
-          demand += edge.demand;
+        CapacityT effective_resource;
+        if (ndr_active) {
+          // NDR path: gate on best-single-layer headroom minus
+          // `(net_factor - 1)`. An NDR wire can't span 3D layers,
+          // so the summed `(capacity - demand)` overstates what an
+          // NDR net can actually use when the per-layer distribution
+          // is uneven (e.g. 3 free tracks across 3 layers, 1 each,
+          // is unusable for a 2x-wide NDR). The logistic threshold
+          // lands at `max_per_layer_resource == net_factor - 1`: at
+          // most "barely fits", matching the physical constraint
+          // without over-amplifying detours when headroom is
+          // abundant.
+          CapacityT max_per_layer_resource
+              = std::numeric_limits<CapacityT>::lowest();
+          for (int layer_index : layer_indices) {
+            const auto& edge = getEdge(layer_index, x, y);
+            capacity += edge.capacity;
+            max_per_layer_resource
+                = std::max(max_per_layer_resource, edge.capacity - edge.demand);
+          }
+          effective_resource = max_per_layer_resource - (net_factor - 1.0);
+        } else {
+          CapacityT demand = 0;
+          for (int layer_index : layer_indices) {
+            const auto& edge = getEdge(layer_index, x, y);
+            capacity += edge.capacity;
+            demand += edge.demand;
+          }
+          effective_resource = capacity - demand;
         }
         const int length = getEdgeLength(direction, edge_index);
         view[direction][x][y]
@@ -963,7 +1014,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
                  + unit_length_short_cost
                        * (capacity < 1.0
                               ? 1.0
-                              : logistic(capacity - demand,
+                              : logistic(effective_resource,
                                          constants_.maze_logistic_slope
                                              * cost_multiplier_)));
       }
