@@ -23,7 +23,7 @@ bazel build --config=lint //src/utl/...
 # Full lint scope (excludes submodules):
 bazel build --config=lint -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
 ```
-- Uses `clang-tidy` 20.1.8 from `@llvm_toolchain` (the same binary `etc/run-clang-tidy.sh` uses).
+- Uses `clang-tidy` from `@llvm_toolchain` (the same binary `etc/run-clang-tidy.sh` uses).
 - Reports land at `$(bazel info bazel-bin)/<pkg>/<target>_rules_lint/<src>.AspectRulesLintClangTidy.out`.
 - Generated files (SWIG, bison, flex) are auto-skipped. Targets tagged `no-lint` are skipped.
 - Aspect + config defined in `tools/lint/` and `//:.bazelrc` (`--config=lint`).
