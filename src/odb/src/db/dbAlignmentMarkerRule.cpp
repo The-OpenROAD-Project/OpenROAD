@@ -16,7 +16,6 @@
 // User Code Begin Includes
 #include <algorithm>
 #include <cstddef>
-#include <ranges>
 
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
