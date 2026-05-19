@@ -8,7 +8,6 @@ on:
 
 jobs:
   Mac-Build:
-    if: github.repository_owner != 'The-OpenROAD-Project-private'
     runs-on: macos-latest
     steps:
       - name: Setup xcode
@@ -42,6 +41,9 @@ jobs:
               --remote_header="Authorization=Basic ${TOKEN_B64}"
             )
           fi
+          # Trace the bazelisk invocation so we can confirm auth flags are
+          # present. TOKEN_B64 is already masked above, so it prints as ***.
+          set -x
           bazelisk build \
             "${REMOTE_FLAGS[@]}" \
             --remote_download_minimal \
