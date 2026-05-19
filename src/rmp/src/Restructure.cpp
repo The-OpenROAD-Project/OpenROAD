@@ -19,6 +19,10 @@
 #include <utility>
 #include <vector>
 
+// Establish abc namespace, must include before abcapis.h
+#include "misc/util/abc_namespaces.h"  // IWYU pragma: keep
+
+// other includes
 #include "annealing_strategy.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"

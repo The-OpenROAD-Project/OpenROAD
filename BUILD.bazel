@@ -38,6 +38,7 @@ config_setting(
 )
 
 exports_files([
+    ".clang-tidy",
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
@@ -252,11 +253,9 @@ cc_library(
         "include/ord/OpenRoad.hh",
         "include/ord/Tech.h",
         "include/ord/Timing.h",
-        "include/ord/Version.hh",
     ],
     includes = [
         "include",
-        "include/ord",
     ],
     visibility = ["//:__subpackages__"],
     deps = [
@@ -269,6 +268,9 @@ cc_library(
     name = "openroad_version",
     hdrs = [
         ":OpenRoadVersion",
+    ],
+    includes = [
+        "include",
     ],
 )
 
