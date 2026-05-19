@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <map>
 #include <queue>
 #include <tuple>
 #include <unordered_map>
@@ -810,6 +811,19 @@ bool NegotiationLegalizer::initFromDb()
     }
 
     cells_.push_back(cell);
+  }
+
+  std::map<int, int> neg_height_counts;
+  for (const NegCell& c : cells_) {
+    neg_height_counts[c.height]++;
+  }
+  logger_->info(utl::DPL,
+                392,
+                "Negotiation cell height distribution ({} unique row-count(s)):",
+                neg_height_counts.size());
+  for (const auto& [height, count] : neg_height_counts) {
+    logger_->info(
+        utl::DPL, 393, "  height {} row(s): {} cells", height, count);
   }
 
   return true;
