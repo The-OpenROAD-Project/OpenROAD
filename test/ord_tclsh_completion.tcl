@@ -1,76 +1,149 @@
-# Mock tclreadline
-namespace eval ::tclreadline {
-proc Lindex { line index } {
-  return [lindex $line $index]
-}
+# Regression test for ::tclreadline::complete, the Tcl-callable wrapper
+# around the C++ TAB completion engine (ord::completeTcl) used by both
+# the linenoise REPL and the web Tcl console.
 
-proc ScriptCompleter { part start end line } {
-  # Simulate noisy output from ScriptCompleter to ensure it's suppressed
-  puts "ScriptCompleter: [ERROR] Should be suppressed"
-  error "ScriptCompleter Error"
-}
+# ---------------------------------------------------------------------------
+# Command-position completion
+# ---------------------------------------------------------------------------
 
-proc RemoveUsedOptions { line flags } {
-  # Default behavior: return flags as is
-  return $flags
-}
-
-proc CompleteFromList { part matches } {
-  set res {}
-  foreach m $matches {
-    if { [string match "${part}*" $m] } {
-      lappend res $m
-    }
-  }
-  return $res
-}
-}
-
-if { [info procs ::ord::cmd_args_completer] eq "" } {
-  puts "Error: ::ord::cmd_args_completer not found."
-  exit 1
-}
-
-puts "Test 1: Command name completion 'read_db'"
-# start=0 triggers ScriptCompleter path.
-# We expect NO error to propagate (caught inside) and clean stdout (redirected).
-# Result should be "" (from catch block returning "")
-set result ""
-if { [catch { set result [::ord::cmd_args_completer "read_db" 0 7 "read_db"] } err] } {
-  puts "FAIL: Test 1 threw error: $err"
+set r [::tclreadline::complete "read_db" 7]
+if { [lsearch -exact $r read_db] >= 0 } {
+  puts "PASS: Test 1 candidate list contains 'read_db'"
 } else {
-  if { $result eq "" } {
-    puts "PASS: Test 1 returned empty (as expected for mock failure)"
-  } else {
-    puts "FAIL: Test 1 returned: $result"
-  }
+  puts "FAIL: Test 1 candidate list: $r"
 }
 
-puts "\nTest 2: Argument completion 'read_db '"
-# start=8 triggers RemoveUsedOptions path.
-# We expect it to find files in current directory (or our mock).
-# Since we didn't mock glob, it will use real glob.
-# 'read_db' takes a file. cmd_args_completer logic does `glob`.
-set result ""
-if { [catch { set result [::ord::cmd_args_completer "" 8 8 "read_db "] } err] } {
-  puts "FAIL: Test 2 threw error: $err"
+set r [::tclreadline::complete "place_" 6]
+set all_place_prefix 1
+foreach c $r {
+  if { ![string match {place_*} $c] } { set all_place_prefix 0; break }
+}
+if { [llength $r] >= 3 && $all_place_prefix } {
+  puts "PASS: Test 2 'place_' returns >=3 candidates all starting with place_"
 } else {
-  # It should return a list of files/dirs
-  if { [llength $result] > 0 } {
-    puts "PASS: Test 2 returned list of length > 0"
-  } else {
-    puts "FAIL: Test 2 returned list of length 0"
-  }
+  puts "FAIL: Test 2 'place_' candidates: $r"
 }
 
-puts "\nTest 3: write_lef completion"
-# write_lef also takes filename.
-if { [catch { set result [::ord::cmd_args_completer "" 10 10 "write_lef "] } err] } {
-  puts "FAIL: Test 3 threw error: $err"
+set r [::tclreadline::complete "" 0]
+if { [llength $r] >= 50 && [lsearch -exact $r read_lef] >= 0 } {
+  puts "PASS: Test 3 empty line returns full command list (>=50, includes read_lef)"
 } else {
-  if { [llength $result] > 0 } {
-    puts "PASS: Test 3 returned list of length > 0"
-  } else {
-    puts "FAIL: Test 3 returned list of length 0"
-  }
+  puts "FAIL: Test 3 empty line llength=[llength $r]"
+}
+
+# ---------------------------------------------------------------------------
+# Flag (-arg) completion
+# ---------------------------------------------------------------------------
+
+set line "place_bondpad -"
+set r [::tclreadline::complete $line [string length $line]]
+set all_dash 1
+foreach c $r {
+  if { [string index $c 0] ne "-" } { set all_dash 0; break }
+}
+if { [llength $r] > 0 && $all_dash } {
+  puts "PASS: Test 4 flag completion returns bare flags (each starts with '-')"
+} else {
+  puts "FAIL: Test 4 flag completion: $r"
+}
+
+set line "place_bondpad -b"
+set r [::tclreadline::complete $line [string length $line]]
+set all_match 1
+foreach c $r {
+  if { ![string match {-b*} $c] } { set all_match 0; break }
+}
+if { [llength $r] > 0 && $all_match } {
+  puts "PASS: Test 5 flag narrowing 'place_bondpad -b' -> only -b* and not empty"
+} else {
+  puts "FAIL: Test 5 flag narrowing: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Variable completion
+# ---------------------------------------------------------------------------
+
+set ::ord_completion_test_var 1
+set line "puts \$ord_completion_test_v"
+set r [::tclreadline::complete $line [string length $line]]
+set found 0
+foreach c $r {
+  if { $c eq "\$ord_completion_test_var" } { set found 1; break }
+}
+if { $found } {
+  puts "PASS: Test 6 variable completion finds defined var with '\$' prefix"
+} else {
+  puts "FAIL: Test 6 variable completion: $r"
+}
+
+# ---------------------------------------------------------------------------
+# File completion at argument position
+# ---------------------------------------------------------------------------
+
+set line "read_lef "
+set r [::tclreadline::complete $line [string length $line]]
+set found_self 0
+foreach c $r {
+  if { $c eq "ord_tclsh_completion.tcl" } { set found_self 1; break }
+}
+if { [llength $r] > 0 && $found_self } {
+  puts "PASS: Test 7 file completion at arg position finds files in pwd"
+} else {
+  puts "FAIL: Test 7 file completion: llength=[llength $r] found_self=$found_self"
+}
+
+# ---------------------------------------------------------------------------
+# Bracket boundary: text after '[' is a fresh command position
+# ---------------------------------------------------------------------------
+
+set line "puts \[set_"
+set r [::tclreadline::complete $line [string length $line]]
+set all_set_prefix 1
+foreach c $r {
+  if { ![string match {set_*} $c] } { set all_set_prefix 0; break }
+}
+if { [llength $r] > 0 && $all_set_prefix } {
+  puts "PASS: Test 8 bracket boundary: '\[set_' completes as command position"
+} else {
+  puts "FAIL: Test 8 bracket boundary: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Plain Tcl builtins must be in the candidate list
+# ---------------------------------------------------------------------------
+
+set r [::tclreadline::complete "pu" 2]
+if { [lsearch -exact $r puts] >= 0 } {
+  puts "PASS: Test 9 'pu' includes the Tcl builtin 'puts'"
+} else {
+  puts "FAIL: Test 9 'pu' candidates: $r"
+}
+
+# ---------------------------------------------------------------------------
+# User-defined procs at global scope must be in the candidate list
+# ---------------------------------------------------------------------------
+
+proc ord_completion_test_proc {} {}
+set r [::tclreadline::complete "ord_completion_test_p" 21]
+if { [lsearch -exact $r ord_completion_test_proc] >= 0 } {
+  puts "PASS: Test 10 user proc 'ord_completion_test_proc' appears in candidates"
+} else {
+  puts "FAIL: Test 10 user proc candidates: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Flag completion must still work after a positional argument or flag value.
+# Regression for the backward-walk bug in findEnclosingCommand.
+# ---------------------------------------------------------------------------
+
+set line "place_bondpad PAD -"
+set r [::tclreadline::complete $line [string length $line]]
+set all_dash 1
+foreach c $r {
+  if { [string index $c 0] ne "-" } { set all_dash 0; break }
+}
+if { [llength $r] > 0 && $all_dash } {
+  puts "PASS: Test 11 flag completion after positional arg"
+} else {
+  puts "FAIL: Test 11 flag completion after positional arg: $r"
 }

@@ -322,20 +322,12 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#ifdef ENABLE_READLINE
-static int tclOrdReadlineInit(Tcl_Interp* interp)
+static int tclOrdReplInit(Tcl_Interp* interp)
 {
-  std::array<const char*, 2> readline_cmds
-      = {"ord::setup_tclreadline", "::tclreadline::Loop"};
-
-  for (auto cmd : readline_cmds) {
-    if (TCL_ERROR == Tcl_Eval(interp, cmd)) {
-      return TCL_ERROR;
-    }
-  }
-  return TCL_OK;
+  // SetupTclReadlineLibrary has already registered ::tclreadline::Loop
+  // (linenoise-backed REPL).  Hand control over; the loop never returns.
+  return Tcl_Eval(interp, "::tclreadline::Loop");
 }
-#endif
 
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
@@ -375,10 +367,11 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-    if (!exit_after_cmd_file) {
-      if (ord::SetupTclReadlineLibrary(interp) == TCL_ERROR) {
-        printf("Failed to load tclreadline\n");
-      }
+    // Register the ::tclreadline namespace shim unconditionally: it's
+    // cheap, and Tcl scripts (including non-interactive ones) may probe
+    // [info exists tclreadline::version] or call ::tclreadline::complete.
+    if (ord::SetupTclReadlineLibrary(interp) == TCL_ERROR) {
+      printf("Failed to set up tclreadline shim\n");
     }
 
     ord::initOpenRoad(
@@ -491,14 +484,12 @@ static int tclAppInit(int& argc,
       }
     }
   }
-#ifdef ENABLE_READLINE
-  // Initialize readline unless the Qt GUI is active (it has its own
-  // script widget).  The web viewer's headless mode still needs the
+  // Enter the linenoise REPL unless the Qt GUI is active (it has its
+  // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
   if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
-    return tclOrdReadlineInit(interp);
+    return tclOrdReplInit(interp);
   }
-#endif
   return TCL_OK;
 }
 

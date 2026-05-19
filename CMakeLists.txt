@@ -60,7 +60,7 @@ option(TSAN "Enable Thread Sanitizer" OFF)
 option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 
 project(OpenROAD VERSION 1
-  LANGUAGES CXX
+  LANGUAGES C CXX
 )
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
