@@ -28,11 +28,8 @@ jobs:
         env:
           BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
-          # With a cache password: opt into --config=ci (gRPC + Remote
-          # Asset API + uploads) and inject Basic auth via remote_header.
-          # Without one (fork PR): rely on .bazelrc's anonymous HTTPS
-          # read-only cache. Anonymous gRPC + asset API would 401 at
-          # Caddy, so we explicitly do not opt into --config=ci.
+          # --config=ci (gRPC + Remote Asset API) requires auth. Fork PRs
+          # have no secret -> fall back to .bazelrc's anon HTTPS cache.
           REMOTE_FLAGS=()
           if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
             TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
@@ -40,8 +37,6 @@ jobs:
               --config=ci
               --remote_header="Authorization=Basic ${TOKEN_B64}"
             )
-          else
-            echo "BAZEL_CACHE_PASSWORD unset (fork PR?); anonymous HTTPS read-only cache."
           fi
           bazelisk build \
             "${REMOTE_FLAGS[@]}" \
