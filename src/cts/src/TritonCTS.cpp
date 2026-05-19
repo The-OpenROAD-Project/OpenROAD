@@ -1892,41 +1892,6 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
   return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
-// Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
-// SPACING
-int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
-                             const int width1,
-                             const int width2)
-{
-  int min_spc = 0;
-  if (layer->hasTwoWidthsSpacingRules()) {
-    min_spc = layer->findTwSpacing(width1, width2, 0);
-  } else if (layer->hasV55SpacingRules()) {
-    min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
-  } else if (!layer->getV54SpacingRules().empty()) {
-    for (auto rule : layer->getV54SpacingRules()) {
-      if (rule->hasRange()) {
-        uint32_t rmin;
-        uint32_t rmax;
-        rule->getRange(rmin, rmax);
-        if (width1 < rmin || width2 > rmax) {
-          continue;
-        }
-      }
-      min_spc = std::max<int>(min_spc, rule->getSpacing());
-    }
-  } else {
-    min_spc = layer->getSpacing();
-  }
-
-  // Last resort, get pitch - minWidth
-  if (min_spc == 0) {
-    min_spc = layer->getPitch() - layer->getMinWidth();
-  }
-
-  return min_spc;
-}
-
 void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
@@ -1954,29 +1919,29 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
     assert(layerRule != nullptr);
 
-    int defaultWidth = layer->getWidth();
-    int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
+    int default_width = layer->getWidth();
+    int default_space = layer->getPitch() - default_width;
 
     // If width or space is 0, something is not right
-    if (defaultWidth == 0 || defaultSpace == 0) {
-      logger_->warn(CTS,
-                    208,
-                    "Clock NDR settings for layer {}: defaultSpace: {} - "
-                    "defaultWidth: {}",
-                    layer->getName(),
-                    defaultSpace,
-                    defaultWidth);
+    if (default_width == 0 || default_space == 0) {
+      logger_->error(CTS,
+                     208,
+                     "Clock NDR settings for layer {}: defaultSpace: {} - "
+                     "defaultWidth: {}",
+                     layer->getName(),
+                     default_space,
+                     default_width);
     }
 
     // Set NDR settings
-    int ndr_width = defaultWidth;
+    int ndr_width = default_width;
     layerRule->setWidth(ndr_width);
-    int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
+    int ndr_space = 2 * default_space;
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
                CTS,
-               "clustering",
+               "ndr",
                1,
                "  NDR rule set to layer {} {} as space={} width={} vs. default "
                "space={} width={}",
@@ -1984,8 +1949,8 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
                layer->getName(),
                layerRule->getSpacing(),
                layerRule->getWidth(),
-               defaultSpace,
-               defaultWidth);
+               default_space,
+               default_width);
   }
 
   int clkNets = 0;
@@ -2009,7 +1974,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 
   debugPrint(logger_,
              CTS,
-             "clustering",
+             "ndr",
              1,
              "Non-default rule {} for double spacing has been applied to {} "
              "clock nets",
