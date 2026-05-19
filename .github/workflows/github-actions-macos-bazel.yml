@@ -8,6 +8,7 @@ on:
 
 jobs:
   Mac-Build:
+    if: github.repository_owner != 'The-OpenROAD-Project-private'
     runs-on: macos-latest
     steps:
       - name: Setup xcode
@@ -20,6 +21,15 @@ jobs:
         with:
           submodules: 'recursive'
 
+      # 1. RESTORE: All jobs (PRs, manual runs, master) get to read the cache
+      - name: Restore Bazel Disk Cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.cache/bazel-disk-cache
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+
       - name: Install Bazelisk
         run: brew install bazelisk
 
@@ -27,9 +37,10 @@ jobs:
         env:
           BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
-          # --config=remote-auth (gRPC + Remote Asset API + uploads) requires
-          # auth. Fork PRs have no secret -> fall back to .bazelrc's anon
-          # HTTPS read-only cache.
+          # When the secret is present (push / dispatch / private repo PR)
+          # add authed gRPC + Remote Asset API + uploads on top of the
+          # .bazelrc anon HTTPS read-only cache. Fork PRs have no secret
+          # and just use the anon read path.
           REMOTE_FLAGS=()
           if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
             TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
@@ -37,14 +48,25 @@ jobs:
             # GH auto-masks the raw secret but not base64-of-secret.
             echo "::add-mask::${TOKEN_B64}"
             REMOTE_FLAGS=(
-              --config=remote-auth
+              --remote_cache=grpcs://bazel.precisioninno.com:443
+              --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
+              --remote_upload_local_results=true
               --remote_header="Authorization=Basic ${TOKEN_B64}"
             )
           fi
-          # Trace the bazelisk invocation so we can confirm auth flags are
+          # Trace the bazelisk invocation so we can confirm remote flags are
           # present. TOKEN_B64 is already masked above, so it prints as ***.
           set -x
           bazelisk build \
             "${REMOTE_FLAGS[@]}" \
-            --remote_download_minimal \
+            --disk_cache=~/.cache/bazel-disk-cache \
+            --experimental_disk_cache_gc_max_size=5G \
             --//:platform=gui //:openroad
+
+      # 2. SAVE: Only executes if this is a push/merge directly to the master branch
+      - name: Save Bazel Disk Cache
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.cache/bazel-disk-cache
+          key: ${{ runner.os }}-bazel-${{ github.sha }}
