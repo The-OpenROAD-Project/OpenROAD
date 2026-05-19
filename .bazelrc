@@ -119,11 +119,12 @@ build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
 
-# Anon: HTTPS read-only cache. CI (--config=ci): gRPC + Remote Asset API,
-# requires --remote_header="Authorization=Basic <b64 ci:$PW>".
+# Setup remote cache
+# Anon: HTTPS read-only cache
 build --remote_cache=https://bazel.precisioninno.com
 build --remote_cache_compression=true
 build --remote_upload_local_results=false
+# CI: gRPC + Remote Asset API, requires --remote_header
 build:ci --remote_cache=grpcs://bazel.precisioninno.com:443
 build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 
