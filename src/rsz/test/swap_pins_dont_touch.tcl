@@ -22,14 +22,8 @@ set_output_delay -clock clk 0.01 [get_ports y1]
 set_output_delay -clock clk 0.01 [get_ports y2]
 
 
-#place the design
-initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-source $tracks_file
-place_pins -hor_layers $io_placer_hor_layer \
-  -ver_layers $io_placer_ver_layer
-global_placement -skip_nesterov_place
-detailed_placement
+# Load the placed fixture to keep this test independent of floorplan and placement.
+read_def -floorplan_initialize swap_pins_dont_touch.def
 
 source Nangate45/Nangate45.rc
 set_wire_rc -signal -layer metal3
