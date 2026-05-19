@@ -1077,10 +1077,14 @@ void GlobalRouter::disableCongestedNDRNetsFromRoutes(
       if (seg.isVia()) {
         continue;
       }
-      const int x0 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
-                     / grid_->getTileSize();
-      const int y0 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
-                     / grid_->getTileSize();
+      const int x0
+          = std::max(0,
+                     (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize());
+      const int y0
+          = std::max(0,
+                     (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize());
       const int x1
           = std::min((std::max(seg.init_x, seg.final_x) - grid_->getXMin())
                          / grid_->getTileSize(),

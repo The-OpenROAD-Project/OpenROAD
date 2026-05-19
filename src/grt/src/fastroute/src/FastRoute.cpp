@@ -2534,11 +2534,15 @@ void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
 
     for (int edgeID = 0; edgeID < num_edges && !is_congested; edgeID++) {
       const TreeEdge& treeedge = sttrees_[net_id].edges[edgeID];
-      if (treeedge.len <= 0 && treeedge.route.routelen <= 0) {
+      if (treeedge.route.routelen <= 0 || treeedge.route.grids.empty()) {
         continue;
       }
       const std::vector<GPoint3D>& grids = treeedge.route.grids;
       for (int i = 0; i < treeedge.route.routelen && !is_congested; i++) {
+        // Skip via transitions (layer changes)
+        if (grids[i].layer != grids[i + 1].layer) {
+          continue;
+        }
         if (grids[i].x == grids[i + 1].x) {  // vertical segment
           const int min_y = std::min(grids[i].y, grids[i + 1].y);
           is_congested = graph2d_.getOverflowV(grids[i].x, min_y) > 0;
