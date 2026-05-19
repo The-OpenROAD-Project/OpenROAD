@@ -21,29 +21,28 @@ jobs:
         with:
           submodules: 'recursive'
 
-      # 1. RESTORE: All jobs (PRs, manual runs, master) get to read the cache
-      - name: Restore Bazel Disk Cache
-        uses: actions/cache/restore@v5
-        with:
-          path: ~/.cache/bazel-disk-cache
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-bazel-
-
       - name: Install Bazelisk
         run: brew install bazelisk
 
       - name: Build OpenROAD
+        env:
+          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
+          # With a cache password: opt into --config=ci (gRPC + Remote
+          # Asset API + uploads) and inject Basic auth via remote_header.
+          # Without one (fork PR): rely on .bazelrc's anonymous HTTPS
+          # read-only cache. Anonymous gRPC + asset API would 401 at
+          # Caddy, so we explicitly do not opt into --config=ci.
+          REMOTE_FLAGS=()
+          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
+            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+            REMOTE_FLAGS=(
+              --config=ci
+              --remote_header="Authorization=Basic ${TOKEN_B64}"
+            )
+          else
+            echo "BAZEL_CACHE_PASSWORD unset (fork PR?); anonymous HTTPS read-only cache."
+          fi
           bazelisk build \
-            --disk_cache=~/.cache/bazel-disk-cache \
-            --experimental_disk_cache_gc_max_size=5G \
+            "${REMOTE_FLAGS[@]}" \
             --//:platform=gui //:openroad
-
-      # 2. SAVE: Only executes if this is a push/merge directly to the master branch
-      - name: Save Bazel Disk Cache
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        uses: actions/cache/save@v5
-        with:
-          path: ~/.cache/bazel-disk-cache
-          key: ${{ runner.os }}-bazel-${{ github.sha }}
