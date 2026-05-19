@@ -4,6 +4,7 @@
 #include "cli_completer.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <filesystem>
 #include <iterator>
 #include <regex>
@@ -103,29 +104,85 @@ void addVariableCompletions(Tcl_Interp* interp,
   const std::string var_prefix = prefix.substr(1);  // strip leading '$'
   const bool starts_with_colon = !var_prefix.empty() && var_prefix[0] == ':';
 
-  std::string tcl_cmd = "info vars " + var_prefix;
-  // `info vars foo:*` matches both `foo:bar` and `foo::bar` — handle the
-  // user typing only one colon by appending a second if needed.
-  if (!var_prefix.empty() && var_prefix.back() == ':'
-      && (var_prefix.size() == 1 || var_prefix[var_prefix.size() - 2] != ':')) {
-    tcl_cmd += ":";
+  // Split the typed text into (namespace context, leaf).  A trailing single
+  // colon counts as the start of a `::` separator.  Examples:
+  //   "dpl"        -> ns_ctx="",       leaf="dpl"
+  //   "sta::cmd"   -> ns_ctx="::sta",  leaf="cmd"
+  //   "sta::"      -> ns_ctx="::sta",  leaf=""
+  //   "::sta::"    -> ns_ctx="::sta",  leaf=""
+  //   "::"         -> ns_ctx="::",     leaf=""
+  std::string head = var_prefix;
+  if (!head.empty() && head.back() == ':'
+      && (head.size() == 1 || head[head.size() - 2] != ':')) {
+    head.push_back(':');
   }
-  tcl_cmd += "*";
+  std::string ns_ctx;
+  std::string leaf;
+  const auto last_sep = head.rfind("::");
+  if (last_sep == std::string::npos) {
+    leaf = head;
+  } else {
+    ns_ctx = head.substr(0, last_sep);
+    leaf = head.substr(last_sep + 2);
+    if (ns_ctx.empty()) {
+      ns_ctx = "::";  // user typed leading "::"
+    } else if (ns_ctx.size() < 2 || ns_ctx[0] != ':' || ns_ctx[1] != ':') {
+      ns_ctx = "::" + ns_ctx;  // normalize to fully-qualified
+    }
+  }
 
-  for (auto var : getTclList(interp, tcl_cmd)) {
-    if (!starts_with_colon && !var.empty() && var[0] == ':') {
+  // 1. Variables in ns_ctx matching leaf*.  `info vars` accepts a qualified
+  // pattern; an empty ns_ctx falls back to the global namespace.
+  const std::string var_pattern
+      = ns_ctx.empty() ? leaf + "*" : ns_ctx + "::" + leaf + "*";
+  size_t var_count = 0;
+  for (auto var : getTclList(interp, "info vars " + var_pattern)) {
+    if (!starts_with_colon && var.size() >= 2 && var[0] == ':'
+        && var[1] == ':') {
       var = var.substr(2);
     }
-    out.push_back("$" + std::move(var));
+    std::string candidate = "$" + std::move(var);
+    if (candidate.size() >= prefix.size() && candidate.starts_with(prefix)) {
+      out.push_back(std::move(candidate));
+      ++var_count;
+    }
   }
 
-  // Namespace children — useful for completing $::ns::var paths.
-  for (const auto& ns : getTclList(interp, "namespace children")) {
-    std::string name = ns;
-    if (!starts_with_colon && !name.empty() && name[0] == ':') {
-      name = name.substr(2);
+  // 2. Child namespaces of ns_ctx matching leaf*.  Emit each with a
+  // trailing `::` so the next TAB descends into it.
+  const std::string ns_cmd
+      = ns_ctx.empty() ? "namespace children" : "namespace children " + ns_ctx;
+  size_t ns_count = 0;
+  for (auto ns : getTclList(interp, ns_cmd)) {
+    if (!starts_with_colon && ns.size() >= 2 && ns[0] == ':' && ns[1] == ':') {
+      ns = ns.substr(2);
     }
-    out.push_back("$" + std::move(name));
+    std::string candidate = "$" + std::move(ns) + "::";
+    if (candidate.size() >= prefix.size() && candidate.starts_with(prefix)) {
+      out.push_back(std::move(candidate));
+      ++ns_count;
+    }
+  }
+
+  // 3. Fallback when the namespace has no `$`-completable content: many
+  // OpenROAD namespaces (e.g. ::drt, ::dpl, ::cts) hold only commands, so
+  // `$drt::` + TAB would otherwise return nothing.  Surface the commands
+  // *without* the leading `$` — accepting the candidate then replaces the
+  // entire `$<prefix>` token and yields valid Tcl (e.g. the input
+  // `puts $drt::rep` becomes `puts drt::report_constraints`).
+  if (var_count == 0 && ns_count == 0 && !ns_ctx.empty()) {
+    const std::string cmd_pattern = ns_ctx + "::" + leaf + "*";
+    const std::string prefix_no_dollar = prefix.substr(1);
+    for (auto cmd : getTclList(interp, "info commands " + cmd_pattern)) {
+      if (!starts_with_colon && cmd.size() >= 2 && cmd[0] == ':'
+          && cmd[1] == ':') {
+        cmd = cmd.substr(2);
+      }
+      if (cmd.size() >= prefix_no_dollar.size()
+          && cmd.starts_with(prefix_no_dollar)) {
+        out.push_back(std::move(cmd));
+      }
+    }
   }
 }
 

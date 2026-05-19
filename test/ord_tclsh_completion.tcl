@@ -147,3 +147,106 @@ if { [llength $r] > 0 && $all_dash } {
 } else {
   puts "FAIL: Test 11 flag completion after positional arg: $r"
 }
+
+# ---------------------------------------------------------------------------
+# Namespace variable completion: completing the prefix of a child namespace
+# must produce "$ns::" (with trailing ::) so the next TAB drives variable
+# completion inside that namespace, not the bare "$ns" which is not a valid
+# variable reference on its own.
+# ---------------------------------------------------------------------------
+
+namespace eval ord_completion_test_ns { variable hello 1 }
+set line "puts \$ord_completion_test_n"
+set r [::tclreadline::complete $line [string length $line]]
+set found_qualified 0
+set found_bare 0
+foreach c $r {
+  if { $c eq "\$ord_completion_test_ns::" } { set found_qualified 1 }
+  if { $c eq "\$ord_completion_test_ns" } { set found_bare 1 }
+}
+if { $found_qualified && !$found_bare } {
+  puts "PASS: Test 12 namespace variable completion produces '\$ns::' not bare '\$ns'"
+} else {
+  puts "FAIL: Test 12 namespace variable: q=$found_qualified bare=$found_bare r=$r"
+}
+
+# ---------------------------------------------------------------------------
+# Namespace candidates must be prefix-filtered: typing "$ord_completion_test_n"
+# should not pull in unrelated top-level namespaces like $sta::, $odb::.
+# ---------------------------------------------------------------------------
+
+set line "puts \$ord_completion_test_n"
+set r [::tclreadline::complete $line [string length $line]]
+set has_unrelated 0
+foreach c $r {
+  if { ![string match {$ord_completion_test_*} $c] } {
+    set has_unrelated 1; break
+  }
+}
+if { !$has_unrelated && [llength $r] > 0 } {
+  puts "PASS: Test 13 namespace candidates are prefix-filtered"
+} else {
+  puts "FAIL: Test 13 namespace candidates not filtered: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Completion inside a namespace: "$ord_completion_test_ns::" + TAB must
+# surface variables defined in that namespace (regression for "no
+# completions from this namespace").
+# ---------------------------------------------------------------------------
+
+set line "puts \$ord_completion_test_ns::"
+set r [::tclreadline::complete $line [string length $line]]
+set found_var 0
+foreach c $r {
+  if { $c eq "\$ord_completion_test_ns::hello" } { set found_var 1; break }
+}
+if { $found_var } {
+  puts "PASS: Test 14 completion inside namespace surfaces variables"
+} else {
+  puts "FAIL: Test 14 completion inside namespace: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Sub-namespace enumeration: "$ord_completion_test_outer::" must surface
+# child namespaces with their own trailing "::".
+# ---------------------------------------------------------------------------
+
+namespace eval ord_completion_test_outer {
+namespace eval inner { variable x 1 }
+}
+set line "puts \$ord_completion_test_outer::"
+set r [::tclreadline::complete $line [string length $line]]
+set found_child 0
+foreach c $r {
+  if { $c eq "\$ord_completion_test_outer::inner::" } { set found_child 1; break }
+}
+if { $found_child } {
+  puts "PASS: Test 15 sub-namespace enumeration produces '\$outer::inner::'"
+} else {
+  puts "FAIL: Test 15 sub-namespace enumeration: $r"
+}
+
+# ---------------------------------------------------------------------------
+# Command-only namespace fallback: when the typed `$<ns>::` namespace has no
+# variables and no child namespaces, fall back to commands so TAB is not a
+# dead end.  Emit commands WITHOUT the leading `$` so accepting the
+# candidate produces valid Tcl (replaces the entire `$<prefix>` token).
+# ---------------------------------------------------------------------------
+
+namespace eval ord_completion_test_cmds {
+proc inner_cmd { } { }
+}
+set line "puts \$ord_completion_test_cmds::"
+set r [::tclreadline::complete $line [string length $line]]
+set found_cmd 0
+set has_dollar 0
+foreach c $r {
+  if { $c eq "ord_completion_test_cmds::inner_cmd" } { set found_cmd 1 }
+  if { [string index $c 0] eq "\$" } { set has_dollar 1 }
+}
+if { $found_cmd && !$has_dollar } {
+  puts "PASS: Test 16 command-only namespace falls back to commands (no '\$')"
+} else {
+  puts "FAIL: Test 16 command-only namespace: found_cmd=$found_cmd has_dollar=$has_dollar r=$r"
+}

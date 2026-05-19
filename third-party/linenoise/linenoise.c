@@ -778,11 +778,14 @@ static int completeLine(struct linenoiseState *ls, int keypressed) {
     if (lc.len == 1) {
         /* Unique completion: splice it in, with a trailing space (readline
          * convention) unless the candidate already ends in '/' (directory
-         * path — the user will keep descending). */
+         * path) or '::' (Tcl namespace path) — in both cases the user will
+         * keep descending. */
         const char *cand = lc.cvec[0];
         size_t clen = strlen(cand);
         int trailing_slash = clen > 0 && cand[clen - 1] == '/';
-        const char *trail = trailing_slash ? "" : " ";
+        int trailing_ns
+            = clen >= 2 && cand[clen - 1] == ':' && cand[clen - 2] == ':';
+        const char *trail = (trailing_slash || trailing_ns) ? "" : " ";
         char head[LINENOISE_MAX_LINE];
         size_t head_len = lc.replace_start;
         if (head_len >= sizeof(head)) head_len = sizeof(head) - 1;

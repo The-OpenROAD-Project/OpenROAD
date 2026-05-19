@@ -9,3 +9,8 @@ PASS: Test 8 bracket boundary: '[set_' completes as command position
 PASS: Test 9 'pu' includes the Tcl builtin 'puts'
 PASS: Test 10 user proc 'ord_completion_test_proc' appears in candidates
 PASS: Test 11 flag completion after positional arg
+PASS: Test 12 namespace variable completion produces '$ns::' not bare '$ns'
+PASS: Test 13 namespace candidates are prefix-filtered
+PASS: Test 14 completion inside namespace surfaces variables
+PASS: Test 15 sub-namespace enumeration produces '$outer::inner::'
+PASS: Test 16 command-only namespace falls back to commands (no '$')

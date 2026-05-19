@@ -359,8 +359,10 @@ export class TclCompleter {
         const after = this._input.value.substring(this._replaceEnd);
         // Append a trailing space (readline convention) unless the
         // candidate already ends in '/' (a directory — the user will
-        // keep descending) or the buffer already has whitespace after.
+        // keep descending) or '::' (a Tcl namespace path — same), or
+        // the buffer already has whitespace after.
         const needsSpace = !completion.endsWith('/')
+            && !completion.endsWith('::')
             && (after.length === 0 || after[0] !== ' ');
         const trail = needsSpace ? ' ' : '';
         this._input.value = before + completion + trail + after;
