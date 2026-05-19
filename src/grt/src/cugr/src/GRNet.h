@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -77,7 +78,8 @@ class GRNet
    * A null `dbTechNonDefaultRule` or a rule that only restricts
    * layers (no width/spacing change) yields an all-1.0 cost vector,
    * which this method reports as `false`. Used by the maze stage to
-   * decide whether to rebuild a per-net wire-cost view.
+   * decide whether to rebuild a per-net wire-cost view. Returns
+   * `false` once the net has been soft-demoted (see `setSoftNdr`).
    *
    * @returns `true` iff any per-layer factor is strictly > 1.
    */
@@ -90,6 +92,14 @@ class GRNet
     }
     return false;
   }
+
+  void setSoftNdr()
+  {
+    soft_ndr_ = true;
+    std::fill(ndr_costs_.begin(), ndr_costs_.end(), 1.0);
+  }
+
+  bool isSoftNdr() const { return soft_ndr_; }
 
   void addPreferredAccessPoint(int pin_index, const AccessPoint& ap);
   void addBTermAccessPoint(odb::dbBTerm* bterm, const AccessPoint& ap);
@@ -118,6 +128,7 @@ class GRNet
   float slack_;
   bool is_critical_;
   std::vector<double> ndr_costs_;
+  bool soft_ndr_ = false;
 };
 
 }  // namespace grt

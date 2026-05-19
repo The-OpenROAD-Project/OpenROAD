@@ -16,6 +16,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -464,6 +465,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   constexpr double kMultiplierStep = 1.0;
   constexpr double kMultiplierCap = 6.0;
   constexpr double kCongestionThreshold = 0.9;
+  // Number of consecutive iterations staying in a congestion region
+  // that takes an NDR net to apply soft NDR.
+  constexpr int kSoftNdrStreakThreshold = 2;
+
+  std::unordered_map<int, int> ndr_congested_streak;
+  int soft_ndr_demotions = 0;
 
   double multiplier = 1.0;
   for (int i = 1; i <= congestion_iterations_; ++i) {
@@ -471,6 +478,49 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     if (net_indices.empty()) {
       break;
     }
+
+    // Soft-NDR escape valve: track NDR nets that stay congested
+    // across consecutive iterations and demote them once the streak
+    // exceeds `kSoftNdrStreakThreshold`.
+    std::unordered_set<int> currently_congested(net_indices.begin(),
+                                                net_indices.end());
+    std::vector<std::string> demoted_now;
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (!net->hasNdr()) {
+        continue;
+      }
+      const int streak = ++ndr_congested_streak[net_index];
+      if (streak >= kSoftNdrStreakThreshold) {
+        grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        net->setSoftNdr();
+        grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        demoted_now.push_back(net->getName());
+      }
+    }
+    // Reset streaks for nets that recovered (no longer congested).
+    for (auto& [net_index, streak] : ndr_congested_streak) {
+      if (currently_congested.count(net_index) == 0) {
+        streak = 0;
+      }
+    }
+    if (!demoted_now.empty()) {
+      soft_ndr_demotions += demoted_now.size();
+      for (const std::string& name : demoted_now) {
+        debugPrint(logger_,
+                   GRT,
+                   "softNDR",
+                   1,
+                   "Disabled NDR (to reduce congestion) for net: {}",
+                   name);
+      }
+      logger_->warn(GRT,
+                    305,
+                    "Demoted {} NDR net(s) to default rule to reduce "
+                    "congestion (use debug 'softNDR' for net list).",
+                    demoted_now.size());
+    }
+
     if (multiplier < kMultiplierCap) {
       multiplier += kMultiplierStep;
     }
@@ -480,6 +530,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     mazeRoute(net_indices);
   }
   grid_graph_->setCostMultiplier(1.0);
+  if (soft_ndr_demotions > 0) {
+    logger_->info(GRT,
+                  306,
+                  "Iterative RRR soft-demoted {} NDR net(s) total.",
+                  soft_ndr_demotions);
+  }
 
   // Final summary: the last mazeRoute already printed "Nets with
   // congestion" via updateCongestedNets, so just warn (if anything remains)

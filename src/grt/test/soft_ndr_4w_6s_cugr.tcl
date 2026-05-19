@@ -1,8 +1,10 @@
-# CUGR mirror of soft_ndr_4w_6s.tcl: 4x-width, 6x-spacing NDR.
-# CUGR does *not* implement FastRoute's soft-NDR fallback (which demotes
-# an NDR to default when its region is too congested) — this test
-# baselines what CUGR produces under the stress, so a future v2 with
-# soft-NDR support can be measured against it.
+# CUGR mirror of soft_ndr_4w_6s.tcl: 4x-width, 6x-spacing NDR on the
+# clock tree. At F=4 several clock-NDR routes are physically
+# unroutable on this gcd_sky130hs setup, so the test exercises the
+# soft-NDR escape valve in `iterativeRRR`: NDR nets that stay in the
+# congested set for `kSoftNdrStreakThreshold` consecutive iterations
+# are demoted (GRT-0305) and the design then routes to zero overflow.
+# Mirrors FastRoute's `applySoftNDR` behavior.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
