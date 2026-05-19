@@ -106,6 +106,10 @@ void NegotiationLegalizer::legalize()
       orient_s{0};
   const utl::Timer total_timer;
 
+  if (debug_observer_) {
+    debug_observer_->startPlacement(db_->getChip()->getBlock());
+  }
+
   {
     utl::DebugScopedTimer t(init_from_db_s,
                             logger_,
@@ -119,7 +123,6 @@ void NegotiationLegalizer::legalize()
   }
 
   if (debug_observer_) {
-    debug_observer_->startPlacement(db_->getChip()->getBlock());
     debugPause("Pause after initFromDb.");
   }
 
@@ -788,6 +791,41 @@ bool NegotiationLegalizer::initFromDb()
           cell.init_y = best_y;
           cell.x = cell.init_x;
           cell.y = cell.init_y;
+
+          if (debug_observer_ && opendp_->deep_iterative_debug_) {
+            const odb::dbInst* debug_inst
+                = debug_observer_->getDebugInstance();
+            if (!debug_inst || cell.db_inst == debug_inst) {
+              if (network_) {
+                if (Node* node = network_->getNode(cell.db_inst)) {
+                  node->setLeft(DbuX(cell.x * site_width_));
+                  node->setBottom(
+                      DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
+                  node->setPlaced(true);
+                }
+              }
+              pushNegotiationPixels();
+              const int snap_x_dbu = die_xlo_ + cell.x * site_width_;
+              const int snap_y_dbu
+                  = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.y}).v;
+              logger_->report(
+                  "Pause at snapping of {} to ({}, {}) dbu.",
+                  cell.db_inst->getName(),
+                  snap_x_dbu,
+                  snap_y_dbu);
+              debug_observer_->drawSelected(cell.db_inst, !debug_inst);
+            }
+          }
+        } else {
+          const int init_x_dbu = die_xlo_ + cell.init_x * site_width_;
+          const int init_y_dbu
+              = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
+          logger_->report(
+              "Could not find a valid site for instance {} (init ({}, {}) "
+              "dbu).",
+              cell.db_inst->getName(),
+              init_x_dbu,
+              init_y_dbu);
         }
       }
     }
