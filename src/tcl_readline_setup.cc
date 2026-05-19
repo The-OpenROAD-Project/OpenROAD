@@ -18,8 +18,6 @@
 
 #include "tcl_readline_setup.h"
 
-#include <tcl.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -28,6 +26,8 @@
 
 #include "cli_completer.h"
 #include "linenoise.h"
+#include "tcl.h"
+#include "tclDecls.h"
 
 namespace ord {
 

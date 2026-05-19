@@ -3,16 +3,19 @@
 
 #include "cli_completer.h"
 
-#include <tcl.h>
-
 #include <algorithm>
 #include <filesystem>
+#include <iterator>
 #include <regex>
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
+
+#include "tcl.h"
+#include "tclDecls.h"
 
 namespace ord {
 
@@ -249,7 +252,7 @@ void addFileCompletions(const std::string& prefix,
   std::vector<std::string> matches;
   for (const auto& entry : fs::directory_iterator(dir, ec)) {
     const std::string name = entry.path().filename().string();
-    if (!leaf.empty() && name.compare(0, leaf.size(), leaf) != 0) {
+    if (!leaf.empty() && name.starts_with(leaf)) {
       continue;
     }
     if (leaf.empty() && !name.empty() && name[0] == '.'
@@ -263,7 +266,7 @@ void addFileCompletions(const std::string& prefix,
     }
     matches.push_back(std::move(candidate));
   }
-  std::sort(matches.begin(), matches.end());
+  std::ranges::sort(matches);
   out.insert(out.end(),
              std::make_move_iterator(matches.begin()),
              std::make_move_iterator(matches.end()));
