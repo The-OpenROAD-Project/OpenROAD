@@ -271,7 +271,6 @@ cc_test(
         "cpp/TestBlockMacroChannels.cpp",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/mpl",
         "//src/odb/src/db",
         "//src/tst",

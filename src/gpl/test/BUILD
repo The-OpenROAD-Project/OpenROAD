@@ -155,7 +155,6 @@ cc_test(
         "library/test/test0.lib",
     ],
     deps = [
-        "//:openroad_lib",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
@@ -163,7 +162,6 @@ cc_test(
         "//src/est",
         "//src/gpl",
         "//src/grt",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",
