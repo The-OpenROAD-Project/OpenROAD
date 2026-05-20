@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -129,7 +128,7 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
   // 1900.
   const std::vector<frCoord> expected_tracks
       = {100, 300, 500, 700, 900, 1100, 1300, 1500, 1700, 1900};
-  EXPECT_EQ(worker.getTrackLocs(/*layer_num=*/2), expected_tracks);
+  EXPECT_EQ(worker.getTrackLocs(2), expected_tracks);
 
   // After end(), the guide carries the assigned frPathSeg. Its y-coord must
   // match one of the available tracks.
