@@ -2378,10 +2378,26 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
     }
   }
 
+  // Order modules by id, not pointer value — pointer order varies
+  // across runs and would make tray naming / ILP seed consumption
+  // non-deterministic.
+  struct ModMaskLess
+  {
+    bool operator()(const std::pair<dbModule*, Mask>& a,
+                    const std::pair<dbModule*, Mask>& b) const
+    {
+      if (a.first != b.first) {
+        return odb::compare_by_id(a.first, b.first);
+      }
+      return a.second < b.second;
+    }
+  };
+
   for (const auto& [clk_net, indices] : clk_terms) {
     // Partition by (parent module, mask) so flops in different
     // hierarchical modules are never clustered into the same tray.
-    std::map<std::pair<dbModule*, Mask>, std::vector<Flop>> flops_by_mod_mask;
+    std::map<std::pair<dbModule*, Mask>, std::vector<Flop>, ModMaskLess>
+        flops_by_mod_mask;
     for (const int idx : indices) {
       const Mask vec_mask = GetArrayMask(insts_[idx], false);
       flops_by_mod_mask[{insts_[idx]->getModule(), vec_mask}].push_back(
