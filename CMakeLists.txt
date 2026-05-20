@@ -136,6 +136,16 @@ if(EXISTS "/etc/os-release")
   if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
     set(LTO_UNSUPPORTED_OS TRUE)
     message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
+    # Rocky 8 ships gcc 8 in /usr/lib64/libstdc++.so.6.  gcc-toolset-13's
+    # `-lstdc++` resolves through a linker script that pulls
+    # libstdc++_nonshared.a (fill-in for <filesystem> etc.).  When that
+    # archive's TUs (e.g. fs_path80.o) are pulled into a link with many
+    # OpenROAD .a/.so inputs, the order/visibility of the system
+    # libstdc++.so.6 ends up such that ld can't resolve internal helpers
+    # like basic_string::resize and _Sp_counted_*.  Statically link
+    # libstdc++/libgcc to sidestep the fill-in archive entirely.
+    add_link_options(-static-libstdc++ -static-libgcc)
+    message(STATUS "Rocky 8: enabling -static-libstdc++ -static-libgcc to avoid libstdc++_nonshared.a link errors")
   endif()
 endif()
 
