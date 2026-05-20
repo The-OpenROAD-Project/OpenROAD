@@ -15,6 +15,7 @@
 
 #include "ord/Version.hh"
 #include "tcl.h"
+#include "tclDecls.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -178,6 +179,12 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 
 ////////////////////////////////////////////////////////////////
 
+static void finalizeLoggerMetrics(ClientData clientData)
+{
+  auto* logger = static_cast<utl::Logger*>(clientData);
+  logger->finalizeMetrics();
+}
+
 void initOpenRoad(Tcl_Interp* interp,
                   const char* log_filename,
                   const char* metrics_filename,
@@ -197,6 +204,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = new utl::Logger(log_filename, metrics_filename);
+  if (metrics_filename) {
+    Tcl_CreateExitHandler(finalizeLoggerMetrics, logger_);
+  }
   service_registry_ = new utl::ServiceRegistry(logger_);
   db_->setLogger(logger_);
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
