@@ -24,7 +24,7 @@ read_lef $tech_lef
 read_lef $std_cell_lef
 read_liberty $liberty_file
 
-read_verilog $test_name.hier.v
+read_verilog $test_name.v
 link_design -hier top
 read_def -floorplan_initialize $test_name.def
 
