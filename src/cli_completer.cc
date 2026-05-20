@@ -309,7 +309,7 @@ void addFileCompletions(const std::string& prefix,
   std::vector<std::string> matches;
   for (const auto& entry : fs::directory_iterator(dir, ec)) {
     const std::string name = entry.path().filename().string();
-    if (!leaf.empty() && name.starts_with(leaf)) {
+    if (!leaf.empty() && !name.starts_with(leaf)) {
       continue;
     }
     if (leaf.empty() && !name.empty() && name[0] == '.'

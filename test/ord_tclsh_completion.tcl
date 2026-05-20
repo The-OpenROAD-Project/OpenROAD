@@ -250,3 +250,24 @@ if { $found_cmd && !$has_dollar } {
 } else {
   puts "FAIL: Test 16 command-only namespace: found_cmd=$found_cmd has_dollar=$has_dollar r=$r"
 }
+
+# ---------------------------------------------------------------------------
+# File completion with a non-empty leaf: every candidate must start with the
+# typed leaf.  Regression for an inverted starts_with filter that previously
+# kept the non-matching entries and dropped the matching ones — Test 7 only
+# exercises the empty-leaf path, so this is the case that caught the bug.
+# ---------------------------------------------------------------------------
+
+set line "read_lef ord_"
+set r [::tclreadline::complete $line [string length $line]]
+set all_prefix 1
+set found_self 0
+foreach c $r {
+  if { ![string match {ord_*} $c] } { set all_prefix 0 }
+  if { $c eq "ord_tclsh_completion.tcl" } { set found_self 1 }
+}
+if { [llength $r] > 0 && $all_prefix && $found_self } {
+  puts "PASS: Test 17 file completion with non-empty leaf filters to 'ord_*'"
+} else {
+  puts "FAIL: Test 17 file completion non-empty leaf: prefix=$all_prefix self=$found_self r=$r"
+}

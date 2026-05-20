@@ -14,3 +14,4 @@ PASS: Test 13 namespace candidates are prefix-filtered
 PASS: Test 14 completion inside namespace surfaces variables
 PASS: Test 15 sub-namespace enumeration produces '$outer::inner::'
 PASS: Test 16 command-only namespace falls back to commands (no '$')
+PASS: Test 17 file completion with non-empty leaf filters to 'ord_*'
