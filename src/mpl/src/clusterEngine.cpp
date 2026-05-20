@@ -2082,8 +2082,9 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      auto macro = std::make_unique<HardMacro>(
-          inst, buildMacroHalo(inst, minimum_spacing));
+      HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
+
+      auto macro = std::make_unique<HardMacro>(inst, halo);
 
       if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
         logger_->error(
@@ -2222,14 +2223,28 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
 int ClusteringEngine::getMinimumSpacing() const
 {
   int spacing = 0;
-  for (auto entry : block_->getTech()->getCellEdgeSpacingTable()) {
-    spacing = std::max(spacing, entry->getSpacing());
-  }
 
-  for (auto layer : block_->getTech()->getLayers()) {
-    spacing = std::max(spacing, layer->getSpacing());
-  }
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      odb::dbMaster* master = inst->getMaster();
 
+      for (odb::dbBox* obs : master->getObstructions()) {
+        if (auto layer = obs->getTechLayer()) {
+          spacing = std::max(spacing, layer->getSpacing());
+        }
+      }
+
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* geom : mpin->getGeometry()) {
+            if (auto layer = geom->getTechLayer()) {
+              spacing = std::max(spacing, layer->getSpacing());
+            }
+          }
+        }
+      }
+    }
+  }
   return spacing;
 }
 
