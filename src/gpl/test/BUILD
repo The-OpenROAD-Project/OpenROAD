@@ -163,6 +163,7 @@ cc_test(
         "//src/est",
         "//src/gpl",
         "//src/grt",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",

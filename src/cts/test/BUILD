@@ -237,6 +237,7 @@ cc_test(
     features = ["-layering_check"],  # TODO: accesses private headers
     deps = [
         "//src/cts",
+        "//src/gui:gui_stub",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

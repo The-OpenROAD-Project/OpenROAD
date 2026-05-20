@@ -338,6 +338,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst",
@@ -358,6 +359,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst",
         "//src/tst:integrated_fixture",
@@ -377,6 +379,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst",
         "//src/tst:integrated_fixture",
