@@ -69,6 +69,7 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
         "@boost.stacktrace",
         "@boost.unordered",

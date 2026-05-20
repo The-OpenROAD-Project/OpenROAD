@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "node.h"
+#include "odb/PtrSetMap.h"
 
 namespace utl {
 class Logger;
@@ -30,7 +31,7 @@ class Connection
 
   // For routing layers, resistance per square
   // For via layers, resistance per cut
-  using ResistanceMap = std::map<odb::dbTechLayer*, Resistance>;
+  using ResistanceMap = odb::PtrMap<odb::dbTechLayer, Resistance>;
 
   struct Compare
   {

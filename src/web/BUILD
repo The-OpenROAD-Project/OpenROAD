@@ -173,6 +173,7 @@ cc_library(
     ],
     deps = [
         ":color",
+        "//:cli_completer",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",

@@ -84,7 +84,6 @@ filegroup(
 cc_library(
     name = "ui",
     srcs = [
-        "common/swig_common.h",
         "tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
@@ -99,6 +98,7 @@ cc_library(
         "common",
     ],
     deps = [
+        ":swig_common",
         "//:ord",
         "//src/odb/src/db",
         "//src/odb/src/defout",

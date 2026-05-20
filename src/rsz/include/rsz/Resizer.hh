@@ -25,6 +25,7 @@
 #include "est/EstimateParasitics.h"
 #include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -154,7 +155,7 @@ struct LibraryAnalysisData
   // Cell footprint distribution (footprint_name -> count)
   std::map<std::string, int> cells_by_footprint;
   // LEF site usage distribution (site -> count)
-  std::map<odb::dbSite*, int> cells_by_site;
+  odb::PtrMap<odb::dbSite, int> cells_by_site;
   // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
   std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
 
@@ -293,7 +294,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool loads_on_diff_nets = false);
   odb::dbInst* insertBufferBeforeLoads(
       odb::dbNet* net,
-      const std::set<odb::dbObject*>& loads,
+      const odb::PtrSet<odb::dbObject>& loads,
       odb::dbMaster* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -593,7 +594,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
-                  const std::set<odb::dbSite*>& base_sites);
+                  const odb::PtrSet<odb::dbSite>& base_sites);
 
  public:
   //==============================
