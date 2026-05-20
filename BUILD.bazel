@@ -99,6 +99,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/exa:ui",
     "//src/fin",
     "//src/gpl",
+    "//src/gpl:ui",
     "//src/grt",
     "//src/grt:ui",
     "//src/ifp",
