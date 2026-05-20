@@ -1763,7 +1763,7 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       }
     }
 
-    if (tot_disp == prev) {
+    if (std::abs(tot_disp - prev) <= 0.01f * prev) {
       break;
     }
     prev = tot_disp;
@@ -2280,6 +2280,17 @@ float MBFF::getClockPeriod(odb::dbInst* ff_inst)
   return period;
 }
 
+std::vector<float> MBFF::precomputeClockPeriods(
+    const std::vector<std::vector<Flop>>& FFs)
+{
+  std::vector<float> clock_periods(FFs.size());
+  for (size_t i = 0; i < FFs.size(); i++) {
+    dbInst* ff_inst = insts_[FFs[i].back().idx];
+    clock_periods[i] = getClockPeriod(ff_inst);
+  }
+  return clock_periods;
+}
+
 void MBFF::SetVars(const std::vector<Flop>& flops)
 {
   // get min height and width
@@ -2443,6 +2454,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
 
   std::vector<std::vector<Flop>> FFs;
   SeparateFlops(FFs);
+  const std::vector<float> clock_periods = precomputeClockPeriods(FFs);
   const int num_chunks = FFs.size();
   float tot_ilp = 0;
   bool any_found = false;
@@ -2461,7 +2473,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
       continue;
     }
     any_found = true;
-    clock_period_ = getClockPeriod(ff_inst);
+    clock_period_ = clock_periods[i];
     SelectBestTrays(array_mask, clockActivity());
     SetVars(FFs[i]);
     SetRatios(array_mask);
