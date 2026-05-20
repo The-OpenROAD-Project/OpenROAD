@@ -179,7 +179,6 @@ cc_library(
         "src/AbstractRoutingCongestionDataSource.h",
         "src/GrouteRenderer.cpp",
         "src/GrouteRenderer.h",
-        "src/HeatMapHandleAdapter.h",
         "src/MakeGlobalRouter.cpp",
         "src/Net.h",
         "src/Pin.h",
