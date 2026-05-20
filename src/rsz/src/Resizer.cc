@@ -4871,7 +4871,7 @@ bool Resizer::repairSetup(double setup_margin,
                           const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
-                          bool skip_reduce_load,
+                          bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
@@ -4891,7 +4891,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.phases = phases != nullptr ? phases : "";
   config.skip_pin_swap = skip_pin_swap;
   config.skip_gate_cloning = skip_gate_cloning;
-  config.skip_reduce_load = skip_reduce_load;
+  config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
   config.skip_last_gasp = skip_last_gasp;
@@ -6055,8 +6055,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "reduce_load") {
-    return MoveType::kReduceLoad;
+  if (lower == "size_down_fanout") {
+    return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
     return MoveType::kClone;
@@ -6089,7 +6089,7 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
     std::ranges::transform(lower, lower.begin(), ::tolower);
     if (lower == "size") {
       result.push_back(MoveType::kSizeUp);
-      result.push_back(MoveType::kReduceLoad);
+      result.push_back(MoveType::kSizeDownFanout);
       continue;
     }
     result.push_back(moveTypeFromString(lower));
