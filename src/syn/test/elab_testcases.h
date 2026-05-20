@@ -1014,8 +1014,9 @@ endmodule
         },
         {
             // Mimics core/decoder.sv:191 — a wide (7-bit) opcode selector
-            // with sparse, mutually-exclusive arms against constant matches,
-            // and a nested unique case inside one arm. This is the exact
+            // with sparse, mutually-exclusive branches against constant
+            // matches,
+            // and a nested unique case inside one branch. This is the exact
             // shape that produced Select_N in /tmp/cva6.ir.
             R"(
 module instr_decode (
