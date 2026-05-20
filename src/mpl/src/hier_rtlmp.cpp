@@ -2367,20 +2367,16 @@ void HierRTLMP::correctAllMacrosOrientation()
 
 void HierRTLMP::correctMacroOrientationByCluster()
 {
-  // Group real (non-virtual, non-fixed) hard macros by their cluster.
-  std::map<Cluster*, std::vector<HardMacro*>> cluster_to_macros;
-  for (const auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
-    if (!inst || inst->isFixed()) {
+  for (auto& [_, cluster] : tree_->maps.id_to_cluster) {
+    if (cluster->isFixedMacro() || cluster->isIOCluster()) {
       continue;
     }
 
-    cluster_to_macros[hard_macro->getCluster()].push_back(hard_macro.get());
-  }
+    auto cluster_macros = cluster->getHardMacros();
 
-  for (auto& [cluster, macros] : cluster_to_macros) {
     std::map<int, std::vector<HardMacro*>> cols;
     std::map<int, std::vector<HardMacro*>> rows;
-    for (HardMacro* macro : macros) {
+    for (HardMacro* macro : cluster_macros) {
       cols[macro->getRealX()].push_back(macro);
       rows[macro->getRealY()].push_back(macro);
     }
