@@ -218,7 +218,6 @@ orfs.default(
 # --- External archives ---
 
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 new_local_repository(
     name = "fmt",

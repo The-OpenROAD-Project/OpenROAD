@@ -31,7 +31,7 @@ cc_test(
     srcs = ["opt_test.cc"],
     features = ["-layering_check"],
     deps = [
-        "//src/syn:syn",
+        "//src/syn",
         "//src/syn/src/ir",
         "@googletest//:gtest",
     ],
@@ -44,7 +44,7 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn:syn",
+        "//src/syn",
         "//src/syn/src/ir",
         "//src/utl",
         "@googletest//:gtest",
@@ -69,7 +69,7 @@ cc_test(
     data = ["sm_test_cells.lib"],
     features = ["-layering_check"],
     deps = [
-        "//src/syn:syn",
+        "//src/syn",
         "//src/syn/src/ir",
         "//src/tst",
         "@googletest//:gtest",
@@ -81,7 +81,7 @@ cc_test(
     srcs = ["abc_test.cc"],
     features = ["-layering_check"],
     deps = [
-        "//src/syn:syn",
+        "//src/syn",
         "//src/syn/src/ir",
         "//src/tst",
         "@googletest//:gtest",
@@ -93,7 +93,7 @@ cc_test(
     srcs = ["bitblast_test.cc"],
     features = ["-layering_check"],
     deps = [
-        "//src/syn:syn",
+        "//src/syn",
         "//src/syn/src/ir",
         "@googletest//:gtest",
     ],

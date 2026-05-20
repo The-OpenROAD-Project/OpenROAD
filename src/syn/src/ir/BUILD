@@ -16,6 +16,7 @@ cc_library(
         "TritModel.cc",
     ],
     hdrs = [
+        "Bundle.h",
         "Const.h",
         "ControlNet.h",
         "Graph.h",
@@ -23,15 +24,14 @@ cc_library(
         "Net.h",
         "NetTable.h",
         "NetTableEntry.h",
-        "Bundle.h",
         "TritModel.h",
     ],
-    strip_include_prefix = "//src/syn/src/ir",
     include_prefix = "syn/ir",
+    strip_include_prefix = "//src/syn/src/ir",
     visibility = ["//visibility:public"],
     deps = [
-        "@abc",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@abc",
     ],
 )

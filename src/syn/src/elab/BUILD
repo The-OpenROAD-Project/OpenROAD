@@ -43,8 +43,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":elab_hdrs",
-        "//src/syn/src/ir",
         "//src/dbSta",
+        "//src/syn/src/ir",
         "//third-party/slang-elab/src:slang_frontend",
         "@fmt",
         "@slang",
