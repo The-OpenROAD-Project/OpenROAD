@@ -74,14 +74,12 @@ cc_library(
     srcs = [
         "src/bufferTreeDescriptor.h",
         "src/stub.cpp",
-        ":tcl",
     ],
     deps = [
         ":gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
