@@ -1233,6 +1233,7 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>

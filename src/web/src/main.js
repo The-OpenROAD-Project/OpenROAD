@@ -10,6 +10,7 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
+import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -496,6 +497,18 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+
+    if (isStaticMode(app)) {
+        el.querySelector('.tcl-input-row').style.display = 'none';
+        const notice = document.createElement('span');
+        notice.className = 'tcl-static-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        notice.textContent = 'Tcl console is not available in saved reports.';
+        app.tclOutputEl.appendChild(notice);
+        return;
+    }
+
     const input = el.querySelector('.tcl-input');
     const completer = new TclCompleter(input, app.websocketManager);
 
