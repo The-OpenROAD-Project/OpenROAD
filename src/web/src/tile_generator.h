@@ -21,6 +21,7 @@
 #include "glyph_cache.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "web_painter.h"
 
@@ -60,9 +61,39 @@ struct SelectionResult
 {
   std::any object;  // dbInst*, dbNet*, etc.
   std::string name;
-  std::string type_name;  // "Inst", "Net", etc.
+  std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
+  // Fast-path tag for sort/count.  type_name is a string so `selectAt`
+  // can serialize it later, but the sort comparator runs on every
+  // result pair — comparing two short strings ("Inst" / "Net") per
+  // comparison adds up.  `is_inst` is set alongside type_name and
+  // dominates the sort.
+  bool is_inst = false;
 };
+
+// One node in the chiplet tree rooted at db->getChip().  The root has
+// inst==nullptr and an identity world_xfm; descendants accumulate
+// dbChipInst transforms top-down.  See collectChiplets().
+struct ChipletNode
+{
+  odb::dbChip* chip = nullptr;
+  odb::dbBlock* block = nullptr;    // chip->getBlock()
+  odb::dbChipInst* inst = nullptr;  // null for root
+  odb::dbTransform world_xfm;       // local-to-root transform
+  std::string path;                 // "top.soc_inst.subip" — unique
+  std::string parent_path;          // path of the parent ("" for the root)
+  std::string name;                 // "top" or inst->getName()
+  int depth = 0;
+  int global_z = 0;
+};
+
+// Walk the dbChip → dbChipInst → masterChip hierarchy depth-first and
+// return a flat list with each chiplet's accumulated world transform.
+// Related Qt code: `LayoutViewer::getChips()` returns a flat
+// (dbChipInst → dbChip) PtrMap with no transform composition — this
+// function additionally accumulates `dbTransform`s top-down and assigns
+// stable hierarchical paths so the web renderer can place each chiplet.
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
 
 struct TileVisibility
 {
@@ -159,6 +190,14 @@ struct TileVisibility
   std::set<std::string> visible_layers;
   bool has_visible_layers = false;
 
+  // Per-chiplet visibility: when has_visible_chiplets is true, the tile
+  // renderer skips ChipletNodes whose `path` is not in this set.  Empty
+  // set with the flag off renders every chiplet (default).  Paths match
+  // ChipletNode::path produced by collectChiplets() (e.g. "top.soc_inst").
+  std::set<std::string> visible_chiplets;
+  bool has_visible_chiplets = false;
+  bool isChipletVisible(const std::string& path) const;
+
   void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
@@ -185,7 +224,8 @@ class TileGenerator
 
   // Per-layer colors matching gui::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
-  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap() const;
+  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
+                                                               = nullptr) const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -213,6 +253,14 @@ class TileGenerator
   odb::dbBlock* getBlock() const;
   odb::dbChip* getChip() const;
   odb::dbTech* getTech() const;
+  odb::dbDatabase* getDb() const { return db_; }
+
+  // Cached, sorted list of chiplets reachable from db_->getChip().
+  // The cache is invalidated by eagerInit() and rebuilt lazily on the
+  // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
+  // selectAt) read it on every tile / click; the free function
+  // `collectChiplets` is kept for tests and one-shot callers.
+  const std::vector<ChipletNode>& chiplets() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -394,6 +442,17 @@ class TileGenerator
   mutable std::mutex layer_colors_mutex_;
   mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
+
+  // Cached chiplet traversal.  See chiplets().  Invalidated in
+  // eagerInit() and also auto-invalidated when the chiplet hierarchy
+  // signature (root pointer + total dbChipInst count) changes — this
+  // catches Tcl-driven dbChipInst::create/destroy between eagerInit
+  // calls, which dbBlockCallBackObj does not surface.
+  mutable std::mutex chiplets_mutex_;
+  mutable std::vector<ChipletNode> chiplets_cache_;
+  mutable bool chiplets_cache_valid_ = false;
+  mutable odb::dbChip* chiplets_cache_root_ = nullptr;
+  mutable size_t chiplets_cache_inst_count_ = 0;
 
   static constexpr int kTileSizeInPixel = 256;
 };

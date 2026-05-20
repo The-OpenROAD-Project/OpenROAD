@@ -438,7 +438,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
+    // — whose top chip is HIER and has no dbBlock — still register the
+    // chip observer and send the refresh notification.
+    if (!self->generator_->getChip()) {
       return;
     }
 
