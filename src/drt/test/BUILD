@@ -161,6 +161,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "taTest.cpp",
     ],
     features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
