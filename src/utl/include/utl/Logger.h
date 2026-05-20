@@ -25,9 +25,11 @@
 #include <utility>
 #include <vector>
 
+#include "spdlog/common.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/logger.h"
 #include "utl/Metrics.h"
 #if FMT_VERSION >= 110000
 #include "spdlog/fmt/ranges.h"
@@ -267,6 +269,8 @@ class Logger
   Progress* progress() const { return progress_.get(); }
   std::unique_ptr<Progress> swapProgress(Progress* progress);
 
+  void finalizeMetrics();
+
  private:
   std::vector<std::string> metrics_sinks_;
   std::list<MetricsEntry> metrics_entries_;
@@ -322,7 +326,6 @@ class Logger
   }
 
   void flushMetrics();
-  void finalizeMetrics();
   // Add new metrics for non-zero warnings. It also counts the number of
   // unique warning types.
   void addWarningMetrics();
@@ -371,6 +374,7 @@ class Logger
   std::array<MessageLevel, ToolId::SIZE> message_levels_;
   std::array<DebugGroups, ToolId::SIZE> debug_group_level_;
   bool debug_on_{false};
+  bool metrics_finalized_{false};
   std::atomic_int warning_count_{0};
   std::atomic_int error_count_{0};
   static constexpr const char* level_names[]

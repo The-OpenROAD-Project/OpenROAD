@@ -26,6 +26,7 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
+#include "AbstractRoutingCongestionDataSource.h"
 #include "CUGR.h"
 #include "DataType.h"
 #include "FastRoute.h"
@@ -42,7 +43,6 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -134,9 +134,10 @@ int GlobalRouter::getSnapshotBatchCount() const
   return fastroute_->getSnapshotBatchCount();
 }
 
-void GlobalRouter::initGui(
-    gui::HeatMapSourceHandle routing_congestion_data_source,
-    gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
+void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source,
+                           std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source_rudy)
 {
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
@@ -410,6 +411,7 @@ void GlobalRouter::globalRoute(bool save_guides)
     if (use_cugr_) {
       odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
+      cugr_->setCongestionIterations(congestion_iterations_);
       cugr_->init(min_layer, max_layer, clock_nets);
       if (verbose_) {
         reportResources();
@@ -520,10 +522,10 @@ void GlobalRouter::updateDbCongestion()
     fastroute_->updateDbCongestion(min_layer, max_layer);
   }
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
 }
 
@@ -2517,10 +2519,10 @@ void GlobalRouter::readGuides(const char* file_name)
   computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
   saveGuidesFromFile(guides);
 }
@@ -2561,10 +2563,10 @@ void GlobalRouter::loadGuidesFromDB()
     updateDbCongestion();
   }
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
 }
 

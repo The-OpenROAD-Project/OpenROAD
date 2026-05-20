@@ -711,6 +711,40 @@ _install_abseil() {
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
 }
 
+# Returns 0 if the given directory looks like a dedicated or-tools install
+# (basename "or-tools" or "ortools"). Used to guard rm -rf so the installer
+# never deletes a shared prefix like ~/.local, /usr, or /usr/local.
+_is_dedicated_or_tools_dir() {
+    local d=$1
+    local base
+    base=$(basename "${d}")
+    [[ "${base}" == "or-tools" || "${base}" == "ortools" ]]
+}
+
+# Surgically remove only the files that or-tools owns inside a shared prefix
+# (e.g. ~/.local, /usr/local). Touches libortools.so*, lib*/cmake/ortools/,
+# include/ortools/, share/ortools/ — never the parent directory or unrelated
+# user files.
+_clean_or_tools_in_shared_prefix() {
+    local prefix=$1
+    # On multiarch systems libortools.so may live at e.g.
+    # /usr/lib/x86_64-linux-gnu/, in which case realpath(dirname(lib)/..) gives
+    # /usr/lib rather than the true prefix /usr. Strip a trailing lib component.
+    if [[ "${prefix}" == */lib || "${prefix}" == */lib64 ]]; then
+        prefix=$(dirname "${prefix}")
+    fi
+    local f
+    # Match libortools.so* both directly under lib/ and one level deeper for
+    # multiarch layouts (e.g. lib/x86_64-linux-gnu/).
+    for f in "${prefix}"/lib/libortools.so*   "${prefix}"/lib/*/libortools.so* \
+             "${prefix}"/lib64/libortools.so* "${prefix}"/lib64/*/libortools.so*; do
+        [[ -e "${f}" || -L "${f}" ]] && rm -f "${f}"
+    done
+    rm -rf "${prefix}/lib/cmake/ortools" "${prefix}/lib64/cmake/ortools"
+    rm -rf "${prefix}/include/ortools"
+    rm -rf "${prefix}/share/ortools"
+}
+
 _install_or_tools() {
     local os=$1
     local os_version=$2
@@ -730,7 +764,9 @@ _install_or_tools() {
         local existing_libs
         local search_paths=""
         if [[ -n "${PREFIX}" ]]; then
-            search_paths="${OR_TOOLS_PATH}"
+            # Look in the dedicated subdir first; fall back to the shared PREFIX
+            # to detect legacy installs that landed directly under PREFIX/lib.
+            search_paths="${OR_TOOLS_PATH} ${PREFIX}"
         else
             search_paths="/usr/local /usr /opt"
         fi
@@ -750,9 +786,12 @@ _install_or_tools() {
                 OR_TOOLS_PATH=${or_tools_install_dir}
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, path=${OR_TOOLS_PATH}, status=skipped")
                 return
-            else
-                log "Found old OR-Tools version ${or_tools_installed_version}. Removing it."
+            elif _is_dedicated_or_tools_dir "${or_tools_install_dir}"; then
+                log "Found old OR-Tools version ${or_tools_installed_version} at ${or_tools_install_dir}. Removing it."
                 rm -rf "${or_tools_install_dir}"
+            else
+                log "Found old OR-Tools version ${or_tools_installed_version} under a shared prefix: ${or_tools_install_dir}. Removing or-tools files only."
+                _clean_or_tools_in_shared_prefix "${or_tools_install_dir}"
             fi
         fi
     fi
@@ -942,8 +981,8 @@ _install_ubuntu_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
-        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
+        libgomp1 libomp-dev libpcre2-dev pandoc \
+        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
@@ -986,8 +1025,8 @@ _install_rhel_packages() {
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
-        qt5-qtimageformats readline tcl-devel tcl-tclreadline \
-        tcl-tclreadline-devel tcl-thread-devel tcllib wget yaml-cpp-devel \
+        qt5-qtimageformats tcl-devel \
+        tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
 
     if [[ "${rhel_version}" == "8" ]]; then
@@ -999,7 +1038,6 @@ _install_rhel_packages() {
     if [[ "${rhel_version}" == "9" ]]; then
         _execute "Installing additional packages for RHEL 9..." yum install -y \
             https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
-            https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
             https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
     fi
 
@@ -1024,7 +1062,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
+        pcre2-devel pkg-config python3-devel python3-pip tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -1072,8 +1110,8 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
-        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev tcl-tclreadline \
+        libomp-dev libpcre2-dev "libtcl${tcl_ver}" \
+        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
@@ -1230,7 +1268,14 @@ main() {
         return
     fi
 
-    OR_TOOLS_PATH=${PREFIX:-"/opt/or-tools"}
+    # Always install or-tools into a dedicated subdirectory so the installer
+    # can safely remove an old version with `rm -rf` without touching unrelated
+    # files in the prefix (e.g. ~/.local, /usr).
+    if [[ -n "${PREFIX}" ]]; then
+        OR_TOOLS_PATH="${PREFIX}/or-tools"
+    else
+        OR_TOOLS_PATH="/opt/or-tools"
+    fi
 
     if [[ -z "${SAVE_DEPS_PREFIXES}" ]]; then
         local dir

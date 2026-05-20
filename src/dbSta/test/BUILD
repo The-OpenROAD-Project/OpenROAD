@@ -29,6 +29,7 @@ ALL_TESTS = [
     "hierclock",
     "hierwrite",
     "hier_deep",
+    "hier_highest_connected_net",
     "hier_weird_port",
     "levelize_drvr_vertices1",
     "make_port",

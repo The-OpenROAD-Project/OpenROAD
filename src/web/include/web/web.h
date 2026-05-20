@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <spdlog/common.h>
-
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -17,6 +15,7 @@
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
 #include "odb/db.h"
+#include "spdlog/common.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 

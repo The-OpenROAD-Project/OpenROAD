@@ -27,6 +27,7 @@ cc_library(
     includes = ["src"],
     visibility = ["//visibility:private"],
     deps = [
+        # note: cyclic dependency, headers include things provided by :dpl
         "//src/odb/src/db",
         "//src/utl",
         "@boost.icl",

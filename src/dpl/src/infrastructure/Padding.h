@@ -6,8 +6,8 @@
 #include <map>
 #include <utility>
 
-#include "Coordinates.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"  // IWYU pragma: keep (GridX type)
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
