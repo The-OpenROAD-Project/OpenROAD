@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "FastRoute.h"
+#include "HeatMapHandleAdapter.h"
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
@@ -23,8 +24,10 @@ extern const char* grt_tcl_inits[];
 
 void initGui(grt::GlobalRouter* grt, odb::dbDatabase* db, utl::Logger* logger)
 {
-  grt->initGui(grt::registerRoutingCongestionHeatMapSource(logger, db),
-               grt::registerRudyHeatMapSource(logger, grt, db));
+  grt->initGui(std::make_unique<HeatMapHandleAdapter>(
+                   grt::registerRoutingCongestionHeatMapSource(logger, db)),
+               std::make_unique<HeatMapHandleAdapter>(
+                   grt::registerRudyHeatMapSource(logger, grt, db)));
 }
 
 void initTcl(Tcl_Interp* tcl_interp)
