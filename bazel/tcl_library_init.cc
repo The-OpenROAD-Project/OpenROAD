@@ -39,15 +39,6 @@ int SetupTclEnvironment(Tcl_Interp* interp)
     return TCL_ERROR;
   }
 
-  // Readline library location
-  const std::string rd_lib = *mount_point + "/tclreadline";
-  Tcl_Eval(interp, "namespace eval ::tclreadline {}");
-  if (!Tcl_SetVar(
-          interp, "::tclreadline::library", rd_lib.c_str(), TCL_GLOBAL_ONLY)) {
-    std::cerr << "[Warning] could not set ::tclreadline::library\n";
-    return TCL_ERROR;
-  }
-
   return TCL_OK;
 }
 }  // namespace in_bazel
