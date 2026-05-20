@@ -382,9 +382,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_conn_tbl_;
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
+  stream << *obj.alignment_marker_rule_tbl_;
   stream << obj.dbu_per_micron_;
   stream << obj.hierarchy_;
-  stream << *obj.alignment_marker_rule_tbl_;
   // User Code End <<
   return stream;
 }
