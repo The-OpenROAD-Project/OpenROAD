@@ -1748,16 +1748,19 @@ void NesterovBaseCommon::fixPointers()
       continue;
     }
     if (!isValidSigType(signal_type)) {
-      debugPrint(log_,
-                 GPL,
-                 "callbacks",
-                 1,
-                 "warning: invalid type itermType: {}",
-                 iterm->getSigType().getString());
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
+          "warning: invalid signal type ({}) in {} {}",
+          signal_type.getString(),
+          iterm ? "ITerm" : "BTerm",
+          iterm ? iterm->getNet()->getName() : bterm->getNet()->getName());
       continue;
     }
     // set cell
-    if (pin->isITerm()) {
+    if (iterm) {
       auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
       if (inst_it != db_inst_to_nbc_index_map_.end()) {
         gPin.setGCell(&gCellStor_[inst_it->second]);
@@ -1769,13 +1772,15 @@ void NesterovBaseCommon::fixPointers()
     if (net_it != db_net_to_index_map_.end()) {
       gPin.setGNet(&gNetStor_[net_it->second]);
     } else {
-      debugPrint(log_,
-                 GPL,
-                 "callbacks",
-                 1,
-                 "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
-                 iterm->getNet()->getName(),
-                 iterm->getName());
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
+          "warning: Net not found in db_net_map_ for {} : {} -> {}",
+          iterm ? "ITerm" : "BTerm",
+          iterm ? iterm->getNet()->getName() : bterm->getNet()->getName(),
+          iterm ? iterm->getName() : bterm->getName());
     }
   }
 
