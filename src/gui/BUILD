@@ -78,7 +78,7 @@ cc_library(
     ],
     deps = [
         ":gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@spdlog",
