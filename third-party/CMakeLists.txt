@@ -55,6 +55,14 @@ add_compile_options(
   set(ABC_SKIP_TESTS TRUE CACHE BOOL "Disable tests in the ABC submodule")
   add_subdirectory(abc)
 
+  # kissat (under abc/src/sat/kissat) casts STACK(T)* to chars* when calling
+  # kissat_stack_enlarge — see third-party/abc/src/sat/kissat/stack.h:41. GCC's
+  # type-based alias analysis treats the call as unable to modify the original
+  # stack, caches the stale end pointer across the realloc inside enlarge, and
+  # dereferences NULL on the first push.
+  target_compile_options(libabc PRIVATE -fno-strict-aliasing)
+  target_compile_options(libabc-pic PRIVATE -fno-strict-aliasing)
+
 endif()
 
 add_subdirectory(lodepng)
