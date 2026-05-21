@@ -3054,10 +3054,10 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*skip_crit_vt_swap=*/true);
 
     if (!repair_setup) {
-      logger_->warn(RSZ,
+      logger_->info(RSZ,
                     165,
-                    "repair_setup failed during timing-driven global "
-                    "placement. No fixable setup violations were found.");
+                    "No fixable setup violations were found during "
+                    "timing-driven global placement.");
     }
 
     // Re-estimate parasitics after repair_setup
