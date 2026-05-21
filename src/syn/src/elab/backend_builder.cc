@@ -25,7 +25,6 @@
 #include "syn/ir/ControlNet.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
-#include "utl/Logger.h"
 
 namespace slang_frontend {
 
@@ -845,8 +844,9 @@ void BackendGraphBuilder::add_aldff(std::string_view,
                                  : syn::ControlNet::neg(aload_net);
 
   if (!ad.is_fully_const()) {
-    graph_->logger()->error(
-        utl::SYN, 91, "Flops with non-constant asynchronous load unsupported");
+    reportError(graph_->logger(),
+                91,
+                "Flops with non-constant asynchronous load unsupported");
   }
 
   syn::Bundle dff_out = g.add<syn::Dff>(db,

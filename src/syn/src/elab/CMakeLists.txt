@@ -5,6 +5,7 @@ add_library(syn_elab
   backend_builder.cc
   blackboxes.cc
   driver.cc
+  error.cc
 )
 
 target_compile_definitions(syn_elab PUBLIC

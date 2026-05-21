@@ -29,6 +29,7 @@ cc_library(
         "backend_builder.cc",
         "blackboxes.cc",
         "driver.cc",
+        "error.cc",
         "ir.cc",
     ],
     hdrs = [

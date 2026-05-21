@@ -22,7 +22,20 @@
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace slang_frontend {
+
+// Wraps `logger->error(utl::SYN, code, "{}", message)`. Defined in error.cc
+// so its TU is the only one that pulls utl/Logger.h (which transitively
+// brings spdlog's bundled fmt). slang headers pull a different fmt version,
+// and mixing the two in one TU causes inline-namespace collisions.
+[[noreturn]] void reportError(utl::Logger* logger,
+                              int code,
+                              std::string_view message);
+
 
 class BackendGraphBuilder : public BackendGraphBuilderBase
 {

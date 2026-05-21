@@ -25,16 +25,22 @@
 #include "slang/driver/Driver.h"
 #include "slang_frontend.h"
 #include "syn/ir/Graph.h"
-#include "utl/Logger.h"
+
+namespace utl {
+class Logger;
+}
 
 namespace syn {
 
 using namespace slang_frontend;  // NOLINT(google-build-using-namespace)
 
-static std::optional<Graph> elaborate1(utl::Logger* logger,
-                                       const std::vector<std::string>& args,
-                                       sta::dbSta* sta,
-                                       std::optional<std::string> buffer)
+// Non-static so error.cc can call it from elaborateText. Not declared in
+// driver.h because the source-buffer parameter is only useful to the test
+// helper.
+std::optional<Graph> elaborateImpl(utl::Logger* logger,
+                                   const std::vector<std::string>& args,
+                                   sta::dbSta* sta,
+                                   std::optional<std::string> buffer)
 {
   slang::driver::Driver driver;
   driver.addStandardArgs();
@@ -143,14 +149,7 @@ std::optional<Graph> elaborate(utl::Logger* logger,
                                const std::vector<std::string>& args,
                                sta::dbSta* sta)
 {
-  return elaborate1(logger, args, sta, {});
-}
-
-std::optional<Graph> elaborateText(const std::string& source,
-                                   const std::vector<std::string>& args)
-{
-  utl::Logger logger;
-  return elaborate1(&logger, args, nullptr, source);
+  return elaborateImpl(logger, args, sta, {});
 }
 
 }  // namespace syn
