@@ -245,9 +245,8 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
       for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
         const double cost = HTree_->computeDist(p, comparisonPoint);
         if (useMaxCapLimit_) {
-          capCost
-              += cost * capPerUnit_
-                  + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
+          capCost += cost * capPerUnit_
+                     + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
         }
         pointIdx++;
         distanceCost = std::max(cost, distanceCost);
@@ -260,13 +259,13 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                           capCost,
                           groupSize)) {
         debugPrint(logger_,
-                    CTS,
-                    "Stree",
-                    4,
-                    "Created cluster of size {}, dia {:.3}, cap {:.3e}",
-                    solutionPoints[j][clusters[j]].size(),
-                    distanceCost,
-                    capCost);
+                   CTS,
+                   "Stree",
+                   4,
+                   "Created cluster of size {}, dia {:.3}, cap {:.3e}",
+                   solutionPoints[j][clusters[j]].size(),
+                   distanceCost,
+                   capCost);
         max_diameter[j] = std::max(max_diameter[j], previousCosts[j]);
         max_size[j] = std::max(
             max_size[j], (unsigned) solutionPoints[j][clusters[j]].size());
