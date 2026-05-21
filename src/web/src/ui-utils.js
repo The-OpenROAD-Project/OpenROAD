@@ -6,7 +6,7 @@
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {
-    return !!app?.wsManager?.isStaticMode;
+    return !!app?.websocketManager?.isStaticMode;
 }
 
 // Make table column headers resizable by dragging.
