@@ -36,21 +36,25 @@ struct TAFixture : public Fixture
     design->getTopBlock()->setBoundaries(boundaries);
   }
 
-  void setSingleGCell(frCoord xl, frCoord yl, frCoord xh, frCoord yh)
+  void createGCellPattern(frUInt4 gcell_width, frUInt4 gcell_height)
   {
-    frGCellPattern xgp;
-    xgp.setHorizontal(true);
-    xgp.setStartCoord(xl);
-    xgp.setSpacing(xh - xl);
-    xgp.setCount(1);
-    frGCellPattern ygp;
-    ygp.setHorizontal(false);
-    ygp.setStartCoord(yl);
-    ygp.setSpacing(yh - yl);
-    ygp.setCount(1);
-    design->getTopBlock()->setGCellPatterns({xgp, ygp});
+    const odb::Rect die = design->getTopBlock()->getDieBox();
+    if (die.dx() % gcell_width != 0) {
+      logger->error(DRT, 185, "die width is not divisible by gcell width");
+    }
+    if (die.dy() % gcell_height != 0) {
+      logger->error(DRT, 188, "die height is not divisible by gcell height");
+    }
+    design->getTopBlock()->setGCellPatterns(
+        {frGCellPattern(/*horizontal=*/true,
+                        die.xMin(),
+                        gcell_width,
+                        die.dx() / gcell_width),
+         frGCellPattern(/*horizontal=*/false,
+                        die.yMin(),
+                        gcell_height,
+                        die.dy() / gcell_height)});
   }
-
   // is_horizontal_pattern follows the frTrackPattern convention: a pattern
   // marked horizontal=true generates vertical tracks (varying x) and
   // horizontal=false generates horizontal tracks (varying y).
@@ -60,13 +64,8 @@ struct TAFixture : public Fixture
                        frUInt4 num_tracks,
                        frUInt4 spacing)
   {
-    auto tp = std::make_unique<frTrackPattern>();
-    tp->setLayerNum(layer_num);
-    tp->setHorizontal(is_horizontal_pattern);
-    tp->setStartCoord(start_coord);
-    tp->setNumTracks(num_tracks);
-    tp->setTrackSpacing(spacing);
-    design->getTopBlock()->addTrackPattern(std::move(tp));
+    design->getTopBlock()->addTrackPattern(std::make_unique<frTrackPattern>(
+        is_horizontal_pattern, start_coord, num_tracks, spacing, layer_num));
   }
 
   frGuide* makeGuide(frNet* net,
@@ -74,10 +73,7 @@ struct TAFixture : public Fixture
                      const odb::Point& begin,
                      const odb::Point& end)
   {
-    auto guide = std::make_unique<frGuide>();
-    guide->setPoints(begin, end);
-    guide->setBeginLayerNum(layer_num);
-    guide->setEndLayerNum(layer_num);
+    auto guide = std::make_unique<frGuide>(begin, layer_num, end, layer_num);
     auto* ptr = guide.get();
     net->addGuide(std::move(guide));
     return ptr;
@@ -97,7 +93,7 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
   // m1 (layer 2) is set up by the Fixture as HORIZONTAL. Horizontal tracks
   // run along x, varying in y -> use is_horizontal_pattern=false.
   setDieArea(0, 0, 2000, 2000);
-  setSingleGCell(0, 0, 2000, 2000);
+  createGCellPattern(1000, 1000);
   addTrackPattern(/*layer_num=*/2,
                   /*is_horizontal_pattern=*/false,
                   /*start_coord=*/100,
@@ -105,14 +101,14 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
                   /*spacing=*/200);
 
   frNet* n1 = makeNet("n1");
-  frGuide* guide = makeGuide(n1, /*layer_num=*/2, {0, 100}, {2000, 100});
+  frGuide* guide = makeGuide(n1, /*layer_num=*/2, {500, 500}, {1500, 500});
 
   initTAQueries();
 
   FlexTAWorker worker(
       design.get(), logger.get(), router_cfg.get(), /*save_updates=*/false);
-  worker.setRouteBox(odb::Rect(0, 0, 2000, 2000));
-  worker.setExtBox(odb::Rect(0, 0, 2000, 2000));
+  worker.setRouteBox(design->getTopBlock()->getDieBox());
+  worker.setExtBox(design->getTopBlock()->getDieBox());
   worker.setDir(odb::dbTechLayerDir::HORIZONTAL);
   worker.setTAIter(0);
 
@@ -138,10 +134,9 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
   ASSERT_EQ(path_seg->typeId(), frcPathSeg);
   const auto [bp, ep] = path_seg->getPoints();
   EXPECT_EQ(bp.y(), ep.y());
-  // assignIroute_bestTrack starts at the midpoint of the available track range
-  // and accepts the first zero-DRC-cost track. For 10 tracks (idx 0..9) that's
-  // trackLocs[(0+9)/2] = trackLocs[4].
-  EXPECT_EQ(bp.y(), expected_tracks[4]);
+  // assignIroute_bestTrack picks the midpoint track (idx 2, y=500) from the
+  // five tracks in gcell (0,0,1000,1000).
+  EXPECT_EQ(bp.y(), expected_tracks[2]);
 }
 
 }  // namespace drt
