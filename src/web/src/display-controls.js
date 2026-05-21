@@ -327,14 +327,15 @@ export function populateDisplayControls(app, visibility, selectability,
 
     // Parallel selectability model — picks gate on this set on the server.
     const layerSelModel = new CheckboxTreeModel(() => {
+        // Rebuild from scratch so multi-chiplet/multi-tech subtrees that
+        // share a layer name don't fall into last-writer-wins (an unchecked
+        // M1 leaf in one subtree would otherwise delete the name even when
+        // another M1 leaf is still checked).  Mutate in place — the
+        // WebSocketTileLayer closure captured this Set by reference.
+        app.selectableLayers.clear();
         layerSelModel.forEach(node => {
-            if (!node.data) return;
-            if (node.data.name) {
-                if (node.checked) {
-                    app.selectableLayers.add(node.data.name);
-                } else {
-                    app.selectableLayers.delete(node.data.name);
-                }
+            if (node.checked && node.data && node.data.name) {
+                app.selectableLayers.add(node.data.name);
             }
         });
         syncLayerSelDom();
