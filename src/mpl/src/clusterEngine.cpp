@@ -2178,8 +2178,7 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     return full_halo;
   }
 
-  int spacing = (minimum_spacing / 2) + (minimum_spacing % 2);
-  HardMacro::Halo halo(spacing);
+  HardMacro::Halo halo(minimum_spacing);
 
   odb::dbMaster* master = inst->getMaster();
 
