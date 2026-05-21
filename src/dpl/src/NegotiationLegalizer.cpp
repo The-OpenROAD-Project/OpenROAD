@@ -96,10 +96,8 @@ void NegotiationLegalizer::legalize()
                 site_search_window_,
                 row_search_window_);
 
-  logger_->info(utl::DPL,
-                1104,
-                "NegotiationLegalizer DRC penalty: {}.",
-                drc_penalty_);
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
@@ -237,7 +235,9 @@ void NegotiationLegalizer::legalize()
     commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    logger_->report("Committing post-init positions to odb; debug move line drawings will exclude gpl-to-init displacement.");
+    logger_->report(
+        "Committing post-init positions to odb; debug move line drawings will "
+        "exclude gpl-to-init displacement.");
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
     logger_->report(run_abacus_
@@ -718,13 +718,13 @@ bool NegotiationLegalizer::initFromDb()
         //            "negotiation",
         //            1,
         logger_->report(
-                   "Instance {} at ({}, {}) snaps to invalid site at "
-                   "({}, {}). Searching for nearest valid site.",
-                   cell.db_inst->getName(),
-                   db_x,
-                   db_y,
-                   die_xlo_ + cell.init_x * site_width_,
-                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
+            "Instance {} at ({}, {}) snaps to invalid site at "
+            "({}, {}). Searching for nearest valid site.",
+            cell.db_inst->getName(),
+            db_x,
+            db_y,
+            die_xlo_ + cell.init_x * site_width_,
+            die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
         // Linear scan in the four cardinal directions (same shape as
         // Opendp::moveHopeless).
@@ -735,8 +735,7 @@ bool NegotiationLegalizer::initFromDb()
         const int init_y_dbu = dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
 
         for (int x = cell.init_x - 1; x >= 0; --x) {  // left
-          if (isValidSite(x, cell.init_y)
-              && isInRegionOk(x, cell.init_y)) {
+          if (isValidSite(x, cell.init_y) && isInRegionOk(x, cell.init_y)) {
             best_dist = (cell.init_x - x) * site_width_;
             best_x = x;
             best_y = cell.init_y;
@@ -746,8 +745,7 @@ bool NegotiationLegalizer::initFromDb()
         }
         for (int x = cell.init_x + 1; x + cell.width <= grid_w_;
              ++x) {  // right
-          if (isValidSite(x, cell.init_y)
-              && isInRegionOk(x, cell.init_y)) {
+          if (isValidSite(x, cell.init_y) && isInRegionOk(x, cell.init_y)) {
             const int dist = (x - cell.init_x) * site_width_;
             if (dist < best_dist) {
               best_dist = dist;
@@ -759,8 +757,7 @@ bool NegotiationLegalizer::initFromDb()
           }
         }
         for (int y = cell.init_y - 1; y >= 0; --y) {  // below
-          if (isValidSite(cell.init_x, y)
-              && isInRegionOk(cell.init_x, y)) {
+          if (isValidSite(cell.init_x, y) && isInRegionOk(cell.init_x, y)) {
             const int dist = init_y_dbu - dpl_grid->gridYToDbu(GridY{y}).v;
             if (dist < best_dist) {
               best_dist = dist;
@@ -773,8 +770,7 @@ bool NegotiationLegalizer::initFromDb()
         }
         for (int y = cell.init_y + 1; y + cell.height <= grid_h_;
              ++y) {  // above
-          if (isValidSite(cell.init_x, y)
-              && isInRegionOk(cell.init_x, y)) {
+          if (isValidSite(cell.init_x, y) && isInRegionOk(cell.init_x, y)) {
             const int dist = dpl_grid->gridYToDbu(GridY{y}).v - init_y_dbu;
             if (dist < best_dist) {
               best_dist = dist;
@@ -793,14 +789,12 @@ bool NegotiationLegalizer::initFromDb()
           cell.y = cell.init_y;
 
           if (debug_observer_ && opendp_->deep_iterative_debug_) {
-            const odb::dbInst* debug_inst
-                = debug_observer_->getDebugInstance();
+            const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
             if (!debug_inst || cell.db_inst == debug_inst) {
               if (network_) {
                 if (Node* node = network_->getNode(cell.db_inst)) {
                   node->setLeft(DbuX(cell.x * site_width_));
-                  node->setBottom(
-                      DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
+                  node->setBottom(DbuY(dpl_grid->gridYToDbu(GridY{cell.y}).v));
                   node->setPlaced(true);
                 }
               }
@@ -808,11 +802,10 @@ bool NegotiationLegalizer::initFromDb()
               const int snap_x_dbu = die_xlo_ + cell.x * site_width_;
               const int snap_y_dbu
                   = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.y}).v;
-              logger_->report(
-                  "Pause at snapping of {} to ({}, {}) dbu.",
-                  cell.db_inst->getName(),
-                  snap_x_dbu,
-                  snap_y_dbu);
+              logger_->report("Pause at snapping of {} to ({}, {}) dbu.",
+                              cell.db_inst->getName(),
+                              snap_x_dbu,
+                              snap_y_dbu);
               debug_observer_->drawSelected(cell.db_inst, !debug_inst);
             }
           }
@@ -895,13 +888,13 @@ bool NegotiationLegalizer::initFromDb()
   for (const NegCell& c : cells_) {
     neg_height_counts[c.height]++;
   }
-  logger_->info(utl::DPL,
-                392,
-                "Negotiation cell height distribution ({} unique row-count(s)):",
-                neg_height_counts.size());
+  logger_->info(
+      utl::DPL,
+      392,
+      "Negotiation cell height distribution ({} unique row-count(s)):",
+      neg_height_counts.size());
   for (const auto& [height, count] : neg_height_counts) {
-    logger_->info(
-        utl::DPL, 393, "  height {} row(s): {} cells", height, count);
+    logger_->info(utl::DPL, 393, "  height {} row(s): {} cells", height, count);
   }
 
   return true;

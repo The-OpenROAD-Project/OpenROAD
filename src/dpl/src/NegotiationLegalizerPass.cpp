@@ -482,7 +482,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   last_illegal_cells_ = illegalCellCount;
   last_illegal_sites_ = illegalSiteCount;
 
-  const std::string iter_label = "-> Stuck cells summary | iter " + std::to_string(iter);
+  const std::string iter_label
+      = "-> Stuck cells summary | iter " + std::to_string(iter);
   printStuckSummary(iter_label.c_str(),
                     stuck_no_candidate_count_iter_,
                     stuck_same_pos_count_iter_,
@@ -703,7 +704,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   }
 
-  if(logger_->debugCheck(utl::DPL, "negotiation", 1)) {
+  if (logger_->debugCheck(utl::DPL, "negotiation", 1)) {
     if (best_cost == static_cast<double>(kInfCost)) {
       // Every candidate in the search window was filtered out (out-of-die,
       // invalid row, or fence violation).  The cell falls back to its current
@@ -713,35 +714,36 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       ++stuck_no_candidate_count_iter_;
       ++stuck_no_candidate_by_height_iter_[cell.height];
       debugPrint(logger_,
-                utl::DPL,
-                "negotiation",
-                1,
-                "findBestLocation: no valid candidate found for cell '{}' "
-                "(iter {}, size {} rows x {} sites) — all {} candidate "
-                "filtered, cell may be stuck.",
-                cell.db_inst->getName(),
-                iter,
-                cell.height,
-                cell.width,
-                prof_candidates_filtered_);
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "findBestLocation: no valid candidate found for cell '{}' "
+                 "(iter {}, size {} rows x {} sites) — all {} candidate "
+                 "filtered, cell may be stuck.",
+                 cell.db_inst->getName(),
+                 iter,
+                 cell.height,
+                 cell.width,
+                 prof_candidates_filtered_);
     }
 
     if (best_x == cell.x && best_y == cell.y) {
-      // Valid sites are available, although the best choise is the current position.
+      // Valid sites are available, although the best choise is the current
+      // position.
       ++stuck_same_pos_count_;
       ++stuck_same_pos_by_height_[cell.height];
       ++stuck_same_pos_count_iter_;
       ++stuck_same_pos_by_height_iter_[cell.height];
       debugPrint(logger_,
-                utl::DPL,
-                "negotiation",
-                1,
-                "Negotiation: best location for cell '{}' at iteration {} "
-                "(size {} rows x {} sites) is its current position.",
-                cell.db_inst->getName(),
-                iter,
-                cell.height,
-                cell.width);
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "Negotiation: best location for cell '{}' at iteration {} "
+                 "(size {} rows x {} sites) is its current position.",
+                 cell.db_inst->getName(),
+                 iter,
+                 cell.height,
+                 cell.width);
     }
   }
   return {best_x, best_y};
