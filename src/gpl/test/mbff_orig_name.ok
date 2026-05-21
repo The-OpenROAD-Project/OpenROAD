@@ -5,10 +5,15 @@
 [INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
 [INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNH2V2X already seen in asap7sc7p5t_DFFHQNV2X
 [INFO ODB-0227] LEF file: ./4BitTrayH2W2/asap7sc7p5t_DFFHQNH2V2X.lef, created 9 library cells
-[INFO ODB-0128] Design: tray_test
-[INFO ODB-0130]     Created 9 pins.
-[INFO ODB-0131]     Created 4 components and 20 component-terminals.
-[INFO ODB-0133]     Created 9 nets and 12 connections.
+orig_name field registered at session init (pre-cluster_flops).
+[WARNING IFP-0028] Core area lower left (1.000, 1.000) snapped to (1.026, 1.080).
+[INFO IFP-0001] Added 29 rows of 147 site asap7sc7p5t.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 10.000 10.000 ) um
+[INFO IFP-0101] Core BBox: (  1.026  1.080 ) (  8.964  8.910 ) um
+[INFO IFP-0102] Core area:                           62.155 um^2
+[INFO IFP-0103] Total instances area:                 1.166 um^2
+[INFO IFP-0104] Effective utilization:                0.019
+[INFO IFP-0105] Number of instances:                      4
 Alpha = 40.0, Beta = 1.0, #paths = 0, max size = -1
 Total ILP Cost: 112.643
 Total Timing Critical Path Displacement: 0.0
@@ -16,7 +21,7 @@ Average slot-to-flop displacement: 1.730
 Final Objective Value: 112.643
 Sizes used
   4-bit: 1
-Startpoint: d3 (input port clocked by clk)
+Startpoint: d4 (input port clocked by clk)
 Endpoint: _tray_size4_7 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
@@ -26,8 +31,8 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ input external delay
-   0.00    0.00 ^ d3 (in)
-   0.00    0.00 ^ _tray_size4_7/D1 (DFFHQNV4Xx1_ASAP7_75t_L) ff3/D
+   0.00    0.00 ^ d4 (in)
+   0.00    0.00 ^ _tray_size4_7/D0 (DFFHQNV4Xx1_ASAP7_75t_L) ff4/D
            0.00   data arrival time
 
 1000.00 1000.00   clock clk (rise edge)
