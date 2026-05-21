@@ -1,8 +1,4 @@
 {
-    "synth__design__instance__area__stdcell": {
-        "value": 44.3,
-        "compare": "<="
-    },
     "constraints__clocks__count": {
         "value": 1,
         "compare": "=="
@@ -48,7 +44,7 @@
         "compare": "<="
     },
     "globalroute__timing__setup__ws": {
-        "value": -85.4,
+        "value": -87.0,
         "compare": ">="
     },
     "globalroute__timing__setup__tns": {

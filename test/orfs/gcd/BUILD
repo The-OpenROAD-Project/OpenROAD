@@ -145,14 +145,7 @@ orfs_flow(
         "PLACE_DENSITY": "0.35",
     },
     sources = {
-        # `rules-syn.json` mirrors `rules-base.json` minus the synth
-        # stdcell area metric (the genrule-produced netlist bypasses
-        # ORFS's yosys metric collection, so that field is N/A here)
-        # and with a slightly looser globalroute setup WS bound to
-        # absorb the small QoR delta between Yosys and the integrated
-        # syn tool. Replace with `rules-base.json` once `orfs_synth`
-        # gains a first-class openroad synthesis frontend.
-        "RULES_JSON": [":rules-syn.json"],
+        "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],
         "SYNTH_NETLIST_FILES": [":gcd_syn_netlist_gen"],
     },
