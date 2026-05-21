@@ -212,28 +212,34 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
 }
 
-void ThreeDBlox::processPendingBmaps()
+void ThreeDBlox::processPendingBmaps(dbChip* target_chip)
 {
-  for (const auto& [chip_region, bmap] : pending_bmaps_) {
+  for (auto it = pending_bmaps_.begin(); it != pending_bmaps_.end();) {
+    auto chip_region = it->first;
+    auto bmap = it->second;
     auto chip = chip_region->getChip();
-    if (chip->getChipType() != dbChip::ChipType::HIER
-        && chip->getBlock() == nullptr) {
-      // blackbox stage, create block
-      auto block = odb::dbBlock::create(chip, chip->getName());
-      const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
-      const int y_min = chip->getScribeLineSouth() + chip->getSealRingSouth();
-      const int x_max = x_min + chip->getWidth();
-      const int y_max = y_min + chip->getHeight();
-      block->setDieArea(Rect(x_min, y_min, x_max, y_max));
-      block->setCoreArea(Rect(x_min, y_min, x_max, y_max));
-    }
-    BmapParser parser(logger_);
-    BumpMapData data = parser.parseFile(bmap);
-    for (const auto& entry : data.entries) {
-      createBump(entry, chip_region);
+    if (target_chip == nullptr || chip == target_chip) {
+      if (chip->getChipType() != dbChip::ChipType::HIER
+          && chip->getBlock() == nullptr) {
+        // blackbox stage, create block
+        auto block = odb::dbBlock::create(chip, chip->getName());
+        const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
+        const int y_min = chip->getScribeLineSouth() + chip->getSealRingSouth();
+        const int x_max = x_min + chip->getWidth();
+        const int y_max = y_min + chip->getHeight();
+        block->setDieArea(Rect(x_min, y_min, x_max, y_max));
+        block->setCoreArea(Rect(x_min, y_min, x_max, y_max));
+      }
+      BmapParser parser(logger_);
+      BumpMapData data = parser.parseFile(bmap);
+      for (const auto& entry : data.entries) {
+        createBump(entry, chip_region);
+      }
+      it = pending_bmaps_.erase(it);
+    } else {
+      ++it;
     }
   }
-  pending_bmaps_.clear();
 }
 
 void ThreeDBlox::check()
@@ -714,11 +720,24 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
     if (chip->getBlock() != nullptr) {
       logger_->error(utl::ODB,
                      547,
-                     "3DBX Parser Error: There can't be 2 instances of the "
-                     "same chiplet {} with a def file each",
-                     chip->getName());
+                     "3DBX Parser Error: Chiplet {} already has a block (DEF "
+                     "previously loaded from ChipletDef or another source); "
+                     "cannot also load DEF from ChipletInst {}",
+                     chip->getName(),
+                     chip_inst.name);
     }
     readDefForChip(db_, logger_, chip, chip_inst.external.def_file);
+    // Tag the master chip so that round-tripping serializes the DEF reference
+    // back under ChipletInst external (matching the 3DBlox spec preference).
+    if (odb::dbProperty::find(chip, "def_under_chipletinst") == nullptr) {
+      odb::dbBoolProperty::create(chip, "def_under_chipletinst", true);
+    }
+    // Bumpmaps for this master were queued during ChipletDef parsing but
+    // needed the dbBlock that we have just created via readDefForChip. Flush
+    // them now so subsequent ChipletInsts of the same master see the block.
+    // For chips without a DEF from a ChipletInst, pending bmaps remain queued
+    // and are flushed at the end of readDbx/readDbv (call_depth_ == 0).
+    processPendingBmaps(chip);
   }
 
   dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);

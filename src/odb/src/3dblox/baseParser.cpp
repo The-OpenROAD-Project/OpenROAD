@@ -172,6 +172,25 @@ void BaseParser::resolvePaths(const std::string& path,
   }
 }
 
+std::string BaseParser::extractSinglePathFromList(const YAML::Node& parent,
+                                                  const std::string& key,
+                                                  const std::string& context)
+{
+  if (!parent[key]) {
+    return "";
+  }
+  std::vector<std::string> values;
+  extractValue(parent, key, values);
+  if (values.size() > 1) {
+    logError("Multiple " + key + " entries for " + context
+             + " are currently unsupported.");
+  }
+  if (values.empty()) {
+    return "";
+  }
+  return resolvePath(values[0]);
+}
+
 void BaseParser::logError(const std::string& message)
 {
   logger_->error(utl::ODB, 521, "Parser Error: {}", message);

@@ -73,6 +73,6 @@ class ThreeDBlox
 
   int call_depth_ = 0;
   std::vector<std::pair<odb::dbChipRegion*, std::string>> pending_bmaps_;
-  void processPendingBmaps();
+  void processPendingBmaps(dbChip* chip = nullptr);
 };
 }  // namespace odb
