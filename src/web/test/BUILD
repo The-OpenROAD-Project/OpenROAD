@@ -170,6 +170,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
@@ -187,6 +188,7 @@ cc_test(
     ],
     deps = [
         "//src/gui",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
@@ -203,6 +205,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
@@ -221,6 +224,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
@@ -237,6 +241,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
@@ -250,6 +255,7 @@ cc_test(
     name = "glyph_cache_test",
     srcs = ["cpp/TestGlyphCache.cpp"],
     deps = [
+        "//src/gui:gui_stub",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -261,6 +267,7 @@ cc_test(
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/web",
         "@googletest//:gtest",
@@ -275,6 +282,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",

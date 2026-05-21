@@ -58,4 +58,5 @@ add_compile_options(
 endif()
 
 add_subdirectory(lodepng)
+add_subdirectory(linenoise)
 add_subdirectory(stb_truetype)

@@ -14,9 +14,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <regex>
 #include <set>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -29,6 +27,7 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
+#include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
 #include "gui/descriptor_registry.h"
@@ -1326,76 +1325,6 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   return resp;
 }
 
-// Helper: find the start of the word at cursor_pos in line.
-// Word boundaries are: whitespace, [, ], {, }
-static int findWordStart(const std::string& line, int cursor_pos)
-{
-  static const std::string kBoundary = " \t\n\r[]{}";
-  int pos = cursor_pos - 1;
-  while (pos >= 0 && kBoundary.find(line[pos]) == std::string::npos) {
-    --pos;
-  }
-  return pos + 1;
-}
-
-// Helper: find the enclosing command name for argument completion.
-// Scans backwards from word_start past flags (-xxx) and their values
-// to find the first non-flag word (or the first word after '[').
-static std::string findEnclosingCommand(const std::string& line, int word_start)
-{
-  static const std::string kBoundary = " \t\n\r[]{}";
-  // Collect all words before the current position
-  std::vector<std::string> words;
-  int pos = 0;
-  while (pos < word_start) {
-    // skip whitespace/boundaries
-    while (pos < word_start && kBoundary.find(line[pos]) != std::string::npos) {
-      if (line[pos] == '[') {
-        // bracket resets context
-        words.clear();
-      }
-      ++pos;
-    }
-    if (pos >= word_start) {
-      break;
-    }
-    // extract word
-    const int start = pos;
-    while (pos < word_start && kBoundary.find(line[pos]) == std::string::npos) {
-      ++pos;
-    }
-    words.push_back(line.substr(start, pos - start));
-  }
-
-  // Walk backwards to find the first non-flag word
-  for (int i = static_cast<int>(words.size()) - 1; i >= 0; --i) {
-    if (!words[i].empty() && words[i][0] != '-') {
-      return words[i];
-    }
-  }
-  return {};
-}
-
-// Evaluate a Tcl command that returns a list, sort it, and return
-// the elements as a vector of strings.  Returns empty on error.
-static std::vector<std::string> getTclList(TclEvaluator& eval,
-                                           const std::string& tcl_cmd)
-{
-  auto result = eval.eval("join [lsort [" + tcl_cmd + "]] \\n");
-  std::vector<std::string> items;
-  if (result.is_error) {
-    return items;
-  }
-  std::istringstream stream(result.result);
-  std::string item;
-  while (std::getline(stream, item)) {
-    if (!item.empty()) {
-      items.push_back(std::move(item));
-    }
-  }
-  return items;
-}
-
 WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -1403,122 +1332,28 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     const std::string line = std::string(req.json.at("line").as_string());
-    int cursor_pos = static_cast<int>(req.json.at("cursor_pos").as_int64());
-    if (cursor_pos < 0) {
-      cursor_pos = static_cast<int>(line.size());
-    }
-    cursor_pos = std::min(cursor_pos, static_cast<int>(line.size()));
+    const int cursor_pos
+        = static_cast<int>(req.json.at("cursor_pos").as_int64());
 
-    const int word_start = findWordStart(line, cursor_pos);
-    const std::string prefix = line.substr(word_start, cursor_pos - word_start);
-
-    std::string mode;
-    std::vector<std::string> completions;
-
-    if (!prefix.empty() && prefix[0] == '$') {
-      // Variable completion
-      mode = "variables";
-      const std::string var_prefix = prefix.substr(1);  // strip $
-      const bool starts_with_colon
-          = !var_prefix.empty() && var_prefix[0] == ':';
-      std::string tcl_cmd = "info vars " + var_prefix;
-      if (!var_prefix.empty() && var_prefix.back() == ':'
-          && (var_prefix.size() == 1
-              || var_prefix[var_prefix.size() - 2] != ':')) {
-        tcl_cmd += ":";
-      }
-      tcl_cmd += "*";
-
-      for (auto var : getTclList(*tcl_eval_, tcl_cmd)) {
-        if (!starts_with_colon && !var.empty() && var[0] == ':') {
-          var = var.substr(2);
-        }
-        completions.push_back("$" + var);
-      }
-
-      // Add namespaces
-      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
-        std::string name = ns;
-        if (!starts_with_colon && !name.empty() && name[0] == ':') {
-          name = name.substr(2);
-        }
-        completions.push_back("$" + name);
-      }
-    } else if (!prefix.empty() && prefix[0] == '-') {
-      // Argument completion
-      mode = "arguments";
-      const std::string cmd_name = findEnclosingCommand(line, word_start);
-      if (!cmd_name.empty()) {
-        std::string tcl_cmd = "if {[info exists sta::cmd_args(" + cmd_name
-                              + ")]} { set sta::cmd_args(" + cmd_name
-                              + ") } else { list }";
-        auto result = tcl_eval_->eval(tcl_cmd);
-        if (!result.is_error && !result.result.empty()) {
-          // Parse flags with regex
-          static const std::regex kArgMatcher("-[a-zA-Z0-9_]+");
-          const std::string args_str = result.result;
-          std::sregex_iterator it(
-              args_str.begin(), args_str.end(), kArgMatcher);
-          std::sregex_iterator end;
-          std::set<std::string> unique_args;
-          while (it != end) {
-            unique_args.insert(it->str());
-            ++it;
-          }
-          for (const auto& arg : unique_args) {
-            if (prefix.size() <= 1 || arg.substr(0, prefix.size()) == prefix) {
-              completions.push_back(arg);
-            }
-          }
-        }
-      }
-    } else {
-      // Command completion
-      mode = "commands";
-      // Get OpenROAD registered commands
-      for (auto& cmd : getTclList(*tcl_eval_, "array names sta::cmd_args")) {
-        completions.push_back(std::move(cmd));
-      }
-      // Get namespace commands
-      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
-        for (auto ns_cmd :
-             getTclList(*tcl_eval_, "info commands " + ns + "::*")) {
-          // Remove leading ::
-          if (ns_cmd.size() > 2 && ns_cmd[0] == ':' && ns_cmd[1] == ':') {
-            ns_cmd = ns_cmd.substr(2);
-          }
-          completions.push_back(std::move(ns_cmd));
-        }
-      }
-
-      // Filter by prefix if non-empty
-      if (!prefix.empty()) {
-        const bool add_colons = prefix[0] == ':';
-        std::vector<std::string> filtered;
-        for (const auto& c : completions) {
-          std::string match_target = c;
-          if (add_colons && !c.empty() && c[0] != ':') {
-            match_target = "::" + c;
-          }
-          if (match_target.substr(0, prefix.size()) == prefix) {
-            filtered.push_back(add_colons && c[0] != ':' ? "::" + c : c);
-          }
-        }
-        completions = std::move(filtered);
-      }
+    // The shared completer reads Tcl state via direct Tcl_Eval, so hold
+    // the evaluator mutex for the same reasons regular eval requests do.
+    ord::TclCompletion result;
+    {
+      std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+      result = ord::completeTcl(tcl_eval_->interp, line, cursor_pos);
     }
 
     boost::json::object root;
     boost::json::array comp_arr;
-    comp_arr.reserve(completions.size());
-    for (const auto& c : completions) {
+    comp_arr.reserve(result.completions.size());
+    for (const auto& c : result.completions) {
       comp_arr.emplace_back(c);
     }
     root["completions"] = std::move(comp_arr);
-    root["mode"] = mode;
-    root["prefix"] = prefix;
-    root["replace_start"] = word_start;
-    root["replace_end"] = cursor_pos;
+    root["mode"] = result.mode;
+    root["prefix"] = result.prefix;
+    root["replace_start"] = result.replace_start;
+    root["replace_end"] = result.replace_end;
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
