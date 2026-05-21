@@ -8,6 +8,7 @@ module(
 # --- Regular dependencies (propagated to downstream consumers via MVS) ---
 
 bazel_dep(name = "abc", version = "0.64-yosyshq.bcr.1")
+bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
@@ -217,18 +218,15 @@ orfs.default(
 
 # --- External archives ---
 
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-new_local_repository(
-    name = "fmt",
-    build_file = "//third-party/slang-elab/third_party:fmt.BUILD",
-    path = "third-party/slang-elab/third_party/fmt",
-)
-
-new_local_repository(
+# MikePopoloski/slang pinned to the same commit as third-party/slang-elab/third_party/slang
+http_archive(
     name = "slang",
-    build_file = "//third-party/slang-elab/third_party:slang.BUILD",
-    path = "third-party/slang-elab/third_party/slang",
+    build_file = "//bazel:slang.BUILD",
+    sha256 = "ed21154a6eae279e99045c8fa0a7ae2e1e9ca572d3975ef1f22a811a89a8b8b0",
+    strip_prefix = "slang-f04e81565793c768b747a8fd058f3e7aeceee1b5",
+    urls = ["https://github.com/MikePopoloski/slang/archive/f04e81565793c768b747a8fd058f3e7aeceee1b5.tar.gz"],
 )
 
 # --- Overrides ---
