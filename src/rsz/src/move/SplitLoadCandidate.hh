@@ -5,11 +5,11 @@
 
 #include <memory>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-#include "sta/NetworkClass.hh"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace sta {
 class LibertyCell;

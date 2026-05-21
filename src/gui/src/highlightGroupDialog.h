@@ -6,8 +6,8 @@
 #include <QDialog>
 #include <QWidget>
 
-#include "gui/gui.h"
-#include "ui_highlightGroupDlg.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/ui/ui_highlightGroupDlg.h"
 
 namespace gui {
 class HighlightGroupDialog : public QDialog, private Ui::HighlightGroupDlg

@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiProp.h"
-#include "defiProp.hpp"
+#include "src/odb/src/def/def/defiProp.hpp"
 
 // Wrappers definitions.
 const char* defiProp_string(const ::defiProp* obj)

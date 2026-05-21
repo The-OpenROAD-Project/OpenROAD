@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dbDescriptors.h"
+#include "src/gui/src/dbDescriptors.h"
 
 #ifdef ENABLE_QT
 #include <QInputDialog>
@@ -30,29 +30,29 @@
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
-#include "bufferTreeDescriptor.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/bufferTreeDescriptor.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 #ifdef ENABLE_QT
-#include "insertBufferDialog.h"
+#include "src/gui/src/insertBufferDialog.h"
 #endif
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireGraph.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireGraph.h"
+#include "src/odb/include/odb/geom.h"
 #ifdef ENABLE_QT
-#include "options.h"
+#include "src/gui/src/options.h"
 #endif
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace gui {
 

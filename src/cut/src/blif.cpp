@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "cut/blif.h"
+#include "src/cut/include/cut/blif.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -14,20 +14,20 @@
 #include <utility>
 #include <vector>
 
-#include "cut/blifParser.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+#include "src/cut/include/cut/blifParser.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 using utl::CUT;
 

@@ -9,12 +9,12 @@
 #include <tuple>
 #include <vector>
 
-#include "AbstractFastRouteRenderer.h"
-#include "DataType.h"
-#include "FastRoute.h"
-#include "odb/geom.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
+#include "src/grt/src/fastroute/include/AbstractFastRouteRenderer.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

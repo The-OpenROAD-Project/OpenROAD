@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "par/MakePartitionMgr.h"
+#include "src/par/include/par/MakePartitionMgr.h"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Par_Init(Tcl_Interp* interp);

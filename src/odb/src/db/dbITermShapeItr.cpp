@@ -3,9 +3,9 @@
 
 #include <cassert>
 
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

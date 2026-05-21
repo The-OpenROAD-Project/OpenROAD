@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiGroup.h"
-#include "defiGroup.hpp"
+#include "src/odb/src/def/def/defiGroup.hpp"
 
 // Wrappers definitions.
 const char* defiGroup_name(const ::defiGroup* obj)

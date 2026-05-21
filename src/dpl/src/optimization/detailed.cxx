@@ -6,19 +6,19 @@
 #include <string>
 #include <vector>
 
-#include "optimization/detailed_manager.h"
-#include "utl/Logger.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
+#include "src/utl/include/utl/Logger.h"
 // Detailed placement algorithms.
 #include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed.h"
-#include "optimization/detailed_global.h"
-#include "optimization/detailed_global_legacy.h"
-#include "optimization/detailed_mis.h"
-#include "optimization/detailed_orient.h"
-#include "optimization/detailed_random.h"
-#include "optimization/detailed_reorder.h"
-#include "optimization/detailed_vertical.h"
+#include "src/dpl/src/optimization/detailed_global.h"
+#include "src/dpl/src/optimization/detailed_global_legacy.h"
+#include "src/dpl/src/optimization/detailed_mis.h"
+#include "src/dpl/src/optimization/detailed_orient.h"
+#include "src/dpl/src/optimization/detailed_random.h"
+#include "src/dpl/src/optimization/detailed_reorder.h"
+#include "src/dpl/src/optimization/detailed_vertical.h"
 using utl::DPL;
 
 namespace dpl {

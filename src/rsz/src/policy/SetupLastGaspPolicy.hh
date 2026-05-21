@@ -5,9 +5,9 @@
 
 #include <utility>
 
-#include "SetupLegacyBase.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
+#include "src/rsz/src/policy/SetupLegacyBase.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
 
 namespace rsz {
 

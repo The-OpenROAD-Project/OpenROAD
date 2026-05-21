@@ -2,11 +2,11 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 %{
-#include "ord/OpenRoad.hh"
-#include "mpl/rtl_mp.h"
-#include "MplObserver.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/mpl/include/mpl/rtl_mp.h"
+#include "src/mpl/src/MplObserver.h"
 #include "graphics.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i

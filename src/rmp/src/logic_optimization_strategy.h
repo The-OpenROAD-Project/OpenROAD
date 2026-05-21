@@ -4,9 +4,9 @@
 #pragma once
 
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace rmp {
 
@@ -47,8 +47,7 @@ class LogicOptimizationStrategy
   virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
       const abc::Abc_Ntk_t* ntk,
       cut::AbcLibrary& abc_library,
-      utl::Logger* logger)
-      = 0;
+      utl::Logger* logger) = 0;
 };
 
 }  // namespace rmp

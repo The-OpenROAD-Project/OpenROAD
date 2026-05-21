@@ -5,14 +5,14 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "rcx/array1.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extMeasureRC.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSegment.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extMeasureRC.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSegment.h"
+#include "src/utl/include/utl/Logger.h"
 
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN

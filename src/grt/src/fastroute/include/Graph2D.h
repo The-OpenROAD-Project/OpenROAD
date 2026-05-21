@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "DataType.h"
 #include "boost/multi_array.hpp"
-#include "utl/Logger.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -36,10 +36,10 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "defiKRDefs.hpp"
-#include "defrCallBacks.hpp"
-#include "defrReader.hpp"
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrCallBacks.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

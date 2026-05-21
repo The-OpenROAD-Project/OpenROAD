@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/obj/frInst.h"
+#include "src/drt/src/db/obj/frInst.h"
 
-#include "db/obj/frBlock.h"
-#include "db/obj/frMaster.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBlock.h"
+#include "src/drt/src/db/obj/frMaster.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 namespace drt {
 
 odb::Rect frInst::getBBox() const

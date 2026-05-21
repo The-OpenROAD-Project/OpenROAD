@@ -7,8 +7,8 @@
 
 #include "boost/archive/binary_iarchive.hpp"
 #include "boost/archive/binary_oarchive.hpp"
-#include "frDesign.h"
-#include "serialization.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/serialization.h"
 
 // using struct to omit a bunch of friend declarations
 namespace drt {

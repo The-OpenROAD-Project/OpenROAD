@@ -4,10 +4,10 @@
 #include <memory>
 #include <string>
 
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 namespace test {

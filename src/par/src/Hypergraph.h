@@ -19,7 +19,7 @@
 
 #include "Utilities.h"
 #include "boost/range/iterator_range_core.hpp"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 // The basic function related to hypergraph should be listed here
 

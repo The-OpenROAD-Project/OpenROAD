@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rmp/MakeRestructure.h"
+#include "src/rmp/include/rmp/MakeRestructure.h"
 
-#include "odb/db.h"
-#include "rmp/Restructure.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rmp/include/rmp/Restructure.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Rmp_Init(Tcl_Interp* interp);

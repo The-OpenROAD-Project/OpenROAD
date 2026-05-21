@@ -2,8 +2,8 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "pdn/PdnGen.hh"
-#include "odb/db.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/odb/include/odb/db.h"
 #include <array>
 #include <regex>
 #include <memory>

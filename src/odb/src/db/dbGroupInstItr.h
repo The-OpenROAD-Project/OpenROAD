@@ -7,7 +7,7 @@
 #include <cstdint>
 
 #include "dbCore.h"
-#include "odb/dbIterator.h"
+#include "src/odb/include/odb/dbIterator.h"
 
 namespace odb {
 class _dbInst;

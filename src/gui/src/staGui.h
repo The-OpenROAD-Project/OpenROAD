@@ -25,14 +25,14 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "dropdownCheckboxes.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbObject.h"
-#include "sta/SdcClass.hh"
-#include "sta/Sta.hh"
-#include "staGuiInterface.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dropdownCheckboxes.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Sta.hh"
 
 namespace sta {
 class dbSta;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "SimulatedAnnealing.h"
+#include "src/ppl/src/SimulatedAnnealing.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,17 +12,17 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractIOPlacerRenderer.h"
-#include "Core.h"
 #include "Netlist.h"
-#include "Slots.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "boost/random/uniform_real_distribution.hpp"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "ppl/IOPlacer.h"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ppl/src/AbstractIOPlacerRenderer.h"
+#include "src/ppl/src/Core.h"
+#include "src/ppl/src/Slots.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace ppl {
 

@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "infrastructure/Grid.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

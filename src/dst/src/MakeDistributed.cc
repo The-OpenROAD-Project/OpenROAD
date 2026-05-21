@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dst/MakeDistributed.h"
+#include "src/dst/include/dst/MakeDistributed.h"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Dst_Init(Tcl_Interp* interp);

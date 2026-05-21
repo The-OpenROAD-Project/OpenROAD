@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db_sta/dbReadVerilog.hh"
+#include "src/dbSta/include/db_sta/dbReadVerilog.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,18 +15,18 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "sta/ConcreteLibrary.hh"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/NetworkCmp.hh"
-#include "sta/PortDirection.hh"
-#include "sta/VerilogReader.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/ConcreteLibrary.hh"
+#include "src/sta/include/sta/ConcreteNetwork.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/NetworkCmp.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/VerilogReader.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ord {
 

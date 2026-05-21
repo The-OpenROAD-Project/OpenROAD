@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tap/tapcell.h"
+#include "src/tap/include/tap/tapcell.h"
 
 #include <algorithm>
 #include <array>
@@ -16,12 +16,12 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/util.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace tap {
 

@@ -19,18 +19,18 @@
 #include <variant>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/dbBlockSet.h"
-#include "odb/dbCCSegSet.h"
-#include "odb/dbDatabaseObserver.h"
-#include "odb/dbMatrix.h"
-#include "odb/dbNetSet.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/dbViaParams.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbBlockSet.h"
+#include "src/odb/include/odb/dbCCSegSet.h"
+#include "src/odb/include/odb/dbDatabaseObserver.h"
+#include "src/odb/include/odb/dbMatrix.h"
+#include "src/odb/include/odb/dbNetSet.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbViaParams.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 
 inline constexpr int ADS_MAX_CORNER = 10;
 inline constexpr const char* kDefaultBufBaseName{"buf"};
@@ -11421,4 +11421,4 @@ class dbDoubleProperty : public dbProperty
 }  // namespace odb
 
 // Overload std::less for these types
-#include "odb/dbCompare.inc"  // IWYU pragma: export
+#include "src/odb/include/odb/dbCompare.inc"  // IWYU pragma: export

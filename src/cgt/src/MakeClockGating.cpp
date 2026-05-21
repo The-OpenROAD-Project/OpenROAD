@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "cgt/MakeClockGating.h"
+#include "src/cgt/include/cgt/MakeClockGating.h"
 
-#include "utl/decode.h"
+#include "src/utl/include/utl/decode.h"
 
 extern "C" {
 extern int Cgt_Init(Tcl_Interp* interp);

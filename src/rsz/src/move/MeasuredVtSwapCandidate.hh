@@ -5,11 +5,11 @@
 
 #include <string>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/GraphClass.hh"
-#include "sta/NetworkClass.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace rsz {
 

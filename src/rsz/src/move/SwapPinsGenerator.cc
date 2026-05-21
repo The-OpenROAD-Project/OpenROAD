@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SwapPinsGenerator.hh"
+#include "src/rsz/src/move/SwapPinsGenerator.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -12,24 +12,24 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "SwapPinsCandidate.hh"
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/move/SwapPinsCandidate.hh"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

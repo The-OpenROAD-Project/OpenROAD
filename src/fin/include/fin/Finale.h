@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace fin {
 

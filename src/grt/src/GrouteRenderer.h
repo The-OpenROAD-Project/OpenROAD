@@ -6,12 +6,12 @@
 #include <set>
 #include <unordered_map>
 
-#include "AbstractGrouteRenderer.h"
-#include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/src/AbstractGrouteRenderer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

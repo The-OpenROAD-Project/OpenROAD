@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "MoveTracker.hh"
+#include "src/rsz/src/MoveTracker.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -17,31 +17,31 @@
 #include <utility>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/Sta.hh"
-#include "sta/StringUtil.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Transition.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/ExceptionPath.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/SearchClass.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

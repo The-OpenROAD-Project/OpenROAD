@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ram/layout.h"
+#include "src/ram/include/ram/layout.h"
 
 #include <algorithm>
 #include <memory>
 #include <utility>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
-#include "ram/ram.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/ram/include/ram/ram.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ram {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "Slots.h"
+#include "src/ppl/src/Slots.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "boost/container_hash/hash.hpp"
-#include "odb/geom.h"
-#include "ppl/IOPlacer.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
 
 namespace ppl {
 

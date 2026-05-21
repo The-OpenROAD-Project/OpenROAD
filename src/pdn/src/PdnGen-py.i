@@ -3,9 +3,9 @@
 
 %module pdngen
 %{
-#include "pdn/PdnGen.hh"
-#include "odb/db.h"
-#include "odb/PtrSetMap.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 #include <array>
 #include <string>
 #include <memory>

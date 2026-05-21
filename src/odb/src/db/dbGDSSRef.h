@@ -11,10 +11,10 @@
 
 #include "dbCore.h"
 #include "dbGDSStructure.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 // User Code End Includes
 
 namespace odb {

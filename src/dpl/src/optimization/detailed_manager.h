@@ -11,11 +11,11 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/network.h"
-#include "util/journal.h"
-#include "util/utility.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/dpl/src/util/journal.h"
+#include "src/dpl/src/util/utility.h"
 namespace utl {
 class Logger;
 }  // namespace utl

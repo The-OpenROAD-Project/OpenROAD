@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "MoveCommitter.hh"
+#include "src/rsz/src/MoveCommitter.hh"
 
 #include <algorithm>
 #include <array>
@@ -14,21 +14,21 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "MoveTracker.hh"
-#include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveTracker.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/ExceptionPath.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

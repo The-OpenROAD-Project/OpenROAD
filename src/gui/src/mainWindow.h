@@ -19,15 +19,15 @@
 #include <string>
 #include <vector>
 
-#include "findDialog.h"
-#include "gotoDialog.h"
-#include "gui/gui.h"
-#include "label.h"
-#include "odb/dbDatabaseObserver.h"
-#include "odb/dbObject.h"
-#include "ord/OpenRoad.hh"
-#include "ruler.h"
-#include "utl/Progress.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/findDialog.h"
+#include "src/gui/src/gotoDialog.h"
+#include "src/gui/src/label.h"
+#include "src/gui/src/ruler.h"
+#include "src/odb/include/odb/dbDatabaseObserver.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/utl/include/utl/Progress.h"
 
 namespace odb {
 class dbDatabase;

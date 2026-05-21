@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiProp.h"
-#include "lefiProp.hpp"
+#include "src/odb/src/lef/lef/lefiProp.hpp"
 
 // Wrappers definitions.
 const char* lefiProp_string(const ::lefiProp* obj)

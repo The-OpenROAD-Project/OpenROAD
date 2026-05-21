@@ -27,16 +27,16 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiArray.hpp"
+#include "src/odb/src/lef/lef/lefiArray.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefiMisc.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
 // *****************************************************************************

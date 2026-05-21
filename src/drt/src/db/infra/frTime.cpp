@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/infra/frTime.h"
+#include "src/drt/src/db/infra/frTime.h"
 
 #include <chrono>
 #include <ctime>
@@ -11,9 +11,9 @@
 #include <ostream>
 
 #include "boost/io/ios_state.hpp"
-#include "frBaseTypes.h"
-#include "utl/Logger.h"
-#include "utl/mem_stats.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/mem_stats.h"
 
 namespace drt {
 

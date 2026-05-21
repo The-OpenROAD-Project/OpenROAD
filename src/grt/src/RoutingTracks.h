@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "Pin.h"
+#include "src/grt/src/Pin.h"
 
 namespace grt {
 

@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "sta/LibertyClass.hh"
-#include "sta/NetworkClass.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace utl {
 class Logger;

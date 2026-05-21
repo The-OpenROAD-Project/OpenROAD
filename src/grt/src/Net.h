@@ -8,11 +8,11 @@
 #include <utility>
 #include <vector>
 
-#include "Pin.h"
-#include "grt/GRoute.h"
-#include "grt/RoutePt.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/RoutePt.h"
+#include "src/grt/src/Pin.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace grt {
 

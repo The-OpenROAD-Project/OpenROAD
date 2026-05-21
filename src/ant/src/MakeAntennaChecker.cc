@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "ant/MakeAntennaChecker.hh"
+#include "src/ant/include/ant/MakeAntennaChecker.hh"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Ant_Init(Tcl_Interp* interp);

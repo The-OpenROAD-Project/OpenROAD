@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "highlightGroupDialog.h"
+#include "src/gui/src/highlightGroupDialog.h"
 
 #include <QColor>
 #include <QDialog>
@@ -9,7 +9,7 @@
 #include <QWidget>
 #include <vector>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace gui {
 HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)

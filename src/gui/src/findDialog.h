@@ -6,7 +6,7 @@
 #include <QDialog>
 #include <QWidget>
 
-#include "ui_findDlg.h"
+#include "src/gui/ui/ui_findDlg.h"
 
 namespace gui {
 class FindObjectDialog : public QDialog, public Ui::FindObjDialog

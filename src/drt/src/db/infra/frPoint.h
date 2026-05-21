@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

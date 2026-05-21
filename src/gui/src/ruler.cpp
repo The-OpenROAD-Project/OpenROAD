@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "ruler.h"
+#include "src/gui/src/ruler.h"
 
 #include <any>
 #include <cmath>
@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gui {
 

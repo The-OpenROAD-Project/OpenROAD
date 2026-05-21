@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "upf/upf.h"
+#include "src/upf/include/upf/upf.h"
 
 #include <cctype>
 #include <cmath>
@@ -12,13 +12,13 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
 #include "writer.h"
 
 namespace upf {

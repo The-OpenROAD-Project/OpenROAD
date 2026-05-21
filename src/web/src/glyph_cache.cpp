@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "glyph_cache.h"
+#include "src/web/src/glyph_cache.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-#include "font_data.h"
+#include "src/web/src/font_data.h"
 #include "third-party/stb_truetype/stb_truetype.h"
 
 namespace web {

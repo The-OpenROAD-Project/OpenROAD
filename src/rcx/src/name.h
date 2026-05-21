@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "rcx/util.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiEncryptInt.h"
-#include "lefiEncryptInt.hpp"
+#include "src/odb/src/lef/lef/lefiEncryptInt.hpp"
 
 // Wrappers definitions.
 void lefrEnableReadEncrypted()

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dst/Distributed.h"
+#include "src/dst/include/dst/Distributed.h"
 
 #include <chrono>
 #include <cstddef>
@@ -19,9 +19,9 @@
 #include "boost/bind/bind.hpp"
 #include "boost/system/system_error.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/JobCallBack.h"
-#include "dst/JobMessage.h"
-#include "utl/Logger.h"
+#include "src/dst/include/dst/JobCallBack.h"
+#include "src/dst/include/dst/JobMessage.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dst {
 

@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "stt/SteinerTreeBuilder.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 namespace utl {
 class Logger;

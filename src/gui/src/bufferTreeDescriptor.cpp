@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "bufferTreeDescriptor.h"
+#include "src/gui/src/bufferTreeDescriptor.h"
 
 #include <algorithm>
 #include <any>
@@ -9,14 +9,14 @@
 #include <set>
 #include <string>
 
-#include "colorGenerator.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "sta/Liberty.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/colorGenerator.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace gui {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-#include "genetic_strategy.h"
+#include "src/rmp/src/genetic_strategy.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,13 +14,13 @@
 
 #include "absl/hash/hash.h"
 #include "absl/random/distributions.h"
-#include "cut/abc_library_factory.h"
-#include "gia.h"
-#include "rsz/Resizer.hh"
-#include "slack_tuning_strategy.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/rmp/src/gia.h"
+#include "src/rmp/src/slack_tuning_strategy.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 using utl::RMP;

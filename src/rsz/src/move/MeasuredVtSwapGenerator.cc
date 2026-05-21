@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "MeasuredVtSwapGenerator.hh"
+#include "src/rsz/src/move/MeasuredVtSwapGenerator.hh"
 
 #include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <vector>
 
-#include "MeasuredVtSwapCandidate.hh"
-#include "MoveCandidate.hh"
-#include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "db_sta/dbNetwork.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MeasuredVtSwapCandidate.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace rsz {
 

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "CtsOptions.h"
+#include "src/cts/src/CtsOptions.h"
 
 #include <algorithm>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace cts {
 

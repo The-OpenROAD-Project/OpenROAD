@@ -6,10 +6,10 @@
 #include <map>
 #include <utility>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"  // IWYU pragma: keep (GridX type)
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"  // IWYU pragma: keep (GridX type)
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace dpl {
 class Node;

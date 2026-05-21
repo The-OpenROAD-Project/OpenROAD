@@ -7,11 +7,11 @@
 #include <cmath>
 #include <cstddef>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "objective/detailed_objective.h"
-#include "optimization/detailed_manager.h"
-#include "optimization/detailed_orient.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/objective/detailed_objective.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
+#include "src/dpl/src/optimization/detailed_orient.h"
 
 namespace dpl {
 

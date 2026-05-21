@@ -6,13 +6,13 @@
 #include <memory>
 #include <utility>
 
-#include "db/drObj/drPin.h"
-#include "db/drObj/drRef.h"
-#include "db/tech/frViaDef.h"
-#include "dr/FlexMazeTypes.h"
-#include "frBaseTypes.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drPin.h"
+#include "src/drt/src/db/drObj/drRef.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rcx/extSpef.h"
+#include "src/rcx/include/rcx/extSpef.h"
 
 #include <stdio.h>  // NOLINT(modernize-deprecated-headers): for popen()
 
@@ -16,15 +16,15 @@
 #include <vector>
 
 #include "name.h"
-#include "odb/db.h"
-#include "odb/dbExtControl.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
 #include "parse.h"
-#include "rcx/array1.h"
-#include "rcx/extRCap.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbExtControl.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBlock;
 using odb::dbCapNode;

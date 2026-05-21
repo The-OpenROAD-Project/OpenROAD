@@ -13,15 +13,15 @@
 #include <utility>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

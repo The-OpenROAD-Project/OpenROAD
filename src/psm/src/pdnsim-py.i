@@ -4,9 +4,9 @@
 %module psm_py
 
 %{
-#include "ord/OpenRoad.hh"
-#include "psm/pdnsim.h"
-#include "odb/db.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/psm/include/psm/pdnsim.h"
+#include "src/odb/include/odb/db.h"
 
 %}
 

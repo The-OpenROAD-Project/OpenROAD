@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "GrouteRenderer.h"
+#include "src/grt/src/GrouteRenderer.h"
 
-#include "Net.h"
-#include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/src/Net.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace grt {
 

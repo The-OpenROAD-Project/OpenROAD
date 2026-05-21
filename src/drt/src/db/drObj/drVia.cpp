@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/drObj/drVia.h"
+#include "src/drt/src/db/drObj/drVia.h"
 
 #include <algorithm>
 
-#include "db/drObj/drNet.h"
-#include "db/drObj/drRef.h"
-#include "db/obj/frVia.h"
-#include "distributed/frArchive.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drNet.h"
+#include "src/drt/src/db/drObj/drRef.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

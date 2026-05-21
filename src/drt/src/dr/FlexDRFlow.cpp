@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 

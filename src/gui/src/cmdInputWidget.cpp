@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "cmdInputWidget.h"
+#include "src/gui/src/cmdInputWidget.h"
 
 #include <QFile>
 #include <QMimeData>

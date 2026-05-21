@@ -8,18 +8,18 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
-#include "ant/AntennaChecker.hh"
-#include "db_sta/dbReadVerilog.hh"
-#include "dpl/Opendp.h"
-#include "est/EstimateParasitics.h"
-#include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "src/dbSta/include/db_sta/dbReadVerilog.hh"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/est/include/est/EstimateParasitics.h"
 #include "src/gpl/src/graphicsNone.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "tst/fixture.h"
-#include "utl/ServiceRegistry.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/tst/include/tst/fixture.h"
+#include "src/utl/include/utl/ServiceRegistry.h"
 
 namespace gpl {
 

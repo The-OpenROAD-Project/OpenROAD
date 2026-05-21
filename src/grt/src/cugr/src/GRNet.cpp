@@ -1,15 +1,15 @@
-#include "GRNet.h"
+#include "src/grt/src/cugr/src/GRNet.h"
 
 #include <cstdint>
 #include <unordered_set>
 #include <vector>
 
-#include "GRTree.h"
-#include "GeoTypes.h"
-#include "GridGraph.h"
 #include "Netlist.h"
-#include "geo.h"
-#include "odb/db.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/GeoTypes.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

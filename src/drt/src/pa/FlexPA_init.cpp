@@ -7,14 +7,14 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "db/infra/frTime.h"
-#include "db/obj/frInst.h"
-#include "frBaseTypes.h"
-#include "gc/FlexGC.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "pa/FlexPA.h"
-#include "pa/FlexPA_unique.h"
+#include "src/drt/src/db/infra/frTime.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/gc/FlexGC.h"
+#include "src/drt/src/pa/FlexPA.h"
+#include "src/drt/src/pa/FlexPA_unique.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;

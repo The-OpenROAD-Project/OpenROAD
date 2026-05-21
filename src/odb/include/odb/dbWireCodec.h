@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace odb {
 

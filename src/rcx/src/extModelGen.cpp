@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "rcx/extModelGen.h"
+#include "src/rcx/include/rcx/extModelGen.h"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
-#include "odb/dbSet.h"
 #include "parse.h"
-#include "rcx/extRCap.h"
-#include "rcx/util.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

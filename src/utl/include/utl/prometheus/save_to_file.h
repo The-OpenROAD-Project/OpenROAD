@@ -29,8 +29,8 @@
 #include <string>
 #include <thread>
 
-#include "utl/prometheus/registry.h"
-#include "utl/prometheus/text_serializer.h"
+#include "src/utl/include/utl/prometheus/registry.h"
+#include "src/utl/include/utl/prometheus/text_serializer.h"
 
 namespace utl {
 class SaveToFile

@@ -17,10 +17,10 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

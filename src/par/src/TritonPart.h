@@ -8,10 +8,10 @@
 #include "Coarsener.h"
 #include "Hypergraph.h"
 #include "Utilities.h"
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbReadVerilog.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace par {
 

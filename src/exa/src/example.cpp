@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "exa/example.h"
+#include "src/exa/include/exa/example.h"
 
 #include <memory>
 #include <utility>
 
-#include "observer.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/exa/src/observer.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace exa {
 

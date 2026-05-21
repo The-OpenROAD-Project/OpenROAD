@@ -9,7 +9,7 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace odb {
 

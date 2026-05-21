@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "db/infra/frPoint.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

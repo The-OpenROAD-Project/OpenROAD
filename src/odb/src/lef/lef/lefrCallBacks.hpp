@@ -30,8 +30,8 @@
 #ifndef lefrCallbacks_h
 #define lefrCallbacks_h
 
-#include "lefiKRDefs.hpp"
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

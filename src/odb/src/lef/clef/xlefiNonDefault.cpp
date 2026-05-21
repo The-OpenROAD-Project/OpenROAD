@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiNonDefault.h"
-#include "lefiNonDefault.hpp"
+#include "src/odb/src/lef/lef/lefiNonDefault.hpp"
 
 // Wrappers definitions.
 const char* lefiNonDefault_name(const ::lefiNonDefault* obj)

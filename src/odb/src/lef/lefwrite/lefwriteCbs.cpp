@@ -33,8 +33,8 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
-#include "lefwWriter.hpp"
-#include "lefwWriterCalls.hpp"
+#include "src/odb/src/lef/lef/lefwWriter.hpp"
+#include "src/odb/src/lef/lef/lefwWriterCalls.hpp"
 
 // Global variables
 char defaultOut[128];

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "heatMapPlacementDensity.h"
+#include "src/gui/src/heatMapPlacementDensity.h"
 
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "gui/heatMap.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gui {
 

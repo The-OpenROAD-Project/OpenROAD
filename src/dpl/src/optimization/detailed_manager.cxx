@@ -13,21 +13,21 @@
 #include <utility>
 #include <vector>
 
-#include "PlacementDRC.h"
 #include "boost/format.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_orient.h"
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/detailed_segment.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
-#include "util/journal.h"
-#include "util/symmetry.h"
-#include "util/utility.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/detailed_segment.h"
+#include "src/dpl/src/util/journal.h"
+#include "src/dpl/src/util/symmetry.h"
+#include "src/dpl/src/util/utility.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 using utl::DPL;
 

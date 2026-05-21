@@ -2,9 +2,9 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 %{
-#include "ppl/IOPlacer.h"
-#include "IOPlacerRenderer.h"
-#include "ord/OpenRoad.hh"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ppl/src/IOPlacerRenderer.h"
+#include "include/ord/OpenRoad.hh"
 
 
 namespace ord {

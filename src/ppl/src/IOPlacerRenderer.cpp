@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "IOPlacerRenderer.h"
+#include "src/ppl/src/IOPlacerRenderer.h"
 
 #include <vector>
 
 #include "Netlist.h"
-#include "gui/gui.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace ppl {
 

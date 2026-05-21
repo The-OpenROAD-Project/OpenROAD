@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "heatMapRudy.h"
+#include "src/grt/src/heatMapRudy.h"
 
 #include <algorithm>
 #include <any>
@@ -11,14 +11,14 @@
 #include <stdexcept>
 #include <vector>
 
-#include "grt/GlobalRouter.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

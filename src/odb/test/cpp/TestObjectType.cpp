@@ -2,9 +2,9 @@
 #include <sstream>
 
 #include "gtest/gtest.h"
-#include "odb/dbObject.h"
-#include "odb/dbStream.h"
-#include "tst/fixture.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/tst/include/tst/fixture.h"
 
 namespace odb {
 namespace {

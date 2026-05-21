@@ -9,11 +9,11 @@
 #include <string>
 #include <vector>
 
-#include "gui/heatMap.h"
-#include "odb/PtrSetMap.h"
-#include "odb/dbTypes.h"
-#include "psm/pdnsim.h"
-#include "sta/Sta.hh"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/psm/include/psm/pdnsim.h"
+#include "src/sta/include/sta/Sta.hh"
 
 namespace psm {
 

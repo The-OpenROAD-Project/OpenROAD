@@ -7,14 +7,14 @@
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
-#include "ScanArchitect.hh"
-#include "ScanArchitectConfig.hh"
-#include "ScanCell.hh"
 #include "ScanCellMock.hh"
-#include "ScanChain.hh"
 #include "gtest/gtest.h"
-#include "utl/Logger.h"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/architect/ScanChain.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft::test {
 namespace {

@@ -9,8 +9,8 @@
 #include "dbCore.h"
 #include "dbGDSStructure.h"
 #include "dbHashTable.hpp"
-#include "odb/db.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace odb {
 class dbIStream;

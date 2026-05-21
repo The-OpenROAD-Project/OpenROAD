@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "utl/Metrics.h"
+#include "src/utl/include/utl/Metrics.h"
 
 #include <list>
 #include <regex>

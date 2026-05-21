@@ -245,7 +245,7 @@ odb::dbInst* insertBufferBeforeLoads(const std::vector<odb::dbObject*>& load_pin
 #### Using the `Resizer` API (High-level)
 
 ```cpp
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
 
 // 1. After Driver
 rsz::Net* net = network->findNet("u1/n1");
@@ -267,7 +267,7 @@ rsz::Instance* buf3 = resizer->insertBufferBeforeLoads(nullptr, &loads, buffer_c
 #### Using the `dbNet` API (Low-level)
 
 ```cpp
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 // 1. After Driver
 odb::dbNet* db_net = block->findNet("n1");

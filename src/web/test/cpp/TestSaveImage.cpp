@@ -11,12 +11,12 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/tst/include/tst/nangate45_fixture.h"
+#include "src/web/src/tile_generator.h"
 #include "third-party/lodepng/lodepng.h"
-#include "tile_generator.h"
-#include "tst/nangate45_fixture.h"
 
 namespace web {
 namespace {

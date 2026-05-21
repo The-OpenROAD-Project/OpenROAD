@@ -9,13 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "Core.h"
 #include "Netlist.h"
-#include "Slots.h"
 #include "boost/random/mersenne_twister.hpp"
-#include "odb/geom.h"
-#include "ppl/IOPlacer.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ppl/src/Core.h"
+#include "src/ppl/src/Slots.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ppl {
 

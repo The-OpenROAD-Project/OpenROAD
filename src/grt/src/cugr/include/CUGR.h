@@ -8,9 +8,9 @@
 #include <utility>
 #include <vector>
 
-#include "grt/GRoute.h"
-#include "odb/PtrSetMap.h"
-#include "odb/geom.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbDatabase;

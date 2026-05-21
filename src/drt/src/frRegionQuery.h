@@ -7,10 +7,10 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 class frBlockObject;

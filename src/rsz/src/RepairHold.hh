@@ -3,19 +3,19 @@
 
 #pragma once
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Transition.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;

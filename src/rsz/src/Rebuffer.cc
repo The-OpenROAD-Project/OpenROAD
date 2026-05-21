@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "Rebuffer.hh"
+#include "src/rsz/src/Rebuffer.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -17,34 +17,34 @@
 #include <utility>
 #include <vector>
 
-#include "BufferedNet.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Search.hh"
-#include "sta/StaState.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/BufferedNet.hh"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/StaState.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/TimingRole.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace rsz {
 

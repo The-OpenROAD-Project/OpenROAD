@@ -8,18 +8,18 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frMarker.h"
-#include "db/obj/frNet.h"
-#include "db/tech/frConstraint.h"
-#include "db/tech/frViaDef.h"
 #include "fixture.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "gc/FlexGC.h"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/gc/FlexGC.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerType;
 

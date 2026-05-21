@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiComponent.h"
-#include "defiComponent.hpp"
+#include "src/odb/src/def/def/defiComponent.hpp"
 
 // Wrappers definitions.
 int defiComponentMaskShiftLayer_numMaskShiftLayers(

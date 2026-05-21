@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiUnits.h"
-#include "lefiUnits.hpp"
+#include "src/odb/src/lef/lef/lefiUnits.hpp"
 
 // Wrappers definitions.
 int lefiUnits_hasDatabase(const ::lefiUnits* obj)

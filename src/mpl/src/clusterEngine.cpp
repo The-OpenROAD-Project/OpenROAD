@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "clusterEngine.h"
+#include "src/mpl/src/clusterEngine.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,20 +14,20 @@
 #include <utility>
 #include <vector>
 
-#include "MplObserver.h"
 #include "boost/polygon/polygon.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
-#include "db_sta/dbNetwork.hh"
-#include "mpl-util.h"
-#include "object.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
-#include "par/PartitionMgr.h"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/mpl/src/MplObserver.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/mpl/src/object.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/par/include/par/PartitionMgr.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace mpl {
 using utl::MPL;

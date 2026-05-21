@@ -5,11 +5,11 @@
 
 #include <vector>
 
-#include "db/drObj/drBlockObject.h"
-#include "db/infra/frPoint.h"
-#include "dr/FlexMazeTypes.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

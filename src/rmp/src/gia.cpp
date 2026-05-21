@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-#include "gia.h"
+#include "src/rmp/src/gia.h"
 
 #include <algorithm>
 #include <cassert>
@@ -19,11 +19,6 @@
 #include "map/if/if.h"
 #pragma GCC diagnostic pop
 #include "aig/gia/gia.h"
-#include "cut/abc_library_factory.h"
-#include "cut/logic_cut.h"
-#include "cut/logic_extractor.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -31,16 +26,21 @@
 #include "misc/nm/nm.h"
 #include "misc/util/abc_global.h"
 #include "misc/vec/vecPtr.h"
-#include "odb/db.h"
 #include "proof/dch/dch.h"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Search.hh"
-#include "utils.h"
-#include "utl/Logger.h"
-#include "utl/SuppressStdout.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/cut/include/cut/logic_cut.h"
+#include "src/cut/include/cut/logic_extractor.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rmp/src/utils.h"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/SuppressStdout.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace abc {
 // NOLINTBEGIN(readability-identifier-naming)

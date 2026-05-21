@@ -6,14 +6,14 @@
 #include <utility>
 
 #include "boost/icl/interval_set.hpp"
-#include "db/tech/frConstraint.h"
-#include "db/tech/frLayer.h"
-#include "db/tech/frTechObject.h"
-#include "db/tech/frViaDef.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 class FlexRP

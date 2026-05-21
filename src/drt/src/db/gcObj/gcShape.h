@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "db/gcObj/gcFig.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/gcObj/gcFig.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gtl = boost::polygon;
 

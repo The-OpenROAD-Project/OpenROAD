@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "cts/TritonCTS.h"
+#include "src/cts/include/cts/TritonCTS.h"
 
 #include <algorithm>
 #include <cassert>
@@ -26,35 +26,35 @@
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "HTreeBuilder.h"
-#include "LatencyBalancer.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-#include "sta/Clock.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/Mode.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/Sdc.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/HTreeBuilder.h"
+#include "src/cts/src/LatencyBalancer.h"
+#include "src/cts/src/TechChar.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

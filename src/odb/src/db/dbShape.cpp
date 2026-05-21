@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/dbShape.h"
+#include "src/odb/include/odb/dbShape.h"
 
 #include <cstring>
 #include <vector>
@@ -9,8 +9,8 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

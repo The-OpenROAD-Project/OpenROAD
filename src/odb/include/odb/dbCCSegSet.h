@@ -7,9 +7,9 @@
 #include <cstdint>
 #include <iterator>
 
-#include "odb/dbIterator.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/dbIterator.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
 
 namespace odb {
 

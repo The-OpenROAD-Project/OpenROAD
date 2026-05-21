@@ -43,7 +43,7 @@ unusued in processors).
 Recommended conclusion: use map for concrete cells. They are invariant.
 
  */
-#include "db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -61,27 +61,27 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/dbUtil.h"
-#include "odb/geom.h"
-#include "sta/ConcreteLibrary.hh"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/Iterator.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/ObjectId.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Search.hh"
-#include "sta/StringUtil.hh"
-#include "sta/VertexId.hh"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbUtil.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/ConcreteLibrary.hh"
+#include "src/sta/include/sta/ConcreteNetwork.hh"
+#include "src/sta/include/sta/Iterator.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/ObjectId.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/sta/include/sta/VertexId.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace sta {
 

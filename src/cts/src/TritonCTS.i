@@ -4,11 +4,11 @@
 %{
 #include <cstdint>
 
-#include "cts/TritonCTS.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-#include "CtsGraphics.h"
-#include "ord/OpenRoad.hh"
+#include "src/cts/include/cts/TritonCTS.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/TechChar.h"
+#include "src/cts/src/CtsGraphics.h"
+#include "include/ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rcx/grids.h"
+#include "src/rcx/include/rcx/grids.h"
 
 #include <algorithm>
 #include <cassert>
@@ -9,11 +9,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "odb/db.h"
-#include "odb/isotropy.h"
-#include "rcx/array1.h"
-#include "rcx/box.h"
-#include "rcx/util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/box.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

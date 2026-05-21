@@ -33,9 +33,9 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defiPath.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiPath.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

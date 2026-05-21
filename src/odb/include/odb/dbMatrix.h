@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "boost/multi_array.hpp"
-#include "odb/dbStream.h"
+#include "src/odb/include/odb/dbStream.h"
 
 namespace odb {
 

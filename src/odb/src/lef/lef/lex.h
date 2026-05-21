@@ -32,7 +32,7 @@
 
 #include <cstddef>
 
-#include "lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

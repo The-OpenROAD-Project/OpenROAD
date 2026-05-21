@@ -30,12 +30,12 @@
 #include <variant>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/NetworkClass.hh"
-#include "staGuiInterface.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace sta {
 class dbSta;

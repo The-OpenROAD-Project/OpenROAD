@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "ta/FlexTA_graphics.h"
+#include "src/drt/src/ta/FlexTA_graphics.h"
 
 #include <string>
 
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "gui/gui.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/ta/FlexTA.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace drt {
 

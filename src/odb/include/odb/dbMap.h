@@ -6,8 +6,8 @@
 #include <map>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbSet.h"
 
 namespace odb {
 
@@ -86,4 +86,4 @@ class dbMap
 
 }  // namespace odb
 
-#include "odb/dbMap.inc"  // IWYU pragma: export
+#include "src/odb/include/odb/dbMap.inc"  // IWYU pragma: export

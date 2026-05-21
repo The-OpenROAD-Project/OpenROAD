@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/3dblox.h"
+#include "src/odb/include/odb/3dblox.h"
 
 #include <cmath>
 #include <cstddef>
@@ -23,21 +23,21 @@
 #include "dbxParser.h"
 #include "dbxWriter.h"
 #include "objects.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
-#include "odb/defout.h"
-#include "odb/geom.h"
-#include "odb/lefin.h"
-#include "odb/lefout.h"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Sta.hh"
-#include "sta/VerilogReader.hh"
-#include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/odb/include/odb/lefout.h"
+#include "src/sta/include/sta/ConcreteNetwork.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/VerilogReader.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ScopedTemporaryFile.h"
 #include "verilogWriter.h"
 namespace odb {
 

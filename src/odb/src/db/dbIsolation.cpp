@@ -15,12 +15,12 @@
 #include "dbNet.h"
 #include "dbPowerDomain.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <vector>
 
 #include "dbCommon.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbIsolation>;

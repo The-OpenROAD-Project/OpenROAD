@@ -8,15 +8,15 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipBumpInstItr.h"
 #include "dbChipInst.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipRegionInst>;

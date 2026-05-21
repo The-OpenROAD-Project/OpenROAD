@@ -18,9 +18,9 @@
 #include "dbPolygonItr.h"
 #include "dbTable.h"
 #include "dbVector.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

@@ -26,13 +26,13 @@
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 #include <cstring>
 
-#include "def_parser.hpp"
-#include "defiKRDefs.hpp"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/def_parser.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

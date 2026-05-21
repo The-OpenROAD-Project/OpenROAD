@@ -9,20 +9,20 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frShape.h"
-#include "db/obj/frVia.h"
-#include "db/taObj/taFig.h"
-#include "db/taObj/taPin.h"
-#include "db/taObj/taShape.h"
-#include "db/taObj/taVia.h"
-#include "db/tech/frConstraint.h"
-#include "db/tech/frViaDef.h"
-#include "frBaseTypes.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/taObj/taFig.h"
+#include "src/drt/src/db/taObj/taPin.h"
+#include "src/drt/src/db/taObj/taShape.h"
+#include "src/drt/src/db/taObj/taVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/ta/FlexTA.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;

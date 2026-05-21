@@ -35,12 +35,12 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
-#include "defiAlias.hpp"
-#include "defiComponent.hpp"
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defiNet.hpp"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defiAlias.hpp"
+#include "src/odb/src/def/def/defiComponent.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiNet.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 char defaultName[64];
 char defaultOut[64];

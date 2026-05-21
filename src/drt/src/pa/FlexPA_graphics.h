@@ -8,14 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frMPin.h"
-#include "frBaseTypes.h"
-#include "global.h"
-#include "gui/gui.h"
-#include "pa/AbstractPAGraphics.h"
-#include "pa/FlexPA.h"
-#include "pa/FlexPA_unique.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frMPin.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/pa/AbstractPAGraphics.h"
+#include "src/drt/src/pa/FlexPA.h"
+#include "src/drt/src/pa/FlexPA_unique.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace odb {
 class dbDatabase;

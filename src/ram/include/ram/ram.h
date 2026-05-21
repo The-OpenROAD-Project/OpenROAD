@@ -11,10 +11,10 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "ram/layout.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/ram/include/ram/layout.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 class dbMaster;

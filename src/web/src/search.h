@@ -16,7 +16,7 @@
 
 #include "boost/asio/post.hpp"
 #include "boost/asio/thread_pool.hpp"
-#include "odb/PtrSetMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 
 namespace utl {
 class Logger;
@@ -24,10 +24,10 @@ class Logger;
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
 
 namespace web {
 

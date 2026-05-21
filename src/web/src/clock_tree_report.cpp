@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "clock_tree_report.h"
+#include "src/web/src/clock_tree_report.h"
 
 #include <algorithm>
 #include <limits>
@@ -12,24 +12,24 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/Clock.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
 
 namespace web {
 

@@ -5,9 +5,9 @@
 
 #include <memory>
 
-#include "ScanArchitect.hh"
-#include "ScanArchitectConfig.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

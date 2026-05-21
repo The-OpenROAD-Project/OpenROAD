@@ -6,10 +6,10 @@
 #include <cstdio>
 #include <cstring>
 
-#include "rcx/extRCap.h"
-#include "rcx/extprocess.h"
-#include "rcx/grids.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extprocess.h"
+#include "src/rcx/include/rcx/grids.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

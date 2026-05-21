@@ -2,9 +2,9 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 %{
-#include "odb/db.h"
-#include "upf/upf.h"
-#include "ord/OpenRoad.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/upf/include/upf/upf.h"
+#include "include/ord/OpenRoad.hh"
 
   namespace ord {
   OpenRoad* getOpenRoad();

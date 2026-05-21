@@ -3,8 +3,8 @@
 
 %{
 
-#include "utl/Logger.h"
-#include "LoggerCommon.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/src/LoggerCommon.h"
     
 namespace ord {
 // Defined in OpenRoad.i

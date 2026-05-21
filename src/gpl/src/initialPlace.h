@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "Eigen/SparseCore"
-#include "gpl/Replace.h"
-#include "nesterovPlace.h"
-#include "odb/db.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/gpl/src/nesterovPlace.h"
+#include "src/odb/include/odb/db.h"
 
 namespace utl {
 class Logger;

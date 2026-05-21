@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInst.h"
-#include "db/obj/frMTerm.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/db/obj/frMTerm.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frNet;

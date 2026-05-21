@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace utl {
 class Logger;

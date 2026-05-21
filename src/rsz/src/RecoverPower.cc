@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "RecoverPower.hh"
+#include "src/rsz/src/RecoverPower.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -11,24 +11,24 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/ContainerHelpers.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Sdc.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/ContainerHelpers.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

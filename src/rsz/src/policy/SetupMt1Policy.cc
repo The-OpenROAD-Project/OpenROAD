@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupMt1Policy.hh"
+#include "src/rsz/src/policy/SetupMt1Policy.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -12,21 +12,21 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
-#include "SizeUpMtGenerator.hh"
-#include "VtSwapMtGenerator.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
-#include "utl/ThreadPool.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/move/SizeUpMtGenerator.hh"
+#include "src/rsz/src/move/VtSwapMtGenerator.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ThreadPool.h"
 
 namespace rsz {
 

@@ -26,7 +26,7 @@
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
-#include "lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
 
 #include <cctype>
 #include <cstdio>
@@ -35,8 +35,8 @@
 #include <filesystem>
 #include <system_error>
 
-#include "lefiKRDefs.hpp"
-#include "lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

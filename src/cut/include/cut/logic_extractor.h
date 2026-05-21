@@ -6,13 +6,13 @@
 #include <unordered_set>
 #include <vector>
 
-#include "cut/abc_library_factory.h"
-#include "cut/logic_cut.h"
-#include "db_sta/dbSta.hh"
-#include "sta/Graph.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/SearchPred.hh"
-#include "utl/Logger.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/cut/include/cut/logic_cut.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/SearchPred.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace sta {
 class Mode;

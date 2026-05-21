@@ -37,7 +37,7 @@
 #include <cstdio>
 
 #include "defrReader.h"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 // Wrappers definitions.
 int defrInit()

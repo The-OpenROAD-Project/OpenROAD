@@ -17,12 +17,12 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "tile_generator.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/web/src/tile_generator.h"
 
 namespace web {
 

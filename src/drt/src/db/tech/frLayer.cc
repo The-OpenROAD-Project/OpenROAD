@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "db/tech/frLayer.h"
+#include "src/drt/src/db/tech/frLayer.h"
 
 #include <algorithm>
 
-#include "frBaseTypes.h"
-#include "utl/Logger.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 

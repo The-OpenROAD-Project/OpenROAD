@@ -8,16 +8,16 @@
 #include <cstdint>
 #include <fstream>
 
-#include "sta/Liberty.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Network.hh"
-#include "sta/Scene.hh"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "db_sta/dbNetwork.hh"
-#include "Graphics.hh"
-#include "ord/OpenRoad.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/rsz/src/Graphics.hh"
+#include "include/ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

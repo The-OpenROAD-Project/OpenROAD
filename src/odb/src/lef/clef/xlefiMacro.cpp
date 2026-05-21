@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiMacro.h"
-#include "lefiMacro.hpp"
+#include "src/odb/src/lef/lef/lefiMacro.hpp"
 
 union ulefiGeomRect
 {

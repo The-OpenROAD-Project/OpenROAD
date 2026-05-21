@@ -17,12 +17,12 @@
 #include "dbIntHashTable.h"
 #include "dbPagedVector.h"
 #include "dbVector.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace odb {
 

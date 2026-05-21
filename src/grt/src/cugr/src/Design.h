@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "CUGR.h"
-#include "GeoTypes.h"
-#include "Layers.h"
 #include "Netlist.h"
-#include "geo.h"
-#include "odb/PtrSetMap.h"
+#include "src/grt/src/cugr/include/CUGR.h"
+#include "src/grt/src/cugr/src/GeoTypes.h"
+#include "src/grt/src/cugr/src/Layers.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 
 namespace odb {
 class dbBlock;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "gc/FlexGC.h"
+#include "src/drt/src/gc/FlexGC.h"
 
 #include <algorithm>
 #include <iterator>
@@ -12,18 +12,18 @@
 #include <utility>
 #include <vector>
 
-#include "db/drObj/drShape.h"
-#include "db/gcObj/gcNet.h"
-#include "db/gcObj/gcPin.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frMarker.h"
-#include "db/tech/frTechObject.h"
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "gc/FlexGC_impl.h"
-#include "global.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/drObj/drShape.h"
+#include "src/drt/src/db/gcObj/gcNet.h"
+#include "src/drt/src/db/gcObj/gcPin.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/gc/FlexGC_impl.h"
+#include "src/drt/src/global.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 

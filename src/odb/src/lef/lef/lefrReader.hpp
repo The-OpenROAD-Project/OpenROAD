@@ -33,18 +33,18 @@
 #include <cstdarg>
 #include <cstdio>
 
-#include "lefiArray.hpp"
-#include "lefiCrossTalk.hpp"
-#include "lefiDefs.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefiLayer.hpp"
-#include "lefiMacro.hpp"
-#include "lefiNonDefault.hpp"
-#include "lefiProp.hpp"
-#include "lefiUnits.hpp"
-#include "lefiUser.hpp"
-#include "lefiUtil.hpp"
-#include "lefiViaRule.hpp"
+#include "src/odb/src/lef/lef/lefiArray.hpp"
+#include "src/odb/src/lef/lef/lefiCrossTalk.hpp"
+#include "src/odb/src/lef/lef/lefiDefs.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiMacro.hpp"
+#include "src/odb/src/lef/lef/lefiNonDefault.hpp"
+#include "src/odb/src/lef/lef/lefiProp.hpp"
+#include "src/odb/src/lef/lef/lefiUnits.hpp"
+#include "src/odb/src/lef/lef/lefiUser.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefiViaRule.hpp"
 
 inline constexpr int MAX_LEF_MSGS = 4701;
 

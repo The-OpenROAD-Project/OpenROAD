@@ -13,11 +13,11 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
-#include "layoutViewer.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/layoutViewer.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gui {
 

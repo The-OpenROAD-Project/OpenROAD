@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "layoutViewer.h"
+#include "src/gui/src/layoutViewer.h"
 
 #include <QApplication>
 #include <QColor>
@@ -41,26 +41,26 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "dbDescriptors.h"
-#include "gui/gui.h"
-#include "gui_utils.h"
-#include "highlightGroupDialog.h"
-#include "label.h"
-#include "mainWindow.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "painter.h"
-#include "renderThread.h"
-#include "ruler.h"
-#include "scriptWidget.h"
 #include "search.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/gui_utils.h"
+#include "src/gui/src/highlightGroupDialog.h"
+#include "src/gui/src/label.h"
+#include "src/gui/src/mainWindow.h"
+#include "src/gui/src/painter.h"
+#include "src/gui/src/renderThread.h"
+#include "src/gui/src/ruler.h"
+#include "src/gui/src/scriptWidget.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools

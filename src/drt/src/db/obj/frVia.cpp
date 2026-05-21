@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/obj/frVia.h"
+#include "src/drt/src/db/obj/frVia.h"
 
-#include "db/drObj/drVia.h"
-#include "db/obj/frRef.h"
-#include "distributed/frArchive.h"
-#include "serialization.h"
+#include "src/drt/src/db/drObj/drVia.h"
+#include "src/drt/src/db/obj/frRef.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/serialization.h"
 
 namespace drt {
 

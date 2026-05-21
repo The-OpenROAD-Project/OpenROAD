@@ -7,16 +7,16 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBPin.h"
-#include "db/obj/frBlockage.h"
-#include "db/obj/frInstBlockage.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frPin.h"
-#include "db/obj/frRef.h"
-#include "frBaseTypes.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBPin.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/db/obj/frInstBlockage.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/db/obj/frPin.h"
+#include "src/drt/src/db/obj/frRef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frBlock;

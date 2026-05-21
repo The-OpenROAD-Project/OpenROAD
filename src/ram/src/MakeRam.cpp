@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ram/MakeRam.h"
+#include "src/ram/include/ram/MakeRam.h"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Ram_Init(Tcl_Interp* interp);

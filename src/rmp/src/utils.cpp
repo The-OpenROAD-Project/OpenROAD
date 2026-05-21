@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-#include "utils.h"
+#include "src/rmp/src/utils.h"
 
 #include <fcntl.h>
 
@@ -10,16 +10,16 @@
 #include "aig/aig/aig.h"
 #include "aig/gia/gia.h"
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "cut/logic_cut.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/MinMax.hh"
-#include "sta/PortDirection.hh"
-#include "utl/deleter.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/cut/include/cut/logic_cut.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/utl/include/utl/deleter.h"
 
 namespace rmp {
 

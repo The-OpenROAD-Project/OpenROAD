@@ -12,7 +12,7 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

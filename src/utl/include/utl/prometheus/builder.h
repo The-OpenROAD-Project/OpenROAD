@@ -25,8 +25,8 @@
 #include <map>
 #include <string>
 
-#include "utl/prometheus/family.h"
-#include "utl/prometheus/registry.h"
+#include "src/utl/include/utl/prometheus/family.h"
+#include "src/utl/include/utl/prometheus/registry.h"
 
 namespace utl {
 

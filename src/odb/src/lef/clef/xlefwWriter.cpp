@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefwWriter.h"
-#include "lefwWriter.hpp"
+#include "src/odb/src/lef/lef/lefwWriter.hpp"
 
 // Wrappers definitions.
 int lefwInit(FILE* f)

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "dft/Dft.hh"
+#include "src/dft/include/dft/Dft.hh"
 
 #include <memory>
 #include <optional>
@@ -9,20 +9,20 @@
 #include <variant>
 #include <vector>
 
-#include "ClockDomain.hh"
-#include "DftConfig.hh"
-#include "ScanArchitect.hh"
-#include "ScanArchitectConfig.hh"
-#include "ScanCell.hh"
-#include "ScanCellFactory.hh"
-#include "ScanPin.hh"
-#include "ScanReplace.hh"
-#include "ScanStitch.hh"
 #include "boost/property_tree/json_parser.hpp"
 #include "boost/property_tree/ptree.hpp"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/cells/ScanCellFactory.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/config/DftConfig.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/dft/src/replace/ScanReplace.hh"
+#include "src/dft/src/stitch/ScanStitch.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace {
 constexpr char kDefaultPartition[] = "default";

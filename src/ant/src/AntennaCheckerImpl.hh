@@ -12,10 +12,10 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "ant/AntennaChecker.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbWireGraph.h"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbWireGraph.h"
 
 namespace utl {
 class Logger;

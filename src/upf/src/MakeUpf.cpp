@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "upf/MakeUpf.h"
+#include "src/upf/include/upf/MakeUpf.h"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Upf_Init(Tcl_Interp* interp);

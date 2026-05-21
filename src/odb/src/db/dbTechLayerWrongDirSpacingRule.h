@@ -8,7 +8,7 @@
 
 #include "dbCore.h"
 // User Code Begin Includes
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code End Includes
 
 namespace odb {

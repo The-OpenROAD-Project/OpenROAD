@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2026, The OpenROAD Authors
 
-#include "gui/heatMap.h"
+#include "src/gui/include/gui/heatMap.h"
 
 #include <QDialog>
 #include <QObject>
@@ -14,9 +14,9 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "heatMapGui.h"
-#include "heatMapSetup.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/heatMapGui.h"
+#include "src/gui/src/heatMapSetup.h"
 
 namespace gui {
 

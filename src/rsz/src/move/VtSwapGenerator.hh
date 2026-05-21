@@ -7,11 +7,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/NetworkClass.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
 
 namespace sta {
 class LibertyCell;

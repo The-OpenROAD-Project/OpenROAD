@@ -35,7 +35,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
-#include "defwWriter.hpp"
+#include "src/odb/src/def/def/defwWriter.hpp"
 
 char defaultOut[128];
 

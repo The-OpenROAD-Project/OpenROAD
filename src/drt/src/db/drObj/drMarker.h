@@ -5,8 +5,8 @@
 
 #include <map>
 
-#include "db/drObj/drBlockObject.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frConstraint;

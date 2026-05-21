@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "ta/FlexTA.h"
+#include "src/drt/src/ta/FlexTA.h"
 
 #include <algorithm>
 #include <chrono>
@@ -12,16 +12,16 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frTime.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "frProfileTask.h"
-#include "global.h"
-#include "odb/dbTypes.h"
 #include "omp.h"
-#include "ta/AbstractTAGraphics.h"
-#include "utl/Logger.h"
-#include "utl/exception.h"
+#include "src/drt/src/db/infra/frTime.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/ta/AbstractTAGraphics.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/exception.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;

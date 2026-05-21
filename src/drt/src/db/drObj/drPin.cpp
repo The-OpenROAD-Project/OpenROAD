@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "db/drObj/drPin.h"
+#include "src/drt/src/db/drObj/drPin.h"
 
 #include <algorithm>
 #include <limits>
 #include <utility>
 
-#include "db/drObj/drBlockObject.h"
-#include "distributed/frArchive.h"
-#include "dr/FlexMazeTypes.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 

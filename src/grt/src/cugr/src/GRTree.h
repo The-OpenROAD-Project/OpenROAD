@@ -5,8 +5,8 @@
 #include <utility>
 #include <vector>
 
-#include "geo.h"
-#include "utl/Logger.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

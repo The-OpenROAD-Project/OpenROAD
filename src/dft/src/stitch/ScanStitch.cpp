@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanStitch.hh"
+#include "src/dft/src/stitch/ScanStitch.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,14 +15,14 @@
 #include <utility>
 #include <vector>
 
-#include "ScanCell.hh"
-#include "ScanChain.hh"
-#include "ScanPin.hh"
-#include "ScanStitchConfig.hh"
 #include "boost/algorithm/string.hpp"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/dft/src/architect/ScanChain.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/config/ScanStitchConfig.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace {
 constexpr std::string_view kScanEnable = "scan-enable";

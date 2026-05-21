@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dropdownCheckboxes.h"
+#include "src/gui/src/dropdownCheckboxes.h"
 
 #include <qnamespace.h>
 

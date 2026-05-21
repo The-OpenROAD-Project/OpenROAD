@@ -7,11 +7,11 @@
 #include <cstdio>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "tst/fixture.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/tst/include/tst/fixture.h"
 
 namespace odb {
 

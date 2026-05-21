@@ -3,11 +3,11 @@
 
 
 %{
-#include "grt/GlobalRouter.h"
-#include "GrouteRenderer.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/src/GrouteRenderer.h"
 #include "FastRouteRenderer.h"
-#include "ord/OpenRoad.hh"
-#include "sta/Liberty.hh"
+#include "include/ord/OpenRoad.hh"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

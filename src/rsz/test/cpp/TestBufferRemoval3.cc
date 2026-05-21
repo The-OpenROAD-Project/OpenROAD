@@ -7,13 +7,13 @@
 #include <memory>
 #include <string>
 
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "sta/NetworkClass.hh"
-#include "sta/VerilogWriter.hh"
-#include "tst/IntegratedFixture.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/VerilogWriter.hh"
+#include "src/tst/include/tst/IntegratedFixture.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 class BufRemTest3 : public tst::IntegratedFixture

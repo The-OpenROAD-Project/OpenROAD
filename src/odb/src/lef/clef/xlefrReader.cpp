@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefrReader.h"
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 // Wrappers definitions.
 int lefrInit()

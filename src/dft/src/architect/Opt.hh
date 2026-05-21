@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-#include "ScanArchitect.hh"
-#include "ScanCell.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

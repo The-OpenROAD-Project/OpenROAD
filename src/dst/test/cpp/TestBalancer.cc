@@ -3,16 +3,16 @@
 #include <stdexcept>
 #include <string>
 
-#include "HelperCallBack.h"
 #include "LoadBalancer.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/BroadcastJobDescription.h"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
 #include "gtest/gtest.h"
-#include "utl/Logger.h"
+#include "src/dst/include/dst/BroadcastJobDescription.h"
+#include "src/dst/include/dst/Distributed.h"
+#include "src/dst/include/dst/JobMessage.h"
+#include "src/dst/test/cpp/HelperCallBack.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dst {
 

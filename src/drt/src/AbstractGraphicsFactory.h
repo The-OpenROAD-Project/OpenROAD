@@ -6,12 +6,12 @@
 #include <memory>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "dr/AbstractDRGraphics.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "pa/AbstractPAGraphics.h"
-#include "ta/AbstractTAGraphics.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/dr/AbstractDRGraphics.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/pa/AbstractPAGraphics.h"
+#include "src/drt/src/ta/AbstractTAGraphics.h"
 
 namespace drt {
 class AbstractGraphicsFactory
@@ -22,8 +22,7 @@ class AbstractGraphicsFactory
                      frDesign* design,
                      odb::dbDatabase* db,
                      utl::Logger* logger,
-                     RouterConfiguration* router_cfg)
-      = 0;
+                     RouterConfiguration* router_cfg) = 0;
   virtual bool guiActive() = 0;
   virtual std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() = 0;
   virtual std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() = 0;

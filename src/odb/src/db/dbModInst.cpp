@@ -22,7 +22,7 @@
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
 
@@ -33,11 +33,11 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
 #include "dbSwapMasterSanityChecker.h"
-#include "odb/PtrSetMap.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbModInst>;

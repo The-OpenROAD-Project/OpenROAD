@@ -2,8 +2,8 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
-#include "ord/OpenRoad.hh"
-#include "fin/Finale.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/fin/include/fin/Finale.h"
 
 %}
 

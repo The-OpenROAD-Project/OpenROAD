@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiTimingDisable.h"
-#include "defiTimingDisable.hpp"
+#include "src/odb/src/def/def/defiTimingDisable.hpp"
 
 // Wrappers definitions.
 int defiTimingDisable_hasMacroThru(const ::defiTimingDisable* obj)

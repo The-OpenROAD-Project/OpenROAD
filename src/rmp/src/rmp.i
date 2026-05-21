@@ -2,11 +2,11 @@
 // Copyright (c) 2019-2026, The OpenROAD Authors
 
 %{
-#include "rmp/Restructure.h"
-#include "cut/blif.h"
-#include "ord/OpenRoad.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
+#include "src/rmp/include/rmp/Restructure.h"
+#include "src/cut/include/cut/blif.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

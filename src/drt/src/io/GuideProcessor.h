@@ -10,15 +10,15 @@
 #include <vector>
 
 #include "boost/icl/interval_set.hpp"
-#include "db/infra/frPoint.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInstTerm.h"
-#include "db/tech/frTechObject.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInstTerm.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt::io {
 

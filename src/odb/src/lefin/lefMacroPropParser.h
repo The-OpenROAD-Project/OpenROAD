@@ -7,8 +7,8 @@
 #include <string_view>
 
 #include "boost/fusion/container/vector.hpp"
-#include "odb/db.h"
-#include "odb/lefin.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/lefin.h"
 
 namespace odb {
 class lefMacroClassTypeParser

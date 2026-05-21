@@ -12,15 +12,15 @@
 #include <utility>
 #include <vector>
 
-#include "DataType.h"
-#include "FastRoute.h"
-#include "Graph2D.h"
-#include "grt/GRoute.h"
-#include "odb/PtrSetMap.h"
-#include "odb/geom.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
+#include "src/grt/src/fastroute/include/Graph2D.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace grt {
 

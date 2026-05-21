@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "infrastructure/Padding.h"
+#include "src/dpl/src/infrastructure/Padding.h"
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/Objects.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace dpl {
 

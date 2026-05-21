@@ -1,10 +1,10 @@
-#include "GeoTypes.h"
+#include "src/grt/src/cugr/src/GeoTypes.h"
 
 #include <cmath>
 #include <ostream>
 
-#include "geo.h"
-#include "odb/geom.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace grt {
 

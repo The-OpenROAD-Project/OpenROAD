@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dr/FlexGridGraph.h"
+#include "src/drt/src/dr/FlexGridGraph.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -11,14 +11,14 @@
 #include <map>
 #include <vector>
 
-#include "db/infra/frPoint.h"
-#include "db/obj/frTrackPattern.h"
-#include "db/tech/frViaDef.h"
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/db/obj/frTrackPattern.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;

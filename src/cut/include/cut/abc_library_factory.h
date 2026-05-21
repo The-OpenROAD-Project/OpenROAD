@@ -11,17 +11,17 @@
 #include <vector>
 
 #include "base/abc/abc.h"
-#include "db_sta/dbSta.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
 #include "map/scl/sclLib.h"
-#include "rsz/Resizer.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sta.hh"
-#include "sta/TableModel.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/TableModel.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace cut {
 

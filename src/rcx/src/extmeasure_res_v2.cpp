@@ -4,9 +4,9 @@
 #include <cstdint>
 
 #include "gseq.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extRCap.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/utl/include/utl/Logger.h"
 
 // This file has many duplicate symbols with extmeasure_res.cpp.  Disabled
 // until this is resolved.

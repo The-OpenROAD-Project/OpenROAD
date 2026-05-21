@@ -4,8 +4,8 @@
 %{
 #include <cstdlib>
 
-#include "ord/OpenRoad.hh"
-#include "web/web.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/web/include/web/web.h"
 %}
 
 %include "../../Exception.i"

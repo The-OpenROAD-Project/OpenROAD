@@ -7,8 +7,8 @@
 #include <ctime>
 #include <iostream>
 
-#include "frBaseTypes.h"
-#include "utl/Logger.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 class frTime

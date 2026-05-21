@@ -21,10 +21,10 @@
 #include "dbTechLayer.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbTechViaGenerateRule.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbViaParams.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbViaParams.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

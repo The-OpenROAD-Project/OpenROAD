@@ -5,14 +5,14 @@
 #include <string>
 #include <utility>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/network.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

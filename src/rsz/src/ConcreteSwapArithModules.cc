@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "ConcreteSwapArithModules.hh"
+#include "src/rsz/src/ConcreteSwapArithModules.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -11,21 +11,21 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Network.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

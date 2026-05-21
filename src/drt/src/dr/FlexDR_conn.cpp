@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dr/FlexDR_conn.h"
+#include "src/drt/src/dr/FlexDR_conn.h"
 
 #include <algorithm>
 #include <climits>
@@ -16,23 +16,23 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frSegStyle.h"
-#include "db/obj/frBTerm.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInstTerm.h"
-#include "db/obj/frShape.h"
-#include "db/obj/frVia.h"
-#include "db/tech/frTechObject.h"
-#include "dr/FlexDR.h"
-#include "drt/TritonRoute.h"
-#include "frBaseTypes.h"
-#include "frProfileTask.h"
-#include "frRegionQuery.h"
-#include "io/io.h"
-#include "odb/geom.h"
 #include "omp.h"
-#include "utl/Logger.h"
-#include "utl/exception.h"
+#include "src/drt/include/drt/TritonRoute.h"
+#include "src/drt/src/db/infra/frSegStyle.h"
+#include "src/drt/src/db/obj/frBTerm.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInstTerm.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/frRegionQuery.h"
+#include "src/drt/src/io/io.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/exception.h"
 
 namespace drt {
 

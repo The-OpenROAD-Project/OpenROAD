@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "boost/unordered/unordered_flat_map.hpp"
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbDatabase;

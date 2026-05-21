@@ -7,10 +7,10 @@
 #include <string>
 #include <string_view>
 
-#include "MoveCommitter.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
 
 namespace rsz {
 

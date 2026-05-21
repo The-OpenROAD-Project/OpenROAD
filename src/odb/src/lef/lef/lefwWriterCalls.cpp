@@ -36,14 +36,14 @@
 //
 // Revisions:
 
-#include "lefwWriterCalls.hpp"
+#include "src/odb/src/lef/lef/lefwWriterCalls.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

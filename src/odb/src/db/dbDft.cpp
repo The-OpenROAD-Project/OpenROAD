@@ -9,10 +9,10 @@
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 // User Code Begin Includes
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbObject.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbDft>;

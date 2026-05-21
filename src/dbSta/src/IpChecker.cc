@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "db_sta/IpChecker.hh"
+#include "src/dbSta/include/db_sta/IpChecker.hh"
 
 #include <algorithm>
 #include <cctype>
@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace sta {
 

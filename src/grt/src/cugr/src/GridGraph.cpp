@@ -1,4 +1,4 @@
-#include "GridGraph.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,17 +14,17 @@
 #include <utility>
 #include <vector>
 
-#include "CUGR.h"
-#include "Design.h"
-#include "GRNet.h"
-#include "GRTree.h"
-#include "geo.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "robin_hood.h"
-#include "utl/Logger.h"
+#include "src/grt/src/cugr/include/CUGR.h"
+#include "src/grt/src/cugr/src/Design.h"
+#include "src/grt/src/cugr/src/GRNet.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/grt/src/cugr/src/robin_hood.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "Netlist.h"
-#include "odb/geom.h"
-#include "ppl/IOPlacer.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
 
 namespace ppl {
 

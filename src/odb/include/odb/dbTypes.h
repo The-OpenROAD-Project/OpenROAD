@@ -7,8 +7,8 @@
 #include <optional>
 #include <string>
 
-#include "odb/dbStream.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

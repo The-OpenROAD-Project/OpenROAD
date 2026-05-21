@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "geo.h"
-#include "odb/db.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "web/web.h"
+#include "src/web/include/web/web.h"
 
 #include <netinet/in.h>
 
@@ -33,21 +33,21 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
-#include "clock_tree_report.h"
-#include "gui/heatMap.h"
-#include "hierarchy_report.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbChipCallBackObj.h"
-#include "request_dispatcher.h"
-#include "request_handler.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/web/src/clock_tree_report.h"
+#include "src/web/src/hierarchy_report.h"
+#include "src/web/src/request_dispatcher.h"
+#include "src/web/src/request_handler.h"
+#include "src/web/src/tile_generator.h"
+#include "src/web/src/timing_report.h"
+#include "src/web/src/web_assets.h"
+#include "src/web/src/web_chart.h"
+#include "src/web/src/web_viewer_hook.h"
 #include "tcl.h"
-#include "tile_generator.h"
-#include "timing_report.h"
-#include "utl/Logger.h"
-#include "web_assets.h"
-#include "web_chart.h"
-#include "web_viewer_hook.h"
 
 namespace web {
 

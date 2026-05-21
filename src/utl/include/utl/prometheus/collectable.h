@@ -24,7 +24,7 @@
 
 #include <vector>
 
-#include "utl/prometheus/metric_family.h"
+#include "src/utl/include/utl/prometheus/metric_family.h"
 
 namespace utl {
 

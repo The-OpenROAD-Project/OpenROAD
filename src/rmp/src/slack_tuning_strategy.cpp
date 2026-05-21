@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-#include "slack_tuning_strategy.h"
+#include "src/rmp/src/slack_tuning_strategy.h"
 
 #include <cassert>
 #include <cstddef>
@@ -15,15 +15,15 @@
 #include <vector>
 
 #include "absl/random/distributions.h"
-#include "cut/abc_library_factory.h"
-#include "gia.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/MinMax.hh"
-#include "sta/Transition.hh"
-#include "utils.h"
-#include "utl/Logger.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rmp/src/gia.h"
+#include "src/rmp/src/utils.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 

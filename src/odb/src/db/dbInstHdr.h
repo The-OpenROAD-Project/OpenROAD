@@ -7,7 +7,7 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 
 namespace odb {
 

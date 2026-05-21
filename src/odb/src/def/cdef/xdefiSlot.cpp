@@ -35,10 +35,10 @@
 
 #include <cstdio>
 
-#include "defiMisc.hpp"
 #include "defiSlot.h"
-#include "defiSlot.hpp"
 #include "defiTypedefs.h"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiSlot.hpp"
 
 union udefiPoints
 {

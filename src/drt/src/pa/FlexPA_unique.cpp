@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "pa/FlexPA_unique.h"
+#include "src/drt/src/pa/FlexPA_unique.h"
 
 #include <algorithm>
 #include <limits>
@@ -10,17 +10,17 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frAccess.h"
-#include "db/obj/frInst.h"
-#include "db/obj/frMPin.h"
-#include "db/obj/frTrackPattern.h"
-#include "db/tech/frLayer.h"
-#include "distributed/frArchive.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/db/obj/frMPin.h"
+#include "src/drt/src/db/obj/frTrackPattern.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace drt {
 

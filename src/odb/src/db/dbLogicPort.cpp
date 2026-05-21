@@ -16,7 +16,7 @@
 #include "dbPowerSwitch.h"
 #include "dbTable.h"
 #include "dbVector.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include "dbCommon.h"
 // User Code End Includes

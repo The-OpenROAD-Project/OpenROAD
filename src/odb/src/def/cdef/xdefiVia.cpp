@@ -35,10 +35,10 @@
 
 #include <cstdio>
 
-#include "defiMisc.hpp"
 #include "defiTypedefs.h"
 #include "defiVia.h"
-#include "defiVia.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiVia.hpp"
 
 union udefiPoints
 {

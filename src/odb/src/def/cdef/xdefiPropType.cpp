@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "defiPropType.h"
-#include "defiPropType.hpp"
+#include "src/odb/src/def/def/defiPropType.hpp"
 
 // Wrappers definitions.
 char defiPropType_propType(const ::defiPropType* obj, char* name)

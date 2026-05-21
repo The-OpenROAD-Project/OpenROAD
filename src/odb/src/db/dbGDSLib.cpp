@@ -9,10 +9,10 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace odb {
 template class dbTable<_dbGDSLib>;

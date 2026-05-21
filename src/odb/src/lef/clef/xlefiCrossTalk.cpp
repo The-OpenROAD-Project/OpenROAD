@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiCrossTalk.h"
-#include "lefiCrossTalk.hpp"
+#include "src/odb/src/lef/lef/lefiCrossTalk.hpp"
 
 // Wrappers definitions.
 double lefiNoiseVictim_length(const ::lefiNoiseVictim* obj)

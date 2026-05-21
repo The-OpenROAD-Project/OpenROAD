@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiAssertion.h"
-#include "defiAssertion.hpp"
+#include "src/odb/src/def/def/defiAssertion.hpp"
 
 // Wrappers definitions.
 int defiAssertion_isAssertion(const ::defiAssertion* obj)

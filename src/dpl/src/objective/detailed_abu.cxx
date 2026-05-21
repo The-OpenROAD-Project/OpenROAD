@@ -26,10 +26,10 @@
 #include <cstddef>
 #include <vector>
 
-#include "objective/detailed_objective.h"
-#include "optimization/detailed_orient.h"
-#include "util/journal.h"
-#include "utl/Logger.h"
+#include "src/dpl/src/objective/detailed_objective.h"
+#include "src/dpl/src/optimization/detailed_orient.h"
+#include "src/dpl/src/util/journal.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

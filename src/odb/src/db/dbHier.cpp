@@ -13,8 +13,8 @@
 #include "dbMTerm.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 
 namespace odb {
 

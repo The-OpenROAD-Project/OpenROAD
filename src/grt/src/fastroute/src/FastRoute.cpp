@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "FastRoute.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
 
 #include <algorithm>
 #include <cmath>
@@ -15,14 +15,14 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractFastRouteRenderer.h"
-#include "DataType.h"
-#include "grt/GRoute.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/src/fastroute/include/AbstractFastRouteRenderer.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace grt {
 

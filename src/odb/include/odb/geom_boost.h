@@ -13,7 +13,7 @@
 #include "boost/geometry/geometries/register/ring.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
 // Make odb's Point work with boost polgyon
 

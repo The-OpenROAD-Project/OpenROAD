@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "gpl/MakeReplace.h"
+#include "src/gpl/include/gpl/MakeReplace.h"
 
-#include "gpl/Replace.h"
-#include "graphicsImpl.h"
 #include "graphicsNone.h"
-#include "gui/gui.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/gpl/src/graphicsImpl.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/Logger.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);

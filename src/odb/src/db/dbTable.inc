@@ -12,10 +12,10 @@
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "odb/dbId.h"
-#include "odb/dbObject.h"
-#include "odb/dbStream.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
 namespace drt {
 class TritonRoute;
 }

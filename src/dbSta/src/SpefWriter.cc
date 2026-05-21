@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "db_sta/SpefWriter.hh"
+#include "src/dbSta/include/db_sta/SpefWriter.hh"
 
 #include <algorithm>
 #include <cctype>
@@ -11,16 +11,16 @@
 #include <memory>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/NetworkClass.hh"
-#include "sta/Parasitics.hh"
-#include "sta/ParasiticsClass.hh"
-#include "sta/Scene.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/ParasiticsClass.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace sta {
 

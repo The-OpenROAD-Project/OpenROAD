@@ -13,12 +13,12 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
-#include "odb/unfoldedModel.h"
-#include "utl/Logger.h"
-#include "utl/unionFind.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/unfoldedModel.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unionFind.h"
 
 namespace odb {
 

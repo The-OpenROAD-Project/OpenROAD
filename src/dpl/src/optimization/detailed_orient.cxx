@@ -12,15 +12,15 @@
 
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
-#include "dpl/Opendp.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/detailed_segment.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "util/symmetry.h"
-#include "util/utility.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/detailed_segment.h"
+#include "src/dpl/src/util/symmetry.h"
+#include "src/dpl/src/util/utility.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 using utl::DPL;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "cut/abc_library_factory.h"
+#include "src/cut/include/cut/abc_library_factory.h"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -13,19 +13,19 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
 #include "misc/util/abc_global.h"
 #include "misc/vec/vecFlt.h"
 #include "misc/vec/vecInt.h"
 #include "misc/vec/vecPtr.h"
 #include "misc/vec/vecWrd.h"
-#include "rsz/Resizer.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/Scene.hh"
-#include "sta/SdcClass.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/TimingModel.hh"
+#include "src/utl/include/utl/Logger.h"
 // Poor include definitions in ABC
 // clang-format off
 #include "misc/st/st.h"
@@ -34,15 +34,15 @@
 #include "map/scl/sclCon.h"
 // clang-format on
 #include "map/scl/sclLib.h"
-#include "sta/FuncExpr.hh"
-#include "sta/LeakagePower.hh"
-#include "sta/Liberty.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sta.hh"
-#include "sta/TableModel.hh"
-#include "sta/Units.hh"
-#include "utl/SuppressStdout.h"
-#include "utl/deleter.h"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/LeakagePower.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/TableModel.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/SuppressStdout.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace abc {
 // Forward declare instead of including to avoid warnings from ABC

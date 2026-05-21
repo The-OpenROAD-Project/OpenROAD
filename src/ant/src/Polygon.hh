@@ -9,12 +9,12 @@
 
 #include "AntennaCheckerImpl.hh"
 #include "PinType.hh"
-#include "ant/AntennaChecker.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace ant {
 

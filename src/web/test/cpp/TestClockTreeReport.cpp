@@ -8,12 +8,12 @@
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
-#include "clock_tree_report.h"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "request_handler.h"
-#include "tile_generator.h"
-#include "tst/nangate45_fixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/tst/include/tst/nangate45_fixture.h"
+#include "src/web/src/clock_tree_report.h"
+#include "src/web/src/request_handler.h"
+#include "src/web/src/tile_generator.h"
 
 namespace web {
 namespace {

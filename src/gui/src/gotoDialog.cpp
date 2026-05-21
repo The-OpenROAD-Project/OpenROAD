@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "gotoDialog.h"
+#include "src/gui/src/gotoDialog.h"
 
 #include <QDialog>
 #include <QString>
 #include <QWidget>
 #include <cmath>
 
-#include "gui/gui.h"
-#include "layoutTabs.h"
-#include "layoutViewer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/layoutTabs.h"
+#include "src/gui/src/layoutViewer.h"
 
 namespace gui {
 GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)

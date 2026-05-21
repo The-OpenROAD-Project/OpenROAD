@@ -13,7 +13,7 @@
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include "dbCommon.h"
 #include "dbHashTable.hpp"

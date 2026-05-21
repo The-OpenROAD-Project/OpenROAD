@@ -32,9 +32,9 @@
 
 #include <cstdio>
 
-#include "lefiKRDefs.hpp"
-#include "lefiMisc.hpp"
-#include "lefiVia.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lefiVia.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

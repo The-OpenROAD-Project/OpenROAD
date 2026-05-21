@@ -8,8 +8,8 @@
 #include <string>
 
 #include "definBase.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireCodec.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireCodec.h"
 
 namespace odb {
 

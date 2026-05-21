@@ -11,11 +11,11 @@
 #include <utility>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace utl {
 class Logger;

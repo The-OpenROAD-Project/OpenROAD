@@ -14,13 +14,13 @@
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 // User Code Begin Includes
 #include <string_view>
 #include <variant>
 
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbObject.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbScanChain>;
@@ -149,13 +149,13 @@ std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
       ->getPin();
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin)
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::* field, dbBTerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin);
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin)
+void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::* field, dbITerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin);

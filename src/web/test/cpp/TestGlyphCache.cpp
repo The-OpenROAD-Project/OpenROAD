@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "glyph_cache.h"
 #include "gtest/gtest.h"
+#include "src/web/src/glyph_cache.h"
 
 namespace web {
 namespace {

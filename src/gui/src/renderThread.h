@@ -16,13 +16,13 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "gui/gui.h"
-#include "label.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "ruler.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/label.h"
+#include "src/gui/src/ruler.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

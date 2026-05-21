@@ -7,12 +7,12 @@
 #include <vector>
 
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "db_sta/dbNetwork.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace cut {
 class LogicCut

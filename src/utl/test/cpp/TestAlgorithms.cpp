@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "utl/algorithms.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace utl {
 

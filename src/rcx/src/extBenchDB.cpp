@@ -13,17 +13,17 @@
 #include <memory>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
 #include "parse.h"
-#include "rcx/array1.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSpef.h"
-#include "rcx/extViaModel.h"
-#include "rcx/extprocess.h"
-#include "rcx/util.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSpef.h"
+#include "src/rcx/include/rcx/extViaModel.h"
+#include "src/rcx/include/rcx/extprocess.h"
+#include "src/rcx/include/rcx/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBTerm;
 using odb::dbCapNode;

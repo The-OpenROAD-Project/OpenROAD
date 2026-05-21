@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiArray.h"
-#include "lefiArray.hpp"
+#include "src/odb/src/lef/lef/lefiArray.hpp"
 
 // Wrappers definitions.
 int lefiArrayFloorPlan_numPatterns(const ::lefiArrayFloorPlan* obj)

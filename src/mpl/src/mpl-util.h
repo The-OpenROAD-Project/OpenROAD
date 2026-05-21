@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "shapes.h"
-#include "utl/Logger.h"
+#include "src/mpl/src/shapes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace mpl {
 struct BoundaryRegion;

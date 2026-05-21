@@ -11,8 +11,8 @@
 #include "dbInstHdr.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "odb/dbId.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace odb {
 

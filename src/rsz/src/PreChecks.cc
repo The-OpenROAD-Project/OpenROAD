@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "PreChecks.hh"
+#include "src/rsz/src/PreChecks.hh"
 
 #include <algorithm>
 #include <memory>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Scene.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

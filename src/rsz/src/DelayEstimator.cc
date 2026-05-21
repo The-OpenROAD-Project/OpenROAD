@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "DelayEstimator.hh"
+#include "src/rsz/src/DelayEstimator.hh"
 
 #include <algorithm>
 #include <array>
@@ -13,26 +13,26 @@
 #include <utility>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/StaState.hh"
-#include "sta/TableModel.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/StaState.hh"
+#include "src/sta/include/sta/TableModel.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

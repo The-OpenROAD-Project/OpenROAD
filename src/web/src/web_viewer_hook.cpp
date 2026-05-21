@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "web_viewer_hook.h"
+#include "src/web/src/web_viewer_hook.h"
 
 #include <atomic>
 #include <chrono>
@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "web_chart.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/web/src/web_chart.h"
 
 namespace web {
 

@@ -3,8 +3,8 @@
 
 #include <cstdint>
 
-#include "odb/db.h"
-#include "tst/fixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/tst/include/tst/fixture.h"
 
 namespace odb {
 

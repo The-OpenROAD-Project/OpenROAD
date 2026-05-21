@@ -15,13 +15,13 @@
 
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
-#include "odb/isotropy.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace odb {
 class dbBlock;

@@ -42,14 +42,14 @@
 #include <map>
 #include <string>
 
-#include "defiDebug.hpp"
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defiPath.hpp"
-#include "defrCallBacks.hpp"
-#include "defrData.hpp"
-#include "defrReader.hpp"
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiPath.hpp"
+#include "src/odb/src/def/def/defrCallBacks.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 #ifdef WIN32
 #include <direct.h>
@@ -59,7 +59,7 @@
 
 BEGIN_DEF_PARSER_NAMESPACE
 
-#include "def_parser.hpp"
+#include "src/odb/src/def/def/def_parser.hpp"
 
 int defrData::defGetKeyword(const char* name, int* result)
 {

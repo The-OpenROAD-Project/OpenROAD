@@ -3,7 +3,7 @@
 
 // Debug controls: npinit, updateGrad, np, updateNextIter
 
-#include "nesterovPlace.h"
+#include "src/gpl/src/nesterovPlace.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,12 +17,12 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "nesterovBase.h"
-#include "odb/db.h"
-#include "placerBase.h"
-#include "routeBase.h"
+#include "src/gpl/src/nesterovBase.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/gpl/src/routeBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 #include "timingBase.h"
-#include "utl/Logger.h"
 
 namespace gpl {
 using utl::GPL;

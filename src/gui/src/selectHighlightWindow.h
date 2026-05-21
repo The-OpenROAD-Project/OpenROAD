@@ -23,8 +23,8 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "ui_selectedWidget.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/ui/ui_selectedWidget.h"
 
 namespace gui {
 class SelectionModel : public QAbstractTableModel

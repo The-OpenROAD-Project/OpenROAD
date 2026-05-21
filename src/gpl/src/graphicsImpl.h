@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "routeBase.h"
+#include "src/gpl/src/routeBase.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace utl {
 class Logger;

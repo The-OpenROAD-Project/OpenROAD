@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "via_repair.h"
+#include "src/pdn/src/via_repair.h"
 
 #include <array>
 #include <map>
@@ -11,14 +11,14 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "grid.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
-#include "via.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/via.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

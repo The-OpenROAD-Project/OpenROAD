@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
 
 namespace sta {
 class LibertyCell;

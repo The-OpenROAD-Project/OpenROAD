@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
-#include "odb/db.h"
 #include "shape.h"
-#include "via.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/pdn/src/via.h"
 
 namespace odb {
 class Rect;

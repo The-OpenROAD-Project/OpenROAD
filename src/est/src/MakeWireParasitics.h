@@ -7,16 +7,16 @@
 #include <map>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
-#include "grt/PinGridLocation.h"
-#include "grt/RoutePt.h"
-#include "odb/db.h"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/Clock.hh"
-#include "sta/MinMax.hh"
-#include "sta/ParasiticsClass.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/include/grt/PinGridLocation.h"
+#include "src/grt/include/grt/RoutePt.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/ParasiticsClass.hh"
 
 namespace sta {
 class Net;

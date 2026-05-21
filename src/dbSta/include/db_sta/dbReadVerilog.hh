@@ -4,12 +4,12 @@
 #pragma once
 #include <string_view>
 
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "sta/ConcreteLibrary.hh"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/VerilogReader.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/ConcreteLibrary.hh"
+#include "src/sta/include/sta/ConcreteNetwork.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/VerilogReader.hh"
 
 namespace utl {
 class Logger;

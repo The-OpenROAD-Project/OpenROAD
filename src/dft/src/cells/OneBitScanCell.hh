@@ -7,12 +7,12 @@
 #include <memory>
 #include <string>
 
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/Liberty.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace dft {
 

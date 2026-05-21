@@ -1,8 +1,8 @@
 #include <cstdint>
 
-#include "ScanArchitect.hh"
-#include "ScanArchitectConfig.hh"
 #include "gtest/gtest.h"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
 
 namespace dft {
 namespace {

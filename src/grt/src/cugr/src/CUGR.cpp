@@ -1,4 +1,4 @@
-#include "CUGR.h"
+#include "src/grt/src/cugr/include/CUGR.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,26 +19,26 @@
 #include <utility>
 #include <vector>
 
-#include "Design.h"
-#include "GRNet.h"
-#include "GRTree.h"
-#include "GridGraph.h"
-#include "Layers.h"
-#include "MazeRoute.h"
 #include "Netlist.h"
-#include "PatternRoute.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/ParasiticsService.h"
-#include "geo.h"
-#include "grt/GRoute.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/MinMax.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
-#include "utl/ServiceRegistry.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/ParasiticsService.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/src/cugr/src/Design.h"
+#include "src/grt/src/cugr/src/GRNet.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
+#include "src/grt/src/cugr/src/Layers.h"
+#include "src/grt/src/cugr/src/MazeRoute.h"
+#include "src/grt/src/cugr/src/PatternRoute.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ServiceRegistry.h"
 
 using utl::GRT;
 

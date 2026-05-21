@@ -8,8 +8,8 @@
 #include <set>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/network.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/network.h"
 namespace dpl {
 class Grid;
 

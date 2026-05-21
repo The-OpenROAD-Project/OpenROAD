@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include "gui/heatMap.h"
-#include "odb/db.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

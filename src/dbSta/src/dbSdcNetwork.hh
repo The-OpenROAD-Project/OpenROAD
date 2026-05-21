@@ -8,9 +8,9 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/SdcNetwork.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/SdcNetwork.hh"
 
 namespace sta {
 

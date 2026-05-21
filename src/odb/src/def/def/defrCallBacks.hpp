@@ -30,8 +30,8 @@
 #ifndef DEFRCALLBACKS_H
 #define DEFRCALLBACKS_H 1
 
-#include "defiKRDefs.hpp"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

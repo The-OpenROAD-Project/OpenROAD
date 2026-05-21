@@ -5,9 +5,9 @@
 
 #include <memory>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frBlockage.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frInst;

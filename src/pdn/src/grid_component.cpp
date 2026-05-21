@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "grid_component.h"
+#include "src/pdn/src/grid_component.h"
 
 #include <algorithm>
 #include <map>
@@ -12,16 +12,16 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "connect.h"
-#include "grid.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
 #include "shape.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
-#include "via.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/src/connect.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/pdn/src/via.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

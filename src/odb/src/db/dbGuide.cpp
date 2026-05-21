@@ -9,16 +9,16 @@
 #include "dbNet.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
 
 #include "dbBlock.h"
 #include "dbJournal.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGuide>;

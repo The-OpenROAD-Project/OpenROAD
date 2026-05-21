@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 #include <QApplication>
 #include <QColor>
@@ -21,7 +21,7 @@
 #include <utility>
 #include <variant>
 
-#include "gui/descriptor_registry.h"
+#include "src/gui/include/gui/descriptor_registry.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
@@ -34,27 +34,27 @@
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "chartsWidget.h"
-#include "clockWidget.h"
-#include "displayControls.h"
-#include "drcWidget.h"
-#include "heatMapGui.h"
-#include "helpWidget.h"
-#include "inspector.h"
-#include "layoutViewer.h"
-#include "mainWindow.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "ord/OpenRoad.hh"
-#include "ruler.h"
-#include "scriptWidget.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/gui/src/chartsWidget.h"
+#include "src/gui/src/clockWidget.h"
+#include "src/gui/src/displayControls.h"
+#include "src/gui/src/drcWidget.h"
+#include "src/gui/src/heatMapGui.h"
+#include "src/gui/src/helpWidget.h"
+#include "src/gui/src/inspector.h"
+#include "src/gui/src/layoutViewer.h"
+#include "src/gui/src/mainWindow.h"
+#include "src/gui/src/ruler.h"
+#include "src/gui/src/scriptWidget.h"
+#include "src/gui/src/timingWidget.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/decode.h"
+#include "src/utl/include/utl/exception.h"
 #include "third-party/gif-h/gif.h"
-#include "timingWidget.h"
-#include "utl/Logger.h"
-#include "utl/decode.h"
-#include "utl/exception.h"
 
 extern int cmd_argc;
 extern char** cmd_argv;

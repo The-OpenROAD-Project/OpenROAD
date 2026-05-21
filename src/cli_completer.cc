@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "cli_completer.h"
+#include "src/cli_completer.h"
 
 #include <algorithm>
 #include <cstddef>

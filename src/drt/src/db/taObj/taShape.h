@@ -5,11 +5,11 @@
 
 #include <utility>
 
-#include "db/infra/frSegStyle.h"
-#include "db/taObj/taFig.h"
-#include "frBaseTypes.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frSegStyle.h"
+#include "src/drt/src/db/taObj/taFig.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frNet;

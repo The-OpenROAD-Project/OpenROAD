@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

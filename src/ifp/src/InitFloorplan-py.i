@@ -2,8 +2,8 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "ifp/InitFloorplan.hh"
-#include "odb/PtrSetMap.h"
+#include "src/ifp/include/ifp/InitFloorplan.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
 %}
 
 %include "odb/PtrSetMap.h"

@@ -12,18 +12,18 @@
 #include <cstring>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extPattern.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSpef.h"
-#include "rcx/ext_options.h"
-#include "rcx/extprocess.h"
-#include "rcx/util.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extPattern.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSpef.h"
+#include "src/rcx/include/rcx/ext_options.h"
+#include "src/rcx/include/rcx/extprocess.h"
+#include "src/rcx/include/rcx/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

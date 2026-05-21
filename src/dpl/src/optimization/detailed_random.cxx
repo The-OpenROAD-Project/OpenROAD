@@ -17,21 +17,21 @@
 #include <vector>
 
 #include "boost/tokenizer.hpp"
-#include "optimization/detailed_generator.h"
-#include "util/utility.h"
-#include "utl/Logger.h"
+#include "src/dpl/src/optimization/detailed_generator.h"
+#include "src/dpl/src/util/utility.h"
+#include "src/utl/include/utl/Logger.h"
 // For detailed improvement.
 #include "detailed_manager.h"
 #include "detailed_orient.h"
 #include "detailed_random.h"
-#include "infrastructure/detailed_segment.h"
+#include "src/dpl/src/infrastructure/detailed_segment.h"
 // Detailed placement objectives.
 #include "detailed_global.h"
 #include "detailed_vertical.h"
-#include "objective/detailed_abu.h"
-#include "objective/detailed_displacement.h"
-#include "objective/detailed_hpwl.h"
-#include "objective/detailed_objective.h"
+#include "src/dpl/src/objective/detailed_abu.h"
+#include "src/dpl/src/objective/detailed_displacement.h"
+#include "src/dpl/src/objective/detailed_hpwl.h"
+#include "src/dpl/src/objective/detailed_objective.h"
 
 using utl::DPL;
 

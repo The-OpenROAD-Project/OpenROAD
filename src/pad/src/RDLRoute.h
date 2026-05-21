@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "RDLRouter.h"
-#include "odb/PtrSetMap.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbITerm;

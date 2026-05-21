@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "layoutTabs.h"
+#include "src/gui/src/layoutTabs.h"
 
 #include <QColor>
 #include <QWidget>
@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "colorGenerator.h"
-#include "gui/gui.h"
-#include "layoutViewer.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/colorGenerator.h"
+#include "src/gui/src/layoutViewer.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/drObj/drNet.h"
+#include "src/drt/src/db/drObj/drNet.h"
 
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "db/drObj/drBlockObject.h"
-#include "db/drObj/drFig.h"
-#include "db/drObj/drShape.h"
-#include "db/drObj/drVia.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frBTerm.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInstTerm.h"
-#include "distributed/frArchive.h"
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
-#include "serialization.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/db/drObj/drFig.h"
+#include "src/drt/src/db/drObj/drShape.h"
+#include "src/drt/src/db/drObj/drVia.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBTerm.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInstTerm.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/serialization.h"
 
 namespace drt {
 

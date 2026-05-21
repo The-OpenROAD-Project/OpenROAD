@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "power_cells.h"
+#include "src/pdn/src/power_cells.h"
 
 #include <algorithm>
 #include <cmath>
@@ -11,14 +11,14 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "domain.h"
-#include "grid.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "pdn/PdnGen.hh"
 #include "shape.h"
-#include "straps.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/straps.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

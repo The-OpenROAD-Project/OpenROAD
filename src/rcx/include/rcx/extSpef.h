@@ -8,12 +8,12 @@
 #include <map>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "rcx/array1.h"
-#include "rcx/extRCap.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

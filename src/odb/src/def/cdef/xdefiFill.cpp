@@ -36,9 +36,9 @@
 #include <cstdio>
 
 #include "defiFill.h"
-#include "defiFill.hpp"
-#include "defiMisc.hpp"
 #include "defiTypedefs.h"
+#include "src/odb/src/def/def/defiFill.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
 
 union udefiPoints
 {

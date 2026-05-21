@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "est/SteinerTree.h"
+#include "src/est/include/est/SteinerTree.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,15 +9,15 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "odb/geom.h"
-#include "sta/Hash.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/NetworkCmp.hh"
-#include "sta/StringUtil.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Hash.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/NetworkCmp.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace est {
 

@@ -13,16 +13,16 @@
 #include <utility>
 #include <vector>
 
-#include "db/drObj/drBlockObject.h"
-#include "db/drObj/drPin.h"
-#include "db/drObj/drShape.h"
-#include "db/drObj/drVia.h"
-#include "db/infra/frPoint.h"
-#include "db/infra/frSegStyle.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "frBaseTypes.h"
-#include "global.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/db/drObj/drPin.h"
+#include "src/drt/src/db/drObj/drShape.h"
+#include "src/drt/src/db/drObj/drVia.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/db/infra/frSegStyle.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
 
 namespace drt {
 class frNet;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "selectHighlightWindow.h"
+#include "src/gui/src/selectHighlightWindow.h"
 
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -15,8 +15,8 @@
 #include <string>
 #include <utility>
 
-#include "gui/gui.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gui {
 

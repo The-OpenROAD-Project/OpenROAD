@@ -30,12 +30,12 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "options.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/options.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
 
 namespace odb {
 class dbDatabase;

@@ -18,14 +18,14 @@
 #include <vector>
 
 #include "boost/geometry/index/predicates.hpp"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pad {
 

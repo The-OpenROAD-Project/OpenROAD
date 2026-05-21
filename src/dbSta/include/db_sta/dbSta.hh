@@ -10,19 +10,19 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDatabaseObserver.h"
-#include "odb/dbObject.h"
-#include "sta/Clock.hh"
-#include "sta/Delay.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbDatabaseObserver.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ord {
 class OpenRoad;

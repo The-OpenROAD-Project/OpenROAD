@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "aig/gia/gia.h"
-#include "cut/abc_library_factory.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace sta {
 class dbSta;

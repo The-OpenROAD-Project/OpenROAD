@@ -3,8 +3,8 @@
 
 %{
 
-#include "ant/AntennaChecker.hh"
-#include "ord/OpenRoad.hh"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "include/ord/OpenRoad.hh"
 
 ant::AntennaChecker *
 getAntennaChecker()

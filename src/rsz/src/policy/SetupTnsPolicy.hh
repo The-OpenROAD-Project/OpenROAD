@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "RepairTargetCollector.hh"
-#include "SetupLegacyBase.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/policy/SetupLegacyBase.hh"
 
 namespace rsz {
 

@@ -8,14 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "CUGR.h"
-#include "Design.h"
-#include "GRTree.h"
-#include "Layers.h"
-#include "geo.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "robin_hood.h"
+#include "src/grt/src/cugr/include/CUGR.h"
+#include "src/grt/src/cugr/src/Design.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/Layers.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/grt/src/cugr/src/robin_hood.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace grt {
 

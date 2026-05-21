@@ -11,8 +11,8 @@
 #include <set>
 #include <string>
 
-#include "db/obj/frMarker.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace odb {
 class Point;

@@ -17,9 +17,9 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 class dbBlock;
@@ -210,8 +210,7 @@ class HeatMapDataSource
                               double new_data,
                               double data_area,
                               double intersection_area,
-                              double rect_area)
-      = 0;
+                              double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();

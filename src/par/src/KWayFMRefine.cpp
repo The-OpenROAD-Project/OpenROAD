@@ -17,7 +17,7 @@
 #include "PriorityQueue.h"
 #include "Refiner.h"
 #include "Utilities.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 // Implement the direct k-way FM refinement
 namespace par {

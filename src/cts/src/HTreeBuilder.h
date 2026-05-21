@@ -11,14 +11,14 @@
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
-#include "CtsObserver.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-#include "Util.h"
-#include "odb/db.h"
-#include "odb/isotropy.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/CtsObserver.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/TechChar.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace cts {
 class Graphics;

@@ -8,11 +8,11 @@
 
 %{
 
-#include "odb/db.h"
-#include "ord/Tech.h"
-#include "ord/Design.h"
-#include "ord/Timing.h"
-#include "ifp/InitFloorplan.hh"
+#include "src/odb/include/odb/db.h"
+#include "include/ord/Tech.h"
+#include "include/ord/Design.h"
+#include "include/ord/Timing.h"
+#include "src/ifp/include/ifp/InitFloorplan.hh"
 
 using odb::dbDatabase;
 using odb::dbBlock;

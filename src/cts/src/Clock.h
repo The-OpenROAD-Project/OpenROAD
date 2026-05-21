@@ -13,9 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "Util.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace utl {
 class Logger;

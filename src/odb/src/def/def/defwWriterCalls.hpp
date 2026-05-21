@@ -33,9 +33,9 @@
 #include <cstdarg>
 #include <cstdio>
 
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defiUser.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiUser.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

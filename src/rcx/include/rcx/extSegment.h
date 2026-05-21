@@ -6,13 +6,13 @@
 #include <cstdint>
 #include <map>
 
-#include "odb/db.h"
-#include "odb/dbExtControl.h"
-#include "odb/dbShape.h"
-#include "odb/util.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extprocess.h"
-#include "rcx/grids.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbExtControl.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/util.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extprocess.h"
+#include "src/rcx/include/rcx/grids.h"
 
 #ifndef _WIN32
 #define D2I_ROUND (name) rint(name)

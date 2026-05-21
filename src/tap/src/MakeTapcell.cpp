@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tap/MakeTapcell.h"
+#include "src/tap/include/tap/MakeTapcell.h"
 
-#include "tap/tapcell.h"
+#include "src/tap/include/tap/tapcell.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Tap_Init(Tcl_Interp* interp);

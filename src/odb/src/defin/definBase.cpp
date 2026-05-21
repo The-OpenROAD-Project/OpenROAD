@@ -5,10 +5,10 @@
 
 #include <cassert>
 
-#include "defiUtil.hpp"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/src/def/def/defiUtil.hpp"
 
 namespace odb {
 

@@ -8,16 +8,16 @@
 #include <vector>
 
 #include "aig/gia/gia.h"
-#include "cut/abc_library_factory.h"
-#include "db_sta/dbSta.hh"
-#include "gia.h"
-#include "resynthesis_strategy.h"
-#include "rsz/Resizer.hh"
-#include "slack_tuning_strategy.h"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "utl/Logger.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rmp/src/gia.h"
+#include "src/rmp/src/resynthesis_strategy.h"
+#include "src/rmp/src/slack_tuning_strategy.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace sta {
 class Scene;

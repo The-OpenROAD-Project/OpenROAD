@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiLayer.h"
-#include "lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
 
 // Wrappers definitions.
 int lefiAntennaPWL_numPWL(const ::lefiAntennaPWL* obj)

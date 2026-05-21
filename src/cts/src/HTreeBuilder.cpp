@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "HTreeBuilder.h"
+#include "src/cts/src/HTreeBuilder.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,16 +12,16 @@
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
-#include "Clustering.h"
-#include "CtsObserver.h"
-#include "SinkClustering.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-#include "Util.h"
-#include "odb/db.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/Clustering.h"
+#include "src/cts/src/CtsObserver.h"
+#include "src/cts/src/SinkClustering.h"
+#include "src/cts/src/TechChar.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

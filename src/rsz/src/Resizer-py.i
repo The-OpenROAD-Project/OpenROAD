@@ -4,7 +4,7 @@
 %{
 #include <memory>
 
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
 
 using namespace rsz;
 %}

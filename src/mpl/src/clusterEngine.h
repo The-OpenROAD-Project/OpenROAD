@@ -14,11 +14,11 @@
 #include <utility>
 #include <vector>
 
-#include "mpl-util.h"
-#include "object.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/mpl/src/object.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace par {
 class PartitionMgr;

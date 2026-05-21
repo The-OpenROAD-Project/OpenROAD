@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SplitLoadCandidate.hh"
+#include "src/rsz/src/move/SplitLoadCandidate.hh"
 
 #include <memory>
 #include <utility>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

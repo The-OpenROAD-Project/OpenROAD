@@ -5,10 +5,10 @@
 
 %{
 
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
-#include "ant/AntennaChecker.hh"
-#include "ord/OpenRoad.hh"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "include/ord/OpenRoad.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

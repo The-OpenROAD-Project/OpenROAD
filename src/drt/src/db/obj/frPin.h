@@ -8,11 +8,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frFig.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frTerm;

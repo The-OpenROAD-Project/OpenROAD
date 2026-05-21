@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/dbStream.h"
+#include "src/odb/include/odb/dbStream.h"
 
 #include <algorithm>
 #include <iostream>
@@ -10,10 +10,10 @@
 #include <string>
 
 #include "dbDatabase.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

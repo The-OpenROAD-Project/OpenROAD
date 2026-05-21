@@ -12,17 +12,17 @@
 //
 //
 
-#include "OdbCallBack.h"
+#include "src/est/src/OdbCallBack.h"
 
 #include <memory>
 
-#include "est/EstimateParasitics.h"
-#include "grt/GlobalRouter.h"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PortDirection.hh"
-#include "utl/Logger.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace est {
 

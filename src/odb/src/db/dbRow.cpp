@@ -14,12 +14,12 @@
 #include "dbLib.h"
 #include "dbSite.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

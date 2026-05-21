@@ -8,15 +8,15 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "db/gcObj/gcBlockObject.h"
-#include "db/gcObj/gcPin.h"
-#include "db/gcObj/gcShape.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frBlockage.h"
-#include "db/obj/frInstBlockage.h"
-#include "db/obj/frNet.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/gcObj/gcBlockObject.h"
+#include "src/drt/src/db/gcObj/gcPin.h"
+#include "src/drt/src/db/gcObj/gcShape.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/db/obj/frInstBlockage.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frNet;

@@ -5,8 +5,8 @@
 
 #include <string>
 
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace sta {
 class dbSta;

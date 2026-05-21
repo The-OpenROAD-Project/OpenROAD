@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "SinkClustering.h"
+#include "src/cts/src/SinkClustering.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,14 +12,14 @@
 #include <sstream>
 #include <vector>
 
-#include "CtsObserver.h"
-#include "CtsOptions.h"
-#include "HTreeBuilder.h"
-#include "TechChar.h"
-#include "TreeBuilder.h"
-#include "Util.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
+#include "src/cts/src/CtsObserver.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/HTreeBuilder.h"
+#include "src/cts/src/TechChar.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/cts/src/Util.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

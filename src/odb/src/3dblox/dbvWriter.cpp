@@ -8,9 +8,9 @@
 #include <unordered_set>
 
 #include "baseWriter.h"
-#include "odb/db.h"
-#include "odb/defout.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/utl/include/utl/Logger.h"
 #include "yaml-cpp/yaml.h"
 namespace odb {
 

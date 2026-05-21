@@ -2,7 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "grt/GlobalRouter.h"
+#include "src/grt/include/grt/GlobalRouter.h"
 
 using namespace grt;
 

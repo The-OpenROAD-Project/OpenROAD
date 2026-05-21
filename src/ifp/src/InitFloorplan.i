@@ -3,12 +3,12 @@
 
 %{
 
-#include "db_sta/dbSta.hh"
-#include "ifp/InitFloorplan.hh"
-#include "ord/OpenRoad.hh"
-#include "ord/Design.h"
-#include "utl/Logger.h"
-#include "odb/geom.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/ifp/include/ifp/InitFloorplan.hh"
+#include "include/ord/OpenRoad.hh"
+#include "include/ord/Design.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/odb/include/odb/geom.h"
 
 #if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
   typedef int Tcl_Size;

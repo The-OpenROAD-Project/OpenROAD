@@ -8,8 +8,8 @@
 #endif
 
 %{
-#include "gpl/Replace.h"
-#include "odb/db.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/odb/include/odb/db.h"
 
 namespace ord {
 gpl::Replace*

@@ -20,13 +20,13 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "odb/PtrSetMap.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/utl/include/utl/Logger.h"
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 

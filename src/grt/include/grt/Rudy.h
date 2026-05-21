@@ -6,15 +6,15 @@
 #include <set>
 #include <utility>
 
-#include "odb/PtrSetMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 // #define _CRTDBG_MAP_ALLOC
 
 #pragma once
 
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace grt {
 

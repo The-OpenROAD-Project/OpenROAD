@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "stt/MakeSteinerTreeBuilder.h"
+#include "src/stt/include/stt/MakeSteinerTreeBuilder.h"
 
-#include "stt/SteinerTreeBuilder.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Stt_Init(Tcl_Interp* interp);

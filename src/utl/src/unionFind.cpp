@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2026, The OpenROAD Authors
 
-#include "utl/unionFind.h"
+#include "src/utl/include/utl/unionFind.h"
 
 #include <cstddef>
 #include <numeric>

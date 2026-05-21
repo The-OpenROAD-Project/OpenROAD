@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "rcx/extSegment.h"
+#include "src/rcx/include/rcx/extSegment.h"
 
 #include <cstdint>
 
-#include "rcx/dbUtil.h"
-#include "rcx/extRCap.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/utl/include/utl/Logger.h"
 
 #ifdef HI_ACC_1
 #define FRINGE_UP_DOWN

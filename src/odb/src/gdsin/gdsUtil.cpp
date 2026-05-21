@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "odb/gdsUtil.h"
+#include "src/odb/include/odb/gdsUtil.h"
 
 #include <cmath>
 #include <cstdint>
@@ -13,7 +13,7 @@
 
 #include "boost/property_tree/ptree.hpp"
 #include "boost/property_tree/xml_parser.hpp"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb::gds {
 

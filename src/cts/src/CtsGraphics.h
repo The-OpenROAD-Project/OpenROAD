@@ -7,12 +7,12 @@
 #include <string>
 #include <vector>
 
-#include "Clock.h"
-#include "CtsObserver.h"
-#include "HTreeBuilder.h"
-#include "SinkClustering.h"
-#include "Util.h"
-#include "gui/gui.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/CtsObserver.h"
+#include "src/cts/src/HTreeBuilder.h"
+#include "src/cts/src/SinkClustering.h"
+#include "src/cts/src/Util.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace utl {
 class Logger;

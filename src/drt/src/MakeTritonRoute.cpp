@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "drt/MakeTritonRoute.h"
+#include "src/drt/include/drt/MakeTritonRoute.h"
 
 #include <memory>
 #include <utility>
 
-#include "GraphicsFactory.h"
-#include "dr/FlexDR_graphics.h"
-#include "drt/TritonRoute.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/FlexTA_graphics.h"
+#include "src/drt/include/drt/TritonRoute.h"
+#include "src/drt/src/GraphicsFactory.h"
+#include "src/drt/src/dr/FlexDR_graphics.h"
+#include "src/drt/src/pa/FlexPA_graphics.h"
+#include "src/drt/src/ta/FlexTA_graphics.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Drt_Init(Tcl_Interp* interp);

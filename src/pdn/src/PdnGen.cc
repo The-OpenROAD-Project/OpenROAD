@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "pdn/PdnGen.hh"
+#include "src/pdn/include/pdn/PdnGen.hh"
 
 #include <algorithm>
 #include <array>
@@ -16,25 +16,25 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "connect.h"
-#include "domain.h"
-#include "grid.h"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "power_cells.h"
-#include "renderer.h"
-#include "rings.h"
 #include "shape.h"
-#include "sroute.h"
-#include "straps.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
-#include "via.h"
-#include "via_repair.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/pdn/src/connect.h"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/power_cells.h"
+#include "src/pdn/src/renderer.h"
+#include "src/pdn/src/rings.h"
+#include "src/pdn/src/sroute.h"
+#include "src/pdn/src/straps.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/pdn/src/via.h"
+#include "src/pdn/src/via_repair.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

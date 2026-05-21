@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "fin/Finale.h"
+#include "src/fin/include/fin/Finale.h"
 
 #include "DensityFill.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace fin {
 

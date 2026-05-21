@@ -7,9 +7,9 @@
 #include <variant>
 #include <vector>
 
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace web {
 

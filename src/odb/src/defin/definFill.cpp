@@ -8,10 +8,10 @@
 #include <cstdlib>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

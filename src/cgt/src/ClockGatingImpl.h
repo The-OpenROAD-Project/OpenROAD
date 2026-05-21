@@ -12,11 +12,11 @@
 #include "NetworkBuilder.h"
 #include "RandomBits.h"
 #include "base/abc/abc.h"
-#include "cgt/ClockGating.h"
-#include "db_sta/dbSta.hh"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cgt/include/cgt/ClockGating.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace odb {
 class dbDatabase;

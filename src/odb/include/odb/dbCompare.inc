@@ -12,7 +12,7 @@
 
 #include <functional>
 
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace std {
 

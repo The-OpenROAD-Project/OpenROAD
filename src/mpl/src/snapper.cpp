@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "snapper.h"
+#include "src/mpl/src/snapper.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace mpl {
 

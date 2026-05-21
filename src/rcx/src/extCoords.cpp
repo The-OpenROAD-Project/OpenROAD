@@ -4,10 +4,10 @@
 #include <cstdint>
 
 #include "parse.h"
-#include "rcx/array1.h"
-#include "rcx/extSpef.h"
-#include "rcx/grids.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/extSpef.h"
+#include "src/rcx/include/rcx/grids.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "connection.h"
+#include "src/psm/src/connection.h"
 
 #include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
 
-#include "node.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
+#include "src/psm/src/node.h"
 
 namespace psm {
 

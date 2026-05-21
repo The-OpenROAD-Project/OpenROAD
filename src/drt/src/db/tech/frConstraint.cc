@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frConstraint.h"
 
 #include <string>
 
-#include "db/tech/frLayer.h"
-#include "frBaseTypes.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/utl/include/utl/Logger.h"
 namespace drt {
 
 std::string frConstraint::getViolName() const

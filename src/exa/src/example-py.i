@@ -8,8 +8,8 @@
 %module exa_py
 
 %{
-#include "exa/example.h"
-#include "ord/OpenRoad.hh"
+#include "src/exa/include/exa/example.h"
+#include "include/ord/OpenRoad.hh"
 %}
 
 %include "../../Exception-py.i"

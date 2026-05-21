@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "grt/MakeGlobalRouter.h"
+#include "src/grt/include/grt/MakeGlobalRouter.h"
 
 #include <memory>
 #include <utility>
 
-#include "AbstractRoutingCongestionDataSource.h"
-#include "FastRoute.h"
-#include "grt/GlobalRouter.h"
-#include "gui/heatMap.h"
 #include "heatMap.h"
-#include "heatMapRudy.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/src/AbstractRoutingCongestionDataSource.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
+#include "src/grt/src/heatMapRudy.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);

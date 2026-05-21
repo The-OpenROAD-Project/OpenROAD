@@ -9,8 +9,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "odb/util.h"
-#include "rcx/util.h"
+#include "src/odb/include/odb/util.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace utl {
 class Logger;

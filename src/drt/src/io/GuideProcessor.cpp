@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "io/GuideProcessor.h"
+#include "src/drt/src/io/GuideProcessor.h"
 
 #include <algorithm>
 #include <cmath>
@@ -18,22 +18,22 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frPoint.h"
-#include "db/infra/frTime.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frGCellPattern.h"
-#include "db/tech/frLayer.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "frProfileTask.h"
-#include "global.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
 #include "omp.h"
-#include "utl/Logger.h"
-#include "utl/exception.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/db/infra/frTime.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frGCellPattern.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/exception.h"
 
 using odb::dbTechLayerDir;
 

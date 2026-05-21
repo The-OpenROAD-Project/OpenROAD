@@ -8,14 +8,14 @@
 #include <cstdint>
 #include <fstream>
 
-#include "sta/Liberty.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Network.hh"
-#include "sta/Scene.hh"
-#include "est/EstimateParasitics.h"
-#include "sta/Delay.hh"
-#include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "include/ord/OpenRoad.hh"
 
 #if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
   typedef int Tcl_Size;

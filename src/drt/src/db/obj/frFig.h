@@ -5,10 +5,10 @@
 
 #include <memory>
 
-#include "db/infra/frBox.h"
-#include "db/obj/frBlockObject.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frBox.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frFig : public frBlockObject

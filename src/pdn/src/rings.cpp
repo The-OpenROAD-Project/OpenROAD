@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "rings.h"
+#include "src/pdn/src/rings.h"
 
 #include <algorithm>
 #include <array>
@@ -9,13 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "domain.h"
-#include "grid.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
 #include "shape.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

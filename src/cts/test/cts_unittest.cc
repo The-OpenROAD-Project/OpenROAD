@@ -4,13 +4,13 @@
 #include <utility>
 #include <vector>
 
-#include "cts/TritonCTS.h"
 #include "gtest/gtest.h"
+#include "src/cts/include/cts/TritonCTS.h"
 #include "src/cts/src/Clock.h"
 #include "src/cts/src/Clustering.h"
 #include "src/cts/src/HTreeBuilder.h"
 #include "src/cts/src/SinkClustering.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

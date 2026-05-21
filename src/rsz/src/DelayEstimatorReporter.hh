@@ -9,8 +9,8 @@
 #include <string_view>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "sta/Delay.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
 
 namespace odb {
 class dbBlock;

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "colorGenerator.h"
+#include "src/gui/src/colorGenerator.h"
 
 #include <QColor>
 #include <array>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace gui {
 

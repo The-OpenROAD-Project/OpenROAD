@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "chartsWidget.h"
+#include "src/gui/src/chartsWidget.h"
 
 #include <qbarset.h>
 #include <qchar.h>
@@ -26,16 +26,16 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "gui_utils.h"
-#include "sta/Clock.hh"
-#include "sta/MinMax.hh"
-#include "sta/PortDirection.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Units.hh"
-#include "staGuiInterface.h"
-#include "utl/Logger.h"
-#include "utl/histogram.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/gui_utils.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/histogram.h"
 
 namespace gui {
 

@@ -3,16 +3,16 @@
 
 %{
 
-#include "odb/db.h"
-#include "odb/defout.h"
-#include "sta/Report.hh"
-#include "sta/Network.hh"
-#include "db_sta/dbSta.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbReadVerilog.hh"
-#include "utl/Logger.h"
-#include "ord/OpenRoad.hh"
-#include "odb/util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/sta/include/sta/Report.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbReadVerilog.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/odb/include/odb/util.h"
 
 #include <thread>
 #include <vector>

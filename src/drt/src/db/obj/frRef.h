@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "db/obj/frFig.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frRef : public frPinFig

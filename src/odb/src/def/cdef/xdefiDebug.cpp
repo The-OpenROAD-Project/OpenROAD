@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "defiDebug.h"
-#include "defiDebug.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
 
 // Wrappers definitions.
 void defiSetDebug(int num, int value)

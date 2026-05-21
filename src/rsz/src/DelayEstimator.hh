@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-#include "OptimizerTypes.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
 
 namespace sta {
 class Instance;

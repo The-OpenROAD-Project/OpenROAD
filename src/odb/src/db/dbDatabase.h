@@ -8,14 +8,14 @@
 
 #include "dbCore.h"
 #include "dbHashTable.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
 #include <iostream>
 #include <set>
 
 #include "dbChipRegionInstItr.h"
-#include "odb/dbDatabaseObserver.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbDatabaseObserver.h"
+#include "src/odb/include/odb/dbObject.h"
 namespace utl {
 class Logger;
 }

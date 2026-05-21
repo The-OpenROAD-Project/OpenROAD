@@ -7,9 +7,9 @@
 
 #include "boost/integer/static_log2.hpp"
 #include "dbCore.h"
-#include "odb/dbId.h"
-#include "odb/dbIterator.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbIterator.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace odb {
 

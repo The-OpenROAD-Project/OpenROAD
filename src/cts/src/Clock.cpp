@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "Clock.h"
+#include "src/cts/src/Clock.h"
 
 #include <algorithm>
 #include <functional>
@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "Util.h"
-#include "sta/ParseBus.hh"
-#include "utl/Logger.h"
+#include "src/cts/src/Util.h"
+#include "src/sta/include/sta/ParseBus.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

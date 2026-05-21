@@ -6,8 +6,8 @@
 #include <cassert>
 
 #include "definTypes.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 
 namespace odb {
 

@@ -12,7 +12,7 @@
 #include "Hypergraph.h"
 #include "Refiner.h"
 #include "Utilities.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 // ------------------------------------------------------------------------------
 // ILP-based refinement

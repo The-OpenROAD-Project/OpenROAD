@@ -15,8 +15,8 @@
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace odb {
 

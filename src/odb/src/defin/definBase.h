@@ -6,11 +6,11 @@
 #include <cmath>
 #include <vector>
 
-#include "defiMisc.hpp"
 #include "definTypes.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/src/def/def/defiMisc.hpp"
 
 namespace utl {
 class Logger;

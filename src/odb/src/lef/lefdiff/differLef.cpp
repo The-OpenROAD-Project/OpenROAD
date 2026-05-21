@@ -52,7 +52,7 @@ extern char VersionIdent[];
 char* VersionIdent = "N/A";
 #endif /* not WIN32 */
 #include "diffLefRW.hpp"
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 char* exeName;  // use to save the executable name
 

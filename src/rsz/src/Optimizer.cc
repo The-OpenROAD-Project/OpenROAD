@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "Optimizer.hh"
+#include "src/rsz/src/Optimizer.hh"
 
 #include <cstddef>
 #include <memory>
@@ -10,25 +10,25 @@
 #include <utility>
 #include <vector>
 
-#include "MeasuredVtSwapPolicy.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "RepairSetupContext.hh"
-#include "SetupCritVtSwapPolicy.hh"
-#include "SetupDirectionalPolicy.hh"
-#include "SetupLastGaspPolicy.hh"
-#include "SetupLegacyBase.hh"
-#include "SetupLegacyMtPolicy.hh"
-#include "SetupLegacyPolicy.hh"
-#include "SetupMt1Policy.hh"
-#include "SetupReroutePolicy.hh"
-#include "SetupTnsPolicy.hh"
-#include "SetupWnsPolicy.hh"
-#include "est/EstimateParasitics.h"
-#include "rsz/Resizer.hh"
-#include "sta/StringUtil.hh"
-#include "utl/Logger.h"
-#include "utl/scope.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairSetupContext.hh"
+#include "src/rsz/src/policy/MeasuredVtSwapPolicy.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/rsz/src/policy/SetupCritVtSwapPolicy.hh"
+#include "src/rsz/src/policy/SetupDirectionalPolicy.hh"
+#include "src/rsz/src/policy/SetupLastGaspPolicy.hh"
+#include "src/rsz/src/policy/SetupLegacyBase.hh"
+#include "src/rsz/src/policy/SetupLegacyMtPolicy.hh"
+#include "src/rsz/src/policy/SetupLegacyPolicy.hh"
+#include "src/rsz/src/policy/SetupMt1Policy.hh"
+#include "src/rsz/src/policy/SetupReroutePolicy.hh"
+#include "src/rsz/src/policy/SetupTnsPolicy.hh"
+#include "src/rsz/src/policy/SetupWnsPolicy.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/scope.h"
 
 namespace rsz {
 

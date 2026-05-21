@@ -9,13 +9,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
-#include "odb/defout.h"
-#include "odb/lefin.h"
-#include "odb/lefout.h"
-#include "tst/fixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/odb/include/odb/lefout.h"
+#include "src/tst/include/tst/fixture.h"
 
 namespace odb {
 

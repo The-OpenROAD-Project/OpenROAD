@@ -27,15 +27,15 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiProp.hpp"
+#include "src/odb/src/lef/lef/lefiProp.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

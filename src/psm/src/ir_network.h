@@ -13,13 +13,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "connection.h"
-#include "node.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "psm/pdnsim.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/psm/include/psm/pdnsim.h"
+#include "src/psm/src/connection.h"
+#include "src/psm/src/node.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace psm {
 

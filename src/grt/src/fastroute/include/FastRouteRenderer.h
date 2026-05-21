@@ -5,12 +5,12 @@
 
 #include <vector>
 
-#include "AbstractFastRouteRenderer.h"
-#include "DataType.h"
-#include "FastRoute.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "stt/SteinerTreeBuilder.h"
+#include "src/grt/src/fastroute/include/AbstractFastRouteRenderer.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 namespace grt {
 

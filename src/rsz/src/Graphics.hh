@@ -5,11 +5,11 @@
 
 #include <vector>
 
-#include "ResizerObserver.hh"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/ResizerObserver.hh"
 
 namespace rsz {
 

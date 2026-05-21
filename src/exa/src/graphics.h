@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "gui/gui.h"
-#include "observer.h"
-#include "odb/db.h"
+#include "src/exa/src/observer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
 
 // This implements the Observer interface and renders to the GUI
 

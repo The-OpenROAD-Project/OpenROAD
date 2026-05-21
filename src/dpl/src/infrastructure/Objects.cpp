@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/Objects.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////

@@ -35,15 +35,15 @@
 #include <map>
 #include <string>
 
-#include "crypt.hpp"
-#include "lefiDebug.hpp"
-#include "lefiDefs.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefrCallBacks.hpp"
-#include "lefrData.hpp"
-#include "lefrReader.hpp"
-#include "lefrSettings.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/crypt.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiDefs.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrCallBacks.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -53,7 +53,7 @@
 
 BEGIN_LEF_PARSER_NAMESPACE
 
-#include "lef_parser.hpp"
+#include "src/odb/src/lef/lef/lef_parser.hpp"
 
 inline std::string strip_case(const char* str)
 {

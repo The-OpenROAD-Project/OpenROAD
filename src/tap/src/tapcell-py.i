@@ -2,9 +2,9 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "tap/tapcell.h"
+#include "src/odb/include/odb/db.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/tap/include/tap/tapcell.h"
 
 using std::set;
 using std::string;

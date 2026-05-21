@@ -7,10 +7,10 @@
 #include <memory>
 #include <queue>
 
-#include "db/infra/frBox.h"
-#include "dr/FlexMazeTypes.h"
-#include "frBaseTypes.h"
-#include "global.h"
+#include "src/drt/src/db/infra/frBox.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
 
 namespace drt {
 class FlexWavefrontGrid

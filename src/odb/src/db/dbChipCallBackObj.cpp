@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/dbChipCallBackObj.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
 
 #include "dbChip.h"
 

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "db/obj/frMarker.h"
+#include "src/drt/src/db/obj/frMarker.h"
 
 #include <tuple>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frFig.h"
-#include "db/tech/frConstraint.h"
-#include "distributed/frArchive.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "frBaseTypes.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/ta/FlexTA.h"
 
 namespace drt {
 class AbstractTAGraphics

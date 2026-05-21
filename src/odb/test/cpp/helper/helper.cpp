@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "helper.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 #include <cstdint>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

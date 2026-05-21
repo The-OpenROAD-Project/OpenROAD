@@ -9,14 +9,14 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "db/drObj/drFig.h"
-#include "db/drObj/drShape.h"
-#include "db/drObj/drVia.h"
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
-#include "frRTree.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drFig.h"
+#include "src/drt/src/db/drObj/drShape.h"
+#include "src/drt/src/db/drObj/drVia.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frRTree.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

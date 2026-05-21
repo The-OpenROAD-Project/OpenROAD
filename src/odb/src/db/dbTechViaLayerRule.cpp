@@ -13,9 +13,9 @@
 #include "dbTechVia.h"
 #include "dbTechViaGenerateRule.h"
 #include "dbTechViaRule.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace odb {
 

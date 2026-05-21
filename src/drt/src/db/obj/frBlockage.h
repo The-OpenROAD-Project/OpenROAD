@@ -6,9 +6,9 @@
 #include <memory>
 #include <utility>
 
-#include "db/obj/frBPin.h"
-#include "db/obj/frBlockObject.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frBPin.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frBlockage : public frBlockObject

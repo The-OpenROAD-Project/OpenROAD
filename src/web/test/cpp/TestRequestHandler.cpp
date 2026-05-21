@@ -12,12 +12,12 @@
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "gtest/gtest.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "odb/db.h"
-#include "request_handler.h"
-#include "tile_generator.h"
-#include "tst/nangate45_fixture.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/tst/include/tst/nangate45_fixture.h"
+#include "src/web/src/request_handler.h"
+#include "src/web/src/tile_generator.h"
 
 namespace web {
 namespace {

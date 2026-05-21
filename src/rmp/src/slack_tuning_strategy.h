@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
-#include "cut/abc_library_factory.h"
-#include "gia.h"
-#include "resynthesis_strategy.h"
-#include "sta/Delay.hh"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/rmp/src/gia.h"
+#include "src/rmp/src/resynthesis_strategy.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rsz {
 class Resizer;
@@ -93,8 +93,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
       sta::dbSta* sta,
       utl::UniqueName& name_generator,
       rsz::Resizer* resizer,
-      utl::Logger* logger)
-      = 0;
+      utl::Logger* logger) = 0;
 
  protected:
   sta::Scene* corner_;

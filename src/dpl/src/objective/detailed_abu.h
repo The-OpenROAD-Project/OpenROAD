@@ -7,10 +7,10 @@
 #include <vector>
 
 #include "detailed_objective.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/network.h"
-#include "optimization/detailed_manager.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
 
 namespace dpl {
 

@@ -6,10 +6,10 @@
 #include <map>
 #include <vector>
 
-#include "clusterEngine.h"
-#include "mpl-util.h"
-#include "object.h"
-#include "odb/geom.h"
+#include "src/mpl/src/clusterEngine.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/mpl/src/object.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace mpl {
 

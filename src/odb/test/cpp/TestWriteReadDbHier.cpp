@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "tst/IntegratedFixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace odb {
 namespace {

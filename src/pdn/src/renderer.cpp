@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "renderer.h"
+#include "src/pdn/src/renderer.h"
 
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "domain.h"
-#include "grid.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "pdn/PdnGen.hh"
 #include "shape.h"
-#include "straps.h"
-#include "via.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/straps.h"
+#include "src/pdn/src/via.h"
 
 namespace pdn {
 

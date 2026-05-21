@@ -16,7 +16,7 @@
 // `::tclreadline::Loop`; OpenROAD's Main.cc calls `::tclreadline::Loop`
 // directly.  Both paths reach the same linenoise REPL below.
 
-#include "tcl_readline_setup.h"
+#include "src/tcl_readline_setup.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -24,10 +24,10 @@
 #include <filesystem>
 #include <string>
 
-#include "cli_completer.h"
-#include "linenoise.h"
+#include "src/cli_completer.h"
 #include "tcl.h"
 #include "tclDecls.h"
+#include "third-party/linenoise/linenoise.h"
 
 namespace ord {
 

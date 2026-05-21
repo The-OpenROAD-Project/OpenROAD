@@ -13,11 +13,11 @@
 #include <utility>
 #include <vector>
 
-#include "mpl-util.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "shapes.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/mpl/src/shapes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbInst;

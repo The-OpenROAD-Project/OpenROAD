@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "grt/GlobalRouter.h"
-#include "grt/Rudy.h"
-#include "gui/heatMap.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/util.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/include/grt/Rudy.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/util.h"
 
 namespace odb {
 class dbDatabase;

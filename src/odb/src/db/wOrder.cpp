@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/wOrder.h"
+#include "src/odb/include/odb/wOrder.h"
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 #include "tmg_conn.h"
 
 namespace odb {

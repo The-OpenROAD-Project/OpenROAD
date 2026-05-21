@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "db_sta/dbSta.hh"
-#include "resynthesis_strategy.h"
-#include "rsz/Resizer.hh"
-#include "sta/Scene.hh"
-#include "utl/Logger.h"
-#include "utl/unique_name.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rmp/src/resynthesis_strategy.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 

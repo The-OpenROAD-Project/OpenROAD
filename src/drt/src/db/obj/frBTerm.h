@@ -7,11 +7,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frAccess.h"
-#include "db/obj/frBPin.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frTerm.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBPin.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/db/obj/frTerm.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frBlock;

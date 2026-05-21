@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "SteinerRenderer.h"
+#include "src/est/src/SteinerRenderer.h"
 
-#include "est/SteinerTree.h"
-#include "gui/gui.h"
-#include "odb/geom.h"
+#include "src/est/include/est/SteinerTree.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace est {
 

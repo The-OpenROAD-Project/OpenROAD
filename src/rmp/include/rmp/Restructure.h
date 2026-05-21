@@ -12,15 +12,15 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Scene.hh"
-#include "utl/Logger.h"
-#include "utl/unique_name.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace abc {
 }  // namespace abc

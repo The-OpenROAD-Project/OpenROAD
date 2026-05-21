@@ -27,12 +27,12 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiEncryptInt.hpp"
+#include "src/odb/src/lef/lef/lefiEncryptInt.hpp"
 
 #include <cstdlib>
 
-#include "lefiKRDefs.hpp"
-#include "lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

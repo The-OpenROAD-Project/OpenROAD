@@ -6,20 +6,20 @@
 #include <memory>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;

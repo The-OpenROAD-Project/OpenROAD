@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "BufferGenerator.hh"
+#include "src/rsz/src/move/BufferGenerator.hh"
 
 #include <memory>
 #include <vector>
 
-#include "BufferCandidate.hh"
-#include "MoveCandidate.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/BufferCandidate.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
 
 namespace rsz {
 

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/obj/frShape.h"
+#include "src/drt/src/db/obj/frShape.h"
 
 #include <tuple>
 
-#include "db/drObj/drShape.h"
-#include "db/obj/frFig.h"
-#include "db/taObj/taShape.h"
-#include "distributed/frArchive.h"
-#include "serialization.h"
+#include "src/drt/src/db/drObj/drShape.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/taObj/taShape.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/serialization.h"
 
 namespace drt {
 

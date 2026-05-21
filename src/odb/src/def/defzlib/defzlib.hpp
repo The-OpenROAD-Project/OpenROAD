@@ -30,8 +30,8 @@
 #ifndef LEFDEFZIP_H
 #define LEFDEFZIP_H
 
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

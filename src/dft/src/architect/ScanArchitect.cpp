@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanArchitect.hh"
+#include "src/dft/src/architect/ScanArchitect.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,13 +14,13 @@
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
-#include "ClockDomainHash.hh"
-#include "ScanArchitectConfig.hh"
-#include "ScanArchitectHeuristic.hh"
-#include "ScanCell.hh"
-#include "ScanChain.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/architect/ScanArchitectHeuristic.hh"
+#include "src/dft/src/architect/ScanChain.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/clock_domain/ClockDomainHash.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

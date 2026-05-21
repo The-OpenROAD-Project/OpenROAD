@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-#include "db/obj/frPin.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/obj/frPin.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frMTerm;

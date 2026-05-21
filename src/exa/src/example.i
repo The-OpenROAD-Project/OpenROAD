@@ -6,8 +6,8 @@
 // to master so it is easiest to use simple data types as arguments.
 
 %{
-#include "ord/OpenRoad.hh"
-#include "exa/example.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/exa/include/exa/example.h"
 #include "graphics.h"
 %}
 

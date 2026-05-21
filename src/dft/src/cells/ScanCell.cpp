@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanCell.hh"
+#include "src/dft/src/cells/ScanCell.hh"
 
 #include <memory>
 #include <string>
@@ -9,10 +9,10 @@
 #include <utility>
 #include <variant>
 
-#include "ClockDomain.hh"
-#include "ScanPin.hh"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

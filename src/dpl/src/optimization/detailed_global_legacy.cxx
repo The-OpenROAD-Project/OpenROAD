@@ -16,12 +16,12 @@
 #include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
-#include "dpl/Opendp.h"
-#include "infrastructure/Objects.h"
-#include "objective/detailed_hpwl.h"
-#include "optimization/detailed_generator.h"
-#include "util/utility.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/objective/detailed_hpwl.h"
+#include "src/dpl/src/optimization/detailed_generator.h"
+#include "src/dpl/src/util/utility.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

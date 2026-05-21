@@ -14,12 +14,12 @@
 #include <utility>
 #include <vector>
 
-#include "bufferTreeDescriptor.h"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/descriptor_registry.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/gui/src/bufferTreeDescriptor.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 #include "tcl.h"
 
 // empty gif writer class

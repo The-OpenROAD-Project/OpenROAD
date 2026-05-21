@@ -12,19 +12,19 @@
 #include <utility>
 #include <vector>
 
-#include "PlacementDRC.h"
 #include "boost/polygon/polygon.hpp"
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/network.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/util.h"
-#include "util/symmetry.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/dpl/src/util/symmetry.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

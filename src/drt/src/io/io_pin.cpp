@@ -5,11 +5,11 @@
 #include <tuple>
 #include <vector>
 
-#include "db/obj/frMaster.h"
-#include "frBaseTypes.h"
-#include "io/io.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frMaster.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/io/io.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerDir;
 

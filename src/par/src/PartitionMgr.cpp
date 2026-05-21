@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "par/PartitionMgr.h"
+#include "src/par/include/par/PartitionMgr.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,16 +21,16 @@
 
 #include "TritonPart.h"
 #include "Utilities.h"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/Liberty.hh"
-#include "sta/MakeConcreteNetwork.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/ParseBus.hh"
-#include "sta/PortDirection.hh"
-#include "sta/VerilogWriter.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/ConcreteNetwork.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MakeConcreteNetwork.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/ParseBus.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/VerilogWriter.hh"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBlock;
 using odb::dbInst;

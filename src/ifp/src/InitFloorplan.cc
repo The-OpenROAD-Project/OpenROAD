@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "ifp/InitFloorplan.hh"
+#include "src/ifp/include/ifp/InitFloorplan.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -14,20 +14,20 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/util.h"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/PortDirection.hh"
-#include "sta/StringUtil.hh"
-#include "upf/upf.h"
-#include "utl/Logger.h"
-#include "utl/validation.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/util.h"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/upf/include/upf/upf.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/validation.h"
 
 namespace ifp {
 

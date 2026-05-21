@@ -27,15 +27,15 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiDebug.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "defiKRDefs.hpp"
-#include "defrData.hpp"
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

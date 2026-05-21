@@ -8,8 +8,8 @@
 
 #include "boost/bind/bind.hpp"
 #include "boostParser.h"
-#include "odb/db.h"
 #include "parserUtils.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

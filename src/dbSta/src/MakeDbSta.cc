@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "db_sta/MakeDbSta.hh"
+#include "src/dbSta/include/db_sta/MakeDbSta.hh"
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Sta.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Dbsta_Init(Tcl_Interp* interp);

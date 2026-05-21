@@ -15,11 +15,11 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "connection.h"
-#include "ir_network.h"
-#include "node.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/psm/src/connection.h"
+#include "src/psm/src/ir_network.h"
+#include "src/psm/src/node.h"
 
 namespace psm {
 

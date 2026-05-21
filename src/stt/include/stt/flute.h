@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "boost/multi_array.hpp"
-#include "stt/SteinerTreeBuilder.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 #pragma once
 

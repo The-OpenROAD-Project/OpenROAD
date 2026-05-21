@@ -16,8 +16,8 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"
-#include "odb/db.h"
 #include "spdlog/fmt/ostr.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

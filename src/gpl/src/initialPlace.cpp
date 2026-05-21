@@ -13,10 +13,10 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "odb/dbTypes.h"
-#include "placerBase.h"
 #include "solver.h"
-#include "utl/Logger.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gpl {
 

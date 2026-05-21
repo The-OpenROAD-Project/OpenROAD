@@ -14,16 +14,16 @@
 #include <vector>
 
 #include "find_some_net.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "rcx/extModelGen.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSpef.h"
-#include "rcx/extViaModel.h"
-#include "rcx/ext_options.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/extModelGen.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSpef.h"
+#include "src/rcx/include/rcx/extViaModel.h"
+#include "src/rcx/include/rcx/ext_options.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

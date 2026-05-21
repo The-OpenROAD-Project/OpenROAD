@@ -2,8 +2,8 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "ord/OpenRoad.hh"
-#include "ram/ram.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/ram/include/ram/ram.h"
 
 %}
 

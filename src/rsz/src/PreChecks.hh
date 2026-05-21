@@ -2,8 +2,8 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 #pragma once
-#include "db_sta/dbSta.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

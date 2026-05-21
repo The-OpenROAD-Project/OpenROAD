@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "routeBase.h"
+#include "src/gpl/src/routeBase.h"
 
 #include <algorithm>
 #include <cmath>
@@ -15,13 +15,13 @@
 #include <utility>
 #include <vector>
 
-#include "gpl/Replace.h"
-#include "grt/GlobalRouter.h"
-#include "grt/Rudy.h"
-#include "nesterovBase.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/gpl/src/nesterovBase.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/include/grt/Rudy.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBlock;
 using std::pair;

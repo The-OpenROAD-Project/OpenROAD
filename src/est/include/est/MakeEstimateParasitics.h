@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 #include "tcl.h"
-#include "utl/Logger.h"
 
 namespace est {
 

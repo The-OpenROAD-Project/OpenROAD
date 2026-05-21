@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "ppl/IOPlacer.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,19 +16,19 @@
 #include <utility>
 #include <vector>
 
-#include "AbstractIOPlacerRenderer.h"
-#include "Core.h"
-#include "HungarianMatching.h"
 #include "Netlist.h"
-#include "SimulatedAnnealing.h"
-#include "Slots.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "ppl/Parameters.h"
-#include "utl/Logger.h"
-#include "utl/validation.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/Parameters.h"
+#include "src/ppl/src/AbstractIOPlacerRenderer.h"
+#include "src/ppl/src/Core.h"
+#include "src/ppl/src/HungarianMatching.h"
+#include "src/ppl/src/SimulatedAnnealing.h"
+#include "src/ppl/src/Slots.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/validation.h"
 
 namespace ppl {
 

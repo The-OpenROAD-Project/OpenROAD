@@ -11,8 +11,8 @@
 #include <string>
 #include <utility>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace ord {
 class OpenRoad;

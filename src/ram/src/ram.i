@@ -6,9 +6,9 @@
 #include <vector>
 #include <string>
 
-#include "ord/OpenRoad.hh"
-#include "ram/ram.h"
-#include "utl/Logger.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/ram/include/ram/ram.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ord {
 // Defined in OpenRoad.i

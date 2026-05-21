@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "straps.h"
+#include "src/pdn/src/straps.h"
 
 #include <algorithm>
 #include <array>
@@ -17,18 +17,18 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "connect.h"
-#include "domain.h"
-#include "grid.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "pdn/PdnGen.hh"
-#include "renderer.h"
 #include "shape.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/pdn/src/connect.h"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/renderer.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

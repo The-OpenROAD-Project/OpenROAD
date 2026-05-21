@@ -8,10 +8,10 @@
 #include <vector>
 
 #include "Coordinates.h"
-#include "dpl/Opendp.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "pa/FlexPA.h"
+#include "src/drt/src/pa/FlexPA.h"
 
 #include <cstdint>
 #include <fstream>
@@ -16,25 +16,25 @@
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/io/ios_state.hpp"
 #include "boost/serialization/export.hpp"
-#include "db/infra/frTime.h"
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "distributed/PinAccessJobDescription.h"
-#include "distributed/frArchive.h"
-#include "distributed/paUpdate.h"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
-#include "frBaseTypes.h"
-#include "frProfileTask.h"
-#include "gc/FlexGC.h"
-#include "global.h"
-#include "odb/db.h"
 #include "omp.h"
-#include "pa/AbstractPAGraphics.h"
-#include "pa/FlexPA_unique.h"
-#include "serialization.h"
-#include "utl/Logger.h"
-#include "utl/exception.h"
+#include "src/drt/src/db/infra/frTime.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/distributed/PinAccessJobDescription.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/distributed/paUpdate.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/gc/FlexGC.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/pa/AbstractPAGraphics.h"
+#include "src/drt/src/pa/FlexPA_unique.h"
+#include "src/drt/src/serialization.h"
+#include "src/dst/include/dst/Distributed.h"
+#include "src/dst/include/dst/JobMessage.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/exception.h"
 
 BOOST_CLASS_EXPORT(drt::PinAccessJobDescription)
 

@@ -19,10 +19,10 @@
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
 #include "boost/polygon/rectangle_data.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
 
 namespace pad {
 

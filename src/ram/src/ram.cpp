@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ram/ram.h"
+#include "src/ram/include/ram/ram.h"
 
 #include <algorithm>
 #include <array>
@@ -16,23 +16,23 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "dpl/Opendp.h"
-#include "drt/TritonRoute.h"
-#include "grt/GlobalRouter.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/isotropy.h"
-#include "ord/OpenRoad.hh"
-#include "pdn/PdnGen.hh"
-#include "ppl/IOPlacer.h"
-#include "ram/layout.h"
-#include "sta/ConcreteLibrary.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sequential.hh"
-#include "utl/Logger.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/drt/include/drt/TritonRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ram/include/ram/layout.h"
+#include "src/sta/include/sta/ConcreteLibrary.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Sequential.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ram {
 

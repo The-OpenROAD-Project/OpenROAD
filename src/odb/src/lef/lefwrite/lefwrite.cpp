@@ -33,7 +33,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
-#include "lefwWriter.hpp"
+#include "src/odb/src/lef/lef/lefwWriter.hpp"
 
 char defaultOut[128];
 

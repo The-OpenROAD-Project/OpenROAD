@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "Graphics.hh"
+#include "src/rsz/src/Graphics.hh"
 
-#include "BufferedNet.hh"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/src/BufferedNet.hh"
 
 namespace rsz {
 

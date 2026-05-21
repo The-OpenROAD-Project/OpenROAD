@@ -28,16 +28,16 @@
 #include "dbPropertyItr.h"
 #include "dbTable.h"
 #include "dbTech.h"
-#include "odb/db.h"
-#include "odb/dbChipCallBackObj.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/geom.h"
 // User Code Begin Includes
 #include <list>
 
-#include "odb/dbStream.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;

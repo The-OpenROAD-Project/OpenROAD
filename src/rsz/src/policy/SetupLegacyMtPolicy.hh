@@ -9,12 +9,12 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "RepairSetupContext.hh"
-#include "SetupLegacyPolicy.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairSetupContext.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/policy/SetupLegacyPolicy.hh"
 
 namespace rsz {
 

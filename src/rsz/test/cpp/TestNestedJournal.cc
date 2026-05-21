@@ -22,16 +22,16 @@
 #include <memory>
 #include <string>
 
-#include "MoveCandidate.hh"
-#include "MoveCommitter.hh"
-#include "MoveTracker.hh"
-#include "OptimizerTypes.hh"
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "rsz/Resizer.hh"
-#include "tst/IntegratedFixture.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/MoveTracker.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace rsz {
 

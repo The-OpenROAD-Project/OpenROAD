@@ -6,9 +6,9 @@
 #include <array>
 #include <vector>
 
-#include "grid_component.h"
-#include "odb/geom.h"
 #include "shape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/src/grid_component.h"
 
 namespace odb {
 class dbTechLayer;

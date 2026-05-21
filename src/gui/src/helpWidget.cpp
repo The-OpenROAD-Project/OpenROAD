@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "helpWidget.h"
+#include "src/gui/src/helpWidget.h"
 
 #include <QComboBox>
 #include <QFile>

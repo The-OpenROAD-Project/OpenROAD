@@ -6,7 +6,7 @@
 #include <QColor>
 #include <array>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace gui {
 

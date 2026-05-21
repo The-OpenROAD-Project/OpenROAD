@@ -32,8 +32,8 @@
 
 #include <cstdio>
 
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 class defrData;

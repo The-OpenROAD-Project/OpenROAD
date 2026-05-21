@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "label.h"
+#include "src/gui/src/label.h"
 
 #include <QFont>
 #include <any>
@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "options.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/options.h"
+#include "src/odb/include/odb/db.h"
 
 namespace gui {
 

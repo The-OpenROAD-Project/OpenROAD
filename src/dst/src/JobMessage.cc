@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "dst/JobMessage.h"
+#include "src/dst/include/dst/JobMessage.h"
 
 #include <sstream>
 #include <string>
@@ -10,7 +10,7 @@
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/serialization/access.hpp"
 #include "boost/serialization/unique_ptr.hpp"
-#include "dst/BalancerJobDescription.h"
+#include "src/dst/include/dst/BalancerJobDescription.h"
 
 namespace dst {
 

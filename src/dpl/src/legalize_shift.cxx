@@ -7,7 +7,7 @@
 // A simple legalizer used to populate data structures prior to detailed
 // placement.
 
-#include "legalize_shift.h"
+#include "src/dpl/src/legalize_shift.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,12 +16,12 @@
 #include <utility>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/detailed_segment.h"
-#include "optimization/detailed_manager.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/detailed_segment.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
+#include "src/utl/include/utl/Logger.h"
 
 using utl::DPL;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ir_solver.h"
+#include "src/psm/src/ir_solver.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,26 +19,26 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "connection.h"
-#include "db_sta/dbNetwork.hh"
-#include "debug_gui.h"
-#include "est/EstimateParasitics.h"
-#include "ir_network.h"
-#include "node.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "psm/pdnsim.h"
 #include "shape.h"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PowerClass.hh"
-#include "sta/Sdc.hh"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/psm/include/psm/pdnsim.h"
+#include "src/psm/src/connection.h"
+#include "src/psm/src/debug_gui.h"
+#include "src/psm/src/ir_network.h"
+#include "src/psm/src/node.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PowerClass.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace psm {
 

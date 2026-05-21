@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Coordinates.h"
-#include "odb/db.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/odb/include/odb/db.h"
 
 namespace dpl {
 

@@ -6,13 +6,13 @@
 #include <algorithm>
 #include <memory>
 
-#include "db/obj/frBPin.h"
-#include "db/obj/frRef.h"
-#include "db/obj/frShape.h"
-#include "db/tech/frViaDef.h"
-#include "frBaseTypes.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBPin.h"
+#include "src/drt/src/db/obj/frRef.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frNet;

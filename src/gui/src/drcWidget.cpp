@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "drcWidget.h"
+#include "src/gui/src/drcWidget.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -18,12 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "dbDescriptors.h"
-#include "gui/gui.h"
-#include "inspector.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/inspector.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbMarker*);
 

@@ -2,7 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "par/PartitionMgr.h"
+#include "src/par/include/par/PartitionMgr.h"
 %}
 
 %include "../../Exception-py.i"

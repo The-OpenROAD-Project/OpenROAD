@@ -9,18 +9,18 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "db/gcObj/gcShape.h"
-#include "db/obj/frMarker.h"
-#include "db/obj/frVia.h"
-#include "db/tech/frConstraint.h"
-#include "frBaseTypes.h"
-#include "frProfileTask.h"
-#include "gc/FlexGC.h"
-#include "gc/FlexGC_impl.h"
-#include "global.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/gcObj/gcShape.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/gc/FlexGC.h"
+#include "src/drt/src/gc/FlexGC_impl.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerType;
 

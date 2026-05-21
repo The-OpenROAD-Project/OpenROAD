@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

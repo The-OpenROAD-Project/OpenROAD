@@ -9,10 +9,10 @@
 #include <memory>
 #include <vector>
 
-#include "odb/db.h"
-#include "rcx/dbUtil.h"
-#include "rcx/ext_options.h"
-#include "rcx/util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/ext_options.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

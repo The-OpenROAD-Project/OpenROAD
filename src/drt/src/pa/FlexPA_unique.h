@@ -11,16 +11,16 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInst.h"
-#include "db/obj/frMPin.h"
-#include "db/obj/frTrackPattern.h"
-#include "db/tech/frTechObject.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/db/obj/frMPin.h"
+#include "src/drt/src/db/obj/frTrackPattern.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace drt {
 

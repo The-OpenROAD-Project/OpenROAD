@@ -4,9 +4,9 @@
 %{
 #include <optional>
 
-#include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
-#include "gui/gui.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
 
 using utl::GUI;
 

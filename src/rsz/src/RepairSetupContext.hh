@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "RepairTargetCollector.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
 
 namespace rsz {
 

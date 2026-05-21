@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "frRegionQuery.h"
+#include "src/drt/src/frRegionQuery.h"
 
 #include <algorithm>
 #include <iterator>
@@ -11,16 +11,16 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frBlockage.h"
-#include "db/obj/frInstBlockage.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "frRTree.h"
-#include "global.h"
-#include "odb/dbTransform.h"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/db/obj/frInstBlockage.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frRTree.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace drt {
 

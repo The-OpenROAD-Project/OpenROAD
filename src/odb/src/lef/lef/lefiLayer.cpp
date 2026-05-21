@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -37,12 +37,12 @@
 #include <cstring>
 #include <string>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefrCallBacks.hpp"
-#include "lefrData.hpp"
-#include "lefrSettings.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrCallBacks.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

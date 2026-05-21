@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiScanchain.h"
-#include "defiScanchain.hpp"
+#include "src/odb/src/def/def/defiScanchain.hpp"
 
 // Wrappers definitions.
 int defiOrdered_num(const ::defiOrdered* obj)

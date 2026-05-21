@@ -14,14 +14,14 @@
 #include "dbNet.h"
 #include "dbRegion.h"
 #include "dbVector.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
 #include <map>
 #include <set>
 #include <utility>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 // User Code End Includes
 
 namespace odb {

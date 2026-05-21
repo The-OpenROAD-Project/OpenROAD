@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "dpl/OptMirror.h"
+#include "src/dpl/include/dpl/OptMirror.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -9,11 +9,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/util.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

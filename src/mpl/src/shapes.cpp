@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "shapes.h"
+#include "src/mpl/src/shapes.h"
 
 namespace mpl {
 

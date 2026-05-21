@@ -27,16 +27,16 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiPinProp.hpp"
+#include "src/odb/src/def/def/defiPinProp.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
 
-#include "defiDebug.hpp"
-#include "defiKRDefs.hpp"
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

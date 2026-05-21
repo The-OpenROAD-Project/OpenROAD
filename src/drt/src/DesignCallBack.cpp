@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "DesignCallBack.h"
+#include "src/drt/src/DesignCallBack.h"
 
-#include "drt/TritonRoute.h"
-#include "frDesign.h"
-#include "io/io.h"
-#include "odb/db.h"
+#include "src/drt/include/drt/TritonRoute.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/io/io.h"
+#include "src/odb/include/odb/db.h"
 
 namespace drt {
 

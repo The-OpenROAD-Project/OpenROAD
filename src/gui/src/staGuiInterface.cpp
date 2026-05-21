@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "staGuiInterface.h"
+#include "src/gui/src/staGuiInterface.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -13,34 +13,34 @@
 #include <utility>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/ClkNetwork.hh"
-#include "sta/Delay.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathGroup.hh"
-#include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/StringUtil.hh"
-#include "sta/VisitPathEnds.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/ClkNetwork.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/ExceptionPath.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/PathGroup.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/SearchClass.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/sta/include/sta/VisitPathEnds.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "LatencyBalancer.h"
+#include "src/cts/src/LatencyBalancer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,31 +14,31 @@
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "TreeBuilder.h"
-#include "Util.h"
-#include "cts/TritonCTS.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "sta/Clock.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/Mode.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Sdc.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "utl/Logger.h"
+#include "src/cts/include/cts/TritonCTS.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/TimingModel.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

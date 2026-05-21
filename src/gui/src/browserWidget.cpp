@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "browserWidget.h"
+#include "src/gui/src/browserWidget.h"
 
 #include <QColor>
 #include <QColorDialog>
@@ -24,14 +24,14 @@
 #include <utility>
 #include <vector>
 
-#include "dbDescriptors.h"
-#include "db_sta/dbSta.hh"
-#include "displayControls.h"
-#include "gui/gui.h"
-#include "layoutViewer.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/displayControls.h"
+#include "src/gui/src/layoutViewer.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbInst*);
 Q_DECLARE_METATYPE(odb::dbModule*);

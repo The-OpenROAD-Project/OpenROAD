@@ -10,13 +10,13 @@
 #include <string>
 #include <vector>
 
-#include "grid_component.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "pdn/PdnGen.hh"
 #include "shape.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
+#include "src/pdn/src/grid_component.h"
 
 namespace pdn {
 class Grid;

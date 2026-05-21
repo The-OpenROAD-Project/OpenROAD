@@ -22,10 +22,10 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "sta/SdcClass.hh"
-#include "staGuiInterface.h"
-#include "utl/histogram.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/utl/include/utl/histogram.h"
 
 namespace sta {
 class Pin;

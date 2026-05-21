@@ -5,10 +5,10 @@
 
 #include <vector>
 
-#include "AbstractIOPlacerRenderer.h"
 #include "Netlist.h"
-#include "gui/gui.h"
-#include "ppl/IOPlacer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ppl/src/AbstractIOPlacerRenderer.h"
 
 namespace ppl {
 

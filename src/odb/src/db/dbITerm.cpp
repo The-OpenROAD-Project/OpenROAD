@@ -29,13 +29,13 @@
 #include "dbModNet.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 namespace odb {
 
 template class dbTable<_dbITerm>;

@@ -13,13 +13,13 @@
 #include <variant>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbWireGraph.h"
-#include "odb/geom.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbWireGraph.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbMaster;

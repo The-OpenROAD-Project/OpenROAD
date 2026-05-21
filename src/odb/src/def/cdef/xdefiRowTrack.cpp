@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiRowTrack.h"
-#include "defiRowTrack.hpp"
+#include "src/odb/src/def/def/defiRowTrack.hpp"
 
 // Wrappers definitions.
 const char* defiRow_name(const ::defiRow* obj)

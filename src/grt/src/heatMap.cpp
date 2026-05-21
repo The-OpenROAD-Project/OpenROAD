@@ -9,10 +9,10 @@
 #include <string>
 #include <vector>
 
-#include "gui/heatMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

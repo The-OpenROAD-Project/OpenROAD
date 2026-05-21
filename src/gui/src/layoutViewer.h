@@ -30,16 +30,16 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "label.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
-#include "options.h"
-#include "renderThread.h"
-#include "ruler.h"
 #include "search.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/label.h"
+#include "src/gui/src/options.h"
+#include "src/gui/src/renderThread.h"
+#include "src/gui/src/ruler.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace utl {
 class Logger;

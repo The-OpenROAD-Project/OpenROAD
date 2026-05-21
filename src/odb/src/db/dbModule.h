@@ -8,8 +8,8 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/dbId.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbSet.h"
 // User Code Begin Includes
 #include <map>
 #include <string>
@@ -17,7 +17,7 @@
 
 #include "dbHashTable.h"
 #include "dbModulePortItr.h"
-#include "odb/PtrSetMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
 // User Code End Includes
 
 namespace odb {

@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSpef.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSpef.h"
 
 namespace rcx {
 

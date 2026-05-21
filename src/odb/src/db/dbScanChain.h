@@ -10,12 +10,12 @@
 #include "dbCore.h"
 #include "dbScanPin.h"
 #include "dbVector.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
 #include <variant>
 
-#include "odb/db.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
 // User Code End Includes
 
 namespace odb {
@@ -38,8 +38,8 @@ class _dbScanChain : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin);
+  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbBTerm* pin);
+  void setPin(dbId<dbScanPin> _dbScanChain::* field, dbITerm* pin);
   // User Code End Methods
 
   std::string name_;

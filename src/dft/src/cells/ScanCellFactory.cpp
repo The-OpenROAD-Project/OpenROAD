@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanCellFactory.hh"
+#include "src/dft/src/cells/ScanCellFactory.hh"
 
 #include <algorithm>
 #include <memory>
@@ -9,20 +9,20 @@
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
-#include "OneBitScanCell.hh"
-#include "ScanCell.hh"
-#include "Utils.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Clock.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Sequential.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dft/src/cells/OneBitScanCell.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/utils/Utils.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Sequential.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

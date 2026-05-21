@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiPartition.h"
-#include "defiPartition.hpp"
+#include "src/odb/src/def/def/defiPartition.hpp"
 
 // Wrappers definitions.
 const char* defiPartition_name(const ::defiPartition* obj)

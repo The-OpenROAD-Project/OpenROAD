@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "BufferedNet.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/src/BufferedNet.hh"
 
 namespace rsz {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/lefout.h"
+#include "src/odb/include/odb/lefout.h"
 
 #include <cassert>
 #include <cstdint>
@@ -16,17 +16,17 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
 #include "spdlog/fmt/ostr.h"
-#include "utl/scope.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/utl/include/utl/scope.h"
 
 namespace odb {
 

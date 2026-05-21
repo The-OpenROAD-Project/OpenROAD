@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "dr/FlexDR_graphics.h"
+#include "src/drt/src/dr/FlexDR_graphics.h"
 
 #include <any>
 #include <cassert>
@@ -13,16 +13,16 @@
 #include <vector>
 
 #include "../gc/FlexGC.h"
-#include "db/drObj/drFig.h"
-#include "db/obj/frShape.h"
-#include "db/obj/frVia.h"
-#include "dr/FlexDR.h"
-#include "frBaseTypes.h"
-#include "frRegionQuery.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drFig.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frRegionQuery.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

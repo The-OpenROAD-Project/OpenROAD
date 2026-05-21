@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
 
 namespace sta {
 class LibertyCell;
@@ -91,8 +91,7 @@ class MoveGenerator
     return kNoPrepareCache;
   }
   virtual std::vector<std::unique_ptr<MoveCandidate>> generate(
-      const Target& target)
-      = 0;
+      const Target& target) = 0;
 
  protected:
   // === Target-view requirements ============================================

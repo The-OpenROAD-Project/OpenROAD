@@ -5,12 +5,12 @@
 #include <utility>
 #include <vector>
 
-#include "CUGR.h"
-#include "Design.h"
-#include "GRNet.h"
-#include "GRTree.h"
-#include "GridGraph.h"
-#include "geo.h"
+#include "src/grt/src/cugr/include/CUGR.h"
+#include "src/grt/src/cugr/src/Design.h"
+#include "src/grt/src/cugr/src/GRNet.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
+#include "src/grt/src/cugr/src/geo.h"
 
 namespace grt {
 

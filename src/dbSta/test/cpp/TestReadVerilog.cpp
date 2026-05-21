@@ -4,9 +4,9 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "tst/IntegratedFixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace sta {
 

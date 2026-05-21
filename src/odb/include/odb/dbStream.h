@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "boost/container/flat_map.hpp"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace odb {
 

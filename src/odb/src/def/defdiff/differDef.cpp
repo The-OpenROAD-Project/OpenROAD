@@ -51,8 +51,8 @@ extern char VersionIdent[];
 #else
 char* VersionIdent = "N/A";
 #endif /* not WIN32 */
-#include "defrReader.hpp"
 #include "diffDefRW.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 char* exeName;  // use to save the executable name
 

@@ -9,10 +9,10 @@
 #include <string>
 #include <string_view>
 
-#include "ScanPin.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 class ClockDomain;

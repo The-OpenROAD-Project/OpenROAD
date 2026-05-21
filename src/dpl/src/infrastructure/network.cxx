@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "infrastructure/network.h"
+#include "src/dpl/src/infrastructure/network.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "PlacementDRC.h"
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/architecture.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////

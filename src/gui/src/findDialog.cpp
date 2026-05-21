@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "findDialog.h"
+#include "src/gui/src/findDialog.h"
 
 #include <QDialog>
 #include <QWidget>
 #include <string>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace gui {
 FindObjectDialog::FindObjectDialog(QWidget* parent) : QDialog(parent)

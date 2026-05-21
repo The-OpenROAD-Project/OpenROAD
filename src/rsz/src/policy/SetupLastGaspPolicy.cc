@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupLastGaspPolicy.hh"
+#include "src/rsz/src/policy/SetupLastGaspPolicy.hh"
 
 #include <cmath>
 #include <utility>
 #include <vector>
 
-#include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
-#include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
-#include "est/EstimateParasitics.h"
-#include "policy/OptimizationPolicy.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Path.hh"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace rsz {
 

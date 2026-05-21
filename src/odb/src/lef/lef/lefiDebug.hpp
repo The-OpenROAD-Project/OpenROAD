@@ -30,7 +30,7 @@
 #ifndef lefiDebug_h
 #define lefiDebug_h 1
 
-#include "lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

@@ -27,17 +27,17 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "lefiKRDefs.hpp"
-#include "lefrData.hpp"
-#include "lefrReader.hpp"
-#include "lefrSettings.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

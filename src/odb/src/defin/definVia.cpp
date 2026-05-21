@@ -8,11 +8,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

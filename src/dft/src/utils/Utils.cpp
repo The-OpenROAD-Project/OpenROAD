@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "Utils.hh"
+#include "src/dft/src/utils/Utils.hh"
 
 #include <optional>
 #include <string>
@@ -9,15 +9,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/SdcClass.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft::utils {
 

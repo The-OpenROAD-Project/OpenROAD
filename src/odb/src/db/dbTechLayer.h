@@ -11,11 +11,11 @@
 #include "dbCore.h"
 #include "dbHashTable.h"
 #include "dbVector.h"
-#include "odb/dbMatrix.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/dbMatrix.h"
+#include "src/odb/include/odb/dbTypes.h"
 // User Code Begin Includes
-#include "odb/dbId.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbObject.h"
 // User Code End Includes
 
 namespace odb {

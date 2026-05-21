@@ -7,8 +7,8 @@
 #include <utility>
 #include <vector>
 
-#include "GeoTypes.h"
-#include "odb/db.h"
+#include "src/grt/src/cugr/src/GeoTypes.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

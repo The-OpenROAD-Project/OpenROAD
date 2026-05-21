@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "gpl/Replace.h"
+#include "src/gpl/include/gpl/Replace.h"
 
 #include <algorithm>
 #include <chrono>
@@ -10,25 +10,25 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
 #include "mbff.h"
-#include "nesterovBase.h"
-#include "nesterovPlace.h"
-#include "odb/db.h"
-#include "odb/util.h"
-#include "placerBase.h"
-#include "routeBase.h"
-#include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
-#include "sta/Path.hh"
-#include "sta/StaMain.hh"
-#include "sta/StaState.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gpl/src/nesterovBase.h"
+#include "src/gpl/src/nesterovPlace.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/gpl/src/routeBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/util.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/StaMain.hh"
+#include "src/sta/include/sta/StaState.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/validation.h"
 #include "timingBase.h"
-#include "utl/Logger.h"
-#include "utl/validation.h"
 
 namespace gpl {
 

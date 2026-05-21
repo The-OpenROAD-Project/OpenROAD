@@ -9,9 +9,9 @@
 #include "boost/spirit/home/qi/nonterminal/rule.hpp"
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
-#include "lefiLayer.hpp"
-#include "odb/db.h"
-#include "odb/lefin.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
 
 namespace odb {
 

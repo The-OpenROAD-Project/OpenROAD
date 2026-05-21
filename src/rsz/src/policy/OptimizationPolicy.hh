@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
 
 namespace sta {
 class dbSta;

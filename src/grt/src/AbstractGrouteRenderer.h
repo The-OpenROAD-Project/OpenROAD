@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

@@ -7,11 +7,11 @@
 #include <utility>
 #include <vector>
 
-#include "sta/Clock.hh"
-#include "sta/Graph.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/SdcClass.hh"
 
 namespace odb {
 class dbMaster;

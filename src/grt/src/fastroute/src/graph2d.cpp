@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "Graph2D.h"
+#include "src/grt/src/fastroute/include/Graph2D.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include "DataType.h"
-#include "FastRoute.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
 
 namespace grt {
 

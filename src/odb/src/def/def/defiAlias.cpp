@@ -27,13 +27,13 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiAlias.hpp"
+#include "src/odb/src/def/def/defiAlias.hpp"
 
 #include <map>
 #include <string>
 
-#include "defiKRDefs.hpp"
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

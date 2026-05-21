@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "scriptWidget.h"
+#include "src/gui/src/scriptWidget.h"
 
 #include <unistd.h>
 
@@ -22,13 +22,13 @@
 #include <string>
 
 #include "absl/synchronization/mutex.h"
-#include "gui/gui.h"
 #include "spdlog/common.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/tclCmdInputWidget.h"
+#include "src/utl/include/utl/Logger.h"
 #include "tcl.h"
-#include "tclCmdInputWidget.h"
-#include "utl/Logger.h"
 
 namespace gui {
 

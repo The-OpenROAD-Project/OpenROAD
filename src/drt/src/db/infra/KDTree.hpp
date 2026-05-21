@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "frBaseTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace drt {
 

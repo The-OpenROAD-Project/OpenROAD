@@ -21,7 +21,7 @@
 #include "Hypergraph.h"
 #include "Utilities.h"
 #include "boost/range/iterator_range_core.hpp"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 // ------------------------------------------------------------------------------
 // Implementation of Golden Evaluator

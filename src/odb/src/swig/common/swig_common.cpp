@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "swig_common.h"
+#include "src/odb/src/swig/common/swig_common.h"
 
 #include <libgen.h>
 
@@ -15,15 +15,15 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
-#include "odb/defout.h"
-#include "odb/geom.h"
-#include "odb/lefin.h"
-#include "odb/lefout.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/odb/include/odb/lefout.h"
+#include "src/utl/include/utl/Logger.h"
 
 odb::dbLib* read_lef(odb::dbDatabase* db, const char* path)
 {

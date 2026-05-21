@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiVia.h"
-#include "lefiVia.hpp"
+#include "src/odb/src/lef/lef/lefiVia.hpp"
 
 union ulefiGeomPolygon
 {

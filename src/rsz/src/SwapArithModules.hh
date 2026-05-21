@@ -7,15 +7,15 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/MinMax.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 class dbDatabase;
@@ -42,30 +42,25 @@ class SwapArithModules : public sta::dbStaState
 
   virtual bool replaceArithModules(int path_count,
                                    const std::string& target,
-                                   float slack_threshold)
-      = 0;
+                                   float slack_threshold) = 0;
   virtual void collectArithInstsOnPath(const sta::Path* path,
                                        odb::PtrSet<odb::dbModInst>& arithInsts)
       = 0;
   virtual bool isArithInstance(const sta::Instance* inst,
-                               odb::dbModInst*& mod_inst)
-      = 0;
+                               odb::dbModInst*& mod_inst) = 0;
   virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     odb::PtrSet<odb::dbModInst>& insts)
-      = 0;
+                                     odb::PtrSet<odb::dbModInst>& insts) = 0;
   virtual bool doSwapInstances(odb::PtrSet<odb::dbModInst>& insts,
-                               const std::string& target)
-      = 0;
+                               const std::string& target) = 0;
 
  protected:
   virtual void init() = 0;
   virtual void produceNewModuleName(const std::string& old_name,
                                     std::string& new_name,
-                                    const std::string& target)
-      = 0;
+                                    const std::string& target) = 0;
 
   // Member variables
   Resizer* resizer_;

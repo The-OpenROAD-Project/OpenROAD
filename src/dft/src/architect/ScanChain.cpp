@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanChain.hh"
+#include "src/dft/src/architect/ScanChain.hh"
 
 #include <cstddef>
 #include <cstdint>
@@ -12,10 +12,10 @@
 #include <utility>
 #include <vector>
 
-#include "ClockDomain.hh"
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

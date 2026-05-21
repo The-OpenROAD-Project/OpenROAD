@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "OneBitScanCell.hh"
+#include "src/dft/src/cells/OneBitScanCell.hh"
 
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "ClockDomain.hh"
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/Liberty.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/utils/ScanPin.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace dft {
 

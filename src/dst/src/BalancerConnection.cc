@@ -20,11 +20,11 @@
 #include "boost/bind/bind.hpp"
 #include "boost/serialization/export.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/BalancerJobDescription.h"
-#include "dst/BroadcastJobDescription.h"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
-#include "utl/Logger.h"
+#include "src/dst/include/dst/BalancerJobDescription.h"
+#include "src/dst/include/dst/BroadcastJobDescription.h"
+#include "src/dst/include/dst/Distributed.h"
+#include "src/dst/include/dst/JobMessage.h"
+#include "src/utl/include/utl/Logger.h"
 
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)

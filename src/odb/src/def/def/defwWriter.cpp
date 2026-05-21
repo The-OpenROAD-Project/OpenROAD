@@ -39,7 +39,7 @@
 //                         Changed all (!name && !*name) to
 //                         (!name || !*name)
 
-#include "defwWriter.hpp"
+#include "src/odb/src/def/def/defwWriter.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -47,8 +47,8 @@
 #include <cstring>
 #include <ctime>
 
-#include "defiKRDefs.hpp"
-#include "defiUtil.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

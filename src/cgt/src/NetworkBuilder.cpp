@@ -5,14 +5,14 @@
 
 #include <cassert>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PortDirection.hh"
-#include "sta/VerilogReader.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/VerilogReader.hh"
+#include "src/utl/include/utl/Logger.h"
 
 using utl::CGT;
 using utl::UniquePtrWithDeleter;

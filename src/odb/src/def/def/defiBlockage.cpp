@@ -27,16 +27,16 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiBlockage.hpp"
+#include "src/odb/src/def/def/defiBlockage.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "defiDebug.hpp"
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

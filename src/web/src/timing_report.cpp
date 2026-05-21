@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "timing_report.h"
+#include "src/web/src/timing_report.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,28 +13,28 @@
 #include <vector>
 
 #include "boost/json/array.hpp"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Clock.hh"
-#include "sta/ExceptionPath.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PathGroup.hh"
-#include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/Sta.hh"
-#include "sta/StringUtil.hh"
-#include "sta/Units.hh"
-#include "sta/VisitPathEnds.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/ExceptionPath.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/PathGroup.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/SearchClass.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/sta/include/sta/VisitPathEnds.hh"
 
 namespace web {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "psm/pdnsim.h"
+#include "src/psm/include/psm/pdnsim.h"
 
 #include <algorithm>
 #include <limits>
@@ -9,20 +9,20 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "debug_gui.h"
-#include "dpl/Opendp.h"
-#include "gui/gui.h"
 #include "heatMap.h"
-#include "ir_network.h"
-#include "ir_solver.h"
-#include "node.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
 #include "shape.h"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/psm/src/debug_gui.h"
+#include "src/psm/src/ir_network.h"
+#include "src/psm/src/ir_solver.h"
+#include "src/psm/src/node.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBlock;
 using odb::dbSigType;

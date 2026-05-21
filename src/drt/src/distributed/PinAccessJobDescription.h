@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "boost/serialization/base_object.hpp"
-#include "distributed/paUpdate.h"
-#include "dst/JobMessage.h"
+#include "src/drt/src/distributed/paUpdate.h"
+#include "src/dst/include/dst/JobMessage.h"
 namespace boost::serialization {
 class access;
 }

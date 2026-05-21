@@ -5,16 +5,16 @@
 #include <cstdio>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/Graph.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Sta.hh"
-#include "tst/IntegratedFixture.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace sta {
 

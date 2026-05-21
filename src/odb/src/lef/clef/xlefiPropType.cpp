@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiPropType.h"
-#include "lefiPropType.hpp"
+#include "src/odb/src/lef/lef/lefiPropType.hpp"
 
 // Wrappers definitions.
 char lefiPropType_propType(const ::lefiPropType* obj, char* name)

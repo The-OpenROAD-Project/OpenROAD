@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiNet.hpp"
+#include "src/odb/src/def/def/defiNet.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -38,12 +38,12 @@
 #include <iostream>
 #include <sstream>
 
-#include "defiDebug.hpp"
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defiPath.hpp"
-#include "defiUtil.hpp"
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiPath.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

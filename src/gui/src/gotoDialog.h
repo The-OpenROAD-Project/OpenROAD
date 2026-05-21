@@ -6,8 +6,8 @@
 #include <QDialog>
 #include <QWidget>
 
-#include "layoutTabs.h"
-#include "ui_gotoDlg.h"
+#include "src/gui/src/layoutTabs.h"
+#include "src/gui/ui/ui_gotoDlg.h"
 
 namespace gui {
 class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog

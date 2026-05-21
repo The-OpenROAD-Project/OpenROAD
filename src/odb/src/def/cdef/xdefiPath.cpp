@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiPath.h"
-#include "defiPath.hpp"
+#include "src/odb/src/def/def/defiPath.hpp"
 
 // Wrappers definitions.
 void defiPath_initTraverse(const ::defiPath* obj)

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "pad/ICeWall.h"
+#include "src/pad/include/pad/ICeWall.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,14 +21,14 @@
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pad {
 

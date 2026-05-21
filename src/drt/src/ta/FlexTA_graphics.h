@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
-#include "db/obj/frBlock.h"
-#include "frBaseTypes.h"
-#include "gui/gui.h"
-#include "ta/AbstractTAGraphics.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frBlock.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/ta/AbstractTAGraphics.h"
+#include "src/drt/src/ta/FlexTA.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace odb {
 class dbDatabase;

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ScanStitchConfig.hh"
+#include "src/dft/src/config/ScanStitchConfig.hh"
 
 #include <string_view>
 
-#include "Formatting.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/utils/Formatting.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

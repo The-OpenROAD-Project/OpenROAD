@@ -9,8 +9,8 @@
 #include "boost/container/flat_map.hpp"
 #include "dbCore.h"
 #include "dbDatabase.h"
-#include "odb/db.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbId.h"
 
 namespace odb {
 

@@ -3,14 +3,14 @@
 
 // OpenDB --- Transformation utilities
 
-#include "odb/dbTransform.h"
+#include "src/odb/include/odb/dbTransform.h"
 
 #include <stdexcept>
 #include <vector>
 
-#include "odb/dbStream.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

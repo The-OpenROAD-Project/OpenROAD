@@ -5,8 +5,8 @@
 
 #include <memory>
 
-#include "db/gcObj/gcBlockObject.h"
-#include "db/infra/frBox.h"
+#include "src/drt/src/db/gcObj/gcBlockObject.h"
+#include "src/drt/src/db/infra/frBox.h"
 
 namespace drt {
 class gcFig : public gcBlockObject

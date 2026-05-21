@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "ppl/Parameters.h"
-#include "utl/Logger.h"
-#include "utl/validation.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/Parameters.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/validation.h"
 
 namespace odb {
 class dbBTerm;

@@ -6,7 +6,7 @@
 #include <map>
 #include <vector>
 
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace ppl {
 

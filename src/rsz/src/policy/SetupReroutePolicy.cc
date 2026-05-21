@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupReroutePolicy.hh"
+#include "src/rsz/src/policy/SetupReroutePolicy.hh"
 
 #include <algorithm>
 #include <utility>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

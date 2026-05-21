@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "est/MakeEstimateParasitics.h"
+#include "src/est/include/est/MakeEstimateParasitics.h"
 
 #include <memory>
 #include <utility>
 
-#include "SteinerRenderer.h"
-#include "est/EstimateParasitics.h"
-#include "gui/gui.h"
-#include "odb/db.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/est/src/SteinerRenderer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Est_Init(Tcl_Interp* interp);

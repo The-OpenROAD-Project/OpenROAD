@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace ant {
 

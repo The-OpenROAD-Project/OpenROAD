@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefzlib.hpp"
+#include "src/odb/src/lef/lefzlib/lefzlib.hpp"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,7 +37,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 #include "zlib.h"
 
 /*

@@ -9,16 +9,16 @@
 #include <set>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "graphics/DplObserver.h"
-#include "gui/gui.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/network.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/graphics/DplObserver.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 

@@ -12,8 +12,8 @@
 #include <tuple>
 
 #include "boost/operators.hpp"
-#include "dpl/Opendp.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 

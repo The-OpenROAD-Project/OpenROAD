@@ -1,4 +1,4 @@
-#include "utl/ScopedTemporaryFile.h"
+#include "src/utl/include/utl/ScopedTemporaryFile.h"
 
 #include <stdio.h>   // NOLINT(modernize-deprecated-headers): for fdopen()
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for mkstemp()
@@ -19,7 +19,7 @@
 
 #include "boost/algorithm/string/predicate.hpp"
 #include "boost/iostreams/filter/gzip.hpp"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 namespace fs = std::filesystem;
 
 namespace utl {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "dbSdcNetwork.hh"
+#include "src/dbSta/src/dbSdcNetwork.hh"
 
 #include <cstddef>
 #include <functional>
@@ -11,11 +11,11 @@
 #include <utility>
 
 #include "spdlog/fmt/fmt.h"
-#include "sta/NetworkClass.hh"
-#include "sta/ParseBus.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/SdcNetwork.hh"
-#include "sta/StringUtil.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/ParseBus.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/SdcNetwork.hh"
+#include "src/sta/include/sta/StringUtil.hh"
 
 namespace sta {
 

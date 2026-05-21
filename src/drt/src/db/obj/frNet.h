@@ -9,14 +9,14 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frFig.h"
-#include "db/obj/frGuide.h"
-#include "db/obj/frShape.h"
-#include "db/obj/frVia.h"
-#include "frBaseTypes.h"
-#include "global.h"
-#include "odb/dbTypes.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/obj/frGuide.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace drt {
 class frInstTerm;

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/geom_boost.h"
+#include "src/odb/include/odb/geom_boost.h"
 
 namespace odb {
 

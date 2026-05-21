@@ -7,11 +7,11 @@
 #include <sstream>
 #include <string>
 
-#include "odb/wOrder.h"
-#include "rcx/ext.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSolverGen.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/wOrder.h"
+#include "src/rcx/include/rcx/ext.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSolverGen.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

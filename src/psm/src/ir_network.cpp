@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ir_network.h"
+#include "src/psm/src/ir_network.h"
 
 #include <algorithm>
 #include <array>
@@ -18,17 +18,17 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "connection.h"
-#include "node.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
 #include "shape.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/psm/src/connection.h"
+#include "src/psm/src/node.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace psm {
 

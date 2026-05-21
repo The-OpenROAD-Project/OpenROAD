@@ -8,8 +8,8 @@
 #include <cstdlib>
 
 #include "definTypes.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
 
 namespace odb {
 

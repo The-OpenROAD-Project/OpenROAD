@@ -12,7 +12,7 @@
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerCutEnclosureRule>;
 

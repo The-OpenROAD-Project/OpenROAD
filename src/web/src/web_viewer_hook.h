@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace web {
 

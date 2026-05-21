@@ -11,12 +11,12 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "pdn/PdnGen.hh"
 #include "shape.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/include/pdn/PdnGen.hh"
 
 namespace utl {
 class Logger;

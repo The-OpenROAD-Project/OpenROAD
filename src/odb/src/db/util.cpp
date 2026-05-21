@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "odb/util.h"
+#include "src/odb/include/odb/util.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,12 +14,12 @@
 #include <utility>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbCCSegSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbCCSegSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

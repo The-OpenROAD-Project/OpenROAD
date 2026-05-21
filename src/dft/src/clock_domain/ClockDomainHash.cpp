@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "ClockDomainHash.hh"
+#include "src/dft/src/clock_domain/ClockDomainHash.hh"
 
 #include <cstddef>
 #include <functional>
 
-#include "ClockDomain.hh"
-#include "ScanArchitectConfig.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

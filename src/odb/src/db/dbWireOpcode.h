@@ -5,7 +5,7 @@
 
 #include <cassert>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

@@ -8,10 +8,10 @@
 #include <vector>
 
 #include "DplObserver.h"
-#include "dpl/Opendp.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 

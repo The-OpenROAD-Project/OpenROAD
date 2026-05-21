@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "db/infra/KDTree.hpp"
+#include "src/drt/src/db/infra/KDTree.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,9 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "frBaseTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 using odb::horizontal;
 namespace drt {
 KDTree::KDTree(const std::vector<odb::Point>& points)

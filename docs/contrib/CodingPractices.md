@@ -340,8 +340,8 @@ needs.
 // or writing it.
 #include <odb/defout.h>
 #include <odb/lefin.h>
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
 ```
 
 Note this example also incorrectly uses `<>'s` around OpenROAD headers.
@@ -383,7 +383,7 @@ reduce the code the compiler has to process.
 ``` cpp
 class Network;
 // instead of
-#include "Network.hh"
+#include "src/sta/include/sta/Network.hh"
 ```
 
 ### Practice #25

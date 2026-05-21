@@ -6,9 +6,9 @@
 #include "boost/bind/bind.hpp"
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
-#include "odb/db.h"
-#include "odb/lefin.h"
 #include "parserUtils.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/lefin.h"
 
 namespace odb::lefTechLayerSpacingEol {
 
@@ -118,8 +118,7 @@ void withcutParser(
       std::string,
       double,
       boost::optional<boost::fusion::vector2<std::string, double>>>>&
-      enclosureEnd
-      = at_c<4>(params);
+      enclosureEnd = at_c<4>(params);
 
   sc->setWithcutValid(true);
   if (cutclass.is_initialized()) {
@@ -178,8 +177,7 @@ void endtoendspacingParser(
       = at_c<2>(params);
   const boost::optional<
       boost::fusion::vector3<std::string, double, boost::optional<double>>>&
-      extension
-      = at_c<3>(params);
+      extension = at_c<3>(params);
   const boost::optional<boost::fusion::vector2<std::string, double>>
       otherendWidth = at_c<4>(params);
 
@@ -293,8 +291,7 @@ void concaveCornerParser(
   const boost::optional<boost::fusion::vector2<
       std::string,
       boost::variant<boost::fusion::vector<double, double>, double>>>&
-      minAdjlength
-      = at_c<2>(params);
+      minAdjlength = at_c<2>(params);
 
   sc->setToConcaveCornerValid(true);
   if (minlength.is_initialized()) {

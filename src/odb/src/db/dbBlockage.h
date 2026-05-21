@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include "dbCore.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 
 namespace odb {
 

@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiUtil.h"
-#include "lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
 
 char* lefiOrientStr(int orient)
 {

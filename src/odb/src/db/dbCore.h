@@ -26,8 +26,8 @@
 
 #include "boost/container/flat_map.hpp"
 #include "dbAttrTable.h"
-#include "odb/dbId.h"
-#include "odb/dbObject.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbObject.h"
 
 namespace utl {
 class Logger;

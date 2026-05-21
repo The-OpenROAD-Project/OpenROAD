@@ -21,17 +21,17 @@
 #include <utility>
 #include <vector>
 
-#include "CtsOptions.h"
 #include "boost/functional/hash.hpp"
 #include "boost/unordered/unordered_map.hpp"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

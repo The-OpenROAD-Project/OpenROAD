@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "grid.h"
+#include "src/pdn/src/grid.h"
 
 #include <algorithm>
 #include <array>
@@ -15,21 +15,21 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "connect.h"
-#include "domain.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/isotropy.h"
-#include "power_cells.h"
-#include "rings.h"
 #include "shape.h"
-#include "straps.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
-#include "via.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/pdn/src/connect.h"
+#include "src/pdn/src/domain.h"
+#include "src/pdn/src/power_cells.h"
+#include "src/pdn/src/rings.h"
+#include "src/pdn/src/straps.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/pdn/src/via.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 

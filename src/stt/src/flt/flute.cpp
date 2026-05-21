@@ -6,7 +6,7 @@
 // POWV = potentially optimal wirelength vectors
 // POST = potentially optimal Steiner tree
 
-#include "stt/flute.h"
+#include "src/stt/include/stt/flute.h"
 
 #include <algorithm>
 #include <cassert>
@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "boost/multi_array.hpp"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/decode.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/decode.h"
 
 namespace stt::flt {
 

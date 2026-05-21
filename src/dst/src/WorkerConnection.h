@@ -7,7 +7,7 @@
 #include "boost/asio.hpp"
 #include "boost/enable_shared_from_this.hpp"
 #include "boost/make_shared.hpp"
-#include "dst/JobMessage.h"
+#include "src/dst/include/dst/JobMessage.h"
 
 namespace utl {
 class Logger;

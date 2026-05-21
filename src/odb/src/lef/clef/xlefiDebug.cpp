@@ -34,7 +34,7 @@
 #define EXTERN extern "C"
 
 #include "lefiDebug.h"
-#include "lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
 
 // Wrappers definitions.
 void lefiSetDebug(int num, int value)

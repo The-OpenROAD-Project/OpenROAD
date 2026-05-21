@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "cut/logic_cut.h"
+#include "src/cut/include/cut/logic_cut.h"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -16,17 +16,17 @@
 #include <vector>
 
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
 #include "map/scl/sclLib.h"
 #include "misc/vec/vecPtr.h"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace cut {
 

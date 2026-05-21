@@ -8,15 +8,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/geom.h"
-#include "sta/Hash.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "stt/flute.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Hash.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/stt/include/stt/flute.h"
+#include "src/utl/include/utl/Logger.h"
 
 const int kSteinerNull = -1;
 

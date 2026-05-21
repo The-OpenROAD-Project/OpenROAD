@@ -45,17 +45,17 @@
 //
 // Revisions:
 
-#include "defwWriterCalls.hpp"
+#include "src/odb/src/def/def/defwWriterCalls.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "defiDebug.hpp"
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defrData.hpp"
-#include "defwWriter.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defwWriter.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

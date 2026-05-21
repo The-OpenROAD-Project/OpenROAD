@@ -3,10 +3,10 @@
 
 #include "Test3DBloxCheckerFixture.h"
 #include "gtest/gtest.h"
-#include "odb/3dblox.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/3dblox.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 namespace {

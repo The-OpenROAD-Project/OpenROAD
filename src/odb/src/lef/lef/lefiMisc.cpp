@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -38,10 +38,10 @@
 #include <utility>
 #include <vector>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefiUtil.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

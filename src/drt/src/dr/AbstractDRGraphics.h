@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include "frBaseTypes.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace odb {
 class dbDatabase;
@@ -42,8 +42,7 @@ class AbstractDRGraphics
   virtual void endNet(drNet* net) = 0;
 
   virtual void searchNode(const FlexGridGraph* grid_graph,
-                          const FlexWavefrontGrid& grid)
-      = 0;
+                          const FlexWavefrontGrid& grid) = 0;
 
   virtual void init() = 0;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "object.h"
+#include "src/mpl/src/object.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,11 +14,11 @@
 #include <vector>
 
 #include "boost/random/uniform_int_distribution.hpp"
-#include "mpl-util.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace mpl {
 using utl::MPL;

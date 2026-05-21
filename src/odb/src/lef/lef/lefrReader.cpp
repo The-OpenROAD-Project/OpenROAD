@@ -26,7 +26,7 @@
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -34,12 +34,12 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefrCallBacks.hpp"
-#include "lefrData.hpp"
-#include "lefrSettings.hpp"
-#include "lex.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefrCallBacks.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lex.h"
 
 static constexpr int NOCBK = 100;
 static constexpr int NOLEFMSG = 4701;  // 4701 = 4700 + 1, message starts on 1
@@ -48,7 +48,7 @@ static constexpr int NOLEFMSG = 4701;  // 4701 = 4700 + 1, message starts on 1
 
 BEGIN_LEF_PARSER_NAMESPACE
 
-#include "lef_parser.hpp"
+#include "src/odb/src/lef/lef/lef_parser.hpp"
 
 static const char* init_call_func = nullptr;
 

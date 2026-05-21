@@ -20,8 +20,8 @@
 #include <sstream>
 
 #include "boost/stacktrace/stacktrace.hpp"
-#include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/utl/include/utl/Logger.h"
 %}
 
 %exception {

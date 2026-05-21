@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "db/taObj/taShape.h"
+#include "src/drt/src/db/taObj/taShape.h"
 
 #include <tuple>
 
-#include "db/obj/frShape.h"
+#include "src/drt/src/db/obj/frShape.h"
 
 namespace drt {
 

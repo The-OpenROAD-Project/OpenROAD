@@ -13,12 +13,12 @@
 
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "tile_generator.h"
-#include "timing_report.h"
-#include "tst/nangate45_fixture.h"
-#include "web/web.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/tst/include/tst/nangate45_fixture.h"
+#include "src/web/include/web/web.h"
+#include "src/web/src/tile_generator.h"
+#include "src/web/src/timing_report.h"
 
 namespace web {
 namespace {

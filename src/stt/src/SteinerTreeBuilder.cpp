@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "stt/SteinerTreeBuilder.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 #include <algorithm>
 #include <cmath>
@@ -11,12 +11,12 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "stt/flute.h"
-#include "stt/pd.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/stt/include/stt/flute.h"
+#include "src/stt/include/stt/pd.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace stt {
 

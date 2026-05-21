@@ -10,13 +10,13 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frBlockage.h"
-#include "db/obj/frBoundary.h"
-#include "db/obj/frMTerm.h"
-#include "frBaseTypes.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/db/obj/frBoundary.h"
+#include "src/drt/src/db/obj/frMTerm.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 namespace io {

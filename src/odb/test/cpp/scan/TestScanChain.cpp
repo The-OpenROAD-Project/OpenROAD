@@ -10,9 +10,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "helper.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {

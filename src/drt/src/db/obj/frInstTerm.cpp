@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "db/obj/frInstTerm.h"
+#include "src/drt/src/db/obj/frInstTerm.h"
 
 #include <vector>
 
-#include "db/obj/frInst.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
-#include "odb/dbTransform.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

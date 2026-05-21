@@ -17,13 +17,13 @@
 #include "boost/json/object.hpp"
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
-#include "color.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/web/src/color.h"
+#include "src/web/src/tile_generator.h"
 #include "tcl.h"
-#include "tile_generator.h"
-#include "utl/Logger.h"
 
 namespace web {
 

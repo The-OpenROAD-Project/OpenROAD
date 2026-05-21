@@ -5,8 +5,8 @@
 
 #include <memory>
 
-#include "db_sta/dbSta.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cgt {
 

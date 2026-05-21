@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <vector>
 
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/odbDList.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/odbDList.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

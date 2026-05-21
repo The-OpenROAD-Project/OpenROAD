@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ClockDomain.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
 
 #include <cstddef>
 #include <cstdint>

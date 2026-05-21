@@ -6,9 +6,9 @@
 #include <memory>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 class ScanReplace;

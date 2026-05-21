@@ -15,8 +15,8 @@
 #include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <atomic>
@@ -55,12 +55,12 @@
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbDatabaseObserver.h"
-#include "odb/dbObject.h"
-#include "odb/dbStream.h"
-#include "odb/unfoldedModel.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbDatabaseObserver.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/odb/include/odb/unfoldedModel.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbDatabase>;

@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "odb/db.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extRCap.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

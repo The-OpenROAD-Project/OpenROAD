@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "MeasuredVtSwapPolicy.hh"
+#include "src/rsz/src/policy/MeasuredVtSwapPolicy.hh"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "MeasuredVtSwapGenerator.hh"
-#include "MoveCandidate.hh"
-#include "MoveCommitter.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/MeasuredVtSwapGenerator.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

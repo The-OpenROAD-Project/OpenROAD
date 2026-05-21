@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "delay_optimization_strategy.h"
+#include "src/rmp/src/delay_optimization_strategy.h"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -11,13 +11,13 @@
 #include "absl/base/const_init.h"
 #include "absl/synchronization/mutex.h"
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
-#include "utils.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/rmp/src/utils.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace abc {
 // NOLINTBEGIN(readability-identifier-naming)

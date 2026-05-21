@@ -8,10 +8,10 @@
 #include <string>
 
 #include "dbCore.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
 #include "dbVector.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code End Includes
 
 namespace odb {

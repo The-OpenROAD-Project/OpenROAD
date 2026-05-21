@@ -10,8 +10,8 @@
 #include <tuple>
 #include <vector>
 
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
 
 namespace odb {
 class dbBox;

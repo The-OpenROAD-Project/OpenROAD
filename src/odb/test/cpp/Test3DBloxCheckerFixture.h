@@ -5,11 +5,11 @@
 
 #include <vector>
 
-#include "odb/3dblox.h"
-#include "odb/db.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
-#include "tst/fixture.h"
+#include "src/odb/include/odb/3dblox.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/tst/include/tst/fixture.h"
 
 namespace odb {
 class CheckerFixture : public tst::Fixture

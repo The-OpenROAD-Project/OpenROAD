@@ -5,11 +5,11 @@
 #include <cstdlib>
 #include <unordered_set>
 
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbWireCodec.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/utl/include/utl/Logger.h"
 #include "tmg_conn.h"
-#include "utl/Logger.h"
 
 namespace odb {
 

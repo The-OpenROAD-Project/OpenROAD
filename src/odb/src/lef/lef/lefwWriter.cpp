@@ -31,15 +31,15 @@
 //
 // Revisions:
 
-#include "lefwWriter.hpp"
+#include "src/odb/src/lef/lef/lefwWriter.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 
-#include "crypt.hpp"
-#include "lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/crypt.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

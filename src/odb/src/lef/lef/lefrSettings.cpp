@@ -27,14 +27,14 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
 
 #include <cstring>
 #include <map>
 #include <string>
 
-#include "lef_parser.hpp"
-#include "lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lef_parser.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

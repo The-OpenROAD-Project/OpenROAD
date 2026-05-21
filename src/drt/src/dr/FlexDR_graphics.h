@@ -7,10 +7,10 @@
 #include <string>
 #include <vector>
 
-#include "dr/AbstractDRGraphics.h"
-#include "frBaseTypes.h"
-#include "gui/gui.h"
-#include "odb/db.h"
+#include "src/drt/src/dr/AbstractDRGraphics.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 class dbDatabase;

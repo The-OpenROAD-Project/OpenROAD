@@ -1,4 +1,4 @@
-#include "MazeRoute.h"
+#include "src/grt/src/cugr/src/MazeRoute.h"
 
 #include <algorithm>
 #include <cassert>
@@ -9,13 +9,13 @@
 #include <utility>
 #include <vector>
 
-#include "Design.h"
-#include "GridGraph.h"
-#include "Layers.h"
-#include "PatternRoute.h"
-#include "geo.h"
-#include "robin_hood.h"
-#include "utl/Logger.h"
+#include "src/grt/src/cugr/src/Design.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
+#include "src/grt/src/cugr/src/Layers.h"
+#include "src/grt/src/cugr/src/PatternRoute.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/grt/src/cugr/src/robin_hood.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

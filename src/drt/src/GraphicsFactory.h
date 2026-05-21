@@ -6,16 +6,16 @@
 #include <memory>
 #include <vector>
 
-#include "AbstractGraphicsFactory.h"
-#include "db/obj/frBlockObject.h"
-#include "dr/AbstractDRGraphics.h"
-#include "dr/FlexDR_graphics.h"
-#include "frBaseTypes.h"
-#include "gui/gui.h"
-#include "pa/AbstractPAGraphics.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/AbstractTAGraphics.h"
-#include "ta/FlexTA_graphics.h"
+#include "src/drt/src/AbstractGraphicsFactory.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/dr/AbstractDRGraphics.h"
+#include "src/drt/src/dr/FlexDR_graphics.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/pa/AbstractPAGraphics.h"
+#include "src/drt/src/pa/FlexPA_graphics.h"
+#include "src/drt/src/ta/AbstractTAGraphics.h"
+#include "src/drt/src/ta/FlexTA_graphics.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace drt {
 class GraphicsFactory : public AbstractGraphicsFactory

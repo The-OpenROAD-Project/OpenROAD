@@ -22,11 +22,11 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "sta/Clock.hh"
-#include "sta/SdcClass.hh"
-#include "staGuiInterface.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/SdcClass.hh"
 
 namespace sta {
 class Pin;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "cut/blifParser.h"
+#include "src/cut/include/cut/blifParser.h"
 
 #include <string>
 #include <vector>

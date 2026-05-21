@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 #include <strings.h>
 
@@ -12,8 +12,8 @@
 #include <optional>
 #include <string>
 
-#include "odb/dbId.h"
-#include "odb/dbStream.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbStream.h"
 
 namespace odb {
 

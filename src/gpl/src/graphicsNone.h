@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "routeBase.h"
+#include "src/gpl/src/routeBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gpl {
 

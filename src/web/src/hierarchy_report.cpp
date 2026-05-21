@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "hierarchy_report.h"
+#include "src/web/src/hierarchy_report.h"
 
 #include <cstdint>
 #include <map>
@@ -11,9 +11,9 @@
 #include <vector>
 
 #include "boost/json/array.hpp"
-#include "db_sta/dbSta.hh"
-#include "module_color_palette.h"
-#include "odb/db.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/web/src/module_color_palette.h"
 
 namespace web {
 

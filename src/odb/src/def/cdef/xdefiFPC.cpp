@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiFPC.h"
-#include "defiFPC.hpp"
+#include "src/odb/src/def/def/defiFPC.hpp"
 
 // Wrappers definitions.
 const char* defiFPC_name(const ::defiFPC* obj)

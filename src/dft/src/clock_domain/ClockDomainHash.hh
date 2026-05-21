@@ -6,9 +6,9 @@
 #include <cstddef>
 #include <functional>
 
-#include "ClockDomain.hh"
-#include "ScanArchitectConfig.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

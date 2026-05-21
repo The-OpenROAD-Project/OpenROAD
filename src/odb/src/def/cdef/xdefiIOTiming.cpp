@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiIOTiming.h"
-#include "defiIOTiming.hpp"
+#include "src/odb/src/def/def/defiIOTiming.hpp"
 
 // Wrappers definitions.
 int defiIOTiming_hasVariableRise(const ::defiIOTiming* obj)

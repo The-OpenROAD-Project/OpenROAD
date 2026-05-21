@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rp/FlexRP.h"
+#include "src/drt/src/rp/FlexRP.h"
 
-#include "frDesign.h"
-#include "frProfileTask.h"
-#include "global.h"
-#include "utl/Logger.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/global.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 

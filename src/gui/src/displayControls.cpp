@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "displayControls.h"
+#include "src/gui/src/displayControls.h"
 
 #include <QApplication>
 #include <QColor>
@@ -35,13 +35,13 @@
 #include <random>
 #include <string>
 
-#include "dbDescriptors.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
 Q_DECLARE_METATYPE(odb::dbSite*);

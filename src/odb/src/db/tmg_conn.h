@@ -8,9 +8,9 @@
 #include <memory>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

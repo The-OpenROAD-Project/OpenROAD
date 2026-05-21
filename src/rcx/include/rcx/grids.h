@@ -9,12 +9,12 @@
 #include <cstring>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "rcx/array1.h"
-#include "rcx/box.h"
-#include "rcx/rcx.h"
-#include "rcx/util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/box.h"
+#include "src/rcx/include/rcx/rcx.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

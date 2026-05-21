@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "staDescriptors.h"
+#include "src/gui/src/staDescriptors.h"
 
 #ifdef ENABLE_QT
 #include <QInputDialog>
@@ -20,24 +20,24 @@
 #include <utility>
 
 #include "boost/algorithm/string.hpp"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/ClkNetwork.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Sdc.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/ClkNetwork.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

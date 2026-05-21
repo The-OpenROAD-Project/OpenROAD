@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "mpl/rtl_mp.h"
+#include "src/mpl/include/mpl/rtl_mp.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "MplObserver.h"
 #include "hier_rtlmp.h"
-#include "object.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "snapper.h"
-#include "utl/Logger.h"
+#include "src/mpl/src/MplObserver.h"
+#include "src/mpl/src/object.h"
+#include "src/mpl/src/snapper.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace mpl {
 using std::string;

@@ -9,8 +9,8 @@
 
 #ifdef BAZEL
 %{
-#include "utl/Logger.h"
-#include "LoggerCommon.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/src/LoggerCommon.h"
 
 using utl::ToolId;
 using utl::Logger;
@@ -19,8 +19,8 @@ using namespace utl;
 %}
 #else
 %{
-#include "utl/Logger.h"
-#include "LoggerCommon.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/src/LoggerCommon.h"
 
 namespace ord {
 // Defined in OpenRoad.i

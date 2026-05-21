@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2026, The OpenROAD Authors
 
-#include "rmp/Restructure.h"
+#include "src/rmp/include/rmp/Restructure.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -23,27 +23,27 @@
 #include "misc/util/abc_namespaces.h"  // IWYU pragma: keep
 
 // other includes
-#include "annealing_strategy.h"
 #include "base/main/abcapis.h"
-#include "cut/abc_init.h"
-#include "cut/blif.h"
-#include "db_sta/dbSta.hh"
-#include "genetic_strategy.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
-#include "utl/Logger.h"
-#include "zero_slack_strategy.h"
+#include "src/cut/include/cut/abc_init.h"
+#include "src/cut/include/cut/blif.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rmp/src/annealing_strategy.h"
+#include "src/rmp/src/genetic_strategy.h"
+#include "src/rmp/src/zero_slack_strategy.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathEnd.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rmp {
 

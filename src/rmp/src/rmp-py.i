@@ -4,7 +4,7 @@
 %{
 #ifdef BAZEL
 #include <string>
-#include "cut/blif.h"
+#include "src/cut/include/cut/blif.h"
 
 namespace utl {
 class Logger;
@@ -22,12 +22,12 @@ class dbSta;
 using namespace cut;
 using odb::dbInst;
 #else
-#include "rmp/Restructure.h"
-#include "cut/blif.h"
-#include "sta/Scene.hh"
-#include "ord/OpenRoad.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
+#include "src/rmp/include/rmp/Restructure.h"
+#include "src/cut/include/cut/blif.h"
+#include "src/sta/include/sta/Scene.hh"
+#include "include/ord/OpenRoad.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Liberty.hh"
 #include <string>
 
 namespace ord {

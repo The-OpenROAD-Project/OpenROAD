@@ -39,7 +39,7 @@
 #include <time.h>
 #endif
 
-#include "defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

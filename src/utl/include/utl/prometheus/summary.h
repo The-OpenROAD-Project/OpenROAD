@@ -27,12 +27,12 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "utl/prometheus/builder.h"
-#include "utl/prometheus/ckms_quantiles.h"
-#include "utl/prometheus/client_metric.h"
-#include "utl/prometheus/family.h"
-#include "utl/prometheus/prometheus_metric.h"
-#include "utl/prometheus/time_window_quantiles.h"
+#include "src/utl/include/utl/prometheus/builder.h"
+#include "src/utl/include/utl/prometheus/ckms_quantiles.h"
+#include "src/utl/include/utl/prometheus/client_metric.h"
+#include "src/utl/include/utl/prometheus/family.h"
+#include "src/utl/include/utl/prometheus/prometheus_metric.h"
+#include "src/utl/include/utl/prometheus/time_window_quantiles.h"
 
 namespace utl {
 

@@ -8,11 +8,11 @@
 #include <cstdint>
 #include <vector>
 
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace utl {
 class Logger;

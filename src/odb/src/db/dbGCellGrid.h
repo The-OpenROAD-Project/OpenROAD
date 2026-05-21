@@ -9,10 +9,10 @@
 
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/db.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbId.h"
 // User Code Begin Includes
-#include "odb/dbMatrix.h"
+#include "src/odb/include/odb/dbMatrix.h"
 // User Code End Includes
 
 namespace odb {

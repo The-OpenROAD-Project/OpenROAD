@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "DataType.h"
-#include "stt/SteinerTreeBuilder.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 namespace grt {
 

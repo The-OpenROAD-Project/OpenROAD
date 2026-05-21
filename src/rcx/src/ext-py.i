@@ -2,8 +2,8 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "ord/OpenRoad.hh"
-#include "rcx/ext.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/rcx/include/rcx/ext.h"
 
 using namespace odb;
 using rcx::Ext;

@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "rcx/array1.h"
+#include "src/rcx/include/rcx/array1.h"
 
 namespace rcx {
 

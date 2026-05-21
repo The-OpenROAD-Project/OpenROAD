@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "ScanReplace.hh"
+#include "src/dft/src/replace/ScanReplace.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -15,16 +15,16 @@
 #include <utility>
 #include <vector>
 
-#include "Utils.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/EquivCells.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Sequential.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dft/src/utils/Utils.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/EquivCells.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Sequential.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

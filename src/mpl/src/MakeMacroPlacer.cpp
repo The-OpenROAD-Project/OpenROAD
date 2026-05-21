@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "mpl/MakeMacroPlacer.h"
+#include "src/mpl/include/mpl/MakeMacroPlacer.h"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Mpl_Init(Tcl_Interp* interp);

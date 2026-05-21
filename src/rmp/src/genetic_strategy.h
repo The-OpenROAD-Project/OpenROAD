@@ -6,11 +6,11 @@
 #include <random>
 #include <vector>
 
-#include "cut/abc_library_factory.h"
-#include "gia.h"
-#include "slack_tuning_strategy.h"
-#include "sta/Delay.hh"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/rmp/src/gia.h"
+#include "src/rmp/src/slack_tuning_strategy.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 

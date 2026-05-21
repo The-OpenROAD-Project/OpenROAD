@@ -1,20 +1,20 @@
-#include "PlacementDRC.h"
+#include "src/dpl/src/PlacementDRC.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <set>
 #include <string>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
-#include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/Padding.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

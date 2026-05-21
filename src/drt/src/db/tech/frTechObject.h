@@ -13,15 +13,15 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frVia.h"
-#include "db/tech/frConstraint.h"
-#include "db/tech/frLayer.h"
-#include "db/tech/frViaDef.h"
-#include "db/tech/frViaRuleGenerate.h"
-#include "frBaseTypes.h"
-#include "global.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/db/tech/frViaRuleGenerate.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 class dbTechLayer;

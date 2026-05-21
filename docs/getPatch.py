@@ -41,8 +41,8 @@ swap_prefix("../src/CMakeLists.txt", "pdn\n  dft", "pdn\n  dft\n  tool")
 # modify ../src/OpenROAD.cc
 swap_prefix(
     "../src/OpenRoad.cc",
-    '#include "utl/MakeLogger.h"',
-    '#include "utl/MakeLogger.h"\n#include "tool/MakeTool.hh"',
+    '#include "src/utl/include/utl/MakeLogger.h"',
+    '#include "src/utl/include/utl/MakeLogger.h"\n#include "tool/MakeTool.hh"',
 )
 
 swap_prefix(

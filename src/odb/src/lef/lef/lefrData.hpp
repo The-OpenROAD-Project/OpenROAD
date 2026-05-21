@@ -36,22 +36,22 @@
 #include <string>
 #include <vector>
 
-#include "lefiArray.hpp"
-#include "lefiCrossTalk.hpp"
-#include "lefiDefs.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefiLayer.hpp"
-#include "lefiMacro.hpp"
-#include "lefiMisc.hpp"
-#include "lefiNonDefault.hpp"
-#include "lefiProp.hpp"
-#include "lefiPropType.hpp"
-#include "lefiUnits.hpp"
-#include "lefiUser.hpp"
-#include "lefiUtil.hpp"
-#include "lefiVia.hpp"
-#include "lefiViaRule.hpp"
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefiArray.hpp"
+#include "src/odb/src/lef/lef/lefiCrossTalk.hpp"
+#include "src/odb/src/lef/lef/lefiDefs.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiMacro.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lefiNonDefault.hpp"
+#include "src/odb/src/lef/lef/lefiProp.hpp"
+#include "src/odb/src/lef/lef/lefiPropType.hpp"
+#include "src/odb/src/lef/lef/lefiUnits.hpp"
+#include "src/odb/src/lef/lef/lefiUser.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefiVia.hpp"
+#include "src/odb/src/lef/lef/lefiViaRule.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 #define CURRENT_VERSION 5.8
 #define RING_SIZE 10

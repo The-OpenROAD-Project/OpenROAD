@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "frBaseTypes.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 enum class frInterpolateType

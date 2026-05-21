@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "insertBufferDialog.h"
+#include "src/gui/src/insertBufferDialog.h"
 
 #include <QFormLayout>
 #include <QGroupBox>
@@ -13,13 +13,13 @@
 #include <set>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "sta/Liberty.hh"
-#include "utl/algorithms.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/algorithms.h"
 
 Q_DECLARE_METATYPE(odb::dbObject*);
 

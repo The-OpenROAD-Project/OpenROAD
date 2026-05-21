@@ -7,8 +7,8 @@
 #include <cstdint>
 
 #include "dbCore.h"
-#include "odb/dbId.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/geom.h"
 // User Code Begin Includes
 #include <vector>
 // User Code End Includes

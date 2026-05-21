@@ -1,30 +1,30 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "MakeWireParasitics.h"
+#include "src/est/src/MakeWireParasitics.h"
 
 #include <cmath>
 #include <cstddef>
 #include <string>
 #include <vector>
 
-#include "db_sta/SpefWriter.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
-#include "grt/PinGridLocation.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/MinMax.hh"
-#include "sta/Parasitics.hh"
-#include "sta/ParasiticsClass.hh"
-#include "sta/Sdc.hh"
-#include "sta/StaState.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/SpefWriter.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/include/grt/PinGridLocation.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/ArcDelayCalc.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/ParasiticsClass.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/StaState.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace est {
 

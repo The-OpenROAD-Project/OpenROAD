@@ -5,11 +5,11 @@
 
 %{
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
-#include "ScanArchitect.hh"
-#include "ClockDomain.hh"
+#include "src/dft/include/dft/Dft.hh"
+#include "src/dft/src/config/DftConfig.hh"
+#include "include/ord/OpenRoad.hh"
+#include "src/dft/src/architect/ScanArchitect.hh"
+#include "src/dft/src/clock_domain/ClockDomain.hh"
 
 dft::Dft * getDft()
 {

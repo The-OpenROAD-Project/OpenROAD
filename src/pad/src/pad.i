@@ -8,10 +8,10 @@
 ////////////////////////////////////////////////////////////////
 
 %{
-#include "pad/ICeWall.h"
-#include "utl/Logger.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/pad/include/pad/ICeWall.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace ord {
 // Defined in OpenRoad.i

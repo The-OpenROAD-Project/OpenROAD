@@ -35,9 +35,9 @@
 #include <set>
 #include <string>
 
-#include "lefiKRDefs.hpp"
-#include "lefiPropType.hpp"
-#include "lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiPropType.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
 
 #define lefMaxOxides 32
 

@@ -5,10 +5,10 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "tst/IntegratedFixture.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace rsz {
 

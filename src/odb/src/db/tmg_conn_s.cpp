@@ -5,7 +5,7 @@
 #include <deque>
 #include <memory>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 #include "tmg_conn.h"
 
 namespace odb {

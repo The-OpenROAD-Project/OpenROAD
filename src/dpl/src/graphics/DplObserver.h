@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "dpl/Opendp.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace dpl {
 
@@ -38,8 +38,7 @@ class DplObserver
                          GridX xl,
                          GridY yl,
                          GridX xh,
-                         GridY yh)
-      = 0;
+                         GridY yh) = 0;
   virtual void redrawAndPause() = 0;
   virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 

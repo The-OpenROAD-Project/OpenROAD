@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "inspector.h"
+#include "src/gui/src/inspector.h"
 
 #include <QApplication>
 #include <QColor>
@@ -29,8 +29,8 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
-#include "gui_utils.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/gui_utils.h"
 
 Q_DECLARE_METATYPE(gui::Selected);
 Q_DECLARE_METATYPE(gui::Descriptor::Editor);

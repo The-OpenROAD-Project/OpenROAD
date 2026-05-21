@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "rcx/MakeOpenRCX.h"
+#include "src/rcx/include/rcx/MakeOpenRCX.h"
 
-#include "rcx/ext.h"
+#include "src/rcx/include/rcx/ext.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Rcx_Init(Tcl_Interp* interp);

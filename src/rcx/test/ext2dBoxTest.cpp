@@ -2,7 +2,7 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include "gtest/gtest.h"
-#include "rcx/ext2dBox.h"
+#include "src/rcx/include/rcx/ext2dBox.h"
 
 namespace rcx {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/lefin.h"
+#include "src/odb/include/odb/lefin.h"
 
 #include <strings.h>
 #include <unistd.h>
@@ -22,19 +22,19 @@
 #include "absl/synchronization/mutex.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
-#include "lefiDebug.hpp"
-#include "lefiLayer.hpp"
-#include "lefiMisc.hpp"
-#include "lefiUtil.hpp"
-#include "lefrReader.hpp"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/poly_decomp.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/poly_decomp.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
+#include "src/utl/include/utl/Logger.h"
 namespace odb {
 
 using LefParser::lefrSetRelaxMode;

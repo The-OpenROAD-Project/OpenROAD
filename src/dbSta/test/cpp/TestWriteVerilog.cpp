@@ -20,11 +20,11 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/VerilogWriter.hh"
-#include "tst/IntegratedFixture.h"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/VerilogWriter.hh"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 namespace sta {
 

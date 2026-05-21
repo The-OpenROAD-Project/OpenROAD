@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "timingWidget.h"
+#include "src/gui/src/timingWidget.h"
 
 #include <QApplication>
 #include <QClipboard>
@@ -23,15 +23,15 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "gui_utils.h"
-#include "odb/db.h"
-#include "odb/defout.h"
-#include "sta/Liberty.hh"
-#include "sta/SdcClass.hh"
-#include "staGui.h"
-#include "staGuiInterface.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/gui_utils.h"
+#include "src/gui/src/staGui.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/defout.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/SdcClass.hh"
 
 namespace gui {
 

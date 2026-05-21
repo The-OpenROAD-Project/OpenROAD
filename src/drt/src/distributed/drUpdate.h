@@ -2,13 +2,13 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
-#include "db/infra/frSegStyle.h"
-#include "db/obj/frMarker.h"
-#include "db/obj/frShape.h"
-#include "db/obj/frVia.h"
-#include "db/tech/frViaDef.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frSegStyle.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 namespace drt {
 
 class frNet;

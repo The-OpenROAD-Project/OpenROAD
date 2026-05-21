@@ -7,22 +7,22 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "odb/geom.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbViaParams.h"
-#include "odb/dbWireCodec.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbIterator.h"
-#include "odb/dbTransform.h"
-#include "odb/dbWireGraph.h"
-#include "odb/dbMap.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/isotropy.h"
-#include "odb/geom.h"
-#include "odb/wOrder.h"
-#include "odb/util.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbViaParams.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbIterator.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbWireGraph.h"
+#include "src/odb/include/odb/dbMap.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/wOrder.h"
+#include "src/odb/include/odb/util.h"
 
 using namespace odb;
 %}

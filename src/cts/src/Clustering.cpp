@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "Clustering.h"
+#include "src/cts/src/Clustering.h"
 
 #include <sys/timeb.h>
 
@@ -20,7 +20,7 @@
 #include "lemon/list_graph.h"
 #include "lemon/maps.h"
 #include "lemon/network_simplex.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts::CKMeans {
 

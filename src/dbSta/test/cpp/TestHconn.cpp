@@ -10,21 +10,21 @@
 #include <sstream>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/lefin.h"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Search.hh"
-#include "sta/Sta.hh"
-#include "tst/fixture.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/tst/include/tst/fixture.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace odb {
 

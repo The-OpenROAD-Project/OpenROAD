@@ -15,8 +15,8 @@
 #include <tuple>
 #include <vector>
 
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

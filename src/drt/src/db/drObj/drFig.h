@@ -5,9 +5,9 @@
 
 #include <memory>
 
-#include "db/drObj/drBlockObject.h"
-#include "db/infra/frBox.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/db/infra/frBox.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class drFig : public drBlockObject

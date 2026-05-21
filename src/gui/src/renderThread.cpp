@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "renderThread.h"
+#include "src/gui/src/renderThread.h"
 
 #include <QColor>
 #include <QMutexLocker>
@@ -24,20 +24,20 @@
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/predicates.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "gui/gui.h"
-#include "label.h"
-#include "layoutViewer.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "painter.h"
-#include "ruler.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/label.h"
+#include "src/gui/src/layoutViewer.h"
+#include "src/gui/src/painter.h"
+#include "src/gui/src/ruler.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace gui {
 

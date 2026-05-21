@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "MoveCommitter.hh"
-#include "OptimizerTypes.hh"
-#include "RepairSetupContext.hh"
-#include "SetupLegacyBase.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairSetupContext.hh"
+#include "src/rsz/src/policy/SetupLegacyBase.hh"
 
 namespace rsz {
 

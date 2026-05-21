@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "distributed/paUpdate.h"
+#include "src/drt/src/distributed/paUpdate.h"
 
 #include <fstream>
 #include <memory>
@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frPin.h"
-#include "distributed/frArchive.h"
-#include "serialization.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frPin.h"
+#include "src/drt/src/distributed/frArchive.h"
+#include "src/drt/src/serialization.h"
 
 namespace drt {
 

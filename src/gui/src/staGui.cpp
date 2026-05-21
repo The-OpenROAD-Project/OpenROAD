@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "staGui.h"
+#include "src/gui/src/staGui.h"
 
 #include <qchar.h>
 #include <qglobal.h>
@@ -33,26 +33,26 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "dbDescriptors.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "dropdownCheckboxes.h"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "sta/Clock.hh"
-#include "sta/Delay.hh"
-#include "sta/Liberty.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/Scene.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "staGuiInterface.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/dropdownCheckboxes.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PatternMatch.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
 
 Q_DECLARE_METATYPE(sta::Scene*);
 

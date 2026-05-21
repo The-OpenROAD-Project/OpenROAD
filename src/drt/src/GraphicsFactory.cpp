@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "GraphicsFactory.h"
+#include "src/drt/src/GraphicsFactory.h"
 
 #include <memory>
 #include <utility>
 
-#include "dr/AbstractDRGraphics.h"
-#include "dr/FlexDR_graphics.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "pa/AbstractPAGraphics.h"
-#include "pa/FlexPA_graphics.h"
-#include "ta/AbstractTAGraphics.h"
-#include "ta/FlexTA_graphics.h"
+#include "src/drt/src/dr/AbstractDRGraphics.h"
+#include "src/drt/src/dr/FlexDR_graphics.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/pa/AbstractPAGraphics.h"
+#include "src/drt/src/pa/FlexPA_graphics.h"
+#include "src/drt/src/ta/AbstractTAGraphics.h"
+#include "src/drt/src/ta/FlexTA_graphics.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
 
 namespace drt {
 

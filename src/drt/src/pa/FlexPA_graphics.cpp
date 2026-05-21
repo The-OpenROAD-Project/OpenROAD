@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "pa/FlexPA_graphics.h"
+#include "src/drt/src/pa/FlexPA_graphics.h"
 
 #include <cstdio>
 #include <memory>
@@ -9,15 +9,15 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frMPin.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "gui/gui.h"
-#include "pa/FlexPA.h"
-#include "pa/FlexPA_unique.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frMPin.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/pa/FlexPA.h"
+#include "src/drt/src/pa/FlexPA_unique.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 

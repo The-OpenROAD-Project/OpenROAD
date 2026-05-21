@@ -21,10 +21,10 @@
 #include "boost/beast.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "utl/CFileUtils.h"
-#include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
-#include "utl/prometheus/gauge.h"
+#include "src/utl/include/utl/CFileUtils.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ScopedTemporaryFile.h"
+#include "src/utl/include/utl/prometheus/gauge.h"
 
 namespace utl {
 using ::testing::HasSubstr;

@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "Clock.h"
-#include "Util.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/Util.h"
 
 namespace cts {
 

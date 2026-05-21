@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "SetupLegacyPolicy.hh"
-#include "sta/Delay.hh"
-#include "sta/Path.hh"
+#include "src/rsz/src/policy/SetupLegacyPolicy.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Path.hh"
 
 namespace rsz {
 

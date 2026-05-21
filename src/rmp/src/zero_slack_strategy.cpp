@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "zero_slack_strategy.h"
+#include "src/rmp/src/zero_slack_strategy.h"
 
 #include <vector>
 
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "cut/logic_cut.h"
-#include "cut/logic_extractor.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "delay_optimization_strategy.h"
-#include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Search.hh"
-#include "utils.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
-#include "utl/unique_name.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/cut/include/cut/logic_cut.h"
+#include "src/cut/include/cut/logic_extractor.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rmp/src/delay_optimization_strategy.h"
+#include "src/rmp/src/utils.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphDelayCalc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 

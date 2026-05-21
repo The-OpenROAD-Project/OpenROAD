@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "UnbufferCandidate.hh"
+#include "src/rsz/src/move/UnbufferCandidate.hh"
 
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "rsz/Resizer.hh"
-#include "sta/Network.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/Network.hh"
 
 namespace rsz {
 

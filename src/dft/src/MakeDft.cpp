@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "dft/MakeDft.hh"
+#include "src/dft/include/dft/MakeDft.hh"
 
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/decode.h"
 
 namespace dft {
 extern const char* dft_tcl_inits[];

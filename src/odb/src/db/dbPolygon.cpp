@@ -10,7 +10,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <vector>
 
@@ -20,10 +20,10 @@
 #include "dbMaster.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/poly_decomp.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/poly_decomp.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbPolygon>;

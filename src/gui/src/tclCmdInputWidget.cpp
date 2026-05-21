@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "tclCmdInputWidget.h"
+#include "src/gui/src/tclCmdInputWidget.h"
 
 #include <QAbstractItemView>
 #include <QCoreApplication>
@@ -18,12 +18,12 @@
 #include <string>
 #include <utility>
 
-#include "cmdInputWidget.h"
-#include "gui/gui.h"
-#include "ord/OpenRoad.hh"
+#include "include/ord/OpenRoad.hh"
 #include "spdlog/formatter.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/cmdInputWidget.h"
+#include "src/gui/src/tclCmdHighlighter.h"
 #include "tcl.h"
-#include "tclCmdHighlighter.h"
 
 namespace gui {
 

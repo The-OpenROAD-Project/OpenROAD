@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "clockWidget.h"
+#include "src/gui/src/clockWidget.h"
 
 #include <QApplication>
 #include <QColor>
@@ -38,22 +38,22 @@
 #include <utility>
 #include <vector>
 
-#include "colorGenerator.h"
-#include "dbDescriptors.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "gui_utils.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Sdc.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "staGuiInterface.h"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/colorGenerator.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/gui_utils.h"
+#include "src/gui/src/staGuiInterface.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/FuncExpr.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbBTerm*);
 Q_DECLARE_METATYPE(odb::dbITerm*);

@@ -2,10 +2,10 @@
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
 %{
-#include "ord/OpenRoad.hh"
-#include "gpl/Replace.h"
-#include "odb/db.h"
-#include "utl/options.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/options.h"
 
 namespace ord {
 OpenRoad*

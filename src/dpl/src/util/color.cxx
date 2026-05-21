@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "util/color.h"
+#include "src/dpl/src/util/color.h"
 
 #include <algorithm>
 #include <vector>
 
-#include "utl/algorithms.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace dpl {
 

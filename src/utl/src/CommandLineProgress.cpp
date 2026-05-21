@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "CommandLineProgress.h"
+#include "src/utl/src/CommandLineProgress.h"
 
 #include <memory>
 
-#include "utl/Logger.h"
-#include "utl/Progress.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/Progress.h"
 
 namespace utl {
 

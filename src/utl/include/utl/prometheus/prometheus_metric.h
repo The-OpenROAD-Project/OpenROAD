@@ -24,7 +24,7 @@
 
 #include <cstdint>
 
-#include "utl/prometheus/client_metric.h"
+#include "src/utl/include/utl/prometheus/client_metric.h"
 
 namespace utl {
 

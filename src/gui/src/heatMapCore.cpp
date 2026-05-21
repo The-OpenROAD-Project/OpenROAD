@@ -22,16 +22,16 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "heatMapPinDensity.h"
-#include "heatMapPlacementDensity.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "sta/PowerClass.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/gui/src/heatMapPinDensity.h"
+#include "src/gui/src/heatMapPlacementDensity.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/PowerClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

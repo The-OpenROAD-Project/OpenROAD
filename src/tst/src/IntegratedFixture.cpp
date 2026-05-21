@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024, The OpenROAD Authors
 
-#include "tst/IntegratedFixture.h"
+#include "src/tst/include/tst/IntegratedFixture.h"
 
 #include <cstdio>
 #include <fstream>
@@ -9,23 +9,23 @@
 #include <iterator>
 #include <string>
 
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "sta/Clock.hh"
-#include "sta/Graph.hh"
-#include "sta/MinMax.hh"
-#include "sta/Mode.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Transition.hh"
-#include "sta/Units.hh"
-#include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbReadVerilog.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/sta/include/sta/Clock.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Mode.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/SdcClass.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/sta/include/sta/VerilogReader.hh"
+#include "src/sta/include/sta/VerilogWriter.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace tst {
 

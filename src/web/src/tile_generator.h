@@ -17,12 +17,12 @@
 #include <vector>
 
 #include "boost/json/object.hpp"
-#include "color.h"
-#include "glyph_cache.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "web_painter.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/web/src/color.h"
+#include "src/web/src/glyph_cache.h"
+#include "src/web/src/web_painter.h"
 
 namespace sta {
 class dbSta;

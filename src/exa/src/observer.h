@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 // This is an interface that allows the Example object to notify observers
 // (i.e. graphics) that something interesting has happened without having

@@ -6,13 +6,13 @@
 #include <memory>
 #include <vector>
 
-#include "db/obj/frAccess.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frNet.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frNet.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 class frTerm : public frBlockObject
@@ -31,8 +31,7 @@ class frTerm : public frBlockObject
   virtual frAccessPoint* getAccessPoint(frCoord x,
                                         frCoord y,
                                         frLayerNum lNum,
-                                        int pinAccessIdx)
-      = 0;
+                                        int pinAccessIdx) = 0;
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
   {
     return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;

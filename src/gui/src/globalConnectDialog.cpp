@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "globalConnectDialog.h"
+#include "src/gui/src/globalConnectDialog.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -18,9 +18,9 @@
 #include <stdexcept>
 #include <string>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbNet*);
 Q_DECLARE_METATYPE(odb::dbRegion*);

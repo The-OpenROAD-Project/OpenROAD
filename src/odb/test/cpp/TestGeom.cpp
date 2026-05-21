@@ -1,8 +1,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "odb/geom.h"
-#include "odb/isotropy.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/isotropy.h"
 
 namespace odb {
 namespace {

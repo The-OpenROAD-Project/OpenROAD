@@ -7,11 +7,11 @@
 #include <cstddef>
 #include <string>
 
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace cgt {
 

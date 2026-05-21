@@ -11,11 +11,11 @@
 #include <string>
 #include <unordered_map>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbMap.h"
-#include "odb/dbObject.h"
-#include "odb/defout.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbMap.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/defout.h"
 
 namespace utl {
 class Logger;

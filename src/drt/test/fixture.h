@@ -6,19 +6,19 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockage.h"
-#include "db/obj/frInst.h"
-#include "db/obj/frVia.h"
-#include "db/tech/frConstraint.h"
-#include "db/tech/frTechObject.h"
-#include "db/tech/frViaDef.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
+#include "src/drt/src/db/obj/frBlockage.h"
+#include "src/drt/src/db/obj/frInst.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
 #include "src/drt/src/global.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 class dbTechLayerCutSpacingTableDefRule;

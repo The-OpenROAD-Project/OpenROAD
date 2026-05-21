@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "db_sta/dbSta.hh"
-#include "rsz/Resizer.hh"
-#include "utl/Logger.h"
-#include "utl/unique_name.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/unique_name.h"
 
 namespace rmp {
 
@@ -17,7 +17,6 @@ class ResynthesisStrategy
   virtual void OptimizeDesign(sta::dbSta* sta,
                               utl::UniqueName& name_generator,
                               rsz::Resizer* resizer,
-                              utl::Logger* logger)
-      = 0;
+                              utl::Logger* logger) = 0;
 };
 }  // namespace rmp

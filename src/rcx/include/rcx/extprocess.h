@@ -6,8 +6,8 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "rcx/array1.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

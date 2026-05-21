@@ -7,13 +7,13 @@
 #include <cstdio>
 #include <string>
 
-#include "odb/db.h"
-#include "odb/util.h"
-#include "rcx/array1.h"
-#include "rcx/extRCap.h"
-#include "rcx/extSegment.h"
-#include "rcx/grids.h"
-#include "rcx/util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/util.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extSegment.h"
+#include "src/rcx/include/rcx/grids.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

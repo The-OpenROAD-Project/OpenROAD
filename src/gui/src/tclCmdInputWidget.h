@@ -19,14 +19,14 @@
 #include <string>
 #include <vector>
 
-#include "cmdInputWidget.h"
+#include "src/gui/src/cmdInputWidget.h"
+#include "src/gui/src/tclCmdHighlighter.h"
 #include "tcl.h"
-#include "tclCmdHighlighter.h"
 
 #if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7) && !defined(Tcl_Size)
 #define Tcl_Size int
 #endif
-#include "tclSwig.h"  // generated header
+#include "src/gui/src/tclSwig.h"  // generated header
 
 namespace gui {
 

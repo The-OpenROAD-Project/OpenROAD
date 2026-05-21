@@ -9,17 +9,17 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "db/obj/frBlockObject.h"
-#include "db/taObj/taFig.h"
-#include "db/taObj/taPin.h"
-#include "db/taObj/taShape.h"
-#include "db/taObj/taVia.h"
-#include "db/tech/frConstraint.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "frRTree.h"
-#include "odb/geom.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/taObj/taFig.h"
+#include "src/drt/src/db/taObj/taPin.h"
+#include "src/drt/src/db/taObj/taShape.h"
+#include "src/drt/src/db/taObj/taVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frRTree.h"
+#include "src/drt/src/ta/FlexTA.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

@@ -8,13 +8,13 @@
 #include <tuple>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frMarker.h"
-#include "db/tech/frTechObject.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "global.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frMarker.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/global.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 class drNet;

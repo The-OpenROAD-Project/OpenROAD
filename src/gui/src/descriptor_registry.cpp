@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-#include "gui/descriptor_registry.h"
+#include "src/gui/include/gui/descriptor_registry.h"
 
 #include <any>
 #include <cstdlib>
@@ -18,9 +18,9 @@
 
 #include <cstdio>
 
-#include "gui/gui.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

@@ -8,12 +8,12 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "db/gcObj/gcShape.h"
-#include "frBaseTypes.h"
-#include "frRTree.h"
-#include "gc/FlexGC.h"
-#include "gc/FlexGC_impl.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/gcObj/gcShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frRTree.h"
+#include "src/drt/src/gc/FlexGC.h"
+#include "src/drt/src/gc/FlexGC_impl.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace drt {
 

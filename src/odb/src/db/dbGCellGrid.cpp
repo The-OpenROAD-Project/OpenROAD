@@ -13,7 +13,7 @@
 #include "dbHashTable.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <cassert>
@@ -23,9 +23,9 @@
 
 #include "dbBlock.h"
 #include "dbTech.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "utl/algorithms.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/algorithms.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGCellGrid>;

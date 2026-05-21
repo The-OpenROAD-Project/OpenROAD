@@ -9,15 +9,15 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frFig.h"
-#include "db/obj/frShape.h"
-#include "db/tech/frTechObject.h"
-#include "dr/AbstractDRGraphics.h"
-#include "frBaseTypes.h"
-#include "frDesign.h"
-#include "frRegionQuery.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/db/tech/frTechObject.h"
+#include "src/drt/src/dr/AbstractDRGraphics.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frDesign.h"
+#include "src/drt/src/frRegionQuery.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbDatabase;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "LinesRenderer.h"
+#include "src/stt/src/LinesRenderer.h"
 
-#include "gui/gui.h"
-#include "stt/SteinerTreeBuilder.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 
 namespace stt {
 

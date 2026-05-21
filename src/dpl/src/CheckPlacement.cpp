@@ -6,15 +6,15 @@
 #include <string>
 #include <vector>
 
-#include "PlacementDRC.h"
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
-#include "infrastructure/network.h"
-#include "odb/db.h"
-#include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/Padding.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 namespace dpl {
 
 using odb::Direction2D;

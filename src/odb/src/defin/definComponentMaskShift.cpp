@@ -3,8 +3,8 @@
 
 #include "definComponentMaskShift.h"
 
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

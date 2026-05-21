@@ -4,10 +4,10 @@
 #pragma once
 
 #include "base/abc/abc.h"
-#include "cut/abc_library_factory.h"
-#include "logic_optimization_strategy.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
+#include "src/cut/include/cut/abc_library_factory.h"
+#include "src/rmp/src/logic_optimization_strategy.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 
 namespace rmp {
 

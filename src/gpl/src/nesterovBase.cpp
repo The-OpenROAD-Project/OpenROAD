@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "nesterovBase.h"
+#include "src/gpl/src/nesterovBase.h"
 
 #include <algorithm>
 #include <cassert>
@@ -24,13 +24,13 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "fft.h"
-#include "gpl/Replace.h"
-#include "nesterovPlace.h"
-#include "odb/db.h"
 #include "omp.h"
-#include "placerBase.h"
-#include "point.h"
-#include "utl/Logger.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/gpl/src/nesterovPlace.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/gpl/src/point.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 #define REPLACE_SQRT2 1.414213562373095048801L
 

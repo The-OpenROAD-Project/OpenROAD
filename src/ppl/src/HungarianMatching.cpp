@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "HungarianMatching.h"
+#include "src/ppl/src/HungarianMatching.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -10,12 +10,12 @@
 #include <limits>
 #include <vector>
 
-#include "Core.h"
 #include "Netlist.h"
-#include "Slots.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/src/Core.h"
+#include "src/ppl/src/Slots.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ppl {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2026, The OpenROAD Authors
 
-#include "NegotiationLegalizer.h"
+#include "src/dpl/src/NegotiationLegalizer.h"
 
 #include <algorithm>
 #include <array>
@@ -17,18 +17,18 @@
 #include <utility>
 #include <vector>
 
-#include "PlacementDRC.h"
-#include "dpl/Opendp.h"
-#include "graphics/DplObserver.h"
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
-#include "infrastructure/architecture.h"
-#include "infrastructure/network.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/graphics/DplObserver.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/Padding.h"
+#include "src/dpl/src/infrastructure/architecture.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace dpl {
 

@@ -4,8 +4,8 @@
 %module web_py
 
 %{
-#include "web/web.h"
-#include "ord/OpenRoad.hh"
+#include "src/web/include/web/web.h"
+#include "include/ord/OpenRoad.hh"
 %}
 
 %include "../../Exception-py.i"

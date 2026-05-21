@@ -10,18 +10,18 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
 
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipInst>;

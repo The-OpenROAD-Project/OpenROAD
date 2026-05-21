@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
-#include "db/gcObj/gcBlockObject.h"
-#include "db/gcObj/gcShape.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/gcObj/gcBlockObject.h"
+#include "src/drt/src/db/gcObj/gcShape.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class gcNet;

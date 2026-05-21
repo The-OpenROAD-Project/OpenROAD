@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "grt/GlobalRouter.h"
-#include "nesterovBase.h"
-#include "placerBase.h"
-#include "rsz/Resizer.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/NetworkClass.hh"
-#include "utl/Logger.h"
+#include "src/gpl/src/nesterovBase.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gpl {
 

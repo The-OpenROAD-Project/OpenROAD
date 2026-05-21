@@ -6,11 +6,11 @@
 #include <set>
 #include <string>
 
-#include "SwapArithModules.hh"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/src/SwapArithModules.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
 
 namespace rsz {
 

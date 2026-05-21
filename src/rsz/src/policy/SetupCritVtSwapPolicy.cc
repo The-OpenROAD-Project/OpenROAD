@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupCritVtSwapPolicy.hh"
+#include "src/rsz/src/policy/SetupCritVtSwapPolicy.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -15,20 +15,20 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCommitter.hh"
-#include "OptimizerTypes.hh"
-#include "RepairTargetCollector.hh"
-#include "VtSwapCandidate.hh"
-#include "est/EstimateParasitics.h"
-#include "rsz/Resizer.hh"
-#include "sta/Fuzzy.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PortDirection.hh"
-#include "utl/Logger.h"
-#include "utl/timer.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/VtSwapCandidate.hh"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace rsz {
 

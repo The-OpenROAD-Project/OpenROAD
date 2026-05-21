@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "GUIProgress.h"
+#include "src/gui/src/GUIProgress.h"
 
 #include <QApplication>
 #include <QHBoxLayout>
@@ -17,9 +17,9 @@
 #include <utility>
 #include <vector>
 
-#include "mainWindow.h"
-#include "utl/Logger.h"
-#include "utl/Progress.h"
+#include "src/gui/src/mainWindow.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/Progress.h"
 
 namespace gui {
 

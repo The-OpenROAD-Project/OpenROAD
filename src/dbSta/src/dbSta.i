@@ -5,18 +5,18 @@
 
 %{
 
-#include "odb/db.h"
-#include "odb/PtrSetMap.h"
-#include "db_sta/dbSta.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/IpChecker.hh"
-#include "db_sta/MakeDbSta.hh"
-#include "ord/OpenRoad.hh"
-#include "sta/Graph.hh"
-#include "sta/Network.hh"
-#include "sta/Property.hh"
-#include "sta/Report.hh"
-#include "sta/VerilogWriter.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/IpChecker.hh"
+#include "src/dbSta/include/db_sta/MakeDbSta.hh"
+#include "include/ord/OpenRoad.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Property.hh"
+#include "src/sta/include/sta/Report.hh"
+#include "src/sta/include/sta/VerilogWriter.hh"
 
 namespace ord {
 // Defined in OpenRoad.i

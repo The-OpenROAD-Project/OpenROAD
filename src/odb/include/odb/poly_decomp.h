@@ -5,7 +5,7 @@
 
 #include <vector>
 
-#include "odb/geom.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

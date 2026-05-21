@@ -12,12 +12,12 @@
 #include <utility>
 #include <vector>
 
-#include "db/tech/frLookupTbl.h"
-#include "db/tech/frViaDef.h"
-#include "db/tech/frViaRuleGenerate.h"
-#include "frBaseTypes.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/tech/frLookupTbl.h"
+#include "src/drt/src/db/tech/frViaDef.h"
+#include "src/drt/src/db/tech/frViaRuleGenerate.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace drt {
 class frLayer;

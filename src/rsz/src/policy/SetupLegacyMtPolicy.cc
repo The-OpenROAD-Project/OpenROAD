@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupLegacyMtPolicy.hh"
+#include "src/rsz/src/policy/SetupLegacyMtPolicy.hh"
 
 #include <cstddef>
 #include <memory>
@@ -11,24 +11,24 @@
 #include <utility>
 #include <vector>
 
-#include "BufferGenerator.hh"
-#include "CloneGenerator.hh"
-#include "MoveCandidate.hh"
-#include "MoveGenerator.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "RerouteGenerator.hh"
-#include "SizeDownGenerator.hh"
-#include "SizeUpMatchGenerator.hh"
-#include "SizeUpMtGenerator.hh"
-#include "SplitLoadGenerator.hh"
-#include "SwapPinsGenerator.hh"
-#include "UnbufferGenerator.hh"
-#include "VtSwapMtGenerator.hh"
-#include "policy/SetupLegacyPolicy.hh"
-#include "rsz/Resizer.hh"
-#include "utl/Logger.h"
-#include "utl/ThreadPool.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/BufferGenerator.hh"
+#include "src/rsz/src/move/CloneGenerator.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/move/RerouteGenerator.hh"
+#include "src/rsz/src/move/SizeDownGenerator.hh"
+#include "src/rsz/src/move/SizeUpMatchGenerator.hh"
+#include "src/rsz/src/move/SizeUpMtGenerator.hh"
+#include "src/rsz/src/move/SplitLoadGenerator.hh"
+#include "src/rsz/src/move/SwapPinsGenerator.hh"
+#include "src/rsz/src/move/UnbufferGenerator.hh"
+#include "src/rsz/src/move/VtSwapMtGenerator.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/rsz/src/policy/SetupLegacyPolicy.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ThreadPool.h"
 
 namespace rsz {
 

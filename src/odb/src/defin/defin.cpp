@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/defin.h"
+#include "src/odb/include/odb/defin.h"
 
 #include <vector>
 
@@ -9,7 +9,7 @@
 #include "absl/base/const_init.h"
 #include "absl/synchronization/mutex.h"
 #include "definReader.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

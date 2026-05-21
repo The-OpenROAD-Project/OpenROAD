@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -41,16 +41,16 @@
 #include <string_view>
 #include <system_error>
 
-#include "defiDebug.hpp"
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defiProp.hpp"
-#include "defiPropType.hpp"
-#include "defiUtil.hpp"
-#include "defrCallBacks.hpp"
-#include "defrData.hpp"
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiProp.hpp"
+#include "src/odb/src/def/def/defiPropType.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
+#include "src/odb/src/def/def/defrCallBacks.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 static constexpr int NODEFMSG
     = 4013;  // (9012 + 1) - 5000, def msg starts at 5000

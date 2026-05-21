@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tst/fixture.h"
+#include "src/tst/include/tst/fixture.h"
 
 #include <deque>
 #include <filesystem>
@@ -12,14 +12,14 @@
 #include <stdexcept>
 #include <string>
 
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "odb/lefin.h"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Sta.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Sta.hh"
 #include "tcl.h"  // IWYU pragma: keep (clang-tidy, you're drunk)
 
 #ifdef BAZEL_BUILD

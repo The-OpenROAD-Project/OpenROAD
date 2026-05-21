@@ -7,7 +7,7 @@
 #pragma once
 
 #include "spdlog/fmt/fmt.h"  // IWYU pragma: keep
-#include "sta/Delay.hh"
+#include "src/sta/include/sta/Delay.hh"
 
 template <>
 struct fmt::formatter<sta::Delay> : fmt::formatter<float>

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "utl/MakeLogger.h"
+#include "src/utl/include/utl/MakeLogger.h"
 
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/decode.h"
 #include "tcl.h"
-#include "utl/Logger.h"
-#include "utl/decode.h"
 
 extern "C" {
 extern int Utl_Init(Tcl_Interp* interp);

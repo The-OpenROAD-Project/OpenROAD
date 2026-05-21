@@ -10,11 +10,11 @@
 #include <utility>
 #include <vector>
 
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbWireGraph.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbWireGraph.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ant {
 

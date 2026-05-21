@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "via.h"
+#include "src/pdn/src/via.h"
 
 #include <algorithm>
 #include <array>
@@ -18,17 +18,17 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "connect.h"
-#include "grid.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
 #include "shape.h"
-#include "techlayer.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/pdn/src/connect.h"
+#include "src/pdn/src/grid.h"
+#include "src/pdn/src/techlayer.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdn {
 
@@ -1566,8 +1566,7 @@ bool ViaGenerator::checkMinEnclosure() const
                "Bottom rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) bottom_passed
-        |= pass;
+               pass) bottom_passed |= pass;
   }
 
   const bool top_has_rules = !top_rules.empty();
@@ -1593,8 +1592,7 @@ bool ViaGenerator::checkMinEnclosure() const
                "Top rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) top_passed
-        |= pass;
+               pass) top_passed |= pass;
   }
 
   return (!bottom_has_rules || bottom_passed) && (!top_has_rules || top_passed);

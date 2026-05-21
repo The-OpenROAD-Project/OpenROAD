@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 %{
-#include "swig_common.h"
+#include "src/odb/src/swig/common/swig_common.h"
 %}
 
 %template(Points) std::vector<odb::Point>;

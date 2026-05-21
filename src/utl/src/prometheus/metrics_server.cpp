@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "utl/prometheus/metrics_server.h"
+#include "src/utl/include/utl/prometheus/metrics_server.h"
 
 #include <chrono>
 #include <exception>
@@ -12,8 +12,8 @@
 
 #include "boost/asio.hpp"
 #include "boost/beast.hpp"
-#include "utl/Logger.h"
-#include "utl/prometheus/text_serializer.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/prometheus/text_serializer.h"
 
 namespace {
 

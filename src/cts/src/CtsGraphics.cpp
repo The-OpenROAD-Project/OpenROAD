@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "CtsGraphics.h"
+#include "src/cts/src/CtsGraphics.h"
 
 #include <cmath>
 #include <cstdio>
 #include <string>
 #include <vector>
 
-#include "Clock.h"
-#include "Util.h"
-#include "gui/gui.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/Util.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

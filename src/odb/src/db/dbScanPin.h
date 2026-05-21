@@ -10,7 +10,7 @@
 #include "dbBTerm.h"
 #include "dbCore.h"
 #include "dbITerm.h"
-#include "odb/dbId.h"
+#include "src/odb/include/odb/dbId.h"
 
 namespace odb {
 class dbIStream;

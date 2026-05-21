@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "ScanArchitectConfig.hh"
-#include "ScanStitchConfig.hh"
-#include "utl/Logger.h"
+#include "src/dft/src/config/ScanArchitectConfig.hh"
+#include "src/dft/src/config/ScanStitchConfig.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dft {
 

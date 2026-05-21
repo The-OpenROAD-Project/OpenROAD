@@ -10,8 +10,8 @@
 #include <tuple>
 #include <vector>
 
-#include "node.h"
-#include "odb/PtrSetMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/psm/src/node.h"
 
 namespace utl {
 class Logger;

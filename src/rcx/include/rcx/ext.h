@@ -8,13 +8,13 @@
 #include <memory>
 #include <string>
 
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "rcx/extModelGen.h"
-#include "rcx/extPattern.h"
-#include "rcx/extRCap.h"
-#include "rcx/ext_options.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/rcx/include/rcx/extModelGen.h"
+#include "src/rcx/include/rcx/extPattern.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/ext_options.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

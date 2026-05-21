@@ -39,19 +39,19 @@
 #ifndef LEFI_USER_H
 #define LEFI_USER_H
 
-#include "lefiArray.hpp"
-#include "lefiCrossTalk.hpp"
-#include "lefiDebug.hpp"
-#include "lefiKRDefs.hpp"
-#include "lefiLayer.hpp"
-#include "lefiMacro.hpp"
-#include "lefiMisc.hpp"
-#include "lefiNonDefault.hpp"
-#include "lefiProp.hpp"
-#include "lefiPropType.hpp"
-#include "lefiUnits.hpp"
-#include "lefiVia.hpp"
-#include "lefiViaRule.hpp"
+#include "src/odb/src/lef/lef/lefiArray.hpp"
+#include "src/odb/src/lef/lef/lefiCrossTalk.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiKRDefs.hpp"
+#include "src/odb/src/lef/lef/lefiLayer.hpp"
+#include "src/odb/src/lef/lef/lefiMacro.hpp"
+#include "src/odb/src/lef/lef/lefiMisc.hpp"
+#include "src/odb/src/lef/lef/lefiNonDefault.hpp"
+#include "src/odb/src/lef/lef/lefiProp.hpp"
+#include "src/odb/src/lef/lef/lefiPropType.hpp"
+#include "src/odb/src/lef/lef/lefiUnits.hpp"
+#include "src/odb/src/lef/lef/lefiVia.hpp"
+#include "src/odb/src/lef/lef/lefiViaRule.hpp"
 
 BEGIN_LEF_PARSER_NAMESPACE
 

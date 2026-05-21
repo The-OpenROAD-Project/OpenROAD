@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "stt/pd.h"
+#include "src/stt/include/stt/pd.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,9 +17,9 @@
 #include "boost/heap/d_ary_heap.hpp"
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
-#include "odb/geom.h"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace pdr {
 

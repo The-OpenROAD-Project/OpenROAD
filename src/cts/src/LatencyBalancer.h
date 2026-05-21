@@ -10,13 +10,13 @@
 #include <utility>
 #include <vector>
 
-#include "Clock.h"
-#include "CtsOptions.h"
-#include "TreeBuilder.h"
-#include "Util.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "utl/Logger.h"
+#include "src/cts/src/Clock.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/TreeBuilder.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace sta {
 class dbSta;

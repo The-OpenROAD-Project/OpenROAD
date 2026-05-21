@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "db_sta/dbNetwork.hh"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "sta/Network.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/sta/include/sta/Network.hh"
 
 namespace rsz {
 

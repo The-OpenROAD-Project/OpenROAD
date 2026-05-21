@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "OptimizerTypes.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
 
 #include <string>
 
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/TimingRole.hh"
 
 namespace rsz {
 

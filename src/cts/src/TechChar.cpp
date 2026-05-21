@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "TechChar.h"
+#include "src/cts/src/TechChar.h"
 
 #include <algorithm>
 #include <bitset>
@@ -18,27 +18,27 @@
 #include <utility>
 #include <vector>
 
-#include "CtsOptions.h"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "rsz/Resizer.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/PowerClass.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/StringUtil.hh"
-#include "sta/TableModel.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "sta/Transition.hh"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/PowerClass.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/SearchClass.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/sta/include/sta/TableModel.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/sta/include/sta/TimingModel.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace cts {
 

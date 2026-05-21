@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiNonDefault.h"
-#include "defiNonDefault.hpp"
+#include "src/odb/src/def/def/defiNonDefault.hpp"
 
 // Wrappers definitions.
 const char* defiNonDefault_name(const ::defiNonDefault* obj)

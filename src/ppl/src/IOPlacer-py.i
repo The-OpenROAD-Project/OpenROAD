@@ -2,9 +2,9 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "ppl/IOPlacer.h"
-#include "ord/OpenRoad.hh"
-#include "odb/db.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/odb/include/odb/db.h"
 
 using std::set;
 using ppl::PinSet;    

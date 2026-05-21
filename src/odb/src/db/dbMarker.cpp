@@ -21,7 +21,7 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <fstream>
 #include <set>
@@ -30,11 +30,11 @@
 
 #include "dbChip.h"
 #include "dbCore.h"
-#include "odb/PtrSetMap.h"
-#include "odb/dbChipCallBackObj.h"
-#include "odb/dbObject.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;

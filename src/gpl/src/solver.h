@@ -7,9 +7,9 @@
 
 #include "Eigen/IterativeLinearSolvers"
 #include "Eigen/SparseCore"
-#include "odb/db.h"
-#include "placerBase.h"
-#include "utl/Logger.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace utl {
 class Logger;

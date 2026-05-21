@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiPinCap.hpp"
+#include "src/odb/src/def/def/defiPinCap.hpp"
 
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
@@ -35,13 +35,13 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "defiComponent.hpp"
-#include "defiDebug.hpp"
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defiUtil.hpp"
-#include "defrData.hpp"
-#include "defrSettings.hpp"
+#include "src/odb/src/def/def/defiComponent.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

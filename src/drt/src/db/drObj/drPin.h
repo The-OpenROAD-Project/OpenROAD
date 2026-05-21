@@ -8,14 +8,14 @@
 #include <utility>
 #include <vector>
 
-#include "db/drObj/drAccessPattern.h"
-#include "db/drObj/drBlockObject.h"
-#include "db/obj/frBTerm.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frInstTerm.h"
-#include "db/obj/frTerm.h"
-#include "dr/FlexMazeTypes.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/drObj/drAccessPattern.h"
+#include "src/drt/src/db/drObj/drBlockObject.h"
+#include "src/drt/src/db/obj/frBTerm.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frInstTerm.h"
+#include "src/drt/src/db/obj/frTerm.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 

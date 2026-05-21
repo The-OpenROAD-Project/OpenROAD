@@ -54,18 +54,18 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "lex.h"
-#include "lefiDefs.hpp"
-#include "lefiUser.hpp"
-#include "lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lex.h"
+#include "src/odb/src/lef/lef/lefiDefs.hpp"
+#include "src/odb/src/lef/lef/lefiUser.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
 
-#include "lefrData.hpp"
-#include "lefrCallBacks.hpp"
-#include "lefrSettings.hpp"
+#include "src/odb/src/lef/lef/lefrData.hpp"
+#include "src/odb/src/lef/lef/lefrCallBacks.hpp"
+#include "src/odb/src/lef/lef/lefrSettings.hpp"
 
 #ifndef WIN32
   // Only include this on non-Windows platforms
-  #include "lef_parser.hpp"
+  #include "src/odb/src/lef/lef/lef_parser.hpp"
 #endif
 
 BEGIN_LEF_PARSER_NAMESPACE

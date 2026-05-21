@@ -6,10 +6,10 @@
 #include <memory>
 #include <vector>
 
-#include "OneBitScanCell.hh"
-#include "ScanCell.hh"
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/dft/src/cells/OneBitScanCell.hh"
+#include "src/dft/src/cells/ScanCell.hh"
+#include "src/odb/include/odb/db.h"
 
 namespace dft {
 

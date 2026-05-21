@@ -2,10 +2,10 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 %{
-#include "cts/TritonCTS.h"
-#include "CtsOptions.h"
-#include "TechChar.h"
-#include "ord/OpenRoad.hh"
+#include "src/cts/include/cts/TritonCTS.h"
+#include "src/cts/src/CtsOptions.h"
+#include "src/cts/src/TechChar.h"
+#include "include/ord/OpenRoad.hh"
 
 using namespace cts;
 %}

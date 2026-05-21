@@ -10,11 +10,11 @@
 #include "boost/geometry/geometries/register/box.hpp"
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometry.hpp"
-#include "db/infra/frBox.h"
-#include "db/infra/frPoint.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
-#include "serialization.h"
+#include "src/drt/src/db/infra/frBox.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/serialization.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace bgi = boost::geometry::index;
 

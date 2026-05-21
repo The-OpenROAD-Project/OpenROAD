@@ -7,12 +7,12 @@
 #include <string>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "lefiDebug.hpp"
-#include "lefiUtil.hpp"
-#include "lefrReader.hpp"
-#include "lefzlib.hpp"
-#include "odb/lefin.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/lefin.h"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
+#include "src/odb/src/lef/lefzlib/lefzlib.hpp"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

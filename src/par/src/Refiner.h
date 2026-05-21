@@ -12,7 +12,7 @@
 #include "Hypergraph.h"
 #include "PriorityQueue.h"
 #include "Utilities.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace par {
 
@@ -98,8 +98,7 @@ class Refiner
                      Matrix<int>& net_degs,         // the current net degree
                      std::vector<float>& paths_cost,  // the current path cost
                      Partitions& solution,
-                     std::vector<bool>& visited_vertices_flag)
-      = 0;
+                     std::vector<bool>& visited_vertices_flag) = 0;
 
   // If to_pid == -1, we are calculate the current cost of the path;
   // else if to_pid != -1, we are calculate the cost of the path

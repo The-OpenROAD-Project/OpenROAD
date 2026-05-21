@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "debug_gui.h"
+#include "src/psm/src/debug_gui.h"
 
 #include <algorithm>
 #include <any>
@@ -13,16 +13,16 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "connection.h"
-#include "gui/gui.h"
-#include "ir_network.h"
-#include "ir_solver.h"
-#include "node.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
 #include "shape.h"
-#include "sta/Scene.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/psm/src/connection.h"
+#include "src/psm/src/ir_network.h"
+#include "src/psm/src/ir_solver.h"
+#include "src/psm/src/node.h"
+#include "src/sta/include/sta/Scene.hh"
 
 namespace psm {
 

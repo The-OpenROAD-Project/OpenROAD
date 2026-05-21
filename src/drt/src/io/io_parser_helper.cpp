@@ -12,17 +12,17 @@
 
 #include "boost/graph/connected_components.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "db/obj/frAccess.h"
-#include "db/obj/frFig.h"
-#include "db/obj/frVia.h"
-#include "db/tech/frConstraint.h"
-#include "frBaseTypes.h"
-#include "frProfileTask.h"
-#include "global.h"
-#include "io/io.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/obj/frVia.h"
+#include "src/drt/src/db/tech/frConstraint.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/global.h"
+#include "src/drt/src/io/io.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbTechLayerType;
 

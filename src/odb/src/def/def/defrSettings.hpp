@@ -34,10 +34,10 @@
 #include <map>
 #include <string>
 
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defiPropType.hpp"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiPropType.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 
 #define DEF_DEBUG_IDS 100
 #define defMaxOxides 32

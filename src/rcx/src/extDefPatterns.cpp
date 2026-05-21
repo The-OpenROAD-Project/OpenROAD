@@ -8,16 +8,16 @@
 #include <cstring>
 #include <string>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
-#include "rcx/dbUtil.h"
-#include "rcx/extRCap.h"
-#include "rcx/extRulesPattern.h"
-#include "rcx/extSpef.h"
-#include "rcx/extprocess.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rcx/include/rcx/dbUtil.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/extRulesPattern.h"
+#include "src/rcx/include/rcx/extSpef.h"
+#include "src/rcx/include/rcx/extprocess.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBlock;
 using odb::dbTechLayerDir;

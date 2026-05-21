@@ -12,8 +12,8 @@
 #include "dbDatabase.h"
 #include "dbMarker.h"
 #include "dbTable.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
 // User Code Begin Includes
 #include <fstream>
 #include <regex>
@@ -25,10 +25,10 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbHashTable.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/dbChipCallBackObj.h"
-#include "odb/dbObject.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarkerCategory>;

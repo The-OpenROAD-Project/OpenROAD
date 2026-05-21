@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "TreeBuilder.h"
+#include "src/cts/src/TreeBuilder.h"
 
 #include <algorithm>
 #include <cassert>
@@ -11,12 +11,12 @@
 #include <string>
 #include <vector>
 
-#include "Util.h"
 #include "boost/polygon/polygon.hpp"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
-#include "utl/Logger.h"
+#include "src/cts/src/Util.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace cts {
 

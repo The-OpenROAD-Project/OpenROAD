@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "lefiViaRule.h"
-#include "lefiViaRule.hpp"
+#include "src/odb/src/lef/lef/lefiViaRule.hpp"
 
 // Wrappers definitions.
 int lefiViaRuleLayer_hasDirection(const ::lefiViaRuleLayer* obj)

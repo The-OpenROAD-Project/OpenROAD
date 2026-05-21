@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rcx/ext.h"
+#include "src/rcx/include/rcx/ext.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <list>
 #include <string>
 
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/wOrder.h"
 #include "parse.h"
-#include "rcx/extMeasureRC.h"
-#include "rcx/extModelGen.h"
-#include "rcx/extPattern.h"
-#include "rcx/extRCap.h"
-#include "rcx/ext_options.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/wOrder.h"
+#include "src/rcx/include/rcx/extMeasureRC.h"
+#include "src/rcx/include/rcx/extModelGen.h"
+#include "src/rcx/include/rcx/extPattern.h"
+#include "src/rcx/include/rcx/extRCap.h"
+#include "src/rcx/include/rcx/ext_options.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

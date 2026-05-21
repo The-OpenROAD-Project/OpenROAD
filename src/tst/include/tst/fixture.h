@@ -8,16 +8,16 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/deleter.h"
 #include "tcl.h"
-#include "utl/Logger.h"
-#include "utl/deleter.h"
 
 #ifdef BAZEL_BUILD
 #include "tools/cpp/runfiles/runfiles.h"

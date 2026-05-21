@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rcx/extprocess.h"
+#include "src/rcx/include/rcx/extprocess.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -9,8 +9,8 @@
 #include <cstring>
 
 #include "parse.h"
-#include "rcx/array1.h"
-#include "utl/Logger.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

@@ -8,11 +8,11 @@
 #include "dbTable.h"
 #include "dbWire.h"
 #include "dbWireOpcode.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "rcx/dbUtil.h"
+#include "src/rcx/include/rcx/dbUtil.h"
 
 #include <cassert>
 #include <cstdint>
@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireCodec.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 using odb::dbBPin;
 using odb::dbIoType;

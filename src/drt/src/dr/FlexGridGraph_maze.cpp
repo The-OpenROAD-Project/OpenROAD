@@ -11,16 +11,16 @@
 #include <string>
 #include <vector>
 
-#include "db/drObj/drPin.h"
-#include "db/tech/frLayer.h"
-#include "dr/FlexDR.h"
-#include "dr/FlexGridGraph.h"
-#include "dr/FlexMazeTypes.h"
-#include "dr/FlexWavefront.h"
-#include "frBaseTypes.h"
-#include "global.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/drObj/drPin.h"
+#include "src/drt/src/db/tech/frLayer.h"
+#include "src/drt/src/dr/FlexDR.h"
+#include "src/drt/src/dr/FlexGridGraph.h"
+#include "src/drt/src/dr/FlexMazeTypes.h"
+#include "src/drt/src/dr/FlexWavefront.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/global.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 using odb::dbTechLayerDir;
 

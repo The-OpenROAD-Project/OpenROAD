@@ -5,9 +5,9 @@
 %{
 
 #include <cstring>
-#include "drt/TritonRoute.h"
-#include "ord/OpenRoad.hh"
-#include "utl/Logger.h"
+#include "src/drt/include/drt/TritonRoute.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/utl/include/utl/Logger.h"
 %}
 
 %include "../../Exception.i"

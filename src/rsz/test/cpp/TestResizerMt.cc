@@ -18,44 +18,44 @@
 #include <thread>
 #include <vector>
 
-#include "DelayEstimator.hh"
-#include "RepairSetupContext.hh"
-#include "rsz/Resizer.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/DelayEstimator.hh"
+#include "src/rsz/src/RepairSetupContext.hh"
 #define private public
 #define protected public
-#include "SetupLegacyMtPolicy.hh"
+#include "src/rsz/src/policy/SetupLegacyMtPolicy.hh"
 #undef protected
 #undef private
-#include "MoveCommitter.hh"
-#include "OptimizerTypes.hh"
-#include "VtSwapMtCandidate.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/Sta.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/VtSwapMtCandidate.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/LibertyClass.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Sta.hh"
 #define protected public
-#include "tst/IntegratedFixture.h"
+#include "src/tst/include/tst/IntegratedFixture.h"
 #undef protected
-#include "MoveGenerator.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
 
 #define private public
 #define protected public
-#include "SetupMt1Policy.hh"
+#include "src/rsz/src/policy/SetupMt1Policy.hh"
 #undef protected
 #undef private
 
-#include "utl/ThreadPool.h"
+#include "src/utl/include/utl/ThreadPool.h"
 
 namespace rsz {
 

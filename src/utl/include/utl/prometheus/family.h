@@ -33,11 +33,11 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "utl/prometheus/client_metric.h"
-#include "utl/prometheus/collectable.h"
-#include "utl/prometheus/hash.h"
-#include "utl/prometheus/metric_family.h"
-#include "utl/prometheus/prometheus_metric.h"
+#include "src/utl/include/utl/prometheus/client_metric.h"
+#include "src/utl/include/utl/prometheus/collectable.h"
+#include "src/utl/include/utl/prometheus/hash.h"
+#include "src/utl/include/utl/prometheus/metric_family.h"
+#include "src/utl/include/utl/prometheus/prometheus_metric.h"
 
 namespace utl {
 

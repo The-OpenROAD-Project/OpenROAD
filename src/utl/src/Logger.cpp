@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 #include <algorithm>
 #include <atomic>
@@ -16,17 +16,17 @@
 #include <string_view>
 #include <utility>
 
-#include "CommandLineProgress.h"
 #include "spdlog/common.h"
 #include "spdlog/logger.h"
 #include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/ostream_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include "utl/Metrics.h"
-#include "utl/Progress.h"
-#include "utl/prometheus/metrics_server.h"
-#include "utl/prometheus/registry.h"
+#include "src/utl/include/utl/Metrics.h"
+#include "src/utl/include/utl/Progress.h"
+#include "src/utl/include/utl/prometheus/metrics_server.h"
+#include "src/utl/include/utl/prometheus/registry.h"
+#include "src/utl/src/CommandLineProgress.h"
 
 namespace utl {
 

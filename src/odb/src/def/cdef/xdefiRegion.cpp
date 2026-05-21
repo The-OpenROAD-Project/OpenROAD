@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiRegion.h"
-#include "defiRegion.hpp"
+#include "src/odb/src/def/def/defiRegion.hpp"
 
 // Wrappers definitions.
 const char* defiRegion_name(const ::defiRegion* obj)

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "ord/Design.h"
+#include "include/ord/Design.h"
 
 #include <algorithm>
 #include <cmath>
@@ -13,18 +13,18 @@
 #include "absl/base/attributes.h"
 #include "absl/base/const_init.h"
 #include "absl/synchronization/mutex.h"
-#include "ant/AntennaChecker.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "grt/GlobalRouter.h"
-#include "ifp/InitFloorplan.hh"
-#include "odb/db.h"
-#include "ord/OpenRoad.hh"
-#include "ord/Tech.h"
-#include "sta/Sta.hh"
+#include "include/ord/OpenRoad.hh"
+#include "include/ord/Tech.h"
+#include "src/ant/include/ant/AntennaChecker.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/ifp/include/ifp/InitFloorplan.hh"
+#include "src/odb/include/odb/db.h"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/utl/include/utl/Logger.h"
 #include "tcl.h"
 #include "tclDecls.h"
-#include "utl/Logger.h"
 
 namespace ord {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "tile_generator.h"
+#include "src/web/src/tile_generator.h"
 
 #include <algorithm>
 #include <array>
@@ -21,25 +21,25 @@
 #include <vector>
 
 #include "boost/json/array.hpp"
-#include "color.h"
-#include "db_sta/dbSta.hh"
-#include "font_atlas.h"
-#include "glyph_cache.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "request_handler.h"
 #include "search.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/web/src/color.h"
+#include "src/web/src/font_atlas.h"
+#include "src/web/src/glyph_cache.h"
+#include "src/web/src/request_handler.h"
+#include "src/web/src/timing_report.h"
+#include "src/web/src/web_painter.h"
 #include "third-party/lodepng/lodepng.h"
-#include "timing_report.h"
-#include "utl/Logger.h"
-#include "web_painter.h"
 
 namespace web {
 
@@ -62,7 +62,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   struct BoolField
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
 

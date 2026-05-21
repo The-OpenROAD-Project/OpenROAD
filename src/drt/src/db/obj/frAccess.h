@@ -11,11 +11,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frPoint.h"
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frShape.h"
-#include "frBaseTypes.h"
-#include "odb/geom.h"
+#include "src/drt/src/db/infra/frPoint.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/geom.h"
 namespace odb {
 class dbAccessPoint;
 }

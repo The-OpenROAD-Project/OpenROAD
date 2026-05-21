@@ -8,11 +8,11 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbMatrix.h"
-#include "odb/dbObject.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbMatrix.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace utl {
 class Logger;

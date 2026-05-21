@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "odb/gdsin.h"
+#include "src/odb/include/odb/gdsin.h"
 
 #if defined(__APPLE__)
 #include <machine/endian.h>
@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "odb/gdsUtil.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/gdsUtil.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb ::gds {
 

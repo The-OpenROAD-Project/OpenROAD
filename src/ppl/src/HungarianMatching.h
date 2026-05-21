@@ -8,13 +8,13 @@
 #include <limits>
 #include <vector>
 
-#include "Core.h"
-#include "Hungarian.h"
 #include "Netlist.h"
-#include "Slots.h"
-#include "odb/geom.h"
-#include "ppl/IOPlacer.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/ppl/include/ppl/IOPlacer.h"
+#include "src/ppl/src/Core.h"
+#include "src/ppl/src/Slots.h"
+#include "src/ppl/src/munkres/src/Hungarian.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ppl {
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "dpl/Opendp.h"
+#include "src/dpl/include/dpl/Opendp.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -14,22 +14,22 @@
 #include <utility>
 #include <vector>
 
-#include "NegotiationLegalizer.h"
-#include "PlacementDRC.h"
 #include "boost/geometry/index/predicates.hpp"
-#include "dpl/OptMirror.h"
-#include "graphics/DplObserver.h"
-#include "infrastructure/Coordinates.h"
-#include "infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
-#include "infrastructure/Grid.h"
-#include "infrastructure/Objects.h"
-#include "infrastructure/Padding.h"
-#include "infrastructure/network.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "odb/util.h"
-#include "util/journal.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/OptMirror.h"
+#include "src/dpl/src/NegotiationLegalizer.h"
+#include "src/dpl/src/PlacementDRC.h"
+#include "src/dpl/src/graphics/DplObserver.h"
+#include "src/dpl/src/infrastructure/Coordinates.h"
+#include "src/dpl/src/infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/infrastructure/Objects.h"
+#include "src/dpl/src/infrastructure/Padding.h"
+#include "src/dpl/src/infrastructure/network.h"
+#include "src/dpl/src/util/journal.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace dpl {
 

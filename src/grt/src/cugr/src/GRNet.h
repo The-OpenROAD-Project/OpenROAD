@@ -6,13 +6,13 @@
 #include <utility>
 #include <vector>
 
-#include "CUGR.h"
-#include "GRTree.h"
-#include "GridGraph.h"
 #include "Netlist.h"
-#include "geo.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
+#include "src/grt/src/cugr/include/CUGR.h"
+#include "src/grt/src/cugr/src/GRTree.h"
+#include "src/grt/src/cugr/src/GridGraph.h"
+#include "src/grt/src/cugr/src/geo.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
 
 namespace grt {
 

@@ -9,13 +9,13 @@
 #include <memory>
 #include <tuple>
 
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbWireCodec.h"
-#include "odb/isotropy.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbWireCodec.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/utl/include/utl/Logger.h"
 #include "tmg_conn_g.h"
-#include "utl/Logger.h"
 
 namespace odb {
 

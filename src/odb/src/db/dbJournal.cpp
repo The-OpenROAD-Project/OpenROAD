@@ -18,11 +18,11 @@
 #include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

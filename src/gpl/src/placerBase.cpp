@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "placerBase.h"
+#include "src/gpl/src/placerBase.h"
 
 #include <algorithm>
 #include <climits>
@@ -12,12 +12,12 @@
 #include <utility>
 #include <vector>
 
-#include "nesterovBase.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+#include "src/gpl/src/nesterovBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gpl {
 

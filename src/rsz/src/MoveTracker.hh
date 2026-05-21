@@ -11,10 +11,10 @@
 #include <utility>
 #include <vector>
 
-#include "OptimizerTypes.hh"
-#include "db_sta/dbNetwork.hh"
-#include "odb/dbBlockCallBackObj.h"
-#include "sta/Delay.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/sta/include/sta/Delay.hh"
 
 namespace odb {
 class dbBlock;

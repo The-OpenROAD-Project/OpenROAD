@@ -16,11 +16,11 @@
 #include "dbTable.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
-#include "utl/algorithms.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace odb {
 

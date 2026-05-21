@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "gui_utils.h"
+#include "src/gui/src/gui_utils.h"
 
 #include <QColor>
 #include <QFileDialog>
@@ -11,7 +11,7 @@
 #include <QWidget>
 #include <algorithm>
 
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

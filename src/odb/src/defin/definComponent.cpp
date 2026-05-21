@@ -12,15 +12,15 @@
 #include <cstring>
 #include <vector>
 
-#include "defiComponent.hpp"
-#include "defiUtil.hpp"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/dbTransform.h"
-#include "odb/dbTypes.h"
-#include "odb/defin.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbTransform.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/defin.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/src/def/def/defiComponent.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 

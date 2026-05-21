@@ -32,23 +32,23 @@
 #include <tclExtend.h>
 #endif
 
-#include "cut/abc_init.h"
-#include "gui/gui.h"
-#include "ord/Design.h"
-#include "ord/InitOpenRoad.hh"
-#include "ord/OpenRoad.hh"
-#include "ord/Tech.h"
-#include "sta/StaMain.hh"
-#include "sta/StringUtil.hh"
-#include "utl/Logger.h"
-#include "utl/decode.h"
-#include "web/web.h"
+#include "include/ord/Design.h"
+#include "include/ord/InitOpenRoad.hh"
+#include "include/ord/OpenRoad.hh"
+#include "include/ord/Tech.h"
+#include "src/cut/include/cut/abc_init.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/sta/include/sta/StaMain.hh"
+#include "src/sta/include/sta/StringUtil.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/decode.h"
+#include "src/web/include/web/web.h"
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "bazel/tcl_library_init.h"
 #endif
 
-#include "tcl_readline_setup.h"
+#include "src/tcl_readline_setup.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;

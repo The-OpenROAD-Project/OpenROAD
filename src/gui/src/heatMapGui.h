@@ -5,8 +5,8 @@
 
 #include <memory>
 
-#include "gui/gui.h"
-#include "gui/heatMap.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
 
 namespace gui {
 

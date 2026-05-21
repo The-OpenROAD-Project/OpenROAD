@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "painter.h"
+#include "src/gui/src/painter.h"
 
 #include <QColor>
 #include <QFont>
@@ -14,9 +14,9 @@
 #include <map>
 #include <string>
 
-#include "gui/gui.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace gui {
 

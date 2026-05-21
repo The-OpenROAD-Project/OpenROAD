@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SetupLegacyBase.hh"
+#include "src/rsz/src/policy/SetupLegacyBase.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -15,35 +15,35 @@
 #include <utility>
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "MoveCommitter.hh"
-#include "MoveGenerator.hh"
-#include "OptimizationPolicy.hh"
-#include "OptimizerTypes.hh"
-#include "Rebuffer.hh"
-#include "RepairTargetCollector.hh"
-#include "SizeUpGenerator.hh"
-#include "SizeUpMatchGenerator.hh"
-#include "SwapPinsGenerator.hh"
-#include "db_sta/dbSta.hh"
-#include "est/EstimateParasitics.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Liberty.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/Sta.hh"
-#include "sta/TimingArc.hh"
-#include "utl/Logger.h"
-#include "utl/mem_stats.h"
-#include "utl/timer.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/MoveCommitter.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/Rebuffer.hh"
+#include "src/rsz/src/RepairTargetCollector.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
+#include "src/rsz/src/move/SizeUpGenerator.hh"
+#include "src/rsz/src/move/SizeUpMatchGenerator.hh"
+#include "src/rsz/src/move/SwapPinsGenerator.hh"
+#include "src/rsz/src/policy/OptimizationPolicy.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Graph.hh"
+#include "src/sta/include/sta/GraphClass.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Path.hh"
+#include "src/sta/include/sta/PathExpanded.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Search.hh"
+#include "src/sta/include/sta/SearchClass.hh"
+#include "src/sta/include/sta/Sta.hh"
+#include "src/sta/include/sta/TimingArc.hh"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/mem_stats.h"
+#include "src/utl/include/utl/timer.h"
 
 namespace rsz {
 

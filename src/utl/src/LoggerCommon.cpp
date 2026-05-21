@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
-#include "LoggerCommon.h"
+#include "src/utl/src/LoggerCommon.h"
 
 #include <cstdint>
 #include <string>
 
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 #ifndef BAZEL
 namespace ord {

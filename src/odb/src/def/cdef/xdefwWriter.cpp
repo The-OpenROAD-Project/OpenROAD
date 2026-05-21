@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defwWriter.h"
-#include "defwWriter.hpp"
+#include "src/odb/src/def/def/defwWriter.hpp"
 
 // Wrappers definitions.
 int defwNewLine()

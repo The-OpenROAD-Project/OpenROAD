@@ -13,8 +13,8 @@
 #include "dbHashTable.hpp"
 #include "dbName.h"
 #include "dbTable.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
 
 namespace odb {
 

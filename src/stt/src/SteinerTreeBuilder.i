@@ -3,13 +3,13 @@
 
 %{
 
-#include "stt/SteinerTreeBuilder.h"
-#include "LinesRenderer.h"
-#include "stt/pd.h"
-#include "stt/flute.h"
-#include "gui/gui.h"
-#include "ord/OpenRoad.hh"
-#include "odb/db.h"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/stt/src/LinesRenderer.h"
+#include "src/stt/include/stt/pd.h"
+#include "src/stt/include/stt/flute.h"
+#include "src/gui/include/gui/gui.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/odb/include/odb/db.h"
 #include <vector>
 
 namespace ord {

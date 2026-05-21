@@ -6,10 +6,10 @@
 #include <map>
 #include <ostream>
 
-#include "db_sta/dbSta.hh"
-#include "sta/Parasitics.hh"
-#include "sta/ParasiticsClass.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/sta/include/sta/Parasitics.hh"
+#include "src/sta/include/sta/ParasiticsClass.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace sta {
 

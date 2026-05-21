@@ -5,10 +5,10 @@
 
 #include <ranges>
 
-#include "dpl/Opendp.h"
-#include "infrastructure/Grid.h"
-#include "odb/db.h"
-#include "optimization/detailed_manager.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/dpl/src/infrastructure/Grid.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
+#include "src/odb/include/odb/db.h"
 
 namespace dpl {
 void Journal::clear()

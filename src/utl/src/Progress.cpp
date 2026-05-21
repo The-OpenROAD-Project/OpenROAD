@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
-#include "utl/Progress.h"
+#include "src/utl/include/utl/Progress.h"
 
 #include <signal.h>  // NOLINT(modernize-deprecated-headers): for sigaction
 
@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "utl/Logger.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace utl {
 

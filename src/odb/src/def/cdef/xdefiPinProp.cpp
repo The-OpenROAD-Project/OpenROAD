@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defiPinProp.h"
-#include "defiPinProp.hpp"
+#include "src/odb/src/def/def/defiPinProp.hpp"
 
 // Wrappers definitions.
 int defiPinProp_isPin(const ::defiPinProp* obj)

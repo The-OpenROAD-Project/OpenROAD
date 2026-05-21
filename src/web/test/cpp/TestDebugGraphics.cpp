@@ -14,13 +14,13 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "gui/gui.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "tile_generator.h"
-#include "web_chart.h"
-#include "web_painter.h"
-#include "web_viewer_hook.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/web/src/tile_generator.h"
+#include "src/web/src/web_chart.h"
+#include "src/web/src/web_painter.h"
+#include "src/web/src/web_viewer_hook.h"
 namespace web {
 namespace {
 

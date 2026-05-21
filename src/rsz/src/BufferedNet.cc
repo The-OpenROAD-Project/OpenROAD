@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "BufferedNet.hh"
+#include "src/rsz/src/BufferedNet.hh"
 
 #include <algorithm>
 #include <cassert>
@@ -15,33 +15,33 @@
 #include <utility>
 #include <vector>
 
-#include "est/EstimateParasitics.h"
-#include "est/SteinerTree.h"
-#include "grt/GRoute.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Scene.hh"
-#include "sta/Transition.hh"
-#include "stt/SteinerTreeBuilder.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/est/include/est/SteinerTree.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/Scene.hh"
+#include "src/sta/include/sta/Transition.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
 // Use spdlog fmt::format until c++20 that supports std::format.
 #include "spdlog/fmt/fmt.h"
-#include "sta/Fuzzy.hh"
-#include "sta/Liberty.hh"
-#include "sta/Sdc.hh"
-#include "sta/Units.hh"
-#include "utl/Logger.h"
+#include "src/sta/include/sta/Fuzzy.hh"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Sdc.hh"
+#include "src/sta/include/sta/Units.hh"
+#include "src/utl/include/utl/Logger.h"
 
 // Resizer::makeBufferedNetGroute
-#include "db_sta/dbNetwork.hh"
-#include "grt/GlobalRouter.h"
-#include "grt/PinGridLocation.h"
-#include "grt/RoutePt.h"
-#include "sta/Hash.hh"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/grt/include/grt/PinGridLocation.h"
+#include "src/grt/include/grt/RoutePt.h"
+#include "src/sta/include/sta/Hash.hh"
 
 namespace sta {
 class Port;

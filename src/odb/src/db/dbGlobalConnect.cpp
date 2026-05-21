@@ -10,7 +10,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 // User Code Begin Includes
 #include <map>
 #include <set>
@@ -22,9 +22,9 @@
 #include "dbLib.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
-#include "odb/PtrSetMap.h"
-#include "odb/dbSet.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/utl/include/utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGlobalConnect>;

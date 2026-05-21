@@ -60,18 +60,18 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "defrReader.hpp"
-#include "defiUser.hpp"
-#include "defrCallBacks.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
+#include "src/odb/src/def/def/defiUser.hpp"
+#include "src/odb/src/def/def/defrCallBacks.hpp"
 
 #define DEF_MAX_INT 2147483647
 #define YYDEBUG 1     // this is temp fix for pcr 755132 
 // TX_DIR:TRANSLATION ON
 
 
-#include "defrData.hpp"
-#include "defrSettings.hpp"
-#include "defrCallBacks.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
+#include "src/odb/src/def/def/defrSettings.hpp"
+#include "src/odb/src/def/def/defrCallBacks.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

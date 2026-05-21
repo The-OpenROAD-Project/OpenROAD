@@ -30,8 +30,8 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "utl/prometheus/collectable.h"
-#include "utl/prometheus/family.h"
+#include "src/utl/include/utl/prometheus/collectable.h"
+#include "src/utl/include/utl/prometheus/family.h"
 
 namespace utl {
 

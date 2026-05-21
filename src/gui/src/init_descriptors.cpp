@@ -8,17 +8,17 @@
 
 #include <set>
 
-#include "bufferTreeDescriptor.h"
-#include "dbDescriptors.h"
-#include "db_sta/dbSta.hh"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/Liberty.hh"
-#include "sta/Scene.hh"
-#include "staDescriptors.h"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/gui/include/gui/descriptor_registry.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/bufferTreeDescriptor.h"
+#include "src/gui/src/dbDescriptors.h"
+#include "src/gui/src/staDescriptors.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/Liberty.hh"
+#include "src/sta/include/sta/Scene.hh"
 
 namespace gui {
 

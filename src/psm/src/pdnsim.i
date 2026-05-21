@@ -3,9 +3,9 @@
 
 %include "../../Exception.i"
 %{
-#include "ord/OpenRoad.hh"
-#include "psm/pdnsim.h"
-#include "sta/Scene.hh"
+#include "include/ord/OpenRoad.hh"
+#include "src/psm/include/psm/pdnsim.h"
+#include "src/sta/include/sta/Scene.hh"
 
 namespace ord {
 psm::PDNSim*

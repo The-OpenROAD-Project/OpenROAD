@@ -36,7 +36,7 @@
 #include <cstdio>
 
 #include "defwWriterCalls.h"
-#include "defwWriterCalls.hpp"
+#include "src/odb/src/def/def/defwWriterCalls.hpp"
 
 // Wrappers definitions.
 int defwWrite(FILE* file, const char* fileName, defiUserData userData)

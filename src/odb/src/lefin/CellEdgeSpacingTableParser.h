@@ -8,8 +8,8 @@
 #include "boost/fusion/container.hpp"
 #include "boost/optional/optional.hpp"
 #include "boost/spirit/include/support_unused.hpp"
-#include "odb/db.h"
-#include "odb/lefin.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/lefin.h"
 
 namespace odb {
 

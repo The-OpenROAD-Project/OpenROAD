@@ -20,12 +20,12 @@
 #include <vector>
 
 #include "boost/unordered/unordered_flat_map.hpp"
-#include "gpl/Replace.h"
-#include "odb/db.h"
-#include "placerBase.h"
-#include "point.h"
-#include "routeBase.h"
-#include "utl/Logger.h"
+#include "src/gpl/include/gpl/Replace.h"
+#include "src/gpl/src/placerBase.h"
+#include "src/gpl/src/point.h"
+#include "src/gpl/src/routeBase.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 namespace odb {
 class dbInst;
 class dbITerm;

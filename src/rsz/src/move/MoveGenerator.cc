@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "MoveGenerator.hh"
+#include "src/rsz/src/move/MoveGenerator.hh"
 
 #include <string>
 #include <tuple>
 
-#include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
-#include "sta/Liberty.hh"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/Delay.hh"
+#include "src/sta/include/sta/Liberty.hh"
 
 namespace rsz {
 

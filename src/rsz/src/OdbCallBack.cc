@@ -12,15 +12,15 @@
 //
 //
 
-#include "rsz/OdbCallBack.hh"
+#include "src/rsz/include/rsz/OdbCallBack.hh"
 
-#include "db_sta/dbNetwork.hh"
-#include "est/EstimateParasitics.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PortDirection.hh"
-#include "utl/Logger.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/sta/include/sta/NetworkClass.hh"
+#include "src/sta/include/sta/PortDirection.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 

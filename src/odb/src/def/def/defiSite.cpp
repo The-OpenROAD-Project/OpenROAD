@@ -27,17 +27,17 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defiSite.hpp"
+#include "src/odb/src/def/def/defiSite.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include "defiDebug.hpp"
-#include "defiKRDefs.hpp"
-#include "defiMisc.hpp"
-#include "defiUtil.hpp"
-#include "defrData.hpp"
+#include "src/odb/src/def/def/defiDebug.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defiMisc.hpp"
+#include "src/odb/src/def/def/defiUtil.hpp"
+#include "src/odb/src/def/def/defrData.hpp"
 
 BEGIN_DEF_PARSER_NAMESPACE
 

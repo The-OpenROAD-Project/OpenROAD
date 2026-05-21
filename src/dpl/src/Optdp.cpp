@@ -3,16 +3,16 @@
 
 #include <cstdint>
 
-#include "dpl/Opendp.h"
-#include "odb/db.h"
-#include "odb/util.h"
-#include "utl/Logger.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/util.h"
+#include "src/utl/include/utl/Logger.h"
 
 // My stuff.
-#include "graphics/DplObserver.h"
-#include "legalize_shift.h"
-#include "optimization/detailed.h"
-#include "optimization/detailed_manager.h"
+#include "src/dpl/src/graphics/DplObserver.h"
+#include "src/dpl/src/legalize_shift.h"
+#include "src/dpl/src/optimization/detailed.h"
+#include "src/dpl/src/optimization/detailed_manager.h"
 
 namespace dpl {
 namespace {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "frProfileTask.h"
-#include "odb/dbTypes.h"
-#include "rp/FlexRP.h"
+#include "src/drt/src/frProfileTask.h"
+#include "src/drt/src/rp/FlexRP.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 using odb::dbTechLayerType;
 

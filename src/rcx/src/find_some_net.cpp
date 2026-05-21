@@ -8,9 +8,9 @@
 #include <memory>
 #include <vector>
 
-#include "odb/db.h"
 #include "parse.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rcx {
 

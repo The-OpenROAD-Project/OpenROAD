@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace utl {
 class Logger;

@@ -6,11 +6,11 @@
 
 #include <sstream>
 
-#include "ord/OpenRoad.hh"
-#include "graphics/Graphics.h"
-#include "graphics/DplObserver.h"
-#include "dpl/Opendp.h"
-#include "utl/Logger.h"
+#include "include/ord/OpenRoad.hh"
+#include "src/dpl/src/graphics/Graphics.h"
+#include "src/dpl/src/graphics/DplObserver.h"
+#include "src/dpl/include/dpl/Opendp.h"
+#include "src/utl/include/utl/Logger.h"
 
 %}
 

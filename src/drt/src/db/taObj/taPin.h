@@ -7,11 +7,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/taObj/taBlockObject.h"
-#include "db/taObj/taFig.h"
-#include "db/taObj/taShape.h"
-#include "db/taObj/taVia.h"
-#include "frBaseTypes.h"
+#include "src/drt/src/db/taObj/taBlockObject.h"
+#include "src/drt/src/db/taObj/taFig.h"
+#include "src/drt/src/db/taObj/taShape.h"
+#include "src/drt/src/db/taObj/taVia.h"
+#include "src/drt/src/frBaseTypes.h"
 
 namespace drt {
 class frGuide;

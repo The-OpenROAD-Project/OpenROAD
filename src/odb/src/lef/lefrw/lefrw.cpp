@@ -42,11 +42,11 @@
 #else
 #include <windows.h>
 #endif /* not WIN32 */
-#include "lefiDebug.hpp"
-#include "lefiEncryptInt.hpp"
-#include "lefiUtil.hpp"
-#include "lefrReader.hpp"
-#include "lefwWriter.hpp"
+#include "src/odb/src/lef/lef/lefiDebug.hpp"
+#include "src/odb/src/lef/lef/lefiEncryptInt.hpp"
+#include "src/odb/src/lef/lef/lefiUtil.hpp"
+#include "src/odb/src/lef/lef/lefrReader.hpp"
+#include "src/odb/src/lef/lef/lefwWriter.hpp"
 
 char defaultName[128];
 char defaultOut[128];

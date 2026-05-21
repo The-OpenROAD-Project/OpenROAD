@@ -16,19 +16,19 @@
 #include <utility>
 #include <vector>
 
-#include "DataType.h"
-#include "FastRoute.h"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "est/ParasiticsService.h"
-#include "grt/GRoute.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "sta/MinMax.hh"
-#include "stt/SteinerTreeBuilder.h"
-#include "utl/Logger.h"
-#include "utl/ServiceRegistry.h"
-#include "utl/algorithms.h"
+#include "src/dbSta/include/db_sta/dbNetwork.hh"
+#include "src/dbSta/include/db_sta/dbSta.hh"
+#include "src/est/include/est/ParasiticsService.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/src/fastroute/include/DataType.h"
+#include "src/grt/src/fastroute/include/FastRoute.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/sta/include/sta/MinMax.hh"
+#include "src/stt/include/stt/SteinerTreeBuilder.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ServiceRegistry.h"
+#include "src/utl/include/utl/algorithms.h"
 
 namespace grt {
 

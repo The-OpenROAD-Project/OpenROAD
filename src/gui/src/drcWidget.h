@@ -16,11 +16,11 @@
 #include <memory>
 #include <variant>
 
-#include "gui/gui.h"
-#include "inspector.h"
-#include "odb/db.h"
-#include "odb/dbChipCallBackObj.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/inspector.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbChipCallBackObj.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace utl {
 class Logger;

@@ -8,8 +8,8 @@
 #include <cstring>
 
 #include "gseq.h"
-#include "rcx/array1.h"
-#include "rcx/util.h"
+#include "src/rcx/include/rcx/array1.h"
+#include "src/rcx/include/rcx/util.h"
 
 namespace rcx {
 

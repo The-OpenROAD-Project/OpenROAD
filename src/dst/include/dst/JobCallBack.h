@@ -2,7 +2,7 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
-#include "dst/Distributed.h"
+#include "src/dst/include/dst/Distributed.h"
 
 namespace dst {
 class JobMessage;

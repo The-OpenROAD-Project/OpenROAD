@@ -118,20 +118,20 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbBlockCallBackObj.h"
-#include "odb/dbExtControl.h"
-#include "odb/dbObject.h"
-#include "odb/dbSet.h"
-#include "odb/dbShape.h"
-#include "odb/dbStream.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "odb/geom_boost.h"
-#include "odb/isotropy.h"
-#include "odb/poly_decomp.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbBlockCallBackObj.h"
+#include "src/odb/include/odb/dbExtControl.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbSet.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbStream.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/geom_boost.h"
+#include "src/odb/include/odb/isotropy.h"
+#include "src/odb/include/odb/poly_decomp.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace odb {
 
@@ -879,8 +879,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::*module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+    dbId<_dbModule> T_impl::* module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {

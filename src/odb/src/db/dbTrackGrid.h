@@ -8,8 +8,8 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbVector.h"
-#include "odb/dbId.h"
-#include "odb/dbTypes.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbTypes.h"
 
 namespace odb {
 

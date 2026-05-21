@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "gui/gui.h"
-#include "odb/geom.h"
-#include "options.h"
-#include "ruler.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/src/options.h"
+#include "src/gui/src/ruler.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace gui {
 

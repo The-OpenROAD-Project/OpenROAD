@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <string>
 
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbStream.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbStream.h"
 
 namespace odb {
 

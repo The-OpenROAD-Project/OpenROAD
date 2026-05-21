@@ -15,8 +15,8 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
-#include "drt/PinAccessService.h"
-#include "odb/geom.h"
+#include "src/drt/include/drt/PinAccessService.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 class dbDatabase;

@@ -6,9 +6,9 @@
 #include <cstdint>
 
 #include "dbCore.h"
-#include "odb/dbId.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
+#include "src/odb/include/odb/dbId.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace odb {
 

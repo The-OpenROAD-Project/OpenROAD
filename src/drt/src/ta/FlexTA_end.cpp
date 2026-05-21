@@ -5,11 +5,11 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frFig.h"
-#include "db/obj/frShape.h"
-#include "distributed/drUpdate.h"
-#include "frBaseTypes.h"
-#include "ta/FlexTA.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/db/obj/frShape.h"
+#include "src/drt/src/distributed/drUpdate.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/drt/src/ta/FlexTA.h"
 
 namespace drt {
 

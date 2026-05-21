@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
-#include "ant/AntennaChecker.hh"
+#include "src/ant/include/ant/AntennaChecker.hh"
 
 #include <algorithm>
 #include <cstdint>
@@ -23,14 +23,14 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/pending/disjoint_sets.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTypes.h"
-#include "odb/dbWireGraph.h"
-#include "odb/geom.h"
 #include "omp.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/dbWireGraph.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace ant {
 

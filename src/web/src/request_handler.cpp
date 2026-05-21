@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "request_handler.h"
+#include "src/web/src/request_handler.h"
 
 #include <algorithm>
 #include <any>
@@ -27,22 +27,22 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
-#include "cli_completer.h"
-#include "clock_tree_report.h"
-#include "color.h"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
-#include "hierarchy_report.h"
-#include "odb/PtrSetMap.h"
-#include "odb/db.h"
-#include "odb/dbObject.h"
-#include "odb/dbTypes.h"
-#include "odb/geom.h"
-#include "request_dispatcher.h"
-#include "tile_generator.h"
-#include "timing_report.h"
-#include "utl/Logger.h"
+#include "src/cli_completer.h"
+#include "src/gui/include/gui/descriptor_registry.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/gui/include/gui/heatMap.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/dbObject.h"
+#include "src/odb/include/odb/dbTypes.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/web/src/clock_tree_report.h"
+#include "src/web/src/color.h"
+#include "src/web/src/hierarchy_report.h"
+#include "src/web/src/request_dispatcher.h"
+#include "src/web/src/tile_generator.h"
+#include "src/web/src/timing_report.h"
 
 namespace web {
 

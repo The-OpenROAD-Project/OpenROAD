@@ -35,9 +35,9 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif /* not WIN32 */
-#include "defiDefs.hpp"
-#include "defwWriter.hpp"
-#include "defwWriterCalls.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defwWriter.hpp"
+#include "src/odb/src/def/def/defwWriterCalls.hpp"
 
 // Global variables
 char defaultOut[128];

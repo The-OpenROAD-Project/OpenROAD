@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include "defzlib.hpp"
+#include "src/odb/src/def/defzlib/defzlib.hpp"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,9 +37,9 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "defiDefs.hpp"
-#include "defiKRDefs.hpp"
-#include "defrReader.hpp"
+#include "src/odb/src/def/def/defiDefs.hpp"
+#include "src/odb/src/def/def/defiKRDefs.hpp"
+#include "src/odb/src/def/def/defrReader.hpp"
 #include "zlib.h"
 
 BEGIN_DEF_PARSER_NAMESPACE

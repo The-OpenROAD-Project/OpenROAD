@@ -7,8 +7,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "odb/geom.h"
-#include "odb/util.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/odb/include/odb/util.h"
 
 namespace rcx {
 

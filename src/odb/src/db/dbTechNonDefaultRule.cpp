@@ -20,7 +20,7 @@
 #include "dbTechLayerRule.h"
 #include "dbTechSameNetRule.h"
 #include "dbTechVia.h"
-#include "odb/db.h"
+#include "src/odb/include/odb/db.h"
 
 namespace odb {
 

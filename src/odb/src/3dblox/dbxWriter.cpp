@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "baseWriter.h"
-#include "odb/db.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 #include "yaml-cpp/yaml.h"
 
 namespace odb {

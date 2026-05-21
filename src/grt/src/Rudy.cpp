@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "grt/Rudy.h"
+#include "src/grt/include/grt/Rudy.h"
 
 #include <algorithm>
 #include <climits>
@@ -10,12 +10,12 @@
 #include <set>
 #include <utility>
 
-#include "grt/GRoute.h"
-#include "grt/GlobalRouter.h"
-#include "odb/PtrSetMap.h"
-#include "odb/dbShape.h"
-#include "odb/geom.h"
-#include "utl/Logger.h"
+#include "src/grt/include/grt/GRoute.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/odb/include/odb/PtrSetMap.h"
+#include "src/odb/include/odb/dbShape.h"
+#include "src/odb/include/odb/geom.h"
+#include "src/utl/include/utl/Logger.h"
 
 namespace grt {
 

@@ -10,10 +10,10 @@
 #include "boost/asio.hpp"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
-#include "dst/Distributed.h"
-#include "dst/JobCallBack.h"
-#include "dst/JobMessage.h"
-#include "utl/Logger.h"
+#include "src/dst/include/dst/Distributed.h"
+#include "src/dst/include/dst/JobCallBack.h"
+#include "src/dst/include/dst/JobMessage.h"
+#include "src/utl/include/utl/Logger.h"
 namespace dst {
 
 WorkerConnection::WorkerConnection(asio::io_context& service,

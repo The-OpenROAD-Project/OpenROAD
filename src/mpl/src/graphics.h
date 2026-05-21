@@ -8,13 +8,13 @@
 #include <string>
 #include <vector>
 
-#include "MplObserver.h"
-#include "clusterEngine.h"
-#include "gui/gui.h"
-#include "mpl-util.h"
-#include "object.h"
-#include "odb/db.h"
-#include "odb/geom.h"
+#include "src/gui/include/gui/gui.h"
+#include "src/mpl/src/MplObserver.h"
+#include "src/mpl/src/clusterEngine.h"
+#include "src/mpl/src/mpl-util.h"
+#include "src/mpl/src/object.h"
+#include "src/odb/include/odb/db.h"
+#include "src/odb/include/odb/geom.h"
 
 namespace mpl {
 class SoftMacro;

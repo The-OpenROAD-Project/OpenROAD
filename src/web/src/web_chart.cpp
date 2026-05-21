@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "web_chart.h"
+#include "src/web/src/web_chart.h"
 
 #include <mutex>
 #include <optional>
@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "gui/gui.h"
+#include "src/gui/include/gui/gui.h"
 
 namespace web {
 

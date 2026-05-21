@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "boost/serialization/access.hpp"
-#include "db/obj/frAccess.h"
-#include "db/obj/frPin.h"
+#include "src/drt/src/db/obj/frAccess.h"
+#include "src/drt/src/db/obj/frPin.h"
 namespace drt {
 class frInst;
 class frInstTerm;

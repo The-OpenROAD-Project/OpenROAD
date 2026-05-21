@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/cdl.h"
+#include "src/odb/include/odb/cdl.h"
 
 #include <strings.h>
 
@@ -15,9 +15,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "odb/db.h"
-#include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
+#include "src/odb/include/odb/db.h"
+#include "src/utl/include/utl/Logger.h"
+#include "src/utl/include/utl/ScopedTemporaryFile.h"
 
 namespace odb {
 

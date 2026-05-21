@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 
-#include "db/obj/frBlockObject.h"
-#include "db/obj/frFig.h"
-#include "frBaseTypes.h"
-#include "odb/dbTransform.h"
+#include "src/drt/src/db/obj/frBlockObject.h"
+#include "src/drt/src/db/obj/frFig.h"
+#include "src/drt/src/frBaseTypes.h"
+#include "src/odb/include/odb/dbTransform.h"
 
 namespace drt {
 class frConstraint;

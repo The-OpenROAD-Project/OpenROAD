@@ -8,7 +8,7 @@
 #include <regex>
 #include <vector>
 
-#include "par/PartitionMgr.h"
+#include "src/par/include/par/PartitionMgr.h"
 
 namespace ord {
 // Defined in OpenRoad.i

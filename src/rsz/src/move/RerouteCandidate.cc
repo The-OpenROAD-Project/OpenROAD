@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "RerouteCandidate.hh"
+#include "src/rsz/src/move/RerouteCandidate.hh"
 
 #include <vector>
 
-#include "MoveCandidate.hh"
-#include "OptimizerTypes.hh"
-#include "est/EstimateParasitics.h"
-#include "grt/GlobalRouter.h"
-#include "odb/db.h"
-#include "rsz/Resizer.hh"
-#include "sta/Network.hh"
-#include "utl/Logger.h"
+#include "src/est/include/est/EstimateParasitics.h"
+#include "src/grt/include/grt/GlobalRouter.h"
+#include "src/odb/include/odb/db.h"
+#include "src/rsz/include/rsz/Resizer.hh"
+#include "src/rsz/src/OptimizerTypes.hh"
+#include "src/rsz/src/move/MoveCandidate.hh"
+#include "src/sta/include/sta/Network.hh"
+#include "src/utl/include/utl/Logger.h"
 
 namespace rsz {
 
