@@ -3,6 +3,12 @@
 
 // Shared UI utilities.
 
+// True when the app was bootstrapped from a saved/static report
+// (i.e. there is no live WebSocket backend).
+export function isStaticMode(app) {
+    return !!app?.wsManager?.isStaticMode;
+}
+
 // Make table column headers resizable by dragging.
 export function makeResizableHeaders(table) {
     // Reset to auto layout so browser computes natural column widths
