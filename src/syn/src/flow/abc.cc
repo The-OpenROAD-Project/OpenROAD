@@ -26,9 +26,15 @@
 #include "misc/util/abc_global.h"
 #include "base/main/abcapis.h"  // NOLINT(misc-include-cleaner) — provides Abc_Frame_t
 #include "aig/gia/gia.h"
-#include "base/main/main.h"
-#include "base/cmd/cmd.h"
 // clang-format on
+
+namespace abc {
+// Explicitly declare the following functions rather than include abc's
+// main.h; this is to work around the pedantic build failing on duplicate
+// declarations between main.h and other abc headers
+extern void Abc_FrameUpdateGia(Abc_Frame_t* pAbc, Gia_Man_t* pNew);
+extern Gia_Man_t* Abc_FrameGetGia(Abc_Frame_t* pAbc);
+}  // namespace abc
 
 namespace syn {
 
