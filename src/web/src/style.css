@@ -749,6 +749,10 @@ html, body {
 .tcl-error {
     color: var(--error-text);
 }
+.tcl-static-notice {
+    color: var(--fg-muted);
+    font-style: italic;
+}
 .tcl-input-row {
     display: flex;
     align-items: center;
