@@ -36,7 +36,6 @@ namespace slang_frontend {
                               int code,
                               std::string_view message);
 
-
 class BackendGraphBuilder : public BackendGraphBuilderBase
 {
  public:
