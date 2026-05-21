@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -494,28 +495,28 @@ class dbNetwork : public ConcreteNetwork
   // One synthetic Cell per dbChip master referenced by a chiplet inst. The
   // Cell has no LibertyCell binding; STA property queries that go through
   // libertyCell(Cell*) need a non-null Cell* to avoid a null deref.
-  std::map<odb::dbChip*, Cell*> chip_master_cells_;
+  odb::PtrMap<odb::dbChip, Cell*> chip_master_cells_;
   // Reverse lookup: bump-inst -> owning chip-net. ensureBumpToChipNet-
   // CacheFresh() rebuilds it on chip-net-count change so net(chip_bump_
   // _pin) sees chip-nets created via the odb API post-setTopChip().
   // Caveat: in-place addBumpInst/removeBumpInst on an existing chip-net
   // (no count change) is NOT detected — see 3DIC_TODO.md TODO 4.
-  mutable std::map<odb::dbChipBumpInst*, odb::dbChipNet*> bump_to_chip_net_;
+  mutable odb::PtrMap<odb::dbChipBumpInst, odb::dbChipNet*> bump_to_chip_net_;
   mutable size_t bump_to_chip_net_cache_size_ = 0;
   void ensureBumpToChipNetCacheFresh() const;
   // STA vertex-id storage for chip-bump-inst pins. _dbChipBumpInst has no
   // staVertexId field on the odb side; keep the mapping here.
-  std::map<odb::dbChipBumpInst*, VertexId> chip_bump_vertex_ids_;
+  odb::PtrMap<odb::dbChipBumpInst, VertexId> chip_bump_vertex_ids_;
   // Reverse lookup: chiplet master dbBlock -> chip-inst that placed it.
   // Built in setTopChip. Only contains blocks whose master is referenced
   // by exactly one chip-inst — shared masters (e.g. two chip-insts of
   // the same chiplet) are skipped, since their inner dbInsts would alias
   // across chip-insts and break STA's per-pin Vertex assumption.
-  std::map<odb::dbBlock*, odb::dbChipInst*> block_to_chip_inst_;
+  odb::PtrMap<odb::dbBlock, odb::dbChipInst*> block_to_chip_inst_;
   // Per-block discriminator stamped into upper bits of getDbNwkObjectId
   // so iterms/bterms/insts/nets from different chiplet blocks (each
   // numbered from 1) don't collide in NetSet/PinSet keys.
-  std::map<odb::dbBlock*, uint32_t> block_disc_;
+  odb::PtrMap<odb::dbBlock, uint32_t> block_disc_;
   // Synthetic LibertyLibrary for chip-master Cells. Each carries a
   // self-arc per chip-bump port so Graph::makeInstanceEdges builds the
   // internal load<->bidir_drvr edges that let create_clock anchors on

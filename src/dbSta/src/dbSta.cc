@@ -427,7 +427,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // Aggregate unbound chip-bumps per master into one summary warning so
   // designs that intentionally leave non-signal bumps unbound (e.g. PG
   // bumps) don't spam the log.
-  std::set<odb::dbChip*> seen_masters;
+  odb::PtrSet<odb::dbChip> seen_masters;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
     if (master == nullptr || !seen_masters.insert(master).second) {

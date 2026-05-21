@@ -921,7 +921,7 @@ void dbNetwork::setTopChip(dbChip* chip)
   // referenced by exactly one chip-inst. Shared-master chip-insts can't
   // descend into the same dbBlock (inner dbInst pointers would alias)
   // and stay treated as leaves.
-  std::map<odb::dbBlock*, int> block_refcount;
+  odb::PtrMap<odb::dbBlock, int> block_refcount;
   uint32_t next_disc = 1;
   // block_disc values are masked to kBlockTagWidth bits when stamped
   // into the ObjectId. Beyond the mask, distinct chiplet blocks alias
