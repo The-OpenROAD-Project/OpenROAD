@@ -929,27 +929,26 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       }
 
       // Store original FF→tray pin mapping as a property on the tray
-      // instance so timing reports can display the original pin name.
-      std::string tray_port;
+      // pin (iterm) so the report_path "orig_name" field can display the
+      // original pin name.
+      dbITerm* tray_iterm = nullptr;
       if (is_d && d_pin) {
-        tray_port = d_pin->name();
+        tray_iterm = tray_inst[tray_idx]->findITerm(d_pin->name().c_str());
       } else if (is_q) {
-        if (is_qn_inv && qn_pin) {
-          tray_port = qn_pin->name();
-        } else if (q_pin) {
-          tray_port = q_pin->name();
+        const sta::LibertyPort* tray_port = is_qn_inv ? qn_pin : q_pin;
+        if (tray_port) {
+          tray_iterm
+              = tray_inst[tray_idx]->findITerm(tray_port->name().c_str());
         }
       }
-      if (!tray_port.empty()) {
-        const std::string key = "orig_name_" + tray_port;
+      if (tray_iterm) {
         const std::string val = orig_inst_name + "/" + orig_port_name;
         odb::dbStringProperty* prop
-            = odb::dbStringProperty::find(tray_inst[tray_idx], key.c_str());
+            = odb::dbStringProperty::find(tray_iterm, kOrigNameProp);
         if (prop) {
           prop->setValue(val.c_str());
         } else {
-          odb::dbStringProperty::create(
-              tray_inst[tray_idx], key.c_str(), val.c_str());
+          odb::dbStringProperty::create(tray_iterm, kOrigNameProp, val.c_str());
         }
       }
     }
