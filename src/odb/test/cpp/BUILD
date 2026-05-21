@@ -18,7 +18,6 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/lefout",
-        "//src/tst",
         "//src/tst:sky130_fixture",
         "//src/utl",
         "@googletest//:gtest",
@@ -34,7 +33,6 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -64,10 +62,8 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@spdlog",
     ],
 )
 
@@ -93,7 +89,6 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
-        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -107,7 +102,6 @@ cc_test(
         "//src/odb/src/db",
         "//src/odb/src/gdsin",
         "//src/odb/src/gdsout",
-        "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -257,7 +251,6 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
@@ -278,8 +271,6 @@ cc_test(
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -301,8 +292,6 @@ cc_test(
         "//src/odb/src/3dblox",
         "//src/odb/src/db",
         "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -319,10 +308,7 @@ cc_test(
     deps = [
         "//src/odb/src/3dblox",
         "//src/odb/src/db",
-        "//src/odb/test/cpp/helper",
         "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -337,13 +323,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -362,7 +343,6 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
