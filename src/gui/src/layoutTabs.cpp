@@ -130,8 +130,30 @@ void LayoutTabs::chipLoaded(odb::dbChip* chip)
   emit newViewer(viewer);
 }
 
+void LayoutTabs::clearViewers()
+{
+  // Stop render threads before destroying viewers to avoid
+  // deleting a running QThread.
+  for (LayoutViewer* viewer : viewers_) {
+    viewer->exit();
+  }
+  // QTabWidget::clear() removes all tabs and deletes the page widgets
+  // (LayoutScroll), which are parents of the LayoutViewer widgets.
+  QTabWidget::clear();
+  viewers_.clear();
+  current_viewer_ = nullptr;
+  modules_.clear();
+  focus_nets_.clear();
+  route_guides_.clear();
+  net_tracks_.clear();
+}
+
 void LayoutTabs::tabChange(int index)
 {
+  if (index < 0 || index >= static_cast<int>(viewers_.size())) {
+    current_viewer_ = nullptr;
+    return;
+  }
   current_viewer_ = viewers_[index];
 
   emit setCurrentChip(current_viewer_->getChip());

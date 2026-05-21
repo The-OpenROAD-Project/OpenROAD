@@ -39,6 +39,7 @@ class AntennaChecker
                                   odb::dbMTerm* diode_mterm,
                                   float ratio_margin);
   void setReportFileName(const char* file_name);
+  void clear();
 
   // Used in repair
   void initAntennaRules();

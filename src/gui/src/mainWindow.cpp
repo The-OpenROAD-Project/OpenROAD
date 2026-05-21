@@ -1616,6 +1616,10 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
 
 void MainWindow::saveSettings()
 {
+  // Stop render threads before saving settings to avoid races
+  // between the render thread and the main thread.
+  viewers_->exit();
+
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
   settings.setValue("geometry", saveGeometry());
@@ -1647,6 +1651,18 @@ void MainWindow::postReadDef(odb::dbBlock* block)
 void MainWindow::postRead3Dbx(odb::dbChip* chip)
 {
   emit chipLoaded(chip);
+}
+
+void MainWindow::preDbClear(odb::dbDatabase* db)
+{
+  selected_.clear();
+  for (auto& highlighted_set : highlighted_) {
+    highlighted_set.clear();
+  }
+  inspector_->inspect(Selected());
+  viewers_->clearViewers();
+  controls_->clearTechData();
+  setBlock(nullptr);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)

@@ -129,6 +129,7 @@ class GlobalRouter
                    routing_congestion_data_source_rudy);
 
   void clear();
+  void clearForReload();
 
   void setAdjustment(float adjustment);
   void setMinRoutingLayer(int min_layer);
@@ -341,6 +342,7 @@ class GlobalRouter
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
+  void clearRudy();
 
   void writePinLocations(const char* file_name);
 

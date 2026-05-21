@@ -188,6 +188,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
           dpl::Opendp* opendp,
           est::EstimateParasitics* estimate_parasitics);
   ~Resizer() override;
+  void clear();
 
   // Core area (meters).
   double coreArea() const;

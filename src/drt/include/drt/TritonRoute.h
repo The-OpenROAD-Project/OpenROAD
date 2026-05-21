@@ -157,6 +157,7 @@ class TritonRoute : public PinAccessService
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
   void clearDesign();
+  void clearForReload();
   void updateDesign(const std::vector<std::string>& updates, int num_threads);
   void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(

@@ -166,6 +166,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void postReadDef(odb::dbBlock* block) override;
   void postReadDb(odb::dbDatabase* db) override;
   void postRead3Dbx(odb::dbChip* chip) override;
+  void preDbClear(odb::dbDatabase* db) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
   odb::PtrSet<odb::dbNet> findClkNets();

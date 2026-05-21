@@ -33,6 +33,12 @@ MacroPlacer::MacroPlacer(odb::dbDatabase* db,
 
 MacroPlacer::~MacroPlacer() = default;
 
+void MacroPlacer::clear()
+{
+  hier_rtlmp_->clear();
+  guidance_regions_.clear();
+}
+
 bool MacroPlacer::place(const int num_threads,
                         const int max_num_macro,
                         const int min_num_macro,

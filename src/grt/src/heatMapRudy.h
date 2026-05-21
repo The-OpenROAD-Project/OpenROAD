@@ -23,6 +23,7 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
                  grt::GlobalRouter* grouter,
                  odb::dbDatabase* db);
 
+  void setChip(odb::dbChip* chip) override;
   void onShow() override;
   void onHide() override;
 
