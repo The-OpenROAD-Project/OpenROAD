@@ -9,6 +9,7 @@
 
 #include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
+#include "cut/utils.h"
 #include "db_sta/dbNetwork.hh"
 #include "kitty/dynamic_truth_table.hpp"
 #include "mockturtle/algorithms/decomposition.hpp"
@@ -114,8 +115,8 @@ LogicCut::BuildMappedMockturtleNetwork(
   }
 
   // Recursive builder: given a STA net, return the corresponding AIG signal
-  std::function<signal(sta::Net*, int)> build_net_signal
-      = [&](sta::Net* net, int depth) -> signal {
+  std::function<std::optional<signal>(sta::Net*, int)> build_net_signal
+      = [&](sta::Net* net, int depth) -> std::optional<signal> {
     // Memoized?
     if (auto it = net_to_signal.find(net); it != net_to_signal.end()) {
       return it->second;
@@ -147,8 +148,10 @@ LogicCut::BuildMappedMockturtleNetwork(
       logger->error(
           utl::CUT, 52, "Driver pin not found: {}", network->name(driver_inst));
     }
-    if (driver_cell->hasSequentials()
-        || !cut_instances_set.contains(driver_inst)) {
+    if (!IsCombinational(driver_cell)) {
+      return std::nullopt;
+    }
+    if (!cut_instances_set.contains(driver_inst)) {
       logger->error(
           utl::CUT, 53, "Invalid driver for: {}", network->name(driver_inst));
     }
@@ -185,7 +188,11 @@ LogicCut::BuildMappedMockturtleNetwork(
       }
 
       sta::Net* fanin_net = network->net(sta_pin);
-      fanins.push_back(build_net_signal(fanin_net, depth + 1));
+      const std::optional<signal> built
+          = build_net_signal(fanin_net, depth + 1);
+      if (built.has_value()) {
+        fanins.push_back(*built);
+      }
     }
 
     // Realize gate function as AIG fragment.
@@ -204,8 +211,10 @@ LogicCut::BuildMappedMockturtleNetwork(
 
   // Hook up primary outputs
   for (sta::Net* net : primary_outputs_) {
-    const signal s = build_net_signal(net, 0);
-    ntk.create_po(s, network->name(net));
+    const std::optional<signal> s = build_net_signal(net, 0);
+    if (s.has_value()) {
+      ntk.create_po(*s, network->name(net));
+    }
   }
 
   return ntk;

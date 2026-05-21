@@ -275,7 +275,10 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
       // If pin isn't a primary input or output add to deleted list. The only
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.
-      if (!primary_input_or_output_nets.contains(connected_net)) {
+      sta::Instance* inst = db_network->instance(pin);
+      sta::LibertyCell* cell = db_network->libertyCell(inst);
+      if (!primary_input_or_output_nets.contains(connected_net)
+          && (!cell || cell->hasSequentials())) {
         db_network->deleteNet(connected_net);
       }
     }
@@ -303,7 +306,8 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
 
     odb::dbNet* net = block->findNet(name.c_str());
     if (!net) {
-      logger->error(utl::RMP, 72, "Failed to find PI net {}", name);
+      logger->warn(utl::RMP, 72, "Failed to find PI net {}", name);
+      return;
     }
 
     node_out_nets[idx].push_back(net);

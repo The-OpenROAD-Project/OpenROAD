@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "cut/utils.h"
 #include "db_sta/dbSta.hh"
 #include "misc/util/abc_global.h"
 #include "misc/vec/vecFlt.h"
@@ -70,16 +71,6 @@ abc::Mio_Library_t* AbcLibrary::mio_library()
         [](abc::Mio_Library_t* lib) { abc::Mio_LibraryDelete(lib); });
   }
   return mio_library_.release();
-}
-
-static bool IsCombinational(sta::LibertyCell* cell)
-{
-  if (!cell) {
-    return false;
-  }
-  return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials() && !cell->isLevelShifter()
-          && !cell->isIsolationCell() && !cell->isMemory());
 }
 
 static int CountOutputPins(sta::LibertyCell* cell)

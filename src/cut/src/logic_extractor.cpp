@@ -10,6 +10,7 @@
 
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
+#include "cut/utils.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Bfs.hh"
@@ -59,6 +60,15 @@ LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
   return *this;
 }
 
+bool LogicExtractorFactory::IsCombinationalVtx(sta::Vertex* vertex)
+{
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  sta::Pin* pin = vertex->pin();
+  sta::Instance* inst = network->instance(pin);
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  return IsCombinational(cell);
+}
+
 std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     const std::set<std::string>& supported_cells)
 {
@@ -79,7 +89,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     sta::Vertex* vertex = iter.next();
     iter.enqueueAdjacentVertices(vertex);
 
-    if (cut_set.insert(vertex).second) {
+    if (IsCombinationalVtx(vertex) && cut_set.insert(vertex).second) {
       cut_vertices.push_back(vertex);
     }
   }
@@ -203,12 +213,10 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
     auto pin_iterator = std::unique_ptr<sta::PinConnectedPinIterator>(
         network->connectedPinIterator(pin));
     while (pin_iterator->hasNext()) {
-      const sta::Pin* connected_pin = pin_iterator->next();
+      auto* connected_pin = const_cast<sta::Pin*>(pin_iterator->next());
       // Pin is not in our cutset, and therefore is a primary output.
       if (!cut_set_vertices.contains(connected_pin)) {
-        sta::VertexId vertex_id = network->vertexId(connected_pin);
-        sta::Vertex* vertex = network->graph()->vertex(vertex_id);
-        primary_outputs.push_back(vertex->pin());
+        primary_outputs.push_back(connected_pin);
       }
     }
   }
@@ -304,6 +312,11 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
       net = network->net(pin);
     }
 
+    if (network->direction(pin)->isInput()
+        && !network->findNet(network->name(net))) {
+      logger_->warn(utl::CUT, 480, "rejecting pin {}", network->name(pin));
+      continue;
+    }
     if (!net) {
       logger_->error(utl::CUT,
                      48,

@@ -103,6 +103,7 @@ class LogicExtractorFactory
       std::vector<sta::Pin*>& primary_inputs);
   std::vector<sta::Pin*> AddMisingPrimaryOutputs(
       std::vector<sta::Pin*>& primary_outputs);
+  bool IsCombinationalVtx(sta::Vertex* vertex);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;

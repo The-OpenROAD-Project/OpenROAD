@@ -16,6 +16,7 @@ cc_library(
         "src/blifParser.cpp",
         "src/logic_cut.cpp",
         "src/logic_extractor.cpp",
+        "src/utils.cpp",
     ],
     hdrs = [
         "include/cut/abc_init.h",
@@ -24,6 +25,7 @@ cc_library(
         "include/cut/blifParser.h",
         "include/cut/logic_cut.h",
         "include/cut/logic_extractor.h",
+        "include/cut/utils.h",
     ],
     defines = [
         "ABC_NAMESPACE=abc",
