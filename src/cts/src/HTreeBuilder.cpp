@@ -140,10 +140,6 @@ void HTreeBuilder::preSinkClustering(
   std::vector<std::pair<float, float>> newSinkLocations;
   for (const std::vector<unsigned>& cluster :
        matching.sinkClusteringSolution()) {
-    /*if (cluster.size() == 1) {
-      const std::pair<float, float>& point = points[cluster[0]];
-      newSinkLocations.emplace_back(point);
-    }*/
     if (cluster.size() >= 1) {
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
