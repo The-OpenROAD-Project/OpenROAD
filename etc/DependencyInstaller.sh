@@ -158,6 +158,28 @@ _verify_checksum() {
 }
 
 # ------------------------------------------------------------------------------
+# Yosys build dependencies
+# ------------------------------------------------------------------------------
+# OpenROAD itself uses vendored linenoise, so readline is no longer in the
+# base package lists. Yosys still requires it at compile time, so install it
+# here right before the yosys build.
+_install_yosys_dependencies() {
+    if _command_exists "apt-get"; then
+        export DEBIAN_FRONTEND="noninteractive"
+        _execute "Installing libreadline-dev for yosys..." \
+            apt-get -y install --no-install-recommends libreadline-dev
+    elif _command_exists "yum"; then
+        _execute "Installing readline-devel for yosys..." \
+            yum -y install readline-devel
+    elif _command_exists "zypper"; then
+        _execute "Installing readline-devel for yosys..." \
+            zypper -n install readline-devel
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing readline for yosys..." brew install readline
+    fi
+}
+
+# ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
 _install_yosys() {
@@ -173,6 +195,7 @@ _install_yosys() {
     local required_version="${YOSYS_VERSION#v}"
     log "Checking Yosys (System: ${yosys_installed_version}, Required: ${required_version})"
     if [[ "${yosys_installed_version}" != "${required_version}" ]]; then
+        _install_yosys_dependencies
         (
             cd "${BASE_DIR}"
             _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys

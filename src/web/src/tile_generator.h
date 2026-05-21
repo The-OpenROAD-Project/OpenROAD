@@ -21,6 +21,7 @@
 #include "glyph_cache.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "web_painter.h"
 
@@ -60,9 +61,71 @@ struct SelectionResult
 {
   std::any object;  // dbInst*, dbNet*, etc.
   std::string name;
-  std::string type_name;  // "Inst", "Net", etc.
+  std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
+  // Fast-path tag for sort/count.  type_name is a string so `selectAt`
+  // can serialize it later, but the sort comparator runs on every
+  // result pair — comparing two short strings ("Inst" / "Net") per
+  // comparison adds up.  `is_inst` is set alongside type_name and
+  // dominates the sort.
+  bool is_inst = false;
 };
+
+// One node in the chiplet tree rooted at db->getChip().  The root has
+// inst==nullptr and an identity world_xfm; descendants accumulate
+// dbChipInst transforms top-down.  See collectChiplets().
+struct ChipletNode
+{
+  odb::dbChip* chip = nullptr;
+  odb::dbBlock* block = nullptr;    // chip->getBlock()
+  odb::dbChipInst* inst = nullptr;  // null for root
+  odb::dbTransform world_xfm;       // local-to-root transform
+  std::string path;                 // "top.soc_inst.subip" — unique
+  std::string parent_path;          // path of the parent ("" for the root)
+  std::string name;                 // "top" or inst->getName()
+  int depth = 0;
+  int global_z = 0;
+};
+
+// Walk the dbChip → dbChipInst → masterChip hierarchy depth-first and
+// return a flat list with each chiplet's accumulated world transform.
+// Related Qt code: `LayoutViewer::getChips()` returns a flat
+// (dbChipInst → dbChip) PtrMap with no transform composition — this
+// function additionally accumulates `dbTransform`s top-down and assigns
+// stable hierarchical paths so the web renderer can place each chiplet.
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
+
+// Coarse instance category, derived once per inst and reused by both
+// isInstVisible and isInstSelectable so the two stay in lock-step.
+enum class InstCategory
+{
+  kStdCells,
+  kMacros,
+  kPadInput,
+  kPadOutput,
+  kPadInout,
+  kPadPower,
+  kPadSpacer,
+  kPadAreaIO,
+  kPadOther,
+  kPhysEndcap,
+  kPhysFill,
+  kPhysWelltap,
+  kPhysTie,
+  kPhysAntenna,
+  kPhysCover,
+  kPhysBump,
+  kPhysOther,
+  kStdBufInv,
+  kStdBufInvTiming,
+  kStdClockBufInv,
+  kStdClockGate,
+  kStdLevelShift,
+  kStdSequential,
+  kStdCombinational,
+};
+
+InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
 
 struct TileVisibility
 {
@@ -159,10 +222,80 @@ struct TileVisibility
   std::set<std::string> visible_layers;
   bool has_visible_layers = false;
 
+  // Per-chiplet visibility: when has_visible_chiplets is true, the tile
+  // renderer skips ChipletNodes whose `path` is not in this set.  Empty
+  // set with the flag off renders every chiplet (default).  Paths match
+  // ChipletNode::path produced by collectChiplets() (e.g. "top.soc_inst").
+  std::set<std::string> visible_chiplets;
+  bool has_visible_chiplets = false;
+  bool isChipletVisible(const std::string& path) const;
+
+  // ── Selectability ──
+  // Parallel to the visibility flags above: when off, the corresponding
+  // class of object is still rendered but is not pickable by selectAt().
+  // Mirrors the Qt GUI's displayControls "selectable" column.
+  // Defaults are all true (everything selectable), matching the Qt GUI.
+  bool stdcells_selectable = true;
+  bool macros_selectable = true;
+
+  bool pad_input_selectable = true;
+  bool pad_output_selectable = true;
+  bool pad_inout_selectable = true;
+  bool pad_power_selectable = true;
+  bool pad_spacer_selectable = true;
+  bool pad_areaio_selectable = true;
+  bool pad_other_selectable = true;
+
+  bool phys_fill_selectable = true;
+  bool phys_endcap_selectable = true;
+  bool phys_welltap_selectable = true;
+  bool phys_tie_selectable = true;
+  bool phys_antenna_selectable = true;
+  bool phys_cover_selectable = true;
+  bool phys_bump_selectable = true;
+  bool phys_other_selectable = true;
+
+  bool std_bufinv_selectable = true;
+  bool std_bufinv_timing_selectable = true;
+  bool std_clock_bufinv_selectable = true;
+  bool std_clock_gate_selectable = true;
+  bool std_level_shift_selectable = true;
+  bool std_sequential_selectable = true;
+  bool std_combinational_selectable = true;
+
+  bool net_signal_selectable = true;
+  bool net_power_selectable = true;
+  bool net_ground_selectable = true;
+  bool net_clock_selectable = true;
+  bool net_reset_selectable = true;
+  bool net_tieoff_selectable = true;
+  bool net_scan_selectable = true;
+  bool net_analog_selectable = true;
+
+  bool pins_selectable = true;
+  bool inst_pins_selectable = true;
+
+  bool placement_blockages_selectable = true;
+  bool routing_obstructions_selectable = true;
+
+  // Per-site selectability (peer to `sites`).  Defaults to true when
+  // unspecified — checked only when the corresponding row is selectable.
+  std::unordered_map<std::string, bool> site_selectable;
+
+  // Per-metal-layer selectability.  When has_selectable_layers is true,
+  // selectAt() skips layers not in this set.
+  std::set<std::string> selectable_layers;
+  bool has_selectable_layers = false;
+
   void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+
+  bool isNetSelectable(odb::dbNet* net) const;
+  bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
+  bool isSiteSelectable(const std::string& site_name) const;
+  bool isLayerSelectable(const std::string& layer_name) const;
 };
 
 class TileGenerator
@@ -185,7 +318,8 @@ class TileGenerator
 
   // Per-layer colors matching gui::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
-  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap() const;
+  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
+                                                               = nullptr) const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -213,6 +347,14 @@ class TileGenerator
   odb::dbBlock* getBlock() const;
   odb::dbChip* getChip() const;
   odb::dbTech* getTech() const;
+  odb::dbDatabase* getDb() const { return db_; }
+
+  // Cached, sorted list of chiplets reachable from db_->getChip().
+  // The cache is invalidated by eagerInit() and rebuilt lazily on the
+  // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
+  // selectAt) read it on every tile / click; the free function
+  // `collectChiplets` is kept for tests and one-shot callers.
+  const std::vector<ChipletNode>& chiplets() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -394,6 +536,17 @@ class TileGenerator
   mutable std::mutex layer_colors_mutex_;
   mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
       layer_colors_by_tech_;
+
+  // Cached chiplet traversal.  See chiplets().  Invalidated in
+  // eagerInit() and also auto-invalidated when the chiplet hierarchy
+  // signature (root pointer + total dbChipInst count) changes — this
+  // catches Tcl-driven dbChipInst::create/destroy between eagerInit
+  // calls, which dbBlockCallBackObj does not surface.
+  mutable std::mutex chiplets_mutex_;
+  mutable std::vector<ChipletNode> chiplets_cache_;
+  mutable bool chiplets_cache_valid_ = false;
+  mutable odb::dbChip* chiplets_cache_root_ = nullptr;
+  mutable size_t chiplets_cache_inst_count_ = 0;
 
   static constexpr int kTileSizeInPixel = 256;
 };
