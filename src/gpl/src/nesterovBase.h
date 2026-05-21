@@ -259,6 +259,13 @@ class GNet
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
+  // GPU path writes computed bbox back through this setter so subsequent
+  // gNet->lx() / ly() / ux() / uy() consumers stay consistent with the
+  // CPU updateBox() side effect, without re-iterating the pin list on the
+  // host. The caller is responsible for passing values that equal what
+  // updateBox() would have produced from the same pin set; this function
+  // performs no validation.
+  void setBox(int lx, int ly, int ux, int uy);
   int64_t getHpwl() const;
 
   void setDontCare();

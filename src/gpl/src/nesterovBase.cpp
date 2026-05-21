@@ -345,6 +345,14 @@ void GNet::updateBox()
   }
 }
 
+void GNet::setBox(int lx, int ly, int ux, int uy)
+{
+  lx_ = lx;
+  ly_ = ly;
+  ux_ = ux;
+  uy_ = uy;
+}
+
 int64_t GNet::getHpwl() const
 {
   if (ux_ < lx_) {  // dangling net
@@ -1556,18 +1564,11 @@ void NesterovBaseCommon::updateDbGCells()
   }
 }
 
-int64_t NesterovBaseCommon::getHpwl()
-{
-  assert(omp_get_thread_num() == 0);
-  int64_t hpwl = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
-    gNet->updateBox();
-    hpwl += gNet->getHpwl();
-  }
-  return hpwl;
-}
+// NesterovBaseCommon::getHpwl() is defined out-of-line in either
+// src/hpwl.cpp (OpenMP backend) or src/gpu/hpwl.cpp (Kokkos backend); CMake
+// selects exactly one source based on the ENABLE_GPU option. This keeps the
+// GPU backend split a build-system concern with no preprocessor branching in
+// the translation units that consume the API.
 
 void NesterovBaseCommon::resetMinRcCellSize()
 {

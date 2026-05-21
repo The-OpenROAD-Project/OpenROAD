@@ -34,6 +34,7 @@ add_library(gpl_lib
   src/fft.cpp
   src/fftsg.cpp
   src/fftsg2d.cpp
+  src/hpwl.cpp
   src/routeBase.cpp
   src/timingBase.cpp
   src/graphicsNone.cpp
@@ -41,32 +42,34 @@ add_library(gpl_lib
   src/mbff.cpp
 )
 
-# --- GPU backend infrastructure ---
-# ENABLE_GPU is a compile definition gating the #ifdef blocks in gpl_lib's
-# .cpp files; the consumer-facing headers (nesterovBase.h, fft.h) stay
-# preprocessor-free wherever possible. The shared runtime helpers
-# gpl::gpuEnabled() and gpl::ensureKokkosInitialized() live in
-# src/gpu/gpuBackend.cpp. The GPU kernels themselves are added by the
-# per-kernel changes (HPWL, FFT). gpu/ is a file-layout subdirectory only
-# (no nested CMakeLists.txt) so kernel build settings stay in this module's
-# CMakeLists with the rest of gpl_lib.
+# --- HPWL backend: runtime switch ---
+# src/hpwl.cpp holds the single NesterovBaseCommon::getHpwl() definition and
+# is always compiled. When ENABLE_GPU=ON, the Kokkos kernel in src/gpu/hpwl.cpp
+# is also compiled in and getHpwl() dispatches between the CPU loop and the GPU
+# kernel at run time (gpl::gpuEnabled(), driven by the ENABLE_GPU env var).
+# ENABLE_GPU is a compile definition gating the #ifdef blocks in gpl_lib's .cpp
+# files; the consumer-facing headers (nesterovBase.h) stay preprocessor-free.
+# gpu/ is a file-layout subdirectory only (no nested CMakeLists.txt) so kernel
+# build settings stay in this module's CMakeLists with the rest of gpl_lib.
 if(ENABLE_GPU)
-  target_sources(gpl_lib PRIVATE src/gpu/gpuBackend.cpp)
+  target_sources(gpl_lib PRIVATE src/gpu/hpwl.cpp src/gpu/gpuBackend.cpp)
   target_compile_definitions(gpl_lib PRIVATE ENABLE_GPU)
   # nesterovBase.h and other private gpl headers live in src/; sources
   # under src/gpu/ need that on the include path explicitly because
   # the compiler's default same-dir lookup points into src/gpu/ instead.
   target_include_directories(gpl_lib PRIVATE src)
-  # gpuBackend.cpp carries no device code itself, but it includes
-  # <Kokkos_Core.hpp> for the lazy Kokkos initialize()/finalize(): when
-  # Kokkos is built with the CUDA (or HIP) backend, that header bakes
-  # KOKKOS_ENABLE_CUDA into its config and refuses to compile under a plain
-  # host compiler (it requires __CUDACC__). So it is flagged with the device
-  # language to match the Kokkos backend.
+  # gpu/hpwl.cpp is the device kernel TU. gpu/gpuBackend.cpp carries no device
+  # code itself, but it includes <Kokkos_Core.hpp> for the lazy Kokkos
+  # initialize()/finalize(): when Kokkos is built with the CUDA (or HIP)
+  # backend, that header bakes KOKKOS_ENABLE_CUDA into its config and refuses
+  # to compile under a plain host compiler (it requires __CUDACC__). So both
+  # TUs are flagged with the device language to match the Kokkos backend.
   if(Kokkos_ENABLE_CUDA)
-    set_source_files_properties(src/gpu/gpuBackend.cpp PROPERTIES LANGUAGE CUDA)
+    set_source_files_properties(src/gpu/hpwl.cpp src/gpu/gpuBackend.cpp
+                                PROPERTIES LANGUAGE CUDA)
   elseif(Kokkos_ENABLE_HIP)
-    set_source_files_properties(src/gpu/gpuBackend.cpp PROPERTIES LANGUAGE HIP)
+    set_source_files_properties(src/gpu/hpwl.cpp src/gpu/gpuBackend.cpp
+                                PROPERTIES LANGUAGE HIP)
   endif()
   # Disable FP contraction for kernels that share gpl_lib's compile
   # context so they stay bit-stable across compilers. Scoped to gpl_lib
@@ -143,7 +146,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_include_directories(gpl_py
     PUBLIC
       include
-
+      
   )
 
   target_link_libraries(gpl_py

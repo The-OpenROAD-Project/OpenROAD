@@ -26,6 +26,7 @@ cc_library(
         "src/graphicsImpl.cpp",
         "src/graphicsImpl.h",
         "src/graphicsNone.cpp",
+        "src/hpwl.cpp",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
