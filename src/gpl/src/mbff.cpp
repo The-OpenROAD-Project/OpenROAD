@@ -172,12 +172,6 @@ const sta::LibertyCell* MBFF::getLibertyCell(const sta::Cell* cell)
 }
 
 namespace {
-// Check whether lib_port appears in any sequential's FuncExpr accessed
-// via `get` (e.g., &Sequential::clear or &Sequential::preset). Scans
-// both the regular lib_cell sequentials and the test cell's
-// sequentials. The test cell's seq.clear()/preset() FuncExpr port set
-// holds test-cell port pointers, so the test cell branch resolves the
-// matching port by name first.
 // Rebind a tray iterm to the given (flat, mod) pair. The plain
 // dbITerm::connect(dbNet*) overload only updates the flat side; if a
 // stale modnet was attached from an earlier per-orig-flop iteration
@@ -197,6 +191,12 @@ void reconnectIterm(dbITerm* tray_iterm, dbNet* net, odb::dbModNet* mod_net)
   }
 }
 
+// Check whether lib_port appears in any sequential's FuncExpr accessed
+// via `get` (e.g., &Sequential::clear or &Sequential::preset). Scans
+// both the regular lib_cell sequentials and the test cell's
+// sequentials. The test cell's seq.clear()/preset() FuncExpr port set
+// holds test-cell port pointers, so the test cell branch resolves the
+// matching port by name first.
 bool portInSequentialFunc(const sta::LibertyCell* lib_cell,
                           const sta::LibertyPort* lib_port,
                           sta::FuncExpr* (sta::Sequential::*get)() const)
