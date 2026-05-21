@@ -281,7 +281,7 @@ static std::optional<SOP> extractSop(sta::FuncExpr* fexpr,
   }
 
   if (logger && cell_name) {
-    debugPrint(logger, utl::SYN, "gatefusion", 3, "    {}");
+    debugPrint(logger, utl::SYN, "gatefusion", 3, "    {}", cell_name);
     if (direct) {
       debugPrint(logger,
                  utl::SYN,
