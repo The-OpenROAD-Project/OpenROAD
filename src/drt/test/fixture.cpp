@@ -25,9 +25,9 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "src/drt/src/global.h"
 #include "utl/Logger.h"
 
 using odb::dbTechLayerDir;
