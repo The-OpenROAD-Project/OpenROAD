@@ -34,7 +34,6 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
-    [-virtual_cts_overflow virtual_cts_overflow]\
     [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
@@ -60,7 +59,6 @@ proc global_placement { args } {
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
       -keep_resize_below_overflow \
-      -virtual_cts_overflow \
       -virtual_cts_max_skew_fraction \
       -pad_left -pad_right} \
     flags {-skip_initial_place \

@@ -70,9 +70,6 @@ static gpl::PlaceOptions getOptions(
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
   checkKey(keys,
-           "-virtual_cts_overflow",
-           options.virtualCtsOverflows);
-  checkKey(keys,
            "-virtual_cts_max_skew_fraction",
            options.virtualCtsMaxSkewFraction);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);

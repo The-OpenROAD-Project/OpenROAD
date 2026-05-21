@@ -69,10 +69,6 @@ struct PlaceOptions
   bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
   bool virtualCtsMode = false;
-  // Overflow thresholds (integer %, e.g. {70, 30}) at which to trigger
-  // virtual CTS. Lead the timing-driven thresholds {64, 20} by several
-  // percent so the placer has time to respond before net reweighting runs.
-  std::vector<int> virtualCtsOverflows{70, 30};
   // Maximum clock insertion delay as a fraction of the clock period.
   // The MST leaf farthest from the virtual clock root gets this delay;
   // all others are scaled proportionally.  Default: 10% of the period.

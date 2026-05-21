@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <functional>
 #include <limits>
 #include <queue>
 #include <utility>
@@ -36,51 +35,6 @@ ClockBase::ClockBase(sta::dbSta* sta, odb::dbDatabase* db, utl::Logger* log)
 }
 
 ClockBase::~ClockBase() = default;
-
-void ClockBase::initOverflowChk()
-{
-  overflow_done_.assign(overflows_.size(), false);
-}
-
-void ClockBase::setVirtualCtsOverflows(const std::vector<int>& overflows)
-{
-  overflows_ = overflows;
-  std::ranges::sort(overflows_, std::greater<int>());
-  initOverflowChk();
-}
-
-size_t ClockBase::getVirtualCtsOverflowSize() const
-{
-  return overflows_.size();
-}
-
-bool ClockBase::isVirtualCtsOverflow(float overflow)
-{
-  if (overflows_.empty()) {
-    return false;
-  }
-
-  const int int_overflow = static_cast<int>(std::round(overflow * 100));
-
-  // Trigger once for each threshold when overflow drops below it,
-  // matching the same pattern used in TimingBase.
-  if (int_overflow > overflows_[0]) {
-    return false;
-  }
-
-  bool needs_run = false;
-  for (size_t i = 0; i < overflows_.size(); ++i) {
-    if (overflows_[i] > int_overflow) {
-      if (!overflow_done_[i]) {
-        overflow_done_[i] = true;
-        needs_run = true;
-      }
-      continue;
-    }
-    return needs_run;
-  }
-  return needs_run;
-}
 
 bool ClockBase::executeVirtualCts()
 {

@@ -371,35 +371,13 @@ void NesterovPlace::updateIterGraphics(
   }
 }
 
-void NesterovPlace::runVirtualCts(int iter, int& virtual_cts_count)
-{
-  if (!cb_) {
-    return;
-  }
-
-  if (!cb_->isVirtualCtsOverflow(average_overflow_unscaled_)) {
-    return;
-  }
-
-  // Update DB placement so pin locations reflect current iteration.
-  updateDb();
-
-  log_->info(GPL,
-             164,
-             "Virtual CTS iteration {}/{}, overflow: {:.3f}.",
-             ++virtual_cts_count,
-             cb_->getVirtualCtsOverflowSize(),
-             average_overflow_unscaled_);
-
-  cb_->executeVirtualCts();
-}
-
 void NesterovPlace::runTimingDriven(int iter,
                                     const std::string& timing_driven_dir,
                                     int routability_driven_revert_count,
                                     int& timing_driven_count,
                                     int64_t& td_accumulated_delta_area,
-                                    bool is_routability_gpl_iter)
+                                    bool is_routability_gpl_iter,
+                                    int& virtual_cts_count)
 {
   // timing driven feature
   // if virtual, do reweight on timing-critical nets,
@@ -409,6 +387,15 @@ void NesterovPlace::runTimingDriven(int iter,
       && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)) {
     // update db's instance location from current density coordinates
     updateDb();
+
+    if (cb_) {
+      log_->info(GPL,
+                 164,
+                 "Virtual CTS iteration {}, overflow: {:.3f}.",
+                 ++virtual_cts_count,
+                 average_overflow_unscaled_);
+      cb_->executeVirtualCts();
+    }
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->addTimingDrivenIter(iter);
@@ -1124,14 +1111,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       ++npVars_.maxNesterovIter;
     }
 
-    runVirtualCts(nesterov_iter, virtual_cts_count);
-
     runTimingDriven(nesterov_iter,
                     timing_driven_dir,
                     routability_driven_revert_count,
                     timing_driven_count,
                     td_accumulated_delta_area,
-                    is_routability_gpl_iter);
+                    is_routability_gpl_iter,
+                    virtual_cts_count);
 
     if (isDiverged(diverge_snapshot_WlCoefX,
                    diverge_snapshot_WlCoefY,
