@@ -438,7 +438,6 @@ sta::Slack RepairTargetCollector::getPathSlackByIndex(
   // Create ExceptionTo for this endpoint
   sta::PinSet* to_pins = new sta::PinSet(network_);
   to_pins->insert(endpoint_pin);
-  // sdc_ access bypasses api
   sta::ExceptionTo* to = sta_->makeExceptionTo(to_pins,
                                                nullptr,
                                                nullptr,
@@ -450,27 +449,26 @@ sta::Slack RepairTargetCollector::getPathSlackByIndex(
   sta::StringSeq group_names;
   int num_paths_needed = path_index + 1;
   sta::PathEndSeq path_ends
-    // search_ access bypasses api
-      = sta_->findPathEnds(nullptr,                // from
-                              nullptr,                // thrus
-                              to,                     // to
-                              false,                  // unconstrained
-                              sta_->scenes(),         // scene
-                              sta::MinMaxAll::all(),  // min_max
-                              num_paths_needed,       // group_path_count
-                              num_paths_needed,       // endpoint_path_count
-                              false,                  // unique_pins
-                              false,                  // unique_edges
-                              -sta::INF,              // slack_min
-                              sta::INF,               // slack_max
-                              true,                   // sort_by_slack
-                              group_names,            // group_names
-                              true,
-                              false,
-                              true,
-                              true,
-                              true,
-                              true);  // checks
+    = sta_->findPathEnds(nullptr,                // from
+                         nullptr,                // thrus
+                         to,                     // to
+                         false,                  // unconstrained
+                         sta_->scenes(),         // scene
+                         sta::MinMaxAll::all(),  // min_max
+                         num_paths_needed,       // group_path_count
+                         num_paths_needed,       // endpoint_path_count
+                         false,                  // unique_pins
+                         false,                  // unique_edges
+                         -sta::INF,              // slack_min
+                         sta::INF,               // slack_max
+                         true,                   // sort_by_slack
+                         group_names,            // group_names
+                         true,
+                         false,
+                         true,
+                         true,
+                         true,
+                         true);  // checks
 
   // Return the slack of the requested path index
   if (std::cmp_less(path_index, path_ends.size())) {
@@ -1137,7 +1135,6 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
   sta::PinSet* to_pins = new sta::PinSet(network_);
   to_pins->insert(endpoint_pin);
   // The ExceptionTo object will be owned and deleted by the SDC.
-  // sdc_ access bypasses api
   sta::ExceptionTo* to = sta_->makeExceptionTo(to_pins,
                                                nullptr,
                                                nullptr,
@@ -1148,7 +1145,6 @@ set<const sta::Pin*> RepairTargetCollector::collectPinsByPathEndpoint(
   // 2. Find paths to the endpoint.
   sta::StringSeq group_names;
   sta::PathEndSeq path_ends
-    // search_ access bypasses api
       = sta_->findPathEnds(nullptr,                // from
                               nullptr,                // thrus
                               to,                     // to
