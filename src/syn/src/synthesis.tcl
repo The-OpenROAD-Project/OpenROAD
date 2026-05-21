@@ -14,7 +14,7 @@ proc synthesize { args } {
 
   # bitblast all but arithmetic
   syn::bitblast_cmd false
-  syn::liveness_opt
+  syn::liveness_opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
     syn::abc_roundtrip {&ps; &st; &fraig -v -w;}
@@ -22,7 +22,7 @@ proc synthesize { args } {
 
   # now bitblast incl. arithmetic
   syn::bitblast_cmd true
-  syn::opt
+  syn::opt_cmd
 
   if { ![info exists flags(-reduce_name_loss)] } {
     syn::abc_roundtrip {&ps; &st; &dc2 -v; &dc2 -v; &if -g -K 6; &dc2 -v; &dc2 -v; &dc2 -v; &ps}
