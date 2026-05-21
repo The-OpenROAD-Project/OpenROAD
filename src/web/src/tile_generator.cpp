@@ -163,17 +163,78 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     }
   }
 
+  // ── Selectability peers ──
+  // clang-format off
+  // NOLINTBEGIN(modernize-use-designated-initializers)
+  static const BoolField kSelectableFields[] = {
+    {"s_stdcells",             &TileVisibility::stdcells_selectable,             true},
+    {"s_macros",               &TileVisibility::macros_selectable,               true},
+    {"s_pad_input",            &TileVisibility::pad_input_selectable,            true},
+    {"s_pad_output",           &TileVisibility::pad_output_selectable,           true},
+    {"s_pad_inout",            &TileVisibility::pad_inout_selectable,            true},
+    {"s_pad_power",            &TileVisibility::pad_power_selectable,            true},
+    {"s_pad_spacer",           &TileVisibility::pad_spacer_selectable,           true},
+    {"s_pad_areaio",           &TileVisibility::pad_areaio_selectable,           true},
+    {"s_pad_other",            &TileVisibility::pad_other_selectable,            true},
+    {"s_phys_fill",            &TileVisibility::phys_fill_selectable,            true},
+    {"s_phys_endcap",          &TileVisibility::phys_endcap_selectable,          true},
+    {"s_phys_welltap",         &TileVisibility::phys_welltap_selectable,         true},
+    {"s_phys_tie",             &TileVisibility::phys_tie_selectable,             true},
+    {"s_phys_antenna",         &TileVisibility::phys_antenna_selectable,         true},
+    {"s_phys_cover",           &TileVisibility::phys_cover_selectable,           true},
+    {"s_phys_bump",            &TileVisibility::phys_bump_selectable,            true},
+    {"s_phys_other",           &TileVisibility::phys_other_selectable,           true},
+    {"s_std_bufinv",           &TileVisibility::std_bufinv_selectable,           true},
+    {"s_std_bufinv_timing",    &TileVisibility::std_bufinv_timing_selectable,    true},
+    {"s_std_clock_bufinv",     &TileVisibility::std_clock_bufinv_selectable,     true},
+    {"s_std_clock_gate",       &TileVisibility::std_clock_gate_selectable,       true},
+    {"s_std_level_shift",      &TileVisibility::std_level_shift_selectable,      true},
+    {"s_std_sequential",       &TileVisibility::std_sequential_selectable,       true},
+    {"s_std_combinational",    &TileVisibility::std_combinational_selectable,    true},
+    {"s_net_signal",           &TileVisibility::net_signal_selectable,           true},
+    {"s_net_power",            &TileVisibility::net_power_selectable,            true},
+    {"s_net_ground",           &TileVisibility::net_ground_selectable,           true},
+    {"s_net_clock",            &TileVisibility::net_clock_selectable,            true},
+    {"s_net_reset",            &TileVisibility::net_reset_selectable,            true},
+    {"s_net_tieoff",           &TileVisibility::net_tieoff_selectable,           true},
+    {"s_net_scan",             &TileVisibility::net_scan_selectable,             true},
+    {"s_net_analog",           &TileVisibility::net_analog_selectable,           true},
+    {"s_pins",                 &TileVisibility::pins_selectable,                 true},
+    {"s_inst_pins",            &TileVisibility::inst_pins_selectable,            true},
+    {"s_placement_blockages",  &TileVisibility::placement_blockages_selectable,  true},
+    {"s_routing_obstructions", &TileVisibility::routing_obstructions_selectable, true},
+  };
+  // NOLINTEND(modernize-use-designated-initializers)
+  // clang-format on
+  for (const auto& f : kSelectableFields) {
+    this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
+  }
+
+  selectable_layers.clear();
+  has_selectable_layers = false;
+  if (auto it = json.find("selectable_layers"); it != json.end()) {
+    has_selectable_layers = true;
+    for (const auto& v : it->value().as_array()) {
+      selectable_layers.emplace(v.as_string());
+    }
+  }
+
   // Per-site flags are only consulted when rows are visible; skip the
   // full-object scan otherwise.
   sites.clear();
+  site_selectable.clear();
   if (rows) {
-    constexpr std::string_view kPrefix = "site_";
+    constexpr std::string_view kVisPrefix = "site_";
+    constexpr std::string_view kSelPrefix = "s_site_";
     for (const auto& [key, value] : json) {
       const std::string_view k(key.data(), key.size());
-      if (!k.starts_with(kPrefix)) {
-        continue;
+      if (k.starts_with(kSelPrefix)) {
+        site_selectable.emplace(std::string(k.substr(kSelPrefix.size())),
+                                value.as_bool());
+      } else if (k.starts_with(kVisPrefix)) {
+        sites.emplace(std::string(k.substr(kVisPrefix.size())),
+                      value.as_bool());
       }
-      sites.emplace(std::string(k.substr(kPrefix.size())), value.as_bool());
     }
   }
 }
@@ -218,7 +279,30 @@ bool TileVisibility::isNetVisible(odb::dbNet* net) const
   return true;
 }
 
-bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
+bool TileVisibility::isNetSelectable(odb::dbNet* net) const
+{
+  switch (net->getSigType().getValue()) {
+    case odb::dbSigType::SIGNAL:
+      return net_signal_selectable;
+    case odb::dbSigType::POWER:
+      return net_power_selectable;
+    case odb::dbSigType::GROUND:
+      return net_ground_selectable;
+    case odb::dbSigType::CLOCK:
+      return net_clock_selectable;
+    case odb::dbSigType::RESET:
+      return net_reset_selectable;
+    case odb::dbSigType::TIEOFF:
+      return net_tieoff_selectable;
+    case odb::dbSigType::SCAN:
+      return net_scan_selectable;
+    case odb::dbSigType::ANALOG:
+      return net_analog_selectable;
+  }
+  return true;
+}
+
+InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
 {
   odb::dbMaster* master = inst->getMaster();
   const odb::dbMasterType mtype = master->getType();
@@ -227,114 +311,237 @@ bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
     using IT = sta::dbSta::InstType;
     switch (sta->getInstanceType(inst)) {
       case IT::BLOCK:
-        return macros;
+        return InstCategory::kMacros;
       case IT::PAD_INPUT:
-        return pad_input;
+        return InstCategory::kPadInput;
       case IT::PAD_OUTPUT:
-        return pad_output;
+        return InstCategory::kPadOutput;
       case IT::PAD_INOUT:
-        return pad_inout;
+        return InstCategory::kPadInout;
       case IT::PAD_POWER:
-        return pad_power;
+        return InstCategory::kPadPower;
       case IT::PAD_SPACER:
-        return pad_spacer;
+        return InstCategory::kPadSpacer;
       case IT::PAD_AREAIO:
-        return pad_areaio;
+        return InstCategory::kPadAreaIO;
       case IT::PAD:
-        return pad_other;
+        return InstCategory::kPadOther;
       case IT::ENDCAP:
-        return phys_endcap;
+        return InstCategory::kPhysEndcap;
       case IT::FILL:
-        return phys_fill;
+        return InstCategory::kPhysFill;
       case IT::TAPCELL:
-        return phys_welltap;
+        return InstCategory::kPhysWelltap;
       case IT::TIE:
-        return phys_tie;
+        return InstCategory::kPhysTie;
       case IT::ANTENNA:
-        return phys_antenna;
+        return InstCategory::kPhysAntenna;
       case IT::COVER:
-        return phys_cover;
+        return InstCategory::kPhysCover;
       case IT::BUMP:
-        return phys_bump;
+        return InstCategory::kPhysBump;
       case IT::LEF_OTHER:
-        return phys_other;
+        return InstCategory::kPhysOther;
       case IT::STD_BUF:
       case IT::STD_INV:
-        return std_bufinv;
+        return InstCategory::kStdBufInv;
       case IT::STD_BUF_TIMING_REPAIR:
       case IT::STD_INV_TIMING_REPAIR:
-        return std_bufinv_timing;
+        return InstCategory::kStdBufInvTiming;
       case IT::STD_BUF_CLK_TREE:
       case IT::STD_INV_CLK_TREE:
-        return std_clock_bufinv;
+        return InstCategory::kStdClockBufInv;
       case IT::STD_CLOCK_GATE:
-        return std_clock_gate;
+        return InstCategory::kStdClockGate;
       case IT::STD_LEVEL_SHIFT:
-        return std_level_shift;
+        return InstCategory::kStdLevelShift;
       case IT::STD_SEQUENTIAL:
-        return std_sequential;
+        return InstCategory::kStdSequential;
       case IT::STD_COMBINATIONAL:
-        return std_combinational;
+        return InstCategory::kStdCombinational;
       case IT::STD_CELL:
       case IT::STD_PHYSICAL:
       case IT::STD_OTHER:
       default:
-        return stdcells;
+        return InstCategory::kStdCells;
     }
   }
 
   // Fallback: dbMasterType-only classification (no Liberty)
   if (mtype.isBlock()) {
-    return macros;
+    return InstCategory::kMacros;
   }
   if (mtype.isPad()) {
     if (mtype == odb::dbMasterType::PAD_INPUT) {
-      return pad_input;
+      return InstCategory::kPadInput;
     }
     if (mtype == odb::dbMasterType::PAD_OUTPUT) {
-      return pad_output;
+      return InstCategory::kPadOutput;
     }
     if (mtype == odb::dbMasterType::PAD_INOUT) {
-      return pad_inout;
+      return InstCategory::kPadInout;
     }
     if (mtype == odb::dbMasterType::PAD_POWER) {
-      return pad_power;
+      return InstCategory::kPadPower;
     }
     if (mtype == odb::dbMasterType::PAD_SPACER) {
-      return pad_spacer;
+      return InstCategory::kPadSpacer;
     }
     if (mtype == odb::dbMasterType::PAD_AREAIO) {
-      return pad_areaio;
+      return InstCategory::kPadAreaIO;
     }
-    return pad_other;
+    return InstCategory::kPadOther;
   }
   if (mtype.isEndCap()) {
-    return phys_endcap;
+    return InstCategory::kPhysEndcap;
   }
   if (master->isFiller()) {
-    return phys_fill;
+    return InstCategory::kPhysFill;
   }
   if (mtype == odb::dbMasterType::CORE_WELLTAP) {
-    return phys_welltap;
+    return InstCategory::kPhysWelltap;
   }
   if (mtype == odb::dbMasterType::CORE_TIEHIGH
       || mtype == odb::dbMasterType::CORE_TIELOW) {
-    return phys_tie;
+    return InstCategory::kPhysTie;
   }
   if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
-    return phys_antenna;
+    return InstCategory::kPhysAntenna;
   }
   if (mtype.isCover()) {
     if (mtype == odb::dbMasterType::COVER_BUMP) {
-      return phys_bump;
+      return InstCategory::kPhysBump;
     }
-    return phys_cover;
+    return InstCategory::kPhysCover;
   }
   if (mtype == odb::dbMasterType::CORE_SPACER
       || inst->getSourceType() == odb::dbSourceType::DIST) {
-    return phys_other;
+    return InstCategory::kPhysOther;
+  }
+  return InstCategory::kStdCells;
+}
+
+bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
+{
+  switch (classifyInstance(inst, sta)) {
+    case InstCategory::kStdCells:
+      return stdcells;
+    case InstCategory::kMacros:
+      return macros;
+    case InstCategory::kPadInput:
+      return pad_input;
+    case InstCategory::kPadOutput:
+      return pad_output;
+    case InstCategory::kPadInout:
+      return pad_inout;
+    case InstCategory::kPadPower:
+      return pad_power;
+    case InstCategory::kPadSpacer:
+      return pad_spacer;
+    case InstCategory::kPadAreaIO:
+      return pad_areaio;
+    case InstCategory::kPadOther:
+      return pad_other;
+    case InstCategory::kPhysEndcap:
+      return phys_endcap;
+    case InstCategory::kPhysFill:
+      return phys_fill;
+    case InstCategory::kPhysWelltap:
+      return phys_welltap;
+    case InstCategory::kPhysTie:
+      return phys_tie;
+    case InstCategory::kPhysAntenna:
+      return phys_antenna;
+    case InstCategory::kPhysCover:
+      return phys_cover;
+    case InstCategory::kPhysBump:
+      return phys_bump;
+    case InstCategory::kPhysOther:
+      return phys_other;
+    case InstCategory::kStdBufInv:
+      return std_bufinv;
+    case InstCategory::kStdBufInvTiming:
+      return std_bufinv_timing;
+    case InstCategory::kStdClockBufInv:
+      return std_clock_bufinv;
+    case InstCategory::kStdClockGate:
+      return std_clock_gate;
+    case InstCategory::kStdLevelShift:
+      return std_level_shift;
+    case InstCategory::kStdSequential:
+      return std_sequential;
+    case InstCategory::kStdCombinational:
+      return std_combinational;
   }
   return stdcells;
+}
+
+bool TileVisibility::isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const
+{
+  switch (classifyInstance(inst, sta)) {
+    case InstCategory::kStdCells:
+      return stdcells_selectable;
+    case InstCategory::kMacros:
+      return macros_selectable;
+    case InstCategory::kPadInput:
+      return pad_input_selectable;
+    case InstCategory::kPadOutput:
+      return pad_output_selectable;
+    case InstCategory::kPadInout:
+      return pad_inout_selectable;
+    case InstCategory::kPadPower:
+      return pad_power_selectable;
+    case InstCategory::kPadSpacer:
+      return pad_spacer_selectable;
+    case InstCategory::kPadAreaIO:
+      return pad_areaio_selectable;
+    case InstCategory::kPadOther:
+      return pad_other_selectable;
+    case InstCategory::kPhysEndcap:
+      return phys_endcap_selectable;
+    case InstCategory::kPhysFill:
+      return phys_fill_selectable;
+    case InstCategory::kPhysWelltap:
+      return phys_welltap_selectable;
+    case InstCategory::kPhysTie:
+      return phys_tie_selectable;
+    case InstCategory::kPhysAntenna:
+      return phys_antenna_selectable;
+    case InstCategory::kPhysCover:
+      return phys_cover_selectable;
+    case InstCategory::kPhysBump:
+      return phys_bump_selectable;
+    case InstCategory::kPhysOther:
+      return phys_other_selectable;
+    case InstCategory::kStdBufInv:
+      return std_bufinv_selectable;
+    case InstCategory::kStdBufInvTiming:
+      return std_bufinv_timing_selectable;
+    case InstCategory::kStdClockBufInv:
+      return std_clock_bufinv_selectable;
+    case InstCategory::kStdClockGate:
+      return std_clock_gate_selectable;
+    case InstCategory::kStdLevelShift:
+      return std_level_shift_selectable;
+    case InstCategory::kStdSequential:
+      return std_sequential_selectable;
+    case InstCategory::kStdCombinational:
+      return std_combinational_selectable;
+  }
+  return stdcells_selectable;
+}
+
+bool TileVisibility::isSiteSelectable(const std::string& site_name) const
+{
+  auto it = site_selectable.find(site_name);
+  // Default: selectable when not explicitly listed.
+  return it == site_selectable.end() || it->second;
+}
+
+bool TileVisibility::isLayerSelectable(const std::string& layer_name) const
+{
+  // When the client doesn't transmit a list, treat all layers as selectable.
+  return !has_selectable_layers || selectable_layers.contains(layer_name);
 }
 
 //////////////////////////////////////////////////
@@ -891,11 +1098,13 @@ std::vector<SelectionResult> TileGenerator::selectAt(
       return r;
     };
 
-    // Search instances in this chiplet's block.
+    // Search instances in this chiplet's block — require both visible
+    // and selectable.
     for (odb::dbInst* inst :
          search_->searchInsts(block, x_lo, y_lo, x_hi, y_hi)) {
       const odb::Rect bbox = inst->getBBox()->getBox();
-      if (bbox.intersects(click_pt) && vis.isInstVisible(inst, sta_)) {
+      if (bbox.intersects(click_pt) && vis.isInstVisible(inst, sta_)
+          && vis.isInstSelectable(inst, sta_)) {
         std::string label = inst->getName();
         if (!node.path.empty() && node.inst != nullptr) {
           std::string prefixed = node.path;
@@ -917,13 +1126,21 @@ std::vector<SelectionResult> TileGenerator::selectAt(
           && !visible_layers.contains(layer->getName())) {
         continue;
       }
+      if (!vis.isLayerSelectable(layer->getName())) {
+        continue;
+      }
 
-      // Regular routing shapes (wires, vias) and BTerm shapes
+      // Regular routing shapes (wires, vias) and BTerm shapes.
+      // Picks require both visible and selectable: routing segments/vias
+      // have no dedicated selectable flag (Qt parity — clicks resolve
+      // through the net), so the net's own selectability gates the
+      // result.  BTerm picks gate on the dedicated `pins_selectable`
+      // flag.
       if (vis.routing || vis.pins) {
         for (const auto& shape :
              search_->searchBoxShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
           const auto type = std::get<1>(shape);
-          if (type == Search::kBterm && !vis.pins) {
+          if (type == Search::kBterm && (!vis.pins || !vis.pins_selectable)) {
             continue;
           }
           if (type == Search::kWire && !(vis.routing && vis.routing_segments)) {
@@ -937,7 +1154,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
             continue;
           }
           const odb::Rect& box = std::get<0>(shape);
-          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          if (box.intersects(click_pt) && vis.isNetVisible(net)
+              && vis.isNetSelectable(net)) {
             seen_nets.insert(net);
             results.push_back({net,
                                net->getName(),
@@ -957,7 +1175,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
             continue;
           }
           const odb::Rect box = std::get<0>(shape)->getBox();
-          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          if (box.intersects(click_pt) && vis.isNetVisible(net)
+              && vis.isNetSelectable(net)) {
             seen_nets.insert(net);
             results.push_back({net,
                                net->getName(),
@@ -977,7 +1196,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
             continue;
           }
           const odb::Rect box = std::get<0>(shape)->getBox();
-          if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          if (box.intersects(click_pt) && vis.isNetVisible(net)
+              && vis.isNetSelectable(net)) {
             seen_nets.insert(net);
             results.push_back({net,
                                net->getName(),

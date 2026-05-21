@@ -3,21 +3,32 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
-// `app` (third arg) is read lazily on every request so that
+// `app` (last arg) is read lazily on every request so that
 // app.visibleChiplets, populated by display-controls.js after the tech
 // metadata arrives, is reflected in tile requests without rebuilding
 // the layer.  When null or absent the field is omitted and the server
 // renders every chiplet (default).
-export function createWebSocketTileLayer(visibility, visibleLayers, app) {
+export function createWebSocketTileLayer(visibility, visibleLayers,
+                                         selectability, selectableLayers,
+                                         app) {
     // Single source of truth for the tile-request payload.  Both
     // createTile (initial load) and refreshTiles (visibility change)
     // call this so the wire format stays in sync — earlier copies of
     // this snippet drifted when fields like visible_chiplets were
     // added in only one place.
+    //
+    // Tiles don't actually use selectability for rendering, but we
+    // send it on every request so the wire schema stays uniform with
+    // selectAt requests.
     function buildTileRequest(coords, layerName) {
         const vf = {};
         for (const [k, v] of Object.entries(visibility)) {
             vf[k] = !!v;
+        }
+        if (selectability) {
+            for (const [k, v] of Object.entries(selectability)) {
+                vf['s_' + k] = !!v;
+            }
         }
         const req = {
             type: 'tile',
@@ -26,6 +37,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers, app) {
             x: coords.x,
             y: coords.y,
             visible_layers: visibleLayers ? [...visibleLayers] : [],
+            selectable_layers: selectableLayers ? [...selectableLayers] : [],
             ...vf,
         };
         if (app && app.visibleChiplets instanceof Set) {

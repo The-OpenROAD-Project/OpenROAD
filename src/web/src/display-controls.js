@@ -52,7 +52,8 @@ const fallbackLayerPalette = [
 ];
 
 // Populate display controls with layer checkboxes and visibility tree.
-export function populateDisplayControls(app, visibility, WebSocketTileLayer,
+export function populateDisplayControls(app, visibility, selectability,
+                                         WebSocketTileLayer,
                                          techData, redrawAllLayers,
                                          HeatMapTileLayer) {
     if (!app.displayControlsEl) return;
@@ -93,11 +94,19 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     // has more than one entry).
     let chipletModel = null;
 
-    // Restore saved hidden-layers set from previous session.
+    // Restore saved hidden-layers and non-selectable-layers sets.
     let savedHiddenLayers = new Set();
+    let savedNonSelectableLayers = new Set();
     try {
         const raw = getCookie('or_hidden_layers');
         if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
+    } catch (_) { /* ignore */ }
+    try {
+        const raw = getCookie('or_nonselectable_layers');
+        if (raw) {
+            savedNonSelectableLayers
+                = new Set(JSON.parse(decodeURIComponent(raw)));
+        }
     } catch (_) { /* ignore */ }
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
@@ -187,6 +196,26 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         };
     }
 
+    // Parallel selectability model with the same node ids as layerSpec so
+    // syncLayerSelDom() and buildLayerDOM() can pair each visibility node
+    // with its selectability peer.
+    function mirrorForSelectability(node) {
+        if (!node.children || node.children.length === 0) {
+            const name = node.data && node.data.name;
+            const selectable = name ? !savedNonSelectableLayers.has(name) : true;
+            if (selectable && name) {
+                app.selectableLayers.add(name);
+            }
+            return { id: node.id, data: { name }, checked: selectable };
+        }
+        return {
+            id: node.id,
+            data: { name: node.data && node.data.name },
+            children: node.children.map(mirrorForSelectability),
+        };
+    }
+    const layerSelSpec = mirrorForSelectability(layerSpec);
+
     const layerModel = new CheckboxTreeModel(() => {
         // Single pass over the tree: rebuild visibleLayerNames in place
         // (the WebSocketTileLayer closure captured this Set by reference
@@ -250,7 +279,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                 }
             }
         });
-
+        // Visibility off ⇒ selectability disabled — refresh selectability DOM.
+        syncLayerSelDom();
         // Refresh pins layer so it filters by the updated visible_layers.
         if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.refreshTiles();
@@ -295,6 +325,39 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     app.layerModel = layerModel; // expose it so other rendering mechanism can use it
     layerModel.addFromSpec(layerSpec);
 
+    // Parallel selectability model — picks gate on this set on the server.
+    const layerSelModel = new CheckboxTreeModel(() => {
+        layerSelModel.forEach(node => {
+            if (!node.data) return;
+            if (node.data.name) {
+                if (node.checked) {
+                    app.selectableLayers.add(node.data.name);
+                } else {
+                    app.selectableLayers.delete(node.data.name);
+                }
+            }
+        });
+        syncLayerSelDom();
+        const nonSel
+            = techData.layers.filter(n => !app.selectableLayers.has(n));
+        setCookie('or_nonselectable_layers',
+                  encodeURIComponent(JSON.stringify(nonSel)));
+    });
+    layerSelModel.addFromSpec(layerSelSpec);
+
+    // Sync layer selectability DOM: visibility off disables the sel checkbox.
+    function syncLayerSelDom() {
+        layerSelModel.forEach(node => {
+            if (!node.selCb) return;
+            node.selCb.checked = node.checked;
+            node.selCb.indeterminate = node.indeterminate;
+            const visNode = layerModel.get(node.id);
+            const visOff
+                = visNode && !visNode.checked && !visNode.indeterminate;
+            node.selCb.disabled = visOff;
+        });
+    }
+
     // --- Layer context menu (right-click) ---
     const contextMenu = document.createElement('div');
     contextMenu.className = 'context-menu';
@@ -330,18 +393,33 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     });
 
     function buildLayerDOM(node, isRoot = false) {
+        const selNode = layerSelModel.get(node.id);
         if (!node.children || node.children.length === 0) {
             // Leaf node (layer)
             const label = document.createElement('label');
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.title = 'Visible';
             checkbox.checked = node.checked;
             node.cb = checkbox;
             checkbox.addEventListener('change', () => {
                 layerModel.check(node.id, checkbox.checked);
             });
             label.appendChild(checkbox);
+
+            if (selNode) {
+                const selCheckbox = document.createElement('input');
+                selCheckbox.type = 'checkbox';
+                selCheckbox.className = 'vis-sel-cb';
+                selCheckbox.title = 'Selectable';
+                selCheckbox.checked = selNode.checked;
+                selNode.selCb = selCheckbox;
+                selCheckbox.addEventListener('change', () => {
+                    layerSelModel.check(node.id, selCheckbox.checked);
+                });
+                label.appendChild(selCheckbox);
+            }
 
             const index = node.data.colorIndex;
             const name = node.data.name;
@@ -390,6 +468,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
             const cb = document.createElement('input');
             cb.type = 'checkbox';
+            cb.title = 'Visible';
             cb.checked = node.checked;
             cb.indeterminate = node.indeterminate;
             node.cb = cb;
@@ -397,6 +476,20 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                 layerModel.check(node.id, cb.checked);
             });
             header.appendChild(cb);
+
+            if (selNode) {
+                const selCb = document.createElement('input');
+                selCb.type = 'checkbox';
+                selCb.className = 'vis-sel-cb';
+                selCb.title = 'Selectable';
+                selCb.checked = selNode.checked;
+                selCb.indeterminate = selNode.indeterminate;
+                selNode.selCb = selCb;
+                selCb.addEventListener('change', () => {
+                    layerSelModel.check(node.id, selCb.checked);
+                });
+                header.appendChild(selCb);
+            }
 
             const name = isRoot ? 'Layers' : (node.data.name || 'Group');
             header.appendChild(document.createTextNode(name));
@@ -428,6 +521,10 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     const layerGroup = buildLayerDOM(parentNode, true);
 
     app.displayControlsEl.appendChild(layerGroup);
+
+    // Initial selectability DOM sync (esp. disabled state for layers whose
+    // visibility was restored as false).
+    syncLayerSelDom();
 
     // --- Chiplets group (multi-die / 3D-IC visibility) ---
     //
@@ -731,8 +828,10 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     }
 
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
-    const visTree = new VisTree(visibility, redrawAllLayers);
-    visTree.add({ label: 'Nets', children: [
+    // Subtrees that opt into a second "selectable" checkbox column mirror
+    // the Qt GUI's selectability column (see displayControls.cpp).
+    const visTree = new VisTree(visibility, selectability, redrawAllLayers);
+    visTree.add({ label: 'Nets', addSelectable: true, children: [
         { key: 'net_signal', label: 'Signal' },
         { key: 'net_power', label: 'Power' },
         { key: 'net_ground', label: 'Ground' },
@@ -742,7 +841,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'net_scan', label: 'Scan' },
         { key: 'net_analog', label: 'Analog' },
     ]});
-    visTree.add({ label: 'Instances', children: [
+    visTree.add({ label: 'Instances', addSelectable: true, children: [
         { label: 'Std Cells', visKey: 'stdcells', disabled: !app.hasLiberty, children: [
             { label: 'Bufs/Invs', children: [
                 { key: 'std_bufinv_timing', label: 'Timing opt.' },
@@ -777,13 +876,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'phys_other', label: 'Other' },
         ]},
     ]});
-    visTree.add({ label: 'Blockages', children: [
+    visTree.add({ label: 'Blockages', addSelectable: true, children: [
         { key: 'placement_blockages', label: 'Placement' },
         { key: 'routing_obstructions', label: 'Routing' },
     ]});
     if (techData.sites && techData.sites.length > 0) {
-        visTree.add({ label: 'Rows', visKey: 'rows', children:
-            techData.sites.map(name => ({
+        visTree.add({ label: 'Rows', visKey: 'rows', addSelectable: true,
+            children: techData.sites.map(name => ({
                 key: 'site_' + name, label: name,
             })),
         });
@@ -801,13 +900,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'srouting_segments', label: 'Segments' },
             { key: 'srouting_vias', label: 'Vias' },
         ]},
-        { key: 'pins', label: 'Pins' },
+        { key: 'pins', label: 'Pins', selectable: true },
         { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
     ]});
     visTree.add({ label: 'Misc', children: [
         { label: 'Instances', children: [
             { key: 'inst_names', label: 'Names' },
-            { key: 'inst_pins', label: 'Pins' },
+            { key: 'inst_pins', label: 'Pins', selectable: true },
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
