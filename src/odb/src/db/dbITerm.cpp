@@ -744,6 +744,11 @@ dbITerm* dbITerm::getITerm(dbBlock* block_, uint32_t dbid)
 Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
+  if (term->getMPins().size() == 0) {
+    Rect bbox;
+    bbox.mergeInit();
+    return bbox;
+  }
   Rect bbox = term->getBBox();
   const odb::dbTransform inst_xfm = getInst()->getTransform();
   inst_xfm.apply(bbox);
