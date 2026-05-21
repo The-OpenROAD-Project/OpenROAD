@@ -197,8 +197,9 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   }
   findBufferSizes();
 
-  sta_->searchPreamble();
-  search_->findAllArrivals();
+  // pointless
+  //sta_->searchPreamble();
+  //search_->findAllArrivals();
 
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
@@ -220,7 +221,8 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
     odb::dbNet* net_db = nullptr;
     odb::dbModNet* mod_net_db = nullptr;
     db_network_->staToDb(net, net_db, mod_net_db);
-    search_->findRequireds(drvr->level() + 1);
+    // pointless
+    //search_->findRequireds(drvr->level() + 1);
 
     if (resizer_->okToBufferNet(drvr_pin)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())
@@ -307,7 +309,8 @@ void RepairDesign::repairDesign(
   sta_->checkCapacitancesPreamble(sta_->scenes());
   sta_->checkFanoutPreamble();
   sta_->searchPreamble();
-  search_->findAllArrivals();
+  // pointless
+  //search_->findAllArrivals();
 
   if (initial_sizing) {
     performEarlySizingRound(repaired_net_count);
@@ -849,14 +852,15 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     load += size_in->capacitance();
   }
 
+  // pointless
   // 5. Incremental timing update
-  sta_->ensureLevelized();
-  sta::Level max_level = 0;
-  for (auto vertex : tree_boundary) {
-    max_level = std::max(vertex->level(), max_level);
-  }
-  sta_->findDelays(max_level);
-  search_->findArrivals(max_level);
+  // sta_->ensureLevelized();
+  // sta::Level max_level = 0;
+  // for (auto vertex : tree_boundary) {
+  //   max_level = std::max(vertex->level(), max_level);
+  // }
+  // sta_->findDelays(max_level);
+  // search_->findArrivals(max_level);
 
   return repaired_net;
 }

@@ -2085,6 +2085,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   if (user_pin) {
     filtered_pins = {user_pin};
   }
+  // should be pointless 2
   sta_->findRequireds();
 
   initial_design_area_ = resizer_->computeDesignArea();
@@ -2115,10 +2116,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    {
-      utl::DebugScopedTimer timer(sta_runtime);
-      search_->findRequireds(drvr->level());
-    }
+    // pointless
+    // {
+    //   utl::DebugScopedTimer timer(sta_runtime);
+    //   search_->findRequireds(drvr->level());
+    // }
 
     // set rebuffering globals
     setPin(drvr_pin);
@@ -2288,11 +2290,12 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     estimate_parasitics_->updateParasitics();
 
-    {
-      utl::DebugScopedTimer timer(sta_runtime);
-      sta_->findDelays(max_level);
-      search_->findArrivals(max_level);
-    }
+    // pointless
+    // {
+    //   utl::DebugScopedTimer timer(sta_runtime);
+    //   sta_->findDelays(max_level);
+    //   search_->findArrivals(max_level);
+    // }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 
@@ -2373,6 +2376,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
+    // should be pointless 4
     sta_->findRequireds();
     annotateLoadSlacks(bnet, drvr);
 
