@@ -428,13 +428,11 @@ if (Python3_FOUND AND BUILD_PYTHON)
       psm_py
       pdn_py
       rsz_py
+      syn_py
       dft_py
       par_py
       web_py
   )
-  if(TARGET syn_py)
-    list(APPEND OPENROAD_PYTHON_MODULES syn_py)
-  endif()
   target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 
 else()
