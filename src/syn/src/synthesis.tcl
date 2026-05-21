@@ -36,7 +36,6 @@ proc synthesize { args } {
 }
 
 namespace eval syn {
-
 proc remove_ports { pattern } {
   remove_ports_cmd $pattern
 }
@@ -92,5 +91,4 @@ proc stats { } {
 proc memory_usage { } {
   memory_usage_cmd
 }
-
 }
