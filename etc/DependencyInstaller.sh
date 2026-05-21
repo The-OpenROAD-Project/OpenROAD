@@ -164,24 +164,19 @@ _verify_checksum() {
 # base package lists. Yosys still requires it at compile time, so install it
 # here right before the yosys build.
 _install_yosys_dependencies() {
-    case "${os}" in
-        "Ubuntu" | "Debian GNU/Linux" | "Debian GNU/Linux rodete")
-            export DEBIAN_FRONTEND="noninteractive"
-            _execute "Installing libreadline-dev for yosys..." \
-                apt-get -y install --no-install-recommends libreadline-dev
-            ;;
-        "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
-            _execute "Installing readline-devel for yosys..." \
-                dnf -y install readline-devel
-            ;;
-        "openSUSE Leap")
-            _execute "Installing readline-devel for yosys..." \
-                zypper -n install readline-devel
-            ;;
-        "Darwin")
-            _execute "Installing readline for yosys..." brew install readline
-            ;;
-    esac
+    if _command_exists "apt-get"; then
+        export DEBIAN_FRONTEND="noninteractive"
+        _execute "Installing libreadline-dev for yosys..." \
+            apt-get -y install --no-install-recommends libreadline-dev
+    elif _command_exists "yum"; then
+        _execute "Installing readline-devel for yosys..." \
+            yum -y install readline-devel
+    elif _command_exists "zypper"; then
+        _execute "Installing readline-devel for yosys..." \
+            zypper -n install readline-devel
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing readline for yosys..." brew install readline
+    fi
 }
 
 # ------------------------------------------------------------------------------
