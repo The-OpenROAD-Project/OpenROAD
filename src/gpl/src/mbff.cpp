@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
+#include "absl/container/inlined_vector.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "lemon/core.h"
@@ -930,27 +931,26 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       }
 
       // Store original FF→tray pin mapping as a property on the tray
-      // instance so timing reports can display the original pin name.
-      std::string tray_port;
+      // pin (iterm) so the report_path "orig_name" field can display the
+      // original pin name.
+      dbITerm* tray_iterm = nullptr;
       if (is_d && d_pin) {
-        tray_port = d_pin->name();
+        tray_iterm = tray_inst[tray_idx]->findITerm(d_pin->name().c_str());
       } else if (is_q) {
-        if (is_qn_inv && qn_pin) {
-          tray_port = qn_pin->name();
-        } else if (q_pin) {
-          tray_port = q_pin->name();
+        const sta::LibertyPort* tray_port = is_qn_inv ? qn_pin : q_pin;
+        if (tray_port) {
+          tray_iterm
+              = tray_inst[tray_idx]->findITerm(tray_port->name().c_str());
         }
       }
-      if (!tray_port.empty()) {
-        const std::string key = "orig_name_" + tray_port;
+      if (tray_iterm) {
         const std::string val = orig_inst_name + "/" + orig_port_name;
         odb::dbStringProperty* prop
-            = odb::dbStringProperty::find(tray_inst[tray_idx], key.c_str());
+            = odb::dbStringProperty::find(tray_iterm, kOrigNameProp);
         if (prop) {
           prop->setValue(val.c_str());
         } else {
-          odb::dbStringProperty::create(
-              tray_inst[tray_idx], key.c_str(), val.c_str());
+          odb::dbStringProperty::create(tray_iterm, kOrigNameProp, val.c_str());
         }
       }
     }
@@ -1740,8 +1740,13 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
     }
 
     // find new center locations
+    absl::InlinedVector<int, 4> empty_clusters;
     for (int i = 0; i < knn; i++) {
       const int cur_sz = clusters[i].size();
+      if (cur_sz == 0) {
+        empty_clusters.push_back(i);
+        continue;
+      }
       float cX = 0;
       float cY = 0;
 
@@ -1753,6 +1758,48 @@ void MBFF::KMeans(const std::vector<Flop>& flops,
       const float new_x = cX / float(cur_sz);
       const float new_y = cY / float(cur_sz);
       centers[i].pt = Point{new_x, new_y};
+    }
+
+    if (!empty_clusters.empty()) {
+      // To revive empty clusters and avoid division by zero, we re-seed their
+      // centers with active flops that are currently furthest from their
+      // assigned cluster centers. We use an inlined vector to track chosen
+      // flops and prevent promoting the same flop to multiple empty clusters.
+      absl::InlinedVector<int, 8> used_flops;
+      for (int empty_idx : empty_clusters) {
+        float max_dist = -1;
+        Point best_pt = centers[empty_idx].pt;  // Fallback to previous center
+        int best_idx = -1;
+
+        for (int j = 0; j < knn; j++) {
+          if (clusters[j].empty()) {
+            continue;
+          }
+          for (const Flop& flop : clusters[j]) {
+            if (std::find(used_flops.begin(), used_flops.end(), flop.idx)
+                != used_flops.end()) {
+              continue;
+            }
+            // Find the flop that has the worst-fit (largest displacement)
+            // to its currently assigned center.
+            const float dist = GetDist(flop.pt, centers[j].pt);
+            if (dist > max_dist) {
+              max_dist = dist;
+              best_pt = flop.pt;
+              best_idx = flop.idx;
+            }
+          }
+        }
+
+        if (best_idx != -1) {
+          // Re-seeding the center directly onto the flop's coordinate.
+          // This guarantees that in the next iteration, the distance from this
+          // flop to this center is 0.0, forcing it to be assigned to this
+          // cluster and keeping it active.
+          centers[empty_idx].pt = best_pt;
+          used_flops.push_back(best_idx);
+        }
+      }
     }
 
     // get total displacement

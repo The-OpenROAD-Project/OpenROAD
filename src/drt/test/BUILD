@@ -167,7 +167,7 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt",
+        "//src/drt",  # build_cleaner: keep for private headers
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
         "//src/odb/src/db",
