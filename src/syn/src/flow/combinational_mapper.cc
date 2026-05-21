@@ -66,7 +66,7 @@ static Truth6 fexprEval(sta::FuncExpr* fexpr,
     case Op::port: {
       // Find the index of this port in inputs
       int in_idx;
-      for (in_idx = 0; in_idx < (int) inputs.size(); in_idx++) {
+      for (in_idx = 0; in_idx < inputs.size(); in_idx++) {
         if (inputs[in_idx] == fexpr->port()) {
           break;
         }
@@ -677,8 +677,8 @@ void Mapping::prepareMatches(const int npriority_cuts,
     int psSlot = 0;
     ClassMatch* matchBuf = allocMatches(nmatches_max);
 
-    for (int i = -1; i < (int) cache[n1->fid].ps.size(); i++) {
-      for (int j = -1; j < (int) cache[n2->fid].ps.size(); j++) {
+    for (int i = -1; i < cache[n1->fid].ps.size(); i++) {
+      for (int j = -1; j < cache[n2->fid].ps.size(); j++) {
         Net* n1Cut = ((i == -1) ? t1 : cache[n1->fid].ps[i].cut);
         Net* n2Cut = ((j == -1) ? t2 : cache[n2->fid].ps[j].cut);
         int n1CutLen = (i == -1) ? 1 : cutLen(n1Cut);

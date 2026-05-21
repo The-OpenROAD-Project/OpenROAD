@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <utility>
-#include <vector>
 
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"

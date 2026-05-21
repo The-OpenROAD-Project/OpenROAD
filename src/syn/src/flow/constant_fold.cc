@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include "constant_fold.h"
+
+#include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -82,7 +84,7 @@ static int log2exact(uint64_t val)
   return __builtin_ctzll(val);
 }
 
-void foldCombinationals(Graph& g)
+static void foldCombinationals(Graph& g)
 {
   std::vector<Net> new_output;
   g.forEachInstance([&](const Instance* inst) {
@@ -422,7 +424,7 @@ void foldCombinationals(Graph& g)
         }
         if (shift >= 0) {
           for (uint32_t i = 0; i < width; i++) {
-            if ((int) i < shift) {
+            if (i < shift) {
               new_output[i] = stripBuffers(g, op->a()[i]);
             } else {
               new_output[i] = Net::zero();
@@ -463,7 +465,7 @@ static BundleView sliceDff(Graph& g,
                     original->clearValue().slice(base, width));
 }
 
-bool foldSequentials(Graph& g)
+static bool foldSequentials(Graph& g)
 {
   // --- Flop optimization: replace DFF bits with constants ---
   //

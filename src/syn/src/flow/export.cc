@@ -225,7 +225,7 @@ void exportToOdb(Graph& g,
           }
         } else if (port->direction()->isOutput()) {
           for (int j = 0; j < port->size(); j++) {
-            if (outputIdx >= (int) out.width()) {
+            if (outputIdx >= out.width()) {
               logger->error(
                   utl::SYN,
                   34,

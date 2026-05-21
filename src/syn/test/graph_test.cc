@@ -308,12 +308,12 @@ TEST(GraphTest, NormalizePreserveWide)
       "%3:4 = input \"a\"\n"
       "%7:4 = not %3:4\n"
       "%11:0 = output \"out\" %7:4\n");
-  Graph g = Graph::parse(is);
-  g.dump(std::cout);
-  g.normalize();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->dump(std::cout);
+  g->normalize();
 
   std::ostringstream os;
-  g.dump(os);
+  g->dump(os);
   EXPECT_EQ(os.str(),
             R"(%3:4 = input "a"
 %7:0 = output "out" %8:4
@@ -331,10 +331,10 @@ TEST(GraphTest, NormalizeWithCycle)
       "%11:8 = and %3:8 %19:8\n"
       "%19:8 = or %11:8 %3:8\n"
       "%27:0 = output \"out\" %19+0:4\n");
-  Graph g = Graph::parse(is);
-  g.normalize();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->normalize();
   std::ostringstream os;
-  g.dump(os);
+  g->dump(os);
   EXPECT_EQ(os.str(),
             R"(%3:8 = input "a"
 %11:0 = output "out" [ %23 %20 %17 %14 ]
@@ -361,9 +361,9 @@ TEST(GraphTest, NormalizeRemovesBuffers)
       "%7:4 = buf %3:4\n"
       "%11:4 = not %7:4\n"
       "%15:0 = output \"out\" %11:4\n");
-  Graph g = Graph::parse(is);
-  g.normalize();
-  g.assertNone<Buffer>();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->normalize();
+  g->assertNone<Buffer>();
 }
 
 TEST(GraphTest, NormalizeRemovesLoopBreakers)
@@ -374,9 +374,9 @@ TEST(GraphTest, NormalizeRemovesLoopBreakers)
       "%4:1 = loop_breaker %3\n"
       "%5:1 = not %4\n"
       "%6:0 = output \"out\" %5\n");
-  Graph g = Graph::parse(is);
-  g.normalize();
-  g.assertNone<LoopBreaker>();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->normalize();
+  g->assertNone<LoopBreaker>();
 }
 
 TEST(GraphTest, NormalizeRemovesUnusedSlices)
@@ -388,9 +388,9 @@ TEST(GraphTest, NormalizeRemovesUnusedSlices)
       %12:4 = xor %3:4 %3+4:4
       %16:2 = not %12:2
   )");
-  Graph g = Graph::parse(is);
-  g.normalize();
-  EXPECT_EQ(g.findOne<Xor>()->outputWidth(), 2);
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->normalize();
+  EXPECT_EQ(g->findOne<Xor>()->outputWidth(), 2);
 }
 
 // A mapped flop (Other/Target with state) in a feedback loop
@@ -411,9 +411,9 @@ TEST(GraphTest, NormalizeNoLoopBreakerForMappedFlop)
 %5:1 = not %4
 %6:0 = output "out" %4
 )");
-  Graph g = Graph::parse(is);
-  g.normalize();
-  g.assertNone<LoopBreaker>();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  g->normalize();
+  g->assertNone<LoopBreaker>();
 }
 
 // ============================================================
@@ -429,12 +429,12 @@ TEST(GraphTest, ReplaceSpanningMultipleInstances)
       "%19:4 = not %11:4\n"
       "%23:4 = not %15:4\n"
       "%27:0 = output \"out\" [ %23:4 %19:4 ]\n");
-  Graph g = Graph::parse(is);
+  std::unique_ptr<Graph> g = Graph::parse(is);
   // Replace nets 21-24 (bits 2-3 of %19:4, bits 0-1 of %23:4)
   // with nets 5-8 (bits 2-5 of input "a").
-  g.forceReplace(BundleView(GraphTestAccess::netFromId(21), 4),
-                 BundleView(GraphTestAccess::netFromId(5), 4));
-  g.checkConsistency();
+  g->forceReplace(BundleView(GraphTestAccess::netFromId(21), 4),
+                  BundleView(GraphTestAccess::netFromId(5), 4));
+  g->checkConsistency();
 }
 
 }  // namespace syn

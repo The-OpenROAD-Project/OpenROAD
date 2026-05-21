@@ -10,6 +10,7 @@
 //   - slang_frontend::reportError  (calls Logger::error)
 //   - syn::elaborateText           (default-constructs a utl::Logger)
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -22,13 +23,13 @@
 namespace syn {
 
 // Defined in driver.cc.
-std::optional<Graph> elaborateImpl(utl::Logger* logger,
-                                   const std::vector<std::string>& args,
-                                   sta::dbSta* sta,
-                                   std::optional<std::string> buffer);
+std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
+                                     const std::vector<std::string>& args,
+                                     sta::dbSta* sta,
+                                     std::optional<std::string> buffer);
 
-std::optional<Graph> elaborateText(const std::string& source,
-                                   const std::vector<std::string>& args)
+std::unique_ptr<Graph> elaborateText(const std::string& source,
+                                     const std::vector<std::string>& args)
 {
   utl::Logger logger;
   return elaborateImpl(&logger, args, nullptr, source);

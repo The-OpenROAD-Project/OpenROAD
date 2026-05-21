@@ -57,7 +57,7 @@ TEST(ElabTest, VariableIndexArrayWrite)
     endmodule
   )",
                                    {"--top", "top"});
-  ASSERT_TRUE(result.has_value()) << "Elaboration failed";
+  ASSERT_TRUE(result) << "Elaboration failed";
 
   syn::Graph& g = *result;
   g.normalize();
@@ -210,7 +210,7 @@ TEST(ElabTest, UniqueCaseOneHot)
     endmodule
   )",
                            {"--top", "top", "--blackboxed-module", "inner"});
-  ASSERT_TRUE(result.has_value()) << "Elaboration failed";
+  ASSERT_TRUE(result) << "Elaboration failed";
 
   syn::Graph& g = *result;
   g.normalize();
@@ -261,16 +261,16 @@ TEST_P(ElabSlangTest, MatchesGolden)
   const auto& [verilog, golden_ir] = GetParam();
 
   auto slang_g = elaborateText(std::string(verilog), {});
-  ASSERT_TRUE(slang_g.has_value()) << "Slang elaboration failed";
+  ASSERT_TRUE(slang_g) << "Slang elaboration failed";
   slang_g->normalize();
 
   std::istringstream is{std::string(golden_ir)};
-  Graph golden = Graph::parse(is);
-  golden.normalize();
+  std::unique_ptr<Graph> golden = Graph::parse(is);
+  golden->normalize();
 
   // If the golden IR is blank (or parsed empty), dump the gate-side IR so
   // the test author can paste it in as the starting golden.
-  if (golden.collectOutputs().empty()) {
+  if (golden->collectOutputs().empty()) {
     std::stringstream ss;
     slang_g->dump(ss);
     ADD_FAILURE() << "; empty gold side\n; gate side:\n" << ss.str();
@@ -278,7 +278,7 @@ TEST_P(ElabSlangTest, MatchesGolden)
   }
 
   equivalenceCheck(
-      golden, *slang_g, /*inputsDefined=*/true, /*allowRefinement=*/false);
+      *golden, *slang_g, /*inputsDefined=*/true, /*allowRefinement=*/false);
 }
 
 INSTANTIATE_TEST_SUITE_P(Elab,

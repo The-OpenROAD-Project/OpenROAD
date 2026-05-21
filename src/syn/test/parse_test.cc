@@ -18,19 +18,19 @@ int main(int argc, char** argv)
 
 namespace syn {
 
-static std::string dumpToString(Graph& g)
+static std::string dumpToString(Graph* g)
 {
   std::ostringstream os;
-  g.dump(os);
+  g->dump(os);
   return os.str();
 }
 
-static std::string roundTrip(Graph& g)
+static std::string roundTrip(Graph* g)
 {
   std::string dump1 = dumpToString(g);
   std::istringstream is(dump1);
-  Graph g2 = Graph::parse(is);
-  return dumpToString(g2);
+  std::unique_ptr<Graph> g2 = Graph::parse(is);
+  return dumpToString(g2.get());
 }
 
 TEST(ParseTest, RoundTrip)
@@ -130,8 +130,8 @@ TEST(ParseTest, RoundTrip)
   (void) dff;
   (void) dangling;
 
-  std::string dump1 = dumpToString(g);
-  std::string dump2 = roundTrip(g);
+  std::string dump1 = dumpToString(&g);
+  std::string dump2 = roundTrip(&g);
   EXPECT_EQ(dump1, dump2);
 }
 
@@ -148,13 +148,13 @@ TEST(ParseTest, NonConsecutiveIds)
         "%14:0 = output \"y\" %15:4\n"
         "%15:4 = and %6:4 %10:4\n";
   std::istringstream is(src);
-  Graph g = Graph::parse(is);
+  std::unique_ptr<Graph> g = Graph::parse(is);
 
   const Input* in_a = nullptr;
   const Input* in_b = nullptr;
   const And* and_inst = nullptr;
   const Output* out = nullptr;
-  g.forEachInstance([&](const Instance* inst) {
+  g->forEachInstance([&](const Instance* inst) {
     if (auto* i = inst->try_as<Input>()) {
       if (i->name() == "a") {
         in_a = i;
@@ -174,15 +174,15 @@ TEST(ParseTest, NonConsecutiveIds)
 
   // The and's inputs must be the two Input outputs, and the Output's value
   // bundle must be the and's outputs.
-  BundleView a_out = g.output(in_a);
-  BundleView b_out = g.output(in_b);
+  BundleView a_out = g->output(in_a);
+  BundleView b_out = g->output(in_b);
   for (uint32_t i = 0; i < 4; i++) {
     EXPECT_EQ(and_inst->a()[i], a_out[i])
         << "and.a[" << i << "] should reference input a";
     EXPECT_EQ(and_inst->b()[i], b_out[i])
         << "and.b[" << i << "] should reference input b";
   }
-  BundleView and_out = g.output(and_inst);
+  BundleView and_out = g->output(and_inst);
   for (uint32_t i = 0; i < 4; i++) {
     EXPECT_EQ(out->value()[i], and_out[i])
         << "output.value[" << i << "] should reference and output";

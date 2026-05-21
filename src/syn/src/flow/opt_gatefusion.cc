@@ -5,8 +5,10 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <set>
@@ -134,7 +136,7 @@ static std::string cubeToString(const Cube& c,
                                 const std::vector<sta::LibertyPort*>& ins)
 {
   std::string s;
-  for (int i = 0; i < (int) ins.size(); i++) {
+  for (int i = 0; i < ins.size(); i++) {
     if (c.pos & (1u << i)) {
       s += ins[i]->name();
     } else if (c.neg & (1u << i)) {
@@ -165,8 +167,8 @@ static std::string sopToString(const SOP& sop,
 
 static constexpr int MAX_CUBES = 1024;
 
-static std::optional<SOP> sop_cross(const std::optional<SOP> a,
-                                    const std::optional<SOP> b)
+static std::optional<SOP> sop_cross(const std::optional<SOP>& a,
+                                    const std::optional<SOP>& b)
 {
   if (!a || !b) {
     return {};
@@ -188,8 +190,8 @@ static std::optional<SOP> sop_cross(const std::optional<SOP> a,
   return result;
 }
 
-static std::optional<SOP> sop_union(const std::optional<SOP> a,
-                                    const std::optional<SOP> b)
+static std::optional<SOP> sop_union(const std::optional<SOP>& a,
+                                    const std::optional<SOP>& b)
 {
   if (!a || !b) {
     return {};
@@ -211,7 +213,7 @@ static std::optional<SOP> fexprToSop(sta::FuncExpr* expr,
   switch (expr->op()) {
     case Op::port: {
       int idx = -1;
-      for (int i = 0; i < (int) ins.size(); i++) {
+      for (int i = 0; i < ins.size(); i++) {
         if (ins[i] == expr->port()) {
           idx = i;
           break;
@@ -340,7 +342,7 @@ struct CellInfo
 static std::string fpToString(const Fingerprint& fp)
 {
   std::string s = "[";
-  for (int i = 0; i < (int) fp.cube_types.size(); i++) {
+  for (int i = 0; i < fp.cube_types.size(); i++) {
     if (i > 0) {
       s += ",";
     }

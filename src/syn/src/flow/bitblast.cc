@@ -320,7 +320,7 @@ struct BitblastedOperation
     // Stages 2..levels-1 (Kogge-Stone on odd indices only).
     for (int i = 1; i < levels; i++) {
       uint32_t stride = 1u << i;
-      for (int j = (int) n - 1; j >= (int) stride; j--) {
+      for (int j = (int) n - 1; j >= stride; j--) {
         if (j % 2 == 1) {
           Literal new_g = OR(g[j], AND(p[j], g[j - stride]));
           Literal new_p = AND(p[j], p[j - stride]);
@@ -594,7 +594,7 @@ struct BitblastedOperation
             Literal product = AND(a_bits[j], b_bits[k]);
 
             if ((k == b_len - 1 || j == a_len - 1)
-                && !(k == b_len - 1 && j == a_len - 1)) {
+                && (k != b_len - 1 || j != a_len - 1)) {
               product = !product;
               corrections[j + k]--;
             }

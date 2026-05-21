@@ -11,6 +11,7 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <map>
 #include <new>
 #include <ostream>
 #include <sstream>
@@ -827,7 +828,7 @@ void Graph::checkNormalization() const
           logger_->error(
               utl::SYN, 102, "checkNormalization failed, see details above");
         } else {
-          std::cerr << ss.str() << std::endl;
+          std::cerr << ss.str() << '\n';
           std::abort();
         }
       }

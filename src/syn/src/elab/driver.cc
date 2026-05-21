@@ -15,7 +15,6 @@
 
 #include "backend_builder.h"
 #include "blackboxes.h"
-#include "log_stubs.h"
 #include "slang/ast/Compilation.h"
 #include "slang/ast/SemanticFacts.h"
 #include "slang/ast/symbols/CompilationUnitSymbols.h"
@@ -37,10 +36,10 @@ using namespace slang_frontend;  // NOLINT(google-build-using-namespace)
 // Non-static so error.cc can call it from elaborateText. Not declared in
 // driver.h because the source-buffer parameter is only useful to the test
 // helper.
-std::optional<Graph> elaborateImpl(utl::Logger* logger,
-                                   const std::vector<std::string>& args,
-                                   sta::dbSta* sta,
-                                   std::optional<std::string> buffer)
+std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
+                                     const std::vector<std::string>& args,
+                                     sta::dbSta* sta,
+                                     std::optional<std::string> buffer)
 {
   slang::driver::Driver driver;
   driver.addStandardArgs();
@@ -66,17 +65,17 @@ std::optional<Graph> elaborateImpl(utl::Logger* logger,
 
   if (!driver.parseCommandLine(static_cast<int>(c_args.size()),
                                const_cast<char**>(c_args.data()))) {
-    return std::nullopt;
+    return nullptr;
   }
 
   fixup_options(settings, driver);
   if (!driver.processOptions()) {
-    return std::nullopt;
+    return nullptr;
   }
   catch_forbidden_options(driver);
 
   if (!driver.parseAllSources()) {
-    return std::nullopt;
+    return nullptr;
   }
 
   auto compilation = driver.createCompilation();
@@ -91,12 +90,12 @@ std::optional<Graph> elaborateImpl(utl::Logger* logger,
 
   if (driver.diagEngine.getNumErrors()) {
     (void) driver.reportDiagnostics(/*quiet=*/false);
-    return std::nullopt;
+    return nullptr;
   }
 
   if (settings.ast_compilation_only.value_or(false)) {
     (void) driver.reportDiagnostics(/*quiet=*/false);
-    return std::nullopt;
+    return nullptr;
   }
 
   // We require exactly one top-level instance.
@@ -127,7 +126,7 @@ std::optional<Graph> elaborateImpl(utl::Logger* logger,
     slang::Diagnostics diags;
     diags.append_range(netlist.issued_diagnostics);
     diags.sort(driver.sourceManager);
-    for (int j = 0; j < (int) diags.size(); j++) {
+    for (int j = 0; j < diags.size(); j++) {
       if (j > 0 && diags[j] == diags[j - 1]) {
         continue;
       }
@@ -136,7 +135,7 @@ std::optional<Graph> elaborateImpl(utl::Logger* logger,
   }
 
   if (!driver.reportDiagnostics(/*quiet=*/false)) {
-    return std::nullopt;
+    return nullptr;
   }
 
   // Extract the graph from the top netlist's backend.
@@ -145,9 +144,9 @@ std::optional<Graph> elaborateImpl(utl::Logger* logger,
   return std::move(builder->graph_);
 }
 
-std::optional<Graph> elaborate(utl::Logger* logger,
-                               const std::vector<std::string>& args,
-                               sta::dbSta* sta)
+std::unique_ptr<Graph> elaborate(utl::Logger* logger,
+                                 const std::vector<std::string>& args,
+                                 sta::dbSta* sta)
 {
   return elaborateImpl(logger, args, sta, {});
 }

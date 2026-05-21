@@ -747,7 +747,7 @@ void TritModel::encodeInstance(const Instance* inst)
 
         // Map LibertyPort* → input index for FuncExpr evaluation.
         std::unordered_map<sta::LibertyPort*, int> port_to_idx;
-        for (int i = 0; i < (int) in_ports.size(); i++) {
+        for (int i = 0; i < in_ports.size(); i++) {
           port_to_idx[in_ports[i]] = i;
         }
 

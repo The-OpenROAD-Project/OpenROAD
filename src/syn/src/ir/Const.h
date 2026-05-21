@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <optional>
 #include <ostream>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -102,9 +103,9 @@ inline std::optional<Trit> refine(std::optional<Trit> a, std::optional<Trit> b)
   }
   // Otherwise, values are compatible
   if (*a != Trit::Undef) {
-    return *a;
+    return a;
   }
-  return *b;
+  return b;
 }
 
 // Multi-bit constant value (LSB at index 0).

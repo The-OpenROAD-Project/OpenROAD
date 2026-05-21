@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "syn/ir/Bundle.h"
+#include "syn/ir/Const.h"
 #include "syn/ir/ControlNet.h"
 #include "syn/ir/Net.h"
 #include "syn/ir/NetTableEntry.h"

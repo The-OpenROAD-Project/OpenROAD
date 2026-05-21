@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <utility>
 
-#include "syn/ir/Instance.h"
 #include "syn/ir/NetTableEntry.h"
 
 namespace syn {

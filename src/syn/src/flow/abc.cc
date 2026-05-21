@@ -14,6 +14,7 @@
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/synthesis.h"
 #include "utl/Logger.h"
 
 // ABC headers are already compiled within namespace abc by the build system.

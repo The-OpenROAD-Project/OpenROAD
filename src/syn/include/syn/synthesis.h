@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "syn/ir/Graph.h"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -23,6 +22,7 @@ class Resizer;
 
 namespace syn {
 
+class Graph;
 class Net;
 
 class Synthesis : public sta::dbStaState
@@ -102,7 +102,7 @@ class Synthesis : public sta::dbStaState
   // which mirrors liberty's dont_use plus any user-set entries).
   bool dontUse(const sta::LibertyCell* cell) const;
 
-  Graph* graph() { return graph_ ? &*graph_ : nullptr; }
+  Graph* graph() { return graph_.get(); }
 
  private:
   // Resolve a net reference string to a Net.
@@ -111,7 +111,7 @@ class Synthesis : public sta::dbStaState
   odb::dbDatabase* db_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
-  std::optional<Graph> graph_;
+  std::unique_ptr<Graph> graph_;
 };
 
 // Free-function entry points re-declared here so tests don't need to

@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <istream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -17,6 +18,7 @@
 #include "sta/Network.hh"
 #include "sta/PortDirection.hh"
 #include "syn/ir/Bundle.h"
+#include "syn/ir/Const.h"
 #include "syn/ir/ControlNet.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
@@ -34,9 +36,9 @@ class Parser
   {
   }
 
-  Graph run()
+  std::unique_ptr<Graph> run()
   {
-    Graph g;
+    auto g = std::make_unique<Graph>();
     while (pos_ < src_.size()) {
       skipBlanks();
       if (pos_ >= src_.size()) {
@@ -46,7 +48,7 @@ class Parser
         advance();
         continue;
       }
-      parseLine(g);
+      parseLine(g.get());
     }
     return g;
   }
@@ -352,7 +354,7 @@ class Parser
 
   // -- Line parser --
 
-  void parseLine(Graph& g)
+  void parseLine(Graph* g)
   {
     skipBlanks();
     if (atEnd() || peek() == '\n') {
@@ -374,102 +376,102 @@ class Parser
     // Honor the declared %id: pad the table with kVoid slots so the next
     // instance's first slot lands at `id`. Dumps with gaps in the ID space
     // (e.g. after DCE) otherwise resolve net references to wrong slots.
-    g.padTableTo(id);
+    g->padTableTo(id);
 
     std::string keyword = parseKeyword();
 
     if (keyword == "buf") {
       Bundle a = parseValue();
-      g.add<Buffer>(std::move(a));
+      g->add<Buffer>(std::move(a));
     } else if (keyword == "not") {
       Bundle a = parseValue();
-      g.add<Not>(std::move(a));
+      g->add<Not>(std::move(a));
     } else if (keyword == "and") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<And>(std::move(a), std::move(b));
+      g->add<And>(std::move(a), std::move(b));
     } else if (keyword == "or") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Or>(std::move(a), std::move(b));
+      g->add<Or>(std::move(a), std::move(b));
     } else if (keyword == "andnot") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Andnot>(std::move(a), std::move(b));
+      g->add<Andnot>(std::move(a), std::move(b));
     } else if (keyword == "xor") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Xor>(std::move(a), std::move(b));
+      g->add<Xor>(std::move(a), std::move(b));
     } else if (keyword == "mux") {
       Net sel = parseNetRef();
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Mux>(sel, std::move(a), std::move(b));
+      g->add<Mux>(sel, std::move(a), std::move(b));
     } else if (keyword == "adc") {
       Bundle a = parseValue();
       Bundle b = parseValue();
       Net cin = parseNetRef();
-      g.add<Adc>(std::move(a), std::move(b), cin);
+      g->add<Adc>(std::move(a), std::move(b), cin);
     } else if (keyword == "eq") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Eq>(std::move(a), std::move(b));
+      g->add<Eq>(std::move(a), std::move(b));
     } else if (keyword == "ult") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<ULt>(std::move(a), std::move(b));
+      g->add<ULt>(std::move(a), std::move(b));
     } else if (keyword == "slt") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<SLt>(std::move(a), std::move(b));
+      g->add<SLt>(std::move(a), std::move(b));
     } else if (keyword == "shl") {
       Bundle a = parseValue();
       Bundle b = parseValue();
       uint32_t stride = parseHashInt();
-      g.add<Shl>(std::move(a), std::move(b), stride);
+      g->add<Shl>(std::move(a), std::move(b), stride);
     } else if (keyword == "ushr") {
       Bundle a = parseValue();
       Bundle b = parseValue();
       uint32_t stride = parseHashInt();
-      g.add<UShr>(std::move(a), std::move(b), stride);
+      g->add<UShr>(std::move(a), std::move(b), stride);
     } else if (keyword == "sshr") {
       Bundle a = parseValue();
       Bundle b = parseValue();
       uint32_t stride = parseHashInt();
-      g.add<SShr>(std::move(a), std::move(b), stride);
+      g->add<SShr>(std::move(a), std::move(b), stride);
     } else if (keyword == "xshr") {
       Bundle a = parseValue();
       Bundle b = parseValue();
       uint32_t stride = parseHashInt();
-      g.add<XShr>(std::move(a), std::move(b), stride);
+      g->add<XShr>(std::move(a), std::move(b), stride);
     } else if (keyword == "mul") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<Mul>(std::move(a), std::move(b));
+      g->add<Mul>(std::move(a), std::move(b));
     } else if (keyword == "udiv") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<UDiv>(std::move(a), std::move(b));
+      g->add<UDiv>(std::move(a), std::move(b));
     } else if (keyword == "umod") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<UMod>(std::move(a), std::move(b));
+      g->add<UMod>(std::move(a), std::move(b));
     } else if (keyword == "sdiv_trunc") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<SDivTrunc>(std::move(a), std::move(b));
+      g->add<SDivTrunc>(std::move(a), std::move(b));
     } else if (keyword == "sdiv_floor") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<SDivFloor>(std::move(a), std::move(b));
+      g->add<SDivFloor>(std::move(a), std::move(b));
     } else if (keyword == "smod_trunc") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<SModTrunc>(std::move(a), std::move(b));
+      g->add<SModTrunc>(std::move(a), std::move(b));
     } else if (keyword == "smod_floor") {
       Bundle a = parseValue();
       Bundle b = parseValue();
-      g.add<SModFloor>(std::move(a), std::move(b));
+      g->add<SModFloor>(std::move(a), std::move(b));
     } else if (keyword == "dff") {
       Bundle data = parseValue();
       ControlNet clk;
@@ -480,26 +482,26 @@ class Parser
       tryParseKeywordControlNet("clr", clr);
       tryParseKeywordControlNet("rst", rst);
       tryParseKeywordControlNet("en", en);
-      g.add<Dff>(std::move(data),
-                 clk,
-                 clr,
-                 rst,
-                 en,
-                 Const::undef(width),
-                 Const::undef(width),
-                 Const::undef(width));
+      g->add<Dff>(std::move(data),
+                  clk,
+                  clr,
+                  rst,
+                  en,
+                  Const::undef(width),
+                  Const::undef(width),
+                  Const::undef(width));
     } else if (keyword == "loop_breaker") {
       Bundle a = parseValue();
-      g.add<LoopBreaker>(std::move(a));
+      g->add<LoopBreaker>(std::move(a));
     } else if (keyword == "input") {
       std::string name = parseString();
-      g.add<Input>(std::move(name), width);
+      g->add<Input>(std::move(name), width);
     } else if (keyword == "dangling") {
-      g.add<Dangling>(width);
+      g->add<Dangling>(width);
     } else if (keyword == "output") {
       std::string name = parseString();
       Bundle value = parseValue();
-      g.add<Output>(std::move(name), std::move(value));
+      g->add<Output>(std::move(name), std::move(value));
     } else if (keyword == "name") {
       std::string name = parseString();
       skipBlanks();
@@ -523,7 +525,7 @@ class Parser
         skipBlanks();
       }
       Bundle value = parseValue();
-      g.add<Name>(
+      g->add<Name>(
           std::move(name), std::move(value), from, to, tentative, is_vector);
     } else if (keyword == "target") {
       if (network_) {
@@ -541,7 +543,7 @@ class Parser
     expectNewline();
   }
 
-  void parseTargetCell(Graph& g, uint32_t base_id, uint32_t width)
+  void parseTargetCell(Graph* g, uint32_t base_id, uint32_t width)
   {
     skipBlanks();
     std::string cell_name = parseString();
@@ -614,12 +616,12 @@ class Parser
     }
 
     Bundle inputs = Bundle::fromVec(std::move(input_nets));
-    g.add<Target>(cell, std::move(inputs));
+    g->add<Target>(cell, std::move(inputs));
     (void) base_id;
     (void) width;
   }
 
-  void parseOtherCell(Graph& g, uint32_t base_id, uint32_t width)
+  void parseOtherCell(Graph* g, uint32_t base_id, uint32_t width)
   {
     skipBlanks();
     std::string cell_type = parseString();
@@ -685,7 +687,7 @@ class Parser
     }
     expect('}');
     (void) base_id;
-    g.add<Other>(std::move(cell_type), std::move(ports));
+    g->add<Other>(std::move(cell_type), std::move(ports));
   }
 
   std::string src_;
@@ -696,7 +698,7 @@ class Parser
 
 }  // namespace
 
-Graph Graph::parse(std::istream& is, sta::Network* network)
+std::unique_ptr<Graph> Graph::parse(std::istream& is, sta::Network* network)
 {
   std::ostringstream buf;
   buf << is.rdbuf();

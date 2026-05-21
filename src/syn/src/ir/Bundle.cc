@@ -398,8 +398,8 @@ Bundle Net::repeated(uint32_t times) const
 
 bool BundleView::isConst() const
 {
-  for (auto it = begin(); it != end(); ++it) {
-    if (!(*it).isConst()) {
+  for (auto net : *this) {
+    if (!net.isConst()) {
       return false;
     }
   }

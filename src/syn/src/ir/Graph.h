@@ -12,6 +12,7 @@
 #include <cstring>
 #include <istream>
 #include <map>
+#include <memory>
 #include <new>
 #include <ostream>
 #include <string>
@@ -137,7 +138,8 @@ class Graph
   // Parse text IR from an input stream and reconstruct a Graph.
   // When network is provided, 'target' blocks are parsed directly
   // as Target instances by looking up liberty cells.
-  static Graph parse(std::istream& is, sta::Network* network = nullptr);
+  static std::unique_ptr<Graph> parse(std::istream& is,
+                                      sta::Network* network = nullptr);
 
   // Verify normalize() invariants: topological order and no unbroken
   // combinational loops. Aborts if a violation is found.

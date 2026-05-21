@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -124,7 +123,7 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
                  bool clk_polarity,
                  bool aload_polarity) override;
 
-  std::optional<syn::Graph> graph_;
+  std::unique_ptr<syn::Graph> graph_;
   unsigned next_id = 0;
 };
 

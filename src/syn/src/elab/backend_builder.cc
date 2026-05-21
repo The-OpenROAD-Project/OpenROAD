@@ -30,7 +30,7 @@ namespace slang_frontend {
 
 BackendGraphBuilder::BackendGraphBuilder()
 {
-  graph_.emplace();
+  graph_ = std::make_unique<syn::Graph>();
 }
 
 std::unique_ptr<BackendGraphBuilder> BackendGraphBuilder::start_new_graph(

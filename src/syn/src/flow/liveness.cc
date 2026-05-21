@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/synthesis.h"
 #include "utl/Logger.h"
 
 namespace syn {

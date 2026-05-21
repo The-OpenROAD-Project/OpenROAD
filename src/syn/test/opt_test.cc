@@ -150,10 +150,10 @@ TEST(OptTest, EqConst)
       "%3:4 = input \"a\"\n"
       "%7:1 = eq 0101 0101\n"
       "%8:0 = output \"out\" %7\n");
-  Graph g = Graph::parse(is);
-  constantFold(g);
-  g.normalize();
-  g.assertNone<Eq>();
+  std::unique_ptr<Graph> g = Graph::parse(is);
+  constantFold(*g);
+  g->normalize();
+  g->assertNone<Eq>();
 }
 
 TEST(OptTest, PreservesDff)
