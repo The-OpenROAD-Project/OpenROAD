@@ -677,6 +677,29 @@ html, body {
     pointer-events: none;
 }
 
+/* Selectability checkbox (second column, next to the visibility checkbox).
+ * Small left margin gives a clear visual separation between the two columns;
+ * disabled state (visibility off) dims the checkbox. */
+.display-controls .vis-sel-cb {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+.display-controls .vis-sel-cb.vis-sel-spacer {
+    /* Layout-only placeholder when a row has no selectability checkbox. */
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    visibility: hidden;
+}
+.display-controls .vis-sel-cb:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.display-controls label.vis-sel-disabled {
+    /* Visually dim labels whose selectability is disabled by visibility. */
+    color: var(--fg-muted);
+}
+
 /* Layer context menu */
 .context-menu {
     position: fixed;
