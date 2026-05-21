@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <stack>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -137,6 +138,7 @@ class MoveCommitter
   // === Commit result handling ==============================================
   bool canManageJournal() const;
   void recordAcceptedResult(const MoveResult& result);
+  void unrecordAcceptedResult(const MoveResult& result);
   int pendingMoveCount() const;
 
   // === ECO journal internals ===============================================
@@ -156,14 +158,18 @@ class MoveCommitter
   Resizer& resizer_;
 
   // === Journal and move accounting state ===================================
-  bool journal_open_{false};
+  // Stack depth equals the number of currently open ECO journals. Each vector
+  // holds the results accepted at that nesting level so a nested restore can
+  // unrecord just its own moves and a nested commit can merge its results into
+  // the parent's vector (mirroring odb's commitEco append-to-parent semantics).
+  std::stack<std::vector<MoveResult>> pending_move_results_;
   std::array<int, kTypeCount> pending_by_type_{};
   std::array<int, kTypeCount> committed_by_type_{};
   std::array<int, kTypeCount> summary_carried_by_type_{};
-  std::array<std::unordered_set<sta::Instance*>, kTypeCount>
+  std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>
       pending_instances_by_type_{};
   std::array<std::unordered_set<sta::Instance*>, kTypeCount>
-      all_instances_by_type_{};
+      committed_instances_by_type_{};
 
   // === MoveTracker state ====================================================
   std::unique_ptr<MoveTracker> move_tracker_;
