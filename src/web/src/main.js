@@ -92,6 +92,17 @@ const app = {
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
+    // Raw tech-layer names (dbTechLayer::getName()) for the layers
+    // currently visible.  Kept in sync with `visibleLayers` by
+    // display-controls.js.  This is the wire-format that the backend
+    // expects in `visible_layers`; `visibleLayers` itself holds the
+    // hierarchical UI node IDs and must not leak into requests.
+    visibleLayerNames: new Set(),
+    // Set of chiplet `path`s currently visible.  Populated by
+    // display-controls.js once techData.chiplets arrives; null means
+    // "render every chiplet" (single-chip designs).
+    visibleChiplets: null,
+    useTrueZ: getCookie('or_use_true_z') === '1',
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
@@ -183,7 +194,11 @@ try {
     // Ignore malformed cookie.
 }
 
-const WebSocketTileLayer = createWebSocketTileLayer(visibility, app.visibleLayers);
+// `app` is forwarded so the tile layer can read app.visibleChiplets
+// lazily on every request — the field is populated by display-controls
+// once the server's tech metadata arrives.
+const WebSocketTileLayer
+    = createWebSocketTileLayer(visibility, app.visibleLayerNames, app);
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -538,6 +553,7 @@ const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
 app.updateInspector = updateInspector;
+app.navigateInspector = inspector.navigateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -971,7 +987,18 @@ app.websocketManager.readyPromise.then(async () => {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = !!v;
             }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: Math.round(app.map.getZoom()), visible_layers: [...app.visibleLayers], ...vf })
+            const selectRequest = {
+                type: 'select',
+                dbu_x,
+                dbu_y,
+                zoom: Math.round(app.map.getZoom()),
+                visible_layers: [...app.visibleLayerNames],
+                ...vf,
+            };
+            if (app.visibleChiplets instanceof Set) {
+                selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            app.websocketManager.request(selectRequest)
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
