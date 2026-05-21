@@ -1204,6 +1204,27 @@ html, body {
     display: none;
 }
 
+.three-d-options {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--fg-primary);
+    user-select: none;
+}
+
+.three-d-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
 /* ─── Charts Widget ──────────────────────────────────────────────────── */
 
 .charts-widget {
