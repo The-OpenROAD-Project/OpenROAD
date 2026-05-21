@@ -214,8 +214,10 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   has_selectable_layers = false;
   if (auto it = json.find("selectable_layers"); it != json.end()) {
     has_selectable_layers = true;
-    for (const auto& v : it->value().as_array()) {
-      selectable_layers.emplace(v.as_string());
+    const auto& arr = it->value().as_array();
+    const size_t count = std::min(arr.size(), kMaxVisibilityEntries);
+    for (size_t i = 0; i < count; ++i) {
+      selectable_layers.emplace(arr[i].as_string());
     }
   }
 
