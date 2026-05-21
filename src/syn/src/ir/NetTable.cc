@@ -62,13 +62,10 @@ NetTableId NetTable::allocateSlots(uint32_t count)
   NetTableId result = next_free_;
 
   // Allocate count slots, adding blocks as needed.
-  for (uint32_t i = 0; i < count; i++) {
-    uint32_t id = next_free_ + i;
-    uint32_t blk_idx = id >> NetTableEntry::kNetTableIdxBits;
-
-    while (blk_idx >= blocks_.size()) {
-      addBlock();
-    }
+  const uint32_t last_id = next_free_ + count - 1;
+  const uint32_t last_blk_idx = last_id >> NetTableEntry::kNetTableIdxBits;
+  while (last_blk_idx >= blocks_.size()) {
+    addBlock();
   }
 
   next_free_ += count;
