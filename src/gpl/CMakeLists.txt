@@ -34,12 +34,81 @@ add_library(gpl_lib
   src/fft.cpp
   src/fftsg.cpp
   src/fftsg2d.cpp
+  src/hpwl.cpp
+  src/wirelengthGradient.cpp
   src/routeBase.cpp
   src/timingBase.cpp
   src/graphicsNone.cpp
   src/solver.cpp
   src/mbff.cpp
 )
+
+# --- HPWL & FFT backends: runtime switch (Strategy + Factory) ---
+# The CPU backends (CpuHpwlBackend in src/hpwl.cpp, CpuFftBackend in
+# src/fft.cpp, + the Ooura src/fftsg*.cpp) are always compiled. When
+# ENABLE_GPU=ON the Kokkos GPU backends in src/gpu/ are also compiled in;
+# makeHpwlBackend() / makeFftBackend() pick the backend per process at run
+# time (gpl::gpuEnabled(), driven by the ENABLE_GPU env var). ENABLE_GPU is a
+# compile definition gating the #ifdef in those two factories; the consumer
+# headers (nesterovBase.h, fft.h) stay preprocessor-free. gpu/ is a
+# file-layout subdirectory only (no nested CMakeLists.txt) so kernel build
+# settings stay in this module's CMakeLists with the rest of gpl_lib.
+if(ENABLE_GPU)
+  target_sources(gpl_lib PRIVATE
+    src/gpu/gpuHpwlBackend.cpp
+    src/gpu/gpuRuntime.cpp
+    src/gpu/gpuFftBackend.cpp
+    src/gpu/poissonSolver.cpp
+    src/gpu/dct.cpp
+    src/gpu/deviceState.cpp
+    src/gpu/gpuWirelengthGradientBackend.cpp
+    src/gpu/wirelengthOp.cpp)
+  target_compile_definitions(gpl_lib PRIVATE ENABLE_GPU)
+  # nesterovBase.h and other private gpl headers live in src/; sources
+  # under src/gpu/ need that on the include path explicitly because
+  # the compiler's default same-dir lookup points into src/gpu/ instead.
+  target_include_directories(gpl_lib PRIVATE src)
+  # The src/gpu/ TUs are device kernels. gpu/gpuRuntime.cpp carries no device
+  # code itself, but it includes <Kokkos_Core.hpp> for the lazy Kokkos
+  # initialize()/finalize(): when Kokkos is built with the CUDA (or HIP)
+  # backend, that header bakes KOKKOS_ENABLE_CUDA into its config and refuses
+  # to compile under a plain host compiler (it requires __CUDACC__). The same
+  # applies to src/fft.cpp, whose makeFftBackend() factory includes
+  # gpu/gpuFftBackend.h (Kokkos-dependent) to construct a GpuFftBackend. All
+  # such TUs are flagged with the device language to match the Kokkos backend.
+  # src/hpwl.cpp stays a plain CXX TU — gpu/gpuHpwlBackend.h is Kokkos-free, so
+  # its makeHpwlBackend() factory needs no device language.
+  # src/fftsg.cpp / src/fftsg2d.cpp are pure C++ Ooura code — left as CXX.
+  if(Kokkos_ENABLE_CUDA)
+    set_source_files_properties(
+      src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
+      src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
+      src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
+      src/fft.cpp
+      PROPERTIES LANGUAGE CUDA)
+  elseif(Kokkos_ENABLE_HIP)
+    set_source_files_properties(
+      src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
+      src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
+      src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
+      src/fft.cpp
+      PROPERTIES LANGUAGE HIP)
+  endif()
+  # Disable FP contraction for kernels that share gpl_lib's compile
+  # context so they stay bit-stable across compilers. Scoped to gpl_lib
+  # but the CXX flag is also harmless on the existing CPU TUs.
+  target_compile_options(gpl_lib PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>
+    $<$<COMPILE_LANGUAGE:CUDA>:--fmad=false>
+    $<$<COMPILE_LANGUAGE:HIP>:-ffp-contract=off>
+  )
+  target_link_libraries(gpl_lib Kokkos::kokkos KokkosFFT::fft)
+  if(Kokkos_ENABLE_CUDA)
+    # cuda runtime symbols are referenced from the CUDA TU; expose cudart
+    # so that gpl_lib (and the openroad binary) link against libcudart.
+    target_link_libraries(gpl_lib CUDA::cudart)
+  endif()
+endif()
 
 target_sources(gpl
   PRIVATE
