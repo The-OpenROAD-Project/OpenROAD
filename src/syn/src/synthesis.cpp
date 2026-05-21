@@ -44,13 +44,12 @@ Synthesis::~Synthesis() = default;
 
 bool Synthesis::svElaborate(const std::vector<std::string>& args)
 {
-  auto result = syn::elaborate(args, sta_);
+  auto result = syn::elaborate(logger_, args, sta_);
   if (!result) {
     logger_->error(utl::SYN, 1, "Elaboration failed.");
     return false;
   }
   graph_ = std::move(result);
-  graph_->setLogger(logger_);
   graph_->makeNamesTentative();
   graph_->normalize();
   syn::importTargets(*graph_, sta_->network(), logger_);

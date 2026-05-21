@@ -25,12 +25,14 @@
 #include "slang/driver/Driver.h"
 #include "slang_frontend.h"
 #include "syn/ir/Graph.h"
+#include "utl/Logger.h"
 
 namespace syn {
 
 using namespace slang_frontend;  // NOLINT(google-build-using-namespace)
 
-static std::optional<Graph> elaborate1(const std::vector<std::string>& args,
+static std::optional<Graph> elaborate1(utl::Logger* logger,
+                                       const std::vector<std::string>& args,
                                        sta::dbSta* sta,
                                        std::optional<std::string> buffer)
 {
@@ -109,6 +111,7 @@ static std::optional<Graph> elaborate1(const std::vector<std::string>& args,
   auto* instance = tops[0];
   HierarchyQueue hqueue;
   auto backend = std::make_unique<BackendGraphBuilder>();
+  backend->graph_->setLogger(logger);
   NetlistContext netlist(
       std::move(backend), settings, *compilation, *tops.front());
   populate_netlist(hqueue, netlist);
@@ -136,16 +139,18 @@ static std::optional<Graph> elaborate1(const std::vector<std::string>& args,
   return std::move(builder->graph_);
 }
 
-std::optional<Graph> elaborate(const std::vector<std::string>& args,
+std::optional<Graph> elaborate(utl::Logger* logger,
+                               const std::vector<std::string>& args,
                                sta::dbSta* sta)
 {
-  return elaborate1(args, sta, {});
+  return elaborate1(logger, args, sta, {});
 }
 
 std::optional<Graph> elaborateText(const std::string& source,
                                    const std::vector<std::string>& args)
 {
-  return elaborate1(args, nullptr, source);
+  utl::Logger logger;
+  return elaborate1(&logger, args, nullptr, source);
 }
 
 }  // namespace syn

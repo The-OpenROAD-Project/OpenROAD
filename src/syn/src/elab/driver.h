@@ -14,6 +14,10 @@
 
 #include "syn/ir/Graph.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace sta {
 class dbSta;
 }
@@ -24,7 +28,8 @@ namespace syn {
 // Arguments are passed through to slang's command-line parser
 // (file paths, -I, --top, defines, etc.).
 // If sta is non-null, Liberty cell definitions are imported as blackboxes.
-std::optional<Graph> elaborate(const std::vector<std::string>& args,
+std::optional<Graph> elaborate(utl::Logger* logger,
+                               const std::vector<std::string>& args,
                                sta::dbSta* sta = nullptr);
 std::optional<Graph> elaborateText(const std::string& source,
                                    const std::vector<std::string>& args = {});
