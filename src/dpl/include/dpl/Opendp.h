@@ -178,6 +178,8 @@ class Opendp
   odb::Point getOdbLocation(const Node* cell) const;
   odb::Point getDplLocation(const Node* cell) const;
 
+  bool isUseNegotiationLegalizer() { return !use_old_diamond_; }
+
  private:
   using bgPoint
       = boost::geometry::model::d2::point_xy<int,

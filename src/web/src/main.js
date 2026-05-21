@@ -10,6 +10,7 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
+import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -92,6 +93,18 @@ const app = {
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
+    // Raw tech-layer names (dbTechLayer::getName()) for the layers
+    // currently visible.  Kept in sync with `visibleLayers` by
+    // display-controls.js.  This is the wire-format that the backend
+    // expects in `visible_layers`; `visibleLayers` itself holds the
+    // hierarchical UI node IDs and must not leak into requests.
+    visibleLayerNames: new Set(),
+    // Set of chiplet `path`s currently visible.  Populated by
+    // display-controls.js once techData.chiplets arrives; null means
+    // "render every chiplet" (single-chip designs).
+    visibleChiplets: null,
+    useTrueZ: getCookie('or_use_true_z') === '1',
+    selectableLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
@@ -183,7 +196,67 @@ try {
     // Ignore malformed cookie.
 }
 
-const WebSocketTileLayer = createWebSocketTileLayer(visibility, app.visibleLayers);
+// Selectability mirrors the Qt GUI's display-controls "selectable" column.
+// Defaults to true (everything selectable), matching the Qt GUI.  Only
+// categories that the Qt GUI exposes a selectable checkbox for are listed
+// here; the server treats unspecified keys as selectable.
+const selectability = {
+    stdcells: true,
+    macros: true,
+    pad_input: true,
+    pad_output: true,
+    pad_inout: true,
+    pad_power: true,
+    pad_spacer: true,
+    pad_areaio: true,
+    pad_other: true,
+    phys_fill: true,
+    phys_endcap: true,
+    phys_welltap: true,
+    phys_tie: true,
+    phys_antenna: true,
+    phys_cover: true,
+    phys_bump: true,
+    phys_other: true,
+    std_bufinv: true,
+    std_bufinv_timing: true,
+    std_clock_bufinv: true,
+    std_clock_gate: true,
+    std_level_shift: true,
+    std_sequential: true,
+    std_combinational: true,
+    net_signal: true,
+    net_power: true,
+    net_ground: true,
+    net_clock: true,
+    net_reset: true,
+    net_tieoff: true,
+    net_scan: true,
+    net_analog: true,
+    pins: true,
+    inst_pins: true,
+    placement_blockages: true,
+    routing_obstructions: true,
+};
+
+try {
+    const saved = getCookie('or_selectability');
+    if (saved) {
+        const parsed = JSON.parse(decodeURIComponent(saved));
+        for (const [k, v] of Object.entries(parsed)) {
+            selectability[k] = !!v;
+        }
+    }
+} catch (_) {
+    // Ignore malformed cookie.
+}
+
+// `app` is forwarded so the tile layer can read app.visibleChiplets
+// lazily on every request — the field is populated by display-controls
+// once the server's tech metadata arrives.
+const WebSocketTileLayer = createWebSocketTileLayer(
+    visibility, app.visibleLayerNames, selectability, app.selectableLayers,
+    app);
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -286,8 +359,11 @@ function updateHeatMaps(data) {
 app.updateHeatMaps = updateHeatMaps;
 
 function redrawAllLayers() {
-    // Persist visibility state to cookie so it survives page reloads.
+    // Persist visibility and selectability state to cookies so they survive
+    // page reloads.
     setCookie('or_visibility', encodeURIComponent(JSON.stringify(visibility)));
+    setCookie('or_selectability',
+              encodeURIComponent(JSON.stringify(selectability)));
 
     // Show/hide modules layer based on module_view visibility
     if (app.modulesLayer) {
@@ -496,6 +572,18 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+
+    if (isStaticMode(app)) {
+        el.querySelector('.tcl-input-row').style.display = 'none';
+        const notice = document.createElement('span');
+        notice.className = 'tcl-static-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        notice.textContent = 'Tcl console is not available in saved reports.';
+        app.tclOutputEl.appendChild(notice);
+        return;
+    }
+
     const input = el.querySelector('.tcl-input');
     const completer = new TclCompleter(input, app.websocketManager);
 
@@ -538,6 +626,7 @@ const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
 app.updateInspector = updateInspector;
+app.navigateInspector = inspector.navigateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -971,7 +1060,24 @@ app.websocketManager.readyPromise.then(async () => {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = !!v;
             }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: Math.round(app.map.getZoom()), visible_layers: [...app.visibleLayers], ...vf })
+            // Selectability is sent with `s_` prefix to mirror the flat
+            // visibility key scheme; the server parses both columns.
+            for (const [k, v] of Object.entries(selectability)) {
+                vf['s_' + k] = !!v;
+            }
+            const selectRequest = {
+                type: 'select',
+                dbu_x,
+                dbu_y,
+                zoom: Math.round(app.map.getZoom()),
+                visible_layers: [...app.visibleLayerNames],
+                selectable_layers: [...app.selectableLayers],
+                ...vf,
+            };
+            if (app.visibleChiplets instanceof Set) {
+                selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            app.websocketManager.request(selectRequest)
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
@@ -1065,7 +1171,8 @@ app.websocketManager.readyPromise.then(async () => {
             });
         }
 
-        populateDisplayControls(app, visibility, WebSocketTileLayer,
+        populateDisplayControls(app, visibility, selectability,
+                                WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
         updateHeatMaps(heatMapData);
 
