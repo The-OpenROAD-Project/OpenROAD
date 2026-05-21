@@ -113,15 +113,17 @@ void Graphics::drawObjects(gui::Painter& painter)
     if (!cell->getDbInst()) {
       continue;
     }
-
-    if (!cell->isPlaced()) {
-      auto color = gui::Painter::kDarkMagenta;
-      painter.setPen(color);
-      painter.setBrush(color);
-      odb::Rect bbox;
-      bbox = cell->getDbInst()->getBBox()->getBox();
-      painter.drawRect(bbox);
-      continue;
+    
+    if(!dp_->isUseNegotiationLegalizer()) {
+      if (!cell->isPlaced()) {
+        auto color = gui::Painter::kDarkMagenta;
+        painter.setPen(color);
+        painter.setBrush(color);
+        odb::Rect bbox;
+        bbox = cell->getDbInst()->getBBox()->getBox();
+        painter.drawRect(bbox);
+        continue;
+      }
     }
 
     if (cell->getDbInst()->isFixed()) {
