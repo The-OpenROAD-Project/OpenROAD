@@ -1938,8 +1938,8 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
     assert(layerRule != nullptr);
 
-    int default_width = layer->getWidth();
-    int default_space = layer->getPitch() - default_width;
+    const int default_width = layer->getWidth();
+    const int default_space = layer->getPitch() - default_width;
 
     // If width or space is 0, something is not right
     if (default_width == 0 || default_space == 0) {
@@ -1953,9 +1953,9 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
 
     // Set NDR settings
-    int ndr_width = default_width;
+    const int ndr_width = default_width;
     layerRule->setWidth(ndr_width);
-    int ndr_space = 2 * default_space;
+    const int ndr_space = 2 * default_space;
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
