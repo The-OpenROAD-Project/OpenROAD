@@ -15,7 +15,7 @@ add_library(syn_flow
 )
 
 set(_syn_flow_stage ${CMAKE_CURRENT_BINARY_DIR}/include/flow)
-foreach(_h abc.h bitblast.h combinational_mapper.h combinational_mapper_npn.h export.h import.h liveness.h opt_gatefusion.h sequential_mapper.h)
+foreach(_h bitblast.h combinational_mapper.h combinational_mapper_npn.h export.h import.h opt_gatefusion.h)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_h} ${_syn_flow_stage}/${_h} COPYONLY)
 endforeach()
 

@@ -4,8 +4,6 @@
 // ABC roundtrip: export the combinational AIG (And/Andnot/Or/Not)
 // to ABC's Gia_Man_t, run ABC commands, and reimport.
 
-#include "flow/abc.h"
-
 #include <cassert>
 #include <cstdint>
 #include <set>

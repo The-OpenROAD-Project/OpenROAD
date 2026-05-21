@@ -15,7 +15,6 @@ cc_library(
     name = "syn",
     srcs = [
         "src/flow/abc.cc",
-        "src/flow/abc.h",
         "src/flow/bitblast.cc",
         "src/flow/bitblast.h",
         "src/flow/combinational_mapper.cc",
@@ -29,11 +28,9 @@ cc_library(
         "src/flow/import.cc",
         "src/flow/import.h",
         "src/flow/liveness.cc",
-        "src/flow/liveness.h",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",
-        "src/flow/sequential_mapper.h",
         "src/synthesis.cpp",
     ],
     hdrs = [
