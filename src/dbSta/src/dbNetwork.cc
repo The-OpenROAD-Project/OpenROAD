@@ -371,6 +371,9 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     dbSet<odb::dbChipInst> chip_insts = network->topChip()->getChipInsts();
     chipinst_iter_ = chip_insts.begin();
     chipinst_end_ = chip_insts.end();
+    // TODO: migrate this inner-inst enumeration into UnfoldedModel and drop
+    // the blockOwnedUniquelyBy filter once chip-inst Instance* is rekeyed
+    // to be path-aware (UnfoldedChip*).
     for (odb::dbChipInst* chip_inst : chip_insts) {
       if (network->blockOwnedUniquelyBy(chip_inst)) {
         if (dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
@@ -1052,8 +1055,7 @@ dbBlock* dbNetwork::blockOf(dbChipInst* chip_inst) const
   if (chip_inst == nullptr) {
     return nullptr;
   }
-  dbChip* master = chip_inst->getMasterChip();
-  return master ? master->getBlock() : nullptr;
+  return chip_inst->getMasterChip()->getBlock();
 }
 
 bool dbNetwork::blockOwnedUniquelyBy(dbChipInst* chip_inst) const

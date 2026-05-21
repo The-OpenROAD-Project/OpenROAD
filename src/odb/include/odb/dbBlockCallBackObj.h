@@ -196,6 +196,12 @@ class dbBlockCallBackObj
   virtual dbBlockCallBackObj& operator()() { return *this; }
 
   // Manipulate _callback list of owner -- in journal.cpp
+  //
+  // Note: addOwner has set-semantics, not add-semantics. A dbBlockCallBackObj
+  // can only be hooked into one dbBlock at a time. Calling addOwner(B) while
+  // owner_==A first unhooks from A's callback list, then inserts into B's.
+  // To hook the same logical callback into multiple blocks, allocate one
+  // dbBlockCallBackObj instance per block.
   void addOwner(dbBlock* new_owner);
   bool hasOwner() const { return (owner_ != nullptr); }
   void removeOwner();

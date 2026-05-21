@@ -393,17 +393,24 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
     return;
   }
   db_network_->setTopChip(chip);
-  if (db_->getUnfoldedModel() == nullptr) {
-    db_->constructUnfoldedModel();
-  }
   // Per-chiplet edit callbacks fire on each chiplet's dbBlock; chip-level
   // dbChipCallBackObj carries no chip-inst/bump/net signals today.
+  // dbBlockCallBackObj is single-owner (addOwner is effectively setOwner: it
+  // removes the previous owner before inserting into the new block's
+  // callback list). Reusing one db_cbk_ across N chiplets would unhook all
+  // but the last, leaving edits inside the other chiplets invisible to STA.
+  // Allocate one dbStaCbk per chiplet block instead.
+  chiplet_cbks_.clear();
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
-    if (odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst)) {
-      db_cbk_->addOwner(chiplet_block);
+    odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
+    if (chiplet_block == nullptr) {
+      continue;
     }
+    auto cbk = std::make_unique<dbStaCbk>(this);
+    cbk->setNetwork(db_network_);
+    cbk->addOwner(chiplet_block);
+    chiplet_cbks_.push_back(std::move(cbk));
   }
-  db_cbk_->setNetwork(db_network_);
 
   // Diagnostics: surface chip-inst / chip-net / chip-conn counts and flag
   // structural issues that would silently block cross-chiplet paths.
@@ -430,7 +437,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   odb::PtrSet<odb::dbChip> seen_masters;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
-    if (master == nullptr || !seen_masters.insert(master).second) {
+    if (!seen_masters.insert(master).second) {
       continue;
     }
     size_t bumps_total = 0;
