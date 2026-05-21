@@ -1205,7 +1205,7 @@ void mapCombinationals(Graph& g,
     return;
   }
 
-  if (!index->tie_low.first || !index->tie_low.first) {
+  if (!index->tie_low.first || !index->tie_high.first) {
     logger->error(utl::SYN, 1017, "mapCombinationals: no tie cells found");
     return;
   }
