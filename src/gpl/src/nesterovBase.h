@@ -21,6 +21,7 @@
 
 #include "boost/unordered/unordered_flat_map.hpp"
 #include "gpl/Replace.h"
+#include "hpwlBackend.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "point.h"
@@ -52,6 +53,8 @@ class Net;
 class GPin;
 class FFT;
 class nesterovDbCbk;
+class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
+class WirelengthGradientBackend;  // wirelengthGradientBackend.h (Phase 2)
 
 class GCell
 {
@@ -259,6 +262,13 @@ class GNet
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
+  // GPU path writes computed bbox back through this setter so subsequent
+  // gNet->lx() / ly() / ux() / uy() consumers stay consistent with the
+  // CPU updateBox() side effect, without re-iterating the pin list on the
+  // host. The caller is responsible for passing values that equal what
+  // updateBox() would have produced from the same pin set; this function
+  // performs no validation.
+  void setBox(int lx, int ly, int ux, int uy);
   int64_t getHpwl() const;
 
   void setDontCare();
@@ -462,6 +472,13 @@ class GPin
 
   int cx() const { return cx_; }
   int cy() const { return cy_; }
+
+  // Offset from the owning GCell's center. The absolute pin center
+  // (cx_/cy_) is recomputed by updateLocation() as gCell->cx() + offsetCx_.
+  // Exposed for GPU paths that maintain pin coordinates device-side from
+  // inst centers + per-pin offsets (gpu/deviceState.cpp).
+  int offsetCx() const { return offsetCx_; }
+  int offsetCy() const { return offsetCy_; }
 
   // clear WA(Weighted Average) variables.
   void clearWaVars();
@@ -805,6 +822,10 @@ class NesterovBaseCommon
                      utl::Logger* log,
                      int num_threads,
                      const Clusters& clusters);
+  // Defined out-of-line (in nesterovBase.cpp) so the device_state_
+  // std::unique_ptr<DeviceState> can default-destruct without exposing the
+  // DeviceState definition (and its Kokkos types) in this header.
+  ~NesterovBaseCommon();
 
   void reportInstanceExtensionByPinDensity() const;
   const std::vector<GCell*>& getGCells() const { return nbc_gcells_; }
@@ -834,7 +855,26 @@ class NesterovBaseCommon
   //
   // Gamma is described in the ePlaceMS paper.
   //
+  // Public entry point — dispatches through wl_grad_backend_ (CPU or GPU).
+  // Defined in wirelengthGradient.cpp.
   void updateWireLengthForceWA(float wlCoeffX, float wlCoeffY);
+
+  // Native CPU body of updateWireLengthForceWA (the original OMP loop).
+  // Called by CpuWirelengthGradientBackend; public so the backend in a
+  // separate TU can dispatch into it. Defined in nesterovBase.cpp.
+  void updateWireLengthForceWA_native(float wlCoeffX, float wlCoeffY);
+
+  // Bulk per-cell wirelength gradient (Phase 2 hot path — replaces the
+  // per-cell loop in NesterovBase::updateGradients). `out` is indexed
+  // parallel to `gCells` (typically nb_gcells_, a per-NesterovBase view
+  // into nbc gCellStor_). Defined in wirelengthGradient.cpp.
+  void getAllWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
+                                   std::vector<FloatPoint>& out);
+
+  // Single-cell wirelength gradient (cold path — NesterovBase::
+  // updateSingleGradient via the db callback). Defined in
+  // wirelengthGradient.cpp.
+  FloatPoint getSingleWireLengthGradientWA(const GCell* gCell);
 
   FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
                                         float wlCoeffX,
@@ -928,6 +968,18 @@ class NesterovBaseCommon
   std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
+  // Device-resident state for GPU backends (Phase 1: pin coords pool).
+  // Constructed in the ctor body after gCellStor_ / gPinStor_ / gNetStor_
+  // are populated; null when ENABLE_GPU is off or gpl::gpuEnabled() returns
+  // false. Must outlive hpwl_backend_ (backend borrows it), so it is
+  // declared first and (since C++ destroys members in reverse declaration
+  // order) destroyed last.
+  std::unique_ptr<DeviceState> device_state_;
+  std::unique_ptr<HpwlBackend> hpwl_backend_;
+  // Phase 2: WA wirelength gradient dispatcher. CPU backend wraps the
+  // updateWireLengthForceWA_native + per-cell helpers below; GPU backend
+  // runs the 5-kernel Kokkos pipeline against device_state_'s pool.
+  std::unique_ptr<WirelengthGradientBackend> wl_grad_backend_;
   int64_t delta_area_;
   int new_gcells_count_;
   int deleted_gcells_count_;

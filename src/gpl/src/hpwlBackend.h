@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+// HpwlBackend — the Strategy interface for the HPWL (half-perimeter
+// wirelength) computation. CpuHpwlBackend (the OpenMP loop) is always
+// available; GpuHpwlBackend (a Kokkos kernel) is added on an ENABLE_GPU build.
+// makeHpwlBackend() picks one per process at run time (gpl::gpuEnabled()).
+//
+// This header is plain C++ — no Kokkos, no preprocessor branches — so
+// nesterovBase.h can hold a std::unique_ptr<HpwlBackend> member without
+// learning anything about the GPU build.
+
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+namespace gpl {
+
+class GNet;
+
+// Strategy: computes the total HPWL over a net storage. Implementations also
+// write each net's bounding box back via GNet::setBox — the side effect the
+// legacy CPU loop performed and that later passes (routability, timing)
+// depend on.
+class HpwlBackend
+{
+ public:
+  virtual ~HpwlBackend() = default;
+
+  virtual int64_t computeHpwl(std::vector<GNet>& nets) = 0;
+
+  // Short label for diagnostic logging; constructed-once factory choice.
+  virtual const char* name() const = 0;
+};
+
+class DeviceState;
+
+// Factory: returns GpuHpwlBackend on an ENABLE_GPU build with the GPU path
+// selected at run time, otherwise CpuHpwlBackend. The `device_state` pointer
+// is the device-resident coordinate pool (gpu/deviceState.h); it is read
+// only by GpuHpwlBackend and may be null for the CPU path.
+std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
+                                             DeviceState* device_state);
+
+}  // namespace gpl

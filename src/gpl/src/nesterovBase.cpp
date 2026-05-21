@@ -25,16 +25,28 @@
 #include "boost/polygon/polygon.hpp"
 #include "fft.h"
 #include "gpl/Replace.h"
+#include "hpwlBackend.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "omp.h"
 #include "placerBase.h"
 #include "point.h"
 #include "utl/Logger.h"
+#include "wirelengthGradientBackend.h"
+
+#ifdef ENABLE_GPU
+#include "gpu/deviceState.h"
+#include "gpu/gpuRuntime.h"
+#endif
 
 #define REPLACE_SQRT2 1.414213562373095048801L
 
 namespace gpl {
+
+// Defined out-of-line so the std::unique_ptr<DeviceState> member can be
+// destroyed where DeviceState is a complete type (the gpu/deviceState.h
+// include above) without leaking that include into nesterovBase.h.
+NesterovBaseCommon::~NesterovBaseCommon() = default;
 
 using odb::dbBlock;
 using utl::GPL;
@@ -343,6 +355,14 @@ void GNet::updateBox()
     ux_ = std::max(gPin->cx(), ux_);
     uy_ = std::max(gPin->cy(), uy_);
   }
+}
+
+void GNet::setBox(int lx, int ly, int ux, int uy)
+{
+  lx_ = lx;
+  ly_ = ly;
+  ux_ = ux;
+  uy_ = uy;
 }
 
 int64_t GNet::getHpwl() const
@@ -1114,6 +1134,10 @@ NesterovBaseCommon::NesterovBaseCommon(
     const Clusters& clusters)
     : nbVars_(nbVars), num_threads_{num_threads}
 {
+  // hpwl_backend_ and device_state_ are constructed at the end of this ctor
+  // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU
+  // backend needs the device state, and the device state initializer reads
+  // those storage vectors.
   assert(omp_get_thread_num() == 0);
   pbc_ = std::move(pbc);
   log_ = log;
@@ -1239,6 +1263,26 @@ NesterovBaseCommon::NesterovBaseCommon(
       gNet.addGPin(pbToNb(pin));
     }
   }
+
+  // ---- Device-resident state + HPWL backend ----
+  // Construct the device-side coordinate pool (instance coords, per-pin
+  // offsets, net→pin CSR) only when the GPU path is selected at run time.
+  // The HPWL backend factory then takes a pointer to it; the GPU backend
+  // borrows the pool, the CPU backend ignores it.
+#ifdef ENABLE_GPU
+  if (gpuEnabled()) {
+    device_state_
+        = std::make_unique<DeviceState>(gCellStor_, gPinStor_, gNetStor_);
+  }
+#endif
+  hpwl_backend_ = makeHpwlBackend(num_threads_, device_state_.get());
+  log_->report("HPWL backend: {}", hpwl_backend_->name());
+
+  // Phase 2: WA wirelength gradient dispatcher. Same factory pattern as
+  // hpwl_backend_; routes through device_state_ on the GPU path.
+  wl_grad_backend_
+      = makeWirelengthGradientBackend(num_threads_, this, device_state_.get());
+  log_->report("WA wirelength gradient backend: {}", wl_grad_backend_->name());
 }
 
 GCell* NesterovBaseCommon::pbToNb(Instance* inst) const
@@ -1288,7 +1332,13 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 //
 // * Note that wlCoeffX and wlCoeffY is 1/gamma
 // in ePlace paper.
-void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
+//
+// _native is the CPU OMP loop body; the public updateWireLengthForceWA
+// dispatcher lives in wirelengthGradient.cpp and routes through
+// wl_grad_backend_ (CPU or GPU). CpuWirelengthGradientBackend calls into
+// this method.
+void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
+                                                        float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
   // clear all WA variables.
@@ -1552,18 +1602,8 @@ void NesterovBaseCommon::updateDbGCells()
   }
 }
 
-int64_t NesterovBaseCommon::getHpwl()
-{
-  assert(omp_get_thread_num() == 0);
-  int64_t hpwl = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
-    gNet->updateBox();
-    hpwl += gNet->getHpwl();
-  }
-  return hpwl;
-}
+// NesterovBaseCommon::getHpwl() is defined out-of-line in src/hpwl.cpp, where
+// it delegates to the HpwlBackend (CPU or GPU) chosen at construction.
 
 void NesterovBaseCommon::resetMinRcCellSize()
 {
@@ -2047,6 +2087,7 @@ NesterovBase::NesterovBase(
                                    bg_.getBinSizeY()));
 
   fft_ = std::move(fft);
+  log_->report("FFT backend: {}", fft_->getBackendName());
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
@@ -2767,18 +2808,49 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
+  (void) wlCoeffX;
+  (void) wlCoeffY;
+
+  // Bulk-fetch all per-cell wirelength gradients in one backend call.
+  // CPU backend: sequential per-cell pass. GPU backend: one K5 kernel +
+  // one deep_copy. updateWireLengthForceWA is expected to have already run.
+  nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
+  density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    int target = 0;  // cur
+    if (&sumGrads == &prevSLPSumGrads_) {
+      target = 1;
+    } else if (&sumGrads == &nextSLPSumGrads_) {
+      target = 2;
+    }
+
+    nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
+    nb_device_ctx_->pushDensityGradsFromHost(densityGrads);
+    nb_device_ctx_->gradCombine(densityPenalty_,
+                                NesterovPlaceVars::minPreconditioner,
+                                target,
+                                wireLengthGradSum_,
+                                densityGradSum_);
+
+    debugPrint(log_,
+               GPL,
+               "updateGrad",
+               1,
+               "WireLengthGradSum: {:g}",
+               wireLengthGradSum_);
+    debugPrint(
+        log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+    return;
+  }
+#endif
+
   // Two-phase: parallel per-cell compute, then deterministic serial reduce.
-  // The previous single-phase loop used `reduction(+: ...)`, whose combine
-  // order across threads is unspecified for floats, producing non-deterministic
-  // sums. Splitting the reduction out keeps results bit-identical regardless
-  // of thread count while still parallelizing the expensive gradient work.
   const size_t numGCells = nb_gcells_.size();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < numGCells; i++) {
     GCell* gCell = nb_gcells_[i];
-    wireLengthGrads[i]
-        = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
-    densityGrads[i] = getDensityGradient(gCell);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2799,11 +2871,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     sumGrads[i].y /= sumPrecondi.y;
   }
 
-  // Different compiler has different results on the following formula.
-  // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-  //
-  // To prevent instability problem,
-  // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
+  // Serial reduce for determinism (float addition order).
   for (size_t i = 0; i < numGCells; i++) {
     wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
     wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
@@ -2896,8 +2964,13 @@ void NesterovBase::updateSingleGradient(
     return;
   }
 
-  wireLengthGrads[gCellIndex]
-      = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
+  (void) wlCoeffX;
+  (void) wlCoeffY;
+  // Cold path (db callback when a gCell is added mid-iter). updateForce
+  // has been refreshed by the most recent NesterovPlace iter's
+  // updateWireLengthForceWA call; the backend (CPU or GPU) returns the
+  // per-cell grad consistent with that state.
+  wireLengthGrads[gCellIndex] = nbc_->getSingleWireLengthGradientWA(gCell);
   densityGrads[gCellIndex] = getDensityGradient(gCell);
 
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
