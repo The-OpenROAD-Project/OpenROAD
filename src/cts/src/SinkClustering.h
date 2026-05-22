@@ -64,7 +64,7 @@ class SinkClustering
   void sortPoints();
   void writePlotFile();
   void repairClusteringSolution(
-      const unsigned solution_idx,
+      unsigned groupSize,
       std::vector<std::vector<Point<double>>>& solutionPoints,
       std::vector<std::vector<unsigned>>& solutionPointsIdx,
       std::vector<std::vector<unsigned>>& solutions,
