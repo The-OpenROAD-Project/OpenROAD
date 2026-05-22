@@ -219,16 +219,16 @@ orfs.default(
 # --- External archives ---
 
 # MikePopoloski/slang is not on BCR and does not ship a Bazel build, so we
-# pull a source tarball at a pinned commit and overlay a BUILD file from the
-# slang-elab fork. fmt comes from BCR instead (see bazel_dep above), which
-# replaces a previously-nested submodule of the slang-elab submodule.
+# pull a source tarball at a pinned commit and overlay a BUILD file from
+# //bazel:slang.BUILD. fmt comes from BCR instead (see bazel_dep above),
+# which replaces a previously-nested submodule of the slang-elab submodule.
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 SLANG_COMMIT = "f04e81565793c768b747a8fd058f3e7aeceee1b5"
 
 http_archive(
     name = "slang",
-    build_file = "//third-party/slang-elab/third_party:slang.BUILD",
+    build_file = "//bazel:slang.BUILD",
     sha256 = "ed21154a6eae279e99045c8fa0a7ae2e1e9ca572d3975ef1f22a811a89a8b8b0",
     strip_prefix = "slang-" + SLANG_COMMIT,
     urls = ["https://github.com/MikePopoloski/slang/archive/" + SLANG_COMMIT + ".tar.gz"],

@@ -15,6 +15,7 @@ exports_files(
         "bzl_tidy.sh",
         "fix_lint.sh",
         "install.sh",
+        "slang.BUILD",
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
