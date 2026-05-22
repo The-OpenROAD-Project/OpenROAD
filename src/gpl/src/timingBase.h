@@ -49,7 +49,7 @@ class TimingBase
   }
   void setRepairTnsEndPercent(float percent)
   {
-    repair_tns_end_percent_ = percent;
+    repair_tns_end_percent_ = percent / 100.0f;
   }
 
   // updateNetWeight.

@@ -56,7 +56,7 @@ struct PlaceOptions
   bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
   bool timingDrivenRepairTiming = false;
-  float timingDrivenRepairTnsEndPercent = 0.01;
+  float timingDrivenRepairTnsEndPercent = 1.0;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
