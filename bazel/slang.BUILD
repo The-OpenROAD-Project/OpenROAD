@@ -145,11 +145,7 @@ genrule(
 #  define SLANG_EXPORT
 #  define SLANG_NO_EXPORT
 #else
-#  ifdef slang_slang_EXPORTS
-#    define SLANG_EXPORT __attribute__((visibility("default")))
-#  else
-#    define SLANG_EXPORT __attribute__((visibility("default")))
-#  endif
+#  define SLANG_EXPORT __attribute__((visibility("default")))
 #  define SLANG_NO_EXPORT __attribute__((visibility("hidden")))
 #endif
 
@@ -172,10 +168,7 @@ genrule(
 #  endif
 #endif
 
-#if defined(_MSC_VER) && !defined(__ICL)
-  #pragma warning(disable:4251)
-  #pragma warning(disable:4275)
-#elif defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
   #pragma GCC diagnostic ignored "-Wattributes"
 #endif
 EXPORT_EOF
