@@ -10,6 +10,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 # tagged manual so CI does not turn red on the unfixed bug.
 sh_test(
     name = "synthesize_minimal_and_sigsegv_test",
+    size = "small",
     srcs = ["run_openroad_repro.sh"],
     args = [
         "$(rootpath //:openroad)",

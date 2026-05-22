@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 # Wrapper for sh_test targets that run the openroad binary against a Tcl
-# repro using workspace-root-relative paths.
+# repro.
 #
-# Test data (asap7 lib files, the .sv RTL) lives under the runfiles
-# workspace root (TEST_SRCDIR/TEST_WORKSPACE). cd-ing there before
-# invoking openroad lets the Tcl use "test/asap7/..." and
-# "src/syn/test/..." style paths.
+# Bazel's sh_test sets cwd to the runfiles workspace root before
+# invoking this script, so test data (asap7 lib files, the .sv RTL,
+# the openroad binary itself) is reachable via "./" relative paths
+# without any explicit cd or workspace-name detection.
 #
 # args:
 #   $1 - rootpath to the openroad binary
 #   $2 - rootpath to the Tcl script
-set -eu
+set -euo pipefail
 OPENROAD_BIN="$1"
 TCL="$2"
-cd "${TEST_SRCDIR}/${TEST_WORKSPACE:-_main}"
 exec "./${OPENROAD_BIN}" -no_splash -no_init -exit "./${TCL}"
