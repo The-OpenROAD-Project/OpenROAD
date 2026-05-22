@@ -297,12 +297,14 @@ differently:
      (`bazel_dep` in `MODULE.bazel`). This is the default — pinned,
      mirrored, reproducible, and no submodule needed.
   2. If the dependency is not on BCR, fetch the upstream repository
-     directly with `http_archive` (preferred) or `git_override` /
-     `archive_override`, pinned by commit + SHA256. Bring a BUILD
-     overlay only when upstream does not ship one.
+     directly with `http_archive` (preferred) or a module extension.
+     For modules that exist on BCR but need a different revision,
+     `git_override` (pinned by commit) or `archive_override` (pinned
+     by URL + SHA256) can be used. Bring a BUILD overlay only when
+     upstream does not ship one.
   3. A real fork (with OpenROAD-specific patches) stays as a git
      submodule because that is also what CMake needs; Bazel then
-     references it via the workspace.
+     references it via its local path.
 
 The rule of thumb: if Bazel can get it from BCR or directly from the
 upstream repo, do not add a submodule just for Bazel. Submodules are
