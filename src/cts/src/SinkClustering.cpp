@@ -228,12 +228,17 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
   const unsigned sinks_num = thetaIndexVector_.size();
+  if (sinks_num == 0) {
+    return false;
+  }
   for (unsigned j = 0; j < groupSize; ++j) {
-    // Create first cluster on vector
-    solutions[j].emplace_back();
-    solutionPoints[j].emplace_back();
-    solutionPointsIdx[j].emplace_back();
     for (unsigned i = 0; i < sinks_num; ++i) {
+      if (solutions[j].empty()) {
+        // Create first cluster on vector
+        solutions[j].emplace_back();
+        solutionPoints[j].emplace_back();
+        solutionPointsIdx[j].emplace_back();
+      }
       // Get the current point
       const unsigned idx = thetaIndexVector_[(i + j) % sinks_num].second;
       const Point<double>& p = points_[idx];
@@ -242,7 +247,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
       unsigned pointIdx = 0;
       // Check the distance from the current point to others in the cluster,
       // if there are any.
-      for (Point<double> comparisonPoint : solutionPoints[j][clusters[j]]) {
+      for (const auto& comparisonPoint : solutionPoints[j][clusters[j]]) {
         const double cost = HTree_->computeDist(p, comparisonPoint);
         if (useMaxCapLimit_) {
           capCost += cost * capPerUnit_
