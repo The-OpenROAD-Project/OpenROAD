@@ -4714,6 +4714,60 @@ int Resizer::repairDesignBufferCount() const
   return repair_design_->insertedBufferCount();
 }
 
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  if (global_router_ == nullptr || !global_router_->haveRoutes()) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  sta::Instance* inst = network_->instance(drvr_pin);
+  if (inst != nullptr && dontTouch(inst)) {
+    return false;
+  }
+
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinClockLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  constexpr float kMinResistanceReduction = 0.40f;
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
+}
+
 void Resizer::repairNet(sta::Net* net,
                         double max_wire_length,
                         double slew_margin,

@@ -17,10 +17,8 @@
 #include <utility>
 #include <vector>
 
-#include "BaseMove.hh"
 #include "BufferedNet.hh"
 #include "PreChecks.hh"
-#include "RerouteMove.hh"
 #include "ResizerObserver.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -1106,8 +1104,7 @@ void RepairDesign::repairNet(sta::Net* net,
         // Try rerouting to a lower-resistance layer first. If the reroute
         // reduces wire resistance enough, it may fix the slew violation
         // without requiring driver resizing or buffer insertion.
-        BaseMove* reroute_move = resizer_->reroute_move_.get();
-        if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
+        if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
           estimate_parasitics_->updateParasitics();
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
@@ -1119,11 +1116,6 @@ void RepairDesign::repairNet(sta::Net* net,
                      network_->name(drvr_pin),
                      delayAsString(slew1, 3, this),
                      delayAsString(max_slew1, 3, this));
-          logger_->report(
-              "repair_net after reroute: drvr slew pin={} slew={} max_slew={}",
-              network_->name(drvr_pin),
-              delayAsString(slew1, 3, this),
-              delayAsString(max_slew1, 3, this));
         }
 
         // If slew violation persists after reroute, fall back to driver
@@ -1165,10 +1157,9 @@ void RepairDesign::repairNet(sta::Net* net,
                      delayAsString(max_slew1, 3, this));
 
           // Try rerouting to a lower-resistance layer before inserting
-          // buffers. RerouteMove rejects nets already rerouted, so this is
-          // safe to call even if we already tried it for a driver slew above.
-          BaseMove* reroute_move = resizer_->reroute_move_.get();
-          if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
+          // tryRerouteNet rejects nets already rerouted, so this is safe to
+          // call even if we already tried it for a driver slew above.
+          if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
             estimate_parasitics_->updateParasitics();
             sta_->findDelays(drvr);
             resizer_->checkLoadSlews(
@@ -1179,12 +1170,6 @@ void RepairDesign::repairNet(sta::Net* net,
                 "repair_net",
                 2,
                 "after reroute: load slew pin={} load_slew={} max_slew={}",
-                network_->name(drvr_pin),
-                delayAsString(slew1, 3, this),
-                delayAsString(max_slew1, 3, this));
-            logger_->report(
-                "repair_net after reroute: drvr slew pin={} slew={} "
-                "max_slew={}",
                 network_->name(drvr_pin),
                 delayAsString(slew1, 3, this),
                 delayAsString(max_slew1, 3, this));
@@ -1207,8 +1192,7 @@ void RepairDesign::repairNet(sta::Net* net,
           // (the annotation is still active), an improved parasitic from
           // rerouting will reduce how many buffers are needed.
           slew_violation = true;
-          BaseMove* reroute_move = resizer_->reroute_move_.get();
-          if (rerouteEnabled() && reroute_move->doMove(drvr_pin, 0.0f)) {
+          if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
             estimate_parasitics_->updateParasitics();
             sta_->findDelays(drvr);
             debugPrint(logger_,
