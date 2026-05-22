@@ -61,6 +61,7 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
@@ -217,18 +218,20 @@ orfs.default(
 
 # --- External archives ---
 
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+# MikePopoloski/slang is not on BCR and does not ship a Bazel build, so we
+# pull a source tarball at a pinned commit and overlay a BUILD file from the
+# slang-elab fork. fmt comes from BCR instead (see bazel_dep above), which
+# replaces a previously-nested submodule of the slang-elab submodule.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-new_local_repository(
-    name = "fmt",
-    build_file = "//third-party/slang-elab/third_party:fmt.BUILD",
-    path = "third-party/slang-elab/third_party/fmt",
-)
+SLANG_COMMIT = "f04e81565793c768b747a8fd058f3e7aeceee1b5"
 
-new_local_repository(
+http_archive(
     name = "slang",
     build_file = "//third-party/slang-elab/third_party:slang.BUILD",
-    path = "third-party/slang-elab/third_party/slang",
+    sha256 = "ed21154a6eae279e99045c8fa0a7ae2e1e9ca572d3975ef1f22a811a89a8b8b0",
+    strip_prefix = "slang-" + SLANG_COMMIT,
+    urls = ["https://github.com/MikePopoloski/slang/archive/" + SLANG_COMMIT + ".tar.gz"],
 )
 
 # --- Overrides ---
