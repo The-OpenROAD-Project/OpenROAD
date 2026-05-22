@@ -19,6 +19,7 @@ package(
 cc_library(
     name = "gpl_private_hdrs",
     hdrs = [
+        "src/fft.h",
         "src/nesterovBase.h",
         "src/nesterovPlace.h",
         "src/placerBase.h",
@@ -26,7 +27,7 @@ cc_library(
         "src/routeBase.h",
     ],
     includes = ["src"],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/gpl:__subpackages__"],
     deps = [
         "//src/odb/src/db",
         "//src/utl",
