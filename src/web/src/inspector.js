@@ -3,7 +3,7 @@
 
 // Inspector panel — property tree, hover highlights, bbox display.
 
-import { dbuToLatLng, dbuRectToBounds } from './coordinates.js';
+import { dbuRectToBounds } from './coordinates.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -53,6 +53,7 @@ const CLEAR_FOCUS_SVG =
 export function createInspectorPanel(app, redrawAllLayers) {
     let lastInspectData = null;
     let pendingInspectId = null;
+    let pendingHoverId = null;
     const kMinHoverBoxPixels = 10;
 
     function showLoading() {
@@ -190,12 +191,24 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
-            app.websocketManager.request({ type: 'hover', select_id: selectId })
-                .then(data => {
-                    renderHoverRects(data.rects || []);
-                    redrawAllLayers();
-                })
-                .catch(() => {});
+            // Cancel any in-flight hover request: out-of-order responses
+            // would otherwise render hover rects for the wrong element
+            // when the user moves between inspector-links quickly.
+            // Mirrors the cancel pattern used by navigateInspector.
+            if (pendingHoverId !== null) {
+                app.websocketManager.cancel(pendingHoverId);
+                pendingHoverId = null;
+            }
+            const promise = app.websocketManager.request(
+                { type: 'hover', select_id: selectId });
+            pendingHoverId = promise.requestId;
+            promise.then(data => {
+                pendingHoverId = null;
+                renderHoverRects(data.rects || []);
+                redrawAllLayers();
+            }).catch(() => {
+                pendingHoverId = null;
+            });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
@@ -463,5 +476,5 @@ export function createInspectorPanel(app, redrawAllLayers) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox };
+    return { createInspector, updateInspector, highlightBBox, navigateInspector };
 }
