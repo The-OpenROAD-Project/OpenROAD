@@ -737,7 +737,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       debugPrint(logger_,
                  utl::DPL,
                  "negotiation",
-                 1,
+                 2,
                  "Negotiation: best location for cell '{}' at iteration {} "
                  "(size {} rows x {} sites) is its current position.",
                  cell.db_inst->getName(),

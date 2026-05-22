@@ -640,8 +640,8 @@ bool NegotiationLegalizer::initFromDb()
     // only check site existence and hard blockages here (both encoded in
     // pixel.is_valid).  Soft blockages, routing-layer blockages, and
     // cell-vs-cell overlap are left to the negotiation loop.
-    // if (!cell.fixed) {
-    if (false) {
+    if (!cell.fixed) {
+    // if (false) {
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
