@@ -4,6 +4,7 @@
 // Canvas-based clock tree viewer widget.
 
 import { getThemeColors } from './theme.js';
+import { isStaticMode } from './ui-utils.js';
 
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
@@ -189,6 +190,9 @@ export class ClockTreeWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
         this._fitBtn = document.createElement('button');
         this._fitBtn.className = 'timing-btn';
         this._fitBtn.textContent = 'Fit';
@@ -220,6 +224,10 @@ export class ClockTreeWidget {
 
         this._ctx = this._canvas.getContext('2d');
         this._bindEvents();
+
+        if (isStaticMode(this._app)) {
+            setTimeout(() => this.update(), 0);
+        }
     }
 
     _fit() {
@@ -393,8 +401,10 @@ export class ClockTreeWidget {
             ctx.fillStyle = tc.canvasText;
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Click "Update" to load clock tree data',
-                w / 2, h / 2);
+            const msg = isStaticMode(this._app)
+                ? 'No clock tree data available'
+                : 'Click "Update" to load clock tree data';
+            ctx.fillText(msg, w / 2, h / 2);
             return;
         }
 

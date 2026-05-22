@@ -17,6 +17,7 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
+    "mbff_hier",
     "mbff_orig_name",
     "nograd01",
     "simple01",
@@ -155,7 +156,6 @@ cc_test(
         "library/test/test0.lib",
     ],
     deps = [
-        "//:openroad_lib",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",

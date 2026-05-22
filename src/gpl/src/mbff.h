@@ -32,6 +32,8 @@ class Scene;
 
 namespace gpl {
 
+inline constexpr const char* kOrigNameProp = "orig_name";
+
 struct Point;
 struct Tray;
 struct Flop;
@@ -247,6 +249,8 @@ class MBFF
   float getInternalEnergy(odb::dbInst* inst);
   float clockActivity() const;
   float getClockPeriod(odb::dbInst* ff_inst);
+  std::vector<float> precomputeClockPeriods(
+      const std::vector<std::vector<Flop>>& FFs);
 
   // OpenROAD vars
   odb::dbDatabase* db_;

@@ -5,6 +5,7 @@
 
 #include <map>
 #include <set>
+#include <stack>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -159,6 +160,16 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // Reject all pending moves (mark them as failed)
   void rejectMoves();
 
+  // === Nested ECO journal support ==========================================
+  // MoveCommitter mirrors its ECO journal stack here. A move recorded with
+  // trackMove() while a journal is open lands in the innermost level;
+  // restoreJournal() rejects exactly that level's moves, and commitJournal()
+  // either finalizes them (outermost journal) or merges them into the parent
+  // level (nested journal) so a later parent restore can still reject them.
+  void beginJournal();
+  void commitJournal();
+  void restoreJournal();
+
   // === Phase and final reports =============================================
   // Print statistics summary for current pass and cumulative totals
   void printMoveSummary(const std::string& title);
@@ -202,9 +213,17 @@ class MoveTracker : public odb::dbBlockCallBackObj
   int getTotalCommits() const { return total_commit_count_; }
   int getTotalRejects() const { return total_reject_count_; }
 
+  // Terminal-state log of every finalized move (committed or rejected),
+  // in finalize order.
+  const std::vector<MoveStateData>& moveLog() const { return moves_; }
+
  private:
   // === Summary maintenance ==================================================
   void clearMoveSummary();
+  // Migrate a level of pending moves into the committed move log with the given
+  // terminal state, updating per-pin and per-endpoint statistics.
+  void finalizeMoves(const std::vector<MoveStateData>& level,
+                     MoveStateType final_state);
   std::string pinPathName(const sta::Pin* pin) const;
 
   // === Report helpers =======================================================
@@ -235,7 +254,13 @@ class MoveTracker : public odb::dbBlockCallBackObj
   int move_count_;
   std::map<const sta::Pin*, int> visit_count_;
   std::vector<MoveStateData> moves_;
+  // Moves tracked outside any ECO journal (e.g. MeasuredVtSwapPolicy);
+  // flushed directly by commitMoves() / rejectMoves().
   std::vector<MoveStateData> pending_moves_;
+  // One pending-move level per open ECO journal, innermost on top. Mirrors
+  // MoveCommitter's journal stack; see beginJournal()/commitJournal()/
+  // restoreJournal().
+  std::stack<std::vector<MoveStateData>> pending_move_levels_;
 
   // === Cumulative move statistics ==========================================
   // Cumulative statistics across all passes

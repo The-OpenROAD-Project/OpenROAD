@@ -43,6 +43,11 @@ build --copt "-Wextra"             --host_copt "-Wextra"
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
 build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
+# False positive under Bazel's parse_headers feature: it compiles each
+# declared header as a main TU, which makes clang treat #pragma once as
+# a no-op and emit -Wpragma-once-outside-header.  Project convention is
+# #pragma once for all headers, so silence the warning project-wide.
+build --copt "-Wno-pragma-once-outside-header" --host_copt "-Wno-pragma-once-outside-header"
 build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
 build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declarations"
@@ -130,5 +135,11 @@ build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 
 # Without this, bazelisk build ... builds the bazel-orfs tests
 build --build_tag_filters=-orfs
+
+# clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
+# Usage: bazel build --config=lint //src/utl/...
+build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
+build:lint --output_groups=rules_lint_report
+build:lint --remote_download_outputs=all
 
 try-import %workspace%/user.bazelrc
