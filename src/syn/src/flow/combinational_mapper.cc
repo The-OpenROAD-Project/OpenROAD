@@ -5,8 +5,6 @@
 // standard cells from a liberty library using cut-based technology
 // mapping with NPN canonicalization.
 
-#include "flow/combinational_mapper.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
