@@ -179,10 +179,11 @@ std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
     if (default_pitch <= 0) {
       continue;
     }
-    const int ndr_pitch
-        = lr->getWidth() / 2 + lr->getSpacing() + default_width / 2;
-    const double f
-        = static_cast<double>(ndr_pitch) / static_cast<double>(default_pitch);
+    // Equivalent to (W/2 + S + D/2) / P; multiplied through by 2
+    // to avoid integer truncation on odd-DBU widths.
+    const double f = static_cast<double>(lr->getWidth() + 2 * lr->getSpacing()
+                                         + default_width)
+                     / static_cast<double>(2 * default_pitch);
     factors[layer_idx] = std::max(1.0, f);
   }
   return factors;
