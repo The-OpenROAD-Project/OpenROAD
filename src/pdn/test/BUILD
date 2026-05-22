@@ -283,8 +283,8 @@ filegroup(
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
-            "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
+            "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
