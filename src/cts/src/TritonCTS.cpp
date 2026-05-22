@@ -1838,9 +1838,9 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   int ndrAppliedNets = 0;
 
   debugPrint(
-      logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
+      logger_, CTS, "ndr", 1, "Applying NDR to clock tree levels: ");
   for (int level : targetLevels) {
-    debugPrint(logger_, CTS, "clustering", 1, "{} ", level);
+    debugPrint(logger_, CTS, "ndr", 1, "{} ", level);
   }
 
   // Check if the main clock net (level 0) is in the level list
@@ -1849,7 +1849,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
     // clang-format off
-    debugPrint(logger_, CTS, "clustering", 1,
+    debugPrint(logger_, CTS, "ndr", 1,
         "Applied NDR to: {} (level {})", clockNet.getName(), 0);
     // clang-format on
   }
@@ -1864,7 +1864,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
         ndrAppliedNets++;
         std::string net_name = net->getName();
         // clang-format off
-        debugPrint(logger_, CTS, "clustering", 1,
+        debugPrint(logger_, CTS, "ndr", 1,
             "Applied NDR to: {} (level {})", net_name, level);
         // clang-format on
       }
@@ -1903,7 +1903,7 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
                                    allLevels.begin() + halfCount);
 
   // clang-format off
-  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}"
+  debugPrint(logger_, CTS, "ndr", 1, "Total clock tree levels found: {}"
         " Applying NDR to first {} levels", allLevels.size(), halfCount);
   // clang-format on
 
