@@ -35,6 +35,7 @@
 #include "grt/GRoute.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
@@ -500,7 +501,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     }
     // Reset streaks for nets that recovered (no longer congested).
     for (auto& [net_index, streak] : ndr_congested_streak) {
-      if (currently_congested.count(net_index) == 0) {
+      if (!currently_congested.contains(net_index)) {
         streak = 0;
       }
     }

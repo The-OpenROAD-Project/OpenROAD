@@ -15,7 +15,7 @@ read_def "gcd.def"
 # up and re-routed by stage 4 under this 90% adjustment.
 create_ndr -name NDR_2W \
   -spacing { metal2 0.20 metal3 0.20 metal4 0.40 metal5 0.40 metal6 0.40 } \
-  -width   { metal2 0.14 metal3 0.14 metal4 0.28 metal5 0.28 metal6 0.28 }
+  -width { metal2 0.14 metal3 0.14 metal4 0.28 metal5 0.28 metal6 0.28 }
 
 assign_ndr -ndr NDR_2W -net _100_
 assign_ndr -ndr NDR_2W -net _200_

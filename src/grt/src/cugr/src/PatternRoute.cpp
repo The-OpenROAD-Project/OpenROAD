@@ -17,6 +17,7 @@
 #include "GRTree.h"
 #include "GridGraph.h"
 #include "Layers.h"
+#include "Netlist.h"
 #include "geo.h"
 #include "robin_hood.h"
 #include "stt/SteinerTreeBuilder.h"

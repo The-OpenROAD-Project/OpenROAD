@@ -96,7 +96,7 @@ class GRNet
   void setSoftNdr()
   {
     soft_ndr_ = true;
-    std::fill(ndr_costs_.begin(), ndr_costs_.end(), 1.0);
+    std::ranges::fill(ndr_costs_, 1.0);
   }
 
   bool isSoftNdr() const { return soft_ndr_; }

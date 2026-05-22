@@ -28,9 +28,9 @@ create_ndr -name NDR_LITE \
 assign_ndr -ndr NDR_THICK -net clk
 assign_ndr -ndr NDR_THICK -net clknet_0_clk
 assign_ndr -ndr NDR_THICK -net clknet_2_0__leaf_clk
-assign_ndr -ndr NDR_LITE  -net clknet_2_1__leaf_clk
-assign_ndr -ndr NDR_LITE  -net clknet_2_2__leaf_clk
-assign_ndr -ndr NDR_LITE  -net clknet_2_3__leaf_clk
+assign_ndr -ndr NDR_LITE -net clknet_2_1__leaf_clk
+assign_ndr -ndr NDR_LITE -net clknet_2_2__leaf_clk
+assign_ndr -ndr NDR_LITE -net clknet_2_3__leaf_clk
 
 set guide_file [make_result_file ndr_multi_cugr.guide]
 
