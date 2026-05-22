@@ -1941,10 +1941,10 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     const int default_space = layer->getPitch() - default_width;
 
     // If width or space is 0, something is not right
-    if (default_width == 0 || default_space == 0) {
+    if (default_width <= 0 || default_space <= 0) {
       logger_->error(CTS,
                      208,
-                     "Clock NDR settings for layer {}: defaultSpace: {} - "
+                     "Clock NDR settings for layer {}: defaultSpace: {}, "
                      "defaultWidth: {}",
                      layer->getName(),
                      default_space,
