@@ -453,14 +453,9 @@ CostT GridGraph::getViaCost(const int layer_index,
                    layer_index,
                    num_layers_);
   }
-  // NDR vias use a different via definition (DRT picks
-  // `ndr->getPrefVia(z)` instead of the default), so the via-rect on
-  // each routing layer is wider and the cut shape may be a multi-cut
-  // array. We approximate that without access to the per-NDR via
-  // shapes by scaling the unit via cost by the max NDR factor across
-  // the two adjacent layers — if either side carries an NDR, the via
-  // is treated as the NDR one. The min-area wire patches below carry
-  // their own per-layer NDR scaling separately.
+  // Scale the unit via cost by the max NDR factor across the two
+  // adjacent layers, approximating the wider NDR via without access
+  // to the per-NDR via shapes.
   const double lower_layer_cost
       = layer_index < static_cast<int>(net_costs.size())
             ? net_costs[layer_index]
@@ -948,10 +943,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
   for (int direction = 0; direction < 2; direction++) {
     std::vector<int> layer_indices;
     CostT unit_length_short_cost = std::numeric_limits<CostT>::max();
-    // Aggregate via max across the direction's layers: gives the
-    // strongest steering the 2D maze can express without per-layer
-    // information. Stays at 1.0 when `net_costs` is empty or when
-    // no in-direction layer has a factor > 1.
+    // `net_factor` aggregates per-direction NDR via max.
     double net_factor = 1.0;
     for (int layer_index = constants_.min_routing_layer;
          layer_index < getNumLayers();
@@ -965,10 +957,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
         }
       }
     }
-    // `ndr_active` is loop-invariant across (x, y); hoist the
-    // dispatch out so the default path skips the max-per-layer
-    // tracking entirely and the NDR path skips the unused demand
-    // sum.
+    // Hoist the NDR/default branch out of the (x, y) loop.
     const bool ndr_active = net_factor > 1.0;
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
@@ -979,16 +968,9 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
         CapacityT capacity = 0;
         CapacityT effective_resource;
         if (ndr_active) {
-          // NDR path: gate on best-single-layer headroom minus
-          // `(net_factor - 1)`. An NDR wire can't span 3D layers,
-          // so the summed `(capacity - demand)` overstates what an
-          // NDR net can actually use when the per-layer distribution
-          // is uneven (e.g. 3 free tracks across 3 layers, 1 each,
-          // is unusable for a 2x-wide NDR). The logistic threshold
-          // lands at `max_per_layer_resource == net_factor - 1`: at
-          // most "barely fits", matching the physical constraint
-          // without over-amplifying detours when headroom is
-          // abundant.
+          // An NDR wire can't span 3D layers: gate on best-single-
+          // layer headroom so an edge whose summed slack hides
+          // "spread thin" per-layer capacity reads as unusable.
           CapacityT max_per_layer_resource
               = std::numeric_limits<CapacityT>::lowest();
           for (int layer_index : layer_indices) {

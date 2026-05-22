@@ -285,19 +285,14 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   grid_graph_->extractWireCostView(wire_cost_view);
   sortNetIndices(net_indices);
   SparseGrid grid(10, 10, 0, 0);
-  // Hoisted out of the loop so the per-net NDR view reuses storage
-  // across NDR nets; `extractWireCostView` resizes only on shape
-  // change. Stays empty when no NDR net hits the maze.
+  // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
     }
-    // Default nets share `wire_cost_view`. NDR nets need a per-net
-    // view because the default surface is NDR-blind: it would steer
-    // an NDR-2x net into the same congested tiles a default net
-    // would pick.
+    // NDR nets need a per-net cost view; the shared one is NDR-blind.
     if (net->hasNdr()) {
       grid_graph_->extractWireCostView(ndr_wire_cost_view, net->getNdrCosts());
     }
@@ -467,8 +462,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   constexpr double kMultiplierStep = 1.0;
   constexpr double kMultiplierCap = 6.0;
   constexpr double kCongestionThreshold = 0.9;
-  // Number of consecutive iterations staying in a congestion region
-  // that takes an NDR net to apply soft NDR.
+  // Iterations in the congested set before an NDR net is demoted.
   constexpr int kSoftNdrStreakThreshold = 2;
 
   std::unordered_map<int, int> ndr_congested_streak;
@@ -481,9 +475,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       break;
     }
 
-    // Soft-NDR escape valve: track NDR nets that stay congested
-    // across consecutive iterations and demote them once the streak
-    // exceeds `kSoftNdrStreakThreshold`.
+    // Soft-NDR escape valve.
     std::unordered_set<int> currently_congested(net_indices.begin(),
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
