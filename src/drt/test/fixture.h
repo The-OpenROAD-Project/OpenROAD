@@ -14,10 +14,10 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "src/drt/src/global.h"
 #include "utl/Logger.h"
 
 namespace odb {

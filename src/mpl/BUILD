@@ -41,6 +41,9 @@ cc_library(
         "src/pusher.h",
         "src/shapes.h",
     ],
+    includes = [
+        "src",
+    ],
     deps = [
         "//src/odb/src/db",
         "//src/utl",
@@ -55,6 +58,9 @@ cc_library(
     hdrs = [
         "src/MplObserver.h",
         "src/clusterEngine.h",
+    ],
+    includes = [
+        "src",
     ],
     visibility = ["//visibility:private"],
     deps = [
