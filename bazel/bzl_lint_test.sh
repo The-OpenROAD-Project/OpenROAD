@@ -11,8 +11,6 @@ TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 [ -L MODULE.bazel ] || { echo "MODULE.bazel missing from runfiles" >&2; exit 1; }
 WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
-# `git ls-files` skips submodule contents (src/sta, third-party/abc), so
-# we never try to reformat files owned by another repo.
 # Explicit -mode=check overrides the repo-root .buildifier.json default.
 git ls-files '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' -z \
     | xargs -0 "$TOOL" -mode=check -lint=warn

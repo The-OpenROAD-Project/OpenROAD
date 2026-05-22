@@ -11,7 +11,6 @@ TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 [ -L MODULE.bazel ] || { echo "MODULE.bazel missing from runfiles" >&2; exit 1; }
 WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
-# `git ls-files` skips submodule contents (src/sta, third-party/abc).
 # Explicit -mode=check -lint=off separates format errors from lint warnings,
 # and overrides the repo-root .buildifier.json default (mode: fix).
 git ls-files '*.bazel' '*.bzl' '**/BUILD' 'BUILD' '**/WORKSPACE' 'WORKSPACE' -z \
