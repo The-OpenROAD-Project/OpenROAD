@@ -101,12 +101,17 @@ genrule(
     name = "gen_version_info",
     srcs = ["source/util/VersionInfo.cpp.in"],
     outs = ["VersionInfo.cpp"],
+    # Version components must match the SLANG_COMMIT pinned in
+    # MODULE.bazel. Slang's cmake/gitversion.cmake derives PATCH from
+    # `git describe --tags` (commits since the most recent tag) and HASH
+    # from the same describe output. At commit f04e8156 the closest tag
+    # is v10.0 with 150 commits since.
     cmd = """
         sed \
-            -e 's/@SLANG_VERSION_MAJOR@/9/g' \
-            -e 's/@SLANG_VERSION_MINOR@/1/g' \
-            -e 's/@SLANG_VERSION_PATCH@/176/g' \
-            -e 's/@SLANG_VERSION_HASH@/03dfa2131/g' \
+            -e 's/@SLANG_VERSION_MAJOR@/10/g' \
+            -e 's/@SLANG_VERSION_MINOR@/0/g' \
+            -e 's/@SLANG_VERSION_PATCH@/150/g' \
+            -e 's/@SLANG_VERSION_HASH@/f04e81565/g' \
             $(location source/util/VersionInfo.cpp.in) > $@
     """,
 )
