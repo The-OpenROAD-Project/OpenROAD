@@ -61,6 +61,7 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
@@ -218,12 +219,6 @@ orfs.default(
 # --- External archives ---
 
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-new_local_repository(
-    name = "fmt",
-    build_file = "//third-party/slang-elab/third_party:fmt.BUILD",
-    path = "third-party/slang-elab/third_party/fmt",
-)
 
 new_local_repository(
     name = "slang",
