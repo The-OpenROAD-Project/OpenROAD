@@ -1,6 +1,20 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 
+# Version components substituted into source/util/VersionInfo.cpp.in (see
+# the gen_version_info genrule below). These must match the SLANG_COMMIT
+# pinned in MODULE.bazel: slang's cmake/gitversion.cmake derives PATCH
+# from `git describe --tags` (commits since the most recent tag) and HASH
+# from the same describe output. At commit f04e8156 the closest tag is
+# v10.0 with 150 commits since, hence:
+SLANG_VERSION_MAJOR = "10"
+
+SLANG_VERSION_MINOR = "0"
+
+SLANG_VERSION_PATCH = "150"
+
+SLANG_VERSION_HASH = "f04e81565"
+
 # ---------------------------------------------------------------------------
 # Code generation scripts
 # ---------------------------------------------------------------------------
@@ -101,19 +115,19 @@ genrule(
     name = "gen_version_info",
     srcs = ["source/util/VersionInfo.cpp.in"],
     outs = ["VersionInfo.cpp"],
-    # Version components must match the SLANG_COMMIT pinned in
-    # MODULE.bazel. Slang's cmake/gitversion.cmake derives PATCH from
-    # `git describe --tags` (commits since the most recent tag) and HASH
-    # from the same describe output. At commit f04e8156 the closest tag
-    # is v10.0 with 150 commits since.
     cmd = """
         sed \
-            -e 's/@SLANG_VERSION_MAJOR@/10/g' \
-            -e 's/@SLANG_VERSION_MINOR@/0/g' \
-            -e 's/@SLANG_VERSION_PATCH@/150/g' \
-            -e 's/@SLANG_VERSION_HASH@/f04e81565/g' \
+            -e 's/@SLANG_VERSION_MAJOR@/{major}/g' \
+            -e 's/@SLANG_VERSION_MINOR@/{minor}/g' \
+            -e 's/@SLANG_VERSION_PATCH@/{patch}/g' \
+            -e 's/@SLANG_VERSION_HASH@/{hash}/g' \
             $(location source/util/VersionInfo.cpp.in) > $@
-    """,
+    """.format(
+        hash = SLANG_VERSION_HASH,
+        major = SLANG_VERSION_MAJOR,
+        minor = SLANG_VERSION_MINOR,
+        patch = SLANG_VERSION_PATCH,
+    ),
 )
 
 # ---------------------------------------------------------------------------
@@ -341,7 +355,7 @@ cc_library(
         "source",
     ],
     linkopts = select({
-        "@platforms//os:linux": ["-lpthread"],
+        "@platforms//os:linux": ["-pthread"],
         "//conditions:default": [],
     }),
     local_defines = ["SLANG_USE_THREADS"],
