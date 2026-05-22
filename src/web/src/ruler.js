@@ -246,7 +246,7 @@ export class RulerManager {
                 point_threshold: pointThreshold,
                 horizontal: !!horizontal,
                 vertical: !!vertical,
-                visible_layers: [...app.visibleLayers],
+                visible_layers: [...app.visibleLayerNames],
                 ...vf,
             });
 
