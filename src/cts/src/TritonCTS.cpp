@@ -1837,8 +1837,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
 {
   int ndrAppliedNets = 0;
 
-  debugPrint(
-      logger_, CTS, "ndr", 1, "Applying NDR to clock tree levels: ");
+  debugPrint(logger_, CTS, "ndr", 1, "Applying NDR to clock tree levels: ");
   for (int level : targetLevels) {
     debugPrint(logger_, CTS, "ndr", 1, "{} ", level);
   }
