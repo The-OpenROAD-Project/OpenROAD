@@ -2,6 +2,27 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+# End-to-end repro for a SIGSEGV in syn::map_combinationals (the post-ABC
+# mapper introduced in #10473). Runs the openroad binary against a 2-input
+# AND Tcl repro and expects exit 0 with "OK" on stdout. Currently fails;
+# tagged manual so CI does not turn red on the unfixed bug.
+sh_test(
+    name = "synthesize_minimal_and_sigsegv_test",
+    srcs = ["run_openroad_repro.sh"],
+    args = [
+        "$(rootpath //:openroad)",
+        "$(rootpath synthesize_minimal_and.tcl)",
+    ],
+    data = [
+        "synthesize_minimal_and.sv",
+        "synthesize_minimal_and.tcl",
+        "//:openroad",
+        "//test:regression_resources",
+    ],
+    tags = ["manual"],
+)
 
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
