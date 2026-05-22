@@ -13,4 +13,8 @@
 set -euo pipefail
 OPENROAD_BIN="$1"
 TCL="$2"
-exec "./${OPENROAD_BIN}" -no_splash -no_init -exit "./${TCL}"
+# The "./" prefix on the binary is needed so exec resolves it relative
+# to cwd rather than PATH-searching; the Tcl script is just a file
+# argument and goes through openroad's own open(), which handles both
+# relative-to-cwd and absolute paths without it.
+exec "./${OPENROAD_BIN}" -no_splash -no_init -exit "${TCL}"
