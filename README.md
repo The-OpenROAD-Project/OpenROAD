@@ -290,7 +290,7 @@ differently:
   and the nested `.gitmodules` files under each submodule). Some of
   these submodules look like forks but are really just pinned upstream
   trees; they exist so CMake has a directory to point at. These are
-  "faux forks" — kept as submodules because that is what CMake can
+  upstream mirrors — kept as submodules because that is what CMake can
   consume.
 - **Bazel**: prefer the idiomatic options, in order:
   1. A module from the [Bazel Central Registry](https://registry.bazel.build/)
