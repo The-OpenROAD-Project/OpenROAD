@@ -19,7 +19,7 @@ read_liberty test/asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz
 read_liberty test/asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib
 
 sv_elaborate -D SYNTHESIS --top synthesize_minimal_and --std=1364-2005 \
-    src/syn/test/synthesize_minimal_and.sv
+  src/syn/test/synthesize_minimal_and.sv
 syn::stats
 synthesize
 
