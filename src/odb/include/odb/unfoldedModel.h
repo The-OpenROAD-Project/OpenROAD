@@ -84,6 +84,11 @@ struct UnfoldedChip
   Cuboid cuboid;
   dbTransform transform;
 
+  // True when the master chip has no detailed routing (blackbox stage).
+  // The routing graph adds a complete clique across all regions of a blackbox
+  // chip so they are treated as mutually reachable.
+  bool is_blackbox = false;
+
   std::deque<UnfoldedRegion> regions;
 
   std::unordered_map<dbChipRegionInst*, UnfoldedRegion*> region_map;

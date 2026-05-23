@@ -7267,6 +7267,10 @@ class dbChip : public dbObject
 
   bool isTsv() const;
 
+  void setBlackbox(bool blackbox);
+
+  bool isBlackbox() const;
+
   dbSet<dbChipRegion> getChipRegions() const;
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;

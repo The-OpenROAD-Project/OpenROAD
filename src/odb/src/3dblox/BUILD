@@ -26,6 +26,9 @@ cc_library(
         "//src/odb/src/lefout",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@boost.algorithm",
+        "@boost.graph",
+        "@boost.range",
         "@yaml-cpp",
     ],
 )

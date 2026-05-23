@@ -14,6 +14,7 @@ add_library(3dblox
   dbxWriter.cpp
   verilogWriter.cpp
   3dblox.cpp
+  routingGraph.cpp
   checker.cpp
 )
 
@@ -23,6 +24,7 @@ target_link_libraries(3dblox
     utl_lib
     yaml-cpp
     OpenSTA
+    Boost::headers
 )
 
 target_include_directories(3dblox

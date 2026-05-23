@@ -118,6 +118,12 @@
       "schema": "kSchemaChipExtended"
     },
     {
+      "name": "blackbox_",
+      "type": "bool",
+      "default": "false",
+      "schema": "kSchemaChipBlackbox"
+    },
+    {
       "name": "top_",
       "type": "dbId<_dbBlock>",
       "flags": ["private", "cmpgt"],
