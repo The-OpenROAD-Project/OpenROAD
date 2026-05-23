@@ -83,5 +83,4 @@ cc_library(
         "//src/utl",
         "@googletest//:gtest",
     ],
-    alwayslink = True,
 )

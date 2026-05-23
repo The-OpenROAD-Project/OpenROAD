@@ -337,12 +337,12 @@ cc_test(
     ],
     data = [
         "//src/odb/test:regression_resources",
+        "//test:nangate45_data",
     ],
     deps = [
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/tst",
-        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -355,12 +355,12 @@ cc_test(
     ],
     data = [
         "//src/odb/test:regression_resources",
+        "//test:nangate45_data",
     ],
     deps = [
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/tst",
-        "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
