@@ -10,6 +10,25 @@ package(
     features = ["layering_check"],
 )
 
+# Public API headers. No dependencies on anything inside src/dst/, so this
+# target sits at the bottom of the dst dependency graph and both
+# :private_hdrs and :dst can depend on it without forming a cycle.
+cc_library(
+    name = "dst_hdrs",
+    hdrs = [
+        "include/dst/BalancerJobDescription.h",
+        "include/dst/BroadcastJobDescription.h",
+        "include/dst/Distributed.h",
+        "include/dst/JobCallBack.h",
+        "include/dst/JobMessage.h",
+    ],
+    includes = ["include"],
+    deps = [
+        "@boost.asio",
+        "@boost.serialization",
+    ],
+)
+
 cc_library(
     name = "private_hdrs",
     hdrs = [
@@ -21,6 +40,7 @@ cc_library(
     includes = ["src"],
     visibility = ["//src/dst:__subpackages__"],
     deps = [
+        ":dst_hdrs",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
@@ -42,6 +62,9 @@ cc_library(
         "src/Worker.cc",
         "src/WorkerConnection.cc",
     ],
+    # The public hdrs are also listed in :dst_hdrs; they are duplicated here
+    # so that external consumers depending on //src/dst continue to satisfy
+    # layering_check without needing a separate //src/dst:dst_hdrs dep.
     hdrs = [
         "include/dst/BalancerJobDescription.h",
         "include/dst/BroadcastJobDescription.h",
@@ -49,10 +72,9 @@ cc_library(
         "include/dst/JobCallBack.h",
         "include/dst/JobMessage.h",
     ],
-    includes = [
-        "include",
-    ],
+    includes = ["include"],
     deps = [
+        ":dst_hdrs",
         ":private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
