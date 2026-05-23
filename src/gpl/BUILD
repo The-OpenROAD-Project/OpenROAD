@@ -14,6 +14,15 @@ package(
     features = ["layering_check"],
 )
 
+# Public API headers. Leaf target with no deps on anything inside src/gpl/,
+# so :gpl_private_hdrs can depend on it without forming a cycle back through
+# :gpl. The same hdrs are also listed in :gpl for layering_check.
+cc_library(
+    name = "gpl_hdrs",
+    hdrs = ["include/gpl/Replace.h"],
+    includes = ["include"],
+)
+
 # Headers owned by :gpl but also consumed by :ui. Kept package-private so
 # nothing outside //src/gpl can depend on them.
 cc_library(
@@ -29,6 +38,7 @@ cc_library(
     includes = ["src"],
     visibility = ["//src/gpl:__subpackages__"],
     deps = [
+        ":gpl_hdrs",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.unordered",
@@ -70,6 +80,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":gpl_hdrs",
         ":gpl_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",

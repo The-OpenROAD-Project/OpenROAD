@@ -12,6 +12,30 @@ package(
     features = ["layering_check"],
 )
 
+# Public API headers. Leaf target with no deps on anything inside src/rsz/,
+# so :private_hdrs can depend on it without forming a cycle back through
+# :rsz. The same hdrs are also listed in :rsz for layering_check.
+cc_library(
+    name = "rsz_hdrs",
+    hdrs = [
+        "include/rsz/OdbCallBack.hh",
+        "include/rsz/Resizer.hh",
+    ],
+    includes = ["include"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:SpefWriter",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
 cc_library(
     name = "private_hdrs",
     hdrs = [
@@ -37,6 +61,7 @@ cc_library(
     ],
     visibility = ["//src/rsz:__subpackages__"],
     deps = [
+        ":rsz_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
@@ -161,6 +186,7 @@ cc_library(
     linkopts = ["-pthread"],
     deps = [
         ":private_hdrs",
+        ":rsz_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
