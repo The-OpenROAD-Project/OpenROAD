@@ -677,6 +677,29 @@ html, body {
     pointer-events: none;
 }
 
+/* Selectability checkbox (second column, next to the visibility checkbox).
+ * Small left margin gives a clear visual separation between the two columns;
+ * disabled state (visibility off) dims the checkbox. */
+.display-controls .vis-sel-cb {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+.display-controls .vis-sel-cb.vis-sel-spacer {
+    /* Layout-only placeholder when a row has no selectability checkbox. */
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    visibility: hidden;
+}
+.display-controls .vis-sel-cb:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.display-controls label.vis-sel-disabled {
+    /* Visually dim labels whose selectability is disabled by visibility. */
+    color: var(--fg-muted);
+}
+
 /* Layer context menu */
 .context-menu {
     position: fixed;
@@ -725,6 +748,10 @@ html, body {
 }
 .tcl-error {
     color: var(--error-text);
+}
+.tcl-static-notice {
+    color: var(--fg-muted);
+    font-style: italic;
 }
 .tcl-input-row {
     display: flex;
@@ -906,10 +933,10 @@ html, body {
     color: var(--fg-muted);
 }
 
-/* Debug-graphics Continue button (fixed bottom-right, hidden until paused) */
+/* Debug-graphics Continue button (fixed top-right, hidden until paused) */
 .debug-continue-btn {
     position: fixed;
-    bottom: 12px;
+    top: 12px;
     right: 12px;
     z-index: 10000;
     padding: 8px 16px;
@@ -1173,6 +1200,56 @@ html, body {
     white-space: nowrap;
     z-index: 100;
     display: none;
+}
+
+/* ─── 3D Viewer Widget ───────────────────────────────────────────────── */
+
+.three-d-viewer-widget {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: var(--bg-panel);
+}
+
+.three-d-canvas-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.three-d-tooltip {
+    position: absolute;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--fg-primary);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+    display: none;
+}
+
+.three-d-options {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--fg-primary);
+    user-select: none;
+}
+
+.three-d-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 }
 
 /* ─── Charts Widget ──────────────────────────────────────────────────── */
@@ -1503,4 +1580,14 @@ html[data-theme="dark"] .schematic-widget svg {
 }
 .drc-error {
     color: var(--error);
+}
+
+/* DRC highlight flash animation — pulses tile opacity to mimic
+   the Qt GUI's yellow blinking highlight on visible markers. */
+@keyframes drc-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.drc-flashing .leaflet-tile-pane {
+    animation: drc-pulse 0.4s ease-in-out 3;
 }

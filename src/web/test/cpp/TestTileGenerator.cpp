@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include <boost/json/object.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/serialize.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -12,6 +9,9 @@
 #include <string_view>
 #include <vector>
 
+#include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -961,6 +961,119 @@ TEST_F(RowRenderingTest, RowsDefaultOff)
 //------------------------------------------------------------------------------
 // serializeTechResponse — exercises the contract main.js relies on for the
 // document title (techData.block_name).
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// Selectability — parallel column added to the display panel, mirroring the
+// Qt GUI's selectability column.  Picks (selectAt) require both visible AND
+// selectable, but rendering ignores the selectability flags.
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, SelectableDefaultAllTrue)
+{
+  TileVisibility vis;
+  EXPECT_TRUE(vis.stdcells_selectable);
+  EXPECT_TRUE(vis.macros_selectable);
+  EXPECT_TRUE(vis.net_signal_selectable);
+  EXPECT_TRUE(vis.net_power_selectable);
+  EXPECT_TRUE(vis.net_clock_selectable);
+  EXPECT_TRUE(vis.pins_selectable);
+  EXPECT_TRUE(vis.inst_pins_selectable);
+  EXPECT_TRUE(vis.placement_blockages_selectable);
+  EXPECT_TRUE(vis.routing_obstructions_selectable);
+  EXPECT_FALSE(vis.has_selectable_layers);
+}
+
+TEST_F(TileGeneratorTest, ParseFromJsonReadsSelectableKeys)
+{
+  TileVisibility vis;
+  vis.parseFromJson(
+      parseObj(R"({"s_stdcells":false,"s_macros":true,"s_net_signal":false,)"
+               R"("s_pins":false,"s_inst_pins":false,)"
+               R"("selectable_layers":["metal1","metal2"]})"));
+  EXPECT_FALSE(vis.stdcells_selectable);
+  EXPECT_TRUE(vis.macros_selectable);
+  EXPECT_FALSE(vis.net_signal_selectable);
+  EXPECT_FALSE(vis.pins_selectable);
+  EXPECT_FALSE(vis.inst_pins_selectable);
+  EXPECT_TRUE(vis.has_selectable_layers);
+  EXPECT_TRUE(vis.isLayerSelectable("metal1"));
+  EXPECT_TRUE(vis.isLayerSelectable("metal2"));
+  EXPECT_FALSE(vis.isLayerSelectable("metal3"));
+}
+
+TEST_F(TileGeneratorTest, IsNetSelectableRespectsSignalType)
+{
+  odb::dbNet* sig_net = odb::dbNet::create(block_, "sig");
+  sig_net->setSigType(odb::dbSigType::SIGNAL);
+  odb::dbNet* pwr_net = odb::dbNet::create(block_, "vdd");
+  pwr_net->setSigType(odb::dbSigType::POWER);
+
+  TileVisibility vis;
+  EXPECT_TRUE(vis.isNetSelectable(sig_net));
+  EXPECT_TRUE(vis.isNetSelectable(pwr_net));
+
+  vis.net_signal_selectable = false;
+  EXPECT_FALSE(vis.isNetSelectable(sig_net));
+  EXPECT_TRUE(vis.isNetSelectable(pwr_net));
+}
+
+TEST_F(TileGeneratorTest, IsLayerSelectableDefaultsTrueWhenUnspecified)
+{
+  TileVisibility vis;
+  // No selectable_layers list ⇒ every layer is selectable.
+  EXPECT_TRUE(vis.isLayerSelectable("metal1"));
+  EXPECT_TRUE(vis.isLayerSelectable("anything"));
+}
+
+TEST_F(TileGeneratorTest, SelectAtGatesInstancesBySelectability)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  // Default visibility + selectability ⇒ the inst is picked.
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  EXPECT_EQ(results.size(), 1u);
+
+  // Visible but not selectable ⇒ no pick.
+  TileVisibility vis_no_sel;
+  vis_no_sel.stdcells_selectable = false;
+  auto results_no_sel = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis_no_sel);
+  EXPECT_EQ(results_no_sel.size(), 0u);
+
+  // Confirm the path-through-parseFromJson works too.
+  TileVisibility vis_json;
+  vis_json.parseFromJson(parseObj(R"({"s_stdcells":false})"));
+  auto results_json = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis_json);
+  EXPECT_EQ(results_json.size(), 0u);
+}
+
+TEST_F(TileGeneratorTest, SelectAtGatesInstancesByLayerSelectability)
+{
+  // Layer selectability does NOT gate instance picks (insts aren't on a
+  // layer) — only routing-shape picks.  Confirm an inst still picks when
+  // the selectable_layers list is non-empty but doesn't list anything.
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
+  EXPECT_TRUE(vis.has_selectable_layers);
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  EXPECT_EQ(results.size(), 1u);
+}
+
 //------------------------------------------------------------------------------
 
 TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)

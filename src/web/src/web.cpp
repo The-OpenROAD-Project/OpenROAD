@@ -37,6 +37,8 @@
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
@@ -116,7 +118,9 @@ static http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
-class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
+                         public odb::dbChipCallBackObj,
+                         public odb::dbBlockCallBackObj
 {
   websocket::stream<beast::tcp_stream> websocket_;
   beast::flat_buffer buffer_;
@@ -172,6 +176,42 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void queue_response(const WebSocketResponse& resp,
                       std::function<void()> on_complete = {});
   void do_write();
+
+  void inDbMarkerCategoryCreate(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCategoryDestroy(odb::dbMarkerCategory*) override
+  {
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerCreate(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
+
+  void inDbMarkerDestroy(odb::dbMarker*) override
+  {
+    WebSocketResponse resp;
+    resp.type = WebSocketResponse::kJson;
+    const std::string json = R"({"type":"drcUpdated"})";
+    resp.payload.assign(json.begin(), json.end());
+    queue_response(resp);
+  }
 };
 
 WebSocketSession::WebSocketSession(
@@ -196,6 +236,17 @@ WebSocketSession::WebSocketSession(
       generator_(std::move(generator)),
       viewer_hook_(viewer_hook)
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::addOwner(chip);
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::addOwner(block);
+      }
+    }
+  }
+
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
@@ -287,6 +338,16 @@ WebSocketSession::WebSocketSession(
 
 WebSocketSession::~WebSocketSession()
 {
+  if (generator_) {
+    odb::dbChip* chip = generator_->getChip();
+    if (chip) {
+      odb::dbChipCallBackObj::removeOwner();
+      odb::dbBlock* block = chip->getBlock();
+      if (block) {
+        odb::dbBlockCallBackObj::removeOwner();
+      }
+    }
+  }
   if (viewer_hook_ != nullptr && viewer_token_ != 0) {
     viewer_hook_->sessions().remove(viewer_token_);
   }
@@ -377,9 +438,26 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
+    // — whose top chip is HIER and has no dbBlock — still register the
+    // chip observer and send the refresh notification.
+    if (!self->generator_->getChip()) {
       return;
     }
+
+    // Re-register chip/block observer if the chip was created after session
+    // construction (e.g. read_def ran after browser connected).
+    if (!self->odb::dbChipCallBackObj::hasOwner()) {
+      odb::dbChip* chip = self->generator_->getChip();
+      if (chip) {
+        self->odb::dbChipCallBackObj::addOwner(chip);
+        odb::dbBlock* block = chip->getBlock();
+        if (block && !self->odb::dbBlockCallBackObj::hasOwner()) {
+          self->odb::dbBlockCallBackObj::addOwner(block);
+        }
+      }
+    }
+
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
     resp.id = 0;
@@ -1158,6 +1236,7 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>

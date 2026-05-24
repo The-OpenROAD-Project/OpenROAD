@@ -101,6 +101,8 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    congestion_markers_cugr
+    congestion_report_file_cugr
     snapshot_batched_bus_route
     snapshot_batched_incremental_state
     snapshot_batched_smoke

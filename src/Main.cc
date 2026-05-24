@@ -18,8 +18,11 @@
 #include <string>
 #include <system_error>
 
+#include "absl/base/no_destructor.h"
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
+#include "tclDecls.h"
+
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -74,6 +77,7 @@ using std::string;
   X(rmp)                                 \
   X(cgt)                                 \
   X(stt)                                 \
+  X(syn)                                 \
   X(psm)                                 \
   X(pdn)                                 \
   X(rsz)                                 \
@@ -155,6 +159,7 @@ static void initPython()
 #undef X
 #undef FOREACH_TOOL
 #undef FOREACH_TOOL_WITHOUT_OPENROAD
+#undef FOREACH_SYN_PYTHON_TOOL
 
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
@@ -182,16 +187,16 @@ static volatile sig_atomic_t fatal_error_in_progress = 0;
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
-//
-// Use a wrapper struct to ensure destruction ordering - design
-// then tech (members are destroyed in reverse order).
+// Use a wrapper struct to hold the objects. They are wrapped in
+// absl::NoDestructor below to intentionally leak them and avoid
+// static destruction order issues.
 struct TechAndDesign
 {
   std::unique_ptr<ord::Tech> tech;
   std::unique_ptr<ord::Design> design;
 };
 
-static TechAndDesign the_tech_and_design;
+static absl::NoDestructor<TechAndDesign> the_tech_and_design;
 
 static void handler(int sig)
 {
@@ -265,10 +270,10 @@ int main(int argc, char* argv[])
     // Setup the app with tcl
     auto* interp = Tcl_CreateInterp();
     Tcl_Init(interp);
-    the_tech_and_design.tech = std::make_unique<ord::Tech>(interp);
-    the_tech_and_design.design
-        = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
-    ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
+    the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
+    the_tech_and_design->design
+        = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
+    ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
     const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
     ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
     if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash")) {
@@ -320,20 +325,12 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-#ifdef ENABLE_READLINE
-static int tclOrdReadlineInit(Tcl_Interp* interp)
+static int tclOrdReplInit(Tcl_Interp* interp)
 {
-  std::array<const char*, 2> readline_cmds
-      = {"ord::setup_tclreadline", "::tclreadline::Loop"};
-
-  for (auto cmd : readline_cmds) {
-    if (TCL_ERROR == Tcl_Eval(interp, cmd)) {
-      return TCL_ERROR;
-    }
-  }
-  return TCL_OK;
+  // SetupTclReadlineLibrary has already registered ::tclreadline::Loop
+  // (linenoise-backed REPL).  Hand control over; the loop never returns.
+  return Tcl_Eval(interp, "::tclreadline::Loop");
 }
-#endif
 
 // Tcl init executed inside Tcl_Main.
 static int tclAppInit(int& argc,
@@ -373,10 +370,11 @@ static int tclAppInit(int& argc,
     }
 #endif
 
-    if (!exit_after_cmd_file) {
-      if (ord::SetupTclReadlineLibrary(interp) == TCL_ERROR) {
-        printf("Failed to load tclreadline\n");
-      }
+    // Register the ::tclreadline namespace shim unconditionally: it's
+    // cheap, and Tcl scripts (including non-interactive ones) may probe
+    // [info exists tclreadline::version] or call ::tclreadline::complete.
+    if (ord::SetupTclReadlineLibrary(interp) == TCL_ERROR) {
+      printf("Failed to set up tclreadline shim\n");
     }
 
     ord::initOpenRoad(
@@ -452,7 +450,7 @@ static int tclAppInit(int& argc,
 
     if (argc > 2 || (argc > 1 && argv[1][0] == '-')) {
       showUsage(argv[0], init_filename);
-      exit(1);
+      Tcl_Exit(1);
     } else {
       if (argc == 2) {
         char* cmd_file = argv[1];
@@ -461,7 +459,7 @@ static int tclAppInit(int& argc,
             int result = sourceTclFile(cmd_file, false, false, interp);
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
-              exit(exit_code);
+              Tcl_Exit(exit_code);
             }
           } else {
             // need to delay loading of file until after GUI is completed
@@ -485,35 +483,46 @@ static int tclAppInit(int& argc,
       // real process exit now from the main thread (worker threads are
       // already joined by stop()).
       if (server->exitRequested()) {
-        exit(EXIT_SUCCESS);
+        Tcl_Exit(EXIT_SUCCESS);
       }
     }
   }
-#ifdef ENABLE_READLINE
-  // Initialize readline unless the Qt GUI is active (it has its own
-  // script widget).  The web viewer's headless mode still needs the
+  // Enter the linenoise REPL unless the Qt GUI is active (it has its
+  // own script widget).  The web viewer's headless mode still needs the
   // terminal prompt.
   if (!gui::Gui::hasUI() && !exit_after_cmd_file) {
-    return tclOrdReadlineInit(interp);
+    return tclOrdReplInit(interp);
   }
-#endif
   return TCL_OK;
+}
+
+[[noreturn]] static void exitTclAppInitError(Tcl_Interp* interp)
+{
+  fprintf(stderr,
+          "application-specific initialization failed: %s\n",
+          Tcl_GetStringResult(interp));
+  exit(EXIT_FAILURE);
 }
 
 int ord::tclAppInit(Tcl_Interp* interp)
 {
-  the_tech_and_design.tech = std::make_unique<ord::Tech>(interp);
-  the_tech_and_design.design
-      = std::make_unique<ord::Design>(the_tech_and_design.tech.get());
-  ord::OpenRoad::setOpenRoad(the_tech_and_design.design->getOpenRoad());
+  the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
+  the_tech_and_design->design
+      = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
+  ord::OpenRoad::setOpenRoad(the_tech_and_design->design->getOpenRoad());
 
   // This is to enable Design.i where a design arg can be
   // retrieved from the interpreter.  This is necessary for
   // cases with more than one interpreter (ie more than one Design).
   // This should replace the use of the singleton OpenRoad::openRoad().
-  Tcl_SetAssocData(interp, "design", nullptr, the_tech_and_design.design.get());
+  Tcl_SetAssocData(
+      interp, "design", nullptr, the_tech_and_design->design.get());
 
-  return ord::tclInit(interp);
+  const int result = ord::tclInit(interp);
+  if (result != TCL_OK) {
+    exitTclAppInitError(interp);
+  }
+  return TCL_OK;
 }
 
 int ord::tclInit(Tcl_Interp* interp)

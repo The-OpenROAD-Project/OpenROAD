@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -121,7 +122,7 @@ class ICeWall
                  odb::dbTechLayer* layer,
                  const odb::Rect& shape) const;
 
-  std::set<odb::dbNet*> connectByAbutment(
+  odb::PtrSet<odb::dbNet> connectByAbutment(
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
       const;
 
@@ -136,7 +137,7 @@ class ICeWall
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  std::map<odb::dbITerm*, odb::dbITerm*> routing_map_;
+  odb::PtrMap<odb::dbITerm, odb::dbITerm*> routing_map_;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;

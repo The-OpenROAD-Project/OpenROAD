@@ -17,6 +17,7 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
+    "mbff_hier",
     "mbff_orig_name",
     "nograd01",
     "simple01",
@@ -25,6 +26,7 @@ TESTS = [
     "simple01-ref",
     "simple01-skip-io",
     "simple01-td",
+    "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-uniform",
     "simple02",
@@ -105,6 +107,7 @@ PY_TESTS = [
     "simple01-ref",
     "simple01-skip-io",
     "simple01-td",
+    "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-uniform",
     "simple02",
@@ -153,7 +156,6 @@ cc_test(
         "library/test/test0.lib",
     ],
     deps = [
-        "//:openroad_lib",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
@@ -161,7 +163,7 @@ cc_test(
         "//src/est",
         "//src/gpl",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/stt",
         "//src/tst",
@@ -187,4 +189,10 @@ doc_check_test(
         "//src/gpl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+doc_check_test(
+    name = "gpl_messages_txt_check",
+    check_log = False,
+    data = ["//src/gpl:messages_txt"],
 )

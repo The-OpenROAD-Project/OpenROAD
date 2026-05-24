@@ -105,11 +105,79 @@ class GridGraph
     return graph_edges_[layer_index][x][y];
   }
 
+  CapacityT getInitialEdgeCapacity(int layer_index, int x, int y) const
+  {
+    const int direction = layer_directions_[layer_index];
+    const int perp = (direction == MetalLayer::H) ? y : x;
+    return grid_tracks_[layer_index][perp];
+  }
+
+  const std::vector<int>& getOriginalResources() const
+  {
+    return original_resources_per_layer_;
+  }
+  void computeCongestionInformation();
+  const std::vector<int>& getTotalCapacityPerLayer() const
+  {
+    return cap_per_layer_;
+  }
+  const std::vector<int>& getTotalUsagePerLayer() const
+  {
+    return usage_per_layer_;
+  }
+  const std::vector<int>& getTotalOverflowPerLayer() const
+  {
+    return overflow_per_layer_;
+  }
+  const std::vector<int>& getMaxHorizontalOverflows() const
+  {
+    return max_h_overflow_;
+  }
+  const std::vector<int>& getMaxVerticalOverflows() const
+  {
+    return max_v_overflow_;
+  }
+
   // Costs
   int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
+
+  /**
+   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   *
+   * Scales `constants_.cost_logistic_slope` and
+   * `constants_.maze_logistic_slope` wherever they are read by
+   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
+   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
+   * between iterations. The default value 1.0 leaves the cost surface
+   * unchanged.
+   *
+   * @param m New multiplier value. Must be > 0.
+   */
+  void setCostMultiplier(double m) { cost_multiplier_ = m; }
+  double getCostMultiplier() const { return cost_multiplier_; }
+
+  /**
+   * @brief Counts congested edges traversed by a routing tree.
+   *
+   * Walks the tree's wire segments and returns how many edges satisfy
+   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
+   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
+   * widens to include near-overflow ("congested but not yet
+   * overflowing") edges. Edges sitting exactly at capacity are
+   * intentionally *not* flagged — being full is not the same as being
+   * congested. Used by the RRR loop to extend the rip-up set beyond
+   * strictly-overflowed nets.
+   *
+   * @param tree      Routing tree to walk.
+   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
+   *
+   * @returns Number of tree edges meeting the predicate (>= 0).
+   */
+  int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
+                      double threshold) const;
 
   // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
@@ -123,11 +191,6 @@ class GridGraph
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
-  int checkOverflow(int layer_index,
-                    PointT u,
-                    PointT v) const;  // Check wire overflow
-  int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
-      const;  // Check routing tree overflow (Only wires are checked)
   std::string getPythonString(
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
@@ -202,7 +265,28 @@ class GridGraph
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
+  // Per-layer initial track count keyed by perpendicular index
+  // (row for H layers, column for V layers). Used to recover the
+  // pre-blockage / pre-adjustment capacity of each edge.
+  std::vector<std::vector<int>> grid_tracks_;
+  // Per-layer capacity sums captured before user-defined adjustments are
+  // applied (i.e. only blockage reductions are accounted for). Used by
+  // resource reporting so that the report can show the reduction from
+  // user adjustments analogous to FastRoute's real_cap vs cap.
+  std::vector<int> original_resources_per_layer_;
+  // Per-layer caches populated by computeCongestionInformation(). Kept
+  // valid by congestion_info_dirty_: any commit() that mutates demand
+  // marks the caches stale, so the next computeCongestionInformation()
+  // refreshes them; otherwise it returns immediately.
+  std::vector<int> cap_per_layer_;
+  std::vector<int> usage_per_layer_;
+  std::vector<int> overflow_per_layer_;
+  std::vector<int> max_h_overflow_;
+  std::vector<int> max_v_overflow_;
+  bool congestion_info_dirty_ = true;
   const Constants constants_;
+  // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
+  double cost_multiplier_ = 1.0;
 };
 
 template <typename Type>

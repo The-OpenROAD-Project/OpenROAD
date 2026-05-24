@@ -72,7 +72,7 @@ GridGraph::GridGraph(const Design* design,
   }
 
   // Init grid graph edges
-  std::vector<std::vector<int>> grid_tracks(num_layers_);
+  grid_tracks_.assign(num_layers_, std::vector<int>());
   graph_edges_.assign(num_layers_,
                       std::vector<std::vector<GraphEdge>>(
                           x_size_, std::vector<GraphEdge>(y_size_)));
@@ -81,34 +81,34 @@ GridGraph::GridGraph(const Design* design,
     const int direction = layer.getDirection();
 
     const int n_grids = gridlines_[1 - direction].size() - 1;
-    grid_tracks[layer_index].resize(n_grids);
+    grid_tracks_[layer_index].assign(n_grids, 0);
     for (size_t grid_index = 0; grid_index < n_grids; grid_index++) {
       IntervalT loc_range(gridlines_[1 - direction][grid_index],
                           gridlines_[1 - direction][grid_index + 1]);
       auto track_range = layer.rangeSearchTracks(loc_range);
       if (track_range.isValid()) {
-        grid_tracks[layer_index][grid_index] = track_range.range() + 1;
+        grid_tracks_[layer_index][grid_index] = track_range.range() + 1;
         // exclude the track on the higher gridline
         if (grid_index != n_grids - 1
             && layer.getTrackLocation(track_range.high()) == loc_range.high()) {
-          grid_tracks[layer_index][grid_index]--;
+          grid_tracks_[layer_index][grid_index]--;
         }
       } else {
-        grid_tracks[layer_index][grid_index] = 0;
+        grid_tracks_[layer_index][grid_index] = 0;
       }
     }
 
     // Initialize edges' capacity to the number of tracks
     if (direction == MetalLayer::V) {
       for (size_t x = 0; x < x_size_; x++) {
-        const CapacityT n_tracks = grid_tracks[layer_index][x];
+        const CapacityT n_tracks = grid_tracks_[layer_index][x];
         for (size_t y = 0; y + 1 < y_size_; y++) {
           graph_edges_[layer_index][x][y].capacity = n_tracks;
         }
       }
     } else {
       for (size_t y = 0; y < y_size_; y++) {
-        const CapacityT n_tracks = grid_tracks[layer_index][y];
+        const CapacityT n_tracks = grid_tracks_[layer_index][y];
         for (size_t x = 0; x + 1 < x_size_; x++) {
           graph_edges_[layer_index][x][y].capacity = n_tracks;
         }
@@ -161,10 +161,10 @@ GridGraph::GridGraph(const Design* design,
     IntervalT grid_track_range;
     for (int grid_index = 0; grid_index < n_grids; grid_index++) {
       if (grid_index == 0) {
-        grid_track_range.set(0, grid_tracks[layer_index][grid_index] - 1);
+        grid_track_range.set(0, grid_tracks_[layer_index][grid_index] - 1);
       } else {
         grid_track_range.setLow(grid_track_range.high() + 1);
-        grid_track_range.addToHigh(grid_tracks[layer_index][grid_index]);
+        grid_track_range.addToHigh(grid_tracks_[layer_index][grid_index]);
       }
       if (!grid_track_range.isValid()) {
         continue;
@@ -234,15 +234,106 @@ GridGraph::GridGraph(const Design* design,
     }
   }
 
-  // Apply user-defined capacity adjustment
+  original_resources_per_layer_.assign(num_layers_, 0);
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
-    const float adjustment = design->getLayer(layer_index).getAdjustment();
-    if (adjustment != 0.0) {
-      for (size_t x = 0; x < x_size_; x++) {
-        for (size_t y = 0; y < y_size_; y++) {
-          graph_edges_[layer_index][x][y].capacity *= (1.0 - adjustment);
+    const int direction = layer_directions_[layer_index];
+    CapacityT sum = 0;
+    if (direction == MetalLayer::H) {
+      for (int y = 0; y < y_size_; y++) {
+        for (int x = 0; x + 1 < x_size_; x++) {
+          sum += graph_edges_[layer_index][x][y].capacity;
         }
       }
+    } else {
+      for (int x = 0; x < x_size_; x++) {
+        for (int y = 0; y + 1 < y_size_; y++) {
+          sum += graph_edges_[layer_index][x][y].capacity;
+        }
+      }
+    }
+    original_resources_per_layer_[layer_index]
+        = static_cast<int>(std::round(sum));
+  }
+
+  // Apply user-defined capacity adjustment.
+  //
+  // Mirrors the floor-to-1 rule FastRoute applies in
+  // GlobalRouter::computeUserLayerAdjustments: if the edge had any
+  // capacity before the adjustment and the user did not explicitly
+  // ask for full removal (adjustment == 1.0), keep at least one
+  // usable track.
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const float adjustment = design->getLayer(layer_index).getAdjustment();
+    if (adjustment == 0.0) {
+      continue;
+    }
+    for (size_t x = 0; x < x_size_; x++) {
+      for (size_t y = 0; y < y_size_; y++) {
+        auto& edge = graph_edges_[layer_index][x][y];
+        const CapacityT orig_cap = edge.capacity;
+        edge.capacity *= (1.0 - adjustment);
+        if (orig_cap > 0.0 && adjustment != 1.0f) {
+          edge.capacity = std::max<CapacityT>(edge.capacity, 1.0);
+        }
+      }
+    }
+  }
+}
+
+void GridGraph::computeCongestionInformation()
+{
+  if (!congestion_info_dirty_) {
+    return;
+  }
+  congestion_info_dirty_ = false;
+
+  cap_per_layer_.assign(num_layers_, 0);
+  usage_per_layer_.assign(num_layers_, 0);
+  overflow_per_layer_.assign(num_layers_, 0);
+  max_h_overflow_.assign(num_layers_, 0);
+  max_v_overflow_.assign(num_layers_, 0);
+
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const int direction = layer_directions_[layer_index];
+    CapacityT cap_sum = 0;
+    CapacityT usage_sum = 0;
+    CapacityT overflow_sum = 0;
+    CapacityT max_overflow = 0;
+
+    auto accumulate = [&](int x, int y) {
+      const auto& edge = graph_edges_[layer_index][x][y];
+      cap_sum += edge.capacity;
+      usage_sum += edge.demand;
+      const CapacityT overflow = edge.demand - edge.capacity;
+      if (overflow > 0) {
+        overflow_sum += overflow;
+        max_overflow = std::max(max_overflow, overflow);
+      }
+    };
+
+    if (direction == MetalLayer::H) {
+      for (int y = 0; y < y_size_; y++) {
+        for (int x = 0; x + 1 < x_size_; x++) {
+          accumulate(x, y);
+        }
+      }
+    } else {
+      for (int x = 0; x < x_size_; x++) {
+        for (int y = 0; y + 1 < y_size_; y++) {
+          accumulate(x, y);
+        }
+      }
+    }
+
+    cap_per_layer_[layer_index] = static_cast<int>(std::round(cap_sum));
+    usage_per_layer_[layer_index] = static_cast<int>(std::round(usage_sum));
+    overflow_per_layer_[layer_index]
+        = static_cast<int>(std::round(overflow_sum));
+    const int max_overflow_int = static_cast<int>(std::round(max_overflow));
+    if (direction == MetalLayer::H) {
+      max_h_overflow_[layer_index] = max_overflow_int;
+    } else {
+      max_v_overflow_[layer_index] = max_overflow_int;
     }
   }
 }
@@ -313,9 +404,10 @@ CostT GridGraph::getWireCost(const int layer_index,
   const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demand_length * unit_length_wire_cost_;
   cost += demand_length * unit_length_short_costs_[layer_index]
-          * (edge.capacity < 1.0 ? 1.0
-                                 : logistic(edge.capacity - edge.demand,
-                                            constants_.cost_logistic_slope));
+          * (edge.capacity < 1.0
+                 ? 1.0
+                 : logistic(edge.capacity - edge.demand,
+                            constants_.cost_logistic_slope * cost_multiplier_));
   return cost;
 }
 
@@ -573,6 +665,7 @@ void GridGraph::commit(const int layer_index,
                        const CapacityT demand)
 {
   graph_edges_[layer_index][lower.x()][lower.y()].demand += demand;
+  congestion_info_dirty_ = true;
 }
 
 void GridGraph::commitWire(const int layer_index,
@@ -681,47 +774,8 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
   });
 }
 
-int GridGraph::checkOverflow(const int layer_index,
-                             const PointT u,
-                             const PointT v) const
-{
-  int num = 0;
-  const int direction = layer_directions_[layer_index];
-  if (direction == MetalLayer::H) {
-    if (u.y() != v.y()) {
-      logger_->error(utl::GRT,
-                     1254,
-                     "Horizontal segment endpoints have different y "
-                     "coordinates: {} != {}.",
-                     u.y(),
-                     v.y());
-    }
-    const auto [l, h] = std::minmax({u.x(), v.x()});
-    for (int x = l; x < h; x++) {
-      if (checkOverflow(layer_index, x, u.y())) {
-        num++;
-      }
-    }
-  } else {
-    if (u.x() != v.x()) {
-      logger_->error(
-          utl::GRT,
-          1255,
-          "Vertical segment endpoints have different x coordinates: {} != {}.",
-          u.x(),
-          v.x());
-    }
-    const auto [l, h] = std::minmax({u.y(), v.y()});
-    for (int y = l; y < h; y++) {
-      if (checkOverflow(layer_index, u.x(), y)) {
-        num++;
-      }
-    }
-  }
-  return num;
-}
-
-int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
+int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
+                               const double threshold) const
 {
   if (!tree) {
     return 0;
@@ -729,10 +783,22 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
   int num = 0;
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
-      // Only check wires
-      if (node->getLayerIdx() == child->getLayerIdx()) {
-        num += checkOverflow(
-            node->getLayerIdx(), (PointT) *node, (PointT) *child);
+      if (node->getLayerIdx() != child->getLayerIdx()) {
+        continue;
+      }
+      const int layer = node->getLayerIdx();
+      const int direction = layer_directions_[layer];
+      const auto [lo, hi]
+          = std::minmax({(*node)[direction], (*child)[direction]});
+      const int r = (*node)[1 - direction];
+      for (int c = lo; c < hi; c++) {
+        const int x = (direction == MetalLayer::H) ? c : r;
+        const int y = (direction == MetalLayer::H) ? r : c;
+        const auto& edge = graph_edges_[layer][x][y];
+
+        if (edge.demand > edge.capacity * threshold) {
+          ++num;
+        }
       }
     }
   });
@@ -866,7 +932,8 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
                        * (capacity < 1.0
                               ? 1.0
                               : logistic(capacity - demand,
-                                         constants_.maze_logistic_slope)));
+                                         constants_.maze_logistic_slope
+                                             * cost_multiplier_)));
       }
     }
   }
@@ -907,10 +974,10 @@ void GridGraph::updateWireCostView(
         = length
           * (unit_length_wire_cost_
              + unit_length_short_cost[direction]
-                   * (capacity < 1.0
-                          ? 1.0
-                          : logistic(capacity - demand,
-                                     constants_.maze_logistic_slope)));
+                   * (capacity < 1.0 ? 1.0
+                                     : logistic(capacity - demand,
+                                                constants_.maze_logistic_slope
+                                                    * cost_multiplier_)));
   };
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {

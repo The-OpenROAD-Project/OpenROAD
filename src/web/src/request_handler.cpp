@@ -5,11 +5,8 @@
 
 #include <algorithm>
 #include <any>
-#include <boost/json/array.hpp>
-#include <boost/json/object.hpp>
-#include <boost/json/serialize.hpp>
-#include <boost/json/value.hpp>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <filesystem>
@@ -17,22 +14,27 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <regex>
 #include <set>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
+#include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -462,6 +464,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSetRouteGuides(req, state);
         });
+  d.add("get_3d_data",
+        WebSocketRequest::kGet3DData,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGet3DData(req);
+        });
 }
 
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
@@ -857,14 +864,14 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       throw std::runtime_error("Instance not found: " + inst_name);
     }
 
-    std::set<odb::dbInst*> all_insts;
+    odb::PtrSet<odb::dbInst> all_insts;
     all_insts.insert(target_inst);
     bool cone_full = false;
 
     // Fanin BFS: follow input pins upstream to their driving instances.
     {
       std::vector<odb::dbInst*> level = {target_inst};
-      std::set<odb::dbNet*> seen_nets;
+      odb::PtrSet<odb::dbNet> seen_nets;
       for (int d = 0; d < fanin_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
@@ -906,7 +913,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     // Fanout BFS: follow output pins downstream to their load instances.
     {
       std::vector<odb::dbInst*> level = {target_inst};
-      std::set<odb::dbNet*> seen_nets;
+      odb::PtrSet<odb::dbNet> seen_nets;
       for (int d = 0; d < fanout_depth && !cone_full; ++d) {
         std::vector<odb::dbInst*> next_level;
         for (odb::dbInst* inst : level) {
@@ -946,7 +953,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     }
 
     // Collect all nets that touch any visited instance.
-    std::map<odb::dbNet*, int> net_to_id;
+    odb::PtrMap<odb::dbNet, int> net_to_id;
     int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
     for (odb::dbInst* inst : all_insts) {
       for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -1039,7 +1046,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
       throw std::runtime_error("No block loaded");
     }
 
-    std::map<odb::dbNet*, int> net_to_id;
+    odb::PtrMap<odb::dbNet, int> net_to_id;
     int next_net_id = 2;
     for (odb::dbNet* net : block->getNets()) {
       net_to_id[net] = next_net_id++;
@@ -1107,6 +1114,97 @@ WebSocketResponse SelectHandler::handleSchematicFull(
 
     boost::json::object root;
     root["modules"] = boost::json::object{{"top", std::move(top)}};
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+
+  try {
+    odb::dbChip* chip = gen_->getChip();
+    if (!chip) {
+      boost::json::object info;
+      info["info"]
+          = "No 3D chip data available. Load a multi-die design to "
+            "use this view.";
+      writePayload(resp, info);
+      return resp;
+    }
+
+    boost::json::object root;
+    boost::json::array chiplets;
+
+    auto processInst = [&](auto& self,
+                           odb::dbChipInst* inst,
+                           int offset_x,
+                           int offset_y,
+                           int offset_z,
+                           const std::string& parent_name) -> void {
+      odb::dbChip* master_chip = inst->getMasterChip();
+      if (master_chip && !master_chip->getChipInsts().empty()) {
+        for (odb::dbChipInst* child : master_chip->getChipInsts()) {
+          odb::Point3D loc = inst->getLoc();
+          self(self,
+               child,
+               offset_x + loc.x(),
+               offset_y + loc.y(),
+               offset_z + loc.z(),
+               parent_name + std::string(inst->getName()) + "/");
+        }
+      } else {
+        boost::json::object obj;
+        obj["name"] = parent_name + std::string(inst->getName());
+
+        odb::Point3D loc = inst->getLoc();
+        obj["x"] = offset_x + loc.x();
+        obj["y"] = offset_y + loc.y();
+        obj["z"] = offset_z + loc.z();
+
+        int w = 0;
+        int h = 0;
+        int thickness = 0;
+        if (master_chip) {
+          w = master_chip->getWidth();
+          h = master_chip->getHeight();
+          thickness = master_chip->getThickness();
+          // Fallback: use block bbox if chip has no explicit dimensions
+          if (w == 0 || h == 0) {
+            if (odb::dbBlock* block = master_chip->getBlock()) {
+              if (odb::dbBox* block_bbox = block->getBBox()) {
+                const odb::Rect bbox = block_bbox->getBox();
+                if (w == 0) {
+                  w = bbox.dx();
+                }
+                if (h == 0) {
+                  h = bbox.dy();
+                }
+              }
+            }
+          }
+        }
+        constexpr int kDefaultChipWidth = 100000;
+        constexpr int kDefaultChipHeight = 100000;
+        constexpr int kDefaultChipThickness = 10000;
+        obj["width"] = w > 0 ? w : kDefaultChipWidth;
+        obj["height"] = h > 0 ? h : kDefaultChipHeight;
+        obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
+        chiplets.emplace_back(std::move(obj));
+      }
+    };
+
+    for (odb::dbChipInst* inst : chip->getChipInsts()) {
+      processInst(processInst, inst, 0, 0, 0, "");
+    }
+    root["chiplets"] = std::move(chiplets);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1227,76 +1325,6 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   return resp;
 }
 
-// Helper: find the start of the word at cursor_pos in line.
-// Word boundaries are: whitespace, [, ], {, }
-static int findWordStart(const std::string& line, int cursor_pos)
-{
-  static const std::string kBoundary = " \t\n\r[]{}";
-  int pos = cursor_pos - 1;
-  while (pos >= 0 && kBoundary.find(line[pos]) == std::string::npos) {
-    --pos;
-  }
-  return pos + 1;
-}
-
-// Helper: find the enclosing command name for argument completion.
-// Scans backwards from word_start past flags (-xxx) and their values
-// to find the first non-flag word (or the first word after '[').
-static std::string findEnclosingCommand(const std::string& line, int word_start)
-{
-  static const std::string kBoundary = " \t\n\r[]{}";
-  // Collect all words before the current position
-  std::vector<std::string> words;
-  int pos = 0;
-  while (pos < word_start) {
-    // skip whitespace/boundaries
-    while (pos < word_start && kBoundary.find(line[pos]) != std::string::npos) {
-      if (line[pos] == '[') {
-        // bracket resets context
-        words.clear();
-      }
-      ++pos;
-    }
-    if (pos >= word_start) {
-      break;
-    }
-    // extract word
-    const int start = pos;
-    while (pos < word_start && kBoundary.find(line[pos]) == std::string::npos) {
-      ++pos;
-    }
-    words.push_back(line.substr(start, pos - start));
-  }
-
-  // Walk backwards to find the first non-flag word
-  for (int i = static_cast<int>(words.size()) - 1; i >= 0; --i) {
-    if (!words[i].empty() && words[i][0] != '-') {
-      return words[i];
-    }
-  }
-  return {};
-}
-
-// Evaluate a Tcl command that returns a list, sort it, and return
-// the elements as a vector of strings.  Returns empty on error.
-static std::vector<std::string> getTclList(TclEvaluator& eval,
-                                           const std::string& tcl_cmd)
-{
-  auto result = eval.eval("join [lsort [" + tcl_cmd + "]] \\n");
-  std::vector<std::string> items;
-  if (result.is_error) {
-    return items;
-  }
-  std::istringstream stream(result.result);
-  std::string item;
-  while (std::getline(stream, item)) {
-    if (!item.empty()) {
-      items.push_back(std::move(item));
-    }
-  }
-  return items;
-}
-
 WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -1304,122 +1332,28 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     const std::string line = std::string(req.json.at("line").as_string());
-    int cursor_pos = static_cast<int>(req.json.at("cursor_pos").as_int64());
-    if (cursor_pos < 0) {
-      cursor_pos = static_cast<int>(line.size());
-    }
-    cursor_pos = std::min(cursor_pos, static_cast<int>(line.size()));
+    const int cursor_pos
+        = static_cast<int>(req.json.at("cursor_pos").as_int64());
 
-    const int word_start = findWordStart(line, cursor_pos);
-    const std::string prefix = line.substr(word_start, cursor_pos - word_start);
-
-    std::string mode;
-    std::vector<std::string> completions;
-
-    if (!prefix.empty() && prefix[0] == '$') {
-      // Variable completion
-      mode = "variables";
-      const std::string var_prefix = prefix.substr(1);  // strip $
-      const bool starts_with_colon
-          = !var_prefix.empty() && var_prefix[0] == ':';
-      std::string tcl_cmd = "info vars " + var_prefix;
-      if (!var_prefix.empty() && var_prefix.back() == ':'
-          && (var_prefix.size() == 1
-              || var_prefix[var_prefix.size() - 2] != ':')) {
-        tcl_cmd += ":";
-      }
-      tcl_cmd += "*";
-
-      for (auto var : getTclList(*tcl_eval_, tcl_cmd)) {
-        if (!starts_with_colon && !var.empty() && var[0] == ':') {
-          var = var.substr(2);
-        }
-        completions.push_back("$" + var);
-      }
-
-      // Add namespaces
-      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
-        std::string name = ns;
-        if (!starts_with_colon && !name.empty() && name[0] == ':') {
-          name = name.substr(2);
-        }
-        completions.push_back("$" + name);
-      }
-    } else if (!prefix.empty() && prefix[0] == '-') {
-      // Argument completion
-      mode = "arguments";
-      const std::string cmd_name = findEnclosingCommand(line, word_start);
-      if (!cmd_name.empty()) {
-        std::string tcl_cmd = "if {[info exists sta::cmd_args(" + cmd_name
-                              + ")]} { set sta::cmd_args(" + cmd_name
-                              + ") } else { list }";
-        auto result = tcl_eval_->eval(tcl_cmd);
-        if (!result.is_error && !result.result.empty()) {
-          // Parse flags with regex
-          static const std::regex kArgMatcher("-[a-zA-Z0-9_]+");
-          const std::string args_str = result.result;
-          std::sregex_iterator it(
-              args_str.begin(), args_str.end(), kArgMatcher);
-          std::sregex_iterator end;
-          std::set<std::string> unique_args;
-          while (it != end) {
-            unique_args.insert(it->str());
-            ++it;
-          }
-          for (const auto& arg : unique_args) {
-            if (prefix.size() <= 1 || arg.substr(0, prefix.size()) == prefix) {
-              completions.push_back(arg);
-            }
-          }
-        }
-      }
-    } else {
-      // Command completion
-      mode = "commands";
-      // Get OpenROAD registered commands
-      for (auto& cmd : getTclList(*tcl_eval_, "array names sta::cmd_args")) {
-        completions.push_back(std::move(cmd));
-      }
-      // Get namespace commands
-      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
-        for (auto ns_cmd :
-             getTclList(*tcl_eval_, "info commands " + ns + "::*")) {
-          // Remove leading ::
-          if (ns_cmd.size() > 2 && ns_cmd[0] == ':' && ns_cmd[1] == ':') {
-            ns_cmd = ns_cmd.substr(2);
-          }
-          completions.push_back(std::move(ns_cmd));
-        }
-      }
-
-      // Filter by prefix if non-empty
-      if (!prefix.empty()) {
-        const bool add_colons = prefix[0] == ':';
-        std::vector<std::string> filtered;
-        for (const auto& c : completions) {
-          std::string match_target = c;
-          if (add_colons && !c.empty() && c[0] != ':') {
-            match_target = "::" + c;
-          }
-          if (match_target.substr(0, prefix.size()) == prefix) {
-            filtered.push_back(add_colons && c[0] != ':' ? "::" + c : c);
-          }
-        }
-        completions = std::move(filtered);
-      }
+    // The shared completer reads Tcl state via direct Tcl_Eval, so hold
+    // the evaluator mutex for the same reasons regular eval requests do.
+    ord::TclCompletion result;
+    {
+      std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+      result = ord::completeTcl(tcl_eval_->interp, line, cursor_pos);
     }
 
     boost::json::object root;
     boost::json::array comp_arr;
-    comp_arr.reserve(completions.size());
-    for (const auto& c : completions) {
+    comp_arr.reserve(result.completions.size());
+    for (const auto& c : result.completions) {
       comp_arr.emplace_back(c);
     }
     root["completions"] = std::move(comp_arr);
-    root["mode"] = mode;
-    root["prefix"] = prefix;
-    root["replace_start"] = word_start;
-    root["replace_end"] = cursor_pos;
+    root["mode"] = result.mode;
+    root["prefix"] = result.prefix;
+    root["replace_start"] = result.replace_start;
+    root["replace_end"] = result.replace_end;
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2201,14 +2135,11 @@ void DRCHandler::registerRequests(RequestDispatcher& d)
 
 std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
 {
-  odb::dbBlock* block = gen_->getBlock();
-  if (!block) {
-    throw std::runtime_error("No block loaded");
-  }
-  odb::dbChip* chip = block->getChip();
+  odb::dbChip* chip = gen_->getChip();
   if (!chip) {
     throw std::runtime_error("No chip loaded");
   }
+  odb::dbBlock* block = chip->getBlock();
   return {block, chip};
 }
 
@@ -2239,14 +2170,11 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
   state.drc_rects.clear();
   state.drc_lines.clear();
 
-  odb::dbBlock* block = gen_->getBlock();
-  if (!block) {
-    return;
-  }
-  odb::dbChip* chip = block->getChip();
+  odb::dbChip* chip = gen_->getChip();
   if (!chip || state.active_drc_category.empty()) {
     return;
   }
+  odb::dbBlock* block = chip->getBlock();
 
   odb::dbMarkerCategory* category
       = chip->findMarkerCategory(state.active_drc_category.c_str());
@@ -2261,21 +2189,25 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
   // with solid outline.  Line → drawn as a line.  Point → drawn as X.
   // When the marker bbox is too small (< min_box DBU), draw an X at
   // the center instead, matching the GUI's min_box fallback.
-  const Color white_fill{.r = 255, .g = 255, .b = 255, .a = 50};
-  const Color white_line{.r = 255, .g = 255, .b = 255, .a = 255};
+  // Color matches Qt GUI's Painter::kHighlight (yellow).
+  const Color yellow_fill{.r = 255, .g = 255, .b = 0, .a = 100};
+  const Color yellow_line{.r = 255, .g = 255, .b = 0, .a = 255};
 
   // min_box: cached tech pitch as "minimum visible size" threshold.
   // Default to 200 DBU (0.2um at 1000 dbu/um) if no routing layer available.
   if (min_box_ < 0) {
-    min_box_ = 200;
-    odb::dbTech* tech = block->getDb()->getTech();
-    if (tech) {
-      for (odb::dbTechLayer* layer : tech->getLayers()) {
-        if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-          const int pitch = layer->getPitch();
-          if (pitch > 0) {
-            min_box_ = pitch;
-            break;
+    constexpr int kDefaultMinBox = 200;
+    min_box_ = kDefaultMinBox;
+    if (block) {
+      odb::dbTech* tech = block->getTech();
+      if (tech) {
+        for (odb::dbTechLayer* layer : tech->getLayers()) {
+          if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+            const int pitch = layer->getPitch();
+            if (pitch > 0) {
+              min_box_ = pitch;
+              break;
+            }
           }
         }
       }
@@ -2287,10 +2219,10 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     // Two diagonal lines forming an X, matching GUI's painter.drawX().
     state.drc_lines.push_back({odb::Point(cx - half, cy - half),
                                odb::Point(cx + half, cy + half),
-                               white_line});
+                               yellow_line});
     state.drc_lines.push_back({odb::Point(cx - half, cy + half),
                                odb::Point(cx + half, cy - half),
-                               white_line});
+                               yellow_line});
   };
 
   for (odb::dbMarker* marker : category->getAllMarkers()) {
@@ -2314,7 +2246,7 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     // Fallback: if no shapes, use the bounding box.
     if (shapes.empty()) {
       if (bbox.area() > 0) {
-        state.drc_rects.push_back({bbox, white_fill, "", /*filled=*/true});
+        state.drc_rects.push_back({bbox, yellow_fill, "", /*filled=*/true});
       }
       continue;
     }
@@ -2322,21 +2254,21 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     for (const auto& shape : shapes) {
       if (std::holds_alternative<odb::Rect>(shape)) {
         state.drc_rects.push_back(
-            {std::get<odb::Rect>(shape), white_fill, "", /*filled=*/true});
+            {std::get<odb::Rect>(shape), yellow_fill, "", /*filled=*/true});
       } else if (std::holds_alternative<odb::Line>(shape)) {
         const odb::Line& line = std::get<odb::Line>(shape);
-        state.drc_lines.push_back({line.pt0(), line.pt1(), white_line});
+        state.drc_lines.push_back({line.pt0(), line.pt1(), yellow_line});
       } else if (std::holds_alternative<odb::Point>(shape)) {
         const odb::Point& pt = std::get<odb::Point>(shape);
         emitX(pt.x(), pt.y(), min_box / 2);
       } else if (std::holds_alternative<odb::Polygon>(shape)) {
         const odb::Polygon& poly = std::get<odb::Polygon>(shape);
         state.drc_rects.push_back(
-            {poly.getEnclosingRect(), white_fill, "", /*filled=*/true});
+            {poly.getEnclosingRect(), yellow_fill, "", /*filled=*/true});
       } else if (std::holds_alternative<odb::Cuboid>(shape)) {
         state.drc_rects.push_back(
             {std::get<odb::Cuboid>(shape).getEnclosingRect(),
-             white_fill,
+             yellow_fill,
              "",
              /*filled=*/true});
       }
@@ -2412,6 +2344,30 @@ static boost::json::object serializeMarkerCategory(
       m["waived"] = marker->isWaived();
       m["bbox"] = bboxArray(marker->getBBox());
 
+      // Serialize individual shapes so the 3D viewer can highlight
+      // the actual cuboids instead of the full bounding box.
+      const auto& shapes = marker->getShapes();
+      if (!shapes.empty()) {
+        boost::json::array rects;
+        for (const auto& shape : shapes) {
+          if (std::holds_alternative<odb::Rect>(shape)) {
+            const odb::Rect& r = std::get<odb::Rect>(shape);
+            rects.emplace_back(
+                boost::json::array{r.xMin(), r.yMin(), r.xMax(), r.yMax()});
+          } else if (std::holds_alternative<odb::Polygon>(shape)) {
+            const odb::Rect r
+                = std::get<odb::Polygon>(shape).getEnclosingRect();
+            rects.emplace_back(
+                boost::json::array{r.xMin(), r.yMin(), r.xMax(), r.yMax()});
+          } else if (std::holds_alternative<odb::Cuboid>(shape)) {
+            const odb::Cuboid& c = std::get<odb::Cuboid>(shape);
+            rects.emplace_back(boost::json::array{
+                c.xMin(), c.yMin(), c.xMax(), c.yMax(), c.zMin(), c.zMax()});
+          }
+        }
+        m["rects"] = std::move(rects);
+      }
+
       if (odb::dbTechLayer* layer = marker->getTechLayer()) {
         m["layer"] = std::string(layer->getName());
       }
@@ -2479,7 +2435,19 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
     const std::string cat_name
         = std::string(req.json.at("category").as_string());
 
-    // Update active category and overlay
+    // Clear all markers' visibility so highlights start off.
+    // The user explicitly checks individual markers to see them.
+    odb::dbMarkerCategory* category = nullptr;
+    if (!cat_name.empty()) {
+      category = chip->findMarkerCategory(cat_name.c_str());
+      if (category) {
+        for (odb::dbMarker* marker : category->getAllMarkers()) {
+          marker->setVisible(false);
+        }
+      }
+    }
+
+    // Update active category and overlay (now empty since all invisible)
     {
       std::lock_guard<std::mutex> lock(state.drc_mutex);
       state.active_drc_category = cat_name;
@@ -2490,8 +2458,6 @@ WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
     if (cat_name.empty()) {
       root["subcategories"] = boost::json::array{};
     } else {
-      odb::dbMarkerCategory* category
-          = chip->findMarkerCategory(cat_name.c_str());
       if (!category) {
         root["error"] = "Category not found: " + cat_name;
       } else {
@@ -2656,6 +2622,9 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
 
   try {
     const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
+    const bool open_inspector = req.json.contains("open_inspector")
+                                    ? req.json.at("open_inspector").as_bool()
+                                    : false;
     auto [block, chip] = getBlockAndChip();
 
     odb::dbMarker* target = findMarkerById(state, chip, marker_id);
@@ -2665,12 +2634,41 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       target->setVisited(true);
       odb::Rect bbox = target->getBBox();
 
-      // Set highlight to the marker's bbox
+      // When the client requests inspector navigation, promote the marker to
+      // a canonical selectable so the existing `inspect` flow can populate
+      // the Inspector panel.  Mirrors handleSelect's pattern (replace
+      // selectables, set current_inspected, clear navigation history) so
+      // back-navigation behaves the same as for instances/nets.
+      gui::Selected sel;
+      int marker_select_id = -1;
+      std::vector<gui::Selected> new_selectables;
+      if (open_inspector) {
+        sel = gui::DescriptorRegistry::instance()->makeSelected(target);
+        if (sel) {
+          marker_select_id = storeSelectable(new_selectables, sel);
+        }
+      }
+
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         state.highlight_rects.clear();
         state.highlight_polys.clear();
-        state.highlight_rects.push_back(bbox);
+        if (sel) {
+          state.hover_rects.clear();
+          state.timing_rects.clear();
+          state.timing_lines.clear();
+          collectHighlightShapes(
+              sel, state.highlight_rects, state.highlight_polys);
+          state.current_inspected = sel;
+          state.navigation_history.clear();
+        } else {
+          state.highlight_rects.push_back(bbox);
+        }
+      }
+
+      if (sel) {
+        std::lock_guard<std::mutex> lock(state.selectables_mutex);
+        state.selectables = std::move(new_selectables);
       }
 
       root["ok"] = 1;
@@ -2679,6 +2677,9 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       root["visited"] = true;
       if (odb::dbTechLayer* layer = target->getTechLayer()) {
         root["layer"] = std::string(layer->getName());
+      }
+      if (marker_select_id >= 0) {
+        root["select_id"] = marker_select_id;
       }
     } else {
       // Clear highlight if marker_id is -1 (deselect)

@@ -16,7 +16,8 @@ cc_test(
         "TestAbstractLef.cc",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefout",
         "//src/tst",
         "//src/tst:sky130_fixture",
         "//src/utl",
@@ -31,7 +32,7 @@ cc_test(
         "TestAccessPoint.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "@googletest//:gtest",
@@ -46,7 +47,7 @@ cc_test(
         "TestCallBacks.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "@googletest//:gtest",
@@ -61,7 +62,7 @@ cc_test(
         "TestChips.cpp",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "@googletest//:gtest",
@@ -77,7 +78,8 @@ cc_test(
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -89,7 +91,7 @@ cc_test(
     name = "TestGCellGrid",
     srcs = ["TestGCellGrid.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "@googletest//:gtest",
@@ -102,7 +104,9 @@ cc_test(
     srcs = ["TestGDSIn.cpp"],
     data = ["//src/odb/test:regression_resources"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/gdsin",
+        "//src/odb/src/gdsout",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/utl",
@@ -115,7 +119,7 @@ cc_test(
     name = "TestGeom",
     srcs = ["TestGeom.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -125,7 +129,7 @@ cc_test(
     name = "TestGroup",
     srcs = ["TestGroup.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -136,7 +140,7 @@ cc_test(
     name = "TestGuide",
     srcs = ["TestGuide.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -147,7 +151,7 @@ cc_test(
     name = "TestJournal",
     srcs = ["TestJournal.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -159,7 +163,11 @@ cc_test(
     srcs = ["TestLef58Properties.cpp"],
     data = ["//src/odb/test:regression_resources"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/defout",
+        "//src/odb/src/lefin",
+        "//src/odb/src/lefout",
         "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -170,7 +178,7 @@ cc_test(
     name = "TestMaster",
     srcs = ["TestMaster.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -181,7 +189,7 @@ cc_test(
     name = "TestModule",
     srcs = ["TestModule.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -192,7 +200,7 @@ cc_test(
     name = "TestNetTrack",
     srcs = ["TestNetTrack.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -213,7 +221,10 @@ cc_test(
         "//src/odb/test/data/sky130hd:lef-test-data",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/odb/src/lefout",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/tst:nangate45_fixture",
@@ -228,7 +239,7 @@ cc_test(
     name = "TestObjectType",
     srcs = ["TestObjectType.cpp"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -244,7 +255,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
@@ -262,7 +274,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/tst:nangate45_fixture",
@@ -285,7 +298,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
@@ -303,7 +317,8 @@ cc_test(
         "//src/odb/test:regression_resources",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/3dblox",
+        "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/tst:nangate45_fixture",
@@ -324,7 +339,7 @@ cc_test(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/tst:integrated_fixture",
@@ -344,7 +359,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
@@ -363,7 +378,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
