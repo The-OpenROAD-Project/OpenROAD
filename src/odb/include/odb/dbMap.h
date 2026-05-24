@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/dbSet.h"
 
 namespace odb {
@@ -79,8 +80,8 @@ class dbMap
 
  private:
   dbSet<T> set_;
-  std::map<T*, D>* map_;    // map used if set is not sequential
-  std::vector<D>* _vector;  // vector used if set is sequential
+  std::map<T*, D, ODBPtrLess>* map_;  // map used if set is not sequential
+  std::vector<D>* _vector;            // vector used if set is sequential
 };
 
 }  // namespace odb

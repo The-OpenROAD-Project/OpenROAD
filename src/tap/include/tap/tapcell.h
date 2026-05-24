@@ -10,6 +10,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -139,7 +140,7 @@ class Tapcell
   };
   using Polygon = boost::polygon::polygon_90_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
+  using CornerMap = odb::PtrMap<odb::dbRow, odb::PtrSet<odb::dbInst>>;
 
   struct InstIndexableGetter
   {
@@ -162,18 +163,19 @@ class Tapcell
                             int x,
                             int y,
                             const std::string& prefix);
-  std::optional<int> findValidLocation(int x,
-                                       int width,
-                                       const odb::dbOrientType& orient,
-                                       const std::set<odb::dbInst*>& row_insts,
-                                       int site_width,
-                                       int tap_width,
-                                       int row_urx,
-                                       bool disallow_one_site_gaps);
+  std::optional<int> findValidLocation(
+      int x,
+      int width,
+      const odb::dbOrientType& orient,
+      const odb::PtrSet<odb::dbInst>& row_insts,
+      int site_width,
+      int tap_width,
+      int row_urx,
+      bool disallow_one_site_gaps);
   bool isOverlapping(int x,
                      int width,
                      const odb::dbOrientType& orient,
-                     const std::set<odb::dbInst*>& row_insts);
+                     const odb::PtrSet<odb::dbInst>& row_insts);
   int placeTapcells(odb::dbMaster* tapcell_master, int dist);
   int placeTapcells(odb::dbMaster* tapcell_master,
                     int dist,
@@ -222,7 +224,7 @@ class Tapcell
 
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type,
                                  const std::string& option_name) const;
-  std::set<odb::dbMaster*> findMasterByType(
+  odb::PtrSet<odb::dbMaster> findMasterByType(
       const odb::dbMasterType& type) const;
   odb::dbBlock* getBlock() const;
 

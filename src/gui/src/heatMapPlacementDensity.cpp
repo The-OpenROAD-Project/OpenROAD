@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -45,7 +46,7 @@ bool PlacementDensityDataSource::populateMap()
   }
 
   // Collect selected instances if filter is enabled
-  const std::set<odb::dbInst*> selected_insts = getSelectedInsts();
+  const odb::PtrSet<odb::dbInst> selected_insts = getSelectedInsts();
   const bool filter = !selected_insts.empty();
 
   // Iterate through blocks hierarchically to gather the flattened data

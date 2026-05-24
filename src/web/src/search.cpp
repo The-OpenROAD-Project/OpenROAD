@@ -204,19 +204,35 @@ void Search::setTopChip(odb::dbChip* chip)
   }
   odb::dbBlock* block = chip->getBlock();
   if (top_chip_ != chip) {
-    clear();
+    {
+      // Hold the unique lock for the entire reset+repopulate cycle so
+      // that shapesReady()/getData() callers from other threads see
+      // either the old or the new state, never a partial view.
+      std::unique_lock lock(child_block_data_mutex_);
+      clear();
 
-    if (top_chip_ != nullptr) {
-      removeOwner();
-    }
+      if (top_chip_ != nullptr) {
+        removeOwner();
+      }
 
-    addOwner(block);  // register as a callback object
+      addOwner(block);  // register as a callback object
 
-    // Pre-populate children so we don't have to lock access to
-    // child_block_data_ later
-    if (block) {
-      for (auto child : block->getChildren()) {
-        child_block_data_[child];
+      // Pre-populate children so the common path through getData() is
+      // a lock-free hit.  This covers two distinct hierarchies:
+      //   1. dbBlock children of the top block (intra-chip hierarchy).
+      //   2. Every dbBlock reachable through dbChipInst (3D-IC /
+      //      multi-die hierarchy).  These belong to dbChips other than
+      //      top_chip_, so getData() routes them into
+      //      child_block_data_ as well.
+      if (block) {
+        for (auto child : block->getChildren()) {
+          child_block_data_[child];
+        }
+      }
+      for (const ChipletNode& node : collectChiplets(chip)) {
+        if (node.block && node.block != block) {
+          child_block_data_[node.block];
+        }
       }
     }
   }
@@ -224,6 +240,23 @@ void Search::setTopChip(odb::dbChip* chip)
   top_chip_ = chip;
 
   // emit newChip(chip);
+}
+
+bool Search::shapesReady() const
+{
+  if (top_block_data_.shapes_init.load()) {
+    return true;
+  }
+  // Multi-die designs: check chiplet master blocks too.  Hold the
+  // shared lock for the iteration so a concurrent setTopChip() (which
+  // holds the unique lock) cannot reshape the map under us.
+  std::shared_lock lock(child_block_data_mutex_);
+  for (const auto& [block, data] : child_block_data_) {
+    if (data.shapes_init.load()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Search::announceModified(std::atomic_bool& flag)
@@ -304,8 +337,22 @@ void Search::eagerInit(odb::dbBlock* block)
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
-  return block->getChip() == top_chip_ ? top_block_data_
-                                       : child_block_data_[block];
+  if (block->getChip() == top_chip_) {
+    return top_block_data_;
+  }
+  // Common path: setTopChip() pre-populated this entry.  Try a
+  // lock-free find under shared lock first; only escalate to a unique
+  // lock when we actually need to insert (rare — happens for blocks
+  // first touched by a db callback).
+  {
+    std::shared_lock lock(child_block_data_mutex_);
+    auto it = child_block_data_.find(block);
+    if (it != child_block_data_.end()) {
+      return it->second;
+    }
+  }
+  std::unique_lock lock(child_block_data_mutex_);
+  return child_block_data_[block];
 }
 
 void Search::updateShapes(odb::dbBlock* block)
@@ -780,6 +827,10 @@ class Search::MinHeightPredicate
   int min_height_;
 };
 
+// Eagerly collect shape search results under a shared_lock so we don't
+// hold a lazy iterator into an R-tree that another thread may rebuild.
+// Mirrors the pattern used by searchInsts / searchFills.
+
 Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
                                              odb::dbTechLayer* layer,
                                              int x_lo,
@@ -793,23 +844,30 @@ Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.box_shapes.find(layer);
   if (it == data.box_shapes.end()) {
-    return RoutingRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  RoutingRange results;
   if (min_size > 0) {
-    return RoutingRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return RoutingRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
@@ -825,23 +883,30 @@ Search::SNetSBoxRange Search::searchSNetViaShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.snet_via_shapes.find(layer);
   if (it == data.snet_via_shapes.end()) {
-    return SNetSBoxRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  SNetSBoxRange results;
   if (min_size > 0) {
-    return SNetSBoxRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return SNetSBoxRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
@@ -857,28 +922,34 @@ Search::SNetShapeRange Search::searchSNetShapes(odb::dbBlock* block,
     updateShapes(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   auto it = data.snet_shapes.find(layer);
   if (it == data.snet_shapes.end()) {
-    return SNetShapeRange();
+    return {};
   }
 
   auto& rtree = it->second;
-
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  SNetShapeRange results;
   if (min_size > 0) {
-    return SNetShapeRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
-            && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
-        rtree.qend());
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinSizePredicate<odb::dbNet*>(min_size))
+             && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return SNetShapeRange(
-      rtree.qbegin(
-          bgi::intersects(query)
-          && bgi::satisfies(PolygonIntersectPredicate<odb::dbNet*>(query))),
-      rtree.qend());
+  return results;
 }
 
 Search::FillRange Search::searchFills(odb::dbBlock* block,
@@ -968,18 +1039,26 @@ Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,
     updateBlockages(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.blockages_init_mutex);
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  BlockageRange results;
   if (min_height > 0) {
-    return BlockageRange(
-        data.blockages.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(
-                MinHeightPredicate<odb::dbBlockage*>(min_height))),
-        data.blockages.qend());
+    for (auto qi = data.blockages.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(
+                 MinHeightPredicate<odb::dbBlockage*>(min_height)));
+         qi != data.blockages.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = data.blockages.qbegin(bgi::intersects(query));
+         qi != data.blockages.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return BlockageRange(data.blockages.qbegin(bgi::intersects(query)),
-                       data.blockages.qend());
+  return results;
 }
 
 Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
@@ -995,22 +1074,31 @@ Search::ObstructionRange Search::searchObstructions(odb::dbBlock* block,
     updateObstructions(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
   auto it = data.obstructions.find(layer);
   if (it == data.obstructions.end()) {
-    return ObstructionRange();
+    return {};
   }
 
   auto& rtree = it->second;
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  ObstructionRange results;
   if (min_size > 0) {
-    return ObstructionRange(
-        rtree.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinSizePredicate<odb::dbObstruction*>(min_size))),
-        rtree.qend());
+    for (auto qi
+         = rtree.qbegin(bgi::intersects(query)
+                        && bgi::satisfies(
+                            MinSizePredicate<odb::dbObstruction*>(min_size)));
+         qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = rtree.qbegin(bgi::intersects(query)); qi != rtree.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return ObstructionRange(rtree.qbegin(bgi::intersects(query)), rtree.qend());
+  return results;
 }
 
 Search::RowRange Search::searchRows(odb::dbBlock* block,
@@ -1025,16 +1113,25 @@ Search::RowRange Search::searchRows(odb::dbBlock* block,
     updateRows(block);
   }
 
+  std::shared_lock<std::shared_mutex> lock(data.rows_init_mutex);
   const odb::Rect query(x_lo, y_lo, x_hi, y_hi);
+  RowRange results;
   if (min_height > 0) {
-    return RowRange(
-        data.rows.qbegin(
-            bgi::intersects(query)
-            && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height))),
-        data.rows.qend());
+    for (auto qi = data.rows.qbegin(
+             bgi::intersects(query)
+             && bgi::satisfies(MinHeightPredicate<odb::dbRow*>(min_height)));
+         qi != data.rows.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
+  } else {
+    for (auto qi = data.rows.qbegin(bgi::intersects(query));
+         qi != data.rows.qend();
+         ++qi) {
+      results.push_back(*qi);
+    }
   }
-
-  return RowRange(data.rows.qbegin(bgi::intersects(query)), data.rows.qend());
+  return results;
 }
 
 // ─── Snap (nearest edge search) ─────────────────────────────────────────────
@@ -1160,10 +1257,10 @@ Search::SnapResult Search::searchNearestEdge(
                              search_box.yMin(),
                              search_box.xMax(),
                              search_box.yMax())) {
-          if (!vis.routing && type == kWire) {
+          if (type == kWire && !(vis.routing && vis.routing_segments)) {
             continue;
           }
-          if (!vis.routing && type == kVia) {
+          if (type == kVia && !(vis.routing && vis.routing_vias)) {
             continue;
           }
           if (!vis.pins && type == kBterm) {
@@ -1175,8 +1272,8 @@ Search::SnapResult Search::searchNearestEdge(
         }
       }
 
-      // Special net shapes.
-      if (vis.special_nets) {
+      // Special net shapes (segments).
+      if (vis.special_nets && vis.srouting_segments) {
         for (const auto& [sbox, poly, net] :
              searchSNetShapes(block,
                               layer,
@@ -1188,8 +1285,10 @@ Search::SnapResult Search::searchNearestEdge(
             check_rect(sbox->getBox());
           }
         }
+      }
 
-        // Special net vias.
+      // Special net vias.
+      if (vis.special_nets && vis.srouting_vias) {
         for (const auto& [sbox, net] : searchSNetViaShapes(block,
                                                            layer,
                                                            search_box.xMin(),

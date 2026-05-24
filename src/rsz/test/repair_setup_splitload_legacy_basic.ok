@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 41 components and 246 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 82 connections.
+[INFO ODB-0133]     Created 2 nets and 82 connections.
+worst slack max -0.17
+[INFO RSZ-0100] Repair move sequence: SplitLoadMove 
+[INFO RSZ-0094] Found 40 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.174 |       -0.2 |       -6.9 |     40 | load35/D
+      56* |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
+    final |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 6 buffers, 6 to split loads.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.12
+No differences found.

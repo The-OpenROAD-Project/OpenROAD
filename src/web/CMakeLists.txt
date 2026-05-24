@@ -34,6 +34,7 @@ set(WEB_ASSET_FILES
     src/charts-widget.js
     src/timing-widget.js
     src/drc-widget.js
+    src/3d-viewer-widget.js
     src/main.js
 )
 
@@ -68,6 +69,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/3d-viewer-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
@@ -112,6 +114,7 @@ target_link_libraries(web
   PUBLIC
     odb
   PRIVATE
+    cli_completer
     gui_descriptors
     gui_heatmap_core
     dbSta_lib
@@ -131,7 +134,11 @@ target_include_directories(web
     ${OPENROAD_HOME}/third-party
 )
 
-target_compile_definitions(web PRIVATE BOOST_ASIO_NO_DEPRECATED)
+target_compile_definitions(web
+  PRIVATE
+    BOOST_ASIO_NO_DEPRECATED
+    BOOST_JSON_HEADER_ONLY
+)
 
 messages(
   TARGET web

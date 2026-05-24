@@ -176,7 +176,6 @@ void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(lib_cell, dont_use);
 }
@@ -184,7 +183,6 @@ set_dont_use(LibertyCell *lib_cell,
 void
 reset_dont_use()
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resetDontUse();
 }
@@ -617,6 +615,30 @@ void report_buffers_cmd(bool filtered)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportBuffers(filtered);
+}
+
+void report_delay_estimator_accuracy_cmd(Instance* inst,
+                                         LibertyCell* replacement,
+                                         const char* estimator,
+                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracy(
+      inst, replacement, std::string(estimator), delay_levels);
+}
+
+bool is_valid_accuracy_estimator_cmd(const char* name)
+{
+  return Resizer::isValidDelayEstimatorName(std::string(name));
+}
+
+const char* accuracy_estimator_names_cmd()
+{
+  static const std::string names = []() {
+    return Resizer::delayEstimatorNames();
+  }();
+  return names.c_str();
 }
 
 void

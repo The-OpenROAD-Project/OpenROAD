@@ -17,6 +17,7 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -55,11 +56,6 @@ class dbNetwork;
 class SpefWriter;
 }  // namespace sta
 
-namespace gui {
-class HeatMapSourceRegistration;
-using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
-}  // namespace gui
-
 namespace grt {
 
 class FastRouteCore;
@@ -73,6 +69,7 @@ class RoutingTracks;
 class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
+class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
 class Rudy;
@@ -126,8 +123,10 @@ class GlobalRouter
                dpl::Opendp* opendp);
   ~GlobalRouter();
 
-  void initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
-               gui::HeatMapSourceHandle routing_congestion_data_source_rudy);
+  void initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
+                   routing_congestion_data_source,
+               std::unique_ptr<AbstractRoutingCongestionDataSource>
+                   routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -155,12 +154,19 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setSnapshotBatchedWidth(int snapshot_batched_width);
+  int getSnapshotBatchedWidth() const;
+  int getSnapshotBatchCount() const;
+  bool isResistanceAware() { return resistance_aware_; };
+  void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
+  bool isNetResAware(odb::dbNet* db_net);
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
   };
+  void setNumThreads(int num_threads);
 
   void setInfiniteCapacity(bool infinite_capacity);
 
@@ -230,7 +236,7 @@ class GlobalRouter
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
   void updateCUGRNet(odb::dbNet* net);
-  std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
+  odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
   bool haveDbGuides();
@@ -304,6 +310,8 @@ class GlobalRouter
   // Report wire resistance
   float getLayerResistance(int layer, int length, odb::dbNet* net);
   float getViaResistance(int from_layer, int to_layer);
+  float getFRNetResistance(odb::dbNet* db_net);
+  float getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net);
   double dbuToMicrons(int dbu);
   float estimatePathResistance(odb::dbObject* pin1,
                                odb::dbObject* pin2,
@@ -343,7 +351,7 @@ class GlobalRouter
   void removeNet(odb::dbNet* db_net);
   void updateNetPins(Net* net);
 
-  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
+  void getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
@@ -477,7 +485,7 @@ class GlobalRouter
   void findTrackPitches(int max_layer);
   std::vector<Net*> findNets(bool init_clock_nets);
   void findClockNets(const std::vector<Net*>& nets,
-                     std::set<odb::dbNet*>& clock_nets);
+                     odb::PtrSet<odb::dbNet>& clock_nets);
   void computeObstructionsAdjustments();
   void findLayerExtensions(std::vector<int>& layer_extensions);
   int findObstructions(odb::Rect& die_area);
@@ -519,7 +527,7 @@ class GlobalRouter
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
 
-  std::map<odb::dbNet*, Net*> db_net_map_;
+  odb::PtrMap<odb::dbNet, Net*> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
   std::vector<RoutingTracks> routing_tracks_;
@@ -531,6 +539,8 @@ class GlobalRouter
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
+  int snapshot_batched_width_{0};
+  int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
@@ -553,7 +563,7 @@ class GlobalRouter
   int perturbation_amount_;
 
   // Variables for PADs obstructions handling
-  std::map<odb::dbNet*, std::vector<GSegment>> pad_pins_connections_;
+  odb::PtrMap<odb::dbNet, std::vector<GSegment>> pad_pins_connections_;
 
   // Saving the positions used by nets
   std::map<odb::Point, std::vector<odb::dbNet*>> h_nets_in_pos_;
@@ -564,13 +574,13 @@ class GlobalRouter
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
 
-  std::set<odb::dbNet*> dirty_nets_;
+  odb::PtrSet<odb::dbNet> dirty_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
-  gui::HeatMapSourceHandle heatmap_;
-  gui::HeatMapSourceHandle heatmap_rudy_;
+  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
+  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
   // variables congestion report file
   const char* congestion_file_name_;

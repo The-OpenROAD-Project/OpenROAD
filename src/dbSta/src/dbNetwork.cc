@@ -57,11 +57,11 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <set>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <unordered_set>
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -786,6 +786,21 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
+std::string dbNetwork::stripParentPrefix(const std::string& name)
+{
+  size_t pos = name.length();
+  while ((pos = name.rfind('/', pos)) != std::string::npos) {
+    if (pos > 0 && name[pos - 1] == '\\') {
+      // Escaped slash inside a Verilog escaped identifier; not a
+      // hierarchy separator.  Keep searching to the left.
+      pos--;
+    } else {
+      return name.substr(pos + 1);
+    }
+  }
+  return name;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -808,10 +823,7 @@ std::string dbNetwork::name(const Port* port) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -855,21 +867,7 @@ std::string dbNetwork::name(const Instance* instance) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = std::string::npos;
-    size_t pos = name.length();
-    while ((pos = name.rfind('/', pos)) != std::string::npos) {
-      if (pos > 0 && name[pos - 1] == '\\') {
-        // This is an escaped slash, so we should ignore it and continue
-        // searching.
-        pos--;
-      } else {
-        last_idx = pos;
-        break;
-      }
-    }
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -2020,9 +2018,18 @@ void dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
+// Caution:
+//- Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
+// net connected to the given net.
+// - But `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
+// flat net for the given net.
+// - It behaves differently to cope with the issue 9724.
+// - This redefinition may cause another issue later when
+// `Network::highestConnectedNet(Net *net)` is used elsewhere.
 const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
-  return net;
+  const Net* flat = findFlatNet(net);
+  return flat ? flat : net;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2540,7 +2547,10 @@ It also checks the legallity of the pin/net combination.
 
 */
 
-void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+void dbNetwork::connectPin(Pin* pin,
+                           Net* flat_net,
+                           Net* hier_net,
+                           bool reassociate_hier_flat)
 {
   // get the type of the pin
   odb::dbITerm* iterm = nullptr;
@@ -2599,9 +2609,9 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
-      // do the house keeping. Mod net must always have the flat net associated
-      // with it.
-      if (flat_net_db) {
+      // Do the house keeping. A mod net must have the correct flat-net
+      // association when the caller is performing a hierarchy edit.
+      if (flat_net_db && reassociate_hier_flat) {
         reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
       }
     }
@@ -2685,12 +2695,10 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 // Incrementally update drivers.
 void dbNetwork::connectPinAfter(Pin* pin)
 {
-  if (isDriver(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
-  } else if (isHierarchical(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
+  // Update only an existing cache entry; do not prime the cache here --
+  // drivers() will lazily populate on the first read.
+  if (isDriver(pin) || (isHierarchical(pin) && direction(pin)->isAnyOutput())) {
+    addDriverToCacheIfPresent(net(pin), pin);
   }
 }
 
@@ -2824,7 +2832,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     removeDriverFromCache(dbToSta(db_net));
 
     // Remove all related hier nets from cache
-    std::set<odb::dbModNet*> modnet_set;
+    odb::PtrSet<odb::dbModNet> modnet_set;
     db_net->findRelatedModNets(modnet_set);
     for (odb::dbModNet* modnet : modnet_set) {
       removeDriverFromCache(dbToSta(modnet));
@@ -2843,7 +2851,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   if (db_net) {
     // A dbNet can be associated with multiple dbModNets.
     // We need to update the cache for all of them.
-    std::set<odb::dbModNet*> related_mod_nets;
+    odb::PtrSet<odb::dbModNet> related_mod_nets;
     db_net->findRelatedModNets(related_mod_nets);
     for (odb::dbModNet* related_mod_net : related_mod_nets) {
       removeDriverFromCache(dbToSta(related_mod_net), pin);
@@ -4641,7 +4649,7 @@ void dbNetwork::checkSanityUnusedModules() const
   }
 
   // 2. Create a set of all instantiated module masters.
-  std::set<odb::dbModule*> instantiated_masters;
+  odb::PtrSet<odb::dbModule> instantiated_masters;
   for (odb::dbModule* module : all_modules) {
     for (odb::dbModInst* mod_inst : module->getModInsts()) {
       instantiated_masters.insert(mod_inst->getMaster());
@@ -4702,8 +4710,8 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   //
   if (obj != nullptr) {
     // Collect relevant nets from the provided object
-    std::set<odb::dbNet*> nets_to_check;
-    std::set<odb::dbModNet*> mod_nets_to_check;
+    odb::PtrSet<odb::dbNet> nets_to_check;
+    odb::PtrSet<odb::dbModNet> mod_nets_to_check;
 
     auto const obj_type = obj->getObjectType();
     if (obj_type == odb::dbNetObj) {
@@ -4846,7 +4854,7 @@ void dbNetwork::checkSanityNetNames() const
   // Check for name mismatch between flat net and hierchical net
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
-    std::set<odb::dbModNet*> mod_nets;
+    odb::PtrSet<odb::dbModNet> mod_nets;
     if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
@@ -5122,16 +5130,16 @@ PinSet* dbNetwork::drivers(const Net* net)
     return nullptr;
   }
 
-  // Get or create drvrs pin set
-  auto drvrs_entry = net_drvr_pin_map_.find(net);
-  if (drvrs_entry == net_drvr_pin_map_.end()) {
-    std::tie(drvrs_entry, std::ignore)
-        = net_drvr_pin_map_.insert({net, new PinSet(this)});
+  // Cache hit: return the stored set
+  NetDrvrPinsMap::iterator drvrs_entry = net_drvr_pin_map_.find(net);
+  if (drvrs_entry != net_drvr_pin_map_.end()) {
+    return drvrs_entry->second;
   }
 
-  PinSet* drvrs = drvrs_entry->second;
+  // Cache miss: populate
+  PinSet* drvrs = new PinSet(this);
+  net_drvr_pin_map_.insert({net, drvrs});
 
-  // Insert the driver pin of the net
   dbNet* db_net = findFlatDbNet(net);
   if (db_net == nullptr) {
     return drvrs;
@@ -5145,9 +5153,17 @@ PinSet* dbNetwork::drivers(const Net* net)
   return drvrs;
 }
 
+void dbNetwork::addDriverToCacheIfPresent(const Net* net, const Pin* drvr)
+{
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    entry->second->insert(drvr);
+  }
+}
+
 void dbNetwork::removeDriverFromCache(const Net* net)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     delete entry->second;
     net_drvr_pin_map_.erase(entry);
@@ -5156,7 +5172,7 @@ void dbNetwork::removeDriverFromCache(const Net* net)
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     entry->second->erase(drvr);
   }
@@ -5211,11 +5227,15 @@ Net* dbNetwork::highestNetAbove(Net* net) const
   }
 
   if (modnet) {
+    // Return the flat net associated with this mod net.
+    // Parasitic externality checks in
+    // ConcreteParasiticNetwork::ensureParasiticNode compare against net_ which
+    // is always a flat net (set via makeParasiticNetwork). Returning the
+    // highest mod net causes all pin nodes on hierarchically-connected nets to
+    // compare unequal to net_ and be incorrectly marked as external, making
+    // node_count_ = 0 and crashing PRIMA in measureThresholds.
     if (dbNet* related_dbnet = modnet->findRelatedNet()) {
-      if (odb::dbModNet* highest_modnet
-          = related_dbnet->findModNetInHighestHier()) {
-        return dbToSta(highest_modnet);  // Found the highest modnet
-      }
+      return dbToSta(related_dbnet);
     }
   }
 

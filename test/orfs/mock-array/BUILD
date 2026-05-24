@@ -3,7 +3,7 @@ load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
-    features = ["-layering_check"],  # TODO: enable
+    features = ["layering_check"],  # TODO: enable
 )
 
 exports_files(["write_verilog.tcl"])
@@ -77,23 +77,6 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     name = name,
     config = config,
 ) for name, config in CONFIGS.items()]
-
-test_suite(
-    name = "eqy_tests",
-    tags = ["manual"],
-    tests = ["Element_eqy_{variant}".format(variant = name) for name in CONFIGS] +
-            [
-                "MockArray_eqy_{name}_{variant}".format(
-                    name = name,
-                    variant = variant,
-                )
-                for name in CONFIGS
-                for variant in [
-                    "flat",
-                    "base",
-                ]
-            ],
-)
 
 orfs_run(
     name = "write_macro_placement",
