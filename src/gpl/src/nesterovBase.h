@@ -56,6 +56,7 @@ class nesterovDbCbk;
 class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h (Phase 2)
 class DensityGradientBackend;     // densityGradientBackend.h (Phase 3)
+class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h (Phase 4)
 
 class GCell
 {
@@ -1217,6 +1218,7 @@ class NesterovBase
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
   std::unique_ptr<DensityGradientBackend> density_grad_backend_;
+  std::unique_ptr<NesterovDeviceContext> nb_device_ctx_;  // Phase 4
 
   int fillerDx_ = 0;
   int fillerDy_ = 0;

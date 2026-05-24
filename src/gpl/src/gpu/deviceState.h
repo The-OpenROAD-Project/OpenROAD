@@ -93,12 +93,24 @@ class DeviceState
   int gridLx() const { return grid_lx_; }
   int gridLy() const { return grid_ly_; }
 
+  // Phase 4+: NB device context scatters inst coords + calls
+  // updatePinLocations before updateWireLengthForceWA, making the
+  // host→device sync redundant. This flag lets the sync skip safely.
+  void markCoordsFresh() { coords_fresh_ = true; }
+  bool consumeCoordsFresh()
+  {
+    bool f = coords_fresh_;
+    coords_fresh_ = false;
+    return f;
+  }
+
   // Accessor for Kokkos-aware backend translation units. Consumers must
   // also #include "deviceState_kokkos.h" to use the returned reference.
   KokkosDeviceState& kokkos() { return *kokkos_; }
   const KokkosDeviceState& kokkos() const { return *kokkos_; }
 
  private:
+  bool coords_fresh_ = false;
   std::unique_ptr<KokkosDeviceState> kokkos_;
 
   // Cached host-side sizes; used by numInsts/Pins/Nets without needing to

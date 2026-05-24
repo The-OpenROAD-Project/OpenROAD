@@ -38,6 +38,7 @@
 #ifdef ENABLE_GPU
 #include "gpu/deviceState.h"
 #include "gpu/gpuRuntime.h"
+#include "gpu/nesterovDeviceContext.h"
 #endif
 
 #define REPLACE_SQRT2 1.414213562373095048801L
@@ -2747,6 +2748,22 @@ void NesterovBase::initDensity1()
 
   sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
                            / static_cast<float>(getNesterovInstsArea());
+
+#ifdef ENABLE_GPU
+  if (nbc_->getDeviceState()) {
+    nb_device_ctx_
+        = std::make_unique<NesterovDeviceContext>(nb_gcells_, nbc_.get(), bg_);
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
+                                         NesterovDeviceContext::kVecCurSLP);
+    nbc_->getDeviceState()->updatePinLocations();
+    nbc_->getDeviceState()->markCoordsFresh();
+  }
+#endif
 }
 
 float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
@@ -2779,6 +2796,30 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    using NDC = NesterovDeviceContext;
+    const bool a_is_prev = (&prevSLPCoordi_ == &this->prevSLPCoordi_);
+    const int coord_a = a_is_prev ? NDC::kVecPrevSLP : NDC::kVecCurSLP;
+    const int grad_a = a_is_prev ? NDC::kVecPrevSumGrads : NDC::kVecCurSumGrads;
+    const bool b_is_cur = (&curSLPCoordi_ == &this->curSLPCoordi_);
+    const int coord_b = b_is_cur ? NDC::kVecCurSLP : NDC::kVecNextSLP;
+    const int grad_b = b_is_cur ? NDC::kVecCurSumGrads : NDC::kVecNextSumGrads;
+
+    coordiDistance_ = nb_device_ctx_->getDistance(coord_a, coord_b);
+    gradDistance_ = nb_device_ctx_->getDistance(grad_a, grad_b);
+    debugPrint(log_,
+               GPL,
+               "getStepLength",
+               1,
+               "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}",
+               coordiDistance_,
+               gradDistance_,
+               stepLength_);
+    return coordiDistance_ / gradDistance_;
+  }
+#endif
+
   coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
   gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
   debugPrint(log_,
@@ -3007,6 +3048,20 @@ void NesterovBase::updateSingleGradient(
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->updateInitialPrevSLPCoordi(
+        npVars_->initialPrevCoordiUpdateCoef);
+    nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
+    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
+                                         NesterovDeviceContext::kVecPrevSLP);
+    nbc_->getDeviceState()->updatePinLocations();
+    nbc_->getDeviceState()->markCoordsFresh();
+    return;
+  }
+#endif
+
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < nb_gcells_.size(); i++) {
     GCell* curGCell = nb_gcells_[i];
@@ -3099,6 +3154,12 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(curSLPSumGrads_, nextSLPSumGrads_);
 
   std::swap(curCoordi_, nextCoordi_);
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->rotateForNextIter();
+  }
+#endif
 
   // In a macro dominated design like mock-array you may be placing
   // very few std cells in a sea of fixed macros.  The overflow denominator
@@ -3222,6 +3283,20 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   if (isConverged_) {
     return;
   }
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->nesterovCoordUpdate(stepLength_, coeff);
+    nb_device_ctx_->syncCoordsToHost(nextSLPCoordi_, nextCoordi_);
+    updateGCellDensityCenterLocation(nextSLPCoordi_);
+    updateDensityFieldBin();
+    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
+                                         NesterovDeviceContext::kVecNextSLP);
+    nbc_->getDeviceState()->updatePinLocations();
+    nbc_->getDeviceState()->markCoordsFresh();
+    return;
+  }
+#endif
 
   // fill in nextCoordinates with given stepLength_
   // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
@@ -3456,6 +3531,16 @@ bool NesterovBase::revertToSnapshot()
 
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+  }
+#endif
 
   isDiverged_ = false;
 

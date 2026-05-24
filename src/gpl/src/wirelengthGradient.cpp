@@ -140,10 +140,11 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
 #ifdef ENABLE_GPU
-  // GPU backend reads pin coords from device_state_; refresh from host
-  // gCellStor_ before dispatching. Mirrors hpwl.cpp pattern. After Phase 4
-  // (Nesterov coord update on device) this disappears.
-  if (device_state_) {
+  // Phase 4+: NB device context scatters inst coords + updates pin locations
+  // before this call, so the host→device sync is redundant. Fall back to
+  // host sync only when no scatter preceded this call (e.g. init paths
+  // before nb_device_ctx_ exists).
+  if (device_state_ && !device_state_->consumeCoordsFresh()) {
     const auto ts0 = std::chrono::steady_clock::now();
     device_state_->syncInstCoordsFromHost(gCellStor_);
     device_state_->updatePinLocations();
