@@ -438,7 +438,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
+    // — whose top chip is HIER and has no dbBlock — still register the
+    // chip observer and send the refresh notification.
+    if (!self->generator_->getChip()) {
       return;
     }
 
@@ -1233,6 +1236,7 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>
