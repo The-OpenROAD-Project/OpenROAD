@@ -1177,7 +1177,7 @@ proc add_3dblox_alignment_marker_rule { args } {
 
   foreach req {-master_a -master_b} {
     if { ![info exists keys($req)] } {
-      utl::error ODB 469 "$req is required"
+      utl::error ODB 475 "$req is required"
     }
   }
 

@@ -308,9 +308,7 @@ struct less<odb::dbAlignmentMarkerRule*>
 {
   bool operator()(const odb::dbAlignmentMarkerRule* lhs,
                   const odb::dbAlignmentMarkerRule* rhs) const
-  {
-    return odb::compare_by_id(lhs, rhs);
-  }
+      = delete;
 };
 
 template <>
