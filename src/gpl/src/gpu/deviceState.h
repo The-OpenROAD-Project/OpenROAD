@@ -30,6 +30,7 @@
 
 namespace gpl {
 
+class BinGrid;
 class GCell;
 class GNet;
 class GPin;
@@ -40,12 +41,18 @@ class DeviceState
 {
  public:
   // Reads instance coords, pin offsets, pin→inst id, and net→pin CSR from
-  // the supplied host storage, and pushes the static (offsets / CSR) parts
-  // to the device once. Coords are loaded via syncInstCoordsFromHost().
+  // the supplied host storage. Static data (offsets, CSRs) is pushed once;
+  // coords loaded each iter via syncInstCoordsFromHost().
   DeviceState(const std::vector<GCell>& gCellStor,
               const std::vector<GPin>& gPinStor,
               const std::vector<GNet>& gNetStor);
   ~DeviceState();
+
+  // Phase 3: allocate bin grid Views + push per-inst density params. Called
+  // once from NesterovBase after the BinGrid is initialized (initDensity1).
+  // Must precede any density gather kernel or GpuFftBackend solve.
+  void initBinViews(const BinGrid& binGrid,
+                    const std::vector<GCell>& gCellStor);
 
   // Re-push current instance centers (= GCell::cx()/cy()) to the device.
   // Used at the start of every gpu kernel that reads pin coords in Phases
@@ -67,10 +74,24 @@ class DeviceState
   // FIXME(phase 2): hook from rsz/grt-driven net-weight update path.
   void refreshNetWeights(const std::vector<GNet>& gNetStor);
 
+  // Re-push per-inst density params (half_dx, half_dy, density_scale) after
+  // the resize callback changes them. Static during the main Nesterov loop.
+  // FIXME(phase 3): hook from resize callback path.
+  void refreshDensityParams(const std::vector<GCell>& gCellStor);
+
   // Counts (for backends to size their own per-net / per-pin buffers).
   int numInsts() const;
   int numPins() const;
   int numNets() const;
+  int numBins() const;
+
+  // Bin grid geometry (for kernels that compute bin indices on-the-fly).
+  int binCntX() const { return bin_cnt_x_; }
+  int binCntY() const { return bin_cnt_y_; }
+  float binSizeX() const { return bin_size_x_; }
+  float binSizeY() const { return bin_size_y_; }
+  int gridLx() const { return grid_lx_; }
+  int gridLy() const { return grid_ly_; }
 
   // Accessor for Kokkos-aware backend translation units. Consumers must
   // also #include "deviceState_kokkos.h" to use the returned reference.
@@ -85,6 +106,15 @@ class DeviceState
   int num_insts_ = 0;
   int num_pins_ = 0;
   int num_nets_ = 0;
+  int num_bins_ = 0;
+
+  // Bin grid geometry (plain scalars, no Kokkos dependency).
+  int bin_cnt_x_ = 0;
+  int bin_cnt_y_ = 0;
+  float bin_size_x_ = 0;
+  float bin_size_y_ = 0;
+  int grid_lx_ = 0;
+  int grid_ly_ = 0;
 };
 
 }  // namespace gpl

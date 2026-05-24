@@ -174,23 +174,34 @@ void CpuFftBackend::solve(float** density,
 std::unique_ptr<FftBackend> makeFftBackend(int bin_cnt_x,
                                            int bin_cnt_y,
                                            float bin_size_x,
-                                           float bin_size_y)
+                                           float bin_size_y,
+                                           DeviceState* device_state)
 {
 #ifdef ENABLE_GPU
   if (gpuEnabled()) {
     ensureKokkosInitialized();
     return std::make_unique<GpuFftBackend>(
-        bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y);
+        bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y, device_state);
   }
+#else
+  (void) device_state;
 #endif
   return std::make_unique<CpuFftBackend>(
       bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y);
 }
 
-FFT::FFT(int bin_cnt_x, int bin_cnt_y, float bin_size_x, float bin_size_y)
+FFT::FFT(int bin_cnt_x,
+         int bin_cnt_y,
+         float bin_size_x,
+         float bin_size_y,
+         DeviceState* device_state)
     : bin_cnt_X_(bin_cnt_x),
       bin_cnt_y_(bin_cnt_y),
-      backend_(makeFftBackend(bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y))
+      backend_(makeFftBackend(bin_cnt_x,
+                              bin_cnt_y,
+                              bin_size_x,
+                              bin_size_y,
+                              device_state))
 {
   bin_density_ = new float*[bin_cnt_X_];
   electro_phi_ = new float*[bin_cnt_X_];

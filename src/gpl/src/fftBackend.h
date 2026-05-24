@@ -35,11 +35,16 @@ class FftBackend
   virtual const char* name() const = 0;
 };
 
+class DeviceState;
+
 // Factory: returns GpuFftBackend on an ENABLE_GPU build with the GPU path
-// selected at run time, otherwise CpuFftBackend.
+// selected at run time, otherwise CpuFftBackend. `device_state` is the
+// device-resident pool (may be null for CPU path; GpuFftBackend borrows
+// its bin Views when available, falling back to self-owned Views).
 std::unique_ptr<FftBackend> makeFftBackend(int bin_cnt_x,
                                            int bin_cnt_y,
                                            float bin_size_x,
-                                           float bin_size_y);
+                                           float bin_size_y,
+                                           DeviceState* device_state);
 
 }  // namespace gpl
