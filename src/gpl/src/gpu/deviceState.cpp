@@ -215,6 +215,59 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
 
 DeviceState::~DeviceState() = default;
 
+void DeviceState::initBinViews(const BinGrid& binGrid,
+                               const std::vector<GCell>& gCellStor)
+{
+  bin_cnt_x_ = binGrid.getBinCntX();
+  bin_cnt_y_ = binGrid.getBinCntY();
+  bin_size_x_ = static_cast<float>(binGrid.getBinSizeX());
+  bin_size_y_ = static_cast<float>(binGrid.getBinSizeY());
+  grid_lx_ = binGrid.lx();
+  grid_ly_ = binGrid.ly();
+  num_bins_ = bin_cnt_x_ * bin_cnt_y_;
+
+  auto& s = *kokkos_;
+  s.d_bin_density = Kokkos::View<float*>("ds_bin_density", num_bins_);
+  s.d_bin_phi = Kokkos::View<float*>("ds_bin_phi", num_bins_);
+  s.d_bin_elec_x = Kokkos::View<float*>("ds_bin_elec_x", num_bins_);
+  s.d_bin_elec_y = Kokkos::View<float*>("ds_bin_elec_y", num_bins_);
+  s.h_bin_density = Kokkos::create_mirror_view(s.d_bin_density);
+  s.h_bin_phi = Kokkos::create_mirror_view(s.d_bin_phi);
+  s.h_bin_elec_x = Kokkos::create_mirror_view(s.d_bin_elec_x);
+  s.h_bin_elec_y = Kokkos::create_mirror_view(s.d_bin_elec_y);
+
+  s.d_inst_density_half_dx
+      = Kokkos::View<int*>("ds_inst_density_half_dx", num_insts_);
+  s.d_inst_density_half_dy
+      = Kokkos::View<int*>("ds_inst_density_half_dy", num_insts_);
+  s.d_inst_density_scale
+      = Kokkos::View<float*>("ds_inst_density_scale", num_insts_);
+  s.d_inst_density_grad_x
+      = Kokkos::View<float*>("ds_inst_density_grad_x", num_insts_);
+  s.d_inst_density_grad_y
+      = Kokkos::View<float*>("ds_inst_density_grad_y", num_insts_);
+  s.h_inst_density_grad_x = Kokkos::create_mirror_view(s.d_inst_density_grad_x);
+  s.h_inst_density_grad_y = Kokkos::create_mirror_view(s.d_inst_density_grad_y);
+
+  std::vector<int> h_half_dx(num_insts_);
+  std::vector<int> h_half_dy(num_insts_);
+  std::vector<float> h_scale(num_insts_);
+  for (int i = 0; i < num_insts_; ++i) {
+    h_half_dx[i] = gCellStor[i].dDx() / 2;
+    h_half_dy[i] = gCellStor[i].dDy() / 2;
+    h_scale[i] = gCellStor[i].getDensityScale();
+  }
+  Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
+      h_half_dx.data(), num_insts_);
+  Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dy(
+      h_half_dy.data(), num_insts_);
+  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_s(
+      h_scale.data(), num_insts_);
+  Kokkos::deep_copy(s.d_inst_density_half_dx, hv_dx);
+  Kokkos::deep_copy(s.d_inst_density_half_dy, hv_dy);
+  Kokkos::deep_copy(s.d_inst_density_scale, hv_s);
+}
+
 void DeviceState::syncInstCoordsFromHost(const std::vector<GCell>& gCellStor)
 {
   auto& s = *kokkos_;
@@ -271,6 +324,28 @@ void DeviceState::refreshNetWeights(const std::vector<GNet>& gNetStor)
   Kokkos::deep_copy(s.d_net_weight, hv);
 }
 
+void DeviceState::refreshDensityParams(const std::vector<GCell>& gCellStor)
+{
+  auto& s = *kokkos_;
+  std::vector<int> h_half_dx(num_insts_);
+  std::vector<int> h_half_dy(num_insts_);
+  std::vector<float> h_scale(num_insts_);
+  for (int i = 0; i < num_insts_; ++i) {
+    h_half_dx[i] = gCellStor[i].dDx() / 2;
+    h_half_dy[i] = gCellStor[i].dDy() / 2;
+    h_scale[i] = gCellStor[i].getDensityScale();
+  }
+  Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
+      h_half_dx.data(), num_insts_);
+  Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dy(
+      h_half_dy.data(), num_insts_);
+  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_s(
+      h_scale.data(), num_insts_);
+  Kokkos::deep_copy(s.d_inst_density_half_dx, hv_dx);
+  Kokkos::deep_copy(s.d_inst_density_half_dy, hv_dy);
+  Kokkos::deep_copy(s.d_inst_density_scale, hv_s);
+}
+
 int DeviceState::numInsts() const
 {
   return num_insts_;
@@ -284,6 +359,11 @@ int DeviceState::numPins() const
 int DeviceState::numNets() const
 {
   return num_nets_;
+}
+
+int DeviceState::numBins() const
+{
+  return num_bins_;
 }
 
 }  // namespace gpl

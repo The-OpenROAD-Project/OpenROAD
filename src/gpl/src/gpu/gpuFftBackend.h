@@ -19,13 +19,16 @@
 
 namespace gpl {
 
+class DeviceState;
+
 class GpuFftBackend : public FftBackend
 {
  public:
   GpuFftBackend(int bin_cnt_x,
                 int bin_cnt_y,
                 float bin_size_x,
-                float bin_size_y);
+                float bin_size_y,
+                DeviceState* device_state);
 
   // Packs the host density grid into the device View, runs the Poisson solve,
   // and unpacks potential + electric field back into the host grids. All four
@@ -43,13 +46,16 @@ class GpuFftBackend : public FftBackend
   int bin_cnt_y_;
 
   PoissonSolver solver_;
+  DeviceState* device_state_;  // borrowed; may be null when ENABLE_GPU=ON but
+                               // no device_state
+
+  // Self-owned staging Views — used when DeviceState's bin Views are not yet
+  // initialized (before initBinViews). After Phase 3, solve() routes to
+  // DeviceState's Views so the density gather kernel can read them directly.
   Kokkos::View<float*> d_density_;
   Kokkos::View<float*> d_phi_;
-  Kokkos::View<float*> d_elec_x_;  // PoissonSolver electroForceX → gpl fy axis
-  Kokkos::View<float*> d_elec_y_;  // PoissonSolver electroForceY → gpl fx axis
-  // Persistent host mirrors paired with the four device staging Views above.
-  // Reused across solve() calls so each invocation skips four host-side mirror
-  // allocations -- measurably significant in the placement hot path.
+  Kokkos::View<float*> d_elec_x_;
+  Kokkos::View<float*> d_elec_y_;
   Kokkos::View<float*>::HostMirror h_density_;
   Kokkos::View<float*>::HostMirror h_phi_;
   Kokkos::View<float*>::HostMirror h_elec_x_;

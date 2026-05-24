@@ -18,7 +18,11 @@ namespace gpl {
 class FFT
 {
  public:
-  FFT(int bin_cnt_x, int bin_cnt_y, float bin_size_x, float bin_size_y);
+  FFT(int bin_cnt_x,
+      int bin_cnt_y,
+      float bin_size_x,
+      float bin_size_y,
+      DeviceState* device_state = nullptr);
   ~FFT();
 
   // input func

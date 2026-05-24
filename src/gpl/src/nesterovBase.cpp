@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "densityGradientBackend.h"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
@@ -2084,13 +2085,24 @@ NesterovBase::NesterovBase(
   std::unique_ptr<FFT> fft(new FFT(bg_.getBinCntX(),
                                    bg_.getBinCntY(),
                                    bg_.getBinSizeX(),
-                                   bg_.getBinSizeY()));
+                                   bg_.getBinSizeY(),
+                                   nbc_->getDeviceState()));
 
   fft_ = std::move(fft);
   log_->report("FFT backend: {}", fft_->getBackendName());
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
+
+#ifdef ENABLE_GPU
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->initBinViews(bg_, nbc_->getGCellStor());
+  }
+#endif
+
+  density_grad_backend_
+      = makeDensityGradientBackend(this, nbc_->getDeviceState());
+  log_->report("Density gradient backend: {}", density_grad_backend_->name());
 
   checkConsistency();
 }
@@ -2971,7 +2983,7 @@ void NesterovBase::updateSingleGradient(
   // updateWireLengthForceWA call; the backend (CPU or GPU) returns the
   // per-cell grad consistent with that state.
   wireLengthGrads[gCellIndex] = nbc_->getSingleWireLengthGradientWA(gCell);
-  densityGrads[gCellIndex] = getDensityGradient(gCell);
+  densityGrads[gCellIndex] = density_grad_backend_->getCellGradient(gCell);
 
   sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
                            + densityPenalty_ * densityGrads[gCellIndex].x;

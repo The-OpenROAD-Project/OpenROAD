@@ -36,6 +36,7 @@ add_library(gpl_lib
   src/fftsg2d.cpp
   src/hpwl.cpp
   src/wirelengthGradient.cpp
+  src/densityGradient.cpp
   src/routeBase.cpp
   src/timingBase.cpp
   src/graphicsNone.cpp
@@ -62,7 +63,9 @@ if(ENABLE_GPU)
     src/gpu/dct.cpp
     src/gpu/deviceState.cpp
     src/gpu/gpuWirelengthGradientBackend.cpp
-    src/gpu/wirelengthOp.cpp)
+    src/gpu/wirelengthOp.cpp
+    src/gpu/gpuDensityGradientBackend.cpp
+    src/gpu/densityOp.cpp)
   target_compile_definitions(gpl_lib PRIVATE ENABLE_GPU)
   # nesterovBase.h and other private gpl headers live in src/; sources
   # under src/gpu/ need that on the include path explicitly because
@@ -84,6 +87,7 @@ if(ENABLE_GPU)
       src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
       src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
+      src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/fft.cpp
       PROPERTIES LANGUAGE CUDA)
   elseif(Kokkos_ENABLE_HIP)
@@ -91,6 +95,7 @@ if(ENABLE_GPU)
       src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
       src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
+      src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/fft.cpp
       PROPERTIES LANGUAGE HIP)
   endif()

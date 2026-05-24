@@ -55,6 +55,7 @@ class FFT;
 class nesterovDbCbk;
 class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h (Phase 2)
+class DensityGradientBackend;     // densityGradientBackend.h (Phase 3)
 
 class GCell
 {
@@ -891,6 +892,12 @@ class NesterovBaseCommon
 
   void updateDbGCells();
 
+  // Device-resident state accessor (may be null when ENABLE_GPU is off).
+  DeviceState* getDeviceState() { return device_state_.get(); }
+
+  // Raw gCellStor_ accessor for DeviceState init (index correspondence).
+  const std::vector<GCell>& getGCellStor() const { return gCellStor_; }
+
   // Number of threads of execution
   size_t getNumThreads() { return num_threads_; }
 
@@ -1000,6 +1007,8 @@ class NesterovBase
   ~NesterovBase();
 
   GCell& getFillerGCell(size_t index);
+
+  NesterovBaseCommon* getNbc() { return nbc_.get(); }
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
@@ -1207,6 +1216,7 @@ class NesterovBase
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
+  std::unique_ptr<DensityGradientBackend> density_grad_backend_;
 
   int fillerDx_ = 0;
   int fillerDy_ = 0;

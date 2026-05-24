@@ -12,6 +12,8 @@
 #include <Kokkos_Core.hpp>
 #include <cstddef>
 
+#include "deviceState.h"
+#include "deviceState_kokkos.h"
 #include "gpuRuntime.h"
 #include "poissonSolver.h"
 
@@ -28,13 +30,15 @@ constexpr float kSolverToGplFieldScale = 0.5f;
 GpuFftBackend::GpuFftBackend(int bin_cnt_x,
                              int bin_cnt_y,
                              float bin_size_x,
-                             float bin_size_y)
+                             float bin_size_y,
+                             DeviceState* device_state)
     : bin_cnt_x_(bin_cnt_x),
       bin_cnt_y_(bin_cnt_y),
       // The Poisson solver's binCntX axis is gpl's fast (y) axis, so the flat
       // layout [h*binCntX + w] equals gpl's [x][y] when binCntX = bin_cnt_y.
       // The bin-size axes swap with the count axes (only the ratio is used).
       solver_(bin_cnt_y, bin_cnt_x, bin_size_y, bin_size_x),
+      device_state_(device_state),
       d_density_("fft_gpu_density", static_cast<size_t>(bin_cnt_x) * bin_cnt_y),
       d_phi_("fft_gpu_phi", static_cast<size_t>(bin_cnt_x) * bin_cnt_y),
       d_elec_x_("fft_gpu_elec_x", static_cast<size_t>(bin_cnt_x) * bin_cnt_y),
@@ -44,10 +48,6 @@ GpuFftBackend::GpuFftBackend(int bin_cnt_x,
       h_elec_x_(Kokkos::create_mirror_view(d_elec_x_)),
       h_elec_y_(Kokkos::create_mirror_view(d_elec_y_))
 {
-  // Kokkos must be live before any View above is touched; the ctor body runs
-  // after the member init list, so ensureKokkosInitialized() here would be too
-  // late for the Views — initialization is therefore driven from
-  // makeFftBackend() before GpuFftBackend is constructed.
 }
 
 void GpuFftBackend::solve(float** density,
@@ -65,26 +65,44 @@ void GpuFftBackend::solve(float** density,
       h_density_(static_cast<size_t>(x) * bin_cnt_y_ + y) = density[x][y];
     }
   }
-  Kokkos::deep_copy(d_density_, h_density_);
 
-  solver_.solvePoisson(d_density_, d_phi_, d_elec_x_, d_elec_y_);
-  Kokkos::fence();
+  // If DeviceState bin Views are initialized (Phase 3+), solve into
+  // DeviceState's Views so the density gather kernel can read them directly
+  // on device. The host unpack below reads from DeviceState's host mirrors.
+  const bool use_ds = device_state_ && device_state_->numBins() > 0;
+  if (use_ds) {
+    KokkosDeviceState& ds = device_state_->kokkos();
+    Kokkos::deep_copy(ds.d_bin_density, h_density_);
+    solver_.solvePoisson(
+        ds.d_bin_density, ds.d_bin_phi, ds.d_bin_elec_x, ds.d_bin_elec_y);
+    Kokkos::fence();
+    Kokkos::deep_copy(ds.h_bin_phi, ds.d_bin_phi);
+    Kokkos::deep_copy(ds.h_bin_elec_x, ds.d_bin_elec_x);
+    Kokkos::deep_copy(ds.h_bin_elec_y, ds.d_bin_elec_y);
 
-  Kokkos::deep_copy(h_phi_, d_phi_);
-  Kokkos::deep_copy(h_elec_x_, d_elec_x_);
-  Kokkos::deep_copy(h_elec_y_, d_elec_y_);
+    for (int x = 0; x < bin_cnt_x_; x++) {
+      for (int y = 0; y < bin_cnt_y_; y++) {
+        const size_t k = static_cast<size_t>(x) * bin_cnt_y_ + y;
+        phi[x][y] = ds.h_bin_phi(k);
+        field_x[x][y] = kSolverToGplFieldScale * ds.h_bin_elec_y(k);
+        field_y[x][y] = kSolverToGplFieldScale * ds.h_bin_elec_x(k);
+      }
+    }
+  } else {
+    Kokkos::deep_copy(d_density_, h_density_);
+    solver_.solvePoisson(d_density_, d_phi_, d_elec_x_, d_elec_y_);
+    Kokkos::fence();
+    Kokkos::deep_copy(h_phi_, d_phi_);
+    Kokkos::deep_copy(h_elec_x_, d_elec_x_);
+    Kokkos::deep_copy(h_elec_y_, d_elec_y_);
 
-  // Unpack. Two reconciliations vs the legacy CPU Ooura FFT:
-  //   (1) axis swap — the solver's electroForceX is the force along gpl's
-  //       fast (y) axis and electroForceY along the slow (x) axis;
-  //   (2) field scale — kSolverToGplFieldScale (see top of file).
-  // phi matches gpl 1:1, copied as-is.
-  for (int x = 0; x < bin_cnt_x_; x++) {
-    for (int y = 0; y < bin_cnt_y_; y++) {
-      const size_t k = static_cast<size_t>(x) * bin_cnt_y_ + y;
-      phi[x][y] = h_phi_(k);
-      field_x[x][y] = kSolverToGplFieldScale * h_elec_y_(k);
-      field_y[x][y] = kSolverToGplFieldScale * h_elec_x_(k);
+    for (int x = 0; x < bin_cnt_x_; x++) {
+      for (int y = 0; y < bin_cnt_y_; y++) {
+        const size_t k = static_cast<size_t>(x) * bin_cnt_y_ + y;
+        phi[x][y] = h_phi_(k);
+        field_x[x][y] = kSolverToGplFieldScale * h_elec_y_(k);
+        field_y[x][y] = kSolverToGplFieldScale * h_elec_x_(k);
+      }
     }
   }
 }
