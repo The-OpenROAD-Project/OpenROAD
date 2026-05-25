@@ -10,11 +10,8 @@
 // getHpwl() just delegates to the backend it was given at construction — no
 // preprocessor branch, no backend knowledge.
 
-#include <atomic>
 #include <cassert>
-#include <chrono>
 #include <cstdint>
-#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -31,33 +28,6 @@
 namespace gpl {
 
 namespace {
-
-// TEMP BENCH: per-process HPWL backend timing for the Phase-1 perf cycle.
-// Remove before merge. Splits backend-time from device-state sync time so we
-// can see where the Phase 1 host pin pack savings actually land.
-struct HpwlBenchTimer
-{
-  std::atomic<int64_t> calls{0};
-  std::atomic<int64_t> backend_us{0};
-  std::atomic<int64_t> sync_us{0};
-  ~HpwlBenchTimer()
-  {
-    const int64_t c = calls.load();
-    if (c > 0) {
-      const int64_t bu = backend_us.load();
-      const int64_t su = sync_us.load();
-      std::fprintf(stderr,
-                   "[bench] HPWL: %ld calls   backend %.3fs (%.1f us/call)"
-                   "   sync %.3fs (%.1f us/call)\n",
-                   c,
-                   bu / 1e6,
-                   static_cast<double>(bu) / c,
-                   su / 1e6,
-                   static_cast<double>(su) / c);
-    }
-  }
-};
-HpwlBenchTimer hpwl_bench_timer;
 
 // CPU HPWL backend: the OpenMP reduction over nets. The loop body is
 // byte-identical to the pre-GPU NesterovBaseCommon::getHpwl().
@@ -109,22 +79,11 @@ int64_t NesterovBaseCommon::getHpwl()
   // Phase 4 (Nesterov coord update on device) this sync moves to a one-time
   // init load and disappears from the hot path.
   if (device_state_) {
-    const auto ts0 = std::chrono::steady_clock::now();
     device_state_->syncInstCoordsFromHost(gCellStor_);
     device_state_->updatePinLocations();
-    const auto ts1 = std::chrono::steady_clock::now();
-    hpwl_bench_timer.sync_us.fetch_add(
-        std::chrono::duration_cast<std::chrono::microseconds>(ts1 - ts0)
-            .count());
   }
 #endif
-  const auto t0 = std::chrono::steady_clock::now();
-  const int64_t result = hpwl_backend_->computeHpwl(gNetStor_);
-  const auto t1 = std::chrono::steady_clock::now();
-  hpwl_bench_timer.backend_us.fetch_add(
-      std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
-  hpwl_bench_timer.calls.fetch_add(1);
-  return result;
+  return hpwl_backend_->computeHpwl(gNetStor_);
 }
 
 }  // namespace gpl

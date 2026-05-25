@@ -3,11 +3,7 @@
 
 // Density gradient backends + dispatch. Mirrors wirelengthGradient.cpp.
 
-#include <atomic>
-#include <chrono>
 #include <cstddef>
-#include <cstdint>
-#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -24,25 +20,6 @@
 namespace gpl {
 
 namespace {
-
-struct DensityGradBenchTimer
-{
-  std::atomic<int64_t> calls{0};
-  std::atomic<int64_t> us{0};
-  ~DensityGradBenchTimer()
-  {
-    const int64_t c = calls.load();
-    if (c > 0) {
-      const int64_t u = us.load();
-      std::fprintf(stderr,
-                   "[bench] DensityGrad: %ld calls %.3fs (%.1f us/call)\n",
-                   c,
-                   u / 1e6,
-                   static_cast<double>(u) / c);
-    }
-  }
-};
-DensityGradBenchTimer density_grad_bench;
 
 class CpuDensityGradientBackend : public DensityGradientBackend
 {

@@ -1278,13 +1278,18 @@ NesterovBaseCommon::NesterovBaseCommon(
   }
 #endif
   hpwl_backend_ = makeHpwlBackend(num_threads_, device_state_.get());
-  log_->report("HPWL backend: {}", hpwl_backend_->name());
+  debugPrint(log_, GPL, "init", 1, "HPWL backend: {}", hpwl_backend_->name());
 
   // Phase 2: WA wirelength gradient dispatcher. Same factory pattern as
   // hpwl_backend_; routes through device_state_ on the GPU path.
   wl_grad_backend_
       = makeWirelengthGradientBackend(num_threads_, this, device_state_.get());
-  log_->report("WA wirelength gradient backend: {}", wl_grad_backend_->name());
+  debugPrint(log_,
+             GPL,
+             "init",
+             1,
+             "WA wirelength gradient backend: {}",
+             wl_grad_backend_->name());
 }
 
 GCell* NesterovBaseCommon::pbToNb(Instance* inst) const
@@ -2090,7 +2095,7 @@ NesterovBase::NesterovBase(
                                    nbc_->getDeviceState()));
 
   fft_ = std::move(fft);
-  log_->report("FFT backend: {}", fft_->getBackendName());
+  debugPrint(log_, GPL, "init", 1, "FFT backend: {}", fft_->getBackendName());
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
@@ -2103,7 +2108,12 @@ NesterovBase::NesterovBase(
 
   density_grad_backend_
       = makeDensityGradientBackend(this, nbc_->getDeviceState());
-  log_->report("Density gradient backend: {}", density_grad_backend_->name());
+  debugPrint(log_,
+             GPL,
+             "init",
+             1,
+             "Density gradient backend: {}",
+             density_grad_backend_->name());
 
   checkConsistency();
 }

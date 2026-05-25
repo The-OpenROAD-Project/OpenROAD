@@ -56,10 +56,8 @@ if(ENABLE_GPU)
   get_property(gpl_tests DIRECTORY PROPERTY TESTS)
   foreach(test_name ${gpl_tests})
     get_test_property(${test_name} LABELS test_labels)
-    if(test_labels MATCHES "log_compare")
-      set_tests_properties(${test_name} PROPERTIES
-        ENVIRONMENT "ENABLE_GPU=0")
-    endif()
+    set_property(TEST ${test_name} APPEND PROPERTY
+      ENVIRONMENT "ENABLE_GPU=0")
   endforeach()
 endif()
 
