@@ -1,4 +1,9 @@
 common --enable_bzlmod
+# sv-lang 10.0.bcr.2 (slang at f04e8156 with the foreign_cc cmake -xc++
+# fix) is pending upstream as a PR against bazelbuild/bazel-central-
+# registry. Remove this registry line once the version lands on BCR.
+common --registry=https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/
+common --registry=https://bcr.bazel.build/
 build --workspace_status_command=tools/workspace_status.sh
 
 # Release builds embed real git version info; dev builds use cache-safe placeholders.
