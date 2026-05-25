@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <sstream>
+#include <stdexcept>
 
 #include "gtest/gtest.h"
 #include "syn/ir/Graph.h"
@@ -187,6 +188,15 @@ TEST(ParseTest, NonConsecutiveIds)
     EXPECT_EQ(out->value()[i], and_out[i])
         << "output.value[" << i << "] should reference and output";
   }
+}
+
+TEST(ParseTest, RejectsDeclaredWidthMismatch)
+{
+  std::istringstream is(
+      "%3:8 = input \"a\"\n"
+      "%11:8 = input \"b\"\n"
+      "%19:16 = mul %3:8 %11:8\n");
+  EXPECT_THROW({ (void) Graph::parse(is); }, std::runtime_error);
 }
 
 }  // namespace syn
