@@ -26,7 +26,6 @@ if echo "$fromImage" | grep -q "ubuntu"; then
 else
     echo "Skipping strip command as fromImage does not contain 'ubuntu'"
 fi
-# Purge apt lists (~39MB on Ubuntu/Debian; no-op on RHEL/Rocky).
 if command -v apt-get >/dev/null 2>&1; then
     rm -rf /var/lib/apt/lists/*
 fi
