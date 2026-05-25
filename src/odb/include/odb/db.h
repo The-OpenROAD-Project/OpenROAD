@@ -109,6 +109,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbAlignmentMarkerRule;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
@@ -7118,6 +7119,32 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbAlignmentMarkerRule : public dbObject
+{
+ public:
+  void setTolerance(int tolerance);
+
+  // Max center-to-center misalignment (DBU) between paired markers; 0 means
+  // exact alignment is required.
+  int getTolerance() const;
+
+  // User Code Begin dbAlignmentMarkerRule
+  // getters
+  dbMaster* getMasterA() const;
+  dbMaster* getMasterB() const;
+  // Allowed relative orientations of master_b w.r.t. master_a: master_b.orient
+  // == master_a.orient * rel_orient. Empty means no orientation constraint.
+  std::vector<dbOrientType> getRelativeOrientations() const;
+  // setters
+  void setRelativeOrientations(
+      const std::vector<dbOrientType>& relative_orientations);
+  void addRelativeOrientation(dbOrientType relative_orientation);
+
+  static dbAlignmentMarkerRule* create(dbMaster* master_a, dbMaster* master_b);
+  static void destroy(dbAlignmentMarkerRule* alignment_marker_rule);
+  // User Code End dbAlignmentMarkerRule
+};
+
 class dbBusPort : public dbObject
 {
  public:
@@ -7536,6 +7563,8 @@ class dbDatabase : public dbObject
   void setDbuPerMicron(uint32_t dbu_per_micron);
 
   uint32_t getDbuPerMicron() const;
+
+  dbSet<dbAlignmentMarkerRule> getAlignmentMarkerRules() const;
 
   dbSet<dbChip> getChips() const;
 

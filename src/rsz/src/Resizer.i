@@ -176,7 +176,6 @@ void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(lib_cell, dont_use);
 }
@@ -184,7 +183,6 @@ set_dont_use(LibertyCell *lib_cell,
 void
 reset_dont_use()
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resetDontUse();
 }

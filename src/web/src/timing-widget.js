@@ -3,7 +3,7 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
     constructor(app, redrawAllLayers) {
@@ -31,6 +31,9 @@ export class TimingWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
 
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
@@ -77,6 +80,10 @@ export class TimingWidget {
         this.element = el;
 
         this._bindEvents();
+
+        if (isStaticMode(this._app)) {
+            setTimeout(() => this.update(), 0);
+        }
     }
 
     _makeTab(label, active) {
@@ -270,6 +277,20 @@ export class TimingWidget {
             tr.addEventListener('click', () => this._selectPathRow(idx));
             tbody.appendChild(tr);
         });
+
+        if (paths.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = TimingWidget.PATH_COLS.length;
+            td.style.textAlign = 'center';
+            td.style.color = 'var(--fg-secondary)';
+            td.textContent = isStaticMode(this._app) ?
+                'No timing data available' :
+                'Click "Update" to load timing paths';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+
         this._pathTable.appendChild(tbody);
 
         // Restore previous widths if available, otherwise compute fresh.

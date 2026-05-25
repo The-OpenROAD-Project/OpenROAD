@@ -32,6 +32,8 @@ class Scene;
 
 namespace gpl {
 
+inline constexpr const char* kOrigNameProp = "orig_name";
+
 struct Point;
 struct Tray;
 struct Flop;
