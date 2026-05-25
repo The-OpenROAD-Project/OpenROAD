@@ -1587,6 +1587,27 @@ void RepairDesign::repairNetWire(
       double buf_dist = (split_length >= length)
                             ? length
                             : split_length * (1.0 - length_margin);
+      // Bail when no forward progress is possible. With buf_dist == 0 the
+      // next repeater would be placed at the same coordinate as this one,
+      // leaving `length` unchanged and the same slew/cap violation, so the
+      // outer while loop would iterate unboundedly. The trigger is a slew
+      // quadratic whose only non-negative root is 0, which happens when
+      // r_drvr * ref_cap already meets or exceeds max_load_slew /
+      // slew_rc_factor_ -- i.e., the driver alone, loaded only by the
+      // repeater's input pin cap, cannot satisfy the slew limit.
+      if (buf_dist <= 0.0) {
+        logger_->warn(
+            RSZ,
+            170,
+            "Cannot repair slew on net {} driven by {}: driver resistance "
+            "x repeater pin capacitance ({:.3g}) already meets or exceeds "
+            "the slew budget ({:.3g}). Net left unrepaired on this segment.",
+            network_->pathName(network_->net(drvr_pin_)),
+            network_->pathName(drvr_pin_),
+            r_drvr * ref_cap,
+            max_load_slew_margined / (*slew_rc_factor_));
+        break;
+      }
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;
