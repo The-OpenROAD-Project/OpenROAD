@@ -125,18 +125,22 @@ bool IRSolver::check(bool check_bterms)
     return connected_.value();
   }
 
-  // set to true and unset if it failed
-  connected_ = true;
-  if (check_bterms && !checkBTerms()) {
-    reportMissingBTerm();
+  if (!network_->hasNodes()) {
     connected_ = false;
-  }
-  if (!checkOpen()) {
-    reportUnconnectedNodes();
-    connected_ = false;
-  }
-  if (!checkShort()) {
-    connected_ = false;
+  } else {
+    // set to true and unset if it failed
+    connected_ = true;
+    if (check_bterms && !checkBTerms()) {
+      reportMissingBTerm();
+      connected_ = false;
+    }
+    if (!checkOpen()) {
+      reportUnconnectedNodes();
+      connected_ = false;
+    }
+    if (!checkShort()) {
+      connected_ = false;
+    }
   }
 
   return connected_.value();
@@ -1000,6 +1004,10 @@ void IRSolver::solve(sta::Scene* corner,
   if (network_->isFloorplanningOnly()) {
     network_->setFloorplanning(false);
     network_->construct();
+  }
+
+  if (!network_->hasNodes()) {
+    return;
   }
 
   assertResistanceMap(corner);
