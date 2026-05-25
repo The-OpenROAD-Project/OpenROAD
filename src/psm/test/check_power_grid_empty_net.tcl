@@ -9,5 +9,5 @@ $net setSigType POWER
 
 odb::dbBTerm_create $net "VDDTest"
 
-catch { [check_power_grid -net VDDTest] } err
+catch { check_power_grid -net VDDTest } err
 puts $err

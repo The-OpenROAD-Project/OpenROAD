@@ -1007,6 +1007,10 @@ void IRSolver::solve(sta::Scene* corner,
   }
 
   if (!network_->hasNodes()) {
+    voltages_.erase(corner);
+    currents_.erase(corner);
+    solution_voltages_.erase(corner);
+    solution_power_.erase(corner);
     return;
   }
 
