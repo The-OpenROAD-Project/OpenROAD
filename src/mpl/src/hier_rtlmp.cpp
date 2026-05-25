@@ -2365,7 +2365,8 @@ void HierRTLMP::correctAllMacrosOrientation()
 void HierRTLMP::correctMacroOrientationByCluster()
 {
   for (auto& [_, cluster] : tree_->maps.id_to_cluster) {
-    if (cluster->isFixedMacro() || cluster->isIOCluster()) {
+    if (cluster->getClusterType() != HardMacroCluster
+        || cluster->isFixedMacro()) {
       continue;
     }
 
