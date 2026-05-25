@@ -8,12 +8,8 @@
 // pipeline) is added on ENABLE_GPU. makeWirelengthGradientBackend() picks
 // per-process at run time (gpl::gpuEnabled()).
 
-#include <atomic>
 #include <cassert>
-#include <chrono>
 #include <cstddef>
-#include <cstdint>
-#include <cstdio>
 #include <memory>
 #include <vector>
 
@@ -30,43 +26,6 @@
 namespace gpl {
 
 namespace {
-
-// TEMP BENCH: per-process WA gradient timing for the Phase-2 perf cycle.
-// Remove before merge (Phase 5). Same shape as HpwlBenchTimer in hpwl.cpp.
-struct WlGradBenchTimer
-{
-  std::atomic<int64_t> force_calls{0};
-  std::atomic<int64_t> force_us{0};
-  std::atomic<int64_t> sync_us{0};
-  std::atomic<int64_t> gather_calls{0};
-  std::atomic<int64_t> gather_us{0};
-  std::atomic<int64_t> single_calls{0};
-  ~WlGradBenchTimer()
-  {
-    const int64_t fc = force_calls.load();
-    const int64_t gc = gather_calls.load();
-    if (fc > 0 || gc > 0) {
-      const int64_t fu = force_us.load();
-      const int64_t gu = gather_us.load();
-      const int64_t su = sync_us.load();
-      std::fprintf(stderr,
-                   "[bench] WLgrad: force %ld calls %.3fs (%.1f us/call)"
-                   "   sync %.3fs (%.1f us/call)"
-                   "   gather %ld calls %.3fs (%.1f us/call)"
-                   "   single %ld calls\n",
-                   fc,
-                   fu / 1e6,
-                   fc > 0 ? static_cast<double>(fu) / fc : 0.0,
-                   su / 1e6,
-                   fc > 0 ? static_cast<double>(su) / fc : 0.0,
-                   gc,
-                   gu / 1e6,
-                   gc > 0 ? static_cast<double>(gu) / gc : 0.0,
-                   single_calls.load());
-    }
-  }
-};
-WlGradBenchTimer wl_grad_bench_timer;
 
 // CPU backend: thin wrapper around the existing nbc methods. The OMP loops
 // live in NesterovBaseCommon::updateWireLengthForceWA_native — same body as
@@ -133,7 +92,7 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
 
 //
 // NesterovBaseCommon hooks. Defined out-of-line here so this TU owns the
-// backend dispatch + bench timing in one place. The native CPU body
+// backend dispatch in one place. The native CPU body
 // (updateWireLengthForceWA_native) and per-cell helpers stay in
 // nesterovBase.cpp.
 //
@@ -145,38 +104,22 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
   // host sync only when no scatter preceded this call (e.g. init paths
   // before nb_device_ctx_ exists).
   if (device_state_ && !device_state_->consumeCoordsFresh()) {
-    const auto ts0 = std::chrono::steady_clock::now();
     device_state_->syncInstCoordsFromHost(gCellStor_);
     device_state_->updatePinLocations();
-    const auto ts1 = std::chrono::steady_clock::now();
-    wl_grad_bench_timer.sync_us.fetch_add(
-        std::chrono::duration_cast<std::chrono::microseconds>(ts1 - ts0)
-            .count());
   }
 #endif
-  const auto t0 = std::chrono::steady_clock::now();
   wl_grad_backend_->updateForce(wlCoeffX, wlCoeffY);
-  const auto t1 = std::chrono::steady_clock::now();
-  wl_grad_bench_timer.force_us.fetch_add(
-      std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
-  wl_grad_bench_timer.force_calls.fetch_add(1);
 }
 
 void NesterovBaseCommon::getAllWireLengthGradientsWA(
     const std::vector<GCellHandle>& gCells,
     std::vector<FloatPoint>& out)
 {
-  const auto t0 = std::chrono::steady_clock::now();
   wl_grad_backend_->getCellGradients(gCells, out);
-  const auto t1 = std::chrono::steady_clock::now();
-  wl_grad_bench_timer.gather_us.fetch_add(
-      std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
-  wl_grad_bench_timer.gather_calls.fetch_add(1);
 }
 
 FloatPoint NesterovBaseCommon::getSingleWireLengthGradientWA(const GCell* gCell)
 {
-  wl_grad_bench_timer.single_calls.fetch_add(1);
   return wl_grad_backend_->getCellGradient(gCell);
 }
 
