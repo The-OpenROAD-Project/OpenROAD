@@ -208,7 +208,7 @@ void SinkClustering::repairClusteringSolution(
     int& single_cluster_count,
     int& solved_cluster_count)
 {
-  unsigned cluster_num = solutions.size();
+  int cluster_num = solutions.size();
   for (int c = 0; c < cluster_num; ++c) {
     // only clusters with a single sink
     if (solutionPoints[c].size() == 1) {
@@ -222,7 +222,7 @@ void SinkClustering::repairClusteringSolution(
       double min_dist_to_merge = maxInternalDiameter_;
       int cluster_idx_to_merge = -1;
       // Find cluster to add one sink
-      for (unsigned k = 0; k < cluster_num; ++k) {
+      for (int k = 0; k < cluster_num; ++k) {
         if (k == c) {
           continue;
         }
@@ -230,7 +230,7 @@ void SinkClustering::repairClusteringSolution(
         unsigned pointIdx = 0;
         double distanceCost = 0;
         double capCost = pointsCap_[idx];
-        for (Point<double> comparisonPoint : solutionPoints[k]) {
+        for (const auto& comparisonPoint : solutionPoints[k]) {
           const double cost = HTree_->computeDist(p, comparisonPoint);
           const double cap_cost
               = pointsCap_[idx]
