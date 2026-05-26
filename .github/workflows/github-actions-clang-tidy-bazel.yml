@@ -1,0 +1,102 @@
+name: clang-tidy-bazel
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  Clang-Tidy-Bazel:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+          # Need full history so reviewdog can diff against the PR base.
+          fetch-depth: 0
+
+      - name: Set up bazel
+        # GitHub-hosted ubuntu-latest preinstalls bazelisk, but self-hosted
+        # runners do not. Install it explicitly so the workflow works on
+        # both runner types. bazel-contrib/setup-bazel's default uses a
+        # pre-installed bazelisk; passing bazelisk-version forces install.
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: 1.x
+          bazelisk-cache: true
+
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Run bazel clang-tidy
+        env:
+          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
+        run: |
+          # Same auth pattern as github-actions-macos-bazel.yml: when the
+          # cache secret is present (push / dispatch / private repo PR),
+          # add authed gRPC + Remote Asset API on top of the .bazelrc anon
+          # HTTPS read-only cache. Fork PRs have no secret and just read
+          # the anon cache.
+          REMOTE_FLAGS=()
+          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
+            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+            echo "::add-mask::${TOKEN_B64}"
+            REMOTE_FLAGS=(
+              --remote_cache=grpcs://bazel.precisioninno.com:443
+              --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
+              --remote_upload_local_results=true
+              --remote_header="Authorization=Basic ${TOKEN_B64}"
+            )
+          fi
+          # Note: do NOT use --config=ci here. That config sets
+          # --remote_download_minimal and --config=opt (LTO), but we need
+          # the .AspectRulesLintClangTidy.out files materialized locally
+          # to feed reviewdog, and LTO is wasted work for lint.
+          set -x
+          bazel build \
+            "${REMOTE_FLAGS[@]}" \
+            --config=lint \
+            -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+
+      - name: Collect clang-tidy diagnostics
+        run: |
+          # Paths in .out files are sandbox-absolute; strip to workspace-
+          # relative so reviewdog can match against the PR diff. Keep only
+          # `path:line:col: warning|error:` lines — drops source-context
+          # carets, notes, and clang-tidy's header noise in one filter.
+          # `grep -v bazel-out/` drops findings against external virtual
+          # includes (not in any PR diff). `sort -u` dedupes the same
+          # finding emitted under multiple cc_library consumers of a
+          # shared source.
+          BAZEL_BIN=$(bazel info bazel-bin)
+          find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0 \
+            | xargs -0 cat \
+            | sed -E 's|^.*/execroot/_main/||' \
+            | grep -E '^[^:]+:[0-9]+:[0-9]+: (warning|error):' \
+            | grep -vE '^(bazel-out|external)/' \
+            | sort -u \
+            > clang-tidy.txt
+          echo "::group::clang-tidy.txt (head)"
+          head -50 clang-tidy.txt || true
+          echo "::endgroup::"
+          echo "Findings: $(wc -l < clang-tidy.txt)"
+
+      - name: Run reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog \
+            -efm="%E%f:%l:%c: error: %m" \
+            -efm="%W%f:%l:%c: warning: %m" \
+            -name="clang-tidy" \
+            -reporter=github-pr-review \
+            -filter-mode=added \
+            -fail-level=any \
+            < clang-tidy.txt
