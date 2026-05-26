@@ -24,7 +24,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",
@@ -48,7 +48,7 @@ cc_library(
     deps = [
         ":tap",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",

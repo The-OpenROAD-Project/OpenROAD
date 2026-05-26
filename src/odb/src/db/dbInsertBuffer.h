@@ -10,6 +10,7 @@
 #include <string>
 
 #include "dbNet.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -51,7 +52,7 @@ class dbInsertBuffer
       const char* new_net_base_name = kDefaultNetBaseName,
       const dbNameUniquifyType& uniquify = dbNameUniquifyType::ALWAYS);
   dbInst* insertBufferBeforeLoads(
-      const std::set<dbObject*>& load_pins,
+      const odb::PtrSet<dbObject>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -79,22 +80,22 @@ class dbInsertBuffer
                              bool insertBefore);
   dbInst* checkAndCreateBuffer();
   bool checkDontTouch(const dbITerm* iterm) const;
-  dbNet* createNewFlatNet(const std::set<dbObject*>& connected_terms);
+  dbNet* createNewFlatNet(const odb::PtrSet<dbObject>& connected_terms);
   std::string makeUniqueHierName(const dbModule* module,
                                  const std::string& base_name,
                                  const char* suffix = nullptr) const;
   int getModuleDepth(const dbModule* mod) const;
   dbModule* findLCA(dbModule* m1, dbModule* m2) const;
   dbModNet* getFirstDriverModNetInTargetModule(
-      const std::set<dbModNet*>& modnets_in_target_module) const;
+      const odb::PtrSet<dbModNet>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,
-                               const std::set<dbObject*>& load_pins) const;
+                               const odb::PtrSet<dbObject>& load_pins) const;
   bool isMarkedAsNotReusable(dbModNet* net) const;
   std::optional<bool> getCachedReusability(dbModNet* net) const;
   void markModNetReusability(dbModNet* net, bool is_reusable) const;
   bool getPinLocation(const dbObject* pin, int& x, int& y) const;
   bool computeCentroid(const dbObject* drvr_pin,
-                       const std::set<dbObject*>& load_pins,
+                       const odb::PtrSet<dbObject>& load_pins,
                        Point& result) const;
   void placeBufferAtLocation(dbInst* buffer_inst,
                              const Point& loc,
@@ -102,7 +103,7 @@ class dbInsertBuffer
   void placeBufferAtPin(dbInst* buffer_inst, const dbObject* term);
   void placeBufferAtCentroid(dbInst* buffer_inst,
                              const dbObject* drvr_pin,
-                             const std::set<dbObject*>& load_pins);
+                             const odb::PtrSet<dbObject>& load_pins);
 
   ///
   /// This function identifies hierarchical nets (dbModNet) that can be reused
@@ -111,7 +112,7 @@ class dbInsertBuffer
   /// A modnet is considered reusable if all of its loads are also target load
   /// pins for the buffer being inserted.
   ///
-  void populateReusableModNets(const std::set<dbObject*>& load_pins);
+  void populateReusableModNets(const odb::PtrSet<dbObject>& load_pins);
 
   ///
   /// Traverses the netlist upstream (fanin cone) from the given net and marks
@@ -168,7 +169,7 @@ class dbInsertBuffer
                               dbModule* load_mod);
   bool stitchLoadToDriver(dbITerm* load_pin,
                           dbITerm* drvr_term,
-                          const std::set<dbObject*>& load_pins);
+                          const odb::PtrSet<dbObject>& load_pins);
 
   //------------------------------------------------------------------
   // Helper functions for stitchLoadToDriver
@@ -176,7 +177,7 @@ class dbInsertBuffer
   bool tryReuseParentPath(dbObject*& load_obj,
                           dbModule*& current_module,
                           dbModITerm*& top_mod_iterm,
-                          const std::set<dbObject*>& load_pins);
+                          const odb::PtrSet<dbObject>& load_pins);
   bool tryReuseModNetInModule(dbObject*& load_obj,
                               dbModule*& current_module,
                               dbModITerm*& top_mod_iterm);
@@ -206,25 +207,25 @@ class dbInsertBuffer
   //------------------------------------------------------------------
   // Helper functions for insertBufferBeforeLoads
   //------------------------------------------------------------------
-  void validateArgumentsBeforeLoads(const std::set<dbObject*>& load_pins,
+  void validateArgumentsBeforeLoads(const odb::PtrSet<dbObject>& load_pins,
                                     const dbMaster* buffer_master) const;
-  dbModule* validateLoadPinsAndFindLCA(const std::set<dbObject*>& load_pins,
+  dbModule* validateLoadPinsAndFindLCA(const odb::PtrSet<dbObject>& load_pins,
                                        bool loads_on_diff_nets) const;
-  void createNewFlatAndHierNets(const std::set<dbObject*>& load_pins);
-  void rewireBufferLoadPins(const std::set<dbObject*>& load_pins);
+  void createNewFlatAndHierNets(const odb::PtrSet<dbObject>& load_pins);
+  void rewireBufferLoadPins(const odb::PtrSet<dbObject>& load_pins);
   void setBufferAttributes(dbInst* buffer_inst);
   void validateBufferMaster() const;
 
   //------------------------------------------------------------------
   // Debug logging functions
   //------------------------------------------------------------------
-  void dlogBeforeLoadsParams(const std::set<dbObject*>& load_pins,
+  void dlogBeforeLoadsParams(const odb::PtrSet<dbObject>& load_pins,
                              const Point* loc,
                              bool loads_on_diff_nets) const;
   void dlogTargetLoadPin(const dbObject* load_obj) const;
   void dlogDifferentDbNet(const dbNet* net) const;
   void dlogLCAModule(const dbModule* target_module) const;
-  void dlogDumpNets(const std::set<dbNet*>& other_dbnets) const;
+  void dlogDumpNets(const odb::PtrSet<dbNet>& other_dbnets) const;
   void dlogCreatingNewHierNet(const char* base_name) const;
   void dlogConnectedBufferInputFlat() const;
   void dlogConnectedBufferInputHier(const dbModNet* orig_mod_net) const;
@@ -267,10 +268,10 @@ class dbInsertBuffer
 
   // dbModNet has target loads only (true) or
   // mixed target and non-target loads (false)
-  mutable std::map<dbModNet*, bool> is_target_only_cache_;
+  mutable odb::PtrMap<dbModNet, bool> is_target_only_cache_;
 
   // Indicates a dbModNet in a module can be reused (w/o port punching) or not
-  std::map<dbModule*, std::set<dbModNet*>> module_reusable_nets_;
+  odb::PtrMap<dbModule, odb::PtrSet<dbModNet>> module_reusable_nets_;
 
   //------------------------------------------------------------------
   // Static attributes

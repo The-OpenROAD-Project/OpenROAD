@@ -22,7 +22,7 @@ inline dbMap<T, D>::dbMap(const dbSet<T>& set)
   // Use a map if this set represents random iterator
   else {
     _vector = nullptr;
-    map_ = new std::map<T*, D>;
+    map_ = new std::map<T*, D, ODBPtrLess>;
     typename dbSet<T>::iterator itr;
 
     for (itr = set_.begin(); itr != set_.end(); ++itr) {
@@ -43,7 +43,7 @@ template <class T, class D>
 inline const D& dbMap<T, D>::operator[](T* object) const
 {
   if (map_) {
-    typename std::map<T*, D>::const_iterator itr = map_->find(object);
+    auto itr = map_->find(object);
     assert(itr != map_->end());
     return (*itr).second;
   }

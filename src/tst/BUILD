@@ -15,7 +15,7 @@ cc_library(
     data = [
         "//test:nangate45_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [":tst"],
 )
@@ -27,7 +27,7 @@ cc_library(
     data = [
         "//test:sky130hd_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [":tst"],
 )
@@ -47,7 +47,8 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@bazel_tools//tools/cpp/runfiles",
@@ -66,7 +67,7 @@ cc_library(
         "//test:nangate45_data",
         "//test:sky130hd_data",
     ],
-    includes = ["."],
+    includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [
         ":tst",
@@ -77,7 +78,7 @@ cc_library(
         "//src/dpl",
         "//src/est",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",

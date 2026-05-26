@@ -19,6 +19,7 @@
 #include <variant>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockSet.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbDatabaseObserver.h"
@@ -108,6 +109,7 @@ class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
 class dbAccessPoint;
+class dbAlignmentMarkerRule;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
@@ -1372,7 +1374,7 @@ class dbBlock : public dbObject
 
   void clearUserInstFlags();
 
-  std::map<dbTechLayer*, dbTechVia*> getDefaultVias();
+  odb::PtrMap<dbTechLayer, dbTechVia*> getDefaultVias();
 
   ///
   /// Destroy all the routing wires from signal and clock nets in this block.
@@ -2369,7 +2371,7 @@ class dbNet : public dbObject
   ///
   void getCouplingNets(uint32_t corner,
                        double ccThreshold,
-                       std::set<dbNet*>& cnets);
+                       odb::PtrSet<dbNet>& cnets);
 
   ///
   /// delete the capacitor-coupled segments.
@@ -2545,7 +2547,7 @@ class dbNet : public dbObject
   /// two objects in different parts of the hierarchy, each connected
   /// by different dbModNets in different parts of the hierarchy).
   ///
-  bool findRelatedModNets(std::set<dbModNet*>& modnet_set) const;
+  bool findRelatedModNets(odb::PtrSet<dbModNet>& modnet_set) const;
 
   ///
   /// Find the modnet in the highest hierarchy related to this net.
@@ -2638,7 +2640,7 @@ class dbNet : public dbObject
   ///   contain an irrelevant load.
   ///
   dbInst* insertBufferBeforeLoads(
-      const std::set<dbObject*>& load_pins,
+      const odb::PtrSet<dbObject>& load_pins,
       const dbMaster* buffer_master,
       const Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -3479,7 +3481,7 @@ class dbITerm : public dbObject
   ///
   /// Returns all access points for each pin.
   ///
-  std::map<dbMPin*, std::vector<dbAccessPoint*>> getAccessPoints() const;
+  odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> getAccessPoints() const;
 
   ///
   /// Destroys all access points of each pin.
@@ -7117,6 +7119,32 @@ class dbAccessPoint : public dbObject
   // User Code End dbAccessPoint
 };
 
+class dbAlignmentMarkerRule : public dbObject
+{
+ public:
+  void setTolerance(int tolerance);
+
+  // Max center-to-center misalignment (DBU) between paired markers; 0 means
+  // exact alignment is required.
+  int getTolerance() const;
+
+  // User Code Begin dbAlignmentMarkerRule
+  // getters
+  dbMaster* getMasterA() const;
+  dbMaster* getMasterB() const;
+  // Allowed relative orientations of master_b w.r.t. master_a: master_b.orient
+  // == master_a.orient * rel_orient. Empty means no orientation constraint.
+  std::vector<dbOrientType> getRelativeOrientations() const;
+  // setters
+  void setRelativeOrientations(
+      const std::vector<dbOrientType>& relative_orientations);
+  void addRelativeOrientation(dbOrientType relative_orientation);
+
+  static dbAlignmentMarkerRule* create(dbMaster* master_a, dbMaster* master_b);
+  static void destroy(dbAlignmentMarkerRule* alignment_marker_rule);
+  // User Code End dbAlignmentMarkerRule
+};
+
 class dbBusPort : public dbObject
 {
  public:
@@ -7535,6 +7563,8 @@ class dbDatabase : public dbObject
   void setDbuPerMicron(uint32_t dbu_per_micron);
 
   uint32_t getDbuPerMicron() const;
+
+  dbSet<dbAlignmentMarkerRule> getAlignmentMarkerRules() const;
 
   dbSet<dbChip> getChips() const;
 
@@ -8344,7 +8374,7 @@ class dbMarker : public dbObject
   dbTechLayer* getTechLayer() const;
   Rect getBBox() const;
 
-  std::set<dbObject*> getSources() const;
+  odb::PtrSet<dbObject> getSources() const;
 
   void addShape(const Point& pt);
   void addShape(const Line& line);
@@ -8390,7 +8420,7 @@ class dbMarkerCategory : public dbObject
   dbObject* getParent() const;
   std::string getSource() const;
 
-  std::set<dbMarker*> getAllMarkers() const;
+  odb::PtrSet<dbMarker> getAllMarkers() const;
 
   bool rename(const char* name);
 
@@ -8401,11 +8431,11 @@ class dbMarkerCategory : public dbObject
   void writeTR(const std::string& path) const;
   void writeTR(std::ofstream& report) const;
 
-  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
-                                              const std::string& path);
-  static std::set<dbMarkerCategory*> fromJSON(dbChip* chip,
-                                              const char* source,
-                                              std::ifstream& report);
+  static odb::PtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
+                                                const std::string& path);
+  static odb::PtrSet<dbMarkerCategory> fromJSON(dbChip* chip,
+                                                const char* source,
+                                                std::ifstream& report);
   static dbMarkerCategory* fromTR(dbChip* chip,
                                   const char* name,
                                   const std::string& path);
