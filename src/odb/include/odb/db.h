@@ -3842,6 +3842,11 @@ class dbSWire : public dbObject
   dbWireType getWireType();
 
   ///
+  /// Set the wire-type.
+  ///
+  void setWireType(dbWireType type);
+
+  ///
   /// Returns the shield net if the wire-type is dbWireType::SHIELD
   ///
   dbNet* getShield();
