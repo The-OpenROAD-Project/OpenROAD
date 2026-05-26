@@ -67,7 +67,7 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
 bazel_dep(name = "spdlog", version = "1.15.1")
-bazel_dep(name = "sv-lang", version = "10.0.bcr.2")
+bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -105,7 +105,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "78f19f25cec73bdec3517a76465dec7ce17ce227"
+BAZEL_ORFS_COMMIT = "6ebadeb4be5c9ada103081c9a5e668c014126616"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -143,7 +143,7 @@ archive_override(
     urls = ["https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/archive/" + ORFS_COMMIT + ".tar.gz"],
 )
 
-bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
+bazel_dep(name = "yosys", version = "0.64", dev_dependency = True)
 
 # yosys-slang is not on BCR. Pin to a commit on povik/yosys-slang master
 # that has the upstream Bazel build (povik/yosys-slang#310) and the
