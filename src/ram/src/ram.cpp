@@ -689,8 +689,7 @@ void RamGen::findMasters()
               if (lp->isLatchData()) {
                 has_latch_data = true;
               }
-              if (std::string(lp->name()) == "GATE"
-                  || std::string(lp->name()) == "G") {
+              if (lp->isClock()) {
                 has_gate = true;
               }
             }
