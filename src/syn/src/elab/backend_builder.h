@@ -49,8 +49,7 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
   // is no longer called.
   syn::Graph& graph()
   {
-    assert(graph_.has_value());
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    assert(graph_);
     return *graph_;
   }
 

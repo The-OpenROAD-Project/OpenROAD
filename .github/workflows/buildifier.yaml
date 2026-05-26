@@ -15,10 +15,15 @@ jobs:
       fail-fast: false
       matrix:
         check:
+          # Drive buildifier from `git ls-files` instead of `-r .` so the
+          # scan stays inside this repo. With `-r .` buildifier was
+          # recursing into submodule contents (third-party/slang-elab/...)
+          # left on disk by self-hosted runners — files we can't fix from
+          # here since they're upstream-managed.
           - name: Buildifier format
-            run: ./buildifier -r -mode=check -lint=off .
+            run: "git ls-files -z ':(glob)**/*.bzl' ':(glob)**/*.bazel' ':(glob)**/BUILD' ':(glob)**/WORKSPACE' | xargs -0 -r ./buildifier -mode=check -lint=off"
           - name: Buildifier lint
-            run: ./buildifier -r -lint=warn .
+            run: "git ls-files -z ':(glob)**/*.bzl' ':(glob)**/*.bazel' ':(glob)**/BUILD' ':(glob)**/WORKSPACE' | xargs -0 -r ./buildifier -lint=warn"
     name: ${{ matrix.check.name }}
     env:
       BUILDIFIER_VERSION: v8.2.1
