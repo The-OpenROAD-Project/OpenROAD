@@ -117,10 +117,15 @@ class Synthesis : public sta::dbStaState
 // Free-function entry points re-declared here so tests don't need to
 // pull in the private flow/ headers. The Synthesis methods of the same
 // names forward to these.
+void bitblast(Graph& g, bool blast_arith = true);
 void mapSequentials(Graph& g,
                     sta::Network* network,
                     utl::Logger* logger,
                     const Synthesis& syn);
+void mapCombinationals(Graph& g,
+                       sta::Network* network,
+                       utl::Logger* logger,
+                       const Synthesis& syn);
 void abcRoundtrip(Graph& g, const std::string& commands, utl::Logger* logger);
 void livenessOpt(Graph& g,
                  utl::Logger* logger,

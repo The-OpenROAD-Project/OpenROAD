@@ -92,41 +92,25 @@ void io::Parser::setTracks(odb::dbBlock* block)
       logger_->error(
           DRT, 94, "Cannot find layer: {}.", track->getTechLayer()->getName());
     }
-    int xPatternSize = track->getNumGridPatternsX();
-    int yPatternSize = track->getNumGridPatternsY();
-    for (int i = 0; i < xPatternSize; i++) {
-      std::unique_ptr<frTrackPattern> tmpTrackPattern
-          = std::make_unique<frTrackPattern>();
-      tmpTrackPattern->setLayerNum(
-          getTech()
+    const int xPatternSize = track->getNumGridPatternsX();
+    const int yPatternSize = track->getNumGridPatternsY();
+    const frLayerNum layer_num
+        = getTech()
               ->name2layer_.at(track->getTechLayer()->getName())
-              ->getLayerNum());
-      tmpTrackPattern->setHorizontal(true);
+              ->getLayerNum();
+    for (int i = 0; i < xPatternSize; i++) {
       int startCoord, numTracks, step;
       track->getGridPatternX(i, startCoord, numTracks, step);
-      tmpTrackPattern->setStartCoord(startCoord);
-      tmpTrackPattern->setNumTracks(numTracks);
-      tmpTrackPattern->setTrackSpacing(step);
-      getBlock()
-          ->trackPatterns_.at(tmpTrackPattern->getLayerNum())
-          .push_back(std::move(tmpTrackPattern));
+      getBlock()->trackPatterns_.at(layer_num).push_back(
+          std::make_unique<frTrackPattern>(
+              /*horizontal=*/true, startCoord, numTracks, step, layer_num));
     }
     for (int i = 0; i < yPatternSize; i++) {
-      std::unique_ptr<frTrackPattern> tmpTrackPattern
-          = std::make_unique<frTrackPattern>();
-      tmpTrackPattern->setLayerNum(
-          getTech()
-              ->name2layer_.at(track->getTechLayer()->getName())
-              ->getLayerNum());
-      tmpTrackPattern->setHorizontal(false);
       int startCoord, numTracks, step;
       track->getGridPatternY(i, startCoord, numTracks, step);
-      tmpTrackPattern->setStartCoord(startCoord);
-      tmpTrackPattern->setNumTracks(numTracks);
-      tmpTrackPattern->setTrackSpacing(step);
-      getBlock()
-          ->trackPatterns_.at(tmpTrackPattern->getLayerNum())
-          .push_back(std::move(tmpTrackPattern));
+      getBlock()->trackPatterns_.at(layer_num).push_back(
+          std::make_unique<frTrackPattern>(
+              /*horizontal=*/false, startCoord, numTracks, step, layer_num));
     }
   }
 }

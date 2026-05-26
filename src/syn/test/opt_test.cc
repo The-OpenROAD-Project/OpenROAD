@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <memory>
+#include <sstream>
+
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
+#include "syn/ir/Const.h"
+#include "syn/ir/ControlNet.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"

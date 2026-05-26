@@ -16,9 +16,7 @@ cc_library(
     srcs = [
         "src/flow/abc.cc",
         "src/flow/bitblast.cc",
-        "src/flow/bitblast.h",
         "src/flow/combinational_mapper.cc",
-        "src/flow/combinational_mapper.h",
         "src/flow/combinational_mapper_npn.cc",
         "src/flow/combinational_mapper_npn.h",
         "src/flow/constant_fold.cc",

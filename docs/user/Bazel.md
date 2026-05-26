@@ -59,6 +59,16 @@ Without offering any deeper insight some comments about what is shown above:
 - `exec` means host, appears with `ST` and an extra hash at the end
 - `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
+### LTO
+
+The default Bazel build (`fastbuild`) does not enable Link Time Optimization
+(LTO). `-c opt` enables optimization without LTO; `--config=opt` adds LTO
+on top, which improves runtime by ~11% at the cost of a much longer
+(single-threaded) link step. Use `--config=opt` for production binaries
+shipped to end users; keep the default for the local edit-rebuild loop.
+The CMake build has LTO on by default in Release mode -- see the
+[CMake LTO option](Build.md#lto-options).
+
 ## Using OpenROAD as a dependency from another project
 
 OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
