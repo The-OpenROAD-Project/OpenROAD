@@ -316,7 +316,7 @@ write_pin_placement
 The `place_pins` command supports designs with a rectilinear
 (non-rectangular) die outline, such as those created by
 `initialize_floorplan` with a polygonal `-die_area` (see the
-[`ifp` documentation](../ifp/README.md#rectilinear-polygonal-floorplans)).
+[`ifp` documentation](../ifp/README.md#rectilinear-floorplans)).
 Rectilinear mode is detected automatically from the die polygon stored in the
 database; no extra option is required. Pins are distributed along the
 edges of the polygonal die boundary.

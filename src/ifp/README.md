@@ -64,9 +64,9 @@ initialize_floorplan
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-core_area` | Core area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-polygonal-floorplans). |
+| `-core_area` | Core area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-floorplans). |
 | `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
-| `-die_area` | Die area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-polygonal-floorplans). |
+| `-die_area` | Die area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-floorplans). |
 | `-site` | Site name. |
 | `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
 | `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
