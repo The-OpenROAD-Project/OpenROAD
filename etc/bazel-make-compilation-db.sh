@@ -35,6 +35,9 @@ BAZEL_OPTS="${BAZEL_OPTS:--c opt ${BAZEL_REMOTE_MATERIALIZE}}"
 
 "${BANT}" compile-flags -o compile_flags.txt
 
+# Temporary hack until bant can deal with include_prefix and strip_include_prefix
+echo "-Ibazel-bin/src/syn/src/ir/_virtual_includes/ir" >> compile_flags.txt
+
 # The QT headers are not properly picked up; add them manually.
 for f in bazel-out/../../../external/qt-bazel*/qt_source/qtbase*/build/include \
   bazel-out/../../../external/qt-bazel*/qt_source/qtbase*/build/include/Q* \
@@ -60,7 +63,7 @@ for f in bazel-out/../../../external/*/include/python3.*/Python.h; do
 done >> compile_flags.txt
 
 # Since we don't do per-file define extraction in compile_flag.txt,
-# add them here globally
+# to avoid polluting the global namespace, selectively add necessary ones here.
 cat >> compile_flags.txt <<EOF
 -DABC_USE_STDINT_H=1
 -DABC_NAMESPACE=abc
@@ -68,6 +71,8 @@ cat >> compile_flags.txt <<EOF
 -DBUILD_TYPE="opt"
 -DBUILD_PYTHON=false
 -DBUILD_GUI=true
+-DSLANG_NO_YOSYS
+-DSLANG_MUX_LOWERING
 EOF
 
 # If there are two styles of comp-dbs, tools might choose wrong one. Warn user.
