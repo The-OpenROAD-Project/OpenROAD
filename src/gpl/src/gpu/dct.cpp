@@ -45,7 +45,6 @@
 
 #include <KokkosFFT.hpp>
 #include <Kokkos_Core.hpp>
-#include <cassert>
 
 #include "kokkosUtil.h"
 
@@ -61,8 +60,7 @@ void dct_2d_fft(const int M,
                 const Kokkos::View<float*>& post)
 {
   if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    printf("Input length is not power of 2.\n");
-    assert(0);
+    Kokkos::abort("dct: input length is not power of 2");
   }
 
   auto halfN = N / 2;
@@ -85,9 +83,7 @@ void dct_2d_fft(const int M,
             index = INDEX(hid, (wid >> 1), halfN);
             break;
           default:
-            Kokkos::printf("Error: unhandled case in dct_2d_fft\n");
-            index = 0;
-            assert(0);
+            Kokkos::abort("dct_2d_fft: unhandled cond");
             break;
         }
         pre[index] = input[INDEX(hid, wid, N)];
@@ -217,7 +213,7 @@ void dct_2d_fft(const int M,
           }
 
           default:
-            assert(0);
+            Kokkos::abort("dct_2d_fft post: unhandled cond");
             break;
         }
       });
@@ -238,8 +234,7 @@ void idct_2d_fft(
     const Kokkos::View<float*>& post)
 {
   if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    printf("Input length is not power of 2.\n");
-    assert(0);
+    Kokkos::abort("dct: input length is not power of 2");
   }
 
   Kokkos::deep_copy(pre, 0);
@@ -338,7 +333,7 @@ void idct_2d_fft(
           }
 
           default:
-            assert(0);
+            Kokkos::abort("idct_2d_fft pre: unhandled cond");
             break;
         }
       });
@@ -388,9 +383,7 @@ void idct_2d_fft(
             index = INDEX(hid << 1, wid << 1, N);
             break;
           default:
-            Kokkos::printf("Unhandled case in idct_2d_fft\n");
-            index = 0;
-            assert(0);
+            Kokkos::abort("idct_2d_fft: unhandled cond");
             break;
         }
         post[index] = ifft[INDEX(hid, wid, N)];
@@ -412,8 +405,7 @@ void idct_idxst(
     const Kokkos::View<float*>& output)
 {
   if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    printf("Input length is not power of 2.\n");
-    assert(0);
+    Kokkos::abort("dct: input length is not power of 2");
   }
 
   Kokkos::parallel_for(
@@ -468,8 +460,7 @@ void idxst_idct(
     const Kokkos::View<float*>& output)
 {
   if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    printf("Input length is not power of 2.\n");
-    assert(0);
+    Kokkos::abort("dct: input length is not power of 2");
   }
 
   Kokkos::parallel_for(

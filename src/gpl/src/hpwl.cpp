@@ -74,11 +74,11 @@ std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
 int64_t NesterovBaseCommon::getHpwl()
 {
 #ifdef ENABLE_GPU
-  // The GPU backend reads pin coords from device_state_; refresh them from
-  // the current host instance positions before invoking the backend. After
-  // Phase 4 (Nesterov coord update on device) this sync moves to a one-time
-  // init load and disappears from the hot path.
-  if (device_state_) {
+  // Phase 4+: when NesterovBase has already scattered fresh inst coords
+  // from the device-resident Nesterov vectors, skip the host→device
+  // round-trip — host gCellStor_::dCx/dCy is int-truncated and would lose
+  // sub-integer precision the GPU coord-update kernel produced.
+  if (device_state_ && !device_state_->consumeCoordsFresh()) {
     device_state_->syncInstCoordsFromHost(gCellStor_);
     device_state_->updatePinLocations();
   }

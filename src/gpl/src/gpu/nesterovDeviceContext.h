@@ -19,7 +19,6 @@ class GCell;
 class GCellHandle;
 class BinGrid;
 class DeviceState;
-class NesterovBaseCommon;
 struct KokkosNesterovState;
 struct KokkosDeviceState;
 
@@ -34,7 +33,6 @@ class NesterovDeviceContext
   static constexpr int kVecNextSumGrads = 5;
 
   NesterovDeviceContext(const std::vector<GCellHandle>& nb_gcells,
-                        NesterovBaseCommon* nbc,
                         const BinGrid& bg);
   ~NesterovDeviceContext();
 
@@ -51,12 +49,14 @@ class NesterovDeviceContext
   void syncCoordsToHost(std::vector<FloatPoint>& nextSLP,
                         std::vector<FloatPoint>& next);
 
-  // Pull device coords (curSLP variant) to host.
-  void syncCurSLPToHost(std::vector<FloatPoint>& curSLP);
-
   // Pull prevSLP coords to host (for density center update after
   // updateInitialPrevSLPCoordi).
   void syncPrevSLPToHost(std::vector<FloatPoint>& prevSLP);
+
+  // Pull curSLP sum-grads from device to host. Needed before saveSnapshot:
+  // on the GPU path, updateGradients writes sum-grads only to device, so
+  // the host vector stays at zero unless explicitly synced.
+  void syncCurSumGradsToHost(std::vector<FloatPoint>& curSumGrads);
 
   // GPU kernel: updateGradients loop body.
   void gradCombine(float density_penalty,
@@ -80,19 +80,10 @@ class NesterovDeviceContext
   // Scatter DeviceState WL grads to NB arrays.
   void scatterWLGradsToNB(DeviceState* device_state);
 
-  // Scatter DeviceState density grads to NB arrays (inst cells only).
-  void scatterDensityGradsToNB(DeviceState* device_state);
-
   // Push complete density gradient vector (inst + filler) from host to device.
   // Required because GPU density backend only computes inst grads on device;
   // filler grads are CPU-computed and must be explicitly pushed.
   void pushDensityGradsFromHost(const std::vector<FloatPoint>& densityGrads);
-
-  // Swap cur ↔ next for the next iter (device-side pointer swap).
-  void swapCurNext();
-
-  // Swap cur ↔ prev SLP grads (for backtracking).
-  void swapSumGrads(int a, int b);
 
   // Device-side pointer rotation matching NesterovBase::updateNextIter swaps.
   void rotateForNextIter();

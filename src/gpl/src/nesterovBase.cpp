@@ -35,10 +35,13 @@
 #include "utl/Logger.h"
 #include "wirelengthGradientBackend.h"
 
-#ifdef ENABLE_GPU
+// Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
+// unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
+// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
 #include "gpu/deviceState.h"
-#include "gpu/gpuRuntime.h"
 #include "gpu/nesterovDeviceContext.h"
+#ifdef ENABLE_GPU
+#include "gpu/gpuRuntime.h"
 #endif
 
 #define REPLACE_SQRT2 1.414213562373095048801L
@@ -2760,9 +2763,14 @@ void NesterovBase::initDensity1()
                            / static_cast<float>(getNesterovInstsArea());
 
 #ifdef ENABLE_GPU
+  // initDensity1 can be called more than once (NesterovPlace::init recurses
+  // when initial step-length search diverges; routability flows may also
+  // reinvoke it). Allocate the device context only on first call; subsequent
+  // calls just refresh device coords from the latest host vectors.
   if (nbc_->getDeviceState()) {
-    nb_device_ctx_
-        = std::make_unique<NesterovDeviceContext>(nb_gcells_, nbc_.get(), bg_);
+    if (!nb_device_ctx_) {
+      nb_device_ctx_ = std::make_unique<NesterovDeviceContext>(nb_gcells_, bg_);
+    }
     nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
                                        prevSLPCoordi_,
                                        curCoordi_,
@@ -3367,6 +3375,16 @@ void NesterovBase::saveSnapshot()
   if (isConverged_) {
     return;
   }
+
+#ifdef ENABLE_GPU
+  // On the GPU path updateGradients writes sum-grads only to device; the
+  // host vector stays at zero. Pull from device before snapshotting so the
+  // subsequent revertToSnapshot pushes back real values, not zeros.
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
+  }
+#endif
+
   // save snapshots for routability-driven
   snapshotCoordi_ = curCoordi_;
   snapshotSLPCoordi_ = curSLPCoordi_;
@@ -3549,6 +3567,13 @@ bool NesterovBase::revertToSnapshot()
                                        curCoordi_,
                                        curSLPSumGrads_,
                                        prevSLPSumGrads_);
+    // Mirror what initDensity1 / nesterovUpdateCoordinates do after
+    // pushing coords: refresh DeviceState pin locations so the next
+    // updateWireLengthForceWA / getHpwl reads from the reverted state.
+    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
+                                         NesterovDeviceContext::kVecCurSLP);
+    nbc_->getDeviceState()->updatePinLocations();
+    nbc_->getDeviceState()->markCoordsFresh();
   }
 #endif
 

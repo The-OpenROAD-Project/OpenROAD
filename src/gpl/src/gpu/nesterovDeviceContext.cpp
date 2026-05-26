@@ -18,9 +18,47 @@
 
 namespace gpl {
 
+namespace {
+
+// Copy a host vector<FloatPoint> into a pair of device float Views.
+void pushVecPairToDevice(const std::vector<FloatPoint>& src,
+                         Kokkos::View<float*>& dx,
+                         Kokkos::View<float*>& dy)
+{
+  const int n = static_cast<int>(src.size());
+  std::vector<float> hx(n), hy(n);
+  for (int i = 0; i < n; ++i) {
+    hx[i] = src[i].x;
+    hy[i] = src[i].y;
+  }
+  using HostUM
+      = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+  Kokkos::deep_copy(dx, HostUM(hx.data(), n));
+  Kokkos::deep_copy(dy, HostUM(hy.data(), n));
+}
+
+// Pull a pair of device float Views back into a host vector<FloatPoint>.
+// `dst` must be pre-sized; only its element values are written.
+void pullVecPairToHost(const Kokkos::View<float*>& dx,
+                       const Kokkos::View<float*>& dy,
+                       std::vector<FloatPoint>& dst)
+{
+  const int n = static_cast<int>(dst.size());
+  std::vector<float> hx(n), hy(n);
+  using HostUM
+      = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+  Kokkos::deep_copy(HostUM(hx.data(), n), dx);
+  Kokkos::deep_copy(HostUM(hy.data(), n), dy);
+  for (int i = 0; i < n; ++i) {
+    dst[i].x = hx[i];
+    dst[i].y = hy[i];
+  }
+}
+
+}  // namespace
+
 NesterovDeviceContext::NesterovDeviceContext(
     const std::vector<GCellHandle>& nb_gcells,
-    NesterovBaseCommon* nbc,
     const BinGrid& bg)
     : kokkos_(std::make_unique<KokkosNesterovState>())
 {
@@ -65,11 +103,6 @@ NesterovDeviceContext::NesterovDeviceContext(
   s.d_clamp_ux = Kokkos::View<float*>("nb_clamp_ux", n);
   s.d_clamp_uy = Kokkos::View<float*>("nb_clamp_uy", n);
 
-  s.h_next_slp_x = Kokkos::create_mirror_view(s.d_next_slp_x);
-  s.h_next_slp_y = Kokkos::create_mirror_view(s.d_next_slp_y);
-  s.h_cur_slp_x = Kokkos::create_mirror_view(s.d_cur_slp_x);
-  s.h_cur_slp_y = Kokkos::create_mirror_view(s.d_cur_slp_y);
-
   // Push static per-cell data.
   std::vector<int> h_num_pins(num_cells_);
   std::vector<float> h_area(num_cells_);
@@ -84,8 +117,6 @@ NesterovDeviceContext::NesterovDeviceContext(
   const float grid_ly = static_cast<float>(bg.ly());
   const float grid_ux = static_cast<float>(bg.ux());
   const float grid_uy = static_cast<float>(bg.uy());
-  const float bsx = static_cast<float>(bg.getBinSizeX());
-  const float bsy = static_cast<float>(bg.getBinSizeY());
 
   for (int i = 0; i < num_cells_; ++i) {
     const GCell* gc = nb_gcells[i];
@@ -99,13 +130,16 @@ NesterovDeviceContext::NesterovDeviceContext(
       h_nbc_index[i] = -1;
     }
 
-    // Coord clamp bounds (same as getDensityCoordiLayoutInsideX/Y).
-    const float ddx = static_cast<float>(gc->dDx());
-    const float ddy = static_cast<float>(gc->dDy());
-    h_clamp_lx[i] = grid_lx + bsx;
-    h_clamp_ly[i] = grid_ly + bsy;
-    h_clamp_ux[i] = grid_ux - bsx - ddx;
-    h_clamp_uy[i] = grid_uy - bsy - ddy;
+    // Coord clamp bounds — must match NesterovBase::getDensityCoordiLayout-
+    // InsideX/Y exactly. The CPU path clamps the cell *center* into
+    // [bg.lx()+dDx/2, bg.ux()-dDx/2] (and Y mirror). Half the cell width,
+    // NOT a bin width.
+    const float half_ddx = 0.5f * static_cast<float>(gc->dDx());
+    const float half_ddy = 0.5f * static_cast<float>(gc->dDy());
+    h_clamp_lx[i] = grid_lx + half_ddx;
+    h_clamp_ly[i] = grid_ly + half_ddy;
+    h_clamp_ux[i] = grid_ux - half_ddx;
+    h_clamp_uy[i] = grid_uy - half_ddy;
   }
 
   auto push_int = [&](Kokkos::View<int*>& d_view, std::vector<int>& h_vec) {
@@ -140,99 +174,19 @@ void NesterovDeviceContext::syncCoordsToDevice(
     const std::vector<FloatPoint>& prevSumGrads)
 {
   auto& s = *kokkos_;
-  for (int i = 0; i < num_cells_; ++i) {
-    s.h_cur_slp_x(i) = curSLP[i].x;
-    s.h_cur_slp_y(i) = curSLP[i].y;
-  }
-  Kokkos::deep_copy(s.d_cur_slp_x, s.h_cur_slp_x);
-  Kokkos::deep_copy(s.d_cur_slp_y, s.h_cur_slp_y);
-
-  // prevSLP
-  std::vector<float> hpx(num_cells_), hpy(num_cells_);
-  for (int i = 0; i < num_cells_; ++i) {
-    hpx[i] = prevSLP[i].x;
-    hpy[i] = prevSLP[i].y;
-  }
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hpxv(
-      hpx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hpyv(
-      hpy.data(), num_cells_);
-  Kokkos::deep_copy(s.d_prev_slp_x, hpxv);
-  Kokkos::deep_copy(s.d_prev_slp_y, hpyv);
-
-  // cur
-  std::vector<float> hcx(num_cells_), hcy(num_cells_);
-  for (int i = 0; i < num_cells_; ++i) {
-    hcx[i] = cur[i].x;
-    hcy[i] = cur[i].y;
-  }
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hcxv(
-      hcx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hcyv(
-      hcy.data(), num_cells_);
-  Kokkos::deep_copy(s.d_cur_x, hcxv);
-  Kokkos::deep_copy(s.d_cur_y, hcyv);
-
-  // curSumGrads
-  std::vector<float> hsgx(num_cells_), hsgy(num_cells_);
-  for (int i = 0; i < num_cells_; ++i) {
-    hsgx[i] = curSumGrads[i].x;
-    hsgy[i] = curSumGrads[i].y;
-  }
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hsgxv(
-      hsgx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hsgyv(
-      hsgy.data(), num_cells_);
-  Kokkos::deep_copy(s.d_cur_sum_grads_x, hsgxv);
-  Kokkos::deep_copy(s.d_cur_sum_grads_y, hsgyv);
-
-  // prevSumGrads
-  std::vector<float> hpsgx(num_cells_), hpsgy(num_cells_);
-  for (int i = 0; i < num_cells_; ++i) {
-    hpsgx[i] = prevSumGrads[i].x;
-    hpsgy[i] = prevSumGrads[i].y;
-  }
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hpsgxv(
-      hpsgx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hpsgyv(
-      hpsgy.data(), num_cells_);
-  Kokkos::deep_copy(s.d_prev_sum_grads_x, hpsgxv);
-  Kokkos::deep_copy(s.d_prev_sum_grads_y, hpsgyv);
+  pushVecPairToDevice(curSLP, s.d_cur_slp_x, s.d_cur_slp_y);
+  pushVecPairToDevice(prevSLP, s.d_prev_slp_x, s.d_prev_slp_y);
+  pushVecPairToDevice(cur, s.d_cur_x, s.d_cur_y);
+  pushVecPairToDevice(curSumGrads, s.d_cur_sum_grads_x, s.d_cur_sum_grads_y);
+  pushVecPairToDevice(prevSumGrads, s.d_prev_sum_grads_x, s.d_prev_sum_grads_y);
 }
 
 void NesterovDeviceContext::syncCoordsToHost(std::vector<FloatPoint>& nextSLP,
                                              std::vector<FloatPoint>& next)
 {
   auto& s = *kokkos_;
-  Kokkos::deep_copy(s.h_next_slp_x, s.d_next_slp_x);
-  Kokkos::deep_copy(s.h_next_slp_y, s.d_next_slp_y);
-  for (int i = 0; i < num_cells_; ++i) {
-    nextSLP[i].x = s.h_next_slp_x(i);
-    nextSLP[i].y = s.h_next_slp_y(i);
-  }
-
-  // Also fetch next coords.
-  Kokkos::View<float*>::HostMirror h_nx
-      = Kokkos::create_mirror_view(s.d_next_x);
-  Kokkos::View<float*>::HostMirror h_ny
-      = Kokkos::create_mirror_view(s.d_next_y);
-  Kokkos::deep_copy(h_nx, s.d_next_x);
-  Kokkos::deep_copy(h_ny, s.d_next_y);
-  for (int i = 0; i < num_cells_; ++i) {
-    next[i].x = h_nx(i);
-    next[i].y = h_ny(i);
-  }
-}
-
-void NesterovDeviceContext::syncCurSLPToHost(std::vector<FloatPoint>& curSLP)
-{
-  auto& s = *kokkos_;
-  Kokkos::deep_copy(s.h_cur_slp_x, s.d_cur_slp_x);
-  Kokkos::deep_copy(s.h_cur_slp_y, s.d_cur_slp_y);
-  for (int i = 0; i < num_cells_; ++i) {
-    curSLP[i].x = s.h_cur_slp_x(i);
-    curSLP[i].y = s.h_cur_slp_y(i);
-  }
+  pullVecPairToHost(s.d_next_slp_x, s.d_next_slp_y, nextSLP);
+  pullVecPairToHost(s.d_next_x, s.d_next_y, next);
 }
 
 void NesterovDeviceContext::gradCombine(float density_penalty,
@@ -277,91 +231,23 @@ void NesterovDeviceContext::scatterWLGradsToNB(DeviceState* device_state)
   nestop::launchScatterGradsToNB(*kokkos_, device_state->kokkos(), num_cells_);
 }
 
-void NesterovDeviceContext::scatterDensityGradsToNB(DeviceState* device_state)
-{
-  auto& ns = *kokkos_;
-  auto& ds = device_state->kokkos();
-  auto d_nbc_index = ns.d_nbc_index;
-  auto d_nb_dens_x = ns.d_density_grad_x;
-  auto d_nb_dens_y = ns.d_density_grad_y;
-  auto d_inst_dens_x = ds.d_inst_density_grad_x;
-  auto d_inst_dens_y = ds.d_inst_density_grad_y;
-  const int n = num_cells_;
-
-  using ExecSpace = Kokkos::DefaultExecutionSpace;
-  Kokkos::parallel_for(
-      "nestop_scatter_dens_nb",
-      Kokkos::RangePolicy<ExecSpace>(0, n),
-      KOKKOS_LAMBDA(const int i) {
-        const int nbc_idx = d_nbc_index(i);
-        if (nbc_idx >= 0) {
-          d_nb_dens_x(i) = d_inst_dens_x(nbc_idx);
-          d_nb_dens_y(i) = d_inst_dens_y(nbc_idx);
-        }
-        // Fillers: density grad stays from previous K_density_gather
-        // which now runs over all nb cells (Phase 4 filler support).
-      });
-}
-
 void NesterovDeviceContext::syncPrevSLPToHost(std::vector<FloatPoint>& prevSLP)
 {
-  auto& s = *kokkos_;
-  std::vector<float> hx(num_cells_), hy(num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hxv(
-      hx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hyv(
-      hy.data(), num_cells_);
-  Kokkos::deep_copy(hxv, s.d_prev_slp_x);
-  Kokkos::deep_copy(hyv, s.d_prev_slp_y);
-  for (int i = 0; i < num_cells_; ++i) {
-    prevSLP[i].x = hx[i];
-    prevSLP[i].y = hy[i];
-  }
+  pullVecPairToHost(kokkos_->d_prev_slp_x, kokkos_->d_prev_slp_y, prevSLP);
+}
+
+void NesterovDeviceContext::syncCurSumGradsToHost(
+    std::vector<FloatPoint>& curSumGrads)
+{
+  pullVecPairToHost(
+      kokkos_->d_cur_sum_grads_x, kokkos_->d_cur_sum_grads_y, curSumGrads);
 }
 
 void NesterovDeviceContext::pushDensityGradsFromHost(
     const std::vector<FloatPoint>& densityGrads)
 {
-  auto& s = *kokkos_;
-  std::vector<float> hx(num_cells_), hy(num_cells_);
-  for (int i = 0; i < num_cells_; ++i) {
-    hx[i] = densityGrads[i].x;
-    hy[i] = densityGrads[i].y;
-  }
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hxv(
-      hx.data(), num_cells_);
-  Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hyv(
-      hy.data(), num_cells_);
-  Kokkos::deep_copy(s.d_density_grad_x, hxv);
-  Kokkos::deep_copy(s.d_density_grad_y, hyv);
-}
-
-void NesterovDeviceContext::swapCurNext()
-{
-  auto& s = *kokkos_;
-  std::swap(s.d_cur_slp_x, s.d_next_slp_x);
-  std::swap(s.d_cur_slp_y, s.d_next_slp_y);
-  std::swap(s.d_cur_x, s.d_next_x);
-  std::swap(s.d_cur_y, s.d_next_y);
-}
-
-void NesterovDeviceContext::swapSumGrads(int a, int b)
-{
-  auto& s = *kokkos_;
-  auto get_pair
-      = [&](int id) -> std::pair<Kokkos::View<float*>&, Kokkos::View<float*>&> {
-    if (id == 0) {
-      return {s.d_cur_sum_grads_x, s.d_cur_sum_grads_y};
-    }
-    if (id == 1) {
-      return {s.d_prev_sum_grads_x, s.d_prev_sum_grads_y};
-    }
-    return {s.d_next_sum_grads_x, s.d_next_sum_grads_y};
-  };
-  auto [ax, ay] = get_pair(a);
-  auto [bx, by] = get_pair(b);
-  std::swap(ax, bx);
-  std::swap(ay, by);
+  pushVecPairToDevice(
+      densityGrads, kokkos_->d_density_grad_x, kokkos_->d_density_grad_y);
 }
 
 void NesterovDeviceContext::rotateForNextIter()

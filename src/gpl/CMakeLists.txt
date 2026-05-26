@@ -137,6 +137,13 @@ target_include_directories(gpl_lib
   PUBLIC
     include
     ${LEMON_INCLUDE_DIRS}
+  PRIVATE
+    # The PIMPL headers under src/gpu/ (deviceState.h, nesterovDeviceContext.h)
+    # are included from src/nesterovBase.cpp on both ENABLE_GPU=ON and OFF
+    # paths, and they need to find sibling headers like src/point.h. Add the
+    # src/ directory to the private include path unconditionally; previously
+    # it was only added inside the if(ENABLE_GPU) block.
+    src
 )
 
 target_link_libraries(gpl_lib

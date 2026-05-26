@@ -71,6 +71,12 @@ class PoissonSolver
   // device memory management
   void initBackend();
 
+  // Step #2 of solvePoisson/solvePoissonPotential — divide a_uv coefficients
+  // by w_u^2 + w_v^2 per (wID, hID) bin index. Public because it contains an
+  // extended __host__ __device__ lambda, which NVCC requires in a non-private
+  // enclosing function.
+  void launchDivideByWSquare();
+
  private:
   int binCntX_;
   int binCntY_;

@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -96,12 +97,16 @@ class DeviceState
   // Phase 4+: NB device context scatters inst coords + calls
   // updatePinLocations before updateWireLengthForceWA, making the
   // host→device sync redundant. This flag lets the sync skip safely.
-  void markCoordsFresh() { coords_fresh_ = true; }
+  // std::atomic for defensive thread-safety; consumers run on the master
+  // thread today but the OMP-parallel boundaries elsewhere in gpl make a
+  // future race plausible.
+  void markCoordsFresh()
+  {
+    coords_fresh_.store(true, std::memory_order_release);
+  }
   bool consumeCoordsFresh()
   {
-    bool f = coords_fresh_;
-    coords_fresh_ = false;
-    return f;
+    return coords_fresh_.exchange(false, std::memory_order_acq_rel);
   }
 
   // Accessor for Kokkos-aware backend translation units. Consumers must
@@ -110,7 +115,7 @@ class DeviceState
   const KokkosDeviceState& kokkos() const { return *kokkos_; }
 
  private:
-  bool coords_fresh_ = false;
+  std::atomic<bool> coords_fresh_{false};
   std::unique_ptr<KokkosDeviceState> kokkos_;
 
   // Cached host-side sizes; used by numInsts/Pins/Nets without needing to

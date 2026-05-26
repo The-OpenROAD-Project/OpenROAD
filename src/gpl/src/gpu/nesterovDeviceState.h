@@ -54,12 +54,6 @@ struct KokkosNesterovState
   Kokkos::View<float*> d_clamp_ly;
   Kokkos::View<float*> d_clamp_ux;
   Kokkos::View<float*> d_clamp_uy;
-
-  // Host mirrors for reverse sync (device→host coords).
-  Kokkos::View<float*>::HostMirror h_next_slp_x;
-  Kokkos::View<float*>::HostMirror h_next_slp_y;
-  Kokkos::View<float*>::HostMirror h_cur_slp_x;
-  Kokkos::View<float*>::HostMirror h_cur_slp_y;
 };
 
 }  // namespace gpl

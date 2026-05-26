@@ -55,12 +55,30 @@ PoissonSolver::PoissonSolver()
 {
 }
 
+// The IDCT post-processing kernel in dct.cpp indexes
+//   expkMN2[halfN - hid + (N-1)]      (hid up to M/2)
+//   expkMN2[wid - hid + (N-1)]        (wid up to N/2, hid up to M/2)
+// Both go negative when M is substantially larger than N. The expkMN1/2
+// allocation is sized 2*max(N,M), so the upper bound is safe, but the
+// lower bound requires M <= 2N (and symmetrically N <= 2M for the
+// transposed path). Typical placer bin grids satisfy this with margin.
+constexpr int kMaxBinAspectRatio = 2;
+
 PoissonSolver::PoissonSolver(int binCntX,
                              int binCntY,
                              float binSizeX,
                              float binSizeY)
     : PoissonSolver()
 {
+  if (binCntY > kMaxBinAspectRatio * binCntX
+      || binCntX > kMaxBinAspectRatio * binCntY) {
+    Kokkos::abort(
+        "PoissonSolver: bin grid aspect ratio exceeds the supported limit "
+        "(kMaxBinAspectRatio=2) — IDCT indexing may go out of bounds. "
+        "Increase the shorter dimension or extend the solver's expk index "
+        "math to handle this case.");
+  }
+
   binCntX_ = binCntX;
   binCntY_ = binCntY;
   binSizeX_ = binSizeX;
@@ -92,6 +110,20 @@ KOKKOS_FUNCTION void divideByWSquare(const int wID,
   }
 }
 
+void PoissonSolver::launchDivideByWSquare()
+{
+  const auto binCntX = binCntX_;
+  const auto binCntY = binCntY_;
+  const auto binSizeX = binSizeX_;
+  const auto binSizeY = binSizeY_;
+  auto d_auv = d_auv_;
+  Kokkos::parallel_for(
+      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {binCntX_, binCntY_}),
+      KOKKOS_LAMBDA(const int wID, const int hID) {
+        divideByWSquare(wID, hID, binCntX, binCntY, binSizeX, binSizeY, d_auv);
+      });
+}
+
 void PoissonSolver::solvePoissonPotential(Kokkos::View<float*> binDensity,
                                           Kokkos::View<float*> potential)
 {
@@ -106,14 +138,7 @@ void PoissonSolver::solvePoissonPotential(Kokkos::View<float*> binDensity,
              d_auv_);
 
   // Step #2. Divide by (w_u^2 + w_v^2)
-  auto binCntX = binCntX_, binCntY = binCntY_;
-  auto binSizeX = binSizeX_, binSizeY = binSizeY_;
-  auto d_auv = d_auv_;
-  Kokkos::parallel_for(
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {binCntX_, binCntY_}),
-      KOKKOS_LAMBDA(const int wID, const int hID) {
-        divideByWSquare(hID, wID, binCntX, binCntY, binSizeX, binSizeY, d_auv);
-      });
+  launchDivideByWSquare();
 
   // Step #3. Compute Potential
   idct_2d_fft(binCntY_,
@@ -144,14 +169,7 @@ void PoissonSolver::solvePoisson(Kokkos::View<float*> binDensity,
              d_auv_);
 
   // Step #2. Divide by (w_u^2 + w_v^2)
-  auto binCntX = binCntX_, binCntY = binCntY_;
-  auto binSizeX = binSizeX_, binSizeY = binSizeY_;
-  auto d_auv = d_auv_;
-  Kokkos::parallel_for(
-      Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {binCntX_, binCntY_}),
-      KOKKOS_LAMBDA(const int wID, const int hID) {
-        divideByWSquare(hID, wID, binCntX, binCntY, binSizeX, binSizeY, d_auv);
-      });
+  launchDivideByWSquare();
 
   // Step #3. Compute Potential
   idct_2d_fft(binCntY_,
@@ -166,6 +184,11 @@ void PoissonSolver::solvePoisson(Kokkos::View<float*> binDensity,
               potential);
 
   // Step #4. Multiply w_u , w_v
+  const auto binCntX = binCntX_;
+  const auto binCntY = binCntY_;
+  const auto binSizeX = binSizeX_;
+  const auto binSizeY = binSizeY_;
+  auto d_auv = d_auv_;
   auto d_inputForX = d_inputForX_, d_inputForY = d_inputForY_;
   Kokkos::parallel_for(
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {binCntX_, binCntY_}),
