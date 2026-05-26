@@ -2199,7 +2199,7 @@ void DRCHandler::refreshDRCOverlay(SessionState& state)
     constexpr int kDefaultMinBox = 200;
     min_box_ = kDefaultMinBox;
     if (block) {
-      odb::dbTech* tech = block->getDb()->getTech();
+      odb::dbTech* tech = block->getTech();
       if (tech) {
         for (odb::dbTechLayer* layer : tech->getLayers()) {
           if (layer->getType() == odb::dbTechLayerType::ROUTING) {
@@ -2622,6 +2622,9 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
 
   try {
     const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
+    const bool open_inspector = req.json.contains("open_inspector")
+                                    ? req.json.at("open_inspector").as_bool()
+                                    : false;
     auto [block, chip] = getBlockAndChip();
 
     odb::dbMarker* target = findMarkerById(state, chip, marker_id);
@@ -2631,12 +2634,41 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       target->setVisited(true);
       odb::Rect bbox = target->getBBox();
 
-      // Set highlight to the marker's bbox
+      // When the client requests inspector navigation, promote the marker to
+      // a canonical selectable so the existing `inspect` flow can populate
+      // the Inspector panel.  Mirrors handleSelect's pattern (replace
+      // selectables, set current_inspected, clear navigation history) so
+      // back-navigation behaves the same as for instances/nets.
+      gui::Selected sel;
+      int marker_select_id = -1;
+      std::vector<gui::Selected> new_selectables;
+      if (open_inspector) {
+        sel = gui::DescriptorRegistry::instance()->makeSelected(target);
+        if (sel) {
+          marker_select_id = storeSelectable(new_selectables, sel);
+        }
+      }
+
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
         state.highlight_rects.clear();
         state.highlight_polys.clear();
-        state.highlight_rects.push_back(bbox);
+        if (sel) {
+          state.hover_rects.clear();
+          state.timing_rects.clear();
+          state.timing_lines.clear();
+          collectHighlightShapes(
+              sel, state.highlight_rects, state.highlight_polys);
+          state.current_inspected = sel;
+          state.navigation_history.clear();
+        } else {
+          state.highlight_rects.push_back(bbox);
+        }
+      }
+
+      if (sel) {
+        std::lock_guard<std::mutex> lock(state.selectables_mutex);
+        state.selectables = std::move(new_selectables);
       }
 
       root["ok"] = 1;
@@ -2645,6 +2677,9 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       root["visited"] = true;
       if (odb::dbTechLayer* layer = target->getTechLayer()) {
         root["layer"] = std::string(layer->getName());
+      }
+      if (marker_select_id >= 0) {
+        root["select_id"] = marker_select_id;
       }
     } else {
       // Clear highlight if marker_id is -1 (deselect)

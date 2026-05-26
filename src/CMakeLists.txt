@@ -282,6 +282,7 @@ add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
 add_subdirectory(est)
+add_subdirectory(syn)
 add_subdirectory(web)
 
 ################################################################
@@ -352,6 +353,7 @@ target_link_libraries(openroad
   mpl
   par
   est
+  syn
   web
   gui
   cli_completer
@@ -403,33 +405,35 @@ if (Python3_FOUND AND BUILD_PYTHON)
       OpenSTA
       ifp
   )
-  target_link_libraries(openroad
-    ord_py
-    odb_py
-    ifp_py
-    utl_py
-    ant_py
-    grt_py
-    gpl_py
-    dpl_py
-    exa_py
-    ppl_py
-    tap_py
-    cgt_py
-    cts_py
-    drt_py
-    fin_py
-#    ram_py
-    rcx_py
-    rmp_py
-    stt_py
-    psm_py
-    pdn_py
-    rsz_py
-    dft_py
-    par_py
-    web_py
+  set(OPENROAD_PYTHON_MODULES
+      ord_py
+      odb_py
+      ifp_py
+      utl_py
+      ant_py
+      grt_py
+      gpl_py
+      dpl_py
+      exa_py
+      ppl_py
+      tap_py
+      cgt_py
+      cts_py
+      drt_py
+      fin_py
+#      ram_py
+      rcx_py
+      rmp_py
+      stt_py
+      psm_py
+      pdn_py
+      rsz_py
+      syn_py
+      dft_py
+      par_py
+      web_py
   )
+  target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 
 else()
   message(STATUS "Python3 disabled")

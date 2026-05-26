@@ -64,6 +64,7 @@ namespace gpl {
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMaster;
+using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
 using utl::GPL;
@@ -171,6 +172,61 @@ const sta::LibertyCell* MBFF::getLibertyCell(const sta::Cell* cell)
   return lib_cell;
 }
 
+namespace {
+// Rebind a tray iterm to the given (flat, mod) pair. The plain
+// dbITerm::connect(dbNet*) overload only updates the flat side; if a
+// stale modnet was attached from an earlier per-orig-flop iteration
+// on a shared role pin, it would form an inconsistent (flat, mod)
+// pair. Clear the mod side explicitly when only flat is being
+// rebound. dbITerm::connect(dbNet*, dbModNet*) cannot be used with a
+// null mod_net because it dereferences the modnet unconditionally.
+void reconnectIterm(dbITerm* tray_iterm, dbNet* net, odb::dbModNet* mod_net)
+{
+  if (net && mod_net) {
+    tray_iterm->connect(net, mod_net);
+  } else if (net) {
+    tray_iterm->disconnectDbModNet();
+    tray_iterm->connect(net);
+  } else if (mod_net) {
+    tray_iterm->connect(mod_net);
+  }
+}
+
+// Check whether lib_port appears in any sequential's FuncExpr accessed
+// via `get` (e.g., &Sequential::clear or &Sequential::preset). Scans
+// both the regular lib_cell sequentials and the test cell's
+// sequentials. The test cell's seq.clear()/preset() FuncExpr port set
+// holds test-cell port pointers, so the test cell branch resolves the
+// matching port by name first.
+bool portInSequentialFunc(const sta::LibertyCell* lib_cell,
+                          const sta::LibertyPort* lib_port,
+                          sta::FuncExpr* (sta::Sequential::*get)() const)
+{
+  for (const sta::Sequential& seq : lib_cell->sequentials()) {
+    if (const sta::FuncExpr* fe = (seq.*get)()) {
+      if (fe->hasPort(lib_port)) {
+        return true;
+      }
+    }
+  }
+  if (const sta::LibertyCell* test_cell = lib_cell->testCell()) {
+    const sta::LibertyPort* test_lib_port
+        = test_cell->findLibertyPort(lib_port->name());
+    if (test_lib_port == nullptr) {
+      return false;
+    }
+    for (const sta::Sequential& seq : test_cell->sequentials()) {
+      if (const sta::FuncExpr* fe = (seq.*get)()) {
+        if (fe->hasPort(test_lib_port)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+}  // namespace
+
 float MBFF::GetDist(const Point& a, const Point& b)
 {
   return (abs(a.x - b.x) + abs(a.y - b.y));
@@ -222,9 +278,14 @@ bool MBFF::IsDPin(dbITerm* iterm)
 {
   dbInst* inst = iterm->getInst();
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = getLibertyCell(cell);
+  // Use raw libertyCell (not getLibertyCell, which substitutes the
+  // test cell). portInSequentialFunc scans both the regular and the
+  // test cell views with the appropriate LibertyPort lookup.
+  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
 
-  // check that the iterm isn't a (re)set pin
   const sta::Pin* pin = network_->dbToSta(iterm);
   if (pin == nullptr) {
     return false;
@@ -234,13 +295,9 @@ bool MBFF::IsDPin(dbITerm* iterm)
     return false;
   }
 
-  for (const sta::Sequential& seq : lib_cell->sequentials()) {
-    if (seq.clear() && seq.clear()->hasPort(lib_port)) {
-      return false;
-    }
-    if (seq.preset() && seq.preset()->hasPort(lib_port)) {
-      return false;
-    }
+  if (portInSequentialFunc(lib_cell, lib_port, &sta::Sequential::clear)
+      || portInSequentialFunc(lib_cell, lib_port, &sta::Sequential::preset)) {
+    return false;
   }
 
   const bool exclude = (IsClockPin(iterm) || IsSupplyPin(iterm)
@@ -347,42 +404,11 @@ bool MBFF::IsClearPin(dbITerm* iterm)
   if (lib_port == nullptr) {
     return false;
   }
-
   const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   if (lib_cell == nullptr) {
     return false;
   }
-
-  // Check the lib cell if the port is a clear.
-  for (const sta::Sequential& seq : lib_cell->sequentials()) {
-    if (seq.clear() && seq.clear()->hasPort(lib_port)) {
-      return true;
-    }
-  }
-
-  // If it exists, check the test lib cell if the port is a clear.
-  const sta::LibertyCell* test_cell = lib_cell->testCell();
-  if (test_cell == nullptr) {
-    return false;
-  }
-
-  // Find the equivalent lib_port on the test cell by name.
-  //
-  // TODO: NA - Make retrieving the port on the lib cell possible without doing
-  // a name match each time
-  const sta::LibertyPort* test_lib_port
-      = test_cell->findLibertyPort(lib_port->name());
-  if (test_lib_port == nullptr) {
-    return false;
-  }
-
-  for (const sta::Sequential& seq : test_cell->sequentials()) {
-    if (seq.clear() && seq.clear()->hasPort(test_lib_port)) {
-      return true;
-    }
-  }
-
-  return false;
+  return portInSequentialFunc(lib_cell, lib_port, &sta::Sequential::clear);
 }
 
 bool MBFF::HasPreset(dbInst* inst)
@@ -414,37 +440,7 @@ bool MBFF::IsPresetPin(dbITerm* iterm)
   if (lib_cell == nullptr) {
     return false;
   }
-
-  // Check the lib cell if the port is a preset.
-  for (const sta::Sequential& seq : lib_cell->sequentials()) {
-    if (seq.preset() && seq.preset()->hasPort(lib_port)) {
-      return true;
-    }
-  }
-
-  // If it exists, check the test lib cell if the port is a preset.
-  const sta::LibertyCell* test_cell = lib_cell->testCell();
-  if (test_cell == nullptr) {
-    return false;
-  }
-
-  // Find the equivalent lib_port on the test cell by name.
-  //
-  // TODO: NA - Make retrieving the port on the lib cell possible without doing
-  // a name match each time
-  const sta::LibertyPort* test_lib_port
-      = test_cell->findLibertyPort(lib_port->name());
-  if (test_lib_port == nullptr) {
-    return false;
-  }
-
-  for (const sta::Sequential& seq : test_cell->sequentials()) {
-    if (seq.preset() && seq.preset()->hasPort(test_lib_port)) {
-      return true;
-    }
-  }
-
-  return false;
+  return portInSequentialFunc(lib_cell, lib_port, &sta::Sequential::preset);
 }
 
 bool MBFF::IsScanCell(dbInst* inst)
@@ -797,8 +793,14 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
                              + "_" + std::to_string(unused_.back());
       unused_.pop_back();
       const int bit_idx = GetBitIdx(trays[tray_idx].slots.size());
-      auto new_tray = dbInst::create(
-          block_, best_master_[array_mask][bit_idx], new_name.c_str());
+      // SeparateFlops partitions by (parent module, mask), so flops in this
+      // cluster share one parent module; place the new tray there.
+      dbModule* parent = insts_[flops[i].idx]->getModule();
+      auto new_tray = dbInst::create(block_,
+                                     best_master_[array_mask][bit_idx],
+                                     new_name.c_str(),
+                                     /*physical_only=*/false,
+                                     parent);
       const Point tray_center = GetTrayCenter(array_mask, bit_idx);
       new_tray->setLocation(
           multiplier_ * (trays[tray_idx].pt.x - tray_center.x),
@@ -810,6 +812,7 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   }
 
   dbNet* clk_net = nullptr;
+  odb::dbModNet* clk_mod_net = nullptr;
   for (int i = 0; i < num_flops; i++) {
     // single bit flop?
     if (new_mapping[i].first == std::numeric_limits<int>::max()) {
@@ -876,80 +879,78 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       const bool is_qn_inv = is_q && IsInvertingQPin(iterm);
       const std::string orig_port_name = iterm->getMTerm()->getName();
 
+      // Capture both flat and hierarchical nets of the original iterm
+      // before disconnecting, then rebind the matching tray iterm to
+      // both. Preserves the hierarchical netlist after clustering.
       dbNet* net = iterm->getNet();
-      while (net) {
+      odb::dbModNet* mod_net = iterm->getModNet();
+      auto reconnect = [&](dbITerm* tray_iterm) {
+        reconnectIterm(tray_iterm, net, mod_net);
+      };
+      if (net || mod_net) {
         iterm->disconnect();
 
-        // standard pins
         if (is_d) {
-          tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
+          reconnect(tray_inst[tray_idx]->findITerm(d_pin->name().c_str()));
         }
         if (is_q) {
           if (is_qn_inv) {
-            tray_inst[tray_idx]
-                ->findITerm(qn_pin->name().c_str())
-                ->connect(net);
+            reconnect(tray_inst[tray_idx]->findITerm(qn_pin->name().c_str()));
           } else {
-            tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
+            reconnect(tray_inst[tray_idx]->findITerm(q_pin->name().c_str()));
           }
         }
         if (IsSupplyPin(iterm)) {
           if (iterm->getSigType() == odb::dbSigType::GROUND) {
             if (ground) {
-              ground->connect(net);
+              reconnect(ground);
             }
           } else {
             if (power) {
-              power->connect(net);
+              reconnect(power);
             }
           }
         }
         if (IsClockPin(iterm)) {
-          // reconnect pins later
+          // reconnect clock pins later (shared across the tray)
           clk_net = net;
+          clk_mod_net = mod_net;
         }
-
-        // scan pins
         if (IsScanIn(iterm)) {
-          scan_in->connect(net);
+          reconnect(scan_in);
         }
         if (IsScanEnable(iterm)) {
-          scan_enable->connect(net);
+          reconnect(scan_enable);
         }
-
-        // preset/clear pins
         if (IsPresetPin(iterm)) {
-          preset->connect(net);
+          reconnect(preset);
         }
         if (IsClearPin(iterm)) {
-          clear->connect(net);
+          reconnect(clear);
         }
-
-        net = iterm->getNet();
       }
 
       // Store original FF→tray pin mapping as a property on the tray
-      // instance so timing reports can display the original pin name.
-      std::string tray_port;
+      // pin (iterm) so the report_path "orig_name" field can display the
+      // original pin name.
+      dbITerm* tray_iterm = nullptr;
       if (is_d && d_pin) {
-        tray_port = d_pin->name();
+        tray_iterm = tray_inst[tray_idx]->findITerm(d_pin->name().c_str());
       } else if (is_q) {
-        if (is_qn_inv && qn_pin) {
-          tray_port = qn_pin->name();
-        } else if (q_pin) {
-          tray_port = q_pin->name();
+        const sta::LibertyPort* tray_port = is_qn_inv ? qn_pin : q_pin;
+        if (tray_port) {
+          tray_iterm
+              = tray_inst[tray_idx]->findITerm(tray_port->name().c_str());
         }
       }
-      if (!tray_port.empty()) {
-        const std::string key = "orig_name_" + tray_port;
+      if (tray_iterm) {
         const std::string val = orig_inst_name + "/" + orig_port_name;
         odb::dbStringProperty* prop
-            = odb::dbStringProperty::find(tray_inst[tray_idx], key.c_str());
+            = odb::dbStringProperty::find(tray_iterm, kOrigNameProp);
         if (prop) {
           prop->setValue(val.c_str());
         } else {
-          odb::dbStringProperty::create(
-              tray_inst[tray_idx], key.c_str(), val.c_str());
+          odb::dbStringProperty::create(tray_iterm, kOrigNameProp, val.c_str());
         }
       }
     }
@@ -959,10 +960,11 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
   std::vector<bool> isConnected(tray_inst.size());
   for (int i = 0; i < num_flops; i++) {
     if (new_mapping[i].first != std::numeric_limits<int>::max()) {
-      if (!isConnected[new_mapping[i].first] && clk_net != nullptr) {
+      if (!isConnected[new_mapping[i].first]
+          && (clk_net != nullptr || clk_mod_net != nullptr)) {
         for (dbITerm* iterm : tray_inst[new_mapping[i].first]->getITerms()) {
           if (IsClockPin(iterm)) {
-            iterm->connect(clk_net);
+            reconnectIterm(iterm, clk_net, clk_mod_net);
           }
         }
         isConnected[new_mapping[i].first] = true;
@@ -2434,23 +2436,44 @@ void MBFF::SeparateFlops(std::vector<std::vector<Flop>>& ffs)
     }
   }
 
+  // Order modules by id, not pointer value — pointer order varies
+  // across runs and would make tray naming / ILP seed consumption
+  // non-deterministic.
+  struct ModMaskLess
+  {
+    bool operator()(const std::pair<dbModule*, Mask>& a,
+                    const std::pair<dbModule*, Mask>& b) const
+    {
+      if (a.first != b.first) {
+        return odb::compare_by_id(a.first, b.first);
+      }
+      return a.second < b.second;
+    }
+  };
+
   for (const auto& [clk_net, indices] : clk_terms) {
-    ArrayMaskVector<Flop> flops_by_mask;
+    // Partition by (parent module, mask) so flops in different
+    // hierarchical modules are never clustered into the same tray.
+    std::map<std::pair<dbModule*, Mask>, std::vector<Flop>, ModMaskLess>
+        flops_by_mod_mask;
     for (const int idx : indices) {
       const Mask vec_mask = GetArrayMask(insts_[idx], false);
-      flops_by_mask[vec_mask].push_back(flops_[idx]);
+      flops_by_mod_mask[{insts_[idx]->getModule(), vec_mask}].push_back(
+          flops_[idx]);
     }
 
-    for (const auto& [mask, flops] : flops_by_mask) {
+    for (const auto& [key, flops] : flops_by_mod_mask) {
       if (!flops.empty()) {
         ffs.push_back(flops);
         debugPrint(log_,
                    GPL,
                    "mbff",
                    1,
-                   "Flop cluster for net {} with mask {} of size {}",
+                   "Flop cluster for net {} in module {} with mask {} of "
+                   "size {}",
                    clk_net->getName(),
-                   mask.to_string(),
+                   key.first ? key.first->getHierarchicalName() : "<top>",
+                   key.second.to_string(),
                    flops.size());
       }
     }

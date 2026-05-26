@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
@@ -21,7 +22,10 @@
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/Graph.hh"
+#include "sta/Path.hh"
 #include "sta/StaMain.hh"
+#include "sta/StaState.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
@@ -38,6 +42,40 @@ Replace::Replace(odb::dbDatabase* odb,
     : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
 {
   graphics_ = std::make_unique<GraphicsNone>();
+
+  // Register "orig_name" report_path field: original pin name before
+  // multi-bit clustering. Reads "orig_name" property off the path
+  // vertex's iterm. Registered at tool init so paths can be reported
+  // even when the design is loaded from an already-clustered .odb
+  // without re-running cluster_flops.
+  if (sta_->findReportPathField(kOrigNameProp) == nullptr) {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    sta_->makeReportPathField(
+        kOrigNameProp,
+        kOrigNameProp,
+        "Orig Name",
+        36,
+        true,
+        nullptr,
+        [network](const sta::Path* path,
+                  const sta::StaState* sta) -> std::string {
+          if (path == nullptr) {
+            return {};
+          }
+          const sta::Pin* pin = path->vertex(sta)->pin();
+          // staToDb requires all three out-params; only iterm is used.
+          odb::dbITerm* iterm = nullptr;
+          odb::dbBTerm* bterm = nullptr;
+          odb::dbModITerm* moditerm = nullptr;
+          network->staToDb(pin, iterm, bterm, moditerm);
+          if (iterm == nullptr) {
+            return {};
+          }
+          odb::dbStringProperty* prop
+              = odb::dbStringProperty::find(iterm, kOrigNameProp);
+          return prop ? prop->getValue() : std::string{};
+        });
+  }
 }
 
 Replace::~Replace() = default;
@@ -273,6 +311,8 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
     tb_->setTimingNetsPercentage(options.timingDrivenNetsPercentage);
+    tb_->setRepairTiming(options.timingDrivenRepairTiming);
+    tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
   }
 
   if (!np_) {

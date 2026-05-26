@@ -16,6 +16,7 @@ bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
+bazel_dep(name = "rules_pycross", version = "0.8.1")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
@@ -61,10 +62,12 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 bazel_dep(name = "cudd", version = "3.0.0.bcr.2")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+bazel_dep(name = "fmt", version = "11.2.0.bcr.1")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.1")
 bazel_dep(name = "or-tools", version = "9.15")
 bazel_dep(name = "spdlog", version = "1.15.1")
+bazel_dep(name = "sv-lang", version = "10.0.bcr.2")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -188,6 +191,13 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
+# sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
+# 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped
+# from rules_python 2.0.0's MINOR_MAPPING). pycross.configure_environments
+# is root-honored only, so the workaround lives here.
+pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
+pycross.configure_environments(python_versions = ["3.13"])
+
 node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
@@ -213,6 +223,25 @@ orfs.default(
     # Expose the yosys-slang plugin via YOSYS_PLUGIN_PATH so
     # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
     yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
+)
+
+# --- External archives ---
+
+# Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
+# reference @slang resolve without modification. OpenROAD source uses
+# @sv-lang directly; this alias only exists for the slang-elab submodule.
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+new_local_repository(
+    name = "slang",
+    build_file_content = """\
+alias(
+    name = "slang",
+    actual = "@sv-lang//:libsvlang",
+    visibility = ["//visibility:public"],
+)
+""",
+    path = "bazel",
 )
 
 # --- Overrides ---
