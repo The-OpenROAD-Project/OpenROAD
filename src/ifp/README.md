@@ -87,6 +87,7 @@ specified as a polygon (it is not derived from `-utilization`,
 Example: an L-shaped die with a matching L-shaped core, with a 20 micron
 margin between them.
 
+<!-- checker: skip -->
 ```tcl
 initialize_floorplan \
   -die_area  {0 0   200 0   200 100   100 100   100 200   0 200} \

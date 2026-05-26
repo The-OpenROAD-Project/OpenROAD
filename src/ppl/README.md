@@ -321,6 +321,11 @@ Rectilinear mode is detected automatically from the die polygon stored in the
 database; no extra option is required. Pins are distributed along the
 edges of the polygonal die boundary.
 
+<!-- checker: skip -->
+```tcl
+place_pins -hor_layers metal3 -ver_layers metal2
+```
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).
