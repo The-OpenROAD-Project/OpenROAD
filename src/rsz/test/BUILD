@@ -469,9 +469,7 @@ cc_test(
 cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
-    copts = ["-Isrc/rsz/src"],
     data = glob(["cpp/TestResizer*.v"]),
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -522,20 +520,16 @@ cc_test(
 cc_test(
     name = "TestNestedJournal",
     srcs = ["cpp/TestNestedJournal.cc"],
-    copts = [
-        "-Isrc/rsz/src",
-        "-Isrc/rsz/src/move",
-    ],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestBufferRemoval3_0.v",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/rsz",
+        "//src/rsz:private_hdrs",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
@@ -555,7 +549,6 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/ant",
         "//src/dbSta",
@@ -565,6 +558,7 @@ cc_test(
         "//src/grt",
         "//src/odb/src/db",
         "//src/rsz",
+        "//src/rsz:private_hdrs",
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/tst",

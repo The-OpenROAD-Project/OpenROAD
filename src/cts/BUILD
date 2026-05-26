@@ -27,7 +27,7 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/cts:__subpackages__"],
     deps = [
         "//src/sta:opensta_lib",
         "@boost.container_hash",
