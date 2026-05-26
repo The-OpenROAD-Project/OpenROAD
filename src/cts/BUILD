@@ -24,6 +24,9 @@ cc_library(
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
@@ -60,7 +63,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -95,7 +98,7 @@ cc_library(
         "//src/dbSta",
         "//src/est",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/utl",
         "@boost.stacktrace",

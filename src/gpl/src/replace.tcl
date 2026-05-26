@@ -8,8 +8,6 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven]\
     [-routability_driven]\
     [-virtual_cts]\
-    [-disable_timing_driven]\
-    [-disable_routability_driven]\
     [-incremental]\
     [-skip_io]\
     [-bin_grid_count grid_count]\

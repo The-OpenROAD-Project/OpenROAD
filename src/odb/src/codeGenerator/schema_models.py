@@ -13,6 +13,7 @@ class Field:
     bits: Optional[int] = None
     default: Optional[Any] = None
     comment: Optional[str] = None
+    public_comment: Optional[str] = None
     parent: Optional[str] = None
     argument: Optional[str] = None
     functional_name: Optional[str] = None

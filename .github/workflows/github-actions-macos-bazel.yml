@@ -34,8 +34,31 @@ jobs:
         run: brew install bazelisk
 
       - name: Build OpenROAD
+        env:
+          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
+          # When the secret is present (push / dispatch / private repo PR)
+          # add authed gRPC + Remote Asset API + uploads on top of the
+          # .bazelrc anon HTTPS read-only cache. Fork PRs have no secret
+          # and just use the anon read path.
+          REMOTE_FLAGS=()
+          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
+            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+            # Mask the derived token so it cannot leak in build logs.
+            # GH auto-masks the raw secret but not base64-of-secret.
+            echo "::add-mask::${TOKEN_B64}"
+            REMOTE_FLAGS=(
+              --remote_cache=grpcs://bazel.precisioninno.com:443
+              --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
+              --remote_upload_local_results=true
+              --remote_header="Authorization=Basic ${TOKEN_B64}"
+            )
+          fi
+          # Trace the bazelisk invocation so we can confirm remote flags are
+          # present. TOKEN_B64 is already masked above, so it prints as ***.
+          set -x
           bazelisk build \
+            "${REMOTE_FLAGS[@]}" \
             --disk_cache=~/.cache/bazel-disk-cache \
             --experimental_disk_cache_gc_max_size=5G \
             --//:platform=gui //:openroad
