@@ -1911,42 +1911,6 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
   return applyNDRToClockLevels(clockNet, clockNDR, firstHalfLevels);
 }
 
-// Priority for minSpc rule is SPACINGTABLE TWOWIDTHS > SPACINGTABLE PRL >
-// SPACING
-int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
-                             const int width1,
-                             const int width2)
-{
-  int min_spc = 0;
-  if (layer->hasTwoWidthsSpacingRules()) {
-    min_spc = layer->findTwSpacing(width1, width2, 0);
-  } else if (layer->hasV55SpacingRules()) {
-    min_spc = layer->findV55Spacing(std::max(width1, width2), 0);
-  } else if (!layer->getV54SpacingRules().empty()) {
-    for (auto rule : layer->getV54SpacingRules()) {
-      if (rule->hasRange()) {
-        uint32_t rmin;
-        uint32_t rmax;
-        rule->getRange(rmin, rmax);
-        if (width1 < rmin || width2 > rmax) {
-          continue;
-        }
-      }
-      min_spc = std::max<int>(min_spc, rule->getSpacing());
-    }
-  } else {
-    // min_spc = layer->getSpacing();
-    min_spc = layer->getPitch() - width1/2 - width2/2;
-  }
-
-  // Last resort, get pitch - minWidth
-  if (min_spc == 0) {
-    min_spc = layer->getPitch() - layer->getMinWidth();
-  }
-
-  return min_spc;
-}
-
 void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 {
   char ruleName[64];
@@ -1976,7 +1940,6 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 
     const int defaultWidth = layer->getWidth();
     const int defaultSpace = layer->getPitch() - defaultWidth;
-    // int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
 
     // If width or space is 0, something is not right
     if (defaultWidth == 0 || defaultSpace == 0) {
@@ -1993,7 +1956,6 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     const int ndr_width = defaultWidth;
     layerRule->setWidth(ndr_width);
     const int ndr_space = 2 * defaultSpace;
-    // int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
