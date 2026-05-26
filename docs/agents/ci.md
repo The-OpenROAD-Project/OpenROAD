@@ -11,9 +11,6 @@ git commit --allow-empty -s -m "retrigger CI"
 ### `gh pr checks` Exit Code 8
 Exit code 8 means some checks are still pending -- not an error.
 
-### Clang-Tidy CI
-Clang-Tidy CI can fail not only for code issues but also for **unresolved review comments** on the PR. Review threads cannot be resolved via API on public repos -- must be done on the GitHub web UI.
-
 ### Running clang-tidy locally via Bazel
 Run clang-tidy hermetically using the toolchain Bazel already uses to compile:
 ```bash
