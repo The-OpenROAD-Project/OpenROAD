@@ -27,12 +27,12 @@
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
 #include "ram/layout.h"
+#include "spdlog/fmt/fmt.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
-#include "spdlog/fmt/fmt.h"
 #include "utl/Logger.h"
 
 namespace ram {
