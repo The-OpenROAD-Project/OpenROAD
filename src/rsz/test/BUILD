@@ -473,17 +473,10 @@ cc_test(
     data = glob(["cpp/TestResizer*.v"]),
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/grt",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz",  # build_cleaner keep provides the private headers
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

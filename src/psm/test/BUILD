@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "check_power_grid",
     "check_power_grid_disconnected",
     "check_power_grid_disconnected_macro",
+    "check_power_grid_empty_net",
     "check_power_grid_floorplanning",
     "check_power_grid_macros",
     "check_power_grid_ok_disconnected",
