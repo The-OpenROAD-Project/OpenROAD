@@ -1163,8 +1163,7 @@ void RamGen::generate(const int mask_size,
 
   // mux layout columns + per-port buffer/decoder columns + inverter columns
   int col_cell_count
-      = slices_per_word * (mask_size * column_mux_ratio + column_mux_ratio)
-        + 2 * total_ports + inv_col_count + (column_mux_ratio > 1 ? 1 : 0);
+      = slices_per_word * (mask_size * column_mux_ratio + column_mux_ratio);
   ram_grid_.setNumLayouts(col_cell_count);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
@@ -1307,6 +1306,16 @@ void RamGen::generate(const int mask_size,
               = makeNet("word_q", fmt::format("w{}_p{}_b{}", w, port, bit));
         }
       }
+    }
+  }
+
+  // Word selects for column mux, placed before word creation
+  if (column_mux_ratio == 2) {
+    word_sel_nets[0] = inv_addr_nets[0][0];
+    word_sel_nets[1] = addr_inputs_[0][0]->getNet();
+  } else if (column_mux_ratio == 4) {
+    for (int c = 0; c < 4; ++c) {
+      word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
     }
   }
 
@@ -1539,8 +1548,6 @@ void RamGen::generate(const int mask_size,
   std::vector<std::unique_ptr<Cell>> word_sel_cells(column_mux_ratio);
 
   if (column_mux_ratio == 2) {
-    word_sel_nets[0] = inv_addr_nets[0][0];
-    word_sel_nets[1] = addr_inputs_[0][0]->getNet();
     // place inv_addr[0] inverter in sel column
     makeInst(
         inv_sel_cell.get(),
@@ -1551,7 +1558,6 @@ void RamGen::generate(const int mask_size,
          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
   } else if (column_mux_ratio == 4) {
     for (int c = 0; c < 4; ++c) {
-      word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
       word_sel_cells[c] = std::make_unique<Cell>();
     }
     makeInst(word_sel_cells[0].get(),
@@ -1617,11 +1623,14 @@ void RamGen::generate(const int mask_size,
   // adding filler cells to ease congestion for multi-port
   if (column_mux_ratio > 1 && total_ports > 1) {
     int filler_spacing = num_rows / (column_mux_ratio - 1);
-    for (int row = filler_spacing; row < num_rows; row += filler_spacing) {
-      for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
-        ram_grid_.insertCell(nullptr, col, row + filler_rows);
+    if (filler_spacing > 0) {
+      int filler_count = 0;
+      for (int row = filler_spacing; row < num_rows; row += filler_spacing) {
+        for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
+          ram_grid_.insertCell(nullptr, col, row + filler_count);
+        }
+        ++filler_count;
       }
-      ++filler_rows;
     }
   }
 

@@ -76,6 +76,11 @@ proc generate_ram_netlist { args } {
     set w_ports $keys(-w_ports)
   }
 
+  # Defaults to single read/write port if no port flags were specified
+  if { ![info exists keys(-rw_ports)] && ![info exists keys(-r_ports)] && ![info exists keys(-w_ports)] } {
+    set rw_ports 1
+  }
+
   if { $rw_ports + $w_ports != 1 } {
     utl::error RAM 30 "Must have exactly one read/write port or one write port."
   }
