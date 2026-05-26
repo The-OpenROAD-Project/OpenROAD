@@ -146,7 +146,8 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
         if (ux < lx) {
           return;
         }
-        acc += static_cast<int64_t>(ux - lx) + static_cast<int64_t>(uy - ly);
+        acc += (static_cast<int64_t>(ux) - lx)
+               + (static_cast<int64_t>(uy) - ly);
       },
       total_hpwl);
 

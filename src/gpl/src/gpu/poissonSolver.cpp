@@ -233,10 +233,10 @@ void PoissonSolver::initBackend()
   d_expkNForInverse_ = Kokkos::View<Kokkos::complex<float>*>(
       "d_expkNForInverse", binCntX_ / 2 + 1);
 
-  d_expkMN1_
-      = Kokkos::View<Kokkos::complex<float>*>("d_expkMN1", binCntX_ + binCntY_);
-  d_expkMN2_
-      = Kokkos::View<Kokkos::complex<float>*>("d_expkMN2", binCntX_ + binCntY_);
+  d_expkMN1_ = Kokkos::View<Kokkos::complex<float>*>(
+      "d_expkMN1", 2 * std::max(binCntX_, binCntY_));
+  d_expkMN2_ = Kokkos::View<Kokkos::complex<float>*>(
+      "d_expkMN2", 2 * std::max(binCntX_, binCntY_));
 
   // For Input For IDXST_IDCT & IDCT_IDXST
   d_inputForX_ = Kokkos::View<float*>("d_inputForX", binCntX_ * binCntY_);
