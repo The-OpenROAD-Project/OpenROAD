@@ -3,10 +3,19 @@
 
 #include "syn/ir/Graph.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <sstream>
+
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
+#include "syn/ir/Const.h"
+#include "syn/ir/ControlNet.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/ir/NetTableEntry.h"
 
 // ABC (pulled in transitively via //src/syn/src/ir → TritModel) ships its
 // own main() that wins over gtest_main. Provide our own to force the gtest
