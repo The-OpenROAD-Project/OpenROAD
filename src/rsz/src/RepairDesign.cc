@@ -1652,7 +1652,7 @@ void RepairDesign::repairNetWire(
                         network_->pathName(network_->net(drvr_pin_)),
                         network_->pathName(drvr_pin_),
                         r_drvr * ref_cap,
-                        max_load_slew_margined / (*slew_rc_factor_));
+                        max_load_slew_margined / slew_rc_factor_.value());
           break;
         }
       } else {
