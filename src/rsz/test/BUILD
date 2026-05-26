@@ -171,6 +171,7 @@ TESTS = [
     "repair_slew15",
     "repair_slew16",
     "repair_slew17",
+    "repair_slew_no_progress",
     "repair_slew2",
     "repair_slew3",
     "repair_slew4",
