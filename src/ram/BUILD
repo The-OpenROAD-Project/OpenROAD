@@ -41,6 +41,7 @@ cc_library(
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
+        "@spdlog",
     ],
 )
 
