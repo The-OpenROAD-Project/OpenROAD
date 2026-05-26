@@ -27,7 +27,6 @@
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
 #include "ram/layout.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -1126,6 +1125,15 @@ void RamGen::generate(const int mask_size,
   latch_cell_ = nullptr;
   findMasters();
 
+  // using -use_latch will override specified storage cell to avoid collision in
+  // what storage cells are used
+  if (use_latch_ && storage_cell_) {
+    logger_->warn(RAM,
+                  37,
+                  "-storage_cell is ignored when -use_latch is enabled. Latch "
+                  "cells will be auto selected from the library instead.");
+  }
+
   auto chip = db_->getChip();
   if (!chip) {
     chip = odb::dbChip::create(
@@ -1497,7 +1505,8 @@ void RamGen::generate(const int mask_size,
             auto nl_cell = std::make_unique<Cell>();
             makeInst(
                 nl_cell.get(),
-                fmt::format("neg_lat_b{}", global_bit),
+                fmt::format("neg_lat_b{}",
+                            global_bit),  // NOLINT(misc-include-cleaner)
                 "nlat",
                 latch_cell_,
                 {{latch_ports_[{PortRoleType::Clock, 0}], clk_b_net},
