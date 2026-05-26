@@ -1999,6 +1999,8 @@ NetRouteMap FastRouteCore::run()
   int overflow_increases = -1;
   int last_total_overflow = 0;
   float overflow_reduction_percent = -1;
+  // Minimum overflow stagnation
+  int minofl_stagnant = 0;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
                                  logger_,
@@ -2097,6 +2099,9 @@ NetRouteMap FastRouteCore::run()
       if (minofl > past_cong) {
         minofl = past_cong;
         minoflrnd = i;
+        minofl_stagnant = 0;
+      } else {
+        minofl_stagnant++;
       }
 
       if (i == 8) {
@@ -2189,6 +2194,7 @@ NetRouteMap FastRouteCore::run()
             if (minofl > past_cong) {
               minofl = past_cong;
               minoflrnd = i;
+              minofl_stagnant = 0;
             }
           }
         } else {
@@ -2235,7 +2241,8 @@ NetRouteMap FastRouteCore::run()
       // Try disabling NDR nets to fix congestion
       if (total_overflow_ > 0
           && (i == overflow_iterations_
-              || overflow_increases == max_overflow_increases)) {
+              || overflow_increases == max_overflow_increases
+              || minofl_stagnant >= 10)) {
         // Compute all the NDR nets involved in congestion
         computeCongestedNDRnets();
 
@@ -2261,6 +2268,7 @@ NetRouteMap FastRouteCore::run()
 
           // Reset loop parameters
           overflow_increases = 0;
+          minofl_stagnant = 0;
           i = 1;
           costheight_ = COSHEIGHT;
           enlarge_ = ENLARGE;
@@ -2327,15 +2335,29 @@ NetRouteMap FastRouteCore::run()
 
     removeLoops();
 
-    getOverflow2Dmaze(&maxOverflow, &tUsage);
+    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
     layerAssignment();
 
+    getOverflow3D();
+
     if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-      getOverflow3D();
       logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
                       past_cong,
                       total_overflow_);
+    }
+
+    // Mismatch between 2D and 3D congestion related to NDR nets
+    if (past_cong != total_overflow_) {
+      logger_->report(
+          "Disabling NDR for congested nets post-Layer Assignment. Congestion "
+          "2D: {} 3D: {}",
+          past_cong,
+          total_overflow_);
+      disableNDRForCongestedNets(net_ids_);
+      long_edge_len = BIG_INT;
+      past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+      getOverflow3D();
     }
 
     costheight_ = 3;
@@ -2380,9 +2402,6 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-
-  // Check if there is 2D-3D resources mismatch related to NDR nets
-  disableNDRNets(net_ids_);
 
   NetRouteMap routes = getRoutes();
   net_ids_.clear();
@@ -2514,10 +2533,10 @@ void FastRouteCore::updateNet3DUsage(const int net_id, const int cost)
 }
 
 // Disable NDR for any net in `net_ids` that has an active NDR rule and is
-// found to occupy at least one congested 2D edge. 3D edge usage in
+// found to occupy at least one congested edge. 3D edge usage in
 // h_edges_3D_ / v_edges_3D_ is also updated when running in incremental GRT
 // mode or after layer assignment (3D stage).
-void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
+void FastRouteCore::disableNDRForCongestedNets(const std::vector<int>& net_ids)
 {
   // Collect NDR nets from the supplied list that sit on a congested 2D edge
   std::vector<int> congested_ndr_ids;
@@ -2545,10 +2564,20 @@ void FastRouteCore::disableNDRNets(const std::vector<int>& net_ids)
         }
         if (grids[i].x == grids[i + 1].x) {  // vertical segment
           const int min_y = std::min(grids[i].y, grids[i + 1].y);
-          is_congested = graph2d_.getOverflowV(grids[i].x, min_y) > 0;
+          bool overflow_3d
+              = (v_edges_3D_[grids[i].layer][min_y][grids[i].x].cap
+                 - v_edges_3D_[grids[i].layer][min_y][grids[i].x].usage)
+                < 0;
+          is_congested
+              = graph2d_.getOverflowV(grids[i].x, min_y) > 0 || overflow_3d;
         } else {  // horizontal segment
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
-          is_congested = graph2d_.getOverflowH(min_x, grids[i].y) > 0;
+          bool overflow_3d
+              = (h_edges_3D_[grids[i].layer][grids[i].y][min_x].cap
+                 - h_edges_3D_[grids[i].layer][grids[i].y][min_x].usage)
+                < 0;
+          is_congested
+              = graph2d_.getOverflowH(min_x, grids[i].y) > 0 || overflow_3d;
         }
       }
     }

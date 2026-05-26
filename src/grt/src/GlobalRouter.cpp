@@ -1716,18 +1716,23 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
+      // if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
+      //   continue;
+      // }
+      if (layerIdx > getMaxRoutingLayer() || layerIdx < getMinRoutingLayer()) {
         continue;
       }
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
+      int default_spacing = default_pitch - default_width;
 
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
+      int ndr_pitch = (ndr_width + 2 * ndr_spacing + default_width) / 2;
 
-      int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      // Account for both sides
+      int consumption = 2 * std::ceil((float) ndr_pitch / default_pitch) - 1;
       if (consumption > std::numeric_limits<int8_t>::max()) {
         logger_->error(GRT,
                        272,
@@ -1740,12 +1745,23 @@ void GlobalRouter::computeTrackConsumption(
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
 
+      if (logger_->debugCheck(GRT, "ndrInfo", 2)) {
+        logger_->report(
+            "default_width: {} default_spacing: {} default_pitch: {} "
+            "ndr_spacing: {} ndr_width: {} ndr_pitch: {}",
+            default_width,
+            default_spacing,
+            default_pitch,
+            ndr_spacing,
+            ndr_width,
+            ndr_pitch);
+      }
       if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
         logger_->report(
             "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
             net->getConstName(),
             layer_rule->getLayer()->getConstName(),
-            (float) ndr_pitch / default_pitch,
+            2 * (float) ndr_pitch / default_pitch - 1,
             consumption,
             track_consumption);
       }

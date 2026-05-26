@@ -1916,7 +1916,8 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
       min_spc = std::max<int>(min_spc, rule->getSpacing());
     }
   } else {
-    min_spc = layer->getSpacing();
+    // min_spc = layer->getSpacing();
+    min_spc = layer->getPitch() - width1/2 - width2/2;
   }
 
   // Last resort, get pitch - minWidth
@@ -1954,8 +1955,9 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
     assert(layerRule != nullptr);
 
-    int defaultWidth = layer->getWidth();
-    int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
+    const int defaultWidth = layer->getWidth();
+    const int defaultSpace = layer->getPitch() - defaultWidth;
+    // int defaultSpace = getNetSpacing(layer, defaultWidth, defaultWidth);
 
     // If width or space is 0, something is not right
     if (defaultWidth == 0 || defaultSpace == 0) {
@@ -1969,9 +1971,10 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
 
     // Set NDR settings
-    int ndr_width = defaultWidth;
+    const int ndr_width = defaultWidth;
     layerRule->setWidth(ndr_width);
-    int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
+    const int ndr_space = 2 * defaultSpace;
+    // int ndr_space = 2 * getNetSpacing(layer, ndr_width, ndr_width);
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
