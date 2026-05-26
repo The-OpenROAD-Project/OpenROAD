@@ -79,7 +79,7 @@ std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
     return candidates;
   }
 
-  odb::dbNet* db_net = resizer_.dbNetwork()->staToDb(net);
+  odb::dbNet* db_net = resizer_.dbNetwork()->flatNet(net);
   if (db_net == nullptr) {
     debugPrint(resizer_.logger(),
                RSZ,

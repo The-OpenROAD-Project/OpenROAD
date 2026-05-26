@@ -4725,7 +4725,7 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
     return false;
   }
 
-  odb::dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->flatNet(net);
   if (db_net == nullptr || db_net->isSpecial()) {
     return false;
   }
