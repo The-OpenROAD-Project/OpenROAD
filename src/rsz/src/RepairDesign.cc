@@ -1633,6 +1633,21 @@ void RepairDesign::repairNetWire(
       wire_length_ref = 0.0;
       load_cap = repeater_cap + length1 * wire_cap;
       ref_cap = repeater_cap;
+      max_load_slew_margined = maxSlewMargined(max_load_slew);
+      r_wire = length1 * wire_res;
+      c_wire = length1 * wire_cap;
+      load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
+                   + r_wire * c_wire / 2)
+                  * (*slew_rc_factor_);
+      buffer_cell = resizer_->findTargetCell(
+          resizer_->buffer_lowest_drive_, load_cap, false);
+
+      bnet->setCapacitance(load_cap);
+      bnet->setFanout(repeater_fanout);
+      bnet->setMaxLoadSlew(
+          max_load_slew
+          - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+
       // No-progress detection: buf_dist == 0 leaves the repeater stacked
       // on the load pin. If the new ref_cap also does not shrink, the
       // driver still sees the same load, the slew quadratic gives the
@@ -1640,7 +1655,10 @@ void RepairDesign::repairNetWire(
       // observed failure mode is a multi-thousand-deep buffer chain at a
       // single coordinate that overflows the levelize recursion stack).
       // Allow one such iteration in case the repeater's smaller input
-      // pin cap absorbs the violation, but abort on the second.
+      // pin cap absorbs the violation, but abort on the second. Placed
+      // AFTER the bnet write-back so callers reading bnet->cap() /
+      // fanout() / maxLoadSlew() (e.g. repairNetJunc) see the topology
+      // reflecting the latest makeRepeater.
       if (zero_advance && ref_cap >= prev_ref_cap) {
         if (++zero_progress_iters >= 2) {
           // slew_rc_factor_ is asserted engaged at the top of repairNetWire;
@@ -1663,20 +1681,6 @@ void RepairDesign::repairNetWire(
       } else {
         zero_progress_iters = 0;
       }
-      max_load_slew_margined = maxSlewMargined(max_load_slew);
-      r_wire = length1 * wire_res;
-      c_wire = length1 * wire_cap;
-      load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
-                   + r_wire * c_wire / 2)
-                  * (*slew_rc_factor_);
-      buffer_cell = resizer_->findTargetCell(
-          resizer_->buffer_lowest_drive_, load_cap, false);
-
-      bnet->setCapacitance(load_cap);
-      bnet->setFanout(repeater_fanout);
-      bnet->setMaxLoadSlew(
-          max_load_slew
-          - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
 
       debugPrint(logger_,
                  RSZ,
