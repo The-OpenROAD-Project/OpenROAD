@@ -640,25 +640,117 @@ bool NegotiationLegalizer::initFromDb()
     // only check site existence and hard blockages here (both encoded in
     // pixel.is_valid).  Soft blockages, routing-layer blockages, and
     // cell-vs-cell overlap are left to the negotiation loop.
-    // if (!cell.fixed) {
-    if (false) {
+    if (!cell.fixed) {
+    // if (false) {
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
-      auto isValidSite = [&](int gx, int gy) -> bool {
-        if (gx < 0 || gx + cell.width > grid_w_ || gy < 0
-            || gy + cell.height > grid_h_) {
+      auto isValidSite = [&](int pixel_left, int pixel_bottom) -> bool {
+        const bool past_left = pixel_left < 0;
+        const bool past_bottom = pixel_bottom < 0;
+        const bool past_right = pixel_left + cell.width > grid_w_;
+        const bool past_top = pixel_bottom + cell.height > grid_h_;
+        if (past_left || past_right || past_bottom || past_top) {
+          std::string detail;
+          if (past_left) {
+            detail += fmt::format(
+                " left edge of footprint is at column {} (before grid "
+                "column 0);",
+                pixel_left);
+          }
+          if (past_bottom) {
+            detail += fmt::format(
+                " bottom edge of footprint is at row {} (below grid "
+                "row 0);",
+                pixel_bottom);
+          }
+          if (past_right) {
+            detail += fmt::format(
+                " right edge of footprint is at column {} (past grid "
+                "width {});",
+                pixel_left + cell.width,
+                grid_w_);
+          }
+          if (past_top) {
+            detail += fmt::format(
+                " top edge of footprint is at row {} (past grid "
+                "height {});",
+                pixel_bottom + cell.height,
+                grid_h_);
+          }
+          debugPrint(logger_,
+                     utl::DPL,
+                     "negotiation",
+                     1,
+                     "Position grid ({}, {}) rejected for instance '{}': "
+                     "cell footprint {}x{} sites does not fit in grid "
+                     "{}x{} sites.{}",
+                     pixel_left,
+                     pixel_bottom,
+                     cell.db_inst->getName(),
+                     cell.width,
+                     cell.height,
+                     grid_w_,
+                     grid_h_,
+                     detail);
           return false;
         }
         // Site type check at the anchor row is representative for all rows.
         if (site != nullptr
-            && !dpl_grid->getSiteOrientation(GridX{gx}, GridY{gy}, site)
+            && !dpl_grid->getSiteOrientation(GridX{pixel_left}, GridY{pixel_bottom}, site)
                     .has_value()) {
+          debugPrint(logger_,
+                     utl::DPL,
+                     "negotiation",
+                     1,
+                     "Position grid ({}, {}) rejected for instance '{}': "
+                     "the row at this Y has no site matching the master's "
+                     "site '{}' (master='{}', class={}). The row is either "
+                     "missing here or uses a different site definition.",
+                     pixel_left,
+                     pixel_bottom,
+                     cell.db_inst->getName(),
+                     site->getName(),
+                     master->getName(),
+                     master->getType().getString());
           return false;
         }
-        for (int dy = 0; dy < cell.height; ++dy) {
-          for (int dx = 0; dx < cell.width; ++dx) {
-            if (!dpl_grid->pixel(GridY{gy + dy}, GridX{gx + dx}).is_valid) {
+        for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
+          for (int col_offset = 0; col_offset < cell.width; ++col_offset) {
+            const auto& p = dpl_grid->pixel(
+                GridY{pixel_bottom + row_offset},
+                GridX{pixel_left + col_offset});
+            if (!p.is_valid) {
+              const auto [row_site, row_orient] = dpl_grid->getShortestSite(
+                  GridX{pixel_left + col_offset},
+                  GridY{pixel_bottom + row_offset});
+              const std::string cause
+                  = (row_site != nullptr)
+                        ? fmt::format(
+                              "a hard dbBlockage covers it (row site '{}' "
+                              "exists at this pixel but was invalidated)",
+                              row_site->getName())
+                        : std::string(
+                              "no row covers this pixel (gap, off-die "
+                              "area, or fragmented-row gap)");
+              debugPrint(logger_,
+                         utl::DPL,
+                         "negotiation",
+                         1,
+                         "Position grid ({}, {}) rejected for instance "
+                         "'{}': pixel ({}, {}) inside the {}x{} footprint "
+                         "is marked invalid (hopeless={}, "
+                         "blocked_layers=0x{:x}); {}.",
+                         pixel_left,
+                         pixel_bottom,
+                         cell.db_inst->getName(),
+                         pixel_left + col_offset,
+                         pixel_bottom + row_offset,
+                         cell.width,
+                         cell.height,
+                         p.is_hopeless,
+                         p.blocked_layers,
+                         cause);
               return false;
             }
           }
@@ -714,18 +806,18 @@ bool NegotiationLegalizer::initFromDb()
 
       if (!isValidSite(cell.init_x, cell.init_y)
           || !isInRegionOk(cell.init_x, cell.init_y)) {
-        // debugPrint(logger_,
-        //            utl::DPL,
-        //            "negotiation",
-        //            1,
-        logger_->report(
-            "Instance {} at ({}, {}) snaps to invalid site at "
-            "({}, {}). Searching for nearest valid site.",
-            cell.db_inst->getName(),
-            db_x,
-            db_y,
-            die_xlo_ + cell.init_x * site_width_,
-            die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
+        debugPrint(logger_,
+                   utl::DPL,
+                   "negotiation",
+                   1,
+                   "Instance '{}' initially at dbu ({}, {}) rounds to "
+                   "an invalid initial position at dbu ({}, {}). Will "
+                   "search for the nearest valid site.",
+                   cell.db_inst->getName(),
+                   db_x,
+                   db_y,
+                   die_xlo_ + cell.init_x * site_width_,
+                   die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v);
 
         // Linear scan in the four cardinal directions (same shape as
         // Opendp::moveHopeless).
@@ -814,12 +906,18 @@ bool NegotiationLegalizer::initFromDb()
           const int init_x_dbu = die_xlo_ + cell.init_x * site_width_;
           const int init_y_dbu
               = die_ylo_ + dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-          logger_->report(
-              "Could not find a valid site for instance {} (init ({}, {}) "
-              "dbu).",
-              cell.db_inst->getName(),
-              init_x_dbu,
-              init_y_dbu);
+          debugPrint(logger_,
+                     utl::DPL,
+                     "negotiation",
+                     1,
+                     "No valid site found for instance '{}' near its "
+                     "initial position dbu ({}, {}). Linear scan in all "
+                     "four cardinal directions exhausted with no match. "
+                     "Leaving instance at its initial position; "
+                     "negotiation will need to legalize it.",
+                     cell.db_inst->getName(),
+                     init_x_dbu,
+                     init_y_dbu);
         }
       }
     }
