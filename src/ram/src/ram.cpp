@@ -27,6 +27,7 @@
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
 #include "ram/layout.h"
+#include "spdlog/fmt/fmt.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
