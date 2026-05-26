@@ -77,9 +77,11 @@ proc generate_ram_netlist { args } {
   }
 
   # Defaults to single read/write port if no port flags were specified
-  if { ![info exists keys(-rw_ports)] && \
-      ![info exists keys(-r_ports)]  && \
-      ![info exists keys(-w_ports)] } {
+  if {
+    ![info exists keys(-rw_ports)] &&
+    ![info exists keys(-r_ports)] &&
+    ![info exists keys(-w_ports)]
+  } {
     set rw_ports 1
   }
 
