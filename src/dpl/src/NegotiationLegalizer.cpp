@@ -645,12 +645,22 @@ bool NegotiationLegalizer::initFromDb()
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
-      auto isValidSite = [&](int pixel_left, int pixel_bottom) -> bool {
+      // verbose=true only at the initial-position check so the snap
+      // search itself (which evaluates many candidates per cell) stays
+      // quiet.  The single message we keep tells us the reason for the
+      // initial rejection; the "Could not find a valid site" line covers
+      // the case where the scan exhausts.
+      auto isValidSite
+          = [&](int pixel_left, int pixel_bottom, bool verbose = false)
+          -> bool {
         const bool past_left = pixel_left < 0;
         const bool past_bottom = pixel_bottom < 0;
         const bool past_right = pixel_left + cell.width > grid_w_;
         const bool past_top = pixel_bottom + cell.height > grid_h_;
         if (past_left || past_right || past_bottom || past_top) {
+          if (!verbose) {
+            return false;
+          }
           std::string detail;
           if (past_left) {
             detail += fmt::format(
@@ -699,20 +709,22 @@ bool NegotiationLegalizer::initFromDb()
         if (site != nullptr
             && !dpl_grid->getSiteOrientation(GridX{pixel_left}, GridY{pixel_bottom}, site)
                     .has_value()) {
-          debugPrint(logger_,
-                     utl::DPL,
-                     "negotiation",
-                     1,
-                     "Position grid ({}, {}) rejected for instance '{}': "
-                     "the row at this Y has no site matching the master's "
-                     "site '{}' (master='{}', class={}). The row is either "
-                     "missing here or uses a different site definition.",
-                     pixel_left,
-                     pixel_bottom,
-                     cell.db_inst->getName(),
-                     site->getName(),
-                     master->getName(),
-                     master->getType().getString());
+          if (verbose) {
+            debugPrint(logger_,
+                       utl::DPL,
+                       "negotiation",
+                       1,
+                       "Position grid ({}, {}) rejected for instance '{}': "
+                       "the row at this Y has no site matching the master's "
+                       "site '{}' (master='{}', class={}). The row is either "
+                       "missing here or uses a different site definition.",
+                       pixel_left,
+                       pixel_bottom,
+                       cell.db_inst->getName(),
+                       site->getName(),
+                       master->getName(),
+                       master->getType().getString());
+          }
           return false;
         }
         for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
@@ -721,6 +733,9 @@ bool NegotiationLegalizer::initFromDb()
                 GridY{pixel_bottom + row_offset},
                 GridX{pixel_left + col_offset});
             if (!p.is_valid) {
+              if (!verbose) {
+                return false;
+              }
               const auto [row_site, row_orient] = dpl_grid->getShortestSite(
                   GridX{pixel_left + col_offset},
                   GridY{pixel_bottom + row_offset});
@@ -804,7 +819,7 @@ bool NegotiationLegalizer::initFromDb()
         return false;
       };
 
-      if (!isValidSite(cell.init_x, cell.init_y)
+      if (!isValidSite(cell.init_x, cell.init_y, /*verbose=*/true)
           || !isInRegionOk(cell.init_x, cell.init_y)) {
         debugPrint(logger_,
                    utl::DPL,
