@@ -3,7 +3,48 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
-export function createWebSocketTileLayer(visibility, visibleLayers) {
+// `app` (last arg) is read lazily on every request so that
+// app.visibleChiplets, populated by display-controls.js after the tech
+// metadata arrives, is reflected in tile requests without rebuilding
+// the layer.  When null or absent the field is omitted and the server
+// renders every chiplet (default).
+export function createWebSocketTileLayer(visibility, visibleLayers,
+                                         selectability, selectableLayers,
+                                         app) {
+    // Single source of truth for the tile-request payload.  Both
+    // createTile (initial load) and refreshTiles (visibility change)
+    // call this so the wire format stays in sync — earlier copies of
+    // this snippet drifted when fields like visible_chiplets were
+    // added in only one place.
+    //
+    // Tiles don't actually use selectability for rendering, but we
+    // send it on every request so the wire schema stays uniform with
+    // selectAt requests.
+    function buildTileRequest(coords, layerName) {
+        const vf = {};
+        for (const [k, v] of Object.entries(visibility)) {
+            vf[k] = !!v;
+        }
+        if (selectability) {
+            for (const [k, v] of Object.entries(selectability)) {
+                vf['s_' + k] = !!v;
+            }
+        }
+        const req = {
+            type: 'tile',
+            layer: layerName,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            visible_layers: visibleLayers ? [...visibleLayers] : [],
+            selectable_layers: selectableLayers ? [...selectableLayers] : [],
+            ...vf,
+        };
+        if (app && app.visibleChiplets instanceof Set) {
+            req.visible_chiplets = [...app.visibleChiplets];
+        }
+        return req;
+    }
     return L.GridLayer.extend({
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
@@ -35,23 +76,13 @@ export function createWebSocketTileLayer(visibility, visibleLayers) {
                 }
             };
 
-            const vf = {};
-            for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = !!v;
-            }
             // Store the request ID so _removeTile() can cancel it
             // when the tile is discarded (e.g. during zoom).
             tile._websocketRequestId = this._websocketManager.nextId;
 
-            this._websocketManager.request({
-                type: 'tile',
-                layer: this._layerName,
-                z: coords.z,
-                x: coords.x,
-                y: coords.y,
-                visible_layers: visibleLayers ? [...visibleLayers] : [],
-                ...vf,
-            }).then(data => {
+            this._websocketManager.request(
+                buildTileRequest(coords, this._layerName)
+            ).then(data => {
                 if (typeof data === 'string') {
                     tile.src = data;  // data URI from cache
                 } else {
@@ -69,11 +100,6 @@ export function createWebSocketTileLayer(visibility, visibleLayers) {
         refreshTiles: function() {
             if (!this._map) return;
 
-            const vf = {};
-            for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = !!v;
-            }
-
             for (const key in this._tiles) {
                 const tileInfo = this._tiles[key];
                 if (!tileInfo || !tileInfo.el) continue;
@@ -86,18 +112,11 @@ export function createWebSocketTileLayer(visibility, visibleLayers) {
                     this._websocketManager.cancel(tile._websocketRequestId);
                 }
 
-                const requestId = this._websocketManager.nextId;
-                tile._websocketRequestId = requestId;
+                tile._websocketRequestId = this._websocketManager.nextId;
 
-                this._websocketManager.request({
-                    type: 'tile',
-                    layer: this._layerName,
-                    z: coords.z,
-                    x: coords.x,
-                    y: coords.y,
-                    visible_layers: visibleLayers ? [...visibleLayers] : [],
-                    ...vf,
-                }).then(data => {
+                this._websocketManager.request(
+                    buildTileRequest(coords, this._layerName)
+                ).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
                     }

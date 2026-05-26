@@ -32,6 +32,9 @@ class {{klass.name}} : public {{klass.base_class}}
   
     {% endif %}
     {% if 'no-get' not in field.flags %}
+      {% if field.public_comment %}
+        {{field.public_comment}}
+      {% endif %}
       {{ macros.getter_signature(field) }};
     {% endif %}
   

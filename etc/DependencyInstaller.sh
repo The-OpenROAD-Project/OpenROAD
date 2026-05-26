@@ -158,6 +158,28 @@ _verify_checksum() {
 }
 
 # ------------------------------------------------------------------------------
+# Yosys build dependencies
+# ------------------------------------------------------------------------------
+# OpenROAD itself uses vendored linenoise, so readline is no longer in the
+# base package lists. Yosys still requires it at compile time, so install it
+# here right before the yosys build.
+_install_yosys_dependencies() {
+    if _command_exists "apt-get"; then
+        export DEBIAN_FRONTEND="noninteractive"
+        _execute "Installing libreadline-dev for yosys..." \
+            apt-get -y install --no-install-recommends libreadline-dev
+    elif _command_exists "yum"; then
+        _execute "Installing readline-devel for yosys..." \
+            yum -y install readline-devel
+    elif _command_exists "zypper"; then
+        _execute "Installing readline-devel for yosys..." \
+            zypper -n install readline-devel
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing readline for yosys..." brew install readline
+    fi
+}
+
+# ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
 _install_yosys() {
@@ -173,6 +195,7 @@ _install_yosys() {
     local required_version="${YOSYS_VERSION#v}"
     log "Checking Yosys (System: ${yosys_installed_version}, Required: ${required_version})"
     if [[ "${yosys_installed_version}" != "${required_version}" ]]; then
+        _install_yosys_dependencies
         (
             cd "${BASE_DIR}"
             _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
@@ -981,8 +1004,8 @@ _install_ubuntu_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
-        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
+        libgomp1 libomp-dev libpcre2-dev pandoc \
+        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
@@ -1025,8 +1048,8 @@ _install_rhel_packages() {
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
-        qt5-qtimageformats readline tcl-devel tcl-tclreadline \
-        tcl-tclreadline-devel tcl-thread-devel tcllib wget yaml-cpp-devel \
+        qt5-qtimageformats tcl-devel \
+        tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
 
     if [[ "${rhel_version}" == "8" ]]; then
@@ -1038,7 +1061,6 @@ _install_rhel_packages() {
     if [[ "${rhel_version}" == "9" ]]; then
         _execute "Installing additional packages for RHEL 9..." yum install -y \
             https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
-            https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
             https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
     fi
 
@@ -1063,7 +1085,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
+        pcre2-devel pkg-config python3-devel python3-pip tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -1111,8 +1133,8 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
-        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev tcl-tclreadline \
+        libomp-dev libpcre2-dev "libtcl${tcl_ver}" \
+        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
