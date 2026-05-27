@@ -1,6 +1,9 @@
 {
   "lockFileVersion": 24,
   "registryFileHashes": {
+    "https://bcr.bazel.build/bazel_registry.json": "8a28e4aff06ee60aed2a8c281907fb8bcbf3b753c91fb5a5c57da3215d5b3497",
+    "https://bcr.bazel.build/modules/bant/0.2.10/MODULE.bazel": "1f74c3db56b4cfb85ec89250626712658092027dcda2e6082bddd41a7de7384a",
+    "https://bcr.bazel.build/modules/bant/0.2.10/source.json": "6277f91fa835ecc8ec06ad8769ece86920e14cc1a0c77101e269a600fec47305",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/bazel_registry.json": "8a28e4aff06ee60aed2a8c281907fb8bcbf3b753c91fb5a5c57da3215d5b3497",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/abc/0.62-yosyshq/MODULE.bazel": "325231df11fd3480cb0eb3c9095105ccdfacf34583c3a92d8c0ae46967dbaef6",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/abc/0.64-yosyshq.bcr.1/MODULE.bazel": "d1ed5b52014c8b7cf2b8a617f1c1f6e363303c92fd84c6c426281a873d0d297a",
@@ -60,8 +63,7 @@
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/aspect_rules_py/1.8.4/source.json": "7cd80ad811f0c2b3aad3c878506ae602fce2fe53b78487ecfbcc8bcde07d220e",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/aspect_tools_telemetry/0.3.3/MODULE.bazel": "37c764292861c2f70314efa9846bb6dbb44fc0308903b3285da6528305450183",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/aspect_tools_telemetry/0.3.3/source.json": "605086bbc197743a0d360f7ddc550a1d4dfa0441bc807236e17170f636153348",
-    "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bant/0.2.9/MODULE.bazel": "d1c4b3d4a64cf00d3b4aae4c6d3575b0463d9b3109354e22d200b167ca9cf503",
-    "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bant/0.2.9/source.json": "9bda78fe20d5cc0c07a2dcae5e6a14a926bfc532d32c6217268a001be106fb5a",
+    "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bant/0.2.10/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bazel_features/0.1.0/MODULE.bazel": "47011d645b0f949f42ee67f2e8775188a9cf4a0a1528aa2fa4952f2fd00906fd",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bazel_features/1.0.0/MODULE.bazel": "d7f022dc887efb96e1ee51cec7b2e48d41e36ff59a6e4f216c40e4029e1585bf",
     "https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/modules/bazel_features/1.1.0/MODULE.bazel": "cfd42ff3b815a5f39554d97182657f8c4b9719568eb7fded2b9135f084bf760b",
