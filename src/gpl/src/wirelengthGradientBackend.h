@@ -8,13 +8,11 @@
 //
 // Header is plain C++ (no Kokkos, no preprocessor) so nesterovBase.h can hold
 // a std::unique_ptr<WirelengthGradientBackend> member.
-//
-// Phase 2 of the gpl GPU porting — see plan in
-// /home/mjkim/.claude/plans/parsed-sprouting-cookie.md.
 
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include "point.h"
@@ -30,6 +28,11 @@ class WirelengthGradientBackend
 {
  public:
   virtual ~WirelengthGradientBackend() = default;
+  WirelengthGradientBackend(const WirelengthGradientBackend&) = delete;
+  WirelengthGradientBackend& operator=(const WirelengthGradientBackend&)
+      = delete;
+  WirelengthGradientBackend(WirelengthGradientBackend&&) = delete;
+  WirelengthGradientBackend& operator=(WirelengthGradientBackend&&) = delete;
 
   // Refresh per-pin / per-net WA exponentials (CPU: clearWaVars + the OMP loop
   // in updateWireLengthForceWA; GPU: K1 updateNetBBox, K2 computeAPosNeg,
@@ -50,6 +53,9 @@ class WirelengthGradientBackend
   virtual FloatPoint getCellGradient(const GCell* gCell) = 0;
 
   virtual const char* name() const = 0;
+
+ protected:
+  WirelengthGradientBackend() = default;
 };
 
 // Factory: GpuWirelengthGradientBackend on ENABLE_GPU + gpuEnabled(), else
@@ -60,5 +66,8 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
     int num_threads,
     NesterovBaseCommon* nbc,
     DeviceState* device_state);
+
+static_assert(!std::is_copy_constructible_v<WirelengthGradientBackend>);
+static_assert(!std::is_move_constructible_v<WirelengthGradientBackend>);
 
 }  // namespace gpl

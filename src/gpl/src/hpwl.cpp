@@ -74,9 +74,9 @@ std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
 int64_t NesterovBaseCommon::getHpwl()
 {
 #ifdef ENABLE_GPU
-  // Phase 4+: when NesterovBase has already scattered fresh inst coords
-  // from the device-resident Nesterov vectors, skip the host→device
-  // round-trip — host gCellStor_::dCx/dCy is int-truncated and would lose
+  // When NesterovBase has already scattered fresh inst coords from the
+  // device-resident Nesterov vectors, skip the host→device round-trip —
+  // host gCellStor_::dCx/dCy is int-truncated and would lose the
   // sub-integer precision the GPU coord-update kernel produced.
   if (device_state_ && !device_state_->consumeCoordsFresh()) {
     device_state_->syncInstCoordsFromHost(gCellStor_);

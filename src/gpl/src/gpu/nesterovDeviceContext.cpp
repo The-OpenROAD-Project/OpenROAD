@@ -5,6 +5,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -20,39 +21,48 @@ namespace gpl {
 
 namespace {
 
-// Copy a host vector<FloatPoint> into a pair of device float Views.
+using HostUM = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+
+// Copy a host vector<FloatPoint> into a pair of device float Views, staging
+// through caller-owned scratch buffers (NesterovDeviceContext members).
+// Scratch vectors must already be sized to src.size().
 void pushVecPairToDevice(const std::vector<FloatPoint>& src,
+                         std::vector<float>& scratch_x,
+                         std::vector<float>& scratch_y,
                          Kokkos::View<float*>& dx,
                          Kokkos::View<float*>& dy)
 {
   const int n = static_cast<int>(src.size());
-  std::vector<float> hx(n), hy(n);
   for (int i = 0; i < n; ++i) {
-    hx[i] = src[i].x;
-    hy[i] = src[i].y;
+    scratch_x[i] = src[i].x;
+    scratch_y[i] = src[i].y;
   }
-  using HostUM
-      = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
-  Kokkos::deep_copy(dx, HostUM(hx.data(), n));
-  Kokkos::deep_copy(dy, HostUM(hy.data(), n));
+  Kokkos::deep_copy(dx, HostUM(scratch_x.data(), n));
+  Kokkos::deep_copy(dy, HostUM(scratch_y.data(), n));
 }
 
-// Pull a pair of device float Views back into a host vector<FloatPoint>.
-// `dst` must be pre-sized; only its element values are written.
+// Pull a pair of device float Views back into a host vector<FloatPoint>,
+// staging through caller-owned scratch buffers. `dst` must be pre-sized.
 void pullVecPairToHost(const Kokkos::View<float*>& dx,
                        const Kokkos::View<float*>& dy,
+                       std::vector<float>& scratch_x,
+                       std::vector<float>& scratch_y,
                        std::vector<FloatPoint>& dst)
 {
   const int n = static_cast<int>(dst.size());
-  std::vector<float> hx(n), hy(n);
-  using HostUM
-      = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
-  Kokkos::deep_copy(HostUM(hx.data(), n), dx);
-  Kokkos::deep_copy(HostUM(hy.data(), n), dy);
+  Kokkos::deep_copy(HostUM(scratch_x.data(), n), dx);
+  Kokkos::deep_copy(HostUM(scratch_y.data(), n), dy);
   for (int i = 0; i < n; ++i) {
-    dst[i].x = hx[i];
-    dst[i].y = hy[i];
+    dst[i].x = scratch_x[i];
+    dst[i].y = scratch_y[i];
   }
+}
+
+// Deleter passed to the type-erased unique_ptr in nesterovDeviceContext.h.
+// Defined here where KokkosNesterovState is complete.
+void deleteKokkosNesterovState(KokkosNesterovState* p)
+{
+  delete p;
 }
 
 }  // namespace
@@ -60,11 +70,13 @@ void pullVecPairToHost(const Kokkos::View<float*>& dx,
 NesterovDeviceContext::NesterovDeviceContext(
     const std::vector<GCellHandle>& nb_gcells,
     const BinGrid& bg)
-    : kokkos_(std::make_unique<KokkosNesterovState>())
+    : kokkos_(new KokkosNesterovState(), &deleteKokkosNesterovState)
 {
   ensureKokkosInitialized();
 
   num_cells_ = static_cast<int>(nb_gcells.size());
+  scratch_x_.resize(num_cells_);
+  scratch_y_.resize(num_cells_);
   auto& s = *kokkos_;
 
   // Allocate all Views.
@@ -164,7 +176,8 @@ NesterovDeviceContext::NesterovDeviceContext(
   push_float(s.d_clamp_uy, h_clamp_uy);
 }
 
-NesterovDeviceContext::~NesterovDeviceContext() = default;
+// ~NesterovDeviceContext() is inline-defaulted in nesterovDeviceContext.h
+// thanks to the function-pointer deleter on kokkos_.
 
 void NesterovDeviceContext::syncCoordsToDevice(
     const std::vector<FloatPoint>& curSLP,
@@ -173,25 +186,47 @@ void NesterovDeviceContext::syncCoordsToDevice(
     const std::vector<FloatPoint>& curSumGrads,
     const std::vector<FloatPoint>& prevSumGrads)
 {
+  // Inputs must match the device-side allocation; size drift would silently
+  // shred the gradient state via Kokkos::deep_copy on mismatched extents.
+  // The cutFillerCells/restoreRemovedFillers path now rebuilds *this so the
+  // assertion stays satisfied, but catch any future caller that forgets.
+  assert(static_cast<int>(curSLP.size()) == num_cells_);
+  assert(static_cast<int>(prevSLP.size()) == num_cells_);
+  assert(static_cast<int>(cur.size()) == num_cells_);
+  assert(static_cast<int>(curSumGrads.size()) == num_cells_);
+  assert(static_cast<int>(prevSumGrads.size()) == num_cells_);
   auto& s = *kokkos_;
-  pushVecPairToDevice(curSLP, s.d_cur_slp_x, s.d_cur_slp_y);
-  pushVecPairToDevice(prevSLP, s.d_prev_slp_x, s.d_prev_slp_y);
-  pushVecPairToDevice(cur, s.d_cur_x, s.d_cur_y);
-  pushVecPairToDevice(curSumGrads, s.d_cur_sum_grads_x, s.d_cur_sum_grads_y);
-  pushVecPairToDevice(prevSumGrads, s.d_prev_sum_grads_x, s.d_prev_sum_grads_y);
+  pushVecPairToDevice(
+      curSLP, scratch_x_, scratch_y_, s.d_cur_slp_x, s.d_cur_slp_y);
+  pushVecPairToDevice(
+      prevSLP, scratch_x_, scratch_y_, s.d_prev_slp_x, s.d_prev_slp_y);
+  pushVecPairToDevice(cur, scratch_x_, scratch_y_, s.d_cur_x, s.d_cur_y);
+  pushVecPairToDevice(curSumGrads,
+                      scratch_x_,
+                      scratch_y_,
+                      s.d_cur_sum_grads_x,
+                      s.d_cur_sum_grads_y);
+  pushVecPairToDevice(prevSumGrads,
+                      scratch_x_,
+                      scratch_y_,
+                      s.d_prev_sum_grads_x,
+                      s.d_prev_sum_grads_y);
 }
 
 void NesterovDeviceContext::syncCoordsToHost(std::vector<FloatPoint>& nextSLP,
                                              std::vector<FloatPoint>& next)
 {
+  assert(static_cast<int>(nextSLP.size()) == num_cells_);
+  assert(static_cast<int>(next.size()) == num_cells_);
   auto& s = *kokkos_;
-  pullVecPairToHost(s.d_next_slp_x, s.d_next_slp_y, nextSLP);
-  pullVecPairToHost(s.d_next_x, s.d_next_y, next);
+  pullVecPairToHost(
+      s.d_next_slp_x, s.d_next_slp_y, scratch_x_, scratch_y_, nextSLP);
+  pullVecPairToHost(s.d_next_x, s.d_next_y, scratch_x_, scratch_y_, next);
 }
 
 void NesterovDeviceContext::gradCombine(float density_penalty,
                                         float min_preconditioner,
-                                        int target,
+                                        VecSlot target,
                                         float& wl_grad_sum,
                                         float& density_grad_sum)
 {
@@ -214,13 +249,13 @@ void NesterovDeviceContext::updateInitialPrevSLPCoordi(float coef)
   nestop::launchUpdateInitialPrevSLPCoordi(*kokkos_, num_cells_, coef);
 }
 
-float NesterovDeviceContext::getDistance(int vec_a, int vec_b)
+float NesterovDeviceContext::getDistance(VecSlot vec_a, VecSlot vec_b)
 {
   return nestop::launchGetDistance(*kokkos_, num_cells_, vec_a, vec_b);
 }
 
 void NesterovDeviceContext::scatterToDeviceState(DeviceState* device_state,
-                                                 int source)
+                                                 VecSlot source)
 {
   nestop::launchScatterToDeviceState(
       *kokkos_, device_state->kokkos(), num_cells_, source);
@@ -233,21 +268,45 @@ void NesterovDeviceContext::scatterWLGradsToNB(DeviceState* device_state)
 
 void NesterovDeviceContext::syncPrevSLPToHost(std::vector<FloatPoint>& prevSLP)
 {
-  pullVecPairToHost(kokkos_->d_prev_slp_x, kokkos_->d_prev_slp_y, prevSLP);
+  assert(static_cast<int>(prevSLP.size()) == num_cells_);
+  pullVecPairToHost(kokkos_->d_prev_slp_x,
+                    kokkos_->d_prev_slp_y,
+                    scratch_x_,
+                    scratch_y_,
+                    prevSLP);
 }
 
 void NesterovDeviceContext::syncCurSumGradsToHost(
     std::vector<FloatPoint>& curSumGrads)
 {
-  pullVecPairToHost(
-      kokkos_->d_cur_sum_grads_x, kokkos_->d_cur_sum_grads_y, curSumGrads);
+  assert(static_cast<int>(curSumGrads.size()) == num_cells_);
+  pullVecPairToHost(kokkos_->d_cur_sum_grads_x,
+                    kokkos_->d_cur_sum_grads_y,
+                    scratch_x_,
+                    scratch_y_,
+                    curSumGrads);
+}
+
+void NesterovDeviceContext::syncPrevSumGradsToHost(
+    std::vector<FloatPoint>& prevSumGrads)
+{
+  assert(static_cast<int>(prevSumGrads.size()) == num_cells_);
+  pullVecPairToHost(kokkos_->d_prev_sum_grads_x,
+                    kokkos_->d_prev_sum_grads_y,
+                    scratch_x_,
+                    scratch_y_,
+                    prevSumGrads);
 }
 
 void NesterovDeviceContext::pushDensityGradsFromHost(
     const std::vector<FloatPoint>& densityGrads)
 {
-  pushVecPairToDevice(
-      densityGrads, kokkos_->d_density_grad_x, kokkos_->d_density_grad_y);
+  assert(static_cast<int>(densityGrads.size()) == num_cells_);
+  pushVecPairToDevice(densityGrads,
+                      scratch_x_,
+                      scratch_y_,
+                      kokkos_->d_density_grad_x,
+                      kokkos_->d_density_grad_y);
 }
 
 void NesterovDeviceContext::rotateForNextIter()

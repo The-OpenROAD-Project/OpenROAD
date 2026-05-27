@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace gpl {
@@ -28,11 +29,18 @@ class HpwlBackend
 {
  public:
   virtual ~HpwlBackend() = default;
+  HpwlBackend(const HpwlBackend&) = delete;
+  HpwlBackend& operator=(const HpwlBackend&) = delete;
+  HpwlBackend(HpwlBackend&&) = delete;
+  HpwlBackend& operator=(HpwlBackend&&) = delete;
 
   virtual int64_t computeHpwl(std::vector<GNet>& nets) = 0;
 
   // Short label for diagnostic logging; constructed-once factory choice.
   virtual const char* name() const = 0;
+
+ protected:
+  HpwlBackend() = default;
 };
 
 class DeviceState;
@@ -43,5 +51,8 @@ class DeviceState;
 // only by GpuHpwlBackend and may be null for the CPU path.
 std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
                                              DeviceState* device_state);
+
+static_assert(!std::is_copy_constructible_v<HpwlBackend>);
+static_assert(!std::is_move_constructible_v<HpwlBackend>);
 
 }  // namespace gpl

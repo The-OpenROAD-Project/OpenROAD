@@ -139,6 +139,14 @@ if(Kokkos_ENABLE_CUDA)
   # only. Project-wide CXX compilation is unaffected.
   add_compile_definitions(
     $<$<COMPILE_LANGUAGE:CUDA>:FMT_USE_NONTYPE_TEMPLATE_ARGS=0>)
+  # On aarch64, Boost's unordered_flat_map detects __ARM_NEON and includes
+  # <arm_neon.h> for SIMD-accelerated hashing.  nvcc cannot parse gcc's
+  # arm_neon.h (it contains gcc-specific intrinsics), so disable the NEON
+  # path for CUDA TUs.  The CPU TUs (compiled by g++) are unaffected.
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64")
+    add_compile_definitions(
+      $<$<COMPILE_LANGUAGE:CUDA>:BOOST_UNORDERED_DISABLE_NEON>)
+  endif()
 elseif(Kokkos_ENABLE_HIP)
   enable_language(HIP)
   message(STATUS "OpenROAD: HIP backend")

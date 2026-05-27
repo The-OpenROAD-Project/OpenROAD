@@ -3,6 +3,8 @@
 
 // Density gradient backends + dispatch. Mirrors wirelengthGradient.cpp.
 
+#include <omp.h>
+
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -29,6 +31,8 @@ class CpuDensityGradientBackend : public DensityGradientBackend
   void getCellGradients(const std::vector<GCellHandle>& gCells,
                         std::vector<FloatPoint>& out) override
   {
+#pragma omp parallel for num_threads( \
+        static_cast<int>(nb_->getNbc()->getNumThreads()))
     for (std::size_t i = 0; i < gCells.size(); ++i) {
       const GCell* c = gCells[i];
       out[i] = nb_->getDensityGradient(c);

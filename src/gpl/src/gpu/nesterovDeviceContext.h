@@ -2,13 +2,14 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // NesterovDeviceContext — PIMPL wrapper for KokkosNesterovState. Owns the
-// NB-level device arrays for the Nesterov loop (Phase 4). Plain C++ header
-// so NesterovBase can hold a unique_ptr without pulling in Kokkos.
+// NB-level device arrays for the Nesterov loop. Plain C++ header so
+// NesterovBase can hold a unique_ptr without pulling in Kokkos.
 
 #pragma once
 
 #include <cstddef>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include "point.h"
@@ -22,19 +23,36 @@ class DeviceState;
 struct KokkosNesterovState;
 struct KokkosDeviceState;
 
+// Per-cell vector slot identifiers. Used by NesterovDeviceContext callers
+// (NesterovBase) and the kernel launchers (nestop). Underlying int values
+// must stay contiguous and grouped (SLP then SumGrads) because launchers
+// indexing the SumGrads block compute `CurSumGrads + target` arithmetic.
+enum class VecSlot : int
+{
+  CurSLP = 0,
+  PrevSLP = 1,
+  NextSLP = 2,
+  CurSumGrads = 3,
+  PrevSumGrads = 4,
+  NextSumGrads = 5,
+};
+
 class NesterovDeviceContext
 {
  public:
-  static constexpr int kVecCurSLP = 0;
-  static constexpr int kVecPrevSLP = 1;
-  static constexpr int kVecNextSLP = 2;
-  static constexpr int kVecCurSumGrads = 3;
-  static constexpr int kVecPrevSumGrads = 4;
-  static constexpr int kVecNextSumGrads = 5;
-
   NesterovDeviceContext(const std::vector<GCellHandle>& nb_gcells,
                         const BinGrid& bg);
-  ~NesterovDeviceContext();
+  NesterovDeviceContext() = delete;
+  // Default destructor — see deviceState.h for the function-pointer
+  // deleter rationale. Keeps unique_ptr<KokkosNesterovState> destruction
+  // synthesizable in CPU-only TUs without exposing the Kokkos struct.
+  ~NesterovDeviceContext() = default;
+
+  // Non-copyable, non-movable — same reasoning as DeviceState.
+  NesterovDeviceContext(const NesterovDeviceContext&) = delete;
+  NesterovDeviceContext& operator=(const NesterovDeviceContext&) = delete;
+  NesterovDeviceContext(NesterovDeviceContext&&) = delete;
+  NesterovDeviceContext& operator=(NesterovDeviceContext&&) = delete;
 
   int numCells() const { return num_cells_; }
 
@@ -58,10 +76,16 @@ class NesterovDeviceContext
   // the host vector stays at zero unless explicitly synced.
   void syncCurSumGradsToHost(std::vector<FloatPoint>& curSumGrads);
 
-  // GPU kernel: updateGradients loop body.
+  // Pull prevSLP sum-grads from device to host. Parallel to
+  // syncCurSumGradsToHost; saveSnapshot uses both so revertToSnapshot can
+  // push real values back instead of zombie host data.
+  void syncPrevSumGradsToHost(std::vector<FloatPoint>& prevSumGrads);
+
+  // GPU kernel: updateGradients loop body. `target` selects which SumGrads
+  // slot to write (one of VecSlot::{Cur,Prev,Next}SumGrads).
   void gradCombine(float density_penalty,
                    float min_preconditioner,
-                   int target,
+                   VecSlot target,
                    float& wl_grad_sum,
                    float& density_grad_sum);
 
@@ -72,10 +96,10 @@ class NesterovDeviceContext
   void updateInitialPrevSLPCoordi(float coef);
 
   // GPU kernel: step length via distance reduction.
-  float getDistance(int vec_a, int vec_b);
+  float getDistance(VecSlot vec_a, VecSlot vec_b);
 
   // Scatter NB inst coords to DeviceState d_inst_cx/cy (for HPWL/WLgrad).
-  void scatterToDeviceState(DeviceState* device_state, int source);
+  void scatterToDeviceState(DeviceState* device_state, VecSlot source);
 
   // Scatter DeviceState WL grads to NB arrays.
   void scatterWLGradsToNB(DeviceState* device_state);
@@ -92,8 +116,20 @@ class NesterovDeviceContext
   KokkosNesterovState& kokkos() { return *kokkos_; }
 
  private:
-  std::unique_ptr<KokkosNesterovState> kokkos_;
+  // Type-erased deleter — see deviceState.h for rationale.
+  using KokkosDeleter = void (*)(KokkosNesterovState*);
+  std::unique_ptr<KokkosNesterovState, KokkosDeleter> kokkos_{nullptr, nullptr};
   int num_cells_ = 0;
+
+  // Host scratch buffers reused by every push/pull sync call. Sized once
+  // in the ctor to num_cells_ — avoids the per-call heap allocation that a
+  // local std::vector<float> would incur (~5-10 syncs per Nesterov iter).
+  std::vector<float> scratch_x_;
+  std::vector<float> scratch_y_;
 };
+
+static_assert(!std::is_default_constructible_v<NesterovDeviceContext>);
+static_assert(!std::is_copy_constructible_v<NesterovDeviceContext>);
+static_assert(!std::is_move_constructible_v<NesterovDeviceContext>);
 
 }  // namespace gpl

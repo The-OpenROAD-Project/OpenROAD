@@ -45,6 +45,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <cstdio>
+#include <stdexcept>
 
 #include "kokkosUtil.h"
 
@@ -70,9 +71,18 @@ PoissonSolver::PoissonSolver(int binCntX,
                              float binSizeY)
     : PoissonSolver()
 {
+  // Host-side preconditions: throw so the gpl error handler can log via
+  // utl::Logger instead of process-abort with raw stderr only. Surface
+  // these at construction so the first solve() can't be the first sign of
+  // a misconfigured bin grid.
+  if (!isPowerOf2(binCntX) || !isPowerOf2(binCntY)) {
+    throw std::runtime_error(
+        "PoissonSolver: bin grid dimensions must each be a power of 2 — "
+        "the DCT/IDCT kernels in dct.cpp require this.");
+  }
   if (binCntY > kMaxBinAspectRatio * binCntX
       || binCntX > kMaxBinAspectRatio * binCntY) {
-    Kokkos::abort(
+    throw std::runtime_error(
         "PoissonSolver: bin grid aspect ratio exceeds the supported limit "
         "(kMaxBinAspectRatio=2) — IDCT indexing may go out of bounds. "
         "Increase the shorter dimension or extend the solver's expk index "

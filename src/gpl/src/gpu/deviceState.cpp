@@ -27,12 +27,19 @@ int indexOfGCell(const std::vector<GCell>& gCellStor, const GCell* gCell)
   return static_cast<int>(gCell - base);
 }
 
+// Deleter passed to the type-erased unique_ptr in deviceState.h. Defined
+// here where KokkosDeviceState is complete.
+void deleteKokkosDeviceState(KokkosDeviceState* p)
+{
+  delete p;
+}
+
 }  // namespace
 
 DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
                          const std::vector<GPin>& gPinStor,
                          const std::vector<GNet>& gNetStor)
-    : kokkos_(std::make_unique<KokkosDeviceState>())
+    : kokkos_(new KokkosDeviceState(), &deleteKokkosDeviceState)
 {
   ensureKokkosInitialized();
 
@@ -40,7 +47,6 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
   num_pins_ = static_cast<int>(gPinStor.size());
   num_nets_ = static_cast<int>(gNetStor.size());
 
-  // ---- Allocate device Views ----
   auto& s = *kokkos_;
   s.d_inst_cx = Kokkos::View<int*>("ds_inst_cx", num_insts_);
   s.d_inst_cy = Kokkos::View<int*>("ds_inst_cy", num_insts_);
@@ -56,7 +62,7 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
 
   s.d_net_pin_off = Kokkos::View<int*>("ds_net_pin_off", num_nets_ + 1);
 
-  // Phase 2 buffers.
+  // WA wirelength gradient buffers (per-pin A/B/C).
   s.d_pin_a_pos_x = Kokkos::View<float*>("ds_pin_a_pos_x", num_pins_);
   s.d_pin_a_neg_x = Kokkos::View<float*>("ds_pin_a_neg_x", num_pins_);
   s.d_pin_a_pos_y = Kokkos::View<float*>("ds_pin_a_pos_y", num_pins_);
@@ -162,13 +168,13 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
     }
   }
 
-  // Per-net total weight. Static for Phase 2 — see refreshNetWeights() TODO.
+  // Per-net total weight. Refreshed by DeviceState::refreshNetWeights — see
+  // the TODO there for the missing rsz/grt-driven caller wiring.
   std::vector<float> h_net_weight(num_nets_);
   for (int n = 0; n < num_nets_; ++n) {
     h_net_weight[n] = gNetStor[n].getTotalWeight();
   }
 
-  // ---- Push static parts to device (1× per process) ----
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> h_offset_cx_v(
       h_pin_offset_cx.data(), num_pins_);
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> h_offset_cy_v(
@@ -213,7 +219,8 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
   syncInstCoordsFromHost(gCellStor);
 }
 
-DeviceState::~DeviceState() = default;
+// ~DeviceState() is inline-defaulted in deviceState.h thanks to the
+// function-pointer deleter on kokkos_.
 
 void DeviceState::initBinViews(const BinGrid& binGrid,
                                const std::vector<GCell>& gCellStor)
@@ -275,9 +282,9 @@ void DeviceState::syncInstCoordsFromHost(const std::vector<GCell>& gCellStor)
   // During Nesterov iterations, only density coords mutate
   // (updateGCellDensityCenterLocation calls setDensityCenterLocation). The
   // "regular" lx_/ux_ are only ever set by updateGCellCenterLocation, which
-  // is not part of the inner loop. The pre-Phase-1 CPU getHpwl path reads
-  // gPin->cx_, which is refreshed to dCx_-based by gPin->updateDensityLocation
-  // — i.e., CPU also effectively uses density coords during the iter loop.
+  // is not part of the inner loop. The CPU getHpwl path reads gPin->cx_,
+  // which is refreshed to dCx_-based by gPin->updateDensityLocation — i.e.,
+  // CPU also effectively uses density coords during the iter loop.
   for (int i = 0; i < num_insts_; ++i) {
     s.h_inst_cx(i) = gCellStor[i].dCx();
     s.h_inst_cy(i) = gCellStor[i].dCy();

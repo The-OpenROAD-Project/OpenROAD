@@ -12,7 +12,7 @@
 // Determinism: no atomics. K3 (per-net BC) and K5 (per-inst gather) use
 // parallel_for over the outer dim with a serial inner CSR loop; the inner
 // summation order matches the CPU OMP loop. Float results within a few ULP
-// of CPU (acceptable; see plan §I "결정성").
+// of CPU.
 
 #include "gpuWirelengthGradientBackend.h"
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Phase 4 Nesterov loop kernels. Replaces per-cell CPU loops in
+// Nesterov loop kernels. Replaces per-cell CPU loops in
 // NesterovBase::updateGradients (loop body), nesterovUpdateCoordinates,
 // getDistance, and scatter/gather between NB and DeviceState indices.
 
@@ -27,27 +27,32 @@ struct VecPair
   Kokkos::View<float*> y;
 };
 
-VecPair getVec(KokkosNesterovState& ns, int vec_id)
+// Single overload taking const&: Kokkos::View has shallow-copy semantics
+// (the const applies to the View handle, not the underlying device memory),
+// so this serves both read-only callers (launchGetDistance,
+// launchScatterToDeviceState) and the writing caller (launchGradCombine)
+// without a const_cast.
+VecPair getVec(const KokkosNesterovState& ns, VecSlot vec_id)
 {
   switch (vec_id) {
-    case kVecCurSLP:
+    case VecSlot::CurSLP:
       return {ns.d_cur_slp_x, ns.d_cur_slp_y};
-    case kVecPrevSLP:
+    case VecSlot::PrevSLP:
       return {ns.d_prev_slp_x, ns.d_prev_slp_y};
-    case kVecNextSLP:
+    case VecSlot::NextSLP:
       return {ns.d_next_slp_x, ns.d_next_slp_y};
-    case kVecCurSumGrads:
+    case VecSlot::CurSumGrads:
       return {ns.d_cur_sum_grads_x, ns.d_cur_sum_grads_y};
-    case kVecPrevSumGrads:
+    case VecSlot::PrevSumGrads:
       return {ns.d_prev_sum_grads_x, ns.d_prev_sum_grads_y};
-    default:
+    case VecSlot::NextSumGrads:
       return {ns.d_next_sum_grads_x, ns.d_next_sum_grads_y};
   }
-}
-
-VecPair getVec(const KokkosNesterovState& ns, int vec_id)
-{
-  return getVec(const_cast<KokkosNesterovState&>(ns), vec_id);
+  // Unreachable: switch above is exhaustive over VecSlot. Aborts loudly
+  // rather than silently aliasing an out-of-range value to NextSumGrads if
+  // a future enumerator is added and this switch isn't updated.
+  Kokkos::abort("getVec: invalid VecSlot");
+  return {ns.d_next_sum_grads_x, ns.d_next_sum_grads_y};
 }
 
 }  // namespace
@@ -56,7 +61,7 @@ void launchGradCombine(KokkosNesterovState& ns,
                        int n_cells,
                        float density_penalty,
                        float min_preconditioner,
-                       int target,
+                       VecSlot target,
                        float& wl_grad_sum,
                        float& density_grad_sum)
 {
@@ -72,7 +77,7 @@ void launchGradCombine(KokkosNesterovState& ns,
   auto d_area = ns.d_area;
   auto d_locked = ns.d_locked;
 
-  VecPair out = getVec(ns, kVecCurSumGrads + target);
+  VecPair out = getVec(ns, target);
   auto d_out_x = out.x;
   auto d_out_y = out.y;
 
@@ -217,8 +222,8 @@ void launchNesterovCoordUpdate(KokkosNesterovState& ns,
 
 float launchGetDistance(const KokkosNesterovState& ns,
                         int n_cells,
-                        int vec_a,
-                        int vec_b)
+                        VecSlot vec_a,
+                        VecSlot vec_b)
 {
   if (n_cells == 0) {
     return 0.0f;
@@ -248,7 +253,7 @@ float launchGetDistance(const KokkosNesterovState& ns,
 void launchScatterToDeviceState(const KokkosNesterovState& ns,
                                 KokkosDeviceState& ds,
                                 int n_cells,
-                                int source)
+                                VecSlot source)
 {
   if (n_cells == 0) {
     return;

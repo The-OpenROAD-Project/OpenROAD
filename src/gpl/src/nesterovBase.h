@@ -54,9 +54,10 @@ class GPin;
 class FFT;
 class nesterovDbCbk;
 class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
-class WirelengthGradientBackend;  // wirelengthGradientBackend.h (Phase 2)
-class DensityGradientBackend;     // densityGradientBackend.h (Phase 3)
-class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h (Phase 4)
+class WirelengthGradientBackend;  // wirelengthGradientBackend.h
+class DensityGradientBackend;     // densityGradientBackend.h
+class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
+enum class VecSlot : int;         // gpu/nesterovDeviceContext.h
 
 class GCell
 {
@@ -866,7 +867,7 @@ class NesterovBaseCommon
   // separate TU can dispatch into it. Defined in nesterovBase.cpp.
   void updateWireLengthForceWA_native(float wlCoeffX, float wlCoeffY);
 
-  // Bulk per-cell wirelength gradient (Phase 2 hot path — replaces the
+  // Bulk per-cell wirelength gradient (hot path — replaces the
   // per-cell loop in NesterovBase::updateGradients). `out` is indexed
   // parallel to `gCells` (typically nb_gcells_, a per-NesterovBase view
   // into nbc gCellStor_). Defined in wirelengthGradient.cpp.
@@ -976,7 +977,8 @@ class NesterovBaseCommon
   std::deque<Pin> pb_pins_stor_;
 
   int num_threads_;
-  // Device-resident state for GPU backends (Phase 1: pin coords pool).
+  // Device-resident state for GPU backends (pin coords + per-net/per-pin
+  // buffers; HPWL, WL grad, density gather all read from this).
   // Constructed in the ctor body after gCellStor_ / gPinStor_ / gNetStor_
   // are populated; null when ENABLE_GPU is off or gpl::gpuEnabled() returns
   // false. Must outlive hpwl_backend_ (backend borrows it), so it is
@@ -984,7 +986,7 @@ class NesterovBaseCommon
   // order) destroyed last.
   std::unique_ptr<DeviceState> device_state_;
   std::unique_ptr<HpwlBackend> hpwl_backend_;
-  // Phase 2: WA wirelength gradient dispatcher. CPU backend wraps the
+  // WA wirelength gradient dispatcher. CPU backend wraps the
   // updateWireLengthForceWA_native + per-cell helpers below; GPU backend
   // runs the 5-kernel Kokkos pipeline against device_state_'s pool.
   std::unique_ptr<WirelengthGradientBackend> wl_grad_backend_;
@@ -1215,10 +1217,24 @@ class NesterovBase
   std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_ = nullptr;
 
+  // Build (or rebuild) the GPU Nesterov device context against the current
+  // nb_gcells_ size and sync host coords/grads into it. Called from
+  // initDensity1 for the initial construction and from cutFillerCells /
+  // restoreRemovedFillers after they resize nb_gcells_. No-op on CPU builds
+  // and on GPU builds without a DeviceState (CPU runtime fallback).
+  void rebuildNbDeviceCtx();
+
+  // Scatter the named nb_device_ctx_ vector slot into DeviceState's per-inst
+  // coord views, refresh device pin locations, and mark the DeviceState
+  // coord flag fresh. Called after every GPU coord update (initDensity1,
+  // updateInitialPrevSLPCoordi, nesterovUpdateCoordinates, revertToSnapshot,
+  // rebuildNbDeviceCtx). No-op on CPU builds and when nb_device_ctx_ is null.
+  void commitCoordsToDeviceState(VecSlot source);
+
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
   std::unique_ptr<DensityGradientBackend> density_grad_backend_;
-  std::unique_ptr<NesterovDeviceContext> nb_device_ctx_;  // Phase 4
+  std::unique_ptr<NesterovDeviceContext> nb_device_ctx_;
 
   int fillerDx_ = 0;
   int fillerDy_ = 0;
@@ -1260,6 +1276,7 @@ class NesterovBase
     FloatPoint snapshotCoordi;
     FloatPoint snapshotSLPCoordi;
     FloatPoint snapshotSLPSumGrads;
+    FloatPoint snapshotPrevSLPSumGrads;
   };
 
   std::vector<RemovedFillerState> removed_fillers_;
@@ -1307,6 +1324,7 @@ class NesterovBase
   std::vector<FloatPoint> snapshotCoordi_;
   std::vector<FloatPoint> snapshotSLPCoordi_;
   std::vector<FloatPoint> snapshotSLPSumGrads_;
+  std::vector<FloatPoint> snapshotPrevSLPSumGrads_;
   float snapshotDensityPenalty_ = 0;
   float snapshotStepLength_ = 0;
 

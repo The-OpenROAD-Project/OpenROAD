@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// wlop — Kokkos kernel launchers for the WA wirelength gradient pipeline
-// (Phase 2). The five kernels are 1:1 with DG-RePlAce
-// gpl2/src/wirelengthOp.cu (updateNetBBox / computeAPosNeg / computeBC /
-// computePinWAGrad / gatherInstGrad).
+// wlop — Kokkos kernel launchers for the WA wirelength gradient pipeline.
+// The five kernels are 1:1 with DG-RePlAce gpl2/src/wirelengthOp.cu
+// (updateNetBBox / computeAPosNeg / computeBC / computePinWAGrad /
+// gatherInstGrad).
 //
 // Kokkos-laden header — include only from CUDA/HIP TUs.
 

@@ -21,7 +21,8 @@ struct KokkosDeviceState
   // Inst-level (size = num_insts):
   Kokkos::View<int*> d_inst_cx;
   Kokkos::View<int*> d_inst_cy;
-  // Host mirrors for staging Nesterov-update output (until Phase 4).
+  // Host mirrors retained for callers that still stage via host (cold init
+  // paths and DeviceState::syncInstCoordsFromHost).
   Kokkos::View<int*>::HostMirror h_inst_cx;
   Kokkos::View<int*>::HostMirror h_inst_cy;
 
@@ -38,7 +39,7 @@ struct KokkosDeviceState
   // Per-net pin indices (size = total_pins, CSR data).
   Kokkos::View<int*> d_net_pin_idx;
 
-  // ---- Phase 2: WA wirelength gradient ----
+  // ---- WA wirelength gradient ----
   //
   // Per-pin WA exponentials (K2 computeAPosNeg output, K3/K4 input).
   // a_pos = fastExp((pin - net.ub) * coef), a_neg = fastExp((net.lb - pin) *
@@ -70,8 +71,9 @@ struct KokkosDeviceState
   Kokkos::View<float*> d_net_c_pos_y;
   Kokkos::View<float*> d_net_c_neg_y;
 
-  // Per-net total weight (timing/custom-net weight). Static for Phase 2 — see
-  // DeviceState::refreshNetWeights() TODO.
+  // Per-net total weight (timing/custom-net weight). Refreshed via
+  // DeviceState::refreshNetWeights — see the TODO there for the missing
+  // rsz/grt-driven caller wiring.
   Kokkos::View<float*> d_net_weight;
 
   // Inst→pin CSR (offsets size = num_insts + 1). I/O pins (inst_id == -1)
@@ -85,11 +87,11 @@ struct KokkosDeviceState
   Kokkos::View<float*>::HostMirror h_inst_wl_grad_x;
   Kokkos::View<float*>::HostMirror h_inst_wl_grad_y;
 
-  // ---- Phase 3: density gradient (FFT field Views + per-inst gather) ----
+  // ---- Density gradient (FFT field Views + per-inst gather) ----
   //
   // Bin grid Views (size = binCntX × binCntY, row-major [x * binCntY + y]).
-  // Owned here; GpuFftBackend borrows them (same pattern as Phase 1 pin
-  // coords). The solver's axis convention differs from gpl's — the gather
+  // Owned here; GpuFftBackend borrows them (same pattern as the pin coords
+  // above). The solver's axis convention differs from gpl's — the gather
   // kernel applies the axis swap + 0.5× scale inline.
   Kokkos::View<float*> d_bin_density;  // FFT input (scatter result)
   Kokkos::View<float*> d_bin_phi;      // FFT output (electrostatic potential)

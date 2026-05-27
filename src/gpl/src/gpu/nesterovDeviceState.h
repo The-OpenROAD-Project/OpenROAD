@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// NesterovBase-level device arrays (Phase 4). Parallel to nb_gcells_
+// NesterovBase-level device arrays. Parallel to nb_gcells_
 // (inst + filler cells). Owned by NesterovBase; distinct from the
 // NesterovBaseCommon-level DeviceState which holds inst-only data
 // (pin/net CSRs, WA gradient Views, etc.).

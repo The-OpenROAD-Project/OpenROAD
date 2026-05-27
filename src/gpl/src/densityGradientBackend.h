@@ -12,6 +12,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include "point.h"
@@ -27,6 +28,10 @@ class DensityGradientBackend
 {
  public:
   virtual ~DensityGradientBackend() = default;
+  DensityGradientBackend(const DensityGradientBackend&) = delete;
+  DensityGradientBackend& operator=(const DensityGradientBackend&) = delete;
+  DensityGradientBackend(DensityGradientBackend&&) = delete;
+  DensityGradientBackend& operator=(DensityGradientBackend&&) = delete;
 
   virtual void getCellGradients(const std::vector<GCellHandle>& gCells,
                                 std::vector<FloatPoint>& out)
@@ -35,10 +40,16 @@ class DensityGradientBackend
   virtual FloatPoint getCellGradient(const GCell* gCell) = 0;
 
   virtual const char* name() const = 0;
+
+ protected:
+  DensityGradientBackend() = default;
 };
 
 std::unique_ptr<DensityGradientBackend> makeDensityGradientBackend(
     NesterovBase* nb,
     DeviceState* device_state);
+
+static_assert(!std::is_copy_constructible_v<DensityGradientBackend>);
+static_assert(!std::is_move_constructible_v<DensityGradientBackend>);
 
 }  // namespace gpl

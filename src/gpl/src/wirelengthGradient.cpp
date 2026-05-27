@@ -6,7 +6,9 @@
 // CpuWirelengthGradientBackend wraps the existing OMP loops in
 // NesterovBaseCommon. GpuWirelengthGradientBackend (a 5-kernel Kokkos
 // pipeline) is added on ENABLE_GPU. makeWirelengthGradientBackend() picks
-// per-process at run time (gpl::gpuEnabled()).
+// per-process at run time via gpl::gpuEnabled().
+
+#include <omp.h>
 
 #include <cassert>
 #include <cstddef>
@@ -28,8 +30,7 @@ namespace gpl {
 namespace {
 
 // CPU backend: thin wrapper around the existing nbc methods. The OMP loops
-// live in NesterovBaseCommon::updateWireLengthForceWA_native — same body as
-// before the Phase-2 split, just renamed.
+// live in NesterovBaseCommon::updateWireLengthForceWA_native.
 class CpuWirelengthGradientBackend : public WirelengthGradientBackend
 {
  public:
@@ -46,10 +47,9 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
                         std::vector<FloatPoint>& out) override
   {
     assert(out.size() == gCells.size());
-    // Sequential loop — matches NesterovBase::updateGradients (it disables
-    // OMP for determinism, see nesterovBase.cpp:2802).
+#pragma omp parallel for num_threads(static_cast<int>(nbc_->getNumThreads()))
     for (std::size_t i = 0; i < gCells.size(); ++i) {
-      const GCell* gCell = gCells[i];  // GCellHandle → GCell*
+      const GCell* gCell = gCells[i];
       out[i] = nbc_->getWireLengthGradientWA(
           gCell, last_wl_coef_x_, last_wl_coef_y_);
     }
@@ -99,10 +99,10 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
 #ifdef ENABLE_GPU
-  // Phase 4+: NB device context scatters inst coords + updates pin locations
-  // before this call, so the host→device sync is redundant. Fall back to
-  // host sync only when no scatter preceded this call (e.g. init paths
-  // before nb_device_ctx_ exists).
+  // NB device context scatters inst coords + updates pin locations before
+  // this call, so the host→device sync is redundant. Fall back to host
+  // sync only when no scatter preceded this call (e.g. init paths before
+  // nb_device_ctx_ exists).
   if (device_state_ && !device_state_->consumeCoordsFresh()) {
     device_state_->syncInstCoordsFromHost(gCellStor_);
     device_state_->updatePinLocations();

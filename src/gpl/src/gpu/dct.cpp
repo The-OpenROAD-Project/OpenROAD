@@ -45,10 +45,28 @@
 
 #include <KokkosFFT.hpp>
 #include <Kokkos_Core.hpp>
+#include <stdexcept>
+#include <string>
 
 #include "kokkosUtil.h"
 
 namespace gpl {
+
+namespace {
+
+// Defensive guard: PoissonSolver's ctor validates power-of-2 dimensions at
+// construction, so callers going through GpuFftBackend can't reach here
+// with a bad N or M. Keep the per-function check as a safety net for any
+// future caller of dct.cpp that bypasses PoissonSolver.
+void requirePowerOf2Dims(int M, int N, const char* fn_name)
+{
+  if (!isPowerOf2(N) || !isPowerOf2(M)) {
+    throw std::runtime_error(std::string(fn_name)
+                             + ": input length is not a power of 2");
+  }
+}
+
+}  // namespace
 
 void dct_2d_fft(const int M,
                 const int N,
@@ -59,9 +77,7 @@ void dct_2d_fft(const int M,
                 const Kokkos::View<Kokkos::complex<float>*>& fft,
                 const Kokkos::View<float*>& post)
 {
-  if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    Kokkos::abort("dct: input length is not power of 2");
-  }
+  requirePowerOf2Dims(M, N, "dct_2d_fft");
 
   auto halfN = N / 2;
   Kokkos::parallel_for(
@@ -233,9 +249,7 @@ void idct_2d_fft(
     const Kokkos::View<float*>& ifft,
     const Kokkos::View<float*>& post)
 {
-  if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    Kokkos::abort("dct: input length is not power of 2");
-  }
+  requirePowerOf2Dims(M, N, "idct_2d_fft");
 
   Kokkos::deep_copy(pre, 0);
 
@@ -404,9 +418,7 @@ void idct_idxst(
     const Kokkos::View<float*>& workSpaceReal3,
     const Kokkos::View<float*>& output)
 {
-  if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    Kokkos::abort("dct: input length is not power of 2");
-  }
+  requirePowerOf2Dims(M, N, "idct_idxst");
 
   Kokkos::parallel_for(
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {N, M}),
@@ -459,9 +471,7 @@ void idxst_idct(
     const Kokkos::View<float*>& workSpaceReal3,
     const Kokkos::View<float*>& output)
 {
-  if (!isPowerOf2(N) || !isPowerOf2(M)) {
-    Kokkos::abort("dct: input length is not power of 2");
-  }
+  requirePowerOf2Dims(M, N, "idxst_idct");
 
   Kokkos::parallel_for(
       Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {N, M}),

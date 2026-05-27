@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// densityOp — Kokkos kernel launcher for density gradient gather (Phase 3).
+// densityOp — Kokkos kernel launcher for density gradient gather.
 // K_density_gather: per-inst overlap-weighted sum of bin electric field.
 // Kokkos-laden header — include only from CUDA/HIP TUs.
 

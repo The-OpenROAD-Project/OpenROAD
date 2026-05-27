@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 
 namespace gpl {
 
@@ -24,6 +25,10 @@ class FftBackend
 {
  public:
   virtual ~FftBackend() = default;
+  FftBackend(const FftBackend&) = delete;
+  FftBackend& operator=(const FftBackend&) = delete;
+  FftBackend(FftBackend&&) = delete;
+  FftBackend& operator=(FftBackend&&) = delete;
 
   virtual void solve(float** density,
                      float** phi,
@@ -33,6 +38,9 @@ class FftBackend
 
   // Short label for diagnostic logging; constructed-once factory choice.
   virtual const char* name() const = 0;
+
+ protected:
+  FftBackend() = default;
 };
 
 class DeviceState;
@@ -46,5 +54,8 @@ std::unique_ptr<FftBackend> makeFftBackend(int bin_cnt_x,
                                            float bin_size_x,
                                            float bin_size_y,
                                            DeviceState* device_state);
+
+static_assert(!std::is_copy_constructible_v<FftBackend>);
+static_assert(!std::is_move_constructible_v<FftBackend>);
 
 }  // namespace gpl

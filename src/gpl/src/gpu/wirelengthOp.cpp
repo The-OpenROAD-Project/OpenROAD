@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// WA wirelength gradient — Kokkos kernel implementations (Phase 2).
+// WA wirelength gradient — Kokkos kernel implementations.
 //
 // Five kernels mirroring DG-RePlAce gpl2/src/wirelengthOp.cu:
 //   K1 updateNetBBox    — per-net bbox over CSR-listed pins
@@ -12,8 +12,7 @@
 //
 // Determinism: no atomics; per-net/per-inst outer parallelism with serial
 // CSR inner loops matches the CPU summation order. Float results may differ
-// from CPU by a few ULP (fastExp / division ordering) — acceptable per plan
-// §I "결정성".
+// from CPU by a few ULP (fastExp / division ordering).
 
 #include "wirelengthOp.h"
 
@@ -33,7 +32,7 @@ namespace {
 // in NesterovBaseVars, we'll need to plumb it through.
 constexpr float kMinWireLengthForceBar = -300.0f;
 
-// fastExp — same approximation as nesterovBase.cpp:4407 (10× squaring,
+// fastExp — same approximation as fastExp() in nesterovBase.cpp (10× squaring,
 // linearization at 0). KOKKOS_INLINE_FUNCTION makes it device-callable.
 // Reproducing the CPU body exactly (not std::exp) keeps GPU close enough to
 // CPU for convergence-trajectory parity.

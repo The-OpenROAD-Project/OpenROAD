@@ -6,15 +6,14 @@
 // gCellStor_ / gPinStor_ / gNetStor_ vectors are populated; reused across
 // every Nesterov iteration to keep coordinate data on the device.
 //
-// This is the foundation for moving the gpl hot path off the host:
-//   - HPWL (Phase 1, this file): reads device pin coords directly, no host
-//     re-pack per iteration.
-//   - WA wirelength gradient (Phase 2): same device pool + per-pin A/B/C
-//     buffers (owned by the gradient backend).
-//   - Density scatter+gather (Phase 3): same instance coords drive the
-//     density bin update.
-//   - Nesterov coord update (Phase 4): inst coords mutate device-side,
-//     `syncInstCoordsFromHost` becomes the one-time init load.
+// Consumers of this pool:
+//   - HPWL: reads device pin coords directly, no host re-pack per iteration.
+//   - WA wirelength gradient: same device pool + per-pin A/B/C buffers
+//     (owned by the gradient backend).
+//   - Density scatter+gather: same instance coords drive the density bin
+//     update; FFT solve writes electric field Views back here.
+//   - Nesterov coord update: inst coords mutate device-side via the NB
+//     device context; `syncInstCoordsFromHost` is a one-time init load.
 //
 // PIMPL: Kokkos types are hidden in gpu/deviceState_kokkos.h, included only
 // by Kokkos-aware translation units. This header is plain C++, so consumer
@@ -27,6 +26,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 namespace gpl {
@@ -43,22 +43,37 @@ class DeviceState
  public:
   // Reads instance coords, pin offsets, pin→inst id, and net→pin CSR from
   // the supplied host storage. Static data (offsets, CSRs) is pushed once;
-  // coords loaded each iter via syncInstCoordsFromHost().
+  // coords loaded each iter via syncInstCoordsFromHost(). The only public
+  // ctor — default-construction is deleted so kokkos_ can never start out
+  // null with a null deleter.
   DeviceState(const std::vector<GCell>& gCellStor,
               const std::vector<GPin>& gPinStor,
               const std::vector<GNet>& gNetStor);
-  ~DeviceState();
+  DeviceState() = delete;
+  // Default destructor — the function-pointer deleter on kokkos_ (see
+  // below) lets this stay inline without requiring KokkosDeviceState to be
+  // complete here. CPU-only builds (no ENABLE_GPU) never construct the
+  // unique_ptr, so the deleter is never invoked.
+  ~DeviceState() = default;
 
-  // Phase 3: allocate bin grid Views + push per-inst density params. Called
-  // once from NesterovBase after the BinGrid is initialized (initDensity1).
+  // Non-copyable, non-movable: the implicit move would inherit a possibly
+  // null deleter from a moved-from instance, masking the "must construct
+  // via the GPU ctor" invariant captured by the unique_ptr field below.
+  DeviceState(const DeviceState&) = delete;
+  DeviceState& operator=(const DeviceState&) = delete;
+  DeviceState(DeviceState&&) = delete;
+  DeviceState& operator=(DeviceState&&) = delete;
+
+  // Allocate bin grid Views + push per-inst density params. Called once
+  // from NesterovBase after the BinGrid is initialized (initDensity1).
   // Must precede any density gather kernel or GpuFftBackend solve.
   void initBinViews(const BinGrid& binGrid,
                     const std::vector<GCell>& gCellStor);
 
   // Re-push current instance centers (= GCell::cx()/cy()) to the device.
-  // Used at the start of every gpu kernel that reads pin coords in Phases
-  // 1-3, where Nesterov updates still run on the host. After Phase 4 this
-  // shrinks to a one-time initial load.
+  // Now used only on the init path; once nb_device_ctx_ exists, that
+  // context scatters fresh inst coords each iteration via
+  // scatterToDeviceState and this host-side path becomes redundant.
   void syncInstCoordsFromHost(const std::vector<GCell>& gCellStor);
 
   // Compute absolute pin centers on the device:
@@ -72,12 +87,12 @@ class DeviceState
   // the timing-driven / routability-driven boundary, not inside the Nesterov
   // inner loop, so they are loaded once at construction. This API exists as
   // a TODO hook for those boundary callers — currently no caller wires it.
-  // FIXME(phase 2): hook from rsz/grt-driven net-weight update path.
+  // TODO: hook from the rsz/grt-driven net-weight update path.
   void refreshNetWeights(const std::vector<GNet>& gNetStor);
 
   // Re-push per-inst density params (half_dx, half_dy, density_scale) after
   // the resize callback changes them. Static during the main Nesterov loop.
-  // FIXME(phase 3): hook from resize callback path.
+  // TODO: hook from the resize callback path.
   void refreshDensityParams(const std::vector<GCell>& gCellStor);
 
   // Counts (for backends to size their own per-net / per-pin buffers).
@@ -94,9 +109,9 @@ class DeviceState
   int gridLx() const { return grid_lx_; }
   int gridLy() const { return grid_ly_; }
 
-  // Phase 4+: NB device context scatters inst coords + calls
-  // updatePinLocations before updateWireLengthForceWA, making the
-  // host→device sync redundant. This flag lets the sync skip safely.
+  // NB device context scatters inst coords + calls updatePinLocations
+  // before updateWireLengthForceWA, making the host→device sync redundant.
+  // This flag lets the sync skip safely.
   // std::atomic for defensive thread-safety; consumers run on the master
   // thread today but the OMP-parallel boundaries elsewhere in gpl make a
   // future race plausible.
@@ -116,7 +131,16 @@ class DeviceState
 
  private:
   std::atomic<bool> coords_fresh_{false};
-  std::unique_ptr<KokkosDeviceState> kokkos_;
+  // Type-erased deleter: a plain function pointer instead of
+  // std::default_delete<KokkosDeviceState>. This lets ~DeviceState() be
+  // synthesized in CPU-only TUs (Bazel, ENABLE_GPU=OFF) where
+  // KokkosDeviceState is incomplete — the unique_ptr destructor only ever
+  // calls the deleter through the stored pointer, never through a typed
+  // expression that requires the impl to be complete. The deleter is set
+  // by the GPU-only constructor in gpu/deviceState.cpp; default-constructed
+  // unique_ptrs hold a null pointer + null deleter and never invoke it.
+  using KokkosDeleter = void (*)(KokkosDeviceState*);
+  std::unique_ptr<KokkosDeviceState, KokkosDeleter> kokkos_{nullptr, nullptr};
 
   // Cached host-side sizes; used by numInsts/Pins/Nets without needing to
   // include the Kokkos header.
@@ -133,5 +157,12 @@ class DeviceState
   int grid_lx_ = 0;
   int grid_ly_ = 0;
 };
+
+// Lock the "must construct via the GPU ctor" invariant at compile time so a
+// future refactor that re-enables default/copy/move construction also fails
+// to build instead of silently regressing the null-deleter footgun.
+static_assert(!std::is_default_constructible_v<DeviceState>);
+static_assert(!std::is_copy_constructible_v<DeviceState>);
+static_assert(!std::is_move_constructible_v<DeviceState>);
 
 }  // namespace gpl

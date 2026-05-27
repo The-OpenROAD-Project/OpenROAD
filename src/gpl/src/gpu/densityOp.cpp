@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Density gradient gather — Kokkos kernel (Phase 3).
+// Density gradient gather — Kokkos kernel.
 //
 // K_density_gather: per-inst, find overlapping bins via density half-sizes,
 // compute clipped rectangle overlap area, accumulate overlap × E_field ×

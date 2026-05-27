@@ -29,9 +29,9 @@ class GpuWirelengthGradientBackend : public WirelengthGradientBackend
  public:
   // Both pointers borrowed; must outlive this backend. `device_state`
   // supplies the device pool (pin/inst coords, CSRs, net weights). `nbc` is
-  // the owning common base — used only to refresh device inst coords from
-  // host gCellStor_ before each updateForce (until Phase 4 moves the
-  // Nesterov coord update onto the device).
+  // the owning common base — used only as a fallback to refresh device
+  // inst coords from host gCellStor_ when no NB-level device context has
+  // scattered them ahead of this call.
   GpuWirelengthGradientBackend(NesterovBaseCommon* nbc,
                                DeviceState* device_state);
   ~GpuWirelengthGradientBackend() override;

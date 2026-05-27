@@ -9,8 +9,8 @@
 // in an ENABLE_GPU build — the choice is a runtime one.
 //
 // Reads pin coords from a DeviceState shared with the owning
-// NesterovBaseCommon (Phase 1 device-resident transition); owns only the
-// per-net bbox / reduction buffers + their host mirrors.
+// NesterovBaseCommon; owns only the per-net bbox / reduction buffers + their
+// host mirrors.
 //
 // Determinism: integer arithmetic; bit-exact across Kokkos backends
 // (Serial / OpenMP / Threads / CUDA) and against the OpenMP CPU loop.

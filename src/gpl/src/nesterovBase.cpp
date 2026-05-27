@@ -1283,7 +1283,7 @@ NesterovBaseCommon::NesterovBaseCommon(
   hpwl_backend_ = makeHpwlBackend(num_threads_, device_state_.get());
   debugPrint(log_, GPL, "init", 1, "HPWL backend: {}", hpwl_backend_->name());
 
-  // Phase 2: WA wirelength gradient dispatcher. Same factory pattern as
+  // WA wirelength gradient dispatcher. Same factory pattern as
   // hpwl_backend_; routes through device_state_ on the GPU path.
   wl_grad_backend_
       = makeWirelengthGradientBackend(num_threads_, this, device_state_.get());
@@ -2725,6 +2725,7 @@ void NesterovBase::initDensity1()
   snapshotCoordi_.resize(gCellSize, FloatPoint());
   snapshotSLPCoordi_.resize(gCellSize, FloatPoint());
   snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
+  snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
@@ -2762,25 +2763,40 @@ void NesterovBase::initDensity1()
   sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
                            / static_cast<float>(getNesterovInstsArea());
 
+  rebuildNbDeviceCtx();
+}
+
+void NesterovBase::rebuildNbDeviceCtx()
+{
 #ifdef ENABLE_GPU
-  // initDensity1 can be called more than once (NesterovPlace::init recurses
-  // when initial step-length search diverges; routability flows may also
-  // reinvoke it). Allocate the device context only on first call; subsequent
-  // calls just refresh device coords from the latest host vectors.
-  if (nbc_->getDeviceState()) {
-    if (!nb_device_ctx_) {
-      nb_device_ctx_ = std::make_unique<NesterovDeviceContext>(nb_gcells_, bg_);
-    }
-    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
-                                       prevSLPCoordi_,
-                                       curCoordi_,
-                                       curSLPSumGrads_,
-                                       prevSLPSumGrads_);
-    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
-                                         NesterovDeviceContext::kVecCurSLP);
-    nbc_->getDeviceState()->updatePinLocations();
-    nbc_->getDeviceState()->markCoordsFresh();
+  if (!nbc_->getDeviceState()) {
+    return;
   }
+  // Always reconstruct: sized to nb_gcells_.size(). Cheap relative to the
+  // host-side resize work the callers already do, and cutFillerCells /
+  // restoreRemovedFillers depend on the rebuild to keep the GPU path live
+  // (otherwise the next nb_device_ctx_ guard falls through to CPU silently).
+  nb_device_ctx_ = std::make_unique<NesterovDeviceContext>(nb_gcells_, bg_);
+  nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                     prevSLPCoordi_,
+                                     curCoordi_,
+                                     curSLPSumGrads_,
+                                     prevSLPSumGrads_);
+  commitCoordsToDeviceState(VecSlot::CurSLP);
+#endif
+}
+
+void NesterovBase::commitCoordsToDeviceState(VecSlot source)
+{
+#ifdef ENABLE_GPU
+  if (!nb_device_ctx_) {
+    return;
+  }
+  nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(), source);
+  nbc_->getDeviceState()->updatePinLocations();
+  nbc_->getDeviceState()->markCoordsFresh();
+#else
+  (void) source;
 #endif
 }
 
@@ -2816,13 +2832,14 @@ float NesterovBase::getStepLength(
 {
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
-    using NDC = NesterovDeviceContext;
     const bool a_is_prev = (&prevSLPCoordi_ == &this->prevSLPCoordi_);
-    const int coord_a = a_is_prev ? NDC::kVecPrevSLP : NDC::kVecCurSLP;
-    const int grad_a = a_is_prev ? NDC::kVecPrevSumGrads : NDC::kVecCurSumGrads;
+    const VecSlot coord_a = a_is_prev ? VecSlot::PrevSLP : VecSlot::CurSLP;
+    const VecSlot grad_a
+        = a_is_prev ? VecSlot::PrevSumGrads : VecSlot::CurSumGrads;
     const bool b_is_cur = (&curSLPCoordi_ == &this->curSLPCoordi_);
-    const int coord_b = b_is_cur ? NDC::kVecCurSLP : NDC::kVecNextSLP;
-    const int grad_b = b_is_cur ? NDC::kVecCurSumGrads : NDC::kVecNextSumGrads;
+    const VecSlot coord_b = b_is_cur ? VecSlot::CurSLP : VecSlot::NextSLP;
+    const VecSlot grad_b
+        = b_is_cur ? VecSlot::CurSumGrads : VecSlot::NextSumGrads;
 
     coordiDistance_ = nb_device_ctx_->getDistance(coord_a, coord_b);
     gradDistance_ = nb_device_ctx_->getDistance(grad_a, grad_b);
@@ -2890,11 +2907,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
-    int target = 0;  // cur
+    VecSlot target = VecSlot::CurSumGrads;
     if (&sumGrads == &prevSLPSumGrads_) {
-      target = 1;
+      target = VecSlot::PrevSumGrads;
     } else if (&sumGrads == &nextSLPSumGrads_) {
-      target = 2;
+      target = VecSlot::NextSumGrads;
     }
 
     nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
@@ -3072,10 +3089,7 @@ void NesterovBase::updateInitialPrevSLPCoordi()
     nb_device_ctx_->updateInitialPrevSLPCoordi(
         npVars_->initialPrevCoordiUpdateCoef);
     nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
-    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
-                                         NesterovDeviceContext::kVecPrevSLP);
-    nbc_->getDeviceState()->updatePinLocations();
-    nbc_->getDeviceState()->markCoordsFresh();
+    commitCoordsToDeviceState(VecSlot::PrevSLP);
     return;
   }
 #endif
@@ -3308,10 +3322,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
     nb_device_ctx_->syncCoordsToHost(nextSLPCoordi_, nextCoordi_);
     updateGCellDensityCenterLocation(nextSLPCoordi_);
     updateDensityFieldBin();
-    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
-                                         NesterovDeviceContext::kVecNextSLP);
-    nbc_->getDeviceState()->updatePinLocations();
-    nbc_->getDeviceState()->markCoordsFresh();
+    commitCoordsToDeviceState(VecSlot::NextSLP);
     return;
   }
 #endif
@@ -3378,10 +3389,11 @@ void NesterovBase::saveSnapshot()
 
 #ifdef ENABLE_GPU
   // On the GPU path updateGradients writes sum-grads only to device; the
-  // host vector stays at zero. Pull from device before snapshotting so the
-  // subsequent revertToSnapshot pushes back real values, not zeros.
+  // host vectors stay at zero. Pull both from device before snapshotting so
+  // the subsequent revertToSnapshot pushes back real values, not zeros.
   if (nb_device_ctx_) {
     nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
+    nb_device_ctx_->syncPrevSumGradsToHost(prevSLPSumGrads_);
   }
 #endif
 
@@ -3389,6 +3401,7 @@ void NesterovBase::saveSnapshot()
   snapshotCoordi_ = curCoordi_;
   snapshotSLPCoordi_ = curSLPCoordi_;
   snapshotSLPSumGrads_ = curSLPSumGrads_;
+  snapshotPrevSLPSumGrads_ = prevSLPSumGrads_;
   snapshotDensityPenalty_ = densityPenalty_;
   snapshotStepLength_ = stepLength_;
 }
@@ -3554,6 +3567,7 @@ bool NesterovBase::revertToSnapshot()
   curCoordi_ = snapshotCoordi_;
   curSLPCoordi_ = snapshotSLPCoordi_;
   curSLPSumGrads_ = snapshotSLPSumGrads_;
+  prevSLPSumGrads_ = snapshotPrevSLPSumGrads_;
   densityPenalty_ = snapshotDensityPenalty_;
   stepLength_ = snapshotStepLength_;
 
@@ -3567,13 +3581,7 @@ bool NesterovBase::revertToSnapshot()
                                        curCoordi_,
                                        curSLPSumGrads_,
                                        prevSLPSumGrads_);
-    // Mirror what initDensity1 / nesterovUpdateCoordinates do after
-    // pushing coords: refresh DeviceState pin locations so the next
-    // updateWireLengthForceWA / getHpwl reads from the reverted state.
-    nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(),
-                                         NesterovDeviceContext::kVecCurSLP);
-    nbc_->getDeviceState()->updatePinLocations();
-    nbc_->getDeviceState()->markCoordsFresh();
+    commitCoordsToDeviceState(VecSlot::CurSLP);
   }
 #endif
 
@@ -3986,7 +3994,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
           .snapshotCoordi = snapshotCoordi_[i],
           .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
+          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i],
+          .snapshotPrevSLPSumGrads = snapshotPrevSLPSumGrads_[i]});
 
       destroyFillerGCell(i);
       availableFillerArea -= single_filler_area;
@@ -4049,6 +4058,11 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
     movableArea_ = whiteSpaceArea_ * targetDensity_;
     log_->info(GPL, 79, "New target density: {}", targetDensity_);
   }
+
+  // nb_gcells_ has shrunk; rebuild the GPU device context against the new
+  // size so subsequent Nesterov iterations keep running on the GPU instead
+  // of silently falling through the nb_device_ctx_ guards on the CPU path.
+  rebuildNbDeviceCtx();
 }
 
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
@@ -4164,6 +4178,7 @@ void NesterovBase::restoreRemovedFillers()
     snapshotCoordi_[idx] = filler.snapshotCoordi;
     snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
     snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
+    snapshotPrevSLPSumGrads_[idx] = filler.snapshotPrevSLPSumGrads;
 
     totalFillerArea_ += getFillerCellArea();
   }
@@ -4205,6 +4220,10 @@ void NesterovBase::restoreRemovedFillers()
              rel_area_change);
 
   removed_fillers_.clear();
+
+  // Symmetric with cutFillerCells: nb_gcells_ has grown back; rebuild the
+  // GPU device context against the new size.
+  rebuildNbDeviceCtx();
 }
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
@@ -4319,6 +4338,7 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+    swapAndPop(snapshotPrevSLPSumGrads_, remove_index, last_index);
   }
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
@@ -4343,6 +4363,7 @@ void NesterovBase::appendParallelVectors()
     snapshotCoordi_.emplace_back();
     snapshotSLPCoordi_.emplace_back();
     snapshotSLPSumGrads_.emplace_back();
+    snapshotPrevSLPSumGrads_.emplace_back();
   }
   curSLPCoordi_.emplace_back();
   curSLPWireLengthGrads_.emplace_back();
@@ -4446,6 +4467,7 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
     add_header("snapshotCoordi");
     add_header("snapshotSLPCoordi");
     add_header("snapshotSLPSumGrads");
+    add_header("snapshotPrevSLPSumGrads");
 
     file << "\n";
   }
@@ -4486,6 +4508,7 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
       add_value(snapshotCoordi_);
       add_value(snapshotSLPCoordi_);
       add_value(snapshotSLPSumGrads_);
+      add_value(snapshotPrevSLPSumGrads_);
     }
 
     file << "\n";
