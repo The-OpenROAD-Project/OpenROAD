@@ -664,3 +664,4 @@ sh_binary(
         "@buildifier_prebuilt//:buildifier",
     ],
 )
+test
