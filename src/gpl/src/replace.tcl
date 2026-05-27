@@ -6,6 +6,7 @@ sta::define_cmd_args "global_placement" {\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-timing_driven_repair_timing]\
     [-routability_driven]\
     [-virtual_cts]\
     [-incremental]\
@@ -33,6 +34,7 @@ sta::define_cmd_args "global_placement" {\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -56,6 +58,7 @@ proc global_placement { args } {
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
       -timing_driven_nets_percentage \
+      -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
       -virtual_cts_max_skew_fraction \
       -pad_left -pad_right} \
@@ -63,6 +66,7 @@ proc global_placement { args } {
       -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
+      -timing_driven_repair_timing \
       -routability_driven \
       -virtual_cts \
       -routability_use_grt \

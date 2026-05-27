@@ -28,6 +28,7 @@ TESTS = [
     "simple01-td",
     "simple01-td-net-percentage",
     "simple01-td-tune",
+    "simple01-td-repair",
     "simple01-uniform",
     "simple01-vcts",
     "simple02",
@@ -110,6 +111,7 @@ PY_TESTS = [
     "simple01-td",
     "simple01-td-net-percentage",
     "simple01-td-tune",
+    "simple01-td-repair",
     "simple01-uniform",
     "simple02",
     "simple03",
@@ -158,7 +160,6 @@ cc_test(
     ],
     deps = [
         "//src/ant",
-        "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",

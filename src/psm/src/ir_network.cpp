@@ -77,6 +77,16 @@ odb::dbTech* IRNetwork::getTech() const
   return getBlock()->getTech();
 }
 
+bool IRNetwork::hasNodes() const
+{
+  for (const auto& [layer, nodes] : nodes_) {
+    if (!nodes.empty()) {
+      return true;
+    }
+  }
+  return !iterm_nodes_.empty() || !bpin_nodes_.empty();
+}
+
 void IRNetwork::reset()
 {
   shapes_.clear();
@@ -98,6 +108,12 @@ void IRNetwork::construct()
 
   generateRoutingLayerShapesAndNodes();
   generateCutLayerNodes();
+
+  if (!hasNodes()) {
+    logger_->warn(utl::PSM, 86, "Net {} is empty.", net_->getName());
+    return;
+  }
+
   generateTopLayerFillerNodes();
   sortNodes();
   if (logger_->debugCheck(utl::PSM, "dump", 2)) {

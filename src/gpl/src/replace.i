@@ -24,6 +24,7 @@ static gpl::PlaceOptions getOptions(
 
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
+  checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
   checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
@@ -78,6 +79,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
   checkKey(keys, "-init_wirelength_coef", options.initWireLengthCoef);
   checkKey(keys, "-reference_hpwl", options.referenceHpwl);
+  checkKey(keys,
+           "-timing_driven_repair_tns_end_percent",
+           options.timingDrivenRepairTnsEndPercent);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {

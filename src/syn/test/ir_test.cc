@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
+#include <utility>
+#include <vector>
+
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/ir/NetTableEntry.h"
 
 // ABC (pulled in transitively via //src/syn/src/ir → TritModel) ships its
 // own main() that wins over gtest_main. Provide our own to force the gtest
