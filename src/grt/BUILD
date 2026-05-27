@@ -271,4 +271,3 @@ filegroup(
 messages_txt(
     visibility = ["//src/grt/test:__pkg__"],
 )
-asdf
