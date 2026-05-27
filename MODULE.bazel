@@ -261,3 +261,13 @@ single_version_override(
     patches = ["//bazel:scip_tinycthread_tny_prefix.patch"],
     version = "9.2.3",
 )
+
+# sed 4.9 vendors gnulib polyfills whose `#undef <name>` is gated on
+# _LIBC; glibc 2.43+'s _Generic <string.h> macros break the polyfill
+# decls. Drop the gate locally; lift override when upstream gnulib does.
+single_version_override(
+    module_name = "sed",
+    patch_strip = 1,
+    patches = ["//bazel:sed_gnulib_polyfill_undef.patch"],
+    version = "4.9.bcr.5",
+)

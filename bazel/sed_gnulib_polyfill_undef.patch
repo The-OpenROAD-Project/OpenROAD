@@ -1,0 +1,18 @@
+Drop the `_LIBC` gate on `#undef <name>` in sed's vendored gnulib
+polyfills so they survive glibc 2.43+'s _Generic wrappers in <string.h>.
+Drop when upstream gnulib lands an unconditional undef.
+
+diff --git a/lib/memchr.c b/lib/memchr.c
+--- a/lib/memchr.c
++++ b/lib/memchr.c
+@@ -46,9 +46,7 @@
+ #endif
+
+ #undef __memchr
+-#ifdef _LIBC
+-# undef memchr
+-#endif
++#undef memchr
+
+ #ifndef weak_alias
+ # define __memchr memchr
