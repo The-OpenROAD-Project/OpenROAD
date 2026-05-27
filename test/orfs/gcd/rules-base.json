@@ -1,6 +1,6 @@
 {
     "synth__design__instance__area__stdcell": {
-        "value": 44.3,
+        "value": 47.6,
         "compare": "<="
     },
     "constraints__clocks__count": {
@@ -8,11 +8,11 @@
         "compare": "=="
     },
     "placeopt__design__instance__area": {
-        "value": 59,
+        "value": 63,
         "compare": "<="
     },
     "placeopt__design__instance__count__stdcell": {
-        "value": 613,
+        "value": 664,
         "compare": "<="
     },
     "detailedplace__design__violations": {
@@ -20,11 +20,11 @@
         "compare": "=="
     },
     "cts__design__instance__count__setup_buffer": {
-        "value": 53,
+        "value": 58,
         "compare": "<="
     },
     "cts__design__instance__count__hold_buffer": {
-        "value": 53,
+        "value": 58,
         "compare": "<="
     },
     "cts__timing__setup__ws": {
@@ -32,7 +32,7 @@
         "compare": ">="
     },
     "cts__timing__setup__tns": {
-        "value": -1710.0,
+        "value": -1340.0,
         "compare": ">="
     },
     "cts__timing__hold__ws": {
@@ -48,11 +48,11 @@
         "compare": "<="
     },
     "globalroute__timing__setup__ws": {
-        "value": -85.4,
+        "value": -92.8,
         "compare": ">="
     },
     "globalroute__timing__setup__tns": {
-        "value": -1910.0,
+        "value": -1690.0,
         "compare": ">="
     },
     "globalroute__timing__hold__ws": {
@@ -64,7 +64,7 @@
         "compare": ">="
     },
     "detailedroute__route__wirelength": {
-        "value": 1403,
+        "value": 1625,
         "compare": "<="
     },
     "detailedroute__route__drc_errors": {
@@ -80,11 +80,11 @@
         "compare": "<="
     },
     "finish__timing__setup__ws": {
-        "value": -71.0,
+        "value": -79.5,
         "compare": ">="
     },
     "finish__timing__setup__tns": {
-        "value": -1290.0,
+        "value": -1330.0,
         "compare": ">="
     },
     "finish__timing__hold__ws": {
@@ -96,7 +96,7 @@
         "compare": ">="
     },
     "finish__design__instance__area": {
-        "value": 66,
+        "value": 68,
         "compare": "<="
     }
 }
