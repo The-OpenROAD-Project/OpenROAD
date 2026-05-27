@@ -157,6 +157,7 @@ or_integration_tests(
     repair_slew15
     repair_slew16
     repair_slew17
+    repair_slew_no_progress
     repair_tie1
     repair_tie2
     repair_tie3

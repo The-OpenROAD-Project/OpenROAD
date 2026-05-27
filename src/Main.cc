@@ -77,6 +77,7 @@ using std::string;
   X(rmp)                                 \
   X(cgt)                                 \
   X(stt)                                 \
+  X(syn)                                 \
   X(psm)                                 \
   X(pdn)                                 \
   X(rsz)                                 \
@@ -158,6 +159,7 @@ static void initPython()
 #undef X
 #undef FOREACH_TOOL
 #undef FOREACH_TOOL_WITHOUT_OPENROAD
+#undef FOREACH_SYN_PYTHON_TOOL
 
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".

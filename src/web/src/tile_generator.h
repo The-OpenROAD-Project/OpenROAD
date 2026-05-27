@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
