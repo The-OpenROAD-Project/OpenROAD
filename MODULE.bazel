@@ -252,3 +252,19 @@ single_version_override(
     patches = ["//bazel:boost_context_disable_parse_headers.patch"],
     version = BOOST_VERSION,
 )
+
+# Pinned at scip 9.2.3 (current BCR latest). Backports upstream
+# scipopt/scip@cc917e07 ("prefix also once_flag and call_once with TNY",
+# 2026-02-16, closes scipopt/scip#191), which namespaces scip's vendored
+# tinycthread.h internals so they no longer collide with the C11
+# <threads.h> symbol names `once_flag` and `call_once` exposed by modern
+# C libraries. Drop this override once a post-9.2.3 scip release with
+# cc917e07 lands on the Bazel Central Registry: bump the version in this
+# block (or the bazel_dep pulling scip in transitively) and delete this
+# single_version_override block plus //bazel:scip_tinycthread_tny_prefix.patch.
+single_version_override(
+    module_name = "scip",
+    patch_strip = 1,
+    patches = ["//bazel:scip_tinycthread_tny_prefix.patch"],
+    version = "9.2.3",
+)
