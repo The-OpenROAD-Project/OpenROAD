@@ -1717,12 +1717,11 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      // if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
-      //   continue;
-      // }
+
       if (layerIdx > getMaxRoutingLayer() || layerIdx < getMinRoutingLayer()) {
         continue;
       }
+
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
