@@ -28,6 +28,20 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
+      # Reviewdog's github-pr-review reporter resolves the local git root
+      # before flushing comments and silently no-ops if .git is missing.
+      # Check out the base repo (default branch, shallow) so reviewdog has
+      # a .git directory to operate against. No fork code involved — this
+      # is the base repo at HEAD of its default branch.
+      - name: Check out base repo for reviewdog .git requirement
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          # Default ref in workflow_run context is the base repo's default
+          # branch, which is the safe choice here. Reviewdog uses GitHub
+          # API to fetch the actual PR diff, so the local SHA need not
+          # match the PR head.
+
       - name: Download clang-tidy artifact
         uses: actions/download-artifact@v4
         with:
