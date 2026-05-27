@@ -17,16 +17,16 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4.8.0
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Cache railroad diagram tools
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         id: cache-tools
         with:
           path: src/odb/doc/tools
@@ -82,7 +82,7 @@ jobs:
 
       - name: Open PR if diagrams changed
         if: steps.diagram-changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676  # v7.0.11
         with:
           commit-message: "odb: regenerate LEF/DEF railroad diagram SVGs"
           branch: auto/grammar-railroad-diagrams
