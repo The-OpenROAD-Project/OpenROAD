@@ -46,6 +46,7 @@ def repair_design(
     max_utilization=None,
     pre_placement=False,
     match_cell_footprint=False,
+    reroute=False,
     verbose=False,
 ):
     resizer = design.getResizer()
@@ -57,6 +58,7 @@ def repair_design(
         float(cap_margin),
         1.0 if pre_placement else 0.0,
         match_cell_footprint,
+        reroute,
         verbose,
     )
 
