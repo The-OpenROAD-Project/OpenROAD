@@ -225,24 +225,11 @@ orfs.default(
     yosys_plugins = ["@yosys-slang//src/yosys_plugin:slang.so"],
 )
 
-# --- External archives ---
-
-# Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
-# reference @slang resolve without modification. OpenROAD source uses
-# @sv-lang directly; this alias only exists for the slang-elab submodule.
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-new_local_repository(
-    name = "slang",
-    build_file_content = """\
-alias(
-    name = "slang",
-    actual = "@sv-lang//:libsvlang",
-    visibility = ["//visibility:public"],
-)
-""",
-    path = "bazel",
-)
+# @slang -> @sv-lang//:libsvlang for third-party/slang-elab/src/BUILD.
+# Drops when slang-elab moves to BCR (along with the yosys-slang
+# git_override above).
+slang_alias = use_extension("//bazel:slang_alias.bzl", "slang_alias")
+use_repo(slang_alias, "slang")
 
 # --- Overrides ---
 

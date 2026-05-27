@@ -834,6 +834,22 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//bazel:slang_alias.bzl%slang_alias": {
+      "general": {
+        "bzlTransitiveDigest": "G9F5g546mLafkCbQ7PYxM8XMMPE354r9iMaRSVjp8pk=",
+        "usagesDigest": "FiHKHyF3ynFxjcXTD/YzjInHpxk2Iag3YLgUrFHWKkA=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "slang": {
+            "repoRuleId": "@@//bazel:slang_alias.bzl%_slang_alias_repo",
+            "attributes": {}
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "@@apple_rules_lint+//lint:extensions.bzl%linter": {
       "general": {
         "bzlTransitiveDigest": "g7izj5kLCmsajh8IospHh4ZQ35dyM0FIrA8D4HapAsM=",
