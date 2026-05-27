@@ -1,13 +1,6 @@
-Backport of upstream scipopt/scip commit cc917e074cd23a1630cb0eb4b7f3ec6ba2777d80
-("prefix also once_flag and call_once with TNY"). scip's vendored
-tinycthread.h exposes the bare identifiers `once_flag` and `call_once`,
-which are reserved by the C11 standard library (<threads.h>) and now
-provided as real typedefs/functions by modern C runtimes. The upstream
-commit namespaces scip's internal copies with a TNY_ prefix so the
-polyfill and the standard symbols can coexist.
-
-Drop this patch when a scip release containing the upstream rename lands
-on the Bazel Central Registry.
+Backport scipopt/scip@cc917e07: prefix tinycthread once_flag/call_once
+with TNY_ to avoid clash with C11 <threads.h>. Drop when included in a
+BCR scip release > 9.2.3.
 
 diff --git a/src/tinycthread/tinycthread.c b/src/tinycthread/tinycthread.c
 --- a/src/tinycthread/tinycthread.c
