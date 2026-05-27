@@ -210,3 +210,4 @@ filegroup(
 messages_txt(
     visibility = ["//src/gpl/test:__pkg__"],
 )
+asdf
