@@ -252,3 +252,13 @@ single_version_override(
     patches = ["//bazel:boost_context_disable_parse_headers.patch"],
     version = BOOST_VERSION,
 )
+
+# Drop the abc -> readline dependency. The BCR overlay BUILD unconditionally
+# adds @readline and ABC_USE_READLINE; OpenROAD drives abc programmatically
+# and does not need the interactive line editor.
+single_version_override(
+    module_name = "abc",
+    patch_strip = 1,
+    patches = ["//bazel:abc_no_readline.patch"],
+    version = "0.64-yosyshq.bcr.1",
+)

@@ -1,0 +1,18 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1436,7 +1436,6 @@
+     defines = [
+         "ABC_USE_CUDD=1",
+         "ABC_USE_PTHREADS",
+-        "ABC_USE_READLINE",
+         "ABC_NAMESPACE=abc",
+         "ABC_USE_STDINT_H=1",
+     ],
+@@ -1459,7 +1458,6 @@
+     ],
+     visibility = ["//visibility:public"],
+     deps = [
+-        "@readline",
+         "@zlib",
+     ],
+ )
