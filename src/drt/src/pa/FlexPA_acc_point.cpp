@@ -1422,18 +1422,17 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 
   bool enough_access_points = false;
 
-  // if (isStdCellTerm(inst_term)) {
-  //   logger_->report("[BNMFW] inst name: {}",
-  //   inst_term->getInst()->getName());
-  // }
-
   for (auto upper : {frAccessPointEnum::OnGrid,
                      frAccessPointEnum::HalfGrid,
                      frAccessPointEnum::Center,
+                     frAccessPointEnum::EncOpt,
                      frAccessPointEnum::NearbyGrid}) {
-    for (auto lower : {frAccessPointEnum::OnGrid,
-                       frAccessPointEnum::HalfGrid,
-                       frAccessPointEnum::Center}) {
+    for (auto lower : {
+             frAccessPointEnum::OnGrid,
+             frAccessPointEnum::HalfGrid,
+             frAccessPointEnum::Center,
+             frAccessPointEnum::EncOpt,
+         }) {
       if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
         // Only use NearbyGrid as a last resort (at least until
         // nangate45/aes is resolved).

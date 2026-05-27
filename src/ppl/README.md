@@ -311,6 +311,21 @@ write_pin_placement
 | `file_name` | The name of the file with the pin placement. |
 | `-placed_status` | When this flag is enabled, the file will be generated´with the `-placed_status` flag in each `place_pin` command call. |
 
+### Rectilinear Floorplans
+
+The `place_pins` command supports designs with a rectilinear
+(non-rectangular) die outline, such as those created by
+`initialize_floorplan` with a polygonal `-die_area` (see the
+[`ifp` documentation](../ifp/README.md#rectilinear-floorplans)).
+Rectilinear mode is detected automatically from the die polygon stored in the
+database; no extra option is required. Pins are distributed along the
+edges of the polygonal die boundary.
+
+<!-- checker: skip -->
+```tcl
+place_pins -hor_layers metal3 -ver_layers metal2
+```
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/IOPlacer.cpp) or the [swig file](./src/IOPlacer.i).

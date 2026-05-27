@@ -79,8 +79,6 @@ cc_library(
         "//src/utl",
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
-        "@boost.stacktrace",
-        "@boost.unordered",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",

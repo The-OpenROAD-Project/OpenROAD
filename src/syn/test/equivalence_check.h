@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <cstdint>
 #include <sstream>
 
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
+#include "syn/ir/Net.h"
 #include "syn/ir/TritModel.h"
 
 namespace syn {

@@ -261,24 +261,6 @@ int FlexPA::genPatternsHelper(
                           max_access_point_size)) {
       if (is_valid) {
         num_valid_pattern++;
-        if (num_valid_pattern == 1) {
-          if (!pins.empty()
-              && pins[0].second->getInst()->getName() == "_221_") {
-            const int pin_access_idx
-                = pins[0].second->getInst()->getPinAccessIdx();
-            for (const auto& [pin, inst_term] : pins) {
-              for (const auto& ap :
-                   pin->getPinAccess(pin_access_idx)->getAccessPoints()) {
-                logger_->report("[BNMFW] commit#{} {} - {}/{}: neighbors={}",
-                                num_valid_pattern,
-                                inst_term->getName(),
-                                ap->getPoint().getX(),
-                                ap->getPoint().getY(),
-                                ap->getCompatibleNeighbours());
-              }
-            }
-          }
-        }
       }
     } else {
       break;
@@ -436,8 +418,8 @@ void FlexPA::genPatternsPerform(
         continue;
       }
       int prev_pin_idx = curr_pin_idx > 0 ? curr_pin_idx - 1 : source_node_idx;
-      for (const auto& prev_acc_point_idx : nodes[prev_pin_idx]) {
-        FlexDPNode* prev_node = prev_acc_point_idx.get();
+      for (const auto& prev_node_unique : nodes[prev_pin_idx]) {
+        FlexDPNode* prev_node = prev_node_unique.get();
         if (prev_node->getPathCost() == std::numeric_limits<int>::max()) {
           continue;
         }
@@ -453,35 +435,11 @@ void FlexPA::genPatternsPerform(
 
         if (!curr_node->isVirtual() && !prev_node->isVirtual()
             && used_access_points.empty() && edge_cost < 1000) {
-          auto [curr_pin_idx, curr_acc_point_idx] = curr_node->getIdx();
-          const auto& [curr_pin, curr_inst_term] = pins[curr_pin_idx];
-
-          auto [prev_pin_idx, prev_acc_point_idx] = prev_node->getIdx();
-          const auto& [prev_pin, prev_inst_term] = pins[prev_pin_idx];
-
           frAccessPoint* curr_ap = DPNodeToAccessPoint(curr_node, pins);
           frAccessPoint* prev_ap = DPNodeToAccessPoint(prev_node, pins);
 
-          if (curr_inst_term->getInst()->getName() == "_221_") {
-            logger_->report("[BNMFW] {} {}:{} -- {} {}:{}",
-                            curr_inst_term->getName(),
-                            curr_ap->getPoint().getX(),
-                            curr_ap->getPoint().getY(),
-                            prev_inst_term->getName(),
-                            prev_ap->getPoint().getX(),
-                            prev_ap->getPoint().getY());
-          }
-
           curr_ap->addCompatibleNeighbour();
           prev_ap->addCompatibleNeighbour();
-          auto [pin_idx, acc_point_idx] = curr_node->getIdx();
-          const auto& [pin, inst_term] = pins[pin_idx];
-          if (inst_term->getInst()->getName() == "_221_") {
-            logger_->report("[BNMFW] inst_term: {}", inst_term->getName());
-            logger_->report("[BNMFW] Neighbors: {} - {}\n",
-                            curr_ap->getCompatibleNeighbours(),
-                            prev_ap->getCompatibleNeighbours());
-          }
         }
 
         if (curr_node->getPathCost() == std::numeric_limits<int>::max()
