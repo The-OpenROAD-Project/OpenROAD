@@ -1556,6 +1556,12 @@ void RepairDesign::repairNetWire(
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
+  // Tracks consecutive iterations whose buf_dist collapses to 0 without
+  // shrinking ref_cap (i.e. the next repeater would be placed at the
+  // same coordinate as this one and the driver would still see the same
+  // load); two such iterations in a row means the slew constraint is
+  // physically unsatisfiable on this segment and the loop must break.
+  int zero_progress_iters = 0;
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0 && max_cap_ > 0.0 && load_cap > max_cap_)
          || load_slew > max_load_slew_margined) {
@@ -1651,6 +1657,12 @@ void RepairDesign::repairNetWire(
       double buf_dist = (split_length >= length)
                             ? length
                             : split_length * (1.0 - length_margin);
+      // Snapshot pre-insertion ref_cap so the post-insertion progress
+      // check below can detect the no-progress case (buf_dist == 0 and
+      // the new repeater's input pin cap does not shrink the load the
+      // driver sees). Two such iterations in a row terminate the loop.
+      const double prev_ref_cap = ref_cap;
+      const bool zero_advance = (buf_dist <= 0.0);
       double dx = from_x - to_x;
       double dy = from_y - to_y;
       double d = (length == 0) ? 0.0 : buf_dist / length;
@@ -1699,6 +1711,40 @@ void RepairDesign::repairNetWire(
       bnet->setMaxLoadSlew(
           max_load_slew
           - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+
+      // No-progress detection: buf_dist == 0 leaves the repeater stacked
+      // on the load pin. If the new ref_cap also does not shrink, the
+      // driver still sees the same load, the slew quadratic gives the
+      // same split_length == 0, and the loop would iterate forever (the
+      // observed failure mode is a multi-thousand-deep buffer chain at a
+      // single coordinate that overflows the levelize recursion stack).
+      // Allow one such iteration in case the repeater's smaller input
+      // pin cap absorbs the violation, but abort on the second. Placed
+      // AFTER the bnet write-back so callers reading bnet->cap() /
+      // fanout() / maxLoadSlew() (e.g. repairNetJunc) see the topology
+      // reflecting the latest makeRepeater.
+      if (zero_advance && ref_cap >= prev_ref_cap) {
+        if (++zero_progress_iters >= 2) {
+          // slew_rc_factor_ is asserted engaged at the top of repairNetWire;
+          // re-check locally so clang-tidy's CFG-only analysis is satisfied.
+          if (slew_rc_factor_) {
+            logger_->warn(
+                RSZ,
+                170,
+                "Cannot repair slew on net {} driven by {}: driver resistance "
+                "x repeater pin capacitance ({:.3g}) already meets or exceeds "
+                "the slew budget ({:.3g}). Net left unrepaired on this "
+                "segment.",
+                network_->pathName(network_->net(drvr_pin_)),
+                network_->pathName(drvr_pin_),
+                r_drvr * ref_cap,
+                max_load_slew_margined / *slew_rc_factor_);
+          }
+          break;
+        }
+      } else {
+        zero_progress_iters = 0;
+      }
 
       debugPrint(logger_,
                  RSZ,
