@@ -15,8 +15,6 @@
 
 #include "db_sta/dbSta.hh"
 #include "elab/driver.h"
-#include "flow/bitblast.h"
-#include "flow/combinational_mapper.h"
 #include "flow/constant_fold.h"
 #include "flow/export.h"
 #include "flow/import.h"

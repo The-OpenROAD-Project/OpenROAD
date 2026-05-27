@@ -52,7 +52,6 @@ cc_library(
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.multi_array",
-        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
@@ -78,8 +77,6 @@ cc_library(
     deps = [
         ":gui",
         "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
         "@tcl_lang//:tcl",
     ],
 )

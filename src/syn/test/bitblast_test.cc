@@ -9,6 +9,7 @@
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/synthesis.h"
 
 int main(int argc, char** argv)
 {
@@ -17,8 +18,6 @@ int main(int argc, char** argv)
 }
 
 namespace syn {
-
-void bitblast(Graph& g, bool blast_arith = true);
 
 // Rule 11 (Substitution): a & ~(a & b) → a & ~b (= andnot)
 TEST(BitblastTest, Rule11_Substitution)

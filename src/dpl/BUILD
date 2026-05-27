@@ -109,13 +109,10 @@ cc_library(
         "//src/utl",
         "@boost.format",
         "@boost.geometry",
-        "@boost.icl",
         "@boost.polygon",
         "@boost.random",
         "@boost.tokenizer",
-        "@boost.utility",
         "@coin-or-lemon//:lemon",
-        "@tcl_lang//:tcl",
     ],
 )
 
