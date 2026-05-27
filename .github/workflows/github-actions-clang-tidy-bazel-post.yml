@@ -24,8 +24,11 @@ permissions:
 
 jobs:
   Post-Reviewdog:
-    # Skip if the upstream build failed before producing an artifact.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Run on success AND failure: Stage A intentionally exits non-zero when
+    # clang-tidy findings exist on the PR diff (to fail the required PR
+    # check), but the artifact is uploaded *before* that fail step, so the
+    # findings are still posted as review comments. Only skip on cancelled.
+    if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       # Reviewdog's github-pr-review reporter resolves the local git root
