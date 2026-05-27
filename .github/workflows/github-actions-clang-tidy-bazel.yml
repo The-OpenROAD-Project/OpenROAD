@@ -110,3 +110,28 @@ jobs:
             pr-meta.txt
           retention-days: 7
           if-no-files-found: error
+
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Fail check on clang-tidy findings in PR diff
+        # Runs after the artifact upload so the post workflow always has the
+        # findings to comment on, even when this step exits non-zero.
+        # Uses -reporter=local because the fork-PR token is read-only here;
+        # local mode just prints to stdout and exits with -fail-level=any if
+        # findings exist. The post workflow does the actual review posting.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          reviewdog \
+            -efm="%E%f:%l:%c: error: %m" \
+            -efm="%W%f:%l:%c: warning: %m" \
+            -name="clang-tidy" \
+            -reporter=local \
+            -diff="git diff ${BASE_SHA}...${HEAD_SHA}" \
+            -filter-mode=added \
+            -fail-level=any \
+            < clang-tidy.txt
