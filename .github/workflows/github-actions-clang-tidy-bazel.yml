@@ -5,9 +5,13 @@ on:
     branches:
       - master
 
+# Read-only by design: fork PRs get a read-only GITHUB_TOKEN regardless of
+# what this block requests, so this workflow only builds clang-tidy and
+# uploads the findings as an artifact. The companion workflow
+# `clang-tidy-bazel-post` runs on `workflow_run` in the base repo context
+# with a writable token and posts the reviewdog comments.
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   Clang-Tidy-Bazel:
@@ -17,7 +21,8 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: 'recursive'
-          # Need full history so reviewdog can diff against the PR base.
+          # Need full history so the post workflow's reviewdog can diff
+          # against the PR base via the API.
           fetch-depth: 0
 
       - name: Set up bazel
@@ -29,11 +34,6 @@ jobs:
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true
-
-      - name: Set up reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
 
       - name: Run bazel clang-tidy
         env:
@@ -88,15 +88,25 @@ jobs:
           echo "::endgroup::"
           echo "Findings: $(wc -l < clang-tidy.txt)"
 
-      - name: Run reviewdog
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Save PR metadata for post workflow
         run: |
-          reviewdog \
-            -efm="%E%f:%l:%c: error: %m" \
-            -efm="%W%f:%l:%c: warning: %m" \
-            -name="clang-tidy" \
-            -reporter=github-pr-review \
-            -filter-mode=added \
-            -fail-level=any \
-            < clang-tidy.txt
+          # workflow_run.event.pull_requests[] is empty for fork PRs, so the
+          # post workflow needs the PR number and head SHA delivered via the
+          # artifact itself.
+          {
+            echo "pr_number=${{ github.event.pull_request.number }}"
+            echo "head_sha=${{ github.event.pull_request.head.sha }}"
+            echo "base_sha=${{ github.event.pull_request.base.sha }}"
+            echo "head_repo=${{ github.event.pull_request.head.repo.full_name }}"
+            echo "base_repo=${{ github.event.pull_request.base.repo.full_name }}"
+          } > pr-meta.txt
+
+      - name: Upload clang-tidy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-bazel
+          path: |
+            clang-tidy.txt
+            pr-meta.txt
+          retention-days: 7
+          if-no-files-found: error
