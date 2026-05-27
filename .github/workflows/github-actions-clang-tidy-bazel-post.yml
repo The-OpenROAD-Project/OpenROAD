@@ -1,0 +1,140 @@
+name: clang-tidy-bazel-post
+
+# Runs in the base repository's context with a writable GITHUB_TOKEN, so it
+# can post reviewdog comments on PRs opened from forks (which the upstream
+# `clang-tidy-bazel` workflow cannot, since fork pull_request runs get a
+# read-only token by GitHub's design).
+#
+# Security: this workflow MUST NOT execute untrusted PR code. It only reads
+# the text artifact (clang-tidy.txt) produced by the upstream workflow and
+# the metadata file we wrote there ourselves. No checkout of the PR head,
+# no bazel build, no scripts from the fork.
+
+on:
+  workflow_run:
+    workflows: ["clang-tidy-bazel"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+  # Needed for actions/download-artifact@v4 to fetch from another workflow.
+  actions: read
+
+jobs:
+  Post-Reviewdog:
+    # Skip if the upstream build failed before producing an artifact.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    steps:
+      # Reviewdog's github-pr-review reporter resolves the local git root
+      # before flushing comments and silently no-ops if .git is missing.
+      # Check out the base repo (default branch, shallow) so reviewdog has
+      # a .git directory to operate against. No fork code involved — this
+      # is the base repo at HEAD of its default branch.
+      - name: Check out base repo for reviewdog .git requirement
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          # Default ref in workflow_run context is the base repo's default
+          # branch, which is the safe choice here. Reviewdog uses GitHub
+          # API to fetch the actual PR diff, so the local SHA need not
+          # match the PR head.
+
+      - name: Download clang-tidy artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: clang-tidy-bazel
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load PR metadata
+        id: meta
+        run: |
+          # pr-meta.txt is produced by the upstream workflow from the
+          # pull_request event payload. It is text we wrote ourselves —
+          # not arbitrary fork content — and is parsed with a strict
+          # allowlist below before being exported.
+          if [ ! -f pr-meta.txt ]; then
+            echo "::error::pr-meta.txt missing from artifact"
+            exit 1
+          fi
+          while IFS='=' read -r key value; do
+            case "$key" in
+              pr_number|head_sha|base_sha|head_repo|base_repo) ;;
+              *) continue ;;
+            esac
+            # Validate values: numbers, hex SHAs, or owner/repo slugs only.
+            case "$key" in
+              pr_number)
+                [[ "$value" =~ ^[0-9]+$ ]] || { echo "::error::bad pr_number"; exit 1; } ;;
+              head_sha|base_sha)
+                [[ "$value" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::bad $key"; exit 1; } ;;
+              head_repo|base_repo)
+                [[ "$value" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || { echo "::error::bad $key"; exit 1; } ;;
+            esac
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done < pr-meta.txt
+
+      - name: Synthesize pull_request event payload
+        id: event
+        env:
+          PR_NUMBER: ${{ steps.meta.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.meta.outputs.head_sha }}
+          BASE_SHA: ${{ steps.meta.outputs.base_sha }}
+          HEAD_REPO: ${{ steps.meta.outputs.head_repo }}
+          BASE_REPO: ${{ steps.meta.outputs.base_repo }}
+        run: |
+          # Reviewdog's `github-pr-review` reporter reads GITHUB_EVENT_PATH
+          # expecting a pull_request payload. The real event here is
+          # workflow_run, so we synthesize the minimum payload reviewdog
+          # needs and point GITHUB_EVENT_PATH at it for the next step.
+          EVENT_PATH="${RUNNER_TEMP}/pr-event.json"
+          python3 - <<'PY' > "$EVENT_PATH"
+          import json, os
+          payload = {
+            "action": "synchronize",
+            "number": int(os.environ["PR_NUMBER"]),
+            "pull_request": {
+              "number": int(os.environ["PR_NUMBER"]),
+              "head": {
+                "sha": os.environ["HEAD_SHA"],
+                "repo": {"full_name": os.environ["HEAD_REPO"]},
+              },
+              "base": {
+                "sha": os.environ["BASE_SHA"],
+                "repo": {"full_name": os.environ["BASE_REPO"]},
+              },
+            },
+            "repository": {
+              "full_name": os.environ["BASE_REPO"],
+              "owner": {"login": os.environ["BASE_REPO"].split("/")[0]},
+              "name": os.environ["BASE_REPO"].split("/")[1],
+            },
+          }
+          print(json.dumps(payload))
+          PY
+          echo "event_path=${EVENT_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Run reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: ${{ steps.event.outputs.event_path }}
+          GITHUB_SHA: ${{ steps.meta.outputs.head_sha }}
+          GITHUB_REPOSITORY: ${{ steps.meta.outputs.base_repo }}
+        run: |
+          reviewdog \
+            -efm="%E%f:%l:%c: error: %m" \
+            -efm="%W%f:%l:%c: warning: %m" \
+            -name="clang-tidy" \
+            -reporter=github-pr-review \
+            -filter-mode=added \
+            -fail-level=any \
+            < clang-tidy.txt
