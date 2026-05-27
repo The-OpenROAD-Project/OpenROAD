@@ -37,7 +37,7 @@ jobs:
       # a .git directory to operate against. No fork code involved — this
       # is the base repo at HEAD of its default branch.
       - name: Check out base repo for reviewdog .git requirement
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 1
           # Default ref in workflow_run context is the base repo's default
@@ -46,7 +46,7 @@ jobs:
           # match the PR head.
 
       - name: Download clang-tidy artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
         with:
           name: clang-tidy-bazel
           run-id: ${{ github.event.workflow_run.id }}
@@ -121,7 +121,7 @@ jobs:
           echo "event_path=${EVENT_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Set up reviewdog
-        uses: reviewdog/action-setup@v1
+        uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f  # v1.5.0
         with:
           reviewdog_version: latest
 

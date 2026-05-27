@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           submodules: 'recursive'
           # Need full history so the post workflow's reviewdog can diff
@@ -30,7 +30,7 @@ jobs:
         # runners do not. Install it explicitly so the workflow works on
         # both runner types. bazel-contrib/setup-bazel's default uses a
         # pre-installed bazelisk; passing bazelisk-version forces install.
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # 0.19.0
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true
@@ -102,7 +102,7 @@ jobs:
           } > pr-meta.txt
 
       - name: Upload clang-tidy artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: clang-tidy-bazel
           path: |
