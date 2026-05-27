@@ -187,6 +187,9 @@ class frAccessPoint : public frBlockObject
     }
   }
   void setAllowVia(bool in) { allow_via_ = in; }
+  void addCompatibleNeighbour() { compatible_neighbors_++; }
+  void resetCompatibleNeigbours() { compatible_neighbors_ = 0; }
+  int getCompatibleNeighbours() { return compatible_neighbors_; }
   // others
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
   frCoord x() const { return point_.x(); }
@@ -209,6 +212,7 @@ class frAccessPoint : public frBlockObject
   frPinAccess* aps_{nullptr};
   std::vector<frPathSeg> pathSegs_;
   bool allow_via_{false};
+  int compatible_neighbors_{0};
   odb::dbAccessPoint* db_ap_{nullptr};
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);
