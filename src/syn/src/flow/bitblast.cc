@@ -4,8 +4,6 @@
 // Bitblast pass: converts arithmetic operations and muxes
 // to And/Andnot/Or/Xor/Not gates.
 
-#include "flow/bitblast.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -22,6 +20,7 @@
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
+#include "syn/synthesis.h"
 
 namespace syn {
 

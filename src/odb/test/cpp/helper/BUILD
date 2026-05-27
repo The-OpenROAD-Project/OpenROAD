@@ -21,6 +21,5 @@ cc_library(
     deps = [
         "//src/odb/src/db",
         "//src/tst",
-        "//src/utl",
     ],
 )

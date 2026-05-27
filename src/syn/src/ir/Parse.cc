@@ -539,7 +539,13 @@ class Parser
       error("unknown cell keyword: " + keyword);
     }
 
-    (void) id;
+    const uint32_t expected_slots = std::max(width, 1u);
+    if (g->tableSize() != id + expected_slots) {
+      error("'" + keyword + "' declared output width " + std::to_string(width)
+            + " but produced " + std::to_string(g->tableSize() - id) + " slot"
+            + (g->tableSize() - id == 1 ? "" : "s"));
+    }
+
     expectNewline();
   }
 

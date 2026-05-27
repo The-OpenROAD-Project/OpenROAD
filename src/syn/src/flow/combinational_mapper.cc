@@ -5,8 +5,6 @@
 // standard cells from a liberty library using cut-based technology
 // mapping with NPN canonicalization.
 
-#include "flow/combinational_mapper.h"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -677,8 +675,8 @@ void Mapping::prepareMatches(const int npriority_cuts,
     int psSlot = 0;
     ClassMatch* matchBuf = allocMatches(nmatches_max);
 
-    for (int i = -1; i < cache[n1->fid].ps.size(); i++) {
-      for (int j = -1; j < cache[n2->fid].ps.size(); j++) {
+    for (int i = -1; i < (int) cache[n1->fid].ps.size(); i++) {
+      for (int j = -1; j < (int) cache[n2->fid].ps.size(); j++) {
         Net* n1Cut = ((i == -1) ? t1 : cache[n1->fid].ps[i].cut);
         Net* n2Cut = ((j == -1) ? t2 : cache[n2->fid].ps[j].cut);
         int n1CutLen = (i == -1) ? 1 : cutLen(n1Cut);

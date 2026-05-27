@@ -77,6 +77,22 @@ cc_test(
 )
 
 cc_test(
+    name = "cm_test",
+    srcs = [
+        "cm_test.cc",
+        "equivalence_check.h",
+    ],
+    data = ["cm_test_cells.lib"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/syn",
+        "//src/syn/src/ir",
+        "//src/tst",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "abc_test",
     srcs = ["abc_test.cc"],
     features = ["-layering_check"],
