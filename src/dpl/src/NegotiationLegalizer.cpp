@@ -641,18 +641,11 @@ bool NegotiationLegalizer::initFromDb()
     // pixel.is_valid).  Soft blockages, routing-layer blockages, and
     // cell-vs-cell overlap are left to the negotiation loop.
     if (!cell.fixed) {
-    // if (false) {
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
-      // verbose=true only at the initial-position check so the snap
-      // search itself (which evaluates many candidates per cell) stays
-      // quiet.  The single message we keep tells us the reason for the
-      // initial rejection; the "Could not find a valid site" line covers
-      // the case where the scan exhausts.
-      auto isValidSite
-          = [&](int pixel_left, int pixel_bottom, bool verbose = false)
-          -> bool {
+      auto isValidSite =
+          [&](int pixel_left, int pixel_bottom, bool verbose = false) -> bool {
         const bool past_left = pixel_left < 0;
         const bool past_bottom = pixel_bottom < 0;
         const bool past_right = pixel_left + cell.width > grid_w_;
@@ -707,7 +700,9 @@ bool NegotiationLegalizer::initFromDb()
         }
         // Site type check at the anchor row is representative for all rows.
         if (site != nullptr
-            && !dpl_grid->getSiteOrientation(GridX{pixel_left}, GridY{pixel_bottom}, site)
+            && !dpl_grid
+                    ->getSiteOrientation(
+                        GridX{pixel_left}, GridY{pixel_bottom}, site)
                     .has_value()) {
           if (verbose) {
             debugPrint(logger_,
@@ -729,16 +724,15 @@ bool NegotiationLegalizer::initFromDb()
         }
         for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
           for (int col_offset = 0; col_offset < cell.width; ++col_offset) {
-            const auto& p = dpl_grid->pixel(
-                GridY{pixel_bottom + row_offset},
-                GridX{pixel_left + col_offset});
+            const auto& p = dpl_grid->pixel(GridY{pixel_bottom + row_offset},
+                                            GridX{pixel_left + col_offset});
             if (!p.is_valid) {
               if (!verbose) {
                 return false;
               }
-              const auto [row_site, row_orient] = dpl_grid->getShortestSite(
-                  GridX{pixel_left + col_offset},
-                  GridY{pixel_bottom + row_offset});
+              const auto [row_site, row_orient]
+                  = dpl_grid->getShortestSite(GridX{pixel_left + col_offset},
+                                              GridY{pixel_bottom + row_offset});
               const std::string cause
                   = (row_site != nullptr)
                         ? fmt::format(
@@ -844,10 +838,13 @@ bool NegotiationLegalizer::initFromDb()
 
         for (int x = cell.init_x - 1; x >= 0; --x) {  // left
           if (isValidSite(x, cell.init_y) && isInRegionOk(x, cell.init_y)) {
-            best_dist = (cell.init_x - x) * site_width_;
-            best_x = x;
-            best_y = cell.init_y;
-            found = true;
+            const int dist = (cell.init_x - x) * site_width_;
+            if (dist < best_dist) {
+              best_dist = dist;
+              best_x = x;
+              best_y = cell.init_y;
+              found = true;
+            }
             break;
           }
         }
