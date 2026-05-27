@@ -456,12 +456,11 @@ CostT GridGraph::getViaCost(const int layer_index,
   // Scale the unit via cost by the max NDR factor across the two
   // adjacent layers, approximating the wider NDR via without access
   // to the per-NDR via shapes.
-  const double lower_layer_cost
-      = layer_index < static_cast<int>(net_costs.size())
-            ? net_costs[layer_index]
-            : 1.0;
+  const double lower_layer_cost = std::cmp_less(layer_index, net_costs.size())
+                                      ? net_costs[layer_index]
+                                      : 1.0;
   const double upper_layer_cost
-      = layer_index + 1 < static_cast<int>(net_costs.size())
+      = std::cmp_less(layer_index + 1, net_costs.size())
             ? net_costs[layer_index + 1]
             : 1.0;
   CostT cost = unit_via_cost_ * std::max(lower_layer_cost, upper_layer_cost);
@@ -483,7 +482,7 @@ CostT GridGraph::getViaCost(const int layer_index,
                                / (lower_edge_length + higher_edge_length)
                                * constants_.via_multiplier;
       const double layer_factor
-          = l < static_cast<int>(net_costs.size()) ? net_costs[l] : 1.0;
+          = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
       if (lower_edge_length > 0) {
         cost += getWireCost(l, lower_loc, demand, layer_factor);
       }
@@ -732,7 +731,7 @@ void GridGraph::commitVia(const int layer_index,
                                * constants_.via_multiplier;
       // Use the per-layer NDR factor for `l`, not a net-wide value.
       const double layer_factor
-          = l < static_cast<int>(net_costs.size()) ? net_costs[l] : 1.0;
+          = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
       if (lower_edge_length > 0) {
         commit(l, lower_loc, (rip_up ? -demand : demand), layer_factor);
       }
@@ -757,9 +756,8 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
       if (node->getLayerIdx() == child->getLayerIdx()) {
         const int layer = node->getLayerIdx();
         const int direction = layer_directions_[layer];
-        const double wire_factor = layer < static_cast<int>(net_costs.size())
-                                       ? net_costs[layer]
-                                       : 1.0;
+        const double wire_factor
+            = std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
         if (direction == MetalLayer::H) {
           if (node->y() != child->y()) {
             logger_->error(utl::GRT,
@@ -952,7 +950,7 @@ void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
         layer_indices.emplace_back(layer_index);
         unit_length_short_cost = std::min(unit_length_short_cost,
                                           getUnitLengthShortCost(layer_index));
-        if (layer_index < static_cast<int>(net_costs.size())) {
+        if (std::cmp_less(layer_index, net_costs.size())) {
           net_factor = std::max(net_factor, net_costs[layer_index]);
         }
       }

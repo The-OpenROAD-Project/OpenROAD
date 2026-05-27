@@ -62,7 +62,8 @@ class GRNet
 
   double getNdrCost(int layer_index) const
   {
-    if (layer_index < 0 || layer_index >= static_cast<int>(ndr_costs_.size())) {
+    if (layer_index < 0
+        || std::cmp_greater_equal(layer_index, ndr_costs_.size())) {
       return 1.0;
     }
     return ndr_costs_[layer_index];
