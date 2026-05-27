@@ -23,18 +23,21 @@ class DeviceState;
 struct KokkosNesterovState;
 struct KokkosDeviceState;
 
-// Per-cell vector slot identifiers. Used by NesterovDeviceContext callers
-// (NesterovBase) and the kernel launchers (nestop). Underlying int values
-// must stay contiguous and grouped (SLP then SumGrads) because launchers
-// indexing the SumGrads block compute `CurSumGrads + target` arithmetic.
-enum class VecSlot : int
+// Per-cell vector slot identifiers — split by purpose so the launchers can
+// not be passed an unrelated slot. Used by NesterovDeviceContext callers
+// (NesterovBase) and the kernel launchers (nestop).
+enum class SlpSlot : int
 {
-  CurSLP = 0,
-  PrevSLP = 1,
-  NextSLP = 2,
-  CurSumGrads = 3,
-  PrevSumGrads = 4,
-  NextSumGrads = 5,
+  Cur = 0,
+  Prev = 1,
+  Next = 2,
+};
+
+enum class SumGradSlot : int
+{
+  Cur = 0,
+  Prev = 1,
+  Next = 2,
 };
 
 class NesterovDeviceContext
@@ -81,11 +84,10 @@ class NesterovDeviceContext
   // push real values back instead of zombie host data.
   void syncPrevSumGradsToHost(std::vector<FloatPoint>& prevSumGrads);
 
-  // GPU kernel: updateGradients loop body. `target` selects which SumGrads
-  // slot to write (one of VecSlot::{Cur,Prev,Next}SumGrads).
+  // GPU kernel: updateGradients loop body.
   void gradCombine(float density_penalty,
                    float min_preconditioner,
-                   VecSlot target,
+                   SumGradSlot target,
                    float& wl_grad_sum,
                    float& density_grad_sum);
 
@@ -95,11 +97,14 @@ class NesterovDeviceContext
   // GPU kernel: update initial prevSLP coords.
   void updateInitialPrevSLPCoordi(float coef);
 
-  // GPU kernel: step length via distance reduction.
-  float getDistance(VecSlot vec_a, VecSlot vec_b);
+  // GPU kernel: step length via distance reduction. Two overloads — the
+  // step-length numerator iterates SLP coords, the denominator iterates
+  // sum-grads, and the two are never crossed.
+  float getDistance(SlpSlot vec_a, SlpSlot vec_b);
+  float getDistance(SumGradSlot vec_a, SumGradSlot vec_b);
 
   // Scatter NB inst coords to DeviceState d_inst_cx/cy (for HPWL/WLgrad).
-  void scatterToDeviceState(DeviceState* device_state, VecSlot source);
+  void scatterToDeviceState(DeviceState* device_state, SlpSlot source);
 
   // Scatter DeviceState WL grads to NB arrays.
   void scatterWLGradsToNB(DeviceState* device_state);

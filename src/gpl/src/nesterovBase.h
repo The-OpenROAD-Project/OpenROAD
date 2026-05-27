@@ -57,7 +57,8 @@ class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h
 class DensityGradientBackend;     // densityGradientBackend.h
 class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
-enum class VecSlot : int;         // gpu/nesterovDeviceContext.h
+enum class SlpSlot : int;         // gpu/nesterovDeviceContext.h
+enum class SumGradSlot : int;     // gpu/nesterovDeviceContext.h
 
 class GCell
 {
@@ -1175,8 +1176,6 @@ class NesterovBase
 
   void resetMinSumOverflow();
 
-  void printStepLength() { printf("stepLength = %f\n", stepLength_); }
-
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
@@ -1229,7 +1228,7 @@ class NesterovBase
   // coord flag fresh. Called after every GPU coord update (initDensity1,
   // updateInitialPrevSLPCoordi, nesterovUpdateCoordinates, revertToSnapshot,
   // rebuildNbDeviceCtx). No-op on CPU builds and when nb_device_ctx_ is null.
-  void commitCoordsToDeviceState(VecSlot source);
+  void commitCoordsToDeviceState(SlpSlot source);
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;

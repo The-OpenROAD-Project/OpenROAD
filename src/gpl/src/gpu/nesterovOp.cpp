@@ -27,31 +27,34 @@ struct VecPair
   Kokkos::View<float*> y;
 };
 
-// Single overload taking const&: Kokkos::View has shallow-copy semantics
-// (the const applies to the View handle, not the underlying device memory),
-// so this serves both read-only callers (launchGetDistance,
-// launchScatterToDeviceState) and the writing caller (launchGradCombine)
-// without a const_cast.
-VecPair getVec(const KokkosNesterovState& ns, VecSlot vec_id)
+// Kokkos::View has shallow-copy semantics (the const applies to the View
+// handle, not the underlying device memory), so a single const& overload
+// serves both read-only and writing callers without a const_cast.
+VecPair getVec(const KokkosNesterovState& ns, SlpSlot vec_id)
 {
   switch (vec_id) {
-    case VecSlot::CurSLP:
+    case SlpSlot::Cur:
       return {ns.d_cur_slp_x, ns.d_cur_slp_y};
-    case VecSlot::PrevSLP:
+    case SlpSlot::Prev:
       return {ns.d_prev_slp_x, ns.d_prev_slp_y};
-    case VecSlot::NextSLP:
+    case SlpSlot::Next:
       return {ns.d_next_slp_x, ns.d_next_slp_y};
-    case VecSlot::CurSumGrads:
+  }
+  Kokkos::abort("getVec: invalid SlpSlot");
+  return {ns.d_next_slp_x, ns.d_next_slp_y};
+}
+
+VecPair getVec(const KokkosNesterovState& ns, SumGradSlot vec_id)
+{
+  switch (vec_id) {
+    case SumGradSlot::Cur:
       return {ns.d_cur_sum_grads_x, ns.d_cur_sum_grads_y};
-    case VecSlot::PrevSumGrads:
+    case SumGradSlot::Prev:
       return {ns.d_prev_sum_grads_x, ns.d_prev_sum_grads_y};
-    case VecSlot::NextSumGrads:
+    case SumGradSlot::Next:
       return {ns.d_next_sum_grads_x, ns.d_next_sum_grads_y};
   }
-  // Unreachable: switch above is exhaustive over VecSlot. Aborts loudly
-  // rather than silently aliasing an out-of-range value to NextSumGrads if
-  // a future enumerator is added and this switch isn't updated.
-  Kokkos::abort("getVec: invalid VecSlot");
+  Kokkos::abort("getVec: invalid SumGradSlot");
   return {ns.d_next_sum_grads_x, ns.d_next_sum_grads_y};
 }
 
@@ -61,7 +64,7 @@ void launchGradCombine(KokkosNesterovState& ns,
                        int n_cells,
                        float density_penalty,
                        float min_preconditioner,
-                       VecSlot target,
+                       SumGradSlot target,
                        float& wl_grad_sum,
                        float& density_grad_sum)
 {
@@ -220,15 +223,18 @@ void launchNesterovCoordUpdate(KokkosNesterovState& ns,
       });
 }
 
-float launchGetDistance(const KokkosNesterovState& ns,
-                        int n_cells,
-                        VecSlot vec_a,
-                        VecSlot vec_b)
+namespace {
+// Template impl shared by the two launchGetDistance overloads — the body is
+// identical, only the Slot type differs (and `getVec` dispatches accordingly).
+template <typename Slot>
+float launchGetDistanceImpl(const KokkosNesterovState& ns,
+                            int n_cells,
+                            Slot vec_a,
+                            Slot vec_b)
 {
   if (n_cells == 0) {
     return 0.0f;
   }
-
   VecPair a = getVec(ns, vec_a);
   VecPair b = getVec(ns, vec_b);
   auto ax = a.x;
@@ -249,11 +255,28 @@ float launchGetDistance(const KokkosNesterovState& ns,
 
   return std::sqrt(sum / (2.0f * n_cells));
 }
+}  // namespace
+
+float launchGetDistance(const KokkosNesterovState& ns,
+                        int n_cells,
+                        SlpSlot vec_a,
+                        SlpSlot vec_b)
+{
+  return launchGetDistanceImpl(ns, n_cells, vec_a, vec_b);
+}
+
+float launchGetDistance(const KokkosNesterovState& ns,
+                        int n_cells,
+                        SumGradSlot vec_a,
+                        SumGradSlot vec_b)
+{
+  return launchGetDistanceImpl(ns, n_cells, vec_a, vec_b);
+}
 
 void launchScatterToDeviceState(const KokkosNesterovState& ns,
                                 KokkosDeviceState& ds,
                                 int n_cells,
-                                VecSlot source)
+                                SlpSlot source)
 {
   if (n_cells == 0) {
     return;

@@ -373,4 +373,19 @@ int DeviceState::numBins() const
   return num_bins_;
 }
 
+void DeviceState::ensureCoordsFresh(const std::vector<GCell>& gCellStor)
+{
+  // Fast path: NB device context already scattered fresh inst coords (and
+  // ran updatePinLocations()) this iteration via commitCoordsToDeviceState.
+  // Skip the host→device round-trip — host gCellStor_::dCx/dCy is
+  // int-truncated and would lose the sub-integer precision the GPU
+  // coord-update kernel produced.
+  if (coords_fresh_) {
+    coords_fresh_ = false;
+    return;
+  }
+  syncInstCoordsFromHost(gCellStor);
+  updatePinLocations();
+}
+
 }  // namespace gpl

@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "backendContext.h"
 #include "densityGradientBackend.h"
 #include "nesterovBase.h"
 #include "point.h"
@@ -53,17 +54,15 @@ class CpuDensityGradientBackend : public DensityGradientBackend
 }  // namespace
 
 std::unique_ptr<DensityGradientBackend> makeDensityGradientBackend(
-    NesterovBase* nb,
-    DeviceState* device_state)
+    const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
-  if (gpuEnabled() && device_state && device_state->numBins() > 0) {
-    return std::make_unique<GpuDensityGradientBackend>(nb, device_state);
+  if (gpuEnabled() && ctx.device_state && ctx.device_state->numBins() > 0) {
+    return std::make_unique<GpuDensityGradientBackend>(ctx.nb,
+                                                       ctx.device_state);
   }
-#else
-  (void) device_state;
 #endif
-  return std::make_unique<CpuDensityGradientBackend>(nb);
+  return std::make_unique<CpuDensityGradientBackend>(ctx.nb);
 }
 
 }  // namespace gpl

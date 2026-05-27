@@ -51,6 +51,33 @@
 
 namespace gpl {
 
+// Solver-frame → gpl-frame electric field adapter.
+//
+// The Poisson solver runs with its X/Y axes swapped relative to gpl's
+// convention (see GpuFftBackend::Impl ctor: bin_cnt_y/bin_cnt_x are passed
+// in solver order). The solver's DCT-derived field is also 2× the magnitude
+// the legacy CPU Ooura backend produces. Both fix-ups apply at the point
+// the solver output is consumed by gpl — the host unpack in
+// GpuFftBackend::solve and the on-device gather in densityOp.cpp. Pinned by
+// GpuFFTTest in src/gpl/test/fft_gpu_test.cc.
+inline constexpr float kSolverToGplFieldScale = 0.5f;
+
+// Result of solverToGplField — kept Kokkos-free POD so the helper is usable
+// from both host code and KOKKOS_LAMBDA device kernels.
+struct GplField
+{
+  float x;
+  float y;
+};
+
+// Apply the solver→gpl axis swap and 0.5× field scale in one place.
+KOKKOS_INLINE_FUNCTION GplField solverToGplField(float solver_elec_x,
+                                                 float solver_elec_y)
+{
+  return {kSolverToGplFieldScale * solver_elec_y,
+          kSolverToGplFieldScale * solver_elec_x};
+}
+
 class PoissonSolver
 {
  public:

@@ -23,6 +23,7 @@ class NesterovBaseCommon;
 class DeviceState;
 class GCell;
 class GCellHandle;
+struct BackendContext;
 
 class WirelengthGradientBackend
 {
@@ -59,13 +60,11 @@ class WirelengthGradientBackend
 };
 
 // Factory: GpuWirelengthGradientBackend on ENABLE_GPU + gpuEnabled(), else
-// CpuWirelengthGradientBackend. `nbc` is the owning common base — both
-// backends call back into it for CPU helpers / data access. `device_state`
-// may be null for the CPU path.
+// CpuWirelengthGradientBackend. Consumes ctx.nbc (required — both backends
+// call back into it for CPU helpers / data access), ctx.num_threads (CPU
+// path), and ctx.device_state (GPU path; may be null for the CPU path).
 std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
-    int num_threads,
-    NesterovBaseCommon* nbc,
-    DeviceState* device_state);
+    const BackendContext& ctx);
 
 static_assert(!std::is_copy_constructible_v<WirelengthGradientBackend>);
 static_assert(!std::is_move_constructible_v<WirelengthGradientBackend>);

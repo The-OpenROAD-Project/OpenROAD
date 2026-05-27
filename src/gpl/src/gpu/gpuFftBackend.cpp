@@ -21,13 +21,10 @@
 
 namespace gpl {
 
-// The solver's DCT-derived electric field is 2x what the legacy CPU Ooura
-// backend produces (the gpl convention); halve it on unpack so consumers
-// see the same magnitudes regardless of backend. Pinned by GpuFFTTest in
+// The solver→gpl axis swap + 0.5× field scale go through
+// poissonSolver.h::solverToGplField (shared with the device density gather
+// in densityOp.cpp) — single source of truth. Pinned by GpuFFTTest in
 // src/gpl/test/fft_gpu_test.cc.
-namespace {
-constexpr float kSolverToGplFieldScale = 0.5f;
-}  // namespace
 
 struct GpuFftBackend::Impl
 {
@@ -92,10 +89,10 @@ GpuFftBackend::GpuFftBackend(int bin_cnt_x,
 
 GpuFftBackend::~GpuFftBackend() = default;
 
-void GpuFftBackend::solve(float** density,
-                          float** phi,
-                          float** field_x,
-                          float** field_y)
+void GpuFftBackend::solve(BinGridSpan density,
+                          BinGridSpan phi,
+                          BinGridSpan field_x,
+                          BinGridSpan field_y)
 {
   ensureKokkosInitialized();
   auto& impl = *impl_;
@@ -106,7 +103,7 @@ void GpuFftBackend::solve(float** density,
   for (int x = 0; x < impl.bin_cnt_x; x++) {
     for (int y = 0; y < impl.bin_cnt_y; y++) {
       impl.h_density(static_cast<size_t>(x) * impl.bin_cnt_y + y)
-          = density[x][y];
+          = density(x, y);
     }
   }
 
@@ -127,9 +124,11 @@ void GpuFftBackend::solve(float** density,
     for (int x = 0; x < impl.bin_cnt_x; x++) {
       for (int y = 0; y < impl.bin_cnt_y; y++) {
         const size_t k = static_cast<size_t>(x) * impl.bin_cnt_y + y;
-        phi[x][y] = ds.h_bin_phi(k);
-        field_x[x][y] = kSolverToGplFieldScale * ds.h_bin_elec_y(k);
-        field_y[x][y] = kSolverToGplFieldScale * ds.h_bin_elec_x(k);
+        phi(x, y) = ds.h_bin_phi(k);
+        const GplField f
+            = solverToGplField(ds.h_bin_elec_x(k), ds.h_bin_elec_y(k));
+        field_x(x, y) = f.x;
+        field_y(x, y) = f.y;
       }
     }
   } else {
@@ -144,9 +143,10 @@ void GpuFftBackend::solve(float** density,
     for (int x = 0; x < impl.bin_cnt_x; x++) {
       for (int y = 0; y < impl.bin_cnt_y; y++) {
         const size_t k = static_cast<size_t>(x) * impl.bin_cnt_y + y;
-        phi[x][y] = impl.h_phi(k);
-        field_x[x][y] = kSolverToGplFieldScale * impl.h_elec_y(k);
-        field_y[x][y] = kSolverToGplFieldScale * impl.h_elec_x(k);
+        phi(x, y) = impl.h_phi(k);
+        const GplField f = solverToGplField(impl.h_elec_x(k), impl.h_elec_y(k));
+        field_x(x, y) = f.x;
+        field_y(x, y) = f.y;
       }
     }
   }

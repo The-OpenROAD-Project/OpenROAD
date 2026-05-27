@@ -38,6 +38,7 @@ cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
+        "src/backendContext.h",
         "src/densityGradient.cpp",
         "src/densityGradientBackend.h",
         "src/fft.cpp",

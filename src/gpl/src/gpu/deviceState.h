@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <type_traits>
@@ -109,20 +108,31 @@ class DeviceState
   int gridLx() const { return grid_lx_; }
   int gridLy() const { return grid_ly_; }
 
-  // NB device context scatters inst coords + calls updatePinLocations
-  // before updateWireLengthForceWA, making the host→device sync redundant.
-  // This flag lets the sync skip safely.
-  // std::atomic for defensive thread-safety; consumers run on the master
-  // thread today but the OMP-parallel boundaries elsewhere in gpl make a
-  // future race plausible.
-  void markCoordsFresh()
-  {
-    coords_fresh_.store(true, std::memory_order_release);
-  }
-  bool consumeCoordsFresh()
-  {
-    return coords_fresh_.exchange(false, std::memory_order_acq_rel);
-  }
+  // Coord-sync manager. The NB device context scatters fresh inst coords
+  // to the device before updateWireLengthForceWA, so a subsequent
+  // host→device sync would be redundant (and lossy: gCellStor_::dCx/dCy is
+  // int-truncated). The methods below encapsulate that fast-path skip so
+  // HPWL and WA gradient consumers can stay symmetric.
+  //
+  // Thread safety: these methods are called only from the master thread
+  // (Nesterov outer loop + getHpwl / updateWireLengthForceWA entry points).
+  // The OMP parallel regions in the backends do not touch this flag — they
+  // run after the sync decision is made. No atomic is needed.
+  //
+  // Usage:
+  //   - ensureCoordsFresh(gCellStor) — call before any consumer that reads
+  //     device pin coords (HPWL, WA gradient). No-op if coords are already
+  //     fresh (NB scatter ran this iteration). Otherwise syncs from host
+  //     and updates pin locations. Clears the fresh flag on exit so the
+  //     next iteration's NB scatter sets it again.
+  //   - markCoordsFresh() — called by NesterovBase::commitCoordsToDeviceState
+  //     after scatterToDeviceState + updatePinLocations.
+  //   - invalidateCoords() — call after host-side mutation of gCellStor
+  //     that happens outside the Nesterov inner loop, to force the next
+  //     ensureCoordsFresh() to re-sync.
+  void ensureCoordsFresh(const std::vector<GCell>& gCellStor);
+  void markCoordsFresh() { coords_fresh_ = true; }
+  void invalidateCoords() { coords_fresh_ = false; }
 
   // Accessor for Kokkos-aware backend translation units. Consumers must
   // also #include "deviceState_kokkos.h" to use the returned reference.
@@ -130,7 +140,9 @@ class DeviceState
   const KokkosDeviceState& kokkos() const { return *kokkos_; }
 
  private:
-  std::atomic<bool> coords_fresh_{false};
+  // Master-thread-only; see ensureCoordsFresh() for the thread-safety
+  // rationale. No atomic.
+  bool coords_fresh_ = false;
   // Type-erased deleter: a plain function pointer instead of
   // std::default_delete<KokkosDeviceState>. This lets ~DeviceState() be
   // synthesized in CPU-only TUs (Bazel, ENABLE_GPU=OFF) where

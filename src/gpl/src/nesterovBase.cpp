@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "backendContext.h"
 #include "boost/polygon/polygon.hpp"
 #include "densityGradientBackend.h"
 #include "fft.h"
@@ -1280,13 +1281,16 @@ NesterovBaseCommon::NesterovBaseCommon(
         = std::make_unique<DeviceState>(gCellStor_, gPinStor_, gNetStor_);
   }
 #endif
-  hpwl_backend_ = makeHpwlBackend(num_threads_, device_state_.get());
+  BackendContext nbc_ctx;
+  nbc_ctx.nbc = this;
+  nbc_ctx.device_state = device_state_.get();
+  nbc_ctx.num_threads = num_threads_;
+  hpwl_backend_ = makeHpwlBackend(nbc_ctx);
   debugPrint(log_, GPL, "init", 1, "HPWL backend: {}", hpwl_backend_->name());
 
   // WA wirelength gradient dispatcher. Same factory pattern as
   // hpwl_backend_; routes through device_state_ on the GPU path.
-  wl_grad_backend_
-      = makeWirelengthGradientBackend(num_threads_, this, device_state_.get());
+  wl_grad_backend_ = makeWirelengthGradientBackend(nbc_ctx);
   debugPrint(log_,
              GPL,
              "init",
@@ -2109,8 +2113,10 @@ NesterovBase::NesterovBase(
   }
 #endif
 
-  density_grad_backend_
-      = makeDensityGradientBackend(this, nbc_->getDeviceState());
+  BackendContext nb_ctx;
+  nb_ctx.nb = this;
+  nb_ctx.device_state = nbc_->getDeviceState();
+  density_grad_backend_ = makeDensityGradientBackend(nb_ctx);
   debugPrint(log_,
              GPL,
              "init",
@@ -2782,11 +2788,11 @@ void NesterovBase::rebuildNbDeviceCtx()
                                      curCoordi_,
                                      curSLPSumGrads_,
                                      prevSLPSumGrads_);
-  commitCoordsToDeviceState(VecSlot::CurSLP);
+  commitCoordsToDeviceState(SlpSlot::Cur);
 #endif
 }
 
-void NesterovBase::commitCoordsToDeviceState(VecSlot source)
+void NesterovBase::commitCoordsToDeviceState(SlpSlot source)
 {
 #ifdef ENABLE_GPU
   if (!nb_device_ctx_) {
@@ -2833,13 +2839,11 @@ float NesterovBase::getStepLength(
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
     const bool a_is_prev = (&prevSLPCoordi_ == &this->prevSLPCoordi_);
-    const VecSlot coord_a = a_is_prev ? VecSlot::PrevSLP : VecSlot::CurSLP;
-    const VecSlot grad_a
-        = a_is_prev ? VecSlot::PrevSumGrads : VecSlot::CurSumGrads;
+    const SlpSlot coord_a = a_is_prev ? SlpSlot::Prev : SlpSlot::Cur;
+    const SumGradSlot grad_a = a_is_prev ? SumGradSlot::Prev : SumGradSlot::Cur;
     const bool b_is_cur = (&curSLPCoordi_ == &this->curSLPCoordi_);
-    const VecSlot coord_b = b_is_cur ? VecSlot::CurSLP : VecSlot::NextSLP;
-    const VecSlot grad_b
-        = b_is_cur ? VecSlot::CurSumGrads : VecSlot::NextSumGrads;
+    const SlpSlot coord_b = b_is_cur ? SlpSlot::Cur : SlpSlot::Next;
+    const SumGradSlot grad_b = b_is_cur ? SumGradSlot::Cur : SumGradSlot::Next;
 
     coordiDistance_ = nb_device_ctx_->getDistance(coord_a, coord_b);
     gradDistance_ = nb_device_ctx_->getDistance(grad_a, grad_b);
@@ -2907,11 +2911,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
-    VecSlot target = VecSlot::CurSumGrads;
+    SumGradSlot target = SumGradSlot::Cur;
     if (&sumGrads == &prevSLPSumGrads_) {
-      target = VecSlot::PrevSumGrads;
+      target = SumGradSlot::Prev;
     } else if (&sumGrads == &nextSLPSumGrads_) {
-      target = VecSlot::NextSumGrads;
+      target = SumGradSlot::Next;
     }
 
     nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
@@ -3089,7 +3093,7 @@ void NesterovBase::updateInitialPrevSLPCoordi()
     nb_device_ctx_->updateInitialPrevSLPCoordi(
         npVars_->initialPrevCoordiUpdateCoef);
     nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
-    commitCoordsToDeviceState(VecSlot::PrevSLP);
+    commitCoordsToDeviceState(SlpSlot::Prev);
     return;
   }
 #endif
@@ -3322,7 +3326,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
     nb_device_ctx_->syncCoordsToHost(nextSLPCoordi_, nextCoordi_);
     updateGCellDensityCenterLocation(nextSLPCoordi_);
     updateDensityFieldBin();
-    commitCoordsToDeviceState(VecSlot::NextSLP);
+    commitCoordsToDeviceState(SlpSlot::Next);
     return;
   }
 #endif
@@ -3581,7 +3585,7 @@ bool NesterovBase::revertToSnapshot()
                                        curCoordi_,
                                        curSLPSumGrads_,
                                        prevSLPSumGrads_);
-    commitCoordsToDeviceState(VecSlot::CurSLP);
+    commitCoordsToDeviceState(SlpSlot::Cur);
   }
 #endif
 

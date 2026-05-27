@@ -43,14 +43,12 @@ class HpwlBackend
   HpwlBackend() = default;
 };
 
-class DeviceState;
+struct BackendContext;
 
 // Factory: returns GpuHpwlBackend on an ENABLE_GPU build with the GPU path
-// selected at run time, otherwise CpuHpwlBackend. The `device_state` pointer
-// is the device-resident coordinate pool (gpu/deviceState.h); it is read
-// only by GpuHpwlBackend and may be null for the CPU path.
-std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
-                                             DeviceState* device_state);
+// selected at run time, otherwise CpuHpwlBackend. Consumes ctx.num_threads
+// (CPU path) and ctx.device_state (GPU path); other fields are ignored.
+std::unique_ptr<HpwlBackend> makeHpwlBackend(const BackendContext& ctx);
 
 static_assert(!std::is_copy_constructible_v<HpwlBackend>);
 static_assert(!std::is_move_constructible_v<HpwlBackend>);

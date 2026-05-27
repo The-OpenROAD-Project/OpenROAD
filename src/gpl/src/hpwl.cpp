@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "backendContext.h"
 #include "hpwlBackend.h"
 #include "nesterovBase.h"
 #include "omp.h"
@@ -57,30 +58,25 @@ class CpuHpwlBackend : public HpwlBackend
 
 }  // namespace
 
-std::unique_ptr<HpwlBackend> makeHpwlBackend(int num_threads,
-                                             DeviceState* device_state)
+std::unique_ptr<HpwlBackend> makeHpwlBackend(const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
   if (gpuEnabled()) {
     ensureKokkosInitialized();
-    return std::make_unique<GpuHpwlBackend>(device_state);
+    return std::make_unique<GpuHpwlBackend>(ctx.device_state);
   }
-#else
-  (void) device_state;
 #endif
-  return std::make_unique<CpuHpwlBackend>(num_threads);
+  return std::make_unique<CpuHpwlBackend>(ctx.num_threads);
 }
 
 int64_t NesterovBaseCommon::getHpwl()
 {
 #ifdef ENABLE_GPU
-  // When NesterovBase has already scattered fresh inst coords from the
-  // device-resident Nesterov vectors, skip the host→device round-trip —
-  // host gCellStor_::dCx/dCy is int-truncated and would lose the
-  // sub-integer precision the GPU coord-update kernel produced.
-  if (device_state_ && !device_state_->consumeCoordsFresh()) {
-    device_state_->syncInstCoordsFromHost(gCellStor_);
-    device_state_->updatePinLocations();
+  // Sync the device-resident pin coords on the GPU path. ensureCoordsFresh
+  // skips the host→device round-trip when NB has already scattered fresh
+  // inst coords this iteration.
+  if (device_state_) {
+    device_state_->ensureCoordsFresh(gCellStor_);
   }
 #endif
   return hpwl_backend_->computeHpwl(gNetStor_);

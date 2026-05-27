@@ -5,8 +5,9 @@
 //
 // K_density_gather: per-inst, find overlapping bins via density half-sizes,
 // compute clipped rectangle overlap area, accumulate overlap × E_field ×
-// density_scale. Axis swap + 0.5× field scale applied inline (matching the
-// host unpack in GpuFftBackend::solve).
+// density_scale. The solver→gpl axis swap + 0.5× field scale come from the
+// shared adapter in poissonSolver.h (same constant used by the host unpack
+// in GpuFftBackend::solve).
 
 #include "densityOp.h"
 
@@ -14,12 +15,12 @@
 #include <algorithm>
 
 #include "deviceState_kokkos.h"
+#include "poissonSolver.h"
 
 namespace gpl {
 namespace densop {
 
 namespace {
-constexpr float kFieldScale = 0.5f;
 using ExecSpace = Kokkos::DefaultExecutionSpace;
 }  // namespace
 
@@ -117,12 +118,12 @@ void launchDensityGather(KokkosDeviceState& ds,
             // the PoissonSolver's flat layout). NOT the bin grid's
             // [y * binCntX + x] layout.
             const int fft_idx = bxi * bcy + byi;
-            // Axis swap: solver X → gpl Y, solver Y → gpl X.
-            const float field_x = kFieldScale * d_bin_elec_y(fft_idx);
-            const float field_y = kFieldScale * d_bin_elec_x(fft_idx);
+            // Axis swap + 0.5× scale via shared adapter.
+            const GplField f = solverToGplField(d_bin_elec_x(fft_idx),
+                                                d_bin_elec_y(fft_idx));
 
-            gx += overlap * scale * field_x;
-            gy += overlap * scale * field_y;
+            gx += overlap * scale * f.x;
+            gy += overlap * scale * f.y;
           }
         }
         d_inst_density_grad_x(i) = gx;

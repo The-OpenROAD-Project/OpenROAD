@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "cellHandleHelpers.h"
 #include "densityOp.h"
 #include "deviceState.h"
 #include "deviceState_kokkos.h"
@@ -61,17 +62,17 @@ void GpuDensityGradientBackend::getCellGradients(
 {
   materializeHostGrad();
   KokkosDeviceState& ds = impl_->device_state->kokkos();
-  for (std::size_t i = 0; i < gCells.size(); ++i) {
-    if (!gCells[i].isNesterovBaseCommon()) {
-      // Filler: CPU fallback (filler has non-zero density gradient but isn't
-      // in DeviceState). Host bin fields are populated by the FFT unpack.
-      out[i] = impl_->nb->getDensityGradient(gCells[i]);
-      continue;
-    }
-    const std::size_t idx = gCells[i].getStorageIndex();
-    out[i].x = ds.h_inst_density_grad_x(idx);
-    out[i].y = ds.h_inst_density_grad_y(idx);
-  }
+  NesterovBase* nb = impl_->nb;
+  // Filler: CPU fallback (filler has non-zero density gradient but isn't in
+  // DeviceState). Host bin fields are populated by the FFT unpack.
+  mapNbcGrads(
+      gCells,
+      [&](std::size_t idx) {
+        return FloatPoint(ds.h_inst_density_grad_x(idx),
+                          ds.h_inst_density_grad_y(idx));
+      },
+      [&](const GCellHandle& h) { return nb->getDensityGradient(h); },
+      out);
 }
 
 FloatPoint GpuDensityGradientBackend::getCellGradient(const GCell* gCell)

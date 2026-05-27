@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "nesterovDeviceContext.h"  // for VecSlot
+#include "nesterovDeviceContext.h"  // for SlpSlot / SumGradSlot
 
 namespace gpl {
 
@@ -15,15 +15,14 @@ struct KokkosDeviceState;
 namespace nestop {
 
 // K_gradCombine: updateGradients loop body replacement.
-// Reads d_wl_grad, d_density_grad. Writes d_cur_sum_grads (or d_prev/next
-// depending on which variant is called). Returns wireLengthGradSum and
-// densityGradSum via parallel_reduce.
-// `target` must be one of VecSlot::{Cur,Prev,Next}SumGrads.
+// Reads d_wl_grad, d_density_grad. Writes one of the d_*_sum_grads slots
+// chosen by `target`. Returns wireLengthGradSum and densityGradSum via
+// parallel_reduce.
 void launchGradCombine(KokkosNesterovState& ns,
                        int n_cells,
                        float density_penalty,
                        float min_preconditioner,
-                       VecSlot target,
+                       SumGradSlot target,
                        float& wl_grad_sum,
                        float& density_grad_sum);
 
@@ -35,18 +34,23 @@ void launchNesterovCoordUpdate(KokkosNesterovState& ns,
                                float coeff);
 
 // K_getDistance: RMS norm of difference between two per-cell vectors.
-// Returns sqrt(sum_of_squares / (2 * n_cells)).
+// Returns sqrt(sum_of_squares / (2 * n_cells)). Overloaded over slot kind so
+// the caller cannot accidentally cross SLP coords with sum-grads.
 float launchGetDistance(const KokkosNesterovState& ns,
                         int n_cells,
-                        VecSlot vec_a,
-                        VecSlot vec_b);
+                        SlpSlot vec_a,
+                        SlpSlot vec_b);
+float launchGetDistance(const KokkosNesterovState& ns,
+                        int n_cells,
+                        SumGradSlot vec_a,
+                        SumGradSlot vec_b);
 
 // K_scatterToDeviceState: copy inst coords from NB arrays to DeviceState's
 // d_inst_cx/cy using nbc_index mapping. Fillers (nbc_index == -1) skipped.
 void launchScatterToDeviceState(const KokkosNesterovState& ns,
                                 KokkosDeviceState& ds,
                                 int n_cells,
-                                VecSlot source);
+                                SlpSlot source);
 
 // K_scatterGradsToNB: copy inst WL/density grads from DeviceState's
 // d_inst_wl_grad/d_inst_density_grad to NB arrays. Fillers get 0 for WL.

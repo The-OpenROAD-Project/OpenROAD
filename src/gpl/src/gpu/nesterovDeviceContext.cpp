@@ -226,7 +226,7 @@ void NesterovDeviceContext::syncCoordsToHost(std::vector<FloatPoint>& nextSLP,
 
 void NesterovDeviceContext::gradCombine(float density_penalty,
                                         float min_preconditioner,
-                                        VecSlot target,
+                                        SumGradSlot target,
                                         float& wl_grad_sum,
                                         float& density_grad_sum)
 {
@@ -249,13 +249,18 @@ void NesterovDeviceContext::updateInitialPrevSLPCoordi(float coef)
   nestop::launchUpdateInitialPrevSLPCoordi(*kokkos_, num_cells_, coef);
 }
 
-float NesterovDeviceContext::getDistance(VecSlot vec_a, VecSlot vec_b)
+float NesterovDeviceContext::getDistance(SlpSlot vec_a, SlpSlot vec_b)
+{
+  return nestop::launchGetDistance(*kokkos_, num_cells_, vec_a, vec_b);
+}
+
+float NesterovDeviceContext::getDistance(SumGradSlot vec_a, SumGradSlot vec_b)
 {
   return nestop::launchGetDistance(*kokkos_, num_cells_, vec_a, vec_b);
 }
 
 void NesterovDeviceContext::scatterToDeviceState(DeviceState* device_state,
-                                                 VecSlot source)
+                                                 SlpSlot source)
 {
   nestop::launchScatterToDeviceState(
       *kokkos_, device_state->kokkos(), num_cells_, source);

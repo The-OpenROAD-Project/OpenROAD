@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "cellHandleHelpers.h"
 #include "deviceState.h"
 #include "deviceState_kokkos.h"
 #include "gpuRuntime.h"
@@ -103,16 +104,13 @@ void GpuWirelengthGradientBackend::getCellGradients(
   // gCellStor_ index == DeviceState inst index, and (b) NesterovBase-local
   // fillers (fillerStor_) which have no pins and contribute no wirelength
   // gradient — return (0, 0) for those.
-  for (std::size_t i = 0; i < gCells.size(); ++i) {
-    if (!gCells[i].isNesterovBaseCommon()) {
-      out[i].x = 0.0f;
-      out[i].y = 0.0f;
-      continue;
-    }
-    const std::size_t idx = gCells[i].getStorageIndex();
-    out[i].x = ds.h_inst_wl_grad_x(idx);
-    out[i].y = ds.h_inst_wl_grad_y(idx);
-  }
+  mapNbcGrads(
+      gCells,
+      [&](std::size_t idx) {
+        return FloatPoint(ds.h_inst_wl_grad_x(idx), ds.h_inst_wl_grad_y(idx));
+      },
+      [](const GCellHandle&) { return FloatPoint(0.0f, 0.0f); },
+      out);
 }
 
 FloatPoint GpuWirelengthGradientBackend::getCellGradient(const GCell* gCell)

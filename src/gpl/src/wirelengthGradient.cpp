@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "backendContext.h"
 #include "nesterovBase.h"
 #include "point.h"
 #include "wirelengthGradientBackend.h"
@@ -74,20 +75,16 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
 }  // namespace
 
 std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
-    int num_threads,
-    NesterovBaseCommon* nbc,
-    DeviceState* device_state)
+    const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
   if (gpuEnabled()) {
     ensureKokkosInitialized();
-    return std::make_unique<GpuWirelengthGradientBackend>(nbc, device_state);
+    return std::make_unique<GpuWirelengthGradientBackend>(ctx.nbc,
+                                                          ctx.device_state);
   }
-#else
-  (void) device_state;
 #endif
-  (void) num_threads;
-  return std::make_unique<CpuWirelengthGradientBackend>(nbc);
+  return std::make_unique<CpuWirelengthGradientBackend>(ctx.nbc);
 }
 
 //
@@ -99,13 +96,12 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
 #ifdef ENABLE_GPU
-  // NB device context scatters inst coords + updates pin locations before
-  // this call, so the host→device sync is redundant. Fall back to host
-  // sync only when no scatter preceded this call (e.g. init paths before
-  // nb_device_ctx_ exists).
-  if (device_state_ && !device_state_->consumeCoordsFresh()) {
-    device_state_->syncInstCoordsFromHost(gCellStor_);
-    device_state_->updatePinLocations();
+  // Sync the device-resident pin coords on the GPU path. ensureCoordsFresh
+  // skips the host→device round-trip when NB has already scattered fresh
+  // inst coords this iteration (e.g. init paths before nb_device_ctx_
+  // exists fall through to the actual sync).
+  if (device_state_) {
+    device_state_->ensureCoordsFresh(gCellStor_);
   }
 #endif
   wl_grad_backend_->updateForce(wlCoeffX, wlCoeffY);

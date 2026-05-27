@@ -17,10 +17,26 @@
 
 namespace gpl {
 
+// POD view over a 2D bin grid laid out as a single row-major float buffer
+// (size = bin_cnt_x * bin_cnt_y, fast axis = y). Backends and the FFT
+// context share storage through this struct so the solve() signature carries
+// the grid dimensions and addressing convention is unambiguous.
+//
+// Trivially copyable; copying just duplicates the pointer (non-owning).
+struct BinGridSpan
+{
+  float* data = nullptr;
+  int bin_cnt_x = 0;
+  int bin_cnt_y = 0;
+
+  float& operator()(int x, int y) { return data[x * bin_cnt_y + y]; }
+  float operator()(int x, int y) const { return data[x * bin_cnt_y + y]; }
+};
+
 // Strategy: solves the Poisson equation on a density grid. The grids are owned
-// by the FFT context and passed in by pointer — the backends share gpl's data
-// and duplicate no storage. All four arguments are float[bin_cnt_x][bin_cnt_y]
-// arrays; solve() reads `density` and writes `phi`, `field_x`, `field_y`.
+// by the FFT context and passed in by span — the backends share gpl's data
+// and duplicate no storage. solve() reads `density` and writes `phi`,
+// `field_x`, `field_y`. All four spans share the same bin_cnt_x / bin_cnt_y.
 class FftBackend
 {
  public:
@@ -30,10 +46,10 @@ class FftBackend
   FftBackend(FftBackend&&) = delete;
   FftBackend& operator=(FftBackend&&) = delete;
 
-  virtual void solve(float** density,
-                     float** phi,
-                     float** field_x,
-                     float** field_y)
+  virtual void solve(BinGridSpan density,
+                     BinGridSpan phi,
+                     BinGridSpan field_x,
+                     BinGridSpan field_y)
       = 0;
 
   // Short label for diagnostic logging; constructed-once factory choice.
@@ -44,16 +60,14 @@ class FftBackend
 };
 
 class DeviceState;
+struct BackendContext;
 
 // Factory: returns GpuFftBackend on an ENABLE_GPU build with the GPU path
-// selected at run time, otherwise CpuFftBackend. `device_state` is the
-// device-resident pool (may be null for CPU path; GpuFftBackend borrows
-// its bin Views when available, falling back to self-owned Views).
-std::unique_ptr<FftBackend> makeFftBackend(int bin_cnt_x,
-                                           int bin_cnt_y,
-                                           float bin_size_x,
-                                           float bin_size_y,
-                                           DeviceState* device_state);
+// selected at run time, otherwise CpuFftBackend. Consumes ctx.bin_cnt_x /
+// bin_cnt_y / bin_size_x / bin_size_y (grid geometry) and ctx.device_state
+// (GPU path; may be null for CPU path — GpuFftBackend borrows its bin Views
+// when available, falling back to self-owned Views).
+std::unique_ptr<FftBackend> makeFftBackend(const BackendContext& ctx);
 
 static_assert(!std::is_copy_constructible_v<FftBackend>);
 static_assert(!std::is_move_constructible_v<FftBackend>);

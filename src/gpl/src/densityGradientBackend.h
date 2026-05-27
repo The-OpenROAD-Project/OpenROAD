@@ -23,6 +23,7 @@ class DeviceState;
 class GCell;
 class GCellHandle;
 class NesterovBase;
+struct BackendContext;
 
 class DensityGradientBackend
 {
@@ -45,9 +46,11 @@ class DensityGradientBackend
   DensityGradientBackend() = default;
 };
 
+// Factory: GpuDensityGradientBackend on ENABLE_GPU + gpuEnabled() (and
+// ctx.device_state has live bin Views), else CpuDensityGradientBackend.
+// Consumes ctx.nb (required) and ctx.device_state (GPU path).
 std::unique_ptr<DensityGradientBackend> makeDensityGradientBackend(
-    NesterovBase* nb,
-    DeviceState* device_state);
+    const BackendContext& ctx);
 
 static_assert(!std::is_copy_constructible_v<DensityGradientBackend>);
 static_assert(!std::is_move_constructible_v<DensityGradientBackend>);

@@ -13,11 +13,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <numbers>
 #include <utility>
 #include <vector>
 
+#include "backendContext.h"
 #include "fftBackend.h"
 
 #ifdef ENABLE_GPU
@@ -40,10 +42,10 @@ class CpuFftBackend : public FftBackend
                 float bin_size_x,
                 float bin_size_y);
 
-  void solve(float** density,
-             float** phi,
-             float** field_x,
-             float** field_y) override;
+  void solve(BinGridSpan density,
+             BinGridSpan phi,
+             BinGridSpan field_x,
+             BinGridSpan field_y) override;
 
   const char* name() const override { return "CPU (Ooura DCT)"; }
 
@@ -91,29 +93,52 @@ CpuFftBackend::CpuFftBackend(int bin_cnt_x,
   }
 }
 
-void CpuFftBackend::solve(float** density,
-                          float** phi,
-                          float** field_x,
-                          float** field_y)
+// Build a temporary float** row-pointer table over a flat BinGridSpan so the
+// Ooura ddct2d() / ddsct2d() / ddcst2d() API (which expects float**) can be
+// called without changing the FFT context's flat storage convention.
+namespace {
+std::vector<float*> makeRowPtrs(BinGridSpan g)
 {
+  std::vector<float*> rows(g.bin_cnt_x);
+  for (int i = 0; i < g.bin_cnt_x; i++) {
+    rows[i] = g.data + static_cast<std::size_t>(i) * g.bin_cnt_y;
+  }
+  return rows;
+}
+}  // namespace
+
+void CpuFftBackend::solve(BinGridSpan density,
+                          BinGridSpan phi,
+                          BinGridSpan field_x,
+                          BinGridSpan field_y)
+{
+  auto density_rows = makeRowPtrs(density);
+  auto phi_rows = makeRowPtrs(phi);
+  auto field_x_rows = makeRowPtrs(field_x);
+  auto field_y_rows = makeRowPtrs(field_y);
+  float** density_p = density_rows.data();
+  float** phi_p = phi_rows.data();
+  float** field_x_p = field_x_rows.data();
+  float** field_y_p = field_y_rows.data();
+
   ddct2d(bin_cnt_x_,
          bin_cnt_y_,
          -1,
-         density,
+         density_p,
          nullptr,
          work_area_.data(),
          cs_table_.data());
 
   // Normalizations required to perform the inverse operation
   for (int i = 1; i < bin_cnt_x_; i++) {
-    density[i][0] *= 0.5;
+    density_p[i][0] *= 0.5;
   }
   for (int i = 1; i < bin_cnt_y_; i++) {
-    density[0][i] *= 0.5;
+    density_p[0][i] *= 0.5;
   }
   for (int i = 0; i < bin_cnt_x_; i++) {
     for (int j = 0; j < bin_cnt_y_; j++) {
-      density[i][j] *= 4.0 / bin_cnt_x_ / bin_cnt_y_;
+      density_p[i][j] *= 4.0 / bin_cnt_x_ / bin_cnt_y_;
     }
   }
 
@@ -126,7 +151,7 @@ void CpuFftBackend::solve(float** density,
       float wy = wy_[j];
       float wy2 = wy_square_[j];
 
-      float density_value = density[i][j];
+      float density_value = density_p[i][j];
       float phi_value = 0;
       float electro_x = 0, electro_y = 0;
 
@@ -139,9 +164,9 @@ void CpuFftBackend::solve(float** density,
         electro_y = phi_value * wy;
       }
 
-      phi[i][j] = phi_value;
-      field_x[i][j] = electro_x;
-      field_y[i][j] = electro_y;
+      phi_p[i][j] = phi_value;
+      field_x_p[i][j] = electro_x;
+      field_y_p[i][j] = electro_y;
     }
   }
 
@@ -149,21 +174,21 @@ void CpuFftBackend::solve(float** density,
   ddct2d(bin_cnt_x_,
          bin_cnt_y_,
          1,
-         phi,
+         phi_p,
          nullptr,
          work_area_.data(),
          cs_table_.data());
   ddsct2d(bin_cnt_x_,
           bin_cnt_y_,
           1,
-          field_x,
+          field_x_p,
           nullptr,
           work_area_.data(),
           cs_table_.data());
   ddcst2d(bin_cnt_x_,
           bin_cnt_y_,
           1,
-          field_y,
+          field_y_p,
           nullptr,
           work_area_.data(),
           cs_table_.data());
@@ -171,89 +196,83 @@ void CpuFftBackend::solve(float** density,
 
 }  // namespace
 
-std::unique_ptr<FftBackend> makeFftBackend(int bin_cnt_x,
-                                           int bin_cnt_y,
-                                           float bin_size_x,
-                                           float bin_size_y,
-                                           DeviceState* device_state)
+std::unique_ptr<FftBackend> makeFftBackend(const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
   if (gpuEnabled()) {
     ensureKokkosInitialized();
-    return std::make_unique<GpuFftBackend>(
-        bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y, device_state);
+    return std::make_unique<GpuFftBackend>(ctx.bin_cnt_x,
+                                           ctx.bin_cnt_y,
+                                           ctx.bin_size_x,
+                                           ctx.bin_size_y,
+                                           ctx.device_state);
   }
-#else
-  (void) device_state;
 #endif
   return std::make_unique<CpuFftBackend>(
-      bin_cnt_x, bin_cnt_y, bin_size_x, bin_size_y);
+      ctx.bin_cnt_x, ctx.bin_cnt_y, ctx.bin_size_x, ctx.bin_size_y);
 }
+
+namespace {
+BackendContext makeFftCtx(int bin_cnt_x,
+                          int bin_cnt_y,
+                          float bin_size_x,
+                          float bin_size_y,
+                          DeviceState* device_state)
+{
+  BackendContext ctx;
+  ctx.bin_cnt_x = bin_cnt_x;
+  ctx.bin_cnt_y = bin_cnt_y;
+  ctx.bin_size_x = bin_size_x;
+  ctx.bin_size_y = bin_size_y;
+  ctx.device_state = device_state;
+  return ctx;
+}
+}  // namespace
 
 FFT::FFT(int bin_cnt_x,
          int bin_cnt_y,
          float bin_size_x,
          float bin_size_y,
          DeviceState* device_state)
-    : bin_cnt_X_(bin_cnt_x),
+    : bin_density_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
+      electro_phi_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
+      electro_field_x_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
+      electro_field_y_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
+      bin_cnt_x_(bin_cnt_x),
       bin_cnt_y_(bin_cnt_y),
-      backend_(makeFftBackend(bin_cnt_x,
-                              bin_cnt_y,
-                              bin_size_x,
-                              bin_size_y,
-                              device_state))
+      backend_(makeFftBackend(makeFftCtx(bin_cnt_x,
+                                         bin_cnt_y,
+                                         bin_size_x,
+                                         bin_size_y,
+                                         device_state)))
 {
-  bin_density_ = new float*[bin_cnt_X_];
-  electro_phi_ = new float*[bin_cnt_X_];
-  electro_field_x_ = new float*[bin_cnt_X_];
-  electro_field_y_ = new float*[bin_cnt_X_];
-
-  for (int i = 0; i < bin_cnt_X_; i++) {
-    bin_density_[i] = new float[bin_cnt_y_];
-    electro_phi_[i] = new float[bin_cnt_y_];
-    electro_field_x_[i] = new float[bin_cnt_y_];
-    electro_field_y_[i] = new float[bin_cnt_y_];
-
-    for (int j = 0; j < bin_cnt_y_; j++) {
-      bin_density_[i][j] = electro_phi_[i][j] = electro_field_x_[i][j]
-          = electro_field_y_[i][j] = 0.0f;
-    }
-  }
 }
 
-FFT::~FFT()
-{
-  for (int i = 0; i < bin_cnt_X_; i++) {
-    delete[] bin_density_[i];
-    delete[] electro_phi_[i];
-    delete[] electro_field_x_[i];
-    delete[] electro_field_y_[i];
-  }
-  delete[] bin_density_;
-  delete[] electro_phi_;
-  delete[] electro_field_x_;
-  delete[] electro_field_y_;
-}
+FFT::~FFT() = default;
 
 void FFT::updateDensity(int x, int y, float density)
 {
-  bin_density_[x][y] = density;
+  bin_density_[static_cast<std::size_t>(x) * bin_cnt_y_ + y] = density;
 }
 
 std::pair<float, float> FFT::getElectroField(int x, int y) const
 {
-  return std::make_pair(electro_field_x_[x][y], electro_field_y_[x][y]);
+  const std::size_t k = static_cast<std::size_t>(x) * bin_cnt_y_ + y;
+  return std::make_pair(electro_field_x_[k], electro_field_y_[k]);
 }
 
 float FFT::getElectroPhi(int x, int y) const
 {
-  return electro_phi_[x][y];
+  return electro_phi_[static_cast<std::size_t>(x) * bin_cnt_y_ + y];
 }
 
 void FFT::doFFT()
 {
-  backend_->solve(
-      bin_density_, electro_phi_, electro_field_x_, electro_field_y_);
+  BinGridSpan density{bin_density_.data(), bin_cnt_x_, bin_cnt_y_};
+  BinGridSpan phi{electro_phi_.data(), bin_cnt_x_, bin_cnt_y_};
+  BinGridSpan field_x{electro_field_x_.data(), bin_cnt_x_, bin_cnt_y_};
+  BinGridSpan field_y{electro_field_y_.data(), bin_cnt_x_, bin_cnt_y_};
+  backend_->solve(density, phi, field_x, field_y);
 }
 
 const char* FFT::getBackendName() const

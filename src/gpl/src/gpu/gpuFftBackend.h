@@ -30,13 +30,14 @@ class GpuFftBackend : public FftBackend
 
   // Packs the host density grid into the device View, runs the Poisson
   // solve, and unpacks potential + electric field back into the host
-  // grids. All four arguments are float[bin_cnt_x][bin_cnt_y] host arrays
+  // grids. All four BinGridSpans share the bin_cnt_x / bin_cnt_y this
+  // backend was constructed with and reference flat row-major buffers
   // owned by the FFT context — the same staging layout as the CPU Ooura
   // backend.
-  void solve(float** density,
-             float** phi,
-             float** field_x,
-             float** field_y) override;
+  void solve(BinGridSpan density,
+             BinGridSpan phi,
+             BinGridSpan field_x,
+             BinGridSpan field_y) override;
 
   const char* name() const override { return "GPU (Kokkos Poisson)"; }
 

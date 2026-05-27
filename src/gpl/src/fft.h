@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "fftBackend.h"
 
@@ -39,14 +40,15 @@ class FFT
   const char* getBackendName() const;
 
  private:
-  // 2D array; width: binCntX_, height: binCntY_;
-  // No hope to use Vector at this moment...
-  float** bin_density_ = nullptr;
-  float** electro_phi_ = nullptr;
-  float** electro_field_x_ = nullptr;
-  float** electro_field_y_ = nullptr;
+  // Row-major flat buffers, layout [x * bin_cnt_y_ + y]. The backend takes a
+  // BinGridSpan over each; the CPU Ooura backend re-wraps as float** locally
+  // because ddct2d() takes that legacy shape.
+  std::vector<float> bin_density_;
+  std::vector<float> electro_phi_;
+  std::vector<float> electro_field_x_;
+  std::vector<float> electro_field_y_;
 
-  int bin_cnt_X_ = 0;
+  int bin_cnt_x_ = 0;
   int bin_cnt_y_ = 0;
 
   // The Poisson solve backend (CPU Ooura or GPU Kokkos), selected at run time
