@@ -1123,16 +1123,32 @@ void RamGen::generate(const int mask_size,
   buffer_cell_ = nullptr;
   aoi22_cell_ = nullptr;
   latch_cell_ = nullptr;
-  findMasters();
 
-  // using -use_latch will override specified storage cell to avoid collision in
-  // what storage cells are used
   if (use_latch_ && storage_cell_) {
-    logger_->warn(RAM,
-                  37,
-                  "-storage_cell is ignored when -use_latch is enabled. Latch "
-                  "cells will be auto selected from the library instead.");
+    auto sta_cell = network_->dbToSta(storage_cell_);
+    auto liberty = network_->libertyCell(sta_cell);
+    bool is_latch = false;
+    auto port_iter = std::unique_ptr<sta::ConcreteCellPortIterator>(
+        liberty->portIterator());
+    while (port_iter->hasNext()) {
+      auto lp = port_iter->next()->libertyPort();
+      if (lp && lp->isLatchData()) {
+        is_latch = true;
+        break;
+      }
+    }
+    if (!is_latch) {
+      logger_->error(RAM,
+                     37,
+                     "-storage_cell {} is not a latch cell. Please provide a "
+                     "latch cell when setting -use_latch 1.",
+                     storage_cell_->getName());
+    }
+    latch_cell_ = storage_cell_;
+    storage_cell_ = nullptr;
   }
+
+  findMasters();
 
   auto chip = db_->getChip();
   if (!chip) {
