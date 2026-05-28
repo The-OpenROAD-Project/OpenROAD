@@ -4749,7 +4749,7 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
   }
 
   sta::Net* net = network_->net(drvr_pin);
-  if (net == nullptr) {
+  if (net == nullptr || dontTouch(drvr_pin)) {
     return false;
   }
 
@@ -4759,11 +4759,6 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
   }
 
   if (global_router_->isNetResAware(db_net)) {
-    return false;
-  }
-
-  sta::Instance* inst = network_->instance(drvr_pin);
-  if (inst != nullptr && dontTouch(inst)) {
     return false;
   }
 
