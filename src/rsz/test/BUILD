@@ -171,6 +171,7 @@ TESTS = [
     "repair_slew15",
     "repair_slew16",
     "repair_slew17",
+    "repair_slew_no_progress",
     "repair_slew2",
     "repair_slew3",
     "repair_slew4",
@@ -473,17 +474,10 @@ cc_test(
     data = glob(["cpp/TestResizer*.v"]),
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/grt",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz",  # build_cleaner keep provides the private headers
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

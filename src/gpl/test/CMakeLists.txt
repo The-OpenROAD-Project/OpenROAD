@@ -24,6 +24,7 @@ or_integration_tests(
     simple01-td
     simple01-td-net-percentage
     simple01-td-tune
+    simple01-td-repair
     simple01-uniform
     simple02
     simple02-rd
