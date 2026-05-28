@@ -1028,27 +1028,21 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
       // matrix for Prima/CCS).
       sta::ParasiticNode* from_node = prev_node;
       sta::ParasiticNode* to_node = nullptr;
-      const char* from_kind = "prev_mid";
-      const char* to_kind = "new_mid";
       bool need_new_mid = true;
       if (pin_is_below) {
         if (layer_idx - 1 == pin_layer_idx) {
           from_node = pin_node;
-          from_kind = "pin";
         }
         if (layer_idx + 1 == tree_layer_idx) {
           to_node = node;
-          to_kind = "tree";
           need_new_mid = false;
         }
       } else {
         if (layer_idx - 1 == tree_layer_idx) {
           from_node = node;
-          from_kind = "tree";
         }
         if (layer_idx + 1 == pin_layer_idx) {
           to_node = pin_node;
-          to_kind = "pin";
           need_new_mid = false;
         }
       }
@@ -1060,7 +1054,6 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
         to_node = mid_node;
       }
 
-      const size_t this_id = resistor_id;
       parasitics->makeResistor(
           parasitic, resistor_id++, cut_res, from_node, to_node);
 

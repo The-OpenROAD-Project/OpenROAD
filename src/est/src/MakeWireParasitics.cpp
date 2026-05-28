@@ -300,7 +300,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
         continue;
       }
       const float via_R = getCutLayerRes(cut_layer, corner);
-      const size_t this_id = resistor_id_;
       parasitics->makeResistor(
           parasitic, resistor_id_++, via_R, lo_node, hi_node);
       connected_pairs.insert(std::minmax(lo_node, hi_node));
