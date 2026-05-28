@@ -721,9 +721,12 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
-    arc_delay_calc_->reduceParasitic(
-        parasitic, net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(net);
+
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(net);
+    }
   }
 }
 
@@ -855,9 +858,12 @@ void EstimateParasitics::estimateWireParasiticSteiner(
         if (spef_writer) {
           spef_writer->writeNet(corner, net, parasitic, parasitics);
         }
-        arc_delay_calc_->reduceParasitic(
-            parasitic, net, corner, sta::MinMaxAll::all());
-        parasitics->deleteParasiticNetwork(net);
+
+        if (arc_delay_calc_->reduceSupported()) {
+          arc_delay_calc_->reduceParasitic(
+              parasitic, net, corner, sta::MinMaxAll::all());
+          parasitics->deleteParasiticNetwork(net);
+        }
       }
       delete tree;
     }
