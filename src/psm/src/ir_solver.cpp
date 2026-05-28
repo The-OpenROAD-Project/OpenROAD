@@ -198,7 +198,15 @@ bool IRSolver::checkOpen()
 
     node->setVisited(true);
 
-    for (const auto* conn : connections_map.at(node)) {
+    // An isolated seed (e.g. a top-layer terminal with no LayerConnection
+    // built for it) is not in connections_map. Skip it cleanly instead of
+    // throwing - the isolated-node case still gets reported below by the
+    // !isVisited() sweep over all layer nodes.
+    auto map_itr = connections_map.find(node);
+    if (map_itr == connections_map.end()) {
+      continue;
+    }
+    for (const auto* conn : map_itr->second) {
       Node* next = conn->getOtherNode(node);
       if (next->isVisited()) {
         // already been here, so we do not need to add it to the queue
