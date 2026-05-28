@@ -27,7 +27,6 @@
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
 #include "ram/layout.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -355,7 +354,7 @@ void RamGen::makeDecoderColumn(
         if (i == layers - 1) {
           input_net = addr_nets[word][i + 1];
         } else {
-          input_net
+          input_net  // NOLINTNEXTLINE(misc-include-cleaner)
               = makeNet(prefix, fmt::format("layer_in{}_word{}", i, word));
         }
         makeInst(word_cell.get(),
@@ -461,7 +460,7 @@ std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix,
   } else {
     net_prefix = "select_r";
   }
-  for (int i = 0; i < num_rows; ++i) {
+  for (int i = 0; i < num_rows; ++i) {  // NOLINTNEXTLINE(misc-include-cleaner)
     select_nets[i] = makeNet(prefix, fmt::format("{}{}", net_prefix, i));
   }
   return select_nets;
@@ -1206,13 +1205,14 @@ void RamGen::generate(const int mask_size,
 
   for (int p = 0; p < total_ports; ++p) {
     std::string port_prefix;
-    if (p < rw_ports) {
+    if (p < rw_ports) {  // NOLINTBEGIN(misc-include-cleaner)
       port_prefix = fmt::format("addr_rw[{}]", rw_idx++);
     } else if (p < rw_ports + w_ports) {
       port_prefix = fmt::format("addr_w[{}]", w_idx++);
     } else {
       port_prefix = fmt::format("addr_r[{}]", r_idx++);
     }
+    // NOLINTEND(misc-include-cleaner)
 
     addr_inputs_[p].resize(num_inputs);
     inv_addr_nets[p].resize(num_inputs);
@@ -1303,7 +1303,7 @@ void RamGen::generate(const int mask_size,
     for (int w = 0; w < column_mux_ratio; ++w) {
       for (int port = 0; port < r_total; ++port) {
         for (int bit = 0; bit < word_size; ++bit) {
-          word_q_nets[w][port][bit]
+          word_q_nets[w][port][bit]  // NOLINTNEXTLINE(misc-include-cleaner)
               = makeNet("word_q", fmt::format("w{}_p{}_b{}", w, port, bit));
         }
       }
@@ -1393,7 +1393,7 @@ void RamGen::generate(const int mask_size,
           for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
             bit_word_q_nets[word_idx] = word_q_nets[word_idx][port][global_bit];
           }
-
+          // NOLINTNEXTLINE(misc-include-cleaner)
           const std::string port_prefix = fmt::format("{}_p{}", prefix, port);
           // determine which port's address bits to use for mux select
           // Write-capable ports use index 0, read-only ports use their own
