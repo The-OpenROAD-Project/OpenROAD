@@ -5,7 +5,10 @@
 
 #include <cmath>
 #include <cstddef>
+#include <map>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"
@@ -242,6 +245,101 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
     parasitics->makeResistor(parasitic, resistor_id_++, res, n1, n2);
     parasitics->incrCap(n2, cap / 2.0);
   }
+
+  // Fix A: implicit-via post-pass.
+  //
+  // GRT does not always emit an explicit isVia=true segment at every
+  // layer transition along a route; coincident endpoints on adjacent
+  // routing levels are treated as implicitly connected. EST has historically
+  // taken GRoute literally, so any layer transition without an explicit via
+  // segment ends up as two distinct ParasiticNodes at the same (x, y) with
+  // no resistor between them -- a disconnected island in the parasitic
+  // network. That goes unnoticed by pi-Elmore-based delay calculators but
+  // produces a singular conductance matrix in Prima/CCS.
+  //
+  // Close the contract gap here: scan node_map for coincident endpoints on
+  // adjacent routing levels and, when no resistor already bridges them,
+  // insert one with the appropriate cut-layer resistance.
+  std::map<std::pair<int, int>, std::map<int, sta::ParasiticNode*>>
+      xy_to_layer_node;
+  for (const auto& [route_pt, node] : node_map) {
+    xy_to_layer_node[{route_pt.x(), route_pt.y()}][route_pt.layer()] = node;
+  }
+
+  std::set<std::pair<sta::ParasiticNode*, sta::ParasiticNode*>> connected_pairs;
+  for (sta::ParasiticResistor* r : parasitics->resistors(parasitic)) {
+    sta::ParasiticNode* a = parasitics->node1(r);
+    sta::ParasiticNode* b = parasitics->node2(r);
+    connected_pairs.insert(std::minmax(a, b));
+  }
+
+  size_t implicit_via_count = 0;
+  for (auto& [xy, layer_node] : xy_to_layer_node) {
+    if (layer_node.size() < 2) {
+      continue;
+    }
+    auto prev = layer_node.begin();
+    for (auto it = std::next(prev); it != layer_node.end(); ++prev, ++it) {
+      const int lo_level = prev->first;
+      const int hi_level = it->first;
+      if (hi_level != lo_level + 1) {
+        // Not adjacent routing levels -- skipping signals that an
+        // intermediate routing-level node is missing entirely, which is a
+        // different bug worth surfacing rather than silently bridging.
+        continue;
+      }
+      sta::ParasiticNode* lo_node = prev->second;
+      sta::ParasiticNode* hi_node = it->second;
+      if (connected_pairs.count(std::minmax(lo_node, hi_node))) {
+        continue;
+      }
+      odb::dbTechLayer* lower_routing = tech_->findRoutingLayer(lo_level);
+      odb::dbTechLayer* cut_layer
+          = lower_routing ? lower_routing->getUpperLayer() : nullptr;
+      if (cut_layer == nullptr) {
+        // Top of stack or unresolved -- do not silently invent a resistor.
+        continue;
+      }
+      const float via_R = getCutLayerRes(cut_layer, corner);
+      const size_t this_id = resistor_id_;
+      parasitics->makeResistor(
+          parasitic, resistor_id_++, via_R, lo_node, hi_node);
+      connected_pairs.insert(std::minmax(lo_node, hi_node));
+      ++implicit_via_count;
+      logger_->report(
+          "[parasitic_dbg] net={} decision=IMPLICIT_VIA_INSERTED "
+          "at=({},{}) layers=M{}->M{} cut={} id={} R={:g} n1={} n2={}",
+          net_name,
+          xy.first,
+          xy.second,
+          lo_level,
+          hi_level,
+          cut_layer->getName(),
+          this_id,
+          via_R,
+          parasitics->name(lo_node),
+          parasitics->name(hi_node));
+      logger_->warn(EST,
+                    28,
+                    "net {}: GRT did not emit explicit via at "
+                    "({:.4f},{:.4f}) between M{} and M{}; inserting "
+                    "implicit via R={:g}.",
+                    net_name,
+                    block_->dbuToMicrons(xy.first),
+                    block_->dbuToMicrons(xy.second),
+                    lo_level,
+                    hi_level,
+                    via_R);
+    }
+  }
+
+  logger_->report(
+      "[parasitic_dbg] END makeRouteParasitics net={} scene={} "
+      "resistors_created={} implicit_vias_inserted={}",
+      net_name,
+      scene_name,
+      resistor_id_ - 1,
+      implicit_via_count);
 }
 
 void MakeWireParasitics::makeParasiticsToPins(
