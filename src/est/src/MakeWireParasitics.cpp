@@ -305,7 +305,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
       connected_pairs.insert(std::minmax(lo_node, hi_node));
     }
   }
-
 }
 
 void MakeWireParasitics::makeParasiticsToPins(
