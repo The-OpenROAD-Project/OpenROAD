@@ -910,12 +910,14 @@ NETS 120 ;
       + ROUTED metal2 ( 3942 343 ) ( * 497 )
       NEW metal2 ( 3942 217 ) ( * 343 )
       NEW metal2 ( 3942 63 ) ( * 217 )
-      NEW metal2 ( 3942 119 ) ( 4018 * )
+      NEW metal2 ( 3961 35 ) ( 4018 * )
+      NEW metal2 ( 3961 35 ) ( * 63 )
+      NEW metal2 ( 3942 63 ) ( 3961 * )
       NEW metal1 ( 3942 343 ) via1_4
       NEW metal1 ( 3942 497 ) via1_4
       NEW metal1 ( 3942 217 ) via1_4
       NEW metal1 ( 3942 63 ) via1_4
-      NEW metal1 ( 4018 119 ) via1_7 ;
+      NEW metal1 ( 4018 35 ) via1_4 ;
     - addr_rw[0][0] ( PIN addr_rw[0][0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word5 A1 ) ( decoder_p0.and_layer0_word3 A1 ) ( decoder_p0.and_layer0_word1 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 3847 217 ) ( * 231 )
       NEW metal3 ( 3847 231 ) ( 4024 * 0 )
@@ -962,11 +964,7 @@ NETS 120 ;
       NEW metal3 ( 3942 581 ) ( 3999 * )
       NEW metal2 ( 3999 371 ) ( * 581 )
       NEW metal2 ( 3999 371 ) ( 4018 * )
-      NEW metal2 ( 4018 147 ) ( * 371 )
-      NEW metal3 ( 4018 147 ) ( 4024 * )
-      NEW metal3 ( 4024 77 ) ( * 147 )
-      NEW metal3 ( 4013 77 ) ( 4024 * )
-      NEW metal3 ( 4013 63 ) ( * 77 )
+      NEW metal2 ( 4018 63 ) ( * 371 )
       NEW metal2 ( 3942 623 ) ( * 777 )
       NEW metal2 ( 3942 777 ) ( * 903 )
       NEW metal1 ( 3999 63 ) via1_4
@@ -974,7 +972,7 @@ NETS 120 ;
       NEW metal1 ( 3942 623 ) via1_4
       NEW metal2 ( 3942 581 ) via2_5
       NEW metal2 ( 3999 581 ) via2_5
-      NEW metal2 ( 4018 147 ) via2_5
+      NEW metal2 ( 4018 63 ) via2_5
       NEW metal1 ( 3942 777 ) via1_4
       NEW metal1 ( 3942 903 ) via1_4 ;
     - clk ( PIN clk ) ( storage_6_0_0.cg CK ) ( storage_5_0_0.cg CK ) ( storage_4_0_0.cg CK ) ( storage_3_0_0.cg CK ) ( storage_2_0_0.cg CK ) ( storage_1_0_0.cg CK )
