@@ -635,13 +635,13 @@ bool NegotiationLegalizer::initFromDb()
     // gridX() / gridRoundY() are purely arithmetic and don't check whether a
     // site actually exists at the computed position.  Instances near the chip
     // boundary or in sparse-row designs can land on invalid (is_valid=false)
-    // pixels or on pixels that don't support this cell's site type.  Fix those
-    // with a 4-direction linear search (modeled on Opendp::moveHopeless).  We
-    // only check site existence and hard blockages here (both encoded in
-    // pixel.is_valid).  Soft blockages, routing-layer blockages, and
-    // cell-vs-cell overlap are left to the negotiation loop.
+    // pixels.  Fix those with a 4-direction linear search (modeled on
+    // Opendp::moveHopeless).  We only check geometric validity here
+    // (pixel.is_valid covers fragmented-row gaps and hard blockages).
+    // Site-type matching, soft blockages, routing-layer blockages, and
+    // cell-vs-cell overlap are left to the negotiation loop, which re-checks
+    // every candidate via isValidRow.
     if (!cell.fixed) {
-      odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
       auto isValidSite =
@@ -698,30 +698,8 @@ bool NegotiationLegalizer::initFromDb()
                      detail);
           return false;
         }
-        // Site type check at the anchor row is representative for all rows.
-        if (site != nullptr
-            && !dpl_grid
-                    ->getSiteOrientation(
-                        GridX{pixel_left}, GridY{pixel_bottom}, site)
-                    .has_value()) {
-          if (verbose) {
-            debugPrint(logger_,
-                       utl::DPL,
-                       "negotiation",
-                       1,
-                       "Position grid ({}, {}) rejected for instance '{}': "
-                       "the row at this Y has no site matching the master's "
-                       "site '{}' (master='{}', class={}). The row is either "
-                       "missing here or uses a different site definition.",
-                       pixel_left,
-                       pixel_bottom,
-                       cell.db_inst->getName(),
-                       site->getName(),
-                       master->getName(),
-                       master->getType().getString());
-          }
-          return false;
-        }
+        // Site-type matching is enforced by isValidRow inside the negotiation
+        // loop; the snap only verifies geometric validity below.
         for (int row_offset = 0; row_offset < cell.height; ++row_offset) {
           for (int col_offset = 0; col_offset < cell.width; ++col_offset) {
             const auto& p = dpl_grid->pixel(GridY{pixel_bottom + row_offset},
