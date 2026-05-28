@@ -27,7 +27,6 @@
 #include "pdn/PdnGen.hh"
 #include "ppl/IOPlacer.h"
 #include "ram/layout.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -1506,6 +1505,7 @@ void RamGen::generate(const int mask_size,
             auto nl_cell = std::make_unique<Cell>();
             makeInst(
                 nl_cell.get(),
+                // NOLINTNEXTLINE(misc-include-cleaner)
                 fmt::format("neg_lat_b{}", global_bit),
                 "nlat",
                 latch_cell_,
