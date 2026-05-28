@@ -6,7 +6,7 @@
 [INFO ODB-0133]     Created 15 nets and 72 connections.
 [INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
-[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0022] Global adjustment: 70%
 [INFO GRT-0023] Grid origin: (0, 0)
 [INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
 [INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
@@ -29,32 +29,38 @@ Routing layers:      6
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical        21571         21571          0.00%
-met1       Horizontal      27555         27555          0.00%
-met2       Vertical        21571         21571          0.00%
-met3       Horizontal      14023         14023          0.00%
-met4       Vertical        10804         10804          0.00%
-met5       Horizontal       3108          3108          0.00%
+met1       Horizontal      27555         13777          50.00%
+met2       Vertical        21571         10786          50.00%
+met3       Horizontal      14023          4207          70.00%
+met4       Vertical        10804          3241          70.00%
+met5       Horizontal       3108          1413          54.54%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
+Stage 2: Pattern routing with detours.
+Stage 3: Maze routing on sparsified graph.
+[INFO GRT-0117] Start extra iteration 1/5
+[WARNING GRT-0305] Demoted 2 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[INFO GRT-0117] Start extra iteration 2/5
+[INFO GRT-0306] Iterative RRR soft-demoted 2 NDR net(s) total.
 Routing statistics
 Wire length:           2918
-Total via count:       136
+Total via count:       138
 Total congestion:      0
-Min resource:          2
-Bottleneck:            (5, 0, 0)
+Min resource:          0.8611112303204012
+Bottleneck:            (3, 15, 21)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
-li1              21571             3            0.01%             0 /  0 /  0
-met1             27555            74            0.27%             0 /  0 /  0
-met2             21571            63            0.29%             0 /  0 /  0
-met3             14023            25            0.18%             0 /  0 /  0
-met4             10804            13            0.12%             0 /  0 /  0
-met5              3108             0            0.00%             0 /  0 /  0
+li1              21571             6            0.03%             0 /  0 /  0
+met1             13777           199            1.44%             0 /  0 /  0
+met2             10786           129            1.20%             0 /  0 /  0
+met3              4207            25            0.59%             0 /  0 /  0
+met4              3241            13            0.40%             0 /  0 /  0
+met5              1413             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            98632           178            0.18%             0 /  0 /  0
+Total            54995           372            0.68%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15
