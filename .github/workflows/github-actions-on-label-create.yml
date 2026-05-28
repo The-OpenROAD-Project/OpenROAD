@@ -17,10 +17,11 @@ jobs:
     permissions:
       # Read-only access so we don't accidentally try to push to *this* repository.
       contents: read
-      # Pull request write access, so we can remove the label.
-      issues: write
+      # Pull-requests write so we can remove the label (label endpoints on a
+      # PR require pull-requests scope, even though they live under the
+      # issues API).
       pull-requests: write
-      # Deployment write access, so we can add the nice deployment info.
+      # Deployment write so link_pr can record the upstream PR.
       deployments: write
 
     # Only run on the private repository.
@@ -82,140 +83,11 @@ jobs:
       uses: The-OpenROAD-Project/actions/send_pr@main
       env:
         STAGING_GITHUB_TOKEN: ${{ steps.resolve_token.outputs.token }}
+      with:
+        draft: 'true'
 
     - name: Linking to PR using deployment.
       uses: The-OpenROAD-Project/actions/link_pr@main
       env:
         GITHUB_TOKEN: ${{ github.token }}
         UPSTREAM_PR: ${{ steps.send_pr.outputs.pr }}
-
-    - name: Request CODEOWNERS reviewers on upstream PR
-      if: steps.send_pr.outputs.pr != ''
-      env:
-        GH_TOKEN: ${{ steps.resolve_token.outputs.token }}
-        PR: ${{ steps.send_pr.outputs.pr }}
-        UPSTREAM: ${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}
-      run: |
-        set -euo pipefail
-        # System Python on the runner is PEP 668 externally-managed; use a venv.
-        python3 -m venv /tmp/codeowners-venv
-        /tmp/codeowners-venv/bin/pip install --quiet pathspec
-        /tmp/codeowners-venv/bin/python <<'PY'
-        import base64, json, os, subprocess, sys
-        from pathspec import GitIgnoreSpec
-
-        pr = os.environ["PR"]
-        upstream = os.environ["UPSTREAM"]
-
-        pr_json = subprocess.check_output(
-            ["gh", "api", f"repos/{upstream}/pulls/{pr}"], text=True)
-        pr_data = json.loads(pr_json)
-
-        author = pr_data["user"]["login"]
-        base_ref = pr_data["base"]["ref"]
-        base_sha = pr_data["base"]["sha"]
-        head_repo = pr_data["head"]["repo"]["full_name"]
-        head_sha = pr_data["head"]["sha"]
-
-        # The compare endpoint accepts cross-fork heads as "{owner}:{sha}".
-        upstream_owner = upstream.split("/", 1)[0]
-        head_owner = head_repo.split("/", 1)[0]
-        head_ref = (head_sha if head_owner == upstream_owner
-                    else f"{head_owner}:{head_sha}")
-
-        print(f"Computing PR diff: {upstream}@{base_sha}..."
-              f"{head_repo}@{head_sha}")
-
-        # Authoritative CODEOWNERS is the one on the PR base branch.
-        raw = subprocess.check_output(
-            ["gh", "api", "--method", "GET",
-             f"repos/{upstream}/contents/.github/CODEOWNERS",
-             "-f", f"ref={base_ref}", "--jq", ".content"], text=True).strip()
-        codeowners = base64.b64decode(raw).decode()
-
-        rules = []
-        for line in codeowners.splitlines():
-            line = line.split("#", 1)[0].strip()
-            if not line:
-                continue
-            pattern, *rule_owners = line.split()
-            rules.append((GitIgnoreSpec.from_lines([pattern]), rule_owners))
-
-        # Use the three-dot compare (merge_base(base, head)...head). This is
-        # what GitHub's "Files changed" tab shows and is a deterministic
-        # function of the two SHAs, so it does not race with master moving.
-        # Previously we diffed base.sha against merge_commit_sha, but the
-        # async-computed merge_commit_sha can lag behind base.sha, making
-        # files only touched on master after the PR was opened appear as
-        # PR-introduced changes and falsely route their CODEOWNERS teams.
-        files = []
-        page = 1
-        per_page = 100
-        while True:
-            cmp_json = subprocess.check_output(
-                ["gh", "api",
-                 f"repos/{upstream}/compare/{base_sha}...{head_ref}"
-                 f"?per_page={per_page}&page={page}"], text=True)
-            cmp_data = json.loads(cmp_json)
-            page_files = cmp_data.get("files") or []
-            for f in page_files:
-                files.append(f["filename"])
-                # Renames carry the source in previous_filename; route to
-                # CODEOWNERS for both the old and new paths so moves out of
-                # an owned directory still notify the original owner.
-                if f.get("previous_filename"):
-                    files.append(f["previous_filename"])
-            if len(page_files) < per_page:
-                break
-            page += 1
-            if page > 30:
-                raise RuntimeError(
-                    "PR comparison exceeded pagination cap (>3000 files); "
-                    "refusing to request partial CODEOWNERS reviewers.")
-
-        files = sorted(set(files))
-
-        print("Effective changed files:")
-        for path in files:
-            print(f"  {path}")
-
-        owners = set()
-        for path in files:
-            matched = None
-            for spec, rule_owners in rules:
-                if spec.match_file(path):
-                    matched = rule_owners  # last match wins
-            if matched:
-                owners.update(o.lstrip("@") for o in matched)
-
-        # CODEOWNERS lists teams as "org/slug"; the REST endpoint wants the
-        # bare slug in team_reviewers.
-        team_slugs = sorted(t.split("/", 1)[1] for t in owners if "/" in t)
-        users = sorted(o for o in owners
-                       if "/" not in o and o.lower() != author.lower())
-
-        print("Matched CODEOWNERS teams:", ", ".join(team_slugs) or "<none>")
-        print("Matched CODEOWNERS users:", ", ".join(users) or "<none>")
-
-        if not (team_slugs or users):
-            print("No CODEOWNERS-matched reviewers.")
-            sys.exit(0)
-
-        # Use the REST POST endpoint directly: `gh pr edit --add-reviewer`
-        # runs a GraphQL query that needs read:org, which our tokens don't
-        # have. POST /pulls/{n}/requested_reviewers only writes, so the
-        # existing repo / pull-requests:write scope is enough. Each array
-        # is capped at 15 per call.
-        def request(body):
-            print("Requesting:", body)
-            subprocess.run(
-                ["gh", "api", "--method", "POST",
-                 f"repos/{upstream}/pulls/{pr}/requested_reviewers",
-                 "--input", "-"],
-                input=json.dumps(body), text=True, check=True)
-
-        for i in range(0, len(team_slugs), 15):
-            request({"team_reviewers": team_slugs[i:i + 15]})
-        for i in range(0, len(users), 15):
-            request({"reviewers": users[i:i + 15]})
-        PY
