@@ -4744,7 +4744,9 @@ int Resizer::repairDesignBufferCount() const
 
 bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
 {
-  if (global_router_ == nullptr || !global_router_->haveRoutes()) {
+  if (global_router_ == nullptr || !global_router_->haveRoutes()
+      || estimate_parasitics_->getParasiticsSrc()
+             != est::ParasiticsSrc::kGlobalRouting) {
     return false;
   }
 
