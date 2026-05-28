@@ -155,7 +155,6 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
-        "@tcl_lang//:tcl",
     ],
 )
 

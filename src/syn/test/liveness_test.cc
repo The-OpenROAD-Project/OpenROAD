@@ -4,8 +4,11 @@
 // Tests for the liveness pass: 4-valued forward propagation with
 // register/combinational replacement.
 
+#include <cstdint>
+
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
+#include "syn/ir/Const.h"
 #include "syn/ir/ControlNet.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
