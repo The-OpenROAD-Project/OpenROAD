@@ -273,7 +273,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
     connected_pairs.insert(std::minmax(a, b));
   }
 
-  size_t implicit_via_count = 0;
   for (auto& [xy, layer_node] : xy_to_layer_node) {
     if (layer_node.size() < 2) {
       continue;
@@ -305,41 +304,9 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
       parasitics->makeResistor(
           parasitic, resistor_id_++, via_R, lo_node, hi_node);
       connected_pairs.insert(std::minmax(lo_node, hi_node));
-      ++implicit_via_count;
-      logger_->report(
-          "[parasitic_dbg] net={} decision=IMPLICIT_VIA_INSERTED "
-          "at=({},{}) layers=M{}->M{} cut={} id={} R={:g} n1={} n2={}",
-          net_name,
-          xy.first,
-          xy.second,
-          lo_level,
-          hi_level,
-          cut_layer->getName(),
-          this_id,
-          via_R,
-          parasitics->name(lo_node),
-          parasitics->name(hi_node));
-      logger_->warn(EST,
-                    28,
-                    "net {}: GRT did not emit explicit via at "
-                    "({:.4f},{:.4f}) between M{} and M{}; inserting "
-                    "implicit via R={:g}.",
-                    net_name,
-                    block_->dbuToMicrons(xy.first),
-                    block_->dbuToMicrons(xy.second),
-                    lo_level,
-                    hi_level,
-                    via_R);
     }
   }
 
-  logger_->report(
-      "[parasitic_dbg] END makeRouteParasitics net={} scene={} "
-      "resistors_created={} implicit_vias_inserted={}",
-      net_name,
-      scene_name,
-      resistor_id_ - 1,
-      implicit_via_count);
 }
 
 void MakeWireParasitics::makeParasiticsToPins(
