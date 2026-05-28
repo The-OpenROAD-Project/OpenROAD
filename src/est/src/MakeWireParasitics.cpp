@@ -266,9 +266,9 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
   for (sta::ParasiticResistor* r : parasitics->resistors(parasitic)) {
     sta::ParasiticNode* a = parasitics->node1(r);
     sta::ParasiticNode* b = parasitics->node2(r);
-    connected_pairs.push_back(std::minmax(a, b));
+    connected_pairs.emplace_back(std::minmax(a, b));
   }
-  std::sort(connected_pairs.begin(), connected_pairs.end());
+  std::ranges::sort(connected_pairs);
 
   if (!node_map.empty()) {
     auto prev_it = node_map.begin();
@@ -289,8 +289,7 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
       sta::ParasiticNode* hi_node = it->second;
       const std::pair<sta::ParasiticNode*, sta::ParasiticNode*> pair
           = std::minmax(lo_node, hi_node);
-      auto bound_it = std::lower_bound(
-          connected_pairs.begin(), connected_pairs.end(), pair);
+      auto bound_it = std::ranges::lower_bound(connected_pairs, pair);
       if (bound_it != connected_pairs.end() && *bound_it == pair) {
         continue;
       }
