@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: ../../psm/test/backside_data/backside.lef, created 4 layers, 2 library cells
+[INFO ODB-0128] Design: backside_top
+[INFO ODB-0131]     Created 5 components and 10 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 10 connections.
+[INFO PDN-0101] Using vdd as power net for Core domain.
+[INFO PDN-0102] Using vss as ground net for Core domain.
+[WARNING PDN-1200] add_pdn_connect layers (M1, B1) span the front-side/backside boundary. Standard PDN vias do not cross this boundary; the connection must come from a tap cell that internally stitches the two sides. Verify this is intended.
