@@ -115,6 +115,7 @@ class MBFF
   int GetBitCnt(int bit_idx);
   int GetBitIdx(int bit_cnt);
 
+ public:
   // clock pin functions
   bool IsClockPin(odb::dbITerm* iterm);
   bool ClockOn(odb::dbInst* inst);
@@ -147,6 +148,7 @@ class MBFF
   bool IsValidFlop(odb::dbInst* FF);
   bool IsValidTray(odb::dbInst* tray);
 
+ private:
   // (MB)FF funcs
   PortName PortType(const sta::LibertyPort* lib_port, odb::dbInst* inst);
   bool IsSame(const sta::FuncExpr* expr1,
