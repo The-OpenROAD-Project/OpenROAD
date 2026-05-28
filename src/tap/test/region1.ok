@@ -3,4 +3,6 @@
 [INFO ODB-0128] Design: dual_spm
 [INFO TAP-0004] Inserted 272 endcaps.
 [INFO TAP-0005] Inserted 844 tapcells.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 1224 cells
 No differences found.

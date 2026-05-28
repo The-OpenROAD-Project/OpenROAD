@@ -3,30 +3,35 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 549 components and 2166 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 549 cells
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
-[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 549 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |        194 |        46 |       148
-        1 |        135 |        25 |       107
-        2 |         82 |        14 |        68
-        3 |         47 |         9 |        38
-        4 |         14 |         2 |        12
-        5 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 5.
+        0 |        469 |        99 |       364
+        1 |        241 |        45 |       196
+        2 |         65 |        11 |        54
+        3 |         40 |         4 |        36
+        4 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 4.
 Placement Analysis
 ---------------------------------
-total displacement        197.4 u
-average displacement        0.4 u
-max displacement            1.4 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL            6950.8 u
-legalized HPWL           8621.6 u
-delta HPWL                   24 %
+legalized HPWL           8547.4 u
+delta HPWL                   23 %
 
-[INFO DPL-0020] Mirrored 137 instances
-[INFO DPL-0021] HPWL before            8621.6 u
-[INFO DPL-0022] HPWL after             8542.9 u
+[INFO DPL-0020] Mirrored 150 instances
+[INFO DPL-0021] HPWL before            8547.4 u
+[INFO DPL-0022] HPWL after             8473.0 u
 [INFO DPL-0023] HPWL delta               -0.9 %

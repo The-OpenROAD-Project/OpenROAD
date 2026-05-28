@@ -129,22 +129,31 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 8 long wires.
 [INFO RSZ-0048] Inserted 8 buffers in 8 nets.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 2804 cells
+[INFO DPL-0389]   height 300.000 um: 225 cells
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261556.10 um^2, Utilization: 83.0%
-[INFO DPL-0007] Total instances area (incl. excluded): 20261556.10 um^2, Utilization: 83.0%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 20261556.10 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 2804 cells
+[INFO DPL-0393]   height 215 row(s): 225 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 0.
+        0 |         52 |        18 |        34
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement       2016.0 u
-average displacement        0.7 u
-max displacement            1.4 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL          178696.6 u
-legalized HPWL         179698.5 u
+legalized HPWL         179655.4 u
 delta HPWL                    1 %
 
 Clock clk

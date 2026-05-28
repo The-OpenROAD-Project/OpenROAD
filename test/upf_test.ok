@@ -144,10 +144,16 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0664
 [INFO GPL-1009]     - For 50% usage of free space: 0.1063
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 22 cells
 [INFO DPL-0006] Core area: 11467.25 um^2, Instances area: 158.90 um^2, Utilization: 1.4%
-[INFO DPL-0007] Total instances area (incl. excluded): 158.90 um^2, Utilization: 1.4%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 158.90 um^2, Utilization: 1.4%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 22 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -155,14 +161,16 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         32.6 u
-average displacement        1.5 u
-max displacement            2.7 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL            1027.5 u
 legalized HPWL           1174.3 u
 delta HPWL                   14 %
 
 Detailed placement improvement.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 22 cells
 [INFO DPL-0401] Setting random seed to 1.
 [INFO DPL-0402] Setting maximum displacement 0 0 to 216200 216200 units.
 [INFO DPL-0320] Collected 31 fixed cells.
@@ -228,4 +236,6 @@ Original HPWL             1174.3 u (     549.4,      624.9)
 Final HPWL                 934.7 u (     454.3,      480.4)
 Delta HPWL                 -20.4 % (     -17.3,      -23.1)
 
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 22 cells
 No differences found.

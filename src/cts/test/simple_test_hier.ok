@@ -48,10 +48,16 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 9260
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 9260
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 9260
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 16 cells
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 72.35 um^2, Utilization: 0.2%
-[INFO DPL-0007] Total instances area (incl. excluded): 72.35 um^2, Utilization: 0.2%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 72.35 um^2, Utilization: 0.2%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 16 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -59,9 +65,9 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement         11.2 u
-average displacement        0.7 u
-max displacement            1.4 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL               0.0 u
 legalized HPWL             18.8 u
 delta HPWL                    0 %

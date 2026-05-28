@@ -4,10 +4,18 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 5 components and 20 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 0 connections.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 4 cells
+[INFO DPL-0389]   height 50.000 um: 1 cells
 [INFO DPL-0006] Core area: 9607.92 um^2, Instances area: 2503.19 um^2, Utilization: 26.1%
-[INFO DPL-0007] Total instances area (incl. excluded): 2503.19 um^2, Utilization: 26.1%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 2503.19 um^2, Utilization: 26.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 4 cells
+[INFO DPL-0393]   height 36 row(s): 1 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -23,9 +31,9 @@ Negotiation phase 2: isolation point active, 1000 iterations.
 Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          4.2 u
-average displacement        0.8 u
-max displacement            1.4 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

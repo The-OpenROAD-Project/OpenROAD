@@ -11,10 +11,16 @@
 [INFO IFP-0103] Total instances area:                 2.394 um^2
 [INFO IFP-0104] Effective utilization:                0.000
 [INFO IFP-0105] Number of instances:                      3
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 3 cells
 [INFO DPL-0006] Core area: 417456.14 um^2, Instances area: 2.39 um^2, Utilization: 0.0%
-[INFO DPL-0007] Total instances area (incl. excluded): 2.39 um^2, Utilization: 0.0%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 2.39 um^2, Utilization: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 3 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -22,9 +28,9 @@ Iteration | Violations |    Cells |    Sites
 Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement          1.4 u
-average displacement        0.5 u
-max displacement            1.4 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL            2001.1 u
 legalized HPWL           2004.1 u
 delta HPWL                    0 %
@@ -54,6 +60,8 @@ Driver    length delay
 u2/Z manhtn 1998.8 steiner 1998.8 0.00
 in1 manhtn 2.2 steiner 2.2 0.00
 u1/Z manhtn 1.8 steiner 1.8 0.00
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 3 cells
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4

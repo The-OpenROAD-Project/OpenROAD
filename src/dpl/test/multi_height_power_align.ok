@@ -2,10 +2,18 @@
 [INFO ODB-0227] LEF file: multi_height_power_align.lef, created 1 library cells
 [INFO ODB-0128] Design: multi_height_power_align
 [INFO ODB-0131]     Created 2 components and 9 component-terminals.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 1 cells
+[INFO DPL-0389]   height 2.800 um: 1 cells
 [INFO DPL-0006] Core area: 31.92 um^2, Instances area: 3.19 um^2, Utilization: 10.0%
-[INFO DPL-0007] Total instances area (incl. excluded): 3.19 um^2, Utilization: 10.0%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 3.19 um^2, Utilization: 10.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1 cells
+[INFO DPL-0393]   height 2 row(s): 1 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -20,4 +28,7 @@ original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 1 cells
+[INFO DPL-0389]   height 2.800 um: 1 cells
 No differences found.
