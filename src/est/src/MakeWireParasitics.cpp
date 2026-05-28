@@ -100,9 +100,11 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
       spef_writer->writeNet(corner, sta_net, parasitic, parasitics);
     }
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
@@ -139,9 +141,11 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
     makePartialParasiticsToPins(
         parasitics, pin_grid_locs, node_map, corner, parasitic, net);
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
