@@ -8,8 +8,6 @@
 // pipeline) is added on ENABLE_GPU. makeWirelengthGradientBackend() picks
 // per-process at run time via gpl::gpuEnabled().
 
-#include <omp.h>
-
 #include <cassert>
 #include <cstddef>
 #include <memory>

@@ -3,8 +3,6 @@
 
 // Density gradient backends + dispatch. Mirrors wirelengthGradient.cpp.
 
-#include <omp.h>
-
 #include <cstddef>
 #include <memory>
 #include <vector>

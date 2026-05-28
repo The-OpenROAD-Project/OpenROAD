@@ -18,7 +18,7 @@
 #include "backendContext.h"
 #include "hpwlBackend.h"
 #include "nesterovBase.h"
-#include "omp.h"
+#include "omp.h"  // NOLINT(misc-include-cleaner): omp_get_thread_num used in assert below
 
 #ifdef ENABLE_GPU
 #include "gpu/deviceState.h"

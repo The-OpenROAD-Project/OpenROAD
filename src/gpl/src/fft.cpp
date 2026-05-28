@@ -268,10 +268,18 @@ float FFT::getElectroPhi(int x, int y) const
 
 void FFT::doFFT()
 {
-  BinGridSpan density{bin_density_.data(), bin_cnt_x_, bin_cnt_y_};
-  BinGridSpan phi{electro_phi_.data(), bin_cnt_x_, bin_cnt_y_};
-  BinGridSpan field_x{electro_field_x_.data(), bin_cnt_x_, bin_cnt_y_};
-  BinGridSpan field_y{electro_field_y_.data(), bin_cnt_x_, bin_cnt_y_};
+  BinGridSpan density{.data = bin_density_.data(),
+                      .bin_cnt_x = bin_cnt_x_,
+                      .bin_cnt_y = bin_cnt_y_};
+  BinGridSpan phi{.data = electro_phi_.data(),
+                  .bin_cnt_x = bin_cnt_x_,
+                  .bin_cnt_y = bin_cnt_y_};
+  BinGridSpan field_x{.data = electro_field_x_.data(),
+                      .bin_cnt_x = bin_cnt_x_,
+                      .bin_cnt_y = bin_cnt_y_};
+  BinGridSpan field_y{.data = electro_field_y_.data(),
+                      .bin_cnt_x = bin_cnt_x_,
+                      .bin_cnt_y = bin_cnt_y_};
   backend_->solve(density, phi, field_x, field_y);
 }
 
