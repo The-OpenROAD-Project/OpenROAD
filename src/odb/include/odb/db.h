@@ -9273,6 +9273,15 @@ class dbTechLayer : public dbObject
   std::string getLef58TypeString() const;
 
   ///
+  /// Backside layers are physically located on the wafer's reverse side,
+  /// typically used for buried-power-rail (BPR) and backside power
+  /// delivery (BSPDN). Set by the LEF58_BACKSIDE property.
+  ///
+  void setBackside(bool is_backside);
+
+  bool isBackside() const;
+
+  ///
   /// Get the layer name.
   ///
   std::string getName() const;

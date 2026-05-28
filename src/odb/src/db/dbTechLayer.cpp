@@ -101,6 +101,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (flags_.lef58_type != rhs.flags_.lef58_type) {
     return false;
   }
+  if (flags_.is_backside != rhs.flags_.is_backside) {
+    return false;
+  }
   if (wrong_way_width_ != rhs.wrong_way_width_) {
     return false;
   }
@@ -1246,6 +1249,18 @@ dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return (dbTechLayer::LEF58_TYPE) layer->flags_.lef58_type;
+}
+
+void dbTechLayer::setBackside(bool is_backside)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->flags_.is_backside = is_backside;
+}
+
+bool dbTechLayer::isBackside() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->flags_.is_backside;
 }
 
 std::string dbTechLayer::getLef58TypeString() const
