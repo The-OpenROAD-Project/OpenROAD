@@ -3,10 +3,10 @@
 
 #include "MakeWireParasitics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <map>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -246,7 +246,7 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
     parasitics->incrCap(n2, cap / 2.0);
   }
 
-  // Fix A: implicit-via post-pass.
+  // Workaround: implicit-via post-pass.
   //
   // GRT does not always emit an explicit isVia=true segment at every
   // layer transition along a route; coincident endpoints on adjacent
@@ -260,39 +260,41 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
   // Close the contract gap here: scan node_map for coincident endpoints on
   // adjacent routing levels and, when no resistor already bridges them,
   // insert one with the appropriate cut-layer resistance.
-  std::map<std::pair<int, int>, std::map<int, sta::ParasiticNode*>>
-      xy_to_layer_node;
-  for (const auto& [route_pt, node] : node_map) {
-    xy_to_layer_node[{route_pt.x(), route_pt.y()}][route_pt.layer()] = node;
-  }
-
-  std::set<std::pair<sta::ParasiticNode*, sta::ParasiticNode*>> connected_pairs;
+  std::vector<std::pair<sta::ParasiticNode*, sta::ParasiticNode*>>
+      connected_pairs;
   for (sta::ParasiticResistor* r : parasitics->resistors(parasitic)) {
     sta::ParasiticNode* a = parasitics->node1(r);
     sta::ParasiticNode* b = parasitics->node2(r);
-    connected_pairs.insert(std::minmax(a, b));
+    connected_pairs.push_back(std::minmax(a, b));
   }
+  std::sort(connected_pairs.begin(), connected_pairs.end());
 
-  for (auto& [xy, layer_node] : xy_to_layer_node) {
-    if (layer_node.size() < 2) {
-      continue;
-    }
-    auto prev = layer_node.begin();
-    for (auto it = std::next(prev); it != layer_node.end(); ++prev, ++it) {
-      const int lo_level = prev->first;
-      const int hi_level = it->first;
-      if (hi_level != lo_level + 1) {
+  if (!node_map.empty()) {
+    auto prev_it = node_map.begin();
+    for (auto it = std::next(prev_it); it != node_map.end();
+         prev_it = it, ++it) {
+      const auto& prev_pt = prev_it->first;
+      const auto& curr_pt = it->first;
+      if (prev_pt.x() != curr_pt.x() || prev_pt.y() != curr_pt.y()) {
+        continue;
+      }
+      if (curr_pt.layer() != prev_pt.layer() + 1) {
         // Not adjacent routing levels -- skipping signals that an
         // intermediate routing-level node is missing entirely, which is a
         // different bug worth surfacing rather than silently bridging.
         continue;
       }
-      sta::ParasiticNode* lo_node = prev->second;
+      sta::ParasiticNode* lo_node = prev_it->second;
       sta::ParasiticNode* hi_node = it->second;
-      if (connected_pairs.count(std::minmax(lo_node, hi_node))) {
+      const std::pair<sta::ParasiticNode*, sta::ParasiticNode*> pair
+          = std::minmax(lo_node, hi_node);
+      auto bound_it = std::lower_bound(
+          connected_pairs.begin(), connected_pairs.end(), pair);
+      if (bound_it != connected_pairs.end() && *bound_it == pair) {
         continue;
       }
-      odb::dbTechLayer* lower_routing = tech_->findRoutingLayer(lo_level);
+      odb::dbTechLayer* lower_routing
+          = tech_->findRoutingLayer(prev_pt.layer());
       odb::dbTechLayer* cut_layer
           = lower_routing ? lower_routing->getUpperLayer() : nullptr;
       if (cut_layer == nullptr) {
@@ -302,7 +304,7 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
       const float via_R = getCutLayerRes(cut_layer, corner);
       parasitics->makeResistor(
           parasitic, resistor_id_++, via_R, lo_node, hi_node);
-      connected_pairs.insert(std::minmax(lo_node, hi_node));
+      connected_pairs.insert(bound_it, pair);
     }
   }
 }
