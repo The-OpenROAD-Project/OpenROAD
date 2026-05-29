@@ -6083,7 +6083,7 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "size_down_fanout") {
+  if (lower == "size_down_fanout" || lower == "size_down") {
     return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
