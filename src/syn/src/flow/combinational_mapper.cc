@@ -684,6 +684,10 @@ void Mapping::prepareMatches(const int npriority_cuts,
 
     int matchSlot = 0;
     int psSlot = 0;
+
+    // Conservatively reserve a buffer for the maximal number of matches.
+    // Later we will call `allocMatches` to allocate the used portion of
+    // the buffer. This way we don't overallocate and waste slots.
     ClassMatch* matchBuf = reserveMatches(nmatches_max);
 
     for (int i = -1; i < (int) cache[n1->fid].ps.size(); i++) {
