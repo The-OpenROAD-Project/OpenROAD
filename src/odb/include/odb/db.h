@@ -5499,6 +5499,18 @@ class dbMaster : public dbObject
   void setType(dbMasterType type);
 
   ///
+  /// Marks a cell as physically bridging a front-side power layer to a
+  /// LEF58_BACKSIDE layer (typical use: BSPDN tap cells). Tools that
+  /// trace PG-net connectivity should treat the PG pins of such a
+  /// cell as electrically continuous even when they sit on layers
+  /// that disagree on dbTechLayer::isBackside(). Set by the
+  /// LEF58_BACKSIDE_BRIDGE macro property.
+  ///
+  void setBacksideBridge(bool is_bridge);
+
+  bool isBacksideBridge() const;
+
+  ///
   /// Get the Logical equivalent of this master
   /// Returns nullptr if no equivalent was set.
   ///

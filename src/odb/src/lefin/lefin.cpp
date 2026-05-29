@@ -1261,6 +1261,8 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
       valid = lefMacroClassTypeParser::parse(macro->propValue(i), master_);
     } else if (!strcmp(macro->propName(i), "LEF58_EDGETYPE")) {
       lefMacroEdgeTypeParser(master_, this).parse(macro->propValue(i));
+    } else if (!strcmp(macro->propName(i), "LEF58_BACKSIDE_BRIDGE")) {
+      valid = lefMacroBacksideBridgeParser::parse(macro->propValue(i), master_);
     } else {
       dbStringProperty::create(
           master_, macro->propName(i), macro->propValue(i));
