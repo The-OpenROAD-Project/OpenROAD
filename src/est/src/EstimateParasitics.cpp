@@ -963,7 +963,6 @@ void EstimateParasitics::parasiticNodeConnectPins(
       if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
-
           insertViaResistances(pin_layer,
                                tree_layer,
                                parasitics,
@@ -1028,10 +1027,9 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
 
       // Resolve from/to endpoints first, so we only allocate a new mid_node
       // when this iteration actually needs one. On the terminal iteration the
-      // resistor connects directly to the pin or tree anchor; if we had
-      // pre-allocated a mid_node here it would never be wired up and would
-      // become a floating ParasiticNode (singular row in the conductance
-      // matrix for Prima/CCS).
+      // resistor connects directly to the pin or tree anchor; pre-allocating
+      // a mid_node here would create a floating ParasiticNode (singular row
+      // in the conductance matrix for Prima/CCS).
       sta::ParasiticNode* from_node = prev_node;
       sta::ParasiticNode* to_node = nullptr;
       bool need_new_mid = true;
