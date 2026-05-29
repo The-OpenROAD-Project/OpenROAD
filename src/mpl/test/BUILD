@@ -130,7 +130,7 @@ filegroup(
                     "testcases/halo3.def",
                     "testcases/orientation_improve1.lef",
                 ],
-                 "halos5": [
+                "halos5": [
                     "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
