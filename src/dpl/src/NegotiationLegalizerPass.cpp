@@ -779,17 +779,37 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     return ov;
   };
 
-  std::ranges::sort(indices, [&](int a, int b) {
-    const int oa = cellOveruse(a);
-    const int ob = cellOveruse(b);
-    if (oa != ob) {
-      return oa > ob;
+  // Decorate-sort: compute each cell's overuse (a footprint scan) once into a
+  // key, rather than recomputing it the O(log n) times per element a
+  // comparison-time call would.  The comparator below yields identical results
+  // to scoring (a, b) directly, so the resulting order is unchanged.
+  struct SortKey
+  {
+    int overuse;
+    int height;
+    int width;
+    int idx;
+  };
+  std::vector<SortKey> keys;
+  keys.reserve(indices.size());
+  for (int idx : indices) {
+    keys.push_back(
+        {cellOveruse(idx), cells_[idx].height, cells_[idx].width, idx});
+  }
+
+  std::ranges::sort(keys, [](const SortKey& a, const SortKey& b) {
+    if (a.overuse != b.overuse) {
+      return a.overuse > b.overuse;
     }
-    if (cells_[a].height != cells_[b].height) {
-      return cells_[a].height < cells_[b].height;
+    if (a.height != b.height) {
+      return a.height < b.height;
     }
-    return cells_[a].width < cells_[b].width;
+    return a.width < b.width;
   });
+
+  for (size_t i = 0; i < keys.size(); ++i) {
+    indices[i] = keys[i].idx;
+  }
 }
 
 // ===========================================================================
