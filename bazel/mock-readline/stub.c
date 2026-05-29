@@ -9,8 +9,8 @@
 #include <stddef.h>
 
 char* rl_line_buffer = NULL;
-const char* rl_readline_name = NULL;
-const char* rl_basic_word_break_characters = NULL;
+const char* rl_readline_name = "";
+const char* rl_basic_word_break_characters = "";
 rl_completion_func_t* rl_attempted_completion_function = NULL;
 
 char* readline(const char* prompt)
