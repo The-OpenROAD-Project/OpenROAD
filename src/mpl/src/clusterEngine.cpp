@@ -2194,19 +2194,19 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
         odb::Rect pin_rect = box->getBox();
 
         if (direction == odb::dbTechLayerDir::HORIZONTAL) {
-          int dist_L = pin_rect.xMin();
-          int dist_R = master->getWidth() - pin_rect.xMax();
+          int dist_left = pin_rect.xMin();
+          int dist_right = master->getWidth() - pin_rect.xMax();
 
-          if (dist_L < dist_R) {
+          if (dist_left < dist_right) {
             halo.left = full_halo.left;
           } else {
             halo.right = full_halo.right;
           }
         } else {
-          int dist_B = pin_rect.yMin();
-          int dist_T = master->getHeight() - pin_rect.yMax();
+          int dist_bottom = pin_rect.yMin();
+          int dist_top = master->getHeight() - pin_rect.yMax();
 
-          if (dist_B < dist_T) {
+          if (dist_bottom < dist_top) {
             halo.bottom = full_halo.bottom;
           } else {
             halo.top = full_halo.top;
