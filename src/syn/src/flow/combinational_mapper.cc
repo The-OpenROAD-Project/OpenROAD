@@ -406,6 +406,8 @@ class Mapping
 
   Mapping(utl::Logger* logger, const Subject& subject);
 
+  ClassMatch* reserveMatches(int n);
+
   ClassMatch* allocMatches(int n);
 
   Node* node(Net net) { return &nodes_[Graph::netId(net)]; }
@@ -466,13 +468,22 @@ bool Mapping::isMappable(Net net)
   return isMappable(inst);
 }
 
-ClassMatch* Mapping::allocMatches(const int n)
+ClassMatch* Mapping::reserveMatches(const int n)
 {
+  assert(n < kArenaChunk);
   if (arena_slot_ + n > kArenaChunk || match_arena_.empty()) {
     match_arena_.push_back(std::make_unique<ClassMatch[]>(kArenaChunk));
     arena_slot_ = 0;
   }
   ClassMatch* ret = &match_arena_.back()[arena_slot_];
+  // We are reserving but not allocating: do not increment arena_slot_
+  return ret;
+}
+
+ClassMatch* Mapping::allocMatches(const int n)
+{
+  assert(n < kArenaChunk);
+  ClassMatch* ret = reserveMatches(n);
   arena_slot_ += n;
   return ret;
 }
@@ -673,7 +684,7 @@ void Mapping::prepareMatches(const int npriority_cuts,
 
     int matchSlot = 0;
     int psSlot = 0;
-    ClassMatch* matchBuf = allocMatches(nmatches_max);
+    ClassMatch* matchBuf = reserveMatches(nmatches_max);
 
     for (int i = -1; i < (int) cache[n1->fid].ps.size(); i++) {
       for (int j = -1; j < (int) cache[n2->fid].ps.size(); j++) {
@@ -783,6 +794,9 @@ void Mapping::prepareMatches(const int npriority_cuts,
     lcache->ps = std::span<PriorityCut>(
         &pcuts[static_cast<size_t>(cur->fid) * npriority_cuts], psSlot);
     lcache->mark = net;
+    ClassMatch* allocatedBuf = allocMatches(matchSlot);
+    (void) allocatedBuf;
+    assert(allocatedBuf == matchBuf);
     cur->matches = matchBuf;
     cur->nmatches = matchSlot;
   });
