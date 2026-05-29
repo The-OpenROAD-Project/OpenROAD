@@ -29,14 +29,10 @@ SPECIALNETS 2 ;
 - vdd ( * vdd ) + USE POWER
   + ROUTED B1 140 + SHAPE FOLLOWPIN
         ( 0 2800 ) ( 3800 * )
-  NEW M1 140 + SHAPE STRIPE
-        ( 95 0 ) ( * 1400 )
   ;
 - vss ( * vss ) + USE GROUND
   + ROUTED B1 140 + SHAPE FOLLOWPIN
         ( 0 0 ) ( 3800 * )
-  NEW M1 140 + SHAPE STRIPE
-        ( 285 0 ) ( * 1400 )
   ;
 END SPECIALNETS
 

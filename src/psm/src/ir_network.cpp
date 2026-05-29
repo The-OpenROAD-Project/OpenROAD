@@ -249,14 +249,10 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
-  // Pick the lowest front-side routing layer as the virtual base for
-  // ITerm nodes. On a BSPDN PDK, findRoutingLayer(1) may return a
-  // backside layer (BRDL) where no front-side shapes exist; using
-  // firstRoutingLayer() skips past those. Fall back to routing layer
-  // 1 only when the design has no front-side routing layers at all.
-  odb::dbTechLayer* base_layer = getTech()->firstRoutingLayer();
-  if (base_layer == nullptr) {
-    base_layer = getTech()->findRoutingLayer(1);
+  odb::dbTechLayer* front_base = getTech()->firstRoutingLayer();
+  odb::dbTechLayer* back_base = getTech()->firstBacksideLayer();
+  if (front_base == nullptr) {
+    front_base = getTech()->findRoutingLayer(1);
   }
 
   LayerMap<Polygon90Set> shapes_by_layer;
@@ -276,10 +272,55 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
       continue;
     }
 
+    // First pass: figure out which side(s) this iterm has pin geometry on
+    // so we can pick the iterm base node's layer accordingly.
+    bool has_front_pin = false;
+    bool has_back_pin = false;
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* geom : mpin->getGeometry()) {
+        const auto pin_shapes = generatePolygonsFromBox(geom, transform);
+        for (const auto& [layer, shapes] : pin_shapes) {
+          if (layer->isBackside()) {
+            has_back_pin = true;
+          } else {
+            has_front_pin = true;
+          }
+        }
+      }
+    }
+
+    // Place the iterm base node on the cell's "primary" side. A
+    // backside-only cell's base belongs on the backside grid so its
+    // pin connects to real shapes; otherwise default to the front side.
+    odb::dbTechLayer* base_layer = front_base;
+    if (!has_front_pin && has_back_pin && back_base != nullptr) {
+      base_layer = back_base;
+    }
+    const bool primary_is_back = base_layer == back_base;
+    const bool is_bridge = iterm->getMTerm()->getMaster()->isBacksideBridge();
+
     int x, y;
     iterm->getAvgXY(&x, &y);
     auto base_node
         = std::make_unique<ITermNode>(iterm, odb::Point(x, y), base_layer);
+
+    auto link_terminal = [&](Node* term, odb::dbTechLayer* term_layer) {
+      const bool term_is_back = term_layer->isBackside();
+      if (term_is_back == primary_is_back) {
+        // Same-side terminal: ordinary virtual edge into the base node.
+        connections_.push_back(
+            std::make_unique<TermConnection>(base_node.get(), term));
+      } else if (is_bridge) {
+        // Bridge cell: explicit virtual edge across the front/back boundary.
+        connections_.push_back(
+            std::make_unique<BridgeConnection>(base_node.get(), term));
+      }
+      // Non-bridge cross-side terminals are intentionally left
+      // unlinked from the iterm base node. They still join the
+      // local layer graph through cleanupOverlappingNodes(); if
+      // they end up unreachable, that surfaces as an open net,
+      // which is the correct outcome for a malformed PG.
+    };
 
     bool has_routing_term = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
@@ -304,8 +345,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
               auto center = std::make_unique<TerminalNode>(pin_shape, layer);
               terminals.push_back(center.get());
 
-              connections_.push_back(std::make_unique<TermConnection>(
-                  base_node.get(), center.get()));
+              link_terminal(center.get(), layer);
 
               nodes_[layer].push_back(std::move(center));
             }
@@ -322,8 +362,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
           auto center = std::make_unique<TerminalNode>(pin_shape, layer);
           terminals.push_back(center.get());
 
-          connections_.push_back(
-              std::make_unique<TermConnection>(base_node.get(), center.get()));
+          link_terminal(center.get(), layer);
 
           nodes_[layer].push_back(std::move(center));
         }

@@ -157,21 +157,11 @@ bool IRSolver::checkOpen()
 
   std::queue<Node*> queue;
 
-  // Seed from every node on the top routing layer rather than a single
-  // one. The PG network may legitimately have more than one component
-  // that each terminate at the top layer - notably on backside-power-
-  // delivery PDKs where front-side and backside stacks are stitched
-  // only through bridge cells. Without multi-seeding the BFS the
-  // connectivity check spuriously flags whole subgraphs as orphaned.
-  for (const auto& start_node : network_->getTopLayerNodes()) {
-    queue.push(start_node.get());
-  }
-  debugPrint(logger_,
-             utl::PSM,
-             "check",
-             1,
-             "Seeded {} starting node(s) on top layer",
-             queue.size());
+  // grab any node to start, choose one on the highest metal layer
+  Node* start = network_->getTopLayerNodes().begin()->get();
+  debugPrint(
+      logger_, utl::PSM, "check", 1, "Starting at: {}", start->describe(""));
+  queue.push(start);
 
   std::size_t visited = 0;
   const bool print_progress = logger_->debugCheck(utl::PSM, "check", 2);
@@ -198,15 +188,7 @@ bool IRSolver::checkOpen()
 
     node->setVisited(true);
 
-    // An isolated seed (e.g. a top-layer terminal with no LayerConnection
-    // built for it) is not in connections_map. Skip it cleanly instead of
-    // throwing - the isolated-node case still gets reported below by the
-    // !isVisited() sweep over all layer nodes.
-    auto map_itr = connections_map.find(node);
-    if (map_itr == connections_map.end()) {
-      continue;
-    }
-    for (const auto* conn : map_itr->second) {
+    for (const auto* conn : connections_map.at(node)) {
       Node* next = conn->getOtherNode(node);
       if (next->isVisited()) {
         // already been here, so we do not need to add it to the queue
