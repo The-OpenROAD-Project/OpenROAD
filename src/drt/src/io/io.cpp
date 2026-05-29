@@ -831,11 +831,11 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       } while (!endpath);
       // Skip path segments that reference a backside layer; DRT
       // doesn't carry those in its frTech (see setLayers).
-      if (auto it = getTech()->name2layer_.find(layerName);
-          it == getTech()->name2layer_.end()) {
+      auto layer_it = getTech()->name2layer_.find(layerName);
+      if (layer_it == getTech()->name2layer_.end()) {
         continue;
       }
-      auto layerNum = getTech()->name2layer_[layerName]->getLayerNum();
+      auto layerNum = layer_it->second->getLayerNum();
       if (hasRect) {
         auto tmpPWire = std::make_unique<frPatchWire>();
         tmpPWire->setLayerNum(layerNum);

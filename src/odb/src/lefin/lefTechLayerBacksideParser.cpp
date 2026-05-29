@@ -17,7 +17,7 @@ bool parse(Iterator first,
            odb::dbTechLayer* layer,
            odb::lefinReader* /*lefinReader*/)
 {
-  qi::rule<std::string::const_iterator, space_type> backsideRule
+  qi::rule<Iterator, space_type> backsideRule
       = (lit("BACKSIDE")[boost::bind(
              &odb::dbTechLayer::setBackside, layer, true)]
          >> lit(";"));
