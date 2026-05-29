@@ -20,9 +20,6 @@ Pulling real readline is undesirable for two reasons:
    `memchr` macro). Stubbing readline removes `ncurses` and `sed` from the
    graph entirely.
 
-This works in tandem with `abc@0.64-yosyshq.bcr.2`, whose overlay routes abc
-through `readline` instead of depending on `ncurses` directly.
-
 `readline()` returns `NULL` (EOF), so any REPL loop exits immediately.
 
 ## Scope
