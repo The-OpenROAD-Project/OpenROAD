@@ -318,7 +318,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 
   if (totalOverflow > 0 && updateHistory) {
     utl::DebugScopedTimer t(history_s);
-    updateHistoryCosts();
+    updateHistoryCosts(activeCells);
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
   }
@@ -666,14 +666,43 @@ double NegotiationLegalizer::adaptivePf(int iter) const
 //   h_new = h_old + hf * overuse
 // ===========================================================================
 
-void NegotiationLegalizer::updateHistoryCosts()
+void NegotiationLegalizer::updateHistoryCosts(
+    const std::vector<int>& activeCells)
 {
-  for (int gy = 0; gy < grid_h_; ++gy) {
-    for (int gx = 0; gx < grid_w_; ++gx) {
-      Pixel& g = gridAt(gx, gy);
-      const int ov = g.overuse();
-      if (ov > 0) {
-        g.hist_cost += kHfDefault * ov;
+  // Only visit pixels covered by an active cell's footprint instead of
+  // scanning the whole grid (which is O(grid_w * grid_h) every iteration).
+  //
+  // An overused pixel that actually affects negotiationCost must have
+  // capacity > 0 (capacity-0 blockage/fixed pixels short-circuit before
+  // hist_cost is read, so bumping them is a dead write).  A capacity-1 pixel
+  // is overused only when >= 2 movable cells overlap it, and any overlapping
+  // cell is illegal and therefore in the active set.  So active-cell
+  // footprints cover every overused pixel whose hist_cost is ever consumed.
+  //
+  // Footprints of overlapping cells share pixels, so dedupe to bump each
+  // pixel exactly once (matching the original single-pass-per-pixel scan).
+  hist_seen_pixels_.clear();
+  for (int idx : activeCells) {
+    const NegCell& cell = cells_[idx];
+    if (cell.fixed) {
+      continue;
+    }
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
+    for (int dy = 0; dy < cell.height; ++dy) {
+      const int gy = cell.y + dy;
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (!gridExists(gx, gy)) {
+          continue;
+        }
+        if (!hist_seen_pixels_.insert(gy * grid_w_ + gx).second) {
+          continue;
+        }
+        Pixel& g = gridAt(gx, gy);
+        const int ov = g.overuse();
+        if (ov > 0) {
+          g.hist_cost += kHfDefault * ov;
+        }
       }
     }
   }
