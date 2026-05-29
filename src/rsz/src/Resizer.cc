@@ -2533,7 +2533,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   return new_it->second;
 }
 
-int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
+                                std::optional<float> load_cap_hint)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
@@ -2550,10 +2551,19 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
                  revisiting_inst ? " - revisit" : "");
       resized_multi_output_insts_.insert(inst);
     }
-    estimate_parasitics_->ensureWireParasitic(drvr_pin);
-    // Includes net parasitic capacitance.
-    float load_cap
-        = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    // Hint skips ensureWireParasitic, which triggers an incremental
+    // FastRoute per buffer in the repair_design.
+    // Only applies under global-routing parasitics;
+    // placement-based estimation is already cheap.
+    float load_cap;
+    if (load_cap_hint.has_value()
+        && estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kGlobalRouting) {
+      load_cap = *load_cap_hint;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(drvr_pin);
+      load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    }
     if (load_cap > 0.0) {
       sta::LibertyCell* target_cell
           = findTargetCell(cell, load_cap, revisiting_inst);

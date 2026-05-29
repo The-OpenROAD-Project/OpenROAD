@@ -643,7 +643,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
