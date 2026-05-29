@@ -6,7 +6,9 @@ set test_name escape_slash
 source Nangate45/Nangate45.vars
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_def $test_name.def
+read_verilog $test_name.v
+link_design multi_sink
+read_def -floorplan_initialize $test_name.def
 
 source Nangate45/Nangate45.rc
 source $layer_rc_file

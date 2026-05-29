@@ -18,8 +18,8 @@ clk I
 
 *D_NET clk 0.213642
 *CONN
-*I hi_inst\/gclk2_inst:CK I *D CLKGATE_X1
 *P clk I
+*I hi_inst\/gclk2_inst:CK I *D CLKGATE_X1
 *CAP
 1 clk:0 0.106821
 2 clk:1 0.106821
@@ -33,9 +33,9 @@ clk I
 
 *D_NET hi_gclk2 0.430855
 *CONN
-*I hi_inst\/gclk2_inst:GCK O *D CLKGATE_X1
-*I h1\/ff1:CK I *D DFF_X1
 *I ff0\/name:CK I *D DFF_X1
+*I h1\/ff1:CK I *D DFF_X1
+*I hi_inst\/gclk2_inst:GCK O *D CLKGATE_X1
 *CAP
 1 hi_gclk2:0 0.0797636
 2 hi_gclk2:1 0.215427
