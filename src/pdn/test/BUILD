@@ -6,7 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
-    "add_pdn_connect_backside_warn",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
