@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "halos2",
     "halos3",
     "halos4",
+    "halos5",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
