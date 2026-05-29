@@ -131,7 +131,7 @@ filegroup(
                     "testcases/orientation_improve1.lef",
                 ],
                  "halos5": [
-                    "testcases/halo1.def",
+                    "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
