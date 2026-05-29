@@ -1837,10 +1837,9 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
 {
   int ndrAppliedNets = 0;
 
-  debugPrint(
-      logger_, CTS, "clustering", 1, "Applying NDR to clock tree levels: ");
+  debugPrint(logger_, CTS, "ndr", 1, "Applying NDR to clock tree levels: ");
   for (int level : targetLevels) {
-    debugPrint(logger_, CTS, "clustering", 1, "{} ", level);
+    debugPrint(logger_, CTS, "ndr", 1, "{} ", level);
   }
 
   // Check if the main clock net (level 0) is in the level list
@@ -1849,7 +1848,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
     // clang-format off
-    debugPrint(logger_, CTS, "clustering", 1,
+    debugPrint(logger_, CTS, "ndr", 1,
         "Applied NDR to: {} (level {})", clockNet.getName(), 0);
     // clang-format on
   }
@@ -1864,7 +1863,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
         ndrAppliedNets++;
         std::string net_name = net->getName();
         // clang-format off
-        debugPrint(logger_, CTS, "clustering", 1,
+        debugPrint(logger_, CTS, "ndr", 1,
             "Applied NDR to: {} (level {})", net_name, level);
         // clang-format on
       }
@@ -1903,7 +1902,7 @@ int TritonCTS::applyNDRToFirstHalfLevels(Clock& clockNet,
                                    allLevels.begin() + halfCount);
 
   // clang-format off
-  debugPrint(logger_, CTS, "clustering", 1, "Total clock tree levels found: {}"
+  debugPrint(logger_, CTS, "ndr", 1, "Total clock tree levels found: {}"
         " Applying NDR to first {} levels", allLevels.size(), halfCount);
   // clang-format on
 
@@ -1938,29 +1937,29 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
     }
     assert(layerRule != nullptr);
 
-    const int defaultWidth = layer->getWidth();
-    const int defaultSpace = layer->getPitch() - defaultWidth;
+    const int default_width = layer->getWidth();
+    const int default_space = layer->getPitch() - default_width;
 
     // If width or space is 0, something is not right
-    if (defaultWidth == 0 || defaultSpace == 0) {
-      logger_->warn(CTS,
-                    208,
-                    "Clock NDR settings for layer {}: defaultSpace: {} - "
-                    "defaultWidth: {}",
-                    layer->getName(),
-                    defaultSpace,
-                    defaultWidth);
+    if (default_width <= 0 || default_space <= 0) {
+      logger_->error(CTS,
+                     208,
+                     "Clock NDR settings for layer {}: defaultSpace: {}, "
+                     "defaultWidth: {}",
+                     layer->getName(),
+                     default_space,
+                     default_width);
     }
 
     // Set NDR settings
-    const int ndr_width = defaultWidth;
+    const int ndr_width = default_width;
     layerRule->setWidth(ndr_width);
-    const int ndr_space = 2 * defaultSpace;
+    const int ndr_space = 2 * default_space;
     layerRule->setSpacing(ndr_space);
 
     debugPrint(logger_,
                CTS,
-               "clustering",
+               "ndr",
                1,
                "  NDR rule set to layer {} {} as space={} width={} vs. default "
                "space={} width={}",
@@ -1968,8 +1967,8 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
                layer->getName(),
                layerRule->getSpacing(),
                layerRule->getWidth(),
-               defaultSpace,
-               defaultWidth);
+               default_space,
+               default_width);
   }
 
   int clkNets = 0;
@@ -1993,7 +1992,7 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
 
   debugPrint(logger_,
              CTS,
-             "clustering",
+             "ndr",
              1,
              "Non-default rule {} for double spacing has been applied to {} "
              "clock nets",
