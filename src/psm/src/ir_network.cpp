@@ -249,20 +249,12 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
-  // Find the lowest front-side routing layer. ODB orders backside
-  // routing layers (BRDL .. BPR on a BSPDN PDK) at the bottom of the
-  // index space, but the IRSolver wants virtual ITerm base nodes on a
-  // layer the front-side power grid actually uses. Using
-  // findRoutingLayer(1) would land them on BRDL where no shapes exist
-  // and every cell ends up flagged "unconnected".
-  odb::dbTechLayer* base_layer = nullptr;
-  for (int l = 1; l <= getTech()->getRoutingLayerCount(); ++l) {
-    odb::dbTechLayer* layer = getTech()->findRoutingLayer(l);
-    if (layer != nullptr && !layer->isBackside()) {
-      base_layer = layer;
-      break;
-    }
-  }
+  // Pick the lowest front-side routing layer as the virtual base for
+  // ITerm nodes. On a BSPDN PDK, findRoutingLayer(1) may return a
+  // backside layer (BRDL) where no front-side shapes exist; using
+  // firstRoutingLayer() skips past those. Fall back to routing layer
+  // 1 only when the design has no front-side routing layers at all.
+  odb::dbTechLayer* base_layer = getTech()->firstRoutingLayer();
   if (base_layer == nullptr) {
     base_layer = getTech()->findRoutingLayer(1);
   }

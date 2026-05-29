@@ -500,6 +500,30 @@ dbTechLayer* dbTech::findRoutingLayer(int level_number)
   return nullptr;
 }
 
+dbTechLayer* dbTech::firstRoutingLayer()
+{
+  const int n = getRoutingLayerCount();
+  for (int level = 1; level <= n; ++level) {
+    dbTechLayer* layer = findRoutingLayer(level);
+    if (layer != nullptr && !layer->isBackside()) {
+      return layer;
+    }
+  }
+  return nullptr;
+}
+
+dbTechLayer* dbTech::firstBacksideLayer()
+{
+  const int n = getRoutingLayerCount();
+  for (int level = 1; level <= n; ++level) {
+    dbTechLayer* layer = findRoutingLayer(level);
+    if (layer != nullptr && layer->isBackside()) {
+      return layer;
+    }
+  }
+  return nullptr;
+}
+
 int dbTech::getDbUnitsPerMicron()
 {
   return getDb()->getDbuPerMicron();

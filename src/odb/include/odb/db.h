@@ -5933,6 +5933,18 @@ class dbTech : public dbObject
   dbTechLayer* findRoutingLayer(int level_number);
 
   ///
+  /// Find the lowest front-side (non-backside) routing layer.
+  /// Returns nullptr if there is no such layer.
+  ///
+  dbTechLayer* firstRoutingLayer();
+
+  ///
+  /// Find the lowest backside routing layer (LEF58_BACKSIDE).
+  /// Returns nullptr if there is no backside routing layer.
+  ///
+  dbTechLayer* firstBacksideLayer();
+
+  ///
   /// Get the technolgy vias. This includes non-default-rule-vias.
   ///
   dbSet<dbTechVia> getVias();
