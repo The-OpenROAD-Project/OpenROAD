@@ -6,8 +6,8 @@
 # Regression test for the PDN-1200 error added on the bspdn branch.
 source "helpers.tcl"
 
-read_lef ../../psm/test/backside_data/backside.lef
-read_def ../../psm/test/backside_data/backside.def
+read_lef backside_data/backside.lef
+read_def backside_data/backside.def
 
 add_global_connection -net vdd -pin_pattern "^vdd$" -power
 add_global_connection -net vss -pin_pattern "^vss$" -ground

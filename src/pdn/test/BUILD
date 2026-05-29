@@ -292,6 +292,10 @@ filegroup(
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
             ],
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
