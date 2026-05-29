@@ -70,6 +70,7 @@ generate_ram -mask_size bits
 | `-filler_cells` | A list of filler cells to use. Example: `{FILL_X1 FILL_X2 FILL_X4}`. |
 | `-tapcell` | The name of the tapcell master to insert into the grid to obey latchup requirements. Requires `-max_tap_dist`. If this argument is not provided, no tapcells will be inserted. |
 | `-max_tap_dist` | The distance (in microns) that tapcells should be placed apart. Requires `-tapcell`. |
+| `-use_latch` | If set to `1`, uses a two-phase latch-based design instead of flip-flops for the storage elements. Functionally equivalent to flip-flop design with smaller storage cell area. Default: `0`. |
 | `-write_behavioral_verilog` | Write a behavioral Verilog model of the RAM array to the specified file. |
 
 ## Example scripts
