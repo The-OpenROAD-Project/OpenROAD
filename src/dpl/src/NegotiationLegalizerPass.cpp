@@ -37,20 +37,45 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   // window so the loop can create space organically.
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
+  // A naive seed (for every illegal cell, scan all cells for ones inside its
+  // window) is O(|illegal| * |cells|), which approaches N^2 on the first
+  // iteration when nearly every cell is illegal.  Instead build a spatial
+  // index once: bucket movable cells by their bottom row (y), each bucket
+  // sorted by x.  Each seed then only scans the few rows in its y-window and
+  // binary-searches the x-range, so the total cost is proportional to the
+  // number of cells actually inside the search windows.
+  //
+  // Only cells not already in the active set are bucketed: the illegal cells
+  // are already active, so indexing them would just produce redundant no-op
+  // inserts during the window scan.
+  std::vector<std::vector<std::pair<int, int>>> row_buckets(grid_h_);
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    const NegCell& nb = cells_[i];
+    if (nb.fixed || nb.y < 0 || nb.y >= grid_h_ || active_set.contains(i)) {
+      continue;
+    }
+    row_buckets[nb.y].emplace_back(nb.x, i);
+  }
+  for (auto& bucket : row_buckets) {
+    std::ranges::sort(bucket);
+  }
+
   for (int idx : illegalCells) {
     const NegCell& seed = cells_[idx];
     const int xlo = seed.x - horiz_window_;
     const int xhi = seed.x + seed.width + horiz_window_;
-    const int ylo = seed.y - adj_window_;
-    const int yhi = seed.y + seed.height + adj_window_;
+    const int ylo = std::max(0, seed.y - adj_window_);
+    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + adj_window_);
 
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (cells_[i].fixed) {
-        continue;
-      }
-      const NegCell& nb = cells_[i];
-      if (nb.x >= xlo && nb.x <= xhi && nb.y >= ylo && nb.y <= yhi) {
-        active_set.insert(i);
+    for (int yy = ylo; yy <= yhi; ++yy) {
+      const auto& bucket = row_buckets[yy];
+      auto it = std::ranges::lower_bound(  // NOLINT(misc-include-cleaner)
+          bucket,
+          xlo,
+          {},
+          [](const auto& p) { return p.first; });
+      for (; it != bucket.end() && it->first <= xhi; ++it) {
+        active_set.insert(it->second);
       }
     }
   }
