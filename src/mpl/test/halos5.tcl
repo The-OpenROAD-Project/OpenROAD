@@ -1,5 +1,5 @@
 # Test that -use_full_halo restores uniform halo behavior,
-# ignoring pin-side detection (regression for the use_full_halo flag).
+# ignoring pin-aware detection (regression for the use_full_halo flag).
 source "helpers.tcl"
 
 read_lef "./Nangate45/Nangate45.lef"
