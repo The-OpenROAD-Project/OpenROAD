@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: BSD-3-Clause
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Drop-in replacement for @readline//:readline. See README.md.
+cc_library(
+    name = "readline",
+    srcs = ["stub.c"],
+    hdrs = glob(["include/readline/*.h"]),
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+)
