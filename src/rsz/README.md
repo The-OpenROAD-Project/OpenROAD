@@ -223,7 +223,7 @@ repair_timing
     [-phases]
     [-skip_pin_swap]
     [-skip_gate_cloning]
-    [-skip_size_down]
+    [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
@@ -253,7 +253,7 @@ repair_timing
 | `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
-| `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
+| `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
