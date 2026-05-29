@@ -124,6 +124,14 @@
       ]
     },
     {
+      "type": "bit",
+      "name": "is_backside",
+      "flags": [
+        "no-set",
+        "no-get"
+      ]
+    },
+    {
       "type": "uint32_t",
       "default": "0",
       "name": "wrong_way_width_",
