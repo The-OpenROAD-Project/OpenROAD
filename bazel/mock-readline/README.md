@@ -23,6 +23,17 @@ Pulling real readline is undesirable for two reasons:
 This works in tandem with `abc@0.64-yosyshq.bcr.2`, whose overlay routes abc
 through `readline` instead of depending on `ncurses` directly.
 
-`readline()` returns `NULL` (EOF), so any REPL loop exits immediately. If a
-build configuration ever genuinely needs interactive readline, drop the
+`readline()` returns `NULL` (EOF), so any REPL loop exits immediately.
+
+## Scope
+
+`local_path_override` only takes effect in the root module; Bazel ignores it
+when OpenROAD is consumed as a dependency. So the stub applies *only* when the
+OpenROAD repo is built directly (developers, CI) -- exactly the batch-only case
+where it is safe. A downstream project that depends on OpenROAD is the root
+module itself, this override is ignored, and `readline` resolves to the real
+BCR module (GPL) as usual -- no action needed to get the real one. The GPL code
+therefore never enters OpenROAD's own graph or distribution.
+
+To use real readline while building the OpenROAD repo directly, drop the
 override and depend on the real BCR module instead.
