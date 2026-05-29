@@ -470,7 +470,7 @@ bool Mapping::isMappable(Net net)
 
 ClassMatch* Mapping::reserveMatches(const int n)
 {
-  assert(n < kArenaChunk);
+  assert(n <= kArenaChunk);
   if (arena_slot_ + n > kArenaChunk || match_arena_.empty()) {
     match_arena_.push_back(std::make_unique<ClassMatch[]>(kArenaChunk));
     arena_slot_ = 0;
@@ -482,7 +482,7 @@ ClassMatch* Mapping::reserveMatches(const int n)
 
 ClassMatch* Mapping::allocMatches(const int n)
 {
-  assert(n < kArenaChunk);
+  assert(n <= kArenaChunk);
   ClassMatch* ret = reserveMatches(n);
   arena_slot_ += n;
   return ret;
