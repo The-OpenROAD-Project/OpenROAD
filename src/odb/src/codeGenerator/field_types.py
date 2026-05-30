@@ -20,7 +20,7 @@ Kinds, in classification precedence:
   ScalarType     everything else (PODs, enums, std:: tail)
 """
 
-from typing import Optional
+from __future__ import annotations
 
 from helper import (
     get_hash_table_type,
@@ -40,10 +40,10 @@ class FieldType:
     is_table = False
     db_set_getter = False
 
-    ref_type: Optional[str] = None
-    ref_table: Optional[str] = None
-    hash_table_type: Optional[str] = None
-    table_base_type: Optional[str] = None
+    ref_type: str | None = None
+    ref_table: str | None = None
+    hash_table_type: str | None = None
+    table_base_type: str | None = None
 
     def __init__(self, raw: str):
         """Construct the kind from a raw C++ type string."""
@@ -118,8 +118,6 @@ class BoolType(FieldType):
 class CharPtrType(FieldType):
     """A char pointer (char* / char *): deep-copied, getter returns const char*."""
 
-    is_char_ptr = True
-
     @property
     def setter_arg_type(self) -> str:
         """Setter takes a (non-const) char*."""
@@ -156,7 +154,7 @@ class VectorType(FieldType):
 class RefType(FieldType):
     """dbId<_X> object reference; getter resolves via the owner table."""
 
-    def __init__(self, raw: str, ref_table: Optional[str]):
+    def __init__(self, raw: str, ref_table: str | None):
         """Capture the referenced public pointer type and owner table name."""
         super().__init__(raw)
         self.ref_type = get_ref_type(raw)
@@ -216,7 +214,7 @@ class TableType(FieldType):
     is_table = True
     db_set_getter = True
 
-    def __init__(self, base_type: str, page_size: Optional[int]):
+    def __init__(self, base_type: str, page_size: int | None):
         """Owned table of `base_type` children with an optional page size."""
         # base_type is the child class name (e.g. "dbInst"); the stored member
         # type is the dbTable<_Child>* form returned by member_decl().
@@ -251,7 +249,7 @@ class TableType(FieldType):
         return True
 
 
-def _resolve_ref_table(ref_type: str, parent: Optional[str], schema) -> Optional[str]:
+def _resolve_ref_table(ref_type: str, parent: str | None, schema) -> str | None:
     """Owner table the ref getter reads from, honoring any explicit relation."""
     child = ref_type.replace("*", "")
     table = get_table_name(child)

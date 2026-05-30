@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
-from typing import List, Optional
+from __future__ import annotations
+
 import re
+
 from schema_models import Field, Struct
 
 # Atomic leaf types: in components() these compare as a whole rather than being
@@ -70,7 +72,7 @@ def _stem(s: str) -> str:
     return " ".join(item for item in s.split() if item not in _removable)
 
 
-def _get_struct(name: str, structs: List[Struct]) -> Optional[Struct]:
+def _get_struct(name: str, structs: list[Struct]) -> Struct | None:
     """Return the Struct named `name` from `structs`, or None if absent."""
     for struct in structs:
         if struct.name == name:
@@ -78,7 +80,7 @@ def _get_struct(name: str, structs: List[Struct]) -> Optional[Struct]:
     return None
 
 
-def components(structs: List[Struct], name: str, _type: str) -> List[str]:
+def components(structs: list[Struct], name: str, _type: str) -> list[str]:
     """Expand a field into its comparison sub-components.
 
     A leaf/ref type yields itself; a struct type recurses into its members;
@@ -98,7 +100,7 @@ def components(structs: List[Struct], name: str, _type: str) -> List[str]:
     return []
 
 
-def is_bit_fields(field: Field, structs: List[Struct]) -> bool:
+def is_bit_fields(field: Field, structs: list[Struct]) -> bool:
     """Whether the field (or any nested struct member) is a bitfield."""
     if field.bits:
         return True
@@ -150,7 +152,7 @@ def is_hash_table(type_name: str) -> bool:
     return type_name.startswith("dbHashTable<") and type_name.endswith(">")
 
 
-def get_hash_table_type(type_name: str) -> Optional[str]:
+def get_hash_table_type(type_name: str) -> str | None:
     """Value pointer type of a dbHashTable<_dbX[, N]> (e.g. dbX*), or None."""
     if not is_hash_table(type_name) or len(type_name) < 13:
         return None
@@ -196,7 +198,7 @@ def is_template_type(type_name: str) -> bool:
     return closed_bracket >= open_bracket
 
 
-def _split_top_level_commas(type_name: str) -> List[str]:
+def _split_top_level_commas(type_name: str) -> list[str]:
     """Split by commas at angle-bracket depth 0."""
     parts = []
     depth = 0
@@ -213,7 +215,7 @@ def _split_top_level_commas(type_name: str) -> List[str]:
     return [p for p in parts if p]
 
 
-def get_template_types(type_name: str) -> List[str]:
+def get_template_types(type_name: str) -> list[str]:
     """Flatten a type into its constituent template argument type names."""
     # Check for top-level commas first (bracket-aware)
     parts = _split_top_level_commas(type_name)
@@ -230,7 +232,7 @@ def get_template_types(type_name: str) -> List[str]:
     return [type_name]
 
 
-def get_template_type(type_name: str) -> Optional[str]:
+def get_template_type(type_name: str) -> str | None:
     """The substring inside the outer <...> of a template type, or None."""
     if not is_template_type(type_name):
         return None
@@ -246,7 +248,7 @@ def get_template_type(type_name: str) -> Optional[str]:
     return None
 
 
-def get_ref_type(type_name: str) -> Optional[str]:
+def get_ref_type(type_name: str) -> str | None:
     """Public pointer type for a dbId<_dbX> reference (e.g. dbX*), or None."""
     if not is_ref(type_name) or len(type_name) < 7:
         return None

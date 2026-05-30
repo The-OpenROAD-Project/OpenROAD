@@ -3,14 +3,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging
 import re
 import shutil
+import subprocess
 from pathlib import Path
-from subprocess import call
-from typing import Any, Dict, List
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -43,7 +44,7 @@ def make_environment(templates_dir) -> Environment:
     return env
 
 
-def get_json_files(directory: Path) -> List[Path]:
+def get_json_files(directory: Path) -> list[Path]:
     """Return all json files under directory recursively."""
     return list(directory.rglob("*.json"))
 
@@ -353,17 +354,15 @@ class ODBGenerator:
 
     def load_schema(self, json_path: Path) -> Schema:
         """Load the top-level schema JSON and every per-class JSON it points to."""
-        with open(json_path, encoding="ascii") as f:
-            data = json.load(f)
+        data = json.loads(json_path.read_text(encoding="ascii"))
 
         schema = Schema.from_dict(data)
 
         classes_dir = Path(schema.classes_dir)
         for file_path in get_json_files(classes_dir):
-            with open(file_path, encoding="ascii") as f:
-                klass_data = json.load(f)
-                klass = Class.from_dict(klass_data)
-                schema.classes.append(klass)
+            klass_data = json.loads(file_path.read_text(encoding="ascii"))
+            klass = Class.from_dict(klass_data)
+            schema.classes.append(klass)
 
         return schema
 
@@ -507,10 +506,9 @@ class ODBGenerator:
         """Render a template and write it to out_name in the generated dir."""
         template = self.env.get_template(template_name)
         text = template.render(**kwargs)
-        with open(self.generated_dir / out_name, "w", encoding="ascii") as f:
-            f.write(text)
+        (self.generated_dir / out_name).write_text(text, encoding="ascii")
 
-    def _merge_files(self, file_names: List[str]) -> None:
+    def _merge_files(self, file_names: list[str]) -> None:
         """Merge generated sections into the target files, preserving user code,
         then run clang-format."""
         includes = {"db.h", "dbObject.h", "dbCompare.inc"}
@@ -531,7 +529,10 @@ class ODBGenerator:
                 shutil.copy(gen_path, target_path)
 
             if item != "CMakeLists.txt":
-                if call(["clang-format", "-i", str(target_path)]) != 0:
+                if (
+                    subprocess.run(["clang-format", "-i", str(target_path)]).returncode
+                    != 0
+                ):
                     print(f"Failed to format {target_path}")
             print(f"Generated: {target_path}")
 
