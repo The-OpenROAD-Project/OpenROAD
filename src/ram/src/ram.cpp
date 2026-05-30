@@ -1754,7 +1754,6 @@ void RamGen::generate(const int mask_size,
     }
   }
 
-  int filler_rows = 0;
   // adding filler cells to ease congestion for multi-port
   if (column_mux_ratio > 1 && total_ports > 1) {
     int filler_spacing = num_rows / (column_mux_ratio - 1);
@@ -1783,7 +1782,8 @@ void RamGen::generate(const int mask_size,
   //         "decoder",
   //         fmt::format("inv_{}", i),
   //         inv_cell_,
-  //         {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[i]->getNet()},
+  //         {{inv_ports_[{PortRoleType::DataIn, 0}],
+  //         addr_inputs_[i]->getNet()},
   //          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr[i]}});
   //     cell_inv_layout->addCell(std::move(inv_grid_cell));
   //     ++inv_col_cells;
@@ -1794,8 +1794,8 @@ void RamGen::generate(const int mask_size,
   //     }
   //   }
   // }
-  // // Pad remaining slots so this column matches the grid height (num_rows_grid)
-  // while (inv_col_cells < num_rows_grid) {
+  // // Pad remaining slots so this column matches the grid height
+  // (num_rows_grid) while (inv_col_cells < num_rows_grid) {
   //   cell_inv_layout->addCell(nullptr);
   //   ++inv_col_cells;
   // }
