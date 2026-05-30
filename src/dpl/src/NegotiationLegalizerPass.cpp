@@ -37,17 +37,6 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   // window so the loop can create space organically.
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
-  // A naive seed (for every illegal cell, scan all cells for ones inside its
-  // window) is O(|illegal| * |cells|), which approaches N^2 on the first
-  // iteration when nearly every cell is illegal.  Instead build a spatial
-  // index once: bucket movable cells by their bottom row (y), each bucket
-  // sorted by x.  Each seed then only scans the few rows in its y-window and
-  // binary-searches the x-range, so the total cost is proportional to the
-  // number of cells actually inside the search windows.
-  //
-  // Only cells not already in the active set are bucketed: the illegal cells
-  // are already active, so indexing them would just produce redundant no-op
-  // inserts during the window scan.
   std::vector<std::vector<std::pair<int, int>>> row_buckets(grid_h_);
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     const NegCell& nb = cells_[i];
