@@ -45,10 +45,10 @@ clk I
 2 hi_inst\/gclk2_inst:GCK hi_gclk2:3 1e-06
 3 hi_gclk2:3 hi_gclk2:0 1e-06
 4 hi_gclk2:1 hi_gclk2:0 0.00758582
-5 h1\/ff1:CK hi_gclk2:5 1e-06
-6 hi_gclk2:5 hi_gclk2:1 1e-06
+5 h1\/ff1:CK hi_gclk2:4 1e-06
+6 hi_gclk2:4 hi_gclk2:1 1e-06
 7 hi_gclk2:2 hi_gclk2:1 0.0129021
-8 ff0\/name:CK hi_gclk2:7 1e-06
-9 hi_gclk2:7 hi_gclk2:2 1e-06
+8 ff0\/name:CK hi_gclk2:5 1e-06
+9 hi_gclk2:5 hi_gclk2:2 1e-06
 *END
 

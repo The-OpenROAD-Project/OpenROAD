@@ -43,7 +43,7 @@ clk I
 2 h1/gclk_inst:GCK h1/gclk:2 1e-06
 3 h1/gclk:2 h1/gclk:0 1e-06
 4 h1/gclk:1 h1/gclk:0 0.00758582
-5 h1/ff0\/name:CK h1/gclk:4 1e-06
-6 h1/gclk:4 h1/gclk:1 1e-06
+5 h1/ff0\/name:CK h1/gclk:3 1e-06
+6 h1/gclk:3 h1/gclk:1 1e-06
 *END
 
