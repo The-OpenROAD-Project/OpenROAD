@@ -5933,16 +5933,19 @@ class dbTech : public dbObject
   dbTechLayer* findRoutingLayer(int level_number);
 
   ///
-  /// Find the lowest front-side (non-backside) routing layer.
-  /// Returns nullptr if there is no such layer.
+  /// Find the frontside (non-LEF58_BACKSIDE) routing layer closest to
+  /// the substrate (i.e. the lowest routing-level index that is not
+  /// marked backside). Returns nullptr if there is no such layer.
   ///
-  dbTechLayer* firstRoutingLayer();
+  dbTechLayer* firstFrontsideRoutingLayer();
 
   ///
-  /// Find the lowest backside routing layer (LEF58_BACKSIDE).
-  /// Returns nullptr if there is no backside routing layer.
+  /// Find the LEF58_BACKSIDE routing layer closest to the substrate
+  /// (i.e. the highest routing-level index that is marked backside,
+  /// since backside metals are stacked outward from M0 toward BRDL in
+  /// LEF order). Returns nullptr if there is no backside routing layer.
   ///
-  dbTechLayer* firstBacksideLayer();
+  dbTechLayer* firstBacksideRoutingLayer();
 
   ///
   /// Get the technolgy vias. This includes non-default-rule-vias.
