@@ -1156,33 +1156,12 @@ void RepairDesign::repairNet(sta::Net* net,
                      delayAsString(slew1, 3, this),
                      delayAsString(max_slew1, 3, this));
 
-          // Try rerouting to a lower-resistance layer before inserting
-          // tryRerouteNet rejects nets already rerouted, so this is safe to
-          // call even if we already tried it for a driver slew above.
-          if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
-            estimate_parasitics_->updateParasitics();
-            sta_->findDelays(drvr);
-            resizer_->checkLoadSlews(
-                drvr_pin, slew_margin_, slew1, max_slew1, slew_slack1, corner1);
-            debugPrint(
-                logger_,
-                RSZ,
-                "repair_net",
-                2,
-                "after reroute: load slew pin={} load_slew={} max_slew={}",
-                network_->name(drvr_pin),
-                delayAsString(slew1, 3, this),
-                delayAsString(max_slew1, 3, this));
-          }
-
-          if (slew_slack1 < 0.0f) {
-            slew_violation = true;
-            repair_load_slew = true;
-            // If repair_cap is true, corner is already set to correspond
-            // to a max_cap violation, do not override in that case
-            if (!repair_cap) {
-              corner = corner1;
-            }
+          slew_violation = true;
+          repair_load_slew = true;
+          // If repair_cap is true, corner is already set to correspond
+          // to a max_cap violation, do not override in that case
+          if (!repair_cap) {
+            corner = corner1;
           }
         } else if (corner_w_load_slew_viol) {
           // There's a violation hidden by an annotation. The forward pass

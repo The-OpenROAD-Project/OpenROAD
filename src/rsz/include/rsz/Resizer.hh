@@ -423,7 +423,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Returns true if the reroute was accepted (net marked dirty for incremental
   // global re-routing and parasitics invalidated).  Returns false if the net
   // was already rerouted, doesn't exist, or the expected resistance reduction
-  // is below the 40% threshold.
+  // is below the threshold.
   bool tryRerouteNet(const sta::Pin* drvr_pin);
   // for debugging
   void repairNet(sta::Net* net,
