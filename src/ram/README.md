@@ -33,7 +33,7 @@ Standard cell libraries must be loaded before running this command.
 The module will create a new design, therefore a design should not be loaded before running the command.
 
 ```tcl
-generate_ram -mask_size bits
+generate_ram [-mask_size bits]
              -word_size bits
              -num_words words
              [-read_ports count]
@@ -55,7 +55,7 @@ generate_ram -mask_size bits
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. |
+| `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. Default: equal to `-word_size`. |
 | `-word_size` | Size of each word in bits. |
 | `-num_words` | Number of words in the array. |
 | `-read_ports` | Number of read ports for the array. Default: 1. |
