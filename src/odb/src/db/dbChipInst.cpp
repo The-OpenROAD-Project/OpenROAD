@@ -112,6 +112,13 @@ std::string dbChipInst::getName() const
   return obj->name_;
 }
 
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  obj->orient_ = orient;
+}
+
 dbOrientType3D dbChipInst::getOrient() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
@@ -144,13 +151,6 @@ dbTransform dbChipInst::getTransform() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return dbTransform(obj->orient_, obj->origin_);
-}
-
-void dbChipInst::setOrient(dbOrientType3D orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-
-  obj->orient_ = orient;
 }
 
 void dbChipInst::setLoc(const Point3D& loc)

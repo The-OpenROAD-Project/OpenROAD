@@ -7427,6 +7427,8 @@ class dbChipInst : public dbObject
  public:
   std::string getName() const;
 
+  void setOrient(dbOrientType3D orient);
+
   dbOrientType3D getOrient() const;
 
   dbChip* getMasterChip() const;
@@ -7436,8 +7438,6 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
-
-  void setOrient(dbOrientType3D orient);
 
   void setLoc(const Point3D& loc);
 
@@ -8198,13 +8198,23 @@ class dbIsolation : public dbObject
  public:
   const char* getName() const;
 
+  void setAppliesTo(const std::string& applies_to);
+
   std::string getAppliesTo() const;
+
+  void setClampValue(const std::string& clamp_value);
 
   std::string getClampValue() const;
 
+  void setIsolationSignal(const std::string& isolation_signal);
+
   std::string getIsolationSignal() const;
 
+  void setIsolationSense(const std::string& isolation_sense);
+
   std::string getIsolationSense() const;
+
+  void setLocation(const std::string& location);
 
   std::string getLocation() const;
 
@@ -8215,16 +8225,6 @@ class dbIsolation : public dbObject
   // User Code Begin dbIsolation
   static dbIsolation* create(dbBlock* block, const char* name);
   static void destroy(dbIsolation* iso);
-
-  void setAppliesTo(const std::string& applies_to);
-
-  void setClampValue(const std::string& clamp_value);
-
-  void setIsolationSignal(const std::string& isolation_signal);
-
-  void setIsolationSense(const std::string& isolation_sense);
-
-  void setLocation(const std::string& location);
 
   void addIsolationCell(const std::string& master);
 

@@ -130,10 +130,24 @@ const char* dbIsolation::getName() const
   return obj->name_;
 }
 
+void dbIsolation::setAppliesTo(const std::string& applies_to)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  obj->applies_to_ = applies_to;
+}
+
 std::string dbIsolation::getAppliesTo() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->applies_to_;
+}
+
+void dbIsolation::setClampValue(const std::string& clamp_value)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  obj->clamp_value_ = clamp_value;
 }
 
 std::string dbIsolation::getClampValue() const
@@ -142,16 +156,37 @@ std::string dbIsolation::getClampValue() const
   return obj->clamp_value_;
 }
 
+void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  obj->isolation_signal_ = isolation_signal;
+}
+
 std::string dbIsolation::getIsolationSignal() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->isolation_signal_;
 }
 
+void dbIsolation::setIsolationSense(const std::string& isolation_sense)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  obj->isolation_sense_ = isolation_sense;
+}
+
 std::string dbIsolation::getIsolationSense() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->isolation_sense_;
+}
+
+void dbIsolation::setLocation(const std::string& location)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+
+  obj->location_ = location;
 }
 
 std::string dbIsolation::getLocation() const
@@ -194,36 +229,6 @@ dbIsolation* dbIsolation::create(dbBlock* block, const char* name)
 void dbIsolation::destroy(dbIsolation* iso)
 {
   // TODO
-}
-
-void dbIsolation::setAppliesTo(const std::string& applies_to)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-  obj->applies_to_ = applies_to;
-}
-
-void dbIsolation::setClampValue(const std::string& clamp_value)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-  obj->clamp_value_ = clamp_value;
-}
-
-void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-  obj->isolation_signal_ = isolation_signal;
-}
-
-void dbIsolation::setIsolationSense(const std::string& isolation_sense)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-  obj->isolation_sense_ = isolation_sense;
-}
-
-void dbIsolation::setLocation(const std::string& location)
-{
-  _dbIsolation* obj = (_dbIsolation*) this;
-  obj->location_ = location;
 }
 
 void dbIsolation::addIsolationCell(const std::string& master)

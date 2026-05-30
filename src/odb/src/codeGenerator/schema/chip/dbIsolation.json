@@ -16,27 +16,27 @@
     {
       "name":"applies_to_",
       "type":"std::string",
-      "flags":["no-set"]
+      "flags":[]
     },
     {
       "name":"clamp_value_",
       "type":"std::string",
-      "flags":["no-set"]
+      "flags":[]
     },
     {
       "name":"isolation_signal_",
       "type":"std::string",
-      "flags":["no-set"]
+      "flags":[]
     },
     {
       "name":"isolation_sense_",
       "type":"std::string",
-      "flags":["no-set"]
+      "flags":[]
     },
     {
       "name":"location_",
       "type":"std::string",
-      "flags":["no-set"]
+      "flags":[]
     },
     {
       "name": "isolation_cells_",
