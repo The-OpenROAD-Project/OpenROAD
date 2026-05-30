@@ -339,8 +339,11 @@ void MakeWireParasitics::makeParasiticsToPin(sta::Parasitics* parasitics,
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST,
@@ -446,8 +449,11 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST, 350, "Missing route to pin {}.", pin_name);
