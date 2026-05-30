@@ -249,11 +249,8 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
-  odb::dbTechLayer* front_base = getTech()->firstRoutingLayer();
-  odb::dbTechLayer* back_base = getTech()->firstBacksideLayer();
-  if (front_base == nullptr) {
-    front_base = getTech()->findRoutingLayer(1);
-  }
+  odb::dbTechLayer* front_base = getTech()->firstFrontsideRoutingLayer();
+  odb::dbTechLayer* back_base = getTech()->firstBacksideRoutingLayer();
 
   LayerMap<Polygon90Set> shapes_by_layer;
   bool floorplan_asseted = false;
