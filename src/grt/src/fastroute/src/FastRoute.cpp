@@ -1404,12 +1404,15 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
 
   // Bridge implicit vias at Steiner branch points where two adjacent edges
   // arrive on different pseudo-layers; otherwise the parasitic graph for the
-  // net is disconnected.
+  // net is disconnected. Only bridge across a single cut layer -- multi-layer
+  // gaps mean the intermediate via stack is already in place from a
+  // previously processed edge.
   std::map<std::pair<int, int>, int> point_pseudo_layer;
   auto bridge_and_record = [&](int x, int y, int new_layer) {
     const auto pt = std::make_pair(x, y);
     auto it = point_pseudo_layer.find(pt);
-    if (it != point_pseudo_layer.end() && it->second != new_layer) {
+    if (it != point_pseudo_layer.end()
+        && std::abs(it->second - new_layer) == 1) {
       const int lo = std::min(it->second, new_layer);
       const int hi = std::max(it->second, new_layer);
       GSegment bridge_via(x, y, lo + 1, x, y, hi + 1);
@@ -1539,12 +1542,15 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
   std::unordered_set<GSegment, GSegmentHash> net_segs;
 
   // Bridge real-3D layer transitions at Steiner edge boundaries that the
-  // per-edge via-stack handling below does not cover.
+  // per-edge via-stack handling below does not cover. Only adjacent-layer
+  // gaps need bridging; wider gaps are already covered by the existing
+  // via stack at the shared XY.
   std::map<std::pair<int, int>, int> point_pseudo_layer;
   auto bridge_and_record = [&](int x, int y, int new_layer) {
     const auto pt = std::make_pair(x, y);
     auto it = point_pseudo_layer.find(pt);
-    if (it != point_pseudo_layer.end() && it->second != new_layer) {
+    if (it != point_pseudo_layer.end()
+        && std::abs(it->second - new_layer) == 1) {
       const int lo = std::min(it->second, new_layer);
       const int hi = std::max(it->second, new_layer);
       GSegment bridge_via(x, y, lo + 1, x, y, hi + 1);
