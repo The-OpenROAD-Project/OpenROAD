@@ -118,7 +118,7 @@ namespace odb {
     _{{klass.name}}::~_{{klass.name}}()
     {
       {% for field in klass.fields %}
-        {% if field.name == 'name_' and field.type == "char *" %}
+        {% if field.kind.needs_free(field.name) %}
           if (name_) {
             free((void*) name_);
           }
@@ -147,41 +147,32 @@ namespace odb {
       {
     
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
-    
-        {% if field.isRef %}
-    
-          obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
-    
-        {% else %}
 
-          obj->{{field.name}}={{field.argument}};
-    
-        {% endif %}
+        obj->{{field.name}}={{field.kind.setter_assign_rhs(field.argument)}};
       }
     {% endif %}
   
     {% if 'no-get' not in field.flags %}
       {{- macros.getter_signature(field, klass) -}}
       {
-      {% if field.dbSetGetter %}
+      {% set getter_kind = field.kind.getter_kind() %}
+      {% if getter_kind == 'dbset' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.table_base_type}}>(obj, obj->{{field.name}});
-      {% elif field.isPassByRef %}
+      {% elif getter_kind == 'out_param' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           tbl = obj->{{field.name}};
-      {% elif field.isHashTable %}
+      {% elif getter_kind == 'hash_find' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
       {% else %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
-          {% if field.isRef %}
+          {% if getter_kind == 'ref_lookup' %}
             if(obj->{{field.name}} == 0) {
               return nullptr;
             }
             _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
             return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
-          {% elif field.isHashTable %}
-            return {{field.getterReturnType}} obj->{{field.name}}.find(name);
           {% else %}
             return obj->{{field.name}};
           {% endif %}

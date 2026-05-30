@@ -122,7 +122,7 @@ int16_t dbGDSText::getDatatype() const
   return obj->datatype_;
 }
 
-void dbGDSText::setOrigin(Point origin)
+void dbGDSText::setOrigin(const Point& origin)
 {
   _dbGDSText* obj = (_dbGDSText*) this;
 

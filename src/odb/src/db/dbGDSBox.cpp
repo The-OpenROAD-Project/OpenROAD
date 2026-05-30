@@ -112,7 +112,7 @@ int16_t dbGDSBox::getDatatype() const
   return obj->datatype_;
 }
 
-void dbGDSBox::setBounds(Rect bounds)
+void dbGDSBox::setBounds(const Rect& bounds)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 

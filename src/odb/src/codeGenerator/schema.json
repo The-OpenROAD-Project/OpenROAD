@@ -1,5 +1,6 @@
 {
     "classes_dir": "schema",
+    "extern_enums": ["dbGDSSTrans", "dbGDSTextPres", "dbOrientType3D"],
     "iterators":[
     {
         "name": "dbModulePortItr",

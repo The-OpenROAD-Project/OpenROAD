@@ -7070,7 +7070,7 @@ class dbViaParams : private _dbViaParams
 class dbAccessPoint : public dbObject
 {
  public:
-  void setPoint(Point point);
+  void setPoint(const Point& point);
 
   Point getPoint() const;
 
@@ -7243,7 +7243,7 @@ class dbChip : public dbObject
 
   const char* getName() const;
 
-  void setOffset(Point offset);
+  void setOffset(const Point& offset);
 
   Point getOffset() const;
 
@@ -7876,15 +7876,15 @@ class dbGCellGrid : public dbObject
 class dbGDSARef : public dbObject
 {
  public:
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
-  void setLr(Point lr);
+  void setLr(const Point& lr);
 
   Point getLr() const;
 
-  void setUl(Point ul);
+  void setUl(const Point& ul);
 
   Point getUl() const;
 
@@ -7944,7 +7944,7 @@ class dbGDSBox : public dbObject
 
   int16_t getDatatype() const;
 
-  void setBounds(Rect bounds);
+  void setBounds(const Rect& bounds);
 
   Rect getBounds() const;
 
@@ -7991,7 +7991,7 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
@@ -8011,7 +8011,7 @@ class dbGDSSRef : public dbObject
 class dbGDSStructure : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
@@ -8046,7 +8046,7 @@ class dbGDSText : public dbObject
 
   int16_t getDatatype() const;
 
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
@@ -9150,8 +9150,8 @@ class dbScanPin : public dbObject
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);
   void setPin(dbITerm* iterm);
-  static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
-  static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
+  static dbScanPin* create(dbDft* dft, dbBTerm* bterm);
+  static dbScanPin* create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
 };
 

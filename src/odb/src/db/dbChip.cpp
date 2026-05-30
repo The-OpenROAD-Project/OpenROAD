@@ -395,7 +395,7 @@ const char* dbChip::getName() const
   return obj->name_;
 }
 
-void dbChip::setOffset(Point offset)
+void dbChip::setOffset(const Point& offset)
 {
   _dbChip* obj = (_dbChip*) this;
 

@@ -1,0 +1,165 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, The OpenROAD Authors
+
+"""Validates the Field / FieldType contract against the real committed schema.
+
+Processes every field in the schema and checks that each carries a `kind`
+(field_types.FieldType) and that the Field accessor properties
+(setterArgumentType, refType, ...) resolve from that kind.
+
+Run with:  python3 -m unittest test_field_types
+"""
+
+import os
+import unittest
+from pathlib import Path
+
+from field_types import CharPtrType, make_field_type
+from gen import ODBGenerator, make_environment
+from helper import is_set_by_ref
+from schema_models import Field, Schema
+
+HERE = Path(os.path.dirname(__file__))
+
+
+def _all_fields():
+    env = make_environment(HERE / "templates")
+    gen = ODBGenerator(env, ".", ".", False)
+    schema = gen.load_schema(HERE / "schema.json")
+    gen.process_schema(schema)
+    for klass in schema.classes:
+        for field in klass.fields:
+            yield klass, field
+        # The in-class (flags_) struct members get accessors generated too, so
+        # they must carry a kind as well.
+        for struct in klass.structs:
+            if struct.in_class_name:
+                for field in struct.fields:
+                    yield klass, field
+
+
+class FieldKindContractTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fields = list(_all_fields())
+        assert cls.fields, "no fields processed"
+
+    def test_every_field_has_a_kind(self):
+        for klass, field in self.fields:
+            self.assertIsNotNone(field.kind, f"{klass.name}.{field.name} has no kind")
+
+    def test_field_properties_resolve_from_kind(self):
+        for klass, field in self.fields:
+            k = field.kind
+            ctx = f"{klass.name}.{field.name} (type={field.type!r})"
+
+            # classification booleans
+            self.assertEqual(k.is_hash_table, field.isHashTable, f"isHashTable {ctx}")
+            self.assertEqual(k.is_table, bool(field.table), f"table {ctx}")
+            self.assertEqual(
+                k.db_set_getter, bool(field.dbSetGetter), f"dbSetGetter {ctx}"
+            )
+
+            # isSetByRef is determined solely by the kind.
+            self.assertEqual(k.type_set_by_ref, field.isSetByRef, f"isSetByRef {ctx}")
+
+            # accessor signature types. The synthetic flags_ aggregate has no
+            # accessor types (no-get/no-set, handled by the bitFields branch).
+            if field.setterArgumentType is not None:
+                self.assertEqual(
+                    k.setter_arg_type, field.setterArgumentType, f"setterArgType {ctx}"
+                )
+            if field.getterReturnType is not None:
+                self.assertEqual(
+                    k.getter_return_type, field.getterReturnType, f"getterRetType {ctx}"
+                )
+
+            # type-dependent details, checked where they apply
+            if field.refType is not None:
+                self.assertEqual(k.ref_type, field.refType, f"refType {ctx}")
+                self.assertEqual(k.ref_table, field.refTable, f"refTable {ctx}")
+            if field.isHashTable:
+                self.assertEqual(
+                    k.hash_table_type, field.hashTableType, f"hashTableType {ctx}"
+                )
+            if field.table:
+                self.assertEqual(
+                    k.table_base_type, field.table_base_type, f"tableBaseType {ctx}"
+                )
+
+    def test_table_member_decl_is_owned_table_pointer(self):
+        """Owned-table members declare a dbTable<_Child[, N]>*; type is the child."""
+        for klass, field in self.fields:
+            if field.table:
+                ctx = f"{klass.name}.{field.name}"
+                decl = field.member_decl
+                self.assertTrue(
+                    decl.startswith(f"dbTable<_{field.table_base_type}")
+                    and decl.endswith(">*"),
+                    f"member_decl {ctx} = {decl!r}",
+                )
+                # field.type holds the child class name; member_decl adds the wrapper.
+                self.assertEqual(field.type, field.table_base_type, f"type {ctx}")
+
+
+class CharPtrSpellingTest(unittest.TestCase):
+    """Both "char *" and "char*" classify as CharPtrType (spacing-insensitive)."""
+
+    def _kind(self, type_str):
+        return make_field_type(Field(name="name_", type=type_str), Schema("."))
+
+    def test_both_spellings_are_charptr(self):
+        for spelling in ("char *", "char*"):
+            kind = self._kind(spelling)
+            self.assertIsInstance(kind, CharPtrType, spelling)
+            self.assertEqual(kind.getter_return_type, "const char *", spelling)
+            self.assertEqual(kind.setter_arg_type, "char *", spelling)
+            self.assertTrue(kind.needs_free("name_"), spelling)
+            self.assertFalse(kind.needs_free("other_"), spelling)
+
+    def test_member_decl_preserves_original_spelling(self):
+        # The stored member keeps the authored spelling; clang-format normalizes it.
+        self.assertEqual(self._kind("char *").member_decl(), "char *")
+        self.assertEqual(self._kind("char*").member_decl(), "char*")
+
+    def test_plain_char_is_not_a_pointer(self):
+        self.assertNotIsInstance(self._kind("char"), CharPtrType)
+
+
+class SetByRefRuleTest(unittest.TestCase):
+    """is_set_by_ref passes everything by const ref except scalars/pointers/enums."""
+
+    ENUMS = {"dbGDSSTrans", "dbOrientType3D"}
+
+    def test_const_ref_for_aggregates(self):
+        for t in (
+            "std::string",
+            "std::pair<int,int>",
+            "std::vector<Point>",
+            "std::map<int,int>",
+            "dbVector<int>",
+            "Rect",
+            "Point",
+            "Polygon",
+        ):
+            self.assertTrue(is_set_by_ref(t, self.ENUMS), t)
+
+    def test_by_value_for_pod_and_pointers_and_enums(self):
+        for t in (
+            "int",
+            "float",
+            "bool",
+            "uint32_t",
+            "int16_t",
+            "char *",
+            "char*",
+            "dbId<_dbNet>",
+            "dbHashTable<_dbInst>",
+            "dbGDSSTrans",  # registered external enum
+            "dbAccessType::Value",  # scoped enum
+        ):
+            self.assertFalse(is_set_by_ref(t, self.ENUMS), t)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,20 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional
 import re
-from schema_models import Field, Struct, Class, Schema
+from schema_models import Field, Struct
 
-_comparable = {
-    "Point",
-    "Point3D",
-    "Rect",
-    "Polygon",
-    "Line",
+# Atomic leaf types: in components() these compare as a whole rather than being
+# decomposed into struct members. Includes scalars plus std::string and char*.
+_LEAF_TYPES = {
     "bool",
     "char *",
     "char",
-    "char*",
     "double",
     "float",
     "int",
@@ -25,29 +21,45 @@ _comparable = {
     "short",
     "int16_t",
     "std::string",
-    "string",
     "uint32_t",
     "uint8_t",
 }
 
-std = {
+# Value structs that are comparison leaves in components() but are not scalars.
+_VALUE_TYPES = {"Point", "Point3D", "Rect", "Polygon", "Line"}
+
+# Types treated as a single comparison leaf by components() (leaf types + value
+# structs); used in helper.py:components().
+_comparable = _LEAF_TYPES | _VALUE_TYPES
+
+# C++ fundamental / cstdint scalar types that are cheap to pass by value; used by
+# is_set_by_ref(). std::string is intentionally excluded (it is passed by ref).
+_BY_VALUE_SCALARS = {
     "bool",
-    "char *",
     "char",
-    "char*",
-    "double",
-    "float",
-    "int",
-    "int8_t",
-    "long double",
-    "long long",
-    "long",
+    "signed char",
+    "unsigned char",
     "short",
+    "unsigned short",
+    "int",
+    "unsigned",
+    "unsigned int",
+    "long",
+    "unsigned long",
+    "long long",
+    "unsigned long long",
+    "float",
+    "double",
+    "long double",
+    "int8_t",
     "int16_t",
-    "std::string",
-    "string",
-    "uint32_t",
+    "int32_t",
+    "int64_t",
     "uint8_t",
+    "uint16_t",
+    "uint32_t",
+    "uint64_t",
+    "size_t",
 }
 
 _removable = {"const", "static", "unsigned"}
@@ -79,15 +91,6 @@ def components(structs: List[Struct], name: str, _type: str) -> List[str]:
     return []
 
 
-def add_once_to_dict(src: List[str], target: Union[Dict[str, Any], Class]) -> None:
-    for obj in src:
-        if isinstance(target, dict):
-            target.setdefault(obj, [])
-        else:
-            if not getattr(target, obj, None):
-                setattr(target, obj, [])
-
-
 def is_bit_fields(field: Field, structs: List[Struct]) -> bool:
     if field.bits:
         return True
@@ -111,17 +114,19 @@ def get_functional_name(name: str) -> str:
     return name
 
 
-def get_class(schema: Schema, name: str) -> Class:
-    for klass in schema.classes:
-        if klass.name == name:
-            return klass
-    raise NameError(f"Class {name} in relations is not found")
-
-
 def get_table_name(name: str) -> str:
     if name.startswith("db"):
         name = name[2:]
     return f"{name.lower()}_tbl_"
+
+
+# get_ref_type() turns "dbId<_dbModule>" into the public pointer type "dbModule*"
+# by dropping this 6-char prefix (note the trailing "_": the private storage class
+# is "_dbModule" but the public type is "dbModule") and the closing ">".
+_DBID_PUBLIC_PREFIX = "dbId<_"
+
+# get_hash_table_type() strips this prefix off "dbHashTable<_dbX[, N]>".
+_DBHASHTABLE_PREFIX = "dbHashTable<"
 
 
 def is_ref(type_name: str) -> bool:
@@ -135,7 +140,7 @@ def is_hash_table(type_name: str) -> bool:
 def get_hash_table_type(type_name: str) -> Optional[str]:
     if not is_hash_table(type_name) or len(type_name) < 13:
         return None
-    types = get_template_types(type_name[12:-1])
+    types = get_template_types(type_name[len(_DBHASHTABLE_PREFIX) : -1])
     for t in types:
         if "db" in t:
             return f"{t}*"
@@ -146,12 +151,25 @@ def is_pass_by_ref(type_name: str) -> bool:
     return type_name.startswith(("dbVector", "std::vector"))
 
 
-def is_set_by_ref(type_name: str) -> bool:
-    return (
-        type_name == "std::string"
-        or type_name.startswith("std::pair")
-        or type_name.startswith("std::vector")
-    )
+def is_set_by_ref(type_name: str, enum_names) -> bool:
+    """Whether a setter takes the value by const reference rather than by value.
+
+    Trivially-copyable types are passed by value: fundamental scalars, pointers
+    and handles (char*, dbId<>, dbHashTable<>), and enums (scoped "X::Value" or
+    registered in enum_names). Everything else -- std::string, std:: containers,
+    dbVector, geometry/value structs, any class type -- is passed by const ref.
+    """
+    if type_name in _BY_VALUE_SCALARS:
+        return False
+    if type_name.endswith("*") or type_name.startswith(("dbId<", "dbHashTable<")):
+        return False
+    if type_name in enum_names:
+        return False
+    # A bare scoped enum (e.g. "dbAccessType::Value"): has "::" but is neither a
+    # std:: type nor a template (those are aggregates passed by const ref).
+    if "::" in type_name and "<" not in type_name and not type_name.startswith("std::"):
+        return False
+    return True
 
 
 def is_template_type(type_name: str) -> bool:
@@ -213,7 +231,7 @@ def get_template_type(type_name: str) -> Optional[str]:
 def get_ref_type(type_name: str) -> Optional[str]:
     if not is_ref(type_name) or len(type_name) < 7:
         return None
-    return f"{type_name[6:-1]}*"
+    return f"{type_name[len(_DBID_PUBLIC_PREFIX) : -1]}*"
 
 
 def fnv1a_32(string: str) -> int:

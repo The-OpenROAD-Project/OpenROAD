@@ -81,7 +81,7 @@ void _dbGDSSRef::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSSRef::setOrigin(Point origin)
+void dbGDSSRef::setOrigin(const Point& origin)
 {
   _dbGDSSRef* obj = (_dbGDSSRef*) this;
 

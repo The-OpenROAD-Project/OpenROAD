@@ -4,6 +4,8 @@
 // Generator Code Begin Cpp
 #include "dbGDSStructure.h"
 
+#include <cstdlib>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbGDSARef.h"
@@ -152,6 +154,9 @@ void _dbGDSStructure::collectMemInfo(MemInfo& info)
 
 _dbGDSStructure::~_dbGDSStructure()
 {
+  if (name_) {
+    free((void*) name_);
+  }
   delete boundaries_;
   delete boxes_;
   delete paths_;
@@ -166,7 +171,7 @@ _dbGDSStructure::~_dbGDSStructure()
 //
 ////////////////////////////////////////////////////////////////////
 
-char* dbGDSStructure::getName() const
+const char* dbGDSStructure::getName() const
 {
   _dbGDSStructure* obj = (_dbGDSStructure*) this;
   return obj->name_;

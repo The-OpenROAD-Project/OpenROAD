@@ -171,7 +171,7 @@ void _dbAccessPoint::setMPin(_dbMPin* mpin)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbAccessPoint::setPoint(Point point)
+void dbAccessPoint::setPoint(const Point& point)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
 
