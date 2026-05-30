@@ -207,6 +207,13 @@ void io::Parser::setVias(odb::dbBlock* block)
   for (auto via : block->getVias()) {
     if (via->getViaGenerateRule() != nullptr && via->hasParams()) {
       const odb::dbViaParams params = via->getViaParams();
+      // Skip block vias whose cut/top/bottom layer is on the backside;
+      // those layers are filtered out of frTech by setLayers().
+      if (params.getCutLayer()->isBackside()
+          || params.getBottomLayer()->isBackside()
+          || params.getTopLayer()->isBackside()) {
+        continue;
+      }
       frLayerNum cutLayerNum = 0;
       frLayerNum botLayerNum = 0;
       frLayerNum topLayerNum = 0;
@@ -351,6 +358,17 @@ void io::Parser::setVias(odb::dbBlock* block)
             utl::DRT, 337, "Duplicated via definition for {}", via->getName());
       }
     } else {
+      // Skip box-defined block vias touching backside layers.
+      bool any_backside = false;
+      for (auto box : via->getBoxes()) {
+        if (box->getTechLayer()->isBackside()) {
+          any_backside = true;
+          break;
+        }
+      }
+      if (any_backside) {
+        continue;
+      }
       std::map<frLayerNum, odb::PtrSet<odb::dbBox>> lNum2Int;
       for (auto box : via->getBoxes()) {
         if (getTech()->name2layer_.find(box->getTechLayer()->getName())
