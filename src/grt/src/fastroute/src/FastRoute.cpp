@@ -51,8 +51,7 @@ void recordLayerAndBridge(
 {
   const auto pt = std::make_pair(x, y);
   auto it = point_pseudo_layer.find(pt);
-  if (it != point_pseudo_layer.end()
-      && std::abs(it->second - new_layer) == 1) {
+  if (it != point_pseudo_layer.end() && std::abs(it->second - new_layer) == 1) {
     const int lo = std::min(it->second, new_layer);
     const int hi = std::max(it->second, new_layer);
     GSegment bridge_via(x, y, lo + 1, x, y, hi + 1);
@@ -1476,8 +1475,13 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
       int lastL = (lastX == second_x) ? layer_v : layer_h;
 
       // Edge entry: bridge if a prior edge left this XY on a different layer.
-      recordLayerAndBridge(lastX, lastY, lastL, /*is_3d_route=*/false,
-                           point_pseudo_layer, net_segs, route);
+      recordLayerAndBridge(lastX,
+                           lastY,
+                           lastL,
+                           /*is_3d_route=*/false,
+                           point_pseudo_layer,
+                           net_segs,
+                           route);
 
       for (int i = 1; i <= routeLen; i++) {
         const int xreal = (tile_size_ * (grids[i].x + 0.5)) + x_corner_;
@@ -1517,8 +1521,13 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
         // Per-hop commit: catches the case where *this* edge ends or passes
         // through an XY that a previously processed edge entered on a
         // different layer (edge-entry bridging alone misses this).
-        recordLayerAndBridge(lastX, lastY, lastL, /*is_3d_route=*/false,
-                             point_pseudo_layer, net_segs, route);
+        recordLayerAndBridge(lastX,
+                             lastY,
+                             lastL,
+                             /*is_3d_route=*/false,
+                             point_pseudo_layer,
+                             net_segs,
+                             route);
       }
     }
   }
@@ -1664,8 +1673,13 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
         const auto& g = filled_grids[j];
         const int x_real = (tile_size_ * (g.x + 0.5)) + x_corner_;
         const int y_real = (tile_size_ * (g.y + 0.5)) + y_corner_;
-        recordLayerAndBridge(x_real, y_real, g.layer, /*is_3d_route=*/true,
-                             point_pseudo_layer, net_segs, route);
+        recordLayerAndBridge(x_real,
+                             y_real,
+                             g.layer,
+                             /*is_3d_route=*/true,
+                             point_pseudo_layer,
+                             net_segs,
+                             route);
       }
     } else if (treeedge->route.routelen > 0) {
       // Handle zero-length edges (len == 0) that carry via route grids.
@@ -1688,8 +1702,13 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
         const auto& g = treeedge->route.grids[j];
         const int x_real = (tile_size_ * (g.x + 0.5)) + x_corner_;
         const int y_real = (tile_size_ * (g.y + 0.5)) + y_corner_;
-        recordLayerAndBridge(x_real, y_real, g.layer, /*is_3d_route=*/true,
-                             point_pseudo_layer, net_segs, route);
+        recordLayerAndBridge(x_real,
+                             y_real,
+                             g.layer,
+                             /*is_3d_route=*/true,
+                             point_pseudo_layer,
+                             net_segs,
+                             route);
       }
     }
   }
