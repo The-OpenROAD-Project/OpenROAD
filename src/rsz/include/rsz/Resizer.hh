@@ -97,7 +97,7 @@ enum class MoveType : uint8_t
   kClone,
   kSizeUp,
   kSizeUpMatch,
-  kSizeDown,
+  kSizeDownFanout,
   kSwapPins,
   kVtSwap,
   kUnbuffer,
@@ -340,7 +340,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const char* phases,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
-                   bool skip_size_down,
+                   bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
@@ -650,7 +650,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
