@@ -17,7 +17,7 @@ set_wire_rc -clock -layer $wire_rc_layer_clk
 
 set spef_file [make_result_file $test_name.spef]
 estimate_parasitics -placement -spef_file $spef_file
-diff_files $test_name.reduced.spefok $spef_file
+diff_files $test_name.spefok $spef_file
 
 set vout_file [make_result_file $test_name.v]
 write_verilog $vout_file
