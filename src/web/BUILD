@@ -28,6 +28,7 @@ genrule(
     srcs = [
         "src/style.css",
         "src/theme.js",
+        "src/3d-viewer-widget.js",
         "src/coordinates.js",
         "src/ui-utils.js",
         "src/checkbox-tree-model.js",
@@ -53,6 +54,7 @@ genrule(
           " --output $@" +
           " --css $(location src/style.css)" +
           " --js $(location src/theme.js)" +
+          " $(location src/3d-viewer-widget.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +
           " $(location src/checkbox-tree-model.js)" +
@@ -79,6 +81,7 @@ _WEB_ASSET_FILES = [
     "src/index.html",
     "src/style.css",
     "src/theme.js",
+    "src/3d-viewer-widget.js",
     "src/coordinates.js",
     "src/ui-utils.js",
     "src/checkbox-tree-model.js",
@@ -110,56 +113,71 @@ genrule(
 )
 
 cc_library(
+    name = "color",
+    srcs = ["src/color.cpp"],
+    hdrs = ["src/color.h"],
+    includes = ["src"],
+    visibility = ["//src/web/test:__pkg__"],
+)
+
+cc_library(
     name = "web",
     srcs = [
         "src/clock_tree_report.cpp",
-        "src/clock_tree_report.h",
-        "src/color.cpp",
-        "src/color.h",
         "src/font_atlas.h",
         "src/font_data.cpp",
         "src/font_data.h",
         "src/glyph_cache.cpp",
-        "src/glyph_cache.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
-        "src/json_builder.h",
+        "src/module_color_palette.h",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
-        "src/request_handler.h",
         "src/search.cpp",
         "src/search.h",
         "src/tile_generator.cpp",
-        "src/tile_generator.h",
         "src/timing_report.cpp",
-        "src/timing_report.h",
         "src/web.cpp",
         "src/web_assets.h",
         "src/web_chart.cpp",
-        "src/web_chart.h",
         "src/web_painter.cpp",
-        "src/web_painter.h",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
-        "src/web_viewer_hook.h",
         ":report_assets",
         ":web_assets",
     ],
     hdrs = [
         "include/web/web.h",
+        # The following are used by tests, but they are not broken
+        # out as library. So TODO: make them visible for the tests
+        # to properly depend on this library and see the includes.
+        # If these are meant to be used in tests with specific dependencies,
+        # these should be put (together with their *.cpp files) into separate
+        # libraries, with visibility for the //src/web/test path (see :color).
+        "src/glyph_cache.h",
+        "src/tile_generator.h",
+        "src/timing_report.h",
+        "src/web_chart.h",
+        "src/web_painter.h",
+        "src/web_viewer_hook.h",
+        "src/request_handler.h",
+        "src/clock_tree_report.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
+        "-DBOOST_JSON_HEADER_ONLY",
     ],
     includes = [
         "include",
         "src",
     ],
     deps = [
+        ":color",
+        "//:cli_completer",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
@@ -167,6 +185,8 @@ cc_library(
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
+        "@boost.json",
+        "@boost.system",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
@@ -189,7 +209,6 @@ cc_library(
     deps = [
         ":web",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

@@ -26,6 +26,7 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
+#include "AbstractRoutingCongestionDataSource.h"
 #include "CUGR.h"
 #include "DataType.h"
 #include "FastRoute.h"
@@ -42,7 +43,7 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
-#include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -87,6 +88,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
+      num_threads_(1),
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
@@ -110,9 +112,32 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   cugr_ = new CUGR(db_, logger_, service_registry_, stt_builder_, sta_);
 }
 
-void GlobalRouter::initGui(
-    gui::HeatMapSourceHandle routing_congestion_data_source,
-    gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
+void GlobalRouter::setNumThreads(int num_threads)
+{
+  num_threads_ = num_threads;
+  fastroute_->setNumThreads(num_threads_);
+}
+
+void GlobalRouter::setSnapshotBatchedWidth(int snapshot_batched_width)
+{
+  snapshot_batched_width_ = snapshot_batched_width;
+  fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
+}
+
+int GlobalRouter::getSnapshotBatchedWidth() const
+{
+  return fastroute_->getSnapshotBatchedWidth();
+}
+
+int GlobalRouter::getSnapshotBatchCount() const
+{
+  return fastroute_->getSnapshotBatchCount();
+}
+
+void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source,
+                           std::unique_ptr<AbstractRoutingCongestionDataSource>
+                               routing_congestion_data_source_rudy)
 {
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
@@ -202,8 +227,21 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  is_congested_ = fastroute_->totalOverflow() > 0;
-  fastroute_->saveCongestion();
+  if (use_cugr_) {
+    is_congested_ = cugr_->totalOverflow() > 0;
+    cugr_->saveCongestion();
+  } else {
+    is_congested_ = fastroute_->totalOverflow() > 0;
+    fastroute_->saveCongestion();
+  }
+
+  if (congestion_file_name_ != nullptr) {
+    odb::dbMarkerCategory* tool_category
+        = block_->findMarkerCategory("Global route");
+    if (tool_category != nullptr) {
+      tool_category->writeTR(congestion_file_name_);
+    }
+  }
 }
 
 NetRouteMap& GlobalRouter::getRoutes()
@@ -251,7 +289,7 @@ bool GlobalRouter::haveRoutes()
     return false;
   }
   loadGuidesFromDB();
-  bool congested_routes = is_congested_ && !allow_congestion_;
+  bool congested_routes = is_congested_ && !allow_congestion_ && !use_cugr_;
   return !routes_.empty() && !congested_routes;
 }
 
@@ -371,9 +409,13 @@ void GlobalRouter::globalRoute(bool save_guides)
 
     std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
     if (use_cugr_) {
-      std::set<odb::dbNet*> clock_nets;
+      odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
+      cugr_->setCongestionIterations(congestion_iterations_);
       cugr_->init(min_layer, max_layer, clock_nets);
+      if (verbose_) {
+        reportResources();
+      }
       cugr_->route();
       routes_ = cugr_->getRoutes();
       updatePinAccessPoints();
@@ -409,7 +451,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   updateDbCongestion();
   saveCongestion();
 
-  if (verbose_ && !use_cugr_) {
+  if (verbose_) {
     reportCongestion();
   }
   computeWirelength();
@@ -428,7 +470,9 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (is_congested_) {
     // Suggest adjustment value
     suggestAdjustment();
-    if (allow_congestion_) {
+    // CUGR overflow is downgraded to a warning even without -allow_congestion,
+    // since it produces good results on detailed routing.
+    if (allow_congestion_ || use_cugr_) {
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "
@@ -478,10 +522,10 @@ void GlobalRouter::updateDbCongestion()
     fastroute_->updateDbCongestion(min_layer, max_layer);
   }
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
 }
 
@@ -496,6 +540,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
+    // Repopulate edge usage from routes_ using updateNetResources, which
+    // uses layer_edge_cost (essential to NDR nets).
+    for (const auto& [db_net, groute] : routes_) {
+      if (!isDetailedRouted(db_net)) {
+        auto it = db_net_map_.find(db_net);
+        if (it != db_net_map_.end()) {
+          updateNetResources(it->second, false);
+        }
+      }
+    }
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -858,6 +912,36 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
+void GlobalRouter::setNetIsResAware(odb::dbNet* db_net, bool res_aware)
+{
+  Net* net = db_net_map_[db_net];
+  if (net) {
+    net->setIsResAware(res_aware);
+  } else {
+    logger_->warn(GRT,
+                  103,
+                  "Net {} has no GRT representation. It may have been ignored "
+                  "or excluded",
+                  db_net->getConstName());
+  }
+}
+
+bool GlobalRouter::isNetResAware(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    return it->second->isResAware();
+  }
+
+  logger_->warn(
+      GRT,
+      100,
+      "Net {} has no GRT representation. It may have been ignored or excluded",
+      db_net->getConstName());
+
+  return false;
+}
+
 void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
   int min_layer, max_layer;
@@ -870,8 +954,10 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
-    if (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
-        && (!net->isMergedNet() || !netIsCovered(db_net, pins_not_covered))) {
+    if (net->isResAware()
+        || (!loadRoutingFromDBGuides(db_net) && pinPositionsChanged(net)
+            && (!net->isMergedNet()
+                || !netIsCovered(db_net, pins_not_covered)))) {
       dirty_nets.push_back(db_net_map_[db_net]);
       if (net->areSegmentsRestored()) {
         updateNetResources(net, true);
@@ -1300,8 +1386,8 @@ void GlobalRouter::computePinPositionOnGrid(
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    std::map<odb::dbITerm*, odb::Point3D> iterm_to_aps;
-    std::map<odb::dbBTerm*, odb::Point3D> bterm_to_aps;
+    odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
+    odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
     cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
     cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
 
@@ -1609,7 +1695,7 @@ void GlobalRouter::computeTrackConsumption(
 
 std::vector<LayerId> GlobalRouter::findTransitionLayers()
 {
-  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+  odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
       = block_->getDefaultVias();
   std::vector<LayerId> transition_layers;
   for (const auto [tech_layer, via] : default_vias) {
@@ -2228,6 +2314,7 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
+  fastroute_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -2317,6 +2404,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
   fastroute_->setResistanceAware(resistance_aware_);
+  fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);
@@ -2431,10 +2519,10 @@ void GlobalRouter::readGuides(const char* file_name)
   computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
   saveGuidesFromFile(guides);
 }
@@ -2475,10 +2563,10 @@ void GlobalRouter::loadGuidesFromDB()
     updateDbCongestion();
   }
   if (heatmap_) {
-    heatmap_->invalidateInstances();
+    heatmap_->invalidate();
   }
   if (heatmap_rudy_) {
-    heatmap_rudy_->invalidateInstances();
+    heatmap_rudy_->invalidate();
   }
 }
 
@@ -3446,6 +3534,19 @@ float GlobalRouter::getViaResistance(int from_layer, int to_layer)
   return total_via_resistance;
 }
 
+float GlobalRouter::getFRNetResistance(odb::dbNet* db_net)
+{
+  return fastroute_->getNetResistance(db_net);
+}
+
+float GlobalRouter::getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net)
+{
+  int min_layer = getMinLayerForClock() > 0 ? getMinLayerForClock()
+                                            : getMinRoutingLayer();
+  // FastRouteCore uses 0-based layer indices; routing layer numbers are 1-based
+  return fastroute_->getNetResistanceOnLayer(db_net, min_layer - 1);
+}
+
 float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
                                            odb::dbObject* pin2,
                                            bool verbose)
@@ -3838,9 +3939,17 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 
 void GlobalRouter::computeWirelength()
 {
+  std::vector<odb::dbNet*> routed_nets;
+  routed_nets.reserve(routes_.size());
+  for (const auto& [db_net, route] : routes_) {
+    routed_nets.push_back(db_net);
+  }
+
   int64_t total_wirelength = 0;
-  for (auto& net_route : routes_) {
-    total_wirelength += computeNetWirelength(net_route.first);
+#pragma omp parallel for num_threads(num_threads_) \
+    reduction(+ : total_wirelength)
+  for (int i = 0; i < static_cast<int>(routed_nets.size()); i++) {
+    total_wirelength += computeNetWirelength(routed_nets[i]);
   }
   logger_->metric("global_route__wirelength",
                   total_wirelength / block_->getDefUnits());
@@ -4073,7 +4182,7 @@ void GlobalRouter::initGrid(int max_layer)
 }
 
 static void getViaDims(
-    std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias,
+    odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias,
     odb::dbTechLayer* tech_layer,
     odb::dbTechLayer* bottom_layer,
     int& width_up,
@@ -4107,7 +4216,7 @@ static void getViaDims(
 
 std::vector<std::pair<int, int>> GlobalRouter::calcLayerPitches(int max_layer)
 {
-  std::map<odb::dbTechLayer*, odb::dbTechVia*> default_vias
+  odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
       = block_->getDefaultVias();
   odb::dbTech* tech = db_->getTech();
   std::vector<std::pair<int, int>> pitches(tech->getRoutingLayerCount() + 1);
@@ -4357,7 +4466,7 @@ std::vector<Net*> GlobalRouter::findNets(bool init_clock_nets)
 }
 
 void GlobalRouter::findClockNets(const std::vector<Net*>& nets,
-                                 std::set<odb::dbNet*>& clock_nets)
+                                 odb::PtrSet<odb::dbNet>& clock_nets)
 {
   for (Net* net : nets) {
     if (net->isClockNet()) {
@@ -4464,7 +4573,7 @@ int GlobalRouter::getTileSize() const
 
 void GlobalRouter::initClockNets()
 {
-  std::set<odb::dbNet*> clock_nets;
+  odb::PtrSet<odb::dbNet> clock_nets;
 
   auto db_network = sta_->getDbNetwork();
   if (db_network != nullptr && db_network->isLinked()
@@ -4544,7 +4653,7 @@ void GlobalRouter::makeItermPins(Net* net,
 
     odb::Point pin_pos;
     std::vector<odb::dbTechLayer*> pin_layers;
-    std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
+    odb::PtrMap<odb::dbTechLayer, std::vector<odb::Rect>> pin_boxes;
 
     for (odb::dbMPin* mterm : mterm->getMPins()) {
       int last_layer = -1;
@@ -4602,7 +4711,7 @@ void GlobalRouter::makeBtermPins(Net* net,
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
 
-    std::map<odb::dbTechLayer*, std::vector<odb::Rect>> pin_boxes;
+    odb::PtrMap<odb::dbTechLayer, std::vector<odb::Rect>> pin_boxes;
 
     const std::string pin_name = bterm->getConstName();
     odb::Point pin_pos;
@@ -5425,9 +5534,18 @@ void GlobalRouter::reportLayerSettings(int min_routing_layer,
 
 void GlobalRouter::reportResources()
 {
-  fastroute_->computeCongestionInformation();
-  std::vector<int> original_resources = fastroute_->getOriginalResources();
-  std::vector<int> derated_resources = fastroute_->getTotalCapacityPerLayer();
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+  } else {
+    fastroute_->computeCongestionInformation();
+  }
+
+  const std::vector<int>& original_resources
+      = use_cugr_ ? cugr_->getOriginalResources()
+                  : fastroute_->getOriginalResources();
+  const std::vector<int>& derated_resources
+      = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
+                  : fastroute_->getTotalCapacityPerLayer();
 
   logger_->report("");
   logger_->info(GRT, 53, "Routing resources analysis:");
@@ -5466,14 +5584,27 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  fastroute_->computeCongestionInformation();
-  const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
-  const std::vector<int>& demands = fastroute_->getTotalUsagePerLayer();
-  const std::vector<int>& overflows = fastroute_->getTotalOverflowPerLayer();
+  if (use_cugr_) {
+    cugr_->computeCongestionInformation();
+  } else {
+    fastroute_->computeCongestionInformation();
+  }
+
+  const std::vector<int>& resources
+      = use_cugr_ ? cugr_->getTotalCapacityPerLayer()
+                  : fastroute_->getTotalCapacityPerLayer();
+  const std::vector<int>& demands = use_cugr_
+                                        ? cugr_->getTotalUsagePerLayer()
+                                        : fastroute_->getTotalUsagePerLayer();
+  const std::vector<int>& overflows
+      = use_cugr_ ? cugr_->getTotalOverflowPerLayer()
+                  : fastroute_->getTotalOverflowPerLayer();
   const std::vector<int>& max_h_overflows
-      = fastroute_->getMaxHorizontalOverflows();
+      = use_cugr_ ? cugr_->getMaxHorizontalOverflows()
+                  : fastroute_->getMaxHorizontalOverflows();
   const std::vector<int>& max_v_overflows
-      = fastroute_->getMaxVerticalOverflows();
+      = use_cugr_ ? cugr_->getMaxVerticalOverflows()
+                  : fastroute_->getMaxVerticalOverflows();
 
   int total_resource = 0;
   int total_demand = 0;
@@ -5487,7 +5618,7 @@ void GlobalRouter::reportCongestion()
       "Layer         Resource        Demand        Usage (%)    Max H / "
       "Max "
       "V "
-      "/ Total Overflow");
+      "/ Total Congestion");
   logger_->report(
       "--------------------------------------------------------------------"
       "--"
@@ -5971,7 +6102,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       // area will be added
       int add_max = 30;
       // The set will contain the nets for routing
-      std::set<odb::dbNet*> congestion_nets;
+      odb::PtrSet<odb::dbNet> congestion_nets;
       // The dirty nets that could not be routed are added
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
@@ -6044,7 +6175,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 }
 
 // Get the nets that pass through the congestion area based on their wires
-void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
   // Get GCell positions with congestion

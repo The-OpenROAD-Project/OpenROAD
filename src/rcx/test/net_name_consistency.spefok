@@ -1,9 +1,9 @@
 *SPEF "ieee 1481-1999"
 *DESIGN "top"
-*DATE "00:32:25 Monday March 30, 2026"
+*DATE "21:21:51 Tuesday April 28, 2026"
 *VENDOR "The OpenROAD Project"
 *PROGRAM "OpenROAD"
-*VERSION "26Q1-2760-g03ca1c9590"
+*VERSION "26Q2-620-gda443a6e2c"
 *DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
 *DIVIDER /
 *DELIMITER :
@@ -14,53 +14,53 @@
 *L_UNIT 1 HENRY
 
 *NAME_MAP
-*6 b/net2
+*4 b/net2
 *1 mid
 *2 w0
-*5 w1
-*13 b/buf0_1
-*8 b/leaf
-*14 b/leaf_2
-*10 leaf
-*11 load0
-*12 load1
+*3 w1
+*5 b/buf0_1
+*6 b/leaf
+*7 b/leaf_2
+*8 leaf
+*9 load0
+*10 load1
 
-*D_NET *6 0.000182014
+*D_NET *4 0.000182014
 *CONN
-*I *8:A I *D INV_X1
-*I *14:Z O *D LOGIC0_X1
+*I *6:A I *D INV_X1
+*I *7:Z O *D LOGIC0_X1
 *CAP
-1 *8:A 9.10068e-05
-2 *14:Z 9.10068e-05
+1 *6:A 9.10068e-05
+2 *7:Z 9.10068e-05
 *RES
-1 *14:Z *8:A 30.4286 
+1 *7:Z *6:A 30.4286
 *END
 
 *D_NET *2 8.26554e-05
 *CONN
-*I *11:A I *D INV_X1
-*I *10:A I *D INV_X1
-*I *8:ZN O *D INV_X1
+*I *9:A I *D INV_X1
+*I *8:A I *D INV_X1
+*I *6:ZN O *D INV_X1
 *CAP
-1 *11:A 0
-2 *10:A 1.33728e-05
-3 *8:ZN 1.22834e-05
+1 *9:A 0
+2 *8:A 1.33728e-05
+3 *6:ZN 1.22834e-05
 4 *2:8 2.56562e-05
-5 *2:8 *12:A 3.1343e-05
+5 *2:8 *10:A 3.1343e-05
 *RES
-1 *8:ZN *2:8 8.17857 
-2 *2:8 *10:A 7 
-3 *2:8 *11:A 5 
+1 *6:ZN *2:8 8.17857
+2 *2:8 *8:A 7
+3 *2:8 *9:A 5
 *END
 
-*D_NET *5 0.000150118
+*D_NET *3 0.000150118
 *CONN
-*I *12:A I *D INV_X1
-*I *13:Z O *D LOGIC0_X1
+*I *10:A I *D INV_X1
+*I *5:Z O *D LOGIC0_X1
 *CAP
-1 *12:A 5.93874e-05
-2 *13:Z 5.93874e-05
-3 *2:8 *12:A 3.1343e-05
+1 *10:A 5.93874e-05
+2 *5:Z 5.93874e-05
+3 *2:8 *10:A 3.1343e-05
 *RES
-1 *13:Z *12:A 17.6964 
+1 *5:Z *10:A 17.6964
 *END

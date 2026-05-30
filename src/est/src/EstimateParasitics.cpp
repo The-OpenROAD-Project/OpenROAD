@@ -677,7 +677,6 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
       = parasitics->ensureParasiticNode(parasitic, load_pin, network_);
   double wire_cap = wire_length * wireSignalCapacitance(corner);
   double wire_res = wire_length * wireSignalResistance(corner);
-  parasitics->incrCap(n1, wire_cap / 2.0);
 
   // Reduce resistance if the net has NDR with increased width
   odb::dbTechNonDefaultRule* ndr
@@ -690,6 +689,7 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
     wire_res /= ndr_ratio;
   }
 
+  parasitics->incrCap(n1, wire_cap / 2.0);
   parasitics->makeResistor(parasitic, 1, wire_res, n1, n2);
   parasitics->incrCap(n2, wire_cap / 2.0);
 }
@@ -1017,31 +1017,49 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
       if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
-      sta::ParasiticNode* mid_node = parasitics->ensureParasiticNode(
-          parasitic, net, ++max_node_index, network_);
-
       const double cut_res
           = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
 
+      // Resolve from/to endpoints first, so we only allocate a new mid_node
+      // when this iteration actually needs one. On the terminal iteration the
+      // resistor connects directly to the pin or tree anchor; if we had
+      // pre-allocated a mid_node here it would never be wired up and would
+      // become a floating ParasiticNode (singular row in the conductance
+      // matrix for Prima/CCS).
       sta::ParasiticNode* from_node = prev_node;
-      sta::ParasiticNode* to_node = mid_node;
+      sta::ParasiticNode* to_node = nullptr;
+      bool need_new_mid = true;
       if (pin_is_below) {
         if (layer_idx - 1 == pin_layer_idx) {
           from_node = pin_node;
-        } else if (layer_idx + 1 == tree_layer_idx) {
+        }
+        if (layer_idx + 1 == tree_layer_idx) {
           to_node = node;
+          need_new_mid = false;
         }
       } else {
         if (layer_idx - 1 == tree_layer_idx) {
           from_node = node;
-        } else if (layer_idx + 1 == pin_layer_idx) {
-          to_node = pin_node;
         }
+        if (layer_idx + 1 == pin_layer_idx) {
+          to_node = pin_node;
+          need_new_mid = false;
+        }
+      }
+
+      sta::ParasiticNode* mid_node = nullptr;
+      if (need_new_mid) {
+        mid_node = parasitics->ensureParasiticNode(
+            parasitic, net, ++max_node_index, network_);
+        to_node = mid_node;
       }
 
       parasitics->makeResistor(
           parasitic, resistor_id++, cut_res, from_node, to_node);
 
+      // On the terminal iteration mid_node is nullptr and prev_node is unused
+      // by the next iteration (there is none); on every other iteration we
+      // chain through the freshly allocated mid_node.
       prev_node = mid_node;
     }
   }

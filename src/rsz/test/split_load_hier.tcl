@@ -8,14 +8,8 @@ read_lef Nangate45/Nangate45.lef
 read_verilog split_load_hier.v
 link_design reg1 -hier
 
-#place the design
-initialize_floorplan -die_area "0 0 40 1200" -core_area "0 0 40 1200" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
-source $tracks_file
-place_pins -hor_layers $io_placer_hor_layer \
-  -ver_layers $io_placer_ver_layer
-global_placement -skip_nesterov_place
-detailed_placement
+# Load the placed fixture to keep this test independent of floorplan and placement.
+read_def -floorplan_initialize split_load_hier.def
 
 
 create_clock -period 0.3 clk

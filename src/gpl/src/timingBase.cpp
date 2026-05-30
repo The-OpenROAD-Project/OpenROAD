@@ -117,15 +117,24 @@ void TimingBase::setTimingNetWeightMax(float max)
   net_weight_max_ = max;
 }
 
-bool TimingBase::executeTimingDriven(bool run_journal_restore)
+void TimingBase::setTimingNetsPercentage(float percentage)
 {
-  rs_->findResizeSlacks(run_journal_restore);
+  nets_percentage_ = percentage;
+}
+
+bool TimingBase::executeTimingDriven(bool run_journal_restore,
+                                     bool enable_repair_timing)
+{
+  rs_->findResizeSlacks(run_journal_restore,
+                        (enable_repair_timing && repair_timing_),
+                        repair_tns_end_percent_);
 
   if (!run_journal_restore) {
     nbc_->fixPointers();
   }
 
   // get worst resize nets
+  rs_->setWorstSlackNetsPercent(nets_percentage_);
   sta::NetSeq worst_slack_nets = rs_->resizeWorstSlackNets();
 
   if (worst_slack_nets.empty()) {

@@ -153,27 +153,30 @@ target_compile_options(drt
 if(ENABLE_TESTS)
   enable_testing()
 
-  add_executable(trTest
-    ${FLEXROUTE_HOME}/test/gcTest.cpp
-    ${FLEXROUTE_HOME}/test/fixture.cpp
+  foreach(test_name gcTest taTest)
+    add_executable(${test_name}
+      ${FLEXROUTE_HOME}/test/${test_name}.cpp
+      ${FLEXROUTE_HOME}/test/fixture.cpp
+    )
+
+    target_include_directories(${test_name}
+      PRIVATE
+      ${FLEXROUTE_HOME}/src
+      ${OPENROAD_HOME}/include
+      ${OPENROAD_HOME}
   )
 
-  target_include_directories(trTest
-    PRIVATE
-    ${FLEXROUTE_HOME}/src
-    ${OPENROAD_HOME}/include
-  )
+    target_link_libraries(${test_name}
+      drt_lib
+      odb
+      GTest::gtest
+      GTest::gtest_main
+      GTest::gmock
+    )
 
-  target_link_libraries(trTest
-    drt_lib
-    odb
-    GTest::gtest
-    GTest::gtest_main
-    GTest::gmock
-  )
-
-  add_test(NAME trTest COMMAND trTest)
-  add_dependencies(build_and_test trTest)
+    add_test(NAME ${test_name} COMMAND ${test_name})
+    add_dependencies(build_and_test ${test_name})
+  endforeach()
 
   if(DEBUG_DRT_UNDERFLOW)
     target_compile_definitions(drt

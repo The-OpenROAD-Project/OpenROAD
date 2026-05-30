@@ -55,11 +55,12 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",

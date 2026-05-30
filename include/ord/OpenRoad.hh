@@ -130,6 +130,10 @@ namespace web {
 class WebServer;
 }
 
+namespace syn {
+class Synthesis;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -184,6 +188,7 @@ class OpenRoad
     return estimate_parasitics_;
   }
   web::WebServer* getWebServer() { return web_server_; }
+  syn::Synthesis* getSynthesis() { return synthesis_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -288,6 +293,7 @@ class OpenRoad
   dft::Dft* dft_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
+  syn::Synthesis* synthesis_ = nullptr;
   utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;

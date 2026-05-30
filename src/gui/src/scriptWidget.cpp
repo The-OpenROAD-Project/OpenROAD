@@ -23,6 +23,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
+#include "spdlog/common.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tcl.h"

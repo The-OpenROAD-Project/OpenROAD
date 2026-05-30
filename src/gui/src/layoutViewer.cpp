@@ -47,6 +47,7 @@
 #include "highlightGroupDialog.h"
 #include "label.h"
 #include "mainWindow.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -101,10 +102,10 @@ LayoutViewer::LayoutViewer(
     const HighlightSet& highlighted,
     const std::vector<std::unique_ptr<Ruler>>& rulers,
     const std::vector<std::unique_ptr<Label>>& labels,
-    const std::map<odb::dbModule*, ModuleSettings>& module_settings,
-    const std::set<odb::dbNet*>& focus_nets,
-    const std::set<odb::dbNet*>& route_guides,
-    const std::set<odb::dbNet*>& net_tracks,
+    const odb::PtrMap<odb::dbModule, ModuleSettings>& module_settings,
+    const odb::PtrSet<odb::dbNet>& focus_nets,
+    const odb::PtrSet<odb::dbNet>& route_guides,
+    const odb::PtrSet<odb::dbNet>& net_tracks,
     Gui* gui,
     const std::function<bool()>& using_dbu,
     const std::function<bool()>& show_ruler_as_euclidian,
@@ -192,9 +193,9 @@ void LayoutViewer::setChip(odb::dbChip* chip)
   fit();
 }
 
-std::map<odb::dbChipInst*, odb::dbChip*> LayoutViewer::getChips() const
+odb::PtrMap<odb::dbChipInst, odb::dbChip*> LayoutViewer::getChips() const
 {
-  std::map<odb::dbChipInst*, odb::dbChip*> chips;
+  odb::PtrMap<odb::dbChipInst, odb::dbChip*> chips;
   if (getChip() == nullptr) {
     return chips;
   }
