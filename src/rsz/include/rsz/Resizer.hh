@@ -484,7 +484,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks(bool run_journal_restore);
+  void findResizeSlacks(bool run_journal_restore,
+                        bool run_repair_timing = false,
+                        float repair_tns_end_percent = 0.01);
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -641,7 +643,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.

@@ -120,13 +120,23 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
 
   auto storage_net = makeNet(prefix, "storage");
 
-  makeInst(bit_cell.get(),
-           prefix,
-           "bit",
-           storage_cell_,
-           {{storage_ports_[{PortRoleType::Clock, 0}], clock},
-            {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
-            {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  if (!use_latch_) {
+    makeInst(bit_cell.get(),
+             prefix,
+             "bit",
+             storage_cell_,
+             {{storage_ports_[{PortRoleType::Clock, 0}], clock},
+              {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
+              {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  } else {
+    makeInst(bit_cell.get(),
+             prefix,
+             "bit",
+             latch_cell_,
+             {{latch_ports_[{PortRoleType::Clock, 0}], clock},
+              {latch_ports_[{PortRoleType::DataIn, 0}], data_input},
+              {latch_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  }
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
     makeInst(
@@ -677,31 +687,33 @@ void RamGen::findMasters()
   }
   and2_ports_ = buildPortMap(and2_cell_);
 
-  if (!storage_cell_) {
-    // FIXME
-    // Still needs changes to get right type of flip-flop
-    storage_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          if (!port->isRegOutput()) {
-            return false;
-          }
-          // looking for DFF specifically
-          auto cell = port->libertyCell();
-          auto port_iter = cell->portIterator();
-          while (port_iter->hasNext()) {
-            auto p = port_iter->next()->libertyPort();
-            // check to filter out latches
-            if (p && p->isLatchData()) {
-              delete port_iter;
+  if (!use_latch_) {
+    if (!storage_cell_) {
+      // FIXME
+      // Still needs changes to get right type of flip-flop
+      storage_cell_ = findMaster(
+          [](sta::LibertyPort* port) {
+            if (!port->isRegOutput()) {
               return false;
             }
-          }
-          delete port_iter;
-          return true;
-        },
-        "storage");
+            // looking for DFF specifically
+            auto cell = port->libertyCell();
+            auto port_iter = cell->portIterator();
+            while (port_iter->hasNext()) {
+              auto p = port_iter->next()->libertyPort();
+              // check to filter out latches
+              if (p && p->isLatchData()) {
+                delete port_iter;
+                return false;
+              }
+            }
+            delete port_iter;
+            return true;
+          },
+          "storage");
+    }
+    storage_ports_ = buildPortMap(storage_cell_);
   }
-  storage_ports_ = buildPortMap(storage_cell_);
 
   if (!clock_gate_cell_) {
     clock_gate_cell_ = findMaster(
@@ -719,6 +731,41 @@ void RamGen::findMasters()
         "buffer");
   }
   buffer_ports_ = buildPortMap(buffer_cell_);
+
+  // latch cells for latch-based ram: find neg/pos latch cell
+  if (use_latch_ && !latch_cell_) {
+    latch_cell_ = findMaster(
+        [](sta::LibertyPort* port) {
+          if (!port->direction()->isOutput()) {
+            return false;
+          }
+          auto cell = port->libertyCell();
+          if (!cell->hasSequentials()) {
+            return false;
+          }
+          bool has_latch_data = false;
+          bool has_gate = false;
+          auto port_iter = cell->portIterator();
+          while (port_iter->hasNext()) {
+            auto lp = port_iter->next()->libertyPort();
+            if (lp) {
+              if (lp->isLatchData()) {
+                has_latch_data = true;
+              }
+              if (lp->isClock()) {
+                has_gate = true;
+              }
+            }
+          }
+          delete port_iter;
+          return has_latch_data && has_gate;
+        },
+        "latch");
+  }
+
+  if (use_latch_ && latch_cell_) {
+    latch_ports_ = buildPortMap(latch_cell_);
+  }
 
   // aoi cells used for column mux functionality when column_mux_ratio > 1
   // uses truth table simulation to identify AOI22 and discover port names
@@ -1076,6 +1123,7 @@ void RamGen::generate(const int mask_size,
                       const int r_ports,
                       const int w_ports,
                       const int column_mux_ratio,
+                      const bool use_latch,
                       dbMaster* storage_cell,
                       dbMaster* tristate_cell,
                       dbMaster* inv_cell,
@@ -1125,6 +1173,7 @@ void RamGen::generate(const int mask_size,
 
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
+  use_latch_ = use_latch;
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
@@ -1133,6 +1182,32 @@ void RamGen::generate(const int mask_size,
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
   aoi22_cell_ = nullptr;
+  latch_cell_ = nullptr;
+
+  if (use_latch_ && storage_cell_) {
+    auto sta_cell = network_->dbToSta(storage_cell_);
+    auto liberty = network_->libertyCell(sta_cell);
+    bool is_latch = false;
+    auto port_iter = std::unique_ptr<sta::ConcreteCellPortIterator>(
+        liberty->portIterator());
+    while (port_iter->hasNext()) {
+      auto lp = port_iter->next()->libertyPort();
+      if (lp && lp->isLatchData()) {
+        is_latch = true;
+        break;
+      }
+    }
+    if (!is_latch) {
+      logger_->error(RAM,
+                     37,
+                     "-storage_cell {} is not a latch cell. Please provide a "
+                     "latch cell when setting -use_latch 1.",
+                     storage_cell_->getName());
+    }
+    latch_cell_ = storage_cell_;
+    storage_cell_ = nullptr;
+  }
+
   findMasters();
 
   auto chip = db_->getChip();
@@ -1319,6 +1394,16 @@ void RamGen::generate(const int mask_size,
       word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
     }
   }
+  // For latch-based ram: mid_nets carry data from negative latch down to all
+  // pos latches per bit in the same column
+  vector<dbNet*> mid_nets(word_size);
+  dbNet* clk_b_net = nullptr;
+  if (use_latch_) {
+    clk_b_net = makeNet("global", "clk_b");
+    for (int bit = 0; bit < word_size; ++bit) {
+      mid_nets[bit] = makeNet("mid", fmt::format("b{}", bit));
+    }
+  }
 
   // For column_mux_ratio > 1, create one shared select_b net per row before
   // iterating over word_idx. All words in the same row share this net as the
@@ -1367,7 +1452,7 @@ void RamGen::generate(const int mask_size,
                row_selects,
                shared_select_b_nets,
                (word_idx == 0 || column_mux_ratio == 1),
-               D_nets,
+               use_latch_ ? mid_nets : D_nets,
                word_output_nets);
     }
   }
@@ -1477,6 +1562,55 @@ void RamGen::generate(const int mask_size,
           ram_grid_.addCell(std::move(s1_cell_1), base_col + 3);
           ram_grid_.addCell(std::move(s2_cell), base_col + 2);
         }
+      }
+    }
+  }
+
+  if (use_latch_) {
+    auto clk_inv_cell = std::make_unique<Cell>();
+    makeInst(clk_inv_cell.get(),
+             "neg_row",
+             "clk_inv",
+             inv_cell_,
+             {{inv_ports_[{PortRoleType::DataIn, 0}], clock->getNet()},
+              {inv_ports_[{PortRoleType::DataOut, 0}], clk_b_net}});
+    // add to column with clock gates
+    ram_grid_.addCell(std::move(clk_inv_cell), col_cell_count - 1);
+
+    const int nl_col_offset = (column_mux_ratio == 4) ? 1 : 0;
+
+    for (int slice = 0; slice < slices_per_word; ++slice) {
+      for (int bit = 0; bit < mask_size; ++bit) {
+        const int global_bit = slice * mask_size + bit;
+        const int group_start
+            = slice * (mask_size * column_mux_ratio + column_mux_ratio)
+              + bit * column_mux_ratio;
+        const int nl_col = group_start + nl_col_offset;
+        for (int c = group_start; c < group_start + column_mux_ratio; ++c) {
+          if (c == nl_col) {
+            auto nl_cell = std::make_unique<Cell>();
+            makeInst(
+                nl_cell.get(),
+                // NOLINTNEXTLINE(misc-include-cleaner)
+                fmt::format("neg_lat_b{}", global_bit),
+                "nlat",
+                latch_cell_,
+                {{latch_ports_[{PortRoleType::Clock, 0}], clk_b_net},
+                 {latch_ports_[{PortRoleType::DataIn, 0}], D_nets[global_bit]},
+                 {latch_ports_[{PortRoleType::DataOut, 0}],
+                  mid_nets[global_bit]}});
+            ram_grid_.addCell(std::move(nl_cell), c);
+          } else {
+            ram_grid_.addCell(nullptr, c);
+          }
+        }
+      }
+    }
+    for (int slice = 0; slice < slices_per_word; ++slice) {
+      for (int w = 0; w < column_mux_ratio; ++w) {
+        int sel_col = slice * (mask_size * column_mux_ratio + column_mux_ratio)
+                      + mask_size * column_mux_ratio + w;
+        ram_grid_.addCell(nullptr, sel_col);
       }
     }
   }
@@ -1634,6 +1768,38 @@ void RamGen::generate(const int mask_size,
       }
     }
   }
+  // // One extra row at the top for placing input buffers, one extra row for
+  // // negative latches if use latch-based ram
+  const int num_rows_grid = num_rows + 1 + (use_latch_ ? 1 : 0);
+
+  // auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
+  // // check for AND gate, specific case for 2 words
+  // int inv_col_cells = 0;
+  // if (num_row_bits > 1) {
+  //   for (int i = num_inputs - 1; i >= num_word_bits; --i) {
+  //     auto inv_grid_cell = std::make_unique<Cell>();
+  //     makeInst(
+  //         inv_grid_cell.get(),
+  //         "decoder",
+  //         fmt::format("inv_{}", i),
+  //         inv_cell_,
+  //         {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[i]->getNet()},
+  //          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr[i]}});
+  //     cell_inv_layout->addCell(std::move(inv_grid_cell));
+  //     ++inv_col_cells;
+  //     for (int filler_count = 0; filler_count < num_row_bits - 1;
+  //          ++filler_count) {
+  //       cell_inv_layout->addCell(nullptr);
+  //       ++inv_col_cells;
+  //     }
+  //   }
+  // }
+  // // Pad remaining slots so this column matches the grid height (num_rows_grid)
+  // while (inv_col_cells < num_rows_grid) {
+  //   cell_inv_layout->addCell(nullptr);
+  //   ++inv_col_cells;
+  // }
+  // ram_grid_.addLayout(std::move(cell_inv_layout));
 
   auto ram_origin(odb::Point(0, 0));
 
@@ -1643,7 +1809,7 @@ void RamGen::generate(const int mask_size,
   if (tapcell_) {
     // max tap distance specified is greater than the length of ram
     if (ram_grid_.getRowWidth() <= max_tap_dist) {
-      auto tapcell_layout = generateTapColumn(num_rows, 0);
+      auto tapcell_layout = generateTapColumn(num_rows_grid - 1, 0);
       ram_grid_.insertLayout(std::move(tapcell_layout), 0);
     } else {
       // needed this calculation so first cells have right distance
@@ -1654,7 +1820,8 @@ void RamGen::generate(const int mask_size,
       for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
         if (nearest_tap + ram_grid_.getLayoutWidth(col) >= max_tap_dist) {
           // if the nearest_tap is too far, generate tap column
-          auto tapcell_layout = generateTapColumn(num_rows, tapcell_count);
+          auto tapcell_layout
+              = generateTapColumn(num_rows_grid - 1, tapcell_count);
           ram_grid_.insertLayout(std::move(tapcell_layout), col);
           ++col;  // col adjustment after insertion
           nearest_tap = 0;
@@ -1664,7 +1831,8 @@ void RamGen::generate(const int mask_size,
       }
       // check for last column in the grid
       if (nearest_tap >= max_tap_dist) {
-        auto tapcell_layout = generateTapColumn(num_rows, tapcell_count);
+        auto tapcell_layout
+            = generateTapColumn(num_rows_grid - 1, tapcell_count);
         ram_grid_.addLayout(std::move(tapcell_layout));
       }
     }
@@ -1678,8 +1846,8 @@ void RamGen::generate(const int mask_size,
 
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
 
-  // One extra row at the top for placing input buffers
-  const int num_rows_grid = num_rows + filler_rows + 1;
+  // // One extra row at the top for placing input buffers
+  // const int num_rows_grid = num_rows + filler_rows + 1;
   for (int i = 0; i < num_rows_grid; ++i) {
     auto row_name = fmt::format("RAM_ROW{}", i);
     auto y_coord = i * ram_grid_.getHeight();

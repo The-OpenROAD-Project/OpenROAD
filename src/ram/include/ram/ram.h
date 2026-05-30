@@ -101,6 +101,7 @@ class RamGen
                 int r_ports,
                 int w_ports,
                 int column_mux_ratio,
+                bool use_latch,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
@@ -227,6 +228,7 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* aoi22_cell_{nullptr};
+  odb::dbMaster* latch_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
   std::map<PortRole, std::string> storage_ports_;
@@ -235,6 +237,7 @@ class RamGen
   std::map<PortRole, std::string> and2_ports_;
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
+  std::map<PortRole, std::string> latch_ports_;
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
@@ -243,6 +246,7 @@ class RamGen
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
       aoi22_out_;
   Grid ram_grid_;
+  bool use_latch_{false};
 };
 
 }  // namespace ram

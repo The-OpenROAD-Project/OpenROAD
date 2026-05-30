@@ -2533,7 +2533,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   return new_it->second;
 }
 
-int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
+                                std::optional<float> load_cap_hint)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
@@ -2550,10 +2551,19 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
                  revisiting_inst ? " - revisit" : "");
       resized_multi_output_insts_.insert(inst);
     }
-    estimate_parasitics_->ensureWireParasitic(drvr_pin);
-    // Includes net parasitic capacitance.
-    float load_cap
-        = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    // Hint skips ensureWireParasitic, which triggers an incremental
+    // FastRoute per buffer in the repair_design.
+    // Only applies under global-routing parasitics;
+    // placement-based estimation is already cheap.
+    float load_cap;
+    if (load_cap_hint.has_value()
+        && estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kGlobalRouting) {
+      load_cap = *load_cap_hint;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(drvr_pin);
+      load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    }
     if (load_cap > 0.0) {
       sta::LibertyCell* target_cell
           = findTargetCell(cell, load_cap, revisiting_inst);
@@ -2980,7 +2990,9 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore)
+void Resizer::findResizeSlacks(bool run_journal_restore,
+                               bool run_repair_timing,
+                               float repair_tns_end_percent)
 {
   initBlock();
 
@@ -3027,6 +3039,32 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     // TODO: fix the function to understand the parasitics from the global
     // routing.
     fullyRebuffer(nullptr);
+  }
+
+  if (run_repair_timing) {
+    // Conservative repair_timing: only fix worst setup violations.
+    (void) repairSetup(
+        /*setup_margin=*/0.0,
+        repair_tns_end_percent,
+        /*max_passes=*/1,
+        /*max_iterations=*/0,
+        /*max_repairs_per_pass=*/1,
+        /*match_cell_footprint=*/false,
+        /*verbose=*/false,
+        /*sequence=*/parseMoveSequence(""),
+        /*phases=*/"",
+        /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
+        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
+                                     // density
+        /*skip_size_down=*/false,
+        /*skip_buffering=*/false,
+        /*skip_buffer_removal=*/false,
+        /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
+        /*skip_vt_swap=*/true,    // post-placement optimization
+        /*skip_crit_vt_swap=*/true);
+
+    // Re-estimate parasitics after repair_setup
+    estimate_parasitics_->estimateParasitics(parasitics_src);
   }
 
   findResizeSlacks1();
