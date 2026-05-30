@@ -46,6 +46,7 @@ class FieldType:
     table_base_type: Optional[str] = None
 
     def __init__(self, raw: str):
+        """Construct the kind from a raw C++ type string."""
         self.raw = raw
         # Whether the setter takes the value by const reference. Set by
         # make_field_type() since the rule needs the schema's enum names.
@@ -58,10 +59,12 @@ class FieldType:
     # ---- accessor signatures (setter argument type / getter return type) ----
     @property
     def setter_arg_type(self) -> str:
+        """C++ type the setter accepts (the raw type by default)."""
         return self.raw
 
     @property
     def getter_return_type(self) -> str:
+        """C++ type the getter returns (the raw type by default)."""
         return self.raw
 
     # ---- behavior ----
@@ -74,12 +77,15 @@ class FieldType:
         return arg
 
     def serialize_deref(self) -> bool:
+        """Whether the stream operators dereference the member."""
         return False
 
     def compare_deref(self) -> bool:
+        """Whether operator==/operator< dereference the member."""
         return False
 
     def needs_free(self, field_name: str) -> bool:
+        """Whether the named member must be freed in the destructor."""
         return False
 
 
@@ -100,10 +106,12 @@ class BoolType(FieldType):
 
     @property
     def setter_arg_type(self) -> str:
+        """Bitfields are set as bool."""
         return "bool"
 
     @property
     def getter_return_type(self) -> str:
+        """Bitfields are read as bool."""
         return "bool"
 
 
@@ -114,13 +122,16 @@ class CharPtrType(FieldType):
 
     @property
     def setter_arg_type(self) -> str:
+        """Setter takes a (non-const) char*."""
         return "char *"
 
     @property
     def getter_return_type(self) -> str:
+        """Getter returns a const char*."""
         return "const char *"
 
     def needs_free(self, field_name: str) -> bool:
+        """Only name_ owns its char* storage and is freed."""
         return field_name == "name_"
 
 
@@ -129,13 +140,16 @@ class VectorType(FieldType):
 
     @property
     def setter_arg_type(self) -> str:
+        """Exposed as std::vector (dbVector is an internal alias)."""
         return self.raw.replace("dbVector", "std::vector")
 
     @property
     def getter_return_type(self) -> str:
+        """Exposed as std::vector (dbVector is an internal alias)."""
         return self.raw.replace("dbVector", "std::vector")
 
     def getter_kind(self) -> str:
+        """Vector getter fills a std::vector out-parameter."""
         return "out_param"
 
 
@@ -143,22 +157,27 @@ class RefType(FieldType):
     """dbId<_X> object reference; getter resolves via the owner table."""
 
     def __init__(self, raw: str, ref_table: Optional[str]):
+        """Capture the referenced public pointer type and owner table name."""
         super().__init__(raw)
         self.ref_type = get_ref_type(raw)
         self.ref_table = ref_table
 
     @property
     def setter_arg_type(self) -> str:
+        """Setter takes the referenced object's pointer type."""
         return self.ref_type
 
     @property
     def getter_return_type(self) -> str:
+        """Getter returns the referenced object's pointer type."""
         return self.ref_type
 
     def getter_kind(self) -> str:
+        """Ref getter looks the id up in the owner table."""
         return "ref_lookup"
 
     def setter_assign_rhs(self, arg: str) -> str:
+        """Store the referenced object's OID rather than the pointer."""
         return f"{arg}->getImpl()->getOID()"
 
 
@@ -168,21 +187,26 @@ class HashTableType(FieldType):
     is_hash_table = True
 
     def __init__(self, raw: str):
+        """Capture the hashed value's pointer type from the dbHashTable<...>."""
         super().__init__(raw)
         self.hash_table_type = get_hash_table_type(raw)
 
     def _value_type(self) -> str:
+        """The hashed value's public pointer type (e.g. dbX*)."""
         return self.hash_table_type.replace("_", "") if self.hash_table_type else ""
 
     @property
     def setter_arg_type(self) -> str:
+        """Value pointer type (hash tables have no generated setter)."""
         return self._value_type()
 
     @property
     def getter_return_type(self) -> str:
+        """find() returns the value pointer type."""
         return self._value_type()
 
     def getter_kind(self) -> str:
+        """Hash-table getter is find(name)."""
         return "hash_find"
 
 
@@ -193,6 +217,7 @@ class TableType(FieldType):
     db_set_getter = True
 
     def __init__(self, base_type: str, page_size: Optional[int]):
+        """Owned table of `base_type` children with an optional page size."""
         # base_type is the child class name (e.g. "dbInst"); the stored member
         # type is the dbTable<_Child>* form returned by member_decl().
         super().__init__(base_type)
@@ -214,12 +239,15 @@ class TableType(FieldType):
         )
 
     def getter_kind(self) -> str:
+        """Owned tables expose a dbSet<> getter."""
         return "dbset"
 
     def serialize_deref(self) -> bool:
+        """Serialized by dereferencing the owned table pointer."""
         return True
 
     def compare_deref(self) -> bool:
+        """Compared by dereferencing the owned table pointer."""
         return True
 
 

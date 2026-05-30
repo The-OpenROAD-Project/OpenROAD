@@ -55,6 +55,7 @@ class Parser:
     """Parses a file looking for the sections delimited by the code_tags."""
 
     def __init__(self, file_name: str):
+        """Read `file_name` into lines and default to // section comments."""
         with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
         self.generator_code: Dict[str, List[str]] = {}

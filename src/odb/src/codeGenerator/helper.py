@@ -66,10 +66,12 @@ _removable = {"const", "static", "unsigned"}
 
 
 def _stem(s: str) -> str:
+    """Strip cv/`unsigned`/`static` qualifiers from a type string."""
     return " ".join(item for item in s.split() if item not in _removable)
 
 
 def _get_struct(name: str, structs: List[Struct]) -> Optional[Struct]:
+    """Return the Struct named `name` from `structs`, or None if absent."""
     for struct in structs:
         if struct.name == name:
             return struct
@@ -77,6 +79,11 @@ def _get_struct(name: str, structs: List[Struct]) -> Optional[Struct]:
 
 
 def components(structs: List[Struct], name: str, _type: str) -> List[str]:
+    """Expand a field into its comparison sub-components.
+
+    A leaf/ref type yields itself; a struct type recurses into its members;
+    anything else yields nothing (not compared).
+    """
     if _stem(_type) in _comparable or is_ref(_type):
         return [name]
     struct = _get_struct(_type.rstrip(" *"), structs)
@@ -92,6 +99,7 @@ def components(structs: List[Struct], name: str, _type: str) -> List[str]:
 
 
 def is_bit_fields(field: Field, structs: List[Struct]) -> bool:
+    """Whether the field (or any nested struct member) is a bitfield."""
     if field.bits:
         return True
     struct = _get_struct(field.type, structs)
@@ -101,6 +109,7 @@ def is_bit_fields(field: Field, structs: List[Struct]) -> bool:
 
 
 def get_plural_name(name: str) -> str:
+    """Pluralize a name (handles trailing 'y' and 's')."""
     if name.endswith("y"):
         return f"{name[:-1]}ies"
     if name.endswith("s"):
@@ -109,12 +118,14 @@ def get_plural_name(name: str) -> str:
 
 
 def get_functional_name(name: str) -> str:
+    """CamelCase accessor stem from a snake_case field name (tbl -> table)."""
     if name.islower():
         return "".join(n.capitalize() for n in name.replace("tbl", "table").split("_"))
     return name
 
 
 def get_table_name(name: str) -> str:
+    """Table member name for a db class (e.g. dbInst -> inst_tbl_)."""
     if name.startswith("db"):
         name = name[2:]
     return f"{name.lower()}_tbl_"
@@ -130,14 +141,17 @@ _DBHASHTABLE_PREFIX = "dbHashTable<"
 
 
 def is_ref(type_name: str) -> bool:
+    """Whether the type is a dbId<...> object reference."""
     return type_name.startswith("dbId<") and type_name.endswith(">")
 
 
 def is_hash_table(type_name: str) -> bool:
+    """Whether the type is a dbHashTable<...>."""
     return type_name.startswith("dbHashTable<") and type_name.endswith(">")
 
 
 def get_hash_table_type(type_name: str) -> Optional[str]:
+    """Value pointer type of a dbHashTable<_dbX[, N]> (e.g. dbX*), or None."""
     if not is_hash_table(type_name) or len(type_name) < 13:
         return None
     types = get_template_types(type_name[len(_DBHASHTABLE_PREFIX) : -1])
@@ -148,6 +162,7 @@ def get_hash_table_type(type_name: str) -> Optional[str]:
 
 
 def is_pass_by_ref(type_name: str) -> bool:
+    """Whether the type is a dbVector<...> or std::vector<...>."""
     return type_name.startswith(("dbVector", "std::vector"))
 
 
@@ -173,6 +188,7 @@ def is_set_by_ref(type_name: str, enum_names) -> bool:
 
 
 def is_template_type(type_name: str) -> bool:
+    """Whether the type has a <...> template argument list."""
     open_bracket = type_name.find("<")
     if open_bracket == -1:
         return False
@@ -198,6 +214,7 @@ def _split_top_level_commas(type_name: str) -> List[str]:
 
 
 def get_template_types(type_name: str) -> List[str]:
+    """Flatten a type into its constituent template argument type names."""
     # Check for top-level commas first (bracket-aware)
     parts = _split_top_level_commas(type_name)
     if len(parts) > 1:
@@ -214,6 +231,7 @@ def get_template_types(type_name: str) -> List[str]:
 
 
 def get_template_type(type_name: str) -> Optional[str]:
+    """The substring inside the outer <...> of a template type, or None."""
     if not is_template_type(type_name):
         return None
     num_brackets = 0
@@ -229,12 +247,14 @@ def get_template_type(type_name: str) -> Optional[str]:
 
 
 def get_ref_type(type_name: str) -> Optional[str]:
+    """Public pointer type for a dbId<_dbX> reference (e.g. dbX*), or None."""
     if not is_ref(type_name) or len(type_name) < 7:
         return None
     return f"{type_name[len(_DBID_PUBLIC_PREFIX) : -1]}*"
 
 
 def fnv1a_32(string: str) -> int:
+    """FNV-1a 32-bit hash of a string (used for stable dbObjectType hashes)."""
     FNV_prime = 0x01000193
     hash_value = 0x811C9DC5
     for c in string:

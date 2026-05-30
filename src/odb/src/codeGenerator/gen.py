@@ -344,6 +344,7 @@ class ODBGenerator:
     def __init__(
         self, env: Environment, include_dir: Path, src_dir: Path, keep_empty: bool
     ):
+        """Hold the Jinja env, output directories, and the keep_empty flag."""
         self.env = env
         self.include_dir = include_dir
         self.src_dir = src_dir
@@ -351,6 +352,7 @@ class ODBGenerator:
         self.generated_dir = Path("generated")
 
     def load_schema(self, json_path: Path) -> Schema:
+        """Load the top-level schema JSON and every per-class JSON it points to."""
         with open(json_path, encoding="ascii") as f:
             data = json.load(f)
 
@@ -366,6 +368,7 @@ class ODBGenerator:
         return schema
 
     def process_schema(self, schema: Schema) -> None:
+        """Derive all generated attributes on the schema's classes and fields."""
         generate_relations(schema)
 
         # All enum type names (schema-declared + external) used to keep enums
@@ -451,6 +454,7 @@ class ODBGenerator:
                         )
 
     def generate(self, schema: Schema) -> None:
+        """Render all class, iterator, and shared files, then merge and format."""
         print("###################Code Generation Begin###################")
         self.process_schema(schema)
 
@@ -500,12 +504,15 @@ class ODBGenerator:
         print("###################Code Generation End###################")
 
     def _render_to_file(self, template_name: str, out_name: str, **kwargs) -> None:
+        """Render a template and write it to out_name in the generated dir."""
         template = self.env.get_template(template_name)
         text = template.render(**kwargs)
         with open(self.generated_dir / out_name, "w", encoding="ascii") as f:
             f.write(text)
 
     def _merge_files(self, file_names: List[str]) -> None:
+        """Merge generated sections into the target files, preserving user code,
+        then run clang-format."""
         includes = {"db.h", "dbObject.h", "dbCompare.inc"}
         for item in file_names:
             target_dir = self.include_dir if item in includes else self.src_dir
@@ -530,6 +537,7 @@ class ODBGenerator:
 
 
 def main():
+    """Parse CLI args, load the schema, and run code generation."""
     parser = argparse.ArgumentParser(
         description="Code generator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

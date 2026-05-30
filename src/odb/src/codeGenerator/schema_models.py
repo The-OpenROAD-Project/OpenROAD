@@ -46,34 +46,42 @@ class Field:
     # a C++ type. They are properties so the templates can read them by name.
     @property
     def refType(self) -> Optional[str]:
+        """Referenced object's pointer type, for a dbId<> field."""
         return self.kind.ref_type if self.kind else None
 
     @property
     def refTable(self) -> Optional[str]:
+        """Owner table a dbId<> getter reads from."""
         return self.kind.ref_table if self.kind else None
 
     @property
     def isHashTable(self) -> bool:
+        """Whether the field is a dbHashTable<>."""
         return self.kind.is_hash_table if self.kind else False
 
     @property
     def hashTableType(self) -> Optional[str]:
+        """Value pointer type of a dbHashTable<> field."""
         return self.kind.hash_table_type if self.kind else None
 
     @property
     def isSetByRef(self) -> bool:
+        """Whether the setter takes its argument by const reference."""
         return self.kind.type_set_by_ref if self.kind else False
 
     @property
     def setterArgumentType(self) -> Optional[str]:
+        """C++ type the generated setter accepts."""
         return self.kind.setter_arg_type if self.kind else None
 
     @property
     def getterReturnType(self) -> Optional[str]:
+        """C++ type the generated getter returns."""
         return self.kind.getter_return_type if self.kind else None
 
     @property
     def table_base_type(self) -> Optional[str]:
+        """Child class name of an owned-table field."""
         return self.kind.table_base_type if self.kind else None
 
     @property
@@ -83,6 +91,7 @@ class Field:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Field":
+        """Build a Field from its JSON object, rejecting unknown keys."""
         _require_known_keys(cls, data)
         return cls(**data)
 
@@ -96,6 +105,7 @@ class Enum:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Enum":
+        """Build an Enum from JSON, mapping the reserved 'class' key to `cls`."""
         if "class" in data:
             data["cls"] = data.pop("class")
         _require_known_keys(cls, data)
@@ -112,6 +122,7 @@ class Struct:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Struct":
+        """Build a Struct from JSON, parsing its nested field list."""
         fields = [
             Field.from_dict(f) if isinstance(f, dict) else f
             for f in data.get("fields", [])
@@ -146,6 +157,8 @@ class Class:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Class":
+        """Build a Class from JSON: the 'type' alias, do_not_generate_compare
+        coercion, and the nested field/enum/struct lists."""
         if "do_not_generate_compare" in data and isinstance(
             data["do_not_generate_compare"], str
         ):
@@ -185,6 +198,8 @@ class Iterator:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Iterator":
+        """Build an Iterator from JSON, coercing the 'true'/'false' string
+        flags to bool."""
         data = dict(data)
         # The schema spells these as the JSON strings "true"/"false".
         for key in ("reversible", "orderReversed", "customEnd"):
@@ -207,6 +222,7 @@ class Relation:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Relation":
+        """Build a Relation from its JSON object, rejecting unknown keys."""
         _require_known_keys(cls, data)
         return cls(**data)
 
@@ -225,6 +241,7 @@ class Schema:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Schema":
+        """Build a Schema from JSON, parsing the iterator and relation lists."""
         data = dict(data)
         data["iterators"] = [
             Iterator.from_dict(i) if isinstance(i, dict) else i
