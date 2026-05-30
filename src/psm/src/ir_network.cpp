@@ -270,18 +270,20 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
     }
 
     // First pass: figure out which side(s) this iterm has pin geometry on
-    // so we can pick the iterm base node's layer accordingly.
+    // so we can pick the iterm base node's layer accordingly. Only the
+    // layer matters here, so skip the polygon/transform work.
     bool has_front_pin = false;
     bool has_back_pin = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
-        const auto pin_shapes = generatePolygonsFromBox(geom, transform);
-        for (const auto& [layer, shapes] : pin_shapes) {
-          if (layer->isBackside()) {
-            has_back_pin = true;
-          } else {
-            has_front_pin = true;
-          }
+        odb::dbTechLayer* layer = geom->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (layer->isBackside()) {
+          has_back_pin = true;
+        } else {
+          has_front_pin = true;
         }
       }
     }
@@ -294,7 +296,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
       base_layer = back_base;
     }
     const bool primary_is_back = base_layer == back_base;
-    const bool is_bridge = iterm->getMTerm()->getMaster()->isBacksideBridge();
+    const bool is_bridge = inst->getMaster()->isBacksideBridge();
 
     int x, y;
     iterm->getAvgXY(&x, &y);
