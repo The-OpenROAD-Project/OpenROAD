@@ -572,20 +572,6 @@ proc add_pdn_connect { args } {
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
   set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
 
-  # Backside-power sanity check. A standard cut-layer via cannot bridge
-  # a front-side metal to a backside metal (BPR / BM* / BRDL); PDN
-  # cannot create TSVs or backside cut vias, so the connection has to
-  # be provided by a tap/bridge cell whose layout already stitches the
-  # two sides together. Refuse the request rather than silently
-  # building a via that won't exist on the die.
-  if { [$l0 isBackside] != [$l1 isBackside] } {
-    utl::error PDN 1200 \
-      "add_pdn_connect layers ([$l0 getName], [$l1 getName]) span the\
-       front-side/backside boundary. PDN cannot create TSVs or vias\
-       across this boundary; the connection must come from a\
-       tap/bridge cell that internally stitches the two sides."
-  }
-
   set cut_pitch "0 0"
   if { [info exists keys(-cut_pitch)] } {
     set cut_pitch [pdn::get_one_to_two "-cut_pitch" $keys(-cut_pitch)]
