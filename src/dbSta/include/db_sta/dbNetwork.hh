@@ -178,7 +178,10 @@ class dbNetwork : public ConcreteNetwork
   // generic connect pin -> net, supports all pin/net types
   void connectPin(Pin* pin, Net* net);
   // generic connect pin -> flat_net, hier_net.
-  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
+  void connectPin(Pin* pin,
+                  Net* flat_net,
+                  Net* hier_net,
+                  bool reassociate_hier_flat = true);
   // hierarchical support functions
   odb::dbModule* getNetDriverParentModule(Net* net,
                                           Pin*& driver_pin,
@@ -373,7 +376,10 @@ class dbNetwork : public ConcreteNetwork
 
   // Return the highest net above the given net.
   // - If the net is a flat net, return it.
-  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  // - If the net is a hier net (dbModNet), return the associated flat dbNet.
+  // This ensures parasitic externality checks in ensureParasiticNode work
+  // correctly: net_ is always a flat net, so the comparison net != net_
+  // must also operate on flat nets.
   Net* highestNetAbove(Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
@@ -434,8 +440,6 @@ class dbNetwork : public ConcreteNetwork
   PortMemberIterator* memberIterator(const Port* port) const override;
   PinSet* drivers(const Pin* pin) override;
   PinSet* drivers(const Net* net) override;
-  void removeDriverFromCache(const Net* net);
-  void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
   using Network::direction;
@@ -488,6 +492,10 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
+  void addDriverToCacheIfPresent(const Net* net, const Pin* drvr);
+  void removeDriverFromCache(const Net* net);
+  void removeDriverFromCache(const Net* net, const Pin* drvr);
+
   // Strip the parent-instance prefix from a hierarchical name, treating
   // backslash-escaped slashes (\/) as literal name characters rather than
   // hierarchy separators.  Used to recover an in-module name from a

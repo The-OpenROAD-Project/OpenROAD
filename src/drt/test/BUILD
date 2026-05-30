@@ -167,10 +167,37 @@ cc_test(
         "../src",
     ],
     deps = [
+        "//src/drt",  # build_cleaner: keep for private headers
+        "//src/drt:base_types",
+        "//src/drt:db_hdrs",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "ta_test",
+    tests = [":ta_unittest"],
+)
+
+cc_test(
+    name = "ta_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "taTest.cpp",
+    ],
+    features = ["-layering_check"],  # TODO: acceses private headers
+    includes = [
+        "../src",
+    ],
+    deps = [
         "//src/drt",
         "//src/drt:base_types",
         "//src/drt:db_hdrs",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

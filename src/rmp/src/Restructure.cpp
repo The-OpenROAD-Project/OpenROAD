@@ -19,6 +19,10 @@
 #include <utility>
 #include <vector>
 
+// Establish abc namespace, must include before abcapis.h
+#include "misc/util/abc_namespaces.h"  // IWYU pragma: keep
+
+// other includes
 #include "annealing_strategy.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
@@ -438,7 +442,7 @@ void Restructure::removeConstCells()
 
   open_sta_->clearLogicConstants();
   open_sta_->findLogicConstants();
-  std::set<odb::dbInst*> const_insts;
+  odb::PtrSet<odb::dbInst> const_insts;
   int const_cnt = 1;
   for (auto inst : block_->getInsts()) {
     int outputs = 0;

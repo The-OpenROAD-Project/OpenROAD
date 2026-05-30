@@ -43,7 +43,12 @@ TESTS = [
     "modeling_instance_obs",
     "multiple_calls",
     "ndr_1w_3s",
+    "ndr_1w_3s_cugr",
     "ndr_2w_3s",
+    "ndr_2w_3s_cugr",
+    "ndr_multi_cugr",
+    "ndr_rrr_cugr",
+    "ndr_upper_layers_cugr",
     "no_tracks",
     "obs_out_of_die",
     "obstruction",
@@ -93,6 +98,7 @@ TESTS = [
     "single_row",
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
+    "soft_ndr_4w_6s_cugr",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -166,6 +172,20 @@ regression_test(
 
 regression_test(
     name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_markers_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_report_file_cugr",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],

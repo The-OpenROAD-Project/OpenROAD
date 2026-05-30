@@ -334,8 +334,6 @@ def mock_array(name, config):
         orfs_flow(
             name = "MockArray",
             arguments = {
-                "ARRAY_COLS": str(config["cols"]),
-                "ARRAY_ROWS": str(config["rows"]),
                 "CORE_AREA": "{} {} {} {}".format(
                     array_spacing_x,
                     array_spacing_y,
@@ -381,6 +379,10 @@ def mock_array(name, config):
             tags = ["manual"],
             test_kwargs = {
                 "tags": ["orfs"],
+            },
+            user_arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
@@ -446,11 +448,11 @@ def mock_array(name, config):
                         ))
                         for macro in MACROS
                     ] + [
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+                        "//test/orfs/asap7:asap7sc7p5t_AO_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+                        "//test/orfs/asap7:dff.v",
+                        "//test/orfs/asap7:empty.v",
                     ],
                     tags = ["manual"],
                 )

@@ -28,9 +28,9 @@ cc_library(
         "src/heatMapPlacementDensity.cpp",
         "src/heatMapPlacementDensity.h",
         "src/init_descriptors.cpp",
+        "src/insertBufferDialog.h",
         "src/staDescriptors.cpp",
         "src/staDescriptors.h",
-        "src/stub.cpp",
         ":tcl",
     ],
     hdrs = [
@@ -46,13 +46,37 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.multi_array",
-        "@spdlog",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+# CLI-only stub implementations of GUI dispatch symbols (Gui::enabled,
+# startGui, initGui, Painter::getOptions, ...). Split out of :gui so
+# that :openroad-qt — which links //src/gui:gui_qt for the real Qt
+# implementations and pulls :gui transitively via :ui modules — does
+# NOT also link the stub. With --allow-multiple-definition in effect
+# (LLVM toolchain default), having both stub and gui_qt definitions
+# present at link time causes the stub to silently win for symbols
+# like Gui::enabled, and the GUI never opens at runtime.
+#
+# Only the CLI :openroad binary (and :_openroadpy.so) need to dep
+# :gui_stub explicitly to satisfy those undefined references in :gui's
+# heatMapCore.cpp et al.
+cc_library(
+    name = "gui_stub",
+    srcs = [
+        "src/bufferTreeDescriptor.h",
+        "src/stub.cpp",
+    ],
+    deps = [
+        ":gui",
+        "//src/odb/src/db",
         "@tcl_lang//:tcl",
     ],
 )
@@ -103,7 +127,8 @@ QT_GUI_PLATFORMS = {
             "//:ord",
             "//src/dbSta",
             "//src/dbSta:dbNetwork",
-            "//src/odb",
+            "//src/odb/src/db",
+            "//src/odb/src/defout",
             "//src/sta:opensta_lib",
             "//src/utl",
             "//third-party/gif-h:gif_h",

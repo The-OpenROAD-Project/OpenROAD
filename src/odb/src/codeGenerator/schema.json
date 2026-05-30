@@ -442,6 +442,14 @@
       "schema":"kSchemaChipMarkerCategories"
     },
     {
+      "parent":"dbDatabase",
+      "child":"dbAlignmentMarkerRule",
+      "type":"1_n",
+      "flags": ["no-serial"],
+      "tbl_name":"alignment_marker_rule_tbl_",
+      "schema":"kSchemaChipAlignmentMarkerRule"
+    },
+    {
       "parent":"dbChipRegion",
       "child":"dbChipBump",
       "type":"1_n", 

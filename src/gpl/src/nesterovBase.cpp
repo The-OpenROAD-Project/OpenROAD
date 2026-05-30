@@ -4,7 +4,6 @@
 #include "nesterovBase.h"
 
 #include <algorithm>
-#include <boost/polygon/polygon.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -23,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/polygon/polygon.hpp"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "nesterovPlace.h"
@@ -735,23 +735,19 @@ void BinGrid::initBins()
   idealBinCnt = std::max(idealBinCnt, 4);
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
-  log_->info(
-      GPL, 23, format_label_float, "Placement target density:", targetDensity_);
+  log_->info(GPL, 23, "Placement target density:   {:10.4f}", targetDensity_);
   log_->info(GPL,
              24,
-             format_label_um2,
-             "Movable insts average area:",
+             "Movable insts average area: {:10.3f} um^2",
              block->dbuAreaToMicrons(averagePlaceInstArea));
   log_->info(GPL,
              25,
-             format_label_um2,
-             "Ideal bin area:",
+             "Ideal bin area:             {:10.3f} um^2",
              block->dbuAreaToMicrons(idealBinArea));
-  log_->info(GPL, 26, format_label_int, "Ideal bin count:", idealBinCnt);
+  log_->info(GPL, 26, "Ideal bin count:            {:10}", idealBinCnt);
   log_->info(GPL,
              27,
-             format_label_um2,
-             "Total bin area:",
+             "Total bin area:             {:10.3f} um^2",
              block->dbuAreaToMicrons(totalBinArea));
 
   if (!isSetBinCnt_) {
@@ -821,7 +817,7 @@ void BinGrid::initBins()
     }
   }
 
-  log_->info(GPL, 30, format_label_int, "Number of bins:", bins_.size());
+  log_->info(GPL, 30, "Number of bins:             {:10}", bins_.size());
 
   // only initialized once
   updateBinsNonPlaceArea();
@@ -839,26 +835,22 @@ void BinGrid::updateBinsNonPlaceArea()
   using boost::polygon::operators::operator+=;
   using boost::polygon::operators::operator&=;
 
-  // Build the union of all non-place instance rectangles. Overlapping
-  // fixed macros (or blockages) would otherwise be double-counted into
-  // the bins they share, pushing density above 100% and producing
-  // artificially large repulsive forces on movable cells.
-  Polygon90Set fixed_set;
-  for (auto& inst : pb_->nonPlaceInsts()) {
+  // For each bin, collect indices of non-place instances whose bbox
+  // overlaps it. The per-bin geometric union (which dedupes overlapping
+  // fixed macros / blockages) only depends on those instances, so we
+  // avoid copying a full design-wide polygon set per bin.
+  const auto& non_place_insts = pb_->nonPlaceInsts();
+  std::vector<std::vector<int>> bin_insts(bins_.size());
+  for (size_t i = 0; i < non_place_insts.size(); ++i) {
+    const Instance* inst = non_place_insts[i];
     if (inst->lx() >= inst->ux() || inst->ly() >= inst->uy()) {
       continue;
     }
-    fixed_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
-  }
-
-  // Identify bins touched by any fixed instance to skip the empty ones.
-  std::vector<bool> touched(bins_.size(), false);
-  for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
-        touched[y * binCntX_ + x] = true;
+        bin_insts[y * binCntX_ + x].push_back(static_cast<int>(i));
       }
     }
   }
@@ -867,13 +859,31 @@ void BinGrid::updateBinsNonPlaceArea()
   // fixed instances). Drives nonPlaceAreaUnscaled and the cap below.
   std::vector<int64_t> unionArea(bins_.size(), 0);
   for (size_t i = 0; i < bins_.size(); ++i) {
-    if (!touched[i]) {
+    const auto& touching = bin_insts[i];
+    if (touching.empty()) {
       continue;
     }
     Bin& bin = bins_[i];
-    Polygon90Set clip = fixed_set;
-    clip &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
-    unionArea[i] = boost::polygon::area(clip);
+    if (touching.size() == 1) {
+      // Single instance: union == clipped overlap, skip Boost.Polygon.
+      const Instance* inst = non_place_insts[touching.front()];
+      const int rectLx = std::max(bin.lx(), inst->lx());
+      const int rectLy = std::max(bin.ly(), inst->ly());
+      const int rectUx = std::min(bin.ux(), inst->ux());
+      const int rectUy = std::min(bin.uy(), inst->uy());
+      if (rectLx < rectUx && rectLy < rectUy) {
+        unionArea[i] = static_cast<int64_t>(rectUx - rectLx)
+                       * static_cast<int64_t>(rectUy - rectLy);
+      }
+    } else {
+      Polygon90Set local_set;
+      for (int idx : touching) {
+        const Instance* inst = non_place_insts[idx];
+        local_set += BoostRect(inst->lx(), inst->ly(), inst->ux(), inst->uy());
+      }
+      local_set &= BoostRect(bin.lx(), bin.ly(), bin.ux(), bin.uy());
+      unionArea[i] = boost::polygon::area(local_set);
+    }
     // Note that nonPlaceArea should have scale-down with target
     // density. See MS-replace paper.
     bin.setNonPlaceAreaUnscaled(
@@ -899,7 +909,7 @@ void BinGrid::updateBinsNonPlaceArea()
     }
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
-    if (!touched[i]) {
+    if (bin_insts[i].empty()) {
       continue;
     }
     Bin& bin = bins_[i];
@@ -1086,6 +1096,8 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
       routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
       timingDrivenMode(options.timingDrivenMode),
+      timingDrivenRepairTiming(options.timingDrivenRepairTiming),
+      timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
 {
@@ -2757,27 +2769,18 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-  // TODO: This OpenMP parallel section is causing non-determinism. Consider
-  // revisiting this in the future to restore determinism.
-  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
-  // wireLengthGradSum_, densityGradSum_, gradSum)
-  for (size_t i = 0; i < nb_gcells_.size(); i++) {
-    GCell* gCell = nb_gcells_.at(i);
+  // Two-phase: parallel per-cell compute, then deterministic serial reduce.
+  // The previous single-phase loop used `reduction(+: ...)`, whose combine
+  // order across threads is unspecified for floats, producing non-deterministic
+  // sums. Splitting the reduction out keeps results bit-identical regardless
+  // of thread count while still parallelizing the expensive gradient work.
+  const size_t numGCells = nb_gcells_.size();
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t i = 0; i < numGCells; i++) {
+    GCell* gCell = nb_gcells_[i];
     wireLengthGrads[i]
         = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
     densityGrads[i] = getDensityGradient(gCell);
-
-    // Different compiler has different results on the following formula.
-    // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-    //
-    // To prevent instability problem,
-    // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
-    //
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
-
-    densityGradSum_ += std::fabs(densityGrads[i].x);
-    densityGradSum_ += std::fabs(densityGrads[i].y);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2796,6 +2799,19 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
+  }
+
+  // Different compiler has different results on the following formula.
+  // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
+  //
+  // To prevent instability problem,
+  // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
+  for (size_t i = 0; i < numGCells; i++) {
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
+    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
+
+    densityGradSum_ += std::fabs(densityGrads[i].x);
+    densityGradSum_ += std::fabs(densityGrads[i].y);
 
     gradSum += std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
   }
@@ -3125,7 +3141,11 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // fill in nextCoordinates with given stepLength_
-  for (size_t k = 0; k < nb_gcells_.size(); k++) {
+  // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
+  // parallel, bit-identical to the serial version.
+  const size_t numGCells = nb_gcells_.size();
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t k = 0; k < numGCells; k++) {
     GCell* curGCell = nb_gcells_[k];
     if (curGCell->isLocked()) {
       nextCoordi_[k] = curCoordi_[k];
@@ -3222,7 +3242,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
           GPL, 1001, "Global placement finished at iteration {}", final_iter);
       if (npVars_->routability_driven_mode) {
         log_->info(GPL,
-                   1003,
+                   1017,
                    "Routability mode iteration count: {}",
                    routability_gpl_iter_count);
       }
@@ -3239,14 +3259,12 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
 
     log_->info(GPL,
                1002,
-               format_label_float,
-               "Placed Cell Area",
+               "Placed Cell Area            {:10.4f}",
                block->dbuAreaToMicrons(getNesterovInstsArea()));
 
     log_->info(GPL,
                1003,
-               format_label_float,
-               "Available Free Area",
+               "Available Free Area         {:10.4f}",
                block->dbuAreaToMicrons(whiteSpaceArea_));
 
     log_->info(GPL,

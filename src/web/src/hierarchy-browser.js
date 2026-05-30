@@ -4,7 +4,7 @@
 // Hierarchy browser widget — module tree with coloring.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
 
 const COLS = [
     'Instance', 'Module', 'Instances', 'Macros', 'Modules',
@@ -35,7 +35,7 @@ export class HierarchyBrowser {
         app.hierarchyBrowser = this;
 
         // Auto-load in static mode (data is already cached).
-        if (app.websocketManager && app.websocketManager.isStaticMode) {
+        if (isStaticMode(app)) {
             this.update();
         }
     }
@@ -51,6 +51,9 @@ export class HierarchyBrowser {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
 
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
@@ -226,10 +229,9 @@ export class HierarchyBrowser {
             console.error('set_module_colors failed:', err);
         }
 
-        // Refresh the modules layer if it exists
-        if (this._app.modulesLayer && this._app.map.hasLayer(this._app.modulesLayer)) {
-            this._app.modulesLayer.refreshTiles();
-        }
+        // Redraw all layers so the module overlay picks up the new
+        // colors.  This matches what the vis-tree toggle does.
+        this._redrawAllLayers();
     }
 
     _dfs(id, depth) {
@@ -353,6 +355,20 @@ export class HierarchyBrowser {
 
             tbody.appendChild(tr);
         }
+
+        if (this._rows.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = COLS.length;
+            td.style.textAlign = 'center';
+            td.style.color = 'var(--fg-secondary)';
+            td.textContent = isStaticMode(this._app) ?
+                'No hierarchy data available' :
+                'Click "Update" to load hierarchy';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+
         this._table.appendChild(tbody);
         makeResizableHeaders(this._table);
     }

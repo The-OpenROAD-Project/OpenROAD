@@ -36,7 +36,6 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
-#include "drt/TritonRoute.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -58,6 +57,7 @@ class Logger;
 
 namespace drt {
 
+class TritonRoute;
 class frConstraint;
 struct SearchRepairArgs;
 
