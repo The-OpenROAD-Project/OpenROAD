@@ -106,10 +106,10 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   for (int idx : illegalCells) {
     const NegCell& seed = cells_[idx];
-    const int xlo = seed.x - horiz_window_;
-    const int xhi = seed.x + seed.width + horiz_window_;
-    const int ylo = std::max(0, seed.y - adj_window_);
-    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + adj_window_);
+    const int xlo = seed.x - site_search_window_;
+    const int xhi = seed.x + seed.width + site_search_window_;
+    const int ylo = std::max(0, seed.y - row_search_window_);
+    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + row_search_window_);
 
     for (int yy = ylo; yy <= yhi; ++yy) {
       const auto& bucket = row_buckets[yy];
