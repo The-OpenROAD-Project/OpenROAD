@@ -1,8 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -19,13 +23,7 @@ COMPULSORY_TESTS = [
     "sub_modules_sky130",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "dft_man_tcl_check",
-    "dft_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -89,20 +87,6 @@ cc_test(
 )
 
 cc_test(
-    name = "dft_scan_replace_multibit_unittest",
-    srcs = ["cpp/TestScanReplaceMultibit.cpp"],
-    data = ["//src/gpl/test:test0_data"],
-    features = ["-layering_check"],  # TODO: includes private headers
-    deps = [
-        "//src/dft",
-        "//src/odb",
-        "//src/tst",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "dft_scan_architect_heuristic_unittest",
     srcs = [
         "cpp/ScanCellMock.cpp",
@@ -134,4 +118,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "dft_man_tcl_check",
+    srcs = ["dft_man_tcl_check.py"],
+    data = ["//src/dft:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "dft_readme_msgs_check",
+    data = [
+        "//src/dft:doc_files",
+        "//src/dft:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

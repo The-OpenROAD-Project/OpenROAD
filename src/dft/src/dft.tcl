@@ -98,18 +98,15 @@ proc report_dft_config { args } {
 }
 
 
-sta::define_cmd_args "scan_opt" { [-no_spatial_cluster] [-cluster_only] }
+sta::define_cmd_args "scan_opt" { }
 proc scan_opt { args } {
   sta::parse_key_args "scan_opt" args \
-    keys {} flags {-no_spatial_cluster -cluster_only}
-
-  set spatial_cluster [expr { ![info exists flags(-no_spatial_cluster)] }]
-  set cluster_only [info exists flags(-cluster_only)]
+    keys {} flags {}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 13 "No design block found."
   }
-  dft::scan_opt $spatial_cluster $cluster_only
+  dft::scan_opt
 }
 
 sta::define_cmd_args "report_chain_metrics" {}
@@ -117,7 +114,7 @@ proc report_chain_metrics { args } {
   sta::parse_key_args "report_chain_metrics" args keys {} flags {}
 
   if { [ord::get_db_block] == "NULL" } {
-    utl::error DFT 13 "No design block found."
+    utl::error DFT 17 "No design block found."
   }
   dft::report_chain_metrics
 }

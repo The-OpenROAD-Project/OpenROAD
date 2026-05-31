@@ -87,14 +87,8 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
-  // Performs scan optimizations on the netlist.
-  // spatial_cluster: when true (default), runs k-means pre-clustering to
-  // reassign cells across chains before per-chain wirelength optimization.
-  // Pass false to skip pre-clustering (useful for A/B comparison).
-  // cluster_only: when true, runs spatial pre-clustering and stops before
-  // per-chain wirelength optimization. Used to evaluate clustering quality
-  // in isolation.
-  void scanOpt(bool spatial_cluster = true, bool cluster_only = false);
+  // Performs scan optimizations on the netlist
+  void scanOpt();
 
   // Reports order-independent spatial metrics per scan chain (HPWL, MST,
   // sum of pairwise Manhattan distances).  Output is CSV-formatted to
@@ -109,6 +103,8 @@ class Dft
   // Resets the internal state
   void reset();
 
+  void writeToOdb();
+
   // Common function to perform scan replace and scan architect. Shared between
   // report_dft_plan and execute_dft_plan
   std::vector<std::unique_ptr<ScanChain>> scanArchitect();
@@ -121,6 +117,7 @@ class Dft
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
   std::unique_ptr<DftConfig> dft_config_;
+  std::vector<std::unique_ptr<ScanChain>> scan_chains_;
 };
 
 }  // namespace dft

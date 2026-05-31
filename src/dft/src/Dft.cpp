@@ -183,21 +183,14 @@ void Dft::scanReplace()
   scan_replace_->scanReplace();
 }
 
-void Dft::executeDftPlan()
+void Dft::writeToOdb()
 {
-  if (need_to_run_pre_dft_) {
-    pre_dft();
-  }
-  std::vector<std::unique_ptr<ScanChain>> scan_chains = scanArchitect();
-
-  ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
-  stitch.Stitch(scan_chains);
-
-  // Write scan chains to odb
   odb::dbBlock* db_block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = db_block->getDft();
 
-  for (const auto& chain : scan_chains) {
+  db_dft->reset();
+
+  for (const auto& chain : scan_chains_) {
     odb::dbScanChain* db_sc = odb::dbScanChain::create(db_dft);
     db_sc->setName(chain->getName());
     odb::dbScanPartition* db_part = odb::dbScanPartition::create(db_sc);
@@ -247,6 +240,22 @@ void Dft::executeDftPlan()
                  sc_out_load.value().getValue());
     }
   }
+
+  db_dft->setScanInserted(true);
+}
+
+void Dft::executeDftPlan()
+{
+  if (need_to_run_pre_dft_) {
+    pre_dft();
+  }
+
+  scan_chains_ = scanArchitect();
+
+  ScanStitch stitch(db_, logger_, dft_config_->getScanStitchConfig());
+  stitch.Stitch(scan_chains_);
+
+  writeToOdb();
 }
 
 DftConfig* Dft::getMutableDftConfig()
@@ -378,7 +387,7 @@ std::vector<odb::Point> collectChainOrigins(odb::dbScanChain* chain)
 
 }  // namespace
 
-void Dft::scanOpt(bool spatial_cluster, bool cluster_only)
+void Dft::scanOpt()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = block->getDft();
@@ -388,9 +397,8 @@ void Dft::scanOpt(bool spatial_cluster, bool cluster_only)
   // clock domain so that each chain holds a spatially compact set of cells.
   // This runs before per-chain optimization; it updates both dbScanList
   // membership and SI→SO nets via RestitchChain.
-  // Skipped when spatial_cluster is false (e.g. scan_opt -no_spatial_cluster).
   // ---------------------------------------------------------------------------
-  if (spatial_cluster) {
+  {
     // Group chains by (clock_name, clock_edge).  Only chains with the same
     // domain can share cells.
     using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
@@ -505,17 +513,6 @@ void Dft::scanOpt(bool spatial_cluster, bool cluster_only)
                     k,
                     cap_bits);
     }
-  }
-
-  // Stage A only: skip per-chain wirelength optimization.  Used to
-  // evaluate clustering quality in isolation (e.g. report_chain_metrics
-  // afterwards).
-  if (cluster_only) {
-    logger_->info(utl::DFT,
-                  20,
-                  "scan_opt -cluster_only: stopping after spatial "
-                  "pre-clustering.");
-    return;
   }
 
   int chains_optimized = 0;
