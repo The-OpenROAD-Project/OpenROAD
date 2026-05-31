@@ -210,6 +210,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
  private:
   void ensureParasitics();
+  bool isIdealClockPin(const sta::Pin* pin) const;
   bool isIdealClockNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,

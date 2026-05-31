@@ -19,9 +19,6 @@ net2: CLOCK
 net1: CLOCK
 out1: CLOCK
 Driver    length delay
-wire1/Z manhtn 567.3 steiner 567.3 0.04
-wire2/Z manhtn 567.0 steiner 567.0 0.04
-u3/Z manhtn 1.3 steiner 1.3 0.00
 Startpoint: in1 (clock source 'in1')
 Endpoint: out1 (output port)
 Path Group: unconstrained
