@@ -26,8 +26,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
 
   // Design rules not parsed thoroughly
   // Min area
-  const int database_unit = tech_layer->getTech()->getDbUnitsPerMicron();
-  const int min_area = tech_layer->getArea() * database_unit * database_unit;
+  const int min_area = tech_layer->getArea();
   min_length_ = std::max(min_area / width_ - width_, 0);
 
   // Parallel run spacing

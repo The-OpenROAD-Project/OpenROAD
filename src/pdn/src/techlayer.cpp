@@ -240,22 +240,20 @@ odb::Rect TechLayer::adjustToMinArea(
     return rect;
   }
 
-  const int dbu_per_micron = getLefUnits();
-  int min_area = 0;
+  int64_t min_area = 0;
   if (has_rules) {
     for (auto* rule : layer_->getTechLayerAreaRules()) {
-      const int layer_min_area = rule->getArea();
+      const int64_t layer_min_area = rule->getArea();
       if (layer_min_area == 0) {
         continue;
       }
       // TODO: Check width rules
       // TODO: Check length rules
       // TODO: Check except rules
-      min_area = std::max(min_area, layer_min_area * dbu_per_micron);
+      min_area = std::max(min_area, layer_min_area);
     }
   } else {
-    const double layer_min_area = layer_->getArea();
-    min_area = layer_min_area * dbu_per_micron * dbu_per_micron;
+    min_area = layer_->getArea();
   }
 
   if (min_area == 0) {

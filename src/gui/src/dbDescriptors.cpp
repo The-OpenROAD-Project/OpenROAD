@@ -3037,7 +3037,7 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
   if (layer->hasArea()) {
     props.emplace_back(
         "Minimum area",
-        convertUnits(layer->getArea() * 1e-6 * 1e-6, true) + "m²");
+        convertUnits(layer->getArea(), true) + "m²");
   }
   if (layer->getResistance() != 0.0) {
     props.emplace_back("Resistance",
