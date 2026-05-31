@@ -741,15 +741,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Net* net,
     sta::SpefWriter* spef_writer)
 {
-  bool all_modes_ideal_clock = true;
-  for (sta::Mode* mode : sta_->modes()) {
-    if (!sta_->isIdealClock(drvr_pin, mode)) {
-      all_modes_ideal_clock = false;
-      break;
-    }
-  }
-
-  if (!all_modes_ideal_clock) {
+  if (!isIdealClockPin(drvr_pin)) {
     SteinerTree* tree = makeSteinerTree(drvr_pin);
     if (tree) {
       debugPrint(logger_,
