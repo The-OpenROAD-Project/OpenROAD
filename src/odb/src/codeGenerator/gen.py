@@ -40,6 +40,7 @@ from schema_models import Field, Enum, Struct, Class, Schema
 STD_TYPE_HDR = {
     "int16_t": "cstdint",
     "uint32_t": "cstdint",
+    "int64_t": "cstdint",
     "pair": "utility",
 }
 

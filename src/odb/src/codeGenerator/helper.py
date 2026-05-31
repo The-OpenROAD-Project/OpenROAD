@@ -28,6 +28,7 @@ _comparable = {
     "string",
     "uint32_t",
     "uint8_t",
+    "int64_t",
 }
 
 std = {
@@ -48,6 +49,7 @@ std = {
     "string",
     "uint32_t",
     "uint8_t",
+    "int64_t",
 }
 
 _removable = {"const", "static", "unsigned"}

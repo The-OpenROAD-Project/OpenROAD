@@ -13,6 +13,9 @@
         stream >> {{field.name}}bit_field;
         static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
         std::memcpy(&obj.{{field.name}}, &{{field.name}}bit_field, sizeof({{field.name}}bit_field));
+      {% elif 'custom-serial' in field.flags %}
+        //User Code Begin >>{{ comment_tag }}{{ field.name }}
+        //User Code End >>{{ comment_tag }}{{ field.name }}
       {% else %}
         {% if 'no-serial' not in field.flags %}
           {% if field.schema %}
