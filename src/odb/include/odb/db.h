@@ -9616,15 +9616,13 @@ class dbTechLayerAreaRule : public dbObject
 
   uint32_t getOverlap() const;
 
+  static dbTechLayerAreaRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerAreaRule* obj);
   // User Code Begin dbTechLayerAreaRule
-
-  static dbTechLayerAreaRule* create(dbTechLayer* _layer);
 
   void setTrimLayer(dbTechLayer* trim_layer);
 
   dbTechLayer* getTrimLayer() const;
-
-  static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRule
 };
@@ -9666,6 +9664,8 @@ class dbTechLayerArraySpacingRule : public dbObject
 
   bool isWithinValid() const;
 
+  static dbTechLayerArraySpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerArraySpacingRule* obj);
   // User Code Begin dbTechLayerArraySpacingRule
 
   void setCutsArraySpacing(int num_cuts, int spacing);
@@ -9674,13 +9674,9 @@ class dbTechLayerArraySpacingRule : public dbObject
 
   dbTechLayerCutClassRule* getCutClass() const;
 
-  static dbTechLayerArraySpacingRule* create(dbTechLayer* layer);
-
   static dbTechLayerArraySpacingRule* getTechLayerArraySpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
-
-  static void destroy(dbTechLayerArraySpacingRule* rule);
 
   // User Code End dbTechLayerArraySpacingRule
 };
@@ -9766,6 +9762,8 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isCornerToCorner() const;
 
+  static dbTechLayerCornerSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCornerSpacingRule* obj);
   // User Code Begin dbTechLayerCornerSpacingRule
   void setType(CornerType _type);
 
@@ -9777,12 +9775,9 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   void getWidthTable(std::vector<int>& tbl);
 
-  static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
-
   static dbTechLayerCornerSpacingRule* getTechLayerCornerSpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerCornerSpacingRule* rule);
   // User Code End dbTechLayerCornerSpacingRule
 };
 
@@ -10007,17 +10002,16 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   bool isConcaveCornersValid() const;
 
+  static dbTechLayerCutEnclosureRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutEnclosureRule* obj);
   // User Code Begin dbTechLayerCutEnclosureRule
   void setType(ENC_TYPE type);
 
   ENC_TYPE getType() const;
 
-  static dbTechLayerCutEnclosureRule* create(dbTechLayer* layer);
-
   static dbTechLayerCutEnclosureRule* getTechLayerCutEnclosureRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerCutEnclosureRule* rule);
   // User Code End dbTechLayerCutEnclosureRule
 };
 
@@ -10277,6 +10271,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   bool isParWithinEnclosureValid() const;
 
+  static dbTechLayerCutSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingRule* obj);
   // User Code Begin dbTechLayerCutSpacingRule
   dbTechLayerCutClassRule* getCutClass() const;
 
@@ -10292,9 +10288,6 @@ class dbTechLayerCutSpacingRule : public dbObject
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static dbTechLayerCutSpacingRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerCutSpacingRule* rule);
   // User Code End dbTechLayerCutSpacingRule
 };
 
@@ -10427,6 +10420,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isOppositeEnclosureResizeSpacingValid() const;
 
+  static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingTableDefRule* obj);
   // User Code Begin dbTechLayerCutSpacingTableDefRule
   void addPrlForAlignedCutEntry(const std::string& from, const std::string& to);
 
@@ -10487,12 +10482,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   dbTechLayer* getTechLayer() const;
 
-  static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
-
   static dbTechLayerCutSpacingTableDefRule*
   getTechLayerCutSpacingTableDefSubRule(dbTechLayer* parent, uint32_t dbid);
 
-  static void destroy(dbTechLayerCutSpacingTableDefRule* rule);
   // User Code End dbTechLayerCutSpacingTableDefRule
 };
 
@@ -10501,15 +10493,14 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
  public:
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
+  static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingTableOrthRule* obj);
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
   void setSpacingTable(const std::vector<std::pair<int, int>>& tbl);
-
-  static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
 
   static dbTechLayerCutSpacingTableOrthRule*
   getTechLayerCutSpacingTableOrthSubRule(dbTechLayer* parent, uint32_t dbid);
 
-  static void destroy(dbTechLayerCutSpacingTableOrthRule* rule);
   // User Code End dbTechLayerCutSpacingTableOrthRule
 };
 
@@ -10526,17 +10517,16 @@ class dbTechLayerEolExtensionRule : public dbObject
 
   bool isParallelOnly() const;
 
+  static dbTechLayerEolExtensionRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerEolExtensionRule* obj);
   // User Code Begin dbTechLayerEolExtensionRule
 
   void addEntry(int eol, int ext);
-
-  static dbTechLayerEolExtensionRule* create(dbTechLayer* layer);
 
   static dbTechLayerEolExtensionRule* getTechLayerEolExtensionRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerEolExtensionRule* rule);
   // User Code End dbTechLayerEolExtensionRule
 };
 
@@ -10583,13 +10573,13 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   bool isExceptWithin() const;
 
+  static dbTechLayerEolKeepOutRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerEolKeepOutRule* obj);
   // User Code Begin dbTechLayerEolKeepOutRule
-  static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
 
   static dbTechLayerEolKeepOutRule* getTechLayerEolKeepOutRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerEolKeepOutRule* rule);
   // User Code End dbTechLayerEolKeepOutRule
 };
 
@@ -10696,11 +10686,9 @@ class dbTechLayerKeepOutZoneRule : public dbObject
 
   bool isExceptAlignedEnd() const;
 
+  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerKeepOutZoneRule* obj);
   // User Code Begin dbTechLayerKeepOutZoneRule
-
-  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerKeepOutZoneRule* rule);
 
   // User Code End dbTechLayerKeepOutZoneRule
 };
@@ -10716,12 +10704,10 @@ class dbTechLayerMaxSpacingRule : public dbObject
 
   int getMaxSpacing() const;
 
+  static dbTechLayerMaxSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMaxSpacingRule* obj);
   // User Code Begin dbTechLayerMaxSpacingRule
   bool hasCutClass() const;
-
-  static dbTechLayerMaxSpacingRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerMaxSpacingRule* rule);
 
   // User Code End dbTechLayerMaxSpacingRule
 };
@@ -10795,16 +10781,14 @@ class dbTechLayerMinCutRule : public dbObject
 
   bool isFullyEnclosed() const;
 
+  static dbTechLayerMinCutRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMinCutRule* obj);
   // User Code Begin dbTechLayerMinCutRule
 
   void setCutsPerCutClass(const std::string& cut_class, int num_cuts);
 
-  static dbTechLayerMinCutRule* create(dbTechLayer* layer);
-
   static dbTechLayerMinCutRule* getTechLayerMinCutRule(dbTechLayer* inly,
                                                        uint32_t dbid);
-
-  static void destroy(dbTechLayerMinCutRule* rule);
 
   // User Code End dbTechLayerMinCutRule
 };
@@ -10876,13 +10860,13 @@ class dbTechLayerMinStepRule : public dbObject
 
   bool isNoAdjacentEol() const;
 
+  static dbTechLayerMinStepRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMinStepRule* obj);
   // User Code Begin dbTechLayerMinStepRule
-  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
 
   static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
                                                          uint32_t dbid);
 
-  static void destroy(dbTechLayerMinStepRule* rule);
   // User Code End dbTechLayerMinStepRule
 };
 
@@ -11185,14 +11169,14 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   bool isToNotchLengthValid() const;
 
+  static dbTechLayerSpacingEolRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerSpacingEolRule* obj);
   // User Code Begin dbTechLayerSpacingEolRule
-  static dbTechLayerSpacingEolRule* create(dbTechLayer* layer);
 
   static dbTechLayerSpacingEolRule* getTechLayerSpacingEolRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerSpacingEolRule* rule);
   // User Code End dbTechLayerSpacingEolRule
 };
 
@@ -11215,14 +11199,12 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 
   bool isExceeptEol() const;
 
+  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerSpacingTablePrlRule* obj);
   // User Code Begin dbTechLayerSpacingTablePrlRule
   static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(
       dbTechLayer* inly,
       uint32_t dbid);
-
-  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerSpacingTablePrlRule* rule);
 
   void setTable(const std::vector<int>& width_tbl,
                 const std::vector<int>& length_tbl,
@@ -11294,13 +11276,12 @@ class dbTechLayerVoltageSpacing : public dbObject
 
   bool isTocutBelow() const;
 
+  static dbTechLayerVoltageSpacing* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerVoltageSpacing* obj);
   // User Code Begin dbTechLayerVoltageSpacing
   const std::map<float, int>& getTable() const;
   void addEntry(float voltage, int spacing);
 
-  static dbTechLayerVoltageSpacing* create(dbTechLayer* layer);
-
-  static void destroy(dbTechLayerVoltageSpacing* rule);
   // User Code End dbTechLayerVoltageSpacing
 };
 
@@ -11358,14 +11339,14 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 
   bool isLengthValid() const;
 
+  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerWrongDirSpacingRule* obj);
   // User Code Begin dbTechLayerWrongDirSpacingRule
-  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* layer);
 
   static dbTechLayerWrongDirSpacingRule* getTechLayerWrongDirSpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerWrongDirSpacingRule* rule);
   // User Code End dbTechLayerWrongDirSpacingRule
 };
 

@@ -11,6 +11,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -362,6 +363,17 @@ bool dbTechLayerMinCutRule::isFullyEnclosed() const
   return obj->flags_.fully_enclosed;
 }
 
+dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerMinCutRule*) _parent->min_cuts_rules_tbl_->create();
+}
+void dbTechLayerMinCutRule::destroy(dbTechLayerMinCutRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->min_cuts_rules_tbl_->destroy((_dbTechLayerMinCutRule*) obj);
+}
 // User Code Begin dbTechLayerMinCutRulePublicMethods
 
 void dbTechLayerMinCutRule::setCutsPerCutClass(const std::string& cut_class,
@@ -370,14 +382,6 @@ void dbTechLayerMinCutRule::setCutsPerCutClass(const std::string& cut_class,
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   obj->cut_class_cuts_map_[cut_class] = num_cuts;
 }
-
-dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* inly)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) inly;
-  _dbTechLayerMinCutRule* newrule = layer->min_cuts_rules_tbl_->create();
-  return ((dbTechLayerMinCutRule*) newrule);
-}
-
 dbTechLayerMinCutRule* dbTechLayerMinCutRule::getTechLayerMinCutRule(
     dbTechLayer* inly,
     uint32_t dbid)
@@ -385,14 +389,6 @@ dbTechLayerMinCutRule* dbTechLayerMinCutRule::getTechLayerMinCutRule(
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return ((dbTechLayerMinCutRule*) layer->min_cuts_rules_tbl_->getPtr(dbid));
 }
-
-void dbTechLayerMinCutRule::destroy(dbTechLayerMinCutRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->min_cuts_rules_tbl_->destroy((_dbTechLayerMinCutRule*) rule);
-}
-
 // User Code End dbTechLayerMinCutRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

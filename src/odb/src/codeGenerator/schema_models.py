@@ -159,6 +159,13 @@ class Class:
     ostream_scope: bool = False
     equal_fields: list[dict[str, str]] = dataclass_field(default_factory=list)
     less_fields: list[dict[str, str]] = dataclass_field(default_factory=list)
+    # Generated factory methods, populated from an opted-in relation (see
+    # generate_relations): the owning parent class and its table member, plus
+    # whether to emit create()/destroy().
+    factory_parent: str | None = None
+    factory_table: str | None = None
+    gen_create: bool = False
+    gen_destroy: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Class:
@@ -224,6 +231,12 @@ class Relation:
     page_size: int | None = None
     schema: str | None = None
     flags: list[str] = dataclass_field(default_factory=list)
+    # Opt in to generating the child's trivial factory methods. 'create' emits
+    # Child::create(Parent*) and 'destroy' emits Child::destroy(Child*) using the
+    # canonical owned-table pattern; set only when the hand-written versions do
+    # nothing more than allocate/free the table entry (see generate_relations).
+    create: bool = False
+    destroy: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Relation:

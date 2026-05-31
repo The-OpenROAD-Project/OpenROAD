@@ -212,6 +212,21 @@ namespace odb {
     {% endif %}
   {% endfor %}
 
+  {% if klass.gen_create %}
+  {{klass.name}}* {{klass.name}}::create({{klass.factory_parent}}* parent)
+  {
+    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) parent;
+    return ({{klass.name}}*) _parent->{{klass.factory_table}}->create();
+  }
+  {% endif %}
+  {% if klass.gen_destroy %}
+  void {{klass.name}}::destroy({{klass.name}}* obj)
+  {
+    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) obj->getImpl()->getOwner();
+    dbProperty::destroyProperties(obj);
+    _parent->{{klass.factory_table}}->destroy((_{{klass.name}}*) obj);
+  }
+  {% endif %}
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
 } // namespace odb

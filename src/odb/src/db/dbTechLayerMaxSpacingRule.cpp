@@ -8,6 +8,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -94,26 +95,24 @@ int dbTechLayerMaxSpacingRule::getMaxSpacing() const
   return obj->max_spacing_;
 }
 
+dbTechLayerMaxSpacingRule* dbTechLayerMaxSpacingRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerMaxSpacingRule*) _parent->max_spacing_rules_tbl_->create();
+}
+void dbTechLayerMaxSpacingRule::destroy(dbTechLayerMaxSpacingRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->max_spacing_rules_tbl_->destroy((_dbTechLayerMaxSpacingRule*) obj);
+}
 // User Code Begin dbTechLayerMaxSpacingRulePublicMethods
 
 bool dbTechLayerMaxSpacingRule::hasCutClass() const
 {
   _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
   return (!obj->cut_class_.empty());
-}
-dbTechLayerMaxSpacingRule* dbTechLayerMaxSpacingRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerMaxSpacingRule* newrule = layer->max_spacing_rules_tbl_->create();
-  return ((dbTechLayerMaxSpacingRule*) newrule);
-}
-
-void dbTechLayerMaxSpacingRule::destroy(dbTechLayerMaxSpacingRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->max_spacing_rules_tbl_->destroy((_dbTechLayerMaxSpacingRule*) rule);
 }
 // User Code End dbTechLayerMaxSpacingRulePublicMethods
 }  // namespace odb

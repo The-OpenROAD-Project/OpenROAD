@@ -161,6 +161,39 @@ class SetByRefRuleTest(unittest.TestCase):
             self.assertFalse(is_set_by_ref(t, self.ENUMS), t)
 
 
+class FactoryGenerationTest(unittest.TestCase):
+    """An opted-in relation wires the child's generated create()/destroy()."""
+
+    @classmethod
+    def setUpClass(cls):
+        env = make_environment(HERE / "templates")
+        gen = ODBGenerator(env, ".", ".", False)
+        schema = gen.load_schema(HERE / "schema.json")
+        gen.process_schema(schema)
+        cls.by_name = {k.name: k for k in schema.classes}
+        cls.relations = schema.relations
+
+    def test_opted_in_relation_populates_child_factory(self):
+        rel = next((r for r in self.relations if r.create or r.destroy), None)
+        if rel is None:
+            self.skipTest("no relation opts into factory generation")
+        child = self.by_name[rel.child]
+        self.assertEqual(child.factory_parent, rel.parent)
+        self.assertEqual(child.factory_table, rel.tbl_name)
+        self.assertEqual(child.gen_create, rel.create)
+        self.assertEqual(child.gen_destroy, rel.destroy)
+        # The parent's internal header is pulled in for the owner cast.
+        self.assertIn(f"{rel.parent}.h", child.cpp_includes)
+
+    def test_non_factory_class_has_no_factory(self):
+        # dbCellEdgeSpacing has a hand-managed owner table (no relation), so it
+        # never opts into factory generation.
+        klass = self.by_name["dbCellEdgeSpacing"]
+        self.assertFalse(klass.gen_create)
+        self.assertFalse(klass.gen_destroy)
+        self.assertIsNone(klass.factory_parent)
+
+
 class MemInfoAccountableTest(unittest.TestCase):
     """mem_info_accountable matches the heap types MemInfo::add() overloads accept."""
 

@@ -9,6 +9,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -122,6 +123,18 @@ bool dbTechLayerEolExtensionRule::isParallelOnly() const
   return obj->flags_.parallel_only;
 }
 
+dbTechLayerEolExtensionRule* dbTechLayerEolExtensionRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerEolExtensionRule*) _parent->eol_ext_rules_tbl_->create();
+}
+void dbTechLayerEolExtensionRule::destroy(dbTechLayerEolExtensionRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->eol_ext_rules_tbl_->destroy((_dbTechLayerEolExtensionRule*) obj);
+}
 // User Code Begin dbTechLayerEolExtensionRulePublicMethods
 
 void dbTechLayerEolExtensionRule::addEntry(int eol, int ext)
@@ -129,15 +142,6 @@ void dbTechLayerEolExtensionRule::addEntry(int eol, int ext)
   _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
   obj->extension_tbl_.push_back({eol, ext});
 }
-
-dbTechLayerEolExtensionRule* dbTechLayerEolExtensionRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerEolExtensionRule* newrule = layer->eol_ext_rules_tbl_->create();
-  return ((dbTechLayerEolExtensionRule*) newrule);
-}
-
 dbTechLayerEolExtensionRule*
 dbTechLayerEolExtensionRule::getTechLayerEolExtensionRule(dbTechLayer* inly,
                                                           uint32_t dbid)
@@ -145,13 +149,6 @@ dbTechLayerEolExtensionRule::getTechLayerEolExtensionRule(dbTechLayer* inly,
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerEolExtensionRule*) layer->eol_ext_rules_tbl_->getPtr(dbid);
 }
-void dbTechLayerEolExtensionRule::destroy(dbTechLayerEolExtensionRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->eol_ext_rules_tbl_->destroy((_dbTechLayerEolExtensionRule*) rule);
-}
-
 // User Code End dbTechLayerEolExtensionRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

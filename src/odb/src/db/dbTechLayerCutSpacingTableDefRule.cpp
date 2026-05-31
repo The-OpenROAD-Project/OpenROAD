@@ -12,6 +12,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -647,6 +648,21 @@ bool dbTechLayerCutSpacingTableDefRule::isOppositeEnclosureResizeSpacingValid()
   return obj->flags_.opposite_enclosure_resize_spacing_valid;
 }
 
+dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCutSpacingTableDefRule*)
+      _parent->cut_spacing_table_def_tbl_->create();
+}
+void dbTechLayerCutSpacingTableDefRule::destroy(
+    dbTechLayerCutSpacingTableDefRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->cut_spacing_table_def_tbl_->destroy(
+      (_dbTechLayerCutSpacingTableDefRule*) obj);
+}
 // User Code Begin dbTechLayerCutSpacingTableDefRulePublicMethods
 void dbTechLayerCutSpacingTableDefRule::addPrlForAlignedCutEntry(
     const std::string& from,
@@ -940,16 +956,6 @@ dbTechLayer* dbTechLayerCutSpacingTableDefRule::getTechLayer() const
       = (_dbTechLayerCutSpacingTableDefRule*) this;
   return (odb::dbTechLayer*) obj->getOwner();
 }
-
-dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
-    dbTechLayer* parent)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  _dbTechLayerCutSpacingTableDefRule* newrule
-      = _parent->cut_spacing_table_def_tbl_->create();
-  return ((dbTechLayerCutSpacingTableDefRule*) newrule);
-}
-
 dbTechLayerCutSpacingTableDefRule*
 dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
     dbTechLayer* parent,
@@ -959,15 +965,6 @@ dbTechLayerCutSpacingTableDefRule::getTechLayerCutSpacingTableDefSubRule(
   return (dbTechLayerCutSpacingTableDefRule*)
       _parent->cut_spacing_table_def_tbl_->getPtr(dbid);
 }
-void dbTechLayerCutSpacingTableDefRule::destroy(
-    dbTechLayerCutSpacingTableDefRule* rule)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  _parent->cut_spacing_table_def_tbl_->destroy(
-      (_dbTechLayerCutSpacingTableDefRule*) rule);
-}
-
 // User Code End dbTechLayerCutSpacingTableDefRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

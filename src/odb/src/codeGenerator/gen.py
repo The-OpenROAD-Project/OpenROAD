@@ -293,6 +293,18 @@ def generate_relations(schema: Schema) -> None:
             make_parent_hash_field(parent, relation, parent_field)
             make_child_next_field(child, relation)
 
+        if relation.create or relation.destroy:
+            child.factory_parent = relation.parent
+            child.factory_table = relation.tbl_name
+            child.gen_create = relation.create
+            child.gen_destroy = relation.destroy
+            # create()/destroy() cast to the parent's internal type.
+            if f"{relation.parent}.h" not in child.cpp_includes:
+                child.cpp_includes.append(f"{relation.parent}.h")
+            # destroy() frees the entry's properties.
+            if relation.destroy and "dbProperty.h" not in child.cpp_includes:
+                child.cpp_includes.append("dbProperty.h")
+
 
 def add_include(
     klass: Class, key: str, include: str, cpp: bool = False, sys: bool = False
