@@ -206,7 +206,7 @@ proc generate_ram { args } {
   if { [info exists keys(-ground_net_name)] } {
     set ground_net_name $keys(-ground_net_name)
   }
-  
+
   set ground_net_name [string trim $ground_net_name]
   if { $ground_net_name eq "" } {
     utl::error RAM 41 "The -ground_net_name argument cannot be empty."
