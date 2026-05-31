@@ -142,11 +142,12 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
          >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap, rule, _1)]);
 
   qi::rule<std::string::const_iterator, space_type> area_rule
-      = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setArea,
-                                            this,
-                                            _1,
-                                            rule,
-                                            &odb::dbTechLayerAreaRule::setArea)]
+      = (lit("AREA")
+         >> double_[boost::bind(&lefTechLayerAreaRuleParser::setArea,
+                                this,
+                                _1,
+                                rule,
+                                &odb::dbTechLayerAreaRule::setArea)]
          >> -(
              lit("MASK")
              >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask, rule, _1)])
