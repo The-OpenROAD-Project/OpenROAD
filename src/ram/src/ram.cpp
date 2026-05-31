@@ -891,8 +891,22 @@ void RamGen::ramPdngen(const char* power_pin,
         ver_pitch / dbu_per_um);
   }
 
-  auto power_net = dbNet::create(block_, power_net_name);
-  auto ground_net = dbNet::create(block_, ground_net_name);
+  auto power_net = block_->findNet(power_net_name);
+  if (!power_net) {
+    power_net = dbNet::create(block_, power_net_name);
+  }
+  if (!power_net) {
+    logger_->error(RAM, 38, "Failed to create power net '{}'", power_net_name);
+  }
+
+  auto ground_net = block_->findNet(ground_net_name);
+  if (!ground_net) {
+    ground_net = dbNet::create(block_, ground_net_name);
+  }
+  if (!ground_net) {
+    logger_->error(
+        RAM, 39, "Failed to create ground net '{}'", ground_net_name);
+  }
 
   power_net->setSpecial();
   power_net->setSigType(odb::dbSigType::POWER);

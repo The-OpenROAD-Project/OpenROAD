@@ -197,9 +197,19 @@ proc generate_ram { args } {
     set power_net_name $keys(-power_net_name)
   }
 
+  set power_net_name [string trim $power_net_name]
+  if { $power_net_name eq "" } {
+    utl::error RAM 40 "The -power_net_name argument cannot be empty."
+  }
+
   set ground_net_name "VSS"
   if { [info exists keys(-ground_net_name)] } {
     set ground_net_name $keys(-ground_net_name)
+  }
+  
+  set ground_net_name [string trim $ground_net_name]
+  if { $ground_net_name eq "" } {
+    utl::error RAM 41 "The -ground_net_name argument cannot be empty."
   }
 
   if { [info exists keys(-routing_layer)] } {
