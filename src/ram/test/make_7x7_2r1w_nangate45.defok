@@ -548,39 +548,39 @@ PINS 34 ;
         + LAYER metal1 ( 255 -1117 ) ( 262 -1109 )
         + LAYER metal1 ( -5400 -1117 ) ( -5393 -1109 )
         + FIXED ( 5400 1113 ) N ;
-    - addr_r[0][0] + NET addr_r[0][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[0] + NET addr_r0[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 258 ) N ;
-    - addr_r[0][1] + NET addr_r[0][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[1] + NET addr_r0[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 370 ) N ;
-    - addr_r[0][2] + NET addr_r[0][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[2] + NET addr_r0[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 286 ) N ;
-    - addr_r[1][0] + NET addr_r[1][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[0] + NET addr_r1[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 314 ) N ;
-    - addr_r[1][1] + NET addr_r[1][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[1] + NET addr_r1[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 398 ) N ;
-    - addr_r[1][2] + NET addr_r[1][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[2] + NET addr_r1[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 90 ) N ;
-    - addr_w[0][0] + NET addr_w[0][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[0] + NET addr_w[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 230 ) N ;
-    - addr_w[0][1] + NET addr_w[0][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[1] + NET addr_w[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 342 ) N ;
-    - addr_w[0][2] + NET addr_w[0][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[2] + NET addr_w[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
         + PLACED ( 5658 62 ) N ;
@@ -1307,7 +1307,7 @@ NETS 188 ;
       NEW metal1 ( 4379 385 ) via1_4
       NEW metal1 ( 4379 245 ) via1_4
       NEW metal1 ( 4379 105 ) via1_4 ;
-    - addr_r[0].inv_addr[0] ( decoder_p1.inv_p1_a0 ZN ) ( decoder_p1.and_layer0_word6 A1 ) ( decoder_p1.and_layer0_word4 A1 ) ( decoder_p1.and_layer0_word2 A1 ) ( decoder_p1.and_layer0_word0 A1 ) + USE SIGNAL
+    - addr_r0.inv_addr[0] ( decoder_p1.inv_p1_a0 ZN ) ( decoder_p1.and_layer0_word6 A1 ) ( decoder_p1.and_layer0_word4 A1 ) ( decoder_p1.and_layer0_word2 A1 ) ( decoder_p1.and_layer0_word0 A1 ) + USE SIGNAL
       + ROUTED metal3 ( 5215 903 ) ( 5614 * )
       NEW metal2 ( 5614 819 ) ( * 903 )
       NEW metal2 ( 5215 623 ) ( * 749 )
@@ -1332,7 +1332,7 @@ NETS 188 ;
       NEW metal1 ( 5215 623 ) via1_4
       NEW metal1 ( 5215 343 ) via1_4
       NEW metal1 ( 5215 63 ) via1_4 ;
-    - addr_r[0].inv_addr[1] ( decoder_p1.inv_p1_a1 ZN ) ( decoder_p1.and_layer1_word5 A1 ) ( decoder_p1.and_layer1_word4 A1 ) ( decoder_p1.and_layer1_word1 A1 ) ( decoder_p1.and_layer1_word0 A1 ) + USE SIGNAL
+    - addr_r0.inv_addr[1] ( decoder_p1.inv_p1_a1 ZN ) ( decoder_p1.and_layer1_word5 A1 ) ( decoder_p1.and_layer1_word4 A1 ) ( decoder_p1.and_layer1_word1 A1 ) ( decoder_p1.and_layer1_word0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5291 63 ) ( * 217 )
       NEW metal2 ( 5253 623 ) ( 5291 * )
       NEW metal2 ( 5253 217 ) ( * 623 )
@@ -1347,7 +1347,7 @@ NETS 188 ;
       NEW metal1 ( 5614 441 ) via1_7
       NEW metal2 ( 5614 413 ) via2_5
       NEW metal2 ( 5253 413 ) via2_5 ;
-    - addr_r[0].inv_addr[2] ( decoder_p1.inv_p1_a2 ZN ) ( decoder_p1.and_layer1_word3 A2 ) ( decoder_p1.and_layer1_word2 A2 ) ( decoder_p1.and_layer1_word1 A2 ) ( decoder_p1.and_layer1_word0 A2 ) + USE SIGNAL
+    - addr_r0.inv_addr[2] ( decoder_p1.inv_p1_a2 ZN ) ( decoder_p1.and_layer1_word3 A2 ) ( decoder_p1.and_layer1_word2 A2 ) ( decoder_p1.and_layer1_word1 A2 ) ( decoder_p1.and_layer1_word0 A2 ) + USE SIGNAL
       + ROUTED metal3 ( 5310 217 ) ( 5614 * )
       NEW metal2 ( 5310 217 ) ( * 343 )
       NEW metal2 ( 5310 63 ) ( * 217 )
@@ -1359,7 +1359,7 @@ NETS 188 ;
       NEW metal1 ( 5310 343 ) via1_4
       NEW metal1 ( 5310 63 ) via1_4
       NEW metal1 ( 5310 497 ) via1_4 ;
-    - addr_r[0][0] ( PIN addr_r[0][0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_layer0_word5 A1 ) ( decoder_p1.and_layer0_word3 A1 ) ( decoder_p1.and_layer0_word1 A1 ) + USE SIGNAL
+    - addr_r0[0] ( PIN addr_r0[0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_layer0_word5 A1 ) ( decoder_p1.and_layer0_word3 A1 ) ( decoder_p1.and_layer0_word1 A1 ) + USE SIGNAL
       + ROUTED metal3 ( 5215 217 ) ( 5217 * )
       NEW metal3 ( 5217 217 ) ( * 259 )
       NEW metal3 ( 5217 259 ) ( 5658 * 0 )
@@ -1381,7 +1381,7 @@ NETS 188 ;
       NEW metal2 ( 5177 777 ) via2_5
       NEW metal1 ( 5595 777 ) via1_4
       NEW metal2 ( 5557 259 ) via2_5 ;
-    - addr_r[0][1] ( PIN addr_r[0][1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_layer1_word6 A1 ) ( decoder_p1.and_layer1_word3 A1 ) ( decoder_p1.and_layer1_word2 A1 ) + USE SIGNAL
+    - addr_r0[1] ( PIN addr_r0[1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_layer1_word6 A1 ) ( decoder_p1.and_layer1_word3 A1 ) ( decoder_p1.and_layer1_word2 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5291 497 ) ( * 525 )
       NEW metal2 ( 5291 525 ) ( 5329 * )
       NEW metal2 ( 5329 525 ) ( * 819 )
@@ -1401,7 +1401,7 @@ NETS 188 ;
       NEW metal2 ( 5595 497 ) via2_5
       NEW metal2 ( 5329 497 ) via2_5
       NEW metal2 ( 5595 371 ) via2_5 ;
-    - addr_r[0][2] ( PIN addr_r[0][2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_layer1_word6 A2 ) ( decoder_p1.and_layer1_word5 A2 ) ( decoder_p1.and_layer1_word4 A2 ) + USE SIGNAL
+    - addr_r0[2] ( PIN addr_r0[2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_layer1_word6 A2 ) ( decoder_p1.and_layer1_word5 A2 ) ( decoder_p1.and_layer1_word4 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 5595 217 ) ( * 287 )
       NEW metal3 ( 5595 287 ) ( 5658 * 0 )
       NEW metal2 ( 5310 553 ) ( * 623 )
@@ -1420,7 +1420,7 @@ NETS 188 ;
       NEW metal2 ( 5424 287 ) via2_5
       NEW metal1 ( 5310 777 ) via1_4
       NEW metal1 ( 5310 903 ) via1_4 ;
-    - addr_r[1].inv_addr[0] ( decoder_p2.inv_p2_a0 ZN ) ( decoder_p2.and_layer0_word6 A1 ) ( decoder_p2.and_layer0_word4 A1 ) ( decoder_p2.and_layer0_word2 A1 ) ( decoder_p2.and_layer0_word0 A1 ) + USE SIGNAL
+    - addr_r1.inv_addr[0] ( decoder_p2.inv_p2_a0 ZN ) ( decoder_p2.and_layer0_word6 A1 ) ( decoder_p2.and_layer0_word4 A1 ) ( decoder_p2.and_layer0_word2 A1 ) ( decoder_p2.and_layer0_word0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5443 259 ) ( * 343 )
       NEW metal2 ( 5424 259 ) ( 5443 * )
       NEW metal2 ( 5424 63 ) ( * 259 )
@@ -1441,7 +1441,7 @@ NETS 188 ;
       NEW metal2 ( 5652 581 ) via2_5
       NEW metal2 ( 5481 581 ) via2_5
       NEW metal1 ( 5443 903 ) via1_4 ;
-    - addr_r[1].inv_addr[1] ( decoder_p2.inv_p2_a1 ZN ) ( decoder_p2.and_layer1_word5 A1 ) ( decoder_p2.and_layer1_word4 A1 ) ( decoder_p2.and_layer1_word1 A1 ) ( decoder_p2.and_layer1_word0 A1 ) + USE SIGNAL
+    - addr_r1.inv_addr[1] ( decoder_p2.inv_p2_a1 ZN ) ( decoder_p2.and_layer1_word5 A1 ) ( decoder_p2.and_layer1_word4 A1 ) ( decoder_p2.and_layer1_word1 A1 ) ( decoder_p2.and_layer1_word0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5519 623 ) ( * 777 )
       NEW metal2 ( 5652 399 ) ( * 553 )
       NEW metal3 ( 5637 553 ) ( 5652 * )
@@ -1464,7 +1464,7 @@ NETS 188 ;
       NEW metal2 ( 5519 567 ) via2_5
       NEW metal1 ( 5519 217 ) via1_4
       NEW metal1 ( 5519 63 ) via1_4 ;
-    - addr_r[1].inv_addr[2] ( decoder_p2.inv_p2_a2 ZN ) ( decoder_p2.and_layer1_word3 A2 ) ( decoder_p2.and_layer1_word2 A2 ) ( decoder_p2.and_layer1_word1 A2 ) ( decoder_p2.and_layer1_word0 A2 ) + USE SIGNAL
+    - addr_r1.inv_addr[2] ( decoder_p2.inv_p2_a2 ZN ) ( decoder_p2.and_layer1_word3 A2 ) ( decoder_p2.and_layer1_word2 A2 ) ( decoder_p2.and_layer1_word1 A2 ) ( decoder_p2.and_layer1_word0 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 5538 63 ) ( * 105 )
       NEW metal2 ( 5538 105 ) ( 5652 * )
       NEW metal2 ( 5538 105 ) ( * 217 )
@@ -1475,7 +1475,7 @@ NETS 188 ;
       NEW metal1 ( 5538 217 ) via1_4
       NEW metal1 ( 5538 343 ) via1_4
       NEW metal1 ( 5538 490 ) via1_4 ;
-    - addr_r[1][0] ( PIN addr_r[1][0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_layer0_word5 A1 ) ( decoder_p2.and_layer0_word3 A1 ) ( decoder_p2.and_layer0_word1 A1 ) + USE SIGNAL
+    - addr_r1[0] ( PIN addr_r1[0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_layer0_word5 A1 ) ( decoder_p2.and_layer0_word3 A1 ) ( decoder_p2.and_layer0_word1 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5443 217 ) ( * 245 )
       NEW metal2 ( 5443 245 ) ( 5462 * )
       NEW metal2 ( 5462 245 ) ( * 315 )
@@ -1504,7 +1504,7 @@ NETS 188 ;
       NEW metal1 ( 5443 777 ) via1_4
       NEW metal2 ( 5443 693 ) via2_5
       NEW metal2 ( 5405 693 ) via2_5 ;
-    - addr_r[1][1] ( PIN addr_r[1][1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_layer1_word6 A1 ) ( decoder_p2.and_layer1_word3 A1 ) ( decoder_p2.and_layer1_word2 A1 ) + USE SIGNAL
+    - addr_r1[1] ( PIN addr_r1[1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_layer1_word6 A1 ) ( decoder_p2.and_layer1_word3 A1 ) ( decoder_p2.and_layer1_word2 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5519 497 ) ( * 511 )
       NEW metal2 ( 5519 511 ) ( 5538 * )
       NEW metal2 ( 5538 511 ) ( * 595 )
@@ -1532,7 +1532,7 @@ NETS 188 ;
       NEW metal2 ( 5519 343 ) via2_5
       NEW metal2 ( 5633 357 ) via2_5
       NEW metal2 ( 5633 399 ) via2_5 ;
-    - addr_r[1][2] ( PIN addr_r[1][2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_layer1_word6 A2 ) ( decoder_p2.and_layer1_word5 A2 ) ( decoder_p2.and_layer1_word4 A2 ) + USE SIGNAL
+    - addr_r1[2] ( PIN addr_r1[2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_layer1_word6 A2 ) ( decoder_p2.and_layer1_word5 A2 ) ( decoder_p2.and_layer1_word4 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 5633 63 ) ( * 77 )
       NEW metal3 ( 5633 77 ) ( 5637 * )
       NEW metal3 ( 5637 77 ) ( * 91 )
@@ -1554,7 +1554,7 @@ NETS 188 ;
       NEW metal2 ( 5329 91 ) via2_5
       NEW metal1 ( 5538 777 ) via1_4
       NEW metal1 ( 5538 903 ) via1_4 ;
-    - addr_w[0].inv_addr[0] ( decoder_p0.inv_p0_a0 ZN ) ( decoder_p0.and_layer0_word6 A1 ) ( decoder_p0.and_layer0_word4 A1 ) ( decoder_p0.and_layer0_word2 A1 ) ( decoder_p0.and_layer0_word0 A1 ) + USE SIGNAL
+    - addr_w.inv_addr[0] ( decoder_p0.inv_p0_a0 ZN ) ( decoder_p0.and_layer0_word6 A1 ) ( decoder_p0.and_layer0_word4 A1 ) ( decoder_p0.and_layer0_word2 A1 ) ( decoder_p0.and_layer0_word0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5006 623 ) ( * 637 )
       NEW metal3 ( 5006 637 ) ( 5614 * )
       NEW metal2 ( 5006 833 ) ( * 903 )
@@ -1579,7 +1579,7 @@ NETS 188 ;
       NEW metal1 ( 5006 903 ) via1_4
       NEW metal1 ( 5006 343 ) via1_4
       NEW metal1 ( 5006 63 ) via1_4 ;
-    - addr_w[0].inv_addr[1] ( decoder_p0.inv_p0_a1 ZN ) ( decoder_p0.and_layer1_word5 A1 ) ( decoder_p0.and_layer1_word4 A1 ) ( decoder_p0.and_layer1_word1 A1 ) ( decoder_p0.and_layer1_word0 A1 ) + USE SIGNAL
+    - addr_w.inv_addr[1] ( decoder_p0.inv_p0_a1 ZN ) ( decoder_p0.and_layer1_word5 A1 ) ( decoder_p0.and_layer1_word4 A1 ) ( decoder_p0.and_layer1_word1 A1 ) ( decoder_p0.and_layer1_word0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5082 217 ) ( * 301 )
       NEW metal3 ( 5082 301 ) ( 5614 * )
       NEW metal2 ( 5082 63 ) ( * 217 )
@@ -1595,7 +1595,7 @@ NETS 188 ;
       NEW metal1 ( 5082 623 ) via1_4
       NEW metal2 ( 5120 301 ) via2_5
       NEW metal1 ( 5082 777 ) via1_4 ;
-    - addr_w[0].inv_addr[2] ( decoder_p0.inv_p0_a2 ZN ) ( decoder_p0.and_layer1_word3 A2 ) ( decoder_p0.and_layer1_word2 A2 ) ( decoder_p0.and_layer1_word1 A2 ) ( decoder_p0.and_layer1_word0 A2 ) + USE SIGNAL
+    - addr_w.inv_addr[2] ( decoder_p0.inv_p0_a2 ZN ) ( decoder_p0.and_layer1_word3 A2 ) ( decoder_p0.and_layer1_word2 A2 ) ( decoder_p0.and_layer1_word1 A2 ) ( decoder_p0.and_layer1_word0 A2 ) + USE SIGNAL
       + ROUTED metal2 ( 5101 49 ) ( * 63 )
       NEW metal3 ( 5101 49 ) ( 5614 * )
       NEW metal2 ( 5101 63 ) ( * 217 )
@@ -1608,7 +1608,7 @@ NETS 188 ;
       NEW metal1 ( 5101 217 ) via1_4
       NEW metal1 ( 5101 343 ) via1_4
       NEW metal1 ( 5101 497 ) via1_4 ;
-    - addr_w[0][0] ( PIN addr_w[0][0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word5 A1 ) ( decoder_p0.and_layer0_word3 A1 ) ( decoder_p0.and_layer0_word1 A1 ) + USE SIGNAL
+    - addr_w[0] ( PIN addr_w[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word5 A1 ) ( decoder_p0.and_layer0_word3 A1 ) ( decoder_p0.and_layer0_word1 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5595 595 ) ( * 623 )
       NEW metal3 ( 5595 595 ) ( 5609 * )
       NEW metal4 ( 5609 231 ) ( * 595 )
@@ -1637,7 +1637,7 @@ NETS 188 ;
       NEW metal1 ( 5006 777 ) via1_4
       NEW metal2 ( 5006 777 ) via2_5
       NEW metal2 ( 5044 777 ) via2_5 ;
-    - addr_w[0][1] ( PIN addr_w[0][1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word6 A1 ) ( decoder_p0.and_layer1_word3 A1 ) ( decoder_p0.and_layer1_word2 A1 ) + USE SIGNAL
+    - addr_w[1] ( PIN addr_w[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word6 A1 ) ( decoder_p0.and_layer1_word3 A1 ) ( decoder_p0.and_layer1_word2 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5082 497 ) ( * 539 )
       NEW metal3 ( 5082 539 ) ( 5139 * )
       NEW metal2 ( 5139 539 ) ( * 609 )
@@ -1660,7 +1660,7 @@ NETS 188 ;
       NEW metal1 ( 5595 343 ) via1_4
       NEW metal2 ( 5595 329 ) via2_5
       NEW metal2 ( 5082 329 ) via2_5 ;
-    - addr_w[0][2] ( PIN addr_w[0][2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word6 A2 ) ( decoder_p0.and_layer1_word5 A2 ) ( decoder_p0.and_layer1_word4 A2 ) + USE SIGNAL
+    - addr_w[2] ( PIN addr_w[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word6 A2 ) ( decoder_p0.and_layer1_word5 A2 ) ( decoder_p0.and_layer1_word4 A2 ) + USE SIGNAL
       + ROUTED metal3 ( 5595 63 ) ( 5658 * 0 )
       NEW metal3 ( 5101 623 ) ( 5105 * )
       NEW metal3 ( 5105 609 ) ( * 623 )

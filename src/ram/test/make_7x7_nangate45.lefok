@@ -25,30 +25,30 @@ MACRO RAM7x7
         RECT  36.985 11.06 37.125 11.2 ;
     END
   END we[0]
-  PIN addr_rw[0][0]
+  PIN addr_rw[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
         RECT  40.21 2.275 40.28 2.345 ;
     END
-  END addr_rw[0][0]
-  PIN addr_rw[0][1]
+  END addr_rw[0]
+  PIN addr_rw[1]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
         RECT  40.21 3.395 40.28 3.465 ;
     END
-  END addr_rw[0][1]
-  PIN addr_rw[0][2]
+  END addr_rw[1]
+  PIN addr_rw[2]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
       LAYER metal3 ;
         RECT  40.21 0.595 40.28 0.665 ;
     END
-  END addr_rw[0][2]
+  END addr_rw[2]
   PIN D[0]
     DIRECTION INPUT ;
     USE SIGNAL ;

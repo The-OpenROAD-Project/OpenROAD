@@ -646,39 +646,39 @@ PINS 37 ;
         + LAYER met1 ( 1 -2024 ) ( 15 -1976 )
         + LAYER met1 ( -15487 -2024 ) ( -15473 -1976 )
         + FIXED ( 15487 2000 ) N ;
-    - addr_r[0][0] + NET addr_r[0][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[0] + NET addr_r0[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 578 ) N ;
-    - addr_r[0][1] + NET addr_r[0][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[1] + NET addr_r0[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 850 ) N ;
-    - addr_r[0][2] + NET addr_r[0][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_r0[2] + NET addr_r0[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 1122 ) N ;
-    - addr_r[1][0] + NET addr_r[1][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[0] + NET addr_r1[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 1258 ) N ;
-    - addr_r[1][1] + NET addr_r[1][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[1] + NET addr_r1[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 1394 ) N ;
-    - addr_r[1][2] + NET addr_r[1][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_r1[2] + NET addr_r1[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 306 ) N ;
-    - addr_w[0][0] + NET addr_w[0][0] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[0] + NET addr_w[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 442 ) N ;
-    - addr_w[0][1] + NET addr_w[0][1] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[1] + NET addr_w[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 714 ) N ;
-    - addr_w[0][2] + NET addr_w[0][2] + DIRECTION INPUT + USE SIGNAL
+    - addr_w[2] + NET addr_w[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
         + PLACED ( 15462 170 ) N ;
@@ -1708,7 +1708,7 @@ NETS 220 ;
       NEW met1 ( 12075 1853 ) M1M2_PR
       NEW li1 ( 12121 1581 ) L1M1_PR_MR
       NEW met1 ( 12075 1581 ) M1M2_PR ;
-    - addr_r[0].inv_addr[0] ( decoder_p1.inv_p1_a0 Y ) ( decoder_p1.and_layer0_word6 A ) ( decoder_p1.and_layer0_word4 A ) ( decoder_p1.and_layer0_word2 A ) ( decoder_p1.and_layer0_word0 A ) + USE SIGNAL
+    - addr_r0.inv_addr[0] ( decoder_p1.inv_p1_a0 Y ) ( decoder_p1.and_layer0_word6 A ) ( decoder_p1.and_layer0_word4 A ) ( decoder_p1.and_layer0_word2 A ) ( decoder_p1.and_layer0_word0 A ) + USE SIGNAL
       + ROUTED met2 ( 14145 187 ) ( * 697 )
       NEW met2 ( 14145 697 ) ( * 1241 )
       NEW met2 ( 14145 1581 ) ( * 1785 )
@@ -1724,7 +1724,7 @@ NETS 220 ;
       NEW met1 ( 14145 1785 ) M1M2_PR
       NEW met1 ( 14145 1581 ) M1M2_PR
       NEW li1 ( 15295 1581 ) L1M1_PR_MR ;
-    - addr_r[0].inv_addr[1] ( decoder_p1.inv_p1_a1 Y ) ( decoder_p1.and_layer1_word5 A ) ( decoder_p1.and_layer1_word4 A ) ( decoder_p1.and_layer1_word1 A ) ( decoder_p1.and_layer1_word0 A ) + USE SIGNAL
+    - addr_r0.inv_addr[1] ( decoder_p1.inv_p1_a1 Y ) ( decoder_p1.and_layer1_word5 A ) ( decoder_p1.and_layer1_word4 A ) ( decoder_p1.and_layer1_word1 A ) ( decoder_p1.and_layer1_word0 A ) + USE SIGNAL
       + ROUTED met2 ( 14375 1037 ) ( * 1241 )
       NEW met1 ( 14375 1037 ) ( 15295 * )
       NEW met2 ( 14375 391 ) ( * 1037 )
@@ -1740,7 +1740,7 @@ NETS 220 ;
       NEW met1 ( 14375 187 ) M1M2_PR
       NEW li1 ( 14375 1445 ) L1M1_PR_MR
       NEW met1 ( 14375 1445 ) M1M2_PR ;
-    - addr_r[0].inv_addr[2] ( decoder_p1.inv_p1_a2 Y ) ( decoder_p1.and_layer1_word3 B ) ( decoder_p1.and_layer1_word2 B ) ( decoder_p1.and_layer1_word1 B ) ( decoder_p1.and_layer1_word0 B ) + USE SIGNAL
+    - addr_r0.inv_addr[2] ( decoder_p1.inv_p1_a2 Y ) ( decoder_p1.and_layer1_word3 B ) ( decoder_p1.and_layer1_word2 B ) ( decoder_p1.and_layer1_word1 B ) ( decoder_p1.and_layer1_word0 B ) + USE SIGNAL
       + ROUTED met1 ( 14467 425 ) ( * 459 )
       NEW met1 ( 14467 459 ) ( 14513 * )
       NEW met2 ( 14513 459 ) ( 14651 * )
@@ -1760,7 +1760,7 @@ NETS 220 ;
       NEW met1 ( 14467 663 ) M1M2_PR
       NEW li1 ( 14467 935 ) L1M1_PR_MR
       NEW met1 ( 14467 935 ) M1M2_PR ;
-    - addr_r[0][0] ( PIN addr_r[0][0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_layer0_word7 A ) ( decoder_p1.and_layer0_word5 A ) ( decoder_p1.and_layer0_word3 A ) ( decoder_p1.and_layer0_word1 A ) + USE SIGNAL
+    - addr_r0[0] ( PIN addr_r0[0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_layer0_word7 A ) ( decoder_p1.and_layer0_word5 A ) ( decoder_p1.and_layer0_word3 A ) ( decoder_p1.and_layer0_word1 A ) + USE SIGNAL
       + ROUTED met3 ( 15249 578 ) ( 15462 * 0 )
       NEW met3 ( 14191 578 ) ( 15249 * )
       NEW met1 ( 14145 935 ) ( 14191 * )
@@ -1783,7 +1783,7 @@ NETS 220 ;
       NEW li1 ( 14145 1989 ) L1M1_PR_MR
       NEW li1 ( 15249 1513 ) L1M1_PR_MR
       NEW met1 ( 15249 1513 ) M1M2_PR ;
-    - addr_r[0][1] ( PIN addr_r[0][1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_layer1_word7 A ) ( decoder_p1.and_layer1_word6 A ) ( decoder_p1.and_layer1_word3 A ) ( decoder_p1.and_layer1_word2 A ) + USE SIGNAL
+    - addr_r0[1] ( PIN addr_r0[1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_layer1_word7 A ) ( decoder_p1.and_layer1_word6 A ) ( decoder_p1.and_layer1_word3 A ) ( decoder_p1.and_layer1_word2 A ) + USE SIGNAL
       + ROUTED met1 ( 15249 969 ) ( 15295 * )
       NEW met2 ( 15295 850 ) ( * 969 )
       NEW met3 ( 15295 850 ) ( 15462 * 0 )
@@ -1809,7 +1809,7 @@ NETS 220 ;
       NEW met1 ( 14421 1785 ) M1M2_PR
       NEW li1 ( 14375 1989 ) L1M1_PR_MR
       NEW met1 ( 14421 1989 ) M1M2_PR ;
-    - addr_r[0][2] ( PIN addr_r[0][2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_layer1_word7 B ) ( decoder_p1.and_layer1_word6 B ) ( decoder_p1.and_layer1_word5 B ) ( decoder_p1.and_layer1_word4 B ) + USE SIGNAL
+    - addr_r0[2] ( PIN addr_r0[2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_layer1_word7 B ) ( decoder_p1.and_layer1_word6 B ) ( decoder_p1.and_layer1_word5 B ) ( decoder_p1.and_layer1_word4 B ) + USE SIGNAL
       + ROUTED met3 ( 15341 1122 ) ( 15462 * 0 )
       NEW met2 ( 15341 493 ) ( * 1122 )
       NEW met1 ( 15249 493 ) ( 15341 * )
@@ -1833,7 +1833,7 @@ NETS 220 ;
       NEW met1 ( 14467 1751 ) M1M2_PR
       NEW li1 ( 14467 2023 ) L1M1_PR_MR
       NEW met1 ( 14467 2023 ) M1M2_PR ;
-    - addr_r[1].inv_addr[0] ( decoder_p2.inv_p2_a0 Y ) ( decoder_p2.and_layer0_word6 A ) ( decoder_p2.and_layer0_word4 A ) ( decoder_p2.and_layer0_word2 A ) ( decoder_p2.and_layer0_word0 A ) + USE SIGNAL
+    - addr_r1.inv_addr[0] ( decoder_p2.inv_p2_a0 Y ) ( decoder_p2.and_layer0_word6 A ) ( decoder_p2.and_layer0_word4 A ) ( decoder_p2.and_layer0_word2 A ) ( decoder_p2.and_layer0_word0 A ) + USE SIGNAL
       + ROUTED met2 ( 14789 187 ) ( * 697 )
       NEW met2 ( 14789 697 ) ( * 1241 )
       NEW met1 ( 14789 1547 ) ( 15433 * )
@@ -1851,7 +1851,7 @@ NETS 220 ;
       NEW met1 ( 14789 1785 ) M1M2_PR
       NEW met1 ( 15433 1547 ) M1M2_PR
       NEW met1 ( 14789 1547 ) M1M2_PR ;
-    - addr_r[1].inv_addr[1] ( decoder_p2.inv_p2_a1 Y ) ( decoder_p2.and_layer1_word5 A ) ( decoder_p2.and_layer1_word4 A ) ( decoder_p2.and_layer1_word1 A ) ( decoder_p2.and_layer1_word0 A ) + USE SIGNAL
+    - addr_r1.inv_addr[1] ( decoder_p2.inv_p2_a1 Y ) ( decoder_p2.and_layer1_word5 A ) ( decoder_p2.and_layer1_word4 A ) ( decoder_p2.and_layer1_word1 A ) ( decoder_p2.and_layer1_word0 A ) + USE SIGNAL
       + ROUTED met2 ( 15019 391 ) ( * 1275 )
       NEW met2 ( 15019 187 ) ( * 391 )
       NEW met1 ( 15019 765 ) ( 15433 * )
@@ -1866,7 +1866,7 @@ NETS 220 ;
       NEW met1 ( 15019 765 ) M1M2_PR
       NEW li1 ( 15019 1445 ) L1M1_PR_MR
       NEW met1 ( 15019 1445 ) M1M2_PR ;
-    - addr_r[1].inv_addr[2] ( decoder_p2.inv_p2_a2 Y ) ( decoder_p2.and_layer1_word3 B ) ( decoder_p2.and_layer1_word2 B ) ( decoder_p2.and_layer1_word1 B ) ( decoder_p2.and_layer1_word0 B ) + USE SIGNAL
+    - addr_r1.inv_addr[2] ( decoder_p2.inv_p2_a2 Y ) ( decoder_p2.and_layer1_word3 B ) ( decoder_p2.and_layer1_word2 B ) ( decoder_p2.and_layer1_word1 B ) ( decoder_p2.and_layer1_word0 B ) + USE SIGNAL
       + ROUTED met1 ( 15111 153 ) ( 15433 * )
       NEW met2 ( 15111 153 ) ( * 391 )
       NEW met2 ( 15111 391 ) ( * 663 )
@@ -1880,7 +1880,7 @@ NETS 220 ;
       NEW met1 ( 15111 663 ) M1M2_PR
       NEW li1 ( 15111 935 ) L1M1_PR_MR
       NEW met1 ( 15111 935 ) M1M2_PR ;
-    - addr_r[1][0] ( PIN addr_r[1][0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_layer0_word7 A ) ( decoder_p2.and_layer0_word5 A ) ( decoder_p2.and_layer0_word3 A ) ( decoder_p2.and_layer0_word1 A ) + USE SIGNAL
+    - addr_r1[0] ( PIN addr_r1[0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_layer0_word7 A ) ( decoder_p2.and_layer0_word5 A ) ( decoder_p2.and_layer0_word3 A ) ( decoder_p2.and_layer0_word1 A ) + USE SIGNAL
       + ROUTED met1 ( 14789 1479 ) ( 14835 * )
       NEW met2 ( 14835 1479 ) ( * 1989 )
       NEW met1 ( 14789 1989 ) ( 14835 * )
@@ -1904,7 +1904,7 @@ NETS 220 ;
       NEW met1 ( 15341 1173 ) M1M2_PR
       NEW met2 ( 15341 1258 ) M2M3_PR
       NEW met3 ( 15341 1258 ) RECT ( -62 -15 0 15 )  ;
-    - addr_r[1][1] ( PIN addr_r[1][1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_layer1_word7 A ) ( decoder_p2.and_layer1_word6 A ) ( decoder_p2.and_layer1_word3 A ) ( decoder_p2.and_layer1_word2 A ) + USE SIGNAL
+    - addr_r1[1] ( PIN addr_r1[1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_layer1_word7 A ) ( decoder_p2.and_layer1_word6 A ) ( decoder_p2.and_layer1_word3 A ) ( decoder_p2.and_layer1_word2 A ) + USE SIGNAL
       + ROUTED met1 ( 15019 935 ) ( 15065 * )
       NEW met1 ( 15019 697 ) ( 15065 * )
       NEW met2 ( 15065 697 ) ( * 935 )
@@ -1926,7 +1926,7 @@ NETS 220 ;
       NEW met1 ( 15065 1785 ) M1M2_PR
       NEW li1 ( 15019 1989 ) L1M1_PR_MR
       NEW met1 ( 15065 1989 ) M1M2_PR ;
-    - addr_r[1][2] ( PIN addr_r[1][2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_layer1_word7 B ) ( decoder_p2.and_layer1_word6 B ) ( decoder_p2.and_layer1_word5 B ) ( decoder_p2.and_layer1_word4 B ) + USE SIGNAL
+    - addr_r1[2] ( PIN addr_r1[2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_layer1_word7 B ) ( decoder_p2.and_layer1_word6 B ) ( decoder_p2.and_layer1_word5 B ) ( decoder_p2.and_layer1_word4 B ) + USE SIGNAL
       + ROUTED met3 ( 15387 306 ) ( 15462 * 0 )
       NEW met2 ( 15387 119 ) ( * 306 )
       NEW met1 ( 15111 1207 ) ( 15157 * )
@@ -1950,7 +1950,7 @@ NETS 220 ;
       NEW met1 ( 15157 1751 ) M1M2_PR
       NEW li1 ( 15111 2023 ) L1M1_PR_MR
       NEW met1 ( 15157 2023 ) M1M2_PR ;
-    - addr_w[0].inv_addr[0] ( decoder_p0.inv_p0_a0 Y ) ( decoder_p0.and_layer0_word6 A ) ( decoder_p0.and_layer0_word4 A ) ( decoder_p0.and_layer0_word2 A ) ( decoder_p0.and_layer0_word0 A ) + USE SIGNAL
+    - addr_w.inv_addr[0] ( decoder_p0.inv_p0_a0 Y ) ( decoder_p0.and_layer0_word6 A ) ( decoder_p0.and_layer0_word4 A ) ( decoder_p0.and_layer0_word2 A ) ( decoder_p0.and_layer0_word0 A ) + USE SIGNAL
       + ROUTED met1 ( 13501 1241 ) ( 13547 * )
       NEW met2 ( 13501 1241 ) ( * 1309 )
       NEW met1 ( 13501 1309 ) ( 15295 * )
@@ -1969,7 +1969,7 @@ NETS 220 ;
       NEW met1 ( 13501 1785 ) M1M2_PR
       NEW li1 ( 13547 187 ) L1M1_PR_MR
       NEW met1 ( 13547 187 ) M1M2_PR ;
-    - addr_w[0].inv_addr[1] ( decoder_p0.inv_p0_a1 Y ) ( decoder_p0.and_layer1_word5 A ) ( decoder_p0.and_layer1_word4 A ) ( decoder_p0.and_layer1_word1 A ) ( decoder_p0.and_layer1_word0 A ) + USE SIGNAL
+    - addr_w.inv_addr[1] ( decoder_p0.inv_p0_a1 Y ) ( decoder_p0.and_layer1_word5 A ) ( decoder_p0.and_layer1_word4 A ) ( decoder_p0.and_layer1_word1 A ) ( decoder_p0.and_layer1_word0 A ) + USE SIGNAL
       + ROUTED met2 ( 13777 391 ) ( * 629 )
       NEW met1 ( 13777 629 ) ( 15295 * )
       NEW met2 ( 13777 187 ) ( * 391 )
@@ -1985,7 +1985,7 @@ NETS 220 ;
       NEW met1 ( 13777 1241 ) M1M2_PR
       NEW li1 ( 13777 1445 ) L1M1_PR_MR
       NEW met1 ( 13777 1445 ) M1M2_PR ;
-    - addr_w[0].inv_addr[2] ( decoder_p0.inv_p0_a2 Y ) ( decoder_p0.and_layer1_word3 B ) ( decoder_p0.and_layer1_word2 B ) ( decoder_p0.and_layer1_word1 B ) ( decoder_p0.and_layer1_word0 B ) + USE SIGNAL
+    - addr_w.inv_addr[2] ( decoder_p0.inv_p0_a2 Y ) ( decoder_p0.and_layer1_word3 B ) ( decoder_p0.and_layer1_word2 B ) ( decoder_p0.and_layer1_word1 B ) ( decoder_p0.and_layer1_word0 B ) + USE SIGNAL
       + ROUTED met1 ( 13869 85 ) ( * 119 )
       NEW met1 ( 13869 85 ) ( 15295 * )
       NEW met2 ( 13869 119 ) ( * 391 )
@@ -2000,7 +2000,7 @@ NETS 220 ;
       NEW met1 ( 13869 697 ) M1M2_PR
       NEW li1 ( 13869 935 ) L1M1_PR_MR
       NEW met1 ( 13869 935 ) M1M2_PR ;
-    - addr_w[0][0] ( PIN addr_w[0][0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word7 A ) ( decoder_p0.and_layer0_word5 A ) ( decoder_p0.and_layer0_word3 A ) ( decoder_p0.and_layer0_word1 A ) + USE SIGNAL
+    - addr_w[0] ( PIN addr_w[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word7 A ) ( decoder_p0.and_layer0_word5 A ) ( decoder_p0.and_layer0_word3 A ) ( decoder_p0.and_layer0_word1 A ) + USE SIGNAL
       + ROUTED met1 ( 15249 1139 ) ( 15433 * )
       NEW met2 ( 15433 510 ) ( * 1139 )
       NEW met3 ( 15410 510 ) ( 15433 * )
@@ -2028,7 +2028,7 @@ NETS 220 ;
       NEW met1 ( 13593 1445 ) M1M2_PR
       NEW li1 ( 13547 1989 ) L1M1_PR_MR
       NEW met1 ( 13593 1989 ) M1M2_PR ;
-    - addr_w[0][1] ( PIN addr_w[0][1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word7 A ) ( decoder_p0.and_layer1_word6 A ) ( decoder_p0.and_layer1_word3 A ) ( decoder_p0.and_layer1_word2 A ) + USE SIGNAL
+    - addr_w[1] ( PIN addr_w[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word7 A ) ( decoder_p0.and_layer1_word6 A ) ( decoder_p0.and_layer1_word3 A ) ( decoder_p0.and_layer1_word2 A ) + USE SIGNAL
       + ROUTED met1 ( 15203 663 ) ( 15249 * )
       NEW met2 ( 15203 663 ) ( * 714 )
       NEW met3 ( 15203 714 ) ( 15462 * 0 )
@@ -2056,7 +2056,7 @@ NETS 220 ;
       NEW met1 ( 13731 1785 ) M1M2_PR
       NEW li1 ( 13777 2023 ) L1M1_PR_MR
       NEW met1 ( 13731 2023 ) M1M2_PR ;
-    - addr_w[0][2] ( PIN addr_w[0][2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word7 B ) ( decoder_p0.and_layer1_word6 B ) ( decoder_p0.and_layer1_word5 B ) ( decoder_p0.and_layer1_word4 B ) + USE SIGNAL
+    - addr_w[2] ( PIN addr_w[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word7 B ) ( decoder_p0.and_layer1_word6 B ) ( decoder_p0.and_layer1_word5 B ) ( decoder_p0.and_layer1_word4 B ) + USE SIGNAL
       + ROUTED met2 ( 15249 119 ) ( * 170 )
       NEW met3 ( 15249 170 ) ( 15462 * 0 )
       NEW met1 ( 13869 1207 ) ( 13915 * )
