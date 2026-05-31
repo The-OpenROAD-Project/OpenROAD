@@ -84,6 +84,8 @@ void _dbTechLayerVoltageSpacing::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["table"].add(table_);
 }
 
 ////////////////////////////////////////////////////////////////////

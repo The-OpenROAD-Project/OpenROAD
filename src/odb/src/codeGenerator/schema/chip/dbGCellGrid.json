@@ -77,8 +77,7 @@
       "flags": [
         "private",
         "no-serial",
-        "no-template"
-      ]
+        "no-template", "no-meminfo"]
     }
   ],
   "structs": [

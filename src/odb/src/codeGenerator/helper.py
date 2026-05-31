@@ -217,6 +217,36 @@ def is_get_by_ref(type_name: str) -> bool:
     return type_name.startswith(_GET_BY_REF_PREFIXES)
 
 
+# Type prefixes for which MemInfo::add() has an overload that accounts the
+# member's heap allocation in collectMemInfo(). Scalars, dbId, std::pair,
+# std::array, std::tuple, and the value structs have no overload (no heap to
+# account) and are skipped.
+_MEM_INFO_PREFIXES = (
+    "dbVector",
+    "std::vector",
+    "dbHashTable",
+    "dbIntHashTable",
+    "std::map",
+    "std::unordered_map",
+    "boost::container::flat_map",
+    "std::set",
+)
+
+
+def mem_info_accountable(type_name: str) -> bool:
+    """Whether collectMemInfo() accounts this member via a single add() call.
+
+    True for the heap-backed types MemInfo::add() overloads accept (std::string,
+    vectors, hash tables, maps, sets). Members whose elements themselves own heap
+    storage (e.g. a vector of strings, or a map of matrices) need element-level
+    accounting and opt out with the 'no-meminfo' flag, keeping that logic in the
+    collectMemInfo User Code block.
+    """
+    if type_name == "std::string":
+        return True
+    return type_name.startswith(_MEM_INFO_PREFIXES)
+
+
 def is_template_type(type_name: str) -> bool:
     """Whether the type has a <...> template argument list."""
     open_bracket = type_name.find("<")

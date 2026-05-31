@@ -98,6 +98,9 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["region_insts_map"].add(region_insts_map_);
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -110,9 +110,7 @@ void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["class_name"].add(class_name_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

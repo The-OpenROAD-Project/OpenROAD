@@ -107,6 +107,8 @@ void _dbScanChain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["name"].add(name_);
+  info.children["test_mode_name"].add(test_mode_name_);
   scan_partitions_->collectMemInfo(info.children["scan_partitions_"]);
 }
 

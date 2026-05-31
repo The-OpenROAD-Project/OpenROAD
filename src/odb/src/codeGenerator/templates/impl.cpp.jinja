@@ -105,8 +105,10 @@ namespace odb {
     info.size += sizeof(*this);
 
     {% for field in klass.fields %}
-      {% if field.table %} 
+      {% if field.table %}
         {{field.name}}->collectMemInfo(info.children["{{field.name}}"]);
+      {% elif field.kind.mem_info_account() and 'no-meminfo' not in field.flags %}
+        info.children["{{ field.name[:-1] if field.name.endswith('_') else field.name }}"].add({{field.name}});
       {% endif %}
     {% endfor %}
 

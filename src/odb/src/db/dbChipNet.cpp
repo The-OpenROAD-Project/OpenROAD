@@ -71,6 +71,9 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["bump_insts_paths"].add(bump_insts_paths_);
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -192,20 +192,18 @@ void _dbTechLayerCutSpacingTableDefRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["prl_for_aligned_cut_tbl_"].add(prl_for_aligned_cut_tbl_);
-  info.children["center_to_center_tbl_"].add(center_to_center_tbl_);
-  info.children["center_and_edge_tbl_"].add(center_and_edge_tbl_);
-  info.children["prl_tbl_"].add(prl_tbl_);
-  info.children["end_extension_tbl_"].add(end_extension_tbl_);
-  info.children["side_extension_tbl_"].add(side_extension_tbl_);
-  info.children["exact_aligned_spacing_tbl_"].add(exact_aligned_spacing_tbl_);
-  info.children["non_opp_enc_spacing_tbl_"].add(non_opp_enc_spacing_tbl_);
-  info.children["opp_enc_spacing_tbl_"].add(opp_enc_spacing_tbl_);
-  info.children["spacing_tbl_"].add(spacing_tbl_);
-  info.children["row_map_"].add(row_map_);
-  info.children["col_map_"].add(col_map_);
-  // User Code End collectMemInfo
+  info.children["prl_for_aligned_cut_tbl"].add(prl_for_aligned_cut_tbl_);
+  info.children["center_to_center_tbl"].add(center_to_center_tbl_);
+  info.children["center_and_edge_tbl"].add(center_and_edge_tbl_);
+  info.children["prl_tbl"].add(prl_tbl_);
+  info.children["end_extension_tbl"].add(end_extension_tbl_);
+  info.children["side_extension_tbl"].add(side_extension_tbl_);
+  info.children["exact_aligned_spacing_tbl"].add(exact_aligned_spacing_tbl_);
+  info.children["non_opp_enc_spacing_tbl"].add(non_opp_enc_spacing_tbl_);
+  info.children["opp_enc_spacing_tbl"].add(opp_enc_spacing_tbl_);
+  info.children["spacing_tbl"].add(spacing_tbl_);
+  info.children["row_map"].add(row_map_);
+  info.children["col_map"].add(col_map_);
 }
 
 ////////////////////////////////////////////////////////////////////

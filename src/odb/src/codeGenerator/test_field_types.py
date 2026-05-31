@@ -16,7 +16,7 @@ from pathlib import Path
 
 from field_types import CharPtrType, make_field_type
 from gen import ODBGenerator, make_environment
-from helper import is_set_by_ref
+from helper import is_set_by_ref, mem_info_accountable
 from schema_models import Field, Schema
 
 HERE = Path(os.path.dirname(__file__))
@@ -159,6 +159,39 @@ class SetByRefRuleTest(unittest.TestCase):
             "dbAccessType::Value",  # scoped enum
         ):
             self.assertFalse(is_set_by_ref(t, self.ENUMS), t)
+
+
+class MemInfoAccountableTest(unittest.TestCase):
+    """mem_info_accountable matches the heap types MemInfo::add() overloads accept."""
+
+    def test_accountable_heap_types(self):
+        for t in (
+            "std::string",
+            "std::vector<Point>",
+            "dbVector<int>",
+            "dbHashTable<_dbInst>",
+            "std::map<int,int>",
+            "std::unordered_map<std::string, dbId<_dbInst>>",
+            "std::set<int>",
+        ):
+            self.assertTrue(mem_info_accountable(t), t)
+
+    def test_not_accountable_inline_types(self):
+        # Scalars, refs, and small aggregates own no heap and have no overload.
+        for t in (
+            "int",
+            "bool",
+            "double",
+            "uint32_t",
+            "dbId<_dbNet>",
+            "std::pair<int,int>",
+            "std::array<bool, 6>",
+            "std::tuple<Rect, bool, bool>",
+            "char *",
+            "Point",
+            "Polygon",
+        ):
+            self.assertFalse(mem_info_accountable(t), t)
 
 
 if __name__ == "__main__":

@@ -127,13 +127,11 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["description"].add(description_);
+  info.children["source"].add(source_);
   marker_tbl_->collectMemInfo(info.children["marker_tbl_"]);
-
   categories_tbl_->collectMemInfo(info.children["categories_tbl_"]);
-
-  // User Code Begin collectMemInfo
   info.children["categories_hash"].add(categories_hash_);
-  // User Code End collectMemInfo
 }
 
 _dbMarkerCategory::~_dbMarkerCategory()

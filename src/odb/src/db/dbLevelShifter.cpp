@@ -179,25 +179,26 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["elements"].add(elements_);
+  info.children["exclude_elements"].add(exclude_elements_);
+  info.children["source"].add(source_);
+  info.children["sink"].add(sink_);
+  info.children["applies_to"].add(applies_to_);
+  info.children["applies_to_boundary"].add(applies_to_boundary_);
+  info.children["rule"].add(rule_);
+  info.children["location"].add(location_);
+  info.children["input_supply"].add(input_supply_);
+  info.children["output_supply"].add(output_supply_);
+  info.children["internal_supply"].add(internal_supply_);
+  info.children["name_prefix"].add(name_prefix_);
+  info.children["name_suffix"].add(name_suffix_);
+  info.children["instances"].add(instances_);
+  info.children["cell_name"].add(cell_name_);
+  info.children["cell_input"].add(cell_input_);
+  info.children["cell_output"].add(cell_output_);
+
   // User Code Begin collectMemInfo
   info.children["name"].add(name_);
-  info.children["_elements"].add(elements_);
-  info.children["_exclude_elements"].add(exclude_elements_);
-  info.children["_source"].add(source_);
-  info.children["_sink"].add(sink_);
-  info.children["_applies_to"].add(applies_to_);
-  info.children["_applies_to_boundary"].add(applies_to_boundary_);
-  info.children["_rule"].add(rule_);
-  info.children["_location"].add(location_);
-  info.children["_input_supply"].add(input_supply_);
-  info.children["_output_supply"].add(output_supply_);
-  info.children["_internal_supply"].add(internal_supply_);
-  info.children["_name_prefix"].add(name_prefix_);
-  info.children["_name_suffix"].add(name_suffix_);
-  info.children["_instances"].add(instances_);
-  info.children["_cell_name"].add(cell_name_);
-  info.children["_cell_input"].add(cell_input_);
-  info.children["_cell_output"].add(cell_output_);
   // User Code End collectMemInfo
 }
 

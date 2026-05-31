@@ -100,14 +100,15 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["applies_to"].add(applies_to_);
   info.children["clamp_value"].add(clamp_value_);
   info.children["isolation_signal"].add(isolation_signal_);
   info.children["isolation_sense"].add(isolation_sense_);
   info.children["location"].add(location_);
   info.children["isolation_cells"].add(isolation_cells_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

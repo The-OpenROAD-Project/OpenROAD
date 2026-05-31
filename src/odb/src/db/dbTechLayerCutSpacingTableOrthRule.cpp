@@ -58,9 +58,7 @@ void _dbTechLayerCutSpacingTableOrthRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["spacing_tbl"].add(spacing_tbl_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////

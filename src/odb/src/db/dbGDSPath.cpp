@@ -81,8 +81,9 @@ void _dbGDSPath::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["xy"].add(xy_);
+
+  // User Code Begin collectMemInfo
   info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
     info.children["propattr"].add(s);

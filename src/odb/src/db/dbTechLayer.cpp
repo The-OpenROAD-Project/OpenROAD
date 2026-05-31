@@ -796,66 +796,46 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["orth_spacing_tbl"].add(orth_spacing_tbl_);
   cut_class_rules_tbl_->collectMemInfo(info.children["cut_class_rules_tbl_"]);
-
+  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
   spacing_eol_rules_tbl_->collectMemInfo(
       info.children["spacing_eol_rules_tbl_"]);
-
   cut_spacing_rules_tbl_->collectMemInfo(
       info.children["cut_spacing_rules_tbl_"]);
-
   minstep_rules_tbl_->collectMemInfo(info.children["minstep_rules_tbl_"]);
-
   corner_spacing_rules_tbl_->collectMemInfo(
       info.children["corner_spacing_rules_tbl_"]);
-
   spacing_table_prl_rules_tbl_->collectMemInfo(
       info.children["spacing_table_prl_rules_tbl_"]);
-
   cut_spacing_table_orth_tbl_->collectMemInfo(
       info.children["cut_spacing_table_orth_tbl_"]);
-
   cut_spacing_table_def_tbl_->collectMemInfo(
       info.children["cut_spacing_table_def_tbl_"]);
-
   cut_enc_rules_tbl_->collectMemInfo(info.children["cut_enc_rules_tbl_"]);
-
   eol_ext_rules_tbl_->collectMemInfo(info.children["eol_ext_rules_tbl_"]);
-
   array_spacing_rules_tbl_->collectMemInfo(
       info.children["array_spacing_rules_tbl_"]);
-
   eol_keep_out_rules_tbl_->collectMemInfo(
       info.children["eol_keep_out_rules_tbl_"]);
-
   max_spacing_rules_tbl_->collectMemInfo(
       info.children["max_spacing_rules_tbl_"]);
-
   width_table_rules_tbl_->collectMemInfo(
       info.children["width_table_rules_tbl_"]);
-
   min_cuts_rules_tbl_->collectMemInfo(info.children["min_cuts_rules_tbl_"]);
-
   area_rules_tbl_->collectMemInfo(info.children["area_rules_tbl_"]);
-
   forbidden_spacing_rules_tbl_->collectMemInfo(
       info.children["forbidden_spacing_rules_tbl_"]);
-
   keepout_zone_rules_tbl_->collectMemInfo(
       info.children["keepout_zone_rules_tbl_"]);
-
   wrongdir_spacing_rules_tbl_->collectMemInfo(
       info.children["wrongdir_spacing_rules_tbl_"]);
-
   two_wires_forbidden_spc_rules_tbl_->collectMemInfo(
       info.children["two_wires_forbidden_spc_rules_tbl_"]);
-
   voltage_spacing_rules_tbl_->collectMemInfo(
       info.children["voltage_spacing_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
-  info.children["orth_spacing"].add(orth_spacing_tbl_);
-  info.children["cut_class_rules_hash"].add(cut_class_rules_hash_);
   info.children["name"].add(name_);
   info.children["alias"].add(alias_);
   spacing_rules_tbl_->collectMemInfo(info.children["spacing_rules_tbl"]);

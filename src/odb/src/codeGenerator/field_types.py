@@ -31,6 +31,7 @@ from helper import (
     is_pass_by_ref,
     is_ref,
     is_set_by_ref,
+    mem_info_accountable,
 )
 
 
@@ -91,6 +92,10 @@ class FieldType:
     def needs_free(self, field_name: str) -> bool:
         """Whether the named member must be freed in the destructor."""
         return False
+
+    def mem_info_account(self) -> bool:
+        """Whether collectMemInfo() accounts this member via a single add()."""
+        return mem_info_accountable(self.raw)
 
 
 class ScalarType(FieldType):
@@ -251,6 +256,10 @@ class TableType(FieldType):
     def compare_deref(self) -> bool:
         """Compared by dereferencing the owned table pointer."""
         return True
+
+    def mem_info_account(self) -> bool:
+        """Owned tables recurse via collectMemInfo(), not add()."""
+        return False
 
 
 def _resolve_ref_table(ref_type: str, parent: str | None, schema) -> str | None:

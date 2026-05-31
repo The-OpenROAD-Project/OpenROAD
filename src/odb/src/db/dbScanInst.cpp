@@ -100,6 +100,8 @@ void _dbScanInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["scan_clock"].add(scan_clock_);
 }
 
 ////////////////////////////////////////////////////////////////////

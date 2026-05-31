@@ -111,6 +111,7 @@ void _dbChipRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["name"].add(name_);
   chip_bump_tbl_->collectMemInfo(info.children["chip_bump_tbl_"]);
 }
 

@@ -81,12 +81,13 @@ void _dbGDSText::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["text"].add(text_);
+
   // User Code Begin collectMemInfo
   info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
     info.children["propattr"].add(s);
   }
-  info.children["text"].add(text_);
   // User Code End collectMemInfo
 }
 

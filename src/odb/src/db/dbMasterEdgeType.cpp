@@ -81,9 +81,7 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["edge_type"].add(edge_type_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
