@@ -1131,7 +1131,7 @@ void RamGen::generate(const int mask_size,
                       int max_tap_dist)
 {
   if (num_words / column_mux_ratio == 1) {
-    logger_->error(RAM, 37, "1-row RAMs are not supported.");
+    logger_->error(RAM, 39, "1-row RAMs are not supported.");
   }
   const int slices_per_word = word_size / mask_size;
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
@@ -1281,11 +1281,13 @@ void RamGen::generate(const int mask_size,
   for (int p = 0; p < total_ports; ++p) {
     std::string port_prefix;
     if (p < rw_ports) {  // NOLINTBEGIN(misc-include-cleaner)
-      port_prefix = fmt::format("addr_rw[{}]", rw_idx++);
+      port_prefix = "addr_rw";
+      rw_idx++;
     } else if (p < rw_ports + w_ports) {
-      port_prefix = fmt::format("addr_w[{}]", w_idx++);
+      port_prefix = "addr_w";
+      w_idx++;
     } else {
-      port_prefix = fmt::format("addr_r[{}]", r_idx++);
+      port_prefix = fmt::format("addr_r{}", r_idx++);
     }
     // NOLINTEND(misc-include-cleaner)
 
