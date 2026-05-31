@@ -175,7 +175,7 @@ proc generate_ram { args } {
   if { [info exists keys(-w_ports)] } {
     lappend ram_netlist_args -w_ports $keys(-w_ports)
   }
-  
+
   if { [info exists keys(-mask_size)] } {
     lappend ram_netlist_args -mask_size $keys(-mask_size)
   }
