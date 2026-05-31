@@ -39,12 +39,20 @@ void lefTechLayerAreaRuleParser::parse(
 }
 
 // Helper function to set integer values (converts to database units)
-void lefTechLayerAreaRuleParser::setInt(
+void lefTechLayerAreaRuleParser::setDist(
     double val,
     odb::dbTechLayerAreaRule* rule,
     void (odb::dbTechLayerAreaRule::*func)(int))
 {
   (rule->*func)(lefin_->dbdist(val));
+}
+
+void lefTechLayerAreaRuleParser::setArea(
+    double val,
+    odb::dbTechLayerAreaRule* rule,
+    void (odb::dbTechLayerAreaRule::*func)(int64_t))
+{
+  (rule->*func)(lefin_->dbarea(val));
 }
 
 // Set edge length exception parameters
@@ -108,7 +116,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
       = ((lit("EXCEPTEDGELENGTH") >> double_ >> double_)[boost::bind(
              &lefTechLayerAreaRuleParser::setExceptEdgeLengths, this, _1, rule)]
          | lit("EXCEPTEDGELENGTH") >> double_[boost::bind(
-               &lefTechLayerAreaRuleParser::setInt,
+               &lefTechLayerAreaRuleParser::setDist,
                this,
                _1,
                rule,
@@ -134,7 +142,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
          >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap, rule, _1)]);
 
   qi::rule<std::string::const_iterator, space_type> area_rule
-      = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
+      = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setArea,
                                             this,
                                             _1,
                                             rule,
@@ -143,14 +151,14 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
              lit("MASK")
              >> int_[boost::bind(&odb::dbTechLayerAreaRule::setMask, rule, _1)])
          >> -(lit("EXCEPTMINWIDTH") >> double_[boost::bind(
-                  &lefTechLayerAreaRuleParser::setInt,
+                  &lefTechLayerAreaRuleParser::setDist,
                   this,
                   _1,
                   rule,
                   &odb::dbTechLayerAreaRule::setExceptMinWidth)])
          >> -except_edge_length >> -except_min_size >> -except_step
          >> -(lit("RECTWIDTH")
-              >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
+              >> double_[boost::bind(&lefTechLayerAreaRuleParser::setDist,
                                      this,
                                      _1,
                                      rule,

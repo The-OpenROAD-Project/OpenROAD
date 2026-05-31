@@ -102,7 +102,16 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
   stream >> obj.within_cut_dist;
   stream >> obj.length_;
   stream >> obj.length_within_dist_;
-  stream >> obj.area_;
+  // User Code Begin >>area_
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    dbDatabase* db = (dbDatabase*) obj.getDatabase();
+    int area;
+    stream >> area;
+    obj.area_ = area * db->getDbuPerMicron();
+  }
+  // User Code End >>area_
   stream >> obj.area_within_dist_;
   return stream;
 }
@@ -211,14 +220,14 @@ int dbTechLayerMinCutRule::getLengthWithinDist() const
   return obj->length_within_dist_;
 }
 
-void dbTechLayerMinCutRule::setArea(int area)
+void dbTechLayerMinCutRule::setArea(int64_t area)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
   obj->area_ = area;
 }
 
-int dbTechLayerMinCutRule::getArea() const
+int64_t dbTechLayerMinCutRule::getArea() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   return obj->area_;

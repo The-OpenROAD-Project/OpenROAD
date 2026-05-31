@@ -833,7 +833,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       cur_rule->setSpacingNotchLengthValid(layer->hasSpacingNotchLength(j));
 
       if (layer->hasSpacingArea(j)) {
-        cur_rule->setCutArea(dbdist(layer->spacingArea(j)));
+        cur_rule->setCutArea(dbarea(layer->spacingArea(j)));
       }
 
       if (layer->hasSpacingRange(j)) {
@@ -1125,7 +1125,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   if (layer->hasArea()) {
-    l->setArea(layer->area());
+    l->setArea(dbarea(layer->area()));
   }
 
   if (layer->hasThickness()) {
