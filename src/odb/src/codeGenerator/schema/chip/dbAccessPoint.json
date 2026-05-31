@@ -33,8 +33,9 @@
       {
         "type": "dbId<_dbBPin>",
         "name": "bpin_",
-        "flags":["private","cmpgt"],
-        "parent": "dbBPin"
+        "flags":["no-set","cmpgt"],
+        "parent": "dbBlock",
+        "getterFunctionName": "getBPin"
       },
       {
         "name": "accesses_",

@@ -7076,6 +7076,8 @@ class dbAccessPoint : public dbObject
 
   void setLayer(dbTechLayer* layer);
 
+  dbBPin* getBPin() const;
+
   // User Code Begin dbAccessPoint
   void setAccesses(const std::vector<dbDirection>& accesses);
 
@@ -7097,8 +7099,6 @@ class dbAccessPoint : public dbObject
   dbTechLayer* getLayer() const;
 
   dbMPin* getMPin() const;
-
-  dbBPin* getBPin() const;
 
   std::vector<std::vector<dbObject*>> getVias() const;
 

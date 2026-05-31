@@ -191,6 +191,16 @@ void dbAccessPoint::setLayer(dbTechLayer* layer)
   obj->layer_ = layer->getImpl()->getOID();
 }
 
+dbBPin* dbAccessPoint::getBPin() const
+{
+  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  if (obj->bpin_ == 0) {
+    return nullptr;
+  }
+  _dbBlock* par = (_dbBlock*) obj->getOwner();
+  return (dbBPin*) par->bpin_tbl_->getPtr(obj->bpin_);
+}
+
 // User Code Begin dbAccessPointPublicMethods
 
 void dbAccessPoint::addSegment(const Rect& segment,
@@ -312,15 +322,6 @@ dbMPin* dbAccessPoint::getMPin() const
   return (dbMPin*) master->mpin_tbl_->getPtr(obj->mpin_);
 }
 
-dbBPin* dbAccessPoint::getBPin() const
-{
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  if (!obj->bpin_.isValid()) {
-    return nullptr;
-  }
-  _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbBPin*) block->bpin_tbl_->getPtr(obj->bpin_);
-}
 std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
