@@ -327,71 +327,6 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
 }
 
-// Or-Opt scan chain ordering: relocate each single cell to a better position.
-//
-// This is the direction-preserving variant of the 3-Opt move described in
-// Boese et al. 1994 (Figure 5b). Moving one cell never reverses any segment,
-// so no reversal-cost correction is needed.  It catches improvements that
-// 2-Opt cannot make (e.g. moving a displaced cell to a nearby cluster).
-void OrOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
-                    double wv)
-{
-  const int n = static_cast<int>(cells.size());
-  if (n < 3) {
-    return;
-  }
-
-  std::vector<odb::Point> si(n), so(n);
-  for (int i = 0; i < n; i++) {
-    si[i] = cells[i]->getScanInLocation();
-    so[i] = cells[i]->getScanOutLocation();
-  }
-
-  auto D = [&](int i, int j) -> int64_t {
-    return WeightedDist(so[i], si[j], wv);
-  };
-
-  bool improved = true;
-  while (improved) {
-    improved = false;
-    // Try relocating each interior cell i to every other position k.
-    // Skip i==0 and i==n-1 (boundary cells lack one of the two adjacent edges).
-    for (int i = 1; i < n - 1 && !improved; i++) {
-      for (int k = 0; k < n - 1; k++) {
-        if (k == i - 1 || k == i) {
-          continue;  // no-op moves
-        }
-        // Cost of removing cell i from its current position:
-        //   lose edges (i-1→i) and (i→i+1), gain edge (i-1→i+1).
-        // Cost of inserting cell i after position k:
-        //   lose edge (k→k+1), gain edges (k→i) and (i→k+1).
-        const int64_t gain = D(i - 1, i) + D(i, i + 1) + D(k, k + 1)
-                             - D(i - 1, i + 1) - D(k, i) - D(i, k + 1);
-        if (gain > 0) {
-          if (k < i) {
-            // Move cell i to just after position k (to the left).
-            std::rotate(cells.begin() + k + 1,
-                        cells.begin() + i,
-                        cells.begin() + i + 1);
-          } else {
-            // Move cell i to just after position k (to the right).
-            std::rotate(cells.begin() + i,
-                        cells.begin() + i + 1,
-                        cells.begin() + k + 1);
-          }
-          // Refresh the full location cache (indices have shifted).
-          for (int m = 0; m < n; m++) {
-            si[m] = cells[m]->getScanInLocation();
-            so[m] = cells[m]->getScanOutLocation();
-          }
-          improved = true;
-          break;
-        }
-      }
-    }
-  }
-}
-
 }  // namespace (anonymous)
 
 void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
@@ -452,7 +387,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     if (next.second == cursor.second) {
       logger->error(
           utl::DFT,
-          10,
+          14,
           "Couldn't find nearest neighbor, too many overlapping cells");
     }
     // Make sure we only visit things once
@@ -476,10 +411,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   // Improve the nearest-neighbor ordering with local search.
   // 2-Opt corrects for asymmetric scan-in/scan-out pin offsets.
   // 3-Opt (subtour swap) catches direction-preserving improvements.
-  // Or-Opt (single-cell relocation) catches remaining improvements.
   TwoOptScanChain(cells, candidates, wv);
   ThreeOptScanChain(cells, candidates, wv);
-  // OrOptScanChain(cells, wv);
 }
 
 }  // namespace dft
