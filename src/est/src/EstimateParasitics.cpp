@@ -1145,17 +1145,52 @@ bool EstimateParasitics::isPad(const sta::Instance* inst) const
   return false;
 }
 
+bool EstimateParasitics::isIdealClockNet(const sta::Net* net) const
+{
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    return false;
+  }
+
+  PinSet* drivers = network_->drivers(net);
+  if (drivers == nullptr || drivers->empty()) {
+    return false;
+  }
+
+  // An ideal clock net carries fixed arrivals that do not depend on
+  // parasitics, so its parasitics never need re-estimation.
+  const Pin* drvr_pin = *drivers->begin();
+  bool is_clock = false;
+  for (sta::Mode* mode : sta_->modes()) {
+    // In multi-mode designs, a pin may be an ideal clock only in a subset of
+    // modes. Ignore modes where the pin is not a clock at all.
+    // e.g., scan clock pin may not be defined as clock in function mode.
+    if (!sta_->isClock(drvr_pin, mode)) {
+      continue;
+    }
+    is_clock = true;
+    if (!sta_->isIdealClock(drvr_pin, mode)) {
+      return false;
+    }
+  }
+  return is_clock;
+}
+
 void EstimateParasitics::parasiticsInvalid(const sta::Net* net)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(net);
   if (haveEstimatedParasitics() && db_net) {
+    const sta::Net* flat_net = db_network_->dbToSta(db_net);
+    if (isIdealClockNet(flat_net)) {
+      return;
+    }
     debugPrint(logger_,
                EST,
                "estimate_parasitics",
                2,
                "parasitics invalid {}",
-               network_->pathName(net));
-    parasitics_invalid_.insert(db_network_->dbToSta(db_net));
+               network_->pathName(flat_net));
+    parasitics_invalid_.insert(flat_net);
   }
 }
 
