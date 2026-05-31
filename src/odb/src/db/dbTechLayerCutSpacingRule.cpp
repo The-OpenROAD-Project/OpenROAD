@@ -282,9 +282,10 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
   if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
     stream >> obj.cut_area_;
   } else {
+    dbDatabase* db = (dbDatabase*) obj.getDatabase();
     uint32_t cut_area;
     stream >> cut_area;
-    obj.cut_area_ = cut_area;
+    obj.cut_area_ = static_cast<int64_t>(cut_area) * db->getDbuPerMicron();
   }
   // User Code End >>cut_area_
   return stream;

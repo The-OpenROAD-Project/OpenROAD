@@ -76,7 +76,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
     dbDatabase* db = (dbDatabase*) obj.getDatabase();
     int area;
     stream >> area;
-    obj.area_ = area * db->getDbuPerMicron();
+    obj.area_ = static_cast<int64_t>(area) * db->getDbuPerMicron();
   }
   // User Code End >>area_
   stream >> obj.except_min_width_;
