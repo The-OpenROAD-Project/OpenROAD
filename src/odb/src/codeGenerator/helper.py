@@ -189,6 +189,34 @@ def is_set_by_ref(type_name: str, enum_names) -> bool:
     return True
 
 
+# Heap std:: container prefixes whose value getter returns a const reference.
+# std::vector is excluded (it uses an out-parameter getter); std::array/pair are
+# trivially copyable when their elements are, so they are returned by value.
+_GET_BY_REF_PREFIXES = (
+    "std::map",
+    "std::multimap",
+    "std::unordered_map",
+    "std::set",
+    "std::multiset",
+    "std::unordered_set",
+    "std::list",
+    "std::deque",
+)
+
+
+def is_get_by_ref(type_name: str) -> bool:
+    """Whether a value getter returns a const reference rather than by value.
+
+    True for non-trivially-copyable value types: std::string, heap std::
+    containers, and Polygon (an odb geometry type holding a std::vector). Small
+    value structs (Point/Rect/Line/...) and trivially-copyable scalars/enums are
+    returned by value.
+    """
+    if type_name in ("std::string", "Polygon"):
+        return True
+    return type_name.startswith(_GET_BY_REF_PREFIXES)
+
+
 def is_template_type(type_name: str) -> bool:
     """Whether the type has a <...> template argument list."""
     open_bracket = type_name.find("<")

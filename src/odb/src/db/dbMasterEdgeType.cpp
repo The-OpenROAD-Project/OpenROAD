@@ -99,7 +99,7 @@ void dbMasterEdgeType::setEdgeType(const std::string& edge_type)
   obj->edge_type_ = edge_type;
 }
 
-std::string dbMasterEdgeType::getEdgeType() const
+const std::string& dbMasterEdgeType::getEdgeType() const
 {
   _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
   return obj->edge_type_;

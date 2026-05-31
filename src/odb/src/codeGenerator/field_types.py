@@ -26,6 +26,7 @@ from helper import (
     get_hash_table_type,
     get_ref_type,
     get_table_name,
+    is_get_by_ref,
     is_hash_table,
     is_pass_by_ref,
     is_ref,
@@ -64,7 +65,10 @@ class FieldType:
 
     @property
     def getter_return_type(self) -> str:
-        """C++ type the getter returns (the raw type by default)."""
+        """C++ type the getter returns: const ref for non-trivially-copyable
+        aggregates, otherwise the raw type by value."""
+        if is_get_by_ref(self.raw):
+            return f"const {self.raw}&"
         return self.raw
 
     # ---- behavior ----

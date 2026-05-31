@@ -125,7 +125,7 @@ _dbChipRegion::~_dbChipRegion()
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipRegion::getName() const
+const std::string& dbChipRegion::getName() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   return obj->name_;

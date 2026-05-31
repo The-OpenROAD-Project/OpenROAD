@@ -206,7 +206,7 @@ void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
   obj->class_name_ = class_name;
 }
 
-std::string dbTechLayerEolKeepOutRule::getClassName() const
+const std::string& dbTechLayerEolKeepOutRule::getClassName() const
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
   return obj->class_name_;

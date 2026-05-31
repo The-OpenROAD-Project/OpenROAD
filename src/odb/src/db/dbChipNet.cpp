@@ -79,7 +79,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipNet::getName() const
+const std::string& dbChipNet::getName() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   return obj->name_;

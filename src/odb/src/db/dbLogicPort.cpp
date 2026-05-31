@@ -96,7 +96,7 @@ const char* dbLogicPort::getName() const
   return obj->name_;
 }
 
-std::string dbLogicPort::getDirection() const
+const std::string& dbLogicPort::getDirection() const
 {
   _dbLogicPort* obj = (_dbLogicPort*) this;
   return obj->direction;

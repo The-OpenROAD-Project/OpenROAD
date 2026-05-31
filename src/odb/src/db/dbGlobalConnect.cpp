@@ -129,13 +129,13 @@ dbNet* dbGlobalConnect::getNet() const
   return (dbNet*) par->net_tbl_->getPtr(obj->net_);
 }
 
-std::string dbGlobalConnect::getInstPattern() const
+const std::string& dbGlobalConnect::getInstPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->inst_pattern_;
 }
 
-std::string dbGlobalConnect::getPinPattern() const
+const std::string& dbGlobalConnect::getPinPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->pin_pattern_;

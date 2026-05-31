@@ -313,7 +313,7 @@ void dbMarkerCategory::setDescription(const std::string& description)
   obj->description_ = description;
 }
 
-std::string dbMarkerCategory::getDescription() const
+const std::string& dbMarkerCategory::getDescription() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
   return obj->description_;

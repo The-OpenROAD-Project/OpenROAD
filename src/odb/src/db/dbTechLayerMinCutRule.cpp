@@ -153,7 +153,8 @@ int dbTechLayerMinCutRule::getNumCuts() const
   return obj->num_cuts_;
 }
 
-std::map<std::string, int> dbTechLayerMinCutRule::getCutClassCutsMap() const
+const std::map<std::string, int>& dbTechLayerMinCutRule::getCutClassCutsMap()
+    const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   return obj->cut_class_cuts_map_;

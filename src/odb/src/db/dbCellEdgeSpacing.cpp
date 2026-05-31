@@ -108,7 +108,7 @@ void dbCellEdgeSpacing::setFirstEdgeType(const std::string& first_edge_type)
   obj->first_edge_type_ = first_edge_type;
 }
 
-std::string dbCellEdgeSpacing::getFirstEdgeType() const
+const std::string& dbCellEdgeSpacing::getFirstEdgeType() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
   return obj->first_edge_type_;
@@ -121,7 +121,7 @@ void dbCellEdgeSpacing::setSecondEdgeType(const std::string& second_edge_type)
   obj->second_edge_type_ = second_edge_type;
 }
 
-std::string dbCellEdgeSpacing::getSecondEdgeType() const
+const std::string& dbCellEdgeSpacing::getSecondEdgeType() const
 {
   _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
   return obj->second_edge_type_;

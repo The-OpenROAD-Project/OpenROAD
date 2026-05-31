@@ -152,7 +152,7 @@ void dbTechLayerKeepOutZoneRule::setFirstCutClass(
   obj->first_cut_class_ = first_cut_class;
 }
 
-std::string dbTechLayerKeepOutZoneRule::getFirstCutClass() const
+const std::string& dbTechLayerKeepOutZoneRule::getFirstCutClass() const
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
   return obj->first_cut_class_;
@@ -166,7 +166,7 @@ void dbTechLayerKeepOutZoneRule::setSecondCutClass(
   obj->second_cut_class_ = second_cut_class;
 }
 
-std::string dbTechLayerKeepOutZoneRule::getSecondCutClass() const
+const std::string& dbTechLayerKeepOutZoneRule::getSecondCutClass() const
 {
   _dbTechLayerKeepOutZoneRule* obj = (_dbTechLayerKeepOutZoneRule*) this;
   return obj->second_cut_class_;

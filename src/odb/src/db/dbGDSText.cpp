@@ -168,7 +168,7 @@ void dbGDSText::setText(const std::string& text)
   obj->text_ = text;
 }
 
-std::string dbGDSText::getText() const
+const std::string& dbGDSText::getText() const
 {
   _dbGDSText* obj = (_dbGDSText*) this;
   return obj->text_;

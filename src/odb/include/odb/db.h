@@ -7190,11 +7190,11 @@ class dbCellEdgeSpacing : public dbObject
  public:
   void setFirstEdgeType(const std::string& first_edge_type);
 
-  std::string getFirstEdgeType() const;
+  const std::string& getFirstEdgeType() const;
 
   void setSecondEdgeType(const std::string& second_edge_type);
 
-  std::string getSecondEdgeType() const;
+  const std::string& getSecondEdgeType() const;
 
   void setSpacing(int spacing);
 
@@ -7393,7 +7393,7 @@ class dbChipBumpInst : public dbObject
 class dbChipConn : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
 
   void setThickness(int thickness);
 
@@ -7425,7 +7425,7 @@ class dbChipConn : public dbObject
 class dbChipInst : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
 
   void setOrient(dbOrientType3D orient);
 
@@ -7464,7 +7464,7 @@ class dbChipInst : public dbObject
 class dbChipNet : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
 
   // User Code Begin dbChipNet
   dbChip* getChip() const;
@@ -7522,7 +7522,7 @@ class dbChipRegion : public dbObject
     INTERNAL_EXT
   };
 
-  std::string getName() const;
+  const std::string& getName() const;
 
   void setBox(const Rect& box);
 
@@ -8065,7 +8065,7 @@ class dbGDSText : public dbObject
 
   void setText(const std::string& text);
 
-  std::string getText() const;
+  const std::string& getText() const;
 
   // User Code Begin dbGDSText
   const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
@@ -8083,9 +8083,9 @@ class dbGlobalConnect : public dbObject
 
   dbNet* getNet() const;
 
-  std::string getInstPattern() const;
+  const std::string& getInstPattern() const;
 
-  std::string getPinPattern() const;
+  const std::string& getPinPattern() const;
 
   // User Code Begin dbGlobalConnect
   std::vector<dbInst*> getInsts() const;
@@ -8206,23 +8206,23 @@ class dbIsolation : public dbObject
 
   void setAppliesTo(const std::string& applies_to);
 
-  std::string getAppliesTo() const;
+  const std::string& getAppliesTo() const;
 
   void setClampValue(const std::string& clamp_value);
 
-  std::string getClampValue() const;
+  const std::string& getClampValue() const;
 
   void setIsolationSignal(const std::string& isolation_signal);
 
-  std::string getIsolationSignal() const;
+  const std::string& getIsolationSignal() const;
 
   void setIsolationSense(const std::string& isolation_sense);
 
-  std::string getIsolationSense() const;
+  const std::string& getIsolationSense() const;
 
   void setLocation(const std::string& location);
 
-  std::string getLocation() const;
+  const std::string& getLocation() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -8250,11 +8250,11 @@ class dbLevelShifter : public dbObject
 
   void setSource(const std::string& source);
 
-  std::string getSource() const;
+  const std::string& getSource() const;
 
   void setSink(const std::string& sink);
 
-  std::string getSink() const;
+  const std::string& getSink() const;
 
   void setUseFunctionalEquivalence(bool use_functional_equivalence);
 
@@ -8262,15 +8262,15 @@ class dbLevelShifter : public dbObject
 
   void setAppliesTo(const std::string& applies_to);
 
-  std::string getAppliesTo() const;
+  const std::string& getAppliesTo() const;
 
   void setAppliesToBoundary(const std::string& applies_to_boundary);
 
-  std::string getAppliesToBoundary() const;
+  const std::string& getAppliesToBoundary() const;
 
   void setRule(const std::string& rule);
 
-  std::string getRule() const;
+  const std::string& getRule() const;
 
   void setThreshold(float threshold);
 
@@ -8286,39 +8286,39 @@ class dbLevelShifter : public dbObject
 
   void setLocation(const std::string& location);
 
-  std::string getLocation() const;
+  const std::string& getLocation() const;
 
   void setInputSupply(const std::string& input_supply);
 
-  std::string getInputSupply() const;
+  const std::string& getInputSupply() const;
 
   void setOutputSupply(const std::string& output_supply);
 
-  std::string getOutputSupply() const;
+  const std::string& getOutputSupply() const;
 
   void setInternalSupply(const std::string& internal_supply);
 
-  std::string getInternalSupply() const;
+  const std::string& getInternalSupply() const;
 
   void setNamePrefix(const std::string& name_prefix);
 
-  std::string getNamePrefix() const;
+  const std::string& getNamePrefix() const;
 
   void setNameSuffix(const std::string& name_suffix);
 
-  std::string getNameSuffix() const;
+  const std::string& getNameSuffix() const;
 
   void setCellName(const std::string& cell_name);
 
-  std::string getCellName() const;
+  const std::string& getCellName() const;
 
   void setCellInput(const std::string& cell_input);
 
-  std::string getCellInput() const;
+  const std::string& getCellInput() const;
 
   void setCellOutput(const std::string& cell_output);
 
-  std::string getCellOutput() const;
+  const std::string& getCellOutput() const;
 
   // User Code Begin dbLevelShifter
 
@@ -8341,7 +8341,7 @@ class dbLogicPort : public dbObject
  public:
   const char* getName() const;
 
-  std::string getDirection() const;
+  const std::string& getDirection() const;
 
   // User Code Begin dbLogicPort
   static dbLogicPort* create(dbBlock* block,
@@ -8356,7 +8356,7 @@ class dbMarker : public dbObject
  public:
   void setComment(const std::string& comment);
 
-  std::string getComment() const;
+  const std::string& getComment() const;
 
   void setLineNumber(int line_number);
 
@@ -8411,7 +8411,7 @@ class dbMarkerCategory : public dbObject
 
   void setDescription(const std::string& description);
 
-  std::string getDescription() const;
+  const std::string& getDescription() const;
 
   void setSource(const std::string& source);
 
@@ -8484,7 +8484,7 @@ class dbMasterEdgeType : public dbObject
 
   void setEdgeType(const std::string& edge_type);
 
-  std::string getEdgeType() const;
+  const std::string& getEdgeType() const;
 
   void setCellRow(int cell_row);
 
@@ -8541,7 +8541,7 @@ class dbMetalWidthViaMap : public dbObject
 
   void setViaName(const std::string& via_name);
 
-  std::string getViaName() const;
+  const std::string& getViaName() const;
 
   void setPgVia(bool pg_via);
 
@@ -8847,7 +8847,7 @@ class dbNetTrack : public dbObject
 class dbPolygon : public dbObject
 {
  public:
-  Polygon getPolygon() const;
+  const Polygon& getPolygon() const;
 
   int getDesignRuleWidth() const;
 
@@ -10569,7 +10569,7 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   void setClassName(const std::string& class_name);
 
-  std::string getClassName() const;
+  const std::string& getClassName() const;
 
   void setClassValid(bool class_valid);
 
@@ -10638,11 +10638,11 @@ class dbTechLayerKeepOutZoneRule : public dbObject
  public:
   void setFirstCutClass(const std::string& first_cut_class);
 
-  std::string getFirstCutClass() const;
+  const std::string& getFirstCutClass() const;
 
   void setSecondCutClass(const std::string& second_cut_class);
 
-  std::string getSecondCutClass() const;
+  const std::string& getSecondCutClass() const;
 
   void setAlignedSpacing(int aligned_spacing);
 
@@ -10710,7 +10710,7 @@ class dbTechLayerMaxSpacingRule : public dbObject
  public:
   void setCutClass(const std::string& cut_class);
 
-  std::string getCutClass() const;
+  const std::string& getCutClass() const;
 
   void setMaxSpacing(int max_spacing);
 
@@ -10733,7 +10733,7 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getNumCuts() const;
 
-  std::map<std::string, int> getCutClassCutsMap() const;
+  const std::map<std::string, int>& getCutClassCutsMap() const;
 
   void setWidth(int width);
 

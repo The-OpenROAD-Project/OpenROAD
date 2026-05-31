@@ -106,7 +106,7 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipInst::getName() const
+const std::string& dbChipInst::getName() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
   return obj->name_;

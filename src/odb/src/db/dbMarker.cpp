@@ -557,7 +557,7 @@ void dbMarker::setComment(const std::string& comment)
   obj->comment_ = comment;
 }
 
-std::string dbMarker::getComment() const
+const std::string& dbMarker::getComment() const
 {
   _dbMarker* obj = (_dbMarker*) this;
   return obj->comment_;

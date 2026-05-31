@@ -77,7 +77,7 @@ void dbTechLayerMaxSpacingRule::setCutClass(const std::string& cut_class)
   obj->cut_class_ = cut_class;
 }
 
-std::string dbTechLayerMaxSpacingRule::getCutClass() const
+const std::string& dbTechLayerMaxSpacingRule::getCutClass() const
 {
   _dbTechLayerMaxSpacingRule* obj = (_dbTechLayerMaxSpacingRule*) this;
   return obj->cut_class_;

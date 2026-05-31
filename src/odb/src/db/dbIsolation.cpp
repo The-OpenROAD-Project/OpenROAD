@@ -137,7 +137,7 @@ void dbIsolation::setAppliesTo(const std::string& applies_to)
   obj->applies_to_ = applies_to;
 }
 
-std::string dbIsolation::getAppliesTo() const
+const std::string& dbIsolation::getAppliesTo() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->applies_to_;
@@ -150,7 +150,7 @@ void dbIsolation::setClampValue(const std::string& clamp_value)
   obj->clamp_value_ = clamp_value;
 }
 
-std::string dbIsolation::getClampValue() const
+const std::string& dbIsolation::getClampValue() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->clamp_value_;
@@ -163,7 +163,7 @@ void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
   obj->isolation_signal_ = isolation_signal;
 }
 
-std::string dbIsolation::getIsolationSignal() const
+const std::string& dbIsolation::getIsolationSignal() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->isolation_signal_;
@@ -176,7 +176,7 @@ void dbIsolation::setIsolationSense(const std::string& isolation_sense)
   obj->isolation_sense_ = isolation_sense;
 }
 
-std::string dbIsolation::getIsolationSense() const
+const std::string& dbIsolation::getIsolationSense() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->isolation_sense_;
@@ -189,7 +189,7 @@ void dbIsolation::setLocation(const std::string& location)
   obj->location_ = location;
 }
 
-std::string dbIsolation::getLocation() const
+const std::string& dbIsolation::getLocation() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   return obj->location_;
