@@ -36,6 +36,7 @@ The module will create a new design, therefore a design should not be loaded bef
 generate_ram -mask_size bits
              -word_size bits
              -num_words words
+             [-column_mux_ratio ratio]
              [-read_ports count]
              [-storage_cell name]
              [-tristate_cell name]
@@ -58,7 +59,8 @@ generate_ram -mask_size bits
 | `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. |
 | `-word_size` | Size of each word in bits. |
 | `-num_words` | Number of words in the array. |
-| `-read_ports` | Number of read ports for the array. Default: 1. |
+| `-column_mux_ratio` | Number of words in each row that are multiplexed onto the read output path. Supported values are `1`, `2`, and `4`. Default: 1. `-num_words` must be divisible by this value, and values greater than `1` currently require `-read_ports 1`. |
+| `-read_ports` | Number of read ports for the array. Default: 1. The current implementation supports only one read port. |
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
@@ -75,7 +77,10 @@ generate_ram -mask_size bits
 
 ## Example scripts
 
-See [test/make_8x8.tcl](test/make_8x8.tcl).
+See [test/make_8x8_sky130.tcl](test/make_8x8_sky130.tcl) for a basic 8x8 RAM example. The
+[test/make_8x8_mux2_sky130.tcl](test/make_8x8_mux2_sky130.tcl) and
+[test/make_8x8_mux4_sky130.tcl](test/make_8x8_mux4_sky130.tcl) scripts show `-column_mux_ratio`
+values of `2` and `4`.
 
 ## Regression tests
 
