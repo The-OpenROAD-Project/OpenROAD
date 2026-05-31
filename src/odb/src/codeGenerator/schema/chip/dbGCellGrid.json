@@ -87,13 +87,11 @@
         {
           "name": "usage",
           "type": "float",
-          "flags": [],
           "default": 0
         },
         {
           "name": "capacity",
           "type": "float",
-          "flags": [],
           "default": 0
         }
       ],

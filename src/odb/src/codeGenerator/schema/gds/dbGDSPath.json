@@ -4,14 +4,12 @@
       {
         "name":"layer_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"datatype_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"xy_",
@@ -26,14 +24,12 @@
       {
         "name":"width_",
         "default":"0",
-        "type":"int",
-        "flags":[]
+        "type":"int"
       },
       {
         "name":"path_type_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       }
     ],
     "h_includes": [

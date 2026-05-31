@@ -4,14 +4,12 @@
       {
         "name":"layer_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"datatype_",
         "type":"int16_t",
-        "default":"0",
-        "flags":[]
+        "default":"0"
       },
       {
         "name":"bounds_",

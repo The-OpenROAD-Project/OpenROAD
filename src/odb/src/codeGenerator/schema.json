@@ -464,7 +464,6 @@
       "parent":"dbChip",
       "child":"dbChipRegion",
       "type":"1_n", 
-      "flags": [],
       "schema":"kSchemaChipRegion",
       "tbl_name":"chip_region_tbl_"
     },
@@ -472,7 +471,6 @@
       "parent":"dbChip",
       "child":"dbMarkerCategory",
       "type":"1_n",
-      "flags": [],
       "tbl_name":"marker_categories_tbl_",
       "schema":"kSchemaChipMarkerCategories"
     },
@@ -488,7 +486,6 @@
       "parent":"dbChipRegion",
       "child":"dbChipBump",
       "type":"1_n", 
-      "flags": [],
       "schema":"kSchemaChipBump",
       "tbl_name":"chip_bump_tbl_"
     },
