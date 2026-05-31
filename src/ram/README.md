@@ -34,12 +34,13 @@ Standard cell libraries must be loaded before running this command.
 The module will create a new design, therefore a design should not be loaded before running the command.
 
 ```tcl
-generate_ram -mask_size bits
+generate_ram [-mask_size bits]
              -word_size bits
              -num_words words
              [-rw_ports count]
              [-r_ports count]
              [-w_ports count]
+             [-column_mux_ratio ratio]
              [-storage_cell name]
              [-tristate_cell name]
              [-inv_cell name]
@@ -58,12 +59,13 @@ generate_ram -mask_size bits
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. |
+| `-mask_size` | Determines the number of bits which are grouped together for masking during writes. For example, a mask size of `8` will enable each 8 bits of the word to be masked when writing (commonly known as byte masking). A mask size of `1` will enable each bit to be individually masked. The write enable signal for each port will be `(word_size / mask_size)` bits wide. The word size must be a multiple of the mask size. Default: equal to `-word_size`. |
 | `-word_size` | Size of each word in bits. |
 | `-num_words` | Number of words in the array. |
 | `-rw_ports` | Number of read-write ports for the array. Sum of read-write ports and write ports must equal 1. Default: 1. |
 | `-r_ports` | Number of read ports for the array. Default: 0. |
 | `-w_ports` | Number of write ports for the array. Sum of read-write ports and write ports must equal 1. Default: 0. |
+| `-column_mux_ratio` | Number of words sharing a physical column. Must be `1`, `2`, or `4`. The number of words must be divisible by the column mux ratio. Default: `1` (no column muxing). |
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |

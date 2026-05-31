@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2024-2025, The OpenROAD Authors
 
-sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
+sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              -word_size bits
                                              -num_words words
                                              [-column_mux_ratio ratio]
@@ -26,16 +26,16 @@ proc generate_ram_netlist { args } {
     set column_mux_ratio $keys(-column_mux_ratio)
   }
 
-  if { [info exists keys(-mask_size)] } {
-    set mask_size $keys(-mask_size)
-  } else {
-    utl::error RAM 1 "The -mask_size argument must be specified."
-  }
-
   if { [info exists keys(-word_size)] } {
     set word_size $keys(-word_size)
   } else {
     utl::error RAM 2 "The -word_size argument must be specified."
+  }
+
+  if { [info exists keys(-mask_size)] } {
+    set mask_size $keys(-mask_size)
+  } else {
+    set mask_size $word_size
   }
 
   if { $word_size % $mask_size != 0 } {
@@ -123,7 +123,7 @@ proc generate_ram_netlist { args } {
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist
 }
 
-sta::define_cmd_args "generate_ram" {-mask_size bits
+sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      -word_size bits
                                      -num_words words
                                      [-rw_ports count]
@@ -161,7 +161,6 @@ proc generate_ram { args } {
   }
 
   set ram_netlist_args [list \
-    -mask_size $keys(-mask_size) \
     -word_size $keys(-word_size) \
     -num_words $keys(-num_words)]
 
@@ -175,6 +174,10 @@ proc generate_ram { args } {
 
   if { [info exists keys(-w_ports)] } {
     lappend ram_netlist_args -w_ports $keys(-w_ports)
+  }
+  
+  if { [info exists keys(-mask_size)] } {
+    lappend ram_netlist_args -mask_size $keys(-mask_size)
   }
 
   if { [info exists keys(-storage_cell)] } {
