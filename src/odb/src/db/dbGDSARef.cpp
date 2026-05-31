@@ -194,10 +194,17 @@ dbGDSStructure* dbGDSARef::getStructure() const
   return (dbGDSStructure*) lib->gdsstructure_tbl_->getPtr(obj->structure_);
 }
 
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSARef::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSARef::getPropattr() const
 {
   auto* obj = (_dbGDSARef*) this;
   return obj->propattr_;
+}
+
+void dbGDSARef::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSARef*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSARef* dbGDSARef::create(dbGDSStructure* parent, dbGDSStructure* child)

@@ -7902,7 +7902,8 @@ class dbGDSARef : public dbObject
 
   // User Code Begin dbGDSARef
   dbGDSStructure* getStructure() const;
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSARef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSARef* aref);
@@ -7926,7 +7927,8 @@ class dbGDSBoundary : public dbObject
 
   // User Code Begin dbGDSBoundary
   const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSBoundary* create(dbGDSStructure* structure);
   static void destroy(dbGDSBoundary* boundary);
@@ -7949,7 +7951,8 @@ class dbGDSBox : public dbObject
   Rect getBounds() const;
 
   // User Code Begin dbGDSBox
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSBox* create(dbGDSStructure* structure);
   static void destroy(dbGDSBox* box);
@@ -7981,7 +7984,8 @@ class dbGDSPath : public dbObject
 
   // User Code Begin dbGDSPath
   const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSPath* create(dbGDSStructure* structure);
   static void destroy(dbGDSPath* path);
@@ -8001,7 +8005,8 @@ class dbGDSSRef : public dbObject
 
   // User Code Begin dbGDSSRef
   dbGDSStructure* getStructure() const;
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSSRef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSSRef* sref);
@@ -8063,7 +8068,8 @@ class dbGDSText : public dbObject
   std::string getText() const;
 
   // User Code Begin dbGDSText
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSText* create(dbGDSStructure* structure);
   static void destroy(dbGDSText* text);

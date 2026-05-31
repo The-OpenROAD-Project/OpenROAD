@@ -130,10 +130,17 @@ const std::vector<Point>& dbGDSBoundary::getXY()
   return obj->xy_;
 }
 
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSBoundary::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSBoundary::getPropattr() const
 {
   auto* obj = (_dbGDSBoundary*) this;
   return obj->propattr_;
+}
+
+void dbGDSBoundary::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSBoundary*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSBoundary* dbGDSBoundary::create(dbGDSStructure* structure)

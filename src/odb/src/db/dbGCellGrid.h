@@ -41,7 +41,13 @@ class _dbGCellGrid : public _dbObject
   bool operator<(const _dbGCellGrid& rhs) const;
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
-  dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
+  // Lazily create the congestion matrix for a layer if it does not exist.
+  void ensureMatrix(const dbId<_dbTechLayer>& lid);
+  const dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
+  void setCell(const dbId<_dbTechLayer>& lid,
+               uint32_t x,
+               uint32_t y,
+               const dbGCellGrid::GCellData& data);
   dbTechLayer* getLayer(const dbId<_dbTechLayer>& lid) const;
   // User Code End Methods
 

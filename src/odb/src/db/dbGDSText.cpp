@@ -175,10 +175,17 @@ std::string dbGDSText::getText() const
 }
 
 // User Code Begin dbGDSTextPublicMethods
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSText::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSText::getPropattr() const
 {
   auto* obj = (_dbGDSText*) this;
   return obj->propattr_;
+}
+
+void dbGDSText::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSText*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSText* dbGDSText::create(dbGDSStructure* structure)
