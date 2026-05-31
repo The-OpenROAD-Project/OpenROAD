@@ -2596,6 +2596,11 @@ int lefin::dbdist(double value)
   return reader_->dbdist(value);
 }
 
+int64_t lefin::dbarea(double value)
+{
+  return reader_->dbarea(value);
+}
+
 dbTech* lefin::createTech(const char* name, const char* lef_file)
 {
   absl::MutexLock lock(&lef_mutex_);
