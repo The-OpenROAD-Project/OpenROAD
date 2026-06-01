@@ -435,6 +435,9 @@ void EstimateParasitics::updateParasitics()
   switch (parasitics_src_) {
     case ParasiticsSrc::kPlacement:
       for (const sta::Net* net : parasitics_invalid_) {
+        if (isIdealClockNet(net)) {
+          continue;
+        }
         //
         // TODO: remove this check (we expect all to be flat net)
         //
@@ -461,6 +464,9 @@ void EstimateParasitics::updateParasitics()
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes();
       for (const sta::Net* net : parasitics_invalid_) {
+        if (isIdealClockNet(net)) {
+          continue;
+        }
         debugPrint(logger_,
                    EST,
                    "estimate_parasitics",
@@ -482,6 +488,9 @@ void EstimateParasitics::updateParasitics()
   // groute call.
   if (parasitics_src_ != ParasiticsSrc::kNone) {
     for (const sta::Net* net : parasitics_invalid_) {
+      if (isIdealClockNet(net)) {
+        continue;
+      }
       debugPrint(logger_,
                  EST,
                  "estimate_parasitics",
@@ -735,15 +744,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Net* net,
     sta::SpefWriter* spef_writer)
 {
-  bool all_modes_ideal_clock = true;
-  for (sta::Mode* mode : sta_->modes()) {
-    if (!sta_->isIdealClock(drvr_pin, mode)) {
-      all_modes_ideal_clock = false;
-      break;
-    }
-  }
-
-  if (!all_modes_ideal_clock) {
+  if (!isIdealClockPin(drvr_pin)) {
     SteinerTree* tree = makeSteinerTree(drvr_pin);
     if (tree) {
       debugPrint(logger_,
@@ -1147,6 +1148,42 @@ bool EstimateParasitics::isPad(const sta::Instance* inst) const
   }
   // gcc warniing
   return false;
+}
+
+bool EstimateParasitics::isIdealClockPin(const sta::Pin* pin) const
+{
+  // An ideal clock pin carries fixed arrivals that do not depend on
+  // parasitics, so its parasitics never need re-estimation.
+  bool is_clock = false;
+  for (sta::Mode* mode : sta_->modes()) {
+    // In multi-mode designs, a pin may be an ideal clock only in a subset of
+    // modes. Ignore modes where the pin is not a clock at all.
+    // e.g., scan clock pin may not be defined as clock in function mode.
+    if (!sta_->isClock(pin, mode)) {
+      continue;
+    }
+    is_clock = true;
+    if (!sta_->isIdealClock(pin, mode)) {
+      return false;
+    }
+  }
+  return is_clock;
+}
+
+bool EstimateParasitics::isIdealClockNet(const sta::Net* net) const
+{
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    return false;
+  }
+
+  PinSet* drivers = network_->drivers(net);
+  if (drivers == nullptr || drivers->empty()) {
+    return false;
+  }
+
+  const Pin* drvr_pin = *drivers->begin();
+  return isIdealClockPin(drvr_pin);
 }
 
 void EstimateParasitics::parasiticsInvalid(const sta::Net* net)
