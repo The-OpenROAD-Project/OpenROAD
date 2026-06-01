@@ -1004,6 +1004,8 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
+  addImplicitVias(routes_[db_net]);
+
   std::string pins_not_covered;
   if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
     logger_->warn(GRT,
