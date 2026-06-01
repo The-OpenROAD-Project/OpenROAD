@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -28,6 +30,116 @@ namespace {
 boost::json::object parseObj(std::string_view json)
 {
   return boost::json::parse(json).as_object();
+}
+
+constexpr double kPi = 3.14159265358979323846;
+
+// Fraction of AC energy that sits in the moiré "beat band" (spatial periods
+// 16..128 px), computed from the per-column and per-row alpha profiles (max of
+// the two, so vertical/horizontal/diagonal beats are all caught).  A real beat
+// concentrates energy at long periods → high fraction; a finely-resolved grid
+// concentrates at short periods → low fraction.  This is the metric that
+// distinguishes aliasing from legitimate detail (block-CV alone cannot).
+double beatBandFraction1D(const std::vector<double>& sig)
+{
+  const int n = static_cast<int>(sig.size());
+  if (n < 4) {
+    return 0.0;
+  }
+  double mean = 0.0;
+  for (const double v : sig) {
+    mean += v;
+  }
+  mean /= n;
+  double total = 0.0;
+  double band = 0.0;
+  for (int k = 1; k <= n / 2; ++k) {
+    double re = 0.0;
+    double im = 0.0;
+    for (int x = 0; x < n; ++x) {
+      const double ang = -2.0 * kPi * k * x / n;
+      const double centered = sig[x] - mean;
+      re += centered * std::cos(ang);
+      im += centered * std::sin(ang);
+    }
+    const double power = re * re + im * im;
+    total += power;
+    const double period = static_cast<double>(n) / k;
+    if (period >= 16.0 && period <= 128.0) {
+      band += power;
+    }
+  }
+  return total > 0.0 ? band / total : 0.0;
+}
+
+// Beat-band fraction measured over a sub-window of the tile.  Measuring a
+// central macro-uniform window (rather than the whole tile) avoids the
+// low-frequency envelope from the array's outer edge / surrounding empty
+// margin, which would otherwise masquerade as a beat.  (x0,y0)-(x1,y1) half-
+// open in pixels.
+double beatFracWindow(const std::vector<unsigned char>& rgba,
+                      int w,
+                      int x0,
+                      int y0,
+                      int x1,
+                      int y1)
+{
+  const int ww = x1 - x0;
+  const int hh = y1 - y0;
+  std::vector<double> cols(ww, 0.0);
+  std::vector<double> rows(hh, 0.0);
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      const double a = rgba[(static_cast<size_t>(y) * w + x) * 4 + 3];
+      cols[x - x0] += a;
+      rows[y - y0] += a;
+    }
+  }
+  for (double& v : cols) {
+    v /= hh;
+  }
+  for (double& v : rows) {
+    v /= ww;
+  }
+  return std::max(beatBandFraction1D(cols), beatBandFraction1D(rows));
+}
+
+// Coefficient of variation of per-block mean alpha.  High when the image has
+// structure at the block scale (a resolved grid); ~0 for a uniform tint.
+double blockAlphaCV(const std::vector<unsigned char>& rgba,
+                    int w,
+                    int h,
+                    int block)
+{
+  std::vector<double> means;
+  for (int by = 0; by + block <= h; by += block) {
+    for (int bx = 0; bx + block <= w; bx += block) {
+      double s = 0.0;
+      for (int y = by; y < by + block; ++y) {
+        for (int x = bx; x < bx + block; ++x) {
+          s += rgba[(static_cast<size_t>(y) * w + x) * 4 + 3];
+        }
+      }
+      means.push_back(s / (block * block));
+    }
+  }
+  if (means.empty()) {
+    return 0.0;
+  }
+  double mean = 0.0;
+  for (const double v : means) {
+    mean += v;
+  }
+  mean /= means.size();
+  if (mean <= 0.0) {
+    return 0.0;
+  }
+  double var = 0.0;
+  for (const double v : means) {
+    var += (v - mean) * (v - mean);
+  }
+  var /= means.size();
+  return std::sqrt(var) / mean;
 }
 
 class TileGeneratorTest : public tst::Nangate45Fixture
@@ -1274,6 +1386,130 @@ TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
     EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
         << "Backside category should not appear when no layers are backside";
   }
+// ─── Anti-moiré band-limit (issue #10463) ────────────────────────────────
+
+// Build a dense periodic array of small cells whose OUTPUT pitch lands in the
+// sub-pixel regime that aliases into a moiré beat without band-limiting.  N
+// cells per row over the die => output pitch ~ 256/N px at z=0.
+class MoireArrayTest : public TileGeneratorTest
+{
+ protected:
+  // Returns the cell pitch in DBU.
+  int buildArray(int n)
+  {
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    EXPECT_NE(m, nullptr);
+    const int pitch = 2 * std::max(m->getWidth(), m->getHeight());
+    const int die = n * pitch;
+    block_->setDieArea(odb::Rect(0, 0, die, die));
+    int id = 0;
+    for (int iy = 0; iy < n; ++iy) {
+      for (int ix = 0; ix < n; ++ix) {
+        odb::dbInst* inst = odb::dbInst::create(
+            block_, m, ("d" + std::to_string(id++)).c_str());
+        inst->setLocation(ix * pitch, iy * pitch);
+        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      }
+    }
+    return pitch;
+  }
+};
+
+TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
+{
+  buildArray(/*n=*/128);  // output pitch ~2 px — the regime that aliases
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  EXPECT_EQ(w, 256u);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+  // Measure the central macro-uniform window: the full-tile profile is
+  // dominated by the array's outer edge / surrounding margin (a legitimate
+  // low-frequency envelope, not a beat).  In the interior the supersample +
+  // Lanczos-2 decimation must keep the beat band nearly empty — round-8 (1px
+  // coverage) measured ~0.2-0.3 here; the fix drives it to <0.01.
+  const double beat
+      = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
+  EXPECT_LT(beat, 0.06) << "moiré beat present in dense sub-pixel bump array";
+}
+
+TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
+{
+  // Same array, but viewed zoomed-in (z=3) so the pitch resolves to ~16 px.
+  // Band-limiting must NOT smear it into a flat tint: structure (high block
+  // CV) survives while the beat band stays empty.
+  buildArray(/*n=*/128);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // Central tile at z=3 (8x8 tiles); guaranteed to sit inside the array.
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 3, 4, 4), w, h);
+  // The resolved grid's fundamental (~16 px pitch) legitimately lives in the
+  // beat band, so beatFrac is NOT a valid check here — the point is only that
+  // the structure survived (high block-CV), i.e. it wasn't smeared to a tint.
+  EXPECT_GT(blockAlphaCV(pixels, w, h, 8), 0.10)
+      << "resolved grid was over-blurred into a flat tint";
+}
+
+TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // dpr=2 → the tile is rendered at 256*2 physical pixels so it maps 1:1 onto
+  // a HiDPI device grid (no browser resampling → no re-aliased moiré).
+  auto png = tile_gen_->generateTile("_instances",
+                                     0,
+                                     0,
+                                     0,
+                                     /*vis=*/{},
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     /*focus_net_ids=*/nullptr,
+                                     /*route_guide_net_ids=*/nullptr,
+                                     /*dpr=*/2.0);
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 512u);
+  EXPECT_EQ(h, 512u);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
+{
+  makeTileGen();
+  constexpr size_t kCap = 512;  // mirrors TileGenerator::kTileCacheCap
+  for (size_t i = 0; i < kCap + 10; ++i) {
+    tile_gen_->tileCachePut("k" + std::to_string(i),
+                            {static_cast<unsigned char>(i & 0xff),
+                             static_cast<unsigned char>((i >> 8) & 0xff)});
+  }
+  EXPECT_EQ(tile_gen_->tileCacheSize(), kCap);
+
+  std::vector<unsigned char> out;
+  // The 10 oldest keys (k0..k9) were evicted.
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k0", out));
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k9", out));
+  // A recent key still returns its exact bytes.
+  ASSERT_TRUE(tile_gen_->tileCacheGet("k" + std::to_string(kCap + 9), out));
+  EXPECT_EQ(out.size(), 2u);
+
+  // Promotion (LRU): touch the oldest survivor (k10), then overflow by one.
+  // k10 must survive because the touch made it most-recently-used; the next
+  // oldest (k11) is evicted instead.
+  ASSERT_TRUE(tile_gen_->tileCacheGet("k10", out));
+  tile_gen_->tileCachePut("knew", {7});
+  EXPECT_TRUE(tile_gen_->tileCacheGet("k10", out));
+  EXPECT_FALSE(tile_gen_->tileCacheGet("k11", out));
+
+  // Design reload clears the cache.
+  tile_gen_->eagerInit();
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u);
 }
 
 }  // namespace
