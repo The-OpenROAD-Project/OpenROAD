@@ -744,7 +744,7 @@ dbITerm* dbITerm::getITerm(dbBlock* block_, uint32_t dbid)
 Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
-  if (term->getMPins().size() == 0) {
+  if (term->getMPins().empty()) {
     Rect bbox;
     bbox.mergeInit();
     return bbox;
