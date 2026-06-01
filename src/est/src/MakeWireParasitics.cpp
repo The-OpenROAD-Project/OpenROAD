@@ -6,10 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <iterator>
-#include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"
@@ -100,9 +97,11 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
       spef_writer->writeNet(corner, sta_net, parasitic, parasitics);
     }
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
@@ -139,9 +138,11 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
     makePartialParasiticsToPins(
         parasitics, pin_grid_locs, node_map, corner, parasitic, net);
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
@@ -246,67 +247,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
     parasitics->makeResistor(parasitic, resistor_id_++, res, n1, n2);
     parasitics->incrCap(n2, cap / 2.0);
   }
-
-  // Workaround: implicit-via post-pass.
-  //
-  // GRT does not always emit an explicit isVia=true segment at every
-  // layer transition along a route; coincident endpoints on adjacent
-  // routing levels are treated as implicitly connected. EST has historically
-  // taken GRoute literally, so any layer transition without an explicit via
-  // segment ends up as two distinct ParasiticNodes at the same (x, y) with
-  // no resistor between them -- a disconnected island in the parasitic
-  // network. That goes unnoticed by pi-Elmore-based delay calculators but
-  // produces a singular conductance matrix in Prima/CCS.
-  //
-  // Close the contract gap here: scan node_map for coincident endpoints on
-  // adjacent routing levels and, when no resistor already bridges them,
-  // insert one with the appropriate cut-layer resistance.
-  std::vector<std::pair<sta::ParasiticNode*, sta::ParasiticNode*>>
-      connected_pairs;
-  for (sta::ParasiticResistor* r : parasitics->resistors(parasitic)) {
-    sta::ParasiticNode* a = parasitics->node1(r);
-    sta::ParasiticNode* b = parasitics->node2(r);
-    connected_pairs.emplace_back(std::minmax(a, b));
-  }
-  std::ranges::sort(connected_pairs);
-
-  if (!node_map.empty()) {
-    auto prev_it = node_map.begin();
-    for (auto it = std::next(prev_it); it != node_map.end();
-         prev_it = it, ++it) {
-      const auto& prev_pt = prev_it->first;
-      const auto& curr_pt = it->first;
-      if (prev_pt.x() != curr_pt.x() || prev_pt.y() != curr_pt.y()) {
-        continue;
-      }
-      if (curr_pt.layer() != prev_pt.layer() + 1) {
-        // Not adjacent routing levels -- skipping signals that an
-        // intermediate routing-level node is missing entirely, which is a
-        // different bug worth surfacing rather than silently bridging.
-        continue;
-      }
-      sta::ParasiticNode* lo_node = prev_it->second;
-      sta::ParasiticNode* hi_node = it->second;
-      const std::pair<sta::ParasiticNode*, sta::ParasiticNode*> pair
-          = std::minmax(lo_node, hi_node);
-      auto bound_it = std::ranges::lower_bound(connected_pairs, pair);
-      if (bound_it != connected_pairs.end() && *bound_it == pair) {
-        continue;
-      }
-      odb::dbTechLayer* lower_routing
-          = tech_->findRoutingLayer(prev_pt.layer());
-      odb::dbTechLayer* cut_layer
-          = lower_routing ? lower_routing->getUpperLayer() : nullptr;
-      if (cut_layer == nullptr) {
-        // Top of stack or unresolved -- do not silently invent a resistor.
-        continue;
-      }
-      const float via_R = getCutLayerRes(cut_layer, corner);
-      parasitics->makeResistor(
-          parasitic, resistor_id_++, via_R, lo_node, hi_node);
-      connected_pairs.insert(bound_it, pair);
-    }
-  }
 }
 
 void MakeWireParasitics::makeParasiticsToPins(
@@ -399,8 +339,11 @@ void MakeWireParasitics::makeParasiticsToPin(sta::Parasitics* parasitics,
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST,
@@ -506,8 +449,11 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST, 350, "Missing route to pin {}.", pin_name);
