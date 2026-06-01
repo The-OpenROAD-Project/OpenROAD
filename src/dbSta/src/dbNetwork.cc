@@ -3482,6 +3482,18 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
   return libertyCell(dbToSta(inst));
 }
 
+const LibertyCell* dbNetwork::getLibertyCell(const Cell* cell) const
+{
+  const LibertyCell* lib_cell = libertyCell(cell);
+  if (!lib_cell) {
+    return nullptr;
+  }
+  if (const TestCell* test_cell = lib_cell->testCell()) {
+    lib_cell = test_cell;
+  }
+  return lib_cell;
+}
+
 LibertyPort* dbNetwork::libertyPort(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -5242,18 +5254,6 @@ Net* dbNetwork::highestNetAbove(Net* net) const
   }
 
   return net;
-}
-
-const LibertyCell* dbNetwork::getLibertyCell(const Cell* cell) const
-{
-  const LibertyCell* lib_cell = libertyCell(cell);
-  if (!lib_cell) {
-    return nullptr;
-  }
-  if (const TestCell* test_cell = lib_cell->testCell()) {
-    lib_cell = test_cell;
-  }
-  return lib_cell;
 }
 
 bool dbNetwork::isClockPin(odb::dbITerm* iterm) const

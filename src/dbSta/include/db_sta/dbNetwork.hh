@@ -521,6 +521,7 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
+  const LibertyCell* getLibertyCell(const Cell* cell) const;
   void addDriverToCacheIfPresent(const Net* net, const Pin* drvr);
   void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);
@@ -530,7 +531,6 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy separators.  Used to recover an in-module name from a
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
-  const LibertyCell* getLibertyCell(const Cell* cell) const;
 
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;

@@ -159,8 +159,8 @@ cc_test(
     ],
     deps = [
         "//src/ant",
-        "//src/dbSta:dbReadVerilog",
         "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",
         "//src/gpl",
