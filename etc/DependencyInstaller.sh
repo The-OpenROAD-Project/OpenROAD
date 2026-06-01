@@ -883,6 +883,15 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
+        if _command_exists "apt-get"; then
+            _execute "Installing bazel required libraries..." \
+                apt-get -y install --no-install-recommends \
+                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+        elif _command_exists "yum"; then
+            _execute "Installing bazel required libraries..." \
+                yum install -y \
+                glibc-devel libxml2 ncurses-libs zlib libstdc++
+        fi
         if [[ "${NO_GUI}" != "yes" ]]; then
             # Install xcb libraries needed for GUI support with Bazel builds
             if _command_exists "apt-get"; then
