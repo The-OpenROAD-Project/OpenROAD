@@ -220,7 +220,7 @@ bool Optimizer::repairSetup(const sta::Pin* const end_pin)
   config.match_cell_footprint = resizer_.matchCellFootprint();
   config.sequence = {MoveType::kUnbuffer,
                      MoveType::kVtSwap,
-                     MoveType::kSizeDown,
+                     MoveType::kSizeDownFanout,
                      MoveType::kSizeUp,
                      MoveType::kSwapPins,
                      MoveType::kBuffer,
