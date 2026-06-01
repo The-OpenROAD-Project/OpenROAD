@@ -98,6 +98,7 @@ class CUGR
   }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
+  void removeNet(odb::dbNet* net);
   void routeIncremental();
 
   const std::vector<int>& getOriginalResources() const;

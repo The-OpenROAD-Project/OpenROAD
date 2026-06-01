@@ -581,6 +581,7 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   odb::PtrSet<odb::dbNet> dirty_nets_;
+  std::set<odb::dbNet*> pending_deleted_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
 
   RepairAntennas* repair_antennas_;

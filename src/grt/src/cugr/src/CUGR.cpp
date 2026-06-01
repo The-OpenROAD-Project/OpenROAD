@@ -956,6 +956,88 @@ void CUGR::updateNet(odb::dbNet* db_net)
   }
 }
 
+void CUGR::removeNet(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end()) {
+    design_->removeNet(db_net);
+    return;
+  }
+
+  GRNet* gr_net = it->second;
+  if (gr_net->getRoutingTree()) {
+    grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+  }
+
+  std::vector<odb::dbNet*> old_index_to_db_net(gr_nets_.size(), nullptr);
+  std::map<odb::dbNet*, GRNet*> old_net_map;
+  for (const auto& net_ptr : gr_nets_) {
+    GRNet* net = net_ptr.get();
+    old_net_map[net->getDbNet()] = net;
+    const int index = net->getIndex();
+    if (index >= 0 && index < static_cast<int>(old_index_to_db_net.size())) {
+      old_index_to_db_net[index] = net->getDbNet();
+    }
+  }
+
+  design_->removeNet(db_net);
+
+  const std::vector<CUGRNet>& base_nets = design_->getAllNets();
+  std::vector<std::unique_ptr<GRNet>> updated_gr_nets;
+  updated_gr_nets.reserve(base_nets.size());
+  std::map<odb::dbNet*, GRNet*> updated_db_net_map;
+  std::map<odb::dbNet*, int> updated_net_indices;
+  for (const CUGRNet& base_net : base_nets) {
+    auto updated_net =
+        std::make_unique<GRNet>(base_net, grid_graph_.get());
+    if (auto old_it = old_net_map.find(base_net.getDbNet());
+        old_it != old_net_map.end()) {
+      GRNet* old_net = old_it->second;
+      updated_net->setRoutingTree(old_net->getRoutingTree());
+      updated_net->setSlack(old_net->getSlack());
+      updated_net->setCritical(old_net->isCritical());
+      for (const auto& [bterm, ap] : old_net->getBTermAccessPoints()) {
+        updated_net->addBTermAccessPoint(bterm, ap);
+      }
+      for (const auto& [iterm, ap] : old_net->getITermAccessPoints()) {
+        updated_net->addITermAccessPoint(iterm, ap);
+      }
+    }
+    updated_net_indices[base_net.getDbNet()] = base_net.getIndex();
+    updated_db_net_map[base_net.getDbNet()] = updated_net.get();
+    updated_gr_nets.push_back(std::move(updated_net));
+  }
+
+  gr_nets_ = std::move(updated_gr_nets);
+  db_net_map_ = std::move(updated_db_net_map);
+
+  net_indices_.clear();
+  net_indices_.reserve(gr_nets_.size());
+  for (int i = 0; i < static_cast<int>(gr_nets_.size()); i++) {
+    net_indices_.push_back(i);
+  }
+
+  if (!nets_to_route_.empty()) {
+    std::vector<int> updated_to_route;
+    updated_to_route.reserve(nets_to_route_.size());
+    for (const int old_index : nets_to_route_) {
+      if (old_index < 0
+          || old_index >= static_cast<int>(old_index_to_db_net.size())) {
+        continue;
+      }
+      odb::dbNet* old_db_net = old_index_to_db_net[old_index];
+      if (old_db_net == nullptr) {
+        continue;
+      }
+      auto new_it = updated_net_indices.find(old_db_net);
+      if (new_it != updated_net_indices.end()) {
+        updated_to_route.push_back(new_it->second);
+      }
+    }
+    nets_to_route_ = std::move(updated_to_route);
+  }
+}
+
 // The accessors below are only called after init() has constructed
 // grid_graph_, so we rely on the GridGraph's cached vectors directly
 // without extra null-checks (matching the rest of the file).
