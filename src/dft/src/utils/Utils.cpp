@@ -128,12 +128,13 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   return std::nullopt;
 }
 
-bool IsScanCell(const sta::LibertyCell* liberty_cell)
+bool IsScanCell(const sta::dbNetwork* db_network,
+                const sta::LibertyCell* liberty_cell)
 {
   const sta::TestCell* test_cell = liberty_cell->testCell();
   if (test_cell) {
-    return getLibertyScanIn(test_cell) != nullptr
-           && getLibertyScanEnable(test_cell) != nullptr;
+    return db_network->getLibertyScanIn(test_cell) != nullptr
+           && db_network->getLibertyScanEnable(test_cell) != nullptr;
   }
   return false;
 }

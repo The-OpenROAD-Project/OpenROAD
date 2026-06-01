@@ -1398,48 +1398,6 @@ void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 
 ////////////////////////////////////////////////////////////////
 
-sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::enable
-        || signal_type == sta::ScanSignalType::enable_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::input
-        || signal_type == sta::ScanSignalType::input_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::output
-        || signal_type == sta::ScanSignalType::output_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
 void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
                                  const char* filename,
                                  const MinMax* min_max)

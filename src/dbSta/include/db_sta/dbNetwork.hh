@@ -405,6 +405,44 @@ class dbNetwork : public ConcreteNetwork
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
+  ////////////////////////////////////////////////////////////////
+  // Sequential / Flop / Scan flop utility functions
+  // clock pin functions
+  bool isClockPin(odb::dbITerm* iterm) const;
+  bool clockOn(odb::dbInst* inst) const;
+
+  // d pin functions
+  bool isDPin(odb::dbITerm* iterm) const;
+  int getNumD(odb::dbInst* inst) const;
+
+  // q(n) pin functions
+  bool isQPin(odb::dbITerm* iterm) const;
+  bool isInvertingQPin(odb::dbITerm* iterm) const;
+  int getNumQ(odb::dbInst* inst) const;
+
+  // clear/preset pin functions
+  bool hasClear(odb::dbInst* inst) const;
+  bool isClearPin(odb::dbITerm* iterm) const;
+  bool hasPreset(odb::dbInst* inst) const;
+  bool isPresetPin(odb::dbITerm* iterm) const;
+
+  // scan cell/pin functions
+  bool isScanCell(odb::dbInst* inst) const;
+  bool isScanIn(odb::dbITerm* iterm) const;
+  odb::dbITerm* getScanIn(odb::dbInst* inst) const;
+  bool isScanEnable(odb::dbITerm* iterm) const;
+  odb::dbITerm* getScanEnable(odb::dbInst* inst) const;
+  LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell) const;
+  LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell) const;
+  LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell) const;
+
+  // supply pin functions
+  bool isSupplyPin(odb::dbITerm* iterm) const;
+  bool isValidFlop(odb::dbInst* inst) const;
+  bool isValidTray(odb::dbInst* inst) const;
+
+  ////////////////////////////////////////////////////////////////
+
   // hierarchy handler, set in openroad tested in network child traverserser
 
   void setHierarchy() { db_->setHierarchy(true); }
@@ -492,6 +530,7 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy separators.  Used to recover an in-module name from a
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
+  const LibertyCell* getLibertyCell(const Cell* cell) const;
 
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
