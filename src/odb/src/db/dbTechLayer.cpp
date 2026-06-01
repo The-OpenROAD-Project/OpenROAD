@@ -37,6 +37,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iterator>
 #include <ranges>
