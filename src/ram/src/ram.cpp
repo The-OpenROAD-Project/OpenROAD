@@ -848,6 +848,8 @@ void RamGen::findMasters()
 
 void RamGen::ramPdngen(const char* power_pin,
                        const char* ground_pin,
+                       const char* power_net_name,
+                       const char* ground_net_name,
                        const char* route_name,
                        int route_width,
                        const char* ver_name,
@@ -889,10 +891,22 @@ void RamGen::ramPdngen(const char* power_pin,
         ver_pitch / dbu_per_um);
   }
 
-  // need parameters for power and ground nets
-  auto power_net = dbNet::create(block_, "VDD");
-  // need parameters for power and ground nets
-  auto ground_net = dbNet::create(block_, "VSS");
+  auto power_net = block_->findNet(power_net_name);
+  if (!power_net) {
+    power_net = dbNet::create(block_, power_net_name);
+  }
+  if (!power_net) {
+    logger_->error(RAM, 38, "Failed to create power net '{}'", power_net_name);
+  }
+
+  auto ground_net = block_->findNet(ground_net_name);
+  if (!ground_net) {
+    ground_net = dbNet::create(block_, ground_net_name);
+  }
+  if (!ground_net) {
+    logger_->error(
+        RAM, 39, "Failed to create ground net '{}'", ground_net_name);
+  }
 
   power_net->setSpecial();
   power_net->setSigType(odb::dbSigType::POWER);
