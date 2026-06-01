@@ -817,12 +817,11 @@ void dbSta::reportTimingHistogram(int num_bins,
   histogram.report(/*precision=*/3);
 }
 
-void dbSta::reportLogicDepthHistogram(int num_bins,
-                                      bool exclude_buffers,
+std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
                                       bool exclude_inverters) const
 {
-  utl::Histogram<int> histogram(logger_);
-
+  std::vector<int> depths;
+  depths.reserve(sta_->endpoints().size());
   sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : sta_->endpoints()) {
     int path_length = 0;
@@ -843,9 +842,19 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
       }
       path = path->prevPath();
     }
-    histogram.addData(path_length);
+    depths.push_back(path_length);
   }
+  return depths;
+}
 
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+  for (int depth : levelsOfLogic(exclude_buffers, exclude_inverters)) {
+    histogram.addData(depth);
+  }
   histogram.generateBins(num_bins);
   histogram.report();
 }

@@ -50,4 +50,5 @@ cc_library(
         "@fmt",
         "@sv-lang//:libsvlang",
     ],
+    alwayslink = True,
 )
