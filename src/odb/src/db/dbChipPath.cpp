@@ -68,9 +68,10 @@ void _dbChipPath::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["entries"].add(entries_);
+
   // User Code Begin collectMemInfo
   info.children["name"].add(name_);
-  info.children["entries"].add(entries_);
   // User Code End collectMemInfo
 }
 
