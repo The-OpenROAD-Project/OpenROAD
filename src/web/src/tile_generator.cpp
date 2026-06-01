@@ -61,6 +61,15 @@ constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kMinInstNameFontPx = 10;     // minimum readable font size
 constexpr int kMaxInstNameFontPx = 40;     // cap font size for large macros
 constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
+// Anti-moiré LOD for bump arrays: when a bump renders smaller than this (in CSS
+// px), it is not drawn individually; instead the array region is painted as one
+// solid block of the layer color (the band-limit cannot remove the residual
+// beat of a sub-~1px-pitch array — only collapsing to a tint does).
+constexpr int kBumpLodMaxPx = 6;
+// Only collapse to a solid block when at least this many sub-threshold bumps
+// fall in a tile (a real array); fewer scattered bumps are drawn individually
+// so we never paint a solid slab over mostly-empty space.
+constexpr size_t kBumpLodMinCount = 9;
 
 }  // namespace
 
@@ -308,6 +317,46 @@ bool TileVisibility::isNetSelectable(odb::dbNet* net) const
       return net_analog_selectable;
   }
   return true;
+}
+
+// True when `master` has any obstruction (if vis.blockages) or instance-pin
+// (if vis.inst_pins) geometry on `tech_layer` — or on any layer when
+// `tech_layer` is null (the _instances overview).  Used to decide whether a
+// sub-resolution bump contributes to a given layer tile's solid LOD block, so
+// we don't paint a block on layers where the bump draws nothing.
+bool bumpHasLayerGeom(odb::dbMaster* master,
+                      odb::dbTechLayer* tech_layer,
+                      const TileVisibility& vis)
+{
+  if (vis.blockages) {
+    for (odb::dbPolygon* p : master->getPolygonObstructions()) {
+      if (!tech_layer || p->getTechLayer() == tech_layer) {
+        return true;
+      }
+    }
+    for (odb::dbBox* b : master->getObstructions(false)) {
+      if (!tech_layer || b->getTechLayer() == tech_layer) {
+        return true;
+      }
+    }
+  }
+  if (vis.inst_pins) {
+    for (odb::dbMTerm* mterm : master->getMTerms()) {
+      for (odb::dbMPin* mpin : mterm->getMPins()) {
+        for (odb::dbPolygon* pg : mpin->getPolygonGeometry()) {
+          if (!tech_layer || pg->getTechLayer() == tech_layer) {
+            return true;
+          }
+        }
+        for (odb::dbBox* g : mpin->getGeometry(false)) {
+          if (!tech_layer || g->getTechLayer() == tech_layer) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
@@ -2038,6 +2087,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
+        // Sub-resolution bumps collected for the anti-moiré solid LOD block
+        // (filled once after the loop).  In super-pixel coords.
+        std::vector<odb::Rect> small_bumps;
+
         // Draw instances
         for (odb::dbInst* inst : search_->searchInsts(
                  block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
@@ -2071,6 +2124,22 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int draw_yl = std::clamp<int64_t>(pixel_yl, 0, super - 1);
           const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
           const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
+
+          // Anti-moiré LOD: a bump too small to see individually is NOT drawn
+          // here (its outline/fill would form a moiré-prone grid).  Collect its
+          // footprint so the array region is painted as one solid block after
+          // the loop — but only when it would actually draw on this layer (any
+          // geometry on _instances; matching tech-layer geometry otherwise).
+          const bool is_tiny_bump
+              = classifyInstance(inst, sta_) == InstCategory::kPhysBump
+                && std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl)
+                       < static_cast<int64_t>(kBumpLodMaxPx * super_per_css);
+          if (is_tiny_bump
+              && (instances_only
+                  || bumpHasLayerGeom(master, tech_layer, vis))) {
+            small_bumps.emplace_back(loop_xl, loop_yl, loop_xh, loop_yh);
+            continue;
+          }
 
           if (instances_only) {
             // Draw the rectangle border (instances-only layer)
@@ -2332,6 +2401,37 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   }
                 }
               }
+            }
+          }
+        }
+
+        // Anti-moiré LOD: paint the collected sub-resolution bumps.  A dense
+        // array (>= kBumpLodMinCount) becomes ONE solid block of the layer
+        // color covering the bumps AND the gaps between them, so no grid/beat
+        // survives.  A few scattered bumps are drawn as individual solid rects
+        // so we never slab over mostly-empty space.
+        if (!small_bumps.empty()) {
+          const Color bump_block_color
+              = instances_only ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
+                               : color;
+          const auto fill_rect = [&](const odb::Rect& r) {
+            for (int iy = r.yMin(); iy < r.yMax(); ++iy) {
+              const int draw_y = super - 1 - iy;
+              for (int ix = r.xMin(); ix < r.xMax(); ++ix) {
+                blendPixel(image_buffer, ix, draw_y, bump_block_color, super);
+              }
+            }
+          };
+          if (small_bumps.size() >= kBumpLodMinCount) {
+            odb::Rect block;
+            block.mergeInit();
+            for (const odb::Rect& r : small_bumps) {
+              block.merge(r);
+            }
+            fill_rect(block);
+          } else {
+            for (const odb::Rect& r : small_bumps) {
+              fill_rect(r);
             }
           }
         }
