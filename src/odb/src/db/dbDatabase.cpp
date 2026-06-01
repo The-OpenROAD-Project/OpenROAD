@@ -430,19 +430,13 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   alignment_marker_rule_tbl_->collectMemInfo(
       info.children["alignment_marker_rule_tbl_"]);
-
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
-
+  info.children["chip_hash"].add(chip_hash_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
-
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
-
   chip_region_inst_tbl_->collectMemInfo(info.children["chip_region_inst_tbl_"]);
-
   chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
-
   chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
-
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
