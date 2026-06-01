@@ -193,9 +193,7 @@ def is_set_by_ref(type_name: str, enum_names) -> bool:
         return False
     if type_name in enum_names:
         return False
-    # A bare scoped enum (e.g. "dbAccessType::Value"): has "::" but is neither a
-    # std:: type nor a template (those are aggregates passed by const ref).
-    if "::" in type_name and "<" not in type_name and not type_name.startswith("std::"):
+    if is_enum(type_name):
         return False
     return True
 

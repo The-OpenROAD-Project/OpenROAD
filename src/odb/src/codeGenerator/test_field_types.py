@@ -160,6 +160,11 @@ class SetByRefRuleTest(unittest.TestCase):
         ):
             self.assertFalse(is_set_by_ref(t, self.ENUMS), t)
 
+    def test_nested_struct_is_const_ref_not_by_value(self):
+        # A scoped name that is not a "::Value" enum (e.g. a nested struct) must
+        # be passed by const ref, not by value -- guards the is_enum() precision.
+        self.assertTrue(is_set_by_ref("dbPowerSwitch::UPFControlPort", self.ENUMS))
+
 
 class ComponentsRuleTest(unittest.TestCase):
     """components() decides which fields contribute to operator==/operator<."""
