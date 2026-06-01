@@ -371,8 +371,10 @@ class Opendp
   std::unique_ptr<PlacementDRC> drc_engine_;
   Journal* journal_ = nullptr;
 
+  // DPL-wide displacement budget set via detailedPlacement() and honored
+  // by every DPL pass (diamond search, and negotiation).
   int max_displacement_x_ = 0;  // sites
-  int max_displacement_y_ = 0;  // sites
+  int max_displacement_y_ = 0;  // rows
   bool disallow_one_site_gaps_ = false;
   std::vector<Node*> placement_failures_;
 

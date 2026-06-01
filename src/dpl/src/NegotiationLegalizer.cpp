@@ -1091,13 +1091,19 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  // Verify that the cell's site type is available on the target row.
+  // Verify the cell's site type is available on every row the cell
+  // spans, not just the bottom row. Hybrid-row designs interleave row
+  // types; without this an N-row cell could land on a stack mixing
+  // its own site type with an incompatible one.
   if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-    if (site != nullptr
-        && !opendp_->grid_->getSiteOrientation(
-            GridX{gridX}, GridY{rowIdx}, site)) {
-      return false;
+    if (site != nullptr) {
+      for (int dy = 0; dy < cell.height; ++dy) {
+        if (!opendp_->grid_->getSiteOrientation(
+                GridX{gridX}, GridY{rowIdx + dy}, site)) {
+          return false;
+        }
+      }
     }
   }
   const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
@@ -1123,6 +1129,44 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       (row_bottom_rail == cell.rail_type),
       ret);
   return ret;
+}
+
+std::vector<int> NegotiationLegalizer::collectNearestValidRows(
+    const NegCell& cell,
+    int seed_y,
+    int probe_x,
+    int count_per_side,
+    int max_scan) const
+{
+  std::vector<int> rows;
+  rows.reserve(2 * count_per_side + 1);
+
+  if (isValidRow(seed_y, cell, probe_x)) {
+    rows.push_back(seed_y);
+  }
+
+  int found_below = 0;
+  int found_above = 0;
+  for (int step = 1; step <= max_scan; ++step) {
+    if (found_below < count_per_side) {
+      const int below_y = seed_y + step;
+      if (isValidRow(below_y, cell, probe_x)) {
+        rows.push_back(below_y);
+        ++found_below;
+      }
+    }
+    if (found_above < count_per_side) {
+      const int above_y = seed_y - step;
+      if (isValidRow(above_y, cell, probe_x)) {
+        rows.push_back(above_y);
+        ++found_above;
+      }
+    }
+    if (found_below >= count_per_side && found_above >= count_per_side) {
+      break;
+    }
+  }
+  return rows;
 }
 
 bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const

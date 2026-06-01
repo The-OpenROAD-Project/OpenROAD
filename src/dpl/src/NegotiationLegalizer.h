@@ -216,6 +216,16 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
+  // Collect up to `count_per_side` rail-/site-compatible rows on each
+  // side of `seed_y`, plus `seed_y` itself when valid. Walks outward
+  // one row at a time and stops after `max_scan` steps in each direction.
+  // Lets the Y search adapt to cell height: for tall cells, valid rows
+  // are sparser, so the effective Y reach grows automatically.
+  [[nodiscard]] std::vector<int> collectNearestValidRows(const NegCell& cell,
+                                                         int seed_y,
+                                                         int probe_x,
+                                                         int count_per_side,
+                                                         int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
   [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
@@ -285,6 +295,7 @@ class NegotiationLegalizer
   int max_disp_threshold_{kThDefault};      // th on the paper
   int max_iter_neg_{kMaxIterNeg};
   int site_search_window_{kSiteSearchWindow};
+  int row_search_window_{kRowSearchWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
 
   // Last-iteration stats, kept so runNegotiation can print the final row.
@@ -298,7 +309,6 @@ class NegotiationLegalizer
   // iteration. Passed to the debug observer so cells from prior iterations
   // are rendered in grey while current-iteration movers keep directional colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
-  int row_search_window_{kRowSearchWindow};
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};
   bool run_abacus_{false};

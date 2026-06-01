@@ -603,7 +603,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // later iterations strongly penalise DRC violations to force resolution.
   const double drc_penalty = drc_penalty_ * (1.0 + iter);
 
-  // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
     {
       utl::DebugScopedTimer t(prof_filter_s_);
@@ -646,24 +645,52 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   };
 
-  // Search around the initial (GP) position.
+  // Y search cap: original range is row_search_window_ * cell.height,
+  // also capped by DPL max_displacement_y given by user.
+  const int row_search_cap = std::min(cell.height * row_search_window_,
+                                      opendp_->max_displacement_y_);
+
+  // X search window scales with cell width: one cell-width extra per side.
+  const int adapted_site_window = std::min(
+      std::max(site_search_window_, cell.width), opendp_->max_displacement_x_);
+
+  // Search around the initial (GP) position. Iterate over the nearest
+  // valid rows rather than raw row offsets, so the effective Y reach
+  // grows with cell height and naturally aligns to legal rows.
+  const std::vector<int> init_rows = collectNearestValidRows(
+      cell, cell.init_y, cell.init_x, row_search_window_, row_search_cap);
   {
     utl::DebugScopedTimer t(prof_init_search_s_);
-    for (int dy = -row_search_window_; dy <= row_search_window_; ++dy) {
-      for (int dx = -site_search_window_; dx <= site_search_window_; ++dx) {
-        tryLocation(cell.init_x + dx, cell.init_y + dy);
+    for (int ty : init_rows) {
+      for (int dx = -adapted_site_window; dx <= adapted_site_window; ++dx) {
+        tryLocation(cell.init_x + dx, ty);
       }
     }
   }
 
+  // TODO: check if this second call is actually impactful, maybe this impacts
+  // runtime without actual better convergence, mostly considering first
+  // iteration, maybe always skip this at first iteration.
+  //
   // Also search around the current position — critical when the cell has
   // already been displaced far from init_x and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
-  if (cell.x != cell.init_x || cell.y != cell.init_y) {
+  const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
+  std::vector<int> curr_rows;
+  if (displaced) {
+    curr_rows = collectNearestValidRows(
+        cell, cell.y, cell.x, row_search_window_, row_search_cap);
     utl::DebugScopedTimer t(prof_curr_search_s_);
-    for (int dy = -row_search_window_; dy <= row_search_window_; ++dy) {
-      for (int dx = -site_search_window_; dx <= site_search_window_; ++dx) {
-        tryLocation(cell.x + dx, cell.y + dy);
+    // debugPrint(logger_, utl::DPL, "negotiation", 1, "Searching at current
+    // position for {} (searching from inital position found no better
+    // solution).", cell.db_inst->getName());
+    logger_->report(
+        "Searching at current position for {} (searching from inital position "
+        "found no better solution).",
+        cell.db_inst->getName());
+    for (int ty : curr_rows) {
+      for (int dx = -adapted_site_window; dx <= adapted_site_window; ++dx) {
+        tryLocation(cell.x + dx, ty);
       }
     }
   }
@@ -678,17 +705,29 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       return core.yMin()
              + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
     };
-    const odb::Rect init_win(toX(cell.init_x - site_search_window_),
-                             toY(cell.init_y - row_search_window_),
-                             toX(cell.init_x + site_search_window_ + 1),
-                             toY(cell.init_y + row_search_window_ + 1));
-    const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
-    const odb::Rect curr_win
-        = displaced ? odb::Rect(toX(cell.x - site_search_window_),
-                                toY(cell.y - row_search_window_),
-                                toX(cell.x + site_search_window_ + 1),
-                                toY(cell.y + row_search_window_ + 1))
-                    : odb::Rect();
+    // Y extent reflects the actual sparse set of valid rows visited
+    // (bounding rect: lowest to highest+1). Falls back to the seed row
+    // when no valid rows were found within row_search_cap.
+    auto y_range = [&](const std::vector<int>& rows, int fallback_y) {
+      if (rows.empty()) {
+        return std::pair{fallback_y, fallback_y + 1};
+      }
+      const auto [lo, hi] = std::ranges::minmax_element(rows);
+      return std::pair{*lo, *hi + 1};
+    };
+    const auto [init_ylo, init_yhi] = y_range(init_rows, cell.init_y);
+    const odb::Rect init_win(toX(cell.init_x - adapted_site_window),
+                             toY(init_ylo),
+                             toX(cell.init_x + adapted_site_window + 1),
+                             toY(init_yhi));
+    odb::Rect curr_win;
+    if (displaced) {
+      const auto [curr_ylo, curr_yhi] = y_range(curr_rows, cell.y);
+      curr_win = odb::Rect(toX(cell.x - adapted_site_window),
+                           toY(curr_ylo),
+                           toX(cell.x + adapted_site_window + 1),
+                           toY(curr_yhi));
+    }
     debug_observer_->setNegotiationSearchWindow(
         cell.db_inst, init_win, curr_win);
   }
