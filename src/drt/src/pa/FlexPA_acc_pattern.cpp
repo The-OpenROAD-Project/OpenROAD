@@ -312,7 +312,7 @@ void FlexPA::genPatternsInit(
       nodes[pin_idx][ap_idx] = std::make_unique<FlexDPNode>();
       nodes[pin_idx][ap_idx]->setIdx({pin_idx, ap_idx});
       nodes[pin_idx][ap_idx]->setNodeCost(ap->getCost());
-      ap->resetCompatibleNeigbours();
+      ap->resetCompatibleNeighbours();
       ap_idx++;
     }
     pin_idx++;

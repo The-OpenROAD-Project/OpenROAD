@@ -188,7 +188,7 @@ class frAccessPoint : public frBlockObject
   }
   void setAllowVia(bool in) { allow_via_ = in; }
   void addCompatibleNeighbour() { compatible_neighbors_++; }
-  void resetCompatibleNeigbours() { compatible_neighbors_ = 0; }
+  void resetCompatibleNeighbours() { compatible_neighbors_ = 0; }
   int getCompatibleNeighbours() { return compatible_neighbors_; }
   // others
   frBlockObjectEnum typeId() const override { return frcAccessPoint; }
