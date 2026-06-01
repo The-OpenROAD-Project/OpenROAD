@@ -19,17 +19,17 @@
     },
     {
       "name": "access_pins_",
-      "type": "std::pair<dbId<dbScanPin>, dbId<dbScanPin>>",
+      "type": "std::pair<dbId<_dbScanPin>, dbId<_dbScanPin>>",
       "flags": ["private", "no-template"]
     },
     {
       "name": "scan_enable_",
-      "type": "dbId<dbScanPin>",
+      "type": "dbId<_dbScanPin>",
       "flags": ["private"]
     },
     {
       "name": "inst_",
-      "type": "dbId<dbInst>",
+      "type": "dbId<_dbInst>",
       "flags": ["private"]
     },
     {

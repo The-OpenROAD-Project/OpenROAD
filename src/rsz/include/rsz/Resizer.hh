@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -85,7 +86,12 @@ class RegisterOdbCallbackGuard;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;

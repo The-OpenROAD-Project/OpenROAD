@@ -9,6 +9,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -1153,6 +1154,18 @@ bool dbTechLayerCutSpacingRule::isParWithinEnclosureValid() const
   return obj->flags_.par_within_enclosure_valid;
 }
 
+dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCutSpacingRule*) _parent->cut_spacing_rules_tbl_->create();
+}
+void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->cut_spacing_rules_tbl_->destroy((_dbTechLayerCutSpacingRule*) obj);
+}
 // User Code Begin dbTechLayerCutSpacingRulePublicMethods
 dbTechLayerCutClassRule* dbTechLayerCutSpacingRule::getCutClass() const
 {
@@ -1197,15 +1210,6 @@ dbTechLayerCutSpacingRule::CutSpacingType dbTechLayerCutSpacingRule::getType()
   return (dbTechLayerCutSpacingRule::CutSpacingType)
       obj->flags_.cut_spacing_type;
 }
-
-dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerCutSpacingRule* newrule = layer->cut_spacing_rules_tbl_->create();
-  return ((dbTechLayerCutSpacingRule*) newrule);
-}
-
 dbTechLayerCutSpacingRule*
 dbTechLayerCutSpacingRule::getTechLayerCutSpacingRule(dbTechLayer* inly,
                                                       uint32_t dbid)
@@ -1213,12 +1217,6 @@ dbTechLayerCutSpacingRule::getTechLayerCutSpacingRule(dbTechLayer* inly,
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerCutSpacingRule*) layer->cut_spacing_rules_tbl_->getPtr(
       dbid);
-}
-void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->cut_spacing_rules_tbl_->destroy((_dbTechLayerCutSpacingRule*) rule);
 }
 // User Code End dbTechLayerCutSpacingRulePublicMethods
 }  // namespace odb
