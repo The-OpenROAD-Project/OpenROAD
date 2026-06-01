@@ -1453,6 +1453,45 @@ TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
       << "resolved grid was over-blurred into a flat tint";
 }
 
+TEST_F(MoireArrayTest, BumpArrayBelowThresholdBecomesSolidBlock)
+{
+  // Mark the small master as a bump so classifyInstance() returns kPhysBump
+  // (the fixture has no STA, so it falls back to the COVER_BUMP master type).
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(/*n=*/128);  // bumps render ~1-2 px at z=0 → below the 6px LOD
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+
+  // Crop a central macro-uniform window (avoid the array's outer edge).  With
+  // the LOD rule the sub-resolution bumps are collapsed into one solid block,
+  // so the interior is a flat tint: near-zero block-CV and non-transparent.
+  std::vector<unsigned char> center;
+  const int x0 = iw / 4;
+  const int x1 = 3 * iw / 4;
+  const int y0 = ih / 4;
+  const int y1 = 3 * ih / 4;
+  for (int y = y0; y < y1; ++y) {
+    for (int x = x0; x < x1; ++x) {
+      for (int c = 0; c < 4; ++c) {
+        center.push_back(pixels[(static_cast<size_t>(y) * iw + x) * 4 + c]);
+      }
+    }
+  }
+  const int cw = x1 - x0;
+  const int ch = y1 - y0;
+  EXPECT_LT(blockAlphaCV(center, cw, ch, 8), 0.03)
+      << "sub-resolution bump array did not collapse to a uniform block";
+  EXPECT_GT(center[(static_cast<size_t>(ch / 2) * cw + cw / 2) * 4 + 3], 0u)
+      << "LOD block is transparent (expected a solid layer-color tint)";
+}
+
 TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
 {
   placeInst("BUF_X16", "buf1", 10000, 10000);
