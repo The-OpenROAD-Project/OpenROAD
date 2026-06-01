@@ -17,8 +17,10 @@ jobs:
     permissions:
       # Read-only access so we don't accidentally try to push to *this* repository.
       contents: read
-      # Issues write so we can remove the label (labels live on the issues API).
-      issues: write
+      # Pull-requests write so we can remove the label (label endpoints on a
+      # PR require pull-requests scope, even though they live under the
+      # issues API).
+      pull-requests: write
       # Deployment write so link_pr can record the upstream PR.
       deployments: write
 

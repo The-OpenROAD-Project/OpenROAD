@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
@@ -104,9 +105,7 @@ void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["array_spacing_map"].add(array_spacing_map_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -231,6 +230,20 @@ bool dbTechLayerArraySpacingRule::isWithinValid() const
   return obj->flags_.within_valid;
 }
 
+dbTechLayerArraySpacingRule* dbTechLayerArraySpacingRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerArraySpacingRule*)
+      _parent->array_spacing_rules_tbl_->create();
+}
+void dbTechLayerArraySpacingRule::destroy(dbTechLayerArraySpacingRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->array_spacing_rules_tbl_->destroy(
+      (_dbTechLayerArraySpacingRule*) obj);
+}
 // User Code Begin dbTechLayerArraySpacingRulePublicMethods
 
 void dbTechLayerArraySpacingRule::setCutsArraySpacing(int num_cuts, int spacing)
@@ -256,16 +269,6 @@ dbTechLayerCutClassRule* dbTechLayerArraySpacingRule::getCutClass() const
   return (dbTechLayerCutClassRule*) layer->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);
 }
-
-dbTechLayerArraySpacingRule* dbTechLayerArraySpacingRule::create(
-    dbTechLayer* inly)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) inly;
-  _dbTechLayerArraySpacingRule* newrule
-      = layer->array_spacing_rules_tbl_->create();
-  return ((dbTechLayerArraySpacingRule*) newrule);
-}
-
 dbTechLayerArraySpacingRule*
 dbTechLayerArraySpacingRule::getTechLayerArraySpacingRule(dbTechLayer* inly,
                                                           uint32_t dbid)
@@ -274,15 +277,6 @@ dbTechLayerArraySpacingRule::getTechLayerArraySpacingRule(dbTechLayer* inly,
   return ((dbTechLayerArraySpacingRule*)
               layer->array_spacing_rules_tbl_->getPtr(dbid));
 }
-
-void dbTechLayerArraySpacingRule::destroy(dbTechLayerArraySpacingRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->array_spacing_rules_tbl_->destroy(
-      (_dbTechLayerArraySpacingRule*) rule);
-}
-
 // User Code End dbTechLayerArraySpacingRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

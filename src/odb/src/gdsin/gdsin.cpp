@@ -237,7 +237,7 @@ void GDSReader::processPropAttr(T* elem)
     const std::string value = r_.data8;
 
     if (elem) {
-      elem->getPropattr().emplace_back(attr, value);
+      elem->addPropattr(attr, value);
     }
   }
 }
