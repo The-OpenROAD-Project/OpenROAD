@@ -80,13 +80,24 @@ def _get_struct(name: str, structs: list[Struct]) -> Struct | None:
     return None
 
 
+def is_enum(type_name: str) -> bool:
+    """Whether the type is an odb-style scoped enum ("Foo::Value").
+
+    Such enums are comparison leaves: they support == and < directly and are
+    decomposed no further. Other scoped names (e.g. nested structs like
+    "dbPowerSwitch::UPFControlPort") are intentionally excluded -- only the
+    "::Value" convention used for odb enums is treated as a leaf.
+    """
+    return type_name.endswith("::Value")
+
+
 def components(structs: list[Struct], name: str, _type: str) -> list[str]:
     """Expand a field into its comparison sub-components.
 
-    A leaf/ref type yields itself; a struct type recurses into its members;
+    A leaf/ref/enum type yields itself; a struct type recurses into its members;
     anything else yields nothing (not compared).
     """
-    if _stem(_type) in _comparable or is_ref(_type):
+    if _stem(_type) in _comparable or is_ref(_type) or is_enum(_type):
         return [name]
     struct = _get_struct(_type.rstrip(" *"), structs)
     if struct is not None:

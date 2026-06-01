@@ -15,7 +15,6 @@
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
-#include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <utility>
@@ -425,10 +424,10 @@ dbGCellGrid* dbGCellGrid::create(dbBlock* block_)
   return (dbGCellGrid*) grid;
 }
 
-dbGCellGrid* dbGCellGrid::getGCellGrid(dbBlock* block_, uint32_t dbid_)
+dbGCellGrid* dbGCellGrid::getGCellGrid(dbBlock* block_, uint32_t oid)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbGCellGrid*) block->gcell_grid_tbl_->getPtr(dbid_);
+  return (dbGCellGrid*) block->gcell_grid_tbl_->getPtr(oid);
 }
 
 uint32_t dbGCellGrid::getXIdx(int x)

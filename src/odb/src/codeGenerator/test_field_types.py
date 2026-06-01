@@ -16,7 +16,7 @@ from pathlib import Path
 
 from field_types import CharPtrType, make_field_type
 from gen import ODBGenerator, make_environment
-from helper import is_set_by_ref, mem_info_accountable
+from helper import components, is_enum, is_set_by_ref, mem_info_accountable
 from schema_models import Field, Schema
 
 HERE = Path(os.path.dirname(__file__))
@@ -159,6 +159,39 @@ class SetByRefRuleTest(unittest.TestCase):
             "dbAccessType::Value",  # scoped enum
         ):
             self.assertFalse(is_set_by_ref(t, self.ENUMS), t)
+
+
+class ComponentsRuleTest(unittest.TestCase):
+    """components() decides which fields contribute to operator==/operator<."""
+
+    def test_scoped_enum_is_a_comparison_leaf(self):
+        self.assertTrue(is_enum("dbAccessType::Value"))
+        self.assertEqual(
+            components([], "low_type_", "dbAccessType::Value"), ["low_type_"]
+        )
+
+    def test_non_value_scoped_name_is_not_an_enum(self):
+        # Nested structs share the "X::Y" shape but must not be treated as leaves.
+        self.assertFalse(is_enum("dbPowerSwitch::UPFControlPort"))
+        self.assertFalse(is_enum("std::string"))
+
+    def test_scalar_and_ref_remain_leaves(self):
+        self.assertEqual(components([], "x_", "int"), ["x_"])
+        self.assertEqual(components([], "net_", "dbId<_dbNet>"), ["net_"])
+
+    def test_uncompared_container_yields_nothing(self):
+        self.assertEqual(components([], "tbl_", "dbVector<int>"), [])
+
+    def test_cmpgt_field_with_empty_components_raises(self):
+        # A field flagged for ordering must resolve to a component; an unhandled
+        # type would otherwise drop its operator< term silently.
+        env = make_environment(HERE / "templates")
+        gen = ODBGenerator(env, ".", ".", False)
+        schema = gen.load_schema(HERE / "schema.json")
+        klass = schema.classes[0]
+        klass.fields = [Field(name="orphan_", type="dbVector<int>", flags=["cmpgt"])]
+        with self.assertRaises(ValueError):
+            gen.process_schema(schema)
 
 
 class FactoryGenerationTest(unittest.TestCase):

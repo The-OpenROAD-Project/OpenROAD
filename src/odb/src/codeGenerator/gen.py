@@ -174,6 +174,17 @@ def _assign_name_and_components(field: Field, klass: Class) -> None:
         field.functional_name = get_functional_name(field.name)
         field.components = components(klass.structs, field.name, field.type)
 
+    # A field flagged for ordering must resolve to at least one comparison
+    # component; otherwise its operator< term is silently dropped (see the
+    # dbAccessType::Value regression that motivated treating enums as leaves).
+    if "cmpgt" in field.flags and not field.components:
+        raise ValueError(
+            f"{klass.name}.{field.name} ({field.type}) is flagged 'cmpgt' but "
+            f"resolves to no comparison components; its operator< term would be "
+            f"silently dropped. Make the type a comparison leaf in "
+            f"helper.components() (see is_enum/_comparable)."
+        )
+
     if not field.setterFunctionName:
         field.setterFunctionName = f"set{field.functional_name}"
 

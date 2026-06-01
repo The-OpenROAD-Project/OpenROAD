@@ -63,6 +63,15 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (flags_.num_masks != rhs.flags_.num_masks) {
     return false;
   }
+  if (flags_.type != rhs.flags_.type) {
+    return false;
+  }
+  if (flags_.direction != rhs.flags_.direction) {
+    return false;
+  }
+  if (flags_.minstep_type != rhs.flags_.minstep_type) {
+    return false;
+  }
   if (flags_.has_max_width != rhs.flags_.has_max_width) {
     return false;
   }

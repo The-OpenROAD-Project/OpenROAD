@@ -57,6 +57,12 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (bpin_ != rhs.bpin_) {
     return false;
   }
+  if (low_type_ != rhs.low_type_) {
+    return false;
+  }
+  if (high_type_ != rhs.high_type_) {
+    return false;
+  }
 
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
@@ -80,6 +86,12 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
     return false;
   }
   if (bpin_ >= rhs.bpin_) {
+    return false;
+  }
+  if (low_type_ >= rhs.low_type_) {
+    return false;
+  }
+  if (high_type_ >= rhs.high_type_) {
     return false;
   }
 

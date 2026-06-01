@@ -110,6 +110,20 @@ class SnapshotTest(unittest.TestCase):
             "return (dbTechLayerCutClassRule*) obj->cut_class_rules_hash_.find(name);",
         )
 
+    # --- scoped enum ("Foo::Value") is a comparison leaf, not silently dropped ---
+    def test_enum_field_is_compared(self):
+        # cmpgt enums appear in both operator== and operator< (dbAccessType::Value).
+        self.assertLine(
+            "dbAccessPoint", "impl.cpp.jinja", "if (low_type_ != rhs.low_type_) {"
+        )
+        self.assertLine(
+            "dbAccessPoint", "impl.cpp.jinja", "if (low_type_ >= rhs.low_type_) {"
+        )
+        # enum bitfields compare via the packed flags_ member.
+        self.assertLine(
+            "dbTechLayer", "impl.cpp.jinja", "if (flags_.type != rhs.flags_.type) {"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
