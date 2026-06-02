@@ -4628,66 +4628,66 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 
   if (use_cugr_) {
     cugr_->removeNet(db_net);
-  }
-
-  auto it = db_net_map_.find(db_net);
-  if (it == db_net_map_.end() || it->second == nullptr) {
-    return;
-  }
-  Net* deleted_net = it->second;
-
-  if (deleted_net->isMergedNet()) {
-    Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
-    if (preserved_net->areSegmentsRestored()
-        && deleted_net->areSegmentsRestored()) {
-      // Both preserved and deleted nets have segments restored from ODB. Do
-      // nothing to 3D resources, as the resources used by the deleted net were
-      // included in the preserved net.
-      // clearNetRoute releases sttrees usage (no-op for restored nets) but
-      // keeps db_net in db_net_id_map_; deleteNet then removes the stale entry
-      // so future nets at the same pointer address find no mapping.
-      fastroute_->clearNetRoute(db_net);
-      fastroute_->deleteNet(db_net);
-    } else if (preserved_net->areSegmentsRestored()) {
-      // If preserved net has segments restored from ODB, it won't have routing
-      // data inside FastRouteCore. Instead of merging the deleted net into
-      // preserved net, we just remove it from FastRouteCore and account for its
-      // resources manually with updateNetResources.
-      // clearNetRoute releases the tree usage but keeps db_net in
-      // db_net_id_map_, so updateNetResources can look up the correct
-      // edge_cost. deleteNet then removes the net from the map.
-      fastroute_->clearNetRoute(db_net);
-      updateNetResources(deleted_net, false);
-      fastroute_->deleteNet(db_net);
-    } else if (deleted_net->areSegmentsRestored()) {
-      // If deleted net has segments restored from ODB, we need to mark the
-      // preserved net as having segments restore to ensure proper handling of
-      // the capacities used by the deleted net.
-      // Remove usage from the preserved net.
-      fastroute_->clearNetRoute(preserved_net->getDbNet());
-      fastroute_->clearNetRoute(db_net);
-      // Remove usage from the deleted net.
-      updateNetResources(deleted_net, true);
-      fastroute_->deleteNet(db_net);
-      preserved_net->setAreSegmentsRestored(true);
-      // Include usage of the merged net.
-      updateNetResources(preserved_net, false);
-    } else {
-      fastroute_->mergeNet(db_net, preserved_net->getDbNet());
-    }
   } else {
-    if (deleted_net->areSegmentsRestored()) {
-      fastroute_->clearNetRoute(db_net);
-      updateNetResources(deleted_net, true);
-      fastroute_->deleteNet(db_net);
-    } else {
-      fastroute_->removeNet(db_net);
+    auto it = db_net_map_.find(db_net);
+    if (it == db_net_map_.end() || it->second == nullptr) {
+      return;
     }
+    Net* deleted_net = it->second;
+
+    if (deleted_net->isMergedNet()) {
+      Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
+      if (preserved_net->areSegmentsRestored()
+          && deleted_net->areSegmentsRestored()) {
+        // Both preserved and deleted nets have segments restored from ODB. Do
+        // nothing to 3D resources, as the resources used by the deleted net were
+        // included in the preserved net.
+        // clearNetRoute releases sttrees usage (no-op for restored nets) but
+        // keeps db_net in db_net_id_map_; deleteNet then removes the stale entry
+        // so future nets at the same pointer address find no mapping.
+        fastroute_->clearNetRoute(db_net);
+        fastroute_->deleteNet(db_net);
+      } else if (preserved_net->areSegmentsRestored()) {
+        // If preserved net has segments restored from ODB, it won't have routing
+        // data inside FastRouteCore. Instead of merging the deleted net into
+        // preserved net, we just remove it from FastRouteCore and account for its
+        // resources manually with updateNetResources.
+        // clearNetRoute releases the tree usage but keeps db_net in
+        // db_net_id_map_, so updateNetResources can look up the correct
+        // edge_cost. deleteNet then removes the net from the map.
+        fastroute_->clearNetRoute(db_net);
+        updateNetResources(deleted_net, false);
+        fastroute_->deleteNet(db_net);
+      } else if (deleted_net->areSegmentsRestored()) {
+        // If deleted net has segments restored from ODB, we need to mark the
+        // preserved net as having segments restore to ensure proper handling of
+        // the capacities used by the deleted net.
+        // Remove usage from the preserved net.
+        fastroute_->clearNetRoute(preserved_net->getDbNet());
+        fastroute_->clearNetRoute(db_net);
+        // Remove usage from the deleted net.
+        updateNetResources(deleted_net, true);
+        fastroute_->deleteNet(db_net);
+        preserved_net->setAreSegmentsRestored(true);
+        // Include usage of the merged net.
+        updateNetResources(preserved_net, false);
+      } else {
+        fastroute_->mergeNet(db_net, preserved_net->getDbNet());
+      }
+    } else {
+      if (deleted_net->areSegmentsRestored()) {
+        fastroute_->clearNetRoute(db_net);
+        updateNetResources(deleted_net, true);
+        fastroute_->deleteNet(db_net);
+      } else {
+        fastroute_->removeNet(db_net);
+      }
+    }
+    delete deleted_net;
+    db_net_map_.erase(db_net);
+    dirty_nets_.erase(db_net);
+    routes_.erase(db_net);
   }
-  delete deleted_net;
-  db_net_map_.erase(db_net);
-  dirty_nets_.erase(db_net);
-  routes_.erase(db_net);
 }
 
 void GlobalRouter::updateNetPins(Net* net)
