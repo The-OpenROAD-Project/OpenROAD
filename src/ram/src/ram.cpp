@@ -590,6 +590,20 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
     }
   }
 
+  if (power_pin_names_.size() > 1) {
+    logger_->error(RAM,
+                   42,
+                   "Multiple primary power pin names detected across cells: {}",
+                   fmt::join(power_pin_names_, ", "));
+  }
+  if (ground_pin_names_.size() > 1) {
+    logger_->error(
+        RAM,
+        43,
+        "Multiple primary ground pin names detected across cells: {}",
+        fmt::join(ground_pin_names_, ", "));
+  }
+
   return pin_map;
 }
 
@@ -928,8 +942,6 @@ void RamGen::ramPdngen(const char* power_net_name,
   }
 
   block_->globalConnect(false, false);
-  power_pin_names_.clear();
-  ground_pin_names_.clear();
 
   std::string grid_name = "ram_grid";
   pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
