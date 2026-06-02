@@ -25,6 +25,7 @@ _LEAF_TYPES = {
     "std::string",
     "uint32_t",
     "uint8_t",
+    "int64_t",
 }
 
 # Value structs that are comparison leaves in components() but are not scalars.
@@ -60,8 +61,9 @@ _BY_VALUE_SCALARS = {
     "uint8_t",
     "uint16_t",
     "uint32_t",
-    "uint64_t",
     "size_t",
+    "uint64_t",
+    "int64_t",
 }
 
 _removable = {"const", "static", "unsigned"}

@@ -279,7 +279,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj)
   stream >> obj.two_cuts_;
   stream >> obj.prl_;
   stream >> obj.par_length_;
-  stream >> obj.cut_area_;
+  // User Code Begin >>cut_area_
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.cut_area_;
+  } else {
+    uint32_t cut_area;
+    stream >> cut_area;
+    obj.cut_area_ = static_cast<int64_t>(cut_area) * 20000;
+  }
+  // User Code End >>cut_area_
   return stream;
 }
 
@@ -601,14 +609,14 @@ uint32_t dbTechLayerCutSpacingRule::getParLength() const
   return obj->par_length_;
 }
 
-void dbTechLayerCutSpacingRule::setCutArea(int cut_area)
+void dbTechLayerCutSpacingRule::setCutArea(int64_t cut_area)
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
 
   obj->cut_area_ = cut_area;
 }
 
-int dbTechLayerCutSpacingRule::getCutArea() const
+int64_t dbTechLayerCutSpacingRule::getCutArea() const
 {
   _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
   return obj->cut_area_;

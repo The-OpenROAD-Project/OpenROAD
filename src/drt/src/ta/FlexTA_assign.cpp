@@ -572,7 +572,7 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
                                             int& idx1,
                                             int& idx2)
 {
-  lNum = iroute->getGuide()->getBeginLayerNum();
+  lNum = iroute->getGuide()->getLayerNum();
   auto [gbp, gep] = iroute->getGuide()->getPoints();
   odb::Point gIdx = getDesign()->getTopBlock()->getGCellIdx(gbp);
   odb::Rect gBox = getDesign()->getTopBlock()->getGCellBox(gIdx);
@@ -667,7 +667,7 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
 
     // add cost to locations that will cause forbidden via spacing to
     // boundary pin
-    auto layerNum = iroute->getGuide()->getBeginLayerNum();
+    auto layerNum = iroute->getGuide()->getLayerNum();
     auto layer = getTech()->getLayer(layerNum);
 
     if (layer->isUnidirectional()) {
@@ -923,7 +923,7 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
                                            frUInt4& outDrcCost)
 {
   frCoord irouteLayerPitch
-      = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
+      = getTech()->getLayer(iroute->getGuide()->getLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
   int drcCost = (isInitTA()) ? (0.05 * outDrcCost)
                              : (router_cfg_->TADRCCOST * outDrcCost);
