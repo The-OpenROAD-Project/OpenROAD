@@ -1111,11 +1111,11 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   updateInstancesAssociation(parent);
 
   // A cluster dominated by one macro cannot be partitioned correctly using
-  // the wighted min-cut algorithm from TritonPart, so we manually
+  // the weighted min-cut algorithm from TritonPart, so we manually
   // split the macro from the cluster
   if (parent->getNumMacro() > 0) {
     auto macros = parent->getLeafMacros();
-    auto& max_macro
+    auto max_macro
         = *std::ranges::max_element(macros, {}, [](const auto& macro) {
             return macro->getBBox()->getBox().area();
           });
@@ -1124,8 +1124,8 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
       splitHugeMacroFromCluster(parent, max_macro);
       if (isLargeFlatCluster(parent)) {
         breakLargeFlatCluster(parent);
-        return;
       }
+      return;
     }
   }
 
