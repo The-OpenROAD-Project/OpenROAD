@@ -65,8 +65,10 @@ void OptimizeMirroring::run()
   // Sort net boxes by net hpwl.
   std::ranges::sort(
       sorted_boxes, [](NetBox* net_box1, NetBox* net_box2) -> bool {
-        if (net_box1->hpwl() != net_box2->hpwl()) {
-          return net_box1->hpwl() > net_box2->hpwl();
+        const int64_t hpwl1 = net_box1->hpwl();
+        const int64_t hpwl2 = net_box2->hpwl();
+        if (hpwl1 != hpwl2) {
+          return hpwl1 > hpwl2;
         }
         // net_box_map_ is unordered; tie-break for stable output.
         return net_box1->getNet()->getId() < net_box2->getNet()->getId();
