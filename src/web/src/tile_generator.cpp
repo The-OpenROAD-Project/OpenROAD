@@ -2428,6 +2428,29 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             for (const odb::Rect& r : small_bumps) {
               block.merge(r);
             }
+            // Snap any block edge that nearly reaches the tile edge OUT to it,
+            // so the LOD blocks of adjacent tiles abut with no transparent seam
+            // where the array continues into the neighbor (the seam would show
+            // the dark map background as a black grid).  The snap margin is
+            // ~1.5x the estimated bump pitch (sqrt of the mean area per bump);
+            // a real array edge (bumps far from that side) is left untouched,
+            // so empty space beyond the array is not over-filled.
+            const double area = static_cast<double>(block.dx()) * block.dy();
+            const int pitch = std::max(
+                1, static_cast<int>(std::sqrt(area / small_bumps.size())));
+            const int margin = pitch + pitch / 2;
+            if (block.xMin() <= margin) {
+              block.set_xlo(0);
+            }
+            if (block.yMin() <= margin) {
+              block.set_ylo(0);
+            }
+            if (block.xMax() >= super - margin) {
+              block.set_xhi(super);
+            }
+            if (block.yMax() >= super - margin) {
+              block.set_yhi(super);
+            }
             fill_rect(block);
           } else {
             for (const odb::Rect& r : small_bumps) {
