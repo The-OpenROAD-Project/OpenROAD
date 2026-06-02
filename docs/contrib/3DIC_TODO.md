@@ -309,6 +309,96 @@ no chip-net / bump-inst signals — adding those is the prerequisite.
 
 ---
 
+## TODO 5 — STA-gated structural-integrity checks (orphan chip-nets, unbound chip-bumps)
+
+### Problem
+
+Two structural-integrity conditions that matter for STA correctness:
+
+1. **Orphan `dbChipNet`** — a chip-net with zero attached `dbChipBumpInst`s.
+   STA enumeration yields no Pin*s for it; paths through that net never
+   form. Today silent.
+2. **Unbound chip-bump** — `dbChipBump::getBTerm() == nullptr` (5th column
+   of `.bmap` is `-`). `dbNetwork::term(chip_bump_pin)` returns null and
+   STA cannot descend through the bump; cross-chiplet paths terminate at
+   the boundary. Today silent.
+
+Both are diagnostic-only — runtime null-checks in `dbNetwork::term()`,
+`dbNetwork::pin(Term*)`, and `bump_to_chip_net_` already handle the
+nullable cases without crashing. The check just surfaces the gap earlier
+than the eventual "no paths found" message from `report_checks`.
+
+### Why not run unconditionally on `read_3dbx`
+
+3DIC design flows have a **blackbox stage** in which chiplets are placed
+structurally before their inner blocks / bterms are bound:
+
+- `.bmap` col 5 may legitimately be `-` (chiplet body not loaded yet).
+- A `dbChipNet` may exist before any bump-inst is attached (Tcl-built
+  nets, design under construction, partial reads).
+
+Treating these as violations during blackbox would generate false-positive
+WARN spam on every `read_3dbx` and every intermediate save/restore. The
+checks only make sense when STA is **about to consume** the design.
+
+A prior version of this PR landed these as `ODB-0405` / `ODB-0406` inside
+`odb::Checker::check()`, which `OpenRoad::read3Dbx` invokes unconditionally
+after read. Reverted because of the blackbox false-positive concern; this
+TODO captures the proper landing.
+
+### Concrete change
+
+Two acceptable shapes; pick one in the follow-up PR.
+
+**(a) Lazy dbSta-side check on first STA consumption.**
+- File: `src/dbSta/src/dbSta.cc`. Add `bool sta_checks_done_ = false;` to
+  `dbSta`. On the first call into a path-reporting entry point
+  (`findRequireds`, `findClkPins`, equivalent), if `db_network_->has3DicChip()`,
+  walk `top_chip->getChipNets()` and per-master `getChipBumps()` once and
+  warn on orphan nets / unbound bumps. Set the flag so re-entry doesn't
+  re-walk.
+- Invalidate on `clear()` / `setTopChip()` so a fresh design re-checks.
+- Message ids: reuse `STA-3001` / `STA-3002` (currently free; STA-3001 is
+  used by the HIER-master warning — pick fresh ids, e.g. `STA-3010` /
+  `STA-3011`).
+
+**(b) Explicit Tcl validation command.**
+- File: `src/dbSta/src/dbSta.tcl`. Add `validate_3dic_for_sta` that runs
+  the same walks, intended for users to call before `report_checks` /
+  `report_clock_skew`. Optionally call it automatically from the existing
+  `report_3dic_summary` helper.
+- Pro: zero risk of false positives — user opts in.
+- Con: requires user discipline; missed call → silent "no paths found".
+
+Recommend (a) with the lazy first-use pattern; mirrors the existing
+`bump_to_chip_net_` cache lifecycle.
+
+### Test plan
+
+- Extend `dbSta/test/3dic_cross.tcl` (or a new fixture) with an
+  intentionally-orphan `dbChipNet` and verify the warning fires when
+  `report_checks` runs but not earlier.
+- Confirm `dbSta/test/3dic_get_cells.tcl` (blackbox, unbound bumps,
+  no STA traversal) remains silent.
+
+### What this TODO replaces
+
+The reverted `Checker::checkOrphanChipNets` / `Checker::checkBumpPortBindings`
+methods and their ODB-0405 / ODB-0406 messages. Git history (this PR's
+prior commits) is the reference for what the walks themselves looked
+like; the logic is reusable, only the gating changes.
+
+### Out of scope
+
+- Markers in the GUI for orphan chip-nets need `dbMarker::getName()` to
+  handle `dbChipNetObj` before `addSource(chip_net)` is safe. Currently
+  the switch in `src/odb/src/db/dbMarker.cpp:638` lacks a `dbChipNetObj`
+  case and errors `ODB-0290` on any later name lookup. Same for the
+  `dbChipObj` (chiplet master) source on unbound-bump markers. Either
+  extend the switch first, or skip `addSource` and rely on `setComment`.
+
+---
+
 ## File / module references
 
 - `src/dbSta/include/db_sta/dbNetwork.hh` — `chip_bump_vertex_ids_`,

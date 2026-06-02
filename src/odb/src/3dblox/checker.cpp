@@ -222,8 +222,6 @@ void Checker::check()
   checkConnectionRegions(top_cat, model);
   checkBumpPhysicalAlignment(top_cat, model);
   checkAlignmentMarkers(top_cat, model);
-  checkOrphanChipNets(top_cat, model);
-  checkBumpPortBindings(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -594,94 +592,6 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
         }
       }
     }
-  }
-}
-
-void Checker::checkOrphanChipNets(dbMarkerCategory* top_cat,
-                                  const UnfoldedModel* model)
-{
-  dbMarkerCategory* cat = nullptr;
-  int violation_count = 0;
-  for (const auto& net : model->getNets()) {
-    // Single-bump chip-nets are legitimate top-level IO; only flag truly
-    // orphan nets.
-    if (!net.connected_bumps.empty()) {
-      continue;
-    }
-    if (!cat) {
-      cat = dbMarkerCategory::createOrReplace(top_cat, "Orphan Chip Nets");
-    }
-    if (auto* marker = dbMarker::create(cat)) {
-      marker->addSource(net.chip_net);
-      marker->setComment(
-          fmt::format("Chip net '{}' has no bump pads attached; net is "
-                      "orphan and carries no STA pin.",
-                      net.chip_net->getName()));
-    }
-    ++violation_count;
-  }
-  if (violation_count > 0) {
-    logger_->warn(utl::ODB,
-                  405,
-                  "Found {} orphan chip net(s) with no bump pads attached.",
-                  violation_count);
-  }
-}
-
-void Checker::checkBumpPortBindings(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel* /*model*/)
-{
-  dbChip* chip = db_->getChip();
-  if (chip == nullptr) {
-    return;
-  }
-  // The "unbound bump" property is per chiplet master (dbChip), not per
-  // unfolded instance. Walk chip-insts and dedupe by master so designs that
-  // intentionally leave non-signal bumps unbound (e.g. PG bumps) emit one
-  // marker per master, not per instance.
-  std::unordered_set<dbChip*> seen_masters;
-  dbMarkerCategory* cat = nullptr;
-  int violation_count = 0;
-  for (dbChipInst* chip_inst : chip->getChipInsts()) {
-    dbChip* master = chip_inst->getMasterChip();
-    if (master == nullptr || !seen_masters.insert(master).second) {
-      continue;
-    }
-    size_t bumps_total = 0;
-    size_t bumps_unbound = 0;
-    for (dbChipRegion* region : master->getChipRegions()) {
-      for (dbChipBump* bump : region->getChipBumps()) {
-        ++bumps_total;
-        if (bump->getBTerm() == nullptr) {
-          ++bumps_unbound;
-        }
-      }
-    }
-    if (bumps_unbound == 0) {
-      continue;
-    }
-    if (!cat) {
-      cat = dbMarkerCategory::createOrReplace(top_cat, "Unbound Chip Bumps");
-    }
-    if (auto* marker = dbMarker::create(cat)) {
-      marker->addSource(master);
-      marker->setComment(
-          fmt::format("Chiplet '{}': {}/{} bump pads not mapped to a chiplet "
-                      "port (missing name in .bmap col 5). Paths through "
-                      "them drop.",
-                      master->getName(),
-                      bumps_unbound,
-                      bumps_total));
-    }
-    ++violation_count;
-  }
-  if (violation_count > 0) {
-    logger_->warn(utl::ODB,
-                  406,
-                  "Found {} chiplet master(s) with bump pads not mapped to "
-                  "a chiplet port (missing name in .bmap col 5). Paths "
-                  "through them drop.",
-                  violation_count);
   }
 }
 

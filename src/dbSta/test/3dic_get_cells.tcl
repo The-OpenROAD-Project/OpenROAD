@@ -4,10 +4,10 @@ source "helpers.tcl"
 # dbNetwork::DbInstanceChildIterator, so `get_cells *` returns the chiplet
 # instance names.
 #
-# example.bmap leaves both bumps unmapped (col-4 = "-"), so ODB-0406
-# fires on read_3dbx. That is intentional here — this fixture exercises
-# the structural iteration APIs (get_cells / get_pins / get_nets), not
-# signal traversal. The expected warning is part of the golden .ok.
+# example.bmap leaves both bumps unmapped (col-4 = "-"). v1 STA does not
+# warn on this (it's a legitimate blackbox-stage state); paths through
+# such bumps drop silently. This fixture exercises the structural
+# iteration APIs (get_cells / get_pins / get_nets), not signal traversal.
 read_3dbx ../../odb/test/data/example.3dbx
 
 proc cell_names { } {

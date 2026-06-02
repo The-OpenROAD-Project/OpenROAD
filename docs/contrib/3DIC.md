@@ -414,24 +414,20 @@ The map `chip_master_cells_` is reset in `dbNetwork::clear()` since
 
 ## Diagnostics
 
-`read_3dbx` emits one INFO banner from `dbSta::postRead3Dbx` plus two
-structural-integrity warnings from `odb::Checker::check()` so missing-data
-problems surface immediately rather than as silent "No paths found" later.
-The split follows the existing 3DBlox check pattern: structural integrity
-of the chip database lives in `odb::Checker` alongside ODB-0151 (floating
-chips), ODB-0206 (no ground group), ODB-0208 (logical connectivity), and
-ODB-0463 (bump outside region). The STA-side banner confirms that
-`dbNetwork::setTopChip` ran and prints aggregate counts.
+`dbSta::postRead3Dbx` emits two messages: an INFO banner confirming the
+STA integration ran and a WARN when nested chiplet hierarchies are
+detected (v1 supports flat 3DIC only).
 
 | Msg | Level | Source | When |
 |---|---|---|---|
 | STA-3000 | INFO  | `dbSta::postRead3Dbx` | Always. `3DIC STA active: <N> chiplets, <M> top-level nets, <K> 3D bond regions, <B> bump pads.` Counts taken at end of `postRead3Dbx`. Tcl-created chip-nets that show up after `read_3dbx` will not be in this count. |
-| ODB-0405 | WARN  | `odb::Checker::checkOrphanChipNets` | One or more `dbChipNet`s have zero bump pads attached → orphan nets. Single-bump nets are legitimate top IO and stay silent. One aggregate warning is emitted with the count; per-net detail goes to the "Orphan Chip Nets" marker category. |
-| ODB-0406 | WARN  | `odb::Checker::checkBumpPortBindings` | One or more unique chiplet definitions have bumps with no chiplet-port mapping (5th column of `.bmap` is `-`). One aggregate warning is emitted with the master count; per-master detail goes to the "Unbound Chip Bumps" marker category. Intentional in fixtures (e.g. `dbSta/test/3dic_get_cells.tcl`) — see test comment. |
+| STA-3001 | WARN  | `dbSta::postRead3Dbx` | A top-level `dbChipInst` references a hierarchical chiplet master (`dbChip::ChipType::HIER`). v1 only wires `dbStaCbk` on direct chiplet `dbBlock`s and only keys identity by raw `dbChipBumpInst*`; nested chiplets need UnfoldedModel-driven callback wiring and per-unfold-path identity. See `3DIC_TODO.md` TODO 1. |
 
-ODB-0405 / ODB-0406 fire from `OpenRoad::check3DBlox()`, invoked right
-after `triggerPostRead3Dbx()` in `OpenRoad::read3Dbx`. Order in test logs is
-therefore: dbSta banner first, ODB warnings second.
+Two structural-integrity checks — orphan chip-nets and unbound chip-bump
+ports — are deferred to a follow-up PR. They are not violations during the
+**blackbox stage** (chiplets placed structurally before inner blocks /
+bterms are bound), so they cannot run unconditionally during `read_3dbx`.
+See `3DIC_TODO.md` TODO 5.
 
 Tcl helper `report_3dic_summary` (in `dbSta.tcl`) prints the same
 counts plus per-chiplet-instance reference names — useful as a
