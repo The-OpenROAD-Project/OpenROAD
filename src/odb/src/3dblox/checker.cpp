@@ -19,6 +19,7 @@
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "spdlog/fmt/fmt.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
