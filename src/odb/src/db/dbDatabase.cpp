@@ -56,6 +56,11 @@
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
+#include "dbTechLayer.h"
+#include "dbTechLayerAreaRule.h"
+#include "dbTechLayerCutSpacingRule.h"
+#include "dbTechLayerMinCutRule.h"
+#include "dbTechLayerSpacingRule.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
@@ -329,6 +334,49 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     }
   }
 
+  dbDatabase* db = (dbDatabase*) &obj;
+  // Fix area scaling
+  if (!obj.isSchema(kSchemaStoreAreaAsInt64)) {
+    const int64_t dbu_per_micron = obj.dbu_per_micron_;
+    const int64_t single_dbu_scale = 20000 / dbu_per_micron;
+    const int64_t double_dbu_scaling
+        = (20000 * 20000) / (dbu_per_micron * dbu_per_micron);
+    // Fix techlayer area
+    for (dbTech* tech : db->getTechs()) {
+      for (dbTechLayer* layer : tech->getLayers()) {
+        _dbTechLayer* layer_impl = (_dbTechLayer*) layer;
+        layer_impl->area_ /= double_dbu_scaling;
+
+        for (dbTechLayerAreaRule* area_rule : layer->getTechLayerAreaRules()) {
+          _dbTechLayerAreaRule* area_rule_impl
+              = (_dbTechLayerAreaRule*) area_rule;
+          area_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerCutSpacingRule* cut_spacing_rule :
+             layer->getTechLayerCutSpacingRules()) {
+          _dbTechLayerCutSpacingRule* cut_spacing_rule_impl
+              = (_dbTechLayerCutSpacingRule*) cut_spacing_rule;
+          cut_spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerMinCutRule* min_cut_rule :
+             layer->getTechLayerMinCutRules()) {
+          _dbTechLayerMinCutRule* min_cut_rule_impl
+              = (_dbTechLayerMinCutRule*) min_cut_rule;
+          min_cut_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerSpacingRule* spacing_rule :
+             layer->getV54SpacingRules()) {
+          _dbTechLayerSpacingRule* spacing_rule_impl
+              = (_dbTechLayerSpacingRule*) spacing_rule;
+          spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+      }
+    }
+  }
+
   // Fix up the owner id of properties of this db, this value changes.
   const uint32_t oid = obj.getId();
 
@@ -341,7 +389,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   obj.schema_minor_ = kSchemaMinor;
 
   // Set the chipinsts_map_ of the chip
-  dbDatabase* db = (dbDatabase*) &obj;
   for (const auto& inst : db->getChipInsts()) {
     _dbChip* parent_chip = (_dbChip*) inst->getParentChip();
     parent_chip->chipinsts_map_[inst->getName()] = inst->getId();
@@ -356,6 +403,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     // Construct unfolded model only if there are multiple chips
     db->constructUnfoldedModel();
   }
+
   // User Code End >>
   return stream;
 }

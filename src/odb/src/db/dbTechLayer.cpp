@@ -37,6 +37,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iterator>
 #include <ranges>
@@ -617,7 +618,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.wire_extension_;
   stream >> obj.number_;
   stream >> obj.rlevel_;
-  stream >> obj.area_;
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    double area_double;
+    stream >> area_double;
+    obj.area_ = static_cast<int64_t>(std::round(area_double * 20000 * 20000));
+  }
   stream >> obj.thickness_;
   stream >> obj.min_step_;
   stream >> obj.min_step_max_length_;
@@ -1846,18 +1853,17 @@ bool dbTechLayer::hasArea() const
   return (layer->flags_.has_area);
 }
 
-double  // Now denominated in squm
-dbTechLayer::getArea() const
+int64_t dbTechLayer::getArea() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_area) {
     return layer->area_;
   }
 
-  return 0.0;  // Default
+  return 0;  // Default
 }
 
-void dbTechLayer::setArea(double area)
+void dbTechLayer::setArea(int64_t area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_area = true;

@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -833,7 +834,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       cur_rule->setSpacingNotchLengthValid(layer->hasSpacingNotchLength(j));
 
       if (layer->hasSpacingArea(j)) {
-        cur_rule->setCutArea(dbdist(layer->spacingArea(j)));
+        cur_rule->setCutArea(dbarea(layer->spacingArea(j)));
       }
 
       if (layer->hasSpacingRange(j)) {
@@ -1125,7 +1126,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   if (layer->hasArea()) {
-    l->setArea(layer->area());
+    l->setArea(dbarea(layer->area()));
   }
 
   if (layer->hasThickness()) {
@@ -2594,6 +2595,11 @@ lefin::~lefin()
 int lefin::dbdist(double value)
 {
   return reader_->dbdist(value);
+}
+
+int64_t lefin::dbarea(double value)
+{
+  return reader_->dbarea(value);
 }
 
 dbTech* lefin::createTech(const char* name, const char* lef_file)
