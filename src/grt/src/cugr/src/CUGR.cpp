@@ -988,8 +988,7 @@ void CUGR::removeNet(odb::dbNet* db_net)
   std::unordered_map<odb::dbNet*, GRNet*> updated_db_net_map;
   std::unordered_map<odb::dbNet*, int> updated_net_indices;
   for (const CUGRNet& base_net : base_nets) {
-    auto updated_net =
-        std::make_unique<GRNet>(base_net, grid_graph_.get());
+    auto updated_net = std::make_unique<GRNet>(base_net, grid_graph_.get());
     if (auto old_it = old_net_map.find(base_net.getDbNet());
         old_it != old_net_map.end()) {
       GRNet* old_net = old_it->second;
