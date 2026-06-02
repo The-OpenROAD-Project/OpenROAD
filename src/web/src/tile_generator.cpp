@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <numbers>
 #include <random>
 #include <set>
 #include <string>
@@ -329,9 +330,9 @@ bool TileVisibility::isNetSelectable(odb::dbNet* net) const
 // `tech_layer` is null (the _instances overview).  Used to decide whether a
 // sub-resolution bump contributes to a given layer tile's solid LOD block, so
 // we don't paint a block on layers where the bump draws nothing.
-bool bumpHasLayerGeom(odb::dbMaster* master,
-                      odb::dbTechLayer* tech_layer,
-                      const TileVisibility& vis)
+static bool bumpHasLayerGeom(odb::dbMaster* master,
+                             odb::dbTechLayer* tech_layer,
+                             const TileVisibility& vis)
 {
   if (vis.blockages) {
     for (odb::dbPolygon* p : master->getPolygonObstructions()) {
@@ -1692,7 +1693,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // thread_local (renders run one-per-thread) so the large buffer is reused
     // across tiles; assign() re-zeroes it (drawing is sparse, so it must start
     // transparent).
-    thread_local std::vector<unsigned char> super_buffer;
+    static thread_local std::vector<unsigned char> super_buffer;
     super_buffer.assign(super_buffer_size, 0);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
@@ -2928,8 +2929,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // world_image_buffer already holds a transparent tile_px buffer, and a
     // transparent super buffer cannot alias.  any_of early-exits as soon as it
     // hits drawn content, so non-empty tiles pay almost nothing for the check.
-    const bool any_drawn = std::any_of(
-        super_buffer.begin(), super_buffer.end(), [](const unsigned char b) {
+    const bool any_drawn = std::ranges::any_of(
+        super_buffer, [](const unsigned char b) {
           return b != 0;
         });
     if (any_drawn) {
@@ -3135,7 +3136,7 @@ static void compositePixel(unsigned char* dst, const unsigned char* src)
 // resolved grid (pitch >=4px) keeps its contrast.
 // ---------------------------------------------------------------------------
 
-static constexpr double kLanczosPi = 3.14159265358979323846;
+static constexpr double kLanczosPi = std::numbers::pi;
 
 // Lanczos-2 windowed-sinc: L(t) = sinc(t) * sinc(t/2) for |t| < 2, else 0.
 static double lanczos2Kernel(const double t)
@@ -3226,7 +3227,7 @@ static std::vector<unsigned char> lanczos2Downsample(
   // Horizontal pass: premultiply + convolve along X into a float intermediate
   // indexed [src_row][dst_col][channel].  Reused across calls on this thread;
   // every element is overwritten below, so no re-zeroing is needed.
-  thread_local std::vector<float> inter;
+  static thread_local std::vector<float> inter;
   inter.resize(static_cast<size_t>(src_dim) * dst_dim * 4);
   for (int sy = 0; sy < src_dim; ++sy) {
     const unsigned char* srow = &src[static_cast<size_t>(sy) * src_dim * 4];
