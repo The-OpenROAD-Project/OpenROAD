@@ -40,7 +40,7 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 // Checks if the given LibertyCell is really a Scan Cell with a Scan In and a
 // Scan Enable
 bool IsScanCell(const sta::dbNetwork* db_network,
-                const sta::LibertyCell* libertyCell);
+                const sta::LibertyCell* liberty_cell);
 
 // Convenience method to create a new port
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,

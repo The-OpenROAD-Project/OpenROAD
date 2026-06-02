@@ -438,8 +438,8 @@ class dbNetwork : public ConcreteNetwork
 
   // supply pin functions
   bool isSupplyPin(odb::dbITerm* iterm) const;
-  bool isValidFlop(odb::dbInst* inst) const;
-  bool isValidTray(odb::dbInst* inst) const;
+  bool isValidFlop(odb::dbInst* FF) const;
+  bool isValidTray(odb::dbInst* tray) const;
 
   ////////////////////////////////////////////////////////////////
 
