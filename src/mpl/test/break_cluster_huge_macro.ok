@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
-[INFO ODB-0227] LEF file: ./testcases/mpl_dominated.lef, created 2 library cells
+[INFO ODB-0227] LEF file: ./testcases/break_cluster_huge_macro.lef, created 2 library cells
 [INFO ODB-0128] Design: mpl_dominated
 [INFO ODB-0131]     Created 23 components and 53 component-terminals.
 [INFO ODB-0133]     Created 31 nets and 81 connections.
@@ -17,6 +17,7 @@ Die Area: (0.00, 0.00) (30000.00, 30000.00),  Floorplan Area: (0.00, 0.00) (3000
 	Manufacturing Grid: 10
 
 [WARNING MPL-0026] Design has no IO pins!
-[WARNING MPL-0002] Could not align all pins of the macro macro1 to the track-grid. 2 out of 11 pins were aligned.
+[WARNING MPL-0002] Could not align all pins of the macro macro1 to the track-grid. 1 out of 11 pins were aligned.
 [WARNING MPL-0002] Could not align all pins of the macro macro2 to the track-grid. 1 out of 11 pins were aligned.
-[WARNING MPL-0002] Could not align all pins of the macro macro3 to the track-grid. 2 out of 11 pins were aligned.
+[WARNING MPL-0002] Could not align all pins of the macro macro3 to the track-grid. 1 out of 11 pins were aligned.
+No differences found.

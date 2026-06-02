@@ -35,7 +35,7 @@ or_integration_tests(
     halos2
     halos3
     halos4
-    mpl_dominated
+    break_cluster_huge_macro
 )
 
 

@@ -40,7 +40,7 @@ COMPULSORY_TESTS = [
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
-    "mpl_dominated",
+    "break_cluster_huge_macro",
     "no_unfixed_macros",
     "orientation_improve1",
     "orientation_improve2",
@@ -207,9 +207,9 @@ filegroup(
                     "testcases/macro_only.lib",
                     "testcases/mixed_ios1.def",
                 ],
-                "mpl_dominated": [
-                    "testcases/mpl_dominated.def",
-                    "testcases/mpl_dominated.lef",
+                "break_cluster_huge_macro": [
+                    "testcases/break_cluster_huge_macro.def",
+                    "testcases/break_cluster_huge_macro.lef",
                 ],
                 "no_unfixed_macros": [
                     "testcases/macro_only.lef",
