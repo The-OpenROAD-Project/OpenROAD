@@ -645,24 +645,113 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   };
 
-  // Y search cap: original range is row_search_window_ * cell.height,
-  // also capped by DPL max_displacement_y given by user.
+  // TODO make function to standarize the search window, it is used in other
+  // places, we should make sure we use the same sizes for all uses.
+  //  Y search cap: original range is row_search_window_ * cell.height,
+  //  also capped by DPL max_displacement_y given by user.
   const int row_search_cap = std::min(cell.height * row_search_window_,
                                       opendp_->max_displacement_y_);
 
   // X search window scales with cell width: one cell-width extra per side.
-  const int adapted_site_window = std::min(
+  const int extended_site_window = std::min(
       std::max(site_search_window_, cell.width), opendp_->max_displacement_x_);
 
   // Search around the initial (GP) position. Iterate over the nearest
   // valid rows rather than raw row offsets, so the effective Y reach
   // grows with cell height and naturally aligns to legal rows.
-  const std::vector<int> init_rows = collectNearestValidRows(
+  const std::vector<int> extended_search_rows = collectNearestValidRows(
       cell, cell.init_y, cell.init_x, row_search_window_, row_search_cap);
+
+  static int neg_search_print_count = 0;
+  if (neg_search_print_count < 50) {
+    ++neg_search_print_count;
+    auto rail = [](NLPowerRailType r) {
+      return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
+    };
+
+    // Re-scan the same window to attribute rejections by reason and find
+    // the nearest valid row above/below the seed. Diagnostic-only, only
+    // runs for the first 50 cells.
+    int rej_oob = 0, rej_dead = 0, rej_site = 0, rej_rail = 0;
+    int nearest_below_step = -1;  // step distance to first valid row > seed
+    int nearest_above_step = -1;  // step distance to first valid row < seed
+    for (int step = 1; step <= row_search_cap; ++step) {
+      const int below = cell.init_y + step;
+      const int above = cell.init_y - step;
+      const auto rb = rowRejectionReason(below, cell, cell.init_x);
+      const auto ra = rowRejectionReason(above, cell, cell.init_x);
+      auto bump = [&](RowRejection r) {
+        switch (r) {
+          case RowRejection::kOutOfBounds:
+            ++rej_oob;
+            break;
+          case RowRejection::kDeadRow:
+            ++rej_dead;
+            break;
+          case RowRejection::kSiteTypeMismatch:
+            ++rej_site;
+            break;
+          case RowRejection::kRailMismatch:
+            ++rej_rail;
+            break;
+          case RowRejection::kValid:
+            break;
+        }
+      };
+      bump(rb);
+      bump(ra);
+      if (rb == RowRejection::kValid && nearest_below_step == -1) {
+        nearest_below_step = step;
+      }
+      if (ra == RowRejection::kValid && nearest_above_step == -1) {
+        nearest_above_step = step;
+      }
+    }
+    const bool seed_valid = rowRejectionReason(cell.init_y, cell, cell.init_x)
+                            == RowRejection::kValid;
+
+    odb::dbMaster* master = cell.db_inst->getMaster();
+    odb::dbSite* site = master ? master->getSite() : nullptr;
+
+    logger_->report(
+        "[neg-search {}/50] {} master={} site={} "
+        "extended_search_rows.size={} seed_valid={} "
+        "nearest_below_step={} nearest_above_step={} "
+        "rej_oob={} rej_dead={} rej_site={} rej_rail={} "
+        "row_search_cap={} row_search_window={} "
+        "cell.height={} cell.width={} max_disp_y={} "
+        "rail_type={} rail_type_flipped={} flippable={} "
+        "fence_id={} init_y={} init_x={} cur_y={} cur_x={}",
+        neg_search_print_count,
+        cell.db_inst->getName(),
+        master ? master->getName().c_str() : "?",
+        site ? site->getName().c_str() : "?",
+        extended_search_rows.size(),
+        seed_valid,
+        nearest_below_step,
+        nearest_above_step,
+        rej_oob,
+        rej_dead,
+        rej_site,
+        rej_rail,
+        row_search_cap,
+        row_search_window_,
+        cell.height,
+        cell.width,
+        opendp_->max_displacement_y_,
+        rail(cell.rail_type),
+        rail(cell.rail_type_flipped),
+        cell.flippable,
+        cell.fence_id,
+        cell.init_y,
+        cell.init_x,
+        cell.y,
+        cell.x);
+  }
   {
     utl::DebugScopedTimer t(prof_init_search_s_);
-    for (int ty : init_rows) {
-      for (int dx = -adapted_site_window; dx <= adapted_site_window; ++dx) {
+    for (int ty : extended_search_rows) {
+      for (int dx = -extended_site_window; dx <= extended_site_window; ++dx) {
         tryLocation(cell.init_x + dx, ty);
       }
     }
@@ -681,15 +770,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     curr_rows = collectNearestValidRows(
         cell, cell.y, cell.x, row_search_window_, row_search_cap);
     utl::DebugScopedTimer t(prof_curr_search_s_);
-    // debugPrint(logger_, utl::DPL, "negotiation", 1, "Searching at current
-    // position for {} (searching from inital position found no better
-    // solution).", cell.db_inst->getName());
-    logger_->report(
-        "Searching at current position for {} (searching from inital position "
-        "found no better solution).",
-        cell.db_inst->getName());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               2,
+               "Searching at current position for {} (searching from inital "
+               "position found no better solution).",
+               cell.db_inst->getName());
     for (int ty : curr_rows) {
-      for (int dx = -adapted_site_window; dx <= adapted_site_window; ++dx) {
+      for (int dx = -extended_site_window; dx <= extended_site_window; ++dx) {
         tryLocation(cell.x + dx, ty);
       }
     }
@@ -715,17 +804,18 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       const auto [lo, hi] = std::ranges::minmax_element(rows);
       return std::pair{*lo, *hi + 1};
     };
-    const auto [init_ylo, init_yhi] = y_range(init_rows, cell.init_y);
-    const odb::Rect init_win(toX(cell.init_x - adapted_site_window),
+    const auto [init_ylo, init_yhi]
+        = y_range(extended_search_rows, cell.init_y);
+    const odb::Rect init_win(toX(cell.init_x - extended_site_window),
                              toY(init_ylo),
-                             toX(cell.init_x + adapted_site_window + 1),
+                             toX(cell.init_x + extended_site_window + 1),
                              toY(init_yhi));
     odb::Rect curr_win;
     if (displaced) {
       const auto [curr_ylo, curr_yhi] = y_range(curr_rows, cell.y);
-      curr_win = odb::Rect(toX(cell.x - adapted_site_window),
+      curr_win = odb::Rect(toX(cell.x - extended_site_window),
                            toY(curr_ylo),
-                           toX(cell.x + adapted_site_window + 1),
+                           toX(cell.x + extended_site_window + 1),
                            toY(curr_yhi));
     }
     debug_observer_->setNegotiationSearchWindow(
@@ -761,7 +851,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   }
 
-  if(logger_->debugCheck(utl::DPL, "negotiation", 1)) {
+  if (logger_->debugCheck(utl::DPL, "negotiation", 2)) {
     if (best_cost == static_cast<double>(kInfCost)) {
       // Every candidate in the search window was filtered out (out-of-die,
       // invalid row, or fence violation).  The cell falls back to its current
@@ -771,17 +861,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       ++stuck_no_candidate_count_iter_;
       ++stuck_no_candidate_by_height_iter_[cell.height];
       debugPrint(logger_,
-                utl::DPL,
-                "negotiation",
-                1,
-                "findBestLocation: no valid candidate found for cell '{}' "
-                "(iter {}, size {} rows x {} sites) — all {} candidate "
-                "filtered, cell may be stuck.",
-                cell.db_inst->getName(),
-                iter,
-                cell.height,
-                cell.width,
-                prof_candidates_filtered_);
+                 utl::DPL,
+                 "negotiation",
+                 2,
+                 "findBestLocation: no valid candidate found for cell '{}' "
+                 "(iter {}, size {} rows x {} sites) — all {} candidate "
+                 "filtered, cell may be stuck.",
+                 cell.db_inst->getName(),
+                 iter,
+                 cell.height,
+                 cell.width,
+                 prof_candidates_filtered_);
     }
 
     if (best_x == cell.x && best_y == cell.y) {
@@ -1190,10 +1280,14 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
         = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
-      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).",
-                      cell.db_inst->getName(),
-                      pt.x.v,
-                      pt.y.v);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 2,
+                 "diamondRecovery: cell {} recovered at ({}, {}).",
+                 cell.db_inst->getName(),
+                 pt.x.v,
+                 pt.y.v);
       ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation

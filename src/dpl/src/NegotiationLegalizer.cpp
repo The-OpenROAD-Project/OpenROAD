@@ -1078,17 +1078,17 @@ bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
   return x >= 0 && y >= 0 && x + w <= grid_w_ && y + h <= grid_h_;
 }
 
-bool NegotiationLegalizer::isValidRow(int rowIdx,
-                                      const NegCell& cell,
-                                      int gridX) const
+RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
+                                                      const NegCell& cell,
+                                                      int gridX) const
 {
   if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
-    return false;
+    return RowRejection::kOutOfBounds;
   }
   // Every row the cell spans must have real sites.
   for (int dy = 0; dy < cell.height; ++dy) {
     if (!row_has_sites_[rowIdx + dy]) {
-      return false;
+      return RowRejection::kDeadRow;
     }
   }
   // Verify the cell's site type is available on every row the cell
@@ -1101,33 +1101,39 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       for (int dy = 0; dy < cell.height; ++dy) {
         if (!opendp_->grid_->getSiteOrientation(
                 GridX{gridX}, GridY{rowIdx + dy}, site)) {
-          return false;
+          return RowRejection::kSiteTypeMismatch;
         }
       }
     }
   }
   const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
-  // row and cell rail must match, or cell can be flipped.
+  const bool rail_ok
+      = (row_bottom_rail == cell.rail_type)
+        || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
+  return rail_ok ? RowRejection::kValid : RowRejection::kRailMismatch;
+}
+
+bool NegotiationLegalizer::isValidRow(int rowIdx,
+                                      const NegCell& cell,
+                                      int gridX) const
+{
+  const RowRejection reason = rowRejectionReason(rowIdx, cell, gridX);
   auto railStr = [](NLPowerRailType r) {
     return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
   };
-  bool ret = (row_bottom_rail == cell.rail_type)
-             || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
-  debugPrint(
-      logger_,
-      utl::DPL,
-      "rail_align",
-      1,
-      "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
-      "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
-      rowIdx,
-      railStr(row_bottom_rail),
-      cell.db_inst ? cell.db_inst->getName() : "?",
-      railStr(cell.rail_type),
-      railStr(cell.rail_type_flipped),
-      cell.flippable,
-      (row_bottom_rail == cell.rail_type),
-      ret);
+  const bool ret = (reason == RowRejection::kValid);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             2,
+             "rowIdx: {}, cell: {}, cell.rail_type: {}, "
+             "rail_type_flipped: {}, flippable: {}, is_valid: {}",
+             rowIdx,
+             cell.db_inst ? cell.db_inst->getName() : "?",
+             railStr(cell.rail_type),
+             railStr(cell.rail_type_flipped),
+             cell.flippable,
+             ret);
   return ret;
 }
 
