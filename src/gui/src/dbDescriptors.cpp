@@ -3035,8 +3035,9 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
                        Property::convert_dbu(layer->getSpacing(), true));
   }
   if (layer->hasArea()) {
-    props.emplace_back("Minimum area",
-                       convertUnits(layer->getArea(), true) + "m²");
+    const double dbu_per_meter = db_->getDbuPerMicron() * 1e6;
+    const double area = layer->getArea() / (dbu_per_meter * dbu_per_meter);
+    props.emplace_back("Minimum area", convertUnits(area, true) + "m²");
   }
   if (layer->getResistance() != 0.0) {
     props.emplace_back("Resistance",
