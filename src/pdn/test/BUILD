@@ -280,6 +280,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
@@ -291,10 +295,6 @@ filegroup(
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
-            ],
-            "add_pdn_connect_backside_err": [
-                "backside_data/backside.def",
-                "backside_data/backside.lef",
             ],
         }.get(test_name, []),
     )
