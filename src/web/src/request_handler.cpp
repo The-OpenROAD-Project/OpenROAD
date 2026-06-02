@@ -162,8 +162,6 @@ class [[nodiscard]] ScopedDbuFormat
  private:
   gui::DBUToString saved_;
 };
-
-// Store a Selected in the clickables vector and return its index.
 // Clamp + quantize the client's devicePixelRatio so the server renders tiles
 // at a stable 256*dpr and the tile cache has few buckets.  Snaps to the common
 // HiDPI ratios; anything outside [1,3] or non-finite falls back to 1.0.
@@ -186,6 +184,7 @@ static double quantizeDpr(const double raw)
   return best;
 }
 
+// Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
 {
@@ -2039,8 +2038,22 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   if (cacheable) {
     // Key = the full render determinant: the request JSON minus the per-call
     // id, with dpr pinned to the quantized value actually rendered.
+    // Selectability (the s_* flags and selectable_layers) does NOT affect the
+    // rendered tile, so it is excluded — toggling "selectable" must not
+    // invalidate the cache.
     boost::json::object key_obj = req.json;
     key_obj.erase("id");
+    key_obj.erase("selectable_layers");
+    std::vector<std::string> sel_keys;
+    for (const auto& kv : key_obj) {
+      const std::string_view k = kv.key();
+      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
+        sel_keys.emplace_back(k);
+      }
+    }
+    for (const std::string& k : sel_keys) {
+      key_obj.erase(k);
+    }
     key_obj["dpr"] = dpr;
     cache_key = boost::json::serialize(key_obj);
     std::vector<unsigned char> cached;
