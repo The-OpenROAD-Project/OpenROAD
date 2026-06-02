@@ -185,30 +185,11 @@ void Design::updateNet(odb::dbNet* db_net)
 void Design::removeNet(odb::dbNet* db_net)
 {
   auto it = db_net_to_id_.find(db_net);
-  if (it == db_net_to_id_.end()) {
-    return;
+  if (it != db_net_to_id_.end()) {
+    nets_[it->second].invalidate();
+    db_net_to_id_.erase(it);
   }
-
-  std::vector<CUGRNet> updated_nets;
-  updated_nets.reserve(nets_.size() - 1);
-  std::unordered_map<odb::dbNet*, int> updated_net_to_id;
-  int new_index = 0;
-  for (auto& net : nets_) {
-    if (net.getDbNet() == db_net) {
-      continue;
-    }
-    updated_nets.emplace_back(new_index,
-                              net.getDbNet(),
-                              std::move(net.getPins()),
-                              net.getLayerRange());
-    updated_net_to_id[net.getDbNet()] = new_index;
-    new_index++;
-  }
-
-  nets_ = std::move(updated_nets);
-  db_net_to_id_ = std::move(updated_net_to_id);
 }
-
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {
@@ -378,6 +359,7 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
+    if (!net.isValid()) continue;
     logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
       logger_->report("\tPin: {}", pin.getName());
