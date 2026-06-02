@@ -402,7 +402,13 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // but the last, leaving edits inside the other chiplets invisible to STA.
   // Allocate one dbStaCbk per chiplet block instead.
   chiplet_cbks_.clear();
+  bool hier_master_seen = false;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    odb::dbChip* master = chip_inst->getMasterChip();
+    if (master != nullptr
+        && master->getChipType() == odb::dbChip::ChipType::HIER) {
+      hier_master_seen = true;
+    }
     odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
     if (chiplet_block == nullptr) {
       continue;
@@ -411,6 +417,22 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
     cbk->setNetwork(db_network_);
     cbk->addOwner(chiplet_block);
     chiplet_cbks_.push_back(std::move(cbk));
+  }
+  if (hier_master_seen) {
+    // v1 only walks top-level chip-insts when wiring per-chiplet callbacks
+    // and only registers leaf-master blocks in dbNetwork::block_to_chip_inst_.
+    // Hierarchical chiplets (chip-of-chiplets) need an UnfoldedModel walk to
+    // hook callbacks on inner leaf blocks and to distinguish per-unfold-path
+    // identities. Until that lands, warn rather than silently producing
+    // wrong results.
+    logger_->warn(utl::STA,
+                  3001,
+                  "3DIC STA currently supports flat (single-level) chip "
+                  "hierarchies only. One or more chip instances reference a "
+                  "hierarchical chiplet master; callbacks on inner leaf "
+                  "blocks and per-unfold-path identities are not wired. "
+                  "Cross-chiplet paths through nested chiplets may be "
+                  "incomplete or incorrect.");
   }
 
   // Structural-integrity checks (orphan chip-nets, unbound bumps) live in

@@ -110,6 +110,24 @@ graph topology wrong → cross-hierarchy paths break.
    `UnfoldedChip::path` (currently just returns `top_instance_`
    for any chip_inst).
 
+9. **Hook `dbStaCbk` on inner leaf blocks reachable through HIER
+   chiplets.** Today `dbSta::postRead3Dbx` (`src/dbSta/src/dbSta.cc`)
+   loops `chip->getChipInsts()` and installs one `dbStaCbk` per
+   top-level chip-inst's `dbBlock`. For a HIER chiplet master, the
+   top-level chip-inst points at a hierarchical `dbChip` (no own
+   `dbBlock`), so no callback is wired; mutations on the leaf blocks
+   nested inside are invisible to STA.
+   - Walk `db_->getUnfoldedModel()->getChips()`; for each unfolded
+     chip whose master has an associated `dbBlock`, install a
+     `dbStaCbk` if not already owned. Dedupe by leaf `dbBlock*`.
+   - When a leaf master is reached via N unfold paths, only one
+     callback is needed (the callback fires on edits to the
+     `dbBlock`, not per unfold instance).
+   - Until this lands, `postRead3Dbx` emits `STA-3001 WARN` when any
+     top-level chip-inst references a HIER master, telling the user
+     v1 STA supports flat 3DIC only. Remove that warning when the
+     UnfoldedModel-driven callback wiring is in place.
+
 ### Test plan
 
 - Extend `dbSta/test/3dic_cross.tcl` with a second test fixture
@@ -118,6 +136,9 @@ graph topology wrong → cross-hierarchy paths break.
   forms across the four leaf instances.
 - Verify `report_3dic_summary` count of chiplets matches the number of
   UNFOLDED instances, not just the top-level `dbChipInst` count.
+- Confirm `STA-3001` no longer fires once the UnfoldedModel-driven
+  callback wiring (item 9) is in place; add a regression that asserts
+  the warning is absent on a clean nested fixture.
 
 ---
 
