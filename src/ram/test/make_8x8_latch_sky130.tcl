@@ -15,6 +15,7 @@ generate_ram \
   -num_words 8 \
   -rw_ports 1 \
   -use_latch 1 \
+  -storage_cell sky130_fd_sc_hd__dlxtp_1 \
   -power_pin VPWR \
   -ground_pin VGND \
   -routing_layer {met1 0.48} \
