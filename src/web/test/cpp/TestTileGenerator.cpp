@@ -1636,6 +1636,35 @@ TEST_F(MoireArrayTest, BumpArrayBelowThresholdBecomesSolidBlock)
       << "LOD block is transparent (expected a solid layer-color tint)";
 }
 
+TEST_F(MoireArrayTest, BumpBlockTilesAbutWithoutSeam)
+{
+  // Regression: the LOD block must reach the tile edge where the bump array
+  // continues into the neighbor tile, so adjacent tiles abut with no black
+  // seam (the dark map background showing through a 1px gap).
+  odb::dbMaster* m = lib_->findMaster("INV_X1");
+  ASSERT_NE(m, nullptr);
+  m->setType(odb::dbMasterType::COVER_BUMP);
+
+  buildArray(/*n=*/128);
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  // Interior tile at z=1: its right edge borders tile x=1, where the array
+  // continues — the block must fill all the way to that edge.
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 1, 0, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+  int opaque_right = 0;
+  for (int y = 0; y < ih; ++y) {
+    if (pixels[(static_cast<size_t>(y) * iw + (iw - 1)) * 4 + 3] > 0) {
+      ++opaque_right;
+    }
+  }
+  EXPECT_GT(opaque_right, ih / 2)
+      << "LOD block does not reach the tile's right edge → black seam between "
+         "tiles";
+}
+
 TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
 {
   placeInst("BUF_X16", "buf1", 10000, 10000);
