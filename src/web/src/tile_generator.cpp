@@ -61,11 +61,15 @@ constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kMinInstNameFontPx = 10;     // minimum readable font size
 constexpr int kMaxInstNameFontPx = 40;     // cap font size for large macros
 constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
-// Anti-moiré LOD for bump arrays: when a bump renders smaller than this (in CSS
-// px), it is not drawn individually; instead the array region is painted as one
-// solid block of the layer color (the band-limit cannot remove the residual
-// beat of a sub-~1px-pitch array — only collapsing to a tint does).
-constexpr int kBumpLodMaxPx = 6;
+// Anti-moiré LOD for bump arrays, with a crossfade band (CSS px).  When a bump
+// renders at <= kBumpLodLoPx it is not drawn individually — the array region is
+// painted as one solid block of the layer color (the band-limit cannot remove
+// the residual beat of a sub-~1px-pitch array; only collapsing to a tint does).
+// At >= kBumpLodHiPx it is drawn individually (resolved).  In between, both are
+// drawn and the block's opacity ramps from 0 to full, so zooming across the
+// threshold fades block<->detail instead of popping.
+constexpr double kBumpLodLoPx = 5.0;
+constexpr double kBumpLodHiPx = 8.0;
 // Only collapse to a solid block when at least this many sub-threshold bumps
 // fall in a tile (a real array); fewer scattered bumps are drawn individually
 // so we never paint a solid slab over mostly-empty space.
@@ -1684,7 +1688,11 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
-    std::vector<unsigned char> super_buffer(super_buffer_size, 0);
+    // thread_local (renders run one-per-thread) so the large buffer is reused
+    // across tiles; assign() re-zeroes it (drawing is sparse, so it must start
+    // transparent).
+    thread_local std::vector<unsigned char> super_buffer;
+    super_buffer.assign(super_buffer_size, 0);
 
     // Per-chiplet rendering loop.  Mirrors RenderThread::drawChips() in
     // the Qt GUI: walks dbChip → dbChipInst → masterChip and draws each
@@ -2089,8 +2097,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         const int iterm_font_h = getTextHeight(iterm_font);
 
         // Sub-resolution bumps collected for the anti-moiré solid LOD block
-        // (filled once after the loop).  In super-pixel coords.
+        // (filled once after the loop).  In super-pixel coords.  bump_t_* sum
+        // the per-bump crossfade factor t (1 = full block, 0 = full detail);
+        // the block is filled at the mean t (uniform for a single-master
+        // array).
         std::vector<odb::Rect> small_bumps;
+        double bump_t_sum = 0.0;
+        int bump_t_count = 0;
 
         // Draw instances
         for (odb::dbInst* inst : search_->searchInsts(
@@ -2128,20 +2141,30 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
           const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
 
-          // Anti-moiré LOD: a bump too small to see individually is NOT drawn
-          // here (its outline/fill would form a moiré-prone grid).  Collect its
-          // footprint so the array region is painted as one solid block after
-          // the loop — but only when it would actually draw on this layer (any
-          // geometry on _instances; matching tech-layer geometry otherwise).
-          const bool is_tiny_bump
-              = inst_cat == InstCategory::kPhysBump
-                && std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl)
-                       < static_cast<int64_t>(kBumpLodMaxPx * super_per_css);
-          if (is_tiny_bump
+          // Anti-moiré LOD with crossfade: a bump small enough to alias into a
+          // moiré-prone grid is collected so the array region is painted as one
+          // solid block after the loop (only when it would actually draw on
+          // this layer: any geometry on _instances; matching tech-layer
+          // geometry otherwise).  Below the band it is NOT drawn individually
+          // (pure block); inside the band it is ALSO drawn individually and the
+          // block fades in (factor t), so zooming across the threshold blends
+          // block<->detail instead of popping.
+          if (inst_cat == InstCategory::kPhysBump
               && (instances_only
                   || bumpHasLayerGeom(master, tech_layer, vis))) {
-            small_bumps.emplace_back(loop_xl, loop_yl, loop_xh, loop_yh);
-            continue;
+            const double size_px = static_cast<double>(
+                std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl));
+            const double lo = kBumpLodLoPx * super_per_css;
+            const double hi = kBumpLodHiPx * super_per_css;
+            if (size_px < hi) {
+              small_bumps.emplace_back(loop_xl, loop_yl, loop_xh, loop_yh);
+              bump_t_sum += std::clamp((hi - size_px) / (hi - lo), 0.0, 1.0);
+              ++bump_t_count;
+              if (size_px <= lo) {
+                continue;  // fully collapsed → skip the individual draw
+              }
+              // in the band → fall through to also draw the bump individually
+            }
           }
 
           if (instances_only) {
@@ -2412,11 +2435,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // array (>= kBumpLodMinCount) becomes ONE solid block of the layer
         // color covering the bumps AND the gaps between them, so no grid/beat
         // survives.  A few scattered bumps are drawn as individual solid rects
-        // so we never slab over mostly-empty space.
+        // so we never slab over mostly-empty space.  The block opacity is
+        // scaled by the mean crossfade factor t (1 below the band, 0 at the top
+        // of it) and is drawn OVER any individually-drawn band bumps, fading
+        // block<->detail across the zoom threshold.
         if (!small_bumps.empty()) {
-          const Color bump_block_color
+          const double t_block
+              = bump_t_count > 0 ? bump_t_sum / bump_t_count : 1.0;
+          Color bump_block_color
               = instances_only ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
                                : color;
+          bump_block_color.a = static_cast<unsigned char>(
+              std::lround(bump_block_color.a * t_block));
           const auto fill_rect = [&](const odb::Rect& r) {
             for (int iy = r.yMin(); iy < r.yMax(); ++iy) {
               const int draw_y = super - 1 - iy;
@@ -2890,7 +2920,17 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Band-limit: Lanczos-2 decimate the supersampled fills into the output
     // tile.  This is the anti-moiré step — prefiltering the dense periodic
     // geometry so no beat survives at the output (physical) pixel grid.
-    world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
+    // Empty tiles (common while panning) skip the decimation entirely:
+    // world_image_buffer already holds a transparent tile_px buffer, and a
+    // transparent super buffer cannot alias.  any_of early-exits as soon as it
+    // hits drawn content, so non-empty tiles pay almost nothing for the check.
+    const bool any_drawn = std::any_of(
+        super_buffer.begin(), super_buffer.end(), [](const unsigned char b) {
+          return b != 0;
+        });
+    if (any_drawn) {
+      world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
+    }
 
     // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
     // limited), so they map DBU to pixels with the output-space scale.
@@ -3131,6 +3171,27 @@ static std::vector<std::vector<std::pair<int, float>>> buildLanczos2Taps(
   return taps;
 }
 
+// Memoized Lanczos-2 taps.  (src_dim, dst_dim) depend only on dpr — a few
+// distinct values per session — so the taps (and their sin/cos) are built once
+// and reused across every tile.  Entries are never erased, so the returned
+// reference stays valid after the lock is released.
+static const std::vector<std::vector<std::pair<int, float>>>& getLanczos2Taps(
+    const int src_dim,
+    const int dst_dim)
+{
+  static std::mutex mu;
+  static std::map<std::pair<int, int>,
+                  std::vector<std::vector<std::pair<int, float>>>>
+      cache;
+  const std::lock_guard<std::mutex> lock(mu);
+  const std::pair<int, int> key{src_dim, dst_dim};
+  auto it = cache.find(key);
+  if (it == cache.end()) {
+    it = cache.emplace(key, buildLanczos2Taps(src_dim, dst_dim)).first;
+  }
+  return it->second;
+}
+
 // Separable Lanczos-2 downsample of a straight-alpha RGBA buffer from src_dim^2
 // to dst_dim^2.  Alpha is premultiplied before convolution and un-premultiplied
 // after (a straight-alpha convolution dark-fringes coverage edges).  src and
@@ -3145,12 +3206,14 @@ static std::vector<unsigned char> lanczos2Downsample(
     return dst;
   }
 
-  const std::vector<std::vector<std::pair<int, float>>> taps
-      = buildLanczos2Taps(src_dim, dst_dim);
+  const std::vector<std::vector<std::pair<int, float>>>& taps
+      = getLanczos2Taps(src_dim, dst_dim);
 
   // Horizontal pass: premultiply + convolve along X into a float intermediate
-  // indexed [src_row][dst_col][channel].
-  std::vector<float> inter(static_cast<size_t>(src_dim) * dst_dim * 4, 0.0f);
+  // indexed [src_row][dst_col][channel].  Reused across calls on this thread;
+  // every element is overwritten below, so no re-zeroing is needed.
+  thread_local std::vector<float> inter;
+  inter.resize(static_cast<size_t>(src_dim) * dst_dim * 4);
   for (int sy = 0; sy < src_dim; ++sy) {
     const unsigned char* srow = &src[static_cast<size_t>(sy) * src_dim * 4];
     for (int ox = 0; ox < dst_dim; ++ox) {
