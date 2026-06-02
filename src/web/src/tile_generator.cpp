@@ -481,7 +481,12 @@ InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
 
 bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 {
-  switch (classifyInstance(inst, sta)) {
+  return isCategoryVisible(classifyInstance(inst, sta));
+}
+
+bool TileVisibility::isCategoryVisible(InstCategory cat) const
+{
+  switch (cat) {
     case InstCategory::kStdCells:
       return stdcells;
     case InstCategory::kMacros:
@@ -1598,11 +1603,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
 static std::vector<unsigned char> lanczos2Downsample(
     const std::vector<unsigned char>& src,
     int src_dim,
-    int dst_dim,
-    int ox0,
-    int oy0,
-    int ox1,
-    int oy1);
+    int dst_dim);
 
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
@@ -2110,7 +2111,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
           odb::dbMaster* master = inst->getMaster();
 
-          if (!vis.isInstVisible(inst, sta_)) {
+          // Classify once; reused for the visibility gate and the bump LOD.
+          const InstCategory inst_cat = classifyInstance(inst, sta_);
+          if (!vis.isCategoryVisible(inst_cat)) {
             continue;
           }
           const int xl = inst_bbox.xMin();
@@ -2141,7 +2144,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           // the loop — but only when it would actually draw on this layer (any
           // geometry on _instances; matching tech-layer geometry otherwise).
           const bool is_tiny_bump
-              = classifyInstance(inst, sta_) == InstCategory::kPhysBump
+              = inst_cat == InstCategory::kPhysBump
                 && std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl)
                        < static_cast<int64_t>(kBumpLodMaxPx * super_per_css);
           if (is_tiny_bump
@@ -2891,8 +2894,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // Band-limit: Lanczos-2 decimate the supersampled fills into the output
     // tile.  This is the anti-moiré step — prefiltering the dense periodic
     // geometry so no beat survives at the output (physical) pixel grid.
-    world_image_buffer = lanczos2Downsample(
-        super_buffer, super, tile_px, 0, 0, tile_px, tile_px);
+    world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
 
     // Overlays draw at the OUTPUT resolution (crisp lines/text, not band-
     // limited), so they map DBU to pixels with the output-space scale.
@@ -3145,41 +3147,27 @@ static std::vector<std::vector<std::pair<int, float>>> buildLanczos2Taps(
 
 // Separable Lanczos-2 downsample of a straight-alpha RGBA buffer from src_dim^2
 // to dst_dim^2.  Alpha is premultiplied before convolution and un-premultiplied
-// after (a straight-alpha convolution dark-fringes coverage edges).  Only the
-// requested output region [ox0,ox1) x [oy0,oy1) is computed; pixels outside it
-// stay transparent (the dirty-region fast path for sparse/pan tiles).  src and
+// after (a straight-alpha convolution dark-fringes coverage edges).  src and
 // dst are square (tiles are square).
 static std::vector<unsigned char> lanczos2Downsample(
     const std::vector<unsigned char>& src,
     const int src_dim,
-    const int dst_dim,
-    int ox0,
-    int oy0,
-    int ox1,
-    int oy1)
+    const int dst_dim)
 {
   std::vector<unsigned char> dst(static_cast<size_t>(dst_dim) * dst_dim * 4, 0);
-  ox0 = std::max(0, ox0);
-  oy0 = std::max(0, oy0);
-  ox1 = std::min(dst_dim, ox1);
-  oy1 = std::min(dst_dim, oy1);
-  if (ox0 >= ox1 || oy0 >= oy1) {
-    return dst;  // nothing to do (empty / fully-clipped dirty region)
+  if (dst_dim <= 0) {
+    return dst;
   }
 
   const std::vector<std::vector<std::pair<int, float>>> taps
       = buildLanczos2Taps(src_dim, dst_dim);
 
-  // Source rows feeding the dirty output rows (taps are monotonic in output).
-  const int sy0 = taps[oy0].front().first;
-  const int sy1 = taps[oy1 - 1].back().first + 1;
-
   // Horizontal pass: premultiply + convolve along X into a float intermediate
-  // indexed [src_row][dst_col][channel].  Only needed rows/cols are filled.
+  // indexed [src_row][dst_col][channel].
   std::vector<float> inter(static_cast<size_t>(src_dim) * dst_dim * 4, 0.0f);
-  for (int sy = sy0; sy < sy1; ++sy) {
+  for (int sy = 0; sy < src_dim; ++sy) {
     const unsigned char* srow = &src[static_cast<size_t>(sy) * src_dim * 4];
-    for (int ox = ox0; ox < ox1; ++ox) {
+    for (int ox = 0; ox < dst_dim; ++ox) {
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sx, w] : taps[ox]) {
         const unsigned char* p = &srow[static_cast<size_t>(sx) * 4];
@@ -3199,8 +3187,8 @@ static std::vector<unsigned char> lanczos2Downsample(
 
   // Vertical pass: convolve along Y, un-premultiply, clamp (Lanczos
   // overshoots).
-  for (int oy = oy0; oy < oy1; ++oy) {
-    for (int ox = ox0; ox < ox1; ++ox) {
+  for (int oy = 0; oy < dst_dim; ++oy) {
+    for (int ox = 0; ox < dst_dim; ++ox) {
       float r = 0, g = 0, b = 0, a = 0;
       for (const auto& [sy, w] : taps[oy]) {
         const float* p = &inter[(static_cast<size_t>(sy) * dst_dim + ox) * 4];

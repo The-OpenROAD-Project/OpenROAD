@@ -3,11 +3,6 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
-// `app` (last arg) is read lazily on every request so that
-// app.visibleChiplets, populated by display-controls.js after the tech
-// metadata arrives, is reflected in tile requests without rebuilding
-// the layer.  When null or absent the field is omitted and the server
-// renders every chiplet (default).
 // Device pixel ratio for HiDPI tile rendering, clamped to [1,3] so the
 // server-side tile cache has few buckets.  The server renders each tile at
 // 256*dpr physical pixels; Leaflet lays it out at 256 CSS px, so the image
@@ -65,6 +60,11 @@ export function floorClampZoom(layer, zoom) {
     return Math.floor(real);
 }
 
+// `app` (last arg) is read lazily on every request so that
+// app.visibleChiplets, populated by display-controls.js after the tech
+// metadata arrives, is reflected in tile requests without rebuilding
+// the layer.  When null or absent the field is omitted and the server
+// renders every chiplet (default).
 export function createWebSocketTileLayer(visibility, visibleLayers,
                                          selectability, selectableLayers,
                                          app) {

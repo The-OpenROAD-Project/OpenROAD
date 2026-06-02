@@ -296,6 +296,9 @@ struct TileVisibility
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+  // Visibility for an already-classified instance.  Lets callers that already
+  // computed the category (e.g. the tile render loop) avoid reclassifying.
+  bool isCategoryVisible(InstCategory cat) const;
 
   bool isNetSelectable(odb::dbNet* net) const;
   bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
