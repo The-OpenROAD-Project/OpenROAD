@@ -118,8 +118,8 @@ proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio
            -storage_cell -tristate_cell -inv_cell -read_ports -use_latch
-           -power_net_name -ground_net_name -routing_layer -ver_layer 
-           -hor_layer -filler_cells -tapcell -max_tap_dist 
+           -power_net_name -ground_net_name -routing_layer -ver_layer
+           -hor_layer -filler_cells -tapcell -max_tap_dist
            -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
