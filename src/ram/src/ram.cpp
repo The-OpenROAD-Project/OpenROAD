@@ -591,17 +591,31 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
   }
 
   if (power_pin_names_.size() > 1) {
+    std::string names;
+    for (const auto& name : power_pin_names_) {
+      if (!names.empty()) {
+        names += ", ";
+      }
+      names += name;
+    }
     logger_->error(RAM,
                    42,
                    "Multiple primary power pin names detected across cells: {}",
-                   fmt::join(power_pin_names_, ", "));
+                   names);
   }
   if (ground_pin_names_.size() > 1) {
+    std::string names;
+    for (const auto& name : ground_pin_names_) {
+      if (!names.empty()) {
+        names += ", ";
+      }
+      names += name;
+    }
     logger_->error(
         RAM,
         43,
         "Multiple primary ground pin names detected across cells: {}",
-        fmt::join(ground_pin_names_, ", "));
+        names);
   }
 
   return pin_map;
