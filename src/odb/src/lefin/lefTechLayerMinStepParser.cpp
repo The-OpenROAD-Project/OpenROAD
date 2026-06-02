@@ -13,69 +13,69 @@ namespace odb {
 
 void lefTechLayerMinStepParser::createSubRule(odb::dbTechLayer* layer)
 {
-  curRule = odb::dbTechLayerMinStepRule::create(layer);
+  rule = odb::dbTechLayerMinStepRule::create(layer);
 }
 void lefTechLayerMinStepParser::setMinAdjacentLength1(double length,
                                                       odb::lefinReader* l)
 {
-  curRule->setMinAdjLength1(l->dbdist(length));
-  curRule->setMinAdjLength1Valid(true);
+  rule->setMinAdjLength1(l->dbdist(length));
+  rule->setMinAdjLength1Valid(true);
 }
 void lefTechLayerMinStepParser::setMinAdjacentLength2(double length,
                                                       odb::lefinReader* l)
 {
-  curRule->setMinAdjLength2(l->dbdist(length));
-  curRule->setMinAdjLength2Valid(true);
+  rule->setMinAdjLength2(l->dbdist(length));
+  rule->setMinAdjLength2Valid(true);
 }
 void lefTechLayerMinStepParser::minBetweenLengthParser(double length,
                                                        odb::lefinReader* l)
 {
-  curRule->setMinBetweenLength(l->dbdist(length));
-  curRule->setMinBetweenLengthValid(true);
+  rule->setMinBetweenLength(l->dbdist(length));
+  rule->setMinBetweenLengthValid(true);
 }
 void lefTechLayerMinStepParser::noBetweenEolParser(double width,
                                                    odb::lefinReader* l)
 {
-  curRule->setEolWidth(l->dbdist(width));
-  curRule->setNoBetweenEol(true);
+  rule->setEolWidth(l->dbdist(width));
+  rule->setNoBetweenEol(true);
 }
 
 void lefTechLayerMinStepParser::noAdjacentEolParser(double width,
                                                     odb::lefinReader* l)
 {
-  curRule->setEolWidth(l->dbdist(width));
-  curRule->setNoAdjacentEol(true);
+  rule->setEolWidth(l->dbdist(width));
+  rule->setNoAdjacentEol(true);
 }
 
 void lefTechLayerMinStepParser::minStepLengthParser(double length,
                                                     odb::lefinReader* l)
 {
-  curRule->setMinStepLength(l->dbdist(length));
+  rule->setMinStepLength(l->dbdist(length));
 }
 void lefTechLayerMinStepParser::maxEdgesParser(int edges, odb::lefinReader* l)
 {
-  curRule->setMaxEdges(edges);
-  curRule->setMaxEdgesValid(true);
+  rule->setMaxEdges(edges);
+  rule->setMaxEdgesValid(true);
 }
 
 void lefTechLayerMinStepParser::setExceptRectangle()
 {
-  curRule->setExceptRectangle(true);
+  rule->setExceptRectangle(true);
 }
 
 void lefTechLayerMinStepParser::setConvexCorner()
 {
-  curRule->setConvexCorner(true);
+  rule->setConvexCorner(true);
 }
 
 void lefTechLayerMinStepParser::setConcaveCorner()
 {
-  curRule->setConcaveCorner(true);
+  rule->setConcaveCorner(true);
 }
 
 void lefTechLayerMinStepParser::setExceptSameCorners()
 {
-  curRule->setExceptSameCorners(true);
+  rule->setExceptSameCorners(true);
 }
 
 bool lefTechLayerMinStepParser::parse(const std::string& s,
@@ -130,8 +130,8 @@ bool lefTechLayerMinStepParser::parse(const std::string& s,
   bool valid
       = qi::phrase_parse(first, last, minstepRule, space) && first == last;
 
-  if (!valid && curRule != nullptr) {  // fail if we did not get a full match
-    odb::dbTechLayerMinStepRule::destroy(curRule);
+  if (!valid && rule != nullptr) {  // fail if we did not get a full match
+    odb::dbTechLayerMinStepRule::destroy(rule);
   }
   return valid;
 }
