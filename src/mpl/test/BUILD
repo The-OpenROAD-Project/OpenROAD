@@ -74,6 +74,10 @@ filegroup(
                     "testcases/boundary_push1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "break_cluster_huge_macro": [
+                    "testcases/break_cluster_huge_macro.def",
+                    "testcases/break_cluster_huge_macro.lef",
+                ],
                 "centralization1": [
                     "testcases/centralization1.def",
                     "testcases/orientation_improve1.lef",
@@ -206,10 +210,6 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/mixed_ios1.def",
-                ],
-                "break_cluster_huge_macro": [
-                    "testcases/break_cluster_huge_macro.def",
-                    "testcases/break_cluster_huge_macro.lef",
                 ],
                 "no_unfixed_macros": [
                     "testcases/macro_only.lef",
