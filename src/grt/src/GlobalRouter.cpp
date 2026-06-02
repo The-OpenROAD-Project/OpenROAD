@@ -4622,6 +4622,14 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
+  if (db_net == nullptr) {
+    return;
+  }
+
+  if (use_cugr_) {
+    cugr_->removeNet(db_net);
+  }
+
   auto it = db_net_map_.find(db_net);
   if (it == db_net_map_.end() || it->second == nullptr) {
     return;
@@ -6377,9 +6385,6 @@ void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 
 void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
 {
-  if (net != nullptr && grouter_->use_cugr_) {
-    grouter_->cugr_->removeNet(net);
-  }
   grouter_->removeNet(net);
 }
 
