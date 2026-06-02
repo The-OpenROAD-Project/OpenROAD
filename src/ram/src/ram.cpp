@@ -928,6 +928,8 @@ void RamGen::ramPdngen(const char* power_net_name,
   }
 
   block_->globalConnect(false, false);
+  power_pin_names_.clear();
+  ground_pin_names_.clear();
 
   std::string grid_name = "ram_grid";
   pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
