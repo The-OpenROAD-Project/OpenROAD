@@ -1557,6 +1557,29 @@ class MoireArrayTest : public TileGeneratorTest
     }
     return pitch;
   }
+
+  // Build an n x n bump array (master tagged COVER_BUMP) sized so each bump
+  // renders ~target_px CSS px at z=0 (where bounds ~= die, so output size =
+  // cell*256/die).  Used to land bump sizes inside the LOD crossfade band.
+  void buildBumpArrayTargetPx(int n, double target_px)
+  {
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    EXPECT_NE(m, nullptr);
+    m->setType(odb::dbMasterType::COVER_BUMP);
+    const int cell = std::max(m->getWidth(), m->getHeight());
+    const int die = static_cast<int>(cell * 256.0 / target_px);
+    const int pitch = die / n;  // output pitch = 256/n px; > cell ⇒ gaps
+    block_->setDieArea(odb::Rect(0, 0, die, die));
+    int id = 0;
+    for (int iy = 0; iy < n; ++iy) {
+      for (int ix = 0; ix < n; ++ix) {
+        odb::dbInst* inst = odb::dbInst::create(
+            block_, m, ("b" + std::to_string(id++)).c_str());
+        inst->setLocation(ix * pitch, iy * pitch);
+        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      }
+    }
+  }
 };
 
 TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
@@ -1663,6 +1686,34 @@ TEST_F(MoireArrayTest, BumpBlockTilesAbutWithoutSeam)
   EXPECT_GT(opaque_right, ih / 2)
       << "LOD block does not reach the tile's right edge → black seam between "
          "tiles";
+}
+
+TEST_F(MoireArrayTest, LodCrossfadeFillsGapsInBand)
+{
+  // In the crossfade band (5..8 px) the LOD block is drawn at partial opacity
+  // OVER the individually-drawn bumps, so it still tints the gaps and the array
+  // interior stays largely covered.  With the old hard cut at 6 px, a 6 px bump
+  // would be drawn individually with no block, leaving transparent gaps (low
+  // coverage) — so this both exercises and guards the crossfade.
+  buildBumpArrayTargetPx(/*n=*/16, /*target_px=*/6.0);  // mid-band
+  makeTileGen();
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+  const int iw = static_cast<int>(w);
+  const int ih = static_cast<int>(h);
+  int nonzero = 0;
+  int total = 0;
+  for (int y = ih / 4; y < 3 * ih / 4; ++y) {
+    for (int x = iw / 4; x < 3 * iw / 4; ++x) {
+      ++total;
+      if (pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+        ++nonzero;
+      }
+    }
+  }
+  EXPECT_GT(static_cast<double>(nonzero) / total, 0.8)
+      << "crossfade band did not tint the gaps (block not blended in)";
 }
 
 TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
