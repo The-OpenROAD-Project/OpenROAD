@@ -2926,9 +2926,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // transparent super buffer cannot alias.  any_of early-exits as soon as it
     // hits drawn content, so non-empty tiles pay almost nothing for the check.
     const bool any_drawn = std::ranges::any_of(
-        super_buffer, [](const unsigned char b) {
-          return b != 0;
-        });
+        super_buffer, [](const unsigned char b) { return b != 0; });
     if (any_drawn) {
       world_image_buffer = lanczos2Downsample(super_buffer, super, tile_px);
     }
