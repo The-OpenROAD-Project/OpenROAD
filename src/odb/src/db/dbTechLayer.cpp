@@ -623,10 +623,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   } else {
     double area_double;
     stream >> area_double;
-
-    dbDatabase* db = (dbDatabase*) obj.getDatabase();
-    const int64_t dbus = db->getDbuPerMicron();
-    obj.area_ = static_cast<int64_t>(std::round(area_double * dbus * dbus));
+    obj.area_ = static_cast<int64_t>(std::round(area_double * 20000 * 20000));
   }
   stream >> obj.thickness_;
   stream >> obj.min_step_;

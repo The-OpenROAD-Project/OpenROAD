@@ -107,10 +107,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
   if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
     stream >> obj.area_;
   } else {
-    dbDatabase* db = (dbDatabase*) obj.getDatabase();
     int area;
     stream >> area;
-    obj.area_ = static_cast<int64_t>(area) * db->getDbuPerMicron();
+    obj.area_ = static_cast<int64_t>(area) * 20000;
   }
   // User Code End >>area_
   stream >> obj.area_within_dist_;
