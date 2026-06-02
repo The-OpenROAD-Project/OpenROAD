@@ -355,7 +355,7 @@ class _dbDatabase : public _dbObject
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
   UnfoldedModel* unfolded_model_;  // non-persistent object
-  // User Code End Fields
+                                   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj);
