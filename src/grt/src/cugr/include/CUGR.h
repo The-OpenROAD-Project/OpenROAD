@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -209,7 +210,7 @@ class CUGR
   std::unique_ptr<GridGraph> grid_graph_;
   std::vector<int> net_indices_;
   std::vector<std::unique_ptr<GRNet>> gr_nets_;
-  odb::PtrMap<odb::dbNet, GRNet*> db_net_map_;
+  std::unordered_map<odb::dbNet*, GRNet*> db_net_map_;
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;

@@ -147,7 +147,6 @@ void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
 void GlobalRouter::clear()
 {
   routes_.clear();
-  pending_deleted_nets_.clear();
   for (auto [ignored, net] : db_net_map_) {
     delete net;
   }
@@ -376,12 +375,6 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   fastroute_->setResistanceAware(resistance_aware_);
-  if (use_cugr_ && !pending_deleted_nets_.empty()) {
-    for (odb::dbNet* db_net : pending_deleted_nets_) {
-      cugr_->removeNet(db_net);
-    }
-    pending_deleted_nets_.clear();
-  }
   updateDirtyRoutes(save_guides);
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
@@ -6385,7 +6378,7 @@ void GRouteDbCbk::inDbNetCreate(odb::dbNet* net)
 void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
 {
   if (net != nullptr && grouter_->use_cugr_) {
-    grouter_->pending_deleted_nets_.insert(net);
+    grouter_->cugr_->removeNet(net);
   }
   grouter_->removeNet(net);
 }

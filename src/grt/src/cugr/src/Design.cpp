@@ -193,13 +193,13 @@ void Design::removeNet(odb::dbNet* db_net)
   updated_nets.reserve(nets_.size() - 1);
   std::unordered_map<odb::dbNet*, int> updated_net_to_id;
   int new_index = 0;
-  for (const auto& net : nets_) {
+  for (auto& net : nets_) {
     if (net.getDbNet() == db_net) {
       continue;
     }
     updated_nets.emplace_back(new_index,
                               net.getDbNet(),
-                              net.getPins(),
+                              std::move(net.getPins()),
                               net.getLayerRange());
     updated_net_to_id[net.getDbNet()] = new_index;
     new_index++;

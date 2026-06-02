@@ -970,7 +970,7 @@ void CUGR::removeNet(odb::dbNet* db_net)
   }
 
   std::vector<odb::dbNet*> old_index_to_db_net(gr_nets_.size(), nullptr);
-  std::map<odb::dbNet*, GRNet*> old_net_map;
+  std::unordered_map<odb::dbNet*, GRNet*> old_net_map;
   for (const auto& net_ptr : gr_nets_) {
     GRNet* net = net_ptr.get();
     old_net_map[net->getDbNet()] = net;
@@ -985,8 +985,8 @@ void CUGR::removeNet(odb::dbNet* db_net)
   const std::vector<CUGRNet>& base_nets = design_->getAllNets();
   std::vector<std::unique_ptr<GRNet>> updated_gr_nets;
   updated_gr_nets.reserve(base_nets.size());
-  std::map<odb::dbNet*, GRNet*> updated_db_net_map;
-  std::map<odb::dbNet*, int> updated_net_indices;
+  std::unordered_map<odb::dbNet*, GRNet*> updated_db_net_map;
+  std::unordered_map<odb::dbNet*, int> updated_net_indices;
   for (const CUGRNet& base_net : base_nets) {
     auto updated_net =
         std::make_unique<GRNet>(base_net, grid_graph_.get());
