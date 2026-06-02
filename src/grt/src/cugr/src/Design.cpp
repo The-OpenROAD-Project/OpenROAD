@@ -359,7 +359,9 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
-    if (!net.isValid()) continue;
+    if (!net.isValid()) {
+      continue;
+    }
     logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
       logger_->report("\tPin: {}", pin.getName());
