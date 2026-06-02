@@ -19,7 +19,7 @@
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "RerouteGenerator.hh"
-#include "SizeDownGenerator.hh"
+#include "SizeDownFanoutGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SplitLoadGenerator.hh"
@@ -155,7 +155,7 @@ void OptimizationPolicy::printFinalProgress(
       "final",
       committer_.totalMoves(MoveType::kUnbuffer),
       committer_.totalMoves(MoveType::kSizeUp)
-          + committer_.totalMoves(MoveType::kSizeDown)
+          + committer_.totalMoves(MoveType::kSizeDownFanout)
           + committer_.totalMoves(MoveType::kSizeUpMatch)
           + committer_.totalMoves(MoveType::kVtSwap),
       committer_.totalMoves(MoveType::kBuffer)
@@ -186,8 +186,8 @@ bool OptimizationPolicy::reportRepairSummary() const
 
   const int buffer_moves = committer_.summaryCommittedMoves(MoveType::kBuffer);
   const int size_up_moves = committer_.summaryCommittedMoves(MoveType::kSizeUp);
-  const int size_down_moves
-      = committer_.summaryCommittedMoves(MoveType::kSizeDown);
+  const int size_down_fanout_moves
+      = committer_.summaryCommittedMoves(MoveType::kSizeDownFanout);
   const int swap_pins_moves
       = committer_.summaryCommittedMoves(MoveType::kSwapPins);
   const int clone_moves = committer_.summaryCommittedMoves(MoveType::kClone);
@@ -219,18 +219,19 @@ bool OptimizationPolicy::reportRepairSummary() const
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves + split_load_moves);
-  if (size_up_moves + size_down_moves + size_up_match_moves + vt_swap_moves
+  if (size_up_moves + size_down_fanout_moves + size_up_match_moves
+          + vt_swap_moves
       > 0) {
     repaired = true;
-    logger_->info(
-        utl::RSZ,
-        51,
-        "Resized {} instances: {} up, {} up match, {} down, {} VT",
-        size_up_moves + size_up_match_moves + size_down_moves + vt_swap_moves,
-        size_up_moves,
-        size_up_match_moves,
-        size_down_moves,
-        vt_swap_moves);
+    logger_->info(utl::RSZ,
+                  51,
+                  "Resized {} instances: {} up, {} up match, {} down, {} VT",
+                  size_up_moves + size_up_match_moves + size_down_fanout_moves
+                      + vt_swap_moves,
+                  size_up_moves,
+                  size_up_match_moves,
+                  size_down_fanout_moves,
+                  vt_swap_moves);
   }
   if (swap_pins_moves > 0) {
     repaired = true;
@@ -314,8 +315,8 @@ void OptimizationPolicy::buildMoveGenerators(
       case MoveType::kSplitLoad:
         generator = std::make_unique<SplitLoadGenerator>(context);
         break;
-      case MoveType::kSizeDown:
-        generator = std::make_unique<SizeDownGenerator>(context);
+      case MoveType::kSizeDownFanout:
+        generator = std::make_unique<SizeDownFanoutGenerator>(context);
         break;
       case MoveType::kSwapPins:
         generator = std::make_unique<SwapPinsGenerator>(context);

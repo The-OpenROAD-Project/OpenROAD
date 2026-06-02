@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -94,6 +95,38 @@ struct ChipletNode
 // function additionally accumulates `dbTransform`s top-down and assigns
 // stable hierarchical paths so the web renderer can place each chiplet.
 std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
+
+// Coarse instance category, derived once per inst and reused by both
+// isInstVisible and isInstSelectable so the two stay in lock-step.
+enum class InstCategory
+{
+  kStdCells,
+  kMacros,
+  kPadInput,
+  kPadOutput,
+  kPadInout,
+  kPadPower,
+  kPadSpacer,
+  kPadAreaIO,
+  kPadOther,
+  kPhysEndcap,
+  kPhysFill,
+  kPhysWelltap,
+  kPhysTie,
+  kPhysAntenna,
+  kPhysCover,
+  kPhysBump,
+  kPhysOther,
+  kStdBufInv,
+  kStdBufInvTiming,
+  kStdClockBufInv,
+  kStdClockGate,
+  kStdLevelShift,
+  kStdSequential,
+  kStdCombinational,
+};
+
+InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
 
 struct TileVisibility
 {
@@ -198,10 +231,72 @@ struct TileVisibility
   bool has_visible_chiplets = false;
   bool isChipletVisible(const std::string& path) const;
 
+  // ── Selectability ──
+  // Parallel to the visibility flags above: when off, the corresponding
+  // class of object is still rendered but is not pickable by selectAt().
+  // Mirrors the Qt GUI's displayControls "selectable" column.
+  // Defaults are all true (everything selectable), matching the Qt GUI.
+  bool stdcells_selectable = true;
+  bool macros_selectable = true;
+
+  bool pad_input_selectable = true;
+  bool pad_output_selectable = true;
+  bool pad_inout_selectable = true;
+  bool pad_power_selectable = true;
+  bool pad_spacer_selectable = true;
+  bool pad_areaio_selectable = true;
+  bool pad_other_selectable = true;
+
+  bool phys_fill_selectable = true;
+  bool phys_endcap_selectable = true;
+  bool phys_welltap_selectable = true;
+  bool phys_tie_selectable = true;
+  bool phys_antenna_selectable = true;
+  bool phys_cover_selectable = true;
+  bool phys_bump_selectable = true;
+  bool phys_other_selectable = true;
+
+  bool std_bufinv_selectable = true;
+  bool std_bufinv_timing_selectable = true;
+  bool std_clock_bufinv_selectable = true;
+  bool std_clock_gate_selectable = true;
+  bool std_level_shift_selectable = true;
+  bool std_sequential_selectable = true;
+  bool std_combinational_selectable = true;
+
+  bool net_signal_selectable = true;
+  bool net_power_selectable = true;
+  bool net_ground_selectable = true;
+  bool net_clock_selectable = true;
+  bool net_reset_selectable = true;
+  bool net_tieoff_selectable = true;
+  bool net_scan_selectable = true;
+  bool net_analog_selectable = true;
+
+  bool pins_selectable = true;
+  bool inst_pins_selectable = true;
+
+  bool placement_blockages_selectable = true;
+  bool routing_obstructions_selectable = true;
+
+  // Per-site selectability (peer to `sites`).  Defaults to true when
+  // unspecified — checked only when the corresponding row is selectable.
+  std::unordered_map<std::string, bool> site_selectable;
+
+  // Per-metal-layer selectability.  When has_selectable_layers is true,
+  // selectAt() skips layers not in this set.
+  std::set<std::string> selectable_layers;
+  bool has_selectable_layers = false;
+
   void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+
+  bool isNetSelectable(odb::dbNet* net) const;
+  bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
+  bool isSiteSelectable(const std::string& site_name) const;
+  bool isLayerSelectable(const std::string& layer_name) const;
 };
 
 class TileGenerator

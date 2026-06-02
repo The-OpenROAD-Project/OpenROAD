@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -44,7 +45,12 @@ using SteinerPt = int;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 enum class ParasiticsSrc
@@ -204,6 +210,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
  private:
   void ensureParasitics();
+  bool isIdealClockPin(const sta::Pin* pin) const;
+  bool isIdealClockNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);

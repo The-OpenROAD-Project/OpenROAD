@@ -68,10 +68,10 @@ cc_library(
         "src/move/RerouteCandidate.hh",
         "src/move/RerouteGenerator.cc",
         "src/move/RerouteGenerator.hh",
-        "src/move/SizeDownCandidate.cc",
-        "src/move/SizeDownCandidate.hh",
-        "src/move/SizeDownGenerator.cc",
-        "src/move/SizeDownGenerator.hh",
+        "src/move/SizeDownFanoutCandidate.cc",
+        "src/move/SizeDownFanoutCandidate.hh",
+        "src/move/SizeDownFanoutGenerator.cc",
+        "src/move/SizeDownFanoutGenerator.hh",
         "src/move/SizeUpCandidate.cc",
         "src/move/SizeUpCandidate.hh",
         "src/move/SizeUpGenerator.cc",
@@ -155,7 +155,6 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
-        "@tcl_lang//:tcl",
     ],
 )
 

@@ -93,7 +93,6 @@ cc_library(
         ":mpl_private_hdrs",
         ":pusher",
         ":snapper",
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/par",

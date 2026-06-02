@@ -69,6 +69,8 @@ ALL_TESTS = [
     "sta3",
     "sta4",
     "sta5",
+    "sta_to_db1",
+    "sta_to_db1_hier",
     "write_sdc1",
     "write_verilog1",
     "write_verilog2",
@@ -262,6 +264,16 @@ filegroup(
                 "example1_typ.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "sta_to_db1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta_to_db1_hier": [
+                "example1_typ.lib",
+                "example1.lef",
+                "hier3.v",
             ],
             "write_sdc1": [
                 "hier1.sdc",

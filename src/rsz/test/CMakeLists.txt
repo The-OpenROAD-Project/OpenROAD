@@ -98,7 +98,7 @@ or_integration_tests(
     repair_setup_pin_command
     repair_setup_reroute1
     repair_setup_reroute2
-    repair_setup_sizedown_only
+    repair_setup_size_down_fanout_only
     repair_setup_sizeup_match_only
     repair_setup_split_load_hier_only
     repair_setup_startpoint_fanout_only
@@ -107,8 +107,8 @@ or_integration_tests(
     repair_setup_tns
     repair_setup_wns_guard
     repair_setup_wns_last_gasp_noop
-    repair_setup_sizedown
-    repair_setup_sizedown_legacy_basic
+    repair_setup_size_down_fanout
+    repair_setup_size_down_fanout_legacy_basic
     repair_setup_sizeup_match
     repair_setup_sizeup_legacy_basic
     repair_setup_sizeup_match_inverter
@@ -157,6 +157,7 @@ or_integration_tests(
     repair_slew15
     repair_slew16
     repair_slew17
+    repair_slew_no_progress
     repair_tie1
     repair_tie2
     repair_tie3

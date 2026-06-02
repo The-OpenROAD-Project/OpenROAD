@@ -465,6 +465,31 @@ This command checks if the IO pins of the design have a placement status of `PLA
 all_pins_placed
 ```
 
+### Add 3DBlox Alignment Marker Rule
+
+This command registers a 3DBlox alignment marker rule between two cell masters. The 3DBlox checker uses these rules to verify that paired alignment marker instances on bonded chiplets are co-located and (optionally) match a relative orientation constraint.
+
+```tcl
+add_3dblox_alignment_marker_rule
+    [-lib_a lib_a]
+    -master_a master_a
+    [-lib_b lib_b]
+    -master_b master_b
+    [-tolerance tolerance_um]
+    [-relative_orientations relative_orientations]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-lib_a` | Optional library to scope `-master_a` lookup. Required only when the master name is ambiguous across libraries. |
+| `-master_a` | Cell master used as side A of the alignment pair. |
+| `-lib_b` | Optional library to scope `-master_b` lookup. |
+| `-master_b` | Cell master used as side B of the alignment pair. |
+| `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
+| `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 

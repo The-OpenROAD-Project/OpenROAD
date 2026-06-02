@@ -15,21 +15,26 @@ jobs:
       fail-fast: false
       matrix:
         check:
+          # Drive buildifier from `git ls-files` instead of `-r .` so the
+          # scan stays inside this repo. With `-r .` buildifier was
+          # recursing into submodule contents (third-party/slang-elab/...)
+          # left on disk by self-hosted runners — files we can't fix from
+          # here since they're upstream-managed.
           - name: Buildifier format
-            run: ./buildifier -r -mode=check -lint=off .
+            run: "git ls-files -z ':(glob)**/*.bzl' ':(glob)**/*.bazel' ':(glob)**/BUILD' ':(glob)**/WORKSPACE' | xargs -0 -r ./buildifier -mode=check -lint=off"
           - name: Buildifier lint
-            run: ./buildifier -r -lint=warn .
+            run: "git ls-files -z ':(glob)**/*.bzl' ':(glob)**/*.bazel' ':(glob)**/BUILD' ':(glob)**/WORKSPACE' | xargs -0 -r ./buildifier -lint=warn"
     name: ${{ matrix.check.name }}
     env:
       BUILDIFIER_VERSION: v8.2.1
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Cache buildifier
         id: cache-buildifier
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ./buildifier
           key: ${{ runner.os }}-buildifier-${{ env.BUILDIFIER_VERSION }}

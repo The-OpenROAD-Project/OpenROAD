@@ -56,6 +56,7 @@ static const char* name_tbl[] = {"dbGDSLib",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbAccessPoint",
+                                 "dbAlignmentMarkerRule",
                                  "dbBusPort",
                                  "dbCellEdgeSpacing",
                                  "dbChip",
@@ -177,6 +178,7 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x18, dbBPinObj},
        // Generator Code Begin HashToObjectType
        {0x663302D5, dbAccessPointObj},
+       {0x7F49C300, dbAlignmentMarkerRuleObj},
        {0x12B22B2C, dbBusPortObj},
        {0xEE4BAB67, dbCellEdgeSpacingObj},
        {0x00000001, dbChipObj},
@@ -299,6 +301,7 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbBPinObj, 0x18},
        // Generator Code Begin ObjectTypeToHash
        {dbAccessPointObj, 0x663302D5},
+       {dbAlignmentMarkerRuleObj, 0x7F49C300},
        {dbBusPortObj, 0x12B22B2C},
        {dbCellEdgeSpacingObj, 0xEE4BAB67},
        {dbChipObj, 0x00000001},
