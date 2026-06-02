@@ -73,7 +73,7 @@ struct TAFixture : public Fixture
                      const odb::Point& begin,
                      const odb::Point& end)
   {
-    auto guide = std::make_unique<frGuide>(begin, layer_num, end, layer_num);
+    auto guide = std::make_unique<frGuide>(begin, layer_num, end);
     auto* ptr = guide.get();
     net->addGuide(std::move(guide));
     return ptr;

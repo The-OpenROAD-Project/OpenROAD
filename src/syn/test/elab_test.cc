@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "driver.h"
 #include "elab_testcases.h"
 #include "equivalence_check.h"
 #include "gtest/gtest.h"
+#include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/TritModel.h"

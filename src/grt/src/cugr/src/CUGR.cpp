@@ -16,6 +16,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -34,6 +35,7 @@
 #include "grt/GRoute.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
@@ -97,6 +99,7 @@ void CUGR::init(const int min_routing_layer,
   int index = 0;
   for (const CUGRNet& base_net : base_nets) {
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
+    gr_nets_.back()->setNdrCosts(computeNdrCosts(base_net.getDbNet()));
     net_indices_.push_back(index);
     db_net_map_[base_net.getDbNet()] = gr_nets_.back().get();
     index++;
@@ -152,6 +155,40 @@ void CUGR::setInitialNetSlacks()
   }
 }
 
+std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
+{
+  const int num_layers = grid_graph_->getNumLayers();
+  std::vector<double> factors(std::max(num_layers, 0), 1.0);
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr == nullptr) {
+    return factors;
+  }
+  std::vector<odb::dbTechLayerRule*> layer_rules;
+  ndr->getLayerRules(layer_rules);
+  for (odb::dbTechLayerRule* lr : layer_rules) {
+    odb::dbTechLayer* tl = lr->getLayer();
+    if (tl == nullptr || tl->getType() != odb::dbTechLayerType::ROUTING) {
+      continue;
+    }
+    const int layer_idx = tl->getRoutingLevel() - 1;  // 0-based
+    if (layer_idx < 0 || layer_idx >= num_layers) {
+      continue;
+    }
+    const int default_width = tl->getWidth();
+    const int default_pitch = tl->getPitch();
+    if (default_pitch <= 0) {
+      continue;
+    }
+    // Equivalent to (W/2 + S + D/2) / P; multiplied through by 2
+    // to avoid integer truncation on odd-DBU widths.
+    const double f = static_cast<double>(lr->getWidth() + 2 * lr->getSpacing()
+                                         + default_width)
+                     / static_cast<double>(2 * default_pitch);
+    factors[layer_idx] = std::max(1.0, f);
+  }
+  return factors;
+}
+
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
                                const double threshold)
 {
@@ -189,7 +226,8 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     pattern_route.constructSteinerTree();
     pattern_route.constructRoutingDAG();
     pattern_route.run();
-    grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree());
+    grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree(),
+                              gr_nets_[net_index]->getNdrCosts());
   }
 
   updateCongestedNets(net_indices);
@@ -215,7 +253,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     if (net->getNumPins() < 2) {
       continue;
     }
-    grid_graph_->removeTreeUsage(net->getRoutingTree());
+    grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
     PatternRoute pattern_route(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
     pattern_route.constructSteinerTree();
@@ -223,7 +261,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     // KEY DIFFERENCE compared to stage 1 (patternRoute)
     pattern_route.constructDetours(congestion_view);
     pattern_route.run();
-    grid_graph_->addTreeUsage(net->getRoutingTree());
+    grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
 
   updateCongestedNets(net_indices);
@@ -240,19 +278,28 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   for (const int net_index : net_indices) {
-    grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree());
+    grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree(),
+                                 gr_nets_[net_index]->getNdrCosts());
   }
   GridGraphView<CostT> wire_cost_view;
   grid_graph_->extractWireCostView(wire_cost_view);
   sortNetIndices(net_indices);
   SparseGrid grid(10, 10, 0, 0);
+  // Hoisted to reuse storage across NDR nets.
+  GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
     }
+    // NDR nets need a per-net cost view; the shared one is NDR-blind.
+    if (net->hasNdr()) {
+      grid_graph_->extractWireCostView(ndr_wire_cost_view, net->getNdrCosts());
+    }
+    const GridGraphView<CostT>& view_for_net
+        = net->hasNdr() ? ndr_wire_cost_view : wire_cost_view;
     MazeRoute maze_route(net, grid_graph_.get(), logger_);
-    maze_route.constructSparsifiedGraph(wire_cost_view, grid);
+    maze_route.constructSparsifiedGraph(view_for_net, grid);
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
     if (tree == nullptr) {
@@ -268,7 +315,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
-    grid_graph_->addTreeUsage(net->getRoutingTree());
+    grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
@@ -415,6 +462,11 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   constexpr double kMultiplierStep = 1.0;
   constexpr double kMultiplierCap = 6.0;
   constexpr double kCongestionThreshold = 0.9;
+  // Iterations in the congested set before an NDR net is demoted.
+  constexpr int kSoftNdrStreakThreshold = 2;
+
+  std::unordered_map<int, int> ndr_congested_streak;
+  int soft_ndr_demotions = 0;
 
   double multiplier = 1.0;
   for (int i = 1; i <= congestion_iterations_; ++i) {
@@ -422,6 +474,47 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     if (net_indices.empty()) {
       break;
     }
+
+    // Soft-NDR escape valve.
+    std::unordered_set<int> currently_congested(net_indices.begin(),
+                                                net_indices.end());
+    std::vector<std::string> demoted_now;
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (!net->hasNdr()) {
+        continue;
+      }
+      const int streak = ++ndr_congested_streak[net_index];
+      if (streak >= kSoftNdrStreakThreshold) {
+        grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        net->setSoftNdr();
+        grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        demoted_now.push_back(net->getName());
+      }
+    }
+    // Reset streaks for nets that recovered (no longer congested).
+    for (auto& [net_index, streak] : ndr_congested_streak) {
+      if (!currently_congested.contains(net_index)) {
+        streak = 0;
+      }
+    }
+    if (!demoted_now.empty()) {
+      soft_ndr_demotions += demoted_now.size();
+      for (const std::string& name : demoted_now) {
+        debugPrint(logger_,
+                   GRT,
+                   "softNDR",
+                   1,
+                   "Disabled NDR (to reduce congestion) for net: {}",
+                   name);
+      }
+      logger_->warn(GRT,
+                    305,
+                    "Demoted {} NDR net(s) to default rule to reduce "
+                    "congestion (use debug 'softNDR' for net list).",
+                    demoted_now.size());
+    }
+
     if (multiplier < kMultiplierCap) {
       multiplier += kMultiplierStep;
     }
@@ -431,6 +524,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     mazeRoute(net_indices);
   }
   grid_graph_->setCostMultiplier(1.0);
+  if (soft_ndr_demotions > 0) {
+    logger_->info(GRT,
+                  306,
+                  "Iterative RRR soft-demoted {} NDR net(s) total.",
+                  soft_ndr_demotions);
+  }
 
   // Final summary: the last mazeRoute already printed "Nets with
   // congestion" via updateCongestedNets, so just warn (if anything remains)
@@ -818,7 +917,8 @@ void CUGR::addDirtyNet(odb::dbNet* net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
+                                   gr_net->getNdrCosts());
     }
     nets_to_route_.push_back(gr_net->getIndex());
   } else {
@@ -833,7 +933,8 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
+                                   gr_net->getNdrCosts());
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();

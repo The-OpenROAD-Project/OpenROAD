@@ -158,30 +158,13 @@ _verify_checksum() {
 }
 
 # ------------------------------------------------------------------------------
-# Yosys build dependencies
-# ------------------------------------------------------------------------------
-# OpenROAD itself uses vendored linenoise, so readline is no longer in the
-# base package lists. Yosys still requires it at compile time, so install it
-# here right before the yosys build.
-_install_yosys_dependencies() {
-    if _command_exists "apt-get"; then
-        export DEBIAN_FRONTEND="noninteractive"
-        _execute "Installing libreadline-dev for yosys..." \
-            apt-get -y install --no-install-recommends libreadline-dev
-    elif _command_exists "yum"; then
-        _execute "Installing readline-devel for yosys..." \
-            yum -y install readline-devel
-    elif _command_exists "zypper"; then
-        _execute "Installing readline-devel for yosys..." \
-            zypper -n install readline-devel
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        _execute "Installing readline for yosys..." brew install readline
-    fi
-}
-
-# ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
+# Note: yosys's compile-time readline dependency (libreadline-dev /
+# readline-devel / readline brew formula) is installed in the per-platform
+# -base package functions below. It used to live in a separate helper invoked
+# from here, but that put a root-only apt-get inside the unprivileged -common
+# phase (see ORFS issue #4266).
 _install_yosys() {
     local yosys_prefix=${PREFIX:-"/usr/local"}
     local yosys_bin=${yosys_prefix}/bin/yosys
@@ -195,7 +178,6 @@ _install_yosys() {
     local required_version="${YOSYS_VERSION#v}"
     log "Checking Yosys (System: ${yosys_installed_version}, Required: ${required_version})"
     if [[ "${yosys_installed_version}" != "${required_version}" ]]; then
-        _install_yosys_dependencies
         (
             cd "${BASE_DIR}"
             _execute "Cloning Yosys ${YOSYS_VERSION}..." git clone --depth=1 -b "${YOSYS_VERSION}" --recursive https://github.com/YosysHQ/yosys
@@ -1004,7 +986,7 @@ _install_ubuntu_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev pandoc \
+        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -1048,7 +1030,7 @@ _install_rhel_packages() {
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
-        qt5-qtimageformats tcl-devel \
+        qt5-qtimageformats readline-devel tcl-devel \
         tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
 
@@ -1085,7 +1067,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip tcl \
+        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -1111,7 +1093,7 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python readline spdlog tcl-tk@8 zlib swig yaml-cpp
     # _execute "Installing pipx..." brew install pipx
     _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
@@ -1133,7 +1115,7 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev "libtcl${tcl_ver}" \
+        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 

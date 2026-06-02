@@ -48,6 +48,7 @@ cc_library(
         "//src/syn/src/ir",
         "//third-party/slang-elab/src:slang_frontend",
         "@fmt",
-        "@slang",
+        "@sv-lang//:libsvlang",
     ],
+    alwayslink = True,
 )
