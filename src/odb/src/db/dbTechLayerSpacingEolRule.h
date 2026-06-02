@@ -7,17 +7,11 @@
 #include <cstdint>
 
 #include "dbCore.h"
-// User Code Begin Includes
-#include "odb/dbId.h"
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-// User Code Begin Classes
-class _dbTechLayer;
-// User Code End Classes
 
 struct dbTechLayerSpacingEolRuleFlags
 {
@@ -112,10 +106,6 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   int min_adj_length1_;
   int min_adj_length2_;
   int notch_length_;
-
-  // User Code Begin Fields
-  dbId<_dbTechLayer> layer_;
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj);

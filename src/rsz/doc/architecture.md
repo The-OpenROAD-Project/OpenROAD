@@ -222,7 +222,7 @@ enum class MoveType : uint8_t
   kClone,
   kSizeUp,
   kSizeUpMatch,
-  kSizeDown,
+  kSizeDownFanout,
   kSwapPins,
   kVtSwap,
   kUnbuffer,
@@ -582,7 +582,7 @@ Current generator/candidate families:
 | Clone | `CloneGenerator` | `CloneCandidate` |
 | SizeUp | `SizeUpGenerator`, `SizeUpMtGenerator` | `SizeUpCandidate`, `SizeUpMtCandidate` |
 | SizeUpMatch | `SizeUpMatchGenerator` | `SizeUpMatchCandidate` |
-| SizeDown | `SizeDownGenerator` | `SizeDownCandidate` |
+| SizeDownFanout | `SizeDownFanoutGenerator` | `SizeDownFanoutCandidate` |
 | SwapPins | `SwapPinsGenerator` | `SwapPinsCandidate` |
 | VtSwap | `VtSwapGenerator`, `VtSwapMtGenerator` | `VtSwapCandidate`, `VtSwapMtCandidate` |
 | Unbuffer | `UnbufferGenerator` | `UnbufferCandidate` |
@@ -648,7 +648,7 @@ SetupMt1Policy:
 | Removed | `BufferMove.cc`, `BufferMove.hh` | Replaced by `move/BufferGenerator.*`, `move/BufferCandidate.*`. |
 | Removed | `CloneMove.cc`, `CloneMove.hh` | Replaced by `move/CloneGenerator.*`, `move/CloneCandidate.*`. |
 | Removed | `SizeUpMove.cc`, `SizeUpMove.hh` | Replaced by `move/SizeUpGenerator.*`, `move/SizeUpCandidate.*`, `move/SizeUpMt*`, `move/SizeUpMatch*`. |
-| Removed | `SizeDownMove.cc`, `SizeDownMove.hh` | Replaced by `move/SizeDownGenerator.*`, `move/SizeDownCandidate.*`. |
+| Removed | `SizeDownMove.cc`, `SizeDownMove.hh` | Replaced by `move/SizeDownFanoutGenerator.*`, `move/SizeDownFanoutCandidate.*`. |
 | Removed | `SwapPinsMove.cc`, `SwapPinsMove.hh` | Replaced by `move/SwapPinsGenerator.*`, `move/SwapPinsCandidate.*`. |
 | Removed | `VTSwapMove.cc`, `VTSwapMove.hh` | Replaced by `move/VtSwapGenerator.*`, `move/VtSwapCandidate.*`, `move/VtSwapMt*`, `move/MeasuredVtSwap*`. |
 | Removed | `UnbufferMove.cc`, `UnbufferMove.hh` | Replaced by `move/UnbufferGenerator.*`, `move/UnbufferCandidate.*`. |

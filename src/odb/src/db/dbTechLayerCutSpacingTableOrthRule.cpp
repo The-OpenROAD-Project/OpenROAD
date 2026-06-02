@@ -6,7 +6,9 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
+#include "dbTechLayer.h"
 #include "dbTechLayerCutSpacingRule.h"
 #include "odb/db.h"
 // User Code Begin Includes
@@ -58,9 +60,7 @@ void _dbTechLayerCutSpacingTableOrthRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["spacing_tbl"].add(spacing_tbl_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -77,6 +77,21 @@ void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
   tbl = obj->spacing_tbl_;
 }
 
+dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerCutSpacingTableOrthRule*)
+      _parent->cut_spacing_table_orth_tbl_->create();
+}
+void dbTechLayerCutSpacingTableOrthRule::destroy(
+    dbTechLayerCutSpacingTableOrthRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->cut_spacing_table_orth_tbl_->destroy(
+      (_dbTechLayerCutSpacingTableOrthRule*) obj);
+}
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
 void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
     const std::vector<std::pair<int, int>>& tbl)
@@ -85,16 +100,6 @@ void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(
       = (_dbTechLayerCutSpacingTableOrthRule*) this;
   obj->spacing_tbl_ = tbl;
 }
-
-dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
-    dbTechLayer* parent)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  _dbTechLayerCutSpacingTableOrthRule* newrule
-      = _parent->cut_spacing_table_orth_tbl_->create();
-  return ((dbTechLayerCutSpacingTableOrthRule*) newrule);
-}
-
 dbTechLayerCutSpacingTableOrthRule*
 dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
     dbTechLayer* parent,
@@ -104,15 +109,6 @@ dbTechLayerCutSpacingTableOrthRule::getTechLayerCutSpacingTableOrthSubRule(
   return (dbTechLayerCutSpacingTableOrthRule*)
       _parent->cut_spacing_table_orth_tbl_->getPtr(dbid);
 }
-void dbTechLayerCutSpacingTableOrthRule::destroy(
-    dbTechLayerCutSpacingTableOrthRule* rule)
-{
-  _dbTechLayer* _parent = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  _parent->cut_spacing_table_orth_tbl_->destroy(
-      (_dbTechLayerCutSpacingTableOrthRule*) rule);
-}
-
 // User Code End dbTechLayerCutSpacingTableOrthRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp
