@@ -47,6 +47,10 @@ class Checker
                             const UnfoldedModel* model);
   void checkAlignmentMarkers(dbMarkerCategory* top_cat,
                              const UnfoldedModel* model);
+  void checkOrphanChipNets(dbMarkerCategory* top_cat,
+                           const UnfoldedModel* model);
+  void checkBumpPortBindings(dbMarkerCategory* top_cat,
+                             const UnfoldedModel* model);
   utl::Logger* logger_;
   dbDatabase* db_;
 };
