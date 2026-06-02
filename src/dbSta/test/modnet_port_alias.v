@@ -8,12 +8,13 @@
 //   - One such instance is wired to M.clk; another sibling is wired
 //     to a different M port (here 'txclk').
 //
-// Inside Verilog2db::staToDb, when constructModNet processes the pin
-// of the sibling instance:
-//   - cur_inst's stripped local name doesn't match findModInst.
-//   - cur_inst's full hierarchical path doesn't match findDbInst,
-//     because the dbInst hash uses local names, not full paths.
-//   - The reader then fell through to findModBTerm("clk"), which
+// Inside Verilog2db::staToDb, when constructModNet processes the
+// escaped child instance pin:
+//   - pathName(cur_inst) was split at '/', even though that '/' is
+//     part of the escaped local instance name.
+//   - findModInst then failed to resolve the child dbModInst, so the
+//     API returned no dbModITerm for the pin.
+//   - The reader later fell through to findModBTerm("clk"), which
 //     name-matched M's own clk modBTerm and falsely connected it to
 //     the sibling's modnet.
 // Result: M's 'txclk' modnet ends up with both txclk and clk

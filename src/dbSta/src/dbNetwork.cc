@@ -4534,11 +4534,7 @@ void sta::dbNetwork::checkSanityModITerms() const
 // modBTerms' parent modITerms in the parent scope alias to the SAME
 // flat dbNet. Otherwise the boundary of the module is shorting two
 // electrically-distinct external nets together inside, and STA will
-// cross-propagate clocks/signals across them. This was the symptom
-// of the staToDb fall-through bug in dbReadVerilog: a deep-descendant
-// pin's portName was stripped to a leaf token (e.g. "clk") and
-// findModBTerm matched the wrong modBTerm of `module` by string name
-// alone, attaching it to a modnet built for an unrelated net.
+// cross-propagate clocks/signals across them.
 void dbNetwork::checkSanityModNetPortAliasing() const
 {
   if (block_ == nullptr) {

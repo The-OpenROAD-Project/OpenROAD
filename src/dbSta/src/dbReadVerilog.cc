@@ -629,11 +629,7 @@ bool Verilog2db::staToDb(dbModule* module,
 
   if (module) {
     if (cur_inst) {
-      std::string instance_name = network_->pathName(cur_inst);
-      size_t last_idx = instance_name.find_last_of('/');
-      if (last_idx != std::string::npos) {
-        instance_name = instance_name.substr(last_idx + 1);
-      }
+      const std::string instance_name = network_->name(cur_inst);
       dbModInst* mod_inst = module->findModInst(instance_name.c_str());
       if (mod_inst) {
         mod_iterm = mod_inst->findModITerm(pin_name.c_str());
