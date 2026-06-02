@@ -1110,7 +1110,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 {
   updateInstancesAssociation(parent);
 
-  // A cluster dominated by one macro cannot be partitioned correctly using 
+  // A cluster dominated by one macro cannot be partitioned correctly using
   // the wighted min-cut algorithm from TritonPart, so we manually
   // split the macro from the cluster
   if (parent->getNumMacro() > 0) {
@@ -1275,7 +1275,9 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   }
 }
 
-void ClusteringEngine::splitHugeMacroFromCluster(Cluster* cluster, odb::dbInst* huge_macro) {
+void ClusteringEngine::splitHugeMacroFromCluster(Cluster* cluster,
+                                                 odb::dbInst* huge_macro)
+{
   // Remove huge macro from parent cluster
   std::vector<odb::dbInst*> macros = cluster->getLeafMacros();
   cluster->clearLeafMacros();
@@ -1288,8 +1290,8 @@ void ClusteringEngine::splitHugeMacroFromCluster(Cluster* cluster, odb::dbInst* 
   setClusterMetrics(cluster);
 
   // Create a new cluster for the huge macro
-  auto macro_cluster = std::make_unique<Cluster>(
-    id_, huge_macro->getName(), logger_);
+  auto macro_cluster
+      = std::make_unique<Cluster>(id_, huge_macro->getName(), logger_);
   macro_cluster->addLeafMacro(huge_macro);
   macro_cluster->setClusterType(HardMacroCluster);
   incorporateNewCluster(std::move(macro_cluster), cluster->getParent());
