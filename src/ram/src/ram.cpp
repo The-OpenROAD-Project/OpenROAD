@@ -1145,7 +1145,7 @@ void RamGen::generate(const int mask_size,
                       int max_tap_dist)
 {
   if (num_words / column_mux_ratio == 1) {
-    logger_->error(RAM, 39, "1-row RAMs are not supported.");
+    logger_->error(RAM, 42, "1-row RAMs are not supported.");
   }
   const int slices_per_word = word_size / mask_size;
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
@@ -1171,7 +1171,7 @@ void RamGen::generate(const int mask_size,
   // can't support multi-port if the number of rows is too small
   if (column_mux_ratio == 4 && rw_ports + r_ports + w_ports > 1) {
     logger_->info(
-        RAM, 38, "Generated layout may not pass DRC due to congestion");
+        RAM, 43, "Generated layout may not pass DRC due to congestion");
   }
 
   const int num_inputs = std::ceil(std::log2(num_words));
