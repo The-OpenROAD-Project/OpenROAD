@@ -120,7 +120,9 @@ float CUGR::calculatePartialSlack()
     estimator->estimateAllGlobalRouteParasitics();
   }
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     float slack = getNetSlack(net->getDbNet());
     slacks.push_back(slack);
     net->setSlack(slack);
@@ -140,7 +142,9 @@ float CUGR::calculatePartialSlack()
   // Set the non critical nets slack as the maximum float value, so they can be
   // ordered by the default sorting method.
   for (const int& net_index : net_indices_) {
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     if (gr_nets_[net_index]->getSlack() > slack_th) {
       gr_nets_[net_index]->setSlack(
           std::ceil(std::numeric_limits<float>::max()));
@@ -158,7 +162,9 @@ float CUGR::getNetSlack(odb::dbNet* net)
 void CUGR::setInitialNetSlacks()
 {
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
   }
@@ -203,7 +209,9 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
 {
   net_indices.clear();
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     if (!net->getRoutingTree()) {
       continue;
     }
@@ -225,11 +233,15 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
 
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     if (gr_nets_[net_index]->getNumPins() < 2) {
       continue;
     }
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     PatternRoute pattern_route(gr_nets_[net_index].get(),
                                grid_graph_.get(),
                                stt_builder_,
@@ -238,7 +250,9 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     pattern_route.constructSteinerTree();
     pattern_route.constructRoutingDAG();
     pattern_route.run();
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                               gr_nets_[net_index]->getNdrCosts());
   }
@@ -262,7 +276,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   grid_graph_->extractCongestionView(congestion_view);
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
@@ -292,7 +308,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   for (const int net_index : net_indices) {
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                                  gr_nets_[net_index]->getNdrCosts());
   }
@@ -303,7 +321,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
-    if (gr_nets_[net_index] == nullptr) continue;
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
@@ -348,7 +368,9 @@ void CUGR::route()
   } else {
     net_indices.reserve(gr_nets_.size());
     for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+      if (net == nullptr) {
+        continue;
+      }
       net_indices.push_back(net->getIndex());
     }
   }
@@ -497,7 +519,9 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
     for (const int net_index : net_indices) {
-      if (gr_nets_[net_index] == nullptr) continue;
+      if (gr_nets_[net_index] == nullptr) {
+        continue;
+      }
       GRNet* net = gr_nets_[net_index].get();
       if (!net->hasNdr()) {
         continue;
@@ -566,7 +590,9 @@ void CUGR::write(const std::string& guide_file)
   area_of_wire_patches_ = 0;
   std::stringstream ss;
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     std::vector<std::pair<int, BoxT>> guides;
     getGuides(net.get(), guides);
 
@@ -594,7 +620,9 @@ NetRouteMap CUGR::getRoutes()
 {
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
@@ -653,7 +681,9 @@ NetRouteMap CUGR::getRoutes()
 void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
   std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) return false;
+    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
+      return false;
+    }
     return std::make_tuple(gr_nets_[lhs]->getSlack(),
                            gr_nets_[lhs]->getBoundingBox().hp())
            < std::make_tuple(gr_nets_[rhs]->getSlack(),
@@ -794,7 +824,9 @@ void CUGR::printStatistics() const
   uint64_t wire_length = 0;
   int via_count = 0;
   for (const auto& net : gr_nets_) {
-    if (net == nullptr) continue;
+    if (net == nullptr) {
+      continue;
+    }
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
@@ -1103,7 +1135,9 @@ void CUGR::saveCongestion()
   };
 
   for (const auto& gr_net : gr_nets_) {
-    if (gr_net == nullptr) continue;
+    if (gr_net == nullptr) {
+      continue;
+    }
     if (!gr_net->getRoutingTree()) {
       continue;
     }
