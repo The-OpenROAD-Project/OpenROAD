@@ -46,6 +46,8 @@ generate_ram [-mask_size bits]
              [-inv_cell name]
              -power_pin name
              -ground_pin name
+             [-power_net_name name]
+             [-ground_net_name name]
              -routing_layer config
              -ver_layer config
              -hor_layer config
@@ -72,6 +74,8 @@ generate_ram [-mask_size bits]
 | `-power_pin` | Name of the power pin in each standard cell used. Only one name is currently supported. |
 | `-ground_pin` | Name of the ground pin in each standard cell used. Only one name is currently supported. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
+| `-power_net_name` | Name of the power net to create. Default: `VDD`. |
+| `-ground_net_name` | Name of the ground net to create. Default: `VSS`. |
 | `-ver_layer` | A list of the metal layer, metal width (in microns), and metal pitch (in microns) for generating power grid stripes on the first vertical layer above the followpin layer. Example: `{met2 0.48 40}`. North/South I/O pins are also created in this layer. |
 | `-hor_layer` | A list of the metal layer, metal width (in microns), and metal pitch (in microns) for generating power grid stripes on the first horizontal layer above the followpin layer. Example: `{met3 0.48 40}`. East/West I/O pins are also created in this layer. |
 | `-filler_cells` | A list of filler cells to use. Example: `{FILL_X1 FILL_X2 FILL_X4}`. |

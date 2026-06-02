@@ -110,6 +110,8 @@ class RamGen
 
   void ramPdngen(const char* power_pin,
                  const char* ground_pin,
+                 const char* power_net_name,
+                 const char* ground_net_name,
                  const char* route_name,
                  int route_width,
                  const char* ver_name,

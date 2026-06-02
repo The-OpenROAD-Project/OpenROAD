@@ -96,23 +96,19 @@
     },
     {
       "name": "rect_only",
-      "type": "bit",
-      "flags": []
+      "type": "bit"
     },
     {
       "name": "right_way_on_grid_only",
-      "type": "bit",
-      "flags": []
+      "type": "bit"
     },
     {
       "name": "right_way_on_grid_only_check_mask",
-      "type": "bit",
-      "flags": []
+      "type": "bit"
     },
     {
       "type": "bit",
-      "name": "rect_only_except_non_core_pins",
-      "flags": []
+      "name": "rect_only_except_non_core_pins"
     },
     {
       "type": "uint32_t",
