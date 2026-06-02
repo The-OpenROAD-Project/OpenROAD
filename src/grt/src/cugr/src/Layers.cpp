@@ -26,8 +26,8 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
 
   // Design rules not parsed thoroughly
   // Min area
-  const int min_area = tech_layer->getArea();
-  min_length_ = std::max(min_area / width_ - width_, 0);
+  const int64_t min_area = tech_layer->getArea();
+  min_length_ = std::max(static_cast<int>(min_area / width_) - width_, 0);
 
   // Parallel run spacing
   std::vector<std::vector<uint32_t>> spacing_table;

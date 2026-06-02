@@ -225,7 +225,7 @@ class lefin
   // convert distance value to db-units
   int dbdist(double value);
 
-  // convert distance value to db-units
+  // convert area value to db-units^2
   int64_t dbarea(double value);
 
   // Create a technology from the tech-data of this LEF file.
