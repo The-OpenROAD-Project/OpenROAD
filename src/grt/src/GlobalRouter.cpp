@@ -1021,6 +1021,8 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
+  addImplicitVias(routes_[db_net]);
+
   std::string pins_not_covered;
   if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
     logger_->warn(GRT,
@@ -2588,6 +2590,7 @@ void GlobalRouter::readGuides(const char* file_name)
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
+    addImplicitVias(route);
     mergeSegments(pins, route);
   }
 
@@ -2627,6 +2630,7 @@ void GlobalRouter::loadGuidesFromDB()
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
+    addImplicitVias(route);
     mergeSegments(pins, route);
   }
 
@@ -2742,6 +2746,56 @@ void GlobalRouter::updateVias()
       }
     }
   }
+}
+
+void GlobalRouter::addImplicitVias(GRoute& route)
+{
+  if (route.empty()) {
+    return;
+  }
+
+  // Collect the routing layers present at each (x, y) grid point, and the
+  // adjacent-layer transitions already covered by an explicit via segment.
+  // This must run before mergeSegments(), while every grid point is still a
+  // segment endpoint (merging hides interior transition points).
+  std::map<std::pair<int, int>, std::set<int>> layers_at_point;
+  std::set<std::tuple<int, int, int>> existing_vias;  // x, y, lower_layer
+  for (const GSegment& seg : route) {
+    layers_at_point[{seg.init_x, seg.init_y}].insert(seg.init_layer);
+    layers_at_point[{seg.final_x, seg.final_y}].insert(seg.final_layer);
+    if (seg.isVia() && seg.init_layer != seg.final_layer) {
+      const int lo = std::min(seg.init_layer, seg.final_layer);
+      const int hi = std::max(seg.init_layer, seg.final_layer);
+      for (int layer = lo; layer < hi; layer++) {
+        existing_vias.insert({seg.init_x, seg.init_y, layer});
+      }
+    }
+  }
+
+  std::vector<GSegment> bridges;
+  for (const auto& [point, layers] : layers_at_point) {
+    if (layers.size() < 2) {
+      continue;
+    }
+    int prev_layer = -1;
+    for (const int layer : layers) {  // std::set iterates ascending
+      // Only bridge adjacent routing levels. A gap (e.g. metal2 and metal4
+      // present but not metal3) signals a missing intermediate segment, a
+      // different problem we do not paper over here.
+      if (prev_layer != -1 && layer == prev_layer + 1
+          && existing_vias.count({point.first, point.second, prev_layer})
+                 == 0) {
+        bridges.emplace_back(point.first,
+                             point.second,
+                             prev_layer,
+                             point.first,
+                             point.second,
+                             layer);
+      }
+      prev_layer = layer;
+    }
+  }
+  route.insert(route.end(), bridges.begin(), bridges.end());
 }
 
 void GlobalRouter::updateEdgesUsage()
