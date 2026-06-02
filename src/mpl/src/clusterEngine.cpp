@@ -1110,6 +1110,25 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 {
   updateInstancesAssociation(parent);
 
+  // A cluster dominated by one macro cannot be partitioned correctly using 
+  // the wighted min-cut algorithm from TritonPart, so we manually
+  // split the macro from the cluster
+  if (parent->getNumMacro() > 0) {
+    auto macros = parent->getLeafMacros();
+    auto& max_macro
+        = *std::ranges::max_element(macros, {}, [](const auto& macro) {
+            return macro->getBBox()->getBox().area();
+          });
+
+    if (computeArea(max_macro) > (parent->getArea() / 2)) {
+      splitHugeMacroFromCluster(parent, max_macro);
+      if (isLargeFlatCluster(parent)) {
+        breakLargeFlatCluster(parent);
+        return;
+      }
+    }
+  }
+
   std::map<int, int> cluster_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
@@ -1121,46 +1140,10 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   std::vector<odb::dbInst*> insts;
   odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
-  // 1. Calculate areas to detect discrete macro domination
-  float max_macro_area = 0.0f;
-  float total_std_cell_area = 0.0f;
 
-  for (auto& macro : parent->getLeafMacros()) {
-    float area = block_->dbuAreaToMicrons(computeArea(macro));
-    max_macro_area = std::max(max_macro_area, area);
-  }
-
-  for (auto& std_cell : parent->getLeafStdCells()) {
-    float area = block_->dbuAreaToMicrons(computeArea(std_cell));
-    total_std_cell_area += area;
-  }
-
-  // At this point in the code we should have some standard cells, but set
-  // to 1.0 if not.
-  const size_t num_std_cells = parent->getLeafStdCells().size();
-  const float avg_std_cell_area
-      = (num_std_cells > 0) ? (total_std_cell_area / num_std_cells) : 1.0f;
-
-  // 2. The Rocks vs Sand Check
-  // If a single macro dwarfs the entire standard cell cloud, area-balancing
-  // is structurally impossible against a min-cut objective.
-  const bool discrete_macro_domination = (max_macro_area > total_std_cell_area);
-
-  if (discrete_macro_domination) {
-    debugPrint(logger_,
-               MPL,
-               "multilevel_autoclustering",
-               1,
-               "Graph is macro-dominated. Normalizing macro weights to avoid "
-               "knapsack partition failure.");
-  }
-
-  // 3. Populate vertex weights dynamically
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    float weight = discrete_macro_domination
-                       ? avg_std_cell_area
-                       : block_->dbuAreaToMicrons(computeArea(macro));
+    float weight = block_->dbuAreaToMicrons(computeArea(macro));
     vertex_weight.push_back(weight);
     insts.push_back(macro);
   }
@@ -1290,6 +1273,26 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   if (isLargeFlatCluster(raw_part_1)) {
     breakLargeFlatCluster(raw_part_1);
   }
+}
+
+void ClusteringEngine::splitHugeMacroFromCluster(Cluster* cluster, odb::dbInst* huge_macro) {
+  // Remove huge macro from parent cluster
+  std::vector<odb::dbInst*> macros = cluster->getLeafMacros();
+  cluster->clearLeafMacros();
+  for (auto* macro : macros) {
+    if (macro != huge_macro) {
+      cluster->addLeafMacro(macro);
+    }
+  }
+  updateInstancesAssociation(cluster);
+  setClusterMetrics(cluster);
+
+  // Create a new cluster for the huge macro
+  auto macro_cluster = std::make_unique<Cluster>(
+    id_, huge_macro->getName(), logger_);
+  macro_cluster->addLeafMacro(huge_macro);
+  macro_cluster->setClusterType(HardMacroCluster);
+  incorporateNewCluster(std::move(macro_cluster), cluster->getParent());
 }
 
 bool ClusteringEngine::partitionerSolutionIsFullyUnbalanced(
@@ -1723,6 +1726,10 @@ void ClusteringEngine::fetchMixedLeaves(
   std::vector<Cluster*> sister_mixed_leaves;
 
   for (auto& child : parent->getChildren()) {
+    if (child->getClusterType() == HardMacroCluster) {
+      continue;
+    }
+
     updateInstancesAssociation(child.get());
 
     if (child->getNumMacro() == 0) {
