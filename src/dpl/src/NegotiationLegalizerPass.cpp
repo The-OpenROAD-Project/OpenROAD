@@ -789,7 +789,10 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     if (a.height != b.height) {
       return a.height < b.height;
     }
-    return a.width < b.width;
+    if (a.width != b.width) {
+      return a.width < b.width;
+    }
+    return a.idx < b.idx;
   });
 
   for (size_t i = 0; i < keys.size(); ++i) {
