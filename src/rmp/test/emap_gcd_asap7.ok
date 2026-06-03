@@ -99,57 +99,56 @@ tns max -15641.01
 [i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell HAxp5_ASAP7_75t_R
 [i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
 Extended technology mapping stats:
-	area: 16.680
-	delay: 534.670
+	area: 15.610
+	delay: 489.460
 	power: 0.000
 	inverters: 0
-	multioutput gates: 12
+	multioutput gates: 14
 
 [i] Report cells usage:
-[i] AO21x1_ASAP7_75t_R       	 Instance =         26	 Area =         2.34    14.03 %
-[i] AOI211xp5_ASAP7_75t_R    	 Instance =          1	 Area =         0.09     0.54 %
-[i] AOI21xp33_ASAP7_75t_R    	 Instance =          4	 Area =         0.28     1.68 %
-[i] AOI31xp33_ASAP7_75t_R    	 Instance =         17	 Area =         1.53     9.17 %
-[i] AOI321xp33_ASAP7_75t_R   	 Instance =         15	 Area =         1.80    10.79 %
-[i] AOI32xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.10     0.60 %
-[i] INVx1_ASAP7_75t_R        	 Instance =         38	 Area =         1.52     9.11 %
-[i] O2A1O1Ixp33_ASAP7_75t_R  	 Instance =          9	 Area =         0.81     4.86 %
-[i] OAI211xp5_ASAP7_75t_R    	 Instance =          1	 Area =         0.09     0.54 %
-[i] OAI21xp33_ASAP7_75t_R    	 Instance =         19	 Area =         1.33     7.97 %
-[i] OAI22xp33_ASAP7_75t_R    	 Instance =         17	 Area =         1.53     9.17 %
-[i] OAI31xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.09     0.54 %
-[i] OAI32xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.10     0.60 %
-[i] FAx1_ASAP7_75t_R         	 Instance =         12	 Area =         2.40    14.39 %
-[i] MAJIxp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.60 %
-[i] MAJx2_ASAP7_75t_R        	 Instance =          1	 Area =         0.13     0.78 %
-[i] NAND2xp33_ASAP7_75t_R    	 Instance =         15	 Area =         0.90     5.40 %
-[i] NAND5xp2_ASAP7_75t_R     	 Instance =          2	 Area =         0.20     1.20 %
-[i] NOR2xp33_ASAP7_75t_R     	 Instance =          5	 Area =         0.30     1.80 %
-[i] NOR3xp33_ASAP7_75t_R     	 Instance =          1	 Area =         0.07     0.42 %
-[i] NOR4xp25_ASAP7_75t_R     	 Instance =          1	 Area =         0.09     0.54 %
-[i] NOR5xp2_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.60 %
-[i] XNOR2xp5_ASAP7_75t_R     	 Instance =          5	 Area =         0.65     3.90 %
-[i] XOR2xp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.13     0.78 %
-[i] TOTAL                    	 Instance =        195	 Area =        16.68   100.00 %
-[i] Report stats: area = 16.68; delay = 543.99;
+[i] AO222x2_ASAP7_75t_R      	 Instance =         16	 Area =         2.72    17.42 %
+[i] AO22x1_ASAP7_75t_R       	 Instance =          1	 Area =         0.13     0.83 %
+[i] AOI21xp33_ASAP7_75t_R    	 Instance =          2	 Area =         0.14     0.90 %
+[i] AOI221xp5_ASAP7_75t_R    	 Instance =          1	 Area =         0.10     0.64 %
+[i] AOI31xp33_ASAP7_75t_R    	 Instance =         16	 Area =         1.44     9.22 %
+[i] AOI321xp33_ASAP7_75t_R   	 Instance =         16	 Area =         1.92    12.30 %
+[i] INVx1_ASAP7_75t_R        	 Instance =         42	 Area =         1.68    10.76 %
+[i] OA21x2_ASAP7_75t_R       	 Instance =         17	 Area =         1.70    10.89 %
+[i] OAI21xp33_ASAP7_75t_R    	 Instance =          3	 Area =         0.21     1.35 %
+[i] OAI31xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.09     0.58 %
+[i] OAI32xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.10     0.64 %
+[i] FAx1_ASAP7_75t_R         	 Instance =         13	 Area =         2.60    16.66 %
+[i] HAxp5_ASAP7_75t_R        	 Instance =          1	 Area =         0.13     0.83 %
+[i] MAJIxp5_ASAP7_75t_R      	 Instance =         13	 Area =         1.30     8.33 %
+[i] MAJx2_ASAP7_75t_R        	 Instance =          1	 Area =         0.13     0.83 %
+[i] NAND2xp33_ASAP7_75t_R    	 Instance =          2	 Area =         0.12     0.77 %
+[i] NAND5xp2_ASAP7_75t_R     	 Instance =          2	 Area =         0.20     1.28 %
+[i] NOR2xp33_ASAP7_75t_R     	 Instance =          2	 Area =         0.12     0.77 %
+[i] NOR3xp33_ASAP7_75t_R     	 Instance =          1	 Area =         0.07     0.45 %
+[i] NOR4xp25_ASAP7_75t_R     	 Instance =          1	 Area =         0.09     0.58 %
+[i] NOR5xp2_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.64 %
+[i] XNOR2xp5_ASAP7_75t_R     	 Instance =          3	 Area =         0.39     2.50 %
+[i] XOR2xp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.13     0.83 %
+[i] TOTAL                    	 Instance =        157	 Area =        15.61   100.00 %
+[i] Report stats: area = 15.61; delay = 498.78;
 Cell type report:                       Count       Area
-  Inverter                                 38       1.66
+  Inverter                                 42       1.84
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          157      15.03
-  Total                                   230      26.90
-[-788.970, -690.194): ************************************************** (17)
-[-690.194, -591.418): ************************************************** (17)
-[-591.418, -492.642): *** (1)
-[-492.642, -393.866): ****** (2)
-[-393.866, -295.090): ********* (3)
-[-295.090, -196.314): ****** (2)
-[-196.314,  -97.538): ****** (2)
-[ -97.538,    1.239): ****** (2)
-[   1.239,  100.015): ************ (4)
-[ 100.015,  198.791]: ********* (3)
+  Multi-Input combinational cell          115      14.06
+  Total                                   192      26.10
+[-768.263, -671.503): ************************************************** (32)
+[-671.503, -574.743):  (0)
+[-574.743, -477.982): *** (2)
+[-477.982, -381.222): ** (1)
+[-381.222, -284.462): *** (2)
+[-284.462, -187.702): ***** (3)
+[-187.702,  -90.941): ***** (3)
+[ -90.941,    5.819): *** (2)
+[   5.819,  102.579): ********* (6)
+[ 102.579,  199.339]: *** (2)
 Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: dpath/a_lt_b$in0[1]$_DFFE_PP_
+Endpoint: dpath/a_lt_b$in0[0]$_DFFE_PP_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -160,802 +159,548 @@ Corner: slow
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  75.16   75.16 v dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  24.16   99.32 ^ n_96/Y (INVx1_ASAP7_75t_R)
-  49.46  148.78 v n_97/Y (NAND2xp33_ASAP7_75t_R)
-  69.21  217.99 ^ n_98/CON (FAx1_ASAP7_75t_R)
-  44.50  262.49 v n_99/CON (FAx1_ASAP7_75t_R)
-  33.84  296.33 ^ n_100/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  39.91  336.24 ^ n_101/Y (AO21x1_ASAP7_75t_R)
-  29.83  366.07 v n_102/CON (FAx1_ASAP7_75t_R)
-  32.74  398.82 ^ n_103/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  39.68  438.49 ^ n_104/Y (AO21x1_ASAP7_75t_R)
-  29.83  468.32 v n_105/CON (FAx1_ASAP7_75t_R)
-  32.74  501.07 ^ n_106/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  39.68  540.74 ^ n_107/Y (AO21x1_ASAP7_75t_R)
-  29.83  570.57 v n_108/CON (FAx1_ASAP7_75t_R)
-  32.74  603.32 ^ n_109/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  39.68  642.99 ^ n_110/Y (AO21x1_ASAP7_75t_R)
-  29.83  672.83 v n_111/CON (FAx1_ASAP7_75t_R)
-  30.85  703.67 ^ n_112/Y (O2A1O1Ixp33_ASAP7_75t_R)
-  27.23  730.90 v n_113/Y (AOI21xp33_ASAP7_75t_R)
-  28.33  759.24 ^ n_116/Y (AOI21xp33_ASAP7_75t_R)
-  27.86  787.10 v n_119/Y (OAI22xp33_ASAP7_75t_R)
-  28.28  815.38 ^ n_120/Y (INVx1_ASAP7_75t_R)
-  34.45  849.83 v n_121/CON (FAx1_ASAP7_75t_R)
- 172.62 1022.45 ^ n_139/Y (AOI211xp5_ASAP7_75t_R)
- 127.39 1149.85 v n_140/Y (INVx1_ASAP7_75t_R)
-  45.65 1195.49 ^ n_181/Y (OAI211xp5_ASAP7_75t_R)
-  23.58 1219.07 v n_182/Y (AOI31xp33_ASAP7_75t_R)
-  37.10 1256.17 ^ n_183/Y (AOI31xp33_ASAP7_75t_R)
-   0.00 1256.17 ^ dpath/a_lt_b$in0[1]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        1256.17   data arrival time
+  70.33   70.33 v dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  26.90   97.23 ^ n_87/Y (INVx1_ASAP7_75t_R)
+  50.93  148.16 v n_88/Y (NAND2xp33_ASAP7_75t_R)
+  69.33  217.50 ^ n_89/CON (FAx1_ASAP7_75t_R)
+  45.07  262.56 v n_90/CON (FAx1_ASAP7_75t_R)
+  48.36  310.93 ^ n_92/Y (MAJIxp5_ASAP7_75t_R)
+  40.68  351.60 v n_93/CON (FAx1_ASAP7_75t_R)
+  46.90  398.50 ^ n_95/Y (MAJIxp5_ASAP7_75t_R)
+  40.51  439.00 v n_96/CON (FAx1_ASAP7_75t_R)
+  46.85  485.85 ^ n_98/Y (MAJIxp5_ASAP7_75t_R)
+  40.51  526.35 v n_99/CON (FAx1_ASAP7_75t_R)
+  46.85  573.20 ^ n_101/Y (MAJIxp5_ASAP7_75t_R)
+  40.51  613.70 v n_102/CON (FAx1_ASAP7_75t_R)
+  46.85  660.55 ^ n_104/Y (MAJIxp5_ASAP7_75t_R)
+  40.68  701.23 v n_105/CON (FAx1_ASAP7_75t_R)
+  46.90  748.13 ^ n_107/Y (MAJIxp5_ASAP7_75t_R)
+  41.86  789.99 v n_108/CON (FAx1_ASAP7_75t_R)
+ 301.51 1091.50 ^ n_129/Y (AOI21xp33_ASAP7_75t_R)
+  88.66 1180.16 v n_159/Y (AOI321xp33_ASAP7_75t_R)
+  54.66 1234.82 ^ n_160/Y (AOI31xp33_ASAP7_75t_R)
+   0.00 1234.82 ^ dpath/a_lt_b$in0[0]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        1234.82   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
-         500.00 ^ dpath/a_lt_b$in0[1]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -32.80  467.20   library setup time
-         467.20   data required time
+         500.00 ^ dpath/a_lt_b$in0[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -33.45  466.55   library setup time
+         466.55   data required time
 ---------------------------------------------------------
-         467.20   data required time
-        -1256.17   data arrival time
+         466.55   data required time
+        -1234.82   data arrival time
 ---------------------------------------------------------
-        -788.97   slack (VIOLATED)
+        -768.26   slack (VIOLATED)
 
 
-wns max -788.97
-tns max -27624.90
+wns max -768.26
+tns max -27657.01
 -- After repair --
 
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 46 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 46 out of 46 (100.00%) violating endpoints...
+[INFO RSZ-0094] Found 45 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 45 out of 45 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -788.970 |   -13204.1 |   -27624.9 |     46 | dpath\/a_lt_b$in0\[1\]$_DFFE_PP_/D
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_140/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_137/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone5/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone24/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone24/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver clone1/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_139/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -768.263 |   -14039.2 |   -27657.0 |     45 | dpath\/a_lt_b$in0\[0\]$_DFFE_PP_/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone12/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone12/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone14/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone14/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone16/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone16/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone2/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone26/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone26/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_129/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone3/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_125/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_121/CON
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_113/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_248/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
 [WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_96/Y
-[WARNING RSZ-0075] makeBufferedNet failed for driver n_97/Y
-     199* |       0 |      19 |        0 |      6 |    10 |    +3.5% | -531.201 |    -7283.8 |   -19315.0 |     46 | dpath\/a_lt_b$in0\[1\]$_DFFE_PP_/D
-    final |       0 |      19 |        0 |      6 |    10 |    +3.5% | -531.201 |    -7283.8 |   -19315.0 |     44 | dpath\/a_lt_b$in0\[1\]$_DFFE_PP_/D
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver clone4/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_130/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_120/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_120/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_120/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_120/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_110/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_120/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_108/CON
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_214/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_87/Y
+[WARNING RSZ-0075] makeBufferedNet failed for driver dpath\/a_lt_b$in1\[0\]$_DFFE_PP_/QN
+[WARNING RSZ-0075] makeBufferedNet failed for driver n_88/Y
+     164* |       0 |       9 |        0 |      4 |    30 |    +2.4% | -489.958 |    -6672.7 |   -18371.4 |     45 | dpath\/a_lt_b$in1\[12\]$_DFFE_PP_/D
+    final |       0 |       9 |        0 |      4 |    31 |    +2.4% | -489.767 |    -6676.8 |   -18369.2 |     44 | dpath\/a_lt_b$in1\[12\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 19 instances: 19 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 10 instances.
-[INFO RSZ-0049] Cloned 6 instances.
+[INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 31 instances.
+[INFO RSZ-0049] Cloned 4 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 Cell type report:                       Count       Area
-  Inverter                                 38       1.69
-  Timing Repair inverter                    2       0.10
+  Inverter                                 42       1.85
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          161      15.83
-  Total                                   236      27.83
-[-531.201, -453.000): ************************************************** (34)
-[-453.000, -374.799): * (1)
-[-374.799, -296.597): **** (3)
-[-296.597, -218.396): *** (2)
-[-218.396, -140.195): * (1)
-[-140.195,  -61.994): *** (2)
-[ -61.994,   16.208): * (1)
-[  16.208,   94.409): ****** (4)
-[  94.409,  172.610): **** (3)
-[ 172.610,  250.812]: *** (2)
+  Multi-Input combinational cell          119      14.67
+  Total                                   196      26.73
+[-489.767, -415.579): ************************************************** (35)
+[-415.579, -341.392):  (0)
+[-341.392, -267.204): *** (2)
+[-267.204, -193.017): **** (3)
+[-193.017, -118.829): * (1)
+[-118.829,  -44.642): *** (2)
+[ -44.642,   29.546): * (1)
+[  29.546,  103.733): ******* (5)
+[ 103.733,  177.921): *** (2)
+[ 177.921,  252.109]: *** (2)
 Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: dpath/a_lt_b$in0[1]$_DFFE_PP_
+Endpoint: dpath/a_lt_b$in1[12]$_DFFE_PP_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -966,50 +711,42 @@ Corner: slow
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  79.23   79.23 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  21.19  100.41 v n_96/Y (INVx2_ASAP7_75t_R)
-  25.39  125.80 ^ n_97/Y (NAND2x1p5_ASAP7_75t_R)
-  38.80  164.60 v n_98/CON (FAx1_ASAP7_75t_R)
-  40.34  204.94 ^ n_99/CON (FAx1_ASAP7_75t_R)
-  24.45  229.39 v n_100/Y (O2A1O1Ixp5_ASAP7_75t_R)
-  43.29  272.68 v n_101/Y (AO21x1_ASAP7_75t_R)
-  32.53  305.21 ^ n_102/CON (FAx1_ASAP7_75t_R)
-  24.68  329.89 v n_103/Y (O2A1O1Ixp5_ASAP7_75t_R)
-  43.36  373.25 v n_104/Y (AO21x1_ASAP7_75t_R)
-  32.53  405.78 ^ n_105/CON (FAx1_ASAP7_75t_R)
-  24.68  430.46 v n_106/Y (O2A1O1Ixp5_ASAP7_75t_R)
-  43.36  473.82 v n_107/Y (AO21x1_ASAP7_75t_R)
-  32.53  506.35 ^ n_108/CON (FAx1_ASAP7_75t_R)
-  24.68  531.03 v n_109/Y (O2A1O1Ixp5_ASAP7_75t_R)
-  43.36  574.39 v n_110/Y (AO21x1_ASAP7_75t_R)
-  32.53  606.92 ^ n_111/CON (FAx1_ASAP7_75t_R)
-  24.45  631.37 v n_112/Y (O2A1O1Ixp5_ASAP7_75t_R)
-  35.73  667.10 ^ n_113/Y (AOI21xp5_ASAP7_75t_R)
-  22.62  689.72 v n_116/Y (AOI21xp5_ASAP7_75t_R)
-  23.87  713.59 ^ n_119/Y (OAI22xp5_ASAP7_75t_R)
-  25.56  739.15 v n_120/Y (INVx1_ASAP7_75t_R)
-  71.45  810.60 ^ n_121/CON (FAx1_ASAP7_75t_R)
-  82.45  893.05 v n_139/Y (AOI211x1_ASAP7_75t_R)
-  32.93  925.98 ^ n_140/Y (INVx2_ASAP7_75t_R)
-  26.68  952.66 v n_181/Y (OAI211xp5_ASAP7_75t_R)
-  39.87  992.53 ^ n_182/Y (AOI31xp33_ASAP7_75t_R)
-  21.88 1014.41 v n_183/Y (AOI31xp33_ASAP7_75t_R)
-   0.00 1014.41 v dpath/a_lt_b$in0[1]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        1014.41   data arrival time
+  75.59   75.59 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  22.33   97.92 v n_87/Y (INVx2_ASAP7_75t_R)
+  25.84  123.76 ^ n_88/Y (NAND2x1p5_ASAP7_75t_R)
+  38.98  162.75 v n_89/CON (FAx1_ASAP7_75t_R)
+  47.27  210.02 ^ n_90/CON (FAx1_ASAP7_75t_R)
+  47.49  257.51 v n_92/Y (MAJIxp5_ASAP7_75t_R)
+  45.76  303.27 ^ n_93/CON (FAx1_ASAP7_75t_R)
+  47.25  350.53 v n_95/Y (MAJIxp5_ASAP7_75t_R)
+  45.72  396.24 ^ n_96/CON (FAx1_ASAP7_75t_R)
+  47.25  443.49 v n_98/Y (MAJIxp5_ASAP7_75t_R)
+  45.72  489.21 ^ n_99/CON (FAx1_ASAP7_75t_R)
+  47.49  536.70 v n_101/Y (MAJIxp5_ASAP7_75t_R)
+  45.76  582.46 ^ n_102/CON (FAx1_ASAP7_75t_R)
+  47.49  629.95 v n_104/Y (MAJIxp5_ASAP7_75t_R)
+  45.76  675.71 ^ n_105/CON (FAx1_ASAP7_75t_R)
+  47.25  722.96 v n_107/Y (MAJIxp5_ASAP7_75t_R)
+  77.52  800.49 ^ n_108/CON (FAx1_ASAP7_75t_R)
+  66.86  867.34 ^ n_110/Y (AO22x2_ASAP7_75t_R)
+  49.09  916.43 ^ n_130/Y (OA21x2_ASAP7_75t_R)
+  43.32  959.75 ^ n_152/Y (AO222x2_ASAP7_75t_R)
+   0.00  959.75 ^ dpath/a_lt_b$in1[12]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         959.75   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
-         500.00 ^ dpath/a_lt_b$in0[1]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -16.79  483.21   library setup time
-         483.21   data required time
+         500.00 ^ dpath/a_lt_b$in1[12]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -30.02  469.98   library setup time
+         469.98   data required time
 ---------------------------------------------------------
-         483.21   data required time
-        -1014.41   data arrival time
+         469.98   data required time
+        -959.75   data arrival time
 ---------------------------------------------------------
-        -531.20   slack (VIOLATED)
+        -489.77   slack (VIOLATED)
 
 
-wns max -531.20
-tns max -19315.02
+wns max -489.77
+tns max -18369.22
 Repair timing output passed/skipped equivalence test

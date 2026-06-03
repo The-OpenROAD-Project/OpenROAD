@@ -180,9 +180,9 @@ TEST(MockturtleAigTest, CreateIteBuildsDeterministicIntermediateSignals)
   EXPECT_EQ(ite.complement, 1);
 
   EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(4)),
-              ElementsAre(Pair(1, 0), Pair(2, 0)));
-  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(5)),
               ElementsAre(Pair(1, 1), Pair(3, 0)));
+  EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(5)),
+              ElementsAre(Pair(1, 0), Pair(2, 0)));
   EXPECT_THAT(GetAigFanins(ntk, ntk.index_to_node(6)),
               ElementsAre(Pair(4, 1), Pair(5, 1)));
 }

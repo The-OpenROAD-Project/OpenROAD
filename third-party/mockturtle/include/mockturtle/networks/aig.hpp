@@ -349,7 +349,7 @@ public:
   signal create_ite( signal cond, signal f_then, signal f_else )
   {
     bool f_compl{ false };
-    if ( f_then.index < f_else.index )
+    if ( f_then.index > f_else.index )
     {
       std::swap( f_then, f_else );
       cond.complement ^= 1;
