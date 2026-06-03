@@ -6510,7 +6510,7 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutCenterToCenter() const;
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
-  uint32_t getCutArea() const;
+  int64_t getCutArea() const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6531,7 +6531,7 @@ class dbTechLayerSpacingRule : public dbObject
   void setCutCenterToCenter(bool c2c);
   void setCutSameNet(bool same_net);
   void setCutParallelOverlap(bool overlap);
-  void setCutArea(uint32_t area);
+  void setCutArea(int64_t area);
   void setEol(uint32_t width,
               uint32_t within,
               bool parallelEdge,
@@ -6594,8 +6594,8 @@ class dbTechMinCutRule : public dbObject
 class dbTechMinEncRule : public dbObject
 {
  public:
-  bool getEnclosure(uint32_t& area) const;
-  void setEnclosure(uint32_t area);
+  bool getEnclosure(int64_t& area) const;
+  void setEnclosure(int64_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
 
@@ -9455,8 +9455,8 @@ class dbTechLayer : public dbObject
   ///  reasonable default exists.
   ///
   bool hasArea() const;
-  double getArea() const;
-  void setArea(double area);
+  int64_t getArea() const;
+  void setArea(int64_t area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
@@ -9594,9 +9594,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerAreaRule : public dbObject
 {
  public:
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setExceptMinWidth(int except_min_width);
 
@@ -10133,9 +10133,9 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   uint32_t getParLength() const;
 
-  void setCutArea(int cut_area);
+  void setCutArea(int64_t cut_area);
 
-  int getCutArea() const;
+  int64_t getCutArea() const;
 
   void setCenterToCenter(bool center_to_center);
 
@@ -10755,9 +10755,9 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getLengthWithinDist() const;
 
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setAreaWithinDist(int area_within_dist);
 

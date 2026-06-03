@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 130;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 131;  // Current revision number
+
+// Revision where all areas in the are switched to be stored as int64_t
+inline constexpr uint32_t kSchemaStoreAreaAsInt64 = 131;
 
 // Revision where dbAlignmentMarkerRule was added
 inline constexpr uint32_t kSchemaChipAlignmentMarkerRule = 130;
