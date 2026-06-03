@@ -93,6 +93,10 @@ class CUGR
   {
     critical_nets_percentage_ = percentage;
   }
+  void setResistanceAware(bool resistance_aware)
+  {
+    resistance_aware_ = resistance_aware;
+  }
   void setCongestionIterations(int iterations)
   {
     congestion_iterations_ = iterations;
@@ -173,9 +177,6 @@ class CUGR
    * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
    * remains when the loop ends.
    *
-   * See `src/grt/doc/01-iterative-rrr.md` for the cost-model audit
-   * and the rationale for the chosen defaults.
-   *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
@@ -227,6 +228,7 @@ class CUGR
   float critical_nets_percentage_ = 0;
   int congestion_iterations_ = 5;
 
+  bool resistance_aware_ = false;
   std::vector<int> nets_to_route_;
 };
 

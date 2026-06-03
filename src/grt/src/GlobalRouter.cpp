@@ -413,6 +413,7 @@ void GlobalRouter::globalRoute(bool save_guides)
       odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
       cugr_->setCongestionIterations(congestion_iterations_);
+      cugr_->setResistanceAware(resistance_aware_);
       cugr_->init(min_layer, max_layer, clock_nets);
       if (verbose_) {
         reportResources();
@@ -2392,6 +2393,7 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
   fastroute_->setResistanceAware(resistance_aware);
+  cugr_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
