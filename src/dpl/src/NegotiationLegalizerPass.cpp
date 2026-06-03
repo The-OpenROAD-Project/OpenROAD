@@ -38,7 +38,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
   std::vector<std::vector<std::pair<int, int>>> row_buckets(grid_h_);
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+  for (int i = 0; std::cmp_less(i, cells_.size()); ++i) {
     const NegCell& nb = cells_[i];
     if (nb.fixed || nb.y < 0 || nb.y >= grid_h_ || active_set.contains(i)) {
       continue;
