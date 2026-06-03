@@ -59,6 +59,13 @@ struct Constants
 
   double maze_logistic_slope = 0.5;
 
+  // Min net length (bbox hp) for res-aware; short nets are skipped
+  // because the via cost of climbing exceeds their wire-R savings.
+  int resistance_min_net_length = 3;
+
+  // Scales the res-aware resistance cost to CUGR's wire-cost magnitude.
+  double resistance_weight = 500.0;
+
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;
   double wire_patch_threshold = 2.0;
@@ -229,6 +236,15 @@ class CUGR
   int congestion_iterations_ = 5;
 
   bool resistance_aware_ = false;
+  // Per-run normalisers for getResAwareScore (default 1 => well-defined).
+  float worst_slack_ = 1.0f;
+  float worst_resistance_ = 1.0f;
+  int worst_fanout_ = 1;
+  int worst_net_length_ = 1;
+
+  // The initial PatternRoute pass marks a wider critical set because its
+  // placement slack is noisier than the routing slack used later.
+  static constexpr float kPatternRouteWiden = 2.0f;
   std::vector<int> nets_to_route_;
 };
 
