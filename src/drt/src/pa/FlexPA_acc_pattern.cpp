@@ -87,6 +87,9 @@ bool FlexPA::instPrefersHorizontal(frInst* unique_inst)
   const int pin_access_idx = unique_inst->getPinAccessIdx();
   // Positive if most access points are on Horizontal layers, Negative if on
   // Vertical Layers
+  if (pin_access_idx < 0) {
+    return true;
+  }
   int layer_direction_bias = 0;
   const auto tech = getDesign()->getTech();
   for (auto& inst_term : unique_inst->getInstTerms()) {
