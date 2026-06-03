@@ -53,8 +53,8 @@ class EmapStrategy : public ResynthesisStrategy
 
   struct TieMaster
   {
-    odb::dbMaster* master = nullptr;
-    std::string out_pin;
+    odb::dbMaster* const master;
+    const std::string out_pin;
   };
 
   std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>

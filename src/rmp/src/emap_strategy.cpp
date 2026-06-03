@@ -154,41 +154,10 @@ std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
     sta::dbSta* sta,
     bool value)
 {
-  std::vector<TieMaster> candidates;
-
   for (const auto& lib : sta->db()->getLibs()) {
     for (auto* master : lib->getMasters()) {
-      int sig_in = 0, sig_out = 0;
-      std::string out_name;
-
-      for (auto* mt : master->getMTerms()) {
-        auto sig = mt->getSigType();
-        if (sig == odb::dbSigType::POWER || sig == odb::dbSigType::GROUND) {
-          continue;
-        }
-        switch (mt->getIoType().getValue()) {
-          case odb::dbIoType::INPUT:
-            sig_in++;
-            break;
-          case odb::dbIoType::OUTPUT:
-            sig_out++;
-            out_name = mt->getName();
-            break;
-          default:
-            // ignore INOUT/FEEDTHRU
-            break;
-        }
-      }
-
-      if (sig_in != 0 || sig_out != 1) {
-        continue;
-      }
-
-      // likely a constant cell
-      TieMaster tm = {.master = master, .out_pin = out_name};
-
       auto lib_cell = FindLibertyCellByMasterName(sta, master->getName());
-      if (!lib_cell.has_value()) {
+      if (!lib_cell) {
         continue;
       }
       auto* port_it = lib_cell.value()->portIterator();
@@ -197,10 +166,20 @@ std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
         if (!port->direction()->isOutput()) {
           continue;
         }
+
         auto* func = port->function();
+        if (!func) {
+          continue;
+        }
+
+        auto* mterm = master->findMTerm(port->name().c_str());
+        if (!mterm || mterm->getIoType() != odb::dbIoType::OUTPUT) {
+          continue;
+        }
+
         if ((value && func->op() == sta::FuncExpr::Op::one)
             || (!value && func->op() == sta::FuncExpr::Op::zero)) {
-          return tm;
+          return TieMaster{master, port->name()};
         }
       }
     }
