@@ -1,0 +1,33 @@
+{
+  "name": "dbUnfoldedBump",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "chip_bump_inst_",
+      "type": "dbId<_dbChipBumpInst>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "parent_region_",
+      "type": "dbId<_dbUnfoldedRegion>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "region_next_",
+      "type": "dbId<_dbUnfoldedBump>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "odb/dbId.h"
+  ],
+  "cpp_includes": [
+    "dbChipBumpInst.h",
+    "dbChipBump.h",
+    "dbInst.h",
+    "dbUnfoldedRegion.h",
+    "dbUnfoldedChip.h"
+  ]
+}

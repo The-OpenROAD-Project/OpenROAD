@@ -86,7 +86,7 @@ add_library(db
     dbGroupGroundNetItr.cpp
     dbGDSLib.cpp
     dbSwapMasterSanityChecker.cpp
-    unfoldedModel.cpp
+    dbUnfoldedBuilder.cpp
     util.cpp
     poly_decomp.cpp
     # Generator Code Begin cpp
@@ -160,6 +160,11 @@ add_library(db
     dbTechLayerVoltageSpacing.cpp
     dbTechLayerWidthTableRule.cpp
     dbTechLayerWrongDirSpacingRule.cpp
+    dbUnfoldedBump.cpp
+    dbUnfoldedChip.cpp
+    dbUnfoldedConn.cpp
+    dbUnfoldedNet.cpp
+    dbUnfoldedRegion.cpp
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
@@ -183,6 +188,8 @@ add_library(db
     dbNetTrackItr.cpp
     dbRegionGroupItr.cpp
     dbScanListScanInstItr.cpp
+    dbUnfoldedBumpItr.cpp
+    dbUnfoldedRegionItr.cpp
     # Generator Code End cpp
 )
 

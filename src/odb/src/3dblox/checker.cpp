@@ -5,10 +5,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <deque>
 #include <functional>
 #include <map>
-#include <numeric>
 #include <ranges>
 #include <set>
 #include <string>
@@ -23,7 +21,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"  // IWYU pragma: keep
-#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 #include "utl/spatialIndex.h"
 #include "utl/unionFind.h"
@@ -34,74 +31,40 @@ namespace {
 
 constexpr int kBumpMarkerHalfSize = 50;
 
-const char* sideToString(UnfoldedRegionSide side)
+// Local representation of an alignment-marker instance found while
+// scanning an unfolded chip's leaf block. Holds the source dbInst plus
+// its parent dbUnfoldedChip; bbox and orient are computed by applying
+// the chip's world transform.
+//
+// Lives only inside checkAlignmentMarkers(). When STA-style
+// dbUnfoldedInst is introduced, this becomes a filtered view over that
+// table.
+struct UnfoldedAlignmentMarker
 {
-  switch (side) {
-    case UnfoldedRegionSide::TOP:
-      return "TOP";
-    case UnfoldedRegionSide::BOTTOM:
-      return "BOTTOM";
-    case UnfoldedRegionSide::INTERNAL:
-      return "INTERNAL";
-    case UnfoldedRegionSide::INTERNAL_EXT:
-      return "INTERNAL_EXT";
-  }
-  return "UNKNOWN";
-}
+  dbUnfoldedChip* parent_chip = nullptr;
+  dbInst* inst = nullptr;
 
-MatingSurfaces getMatingSurfaces(const UnfoldedConnection& conn)
-{
-  auto* r1 = conn.top_region;
-  auto* r2 = conn.bottom_region;
-  if (!r1 || !r2) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
+  Rect getBBox() const
+  {
+    Rect bbox = inst->getBBox()->getBox();
+    parent_chip->getTransform().apply(bbox);
+    return bbox;
   }
 
-  // r1 faces down (Bottom side) and r2 faces up (Top side) -> r1 is above r2
-  bool r1_down_r2_up = r1->isBottom() && r2->isTop();
-  // r1 faces up (Top side) and r2 faces down (Bottom side) -> r2 is above r1
-  bool r1_up_r2_down = r1->isTop() && r2->isBottom();
-
-  if (r1_down_r2_up == r1_up_r2_down) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
+  dbOrientType getOrient() const
+  {
+    dbTransform inst_xform = inst->getTransform();
+    dbTransform total = inst_xform;
+    total.concat(parent_chip->getTransform());
+    return total.getOrient();
   }
-
-  auto* top = r1_down_r2_up ? r1 : r2;
-  auto* bot = r1_down_r2_up ? r2 : r1;
-  return {
-      .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
-}
-
-bool isValid(const UnfoldedConnection& conn)
-{
-  if (!conn.top_region || !conn.bottom_region) {
-    return true;
-  }
-  if (!conn.top_region->cuboid.xyIntersects(conn.bottom_region->cuboid)) {
-    return false;
-  }
-  if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
-    return std::max(conn.top_region->cuboid.zMin(),
-                    conn.bottom_region->cuboid.zMin())
-           <= std::min(conn.top_region->cuboid.zMax(),
-                       conn.bottom_region->cuboid.zMax());
-  }
-
-  auto surfaces = getMatingSurfaces(conn);
-  if (!surfaces.valid) {
-    return false;
-  }
-  if (surfaces.top_z < surfaces.bot_z) {
-    return false;
-  }
-  return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
-}
+};
 
 using AlignmentMarkerIndex
     = utl::SpatialIndex<Point, const UnfoldedAlignmentMarker*>;
 
 std::vector<AlignmentMarkerIndex::Value> collectMarkersInRect(
-    const std::deque<UnfoldedAlignmentMarker>& markers,
+    const std::vector<UnfoldedAlignmentMarker>& markers,
     const Rect& rect)
 {
   std::vector<AlignmentMarkerIndex::Value> out;
@@ -120,20 +83,25 @@ using AlignmentViolationReporter
                          const std::string&)>;
 
 void matchMarkersBetweenChips(
-    const UnfoldedModel* model,
+    const std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>&
+        rules_by_master,
     const std::vector<AlignmentMarkerIndex::Value>& list_a,
     const std::vector<AlignmentMarkerIndex::Value>& list_b,
-    const UnfoldedChip* c_a,
-    const UnfoldedChip* c_b,
+    dbUnfoldedChip* c_a,
+    dbUnfoldedChip* c_b,
     std::unordered_set<const UnfoldedAlignmentMarker*>& matched_markers,
     const AlignmentViolationReporter& report)
 {
   AlignmentMarkerIndex index_b(list_b);
 
   for (auto& [pa, marker] : list_a) {
+    auto rules_it = rules_by_master.find(marker->inst->getMaster());
+    if (rules_it == rules_by_master.end()) {
+      continue;
+    }
+    const std::vector<dbAlignmentMarkerRule*>& rules = rules_it->second;
+
     int max_tolerance = 0;
-    const std::vector<dbAlignmentMarkerRule*>& rules
-        = model->getAlignmentMarkerRules(marker->inst->getMaster());
     for (const auto* rule : rules) {
       max_tolerance = std::max(max_tolerance, rule->getTolerance());
     }
@@ -154,28 +122,24 @@ void matchMarkersBetweenChips(
         if (b_marker->inst->getMaster() != rule->getMasterB()) {
           continue;
         }
-        if (odb::Point::manhattanDistance(a_marker->getBBox().center(),
-                                          b_marker->getBBox().center())
+        if (Point::manhattanDistance(a_marker->getBBox().center(),
+                                     b_marker->getBBox().center())
             <= rule->getTolerance()) {
           counterparts.insert(candidate);
-          // check the relative orientation
           if (!rule->getRelativeOrientations().empty()) {
             dbTransform rel_xform(a_marker->getOrient());
             rel_xform.invert();
             rel_xform.concat(dbTransform(b_marker->getOrient()));
             const dbOrientType relative_orient = rel_xform.getOrient();
-            const auto& allowed_relative_orients
-                = rule->getRelativeOrientations();
-            if (std::ranges::find(allowed_relative_orients, relative_orient)
-                == allowed_relative_orients.end()) {
-              // candidate violates the relative-orientation constraint
+            const auto& allowed = rule->getRelativeOrientations();
+            if (std::ranges::find(allowed, relative_orient) == allowed.end()) {
               report(a_marker,
                      b_marker,
                      fmt::format(
                          "Alignment marker on {} has mismatched "
                          "relative orientation with counterpart on {} ({})",
-                         b_marker->parent_chip->name,
-                         a_marker->parent_chip->name,
+                         b_marker->parent_chip->getName(),
+                         a_marker->parent_chip->getName(),
                          relative_orient.getString()));
             }
           }
@@ -190,9 +154,9 @@ void matchMarkersBetweenChips(
                fmt::format(
                    "Alignment marker on {} has {} counterparts on {} within "
                    "tolerance",
-                   marker->parent_chip->name,
+                   marker->parent_chip->getName(),
                    counterparts.size(),
-                   c_b->name));
+                   c_b->getName()));
       }
     }
     for (const auto& counterpart : counterparts) {
@@ -201,6 +165,71 @@ void matchMarkersBetweenChips(
     }
   }
 }
+
+const char* sideToString(dbUnfoldedRegion::EffectiveSide side)
+{
+  switch (side) {
+    case dbUnfoldedRegion::EffectiveSide::TOP:
+      return "TOP";
+    case dbUnfoldedRegion::EffectiveSide::BOTTOM:
+      return "BOTTOM";
+    case dbUnfoldedRegion::EffectiveSide::INTERNAL:
+      return "INTERNAL";
+    case dbUnfoldedRegion::EffectiveSide::INTERNAL_EXT:
+      return "INTERNAL_EXT";
+  }
+  return "UNKNOWN";
+}
+
+MatingSurfaces getMatingSurfaces(dbUnfoldedConn* conn)
+{
+  dbUnfoldedRegion* r1 = conn->getTopRegion();
+  dbUnfoldedRegion* r2 = conn->getBottomRegion();
+  if (!r1 || !r2) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  // r1 faces down (Bottom side) and r2 faces up (Top side) -> r1 is above r2
+  bool r1_down_r2_up = r1->isBottom() && r2->isTop();
+  // r1 faces up (Top side) and r2 faces down (Bottom side) -> r2 is above r1
+  bool r1_up_r2_down = r1->isTop() && r2->isBottom();
+
+  if (r1_down_r2_up == r1_up_r2_down) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  auto* top = r1_down_r2_up ? r1 : r2;
+  auto* bot = r1_down_r2_up ? r2 : r1;
+  return {
+      .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
+}
+
+bool isValid(dbUnfoldedConn* conn)
+{
+  auto* r1 = conn->getTopRegion();
+  auto* r2 = conn->getBottomRegion();
+  if (!r1 || !r2) {
+    return true;
+  }
+  if (!r1->getCuboid().xyIntersects(r2->getCuboid())) {
+    return false;
+  }
+  if (r1->isInternalExt() || r2->isInternalExt()) {
+    return std::max(r1->getCuboid().zMin(), r2->getCuboid().zMin())
+           <= std::min(r1->getCuboid().zMax(), r2->getCuboid().zMax());
+  }
+
+  auto surfaces = getMatingSurfaces(conn);
+  if (!surfaces.valid) {
+    return false;
+  }
+  if (surfaces.top_z < surfaces.bot_z) {
+    return false;
+  }
+  return (surfaces.top_z - surfaces.bot_z)
+         == conn->getChipConn()->getThickness();
+}
+
 }  // namespace
 
 Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
@@ -210,49 +239,51 @@ Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
 void Checker::check()
 {
   dbChip* chip = db_->getChip();
-  const UnfoldedModel* model = db_->getUnfoldedModel();
-  if (model == nullptr || chip == nullptr) {
+  if (chip == nullptr) {
     return;
   }
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  checkLogicalConnectivity(top_cat, model);
-  checkFloatingChips(top_cat, model);
-  checkOverlappingChips(top_cat, model);
-  checkInternalExtUsage(top_cat, model);
-  checkConnectionRegions(top_cat, model);
-  checkBumpPhysicalAlignment(top_cat, model);
-  checkAlignmentMarkers(top_cat, model);
+  checkLogicalConnectivity(top_cat);
+  checkFloatingChips(top_cat);
+  checkOverlappingChips(top_cat);
+  checkInternalExtUsage(top_cat);
+  checkConnectionRegions(top_cat);
+  checkBumpPhysicalAlignment(top_cat);
+  checkAlignmentMarkers(top_cat);
 }
 
-void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
-                                 const UnfoldedModel* model)
+void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
 {
-  const auto& chips = model->getChips();
+  std::vector<dbUnfoldedChip*> chips;
+  for (dbUnfoldedChip* chip : db_->getUnfoldedChips()) {
+    chips.push_back(chip);
+  }
   // Add one more node for "ground" (external world: package, PCB, ...)
   utl::UnionFind uf(chips.size() + 1);
   const size_t ground_node = chips.size();
 
-  std::unordered_map<const UnfoldedChip*, size_t> chip_map;
+  std::unordered_map<dbUnfoldedChip*, size_t> chip_map;
   for (size_t i = 0; i < chips.size(); ++i) {
-    chip_map[&chips[i]] = i;
+    chip_map[chips[i]] = i;
   }
 
-  for (const auto& conn : model->getConnections()) {
+  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
     if (isValid(conn)) {
       // Case 1: Both regions exist - connect the two chips together
-      if (conn.top_region && conn.bottom_region) {
-        auto it1 = chip_map.find(conn.top_region->parent_chip);
-        auto it2 = chip_map.find(conn.bottom_region->parent_chip);
+      if (conn->getTopRegion() && conn->getBottomRegion()) {
+        auto it1 = chip_map.find(conn->getTopRegion()->getParentChip());
+        auto it2 = chip_map.find(conn->getBottomRegion()->getParentChip());
         if (it1 != chip_map.end() && it2 != chip_map.end()) {
           uf.unite(it1->second, it2->second);
         }
       }
       // Case 2: Virtual connection (one region is null) - connect chip to
       // ground
-      else if (conn.top_region || conn.bottom_region) {
-        const UnfoldedRegion* region
-            = conn.top_region ? conn.top_region : conn.bottom_region;
-        auto it = chip_map.find(region->parent_chip);
+      else if (conn->getTopRegion() || conn->getBottomRegion()) {
+        dbUnfoldedRegion* region = conn->getTopRegion()
+                                       ? conn->getTopRegion()
+                                       : conn->getBottomRegion();
+        auto it = chip_map.find(region->getParentChip());
         if (it != chip_map.end()) {
           uf.unite(it->second, ground_node);
         }
@@ -260,9 +291,9 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     }
   }
 
-  std::vector<std::vector<const UnfoldedChip*>> groups(chips.size() + 1);
+  std::vector<std::vector<dbUnfoldedChip*>> groups(chips.size() + 1);
   for (size_t i = 0; i < chips.size(); ++i) {
-    groups[uf.find(i)].push_back(&chips[i]);
+    groups[uf.find(i)].push_back(chips[i]);
   }
   auto ground_leader = uf.find(ground_node);
   const bool ground_empty = groups[ground_leader].empty();
@@ -292,34 +323,35 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
       // null-deref crash.
       if (auto* marker = dbMarker::create(cat)) {
         for (auto* chip : group) {
-          marker->addShape(chip->cuboid);
-          marker->addSource(chip->chip_inst_path.back());
+          marker->addShape(chip->getCuboid());
+          marker->addSource(chip->getChipInstPath().back());
         }
-        marker->setComment("Isolated chip set starting with " + group[0]->name);
+        marker->setComment("Isolated chip set starting with "
+                           + group[0]->getName());
       }
     }
   }
 }
 
-void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel* model)
+void Checker::checkOverlappingChips(dbMarkerCategory* top_cat)
 {
-  const auto& chips = model->getChips();
-  std::vector<int> sorted(chips.size());
-  std::iota(sorted.begin(), sorted.end(), 0);
-  std::ranges::sort(sorted, [&](int a, int b) {
-    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+  std::vector<dbUnfoldedChip*> chips;
+  for (dbUnfoldedChip* chip : db_->getUnfoldedChips()) {
+    chips.push_back(chip);
+  }
+  std::ranges::sort(chips, [](dbUnfoldedChip* a, dbUnfoldedChip* b) {
+    return a->getCuboid().xMin() < b->getCuboid().xMin();
   });
 
-  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
-  for (size_t i = 0; i < sorted.size(); ++i) {
-    auto* c1 = &chips[sorted[i]];
-    for (size_t j = i + 1; j < sorted.size(); ++j) {
-      auto* c2 = &chips[sorted[j]];
-      if (c2->cuboid.xMin() >= c1->cuboid.xMax()) {
+  std::vector<std::pair<dbUnfoldedChip*, dbUnfoldedChip*>> overlaps;
+  for (size_t i = 0; i < chips.size(); ++i) {
+    auto* c1 = chips[i];
+    for (size_t j = i + 1; j < chips.size(); ++j) {
+      auto* c2 = chips[j];
+      if (c2->getCuboid().xMin() >= c1->getCuboid().xMax()) {
         break;
       }
-      if (c1->cuboid.overlaps(c2->cuboid)) {
+      if (c1->getCuboid().overlaps(c2->getCuboid())) {
         overlaps.emplace_back(c1, c2);
       }
     }
@@ -330,24 +362,35 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
     logger_->warn(utl::ODB, 156, "Found {} overlapping chips", overlaps.size());
     for (const auto& [inst1, inst2] : overlaps) {
       if (auto* marker = dbMarker::create(cat)) {
-        auto intersection = inst1->cuboid.intersect(inst2->cuboid);
+        auto intersection = inst1->getCuboid().intersect(inst2->getCuboid());
         marker->addShape(intersection);
-        marker->addSource(inst1->chip_inst_path.back());
-        marker->addSource(inst2->chip_inst_path.back());
-        marker->setComment(
-            fmt::format("Chips {} and {} overlap", inst1->name, inst2->name));
+        marker->addSource(inst1->getChipInstPath().back());
+        marker->addSource(inst2->getChipInstPath().back());
+        marker->setComment(fmt::format(
+            "Chips {} and {} overlap", inst1->getName(), inst2->getName()));
       }
     }
   }
 }
 
-void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel* model)
+void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
 {
+  // The struct model maintained an isUsed bit on each region; in the
+  // dbObject model we derive it here on demand by scanning connections.
+  std::unordered_set<dbUnfoldedRegion*> used;
+  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+    if (auto* r = conn->getTopRegion(); r && r->isInternalExt()) {
+      used.insert(r);
+    }
+    if (auto* r = conn->getBottomRegion(); r && r->isInternalExt()) {
+      used.insert(r);
+    }
+  }
+
   dbMarkerCategory* cat = nullptr;
-  for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
-      if (region.isInternalExt() && !region.isUsed) {
+  for (dbUnfoldedChip* chip : db_->getUnfoldedChips()) {
+    for (dbUnfoldedRegion* region : chip->getRegions()) {
+      if (region->isInternalExt() && !used.contains(region)) {
         if (!cat) {
           cat = dbMarkerCategory::createOrReplace(top_cat,
                                                   "Unused internal_ext");
@@ -355,46 +398,45 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
         logger_->warn(utl::ODB,
                       464,
                       "Region {} is internal_ext but unused",
-                      region.region_inst->getChipRegion()->getName());
+                      region->getChipRegionInst()->getChipRegion()->getName());
         if (auto* marker = dbMarker::create(cat)) {
-          marker->addSource(region.region_inst);
-          marker->addShape(region.cuboid);
-          marker->setComment(
-              fmt::format("Unused internal_ext region: {}",
-                          region.region_inst->getChipRegion()->getName()));
+          marker->addSource(region->getChipRegionInst());
+          marker->addShape(region->getCuboid());
+          marker->setComment(fmt::format(
+              "Unused internal_ext region: {}",
+              region->getChipRegionInst()->getChipRegion()->getName()));
         }
       }
     }
   }
 }
 
-void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
-                                     const UnfoldedModel* model)
+void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
 {
-  auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
-    marker->addSource(r->region_inst);
-    marker->addShape(Rect(r->cuboid.xMin(),
-                          r->cuboid.yMin(),
-                          r->cuboid.xMax(),
-                          r->cuboid.yMax()));
+  auto describe = [](dbUnfoldedRegion* r, dbMarker* marker) {
+    const Cuboid cuboid = r->getCuboid();
+    marker->addSource(r->getChipRegionInst());
+    marker->addShape(
+        Rect(cuboid.xMin(), cuboid.yMin(), cuboid.xMax(), cuboid.yMax()));
     return fmt::format("{}/{} (faces {})",
-                       r->parent_chip->name,
-                       r->region_inst->getChipRegion()->getName(),
-                       sideToString(r->effective_side));
+                       r->getParentChip()->getName(),
+                       r->getChipRegionInst()->getChipRegion()->getName(),
+                       sideToString(r->getEffectiveSide()));
   };
   int count = 0;
   dbMarkerCategory* cat = nullptr;
-  for (const auto& conn : model->getConnections()) {
+  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
     if (!isValid(conn)) {
       if (!cat) {
         cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
       }
       if (auto* marker = dbMarker::create(cat)) {
-        marker->addSource(conn.connection);
-        std::string msg = fmt::format("Invalid connection {}: {} to {}",
-                                      conn.connection->getName(),
-                                      describe(conn.top_region, marker),
-                                      describe(conn.bottom_region, marker));
+        marker->addSource(conn->getChipConn());
+        std::string msg
+            = fmt::format("Invalid connection {}: {} to {}",
+                          conn->getChipConn()->getName(),
+                          describe(conn->getTopRegion(), marker),
+                          describe(conn->getBottomRegion(), marker));
         marker->setComment(msg);
         logger_->warn(utl::ODB, 207, msg);
       }
@@ -406,16 +448,16 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
   }
 }
 
-void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
-                                         const UnfoldedModel* model)
+void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
 {
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
-  for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
-      for (const auto& bump : region.bumps) {
-        const auto& p = bump.global_position;
-        if (!region.cuboid.getEnclosingRect().intersects({p.x(), p.y()})) {
+  for (dbUnfoldedChip* chip : db_->getUnfoldedChips()) {
+    for (dbUnfoldedRegion* region : chip->getRegions()) {
+      for (dbUnfoldedBump* bump : region->getBumps()) {
+        const Point3D p = bump->getGlobalPosition();
+        if (!region->getCuboid().getEnclosingRect().intersects(
+                {p.x(), p.y()})) {
           violation_count++;
           if (!cat) {
             cat = dbMarkerCategory::createOrReplace(top_cat, "Bump Alignment");
@@ -424,14 +466,14 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
           // max_markers_ limit; skip the addSource/addShape/setComment
           // chain to avoid a null-deref crash in that case.
           if (auto* marker = dbMarker::create(cat)) {
-            marker->addSource(bump.bump_inst);
+            marker->addSource(bump->getChipBumpInst());
             marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
                                   p.y() - kBumpMarkerHalfSize,
                                   p.x() + kBumpMarkerHalfSize,
                                   p.y() + kBumpMarkerHalfSize));
-            marker->setComment(
-                fmt::format("Bump is outside its parent region {}",
-                            region.region_inst->getChipRegion()->getName()));
+            marker->setComment(fmt::format(
+                "Bump is outside its parent region {}",
+                region->getChipRegionInst()->getChipRegion()->getName()));
           }
         }
       }
@@ -445,14 +487,46 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
   }
 }
 
-void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
-                                   const UnfoldedModel* model)
+void Checker::checkNetConnectivity(dbMarkerCategory* top_cat)
 {
 }
 
-void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel* model)
+void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
 {
+  // Build the per-master rule index. Local to this check; alignment-marker
+  // rules are queried only here, so there's no point persisting it.
+  std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>
+      rules_by_master;
+  for (dbAlignmentMarkerRule* rule : db_->getAlignmentMarkerRules()) {
+    rules_by_master[rule->getMasterA()].push_back(rule);
+    if (rule->getMasterB() != rule->getMasterA()) {
+      rules_by_master[rule->getMasterB()].push_back(rule);
+    }
+  }
+  if (rules_by_master.empty()) {
+    return;
+  }
+
+  // Materialize the per-chip marker lists by walking each unfolded chip's
+  // leaf block and filtering by master against the rule index.
+  std::unordered_map<dbUnfoldedChip*, std::vector<UnfoldedAlignmentMarker>>
+      markers;
+  for (dbUnfoldedChip* chip : db_->getUnfoldedChips()) {
+    std::vector<dbChipInst*> path = chip->getChipInstPath();
+    if (path.empty()) {
+      continue;
+    }
+    dbBlock* block = path.back()->getMasterChip()->getBlock();
+    if (block == nullptr) {
+      continue;
+    }
+    for (dbInst* inst : block->getInsts()) {
+      if (rules_by_master.contains(inst->getMaster())) {
+        markers[chip].push_back({.parent_chip = chip, .inst = inst});
+      }
+    }
+  }
+
   std::unordered_set<const UnfoldedAlignmentMarker*> matched_markers;
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
@@ -463,6 +537,9 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
       cat = dbMarkerCategory::createOrReplace(top_cat, "Alignment Markers");
     }
     auto* marker = dbMarker::create(cat);
+    if (marker == nullptr) {
+      return;
+    }
     // TODO: Add sources correctly
     marker->addShape(m->getBBox());
     if (other) {
@@ -472,42 +549,49 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
     violation_count++;
   };
 
-  for (const auto& conn : model->getConnections()) {
+  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
     if (!isValid(conn)) {
       continue;
     }
-    const UnfoldedRegion* ra = conn.top_region;
-    const UnfoldedRegion* rb = conn.bottom_region;
+    dbUnfoldedRegion* ra = conn->getTopRegion();
+    dbUnfoldedRegion* rb = conn->getBottomRegion();
     if (!ra || !rb) {
       continue;
     }
-    const UnfoldedChip* c_a = ra->parent_chip;
-    const UnfoldedChip* c_b = rb->parent_chip;
+    dbUnfoldedChip* c_a = ra->getParentChip();
+    dbUnfoldedChip* c_b = rb->getParentChip();
     if (c_a == c_b) {
       continue;
     }
-    if (c_a->alignment_markers.empty() && c_b->alignment_markers.empty()) {
+    auto a_it = markers.find(c_a);
+    auto b_it = markers.find(c_b);
+    if (a_it == markers.end() && b_it == markers.end()) {
       continue;
     }
 
-    const Rect overlap = ra->cuboid.getEnclosingRect().intersect(
-        rb->cuboid.getEnclosingRect());
-    auto list_a = collectMarkersInRect(c_a->alignment_markers, overlap);
-    auto list_b = collectMarkersInRect(c_b->alignment_markers, overlap);
+    const Rect overlap = ra->getCuboid().getEnclosingRect().intersect(
+        rb->getCuboid().getEnclosingRect());
+    auto list_a = (a_it != markers.end())
+                      ? collectMarkersInRect(a_it->second, overlap)
+                      : std::vector<AlignmentMarkerIndex::Value>{};
+    auto list_b = (b_it != markers.end())
+                      ? collectMarkersInRect(b_it->second, overlap)
+                      : std::vector<AlignmentMarkerIndex::Value>{};
     if (list_a.empty() && list_b.empty()) {
       continue;
     }
 
     matchMarkersBetweenChips(
-        model, list_a, list_b, c_a, c_b, matched_markers, report);
+        rules_by_master, list_a, list_b, c_a, c_b, matched_markers, report);
   }
-  for (const auto& chip : model->getChips()) {
-    for (const auto& marker : chip.alignment_markers) {
-      if (matched_markers.find(&marker) == matched_markers.end()) {
+
+  for (const auto& [chip, chip_markers] : markers) {
+    for (const auto& marker : chip_markers) {
+      if (!matched_markers.contains(&marker)) {
         report(&marker,
                nullptr,
                fmt::format("Alignment marker on {} has no counterpart",
-                           chip.name));
+                           chip->getName()));
       }
     }
   }
@@ -520,75 +604,78 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
   }
 }
 
-void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
-                                       const UnfoldedModel* model)
+void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
 {
-  std::unordered_map<const UnfoldedBump*, const UnfoldedNet*> bump_net_map;
-  for (const auto& net : model->getNets()) {
-    for (const auto* bump : net.connected_bumps) {
-      bump_net_map[bump] = &net;
+  std::unordered_map<dbUnfoldedBump*, dbUnfoldedNet*> bump_net_map;
+  for (dbUnfoldedNet* net : db_->getUnfoldedNets()) {
+    for (dbUnfoldedBump* bump : net->getConnectedBumps()) {
+      bump_net_map[bump] = net;
     }
   }
 
-  auto get_net_name = [&](const UnfoldedBump* bump) -> std::string {
+  auto get_net_name = [&](dbUnfoldedBump* bump) -> std::string {
     auto it = bump_net_map.find(bump);
     if (it != bump_net_map.end()) {
-      return it->second->chip_net->getName();
+      return it->second->getChipNet()->getName();
     }
     return "defines no net";
   };
 
   dbMarkerCategory* cat = nullptr;
-  for (const auto& conn : model->getConnections()) {
+  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
     if (!isValid(conn)) {
       continue;
     }
-    if (!conn.top_region || !conn.bottom_region) {
+    dbUnfoldedRegion* top_region = conn->getTopRegion();
+    dbUnfoldedRegion* bot_region = conn->getBottomRegion();
+    if (!top_region || !bot_region) {
       continue;
     }
 
-    std::map<Point, const UnfoldedBump*> bot_bumps;
-    for (const auto& bump : conn.bottom_region->bumps) {
-      Point p(bump.global_position.x(), bump.global_position.y());
-      bot_bumps[p] = &bump;
+    std::map<Point, dbUnfoldedBump*> bot_bumps;
+    for (dbUnfoldedBump* bump : bot_region->getBumps()) {
+      const Point3D pos = bump->getGlobalPosition();
+      bot_bumps[Point(pos.x(), pos.y())] = bump;
     }
 
-    for (const auto& top_bump : conn.top_region->bumps) {
-      Point p(top_bump.global_position.x(), top_bump.global_position.y());
+    for (dbUnfoldedBump* top_bump : top_region->getBumps()) {
+      const Point3D top_pos = top_bump->getGlobalPosition();
+      const Point p(top_pos.x(), top_pos.y());
       auto it = bot_bumps.find(p);
-      if (it != bot_bumps.end()) {
-        const UnfoldedBump* bot_bump = it->second;
+      if (it == bot_bumps.end()) {
+        continue;
+      }
+      dbUnfoldedBump* bot_bump = it->second;
 
-        // Check logical connectivity
-        auto top_net_it = bump_net_map.find(&top_bump);
-        auto bot_net_it = bump_net_map.find(bot_bump);
+      // Check logical connectivity
+      auto top_net_it = bump_net_map.find(top_bump);
+      auto bot_net_it = bump_net_map.find(bot_bump);
 
-        const UnfoldedNet* top_net
-            = top_net_it != bump_net_map.end() ? top_net_it->second : nullptr;
-        const UnfoldedNet* bot_net
-            = bot_net_it != bump_net_map.end() ? bot_net_it->second : nullptr;
+      dbUnfoldedNet* top_net
+          = top_net_it != bump_net_map.end() ? top_net_it->second : nullptr;
+      dbUnfoldedNet* bot_net
+          = bot_net_it != bump_net_map.end() ? bot_net_it->second : nullptr;
 
-        if (top_net != bot_net) {
-          if (!cat) {
-            cat = dbMarkerCategory::createOrReplace(top_cat,
-                                                    "Logical Connectivity");
-          }
-          if (auto* marker = dbMarker::create(cat)) {
-            marker->addSource(top_bump.bump_inst);
-            marker->addSource(bot_bump->bump_inst);
-            marker->addShape(conn.top_region->cuboid.intersect(
-                conn.bottom_region->cuboid));  // Mark overlap region
+      if (top_net != bot_net) {
+        if (!cat) {
+          cat = dbMarkerCategory::createOrReplace(top_cat,
+                                                  "Logical Connectivity");
+        }
+        if (auto* marker = dbMarker::create(cat)) {
+          marker->addSource(top_bump->getChipBumpInst());
+          marker->addSource(bot_bump->getChipBumpInst());
+          marker->addShape(top_region->getCuboid().intersect(
+              bot_region->getCuboid()));  // Mark overlap region
 
-            std::string msg = fmt::format(
-                "Bumps at ({}, {}) align physically but logical connectivity "
-                "mismatch: Top bump {} vs Bottom bump {}",
-                p.x(),
-                p.y(),
-                get_net_name(&top_bump),
-                get_net_name(bot_bump));
-            marker->setComment(msg);
-            logger_->warn(utl::ODB, 208, msg);
-          }
+          std::string msg = fmt::format(
+              "Bumps at ({}, {}) align physically but logical connectivity "
+              "mismatch: Top bump {} vs Bottom bump {}",
+              p.x(),
+              p.y(),
+              get_net_name(top_bump),
+              get_net_name(bot_bump));
+          marker->setComment(msg);
+          logger_->warn(utl::ODB, 208, msg);
         }
       }
     }

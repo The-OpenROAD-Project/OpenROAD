@@ -285,6 +285,11 @@ class _dbChipRegionInst;
 class _dbChipConn;
 class _dbChipBumpInst;
 class _dbChipNet;
+class _dbUnfoldedChip;
+class _dbUnfoldedRegion;
+class _dbUnfoldedBump;
+class _dbUnfoldedConn;
+class _dbUnfoldedNet;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
@@ -292,11 +297,12 @@ class dbChipRegionInstItr;
 class dbChipConnItr;
 class dbChipBumpInstItr;
 class dbChipNetItr;
+class dbUnfoldedRegionItr;
+class dbUnfoldedBumpItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
 class _dbGDSLib;
-class UnfoldedModel;
 // User Code End Classes
 
 class _dbDatabase : public _dbObject
@@ -334,6 +340,11 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipConn>* chip_conn_tbl_;
   dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
   dbTable<_dbChipNet>* chip_net_tbl_;
+  dbTable<_dbUnfoldedChip>* unfolded_chip_tbl_;
+  dbTable<_dbUnfoldedRegion>* unfolded_region_tbl_;
+  dbTable<_dbUnfoldedBump>* unfolded_bump_tbl_;
+  dbTable<_dbUnfoldedConn>* unfolded_conn_tbl_;
+  dbTable<_dbUnfoldedNet>* unfolded_net_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* tech_tbl_;
@@ -345,13 +356,14 @@ class _dbDatabase : public _dbObject
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
   dbChipBumpInstItr* chip_bump_inst_itr_;
+  dbUnfoldedRegionItr* unfolded_region_itr_;
+  dbUnfoldedBumpItr* unfolded_bump_itr_;
   dbChipNetItr* chip_net_itr_;
   int unique_id_;
   bool hierarchy_;
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
-  UnfoldedModel* unfolded_model_;  // non-persistent object
 
   // User Code End Fields
 };

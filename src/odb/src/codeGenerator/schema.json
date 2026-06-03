@@ -209,6 +209,24 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbChipNet.h", "dbChip.h"]
+    },
+    {
+      "name": "dbUnfoldedRegionItr",
+      "parentObject": "dbUnfoldedRegion",
+      "tableName": "unfolded_region_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbUnfoldedRegion.h", "dbUnfoldedChip.h"]
+    },
+    {
+      "name": "dbUnfoldedBumpItr",
+      "parentObject": "dbUnfoldedBump",
+      "tableName": "unfolded_bump_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbUnfoldedBump.h", "dbUnfoldedRegion.h"]
     }
   ],
   "relations":[
@@ -543,6 +561,41 @@
       "type":"1_n",
       "tbl_name":"chip_net_tbl_",
       "schema":"kSchemaChipRegion",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbUnfoldedChip",
+      "type":"1_n",
+      "tbl_name":"unfolded_chip_tbl_",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbUnfoldedRegion",
+      "type":"1_n",
+      "tbl_name":"unfolded_region_tbl_",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbUnfoldedBump",
+      "type":"1_n",
+      "tbl_name":"unfolded_bump_tbl_",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbUnfoldedConn",
+      "type":"1_n",
+      "tbl_name":"unfolded_conn_tbl_",
+      "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbDatabase",
+      "child":"dbUnfoldedNet",
+      "type":"1_n",
+      "tbl_name":"unfolded_net_tbl_",
       "flags": ["no-serial"]
     },
     {

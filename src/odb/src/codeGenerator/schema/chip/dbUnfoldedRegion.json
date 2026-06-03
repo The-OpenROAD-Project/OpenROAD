@@ -1,0 +1,55 @@
+{
+  "name": "dbUnfoldedRegion",
+  "type": "dbObject",
+  "enums": [
+    {
+      "name": "EffectiveSide",
+      "class": true,
+      "values": [
+        "TOP",
+        "BOTTOM",
+        "INTERNAL",
+        "INTERNAL_EXT"
+      ],
+      "public": true
+    }
+  ],
+  "fields": [
+    {
+      "name": "chip_region_inst_",
+      "type": "dbId<_dbChipRegionInst>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "effective_side_",
+      "type": "uint32_t",
+      "default": 0,
+      "flags": ["private"]
+    },
+    {
+      "name": "parent_chip_",
+      "type": "dbId<_dbUnfoldedChip>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "chip_next_",
+      "type": "dbId<_dbUnfoldedRegion>",
+      "flags": ["private"]
+    },
+    {
+      "name": "bump_",
+      "type": "dbId<_dbUnfoldedBump>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "odb/dbId.h"
+  ],
+  "cpp_includes": [
+    "dbChipRegionInst.h",
+    "dbChipRegion.h",
+    "dbUnfoldedChip.h"
+  ]
+}

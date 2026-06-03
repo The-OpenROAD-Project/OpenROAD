@@ -127,6 +127,11 @@ enum dbObjectType
   dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
+  dbUnfoldedBumpObj,
+  dbUnfoldedChipObj,
+  dbUnfoldedConnObj,
+  dbUnfoldedNetObj,
+  dbUnfoldedRegionObj,
   // Generator Code End DbObjectType
 
   // Lib Objects
