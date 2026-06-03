@@ -46,6 +46,15 @@ class GRNet
   float getSlack() const { return slack_; }
   void setCritical(bool is_critical) { is_critical_ = is_critical; }
   bool isCritical() const { return is_critical_; }
+
+  // Resistance-aware state: the flag gates the PatternRoute cost term;
+  // resistance_/net_length_ feed getResAwareScore.
+  void setResAware(bool res_aware) { is_res_aware_ = res_aware; }
+  bool isResAware() const { return is_res_aware_; }
+  void setResistance(float resistance) { resistance_ = resistance; }
+  float getResistance() const { return resistance_; }
+  void setNetLength(int net_length) { net_length_ = net_length; }
+  int getNetLength() const { return net_length_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
 
@@ -128,6 +137,9 @@ class GRNet
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
+  bool is_res_aware_ = false;
+  float resistance_ = 0.0f;
+  int net_length_ = 0;
   std::vector<double> ndr_costs_;
   bool soft_ndr_ = false;
 };
