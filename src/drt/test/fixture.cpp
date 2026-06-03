@@ -286,6 +286,17 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
   tech->addUConstraint(std::move(con));
 }
 
+void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
+                                          const frCoord spacing_value)
+{
+  auto con = std::make_unique<frSpacingConstraint>(spacing_value);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
 void Fixture::makeMinStepConstraint(frLayerNum layer_num)
 {
   auto con = std::make_unique<frMinStepConstraint>();

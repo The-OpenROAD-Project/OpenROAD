@@ -86,5 +86,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/pad/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pad/test:__pkg__",
+    ],
 )

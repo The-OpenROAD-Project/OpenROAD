@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "SizeDownCandidate.hh"
+#include "SizeDownFanoutCandidate.hh"
 
 #include "MoveCandidate.hh"
 #include "OptimizerTypes.hh"
@@ -15,14 +15,14 @@ namespace rsz {
 
 using utl::RSZ;
 
-SizeDownCandidate::SizeDownCandidate(Resizer& resizer,
-                                     const Target& target,
-                                     sta::Pin* drvr_pin,
-                                     sta::Instance* inst,
-                                     sta::Pin* load_pin,
-                                     sta::LibertyCell* current_cell,
-                                     sta::LibertyCell* replacement,
-                                     sta::Slack slack)
+SizeDownFanoutCandidate::SizeDownFanoutCandidate(Resizer& resizer,
+                                                 const Target& target,
+                                                 sta::Pin* drvr_pin,
+                                                 sta::Instance* inst,
+                                                 sta::Pin* load_pin,
+                                                 sta::LibertyCell* current_cell,
+                                                 sta::LibertyCell* replacement,
+                                                 sta::Slack slack)
     : MoveCandidate(resizer, target),
       drvr_pin_(drvr_pin),
       inst_(inst),
@@ -33,14 +33,14 @@ SizeDownCandidate::SizeDownCandidate(Resizer& resizer,
 {
 }
 
-MoveResult SizeDownCandidate::apply()
+MoveResult SizeDownFanoutCandidate::apply()
 {
   if (!resizer_.replaceCell(inst_, replacement_)) {
     debugPrint(resizer_.logger(),
                RSZ,
-               "size_down_move",
+               "size_down_fanout_move",
                3,
-               "REJECT SizeDownMove {} -> {}: ({} -> {}) slack={}",
+               "REJECT SizeDownFanoutMove {} -> {}: ({} -> {}) slack={}",
                resizer_.network()->pathName(drvr_pin_),
                resizer_.network()->pathName(load_pin_),
                current_cell_->name(),
@@ -51,9 +51,9 @@ MoveResult SizeDownCandidate::apply()
 
   debugPrint(resizer_.logger(),
              RSZ,
-             "size_down_move",
+             "size_down_fanout_move",
              3,
-             "ACCEPT SizeDownMove {} -> {}: ({} -> {}) slack={}",
+             "ACCEPT SizeDownFanoutMove {} -> {}: ({} -> {}) slack={}",
              resizer_.network()->pathName(drvr_pin_),
              resizer_.network()->pathName(load_pin_),
              current_cell_->name(),
@@ -62,7 +62,7 @@ MoveResult SizeDownCandidate::apply()
 
   return {
       .accepted = true,
-      .type = MoveType::kSizeDown,
+      .type = MoveType::kSizeDownFanout,
       .move_count = 1,
       .touched_instances = {inst_},
   };

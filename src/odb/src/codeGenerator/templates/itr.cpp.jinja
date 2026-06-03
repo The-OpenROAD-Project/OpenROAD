@@ -24,12 +24,12 @@ namespace odb {
 
 bool {{itr.name}}::reversible() const
 {
-  return {{itr.reversible}};
+  return {{itr.reversible | cpp_bool}};
 }
 
 bool {{itr.name}}::orderReversed() const
 {
-  return {{itr.orderReversed}};
+  return {{itr.orderReversed | cpp_bool}};
 }
 
 void {{itr.name}}::reverse(dbObject* parent)

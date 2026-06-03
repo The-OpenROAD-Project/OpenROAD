@@ -129,7 +129,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechMinEncRule& rule)
 {
   uint32_t* bit_field = (uint32_t*) &rule.flags_;
   stream >> *bit_field;
-  stream >> rule.area_;
+  if (rule.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> rule.area_;
+  } else {
+    uint32_t area;
+    stream >> area;
+    rule.area_ = area;
+  }
   stream >> rule.width_;
   return stream;
 }
@@ -258,7 +264,7 @@ dbTechMinCutRule* dbTechMinCutRule::getMinCutRule(dbTechLayer* inly,
 //
 ////////////////////////////////////////////////////////////////////
 
-bool dbTechMinEncRule::getEnclosure(uint32_t& area) const
+bool dbTechMinEncRule::getEnclosure(int64_t& area) const
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 
@@ -266,7 +272,7 @@ bool dbTechMinEncRule::getEnclosure(uint32_t& area) const
   return true;
 }
 
-void dbTechMinEncRule::setEnclosure(uint32_t area)
+void dbTechMinEncRule::setEnclosure(int64_t area)
 {
   _dbTechMinEncRule* _lsm = (_dbTechMinEncRule*) this;
 

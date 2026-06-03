@@ -1080,7 +1080,7 @@ void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
   }
 
   if (layer->hasArea()) {
-    fmt::print(out, "    AREA {:.11g} ;\n", layer->getArea());
+    fmt::print(out, "    AREA {:.11g} ;\n", lefarea(layer->getArea()));
   }
 
   uint32_t thickness;
@@ -1186,7 +1186,7 @@ void lefout::writeSpacingRuleLef(std::ostream& out,
   }
 
   if (rule->getCutArea() > 0) {
-    fmt::print(out, "    AREA {:g} ", lefdist(rule->getCutArea()));
+    fmt::print(out, "    AREA {:g} ", lefarea(rule->getCutArea()));
   }
 
   if (rule->getRange(rmin, rmax)) {
@@ -1310,7 +1310,8 @@ void lefout::writeMinCutRuleLef(std::ostream& out, dbTechMinCutRule* rule)
 
 void lefout::writeMinEncRuleLef(std::ostream& out, dbTechMinEncRule* rule)
 {
-  uint32_t enc_area, enc_width;
+  int64_t enc_area;
+  uint32_t enc_width;
   rule->getEnclosure(enc_area);
   fmt::print(out, "    MINENCLOSEDAREA {:g} ", lefarea(enc_area));
   if (rule->getEnclosureWidth(enc_width)) {

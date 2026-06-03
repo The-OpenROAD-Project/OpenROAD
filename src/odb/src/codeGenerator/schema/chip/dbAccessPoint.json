@@ -33,8 +33,9 @@
       {
         "type": "dbId<_dbBPin>",
         "name": "bpin_",
-        "flags":["private","cmpgt"],
-        "parent": "dbBPin"
+        "flags":["no-set","cmpgt"],
+        "parent": "dbBlock",
+        "getterFunctionName": "getBPin"
       },
       {
         "name": "accesses_",
@@ -63,7 +64,7 @@
         "name": "vias_",
         "type": "dbVector<dbVector<std::pair<dbObjectType,dbId<_dbObject>>>>",
         "comment" : "//list of vias by num of cuts",
-        "flags" : ["private"]
+        "flags" : ["private", "no-meminfo"]
       },
       {
         "name": "path_segs_",

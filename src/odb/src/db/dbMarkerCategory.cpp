@@ -127,13 +127,11 @@ void _dbMarkerCategory::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["description"].add(description_);
+  info.children["source"].add(source_);
   marker_tbl_->collectMemInfo(info.children["marker_tbl_"]);
-
   categories_tbl_->collectMemInfo(info.children["categories_tbl_"]);
-
-  // User Code Begin collectMemInfo
   info.children["categories_hash"].add(categories_hash_);
-  // User Code End collectMemInfo
 }
 
 _dbMarkerCategory::~_dbMarkerCategory()
@@ -313,7 +311,7 @@ void dbMarkerCategory::setDescription(const std::string& description)
   obj->description_ = description;
 }
 
-std::string dbMarkerCategory::getDescription() const
+const std::string& dbMarkerCategory::getDescription() const
 {
   _dbMarkerCategory* obj = (_dbMarkerCategory*) this;
   return obj->description_;

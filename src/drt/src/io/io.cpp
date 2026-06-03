@@ -2167,8 +2167,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   setRoutingLayerProperties(layer, tmpLayer);
   // read minArea rule
   if (layer->hasArea()) {
-    frCoord minArea = frCoord(round(layer->getArea() * getTech()->getDBUPerUU()
-                                    * getTech()->getDBUPerUU()));
+    frCoord minArea = frCoord(layer->getArea());
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frAreaConstraint>(minArea);
     auto rptr = static_cast<frAreaConstraint*>(uCon.get());
@@ -2226,7 +2225,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
           "minEnclosedArea constraint with width is not supported, skipped.");
       continue;
     }
-    frUInt4 _minEnclosedArea;
+    int64_t _minEnclosedArea;
     rule->getEnclosure(_minEnclosedArea);
     frCoord minEnclosedArea = _minEnclosedArea;
     auto minEnclosedAreaConstraint

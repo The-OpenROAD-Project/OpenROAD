@@ -134,7 +134,7 @@ class _dbTechLayer : public _dbObject
   uint32_t wire_extension_;
   uint32_t number_;
   uint32_t rlevel_;
-  double area_;
+  int64_t area_;
   uint32_t thickness_;
   uint32_t max_width_;
   int min_width_;

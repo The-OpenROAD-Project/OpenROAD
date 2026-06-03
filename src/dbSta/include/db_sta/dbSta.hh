@@ -206,6 +206,10 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                                  bool exclude_buffers,
                                  bool exclude_inverters) const;
 
+  // Get the levels of logic for all endpoints.
+  std::vector<int> levelsOfLogic(bool exclude_buffers,
+                                 bool exclude_inverters) const;
+
   utl::Logger* getLogger() { return logger_; }
 
   // Sanity checkers

@@ -97,10 +97,8 @@ void _dbGlobalConnect::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["inst_pattern"].add(inst_pattern_);
   info.children["pin_pattern"].add(pin_pattern_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -129,13 +127,13 @@ dbNet* dbGlobalConnect::getNet() const
   return (dbNet*) par->net_tbl_->getPtr(obj->net_);
 }
 
-std::string dbGlobalConnect::getInstPattern() const
+const std::string& dbGlobalConnect::getInstPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->inst_pattern_;
 }
 
-std::string dbGlobalConnect::getPinPattern() const
+const std::string& dbGlobalConnect::getPinPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->pin_pattern_;

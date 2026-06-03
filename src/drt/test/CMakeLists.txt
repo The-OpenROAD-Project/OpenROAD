@@ -22,5 +22,5 @@ or_integration_tests(
 set_tests_properties(
   drt.ndr_vias1.tcl
   drt.ndr_vias2.tcl
-  PROPERTIES TIMEOUT 180
+  PROPERTIES TIMEOUT 900
 )

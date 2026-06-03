@@ -165,11 +165,11 @@ class SetupLegacyBase : public OptimizationPolicy
                            sta::Slack path_slack,
                            int repairs_per_pass,
                            int& changed);
-  bool trySizeDownBatch(MoveGenerator& generator,
-                        const Target& target,
-                        int repairs_per_pass,
-                        int& changed,
-                        std::optional<MoveType>& accepted_type);
+  bool trySizeDownFanoutBatch(MoveGenerator& generator,
+                              const Target& target,
+                              int repairs_per_pass,
+                              int& changed,
+                              std::optional<MoveType>& accepted_type);
   bool tryCandidateSequence(MoveGenerator& generator,
                             const Target& target,
                             int repairs_per_pass,

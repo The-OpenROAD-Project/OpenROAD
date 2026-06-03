@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -85,7 +86,12 @@ class RegisterOdbCallbackGuard;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;
@@ -97,7 +103,7 @@ enum class MoveType : uint8_t
   kClone,
   kSizeUp,
   kSizeUpMatch,
-  kSizeDown,
+  kSizeDownFanout,
   kSwapPins,
   kVtSwap,
   kUnbuffer,
@@ -340,7 +346,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const char* phases,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
-                   bool skip_size_down,
+                   bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
@@ -643,7 +649,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.

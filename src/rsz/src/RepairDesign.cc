@@ -1604,6 +1604,10 @@ void RepairDesign::repairNetWire(
       double d = (length == 0) ? 0.0 : buf_dist / length;
       int buf_x = to_x + d * dx;
       int buf_y = to_y + d * dy;
+      // Buffer is inserted at buf_dist from to_pt, so it drives only the
+      // downstream wire (buf_dist long) + ref_cap, not the full Steiner edge.
+      const float buffer_load_cap
+          = static_cast<float>(buf_dist / (dbu_ * 1e+6) * wire_cap + ref_cap);
       float repeater_cap, repeater_fanout;
       if (!makeRepeater("wire",
                         odb::Point(buf_x, buf_y),
@@ -1613,7 +1617,8 @@ void RepairDesign::repairNetWire(
                         load_pins,
                         repeater_cap,
                         repeater_fanout,
-                        max_load_slew)) {
+                        max_load_slew,
+                        /* load_cap_hint= */ buffer_load_cap)) {
         debugPrint(logger_,
                    RSZ,
                    "repair_net",
@@ -1842,7 +1847,8 @@ void RepairDesign::repairNetJunc(
                  loads_left,
                  cap_left,
                  fanout_left,
-                 max_load_slew_left);
+                 max_load_slew_left,
+                 /* load_cap_hint= */ cap_left);
     wire_length_left = 0;
   }
   if (repeater_right) {
@@ -1854,7 +1860,8 @@ void RepairDesign::repairNetJunc(
                  loads_right,
                  cap_right,
                  fanout_right,
-                 max_load_slew_right);
+                 max_load_slew_right,
+                 /* load_cap_hint= */ cap_right);
     wire_length_right = 0;
   }
 
@@ -2167,7 +2174,8 @@ bool RepairDesign::makeRepeater(const char* reason,
                                 sta::PinSeq& load_pins,
                                 float& repeater_cap,
                                 float& repeater_fanout,
-                                float& repeater_max_slew)
+                                float& repeater_max_slew,
+                                std::optional<float> load_cap_hint)
 {
   sta::Net* out_net;
   sta::Pin *repeater_in_pin, *repeater_out_pin;
@@ -2183,7 +2191,8 @@ bool RepairDesign::makeRepeater(const char* reason,
                       repeater_max_slew,
                       out_net,
                       repeater_in_pin,
-                      repeater_out_pin);
+                      repeater_out_pin,
+                      load_cap_hint);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2218,7 +2227,8 @@ bool RepairDesign::makeRepeater(
     float& repeater_max_slew,
     sta::Net*& out_net,
     sta::Pin*& repeater_in_pin,
-    sta::Pin*& repeater_out_pin)
+    sta::Pin*& repeater_out_pin,
+    std::optional<float> load_cap_hint)
 {
   debugPrint(logger_,
              RSZ,
@@ -2258,7 +2268,7 @@ bool RepairDesign::makeRepeater(
   // Resize repeater as we back up by levels.
   if (resize) {
     sta::Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
-    resizer_->resizeToTargetSlew(buffer_out_pin);
+    resizer_->resizeToTargetSlew(buffer_out_pin, load_cap_hint);
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   }

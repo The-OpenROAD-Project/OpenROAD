@@ -82,6 +82,8 @@ void _dbAlignmentMarkerRule::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["rel_orients"].add(rel_orients_);
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -143,7 +143,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   }
 
   auto net = guide->getNet();
-  auto layerNum = guide->getBeginLayerNum();
+  auto layerNum = guide->getLayerNum();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   bool hasDown = false;
   bool hasUp = false;
@@ -376,7 +376,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
                                              frCoord& pinCoord)
 {
   auto net = guide->getNet();
-  auto layerNum = guide->getBeginLayerNum();
+  auto layerNum = guide->getLayerNum();
   bool hasMinBegin = false;
   bool hasMaxEnd = false;
   minBegin = std::numeric_limits<frCoord>::max();
@@ -415,7 +415,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
         auto [nbrBp, nbrEp] = nbrGuide->getPoints();
         if (!nbrGuide->hasRoutes()) {
           // via location assumed in center
-          auto psLNum = nbrGuide->getBeginLayerNum();
+          auto psLNum = nbrGuide->getLayerNum();
           if (psLNum == layerNum - 2) {
             downViaCoordSet.insert((isH ? nbrBp.x() : nbrBp.y()));
           } else {
@@ -477,7 +477,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
   auto iroute = std::make_unique<taPin>();
   iroute->setGuide(guide);
   odb::Rect guideBox = guide->getBBox();
-  auto layerNum = guide->getBeginLayerNum();
+  auto layerNum = guide->getLayerNum();
   bool isExt = !(getRouteBox().contains(guideBox));
   if (isExt) {
     // extIroute empty, skip
@@ -608,7 +608,7 @@ void FlexTAWorker::initCosts()
     for (auto& iroute : iroutes_) {
       auto pitch = getDesign()
                        ->getTech()
-                       ->getLayer(iroute->getGuide()->getBeginLayerNum())
+                       ->getLayer(iroute->getGuide()->getLayerNum())
                        ->getPitch();
       for (auto& uPinFig : iroute->getFigs()) {
         if (uPinFig->typeId() == tacPathSeg) {

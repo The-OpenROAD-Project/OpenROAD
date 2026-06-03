@@ -939,9 +939,12 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
 
   std::mt19937 rng(1);
   auto random_color = [&rng]() {
-    return Color{.r = static_cast<unsigned char>(50 + rng() % 200),
-                 .g = static_cast<unsigned char>(50 + rng() % 200),
-                 .b = static_cast<unsigned char>(50 + rng() % 200),
+    const int blue = 50 + rng() % 200;
+    const int green = 50 + rng() % 200;
+    const int red = 50 + rng() % 200;
+    return Color{.r = static_cast<unsigned char>(red),
+                 .g = static_cast<unsigned char>(green),
+                 .b = static_cast<unsigned char>(blue),
                  .a = 180};
   };
 

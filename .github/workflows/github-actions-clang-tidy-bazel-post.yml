@@ -125,6 +125,40 @@ jobs:
         with:
           reviewdog_version: latest
 
+      - name: Dump reviewdog-visible env and event payload
+        # Gated on debug re-runs. Reviewdog emits "this is not PullRequest
+        # build" and posts nothing for fork PRs even though the synthesized
+        # pull_request payload is well-formed (verified locally against
+        # reviewdog v0.21.0). Suspect: step-level `env:` cannot override
+        # runner-protected GITHUB_EVENT_PATH / GITHUB_EVENT_NAME, so reviewdog
+        # reads the runner's workflow_run event payload instead of our synth.
+        # This step proves what reviewdog actually sees on the next debug
+        # re-run.
+        if: runner.debug == '1'
+        env:
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: ${{ steps.event.outputs.event_path }}
+          GITHUB_SHA: ${{ steps.meta.outputs.head_sha }}
+          GITHUB_REPOSITORY: ${{ steps.meta.outputs.base_repo }}
+        run: |
+          echo "::group::GITHUB_* env visible to next step"
+          env | grep -E '^(GITHUB_|RUNNER_|REVIEWDOG_)' | sort
+          echo "::endgroup::"
+          echo "::group::Synth event file location and content"
+          echo "steps.event.outputs.event_path = ${{ steps.event.outputs.event_path }}"
+          echo "Effective GITHUB_EVENT_PATH    = ${GITHUB_EVENT_PATH}"
+          if [ -f "${GITHUB_EVENT_PATH}" ]; then
+            echo "--- file exists, content: ---"
+            cat "${GITHUB_EVENT_PATH}"
+          else
+            echo "::warning::GITHUB_EVENT_PATH file does not exist"
+          fi
+          echo "::endgroup::"
+          echo "::group::Synth file at literal path (should match above)"
+          SYNTH="${{ steps.event.outputs.event_path }}"
+          [ -f "${SYNTH}" ] && cat "${SYNTH}" || echo "missing"
+          echo "::endgroup::"
+
       - name: Run reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,7 +167,14 @@ jobs:
           GITHUB_SHA: ${{ steps.meta.outputs.head_sha }}
           GITHUB_REPOSITORY: ${{ steps.meta.outputs.base_repo }}
         run: |
+          # On debug re-runs add reviewdog's own -log-level=debug so the
+          # cienv detection trace is visible alongside the env dump above.
+          LOG_FLAGS=()
+          if [ "${RUNNER_DEBUG}" = "1" ]; then
+            LOG_FLAGS+=(-log-level=debug)
+          fi
           reviewdog \
+            "${LOG_FLAGS[@]}" \
             -efm="%E%f:%l:%c: error: %m" \
             -efm="%W%f:%l:%c: warning: %m" \
             -name="clang-tidy" \

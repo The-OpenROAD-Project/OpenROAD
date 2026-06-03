@@ -200,8 +200,7 @@ std::ostream& operator<<(std::ostream& os, const frPathSeg& p)
 std::ostream& operator<<(std::ostream& os, const frGuide& p)
 {
   os << "frGuide: begin " << p.getBeginPoint() << " end " << p.getEndPoint()
-     << " begin LayerNum " << p.getBeginLayerNum() << " end layerNum "
-     << p.getEndLayerNum();
+     << " layerNum " << p.getLayerNum();
   return os;
 }
 

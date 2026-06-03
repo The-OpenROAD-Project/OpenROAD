@@ -39,8 +39,7 @@
     {
       "name":"top_",
       "type":"bool",
-      "default": "false",
-      "flags":[]
+      "default": "false"
     },
     {
       "name": "parent_",

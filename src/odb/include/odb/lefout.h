@@ -46,7 +46,7 @@ class lefout
 {
  public:
   double lefdist(int value) { return value * dist_factor_; }
-  double lefarea(int value) { return value * area_factor_; }
+  double lefarea(int64_t value) { return value * area_factor_; }
 
   lefout(utl::Logger* logger, std::ostream& out) : _out(out)
   {

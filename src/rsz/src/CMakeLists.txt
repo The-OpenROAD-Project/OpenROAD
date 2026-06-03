@@ -51,8 +51,8 @@ add_library(rsz_lib
     move/MoveGenerator.cc
     move/RerouteCandidate.cc
     move/RerouteGenerator.cc
-    move/SizeDownCandidate.cc
-    move/SizeDownGenerator.cc
+    move/SizeDownFanoutCandidate.cc
+    move/SizeDownFanoutGenerator.cc
     move/SizeUpCandidate.cc
     move/SizeUpGenerator.cc
     move/SizeUpMatchCandidate.cc

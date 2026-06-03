@@ -470,9 +470,7 @@ void frRegionQuery::Impl::addGuide(frGuide* guide,
                                    ObjectsByLayer<frGuide>& allShapes)
 {
   odb::Rect frb = guide->getBBox();
-  for (int i = guide->getBeginLayerNum(); i <= guide->getEndLayerNum(); i++) {
-    allShapes.at(i).emplace_back(frb, guide);
-  }
+  allShapes.at(guide->getLayerNum()).emplace_back(frb, guide);
 }
 
 void frRegionQuery::Impl::addOrigGuide(frNet* net,

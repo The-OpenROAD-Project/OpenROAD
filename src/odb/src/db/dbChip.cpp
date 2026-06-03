@@ -346,14 +346,15 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["chipinsts_map"].add(chipinsts_map_);
+  info.children["chip_region_map"].add(chip_region_map_);
+  info.children["marker_categories_map"].add(marker_categories_map_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
-
   chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
-
   marker_categories_tbl_->collectMemInfo(
       info.children["marker_categories_tbl_"]);
-
   chip_path_tbl_->collectMemInfo(info.children["chip_path_tbl_"]);
+  info.children["chip_path_hash"].add(chip_path_hash_);
 
   // User Code Begin collectMemInfo
   block_tbl_->collectMemInfo(info.children["block"]);
@@ -395,7 +396,7 @@ const char* dbChip::getName() const
   return obj->name_;
 }
 
-void dbChip::setOffset(Point offset)
+void dbChip::setOffset(const Point& offset)
 {
   _dbChip* obj = (_dbChip*) this;
 

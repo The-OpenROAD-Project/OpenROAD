@@ -208,8 +208,9 @@ void _dbMarker::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["comment"].add(comment_);
+
+  // User Code Begin collectMemInfo
   info.children["sources"].add(sources_);
   info.children["shapes"].add(shapes_);
   // User Code End collectMemInfo
@@ -557,7 +558,7 @@ void dbMarker::setComment(const std::string& comment)
   obj->comment_ = comment;
 }
 
-std::string dbMarker::getComment() const
+const std::string& dbMarker::getComment() const
 {
   _dbMarker* obj = (_dbMarker*) this;
   return obj->comment_;

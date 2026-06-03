@@ -6507,7 +6507,7 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutCenterToCenter() const;
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
-  uint32_t getCutArea() const;
+  int64_t getCutArea() const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6528,7 +6528,7 @@ class dbTechLayerSpacingRule : public dbObject
   void setCutCenterToCenter(bool c2c);
   void setCutSameNet(bool same_net);
   void setCutParallelOverlap(bool overlap);
-  void setCutArea(uint32_t area);
+  void setCutArea(int64_t area);
   void setEol(uint32_t width,
               uint32_t within,
               bool parallelEdge,
@@ -6591,8 +6591,8 @@ class dbTechMinCutRule : public dbObject
 class dbTechMinEncRule : public dbObject
 {
  public:
-  bool getEnclosure(uint32_t& area) const;
-  void setEnclosure(uint32_t area);
+  bool getEnclosure(int64_t& area) const;
+  void setEnclosure(int64_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
 
@@ -7070,11 +7070,13 @@ class dbViaParams : private _dbViaParams
 class dbAccessPoint : public dbObject
 {
  public:
-  void setPoint(Point point);
+  void setPoint(const Point& point);
 
   Point getPoint() const;
 
   void setLayer(dbTechLayer* layer);
+
+  dbBPin* getBPin() const;
 
   // User Code Begin dbAccessPoint
   void setAccesses(const std::vector<dbDirection>& accesses);
@@ -7097,8 +7099,6 @@ class dbAccessPoint : public dbObject
   dbTechLayer* getLayer() const;
 
   dbMPin* getMPin() const;
-
-  dbBPin* getBPin() const;
 
   std::vector<std::vector<dbObject*>> getVias() const;
 
@@ -7190,11 +7190,11 @@ class dbCellEdgeSpacing : public dbObject
  public:
   void setFirstEdgeType(const std::string& first_edge_type);
 
-  std::string getFirstEdgeType() const;
+  const std::string& getFirstEdgeType() const;
 
   void setSecondEdgeType(const std::string& second_edge_type);
 
-  std::string getSecondEdgeType() const;
+  const std::string& getSecondEdgeType() const;
 
   void setSpacing(int spacing);
 
@@ -7243,7 +7243,7 @@ class dbChip : public dbObject
 
   const char* getName() const;
 
-  void setOffset(Point offset);
+  void setOffset(const Point& offset);
 
   Point getOffset() const;
 
@@ -7393,7 +7393,7 @@ class dbChipBumpInst : public dbObject
 class dbChipConn : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
 
   void setThickness(int thickness);
 
@@ -7425,7 +7425,9 @@ class dbChipConn : public dbObject
 class dbChipInst : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
+
+  void setOrient(dbOrientType3D orient);
 
   dbOrientType3D getOrient() const;
 
@@ -7436,8 +7438,6 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
-
-  void setOrient(dbOrientType3D orient);
 
   void setLoc(const Point3D& loc);
 
@@ -7464,7 +7464,7 @@ class dbChipInst : public dbObject
 class dbChipNet : public dbObject
 {
  public:
-  std::string getName() const;
+  const std::string& getName() const;
 
   // User Code Begin dbChipNet
   dbChip* getChip() const;
@@ -7522,7 +7522,7 @@ class dbChipRegion : public dbObject
     INTERNAL_EXT
   };
 
-  std::string getName() const;
+  const std::string& getName() const;
 
   void setBox(const Rect& box);
 
@@ -7876,15 +7876,15 @@ class dbGCellGrid : public dbObject
 class dbGDSARef : public dbObject
 {
  public:
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
-  void setLr(Point lr);
+  void setLr(const Point& lr);
 
   Point getLr() const;
 
-  void setUl(Point ul);
+  void setUl(const Point& ul);
 
   Point getUl() const;
 
@@ -7902,7 +7902,8 @@ class dbGDSARef : public dbObject
 
   // User Code Begin dbGDSARef
   dbGDSStructure* getStructure() const;
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSARef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSARef* aref);
@@ -7926,7 +7927,8 @@ class dbGDSBoundary : public dbObject
 
   // User Code Begin dbGDSBoundary
   const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSBoundary* create(dbGDSStructure* structure);
   static void destroy(dbGDSBoundary* boundary);
@@ -7944,12 +7946,13 @@ class dbGDSBox : public dbObject
 
   int16_t getDatatype() const;
 
-  void setBounds(Rect bounds);
+  void setBounds(const Rect& bounds);
 
   Rect getBounds() const;
 
   // User Code Begin dbGDSBox
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSBox* create(dbGDSStructure* structure);
   static void destroy(dbGDSBox* box);
@@ -7981,7 +7984,8 @@ class dbGDSPath : public dbObject
 
   // User Code Begin dbGDSPath
   const std::vector<Point>& getXY();
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSPath* create(dbGDSStructure* structure);
   static void destroy(dbGDSPath* path);
@@ -7991,7 +7995,7 @@ class dbGDSPath : public dbObject
 class dbGDSSRef : public dbObject
 {
  public:
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
@@ -8001,7 +8005,8 @@ class dbGDSSRef : public dbObject
 
   // User Code Begin dbGDSSRef
   dbGDSStructure* getStructure() const;
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSSRef* create(dbGDSStructure* parent, dbGDSStructure* child);
   static void destroy(dbGDSSRef* sref);
@@ -8011,7 +8016,7 @@ class dbGDSSRef : public dbObject
 class dbGDSStructure : public dbObject
 {
  public:
-  char* getName() const;
+  const char* getName() const;
 
   dbSet<dbGDSBoundary> getGDSBoundaries() const;
 
@@ -8046,7 +8051,7 @@ class dbGDSText : public dbObject
 
   int16_t getDatatype() const;
 
-  void setOrigin(Point origin);
+  void setOrigin(const Point& origin);
 
   Point getOrigin() const;
 
@@ -8060,10 +8065,11 @@ class dbGDSText : public dbObject
 
   void setText(const std::string& text);
 
-  std::string getText() const;
+  const std::string& getText() const;
 
   // User Code Begin dbGDSText
-  std::vector<std::pair<std::int16_t, std::string>>& getPropattr();
+  const std::vector<std::pair<std::int16_t, std::string>>& getPropattr() const;
+  void addPropattr(std::int16_t type, const std::string& value);
 
   static dbGDSText* create(dbGDSStructure* structure);
   static void destroy(dbGDSText* text);
@@ -8077,9 +8083,9 @@ class dbGlobalConnect : public dbObject
 
   dbNet* getNet() const;
 
-  std::string getInstPattern() const;
+  const std::string& getInstPattern() const;
 
-  std::string getPinPattern() const;
+  const std::string& getPinPattern() const;
 
   // User Code Begin dbGlobalConnect
   std::vector<dbInst*> getInsts() const;
@@ -8198,15 +8204,25 @@ class dbIsolation : public dbObject
  public:
   const char* getName() const;
 
-  std::string getAppliesTo() const;
+  void setAppliesTo(const std::string& applies_to);
 
-  std::string getClampValue() const;
+  const std::string& getAppliesTo() const;
 
-  std::string getIsolationSignal() const;
+  void setClampValue(const std::string& clamp_value);
 
-  std::string getIsolationSense() const;
+  const std::string& getClampValue() const;
 
-  std::string getLocation() const;
+  void setIsolationSignal(const std::string& isolation_signal);
+
+  const std::string& getIsolationSignal() const;
+
+  void setIsolationSense(const std::string& isolation_sense);
+
+  const std::string& getIsolationSense() const;
+
+  void setLocation(const std::string& location);
+
+  const std::string& getLocation() const;
 
   void setPowerDomain(dbPowerDomain* power_domain);
 
@@ -8215,16 +8231,6 @@ class dbIsolation : public dbObject
   // User Code Begin dbIsolation
   static dbIsolation* create(dbBlock* block, const char* name);
   static void destroy(dbIsolation* iso);
-
-  void setAppliesTo(const std::string& applies_to);
-
-  void setClampValue(const std::string& clamp_value);
-
-  void setIsolationSignal(const std::string& isolation_signal);
-
-  void setIsolationSense(const std::string& isolation_sense);
-
-  void setLocation(const std::string& location);
 
   void addIsolationCell(const std::string& master);
 
@@ -8244,11 +8250,11 @@ class dbLevelShifter : public dbObject
 
   void setSource(const std::string& source);
 
-  std::string getSource() const;
+  const std::string& getSource() const;
 
   void setSink(const std::string& sink);
 
-  std::string getSink() const;
+  const std::string& getSink() const;
 
   void setUseFunctionalEquivalence(bool use_functional_equivalence);
 
@@ -8256,15 +8262,15 @@ class dbLevelShifter : public dbObject
 
   void setAppliesTo(const std::string& applies_to);
 
-  std::string getAppliesTo() const;
+  const std::string& getAppliesTo() const;
 
   void setAppliesToBoundary(const std::string& applies_to_boundary);
 
-  std::string getAppliesToBoundary() const;
+  const std::string& getAppliesToBoundary() const;
 
   void setRule(const std::string& rule);
 
-  std::string getRule() const;
+  const std::string& getRule() const;
 
   void setThreshold(float threshold);
 
@@ -8280,39 +8286,39 @@ class dbLevelShifter : public dbObject
 
   void setLocation(const std::string& location);
 
-  std::string getLocation() const;
+  const std::string& getLocation() const;
 
   void setInputSupply(const std::string& input_supply);
 
-  std::string getInputSupply() const;
+  const std::string& getInputSupply() const;
 
   void setOutputSupply(const std::string& output_supply);
 
-  std::string getOutputSupply() const;
+  const std::string& getOutputSupply() const;
 
   void setInternalSupply(const std::string& internal_supply);
 
-  std::string getInternalSupply() const;
+  const std::string& getInternalSupply() const;
 
   void setNamePrefix(const std::string& name_prefix);
 
-  std::string getNamePrefix() const;
+  const std::string& getNamePrefix() const;
 
   void setNameSuffix(const std::string& name_suffix);
 
-  std::string getNameSuffix() const;
+  const std::string& getNameSuffix() const;
 
   void setCellName(const std::string& cell_name);
 
-  std::string getCellName() const;
+  const std::string& getCellName() const;
 
   void setCellInput(const std::string& cell_input);
 
-  std::string getCellInput() const;
+  const std::string& getCellInput() const;
 
   void setCellOutput(const std::string& cell_output);
 
-  std::string getCellOutput() const;
+  const std::string& getCellOutput() const;
 
   // User Code Begin dbLevelShifter
 
@@ -8335,7 +8341,7 @@ class dbLogicPort : public dbObject
  public:
   const char* getName() const;
 
-  std::string getDirection() const;
+  const std::string& getDirection() const;
 
   // User Code Begin dbLogicPort
   static dbLogicPort* create(dbBlock* block,
@@ -8350,7 +8356,7 @@ class dbMarker : public dbObject
  public:
   void setComment(const std::string& comment);
 
-  std::string getComment() const;
+  const std::string& getComment() const;
 
   void setLineNumber(int line_number);
 
@@ -8405,7 +8411,7 @@ class dbMarkerCategory : public dbObject
 
   void setDescription(const std::string& description);
 
-  std::string getDescription() const;
+  const std::string& getDescription() const;
 
   void setSource(const std::string& source);
 
@@ -8478,7 +8484,7 @@ class dbMasterEdgeType : public dbObject
 
   void setEdgeType(const std::string& edge_type);
 
-  std::string getEdgeType() const;
+  const std::string& getEdgeType() const;
 
   void setCellRow(int cell_row);
 
@@ -8535,7 +8541,7 @@ class dbMetalWidthViaMap : public dbObject
 
   void setViaName(const std::string& via_name);
 
-  std::string getViaName() const;
+  const std::string& getViaName() const;
 
   void setPgVia(bool pg_via);
 
@@ -8841,7 +8847,7 @@ class dbNetTrack : public dbObject
 class dbPolygon : public dbObject
 {
  public:
-  Polygon getPolygon() const;
+  const Polygon& getPolygon() const;
 
   int getDesignRuleWidth() const;
 
@@ -9150,8 +9156,8 @@ class dbScanPin : public dbObject
   std::variant<dbBTerm*, dbITerm*> getPin() const;
   void setPin(dbBTerm* bterm);
   void setPin(dbITerm* iterm);
-  static dbId<dbScanPin> create(dbDft* dft, dbBTerm* bterm);
-  static dbId<dbScanPin> create(dbDft* dft, dbITerm* iterm);
+  static dbScanPin* create(dbDft* dft, dbBTerm* bterm);
+  static dbScanPin* create(dbDft* dft, dbITerm* iterm);
   // User Code End dbScanPin
 };
 
@@ -9431,8 +9437,8 @@ class dbTechLayer : public dbObject
   ///  reasonable default exists.
   ///
   bool hasArea() const;
-  double getArea() const;
-  void setArea(double area);
+  int64_t getArea() const;
+  void setArea(int64_t area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
@@ -9570,9 +9576,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerAreaRule : public dbObject
 {
  public:
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setExceptMinWidth(int except_min_width);
 
@@ -9610,15 +9616,13 @@ class dbTechLayerAreaRule : public dbObject
 
   uint32_t getOverlap() const;
 
+  static dbTechLayerAreaRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerAreaRule* obj);
   // User Code Begin dbTechLayerAreaRule
-
-  static dbTechLayerAreaRule* create(dbTechLayer* _layer);
 
   void setTrimLayer(dbTechLayer* trim_layer);
 
   dbTechLayer* getTrimLayer() const;
-
-  static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRule
 };
@@ -9660,6 +9664,8 @@ class dbTechLayerArraySpacingRule : public dbObject
 
   bool isWithinValid() const;
 
+  static dbTechLayerArraySpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerArraySpacingRule* obj);
   // User Code Begin dbTechLayerArraySpacingRule
 
   void setCutsArraySpacing(int num_cuts, int spacing);
@@ -9668,13 +9674,9 @@ class dbTechLayerArraySpacingRule : public dbObject
 
   dbTechLayerCutClassRule* getCutClass() const;
 
-  static dbTechLayerArraySpacingRule* create(dbTechLayer* layer);
-
   static dbTechLayerArraySpacingRule* getTechLayerArraySpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
-
-  static void destroy(dbTechLayerArraySpacingRule* rule);
 
   // User Code End dbTechLayerArraySpacingRule
 };
@@ -9760,6 +9762,8 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isCornerToCorner() const;
 
+  static dbTechLayerCornerSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCornerSpacingRule* obj);
   // User Code Begin dbTechLayerCornerSpacingRule
   void setType(CornerType _type);
 
@@ -9771,12 +9775,9 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   void getWidthTable(std::vector<int>& tbl);
 
-  static dbTechLayerCornerSpacingRule* create(dbTechLayer* layer);
-
   static dbTechLayerCornerSpacingRule* getTechLayerCornerSpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerCornerSpacingRule* rule);
   // User Code End dbTechLayerCornerSpacingRule
 };
 
@@ -10001,17 +10002,16 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   bool isConcaveCornersValid() const;
 
+  static dbTechLayerCutEnclosureRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutEnclosureRule* obj);
   // User Code Begin dbTechLayerCutEnclosureRule
   void setType(ENC_TYPE type);
 
   ENC_TYPE getType() const;
 
-  static dbTechLayerCutEnclosureRule* create(dbTechLayer* layer);
-
   static dbTechLayerCutEnclosureRule* getTechLayerCutEnclosureRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerCutEnclosureRule* rule);
   // User Code End dbTechLayerCutEnclosureRule
 };
 
@@ -10115,9 +10115,9 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   uint32_t getParLength() const;
 
-  void setCutArea(int cut_area);
+  void setCutArea(int64_t cut_area);
 
-  int getCutArea() const;
+  int64_t getCutArea() const;
 
   void setCenterToCenter(bool center_to_center);
 
@@ -10271,6 +10271,8 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   bool isParWithinEnclosureValid() const;
 
+  static dbTechLayerCutSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingRule* obj);
   // User Code Begin dbTechLayerCutSpacingRule
   dbTechLayerCutClassRule* getCutClass() const;
 
@@ -10286,9 +10288,6 @@ class dbTechLayerCutSpacingRule : public dbObject
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static dbTechLayerCutSpacingRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerCutSpacingRule* rule);
   // User Code End dbTechLayerCutSpacingRule
 };
 
@@ -10421,6 +10420,8 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   bool isOppositeEnclosureResizeSpacingValid() const;
 
+  static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingTableDefRule* obj);
   // User Code Begin dbTechLayerCutSpacingTableDefRule
   void addPrlForAlignedCutEntry(const std::string& from, const std::string& to);
 
@@ -10481,12 +10482,9 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 
   dbTechLayer* getTechLayer() const;
 
-  static dbTechLayerCutSpacingTableDefRule* create(dbTechLayer* parent);
-
   static dbTechLayerCutSpacingTableDefRule*
   getTechLayerCutSpacingTableDefSubRule(dbTechLayer* parent, uint32_t dbid);
 
-  static void destroy(dbTechLayerCutSpacingTableDefRule* rule);
   // User Code End dbTechLayerCutSpacingTableDefRule
 };
 
@@ -10495,15 +10493,14 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
  public:
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
+  static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutSpacingTableOrthRule* obj);
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
   void setSpacingTable(const std::vector<std::pair<int, int>>& tbl);
-
-  static dbTechLayerCutSpacingTableOrthRule* create(dbTechLayer* parent);
 
   static dbTechLayerCutSpacingTableOrthRule*
   getTechLayerCutSpacingTableOrthSubRule(dbTechLayer* parent, uint32_t dbid);
 
-  static void destroy(dbTechLayerCutSpacingTableOrthRule* rule);
   // User Code End dbTechLayerCutSpacingTableOrthRule
 };
 
@@ -10520,17 +10517,16 @@ class dbTechLayerEolExtensionRule : public dbObject
 
   bool isParallelOnly() const;
 
+  static dbTechLayerEolExtensionRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerEolExtensionRule* obj);
   // User Code Begin dbTechLayerEolExtensionRule
 
   void addEntry(int eol, int ext);
-
-  static dbTechLayerEolExtensionRule* create(dbTechLayer* layer);
 
   static dbTechLayerEolExtensionRule* getTechLayerEolExtensionRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerEolExtensionRule* rule);
   // User Code End dbTechLayerEolExtensionRule
 };
 
@@ -10563,7 +10559,7 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   void setClassName(const std::string& class_name);
 
-  std::string getClassName() const;
+  const std::string& getClassName() const;
 
   void setClassValid(bool class_valid);
 
@@ -10577,13 +10573,13 @@ class dbTechLayerEolKeepOutRule : public dbObject
 
   bool isExceptWithin() const;
 
+  static dbTechLayerEolKeepOutRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerEolKeepOutRule* obj);
   // User Code Begin dbTechLayerEolKeepOutRule
-  static dbTechLayerEolKeepOutRule* create(dbTechLayer* layer);
 
   static dbTechLayerEolKeepOutRule* getTechLayerEolKeepOutRule(
       dbTechLayer* inly,
       uint32_t dbid);
-  static void destroy(dbTechLayerEolKeepOutRule* rule);
   // User Code End dbTechLayerEolKeepOutRule
 };
 
@@ -10632,11 +10628,11 @@ class dbTechLayerKeepOutZoneRule : public dbObject
  public:
   void setFirstCutClass(const std::string& first_cut_class);
 
-  std::string getFirstCutClass() const;
+  const std::string& getFirstCutClass() const;
 
   void setSecondCutClass(const std::string& second_cut_class);
 
-  std::string getSecondCutClass() const;
+  const std::string& getSecondCutClass() const;
 
   void setAlignedSpacing(int aligned_spacing);
 
@@ -10690,11 +10686,9 @@ class dbTechLayerKeepOutZoneRule : public dbObject
 
   bool isExceptAlignedEnd() const;
 
+  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerKeepOutZoneRule* obj);
   // User Code Begin dbTechLayerKeepOutZoneRule
-
-  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerKeepOutZoneRule* rule);
 
   // User Code End dbTechLayerKeepOutZoneRule
 };
@@ -10704,18 +10698,16 @@ class dbTechLayerMaxSpacingRule : public dbObject
  public:
   void setCutClass(const std::string& cut_class);
 
-  std::string getCutClass() const;
+  const std::string& getCutClass() const;
 
   void setMaxSpacing(int max_spacing);
 
   int getMaxSpacing() const;
 
+  static dbTechLayerMaxSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMaxSpacingRule* obj);
   // User Code Begin dbTechLayerMaxSpacingRule
   bool hasCutClass() const;
-
-  static dbTechLayerMaxSpacingRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerMaxSpacingRule* rule);
 
   // User Code End dbTechLayerMaxSpacingRule
 };
@@ -10727,7 +10719,7 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getNumCuts() const;
 
-  std::map<std::string, int> getCutClassCutsMap() const;
+  const std::map<std::string, int>& getCutClassCutsMap() const;
 
   void setWidth(int width);
 
@@ -10745,9 +10737,9 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getLengthWithinDist() const;
 
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setAreaWithinDist(int area_within_dist);
 
@@ -10789,16 +10781,14 @@ class dbTechLayerMinCutRule : public dbObject
 
   bool isFullyEnclosed() const;
 
+  static dbTechLayerMinCutRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMinCutRule* obj);
   // User Code Begin dbTechLayerMinCutRule
 
   void setCutsPerCutClass(const std::string& cut_class, int num_cuts);
 
-  static dbTechLayerMinCutRule* create(dbTechLayer* layer);
-
   static dbTechLayerMinCutRule* getTechLayerMinCutRule(dbTechLayer* inly,
                                                        uint32_t dbid);
-
-  static void destroy(dbTechLayerMinCutRule* rule);
 
   // User Code End dbTechLayerMinCutRule
 };
@@ -10870,13 +10860,13 @@ class dbTechLayerMinStepRule : public dbObject
 
   bool isNoAdjacentEol() const;
 
+  static dbTechLayerMinStepRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerMinStepRule* obj);
   // User Code Begin dbTechLayerMinStepRule
-  static dbTechLayerMinStepRule* create(dbTechLayer* layer);
 
   static dbTechLayerMinStepRule* getTechLayerMinStepRule(dbTechLayer* inly,
                                                          uint32_t dbid);
 
-  static void destroy(dbTechLayerMinStepRule* rule);
   // User Code End dbTechLayerMinStepRule
 };
 
@@ -11179,14 +11169,14 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   bool isToNotchLengthValid() const;
 
+  static dbTechLayerSpacingEolRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerSpacingEolRule* obj);
   // User Code Begin dbTechLayerSpacingEolRule
-  static dbTechLayerSpacingEolRule* create(dbTechLayer* layer);
 
   static dbTechLayerSpacingEolRule* getTechLayerSpacingEolRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerSpacingEolRule* rule);
   // User Code End dbTechLayerSpacingEolRule
 };
 
@@ -11209,14 +11199,12 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 
   bool isExceeptEol() const;
 
+  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerSpacingTablePrlRule* obj);
   // User Code Begin dbTechLayerSpacingTablePrlRule
   static dbTechLayerSpacingTablePrlRule* getTechLayerSpacingTablePrlRule(
       dbTechLayer* inly,
       uint32_t dbid);
-
-  static dbTechLayerSpacingTablePrlRule* create(dbTechLayer* _layer);
-
-  static void destroy(dbTechLayerSpacingTablePrlRule* rule);
 
   void setTable(const std::vector<int>& width_tbl,
                 const std::vector<int>& length_tbl,
@@ -11288,13 +11276,12 @@ class dbTechLayerVoltageSpacing : public dbObject
 
   bool isTocutBelow() const;
 
+  static dbTechLayerVoltageSpacing* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerVoltageSpacing* obj);
   // User Code Begin dbTechLayerVoltageSpacing
   const std::map<float, int>& getTable() const;
   void addEntry(float voltage, int spacing);
 
-  static dbTechLayerVoltageSpacing* create(dbTechLayer* layer);
-
-  static void destroy(dbTechLayerVoltageSpacing* rule);
   // User Code End dbTechLayerVoltageSpacing
 };
 
@@ -11352,14 +11339,14 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 
   bool isLengthValid() const;
 
+  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerWrongDirSpacingRule* obj);
   // User Code Begin dbTechLayerWrongDirSpacingRule
-  static dbTechLayerWrongDirSpacingRule* create(dbTechLayer* layer);
 
   static dbTechLayerWrongDirSpacingRule* getTechLayerWrongDirSpacingRule(
       dbTechLayer* inly,
       uint32_t dbid);
 
-  static void destroy(dbTechLayerWrongDirSpacingRule* rule);
   // User Code End dbTechLayerWrongDirSpacingRule
 };
 

@@ -105,8 +105,10 @@ namespace odb {
     info.size += sizeof(*this);
 
     {% for field in klass.fields %}
-      {% if field.table %} 
+      {% if field.table %}
         {{field.name}}->collectMemInfo(info.children["{{field.name}}"]);
+      {% elif field.kind.mem_info_account() and 'no-meminfo' not in field.flags %}
+        info.children["{{ field.name[:-1] if field.name.endswith('_') else field.name }}"].add({{field.name}});
       {% endif %}
     {% endfor %}
 
@@ -118,7 +120,7 @@ namespace odb {
     _{{klass.name}}::~_{{klass.name}}()
     {
       {% for field in klass.fields %}
-        {% if field.name == 'name_' and field.type == "char *" %}
+        {% if field.kind.needs_free(field.name) %}
           if (name_) {
             free((void*) name_);
           }
@@ -147,41 +149,32 @@ namespace odb {
       {
     
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
-    
-        {% if field.isRef %}
-    
-          obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
-    
-        {% else %}
 
-          obj->{{field.name}}={{field.argument}};
-    
-        {% endif %}
+        obj->{{field.name}}={{field.kind.setter_assign_rhs(field.argument)}};
       }
     {% endif %}
   
     {% if 'no-get' not in field.flags %}
       {{- macros.getter_signature(field, klass) -}}
       {
-      {% if field.dbSetGetter %}
+      {% set getter_kind = field.kind.getter_kind() %}
+      {% if getter_kind == 'dbset' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return dbSet<{{field.table_base_type}}>(obj, obj->{{field.name}});
-      {% elif field.isPassByRef %}
+      {% elif getter_kind == 'out_param' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           tbl = obj->{{field.name}};
-      {% elif field.isHashTable %}
+      {% elif getter_kind == 'hash_find' %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           return ({{field.getterReturnType}}) obj->{{field.name}}.find(name);
       {% else %}
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
-          {% if field.isRef %}
+          {% if getter_kind == 'ref_lookup' %}
             if(obj->{{field.name}} == 0) {
               return nullptr;
             }
             _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
             return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
-          {% elif field.isHashTable %}
-            return {{field.getterReturnType}} obj->{{field.name}}.find(name);
           {% else %}
             return obj->{{field.name}};
           {% endif %}
@@ -219,6 +212,21 @@ namespace odb {
     {% endif %}
   {% endfor %}
 
+  {% if klass.gen_create %}
+  {{klass.name}}* {{klass.name}}::create({{klass.factory_parent}}* parent)
+  {
+    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) parent;
+    return ({{klass.name}}*) _parent->{{klass.factory_table}}->create();
+  }
+  {% endif %}
+  {% if klass.gen_destroy %}
+  void {{klass.name}}::destroy({{klass.name}}* obj)
+  {
+    _{{klass.factory_parent}}* _parent = (_{{klass.factory_parent}}*) obj->getImpl()->getOwner();
+    dbProperty::destroyProperties(obj);
+    _parent->{{klass.factory_table}}->destroy((_{{klass.name}}*) obj);
+  }
+  {% endif %}
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
 } // namespace odb

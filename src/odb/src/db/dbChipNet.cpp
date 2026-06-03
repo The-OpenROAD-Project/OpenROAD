@@ -71,6 +71,9 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["name"].add(name_);
+  info.children["bump_insts_paths"].add(bump_insts_paths_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -79,7 +82,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipNet::getName() const
+const std::string& dbChipNet::getName() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   return obj->name_;

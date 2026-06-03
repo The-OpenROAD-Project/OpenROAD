@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -69,7 +70,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
   stream >> flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
   std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
-  stream >> obj.area_;
+  // User Code Begin >>area_
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    int area;
+    stream >> area;
+    obj.area_ = static_cast<int64_t>(area) * 20000;
+  }
+  // User Code End >>area_
   stream >> obj.except_min_width_;
   stream >> obj.except_edge_length_;
   stream >> obj.except_edge_lengths_;
@@ -111,14 +120,14 @@ void _dbTechLayerAreaRule::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbTechLayerAreaRule::setArea(int area)
+void dbTechLayerAreaRule::setArea(int64_t area)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
 
   obj->area_ = area;
 }
 
-int dbTechLayerAreaRule::getArea() const
+int64_t dbTechLayerAreaRule::getArea() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
   return obj->area_;
@@ -245,25 +254,18 @@ uint32_t dbTechLayerAreaRule::getOverlap() const
   return obj->flags_.overlap;
 }
 
-// User Code Begin dbTechLayerAreaRulePublicMethods
-
-dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* _layer)
+dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* parent)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerAreaRule* newrule = layer->area_rules_tbl_->create();
-  newrule->area_ = 0;
-  newrule->except_min_width_ = 0;
-  newrule->except_edge_length_ = 0;
-  newrule->except_edge_lengths_ = std::pair<int, int>(0, 0);
-  newrule->except_min_size_ = std::pair<int, int>(0, 0);
-  newrule->except_step_ = std::pair<int, int>(0, 0);
-  newrule->mask_ = 0;
-  newrule->rect_width_ = 0;
-  newrule->flags_.except_rectangle = false;
-  newrule->flags_.overlap = 0;
-  return ((dbTechLayerAreaRule*) newrule);
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerAreaRule*) _parent->area_rules_tbl_->create();
 }
-
+void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->area_rules_tbl_->destroy((_dbTechLayerAreaRule*) obj);
+}
+// User Code Begin dbTechLayerAreaRulePublicMethods
 void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
@@ -277,14 +279,6 @@ dbTechLayer* dbTechLayerAreaRule::getTrimLayer() const
   odb::dbTech* tech = getDb()->getTech();
   return odb::dbTechLayer::getTechLayer(tech, obj->trim_layer_);
 }
-
-void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->area_rules_tbl_->destroy((_dbTechLayerAreaRule*) rule);
-}
-
 // User Code End dbTechLayerAreaRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

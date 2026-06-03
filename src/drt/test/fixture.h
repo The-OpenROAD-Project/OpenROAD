@@ -76,6 +76,8 @@ class Fixture : public ::testing::Test
 
   void makeSpacingConstraint(frLayerNum layer_num);
 
+  void makeSimpleSpacingConstraint(frLayerNum layer_num, frCoord spacing_value);
+
   void makeMetalWidthViaMap(frLayerNum layer_num,
                             odb::dbMetalWidthViaMap* rule);
 

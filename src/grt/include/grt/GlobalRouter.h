@@ -296,6 +296,10 @@ class GlobalRouter
                           int via_layer,
                           GRoute& route);
   void updateVias();
+  // Insert explicit via segments wherever adjacent routing layers meet at a
+  // grid point but no via connects them, so the route handed to parasitics
+  // estimation is electrically connected (correct-by-construction).
+  void addImplicitVias(GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,

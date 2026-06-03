@@ -395,7 +395,7 @@ struct OptimizerRunConfig
   bool verbose{false};
   bool skip_pin_swap{false};
   bool skip_gate_cloning{false};
-  bool skip_size_down{false};
+  bool skip_size_down_fanout{false};
   bool skip_buffering{false};
   bool skip_buffer_removal{false};
   bool skip_last_gasp{false};
@@ -439,8 +439,8 @@ inline const char* moveName(const MoveType move_type)
       return "SizeUpMove";
     case MoveType::kSizeUpMatch:
       return "SizeUpMatchMove";
-    case MoveType::kSizeDown:
-      return "SizeDownMove";
+    case MoveType::kSizeDownFanout:
+      return "SizeDownFanoutMove";
     case MoveType::kSwapPins:
       return "SwapPinsMove";
     case MoveType::kVtSwap:

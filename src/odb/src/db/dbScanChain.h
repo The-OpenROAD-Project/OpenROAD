@@ -23,6 +23,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbScanPartition;
+class _dbScanPin;
 
 class _dbScanChain : public _dbObject
 {
@@ -37,16 +38,16 @@ class _dbScanChain : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
-  std::variant<dbBTerm*, dbITerm*> getPin(const dbId<dbScanPin>& scan_pin_id);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin);
-  void setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin);
+  std::variant<dbBTerm*, dbITerm*> getPin(const dbId<_dbScanPin>& scan_pin_id);
+  void setPin(dbId<_dbScanPin> _dbScanChain::*field, dbBTerm* pin);
+  void setPin(dbId<_dbScanPin> _dbScanChain::*field, dbITerm* pin);
   // User Code End Methods
 
   std::string name_;
-  dbId<dbScanPin> scan_in_;
-  dbId<dbScanPin> scan_out_;
-  dbId<dbScanPin> scan_enable_;
-  dbId<dbScanPin> test_mode_;
+  dbId<_dbScanPin> scan_in_;
+  dbId<_dbScanPin> scan_out_;
+  dbId<_dbScanPin> scan_enable_;
+  dbId<_dbScanPin> test_mode_;
   std::string test_mode_name_;
   dbTable<_dbScanPartition>* scan_partitions_;
 };
