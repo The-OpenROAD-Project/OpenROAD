@@ -83,13 +83,12 @@ void FlexTAWorker::modMinSpacingCostPlanar(const odb::Rect& box,
               lNum,
               idx1,
               idx2);
-
-  odb::Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
   frCoord dx, dy;
   auto& trackLocs = getTrackLocs(lNum);
   auto& workerRegionQuery = getWorkerRegionQuery();
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
+    odb::Rect box2(-halfwidth2, -halfwidth2, halfwidth2, halfwidth2);
     odb::dbTransform xform(odb::Point(boxLeft, trackLoc));
     xform.apply(box2);
     box2boxDistSquare(box1, box2, dx, dy);

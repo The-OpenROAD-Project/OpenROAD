@@ -84,6 +84,21 @@ struct TAFixture : public Fixture
     initRegionQuery();
     design->getRegionQuery()->initGuide();
   }
+
+  void runHorizontalInitTA()
+  {
+    FlexTAWorker worker(design.get(),
+                        logger.get(),
+                        router_cfg.get(),
+                        /*save_updates=*/false);
+    worker.setRouteBox(design->getTopBlock()->getDieBox());
+    worker.setExtBox(design->getTopBlock()->getDieBox());
+    worker.setDir(odb::dbTechLayerDir::HORIZONTAL);
+    worker.setTAIter(0);
+    worker.main_mt();
+    worker.end();
+    EXPECT_EQ(worker.getNumAssigned(), 2);
+  }
 };
 
 // A single guide on a horizontal routing layer should be assigned to one of
@@ -137,6 +152,32 @@ TEST_F(TAFixture, single_horizontal_iroute_assigned)
   // assignIroute_bestTrack picks the midpoint track (idx 2, y=500) from the
   // five tracks in gcell (0,0,1000,1000).
   EXPECT_EQ(bp.y(), expected_tracks[2]);
+}
+
+TEST_F(TAFixture, two_parallel_no_coupling)
+{
+  setDieArea(0, 0, 21000, 2000);
+  createGCellPattern(1000, 1000);
+  addTrackPattern(/*layer_num=*/2,
+                  /*is_horizontal_pattern=*/false,
+                  /*start_coord=*/100,
+                  /*num_tracks=*/19,
+                  /*spacing=*/100);
+  makeSimpleSpacingConstraint(2, 100);
+
+  frGuide* g1
+      = makeGuide(makeNet("n1"), /*layer_num=*/2, {500, 500}, {5500, 500});
+  frGuide* g2
+      = makeGuide(makeNet("n2"), /*layer_num=*/2, {500, 500}, {5500, 500});
+  initTAQueries();
+
+  runHorizontalInitTA();
+  const auto* path_seg1
+      = static_cast<frPathSeg*>(g1->getRoutes().front().get());
+  const auto* path_seg2
+      = static_cast<frPathSeg*>(g2->getRoutes().front().get());
+  EXPECT_EQ(path_seg1->getPoints().first.y(), 500);
+  EXPECT_EQ(path_seg2->getPoints().first.y(), 700);
 }
 
 }  // namespace drt
