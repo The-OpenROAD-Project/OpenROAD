@@ -210,13 +210,14 @@ TSV, microbump) contribute non-trivial RC.
 
 ### Problem
 
-v1 always synthesizes a stub `LibertyCell` per chiplet master with a
-zero-delay self-arc per chip-bump port. That works when the chiplet
-ships only as DEF + bump map. When the chiplet vendor instead ships an
-**Extracted Timing Model (ETM)** — a real `.lib` whose `cell` matches
-the chiplet name and whose ports match the chip-bump bterm names —
-the stub is wrong: it hides the ETM's real clock-to-q, setup/hold,
-and internal arcs.
+v1 builds a stub **`ConcreteCell`** (no `LibertyCell` binding) per
+chiplet master, with a plain `Port` per chip-bump bterm and no timing
+arc — cross-chiplet delay is cell logic plus (zero) bond wire delay only.
+That works when the chiplet ships only as DEF + bump map. When the
+chiplet vendor instead ships an **Extracted Timing Model (ETM)** — a real
+`.lib` whose `cell` matches the chiplet name and whose ports match the
+chip-bump bterm names — the stub is wrong: it hides the ETM's real
+clock-to-q, setup/hold, and internal arcs.
 
 3DBlox already supports this via `external.liberty_file:` under
 `ChipletDef:`. dbSta just doesn't consult it.
@@ -229,9 +230,9 @@ and internal arcs.
      LibertyCell* etm = network_->findLibertyCell(master->getName());
      if (etm) {
        chip_master_cells_[master] = reinterpret_cast<Cell*>(etm);
-       continue;  // skip stub synthesis
+       continue;  // skip stub ConcreteCell synthesis
      }
-     // no ETM — fall through to LibertyBuilder stub.
+     // no ETM — fall through to the public makeCell/makePort stub.
      ```
    - The ETM `LibertyCell`'s `LibertyPort`s must match the chip-bump
      bterm names. Validate via a sanity pass:
@@ -241,15 +242,15 @@ and internal arcs.
      }
      ```
 
-2. **Suppress the BIDIRECT direction override when ETM is present.**
-   - `dbNetwork::direction(chip_bump_pin)` currently returns BIDIRECT
-     unconditionally so wire-edge formation runs on every bump. With an
-     ETM, port direction should come from the ETM's `LibertyPort`
-     (which encodes the real INPUT/OUTPUT/INOUT semantics). The ETM
-     model itself drives clock-edge propagation through real arcs, no
-     BIDIRECT trick needed.
+2. **Suppress the BIDIRECT direction fallback when ETM is present.**
+   - For a stub `ConcreteCell` chip-bump pin, `libertyPort(pin)` is null,
+     so `dbNetwork::direction(pin)` returns BIDIRECT (dual vertices, both
+     clock-seeded — how v1 propagates a clock through a bump). With an
+     ETM the bump pin resolves to a real `LibertyPort`, so `direction`
+     returns its INPUT/OUTPUT/INOUT and the ETM's own arcs drive
+     clock-edge propagation; no BIDIRECT fallback is taken.
 
-3. **Skip the `chip_bump_lib_` private LibertyLibrary entirely** when
+3. **Skip the `chip_master_lib_` stub Library entirely** when
    every chiplet master has an ETM.
 
 4. **Diagnostic.**

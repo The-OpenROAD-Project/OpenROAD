@@ -307,22 +307,27 @@ create_clock -name clk -period 1.0 [get_pins -of_objects [get_nets clk_top]]
 now produces a constrained `Path Group: clk` setup check identical to
 the inner-CK form. Two fixes were required on top of Stage 7:
 
-**Fix A — Synthesize a LibertyCell per chip-master with a self-arc per
-chip-bump port.** `dbNetwork::makeTopCellForChip` builds the chip-master
-Cell *as* a `LibertyCell` (via `LibertyBuilder`) on a private
-`LibertyLibrary`. For each chip-bump bterm it creates a `LibertyPort`
-and a combinational self-arc (`lc->makeTimingArcSet(lp, lp, ...)`).
-`Graph::makeInstanceEdges` consumes the arc and creates:
+**Fix A — Chip-bump pins report BIDIRECT; no synthesized timing arc.**
+`dbNetwork::makeTopCellForChip` builds one synthetic **`ConcreteCell`**
+per chip master (via the public `makeCell`/`makePort`), with a `Port`
+per chip-bump bterm. It has no `LibertyCell` binding, so
+`libertyPort(chip_bump_pin)` is null and `dbNetwork::direction(pin)`
+falls through to its `PortDirection::bidirect()` branch.
 
-- `bump_load → bump_bidir_drvr` (forward combinational, traversable by
-  `SearchAdj`)
-- `bump_bidir_drvr → bump_load` (flagged `isBidirectInstPath`, filtered
-  by default predicate but harmless)
+Because the pin is BIDIRECT, `Graph::makePinVertices` allocates **two**
+vertices for it — a load and a driver — and `create_clock` seeds the
+clock arrival on **both** (`Search::findClockVertices` /
+`seedClkArrivals` insert both). The driver vertex then fans out into the
+chiplet body through the fat-net wire-edge model (see Stage 7), so the
+clock reaches each chiplet's internal CK. **No instance/timing arc is
+synthesized** — the load and driver vertices do not need to be joined by
+an edge, since both are seeded directly.
 
-The forward arc closes the gap between the load and driver vertices of
-the BIDIRECT chip-bump pin, so a clock arrival seeded on the load (or
-the driver) fans out via the regular wire-edge model. Zero arc delay
-preserves the inner-CK anchor's reported slack.
+(Historical note: an earlier revision synthesized a `LibertyCell` with a
+zero-delay combinational self-arc per bump via OpenSTA's private
+`LibertyBuilder`. That was dropped — the private header is not part of
+OpenSTA's public include API, and the arc turned out to be unnecessary
+for propagation. See the wire-load section for its QoR side effect.)
 
 **Fix B — Per-block discriminator in `getDbNwkObjectId`.** Each chiplet
 `dbBlock` numbers its iterms/bterms/insts/nets from 1. Without
@@ -353,11 +358,22 @@ STA does **not** build a per-segment drvr → load chain. `Graph::makeWireEdgesF
 
 1. **Cross-chiplet data edge has no intermediate bump-pin hop.** The wire edge `chipA/buf/Z → chipB/buf/A` is created in one shot when `chipA/q_bump` (the BIDIRECT driver iterated from chipA's chip_inst pin walk) is processed. The visitor descends into chipA's inner q dbNet (yielding `chipA/buf/Z`, `chipA.q_bterm`) and chipB's inner d dbNet (yielding `chipB/buf/A`, `chipB.d_bterm`). `FindNetDrvrLoads` then classifies — `chipA/buf/Z` joins `drvrs`, `chipB/buf/A` joins `loads` — and the pairwise loop emits the cross-chip wire edge.
 
-2. **Every BIDIRECT chip-bump appears in BOTH drvrs and loads.** `isDriver` and `isLoad` both return true for `direction == bidirect`. So `chipA/q_bump` and `chipB/d_bump` show up as loads in the aggregated set too, and `chipA/buf/Z` gets extra outgoing wire edges to their **load-side vertices** in addition to the real load `chipB/buf/A`. These edges are harmless for path search — the bump load vertex's only outgoing arc is the synthesized `load → bidir_drvr` self-arc, which then re-enters the same chipnet, and `SearchPred` (forward search) only emits paths via the `bidir_drvr_vertex`. No spurious paths form.
+2. **Every BIDIRECT chip-bump appears in BOTH drvrs and loads.** `isDriver` and `isLoad` both return true for `direction == bidirect`. So `chipA/q_bump` and `chipB/d_bump` show up as loads in the aggregated set too, and `chipA/buf/Z` gets extra outgoing wire edges to their **load-side vertices** in addition to the real load `chipB/buf/A`. These edges are harmless for path search — a bump load vertex has no outgoing arc (it is a dead-end load), and `SearchPred` (forward search) only emits paths via the `bidir_drvr_vertex`. No spurious paths form.
 
-3. **Wire-delay calc sees fanout count.** STA's default wire-load lookup uses fanout count (or summed pin caps; chip-bump LibertyPort cap defaults to 0). Every distinct load on a fat net contributes to the count. If two loads dedup on identity (`PinSet`/`NetSet` sort by `id()` — see the per-block discriminator section above), the fanout under-counts and wire delay drops by one tier.
+3. **Wire-delay calc sees fanout count.** STA's default wire-load lookup uses fanout count (or summed pin caps; chip-bump port cap defaults to 0). Every distinct load on a fat net contributes to the count. If two loads dedup on identity (`PinSet`/`NetSet` sort by `id()` — see the per-block discriminator section above), the fanout under-counts and wire delay drops by one tier.
 
-The Stage 7 golden `slack 0.83` was produced under exactly that under-count: cross-block iterm/bterm/net id collisions in `visited_drvrs` / `visited_nets` silently dropped some chip-side loads. After the `block_disc_` fix the load set is correctly sized, fanout grows, and the wire edge `chipA/buf/Z → chipB/buf/A` picks up an extra +0.01 ns, landing at `slack 0.82`. The regen captures the physical-topology-correct value.
+The `block_disc_` fix is what keeps the three cross-block loads on the
+`chipA/buf/Z` fat net distinct — `chipB/buf/A` (the far CMOS input) plus
+the two physical microbumps `chipA/q_bump` and `chipB/d_bump`. Fanout = 3,
+giving the constrained `slack 0.83`. Verify with
+`report_checks -fields {fanout}`: the `chipA/buf/Z` row shows `Fanout 3`.
+
+An earlier revision reported `slack 0.82` (fanout 4). That extra load was
+an artifact of the now-removed synthesized self-arc (Fix A history): its
+`load → bidir_drvr` edge let a bump's load vertex **re-enter** the chipnet
+during `visitConnectedPins`, so the same bond was counted twice. A bond is
+a single physical load, so `0.83` / fanout 3 is the physically-correct
+value; `0.82` was a one-tier over-count.
 
 ## term(Pin*) history (Stage 4–6.5)
 

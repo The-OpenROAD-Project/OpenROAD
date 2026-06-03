@@ -32,8 +32,11 @@ check "bridge spans both chiplets" {
 } {chipA chipB}
 
 # Anchor the clock on the chip-bump pins of clk_top — the natural form
-# users will write. Propagation through the BIDIRECT bump relies on the
-# synthesized LibertyCell self-arc built in makeTopCellForChip.
+# users will write. Each chip-bump pin reports BIDIRECT (dbNetwork::
+# direction), so Graph::makePinVertices gives it both a load and a driver
+# vertex and create_clock seeds the arrival on both. The driver vertex then
+# fans out into the chiplet body via the fat-net wire-edge model, so the
+# clock reaches each chiplet's internal CK with no synthesized timing arc.
 create_clock -name clk -period 1.0 \
   [get_pins -of_objects [get_nets clk_top]]
 report_checks -path_delay max -group_path_count 4

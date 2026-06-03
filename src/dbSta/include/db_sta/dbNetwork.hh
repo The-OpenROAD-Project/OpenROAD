@@ -516,11 +516,12 @@ class dbNetwork : public ConcreteNetwork
   // so iterms/bterms/insts/nets from different chiplet blocks (each
   // numbered from 1) don't collide in NetSet/PinSet keys.
   odb::PtrMap<odb::dbBlock, uint32_t> block_disc_;
-  // Synthetic LibertyLibrary for chip-master Cells. Each carries a
-  // self-arc per chip-bump port so Graph::makeInstanceEdges builds the
-  // internal load<->bidir_drvr edges that let create_clock anchors on
-  // chip-bump pins propagate into the chiplet body.
-  LibertyLibrary* chip_bump_lib_ = nullptr;
+  // Synthetic (non-Liberty) Library owning the chip-master Cells built in
+  // makeTopCellForChip. The Cells have no LibertyCell binding; a clock
+  // anchored on a chip-bump pin propagates because the pin is BIDIRECT
+  // (dual load/driver vertices, both clock-seeded) and the driver fans out
+  // via the fat-net wire-edge model — no synthesized timing arc.
+  Library* chip_master_lib_ = nullptr;
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;

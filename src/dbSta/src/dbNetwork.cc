@@ -61,7 +61,6 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <vector>
 
 #include "dbEditHierarchy.hh"
-#include "liberty/LibertyBuilder.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -80,8 +79,6 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/StringUtil.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "sta/VertexId.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -1008,28 +1005,27 @@ void dbNetwork::makeTopCellForChip(dbChip* chip)
     Library* old_lib = library(top_cell_);
     deleteLibrary(old_lib);
   }
-  if (chip_bump_lib_) {
-    deleteLibrary(reinterpret_cast<Library*>(chip_bump_lib_));
-    chip_bump_lib_ = nullptr;
+  if (chip_master_lib_) {
+    deleteLibrary(chip_master_lib_);
+    chip_master_lib_ = nullptr;
   }
   chip_master_cells_.clear();
   const char* design_name = chip->getName();
   Library* top_lib = makeLibrary(design_name, "");
   top_cell_ = makeCell(top_lib, design_name, false, "");
-  // Per-master LibertyCell with a self-arc per chip-bump port. Without
-  // the self-arc Graph::makeInstanceEdges builds no load<->bidir_drvr
-  // edge for the BIDIRECT bump pin, blocking create_clock propagation
-  // through the chip-bump.
-  chip_bump_lib_ = makeLibertyLibrary("3dic_chip_bump_lib", "");
-  LibertyBuilder builder(debug_, report_);
+  // One plain Cell per chip master with a Port per chip-bump bterm,
+  // backing cell()/port()/name()/direction() for chip-inst and chip-bump
+  // pins. No LibertyCell, so chip-bump pins read as BIDIRECT and a clock
+  // anchored on one propagates through the fat-net wire model on its own
+  // (no timing arc, no OpenSTA-private LibertyBuilder).
+  chip_master_lib_ = makeLibrary("3dic_chip_master_lib", "");
   for (dbChipInst* chip_inst : chip->getChipInsts()) {
     dbChip* master = chip_inst->getMasterChip();
     if (master == nullptr || chip_master_cells_.contains(master)) {
       continue;
     }
-    LibertyCell* lc
-        = builder.makeCell(chip_bump_lib_, master->getName(), "3dic-synth");
-    Cell* master_cell = reinterpret_cast<Cell*>(lc);
+    Cell* master_cell
+        = makeCell(chip_master_lib_, master->getName(), false, "");
     chip_master_cells_[master] = master_cell;
     for (odb::dbChipRegion* region : master->getChipRegions()) {
       for (odb::dbChipBump* bump : region->getChipBumps()) {
@@ -1037,16 +1033,11 @@ void dbNetwork::makeTopCellForChip(dbChip* chip)
         if (bterm == nullptr) {
           continue;
         }
-        LibertyPort* lp = builder.makePort(lc, bterm->getConstName());
-        lp->setDirection(dbToSta(bterm->getSigType(), bterm->getIoType()));
-        registerConcretePort(reinterpret_cast<Port*>(lp));
-        auto attrs = std::make_shared<TimingArcAttrs>();
-        attrs->setTimingType(TimingType::combinational);
-        lc->makeTimingArcSet(
-            lp, lp, nullptr, TimingRole::combinational(), attrs);
+        Port* port = makePort(master_cell, bterm->getConstName());
+        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
+        registerConcretePort(port);
       }
     }
-    lc->finish(false, report_, debug_);
   }
 }
 
@@ -1092,7 +1083,7 @@ void dbNetwork::clear()
   chip_bump_vertex_ids_.clear();
   block_to_chip_inst_.clear();
   block_disc_.clear();
-  chip_bump_lib_ = nullptr;
+  chip_master_lib_ = nullptr;
 }
 
 Instance* dbNetwork::topInstance() const
