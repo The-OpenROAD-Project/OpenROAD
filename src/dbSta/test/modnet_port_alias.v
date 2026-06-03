@@ -19,7 +19,7 @@
 //     the sibling's modnet.
 // Result: M's 'txclk' modnet ends up with both txclk and clk
 // modBTerms attached, cross-aliasing the two external clocks at M's
-// boundary (warning ORD-2059, or fatal ORD-2030 in some cases).
+// boundary.
 
 module sub_with_clk (input clk, input d, output zo);
   DFF_X1 u_ff (.CK(clk), .D(d), .Q(zo));
