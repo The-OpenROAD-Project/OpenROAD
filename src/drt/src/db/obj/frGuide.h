@@ -17,11 +17,8 @@ class frNet;
 class frGuide : public frConnFig
 {
  public:
-  frGuide(const odb::Point& begin,
-          frLayerNum begin_layer,
-          const odb::Point& end,
-          frLayerNum end_layer)
-      : begin_(begin), end_(end), beginLayer_(begin_layer), endLayer_(end_layer)
+  frGuide(const odb::Point& begin, frLayerNum layer_num, const odb::Point& end)
+      : begin_(begin), end_(end), layerNum_(layer_num)
   {
   }
   frGuide(const frGuide& in) = delete;
@@ -31,8 +28,7 @@ class frGuide : public frConnFig
   const odb::Point& getBeginPoint() const { return begin_; }
   const odb::Point& getEndPoint() const { return end_; }
 
-  frLayerNum getBeginLayerNum() const { return beginLayer_; }
-  frLayerNum getEndLayerNum() const { return endLayer_; }
+  frLayerNum getLayerNum() const { return layerNum_; }
   bool hasRoutes() const { return !routeObj_.empty(); }
   const std::vector<std::unique_ptr<frConnFig>>& getRoutes() const
   {
@@ -76,8 +72,7 @@ class frGuide : public frConnFig
  private:
   odb::Point begin_;
   odb::Point end_;
-  frLayerNum beginLayer_;
-  frLayerNum endLayer_;
+  frLayerNum layerNum_;
   std::vector<std::unique_ptr<frConnFig>> routeObj_;
   frNet* net_{nullptr};
   int index_in_owner_{0};
