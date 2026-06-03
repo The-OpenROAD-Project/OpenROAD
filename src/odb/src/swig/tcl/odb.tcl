@@ -1296,6 +1296,7 @@ proc destroy_routes { } {
 sta::define_cmd_args "report_3dic_summary" {}
 
 proc report_3dic_summary { args } {
+  sta::parse_key_args "report_3dic_summary" args keys {} flags {}
   set db [ord::get_db]
   set chip [$db getChip]
   if { $chip == "NULL" } {
