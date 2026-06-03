@@ -2449,11 +2449,6 @@ NetRouteMap FastRouteCore::run()
 
     // Mismatch between 2D and 3D congestion related to NDR nets
     if (past_cong != total_overflow_) {
-      logger_->report(
-          "Disabling NDR for congested nets post-Layer Assignment. Congestion "
-          "2D: {} 3D: {}",
-          past_cong,
-          total_overflow_);
       disableNDRForCongestedNets(net_ids_);
       long_edge_len = BIG_INT;
       past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -2690,6 +2685,11 @@ void FastRouteCore::disableNDRForCongestedNets(const std::vector<int>& net_ids)
   if (congested_ndr_ids.empty()) {
     return;
   }
+
+  logger_->warn(GRT,
+                297,
+                "Disabling NDR for {} congested nets",
+                congested_ndr_ids.size());
 
   // Whether to also correct 3D edge usage (true once 3D routes exist)
   const bool update_3d = is_incremental_grt_ || is_3d_step_;

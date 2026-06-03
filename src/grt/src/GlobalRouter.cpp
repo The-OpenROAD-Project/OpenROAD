@@ -236,7 +236,7 @@ void GlobalRouter::saveCongestion()
     fastroute_->saveCongestion();
   }
 
-  if (congestion_file_name_ != nullptr) {
+  if (congestion_file_name_ != nullptr && *congestion_file_name_ != '\0') {
     odb::dbMarkerCategory* tool_category
         = block_->findMarkerCategory("Global route");
     if (tool_category != nullptr) {
