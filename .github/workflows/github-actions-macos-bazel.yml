@@ -61,7 +61,7 @@ jobs:
             "${REMOTE_FLAGS[@]}" \
             --disk_cache=~/.cache/bazel-disk-cache \
             --experimental_disk_cache_gc_max_size=5G \
-            --//:platform=gui //:openroad
+            //:openroad
 
       # 2. SAVE: Only executes if this is a push/merge directly to the master branch
       - name: Save Bazel Disk Cache
