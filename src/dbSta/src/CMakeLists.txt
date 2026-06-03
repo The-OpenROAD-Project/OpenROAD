@@ -17,16 +17,6 @@ target_include_directories(dbSta_lib
   PUBLIC
     ../include
     ${PROJECT_SOURCE_DIR}/include
-  PRIVATE
-    # OpenSTA's PUBLIC exports only ${OPENSTA_HOME}/include. dbNetwork.cc
-    # needs liberty/LibertyBuilder.hh (synthetic chip-bump arc creation)
-    # which lives under ${OPENSTA_HOME}, and that header includes
-    # "MinMax.hh" without an sta/ prefix, requiring ${OPENSTA_HOME}/include/sta.
-    # Needed for search/Levelize.hh and the unprefixed transitive
-    # OpenSTA headers it includes (e.g. Graph.hh) which are not part of
-    # OpenSTA's public include.
-    ${OPENSTA_HOME}
-    ${OPENSTA_HOME}/include/sta
 )
 
 

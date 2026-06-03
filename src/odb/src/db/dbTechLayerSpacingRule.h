@@ -67,7 +67,7 @@ class _dbTechLayerSpacingRule : public _dbObject
   uint32_t r1max_;
   uint32_t r2min_;
   uint32_t r2max_;
-  uint32_t cut_area_;
+  int64_t cut_area_;
   dbId<_dbTechLayer> layer_;
   dbId<_dbTechLayer> cut_layer_below_;
 };
