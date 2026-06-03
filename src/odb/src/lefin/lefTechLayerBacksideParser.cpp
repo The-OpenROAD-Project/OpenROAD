@@ -11,6 +11,8 @@
 
 namespace odb::lefTechLayerBackside {
 
+namespace {
+
 template <typename Iterator>
 bool parse(Iterator first,
            Iterator last,
@@ -25,6 +27,8 @@ bool parse(Iterator first,
   bool valid = qi::phrase_parse(first, last, backsideRule, space);
   return valid && first == last;
 }
+
+}  // namespace
 
 }  // namespace odb::lefTechLayerBackside
 

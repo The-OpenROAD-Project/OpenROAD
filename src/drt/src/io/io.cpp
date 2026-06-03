@@ -477,7 +477,7 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
   z = std::numeric_limits<int>::max();
   for (auto via : viaRules) {
     bool any_backside = false;
-    for (int i = 0; i < (int) via->getViaLayerRuleCount(); i++) {
+    for (uint32_t i = 0; i < via->getViaLayerRuleCount(); i++) {
       if (via->getViaLayerRule(i)->getLayer()->isBackside()) {
         any_backside = true;
         break;
@@ -1065,9 +1065,9 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   return raw_net_in;
 }
 
-bool updatefrAccessPoint(odb::dbAccessPoint* db_ap,
-                         frAccessPoint* ap,
-                         frTechObject* tech)
+static bool updatefrAccessPoint(odb::dbAccessPoint* db_ap,
+                                frAccessPoint* ap,
+                                frTechObject* tech)
 {
   // Access points on backside layers (e.g. PG taps) are invisible to
   // the front-side router; report so the caller can drop them.
