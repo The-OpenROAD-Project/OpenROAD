@@ -865,6 +865,15 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
+        if _command_exists "apt-get"; then
+            _execute "Installing bazel required libraries..." \
+                apt-get -y install --no-install-recommends \
+                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+        elif _command_exists "yum"; then
+            _execute "Installing bazel required libraries..." \
+                yum install -y \
+                glibc-devel libxml2 ncurses-libs zlib libstdc++
+        fi
         if [[ "${NO_GUI}" != "yes" ]]; then
             # Install xcb libraries needed for GUI support with Bazel builds
             if _command_exists "apt-get"; then
@@ -872,12 +881,19 @@ _install_bazel() {
                     apt-get -y install --no-install-recommends \
                     libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
                     libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-                    libxcb-xinerama0-dev libxcb-xkb-dev
+                    libxcb-xinerama0-dev libxcb-xkb-dev \
+                    libx11-xcb1 libx11-6 libsm6 libice6 \
+                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
             elif _command_exists "yum"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     yum install -y \
                     libxcb-devel xcb-util-devel xcb-util-image-devel \
-                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel
+                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
+                    libX11-xcb libX11 libSM libICE \
+                    xcb-util-cursor libxcb \
+                    dbus-libs fontconfig \
+                    libxkbcommon libxkbcommon-x11
             fi
         fi
     fi
