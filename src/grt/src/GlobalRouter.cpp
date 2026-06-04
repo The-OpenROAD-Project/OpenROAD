@@ -414,6 +414,9 @@ void GlobalRouter::globalRoute(bool save_guides)
       findClockNets(nets, clock_nets);
       cugr_->setCongestionIterations(congestion_iterations_);
       cugr_->setResistanceAware(resistance_aware_);
+      if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+        cugr_->setCriticalNetsPercentage(0);
+      }
       cugr_->init(min_layer, max_layer, clock_nets);
       if (verbose_) {
         reportResources();

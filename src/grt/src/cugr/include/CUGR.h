@@ -234,7 +234,7 @@ class CUGR
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
 
-  float critical_nets_percentage_ = 0;
+  float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
 
   bool resistance_aware_ = false;
