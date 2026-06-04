@@ -120,12 +120,44 @@ class WebLogSink : public spdlog::sinks::base_sink<std::mutex>
   std::string pending_;
 };
 
+void WebServer::initLogger()
+{
+  // Idempotent: skip if already registered, or if serve() is already
+  // running (it registers the sink itself).
+  if (logger_initialized_ || ioc_) {
+    return;
+  }
+
+  // Create the hook object now because WebLogSink holds a raw pointer to it
+  // (for sessions()).  Do NOT install it as the Gui headless viewer here:
+  // that would make gui::Gui::enabled() true during startup scripts, and
+  // gui::pause() would then block kClientConnectTimeoutSeconds (~30s)
+  // waiting for a web client that cannot connect until serve() opens the
+  // network.  The headless viewer and chart factory are installed in
+  // serve() instead.
+  if (!viewer_hook_) {
+    viewer_hook_ = std::make_unique<WebViewerHook>();
+  }
+
+  auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
+  log_sink_ = log_sink;
+  logger_->addSink(log_sink_);
+  viewer_hook_->setDrainLogsFn(
+      [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
+
+  logger_initialized_ = true;
+}
+
 void WebServer::serve(int port)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
     return;
   }
+
+  // Register the WebLogSink if Main.cc / the interactive `web_server`
+  // command did not already call initLogger().  Idempotent.
+  initLogger();
 
   // Clear any stale stop request left over from a previous session.
   // Without this, a requestStop() that arrives during teardown (after
@@ -159,7 +191,11 @@ void WebServer::serve(int port)
           interp_, "exit", &WebServer::tclExitHandler, this, nullptr);
     }
 
-    viewer_hook_ = std::make_unique<WebViewerHook>();
+    // viewer_hook_ and the WebLogSink were created by initLogger() above.
+    // Install the hook as the Gui headless viewer and chart factory now
+    // that the network is about to open — deferred from initLogger() so
+    // startup scripts run with gui::Gui::enabled() == false (see
+    // initLogger()).
     gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
     gui::Gui::get()->setChartFactory(
         [hook = viewer_hook_.get()](const std::string& name,
@@ -168,11 +204,6 @@ void WebServer::serve(int port)
           return hook->createChart(name, x_label, y_labels);
         });
 
-    auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
-    log_sink_ = log_sink;
-    logger_->addSink(log_sink_);
-    viewer_hook_->setDrainLogsFn(
-        [log_sink = std::move(log_sink)]() { log_sink->drainToClients(); });
     // Flush WebLogSink at the end of every Tcl eval so log output
     // emitted during a command reaches clients before the response
     // carrying the Tcl result.  viewer_hook_ outlives every io thread
@@ -392,6 +423,8 @@ void WebServer::stop()
     log_sink_.reset();
   }
   viewer_hook_.reset();
+  // Reset so a subsequent serve()/initLogger() re-registers the sink.
+  logger_initialized_ = false;
   logger_->info(utl::WEB, 41, "Web session closed.");
 }
 
