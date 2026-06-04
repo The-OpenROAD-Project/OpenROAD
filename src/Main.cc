@@ -191,21 +191,15 @@ static void setupBazelRunfilesEnvironment(const char* argv0)
     return;
   }
 
-  std::filesystem::path exe_path(argv0);
-  if (exe_path.is_relative()) {
-    std::error_code ec;
-    exe_path = std::filesystem::current_path(ec) / exe_path;
-  }
-
   std::error_code ec;
-  exe_path = std::filesystem::weakly_canonical(exe_path, ec);
+  std::filesystem::path exe_path = std::filesystem::weakly_canonical(argv0, ec);
   if (ec) {
     return;
   }
 
-  const std::filesystem::path runfiles_dir = exe_path.string() + ".runfiles";
-  if (std::filesystem::exists(runfiles_dir)) {
-    setenv("RUNFILES_DIR", runfiles_dir.c_str(), /* override */ 0);
+  exe_path += ".runfiles";
+  if (std::filesystem::exists(exe_path)) {
+    setenv("RUNFILES_DIR", exe_path.c_str(), /* override */ 0);
   }
 }
 #endif
