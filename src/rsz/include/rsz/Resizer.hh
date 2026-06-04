@@ -215,6 +215,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::VertexSeq orderedLoadPinVertices();
 
   void setDontUse(sta::LibertyCell* cell, bool dont_use);
+  void setInverterPairEnabled(bool enable);
+  bool isInverterPairEnabled() const { return inverter_pair_enabled_; }
+  const sta::LibertyCellSeq& inverterCells() const { return inverter_cells_; }
   void resetDontUse();
   bool dontUse(const sta::LibertyCell* cell);
   bool isLinkCell(sta::LibertyCell* cell) const;
@@ -592,6 +595,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findBuffers();
   void findBuffersNoPruning();
   void findFastBuffers();
+  void findInverters();
   static MoveType moveTypeFromString(const std::string& str);
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
@@ -933,6 +937,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
+  sta::LibertyCellSeq inverter_cells_;
+  bool inverter_pair_enabled_ = false;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
   sta::LibertyCellSeq clk_buffers_;

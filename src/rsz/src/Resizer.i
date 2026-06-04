@@ -188,6 +188,14 @@ reset_dont_use()
 }
 
 void
+set_enable_inverter_pair(bool enable)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setInverterPairEnabled(enable);
+}
+
+void
 set_dont_touch_instance(Instance *inst,
                         bool dont_touch)
 {

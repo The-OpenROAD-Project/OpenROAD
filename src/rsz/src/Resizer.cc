@@ -2095,6 +2095,46 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
   }
 }
 
+// Collect all link-cell inverters. Curation/pruning of the candidate set
+// is deferred (see PR Future-work); for now every usable inverter is offered.
+void Resizer::findInverters()
+{
+  if (!inverter_cells_.empty()) {
+    return;
+  }
+  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      if (!cell->isInverter()) {
+        continue;
+      }
+      if (dontUse(cell) || cell->alwaysOn() || cell->isIsolationCell()
+          || cell->isLevelShifter() || !isLinkCell(cell)) {
+        continue;
+      }
+      if (!db_network_->staToDb(cell)) {
+        continue;
+      }
+      inverter_cells_.emplace_back(cell);
+    }
+  }
+  delete lib_iter;
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             1,
+             "Found {} inverter cells for inverter-pair insertion.",
+             inverter_cells_.size());
+}
+
+void Resizer::setInverterPairEnabled(bool enable)
+{
+  inverter_pair_enabled_ = enable;
+}
+
 // Filter equivalent cells based on the following liberty attributes:
 // - Footprint (Optional - Honored if enforced by user): Cells with the
 //   same footprint have the same layout boundary.
@@ -3328,6 +3368,7 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  inverter_cells_.clear();
 }
 
 void Resizer::resetDontUse()
@@ -3339,6 +3380,7 @@ void Resizer::resetDontUse()
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   swappable_cells_cache_.clear();
+  inverter_cells_.clear();
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();

@@ -36,6 +36,7 @@ or_integration_tests(
     pinswap_flat
     pinswap_hier
     swap_pins_dont_touch
+    inv_pair1
     rebuffer1
     rebuffer1_hier
     recover_power_verbose

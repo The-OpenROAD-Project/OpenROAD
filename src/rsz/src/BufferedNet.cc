@@ -153,6 +153,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   max_load_slew_ = min(ref->maxLoadSlew(), ref2->maxLoadSlew());
 
   area_ = ref->area() + ref2->area();
+
+  parity_ = ref->parity();
 }
 
 // wire
@@ -181,6 +183,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   max_load_slew_ = ref->maxLoadSlew();
 
   area_ = ref->area();
+
+  parity_ = ref->parity();
 }
 
 // via
@@ -208,6 +212,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   max_load_slew_ = ref->maxLoadSlew();
 
   area_ = ref->area();
+
+  parity_ = ref->parity();
 }
 
 // buffer
@@ -237,6 +243,8 @@ BufferedNet::BufferedNet(const BufferedNetType type,
   max_load_slew_ = resizer->maxInputSlew(input, corner);
 
   area_ = ref->area() + buffer_cell_->area();
+
+  parity_ = buffer_cell->isInverter() ? (ref->parity() ^ 1) : ref->parity();
 }
 
 void BufferedNet::reportTree(const Resizer* resizer) const
@@ -1178,7 +1186,8 @@ bool BufferedNet::fitsEnvelope(Metrics target)
   return maxLoadWireLength() <= target.max_load_wl && slack() >= target.slack
          && sta::fuzzyLessEqual(cap(), target.cap)
          && sta::fuzzyGreaterEqual(maxLoadSlew(), target.max_load_slew)
-         && sta::fuzzyLessEqual(fanout(), target.fanout);
+         && sta::fuzzyLessEqual(fanout(), target.fanout)
+         && parity() == target.parity;
 }
 
 }  // namespace rsz

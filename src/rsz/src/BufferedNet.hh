@@ -187,6 +187,9 @@ class BufferedNet
   // repairNet
   int maxLoadWireLength() const;
 
+  // Inverter count to loads, mod 2 (0 = polarity preserved).
+  int parity() const { return parity_; }
+
   // Rebuffer
   const sta::RiseFallBoth* slackTransition() const
   {
@@ -222,6 +225,7 @@ class BufferedNet
     float cap;
     float max_load_slew;
     float fanout;
+    int parity = 0;
 
     Metrics withMaxLoadWl(int max_load_wl)
     {
@@ -251,7 +255,8 @@ class BufferedNet
                    .slack = slack(),
                    .cap = cap(),
                    .max_load_slew = maxLoadSlew(),
-                   .fanout = fanout()};
+                   .fanout = fanout(),
+                   .parity = parity()};
   }
 
   bool fitsEnvelope(Metrics target);
@@ -294,6 +299,8 @@ class BufferedNet
 
   // Delay from driver pin to here
   FixedDelay arrival_delay_ = FixedDelay::ZERO;
+
+  int8_t parity_ = 0;
 
   const sta::Scene* corner_ = nullptr;
 };

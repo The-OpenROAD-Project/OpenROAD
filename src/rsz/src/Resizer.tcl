@@ -44,6 +44,19 @@ proc reset_dont_use { args } {
   rsz::reset_dont_use
 }
 
+sta::define_cmd_args "enable_inverter_pair" {[-disable]} ;# checker off
+
+proc enable_inverter_pair { args } {
+  sta::parse_key_args "enable_inverter_pair" args \
+    keys {} flags {-disable} ;# checker off
+  sta::check_argc_eq0 "enable_inverter_pair" $args
+  set enable 1
+  if { [info exists flags(-disable)] } {
+    set enable 0
+  }
+  rsz::set_enable_inverter_pair $enable
+}
+
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
   foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn] {

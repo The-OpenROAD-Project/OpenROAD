@@ -45,6 +45,7 @@ TESTS = [
     "pinswap_hier",
     "swap_pins_dont_touch",
     "pin_swap1",
+    "inv_pair1",
     "rebuffer1",
     "rebuffer1_hier",
     "recover_power_verbose",

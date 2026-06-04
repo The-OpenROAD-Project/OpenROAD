@@ -98,6 +98,13 @@ class Rebuffer : public sta::dbStaState
                            BufferedNetPtr assured_opt,
                            int level);
 
+  // Inverter pair
+  void insertInverterCandidates(BufferedNetSeq& opts, int level);
+  void prunePerParityFrontier(BufferedNetSeq& opts);
+  void insertInverterOptions(BufferedNetSeq& opts, int level);
+  bool invPairActive() const;
+  bool isRootParityAccepted(const BufferedNetPtr& opt) const;
+
   std::vector<sta::Instance*> collectImportedTreeBufferInstances(
       sta::Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
@@ -144,6 +151,9 @@ class Rebuffer : public sta::dbStaState
 
   std::vector<BufferSize> buffer_sizes_;
   std::map<sta::LibertyCell*, BufferSize*> buffer_sizes_index_;
+  // Inverters characterized like buffers (only when inv-pair is enabled) so the
+  // area-recovery exemplar path uses one drive check for both.
+  std::vector<BufferSize> inverter_sizes_;
 
   sta::Pin* pin_ = nullptr;
   float fanout_limit_ = 0.0f;

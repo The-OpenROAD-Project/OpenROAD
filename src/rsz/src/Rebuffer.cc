@@ -4,10 +4,12 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -341,6 +343,18 @@ static const sta::RiseFallBoth* combinedTransition(const sta::RiseFallBoth* a,
   return sta::RiseFallBoth::riseFall();
 }
 
+// Inverter flips the upstream slackTransition: rise<->fall
+static const sta::RiseFallBoth* flipRiseFallBoth(const sta::RiseFallBoth* rf)
+{
+  if (rf == sta::RiseFallBoth::rise()) {
+    return sta::RiseFallBoth::fall();
+  }
+  if (rf == sta::RiseFallBoth::fall()) {
+    return sta::RiseFallBoth::rise();
+  }
+  return rf;
+}
+
 static BufferedNetPtr createBnetJunction(Resizer* resizer,
                                          const BufferedNetPtr& p,
                                          const BufferedNetPtr& q,
@@ -663,12 +677,14 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               // This is a long wire, allow for insertion of buffers at the
               // farther end
               insertBufferOptions(opts, level, std::min(full_wl, layer_step));
+              insertInverterOptions(opts, level);
             } else {
               BnetSeq opts1 = opts;
               for (BnetPtr& opt : opts1) {
                 opt = addWire(opt, node->location(), layer, level);
               }
               insertBufferOptions(opts1, level, 0);
+              insertInverterOptions(opts1, level);
               if (opts1.empty()) {
                 // if generated options empty, start again but allow for
                 // insertion of buffers at the farther end
@@ -678,6 +694,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                   opt = addWire(opt, node->location(), layer, level);
                 }
                 insertBufferOptions(opts1, level, 0);
+                insertInverterOptions(opts1, level);
               }
               if (opts1.empty()) {
                 // if generated options still empty, this is an internal error
@@ -733,6 +750,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 opt = addWire(opt, location, layer, level);
               }
               insertBufferOptions(opts, level, std::min(remaining_wl, step));
+              insertInverterOptions(opts, level);
 
               if (opts.empty()) {
                 logger_->warn(
@@ -751,76 +769,112 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
           }
 
           case BnetType::junction: {
-            const BnetSeq& opts_left = recurse(node->ref());
-            const BnetSeq& opts_right = recurse(node->ref2());
+            const BnetSeq& opts_left_all = recurse(node->ref());
+            const BnetSeq& opts_right_all = recurse(node->ref2());
 
-            BnetSeq opts;
-            opts.reserve(std::max(opts_left.size(), opts_right.size()));
-            float best_cap = sta::INF;
-
-            auto li = opts_left.rbegin(), lend = opts_left.rend();
-            auto ri = opts_right.rbegin(), rend = opts_right.rend();
-
-            while (li != lend && ri != rend) {
-              while (li + 1 != lend && (*(li + 1))->slack() >= (*ri)->slack()) {
-                li++;
+            // Junction merge requires equal parity on both sides; with
+            // mixed-parity opts split into 2 buckets and merge per bucket.
+            auto merge_one_bucket = [&](const BnetSeq& opts_left,
+                                        const BnetSeq& opts_right) -> BnetSeq {
+              BnetSeq opts;
+              if (opts_left.empty() || opts_right.empty()) {
+                return opts;
               }
-              while (ri + 1 != rend && (*(ri + 1))->slack() >= (*li)->slack()) {
-                ri++;
-              }
+              opts.reserve(std::max(opts_left.size(), opts_right.size()));
+              float best_cap = sta::INF;
 
-              bool rewrote = false;
-              BnetPtr junc;
+              auto li = opts_left.rbegin(), lend = opts_left.rend();
+              auto ri = opts_right.rbegin(), rend = opts_right.rend();
 
-              if (allow_topology_rewrite) {
-                junc = attemptTopologyRewrite(node, *li, *ri, best_cap);
-                if (junc) {
-                  rewrote = true;
-                }
-              }
-
-              if (!rewrote) {
-                junc = createBnetJunction(resizer_, *li, *ri, node->location());
-              }
-
-              if (junc->fanout() <= fanout_limit_) {
-                debugPrint(logger_,
-                           RSZ,
-                           "rebuffer",
-                           3,
-                           "{:{}s}{}{}",
-                           "",
-                           level,
-                           rewrote ? "(rewritten) " : "",
-                           junc->to_string(resizer_));
-
-                best_cap = junc->cap();
-                opts.push_back(std::move(junc));
-              }
-
-              while (true) {
-                // increment either li or ri, whichever leads to smaller slack
-                // decrease
-                FixedDelay next_li_slack = (li + 1 != lend)
-                                               ? (*(li + 1))->slack()
-                                               : -FixedDelay::INF;
-                FixedDelay next_ri_slack = (ri + 1 != rend)
-                                               ? (*(ri + 1))->slack()
-                                               : -FixedDelay::INF;
-
-                if (next_li_slack > next_ri_slack) {
+              while (li != lend && ri != rend) {
+                while (li + 1 != lend
+                       && (*(li + 1))->slack() >= (*ri)->slack()) {
                   li++;
-                } else {
+                }
+                while (ri + 1 != rend
+                       && (*(ri + 1))->slack() >= (*li)->slack()) {
                   ri++;
                 }
 
-                if (li == lend || ri == rend
-                    || (*li)->cap() + (*ri)->cap() < best_cap) {
-                  break;
+                bool rewrote = false;
+                BnetPtr junc;
+
+                // Rewrite is parity-unaware: only on pure-buf subtrees.
+                const bool rewrite_safe
+                    = allow_topology_rewrite && !invPairActive();
+                if (rewrite_safe) {
+                  junc = attemptTopologyRewrite(node, *li, *ri, best_cap);
+                  if (junc) {
+                    rewrote = true;
+                  }
+                }
+
+                if (!rewrote) {
+                  junc = createBnetJunction(
+                      resizer_, *li, *ri, node->location());
+                }
+
+                if (junc->fanout() <= fanout_limit_) {
+                  debugPrint(logger_,
+                             RSZ,
+                             "rebuffer",
+                             3,
+                             "{:{}s}{}{}",
+                             "",
+                             level,
+                             rewrote ? "(rewritten) " : "",
+                             junc->to_string(resizer_));
+
+                  best_cap = junc->cap();
+                  opts.push_back(std::move(junc));
+                }
+
+                while (true) {
+                  // increment either li or ri, whichever leads to smaller slack
+                  // decrease
+                  FixedDelay next_li_slack = (li + 1 != lend)
+                                                 ? (*(li + 1))->slack()
+                                                 : -FixedDelay::INF;
+                  FixedDelay next_ri_slack = (ri + 1 != rend)
+                                                 ? (*(ri + 1))->slack()
+                                                 : -FixedDelay::INF;
+
+                  if (next_li_slack > next_ri_slack) {
+                    li++;
+                  } else {
+                    ri++;
+                  }
+
+                  if (li == lend || ri == rend
+                      || (*li)->cap() + (*ri)->cap() < best_cap) {
+                    break;
+                  }
                 }
               }
+              std::ranges::reverse(opts);
+              return opts;
+            };
+
+            BnetSeq opts;
+            if (invPairActive()) {
+              // Merge same-parity pairs only
+              BnetSeq left_p0, left_p1, right_p0, right_p1;
+              for (const BnetPtr& o : opts_left_all) {
+                (o->parity() == 0 ? left_p0 : left_p1).push_back(o);
+              }
+              for (const BnetPtr& o : opts_right_all) {
+                (o->parity() == 0 ? right_p0 : right_p1).push_back(o);
+              }
+              BnetSeq m0 = merge_one_bucket(left_p0, right_p0);
+              BnetSeq m1 = merge_one_bucket(left_p1, right_p1);
+              auto cap_less = [](const BnetPtr& a, const BnetPtr& b) {
+                return a->cap() < b->cap();
+              };
+              opts.reserve(m0.size() + m1.size());
+              std::ranges::merge(m0, m1, std::back_inserter(opts), cap_less);
+            } else {
+              opts = merge_one_bucket(opts_left_all, opts_right_all);
             }
-            std::ranges::reverse(opts);
             return opts;
           }
 
@@ -857,9 +911,11 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   int i = 1;
   debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
   for (const BufferedNetPtr& p : top_opts) {
-    // Find slack for drvr_pin into option.
+    // Only parity-0 (polarity-preserving) options are valid at the root.
+    if (!isRootParityAccepted(p)) {
+      continue;
+    }
     std::optional<FixedDelay> slack = evaluateOption(p, i);
-
     if (!slack) {
       // ignore this option as it doesn't pass ERC
       continue;
@@ -874,6 +930,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
     }
     i++;
   }
+
   if (best_option) {
     debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
   } else {
@@ -934,6 +991,152 @@ void Rebuffer::insertAssuredOption(BnetSeq& opts,
              level,
              assured_opt->to_string(resizer_));
   opts.insert(it, std::move(assured_opt));
+}
+
+bool Rebuffer::invPairActive() const
+{
+  return resizer_->isInverterPairEnabled();
+}
+
+bool Rebuffer::isRootParityAccepted(const BufferedNetPtr& opt) const
+{
+  return !resizer_->isInverterPairEnabled() || opt->parity() == 0;
+}
+
+void Rebuffer::insertInverterOptions(BufferedNetSeq& opts, int level)
+{
+  if (!invPairActive()) {
+    return;
+  }
+  insertInverterCandidates(opts, level);
+  prunePerParityFrontier(opts);
+}
+
+void Rebuffer::insertInverterCandidates(BnetSeq& opts, int level)
+{
+  if (opts.empty() || resizer_->inverterCells().empty()) {
+    return;
+  }
+  BnetSeq inv_opts;
+  inv_opts.reserve(opts.size() * resizer_->inverterCells().size());
+
+  // bufferDelay on an inverter reads arrival_paths_[flipped_rf]
+  bool arrival_path_available[sta::RiseFall::index_count] = {false, false};
+  for (int rf_idx : sta::RiseFall::rangeIndex()) {
+    arrival_path_available[rf_idx] = (arrival_paths_[rf_idx] != nullptr);
+  }
+
+  std::vector<std::pair<sta::LibertyPort*, sta::LibertyPort*>> inv_ports;
+  inv_ports.reserve(resizer_->inverterCells().size());
+  for (sta::LibertyCell* inv_cell : resizer_->inverterCells()) {
+    sta::LibertyPort *in, *out;
+    inv_cell->bufferPorts(in, out);
+    inv_ports.emplace_back(in, out);
+  }
+
+  for (const BnetPtr& opt : opts) {
+    const sta::RiseFallBoth* flipped_rf
+        = flipRiseFallBoth(opt->slackTransition());
+    if (flipped_rf) {
+      bool flipped_safe = true;
+      for (auto rf1 : flipped_rf->range()) {
+        if (!arrival_path_available[rf1->index()]) {
+          flipped_safe = false;
+          break;
+        }
+      }
+      if (!flipped_safe) {
+        continue;
+      }
+    }
+    for (size_t i = 0; i < resizer_->inverterCells().size(); i++) {
+      sta::LibertyCell* inv_cell = resizer_->inverterCells()[i];
+      sta::LibertyPort* in = inv_ports[i].first;
+      sta::LibertyPort* out = inv_ports[i].second;
+      if (in == nullptr || out == nullptr) {
+        continue;
+      }
+      const float load_cap = opt->cap() + out->capacitance();
+      const FixedDelay inv_delay
+          = bufferDelay(inv_cell, opt->slackTransition(), load_cap);
+      const FixedDelay slack = opt->slack() - inv_delay;
+
+      BnetPtr z = make_shared<BufferedNet>(BnetType::buffer,
+                                           opt->location(),
+                                           inv_cell,
+                                           opt,
+                                           corner_,
+                                           resizer_,
+                                           estimate_parasitics_);
+      z->setSlack(slack);
+      // Inverter flips the transition; upstream sees flipped_rf.
+      z->setSlackTransition(flipped_rf);
+      z->setDelay(inv_delay);
+
+      debugPrint(logger_,
+                 RSZ,
+                 "rebuffer",
+                 3,
+                 "{:{}s}inv {} on parity {}: {}",
+                 "",
+                 level,
+                 inv_cell->name(),
+                 opt->parity(),
+                 z->to_string(resizer_));
+      inv_opts.push_back(std::move(z));
+    }
+  }
+  opts.insert(opts.end(),
+              std::make_move_iterator(inv_opts.begin()),
+              std::make_move_iterator(inv_opts.end()));
+}
+
+void Rebuffer::prunePerParityFrontier(BnetSeq& opts)
+{
+  if (opts.empty()) {
+    return;
+  }
+  if (std::ranges::none_of(opts,
+                           [](const BnetPtr& o) { return o->parity() != 0; })) {
+    return;
+  }
+
+  BnetSeq p0, p1;
+  p0.reserve(opts.size());
+  p1.reserve(opts.size());
+  for (BnetPtr& o : opts) {
+    (o->parity() == 0 ? p0 : p1).push_back(std::move(o));
+  }
+
+  auto prune_bucket = [](BnetSeq& bucket) {
+    if (bucket.empty()) {
+      return;
+    }
+    std::ranges::sort(bucket, [](const BnetPtr& a, const BnetPtr& b) {
+      if (a->cap() != b->cap()) {
+        return a->cap() < b->cap();
+      }
+      return a->slack() > b->slack();
+    });
+    BnetSeq kept;
+    kept.reserve(bucket.size());
+    FixedDelay best_slack = -FixedDelay::INF;
+    for (BnetPtr& o : bucket) {
+      if (o->slack() > best_slack) {
+        best_slack = o->slack();
+        kept.push_back(std::move(o));
+      }
+    }
+    bucket.swap(kept);
+  };
+  prune_bucket(p0);
+  prune_bucket(p1);
+
+  opts.clear();
+  opts.reserve(p0.size() + p1.size());
+  auto cap_less
+      = [](const BnetPtr& a, const BnetPtr& b) { return a->cap() < b->cap(); };
+  std::ranges::merge(p0, p1, std::back_inserter(opts), cap_less);
 }
 
 // Recover area on a rebuffering choice without regressing timing
@@ -1017,6 +1220,10 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
             opts.reserve(left_opts.size() * right_opts.size());
             for (const BnetPtr& left : left_opts) {
               for (const BnetPtr& right : right_opts) {
+                // Skip cross-parity pairs
+                if (invPairActive() && left->parity() != right->parity()) {
+                  continue;
+                }
                 BnetPtr junc = createBnetJunction(
                     resizer_, left, right, node->location());
                 if (!assured_fallback && junc->fitsEnvelope(assured_envelope)) {
@@ -1029,7 +1236,23 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               }
             }
 
-            pruneCapVsAreaOptions(sta_, opts);
+            // pruneCapVsAreaOptions is parity-blind; prune each bucket
+            // separately.
+            if (invPairActive()) {
+              std::array<BnetSeq, 2> bucketed;  // by parity (polarity)
+              for (BnetPtr& o : opts) {
+                bucketed[o->parity()].push_back(std::move(o));
+              }
+              opts.clear();
+              for (BnetSeq& b : bucketed) {
+                pruneCapVsAreaOptions(sta_, b);
+                for (BnetPtr& o : b) {
+                  opts.push_back(std::move(o));
+                }
+              }
+            } else {
+              pruneCapVsAreaOptions(sta_, opts);
+            }
             debugPrint(logger_,
                        RSZ,
                        "rebuffer",
@@ -1057,7 +1280,10 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               }
             }
 
-            if (!assured_found) {
+            // Defensive: inv-pair's exact-parity fitsEnvelope can leave no
+            // junction fitting the envelope, so assured_fallback may be null;
+            // skip rather than pass null to insertAssuredOption.
+            if (!assured_found && assured_fallback) {
               insertAssuredOption(opts, assured_fallback, level);
             }
             return opts;
@@ -1087,6 +1313,9 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
   int i = 1;
   debugPrint(logger_, RSZ, "rebuffer", 2, "area-optimized options");
   for (const BufferedNetPtr& p : top_opts) {
+    if (!isRootParityAccepted(p)) {
+      continue;
+    }
     // Find slack for drvr_pin into option.
     std::optional<FixedDelay> slack = evaluateOption(p, i);
 
@@ -1287,8 +1516,12 @@ void Rebuffer::insertBufferOptions(
                       : BnetMetrics{};
   bool assured_satisfied = !area_oriented;
 
-  float best_area = sta::INF;
-  FixedDelay best_slack = -FixedDelay::INF;
+  static constexpr int kNumBuckets = 2;
+  auto bucket_of = [](const BnetPtr& o) { return o->parity(); };
+  float best_area[kNumBuckets];
+  FixedDelay best_slack[kNumBuckets];
+  std::fill_n(best_area, kNumBuckets, sta::INF);
+  std::fill_n(best_slack, kNumBuckets, -FixedDelay::INF);
 
   // both `opts` and `buffer_sizes_` are ordered by ascending input
   // capacitance
@@ -1301,10 +1534,11 @@ void Rebuffer::insertBufferOptions(
     for (; opts_iter != opts.end() && (*opts_iter)->cap() <= threshold_cap;
          opts_iter++) {
       BnetPtr& opt = *opts_iter;
+      const int b = bucket_of(opt);
 
-      bool keep = area_oriented ? (sta::fuzzyLess(opt->area(), best_area)
+      bool keep = area_oriented ? (sta::fuzzyLess(opt->area(), best_area[b])
                                    && opt->slack() >= slack_threshold)
-                                : (opt->slack() > best_slack);
+                                : (opt->slack() > best_slack[b]);
 
       if (!bufferSizeCanDriveLoad(strong_driver, opt, next_segment_wl)) {
         keep = false;
@@ -1325,8 +1559,8 @@ void Rebuffer::insertBufferOptions(
         if (!assured_satisfied && opt->fitsEnvelope(assured_envelope)) {
           assured_satisfied = true;
         }
-        best_slack = opt->slack();
-        best_area = opt->area();
+        best_slack[b] = opt->slack();
+        best_area[b] = opt->area();
       }
     }
   };
@@ -1337,20 +1571,23 @@ void Rebuffer::insertBufferOptions(
     buffer_cell->bufferPorts(in, out);
     pass_through(in->capacitance());
 
-    BnetPtr load_opt;
-    FixedDelay load_opt_buffer_delay = FixedDelay::ZERO;
+    // Per-bucket best load_opt.
+    BnetPtr load_opt[kNumBuckets];
+    FixedDelay load_opt_buffer_delay[kNumBuckets];
+    std::fill_n(load_opt_buffer_delay, kNumBuckets, FixedDelay::ZERO);
     auto it = (new_opts.empty() && opts_iter == opts.end()
                && opts_iter > opts.begin())
                   ? (opts_iter - 1)
                   : opts_iter;
     for (; it != opts.end(); it++) {
       BnetPtr& opt = *it;
+      const int b = bucket_of(opt);
 
       if ((area_oriented
                ? (opt->slack() - buffer_size.intrinsic_delay >= slack_threshold
                   && sta::fuzzyLess(opt->area() + buffer_cell->area(),
-                                    best_area))
-               : (opt->slack() - buffer_size.intrinsic_delay) > best_slack)
+                                    best_area[b]))
+               : (opt->slack() - buffer_size.intrinsic_delay) > best_slack[b])
           && bufferSizeCanDriveLoad(buffer_size, opt)) {
         // this is a candidate, make the detailed delay calculation
         const FixedDelay buffer_delay
@@ -1359,26 +1596,29 @@ void Rebuffer::insertBufferOptions(
                           opt->cap() + out->capacitance());
         const FixedDelay slack = opt->slack() - buffer_delay;
 
-        if (area_oriented ? slack >= slack_threshold : slack > best_slack) {
-          load_opt = opt;
-          load_opt_buffer_delay = buffer_delay;
-          best_slack = slack;
-          best_area = load_opt->area() + buffer_cell->area();
+        if (area_oriented ? slack >= slack_threshold : slack > best_slack[b]) {
+          load_opt[b] = opt;
+          load_opt_buffer_delay[b] = buffer_delay;
+          best_slack[b] = slack;
+          best_area[b] = opt->area() + buffer_cell->area();
         }
       }
     }
 
-    if (load_opt) {
+    for (int b = 0; b < kNumBuckets; b++) {
+      if (!load_opt[b]) {
+        continue;
+      }
       BnetPtr z = make_shared<BufferedNet>(BnetType::buffer,
-                                           load_opt->location(),
+                                           load_opt[b]->location(),
                                            buffer_cell,
-                                           load_opt,
+                                           load_opt[b],
                                            corner_,
                                            resizer_,
                                            estimate_parasitics_);
-      z->setSlack(best_slack);
-      z->setSlackTransition(load_opt->slackTransition());
-      z->setDelay(load_opt_buffer_delay);
+      z->setSlack(best_slack[b]);
+      z->setSlackTransition(load_opt[b]->slackTransition());
+      z->setDelay(load_opt_buffer_delay[b]);
 
       if (!assured_satisfied && z->fitsEnvelope(assured_envelope)) {
         assured_satisfied = true;
@@ -1392,21 +1632,23 @@ void Rebuffer::insertBufferOptions(
                  "",
                  level,
                  buffer_cell->name(),
-                 units_->capacitanceUnit()->asString(load_opt->cap()),
-                 delayAsString(load_opt_buffer_delay.toSeconds(), this),
+                 units_->capacitanceUnit()->asString(load_opt[b]->cap()),
+                 delayAsString(load_opt_buffer_delay[b].toSeconds(), this),
                  z->to_string(resizer_));
       new_opts.push_back(std::move(z));
     }
   }
+
   pass_through(sta::INF);
 
   if (!assured_satisfied) {
     assert(exemplar != nullptr);
 
     if (exemplar && exemplar->type() == BnetType::buffer) {
-      sta::LibertyCell* buffer_cell = exemplar->bufferCell();
+      sta::LibertyCell* exemplar_cell = exemplar->bufferCell();
+      const bool exemplar_is_inv = exemplar_cell->isInverter();
       sta::LibertyPort *in, *out;
-      buffer_cell->bufferPorts(in, out);
+      exemplar_cell->bufferPorts(in, out);
 
       float best_area = sta::INF;
       BnetPtr best_option;
@@ -1415,23 +1657,28 @@ void Rebuffer::insertBufferOptions(
           continue;
         }
 
-        const FixedDelay buffer_delay
-            = bufferDelay(buffer_cell,
+        const FixedDelay cell_delay
+            = bufferDelay(exemplar_cell,
                           load_opt->slackTransition(),
                           load_opt->cap() + out->capacitance());
-        if (bufferSizeCanDriveLoad(*buffer_sizes_index_.at(buffer_cell),
+
+        if (bufferSizeCanDriveLoad(*buffer_sizes_index_.at(exemplar_cell),
                                    load_opt)
-            && load_opt->slack() - buffer_delay >= slack_threshold) {
+            && load_opt->slack() - cell_delay >= slack_threshold) {
           BnetPtr z = make_shared<BufferedNet>(BnetType::buffer,
                                                load_opt->location(),
-                                               buffer_cell,
+                                               exemplar_cell,
                                                load_opt,
                                                corner_,
                                                resizer_,
                                                estimate_parasitics_);
-          z->setSlack(load_opt->slack() - buffer_delay);
-          z->setSlackTransition(load_opt->slackTransition());
-          z->setDelay(buffer_delay);
+          z->setSlack(load_opt->slack() - cell_delay);
+          // Inverter exemplar: flip upstream transition to match ctor parity
+          // flip.
+          z->setSlackTransition(
+              exemplar_is_inv ? flipRiseFallBoth(load_opt->slackTransition())
+                              : load_opt->slackTransition());
+          z->setDelay(cell_delay);
           if (z->fitsEnvelope(assured_envelope)) {
             best_area = load_opt->area();
             best_option = z;
@@ -1486,6 +1733,9 @@ void Rebuffer::init()
   sta_->checkFanoutPreamble();
 
   resizer_->findFastBuffers();
+  if (resizer_->isInverterPairEnabled()) {
+    resizer_->findInverters();
+  }
   buffer_sizes_.clear();
 
   for (auto cell : resizer_->buffer_fast_sizes_) {
@@ -1503,8 +1753,25 @@ void Rebuffer::init()
     return bufferCin(a.cell) < bufferCin(b.cell);
   });
 
+  inverter_sizes_.clear();
+  if (resizer_->isInverterPairEnabled()) {
+    for (sta::LibertyCell* inv : resizer_->inverterCells()) {
+      sta::LibertyPort *in, *out;
+      inv->bufferPorts(in, out);
+      inverter_sizes_.push_back(BufferSize{
+          .cell = inv,
+          .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
+          .margined_max_cap = 0.0f,
+          .driver_resistance = out->driveResistance(),
+      });
+    }
+  }
+
   buffer_sizes_index_.clear();
   for (auto& size : buffer_sizes_) {
+    buffer_sizes_index_[size.cell] = &size;
+  }
+  for (auto& size : inverter_sizes_) {
     buffer_sizes_index_[size.cell] = &size;
   }
 }
@@ -1589,18 +1856,22 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 // Needs to be called when the margins (slew_margin_, cap_margin_) change
 void Rebuffer::characterizeBufferLimits()
 {
-  for (auto& size : buffer_sizes_) {
-    sta::LibertyPort *in, *out;
-    size.cell->bufferPorts(in, out);
+  auto characterize = [&](std::vector<BufferSize>& sizes) {
+    for (auto& size : sizes) {
+      sta::LibertyPort *in, *out;
+      size.cell->bufferPorts(in, out);
 
-    bool cap_limit_exists;
-    float cap_limit;
-    out->capacitanceLimit(max_, cap_limit, cap_limit_exists);
+      bool cap_limit_exists;
+      float cap_limit;
+      out->capacitanceLimit(max_, cap_limit, cap_limit_exists);
 
-    size.margined_max_cap
-        = std::min(cap_limit_exists ? maxCapMargined(cap_limit) : sta::INF,
-                   findBufferLoadLimitImpliedByDriverSlew(size.cell));
-  }
+      size.margined_max_cap
+          = std::min(cap_limit_exists ? maxCapMargined(cap_limit) : sta::INF,
+                     findBufferLoadLimitImpliedByDriverSlew(size.cell));
+    }
+  };
+  characterize(buffer_sizes_);
+  characterize(inverter_sizes_);
 }
 
 static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
