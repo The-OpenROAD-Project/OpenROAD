@@ -770,14 +770,23 @@ void FlexTAWorker::initFixedObjs()
               && getTech()->getLayer(layerNum - 2)->getType()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum - 1);
-            auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
-            odb::Rect viaBox = via->getLayer2BBox();
-            frCoord viaWidth = viaBox.minDXDY();
-            // only add for fat via
-            if (viaWidth > width) {
-              bloatDist = initFixedObjs_calcOBSBloatDistVia(
-                  cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
+            // initDefaultVias() only guarantees a defaultViaDef for cut
+            // layers inside BOTTOM_ROUTING_LAYER..max(TOP_ROUTING_LAYER,
+            // topPinLayer). Cut layers outside that range (e.g. contact
+            // cuts below the routing range on PDKs whose MIN_ROUTING_LAYER
+            // is well above M0) can legitimately have a null default;
+            // skip them rather than constructing a frVia from nullptr.
+            auto defaultViaDef = cutLayer->getDefaultViaDef();
+            if (defaultViaDef != nullptr) {
+              auto via = std::make_unique<frVia>(defaultViaDef);
+              odb::Rect viaBox = via->getLayer2BBox();
+              frCoord viaWidth = viaBox.minDXDY();
+              // only add for fat via
+              if (viaWidth > width) {
+                bloatDist = initFixedObjs_calcOBSBloatDistVia(
+                    defaultViaDef, layerNum, bounds, false);
+                initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
+              }
             }
           }
           // up-via
@@ -785,14 +794,17 @@ void FlexTAWorker::initFixedObjs()
               && getTech()->getLayer(layerNum + 2)->getType()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum + 1);
-            auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
-            odb::Rect viaBox = via->getLayer1BBox();
-            frCoord viaWidth = viaBox.minDXDY();
-            // only add for fat via
-            if (viaWidth > width) {
-              bloatDist = initFixedObjs_calcOBSBloatDistVia(
-                  cutLayer->getDefaultViaDef(), layerNum, bounds, false);
-              initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
+            auto defaultViaDef = cutLayer->getDefaultViaDef();
+            if (defaultViaDef != nullptr) {
+              auto via = std::make_unique<frVia>(defaultViaDef);
+              odb::Rect viaBox = via->getLayer1BBox();
+              frCoord viaWidth = viaBox.minDXDY();
+              // only add for fat via
+              if (viaWidth > width) {
+                bloatDist = initFixedObjs_calcOBSBloatDistVia(
+                    defaultViaDef, layerNum, bounds, false);
+                initFixedObjs_helper(box, bloatDist, layerNum, netPtr, true);
+              }
             }
           }
         }

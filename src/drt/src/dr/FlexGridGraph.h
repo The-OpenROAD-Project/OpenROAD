@@ -1159,7 +1159,7 @@ class FlexGridGraph
   // unsafe access, no idx check
   void setPrevAstarNodeDir(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
   {
-    auto baseIdx = 3 * getIdx(x, y, z);
+    auto baseIdx = static_cast<std::size_t>(getIdx(x, y, z)) * 3;
     prevDirs_[baseIdx] = ((uint16_t) dir >> 2) & 1;
     prevDirs_[baseIdx + 1] = ((uint16_t) dir >> 1) & 1;
     prevDirs_[baseIdx + 2] = ((uint16_t) dir) & 1;
@@ -1168,7 +1168,8 @@ class FlexGridGraph
   // unsafe access, no check
   frDirEnum getPrevAstarNodeDir(const FlexMazeIdx& idx) const
   {
-    auto baseIdx = 3 * getIdx(idx.x(), idx.y(), idx.z());
+    auto baseIdx
+        = static_cast<std::size_t>(getIdx(idx.x(), idx.y(), idx.z())) * 3;
     return (frDirEnum) (((uint16_t) (prevDirs_[baseIdx]) << 2)
                         + ((uint16_t) (prevDirs_[baseIdx + 1]) << 1)
                         + ((uint16_t) (prevDirs_[baseIdx + 2]) << 0));
