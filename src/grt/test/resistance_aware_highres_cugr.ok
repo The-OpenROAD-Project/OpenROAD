@@ -40,22 +40,22 @@ met5       Horizontal       3600          2520          30.00%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           40204
-Total via count:       2043
+Total via count:       1932
 Total congestion:      0
-Min resource:          0.5833332141240426
-Bottleneck:            (3, 26, 28)
+Min resource:          1.2649998211860627
+Bottleneck:            (2, 31, 18)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1              25000            39            0.16%             0 /  0 /  0
-met1             21443           879            4.10%             0 /  0 /  0
-met2             17500           806            4.61%             0 /  0 /  0
-met3             11368           442            3.89%             0 /  0 /  0
-met4              8736           307            3.51%             0 /  0 /  0
+met1             21443           891            4.16%             0 /  0 /  0
+met2             17500          1064            6.08%             0 /  0 /  0
+met3             11368           415            3.65%             0 /  0 /  0
+met4              8736            34            0.39%             0 /  0 /  0
 met5              2520             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            86567          2473            2.86%             0 /  0 /  0
+Total            86567          2443            2.82%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 20937 um
 [INFO GRT-0014] Routed nets: 348

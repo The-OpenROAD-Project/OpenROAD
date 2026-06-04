@@ -10,7 +10,7 @@
 # Baseline measured on this design with the identical setup but WITHOUT
 # -resistance_aware (global_route -use_cugr -critical_nets_percentage 30):
 #   WNS = -121.9 ps, TNS = -2892.8 ps
-# Resistance-aware gives ~ WNS -121.7 ps, TNS -2853.2 ps (both better).
+# Resistance-aware gives ~ WNS -121.7 ps, TNS -2852.3 ps (both better).
 # A single global_route cannot be re-run in one session (GRT-0076), so the
 # baseline is captured here as a constant rather than routed twice. The WNS
 # baseline carries a small margin (the WNS gain is only ~0.15 ps) so the

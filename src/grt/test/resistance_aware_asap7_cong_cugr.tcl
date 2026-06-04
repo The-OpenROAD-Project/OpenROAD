@@ -16,7 +16,7 @@
 # Baseline on this design WITHOUT -resistance_aware
 # (global_route -use_cugr -critical_nets_percentage 30):
 #   WNS = -122.0 ps, TNS = -2912.8 ps
-# Resistance-aware gives ~ WNS -121.9 ps, TNS -2879.7 ps (TNS ~33 ps
+# Resistance-aware gives ~ WNS -121.6 ps, TNS -2860.3 ps (TNS ~52 ps
 # better; WNS within noise). The WNS baseline carries a small margin so
 # the check is not brittle to sub-ps drift.
 source "helpers.tcl"

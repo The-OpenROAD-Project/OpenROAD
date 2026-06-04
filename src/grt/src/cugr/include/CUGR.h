@@ -64,7 +64,7 @@ struct Constants
   int resistance_min_net_length = 3;
 
   // Scales the res-aware resistance cost to CUGR's wire-cost magnitude.
-  double resistance_weight = 500.0;
+  double resistance_weight = 50.0;
 
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;

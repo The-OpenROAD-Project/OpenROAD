@@ -45,11 +45,11 @@ Routing layers:      6
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           34022
-Total via count:       2850
+Total via count:       2812
 Total congestion:      0
-Min resource:          1.1815789473684193
-Bottleneck:            (5, 88, 149)
+Min resource:          2.4342105263157885
+Bottleneck:            (5, 87, 149)
 baseline (no resistance-aware) WNS: -121.9 ps  TNS: -2892.8 ps
-resistance-aware               WNS: -121.7 ps  TNS: -2853.2 ps
+resistance-aware               WNS: -121.7 ps  TNS: -2852.3 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.

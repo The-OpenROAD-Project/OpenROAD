@@ -4,8 +4,9 @@
 # updates both the routing cost (dbTechLayer) and timing extraction. With a
 # relaxed (uncongested) adjustment of 0.3 the only pressure to leave met1 is
 # the resistance penalty, so this isolates the resistance response: critical
-# nets should migrate off met1/met2 onto the low-resistance met3/met4. The
-# guides golden captures that redistribution (see GRT-0096 usage in the .ok).
+# nets migrate off the high-resistance met1 (usage ~1225 -> ~891) onto the
+# lower-resistance met3 (~46 -> ~415). The guides golden captures that
+# redistribution (see GRT-0096 usage in the .ok).
 #
 # Mechanism-validation test (deterministic). Timing is NOT asserted here:
 # gcd is cell-delay-limited, so layer choice does not drive its WNS/TNS
