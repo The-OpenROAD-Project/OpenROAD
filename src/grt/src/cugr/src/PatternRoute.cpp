@@ -563,14 +563,17 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layer_index) != direction) {
           continue;
         }
-        CostT cost = net_->isInsideLayerRange(layer_index)
-                         ? path->getCosts()[layer_index]
-                               + grid_graph_->getWireCost(
-                                   layer_index,
-                                   *node,
-                                   *path,
-                                   net_->getNdrCost(layer_index))
-                         : std::numeric_limits<CostT>::max();
+        CostT cost = std::numeric_limits<CostT>::max();
+        if (net_->isInsideLayerRange(layer_index)) {
+          cost = path->getCosts()[layer_index]
+                 + grid_graph_->getWireCost(
+                     layer_index, *node, *path, net_->getNdrCost(layer_index));
+
+          if (net_->isResAware()) {
+            cost += grid_graph_->getWireResistanceCost(
+                layer_index, *node, *path);
+          }
+        }
         if (cost < costs[layer_index].first) {
           costs[layer_index] = std::make_pair(cost, path_index);
         }
@@ -596,6 +599,12 @@ void PatternRoute::calculateRoutingCosts(
     via_costs[layer_index] = via_costs[layer_index - 1]
                              + grid_graph_->getViaCost(
                                  layer_index - 1, *node, net_->getNdrCosts());
+    // Res-aware: charge via resistance so climbing only pays off when
+    // the upper-layer wire-R savings beat it.
+    if (net_->isResAware()) {
+      via_costs[layer_index]
+          += grid_graph_->getViaResistanceCost(layer_index - 1);
+    }
   }
 
   const LayerRange& net_range = net_->getLayerRange();
