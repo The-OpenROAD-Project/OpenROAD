@@ -1250,26 +1250,41 @@ RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
       return RowRejection::kDeadRow;
     }
   }
-  // Verify the cell's site type is available on every row the cell
-  // spans, not just the bottom row. Hybrid-row designs interleave row
-  // types; without this an N-row cell could land on a stack mixing
-  // its own site type with an incompatible one.
+  // Bottom-row site type must match the cell's declared site. Upper rows
+  // of a multi-height cell legitimately span heterogeneous row types in
+  // hybrid-row designs (the cell's master declares one site, matching the
+  // bottom row, and is designed to cover rows of differing types above).
+  // Rail/power compatibility is enforced separately by the rail check
+  // below; this matches CheckPlacement's first-row-only site check.
   if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-    if (site != nullptr) {
-      for (int dy = 0; dy < cell.height; ++dy) {
-        if (!opendp_->grid_->getSiteOrientation(
-                GridX{gridX}, GridY{rowIdx + dy}, site)) {
-          return RowRejection::kSiteTypeMismatch;
-        }
-      }
+    if (site != nullptr
+        && !opendp_->grid_->getSiteOrientation(
+            GridX{gridX}, GridY{rowIdx}, site)) {
+      return RowRejection::kSiteTypeMismatch;
     }
   }
   const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
-  const bool rail_ok
+  const bool bottom_rail_ok
       = (row_bottom_rail == cell.rail_type)
         || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
-  return rail_ok ? RowRejection::kValid : RowRejection::kRailMismatch;
+  if (!bottom_rail_ok) {
+    return RowRejection::kRailMismatch;
+  }
+  // For multi-row cells, also verify the master's power-pin stack lines
+  // up with the PDN rail stack across the entire span. Mirrors the check
+  // in Opendp::isPlacementLegal(); without it, the bottom-rail check
+  // above can let wrong-parity landings through on cells whose top and
+  // bottom rails differ.
+  if (cell.db_inst != nullptr && network_ != nullptr && opendp_ != nullptr) {
+    if (Node* node = network_->getNode(cell.db_inst)) {
+      if (node->getMaster()->isMultiRow()
+          && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
+        return RowRejection::kRailMismatch;
+      }
+    }
+  }
+  return RowRejection::kValid;
 }
 
 bool NegotiationLegalizer::isValidRow(int rowIdx,

@@ -710,11 +710,28 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     odb::dbMaster* master = cell.db_inst->getMaster();
     odb::dbSite* site = master ? master->getSite() : nullptr;
 
+    // Computed window extents (matching the GUI rect drawn below).
+    // Y in row indices, X in site indices; both half-open at the high edge.
+    int win_ylo, win_yhi;
+    if (extended_search_rows.empty()) {
+      win_ylo = cell.init_y;
+      win_yhi = cell.init_y + cell.height;
+    } else {
+      const auto [lo_it, hi_it]
+          = std::ranges::minmax_element(extended_search_rows);
+      win_ylo = *lo_it;
+      win_yhi = *hi_it + cell.height;
+    }
+    const int win_xlo = cell.init_x - extended_site_window;
+    const int win_xhi = cell.init_x + extended_site_window + 1;
+
     logger_->report(
         "[neg-search {}/50] {} master={} site={} "
         "extended_search_rows.size={} seed_valid={} "
         "nearest_below_step={} nearest_above_step={} "
         "rej_oob={} rej_dead={} rej_site={} rej_rail={} "
+        "win_y=[{},{}) (rows={}, below_cell={}, above_cell={}) "
+        "win_x=[{},{}) (sites={}, half={}) "
         "row_search_cap={} row_search_window={} "
         "cell.height={} cell.width={} max_disp_y={} "
         "rail_type={} rail_type_flipped={} flippable={} "
@@ -731,6 +748,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
         rej_dead,
         rej_site,
         rej_rail,
+        win_ylo,
+        win_yhi,
+        win_yhi - win_ylo,
+        cell.init_y - win_ylo,
+        win_yhi - (cell.init_y + cell.height),
+        win_xlo,
+        win_xhi,
+        win_xhi - win_xlo,
+        extended_site_window,
         row_search_cap,
         row_search_window_,
         cell.height,
@@ -791,15 +817,18 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       return core.yMin()
              + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
     };
-    // Y extent reflects the actual sparse set of valid rows visited
-    // (bounding rect: lowest to highest+1). Falls back to the seed row
-    // when no valid rows were found within row_search_cap.
+    // Y extent reflects the actual sparse set of valid rows visited.
+    // Top edge sits at the top of the cell anchored at the highest
+    // valid row (anchor + cell.height), so the rect fully encloses the
+    // cell at every candidate anchor — not just the anchor row itself.
+    // Falls back to the seed row when no valid rows were found within
+    // row_search_cap.
     auto y_range = [&](const std::vector<int>& rows, int fallback_y) {
       if (rows.empty()) {
-        return std::pair{fallback_y, fallback_y + 1};
+        return std::pair{fallback_y, fallback_y + cell.height};
       }
       const auto [lo, hi] = std::ranges::minmax_element(rows);
-      return std::pair{*lo, *hi + 1};
+      return std::pair{*lo, *hi + cell.height};
     };
     const auto [init_ylo, init_yhi]
         = y_range(extended_search_rows, cell.init_y);
