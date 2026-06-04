@@ -494,6 +494,47 @@ CostT GridGraph::getViaCost(const int layer_index,
   return cost;
 }
 
+CostT GridGraph::getWireResistanceCost(const int layer_index,
+                                       const PointT u,
+                                       const PointT v) const
+{
+  const MetalLayer& layer = design_->getLayer(layer_index);
+  const double width = layer.getWidth();
+  // Layer-0 sheet resistance is the reference (matches FastRoute); 0 if
+  // any input is undefined.
+  const double ref = design_->getLayer(0).getResistance();
+  if (width <= 0.0 || ref <= 0.0 || layer.getResistance() <= 0.0) {
+    return 0;
+  }
+  const int direction = layer_directions_[layer_index];
+  int length = 0;  // total wire length in DBU
+  if (direction == MetalLayer::H) {
+    const auto [lo, hi] = std::minmax({u.x(), v.x()});
+    for (int x = lo; x < hi; x++) {
+      length += getEdgeLength(direction, x);
+    }
+  } else {
+    const auto [lo, hi] = std::minmax({u.y(), v.y()});
+    for (int y = lo; y < hi; y++) {
+      length += getEdgeLength(direction, y);
+    }
+  }
+  // R = sheet_resistance * length / width, normalised by layer 0;
+  // resistance_weight rescales the ~O(1) result to CUGR's cost magnitude.
+  const double resistance = layer.getResistance() * length / width;
+  return constants_.resistance_weight * resistance / ref;
+}
+
+CostT GridGraph::getViaResistanceCost(const int lower_layer) const
+{
+  const double ref = design_->getLayer(0).getViaResistance();
+  const double via_r = design_->getLayer(lower_layer).getViaResistance();
+  // Techs that leave cut-layer resistance unpopulated make this 0
+  if (ref <= 0.0 || via_r <= 0.0) {
+    return 0;
+  }
+  return constants_.resistance_weight * via_r / ref;
+}
 std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
     const std::vector<odb::dbAccessPoint*>& aps,
     const odb::Point& inst_location) const
