@@ -2993,7 +2993,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  bool guide_is_congested = is_congested_ && !allow_congestion_;
+  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
