@@ -46,6 +46,7 @@
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "bazel/tcl_library_init.h"
+#include "boost/dll/runtime_symbol_info.hpp"
 #endif
 
 #include "tcl_readline_setup.h"
@@ -185,21 +186,27 @@ static void initPython()
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
 #ifdef BAZEL_CURRENT_REPOSITORY
-static void setupBazelRunfilesEnvironment(const char* argv0)
+// Point RUNFILES_DIR at the runfiles tree next to the installed binary so it
+// can find its Tcl resources. boost::dll::program_location() asks the OS for
+// the absolute path of the running executable (/proc/self/exe on Linux, etc.),
+// which is robust regardless of how it was launched -- a relative path, a bare
+// name resolved via PATH, or through a symlink -- unlike reconstructing it from
+// argv[0].
+static void setupBazelRunfilesEnvironment()
 {
-  if (getenv("RUNFILES_DIR") != nullptr || argv0 == nullptr) {
+  if (getenv("RUNFILES_DIR") != nullptr) {
     return;
   }
 
-  std::error_code ec;
-  std::filesystem::path exe_path = std::filesystem::weakly_canonical(argv0, ec);
+  boost::dll::fs::error_code ec;
+  boost::dll::fs::path exe_path = boost::dll::program_location(ec);
   if (ec) {
     return;
   }
 
   exe_path += ".runfiles";
-  if (std::filesystem::exists(exe_path)) {
-    setenv("RUNFILES_DIR", exe_path.c_str(), /* override */ 0);
+  if (boost::dll::fs::exists(exe_path)) {
+    setenv("RUNFILES_DIR", exe_path.string().c_str(), /* override */ 0);
   }
 }
 #endif
@@ -254,7 +261,7 @@ int main(int argc, char* argv[])
   signal(SIGSEGV, handler);
 
 #ifdef BAZEL_CURRENT_REPOSITORY
-  setupBazelRunfilesEnvironment(argc > 0 ? argv[0] : nullptr);
+  setupBazelRunfilesEnvironment();
 #endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {

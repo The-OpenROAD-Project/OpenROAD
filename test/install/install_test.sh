@@ -9,7 +9,8 @@ set -euo pipefail
 TARFILE="$1"
 
 DEST_DIR=$(mktemp -d)
-trap 'rm -rf "$DEST_DIR"' EXIT
+WORK_DIR=$(mktemp -d)
+trap 'rm -rf "$DEST_DIR" "$WORK_DIR"' EXIT
 
 cp "$TARFILE" "$DEST_DIR"
 cd "$DEST_DIR"
@@ -54,6 +55,19 @@ if OUTPUT=$(./openroad -no_init -no_splash -exit runfiles_env_test.tcl 2>&1) && 
     echo "PASS: RUNFILES_DIR initialized by openroad"
 else
     echo "FAIL: RUNFILES_DIR was not initialized as expected"
+    echo "Output was: $OUTPUT"
+    exit 1
+fi
+
+# Verify runfiles resolution when launched via PATH from an unrelated working
+# directory. argv[0] is then just "openroad" (no path component); the binary
+# must resolve the runfiles tree next to the installed executable found on
+# PATH, not $PWD/openroad.runfiles. WORK_DIR deliberately has no runfiles tree.
+cp runfiles_env_test.tcl "$WORK_DIR"/
+if OUTPUT=$(cd "$WORK_DIR" && PATH="$DEST_DIR:$PATH" openroad -no_init -no_splash -exit runfiles_env_test.tcl 2>&1) && echo "$OUTPUT" | grep -q "runfiles_env_ok"; then
+    echo "PASS: RUNFILES_DIR initialized when launched via PATH from another dir"
+else
+    echo "FAIL: RUNFILES_DIR not initialized when launched via PATH from another dir"
     echo "Output was: $OUTPUT"
     exit 1
 fi
