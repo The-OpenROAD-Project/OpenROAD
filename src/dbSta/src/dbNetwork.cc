@@ -575,6 +575,13 @@ bool DbInstanceNetIterator::hasNext()
   if (chip_walk_) {
     return chip_net_iter_ != chip_net_end_;
   }
+  // 3DIC mode: only the top-instance chip-net walk (chip_walk_) is valid.
+  // For any other instance the ctor returns early and the legacy iter_/end_
+  // members are left default-constructed, so report empty instead of
+  // comparing them (default-constructed dbSet iterators are UB to compare).
+  if (network_->has3DicChip()) {
+    return false;
+  }
   if (network_->hasHierarchy()) {
     if (mod_net_iter_ != mod_net_end_) {
       return true;
@@ -592,6 +599,10 @@ Net* DbInstanceNetIterator::next()
       chip_net_iter_++;
       return network_->dbToSta(net);
     }
+    return nullptr;
+  }
+  // 3DIC, non-top instance: empty (see hasNext) — never touch iter_.
+  if (network_->has3DicChip()) {
     return nullptr;
   }
   if (network_->hasHierarchy()) {
@@ -1868,7 +1879,13 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
   staToDb(pin, iterm, bterm, moditerm);
 
-  if (hasHierarchy()) {
+  // In 3DIC mode every chiplet block numbers its own iterms/bterms from 1,
+  // so the raw-id branch below collides across blocks. Route inner pins
+  // through the tagged encoder (which mixes the block id in via
+  // blockDiscBits) so PinSet/visited_pins dedup stays correct when
+  // visitConnectedPins descends into multiple chiplet inner nets — the
+  // pin-side counterpart of the id(Net*) discriminator.
+  if (hasHierarchy() || has3DicChip()) {
     // get the id for hierarchical objects using dbid.
     std::uintptr_t tag_value
         = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
