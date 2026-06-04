@@ -184,6 +184,32 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
+#ifdef BAZEL_CURRENT_REPOSITORY
+static void setupBazelRunfilesEnvironment(const char* argv0)
+{
+  if (getenv("RUNFILES_DIR") != nullptr || argv0 == nullptr) {
+    return;
+  }
+
+  std::filesystem::path exe_path(argv0);
+  if (exe_path.is_relative()) {
+    std::error_code ec;
+    exe_path = std::filesystem::current_path(ec) / exe_path;
+  }
+
+  std::error_code ec;
+  exe_path = std::filesystem::weakly_canonical(exe_path, ec);
+  if (ec) {
+    return;
+  }
+
+  const std::filesystem::path runfiles_dir = exe_path.string() + ".runfiles";
+  if (std::filesystem::exists(runfiles_dir)) {
+    setenv("RUNFILES_DIR", runfiles_dir.c_str(), /* override */ 0);
+  }
+}
+#endif
+
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
 // Such applications won't allocate or use these objects.
@@ -232,6 +258,10 @@ int main(int argc, char* argv[])
   signal(SIGFPE, handler);
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+  setupBazelRunfilesEnvironment(argc > 0 ? argv[0] : nullptr);
+#endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
