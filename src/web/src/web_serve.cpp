@@ -186,7 +186,9 @@ void WebServer::serve(int port)
     {
       const std::string rename_orig
           = std::string("rename exit ") + kRenamedExitCmd;
+      // NOLINTNEXTLINE(misc-include-cleaner)
       Tcl_Eval(interp_, rename_orig.c_str());
+      // NOLINTNEXTLINE(misc-include-cleaner)
       Tcl_CreateCommand(
           interp_, "exit", &WebServer::tclExitHandler, this, nullptr);
     }
