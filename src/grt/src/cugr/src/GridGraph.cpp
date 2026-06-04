@@ -535,6 +535,61 @@ CostT GridGraph::getViaResistanceCost(const int lower_layer) const
   }
   return constants_.resistance_weight * via_r / ref;
 }
+
+double GridGraph::getNetResistance(
+    const std::shared_ptr<GRTreeNode>& tree) const
+{
+  if (!tree) {
+    return 0.0;
+  }
+  double total_resistance = 0.0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() == child->getLayerIdx()) {
+        // Wire segment on a single layer.
+        const int layer = node->getLayerIdx();
+        const MetalLayer& metal_layer = design_->getLayer(layer);
+        const double width = metal_layer.getWidth();
+        if (width <= 0.0) {
+          continue;
+        }
+        const int direction = layer_directions_[layer];
+        const auto [lo, hi]
+            = std::minmax({(*node)[direction], (*child)[direction]});
+        int length = 0;
+        for (int c = lo; c < hi; c++) {
+          length += getEdgeLength(direction, c);
+        }
+        total_resistance += metal_layer.getResistance() * length / width;
+      } else {
+        // Via stack between the two nodes' layers.
+        const auto [lo, hi]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        for (int l = lo; l < hi; l++) {
+          total_resistance += design_->getLayer(l).getViaResistance();
+        }
+      }
+    }
+  });
+  return total_resistance;
+}
+
+int GridGraph::getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const
+{
+  if (!tree) {
+    return 0;
+  }
+  int length = 0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      // Planar wirelength in gcells (vias contribute 0).
+      length += std::abs(node->x() - child->x())
+                + std::abs(node->y() - child->y());
+    }
+  });
+  return length;
+}
+
 std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
     const std::vector<odb::dbAccessPoint*>& aps,
     const odb::Point& inst_location) const

@@ -190,6 +190,11 @@ class GridGraph
   // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
   // the tech leaves cut-layer resistance unpopulated.
   CostT getViaResistanceCost(int lower_layer) const;
+
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree) const;
+
+  int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
+
   /**
    * @brief Sets the multiplier applied to the logistic-cost slopes.
    *
