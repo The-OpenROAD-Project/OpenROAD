@@ -50,6 +50,8 @@
   "cpp_includes": [
     "dbChipRegionInst.h",
     "dbChipRegion.h",
-    "dbUnfoldedChip.h"
+    "dbUnfoldedChip.h",
+    "odb/dbSet.h",
+    "odb/geom.h"
   ]
 }

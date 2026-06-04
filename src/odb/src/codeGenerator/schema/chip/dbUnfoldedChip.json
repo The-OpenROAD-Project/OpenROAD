@@ -30,6 +30,8 @@
     "dbVector.h"
   ],
   "cpp_includes": [
-    "dbChipInst.h"
+    "dbChipInst.h",
+    "odb/geom.h",
+    "odb/dbSet.h"
   ]
 }

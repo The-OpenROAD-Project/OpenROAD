@@ -21,6 +21,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"  // IWYU pragma: keep
+#include "spdlog/fmt/fmt.h"
 #include "utl/Logger.h"
 #include "utl/spatialIndex.h"
 #include "utl/unionFind.h"

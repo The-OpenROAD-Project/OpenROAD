@@ -13,8 +13,10 @@
 #include "dbTable.h"
 #include "dbUnfoldedChip.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 // User Code Begin Includes
-#include "dbUnfoldedBumpItr.h"
+#include "dbUnfoldedBumpItr.h"  // IWYU pragma: keep
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbUnfoldedRegion>;

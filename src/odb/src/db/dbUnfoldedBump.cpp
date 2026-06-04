@@ -13,6 +13,7 @@
 #include "dbUnfoldedChip.h"
 #include "dbUnfoldedRegion.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 namespace odb {
 template class dbTable<_dbUnfoldedBump>;
 

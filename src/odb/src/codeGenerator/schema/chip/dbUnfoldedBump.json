@@ -28,6 +28,7 @@
     "dbChipBump.h",
     "dbInst.h",
     "dbUnfoldedRegion.h",
-    "dbUnfoldedChip.h"
+    "dbUnfoldedChip.h",
+    "odb/geom.h"
   ]
 }
