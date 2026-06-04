@@ -3194,6 +3194,12 @@ class dbInst : public dbObject
   uint32_t getPinAccessIdx() const;
 
   ///
+  /// Get the chip bump associated with this instance.
+  /// Returns a pointer to the dbChipBump object if present, otherwise nullptr.
+  ///
+  dbChipBump* getChipBump() const;
+
+  ///
   /// Create a new instance.
   /// If physical_only is true, the instance can only be added to a top module.
   /// If false, it will be added to the parent module.
