@@ -245,6 +245,16 @@ class CUGR
   // The initial PatternRoute pass marks a wider critical set because its
   // placement slack is noisier than the routing slack used later.
   static constexpr float kPatternRouteWiden = 2.0f;
+
+  // Marks the top-`percentage` >= 2-pin nets res-aware and refreshes the
+  // per-net resistance/length + worst_* ordering normalisers. No-op
+  // unless resistance_aware_.
+  void markResAwareNets(float percentage);
+
+  // FR-style ordering score (lower routes first): slack/resistance/
+  // fanout/length blend, each normalised by the per-run worst.
+  float getResAwareScore(const GRNet* net) const;
+
   std::vector<int> nets_to_route_;
 };
 

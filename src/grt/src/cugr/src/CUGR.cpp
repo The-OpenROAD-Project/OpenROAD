@@ -168,6 +168,74 @@ void CUGR::setInitialNetSlacks()
     float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
   }
+void CUGR::markResAwareNets(const float percentage)
+{
+  if (!resistance_aware_) {
+    return;
+  }
+
+  // Per-net resistance/length + worst_* normalisers.
+  worst_slack_ = std::numeric_limits<float>::max();
+  worst_resistance_ = 1.0f;
+  worst_fanout_ = 1;
+  worst_net_length_ = 1;
+
+  for (const auto& net : gr_nets_) {
+    const auto& tree = net->getRoutingTree();
+    const float resistance = grid_graph_->getNetResistance(tree);
+    net->setResistance(resistance);
+    // Routed-tree planar length when available; bbox half-perimeter is
+    // only a fallback before the first route exists (PatternRoute).
+    net->setNetLength(tree ? grid_graph_->getTreeLength(tree)
+                           : net->getBoundingBox().hp());
+    worst_resistance_ = std::max(worst_resistance_, resistance);
+    worst_fanout_ = std::max(worst_fanout_, net->getNumPins());
+    worst_net_length_ = std::max(worst_net_length_, net->getNetLength());
+    worst_slack_ = std::min(worst_slack_, net->getSlack());
+  }
+
+  // Mark the top-`percentage` nets by negative slack (same threshold as
+  // calculatePartialSlack; unconstrained nets fall outside it).
+  std::vector<float> slacks;
+  slacks.reserve(gr_nets_.size());
+  for (const auto& net : gr_nets_) {
+    slacks.push_back(net->getSlack());
+  }
+  std::ranges::stable_sort(slacks);
+  const int threshold_index = std::ceil(slacks.size() * percentage / 100);
+  const float slack_th
+      = slacks.empty() ? 0.0f
+                       : slacks[std::min(static_cast<size_t>(threshold_index),
+                                         slacks.size() - 1)];
+  for (const auto& net : gr_nets_) {
+    const bool multi_pin = net->getNumPins() >= 2;
+    // Skip short nets (FR's kShortNetThreshold), using the same length
+    // metric as the ordering score (routed-tree length, bbox hp pre-route).
+    const bool long_enough
+        = net->getNetLength() > constants_.resistance_min_net_length;
+    const bool is_critical = net->getSlack() <= slack_th;
+    net->setResAware(multi_pin && long_enough && is_critical);
+  }
+}
+
+float CUGR::getResAwareScore(const GRNet* net) const
+{
+  constexpr float kSlackWeight = 4.0f;
+  constexpr float kResistanceWeight = 1.0f;
+  constexpr float kFanoutWeight = 3.0f;
+  constexpr float kNetLengthWeight = 2.0f;
+
+  // Adapted from FastRoute's getResAwareScore; lower = more critical.
+  const float slack_norm = std::max(std::abs(worst_slack_), 1e-9f);
+  const float slack_term = net->getSlack() / slack_norm * kSlackWeight;
+  const float resistance_term
+      = net->getResistance() / worst_resistance_ * kResistanceWeight;
+  const float fanout_term
+      = static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight;
+  const float length_term = static_cast<float>(net->getNetLength())
+                            / worst_net_length_ * kNetLengthWeight;
+
+  return slack_term - resistance_term - fanout_term - length_term;
 }
 
 std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
