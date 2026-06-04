@@ -58,8 +58,12 @@ set baseline_wns -122.7
 set baseline_tns -2957.2
 set wns [worst_slack -max]
 set tns [total_negative_slack -max]
-puts "baseline (no resistance-aware) WNS: [format %.1f $baseline_wns] ps  TNS: [format %.1f $baseline_tns] ps"
-puts "resistance-aware               WNS: [format %.1f $wns] ps  TNS: [format %.1f $tns] ps"
+set base_wns [format %.1f $baseline_wns]
+set base_tns [format %.1f $baseline_tns]
+set ra_wns [format %.1f $wns]
+set ra_tns [format %.1f $tns]
+puts "baseline (no resistance-aware) WNS: $base_wns ps  TNS: $base_tns ps"
+puts "resistance-aware               WNS: $ra_wns ps  TNS: $ra_tns ps"
 if { $wns >= $baseline_wns && $tns >= $baseline_tns } {
   puts "resistance-aware WNS and TNS not worse than baseline: PASS"
 } else {
