@@ -2561,9 +2561,20 @@ void dbNetwork::visitConnectedPins(const Net* net,
       }
       Pin* bump_pin = dbToSta(bump);
       visitor(bump_pin);
-      if (Term* inner_term = term(bump_pin)) {
-        if (Net* inner_net = this->net(inner_term)) {
-          visitConnectedPins(inner_net, visitor, visited_nets);
+      // Only descend into the chiplet body for a uniquely-owned master
+      // block. Two chip-insts sharing a master alias the same inner
+      // dbNet/dbInst pointers, so descending would collapse both instances
+      // onto one shared inner net (visited_nets dedup) and silently mis-time
+      // them. Shared masters stay opaque (bump pin only) — consistent with
+      // block_to_chip_inst_ and the DbInstanceChildIterator flat-walk, and
+      // with the documented shared-master limitation (see 3DIC.md). Full
+      // support needs path-aware identities (3DIC_TODO.md TODO 1).
+      dbChipInst* owner = bump->getChipRegionInst()->getChipInst();
+      if (blockOwnedUniquelyBy(owner)) {
+        if (Term* inner_term = term(bump_pin)) {
+          if (Net* inner_net = this->net(inner_term)) {
+            visitConnectedPins(inner_net, visitor, visited_nets);
+          }
         }
       }
     }

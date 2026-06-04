@@ -400,6 +400,101 @@ like; the logic is reusable, only the gating changes.
 
 ---
 
+## TODO 6 — Internally-hierarchical chiplets under a flat top chip
+
+### Problem
+
+v1 assumes each chiplet `dbBlock` is **flat** (leaf `dbInst`s only, no
+Verilog `dbModInst` module hierarchy). A design where the top chip is
+single-level (`has3DicChip()`) **but a chiplet's internal netlist is
+hierarchical** (`hasHierarchy()`) is an untested, unsupported combination.
+
+It may partly *limp*: the top-instance flat walk uses
+`chip_inst->getMasterChip()->getBlock()->getInsts()`
+(`dbNetwork.cc` `DbInstanceChildIterator`, ~line 377), which returns **all**
+leaf `dbInst`s regardless of module structure, and connectivity rides on the
+flat `dbNet` view odb always maintains. So flat timing paths can still form.
+
+But the chiplet's internal hierarchy is effectively **flattened / ignored**,
+because most `dbNetwork` functions check `has3DicChip()` **first and
+`return`**, short-circuiting the `hasHierarchy()` handling:
+
+- `parent(inner_dbInst)` returns the owning chip-inst, not the enclosing
+  module → names collapse to `chipA/<flat_leaf>`, not `chipA/u1/.../leaf`.
+- `dbModNet` / `dbModITerm` / `dbModBTerm` (the hierarchical connectivity
+  overlay) are not consulted — only flat `dbNet`s.
+- `DbInstanceNetIterator` yields empty for any non-top instance, so
+  per-module net enumeration inside a chiplet does not work.
+- Module-scoped queries / hierarchical SDC inside a chiplet do not resolve.
+
+The deeper risk: the two axes (`has3DicChip` vs `hasHierarchy`) are tested in
+**mixed order across functions** (some chip-first, some
+`hasHierarchy() || has3DicChip()` like `id()`), so the combined state has
+latent inconsistencies.
+
+### Concrete change
+
+Make the chip-mode branches **compose with** the module-hierarchy handling
+instead of `return`-ing early. Where an instance is an inner chiplet
+`dbInst`/`dbModInst`, the iterators/accessors must run the existing
+`hasHierarchy()` logic *within* the chiplet block's scope, then attribute the
+result up to the owning chip-inst (compose the chip-inst path with the
+module path for `parent()`/`pathName()`). This overlaps TODO 1's path-aware
+identity work — share the implementation.
+
+### Test plan
+
+- New fixture: flat top chip, one chiplet whose DEF/Verilog carries a
+  `dbModInst` submodule. Verify hierarchical names (`chipA/sub/leaf`),
+  `get_cells chipA/sub/*`, and a cross-chiplet path through the submodule.
+
+---
+
+## TODO 7 — ObjectId capacity: 20-bit per-block id ceiling in 3DIC mode
+
+### Problem
+
+`getDbNwkObjectId` packs a 32-bit `ObjectId` (`uint32_t`, fixed upstream by
+OpenSTA) as, in 3DIC mode:
+
+```
+[ block_disc : 8 (kBlockTagWidth) ][ db_id : 20 ][ type tag : 4 (DBIDTAG_WIDTH) ]
+```
+
+That leaves **20 bits → 1,048,575** for the per-chiplet-block `db_id`
+(`object->getId()`, numbered from 1 within each chiplet block). 2D / non-3DIC
+mode is unaffected (it keeps 28 bits ≈ 268M).
+
+The binding constraint is the **largest per-block table — iterms**, not
+instances: with ~3-4 iterms per instance, 1M iterm ids ≈ **~250-300K
+instances per chiplet**. Large production chiplets exceed this.
+
+It fails **safely** today: `getDbNwkObjectId` errors
+`ORD-2019 "Database id exceeds capacity"` (`dbNetwork.cc:~251`) rather than
+silently colliding. So this is a scalability ceiling, not a correctness bug.
+
+### Concrete change (options, preferred first)
+
+1. **Global id allocator.** Drop the packed scheme; `dbNetwork` keeps a
+   `std::map<const dbObject*, ObjectId>` handing out a monotonic counter on
+   first `id()` call. 32 bits = 4B unique ids globally → removes both
+   `block_disc_` and the per-block ceiling. Cost: a lookup per `id()` (it is
+   on hot `PinSet`/`NetSet` paths — measure).
+2. **Rebalance the split** (band-aid): e.g. `kBlockTagWidth = 6` (64
+   chiplets) → 22-bit id (~4M). Just moves the wall.
+3. **Widen `ObjectId` to 64-bit** — clean but an upstream OpenSTA change with
+   wide blast radius.
+
+### Note
+
+The `db_id` capacity check (`dbNetwork.cc:~251`) subtracts `kBlockTagWidth`
+for **all** object types in 3DIC mode, including chip/mod types whose
+encoding does not reserve disc bits — over-conservative (could trip
+`ORD-2019` early on a huge `dbChipNet` id) but safe-side. Fix alongside the
+allocator change.
+
+---
+
 ## File / module references
 
 - `src/dbSta/include/db_sta/dbNetwork.hh` — `chip_bump_vertex_ids_`,

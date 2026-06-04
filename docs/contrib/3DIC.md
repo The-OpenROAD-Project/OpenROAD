@@ -7,12 +7,16 @@ stages land.
 
 **v1 scope.** This PR lands cross-chiplet STA for **single-level**
 hierarchies (one top `dbChip` with direct `dbChipInst` children, no
-nested chiplets) under a **zero-delay** bond model. Two known gaps —
-multi-hierarchical 3DIC support and `dbChipConn` RC parasitics —
-are out of scope here and documented as concrete follow-up work in
-[`3DIC_TODO.md`](3DIC_TODO.md). The single-level assumption is
-load-bearing in `dbNetwork::parent(Instance*)`,
-`DbInstanceChildIterator`, and `dbNetwork::isLeaf(Instance*)`.
+nested chiplets) under a **zero-delay** bond model, where each chiplet
+is itself a **flat** block (leaf `dbInst`s only, no internal Verilog
+`dbModInst` hierarchy). Known gaps — multi-hierarchical 3DIC,
+internally-hierarchical chiplets, `dbChipConn` RC parasitics, and the
+20-bit per-block `ObjectId` ceiling — are out of scope here and
+documented as concrete follow-up work in
+[`3DIC_TODO.md`](3DIC_TODO.md) (TODOs 1, 6, 2, 7 respectively). The
+single-level assumption is load-bearing in
+`dbNetwork::parent(Instance*)`, `DbInstanceChildIterator`, and
+`dbNetwork::isLeaf(Instance*)`.
 
 ## Mental model: how a chiplet bump becomes an STA Pin
 
