@@ -680,6 +680,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY")) {
         valid
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
@@ -742,6 +745,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         valid = parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
         KeepOutZoneParser parser(l, this);
         parser.parse(layer->propValue(iii));
@@ -1256,6 +1262,8 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
       valid = lefMacroClassTypeParser::parse(macro->propValue(i), master_);
     } else if (!strcmp(macro->propName(i), "LEF58_EDGETYPE")) {
       lefMacroEdgeTypeParser(master_, this).parse(macro->propValue(i));
+    } else if (!strcmp(macro->propName(i), "LEF58_BACKSIDE_BRIDGE")) {
+      valid = lefMacroBacksideBridgeParser::parse(macro->propValue(i), master_);
     } else {
       dbStringProperty::create(
           master_, macro->propName(i), macro->propValue(i));

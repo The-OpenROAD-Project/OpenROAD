@@ -2516,7 +2516,20 @@ int dbBlock::getGCellTileSize()
   // lambda function to get the average track spacing of a given layer
   auto getAverageTrackSpacing = [this](int layer_idx) -> int {
     dbTech* tech = getTech();
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    // Skip backside routing layers (e.g. BSPDN BPR/BM*/BRDL) so the Nth
+    // routing layer is counted among frontside metals regardless of LEF
+    // ordering.
+    odb::dbTechLayer* tech_layer = nullptr;
+    int count = 0;
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
+        continue;
+      }
+      if (++count == layer_idx) {
+        tech_layer = layer;
+        break;
+      }
+    }
     odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
 
     if (track_grid == nullptr) {

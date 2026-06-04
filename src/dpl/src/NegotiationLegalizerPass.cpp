@@ -37,20 +37,38 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   // window so the loop can create space organically.
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
+  // Build a spatial index once: bucket movable cells by their bottom row (y),
+  // each bucket sorted by x.  Each seed then only scans the few rows in its
+  // y-window and binary-searches the x-range, so the total cost is proportional
+  // to the number of cells actually inside the search windows.
+  std::vector<std::vector<std::pair<int, int>>> row_buckets(grid_h_);
+  for (int i = 0; std::cmp_less(i, cells_.size()); ++i) {
+    const NegCell& nb = cells_[i];
+    if (nb.fixed || nb.y < 0 || nb.y >= grid_h_ || active_set.contains(i)) {
+      continue;
+    }
+    row_buckets[nb.y].emplace_back(nb.x, i);
+  }
+  for (auto& bucket : row_buckets) {
+    std::ranges::sort(bucket);
+  }
+
   for (int idx : illegalCells) {
     const NegCell& seed = cells_[idx];
     const int xlo = seed.x - horiz_window_;
     const int xhi = seed.x + seed.width + horiz_window_;
-    const int ylo = seed.y - adj_window_;
-    const int yhi = seed.y + seed.height + adj_window_;
+    const int ylo = std::max(0, seed.y - adj_window_);
+    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + adj_window_);
 
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (cells_[i].fixed) {
-        continue;
-      }
-      const NegCell& nb = cells_[i];
-      if (nb.x >= xlo && nb.x <= xhi && nb.y >= ylo && nb.y <= yhi) {
-        active_set.insert(i);
+    for (int yy = ylo; yy <= yhi; ++yy) {
+      const auto& bucket = row_buckets[yy];
+      auto it = std::ranges::lower_bound(  // NOLINT(misc-include-cleaner)
+          bucket,
+          xlo,
+          {},
+          [](const auto& p) { return p.first; });
+      for (; it != bucket.end() && it->first <= xhi; ++it) {
+        active_set.insert(it->second);
       }
     }
   }
@@ -293,7 +311,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 
   if (totalOverflow > 0 && updateHistory) {
     utl::DebugScopedTimer t(history_s);
-    updateHistoryCosts();
+    updateHistoryCosts(activeCells);
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
   }
@@ -641,14 +659,35 @@ double NegotiationLegalizer::adaptivePf(int iter) const
 //   h_new = h_old + hf * overuse
 // ===========================================================================
 
-void NegotiationLegalizer::updateHistoryCosts()
+void NegotiationLegalizer::updateHistoryCosts(
+    const std::vector<int>& activeCells)
 {
-  for (int gy = 0; gy < grid_h_; ++gy) {
-    for (int gx = 0; gx < grid_w_; ++gx) {
-      Pixel& g = gridAt(gx, gy);
-      const int ov = g.overuse();
-      if (ov > 0) {
-        g.hist_cost += kHfDefault * ov;
+  // Walk active-cell footprints instead of the full grid: every overused
+  // pixel whose hist_cost is read has >= 2 overlapping cells, and at least
+  // one of them is illegal (hence active). Dedupe shared pixels so each is
+  // bumped once.
+  hist_seen_pixels_.clear();
+  for (int idx : activeCells) {
+    const NegCell& cell = cells_[idx];
+    if (cell.fixed) {
+      continue;
+    }
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
+    for (int dy = 0; dy < cell.height; ++dy) {
+      const int gy = cell.y + dy;
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (!gridExists(gx, gy)) {
+          continue;
+        }
+        if (!hist_seen_pixels_.insert(gy * grid_w_ + gx).second) {
+          continue;
+        }
+        Pixel& g = gridAt(gx, gy);
+        const int ov = g.overuse();
+        if (ov > 0) {
+          g.hist_cost += kHfDefault * ov;
+        }
       }
     }
   }
@@ -725,17 +764,40 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     return ov;
   };
 
-  std::ranges::sort(indices, [&](int a, int b) {
-    const int oa = cellOveruse(a);
-    const int ob = cellOveruse(b);
-    if (oa != ob) {
-      return oa > ob;
+  // Decorate-sort: compute each cell's overuse (a footprint scan) once into a
+  // key, rather than recomputing it the O(log n) times per element a
+  // comparison-time call would.  The comparator below yields identical results
+  // to scoring (a, b) directly, so the resulting order is unchanged.
+  struct SortKey
+  {
+    int overuse;
+    int height;
+    int width;
+    int idx;
+  };
+  std::vector<SortKey> keys;
+  keys.reserve(indices.size());
+  for (int idx : indices) {
+    keys.push_back(
+        {cellOveruse(idx), cells_[idx].height, cells_[idx].width, idx});
+  }
+
+  std::ranges::sort(keys, [](const SortKey& a, const SortKey& b) {
+    if (a.overuse != b.overuse) {
+      return a.overuse > b.overuse;
     }
-    if (cells_[a].height != cells_[b].height) {
-      return cells_[a].height < cells_[b].height;
+    if (a.height != b.height) {
+      return a.height < b.height;
     }
-    return cells_[a].width < cells_[b].width;
+    if (a.width != b.width) {
+      return a.width < b.width;
+    }
+    return a.idx < b.idx;
   });
+
+  for (size_t i = 0; i < keys.size(); ++i) {
+    indices[i] = keys[i].idx;
+  }
 }
 
 // ===========================================================================
