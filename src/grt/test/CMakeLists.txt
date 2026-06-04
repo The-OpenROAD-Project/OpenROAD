@@ -91,6 +91,11 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    resistance_aware_asap7_cong_cugr
+    resistance_aware_asap7_cugr
+    resistance_aware_asap7_fr
+    resistance_aware_cugr
+    resistance_aware_highres_cugr
     set_nets_to_route1
     silence
     single_row
