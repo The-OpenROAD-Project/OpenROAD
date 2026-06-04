@@ -61,7 +61,11 @@ graph topology wrong → cross-hierarchy paths break.
 
 3. **Update `vertexId(Pin*) / setVertexId(Pin*, id)`** to read/write
    the `sta_vertex_id_` field on the `UnfoldedBump` directly, no
-   side-map.
+   side-map. (This also removes a latent staleness bug: the current
+   `chip_bump_vertex_ids_` side-map is cleared only in `clear()`, never on
+   graph rebuild via `deleteGraph`, so a bump present in the old graph but
+   not revisited in the new one keeps a stale `VertexId`. Storing the id on
+   the rebuilt graph's object — as regular iterm/bterm pins do — fixes it.)
 
 4. **`instance(Pin*)` for chip-bumps must walk the unfold path.**
    - Currently:
@@ -324,10 +328,31 @@ Two structural-integrity conditions that matter for STA correctness:
    STA cannot descend through the bump; cross-chiplet paths terminate at
    the boundary. Today silent.
 
-Both are diagnostic-only — runtime null-checks in `dbNetwork::term()`,
-`dbNetwork::pin(Term*)`, and `bump_to_chip_net_` already handle the
-nullable cases without crashing. The check just surfaces the gap earlier
-than the eventual "no paths found" message from `report_checks`.
+The orphan-chip-net case is diagnostic-only — `dbNetwork::term()`,
+`dbNetwork::pin(Term*)`, and `bump_to_chip_net_` null-check, so it merely
+yields no paths.
+
+**The unbound chip-bump case is NOT diagnostic-only — it currently CRASHES.**
+`DbInstancePinIterator` surfaces every bump-inst as a Pin without a
+bound-filter (`dbNetwork.cc` ~line 684), and `dbNetwork::direction(Pin*)`
+returns `nullptr` for an unbound bump (~line 2151). `Graph::makePinVertices`
+(`src/sta/graph/Graph.cc` ~420) then dereferences
+`network_->direction(pin)->isPowerGround()` with no null check → segfault
+during `make_graph`, before any reporting. The same null `direction()`
+flows into `Network::isDriver/isLoad`, and `port(Pin*)` returns null →
+`portName()` null-derefs in reporting. So a single unbound bump in a design
+that reaches STA crashes. (This corrects an earlier claim here that the
+nullable cases were "handled without crashing" — they are not for
+`direction()`/`port()`/the graph-build path.)
+
+This must be fixed in the follow-up PR alongside the gating. Preferred fix:
+**filter unbound bump-insts out of pin enumeration** (`DbInstancePinIterator`,
+`DbNetPinIterator`, and the `visitConnectedPins` chip-net loop) so an unbound
+bump is never an STA Pin — killing all the null-deref sites at once and
+matching the semantics "STA cannot cross that boundary." Alternative:
+return `PortDirection::unknown()` from `direction()` and a stub `Port*` from
+`port()` for unbound bumps. The STA-gated diagnostic (below) should then warn
+on the unbound bumps it skipped.
 
 ### Why not run unconditionally on `read_3dbx`
 

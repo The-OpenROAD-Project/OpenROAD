@@ -1173,7 +1173,11 @@ ObjectId dbNetwork::id(const Instance* instance) const
   if (dbChipInst* chip_inst = staToDbChipInst(instance)) {
     return getDbNwkObjectId(chip_inst);
   }
-  if (hasHierarchy()) {
+  // 3DIC: inner dbInsts of distinct chiplet blocks are each numbered from 1,
+  // so raw getId() collides across chiplets and InstanceSet (sorted by id())
+  // merges them — dropping e.g. one chiplet's registers. Route through the
+  // block-discriminated encoder, like id(Pin*)/id(Net*).
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(instance);
     return getDbNwkObjectId(obj);
   }
@@ -2666,7 +2670,10 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 
 ObjectId dbNetwork::id(const Term* term) const
 {
-  if (hasHierarchy()) {
+  // 3DIC: like id(Pin*)/id(Net*), route inner chiplet bterms through the
+  // block-discriminated encoder so per-block ids don't collide across
+  // chiplets and the encoding agrees with id(Pin*) for the same bterm.
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(term);
     return getDbNwkObjectId(obj);
   }
