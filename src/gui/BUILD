@@ -225,8 +225,8 @@ expand_template(
 pkg_files(
     name = "desktop_files",
     srcs = [
-        ":openroad.desktop",
         "resources/icon.png",
+        ":openroad.desktop",
     ],
     renames = {
         ":openroad.desktop": "share/applications/openroad.desktop",
