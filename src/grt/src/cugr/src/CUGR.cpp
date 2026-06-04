@@ -106,6 +106,7 @@ void CUGR::init(const int min_routing_layer,
     }
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
     gr_nets_.back()->setNdrCosts(computeNdrCosts(base_net.getDbNet()));
+    gr_nets_.back()->setNdrWidths(computeNdrWidths(base_net.getDbNet()));
     net_indices_.push_back(index);
     db_net_map_[base_net.getDbNet()] = gr_nets_.back().get();
     index++;
@@ -205,8 +206,8 @@ void CUGR::markResAwareNets(const float percentage)
     worst_slack_ = std::min(worst_slack_, net->getSlack());
   }
 
-  // Mark the top-`percentage` nets by negative slack (same threshold as
-  // calculatePartialSlack; unconstrained nets fall outside it).
+  // Mark the top-`percentage` nets by the same percentile slack threshold
+  // as calculatePartialSlack.
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
   for (const auto& net : gr_nets_) {
@@ -224,7 +225,8 @@ void CUGR::markResAwareNets(const float percentage)
     // metric as the ordering score (routed-tree length, bbox hp pre-route).
     const bool long_enough
         = net->getNetLength() > constants_.resistance_min_net_length;
-    const bool is_critical = net->getSlack() <= slack_th;
+    const bool is_critical
+        = net->getSlack() <= slack_th && net->getSlack() <= 0.0f;
     net->setResAware(multi_pin && long_enough && is_critical);
   }
 }
@@ -281,6 +283,31 @@ std::vector<double> CUGR::computeNdrCosts(odb::dbNet* db_net) const
     factors[layer_idx] = std::max(1.0, f);
   }
   return factors;
+}
+
+std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
+{
+  const int num_layers = grid_graph_->getNumLayers();
+  // 0 => "use the layer default width" in getWireResistanceCost.
+  std::vector<int> widths(std::max(num_layers, 0), 0);
+  odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
+  if (ndr == nullptr) {
+    return widths;
+  }
+  std::vector<odb::dbTechLayerRule*> layer_rules;
+  ndr->getLayerRules(layer_rules);
+  for (odb::dbTechLayerRule* lr : layer_rules) {
+    odb::dbTechLayer* tl = lr->getLayer();
+    if (tl == nullptr || tl->getType() != odb::dbTechLayerType::ROUTING) {
+      continue;
+    }
+    const int layer_idx = tl->getRoutingLevel() - 1;  // 0-based
+    if (layer_idx < 0 || layer_idx >= num_layers) {
+      continue;
+    }
+    widths[layer_idx] = lr->getWidth();
+  }
+  return widths;
 }
 
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
@@ -440,6 +467,13 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
 
 void CUGR::route()
 {
+  if (resistance_aware_ && critical_nets_percentage_ == 0) {
+    logger_->warn(GRT,
+                  702,
+                  "-resistance_aware has no effect without a non-zero "
+                  "-critical_nets_percentage; no nets are marked critical.");
+  }
+
   std::vector<int> net_indices;
   if (!nets_to_route_.empty()) {
     net_indices = nets_to_route_;
@@ -759,7 +793,7 @@ NetRouteMap CUGR::getRoutes()
 
 void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
-  if (resistance_aware_) {
+  if (resistance_aware_ && critical_nets_percentage_ != 0) {
     // Multi-factor res-aware ordering (slack + resistance + fanout +
     // length): critical nets route first so they get the best topology
     // and first pick of upper-metal capacity. (Mimicking FR's full

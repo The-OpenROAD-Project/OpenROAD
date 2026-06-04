@@ -571,7 +571,7 @@ void PatternRoute::calculateRoutingCosts(
 
           if (net_->isResAware()) {
             cost += grid_graph_->getWireResistanceCost(
-                layer_index, *node, *path);
+                layer_index, *node, *path, net_->getNdrWidth(layer_index));
           }
         }
         if (cost < costs[layer_index].first) {

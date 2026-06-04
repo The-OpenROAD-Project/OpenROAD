@@ -496,10 +496,13 @@ CostT GridGraph::getViaCost(const int layer_index,
 
 CostT GridGraph::getWireResistanceCost(const int layer_index,
                                        const PointT u,
-                                       const PointT v) const
+                                       const PointT v,
+                                       const int wire_width) const
 {
   const MetalLayer& layer = design_->getLayer(layer_index);
-  const double width = layer.getWidth();
+  // NDR nets carry wider, lower-resistance wires; fall back to the layer
+  // default when the net sets no NDR width on this layer (wire_width == 0).
+  const double width = wire_width > 0 ? wire_width : layer.getWidth();
   // Layer-0 sheet resistance is the reference (matches FastRoute); 0 if
   // any input is undefined.
   const double ref = design_->getLayer(0).getResistance();

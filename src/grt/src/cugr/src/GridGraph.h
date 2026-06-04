@@ -185,7 +185,10 @@ class GridGraph
 
   // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
   // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
-  CostT getWireResistanceCost(int layer_index, PointT u, PointT v) const;
+  CostT getWireResistanceCost(int layer_index,
+                              PointT u,
+                              PointT v,
+                              int wire_width = 0) const;
 
   // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
   // the tech leaves cut-layer resistance unpopulated.

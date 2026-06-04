@@ -82,6 +82,22 @@ class GRNet
 
   const std::vector<double>& getNdrCosts() const { return ndr_costs_; }
 
+  void setNdrWidths(std::vector<int> widths)
+  {
+    ndr_widths_ = std::move(widths);
+  }
+
+  // Effective wire width (DBU) on a layer: the net's NDR width where the
+  // rule sets one, else 0 to signal "use the layer default".
+  int getNdrWidth(int layer_index) const
+  {
+    if (layer_index < 0
+        || std::cmp_greater_equal(layer_index, ndr_widths_.size())) {
+      return 0;
+    }
+    return ndr_widths_[layer_index];
+  }
+
   /**
    * @brief Checks whether the net has an active demand-scaling NDR.
    *
@@ -141,6 +157,7 @@ class GRNet
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;
+  std::vector<int> ndr_widths_;
   bool soft_ndr_ = false;
 };
 
