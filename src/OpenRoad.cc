@@ -15,6 +15,7 @@
 
 #include "ord/Version.hh"
 #include "tcl.h"
+#include "tclDecls.h"
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -80,6 +81,8 @@
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
+#include "syn/MakeSynthesis.h"
+#include "syn/synthesis.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
 #include "upf/MakeUpf.h"
@@ -124,6 +127,7 @@ OpenRoad::~OpenRoad()
   // sta::deleteAllMemory();
   delete ioPlacer_;
   delete resizer_;
+  delete synthesis_;
   delete opendp_;
   delete global_router_;
   delete restructure_;
@@ -134,6 +138,9 @@ OpenRoad::~OpenRoad()
   delete example_;
   delete extractor_;
   delete detailed_router_;
+  // Stop the web server first — its I/O threads access the database
+  // for tile rendering, so it must be torn down before the DB.
+  delete web_server_;
   delete replace_;
   delete pdnsim_;
   delete finale_;
@@ -147,7 +154,6 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
-  delete web_server_;
   delete logger_;
   delete verilog_reader_;
   delete service_registry_;
@@ -176,6 +182,12 @@ void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
 
 ////////////////////////////////////////////////////////////////
 
+static void finalizeLoggerMetrics(ClientData clientData)
+{
+  auto* logger = static_cast<utl::Logger*>(clientData);
+  logger->finalizeMetrics();
+}
+
 void initOpenRoad(Tcl_Interp* interp,
                   const char* log_filename,
                   const char* metrics_filename,
@@ -195,6 +207,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = new utl::Logger(log_filename, metrics_filename);
+  if (metrics_filename) {
+    Tcl_CreateExitHandler(finalizeLoggerMetrics, logger_);
+  }
   service_registry_ = new utl::ServiceRegistry(logger_);
   db_->setLogger(logger_);
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
@@ -223,6 +238,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                               global_router_,
                               opendp_,
                               estimate_parasitics_);
+  synthesis_ = new syn::Synthesis(db_, sta_, resizer_, logger_);
   finale_ = new fin::Finale(db_, logger_);
   restructure_ = new rmp::Restructure(
       logger_, sta_, db_, resizer_, estimate_parasitics_);
@@ -257,7 +273,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
-  web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  web_server_
+      = new web::WebServer(db_, sta_, logger_, tcl_interp, getThreadCount());
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -272,6 +289,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   upf::initUpf(tcl_interp);
   ifp::initInitFloorplan(tcl_interp);
   sta::initDbSta(tcl_interp);
+  syn::initSynthesis(tcl_interp);
   rsz::initResizer(tcl_interp);
   ppl::initIoplacer(tcl_interp);
   gpl::initReplace(tcl_interp);
@@ -503,8 +521,8 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
-  check3DBlox();
   db_->triggerPostRead3Dbx(db_->getChip());
+  check3DBlox();
 }
 
 void OpenRoad::read3DBloxBMap(const std::string& filename)
@@ -611,6 +629,7 @@ void OpenRoad::linkDesign(const char* design_name,
   if (success) {
     delete verilog_reader_;
     verilog_reader_ = nullptr;
+    verilog_network_->setLinkFunc(nullptr);
   }
 
   if (hierarchy) {
@@ -665,6 +684,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+  if (global_router_ != nullptr) {
+    global_router_->setNumThreads(threads_);
+  }
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

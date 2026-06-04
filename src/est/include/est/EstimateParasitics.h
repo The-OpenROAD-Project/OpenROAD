@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -44,15 +45,20 @@ using SteinerPt = int;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 enum class ParasiticsSrc
 {
-  none,
-  placement,
-  global_routing,
-  detailed_routing
+  kNone,
+  kPlacement,
+  kGlobalRouting,
+  kDetailedRouting
 };
 
 struct ParasiticsResistance
@@ -134,7 +140,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   double wireClkVCapacitance(const sta::Scene* scene) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<sta::Scene*, std::ostream*>& spef_streams_);
+                          std::map<sta::Scene*, std::ostream*>& spef_streams);
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
@@ -204,6 +210,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
  private:
   void ensureParasitics();
+  bool isIdealClockPin(const sta::Pin* pin) const;
+  bool isIdealClockNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);
@@ -261,7 +269,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   std::vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
   std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
 
-  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
+  ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
 
   std::unordered_set<const sta::Net*, NetHash> parasitics_invalid_;
 

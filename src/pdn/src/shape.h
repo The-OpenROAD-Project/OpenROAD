@@ -12,6 +12,7 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -31,7 +32,7 @@ class Via;
 using ShapePtr = std::shared_ptr<Shape>;
 using ViaPtr = std::shared_ptr<Via>;
 
-using ShapeVectorMap = std::map<odb::dbTechLayer*, std::vector<ShapePtr>>;
+using ShapeVectorMap = odb::PtrMap<odb::dbTechLayer, std::vector<ShapePtr>>;
 
 class Grid;
 class GridComponent;
@@ -51,21 +52,21 @@ class Shape
   };
   enum ShapeType
   {
-    SHAPE,
-    GRID_OBS,
-    BLOCK_OBS,
-    MACRO_OBS,
-    OBS,
-    FIXED
+    kShape,
+    kGridObs,
+    kBlockObs,
+    kMacroObs,
+    kObs,
+    kFixed
   };
   struct RectIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const { return t->getRect(); }
   };
   struct ObstructionIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const
     {
       return t->getObstruction();
@@ -77,8 +78,8 @@ class Shape
   using ObstructionTree = bgi::
       rtree<ShapePtr, bgi::quadratic<16>, Shape::ObstructionIndexableGetter>;
 
-  using ShapeTreeMap = std::map<odb::dbTechLayer*, ShapeTree>;
-  using ObstructionTreeMap = std::map<odb::dbTechLayer*, ObstructionTree>;
+  using ShapeTreeMap = odb::PtrMap<odb::dbTechLayer, ShapeTree>;
+  using ObstructionTreeMap = odb::PtrMap<odb::dbTechLayer, ObstructionTree>;
 
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
@@ -279,7 +280,7 @@ class FollowPinShape : public Shape
            std::vector<std::unique_ptr<Shape>>& replacements) const override;
 
  private:
-  std::set<odb::dbRow*> rows_;
+  odb::PtrSet<odb::dbRow> rows_;
 };
 
 class GridObsShape : public Shape

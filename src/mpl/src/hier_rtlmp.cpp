@@ -4,6 +4,7 @@
 #include "hier_rtlmp.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -30,12 +31,14 @@
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
+#include "pusher.h"
 #include "snapper.h"
 #include "utl/Logger.h"
 
@@ -111,17 +114,17 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setDefaultHalo(int left, int bottom, int right, int top)
+void HierRTLMP::setBaseHalo(int left, int bottom, int right, int top)
 {
-  if (!default_halo_.isZero()) {
-    logger_->warn(MPL, 71, "Overwriting default macro halo.");
+  if (!base_halo_.isZero()) {
+    logger_->warn(MPL, 71, "Overwriting base macro halo.");
   }
 
-  default_halo_ = {left, bottom, right, top};
+  base_halo_ = {left, bottom, right, top};
 }
 
 void HierRTLMP::setGuidanceRegions(
-    const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
+    const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
 }
@@ -252,6 +255,50 @@ void HierRTLMP::run()
   computeWireLength();
 }
 
+void HierRTLMP::blockMacroChannels()
+{
+  if (!block_) {
+    block_ = db_->getChip()->getBlock();
+  }
+
+  int blockage_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!inst->isBlock() || !inst->isFixed()) {
+      continue;
+    }
+
+    // There is no need to create blockages for soft halos since other
+    // tools capable of placement are aware of them.
+    if (inst->getHalo() != nullptr && inst->getHalo()->isSoft()) {
+      continue;
+    }
+
+    HardMacro::Halo halo;
+    if (macro_to_halo_.contains(inst)) {
+      halo = macro_to_halo_.at(inst);
+    } else if (inst->getHalo() != nullptr) {
+      const HardMacro::Halo inst_halo(inst->getHalo());
+      halo = inst_halo.floorTo(base_halo_);
+    } else {
+      halo = base_halo_;
+    }
+
+    HardMacro hard_macro(inst, halo);
+    hard_macro.setOrientation(inst->getOrient());
+    hard_macro.setRealLocation(inst->getLocation());
+
+    const odb::Rect box = hard_macro.getBBox();
+    odb::dbBlockage* blockage = odb::dbBlockage::create(
+        block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+    blockage->setSoft();
+
+    ++blockage_count;
+  }
+
+  logger_->info(
+      MPL, 76, "Created {} soft blockages around macros.", blockage_count);
+}
+
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
@@ -274,7 +321,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(default_halo_, macro_to_halo_);
+  clustering_engine_->setHalos(base_halo_, macro_to_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -1788,7 +1835,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
   std::vector<HardMacro> sa_macros;
   std::map<int, int> cluster_to_macro;
-  std::set<odb::dbMaster*> masters;
+  odb::PtrSet<odb::dbMaster> masters;
   clustering_engine_->createTempMacroClusters(
       hard_macros, sa_macros, macro_clusters, cluster_to_macro, masters);
 
@@ -2366,6 +2413,27 @@ void HierRTLMP::commitMacroPlacementToDb()
 void HierRTLMP::commitClusteringDataToDb() const
 {
   createGroupForCluster(tree_->root.get(), nullptr);
+
+  // Check that all instances are in a group
+  int ungrouped_instances = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getGroup() == nullptr) {
+      debugPrint(logger_,
+                 MPL,
+                 "commit_clustering_data",
+                 1,
+                 "Instance {} is not in any group.",
+                 inst->getName());
+      ungrouped_instances++;
+    }
+  }
+  if (ungrouped_instances > 0) {
+    logger_->error(MPL,
+                   49,
+                   "{} instances are not in any group after committing "
+                   "clustering data to the database.",
+                   ungrouped_instances);
+  }
 }
 
 void HierRTLMP::createGroupForCluster(Cluster* cluster,
@@ -2383,21 +2451,27 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   cluster_group->setType(odb::dbGroupType::VISUAL_DEBUG);
 
   for (odb::dbInst* inst : cluster->getLeafStdCells()) {
+    assert(inst->getGroup() == nullptr);
     cluster_group->addInst(inst);
   }
 
   for (odb::dbInst* macro : cluster->getLeafMacros()) {
+    assert(macro->getGroup() == nullptr);
     cluster_group->addInst(macro);
-  }
-
-  for (odb::dbModule* module : cluster->getDbModules()) {
-    for (odb::dbInst* inst : module->getLeafInsts()) {
-      cluster_group->addInst(inst);
-    }
   }
 
   for (const auto& child : cluster->getChildren()) {
     createGroupForCluster(child.get(), cluster_group);
+  }
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      if (inst->getGroup() != nullptr) {
+        // Skip if it is part of a child cluster
+        continue;
+      }
+      cluster_group->addInst(inst);
+    }
   }
 }
 
@@ -2590,302 +2664,6 @@ void HierRTLMP::writeCostFile(const std::string& file_name_prefix,
                               SACore* sa_core)
 {
   sa_core->writeCostFile(file_name_prefix + ".cost.txt");
-}
-
-//////// Pusher ////////
-
-Pusher::Pusher(utl::Logger* logger,
-               Cluster* root,
-               odb::dbBlock* block,
-               const std::vector<odb::Rect>& io_blockages)
-    : logger_(logger), root_(root), block_(block)
-{
-  core_ = block_->getCoreArea();
-  setIOBlockages(io_blockages);
-}
-
-void Pusher::setIOBlockages(const std::vector<odb::Rect>& io_blockages)
-{
-  io_blockages_ = io_blockages;
-}
-
-void Pusher::fetchMacroClusters(Cluster* parent,
-                                std::vector<Cluster*>& macro_clusters)
-{
-  for (auto& child : parent->getChildren()) {
-    if (child->getClusterType() == HardMacroCluster) {
-      macro_clusters.push_back(child.get());
-
-      for (HardMacro* hard_macro : child->getHardMacros()) {
-        hard_macros_.push_back(hard_macro);
-      }
-
-    } else if (child->getClusterType() == MixedCluster) {
-      fetchMacroClusters(child.get(), macro_clusters);
-    }
-  }
-}
-
-void Pusher::pushMacrosToCoreBoundaries()
-{
-  // Case in which the design has nothing but macros.
-  if (root_->getClusterType() == HardMacroCluster) {
-    return;
-  }
-
-  if (designHasSingleCentralizedMacroArray()) {
-    return;
-  }
-
-  std::vector<Cluster*> macro_clusters;
-  fetchMacroClusters(root_, macro_clusters);
-
-  for (Cluster* macro_cluster : macro_clusters) {
-    if (macro_cluster->isFixedMacro()) {
-      continue;
-    }
-
-    debugPrint(logger_,
-               MPL,
-               "boundary_push",
-               1,
-               "Macro Cluster {}",
-               macro_cluster->getName());
-
-    std::map<Boundary, int> boundaries_distance
-        = getDistanceToCloseBoundaries(macro_cluster);
-
-    if (logger_->debugCheck(MPL, "boundary_push", 1)) {
-      logger_->report("Distance to Close Boundaries:");
-
-      for (auto& [boundary, distance] : boundaries_distance) {
-        logger_->report("{} {}", toString(boundary), distance);
-      }
-    }
-
-    pushMacroClusterToCoreBoundaries(macro_cluster, boundaries_distance);
-  }
-}
-
-bool Pusher::designHasSingleCentralizedMacroArray()
-{
-  int macro_cluster_count = 0;
-
-  for (auto& child : root_->getChildren()) {
-    switch (child->getClusterType()) {
-      case MixedCluster:
-        return false;
-      case HardMacroCluster:
-        ++macro_cluster_count;
-        break;
-      case StdCellCluster: {
-        // Note: to check whether or not a std cell cluster is "tiny"
-        // we use the area of its SoftMacro abstraction, because the
-        // Cluster::getArea() will give us the actual std cell area
-        // of the instances from that cluster.
-        if (child->getSoftMacro()->getArea() != 0) {
-          return false;
-        }
-      }
-    }
-
-    if (macro_cluster_count > 1) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// We only group macros of the same size, so here we can use any HardMacro
-// from the cluster to set the minimum distance from the respective
-// boundary to trigger a push.
-std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
-    Cluster* macro_cluster)
-{
-  std::map<Boundary, int> boundaries_distance;
-
-  const odb::Rect cluster_box = macro_cluster->getBBox();
-
-  HardMacro* hard_macro = macro_cluster->getHardMacros().front();
-
-  Boundary hor_boundary_to_push;
-  const int distance_to_left = std::abs(cluster_box.xMin() - core_.xMin());
-  const int distance_to_right = std::abs(cluster_box.xMax() - core_.xMax());
-  int smaller_hor_distance = 0;
-
-  if (distance_to_left < distance_to_right) {
-    hor_boundary_to_push = Boundary::L;
-    smaller_hor_distance = distance_to_left;
-  } else {
-    hor_boundary_to_push = Boundary::R;
-    smaller_hor_distance = distance_to_right;
-  }
-
-  const int hard_macro_width = hard_macro->getWidth();
-  if (smaller_hor_distance < hard_macro_width) {
-    boundaries_distance[hor_boundary_to_push] = smaller_hor_distance;
-  }
-
-  Boundary ver_boundary_to_push;
-  const int distance_to_top = std::abs(cluster_box.yMax() - core_.yMax());
-  const int distance_to_bottom = std::abs(cluster_box.yMin() - core_.yMin());
-  int smaller_ver_distance = 0;
-
-  if (distance_to_bottom < distance_to_top) {
-    ver_boundary_to_push = Boundary::B;
-    smaller_ver_distance = distance_to_bottom;
-  } else {
-    ver_boundary_to_push = Boundary::T;
-    smaller_ver_distance = distance_to_top;
-  }
-
-  const int hard_macro_height = hard_macro->getHeight();
-  if (smaller_ver_distance < hard_macro_height) {
-    boundaries_distance[ver_boundary_to_push] = smaller_ver_distance;
-  }
-
-  return boundaries_distance;
-}
-
-void Pusher::pushMacroClusterToCoreBoundaries(
-    Cluster* macro_cluster,
-    const std::map<Boundary, int>& boundaries_distance)
-{
-  if (boundaries_distance.empty()) {
-    return;
-  }
-
-  std::vector<HardMacro*> hard_macros = macro_cluster->getHardMacros();
-
-  for (const auto& [boundary, distance] : boundaries_distance) {
-    if (distance == 0) {
-      continue;
-    }
-
-    for (HardMacro* hard_macro : hard_macros) {
-      moveHardMacro(hard_macro, boundary, distance);
-    }
-
-    debugPrint(logger_,
-               MPL,
-               "boundary_push",
-               1,
-               "Moved {} in the direction of {}.",
-               macro_cluster->getName(),
-               toString(boundary));
-
-    odb::Rect cluster_box = macro_cluster->getBBox();
-
-    moveMacroClusterBox(cluster_box, boundary, distance);
-
-    // Check based on the shape of the macro cluster to avoid iterating each
-    // of its HardMacros.
-    if (overlapsWithHardMacro(cluster_box, hard_macros)
-        || overlapsWithIOBlockage(cluster_box)) {
-      // Move back to original position.
-      for (HardMacro* hard_macro : hard_macros) {
-        moveHardMacro(hard_macro, boundary, (-distance));
-      }
-    }
-  }
-}
-
-void Pusher::moveMacroClusterBox(odb::Rect& cluster_box,
-                                 const Boundary boundary,
-                                 const int distance)
-{
-  switch (boundary) {
-    case (Boundary::L): {
-      cluster_box.moveDelta(-distance, 0);
-      break;
-    }
-    case (Boundary::R): {
-      cluster_box.moveDelta(distance, 0);
-      break;
-    }
-    case (Boundary::T): {
-      cluster_box.moveDelta(0, distance);
-      break;
-    }
-    case (Boundary::B): {
-      cluster_box.moveDelta(0, -distance);
-      break;
-    }
-  }
-}
-
-void Pusher::moveHardMacro(HardMacro* hard_macro,
-                           const Boundary boundary,
-                           const int distance)
-{
-  switch (boundary) {
-    case (Boundary::L): {
-      hard_macro->setX(hard_macro->getX() - distance);
-      break;
-    }
-    case (Boundary::R): {
-      hard_macro->setX(hard_macro->getX() + distance);
-      break;
-    }
-    case (Boundary::T): {
-      hard_macro->setY(hard_macro->getY() + distance);
-      break;
-    }
-    case (Boundary::B): {
-      hard_macro->setY(hard_macro->getY() - distance);
-      break;
-    }
-  }
-}
-
-bool Pusher::overlapsWithHardMacro(
-    const odb::Rect& cluster_box,
-    const std::vector<HardMacro*>& cluster_hard_macros)
-{
-  for (const HardMacro* hard_macro : hard_macros_) {
-    bool hard_macro_belongs_to_cluster = false;
-
-    for (const HardMacro* cluster_hard_macro : cluster_hard_macros) {
-      if (hard_macro == cluster_hard_macro) {
-        hard_macro_belongs_to_cluster = true;
-        break;
-      }
-    }
-
-    if (hard_macro_belongs_to_cluster) {
-      continue;
-    }
-
-    if (cluster_box.overlaps(hard_macro->getBBox())) {
-      debugPrint(logger_,
-                 MPL,
-                 "boundary_push",
-                 1,
-                 "\tFound overlap with HardMacro {}. Push will be reverted.",
-                 hard_macro->getName());
-      return true;
-    }
-  }
-
-  return false;
-}
-
-bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box) const
-{
-  for (const odb::Rect& io_blockage : io_blockages_) {
-    if (cluster_box.overlaps(io_blockage)) {
-      debugPrint(logger_,
-                 MPL,
-                 "boundary_push",
-                 1,
-                 "\tFound overlap with IO blockage {}. Push will be reverted.",
-                 io_blockage);
-      return true;
-    }
-  }
-
-  return false;
 }
 
 }  // namespace mpl

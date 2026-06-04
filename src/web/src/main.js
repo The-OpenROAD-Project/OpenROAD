@@ -10,27 +10,57 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
+import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
-import './theme.js';
+import { getCookie, setCookie, applyGLTheme } from './theme.js';
+import { updateDocumentTitle } from './title.js';
+import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
 const statusDiv = document.getElementById('websocket-status');
+let disconnectTimeout = null;
+const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
 
 function updateStatus() {
-    const n = app.websocketManager ? app.websocketManager.pending.size : 0;
-    if (n === 0) {
-        statusDiv.textContent = '';
-        statusDiv.style.display = 'none';
+    const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    
+    if (!isConnected) {
+        // After an intentional shutdown the "Server stopped" banner is
+        // already showing — don't overwrite it with the generic message.
+        if (app.websocketManager?._shutdown) {
+            return;
+        }
+        // Only show banner after a delay to avoid flashing on page load
+        if (!disconnectTimeout) {
+            disconnectTimeout = setTimeout(() => {
+                if (!app.websocketManager?.isConnected) {
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
+                    statusDiv.style.display = 'block';
+                }
+            }, DISCONNECT_DELAY_MS);
+        }
     } else {
-        statusDiv.textContent = `pending: ${n}`;
-        statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
+        // Connected - clear timeout and show pending indicator if needed
+        if (disconnectTimeout) {
+            clearTimeout(disconnectTimeout);
+            disconnectTimeout = null;
+        }
+        
+        if (pendingCount === 0) {
+            statusDiv.style.display = 'none';
+        } else {
+            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+            statusDiv.style.display = 'block';
+            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+            statusDiv.querySelector('.pending-indicator').style.color = color;
+        }
     }
 }
 
@@ -63,12 +93,27 @@ const app = {
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
+    // Raw tech-layer names (dbTechLayer::getName()) for the layers
+    // currently visible.  Kept in sync with `visibleLayers` by
+    // display-controls.js.  This is the wire-format that the backend
+    // expects in `visible_layers`; `visibleLayers` itself holds the
+    // hierarchical UI node IDs and must not leak into requests.
+    visibleLayerNames: new Set(),
+    // Set of chiplet `path`s currently visible.  Populated by
+    // display-controls.js once techData.chiplets arrives; null means
+    // "render every chiplet" (single-chip designs).
+    visibleChiplets: null,
+    useTrueZ: getCookie('or_use_true_z') === '1',
+    selectableLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    getDbuPerMicron() {
+        return this.techData?.dbu_per_micron || 1000;
+    },
 };
 
 const visibility = {
@@ -108,11 +153,19 @@ const visibility = {
     net_tieoff: true,
     net_scan: true,
     net_analog: true,
+    // Instance sub-shapes
+    inst_names: true,
+    inst_pins: true,
+    inst_pin_names: true,
     // Shapes
     routing: true,
+    routing_segments: true,
+    routing_vias: true,
     special_nets: true,
+    srouting_segments: true,
+    srouting_vias: true,
     pins: true,
-    pin_markers: true,
+    pin_names: true,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -124,11 +177,87 @@ const visibility = {
     tracks_non_pref: false,
     // Module view
     module_view: false,
+    // Misc
+    rulers: true,
+    scale_bar: true,
     // Debug
     debug: false,
 };
 
-const WebSocketTileLayer = createWebSocketTileLayer(visibility);
+// Restore saved visibility state from a previous session.
+try {
+    const saved = getCookie('or_visibility');
+    if (saved) {
+        const parsed = JSON.parse(decodeURIComponent(saved));
+        for (const [k, v] of Object.entries(parsed)) {
+            visibility[k] = !!v;
+        }
+    }
+} catch (_) {
+    // Ignore malformed cookie.
+}
+
+// Selectability mirrors the Qt GUI's display-controls "selectable" column.
+// Defaults to true (everything selectable), matching the Qt GUI.  Only
+// categories that the Qt GUI exposes a selectable checkbox for are listed
+// here; the server treats unspecified keys as selectable.
+const selectability = {
+    stdcells: true,
+    macros: true,
+    pad_input: true,
+    pad_output: true,
+    pad_inout: true,
+    pad_power: true,
+    pad_spacer: true,
+    pad_areaio: true,
+    pad_other: true,
+    phys_fill: true,
+    phys_endcap: true,
+    phys_welltap: true,
+    phys_tie: true,
+    phys_antenna: true,
+    phys_cover: true,
+    phys_bump: true,
+    phys_other: true,
+    std_bufinv: true,
+    std_bufinv_timing: true,
+    std_clock_bufinv: true,
+    std_clock_gate: true,
+    std_level_shift: true,
+    std_sequential: true,
+    std_combinational: true,
+    net_signal: true,
+    net_power: true,
+    net_ground: true,
+    net_clock: true,
+    net_reset: true,
+    net_tieoff: true,
+    net_scan: true,
+    net_analog: true,
+    pins: true,
+    inst_pins: true,
+    placement_blockages: true,
+    routing_obstructions: true,
+};
+
+try {
+    const saved = getCookie('or_selectability');
+    if (saved) {
+        const parsed = JSON.parse(decodeURIComponent(saved));
+        for (const [k, v] of Object.entries(parsed)) {
+            selectability[k] = !!v;
+        }
+    }
+} catch (_) {
+    // Ignore malformed cookie.
+}
+
+// `app` is forwarded so the tile layer can read app.visibleChiplets
+// lazily on every request — the field is populated by display-controls
+// once the server's tech metadata arrives.
+const WebSocketTileLayer = createWebSocketTileLayer(
+    visibility, app.visibleLayerNames, selectability, app.selectableLayers,
+    app);
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -231,6 +360,12 @@ function updateHeatMaps(data) {
 app.updateHeatMaps = updateHeatMaps;
 
 function redrawAllLayers() {
+    // Persist visibility and selectability state to cookies so they survive
+    // page reloads.
+    setCookie('or_visibility', encodeURIComponent(JSON.stringify(visibility)));
+    setCookie('or_selectability',
+              encodeURIComponent(JSON.stringify(selectability)));
+
     // Show/hide modules layer based on module_view visibility
     if (app.modulesLayer) {
         if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
@@ -239,11 +374,11 @@ function redrawAllLayers() {
             app.map.removeLayer(app.modulesLayer);
         }
     }
-    // Show/hide pin markers layer
+    // Show/hide pin markers layer (controlled by Shapes > Pins)
     if (app.pinsLayer) {
-        if (visibility.pin_markers && !app.map.hasLayer(app.pinsLayer)) {
+        if (visibility.pins && !app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.addTo(app.map);
-        } else if (!visibility.pin_markers && app.map.hasLayer(app.pinsLayer)) {
+        } else if (!visibility.pins && app.map.hasLayer(app.pinsLayer)) {
             app.map.removeLayer(app.pinsLayer);
         }
     }
@@ -253,8 +388,25 @@ function redrawAllLayers() {
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
     }
+    // Update ruler and scale bar visibility.
+    if (app.rulerManager) {
+        app.rulerManager.updateVisibility();
+    }
+    if (app.updateScaleBar) {
+        app.updateScaleBar();
+    }
 }
 
+// Debounced wrapper: coalesces back-to-back server pushes (e.g.
+// debug_refresh + debug_paused) into a single redrawAllLayers() call.
+let _redrawRAF = null;
+function scheduleRedrawAllLayers() {
+    if (_redrawRAF !== null) return;
+    _redrawRAF = requestAnimationFrame(() => {
+        _redrawRAF = null;
+        redrawAllLayers();
+    });
+}
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -295,13 +447,66 @@ function createLayoutViewer(container) {
         const { dbuX, dbuY } = latLngToDbu(
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
-        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+        const dbuPerUm = app.getDbuPerMicron();
         const precision = Math.ceil(Math.log10(dbuPerUm));
         const xUm = (dbuX / dbuPerUm).toFixed(precision);
         const yUm = (dbuY / dbuPerUm).toFixed(precision);
         coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
+
+    // Scale bar overlay (bottom-left, above coord bar).
+    const scaleBar = document.createElement('div');
+    scaleBar.id = 'scale-bar';
+    mapDiv.appendChild(scaleBar);
+    const scaleBarLine = document.createElement('div');
+    scaleBarLine.className = 'scale-bar-line';
+    scaleBar.appendChild(scaleBarLine);
+    const scaleBarLabel = document.createElement('span');
+    scaleBarLabel.className = 'scale-bar-label';
+    scaleBar.appendChild(scaleBarLabel);
+
+    function updateScaleBar() {
+        if (!app.designScale || !visibility.scale_bar) {
+            scaleBar.style.display = 'none';
+            return;
+        }
+        scaleBar.style.display = '';
+
+        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+        // Pixels per DBU at current zoom: designScale * 2^zoom.
+        const zoom = app.map.getZoom();
+        const pxPerDbu = app.designScale * Math.pow(2, zoom);
+        const pxPerUm = pxPerDbu * dbuPerUm;
+
+        // Target bar width: ~15% of the map container width.
+        const containerWidth = app.map.getContainer().clientWidth || 400;
+        const targetPx = containerWidth * 0.15;
+        const targetUm = targetPx / pxPerUm;
+
+        // Pick a nice round number: 1, 2, 5, 10, 20, 50, ...
+        const mag = Math.pow(10, Math.floor(Math.log10(targetUm)));
+        const residual = targetUm / mag;
+        let niceUm;
+        if (residual < 1.5) niceUm = 1 * mag;
+        else if (residual < 3.5) niceUm = 2 * mag;
+        else if (residual < 7.5) niceUm = 5 * mag;
+        else niceUm = 10 * mag;
+
+        const barPx = Math.round(niceUm * pxPerUm);
+
+        // Format with appropriate units.
+        let label;
+        if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
+        else if (niceUm >= 1) label = niceUm + ' \u00b5m';
+        else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
+        else label = (niceUm * 1e6) + ' pm';
+
+        scaleBarLine.style.width = barPx + 'px';
+        scaleBarLabel.textContent = label;
+    }
+    app.map.on('zoomend moveend resize', updateScaleBar);
+    app.updateScaleBar = updateScaleBar;
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
@@ -323,6 +528,42 @@ function tclAppend(text, className) {
     app.tclOutputEl.scrollTop = app.tclOutputEl.scrollHeight;
 }
 
+// Browser UX for `exit`/`quit` typed in the Tcl console. The browser
+// override (web_serve.cpp tclExitHandler) sets exit_requested_, and
+// Main.cc calls exit(EXIT_SUCCESS) once waitForStop() returns — so the
+// whole OpenROAD process exits, not just the web session. (Compare
+// `web_server -stop`, which only stops serving and arrives here as a
+// broadcast `type: shutdown` handled below.)
+// window.close() only succeeds when the tab was opened via JS (or via
+// certain launcher integrations); when it fails we replace the page
+// with a terminal overlay so the user knows OpenROAD exited and they
+// can close the tab manually.
+function handleServerShutdown() {
+    // Idempotent: invoked from both the Tcl-eval response (`action: shutdown`)
+    // and the broadcast push (`type: shutdown`); whichever arrives first wins.
+    if (app._shutdownHandled) return;
+    app._shutdownHandled = true;
+    // Disable auto-reconnect and suppress the "disconnected" banner —
+    // the disconnect is intentional.
+    if (app.websocketManager) {
+        app.websocketManager._shutdown = true;
+        app.websocketManager.onPush = () => {};
+    }
+    const overlay = document.createElement('div');
+    overlay.style.cssText =
+        'position:fixed;inset:0;z-index:99999;background:#1e1e1e;color:#ddd;' +
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'font-family:system-ui,sans-serif;font-size:16px;padding:24px;text-align:center;';
+    overlay.innerHTML =
+        '<div style="font-size:22px;margin-bottom:12px;">OpenROAD exited</div>' +
+        '<div style="opacity:0.7;">You can close this tab.</div>';
+    document.body.appendChild(overlay);
+    // Hold the overlay visible long enough for the user to read it before
+    // window.close() fires.  400 ms was below the perceptual threshold and
+    // looked like the tab vanished instantly on `exit`.
+    setTimeout(() => { try { window.close(); } catch (e) { /* ignore */ } }, 1500);
+}
+
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
@@ -330,11 +571,23 @@ function createTclConsole(container) {
         '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
-        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
+        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." spellcheck="false" autocomplete="off" autocapitalize="none" autocorrect="off"/>' +
         '</div>';
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+
+    if (isStaticMode(app)) {
+        el.querySelector('.tcl-input-row').style.display = 'none';
+        const notice = document.createElement('span');
+        notice.className = 'tcl-static-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        notice.textContent = 'Tcl console is not available in saved reports.';
+        app.tclOutputEl.appendChild(notice);
+        return;
+    }
+
     const input = el.querySelector('.tcl-input');
     const completer = new TclCompleter(input, app.websocketManager);
 
@@ -348,15 +601,21 @@ function createTclConsole(container) {
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
             completer.addToHistory(cmd);
             input.value = '';
+            // Log output produced while the command runs streams in
+            // separately as {"type":"log",...} push messages (handled
+            // below in the onPush dispatch).  The eval response only
+            // carries the Tcl return value plus shutdown signaling.
             app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
-                    if (data.output) {
-                        tclAppend(data.output,
-                                  data.is_error ? 'tcl-error' : '');
-                    }
                     if (data.result) {
                         tclAppend(data.result + '\n',
                                   data.is_error ? 'tcl-error' : '');
+                    }
+                    if (data.action === 'shutdown') {
+                        handleServerShutdown();
+                    }
+                    if (!data.is_error && app.drcWidget) {
+                        app.drcWidget.refresh();
                     }
                 })
                 .catch(err => tclAppend(`Error: ${err}\n`, 'tcl-error'));
@@ -371,6 +630,7 @@ const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
 app.updateInspector = updateInspector;
+app.navigateInspector = inspector.navigateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -421,6 +681,10 @@ function createSchematicWidget(container) {
     new SchematicWidget(container, app);
 }
 
+function create3DViewerWidget(container) {
+    app.threeDViewerWidget = new ThreeDViewerWidget(container, app);
+}
+
 function createStubPanel(container, title, description) {
     const el = document.createElement('div');
     el.className = 'stub-panel';
@@ -460,6 +724,11 @@ const defaultLayoutConfig = {
                                 type: 'component',
                                 componentType: 'SchematicWidget',
                                 title: 'Schematic',
+                            },
+                            {
+                                type: 'component',
+                                componentType: '3DViewer',
+                                title: '3D Viewer',
                             },
                         ],
                     },
@@ -530,6 +799,7 @@ app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
 app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
+app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
@@ -547,6 +817,9 @@ if (staticCache) {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 }
+
+// Check initial connection status
+updateStatus();
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -586,6 +859,7 @@ const componentTitles = {
     ClockWidget: 'Clock Tree',
     ChartsWidget: 'Charts',
     SchematicWidget: 'Schematic',
+    '3DViewer': '3D Viewer',
     HelpWidget: 'Help',
     SelectHighlight: 'Select Highlight',
 };
@@ -616,7 +890,12 @@ app.focusComponent = focusComponent;
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    localStorage.setItem('theme', next);
+    applyGLTheme(next);
+    setCookie('or_theme', next);
+    // Also write to localStorage for standalone file:// reports.
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('or_theme', next);
+    }
     // Re-render canvas-based widgets that read theme colors.
     if (app.chartsWidget) app.chartsWidget.render();
     if (app.clockTreeWidget) app.clockTreeWidget.render();
@@ -626,11 +905,81 @@ app.toggleTheme = function() {
 
 createMenuBar(app);
 
+// Debug-graphics pause affordance: appended lazily when the first
+// debug_paused push arrives.  Clicking "Continue" tells the server to
+// release the placer thread.
+function ensureDebugContinueButton() {
+    let btn = document.getElementById('debug-continue-btn');
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.id = 'debug-continue-btn';
+    btn.className = 'debug-continue-btn';
+    btn.textContent = 'Continue';
+    btn.title = 'Advance the debugger (gpl, cts, ...)';
+    btn.addEventListener('click', () => {
+        // Fire-and-forget; server's broadcast tells us when the placer
+        // actually resumed.
+        app.websocketManager.request({ type: 'debug_continue' })
+            .catch(() => {});
+    });
+    document.body.appendChild(btn);
+    return btn;
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+    } else if (msg.type === 'drcUpdated') {
+        if (app._drcUpdateTimeout) {
+            clearTimeout(app._drcUpdateTimeout);
+        }
+        app._drcUpdateTimeout = setTimeout(() => {
+            if (app.drcWidget) {
+                app.drcWidget.refresh();
+            }
+        }, 500);
+    } else if (msg.type === 'debug_paused') {
+        ensureDebugContinueButton().style.display = 'block';
+        // Refetch tiles so the user sees the current paused state.
+        // Use the debounced version so that a debug_refresh arriving
+        // in the same event-loop turn is coalesced (avoids 2x tiles).
+        scheduleRedrawAllLayers();
+        // Fetch debug charts (e.g. GPL HPWL vs iteration).
+        if (app.chartsWidget) {
+            app.websocketManager.request({ type: 'debug_charts' })
+                .then(data => app.chartsWidget.setDebugCharts(data.charts || []))
+                .catch(() => {});
+        }
+    } else if (msg.type === 'debug_resumed') {
+        const btn = document.getElementById('debug-continue-btn');
+        if (btn) btn.style.display = 'none';
+    } else if (msg.type === 'debug_refresh') {
+        // Instance positions changed — clear the stale Leaflet highlight
+        // outline (the tile-based highlight updates automatically).
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        scheduleRedrawAllLayers();
+    } else if (msg.type === 'log') {
+        // Logger output from the main Tcl thread (e.g. global_placement).
+        // The text already contains \n between lines from the batch; strip
+        // any trailing newline to avoid a blank line at the end.
+        let text = msg.text;
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text) tclAppend(text + '\n', '');
+    } else if (msg.type === 'shutdown') {
+        // Server is stopping intentionally (web_server -stop).
+        // Disable auto-reconnect and show a clear message. Note that
+        // when the user typed `exit`/`quit` in the browser, the eval
+        // response's `action: shutdown` already ran handleServerShutdown
+        // (which set _shutdown and replaced onPush with a no-op), so
+        // this branch only runs in the external-stop case.
+        app.websocketManager._shutdown = true;
+        statusDiv.innerHTML = '<div class="disconnected-banner">Server stopped</div>';
+        statusDiv.style.display = 'block';
     }
 };
 
@@ -643,6 +992,7 @@ app.websocketManager.readyPromise.then(async () => {
         ]);
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
+        updateDocumentTitle(techData.block_name);
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
@@ -712,9 +1062,26 @@ app.websocketManager.readyPromise.then(async () => {
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = v ? 1 : 0;
+                vf[k] = !!v;
             }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), visible_layers: [...app.visibleLayers], ...vf })
+            // Selectability is sent with `s_` prefix to mirror the flat
+            // visibility key scheme; the server parses both columns.
+            for (const [k, v] of Object.entries(selectability)) {
+                vf['s_' + k] = !!v;
+            }
+            const selectRequest = {
+                type: 'select',
+                dbu_x,
+                dbu_y,
+                zoom: Math.round(app.map.getZoom()),
+                visible_layers: [...app.visibleLayerNames],
+                selectable_layers: [...app.selectableLayers],
+                ...vf,
+            };
+            if (app.visibleChiplets instanceof Set) {
+                selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            app.websocketManager.request(selectRequest)
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
@@ -808,7 +1175,8 @@ app.websocketManager.readyPromise.then(async () => {
             });
         }
 
-        populateDisplayControls(app, visibility, WebSocketTileLayer,
+        populateDisplayControls(app, visibility, selectability,
+                                WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
         updateHeatMaps(heatMapData);
 

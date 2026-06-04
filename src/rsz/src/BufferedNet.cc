@@ -497,12 +497,12 @@ BufferedNetPtr Resizer::makeBufferedNet(const sta::Pin* drvr_pin,
                                         const sta::Scene* corner)
 {
   switch (estimate_parasitics_->getParasiticsSrc()) {
-    case est::ParasiticsSrc::placement:
+    case est::ParasiticsSrc::kPlacement:
       return makeBufferedNetSteiner(drvr_pin, corner);
-    case est::ParasiticsSrc::global_routing:
-    case est::ParasiticsSrc::detailed_routing:
+    case est::ParasiticsSrc::kGlobalRouting:
+    case est::ParasiticsSrc::kDetailedRouting:
       return makeBufferedNetGroute(drvr_pin, corner);
-    case est::ParasiticsSrc::none:
+    case est::ParasiticsSrc::kNone:
       return nullptr;
   }
   return nullptr;
@@ -530,7 +530,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
-  if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
+  if (pins && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
     for (const sta::Pin* pin : *pins) {
       if (network->isLoad(pin)) {
@@ -585,7 +585,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
       }
     }
   }
-  if (bnet && from != est::SteinerTree::null_pt
+  if (bnet && from != est::SteinerTree::kNullPt
       && tree->location(to) != tree->location(from)) {
     bnet = make_shared<BufferedNet>(BufferedNetType::wire,
                                     tree->location(from),
@@ -606,7 +606,7 @@ BufferedNetPtr Resizer::makeBufferedNetSteiner(const sta::Pin* drvr_pin,
   est::SteinerTree* tree = estimate_parasitics_->makeSteinerTree(drvr_pin);
   if (tree) {
     const SteinerPt drvr_pt = tree->drvrPt();
-    if (drvr_pt != est::SteinerTree::null_pt) {
+    if (drvr_pt != est::SteinerTree::kNullPt) {
       const int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);
       for (int i = 0; i < branch_count; i++) {
@@ -619,7 +619,7 @@ BufferedNetPtr Resizer::makeBufferedNetSteiner(const sta::Pin* drvr_pin,
       }
       SteinerPtPinVisited pins_visited;
       bnet = rsz::makeBufferedNetFromTree(tree,
-                                          est::SteinerTree::null_pt,
+                                          est::SteinerTree::kNullPt,
                                           drvr_pt,
                                           adjacents,
                                           0,
@@ -654,8 +654,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
-  if (sink_map.contains(to_loc)
-      && pins_visited.find(to_loc) == pins_visited.end()) {
+  if (sink_map.contains(to_loc) && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
     for (BufferedNetPtr sink : sink_map[to_loc]) {
       if (bnet) {
@@ -694,7 +693,7 @@ static BufferedNetPtr makeBufferedNetFromTree2(
       }
     }
   }
-  if (bnet && from != est::SteinerTree::null_pt
+  if (bnet && from != est::SteinerTree::kNullPt
       && tree->location(to) != tree->location(from)) {
     bnet = make_shared<BufferedNet>(BufferedNetType::wire,
                                     tree->location(from),
@@ -727,7 +726,7 @@ BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
       = estimate_parasitics_->makeSteinerTree(root, sink_points);
   if (tree) {
     SteinerPt drvr_pt = tree->drvrPt();
-    if (drvr_pt != est::SteinerTree::null_pt) {
+    if (drvr_pt != est::SteinerTree::kNullPt) {
       int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);
       for (int i = 0; i < branch_count; i++) {
@@ -740,7 +739,7 @@ BufferedNetPtr Resizer::makeBufferedNetSteinerOverBnets(
       }
       SteinerPtPinVisited pins_visited;
       bnet = rsz::makeBufferedNetFromTree2(tree,
-                                           est::SteinerTree::null_pt,
+                                           est::SteinerTree::kNullPt,
                                            drvr_pt,
                                            adjacents,
                                            0,
@@ -986,7 +985,7 @@ static BufferedNetPtr makeBufferedNet(
     sta::dbNetwork* db_network,
     RoutePtSet& visited)
 {
-  if (visited.find(to) != visited.end()) {
+  if (visited.contains(to)) {
     debugPrint(logger, RSZ, "groute_bnet", 2, "Loop found in groute");
     return nullptr;
   }

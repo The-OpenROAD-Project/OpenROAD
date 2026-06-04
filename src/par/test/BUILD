@@ -13,12 +13,6 @@ COMPULSORY_TESTS = [
     "write_artnet",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "partition_gcd",
-    "write_artnet",
-]
-
 ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
@@ -82,7 +76,6 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

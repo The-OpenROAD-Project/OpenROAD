@@ -7,6 +7,7 @@ or_integration_tests(
     clust02
     clust03
     cluster_place01
+    mbff_hier
     mbff_orig_name
     convergence01
     core01
@@ -14,7 +15,6 @@ or_integration_tests(
     diverge01
     error01
     incremental01
-    incremental02
     nograd01
     simple01
     simple01-obs
@@ -22,7 +22,9 @@ or_integration_tests(
     simple01-ref
     simple01-skip-io
     simple01-td
+    simple01-td-net-percentage
     simple01-td-tune
+    simple01-td-repair
     simple01-uniform
     simple02
     simple02-rd
@@ -37,6 +39,8 @@ or_integration_tests(
     simple09
     simple10
     region01
+  PASSFAIL_TESTS
+    incremental02
 )
 
 

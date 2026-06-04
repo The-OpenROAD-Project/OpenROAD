@@ -5,11 +5,11 @@
 #include <memory>
 #include <string>
 
-#include "../../src/snapper.h"
 #include "MplTest.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "snapper.h"
 
 namespace mpl {
 namespace {

@@ -24,6 +24,9 @@ cc_library(
         "src/TreeBuilder.h",
         "src/Util.h",
     ],
+    includes = [
+        "src",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
@@ -60,7 +63,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -92,11 +95,8 @@ cc_library(
         ":cts",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
-        "//src/est",
         "//src/gui",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -151,5 +151,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/cts/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/cts/test:__pkg__",
+    ],
 )
