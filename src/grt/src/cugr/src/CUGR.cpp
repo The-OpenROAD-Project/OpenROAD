@@ -128,6 +128,11 @@ float CUGR::calculatePartialSlack()
     net->setSlack(slack);
   }
 
+  // Re-mark res-aware nets using this (routing) slack. Must run here:
+  // the loop below overwrites non-critical nets' slack with a large
+  // value for sorting, so the real slack is only available now.
+  markResAwareNets(critical_nets_percentage_);
+
   std::ranges::stable_sort(slacks);
 
   // Find the slack threshold based on the percentage of critical nets
@@ -168,6 +173,12 @@ void CUGR::setInitialNetSlacks()
     float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
   }
+  // PatternRoute uses (noisier) placement slack, so widen the critical
+  // set; later passes re-mark and tighten with routing slack.
+  markResAwareNets(
+      std::min(100.0f, critical_nets_percentage_ * kPatternRouteWiden));
+}
+
 void CUGR::markResAwareNets(const float percentage)
 {
   if (!resistance_aware_) {
@@ -748,6 +759,19 @@ NetRouteMap CUGR::getRoutes()
 
 void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
+  if (resistance_aware_) {
+    // Multi-factor res-aware ordering (slack + resistance + fanout +
+    // length): critical nets route first so they get the best topology
+    // and first pick of upper-metal capacity. (Mimicking FR's full
+    // netpinOrderInc tuple — clock/NDR prefix + length/minX tiebreakers
+    // — was measured to regress the maze-engaged asap7 case, so only the
+    // score is used.)
+    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+      return getResAwareScore(gr_nets_[lhs].get())
+             < getResAwareScore(gr_nets_[rhs].get());
+    });
+    return;
+  }
   std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
     if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
       return false;
