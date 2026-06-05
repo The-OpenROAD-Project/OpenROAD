@@ -413,7 +413,6 @@ void GlobalRouter::globalRoute(bool save_guides)
       odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
       cugr_->setCongestionIterations(congestion_iterations_);
-      cugr_->setResistanceAware(resistance_aware_);
       if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
         cugr_->setCriticalNetsPercentage(0);
       }
@@ -2993,6 +2992,8 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
+  // CUGR can produce congested guides that DRT can handle, resulting
+  // on DRC free final routing.
   bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
