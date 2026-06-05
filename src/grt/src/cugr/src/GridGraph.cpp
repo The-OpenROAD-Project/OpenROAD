@@ -549,8 +549,8 @@ CostT GridGraph::getViaResistanceCost(const int lower_layer) const
   return constants_.resistance_weight * via_r / ref;
 }
 
-double GridGraph::getNetResistance(
-    const std::shared_ptr<GRTreeNode>& tree) const
+double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                                   const std::vector<int>& ndr_widths) const
 {
   if (!tree) {
     return 0.0;
@@ -562,7 +562,14 @@ double GridGraph::getNetResistance(
         // Wire segment on a single layer.
         const int layer = node->getLayerIdx();
         const MetalLayer& metal_layer = design_->getLayer(layer);
-        const double width = metal_layer.getWidth();
+        // NDR nets use a wider, lower-resistance wire; fall back to the
+        // layer default when no NDR width is set on this layer. Matches the
+        // width getWireResistanceCost uses, so ordering and cost agree.
+        const int ndr_width
+            = (layer >= 0 && layer < static_cast<int>(ndr_widths.size()))
+                  ? ndr_widths[layer]
+                  : 0;
+        const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
         if (width <= 0.0) {
           continue;
         }

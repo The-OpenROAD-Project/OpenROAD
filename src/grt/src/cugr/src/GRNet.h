@@ -98,6 +98,8 @@ class GRNet
     return ndr_widths_[layer_index];
   }
 
+  const std::vector<int>& getNdrWidths() const { return ndr_widths_; }
+
   /**
    * @brief Checks whether the net has an active demand-scaling NDR.
    *
@@ -123,6 +125,9 @@ class GRNet
   {
     soft_ndr_ = true;
     std::ranges::fill(ndr_costs_, 1.0);
+    // Drop the NDR width too, so the res-aware cost reverts to the default
+    // wire width after demotion (keeps getNdrWidth in sync with hasNdr).
+    std::ranges::fill(ndr_widths_, 0);
   }
 
   bool isSoftNdr() const { return soft_ndr_; }

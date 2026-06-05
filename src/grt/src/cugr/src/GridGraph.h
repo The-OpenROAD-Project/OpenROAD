@@ -194,7 +194,11 @@ class GridGraph
   // the tech leaves cut-layer resistance unpopulated.
   CostT getViaResistanceCost(int lower_layer) const;
 
-  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree) const;
+  // Total tree resistance (wire + via) for res-aware ordering. `ndr_widths`
+  // is the net's per-layer NDR wire width (0 => layer default), matching the
+  // width used by getWireResistanceCost so ordering and cost agree.
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                          const std::vector<int>& ndr_widths) const;
 
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 

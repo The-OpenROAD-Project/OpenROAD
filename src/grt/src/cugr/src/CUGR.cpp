@@ -194,7 +194,8 @@ void CUGR::markResAwareNets(const float percentage)
 
   for (const auto& net : gr_nets_) {
     const auto& tree = net->getRoutingTree();
-    const float resistance = grid_graph_->getNetResistance(tree);
+    const float resistance
+        = grid_graph_->getNetResistance(tree, net->getNdrWidths());
     net->setResistance(resistance);
     // Routed-tree planar length when available; bbox half-perimeter is
     // only a fallback before the first route exists (PatternRoute).
