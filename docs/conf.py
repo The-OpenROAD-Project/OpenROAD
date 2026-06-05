@@ -35,6 +35,7 @@ extensions = [
     "myst_parser",
     "sphinxcontrib.mermaid",
     "sphinx_tabs.tabs",
+    "sphinx_llm.txt",
 ]
 
 myst_enable_extensions = [
@@ -111,8 +112,6 @@ mermaid_verbose = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_extra_path = ["llms.txt", "llms-full.txt"]
-
 html_theme = "sphinx_book_theme"
 
 html_theme_options = {
@@ -181,10 +180,6 @@ def setup(app):
 
     # for populating OR Messages page.
     command = "python getMessages.py"
-    _ = os.popen(command).read()
-
-    # generate llms.txt and llms-full.txt for LLM documentation discovery
-    command = "python generate_llms_txt.py"
     _ = os.popen(command).read()
 
     if not os.path.exists("../_readthedocs/html/doxygen_output"):

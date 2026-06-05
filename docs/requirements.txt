@@ -6,4 +6,4 @@ sphinxcontrib-mermaid
 sphinx-book-theme
 sphinx-copybutton
 sphinx-tabs
-pyyaml
+sphinx-llm

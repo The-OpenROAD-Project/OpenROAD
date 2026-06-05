@@ -1,7 +1,3 @@
-# generated llms.txt files (build artifacts)
-llms.txt
-llms-full.txt
-
 # dont save intermediate results
 md/man2/*md
 md/man3/*md
