@@ -399,6 +399,12 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
+  // First non-zero sheet / via resistance across routing layers: the
+  // reference for the res-aware costs. Scanning (vs. always layer 0) keeps
+  // the cost alive on techs that leave the bottom layer's resistance
+  // undefined.
+  double ref_resistance_ = 0.0;
+  double ref_via_resistance_ = 0.0;
 };
 
 template <typename Type>

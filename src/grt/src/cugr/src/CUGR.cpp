@@ -182,7 +182,7 @@ void CUGR::setInitialNetSlacks()
 
 void CUGR::markResAwareNets(const float percentage)
 {
-  if (!resistance_aware_) {
+  if (!resistance_aware_ || percentage <= 0.0f) {
     return;
   }
 

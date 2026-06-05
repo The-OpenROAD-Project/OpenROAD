@@ -61,6 +61,13 @@ GridGraph::GridGraph(const Design* design,
     layer_names_[layer_index] = layer.getName();
     layer_directions_[layer_index] = layer.getDirection();
     layer_min_lengths_[layer_index] = layer.getMinLength();
+    // First non-zero sheet/via resistance is the res-aware cost reference.
+    if (ref_resistance_ <= 0.0 && layer.getResistance() > 0.0) {
+      ref_resistance_ = layer.getResistance();
+    }
+    if (ref_via_resistance_ <= 0.0 && layer.getViaResistance() > 0.0) {
+      ref_via_resistance_ = layer.getViaResistance();
+    }
   }
 
   unit_length_wire_cost_ = design->getUnitLengthWireCost();
@@ -503,9 +510,10 @@ CostT GridGraph::getWireResistanceCost(const int layer_index,
   // NDR nets carry wider, lower-resistance wires; fall back to the layer
   // default when the net sets no NDR width on this layer (wire_width == 0).
   const double width = wire_width > 0 ? wire_width : layer.getWidth();
-  // Layer-0 sheet resistance is the reference (matches FastRoute); 0 if
-  // any input is undefined.
-  const double ref = design_->getLayer(0).getResistance();
+  // First non-zero routing-layer sheet resistance is the reference (normally
+  // layer 0, matching FastRoute; robust if the bottom layer leaves R
+  // undefined). 0 if no layer defines a resistance.
+  const double ref = ref_resistance_;
   if (width <= 0.0 || ref <= 0.0 || layer.getResistance() <= 0.0) {
     return 0;
   }
@@ -530,7 +538,9 @@ CostT GridGraph::getWireResistanceCost(const int layer_index,
 
 CostT GridGraph::getViaResistanceCost(const int lower_layer) const
 {
-  const double ref = design_->getLayer(0).getViaResistance();
+  // First non-zero via resistance is the reference (normally layer 0; robust
+  // if the bottom via leaves its resistance undefined).
+  const double ref = ref_via_resistance_;
   const double via_r = design_->getLayer(lower_layer).getViaResistance();
   // Techs that leave cut-layer resistance unpopulated make this 0
   if (ref <= 0.0 || via_r <= 0.0) {
