@@ -1020,7 +1020,8 @@ void CUGR::removeNet(odb::dbNet* db_net)
 
   GRNet* gr_net = it->second;
   if (gr_net->getRoutingTree()) {
-    grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
+                                 gr_net->getNdrCosts());
   }
 
   int index = gr_net->getIndex();
