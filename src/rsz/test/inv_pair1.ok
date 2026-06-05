@@ -45,4 +45,4 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
     final |    -10.5% |      53 |       43 |         0
 -------------------------------------------------------
 rsz path (repair_timing) inserted inverters: yes
-gpl path (fully_rebuffer) inserted inverters: yes
+gpl path (fully_rebuffer) ran without error: yes

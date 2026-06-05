@@ -1014,24 +1014,16 @@ void Rebuffer::insertInverterOptions(BufferedNetSeq& opts, int level)
 
 void Rebuffer::insertInverterCandidates(BnetSeq& opts, int level)
 {
-  if (opts.empty() || resizer_->inverterCells().empty()) {
+  if (opts.empty() || inverter_sizes_.empty()) {
     return;
   }
   BnetSeq inv_opts;
-  inv_opts.reserve(opts.size() * resizer_->inverterCells().size());
+  inv_opts.reserve(opts.size() * inverter_sizes_.size());
 
   // bufferDelay on an inverter reads arrival_paths_[flipped_rf]
   bool arrival_path_available[sta::RiseFall::index_count] = {false, false};
   for (int rf_idx : sta::RiseFall::rangeIndex()) {
     arrival_path_available[rf_idx] = (arrival_paths_[rf_idx] != nullptr);
-  }
-
-  std::vector<std::pair<sta::LibertyPort*, sta::LibertyPort*>> inv_ports;
-  inv_ports.reserve(resizer_->inverterCells().size());
-  for (sta::LibertyCell* inv_cell : resizer_->inverterCells()) {
-    sta::LibertyPort *in, *out;
-    inv_cell->bufferPorts(in, out);
-    inv_ports.emplace_back(in, out);
   }
 
   for (const BnetPtr& opt : opts) {
@@ -1049,13 +1041,14 @@ void Rebuffer::insertInverterCandidates(BnetSeq& opts, int level)
         continue;
       }
     }
-    for (size_t i = 0; i < resizer_->inverterCells().size(); i++) {
-      sta::LibertyCell* inv_cell = resizer_->inverterCells()[i];
-      sta::LibertyPort* in = inv_ports[i].first;
-      sta::LibertyPort* out = inv_ports[i].second;
-      if (in == nullptr || out == nullptr) {
+    for (const BufferSize& inv_size : inverter_sizes_) {
+      // Skip inverters that cannot legally drive the downstream load,
+      // mirroring the buffer path in insertBufferOptions.
+      if (!bufferSizeCanDriveLoad(inv_size, opt)) {
         continue;
       }
+      sta::LibertyCell* inv_cell = inv_size.cell;
+      sta::LibertyPort* out = inv_size.out;
       const float load_cap = opt->cap() + out->capacitance();
       const FixedDelay inv_delay
           = bufferDelay(inv_cell, opt->slackTransition(), load_cap);
@@ -1243,13 +1236,18 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               for (BnetPtr& o : opts) {
                 bucketed[o->parity()].push_back(std::move(o));
               }
+              pruneCapVsAreaOptions(sta_, bucketed[0]);
+              pruneCapVsAreaOptions(sta_, bucketed[1]);
+              // Each bucket is cap-ascending after pruning; merge (not
+              // concatenate) so opts stays globally cap-sorted, as both
+              // insertBufferOptions and the timing-DP merge path assume.
               opts.clear();
-              for (BnetSeq& b : bucketed) {
-                pruneCapVsAreaOptions(sta_, b);
-                for (BnetPtr& o : b) {
-                  opts.push_back(std::move(o));
-                }
-              }
+              opts.reserve(bucketed[0].size() + bucketed[1].size());
+              auto cap_less = [](const BnetPtr& a, const BnetPtr& b) {
+                return a->cap() < b->cap();
+              };
+              std::ranges::merge(
+                  bucketed[0], bucketed[1], std::back_inserter(opts), cap_less);
             } else {
               pruneCapVsAreaOptions(sta_, opts);
             }
@@ -1567,8 +1565,8 @@ void Rebuffer::insertBufferOptions(
 
   for (BufferSize buffer_size : buffer_sizes_) {
     sta::LibertyCell* buffer_cell = buffer_size.cell;
-    sta::LibertyPort *in, *out;
-    buffer_cell->bufferPorts(in, out);
+    sta::LibertyPort* in = buffer_size.in;
+    sta::LibertyPort* out = buffer_size.out;
     pass_through(in->capacitance());
 
     // Per-bucket best load_opt.
@@ -1650,11 +1648,35 @@ void Rebuffer::insertBufferOptions(
       sta::LibertyPort *in, *out;
       exemplar_cell->bufferPorts(in, out);
 
+      // An inverter exemplar flips the upstream transition (below); the next
+      // DP level reads arrival_paths_ for that flipped transition, so guard
+      // against it being null -- mirrors insertInverterCandidates.
+      bool arrival_path_available[sta::RiseFall::index_count] = {false, false};
+      for (int rf_idx : sta::RiseFall::rangeIndex()) {
+        arrival_path_available[rf_idx] = (arrival_paths_[rf_idx] != nullptr);
+      }
+
       float best_area = sta::INF;
       BnetPtr best_option;
       for (const BnetPtr& load_opt : opts) {
         if (load_opt->area() >= best_area) {
           continue;
+        }
+        if (exemplar_is_inv) {
+          const sta::RiseFallBoth* flipped_rf
+              = flipRiseFallBoth(load_opt->slackTransition());
+          bool flipped_safe = true;
+          if (flipped_rf) {
+            for (auto rf1 : flipped_rf->range()) {
+              if (!arrival_path_available[rf1->index()]) {
+                flipped_safe = false;
+                break;
+              }
+            }
+          }
+          if (!flipped_safe) {
+            continue;
+          }
         }
 
         const FixedDelay cell_delay
@@ -1743,6 +1765,8 @@ void Rebuffer::init()
     cell->bufferPorts(in, out);
     buffer_sizes_.push_back(BufferSize{
         .cell = cell,
+        .in = in,
+        .out = out,
         .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
         .margined_max_cap = 0.0f,
         .driver_resistance = out->driveResistance(),
@@ -1758,8 +1782,13 @@ void Rebuffer::init()
     for (sta::LibertyCell* inv : resizer_->inverterCells()) {
       sta::LibertyPort *in, *out;
       inv->bufferPorts(in, out);
+      if (in == nullptr || out == nullptr) {
+        continue;
+      }
       inverter_sizes_.push_back(BufferSize{
           .cell = inv,
+          .in = in,
+          .out = out,
           .intrinsic_delay = FixedDelay(out->intrinsicDelay(sta_), resizer_),
           .margined_max_cap = 0.0f,
           .driver_resistance = out->driveResistance(),

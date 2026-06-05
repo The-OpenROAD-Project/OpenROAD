@@ -132,6 +132,8 @@ class Rebuffer : public sta::dbStaState
   struct BufferSize
   {
     sta::LibertyCell* cell;
+    sta::LibertyPort* in;
+    sta::LibertyPort* out;
     FixedDelay intrinsic_delay;
     float margined_max_cap;
     float driver_resistance;
