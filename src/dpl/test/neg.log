@@ -1,0 +1,49 @@
+OpenROAD 26Q2-1860-g5293d481c4 
+Features included (+) or not (-): +GPU +GUI +Python
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 11 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0131]     Created 7 components and 35 component-terminals.
+master:MOCK_DOUBLE height:5600 top_has_pwr:0 top_has_gnd:0 bot_has_pwr:0 bot_has_gnd:0
+master:MOCK_QUAD height:11200 top_has_pwr:0 top_has_gnd:0 bot_has_pwr:0 bot_has_gnd:0
+master:MOCK_SINGLE height:2800 top_has_pwr:0 top_has_gnd:0 bot_has_pwr:0 bot_has_gnd:0
+master:MOCK_TRIPLE height:8400 top_has_pwr:0 top_has_gnd:0 bot_has_pwr:0 bot_has_gnd:0
+[INFO DPL-0388] Cell height distribution (4 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 3 cells
+[INFO DPL-0389]   height 2.800 um: 1 cells
+[INFO DPL-0389]   height 4.200 um: 1 cells
+[INFO DPL-0389]   height 5.600 um: 2 cells
+[INFO DPL-0006] Core area: 108.53 um^2, Instances area: 17.02 um^2, Utilization: 15.7%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 17.02 um^2, Utilization: 15.7%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (4 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 3 cells
+[INFO DPL-0393]   height 2 row(s): 1 cells
+[INFO DPL-0393]   height 3 row(s): 1 cells
+[INFO DPL-0393]   height 4 row(s): 2 cells
+Pause after initFromDb.
+Committing post-init positions to odb; debug move line drawings will exclude gpl-to-init displacement.
+Pause after initialization: Abacus skipped.
+Pause before negotiation phase 1.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+[neg-search 1/50] q2 master=MOCK_QUAD site=QuadHeightSite extended_search_rows.size=3 seed_valid=true nearest_below_step=4 nearest_above_step=-1 rej_oob=32 rej_dead=0 rej_site=6 rej_rail=0 win_y=[0,12) (rows=12, below_cell=0, above_cell=8) win_x=[-14,27) (sites=41, half=20) row_search_cap=20 row_search_window=5 cell.height=4 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=0 init_x=6 cur_y=0 cur_x=6
+Pause at placing of cell q2. orig=(2280,0) target=(2280,11200) dbu. rowidx=4.
+[neg-search 2/50] t1 master=MOCK_TRIPLE site=TripleHeightSite extended_search_rows.size=4 seed_valid=true nearest_below_step=3 nearest_above_step=-1 rej_oob=21 rej_dead=0 rej_site=6 rej_rail=0 win_y=[0,12) (rows=12, below_cell=0, above_cell=9) win_x=[-13,28) (sites=41, half=20) row_search_cap=15 row_search_window=5 cell.height=3 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=0 init_x=7 cur_y=0 cur_x=7
+Pause at placing of cell t1. orig=(2660,0) target=(380,0) dbu. rowidx=0.
+[neg-search 3/50] q1 master=MOCK_QUAD site=QuadHeightSite extended_search_rows.size=3 seed_valid=true nearest_below_step=4 nearest_above_step=-1 rej_oob=32 rej_dead=0 rej_site=6 rej_rail=0 win_y=[0,12) (rows=12, below_cell=0, above_cell=8) win_x=[-15,26) (sites=41, half=20) row_search_cap=20 row_search_window=5 cell.height=4 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=0 init_x=5 cur_y=0 cur_x=5
+Pause at placing of cell q1. orig=(1900,0) target=(1900,0) dbu. rowidx=0.
+[neg-search 4/50] d1 master=MOCK_DOUBLE site=DoubleHeightSite extended_search_rows.size=6 seed_valid=true nearest_below_step=2 nearest_above_step=-1 rej_oob=10 rej_dead=0 rej_site=5 rej_rail=0 win_y=[0,12) (rows=12, below_cell=0, above_cell=10) win_x=[-12,29) (sites=41, half=20) row_search_cap=10 row_search_window=5 cell.height=2 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=0 init_x=8 cur_y=0 cur_x=8
+Pause at placing of cell d1. orig=(3040,0) target=(4940,0) dbu. rowidx=0.
+[neg-search 5/50] s2 master=MOCK_SINGLE site=FreePDK45_38x28_10R_NP_162NW_34O extended_search_rows.size=7 seed_valid=true nearest_below_step=1 nearest_above_step=1 rej_oob=4 rej_dead=0 rej_site=0 rej_rail=0 win_y=[0,7) (rows=7, below_cell=1, above_cell=5) win_x=[-11,30) (sites=41, half=20) row_search_cap=5 row_search_window=5 cell.height=1 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=1 init_x=9 cur_y=1 cur_x=9
+Pause at placing of cell s2. orig=(3420,2800) target=(3420,2800) dbu. rowidx=1.
+[neg-search 6/50] s1 master=MOCK_SINGLE site=FreePDK45_38x28_10R_NP_162NW_34O extended_search_rows.size=6 seed_valid=true nearest_below_step=1 nearest_above_step=-1 rej_oob=5 rej_dead=0 rej_site=0 rej_rail=0 win_y=[0,6) (rows=6, below_cell=0, above_cell=5) win_x=[-11,30) (sites=41, half=20) row_search_cap=5 row_search_window=5 cell.height=1 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=0 init_x=9 cur_y=0 cur_x=9
+Pause at placing of cell s1. orig=(3420,0) target=(3420,0) dbu. rowidx=0.
+[neg-search 7/50] s3 master=MOCK_SINGLE site=FreePDK45_38x28_10R_NP_162NW_34O extended_search_rows.size=8 seed_valid=true nearest_below_step=1 nearest_above_step=1 rej_oob=3 rej_dead=0 rej_site=0 rej_rail=0 win_y=[0,8) (rows=8, below_cell=2, above_cell=5) win_x=[-10,31) (sites=41, half=20) row_search_cap=5 row_search_window=5 cell.height=1 cell.width=4 max_disp_y=100 rail_type=kVss rail_type_flipped=kVdd flippable=true fence_id=-1 init_y=2 init_x=10 cur_y=2 cur_x=10
+Pause at placing of cell s3. orig=(3800,5600) target=(3800,5600) dbu. rowidx=2.

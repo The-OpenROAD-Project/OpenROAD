@@ -1250,12 +1250,11 @@ RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
       return RowRejection::kDeadRow;
     }
   }
-  // Bottom-row site type must match the cell's declared site. Upper rows
-  // of a multi-height cell legitimately span heterogeneous row types in
-  // hybrid-row designs (the cell's master declares one site, matching the
-  // bottom row, and is designed to cover rows of differing types above).
-  // Rail/power compatibility is enforced separately by the rail check
-  // below; this matches CheckPlacement's first-row-only site check.
+  // Bottom-row site type must match the cell's declared site. The returned
+  // orientation also implicitly handles rail alignment for single-row
+  // cells: R0 vs MX flips the cell's power pins so a VSS-bottom master can
+  // legally land on an MX (VDD-bottom) row, etc. Matches the first-row-only
+  // site check in Opendp::checkPixels / CheckPlacement.
   if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr
@@ -1264,18 +1263,21 @@ RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
       return RowRejection::kSiteTypeMismatch;
     }
   }
-  const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
-  const bool bottom_rail_ok
-      = (row_bottom_rail == cell.rail_type)
-        || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
-  if (!bottom_rail_ok) {
-    return RowRejection::kRailMismatch;
-  }
-  // For multi-row cells, also verify the master's power-pin stack lines
-  // up with the PDN rail stack across the entire span. Mirrors the check
-  // in Opendp::isPlacementLegal(); without it, the bottom-rail check
-  // above can let wrong-parity landings through on cells whose top and
-  // bottom rails differ.
+  //
+  // const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
+  // const bool bottom_rail_ok
+  //     = (row_bottom_rail == cell.rail_type)
+  //       || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
+  // if (!bottom_rail_ok) {
+  //   return RowRejection::kRailMismatch;
+  // }
+  //
+
+  // For multi-row cells, verify the master's power-pin stack lines up with
+  // the PDN rail stack across the entire span. Mirrors the check in
+  // Opendp::checkPixels (which diamond search ultimately uses); the
+  // single-row rail constraint is already captured by getSiteOrientation
+  // above (orientation encodes which power pin sits at the bottom).
   if (cell.db_inst != nullptr && network_ != nullptr && opendp_ != nullptr) {
     if (Node* node = network_->getNode(cell.db_inst)) {
       if (node->getMaster()->isMultiRow()
