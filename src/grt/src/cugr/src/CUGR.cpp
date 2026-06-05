@@ -292,7 +292,7 @@ std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
   std::vector<int> widths(std::max(num_layers, 0), 0);
   odb::dbTechNonDefaultRule* ndr = db_net->getNonDefaultRule();
   if (ndr == nullptr) {
-    return widths;
+    return {};
   }
   std::vector<odb::dbTechLayerRule*> layer_rules;
   ndr->getLayerRules(layer_rules);
