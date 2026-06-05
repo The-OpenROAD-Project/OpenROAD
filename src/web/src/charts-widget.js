@@ -41,11 +41,24 @@ export function hitTestColumn(bars, chartArea, mx, my) {
     return null;
 }
 
+// Map a count to a [0,1] vertical fraction.  Log mode uses log10(c+1) so a
+// count of 0 maps to 0 and the fraction is monotonic over all integers.
+function countFraction(count, yMax, logY) {
+    if (logY) {
+        return Math.log10(count + 1) / Math.log10(yMax + 1);
+    }
+    return count / yMax;
+}
+
 // Pure layout computation — extracted for testability.
-export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight) {
+// `opts.logY` switches the Y axis to a log scale (useful for highly skewed
+// distributions like net fanout).
+export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight,
+                                       opts = {}) {
+    const logY = !!opts.logY;
     const bins = histogramData?.bins;
     if (!bins || bins.length === 0) {
-        return { bars: [], yMax: 0, yTicks: [], chartArea: null };
+        return { bars: [], yMax: 0, yTicks: [], chartArea: null, logY };
     }
 
     const chartLeft = kLeftMargin;
@@ -56,7 +69,7 @@ export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight)
     const chartHeight = chartBottom - chartTop;
 
     if (chartWidth <= 0 || chartHeight <= 0) {
-        return { bars: [], yMax: 0, yTicks: [], chartArea: null };
+        return { bars: [], yMax: 0, yTicks: [], chartArea: null, logY };
     }
 
     const chartArea = { left: chartLeft, right: chartRight,
@@ -70,14 +83,15 @@ export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight)
     if (maxCount === 0) maxCount = 1;
 
     // Compute nice Y-axis max and ticks
-    const { yMax, yTicks } = computeYAxis(maxCount);
+    const { yMax, yTicks }
+        = logY ? computeLogYAxis(maxCount) : computeYAxis(maxCount);
 
     // Compute bar rectangles
     const barWidth = (chartWidth - kBarGap * (bins.length - 1)) / bins.length;
     const bars = [];
     for (let i = 0; i < bins.length; i++) {
         const bin = bins[i];
-        const barHeight = (bin.count / yMax) * chartHeight;
+        const barHeight = countFraction(bin.count, yMax, logY) * chartHeight;
         bars.push({
             x: chartLeft + i * (barWidth + kBarGap),
             y: chartBottom - barHeight,
@@ -90,10 +104,13 @@ export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight)
         });
     }
 
-    return { bars, yMax, yTicks, chartArea };
+    return { bars, yMax, yTicks, chartArea, logY };
 }
 
 // Compute nice Y-axis max and tick values.
+// Picks a tick interval from {1, 2, 5} × 10^n targeting ~kTargetTicks ticks,
+// then rounds yMax up to the nearest interval so the tallest bar fills most
+// of the chart instead of leaving the upper half empty.
 function computeYAxis(maxCount) {
     if (maxCount <= 10) {
         const ticks = [];
@@ -101,27 +118,43 @@ function computeYAxis(maxCount) {
         return { yMax: maxCount, yTicks: ticks };
     }
 
-    // Snap to a nice ceiling
-    const digits = Math.floor(Math.log10(maxCount)) + 1;
-    const firstDigit = Math.floor(maxCount / Math.pow(10, digits - 1));
-    const snapMax = (firstDigit + 1) * Math.pow(10, digits - 1);
-
-    let total = Math.pow(10, digits);
-    if (firstDigit < 5) total /= 2;
-    const interval = Math.ceil(total / 10);
+    const kTargetTicks = 8;
+    const raw = maxCount / kTargetTicks;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const residual = raw / mag;
+    let niceCoeff;
+    if (residual < 1.5) niceCoeff = 1;
+    else if (residual < 3) niceCoeff = 2;
+    else if (residual < 7) niceCoeff = 5;
+    else niceCoeff = 10;
+    const interval = niceCoeff * mag;
+    const yMax = Math.ceil(maxCount / interval) * interval;
 
     const ticks = [];
-    for (let v = 0; v <= snapMax; v += interval) {
+    for (let v = 0; v <= yMax + interval / 2; v += interval) {
         ticks.push(v);
     }
+    return { yMax, yTicks: ticks };
+}
 
-    return { yMax: snapMax, yTicks: ticks };
+// Log-scale Y axis: ticks at powers of 10 up to the next decade above
+// maxCount, plus 0 at the bottom.  The bar height mapping uses log(c+1) so 0
+// counts render flat against the axis.
+function computeLogYAxis(maxCount) {
+    const topDecade = Math.max(1,
+        Math.pow(10, Math.ceil(Math.log10(Math.max(1, maxCount + 1)))));
+    const ticks = [0];
+    for (let v = 1; v <= topDecade + 0.5; v *= 10) {
+        ticks.push(v);
+    }
+    return { yMax: topDecade, yTicks: ticks };
 }
 
 export class ChartsWidget {
     constructor(app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        // 'setup' and 'hold' show endpoint slack; 'fanout' shows net fanout.
         this._currentTab = 'setup';
         this._histogramData = null;
         this._bars = [];
@@ -179,8 +212,13 @@ export class ChartsWidget {
         this._holdTab.className = 'timing-tab';
         this._holdTab.textContent = 'Hold Slack';
 
+        this._fanoutTab = document.createElement('div');
+        this._fanoutTab.className = 'timing-tab';
+        this._fanoutTab.textContent = 'Net Fanout';
+
         tabBar.appendChild(this._setupTab);
         tabBar.appendChild(this._holdTab);
+        tabBar.appendChild(this._fanoutTab);
         el.appendChild(tabBar);
 
         // Filter row
@@ -223,6 +261,8 @@ export class ChartsWidget {
         // Group histogram-specific elements so we can hide them
         // when a debug line chart tab is active.
         this._histogramControls = [toolbar, tabBar, filterRow];
+        // Filters only apply to slack histograms (Setup/Hold).
+        this._filterRow = filterRow;
 
         this.element = el;
 
@@ -237,21 +277,10 @@ export class ChartsWidget {
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
 
-        this._setupTab.addEventListener('click', () => {
-            if (this._currentTab === 'setup') return;
-            this._currentTab = 'setup';
-            this._setupTab.classList.add('active');
-            this._holdTab.classList.remove('active');
-            this.update();
-        });
-
-        this._holdTab.addEventListener('click', () => {
-            if (this._currentTab === 'hold') return;
-            this._currentTab = 'hold';
-            this._holdTab.classList.add('active');
-            this._setupTab.classList.remove('active');
-            this.update();
-        });
+        this._setupTab.addEventListener('click', () => this._selectTab('setup'));
+        this._holdTab.addEventListener('click', () => this._selectTab('hold'));
+        this._fanoutTab.addEventListener('click',
+            () => this._selectTab('fanout'));
 
         this._pathGroupSelect.addEventListener('change', () => this._fetchHistogram());
         this._clockSelect.addEventListener('change', () => this._fetchHistogram());
@@ -263,6 +292,8 @@ export class ChartsWidget {
             this._syncView();
         });
         this._canvas.addEventListener('click', (e) => this._handleClick(e));
+        this._canvas.addEventListener('dblclick',
+            (e) => this._handleDblClick(e));
 
         // Re-render on resize
         const ro = new ResizeObserver(() => {
@@ -279,12 +310,27 @@ export class ChartsWidget {
         this._ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    _selectTab(tab) {
+        if (this._currentTab === tab) return;
+        this._currentTab = tab;
+        this._setupTab.classList.toggle('active', tab === 'setup');
+        this._holdTab.classList.toggle('active', tab === 'hold');
+        this._fanoutTab.classList.toggle('active', tab === 'fanout');
+        // Path-group / clock filters only apply to slack histograms.
+        this._filterRow.style.display = (tab === 'fanout') ? 'none' : '';
+        this._hoveredBar = null;
+        this._tooltip.style.display = 'none';
+        this.update();
+    }
+
     async update() {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
         this._statusLabel.textContent = '';
         try {
-            await this._fetchFilters();
+            if (this._currentTab !== 'fanout') {
+                await this._fetchFilters();
+            }
             await this._fetchHistogram();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
@@ -318,25 +364,35 @@ export class ChartsWidget {
 
     async _fetchHistogram() {
         try {
-            const req = {
-                type: 'slack_histogram',
-                is_setup: this._currentTab === 'setup',
-            };
-            if (this._pathGroupSelect.value) {
-                req.path_group = this._pathGroupSelect.value;
-            }
-            if (this._clockSelect.value) {
-                req.clock_name = this._clockSelect.value;
+            let req;
+            if (this._currentTab === 'fanout') {
+                req = { type: 'fanout_histogram' };
+            } else {
+                req = {
+                    type: 'slack_histogram',
+                    is_setup: this._currentTab === 'setup',
+                };
+                if (this._pathGroupSelect.value) {
+                    req.path_group = this._pathGroupSelect.value;
+                }
+                if (this._clockSelect.value) {
+                    req.clock_name = this._clockSelect.value;
+                }
             }
             const data = await this._app.websocketManager.request(req);
             this._histogramData = data;
             this._syncView();
 
-            const total = data.total_endpoints || 0;
-            const unconstrained = data.unconstrained_count || 0;
-            const constrained = total - unconstrained;
-            this._statusLabel.textContent = `${constrained} endpoints` +
-                (unconstrained > 0 ? `, ${unconstrained} unconstrained` : '');
+            if (this._currentTab === 'fanout') {
+                const total = data.total_nets || 0;
+                this._statusLabel.textContent = `${total} nets`;
+            } else {
+                const total = data.total_endpoints || 0;
+                const unconstrained = data.unconstrained_count || 0;
+                const constrained = total - unconstrained;
+                this._statusLabel.textContent = `${constrained} endpoints` +
+                    (unconstrained > 0 ? `, ${unconstrained} unconstrained` : '');
+            }
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
@@ -346,11 +402,13 @@ export class ChartsWidget {
         if (!this._histogramData) return;
         const rect = this._canvas.getBoundingClientRect();
         const result = computeHistogramLayout(
-            this._histogramData, rect.width, rect.height);
+            this._histogramData, rect.width, rect.height,
+            { logY: this._currentTab === 'fanout' });
         this._bars = result.bars;
         this._yMax = result.yMax;
         this._yTicks = result.yTicks;
         this._chartArea = result.chartArea;
+        this._logY = !!result.logY;
     }
 
     render() { this._syncView(); }
@@ -411,8 +469,11 @@ export class ChartsWidget {
         ctx.textBaseline = 'middle';
         const chartHeight = ca.bottom - ca.top;
         for (const tick of this._yTicks) {
-            const y = ca.bottom - (tick / this._yMax) * chartHeight;
-            ctx.fillText(String(tick), ca.left - 6, y);
+            const frac = this._logY
+                ? Math.log10(tick + 1) / Math.log10(this._yMax + 1)
+                : tick / this._yMax;
+            const y = ca.bottom - frac * chartHeight;
+            ctx.fillText(this._formatCount(tick), ca.left - 6, y);
             if (tick > 0) {
                 ctx.strokeStyle = tc.canvasGrid;
                 ctx.beginPath();
@@ -423,6 +484,8 @@ export class ChartsWidget {
             }
         }
 
+        const isFanout = this._currentTab === 'fanout';
+
         // Y axis title
         ctx.save();
         ctx.translate(14, (ca.top + ca.bottom) / 2);
@@ -431,7 +494,8 @@ export class ChartsWidget {
         ctx.textBaseline = 'middle';
         ctx.fillStyle = tc.canvasTitle;
         ctx.font = '11px monospace';
-        ctx.fillText('Endpoints', 0, 0);
+        ctx.fillText(this._logY ? 'Nets (log)'
+                                : (isFanout ? 'Nets' : 'Endpoints'), 0, 0);
         ctx.restore();
 
         // X axis labels — show bin boundaries
@@ -443,9 +507,10 @@ export class ChartsWidget {
         const bins = this._histogramData.bins;
         const unit = this._histogramData.time_unit || '';
 
-        // Determine precision from bin width
+        // Determine precision from bin width.  Fanout bins are integer-valued.
         const binWidth = bins.length > 0 ? bins[0].upper - bins[0].lower : 1;
-        const precision = Math.max(0, -Math.floor(Math.log10(binWidth)));
+        const precision = isFanout
+            ? 0 : Math.max(0, -Math.floor(Math.log10(binWidth)));
 
         // Label at each bar boundary
         for (let i = 0; i <= this._bars.length; i++) {
@@ -461,7 +526,9 @@ export class ChartsWidget {
         ctx.font = '11px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText(`Slack [${unit}]`, (ca.left + ca.right) / 2, ca.bottom + 22);
+        const xTitle = isFanout
+            ? 'Fanout (loads)' : `Slack [${unit}]`;
+        ctx.fillText(xTitle, (ca.left + ca.right) / 2, ca.bottom + 22);
     }
 
     _drawBars(ctx) {
@@ -494,12 +561,18 @@ export class ChartsWidget {
     }
 
     _drawTitle(ctx, canvasWidth, tc) {
-        const mode = this._currentTab === 'setup' ? 'Setup' : 'Hold';
+        let title;
+        if (this._currentTab === 'fanout') {
+            title = 'Net Fanout';
+        } else {
+            const mode = this._currentTab === 'setup' ? 'Setup' : 'Hold';
+            title = `${mode} Endpoint Slack`;
+        }
         ctx.fillStyle = tc.fgPrimary;
         ctx.font = '13px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText(`${mode} Endpoint Slack`, canvasWidth / 2, 8);
+        ctx.fillText(title, canvasWidth / 2, 8);
     }
 
     _hitTestBar(e) {
@@ -522,17 +595,43 @@ export class ChartsWidget {
         }
 
         if (bar) {
-            const unit = this._histogramData?.time_unit || '';
+            const isFanout = this._currentTab === 'fanout';
             const binWidth = bar.upper - bar.lower;
-            const precision = Math.max(0, -Math.floor(Math.log10(binWidth)));
-            this._tooltip.textContent =
-                `Endpoints: ${bar.count}\n` +
-                `Slack: [${bar.lower.toFixed(precision)}, ${bar.upper.toFixed(precision)}) ${unit}`;
+            if (isFanout) {
+                // Bin upper is exclusive; show [lo, hi-1] inclusively when
+                // bin_width is 1 the range collapses to a single value.
+                const hiInclusive = bar.upper - 1;
+                const range = (bar.lower === hiInclusive)
+                    ? `${bar.lower}`
+                    : `[${bar.lower}, ${hiInclusive}]`;
+                this._tooltip.textContent =
+                    `Nets: ${bar.count}\nFanout: ${range}`;
+            } else {
+                const unit = this._histogramData?.time_unit || '';
+                const precision
+                    = Math.max(0, -Math.floor(Math.log10(binWidth)));
+                this._tooltip.textContent =
+                    `Endpoints: ${bar.count}\n`
+                    + `Slack: [${bar.lower.toFixed(precision)}, `
+                    + `${bar.upper.toFixed(precision)}) ${unit}`;
+            }
             this._tooltip.style.display = 'block';
 
+            // Flip the tooltip to the left of the cursor when it would
+            // overflow the widget's right edge; clamp inside otherwise.
             const rect = this.element.getBoundingClientRect();
-            const tx = e.clientX - rect.left + 12;
-            const ty = e.clientY - rect.top - 10;
+            const ttRect = this._tooltip.getBoundingClientRect();
+            const margin = 4;
+            const cursorX = e.clientX - rect.left;
+            const cursorY = e.clientY - rect.top;
+            let tx = cursorX + 12;
+            if (tx + ttRect.width > rect.width - margin) {
+                tx = cursorX - 12 - ttRect.width;
+            }
+            tx = Math.max(margin, tx);
+            let ty = cursorY - 10;
+            ty = Math.min(rect.height - ttRect.height - margin,
+                Math.max(margin, ty));
             this._tooltip.style.left = tx + 'px';
             this._tooltip.style.top = ty + 'px';
         } else {
@@ -542,6 +641,8 @@ export class ChartsWidget {
 
     async _handleClick(e) {
         if (this._activeDebugChart >= 0) return;
+        // Fanout bars are informational only — no timing-path drilldown.
+        if (this._currentTab === 'fanout') return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
@@ -563,6 +664,34 @@ export class ChartsWidget {
             }
         } catch (err) {
             console.error('Charts bar click error:', err);
+        }
+    }
+
+    // Double-click on a fanout bar selects every net in that bin (server-
+    // side multi-selection) and opens the first one in the Inspector.  The
+    // prev/next chevrons in the Inspector then cycle through all of them.
+    async _handleDblClick(e) {
+        if (this._activeDebugChart >= 0) return;
+        if (this._currentTab !== 'fanout') return;
+        const bar = this._hitTestBar(e);
+        if (!bar || bar.count === 0) return;
+        try {
+            const resp = await this._app.websocketManager.request({
+                type: 'select_fanout_bin',
+                lower: bar.lower,
+                upper: bar.upper,
+            });
+            if (this._app.updateInspector) {
+                this._app.updateInspector(resp);
+            }
+            if (this._app.focusComponent) {
+                this._app.focusComponent('Inspector');
+            }
+            if (this._redrawAllLayers) {
+                this._redrawAllLayers();
+            }
+        } catch (err) {
+            console.error('Fanout bin select failed:', err);
         }
     }
 
@@ -627,6 +756,10 @@ export class ChartsWidget {
         }
         for (const el of this._histogramControls) {
             el.style.display = showHist ? '' : 'none';
+        }
+        // Filter row is slack-only; hide it on the fanout tab.
+        if (showHist && this._currentTab === 'fanout' && this._filterRow) {
+            this._filterRow.style.display = 'none';
         }
         this._sizeCanvas();
         if (showHist) {
@@ -783,5 +916,13 @@ export class ChartsWidget {
         if (abs >= 1e3) return (v / 1e3).toFixed(1) + 'k';
         if (abs >= 1) return v.toFixed(1);
         return v.toPrecision(3);
+    }
+
+    // Integer counts on Y axis: compact for large values, plain otherwise.
+    _formatCount(v) {
+        if (v === 0) return '0';
+        if (v >= 1e6) return (v / 1e6) + 'M';
+        if (v >= 1e3) return (v / 1e3) + 'k';
+        return String(v);
     }
 }
