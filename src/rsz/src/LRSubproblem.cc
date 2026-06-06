@@ -153,7 +153,7 @@ float LRSubproblem::leakageOrArea(sta::LibertyCell* cell) const
 bool LRSubproblem::isDataArc(const sta::Edge* edge) const
 {
   const sta::TimingRole* role = edge->role();
-  if (role->isTimingCheck()) {
+  if (role != nullptr && role->isTimingCheck()) {
     return false;
   }
   if (edge->isDisabledLoop()) {
@@ -241,7 +241,7 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
           continue;
         }
         const sta::EdgeId id = graph_->id(e);
-        if (static_cast<int>(id) >= lambda_size) {
+        if (std::cmp_greater_equal(id, lambda_size)) {
           continue;
         }
         lam_sum += lambda[id];
@@ -352,7 +352,7 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
           continue;
         }
         const sta::EdgeId id = graph_->id(e);
-        if (static_cast<int>(id) >= lambda_size) {
+        if (std::cmp_greater_equal(id, lambda_size)) {
           continue;
         }
         lam_U += lambda[id];
@@ -435,13 +435,11 @@ float LRSubproblem::evaluateCellCost(const GateSnapshot& snap,
       // Candidate missing this input port - incompatible.
       return std::numeric_limits<float>::infinity();
     }
-    float load_pert = u.load_U_cur - u.c_in_cur + c_in_cand;
-    if (load_pert < 0.0f) {
-      // Numerical safety: extreme C_in mismatches can push the perturbed
-      // load slightly negative. Clamp at zero rather than rejecting; the
-      // gateDelay LUT is well-defined at zero load.
-      load_pert = 0.0f;
-    }
+    // Numerical safety: extreme C_in mismatches can push the perturbed load
+    // slightly negative. Clamp at zero rather than rejecting; the gateDelay LUT
+    // is well-defined at zero load.
+    const float load_pert
+        = std::max(u.load_U_cur - u.c_in_cur + c_in_cand, 0.0f);
     const float d_U = sta::delayAsFloat(resizer_->gateDelay(
         u.drv_port, load_pert, scene, max_, arc_delay_calc));
     cost += timing_weight * u.lambda_U_drv * d_U;
