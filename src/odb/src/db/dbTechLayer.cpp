@@ -37,6 +37,7 @@
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iterator>
 #include <ranges>
@@ -108,6 +109,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (flags_.lef58_type != rhs.flags_.lef58_type) {
+    return false;
+  }
+  if (flags_.is_backside != rhs.flags_.is_backside) {
     return false;
   }
   if (wrong_way_width_ != rhs.wrong_way_width_) {
@@ -617,7 +621,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj.wire_extension_;
   stream >> obj.number_;
   stream >> obj.rlevel_;
-  stream >> obj.area_;
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    double area_double;
+    stream >> area_double;
+    obj.area_ = static_cast<int64_t>(std::round(area_double * 20000 * 20000));
+  }
   stream >> obj.thickness_;
   stream >> obj.min_step_;
   stream >> obj.min_step_max_length_;
@@ -1237,6 +1247,18 @@ dbTechLayer::LEF58_TYPE dbTechLayer::getLef58Type() const
   return (dbTechLayer::LEF58_TYPE) layer->flags_.lef58_type;
 }
 
+void dbTechLayer::setBackside(bool is_backside)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->flags_.is_backside = is_backside;
+}
+
+bool dbTechLayer::isBackside() const
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->flags_.is_backside;
+}
+
 std::string dbTechLayer::getLef58TypeString() const
 {
   switch (getLef58Type()) {
@@ -1846,18 +1868,17 @@ bool dbTechLayer::hasArea() const
   return (layer->flags_.has_area);
 }
 
-double  // Now denominated in squm
-dbTechLayer::getArea() const
+int64_t dbTechLayer::getArea() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_area) {
     return layer->area_;
   }
 
-  return 0.0;  // Default
+  return 0;  // Default
 }
 
-void dbTechLayer::setArea(double area)
+void dbTechLayer::setArea(int64_t area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_area = true;

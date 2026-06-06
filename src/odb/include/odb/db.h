@@ -3191,6 +3191,12 @@ class dbInst : public dbObject
   uint32_t getPinAccessIdx() const;
 
   ///
+  /// Get the chip bump associated with this instance.
+  /// Returns a pointer to the dbChipBump object if present, otherwise nullptr.
+  ///
+  dbChipBump* getChipBump() const;
+
+  ///
   /// Create a new instance.
   /// If physical_only is true, the instance can only be added to a top module.
   /// If false, it will be added to the parent module.
@@ -5499,6 +5505,18 @@ class dbMaster : public dbObject
   void setType(dbMasterType type);
 
   ///
+  /// Marks a cell as physically bridging a front-side power layer to a
+  /// LEF58_BACKSIDE layer (typical use: BSPDN tap cells). Tools that
+  /// trace PG-net connectivity should treat the PG pins of such a
+  /// cell as electrically continuous even when they sit on layers
+  /// that disagree on dbTechLayer::isBackside(). Set by the
+  /// LEF58_BACKSIDE_BRIDGE macro property.
+  ///
+  void setBacksideBridge(bool is_bridge);
+
+  bool isBacksideBridge() const;
+
+  ///
   /// Get the Logical equivalent of this master
   /// Returns nullptr if no equivalent was set.
   ///
@@ -5919,6 +5937,21 @@ class dbTech : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findRoutingLayer(int level_number);
+
+  ///
+  /// Find the frontside (non-LEF58_BACKSIDE) routing layer closest to
+  /// the substrate (i.e. the lowest routing-level index that is not
+  /// marked backside). Returns nullptr if there is no such layer.
+  ///
+  dbTechLayer* firstFrontsideRoutingLayer();
+
+  ///
+  /// Find the LEF58_BACKSIDE routing layer closest to the substrate
+  /// (i.e. the highest routing-level index that is marked backside,
+  /// since backside metals are stacked outward from M0 toward BRDL in
+  /// LEF order). Returns nullptr if there is no backside routing layer.
+  ///
+  dbTechLayer* firstBacksideRoutingLayer();
 
   ///
   /// Get the technolgy vias. This includes non-default-rule-vias.
@@ -6507,7 +6540,7 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutCenterToCenter() const;
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
-  uint32_t getCutArea() const;
+  int64_t getCutArea() const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6528,7 +6561,7 @@ class dbTechLayerSpacingRule : public dbObject
   void setCutCenterToCenter(bool c2c);
   void setCutSameNet(bool same_net);
   void setCutParallelOverlap(bool overlap);
-  void setCutArea(uint32_t area);
+  void setCutArea(int64_t area);
   void setEol(uint32_t width,
               uint32_t within,
               bool parallelEdge,
@@ -6591,8 +6624,8 @@ class dbTechMinCutRule : public dbObject
 class dbTechMinEncRule : public dbObject
 {
  public:
-  bool getEnclosure(uint32_t& area) const;
-  void setEnclosure(uint32_t area);
+  bool getEnclosure(int64_t& area) const;
+  void setEnclosure(int64_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
 
@@ -9279,6 +9312,15 @@ class dbTechLayer : public dbObject
   std::string getLef58TypeString() const;
 
   ///
+  /// Backside layers are physically located on the wafer's reverse side,
+  /// typically used for buried-power-rail (BPR) and backside power
+  /// delivery (BSPDN). Set by the LEF58_BACKSIDE property.
+  ///
+  void setBackside(bool is_backside);
+
+  bool isBackside() const;
+
+  ///
   /// Get the layer name.
   ///
   std::string getName() const;
@@ -9437,8 +9479,8 @@ class dbTechLayer : public dbObject
   ///  reasonable default exists.
   ///
   bool hasArea() const;
-  double getArea() const;
-  void setArea(double area);
+  int64_t getArea() const;
+  void setArea(int64_t area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
@@ -9576,9 +9618,9 @@ class dbTechLayer : public dbObject
 class dbTechLayerAreaRule : public dbObject
 {
  public:
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setExceptMinWidth(int except_min_width);
 
@@ -10115,9 +10157,9 @@ class dbTechLayerCutSpacingRule : public dbObject
 
   uint32_t getParLength() const;
 
-  void setCutArea(int cut_area);
+  void setCutArea(int64_t cut_area);
 
-  int getCutArea() const;
+  int64_t getCutArea() const;
 
   void setCenterToCenter(bool center_to_center);
 
@@ -10737,9 +10779,9 @@ class dbTechLayerMinCutRule : public dbObject
 
   int getLengthWithinDist() const;
 
-  void setArea(int area);
+  void setArea(int64_t area);
 
-  int getArea() const;
+  int64_t getArea() const;
 
   void setAreaWithinDist(int area_within_dist);
 

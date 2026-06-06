@@ -311,6 +311,9 @@ void Search::clearRows()
 
 void Search::eagerInit(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   const auto t0 = std::chrono::steady_clock::now();
 
   CountdownLatch done(6);
@@ -337,6 +340,12 @@ void Search::eagerInit(odb::dbBlock* block)
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
+  // Defensive: a null block can reach here if a db callback fires during
+  // teardown or before the design is loaded.  Fall back to the top-level
+  // entry rather than dereferencing null in getChip().
+  if (block == nullptr) {
+    return top_block_data_;
+  }
   if (block->getChip() == top_chip_) {
     return top_block_data_;
   }
@@ -357,6 +366,9 @@ Search::BlockData& Search::getData(odb::dbBlock* block)
 
 void Search::updateShapes(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.shapes_init_mutex);
   if (data.shapes_init) {
@@ -469,6 +481,9 @@ void Search::updateShapes(odb::dbBlock* block)
 
 void Search::updateFills(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.fills_init_mutex);
   if (data.fills_init) {
@@ -510,6 +525,9 @@ void Search::updateFills(odb::dbBlock* block)
 
 void Search::updateInsts(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.insts_init_mutex);
   if (data.insts_init) {
@@ -539,6 +557,9 @@ void Search::updateInsts(odb::dbBlock* block)
 
 void Search::updateBlockages(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.blockages_init_mutex);
   if (data.blockages_init) {
@@ -576,6 +597,9 @@ void Search::updateBlockages(odb::dbBlock* block)
 
 void Search::updateObstructions(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
   if (data.obstructions_init) {
@@ -625,6 +649,9 @@ void Search::updateObstructions(odb::dbBlock* block)
 
 void Search::updateRows(odb::dbBlock* block)
 {
+  if (block == nullptr) {
+    return;
+  }
   BlockData& data = getData(block);
   std::unique_lock<std::shared_mutex> lock(data.rows_init_mutex);
   if (data.rows_init) {

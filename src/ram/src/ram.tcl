@@ -103,6 +103,8 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-inv_cell name]
                                      -power_pin name
                                      -ground_pin name
+                                     [-power_net_name name]
+                                     [-ground_net_name name]
                                      -routing_layer config
                                      -ver_layer config
                                      -hor_layer config
@@ -118,8 +120,9 @@ proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio
            -storage_cell -tristate_cell -inv_cell -read_ports -use_latch
-      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
-        -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
+           -power_pin -ground_pin -power_net_name -ground_net_name
+           -routing_layer -ver_layer -hor_layer -filler_cells
+           -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -189,6 +192,26 @@ proc generate_ram { args } {
     utl::error RAM 6 "The -ground_pin argument must be specified."
   }
 
+  set power_net_name "VDD"
+  if { [info exists keys(-power_net_name)] } {
+    set power_net_name $keys(-power_net_name)
+  }
+
+  set power_net_name [string trim $power_net_name]
+  if { $power_net_name eq "" } {
+    utl::error RAM 40 "The -power_net_name argument cannot be empty."
+  }
+
+  set ground_net_name "VSS"
+  if { [info exists keys(-ground_net_name)] } {
+    set ground_net_name $keys(-ground_net_name)
+  }
+
+  set ground_net_name [string trim $ground_net_name]
+  if { $ground_net_name eq "" } {
+    utl::error RAM 41 "The -ground_net_name argument cannot be empty."
+  }
+
   if { [info exists keys(-routing_layer)] } {
     set routing_layer $keys(-routing_layer)
   } else {
@@ -236,7 +259,8 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-  ram::ram_pdngen $power_pin $ground_pin $route_name $route_width \
+  ram::ram_pdngen $power_pin $ground_pin $power_net_name $ground_net_name \
+    $route_name $route_width \
     $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 
   make_tracks -x_offset 0 -y_offset 0
