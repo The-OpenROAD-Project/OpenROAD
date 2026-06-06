@@ -56,7 +56,7 @@ GlobalSizingPolicy::~GlobalSizingPolicy() = default;
 bool GlobalSizingPolicy::isDataArc(const sta::Edge* edge) const
 {
   const sta::TimingRole* role = edge->role();
-  if (role->isTimingCheck()) {
+  if (role != nullptr && role->isTimingCheck()) {
     return false;
   }
   if (edge->isDisabledLoop()) {
@@ -328,11 +328,9 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
       vertices.push_back(vit.next());
     }
   }
-  std::sort(vertices.begin(),
-            vertices.end(),
-            [](const sta::Vertex* a, const sta::Vertex* b) {
-              return a->level() > b->level();
-            });
+  std::ranges::sort(vertices, [](const sta::Vertex* a, const sta::Vertex* b) {
+    return a->level() > b->level();
+  });
 
   int rescaled = 0;
   int zero_sum_fallback = 0;
@@ -543,8 +541,8 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
       = thread_pool_->parallelMap(
           snapshots,
           [this, timing_weight, src](const LRSubproblem::GateSnapshot& snap) {
-            thread_local sta::ArcDelayCalc* cached_src = nullptr;
-            thread_local std::unique_ptr<sta::ArcDelayCalc> adc;
+            static thread_local sta::ArcDelayCalc* cached_src = nullptr;
+            static thread_local std::unique_ptr<sta::ArcDelayCalc> adc;
             if (adc == nullptr || cached_src != src) {
               adc.reset(src->copy());
               cached_src = src;
@@ -622,7 +620,7 @@ float GlobalSizingPolicy::computeAutoTimingWeight(const LRParams& params) const
           continue;
         }
         const sta::EdgeId id = graph_->id(e);
-        if (static_cast<int>(id) >= lambda_size) {
+        if (std::cmp_greater_equal(id, lambda_size)) {
           continue;
         }
         lam_sum += lambda_[id];
