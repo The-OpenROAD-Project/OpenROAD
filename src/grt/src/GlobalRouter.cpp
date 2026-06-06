@@ -4,6 +4,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -235,7 +236,7 @@ void GlobalRouter::saveCongestion()
     fastroute_->saveCongestion();
   }
 
-  if (congestion_file_name_ != nullptr) {
+  if (congestion_file_name_ != nullptr && *congestion_file_name_ != '\0') {
     odb::dbMarkerCategory* tool_category
         = block_->findMarkerCategory("Global route");
     if (tool_category != nullptr) {
@@ -541,15 +542,31 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
     // Repopulate edge usage from routes_ using updateNetResources, which
-    // uses layer_edge_cost (essential to NDR nets).
+    // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
+    // there is too much congestion
+    std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
+    int net_id;
+    bool exists;
     for (const auto& [db_net, groute] : routes_) {
       if (!isDetailedRouted(db_net)) {
         auto it = db_net_map_.find(db_net);
         if (it != db_net_map_.end()) {
           updateNetResources(it->second, false);
+          // Mark the net so congestion-loop releases use the matching
+          // GRoute-based path (updateNetResources) rather than the
+          // sttree-based clearNetRoute (which sees empty sttrees here
+          // and would leave the 3D usage un-released, causing underflow).
+          it->second->setAreSegmentsRestored(true);
+          if (db_net->getNonDefaultRule() != nullptr) {
+            fastroute_->getNetId(db_net, net_id, exists);
+            ndr_nets.emplace_back(db_net, net_id);
+          }
         }
       }
     }
+    // Disable the extra edge cost for NDR nets on congested 2D edges.
+    // Uses routes_ segments directly since sttrees are not yet populated.
+    disableCongestedNDRNetsFromRoutes(ndr_nets);
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -1041,6 +1058,50 @@ void GlobalRouter::updateNetResources(Net* net, bool release_resources)
                       net->getDbNet());
     }
   }
+}
+
+// Disable NDR for any NDR net in ndr_nets that occupies a congested 2D edge,
+// using routes_ segments (real coords) instead of sttrees. This is needed
+// when repairAntennas starts from an uninitialized state where sttrees are
+// empty but routes_ is populated from ODB guides.
+void GlobalRouter::disableCongestedNDRNetsFromRoutes(
+    const std::vector<std::pair<odb::dbNet*, int>>& ndr_nets)
+{
+  using GridSeg = std::array<int, 5>;  // x0, y0, x1, y1, layer
+  std::vector<std::pair<int, std::vector<GridSeg>>> net_grid_segs;
+
+  for (const auto& [db_net, net_id] : ndr_nets) {
+    auto it = routes_.find(db_net);
+    if (it == routes_.end()) {
+      continue;
+    }
+    std::vector<GridSeg> segs;
+    for (const GSegment& seg : it->second) {
+      if (seg.isVia()) {
+        continue;
+      }
+      const int x0
+          = std::max(0,
+                     (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize());
+      const int y0
+          = std::max(0,
+                     (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize());
+      const int x1
+          = std::min((std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize(),
+                     grid_->getXGrids() - 1);
+      const int y1
+          = std::min((std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize(),
+                     grid_->getYGrids() - 1);
+      segs.push_back({x0, y0, x1, y1, seg.final_layer});
+    }
+    net_grid_segs.emplace_back(net_id, std::move(segs));
+  }
+
+  fastroute_->disableNDRNetsFromGridRoutes(net_grid_segs);
 }
 
 // This function is not currently enabled
@@ -1658,18 +1719,22 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
+
+      if (layerIdx > getMaxRoutingLayer() || layerIdx < getMinRoutingLayer()) {
         continue;
       }
+
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
+      int default_spacing = default_pitch - default_width;
 
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
+      int ndr_pitch = (ndr_width + 2 * ndr_spacing + default_width) / 2;
 
-      int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      // Account for both sides
+      int consumption = 2 * std::ceil((float) ndr_pitch / default_pitch) - 1;
       if (consumption > std::numeric_limits<int8_t>::max()) {
         logger_->error(GRT,
                        272,
@@ -1682,12 +1747,23 @@ void GlobalRouter::computeTrackConsumption(
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
 
+      if (logger_->debugCheck(GRT, "ndrInfo", 2)) {
+        logger_->report(
+            "default_width: {} default_spacing: {} default_pitch: {} "
+            "ndr_spacing: {} ndr_width: {} ndr_pitch: {}",
+            default_width,
+            default_spacing,
+            default_pitch,
+            ndr_spacing,
+            ndr_width,
+            ndr_pitch);
+      }
       if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
         logger_->report(
             "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
             net->getConstName(),
             layer_rule->getLayer()->getConstName(),
-            (float) ndr_pitch / default_pitch,
+            2 * (float) ndr_pitch / default_pitch - 1,
             consumption,
             track_consumption);
       }
@@ -6151,7 +6227,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     mergeResults(new_route);
 
     bool reroutingOverflow = true;
-    if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    if (fastroute_->totalOverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
@@ -6161,7 +6237,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
+      while (fastroute_->totalOverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to
         // the set
         // if the nets have wires
@@ -6204,10 +6280,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         mergeResults(new_route);
         add_max--;
       }
-      if (fastroute_->has2Doverflow()) {
+      if (fastroute_->totalOverflow()) {
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
+        reportCongestion();
         // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,

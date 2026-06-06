@@ -178,6 +178,7 @@ COMPULSORY_TESTS = [
     "gcd_def_access",
     "gcd_pdn_def_access",
     "import_package",
+    "lef58_backside_bridge",
     "lef_data_access",
     "lef_mask",
     "multi_tech",

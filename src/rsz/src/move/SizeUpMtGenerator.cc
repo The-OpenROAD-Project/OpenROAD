@@ -29,7 +29,9 @@ SizeUpMtGenerator::SizeUpMtGenerator(const GeneratorContext& context)
 
 bool SizeUpMtGenerator::isApplicable(const Target& target) const
 {
-  return MoveGenerator::isApplicable(target) && target.inst(resizer_) != nullptr
+  sta::Instance* target_inst = target.inst(resizer_);
+  return MoveGenerator::isApplicable(target) && target_inst != nullptr
+         && !resizer_.dontTouch(target_inst)
          && target.isPrepared(kArcDelayStateCache);
 }
 

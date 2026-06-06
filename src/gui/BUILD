@@ -4,8 +4,10 @@
 # This file only currently supports the gui disabled.  More work
 # is needed to handle Qt and build a working gui.
 
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -202,4 +204,33 @@ filegroup(
 
 messages_txt(
     visibility = ["//src/gui/test:__pkg__"],
+)
+
+# Desktop entry for GUI builds. Generated from the same template that the
+# CMake build configures (see src/gui/CMakeLists.txt). The install prefix is
+# not known at build time, so the icon path is left as a @OPENROAD_PREFIX@
+# placeholder that //bazel:install.sh substitutes at install time.
+expand_template(
+    name = "desktop_entry",
+    out = "openroad.desktop",
+    substitutions = {
+        "${OPENROAD_SHARE_GUI_DIR}": "@OPENROAD_PREFIX@/share/openroad/gui",
+    },
+    template = "resources/openroad.desktop.cmake",
+)
+
+# The desktop entry and its icon, laid out at the paths install.sh expects
+# inside the extracted tar. Pulled into //packaging:tarfile only when
+# --//:platform=gui is set.
+pkg_files(
+    name = "desktop_files",
+    srcs = [
+        "resources/icon.png",
+        ":openroad.desktop",
+    ],
+    renames = {
+        ":openroad.desktop": "share/applications/openroad.desktop",
+        "resources/icon.png": "share/openroad/gui/icon.png",
+    },
+    visibility = ["//packaging:__pkg__"],
 )

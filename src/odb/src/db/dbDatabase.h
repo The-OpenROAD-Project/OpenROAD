@@ -50,7 +50,12 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 130;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 132;  // Current revision number
+
+// Revision where dbInst::bump_ was added
+inline constexpr uint32_t kSchemaInstBump = 132;
+// Revision where all areas in the are switched to be stored as int64_t
+inline constexpr uint32_t kSchemaStoreAreaAsInt64 = 131;
 
 // Revision where dbAlignmentMarkerRule was added
 inline constexpr uint32_t kSchemaChipAlignmentMarkerRule = 130;
@@ -352,8 +357,7 @@ class _dbDatabase : public _dbObject
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
   UnfoldedModel* unfolded_model_;  // non-persistent object
-
-  // User Code End Fields
+                                   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj);

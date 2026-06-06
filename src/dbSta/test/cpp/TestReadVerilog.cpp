@@ -10,6 +10,21 @@
 
 namespace sta {
 
+namespace {
+
+odb::dbModITerm* findChildModITerm(odb::dbModule* module,
+                                   const char* instance_name,
+                                   const char* port_name)
+{
+  odb::dbModInst* mod_inst = module->findModInst(instance_name);
+  if (mod_inst == nullptr) {
+    return nullptr;
+  }
+  return mod_inst->findModITerm(port_name);
+}
+
+}  // namespace
+
 class TestReadVerilog : public tst::IntegratedFixture
 {
  public:
@@ -124,6 +139,50 @@ TEST_F(TestReadVerilog, FeedThrough)
   // We avoid checkAxioms() here because it triggers ORD-2041 on the
   // intentionally unconnected pins (U1/A, U2/ZN), which terminates the test.
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Regression for the deep-descendant modBTerm false-attach bug in
+// Verilog2db::staToDb. Escaped child instance names may contain '/'
+// characters, so the reader must resolve them as local dbModInst names
+// and connect the child pin to a dbModITerm instead of falling through
+// to a same-named ancestor dbModBTerm.
+TEST_F(TestReadVerilog, DeepDescendantModBTermCollision)
+{
+  const testing::TestInfo* test_info
+      = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  odb::dbModule* mid = block_->findModule("mid");
+  ASSERT_NE(mid, nullptr);
+
+  // Both clk and txclk modBTerms must exist and remain distinct.
+  odb::dbModBTerm* clk_mbt = mid->findModBTerm("clk");
+  odb::dbModBTerm* txclk_mbt = mid->findModBTerm("txclk");
+  ASSERT_NE(clk_mbt, nullptr);
+  ASSERT_NE(txclk_mbt, nullptr);
+  EXPECT_NE(clk_mbt, txclk_mbt);
+
+  odb::dbModNet* clk_modnet = clk_mbt->getModNet();
+  odb::dbModNet* txclk_modnet = txclk_mbt->getModNet();
+  ASSERT_NE(clk_modnet, nullptr);
+  ASSERT_NE(txclk_modnet, nullptr);
+  EXPECT_NE(clk_modnet, txclk_modnet);
+
+  // The escaped names are local child instance names in module "mid".
+  odb::dbModITerm* child0_clk
+      = findChildModITerm(mid, "iclkdiv\\/gen_phases\\[0\\].iclk", "clk");
+  odb::dbModITerm* child1_clk
+      = findChildModITerm(mid, "iclkdiv\\/gen_phases\\[1\\].iclk", "clk");
+  ASSERT_NE(child0_clk, nullptr);
+  ASSERT_NE(child1_clk, nullptr);
+
+  EXPECT_EQ(child0_clk->getModNet(), clk_modnet);
+  EXPECT_EQ(child1_clk->getModNet(), txclk_modnet);
+  EXPECT_EQ(clk_modnet->getModBTerms().size(), 1u);
+  EXPECT_EQ(txclk_modnet->getModBTerms().size(), 1u);
 }
 
 }  // namespace sta
