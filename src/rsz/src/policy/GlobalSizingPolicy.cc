@@ -348,7 +348,16 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
         if (!isDataArc(e)) {
           continue;
         }
-        target += lambda_[graph_->id(e)];
+        // lambda_ is sized to the edge-id space captured in allocate(). A
+        // sweep can replace cells and the subsequent updateParasitics()/
+        // findRequireds() rebuild arcs, minting edge ids beyond that space, so
+        // an id may now be >= lambda_.size(). Such arcs carry no multiplier;
+        // skip them, matching the guard in updateMultipliers().
+        const sta::EdgeId id = graph_->id(e);
+        if (static_cast<size_t>(id) >= lambda_.size()) {
+          continue;
+        }
+        target += lambda_[id];
       }
     }
 
@@ -362,7 +371,11 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
         if (!isDataArc(e)) {
           continue;
         }
-        in_sum += lambda_[graph_->id(e)];
+        const sta::EdgeId id = graph_->id(e);
+        if (static_cast<size_t>(id) >= lambda_.size()) {
+          continue;
+        }
+        in_sum += lambda_[id];
         ++in_count;
       }
     }
@@ -380,6 +393,9 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
           continue;
         }
         const sta::EdgeId id = graph_->id(e);
+        if (static_cast<size_t>(id) >= lambda_.size()) {
+          continue;
+        }
         lambda_[id] = std::max(lambda_[id] * scale, params.lambda_floor);
       }
       ++rescaled;
@@ -391,7 +407,11 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
         if (!isDataArc(e)) {
           continue;
         }
-        lambda_[graph_->id(e)] = std::max(share, params.lambda_floor);
+        const sta::EdgeId id = graph_->id(e);
+        if (static_cast<size_t>(id) >= lambda_.size()) {
+          continue;
+        }
+        lambda_[id] = std::max(share, params.lambda_floor);
       }
       ++zero_sum_fallback;
     }
