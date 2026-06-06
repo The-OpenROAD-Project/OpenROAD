@@ -978,6 +978,16 @@ WebServer::~WebServer()
   // reactor::shutdown() destroys pending async operations whose
   // handlers reference the dying reactor.  The OS reclaims at exit.
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
+  // Remove the WebLogSink from the Logger before leaking viewer_hook_: the
+  // sink holds a raw pointer into the hook and the CLI thread may still emit
+  // log lines.  In the normal path stop() already did this (log_sink_ is
+  // null here); this covers paths where serve()/stop() never ran — e.g.
+  // initLogger() registered the sink but read_db failed and exited.  logger_
+  // outlives us: ~OpenRoad deletes web_server_ before logger_.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
