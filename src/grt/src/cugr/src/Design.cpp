@@ -90,7 +90,7 @@ void Design::readNetlist()
                               .max_layer = max_routing_layer_ - 1};
     const int min_clk_layer = block_->getMinLayerForClock();
     const int max_clk_layer = block_->getMaxLayerForClock();
-    if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
+    if (clock_nets_.contains(db_net) && min_clk_layer > 0
         && max_clk_layer > 0) {
       layer_range.min_layer = min_clk_layer - 1;
       layer_range.max_layer = max_clk_layer - 1;
@@ -164,8 +164,7 @@ void Design::updateNet(odb::dbNet* db_net)
                             .max_layer = max_routing_layer_ - 1};
   const int min_clk_layer = block_->getMinLayerForClock();
   const int max_clk_layer = block_->getMaxLayerForClock();
-  if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
-      && max_clk_layer > 0) {
+  if (clock_nets_.contains(db_net) && min_clk_layer > 0 && max_clk_layer > 0) {
     layer_range.min_layer = min_clk_layer - 1;
     layer_range.max_layer = max_clk_layer - 1;
   }

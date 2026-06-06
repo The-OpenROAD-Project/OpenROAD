@@ -1594,10 +1594,9 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
 bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
 {
   for (const Pin& pin : net->getPins()) {
-    if (last_pos.find(RoutePt(pin.getOnGridPosition().getX(),
-                              pin.getOnGridPosition().getY(),
-                              pin.getConnectionLayer()))
-        == last_pos.end()) {
+    if (!last_pos.contains(RoutePt(pin.getOnGridPosition().getX(),
+                                   pin.getOnGridPosition().getY(),
+                                   pin.getConnectionLayer()))) {
       return true;
     }
   }
@@ -2560,7 +2559,7 @@ void GlobalRouter::readGuides(const char* file_name)
         continue;
       }
 
-      if (db_net_map_.find(net) == db_net_map_.end()) {
+      if (!db_net_map_.contains(net)) {
         logger_->warn(GRT,
                       250,
                       "Net {} has guides but is not routed by the global "
@@ -2783,7 +2782,7 @@ void GlobalRouter::addImplicitVias(GRoute& route)
       // present but not metal3) signals a missing intermediate segment, a
       // different problem we do not paper over here.
       if (prev_layer != -1 && layer == prev_layer + 1
-          && existing_vias.count({point.first, point.second, prev_layer})
+          && existing_vias.contains({point.first, point.second, prev_layer})
                  == 0) {
         bridges.emplace_back(point.first,
                              point.second,
@@ -2926,12 +2925,12 @@ void GlobalRouter::fillTileSizeMaps(
 {
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
-      if (tile_size_x_map.find(guide.second.dx()) == tile_size_x_map.end()) {
+      if (!tile_size_x_map.contains(guide.second.dx())) {
         tile_size_x_map[guide.second.dx()] = 1;
       } else {
         tile_size_x_map[guide.second.dx()]++;
       }
-      if (tile_size_y_map.find(guide.second.dy()) == tile_size_y_map.end()) {
+      if (!tile_size_y_map.contains(guide.second.dy())) {
         tile_size_y_map[guide.second.dy()] = 1;
       } else {
         tile_size_y_map[guide.second.dy()]++;
@@ -3503,8 +3502,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
-    if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        && net->getNumPins() > 1) {
+    if (pad_pins_connections_.contains(db_net) && net->getNumPins() > 1) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }
@@ -3690,7 +3688,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     logger_->error(GRT, 81, "Invalid pin type. Expected Iterm or Bterm.");
   }
 
-  if (routes_.find(db_net) == routes_.end()) {
+  if (!routes_.contains(db_net)) {
     logger_->error(
         GRT, 82, "Didn't find a route for net {}", db_net->getName());
   }
@@ -3762,7 +3760,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     }
 
     for (const RoutePt& neighbor : adj[curr]) {
-      if (visited.find(neighbor) == visited.end()) {
+      if (!visited.contains(neighbor)) {
         visited.insert(neighbor);
         parent[neighbor] = curr;
         q.push(neighbor);
@@ -3930,7 +3928,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     }
 
     for (const RoutePt& neighbor : adj[curr]) {
-      if (visited.find(neighbor) == visited.end()) {
+      if (!visited.contains(neighbor)) {
         visited.insert(neighbor);
         parent[neighbor] = curr;
         q.push(neighbor);
@@ -4324,7 +4322,7 @@ static void getViaDims(
   prl_up = -1;
   width_down = -1;
   prl_down = -1;
-  if (default_vias.find(tech_layer) != default_vias.end()) {
+  if (default_vias.contains(tech_layer)) {
     for (auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
         width_up = std::min(box->getDX(), box->getDY());
@@ -4333,7 +4331,7 @@ static void getViaDims(
       }
     }
   }
-  if (default_vias.find(bottom_layer) != default_vias.end()) {
+  if (default_vias.contains(bottom_layer)) {
     for (auto box : default_vias[bottom_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
         width_down = std::min(box->getDX(), box->getDY());
@@ -4610,7 +4608,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
       && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
-    if (db_net_map_.find(db_net) != db_net_map_.end()) {
+    if (db_net_map_.contains(db_net)) {
       delete db_net_map_[db_net];
     }
     db_net_map_[db_net] = net;
@@ -5031,11 +5029,11 @@ bool GlobalRouter::layerIsBlocked(
 
   // if layer is max or min, then all obs the nearest layer are added
   if (layer == getMaxRoutingLayer()
-      && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
+      && macro_obs_per_layer.contains(layer - 1)) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
   }
   if (layer == getMinRoutingLayer()
-      && macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
+      && macro_obs_per_layer.contains(layer + 1)) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
   }
 
@@ -5043,10 +5041,10 @@ bool GlobalRouter::layerIsBlocked(
   std::vector<odb::Rect> lower_obs;
 
   // Get Rect vector to layer + 1 and layer - 1
-  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
+  if (macro_obs_per_layer.contains(layer + 1)) {
     upper_obs = macro_obs_per_layer.at(layer + 1);
   }
-  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
+  if (macro_obs_per_layer.contains(layer - 1)) {
     lower_obs = macro_obs_per_layer.at(layer - 1);
   }
 
@@ -5948,7 +5946,7 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
 
   block_ = db_->getChip()->getBlock();
   if (global_route) {
-    if (routes_.find(net) == routes_.end()) {
+    if (!routes_.contains(net)) {
       logger_->warn(
           GRT, 241, "Net {} does not have global route.", net->getName());
       return;
@@ -6323,8 +6321,7 @@ void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
     odb::Point& position = itr.first;
     bool& is_horizontal = itr.second;
     // Find nets with horizontal wires on congestion areas
-    if (is_horizontal
-        && h_nets_in_pos_.find(position) != h_nets_in_pos_.end()) {
+    if (is_horizontal && h_nets_in_pos_.contains(position)) {
       for (odb::dbNet* db_net : h_nets_in_pos_.at(position)) {
         // Avoid modifying supply nets
         if (!db_net->getSigType().isSupply()) {
@@ -6333,8 +6330,7 @@ void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
       }
     }
     // Find nets with vertical wires on congestion areas
-    if (!is_horizontal
-        && v_nets_in_pos_.find(position) != v_nets_in_pos_.end()) {
+    if (!is_horizontal && v_nets_in_pos_.contains(position)) {
       for (odb::dbNet* db_net : v_nets_in_pos_.at(position)) {
         // Avoid modifying supply nets
         if (!db_net->getSigType().isSupply()) {
