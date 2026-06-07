@@ -775,6 +775,21 @@ void GlobalSizingPolicy::iterate()
   int consec_reject = 0;
   resizer_.journalBegin();
   for (int iter = 0; iter < max_iter; ++iter) {
+    // Global sizing only drives WNS upward; once it meets the setup margin
+    // there is no timing left to recover and further sweeps would only spend
+    // area and leakage.
+    const float wns_now = sta::delayAsFloat(sta_->worstSlack(policy_max_));
+    if (sta::fuzzyGreaterEqual(wns_now, lr_params_.setup_slack_margin)) {
+      debugPrint(logger_,
+                 RSZ,
+                 "global_sizing",
+                 1,
+                 "LR stop: WNS {} meets setup margin {}",
+                 sta::delayAsString(wns_now, 3, sta_),
+                 sta::delayAsString(lr_params_.setup_slack_margin, 3, sta_));
+      break;
+    }
+
     if (iter > 0) {
       updateMultipliers(iter_params);
       projectFlowBalance(iter_params);
