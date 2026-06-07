@@ -1486,7 +1486,7 @@ bool PlacerPadPlacer::padSpreading(
           last_idx = j;
         }
       }
-      bound_pos = last_idx == insts.size()
+      bound_pos = last_idx + 1 == insts.size()
                       ? getRowEnd(insts[last_idx])
                       : positions[insts[last_idx + 1]]->center;
     } else {
@@ -1582,9 +1582,27 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
               : kSpringStart;
     const float kSpring1 = k > kSpringIterEnd ? 0 : kString2;
 
+    odb::PtrMap<odb::dbInst, int> curr_positions;
+    for (const auto& [inst, anchor] : positions) {
+      curr_positions[inst] = anchor->center;
+    }
     if (padSpreading(
             positions, initial_positions, k, kSpring1, kRepel1, kDamper)) {
       break;
+    }
+
+    odb::PtrMap<odb::dbInst, int> new_positions;
+    for (const auto& [inst, anchor] : positions) {
+      new_positions[inst] = anchor->center;
+    }
+    if (new_positions == curr_positions) {
+      // Place instances for better debugging
+      placeInstances(positions);
+      getLogger()->error(
+          utl::PAD,
+          47,
+          "Pad placement unable to legalize pads after {} iterations.",
+          k);
     }
   }
 
