@@ -1570,6 +1570,12 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
     positions[inst] = std::move(anchors);
   }
 
+  std::vector<int> check_positions;
+  check_positions.reserve(positions.size());
+  for (const auto& [inst, anchor] : positions) {
+    check_positions.push_back(anchor->center);
+  }
+
   for (int k = 0; k < kMaxIterations; k++) {
     // Update coeff schedule
     const float kRepel1 = kRepelStart
@@ -1582,20 +1588,22 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::padSpreading(
               : kSpringStart;
     const float kSpring1 = k > kSpringIterEnd ? 0 : kString2;
 
-    odb::PtrMap<odb::dbInst, int> curr_positions;
-    for (const auto& [inst, anchor] : positions) {
-      curr_positions[inst] = anchor->center;
-    }
     if (padSpreading(
             positions, initial_positions, k, kSpring1, kRepel1, kDamper)) {
       break;
     }
 
-    odb::PtrMap<odb::dbInst, int> new_positions;
+    bool changed = false;
+    size_t idx = 0;
     for (const auto& [inst, anchor] : positions) {
-      new_positions[inst] = anchor->center;
+      if (anchor->center != check_positions[idx]) {
+        changed = true;
+      }
+      // update check positions
+      check_positions[idx] = anchor->center;
+      idx++;
     }
-    if (new_positions == curr_positions) {
+    if (!changed) {
       // Place instances for better debugging
       placeInstances(positions);
       getLogger()->error(
