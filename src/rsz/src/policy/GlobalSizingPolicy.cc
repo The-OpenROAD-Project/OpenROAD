@@ -810,7 +810,8 @@ void GlobalSizingPolicy::iterate()
     // Best-so-far: Keep track of the best WNS so far but don't restore a sweep
     // that worsens WNS just yet to allow oscillation.
     const float current_wns = sta::delayAsFloat(sta_->worstSlack(policy_max_));
-    if (!reject && sta::fuzzyGreaterEqual(current_wns, best_wns)) {
+    if (!reject && sta::fuzzyGreaterEqual(current_wns, best_wns)
+        && !resizer_.overMaxArea()) {
       resizer_.journalEnd();  // checkpoint
       resizer_.journalBegin();
       best_wns = current_wns;
