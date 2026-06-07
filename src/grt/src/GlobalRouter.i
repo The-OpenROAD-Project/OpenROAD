@@ -111,6 +111,24 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_snapshot_batched_width(int snapshot_batched_width)
+{
+  getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);
+}
+
+int
+get_snapshot_batched_width()
+{
+  return getGlobalRouter()->getSnapshotBatchedWidth();
+}
+
+int
+get_snapshot_batch_count()
+{
+  return getGlobalRouter()->getSnapshotBatchCount();
+}
+
+void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
@@ -157,6 +175,12 @@ set_infinite_cap(bool infinite_capacity)
 {
   getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
 }
+// NOTE: Debug-only. Not part of the public incremental API.
+void
+update_cugr_net(odb::dbNet* net)
+{
+  getGlobalRouter()->updateCUGRNet(net);
+}
 
 void start_incremental()
 {
@@ -172,6 +196,8 @@ void end_incremental()
 void
 global_route()
 {
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  getGlobalRouter()->setNumThreads(num_threads);
   getGlobalRouter()->globalRoute(true);
 }
 
@@ -219,7 +245,8 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
                                 bool steinerTree,
                                 bool rectilinearSTree,
                                 bool tree2D,
-                                bool tree3D)
+                                bool tree3D,
+                                bool edges3D)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -235,6 +262,7 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
+  getGlobalRouter()->setDebugEdges3D(edges3D);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)

@@ -1,8 +1,9 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -13,6 +14,7 @@ COMPULSORY_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "buffer_ports",
     "check_buffers",
     "check_buffers_blockages",
     "check_buffers_blockages_merge",
@@ -25,10 +27,10 @@ COMPULSORY_TESTS = [
     "check_max_fanout3",
     "check_wire_rc_cts",
     "clock_buffer_footprint",
+    "colocated_sinks",
     "dummy_load",
     "find_clock",
-    #   cmake gives 17.47 um ave sink WL vs. bazel 11.54 um
-    #    "find_clock_pad",
+    "find_clock_pad",
     "gated_clock1",
     "gated_clock2",
     "gated_clock3",
@@ -51,13 +53,7 @@ COMPULSORY_TESTS = [
     "twice",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "cts_man_tcl_check",
-    "cts_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -230,7 +226,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -246,4 +242,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "cts_man_tcl_check",
+    srcs = ["cts_man_tcl_check.py"],
+    data = ["//src/cts:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "cts_readme_msgs_check",
+    data = [
+        "//src/cts:doc_files",
+        "//src/cts:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

@@ -46,6 +46,7 @@ class ThreeDBlox
   void writeDbv(const std::string& dbv_file, odb::dbChip* chip);
   void writeDbx(const std::string& dbx_file, odb::dbChip* chip);
   void writeBMap(const std::string& bmap_file, odb::dbChipRegion* region);
+  void writeVerilog(const std::string& verilog_file, odb::dbChip* chip);
 
  private:
   void createChiplet(const ChipletDef& chiplet);

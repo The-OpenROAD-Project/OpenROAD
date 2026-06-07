@@ -1,7 +1,9 @@
 #include <set>
+#include <stdexcept>
 #include <string>
 
 #include "gtest/gtest.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "tst/fixture.h"
@@ -14,13 +16,22 @@ class TestDbNet : public tst::Fixture
   struct ComplexHierarchy
   {
     dbNet* the_net = nullptr;
-    std::set<dbModNet*> expected_modnets;
+    odb::PtrSet<odb::dbModNet> expected_modnets;
+  };
+
+  struct SingleModuleCollision
+  {
+    dbModule* module = nullptr;
+    dbModInst* mod_inst = nullptr;
+    dbInst* leaf_inst = nullptr;
+    dbNet* flat_net = nullptr;
   };
 
   void SetUp() override
   {
-    library_ = readLiberty("./Nangate45/Nangate45_typ.lib");
-    loadTechAndLib("tech", "Nangate45.lef", "./Nangate45/Nangate45.lef");
+    library_ = readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    loadTechAndLib(
+        "tech", "Nangate45.lef", "_main/test/Nangate45/Nangate45.lef");
 
     dbChip* chip = dbChip::create(db_.get(), db_->getTech());
     block_ = dbBlock::create(chip, "top");
@@ -120,6 +131,32 @@ class TestDbNet : public tst::Fixture
     return hierarchy;
   }
 
+  SingleModuleCollision SetUpSingleModuleCollision(
+      const std::string& module_name,
+      const std::string& inst_name,
+      const std::string& net_base_name)
+  {
+    SingleModuleCollision collision;
+    db_->setHierarchy(true);
+
+    auto* top_mod = block_->getTopModule();
+    collision.module = dbModule::create(block_, module_name.c_str());
+    collision.mod_inst
+        = dbModInst::create(top_mod, collision.module, inst_name.c_str());
+
+    auto* inv_master = db_->findMaster("INV_X1");
+    collision.leaf_inst = dbInst::create(block_,
+                                         inv_master,
+                                         (inst_name + "_leaf").c_str(),
+                                         false,
+                                         collision.module);
+    collision.flat_net
+        = dbNet::create(block_, (inst_name + "/" + net_base_name).c_str());
+    collision.leaf_inst->findITerm("A")->connect(collision.flat_net);
+
+    return collision;
+  }
+
   dbBlock* block_;
   sta::LibertyLibrary* library_;
 };
@@ -133,7 +170,7 @@ TEST_F(TestDbNet, FindRelatedModNetsComplex)
   const auto hierarchy = SetUpComplexHierarchy("the_net", "top_mod_net");
 
   // ACTION
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   hierarchy.the_net->findRelatedModNets(related_modnets);
 
   // ASSERT
@@ -154,7 +191,7 @@ TEST_F(TestDbNet, FindRelatedModNetsNone)
   inst->findITerm("A1")->connect(net);
 
   // ACTION
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   net->findRelatedModNets(related_modnets);
 
   // ASSERT
@@ -169,7 +206,7 @@ TEST_F(TestDbNet, FindRelatedModNetsClearsSet)
   auto* top_mod = block_->getTopModule();
   auto* dummy_mod_net = dbModNet::create(top_mod, "dummy");
 
-  std::set<dbModNet*> related_modnets;
+  odb::PtrSet<odb::dbModNet> related_modnets;
   related_modnets.insert(dummy_mod_net);
 
   // ACTION
@@ -206,6 +243,34 @@ TEST_F(TestDbNet, RenameWithModNetNoHier)
 
   // ASSERT
   EXPECT_EQ(net->getName(), "original_name");
+}
+
+TEST_F(TestDbNet, FlatNetNameCollisionWithBareModNetThrows)
+{
+  const auto collision = SetUpSingleModuleCollision("child_mod", "u0", "sig");
+
+  auto* orphan_modnet = dbModNet::create(collision.module, "tmp_modnet");
+  ASSERT_NE(orphan_modnet, nullptr);
+  orphan_modnet->rename("sig");
+  EXPECT_STREQ(orphan_modnet->getConstName(), "sig");
+
+  EXPECT_THROW(collision.flat_net->checkSanityNameCollision(),
+               std::runtime_error);
+  EXPECT_THROW(orphan_modnet->checkSanityNameCollision(), std::runtime_error);
+}
+
+TEST_F(TestDbNet, FlatNetNameCollisionWithBareModBTermThrows)
+{
+  const auto collision
+      = SetUpSingleModuleCollision("child_mod_bterm", "u1", "sig");
+
+  auto* orphan_bterm = dbModBTerm::create(collision.module, "sig");
+  ASSERT_NE(orphan_bterm, nullptr);
+  orphan_bterm->setIoType(dbIoType::INPUT);
+  EXPECT_EQ(orphan_bterm->getModNet(), nullptr);
+
+  EXPECT_THROW(collision.flat_net->checkSanityNameCollision(),
+               std::runtime_error);
 }
 
 }  // namespace odb

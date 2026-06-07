@@ -95,16 +95,10 @@ std::ostream& operator<<(std::ostream& os, frBlockObjectEnum type)
       return os << "frcAccessPattern";
     case frBlockObjectEnum::frcMarker:
       return os << "frcMarker";
-    case frBlockObjectEnum::frcNode:
-      return os << "frcNode";
     case frBlockObjectEnum::frcPatchWire:
       return os << "frcPatchWire";
-    case frBlockObjectEnum::frcRPin:
-      return os << "frcRPin";
     case frBlockObjectEnum::frcAccessPoint:
       return os << "frcAccessPoint";
-    case frBlockObjectEnum::frcAccessPoints:
-      return os << "frcAccessPoints";
     case frBlockObjectEnum::frcPinAccess:
       return os << "frcPinAccess";
     case frBlockObjectEnum::frcCMap:
@@ -113,20 +107,6 @@ std::ostream& operator<<(std::ostream& os, frBlockObjectEnum type)
       return os << "frcGCellPattern";
     case frBlockObjectEnum::frcTrackPattern:
       return os << "frcTrackPattern";
-    case frBlockObjectEnum::grcNode:
-      return os << "grcNode";
-    case frBlockObjectEnum::grcNet:
-      return os << "grcNet";
-    case frBlockObjectEnum::grcPin:
-      return os << "grcPin";
-    case frBlockObjectEnum::grcAccessPattern:
-      return os << "grcAccessPattern";
-    case frBlockObjectEnum::grcPathSeg:
-      return os << "grcPathSeg";
-    case frBlockObjectEnum::grcRef:
-      return os << "grcRef";
-    case frBlockObjectEnum::grcVia:
-      return os << "grcVia";
     case frBlockObjectEnum::drcNet:
       return os << "drcNet";
     case frBlockObjectEnum::drcPin:

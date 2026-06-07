@@ -34,9 +34,22 @@ void TreeBuilder::mergeBlockages()
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->getType().isBlock()
         && inst->getPlacementStatus().isPlaced()) {
-      macros_max_dx = std::max(macros_max_dx, inst->getBBox()->getDX());
-      macros_max_dy = std::max(macros_max_dy, inst->getBBox()->getDY());
-      blockage_polygons += inst->getBBox()->getBox();
+      odb::dbBox* halo = inst->getHalo();
+      odb::Rect transformed_halo = odb::Rect();
+
+      if (halo != nullptr && !halo->isSoft()) {
+        transformed_halo = inst->getTransformedHalo();
+      }
+
+      odb::Rect inst_box = inst->getBBox()->getBox();
+      odb::Rect box = odb::Rect(inst_box.xMin() - transformed_halo.xMin(),
+                                inst_box.yMin() - transformed_halo.yMin(),
+                                inst_box.xMax() + transformed_halo.xMax(),
+                                inst_box.yMax() + transformed_halo.yMax());
+
+      macros_max_dx = std::max(macros_max_dx, static_cast<uint32_t>(box.dx()));
+      macros_max_dy = std::max(macros_max_dy, static_cast<uint32_t>(box.dy()));
+      blockage_polygons += box;
     }
   }
 

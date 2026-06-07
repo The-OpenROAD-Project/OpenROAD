@@ -1,9 +1,75 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
+
+# --- Downstream API surface tests ---
+# Verify visibility labels and dev_dependency markers by inspecting
+# BUILD.bazel and MODULE.bazel directly. Instant, no downstream workspace.
+
+py_test(
+    name = "openroad_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_binary",
+        "--target=openroad",
+        "--expect=public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "openroad_py_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=py_library",
+        "--target=openroad_py",
+        "--expect=public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "openroad_lib_restricted_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_library",
+        "--target=openroad_lib",
+        "--expect=not_public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "rules_verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_verilator",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
+
+py_test(
+    name = "verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=verilator",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
 
 exports_files(
     [
@@ -17,6 +83,8 @@ filegroup(
     name = "nangate45_data",
     srcs = [
         "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_lvt.lef",
+        "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_typ.lib",
         "Nangate45/fakeram45_64x7.lef",
         "Nangate45/fakeram45_64x7.lib",
@@ -76,12 +144,8 @@ COMPULSORY_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "upf_test",
-    "upf_aes",
 ]
 
-# Bazel OpenROAD is not compiled with Python support yet
-# leave as manual for now.
 PYTHON_TESTS = [
     "timing_api",
     "timing_api_2",
@@ -121,16 +185,29 @@ BIG_TESTS = [
     "tinyRocket_nangate45",
 ]
 
+# upf_aes does its own diff internally (regions-only under BAZEL_TEST) since
+# the full DEF output is not bit-stable across Bazel/CMake; the Tcl script
+# fails the test on mismatch, so the log diff against .ok is suppressed.
 [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
-        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS + ["upf_aes"] else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
-        tags = [] if test_name in COMPULSORY_TESTS and test_name not in MANUAL_FOR_BAZEL_TESTS else ["manual"],
+        data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS + BIG_TESTS else [],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
+
+py_test(
+    name = "timing_report_api_test",
+    size = "medium",
+    srcs = ["timing_report_api.py"],
+    data = [":regression_resources"],
+    main = "timing_report_api.py",
+    deps = ["//python/openroad:openroadpy"],
+)
 
 # These tests take a long time, make them easy to explicitly invoke
 test_suite(

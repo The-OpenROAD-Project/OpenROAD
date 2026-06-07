@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -22,6 +23,9 @@ cc_library(
         "src/SinkClustering.h",
         "src/TreeBuilder.h",
         "src/Util.h",
+    ],
+    includes = [
+        "src",
     ],
     visibility = ["//visibility:private"],
     deps = [
@@ -59,7 +63,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
@@ -83,19 +87,16 @@ cc_library(
     hdrs = [
         "include/cts/MakeTritoncts.h",
     ],
-    copts = [
-        "-Isrc/cts/src",
+    includes = [
+        "include",
+        "src",
     ],
-    includes = ["include"],
     deps = [
         ":cts",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
-        "//src/est",
         "//src/gui",
-        "//src/odb",
-        "//src/rsz",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -137,5 +138,21 @@ python_wrap_cc(
     root_swig_src = "src/TritonCTS-py.i",
     swig_includes = [
         "include",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/TritonCTS.tcl",
+    ],
+    visibility = ["//src/cts/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/cts/test:__pkg__",
     ],
 )

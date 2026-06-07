@@ -94,6 +94,8 @@ def diff_files(file1, file2, ignore=None):
 
 def make_design(tech):
     design = Design(tech)
+    if os.environ.get("TEST_SRCDIR", ""):
+        tech.thisown = False
     logger = design.getLogger()
 
     # Reading DEF file

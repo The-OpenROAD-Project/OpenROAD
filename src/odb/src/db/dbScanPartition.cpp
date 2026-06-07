@@ -23,6 +23,7 @@ template class dbTable<_dbScanPartition>;
 
 bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbScanPartition::operator==(const _dbScanPartition& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanPartition::operator<(const _dbScanPartition& rhs) const
@@ -73,6 +75,7 @@ void _dbScanPartition::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["name"].add(name_);
   scan_lists_->collectMemInfo(info.children["scan_lists_"]);
 }
 

@@ -20,6 +20,7 @@ template class dbTable<_dbChipBumpInst>;
 
 bool _dbChipBumpInst::operator==(const _dbChipBumpInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (chip_bump_ != rhs.chip_bump_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbChipBumpInst::operator==(const _dbChipBumpInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipBumpInst::operator<(const _dbChipBumpInst& rhs) const

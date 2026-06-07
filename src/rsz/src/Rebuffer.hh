@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -32,7 +33,8 @@ namespace rsz {
 
 class Resizer;
 class BufferedNet;
-class RepairSetup;
+class BufferCandidate;
+class SetupLegacyBase;
 enum class BufferedNetType;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 using BufferedNetSeq = std::vector<BufferedNetPtr>;
@@ -42,6 +44,7 @@ class Rebuffer : public sta::dbStaState
  public:
   Rebuffer(Resizer* resizer);
   void fullyRebuffer(sta::Pin* user_pin = nullptr);
+  void rebufferNet(const sta::Pin* drvr_pin);
 
  protected:
   void init();
@@ -109,6 +112,7 @@ class Rebuffer : public sta::dbStaState
   int fanout(sta::Vertex* vertex) const;
   int wireLengthLimitImpliedByLoadSlew(sta::LibertyCell*);
   int wireLengthLimitImpliedByMaxCap(sta::LibertyCell*);
+  int wireLengthStepForLayer(int layer);
 
   BufferedNetPtr attemptTopologyRewrite(const BufferedNetPtr& node,
                                         const BufferedNetPtr& left,
@@ -151,6 +155,7 @@ class Rebuffer : public sta::dbStaState
 
   int resizer_max_wire_length_ = 0;
   int wire_length_step_ = 0;
+  std::unordered_map<int, int> layer_wire_length_step_;
 
   double initial_design_area_ = 0.0;
   int print_interval_ = 0;
@@ -170,8 +175,9 @@ class Rebuffer : public sta::dbStaState
 
   double long_wire_stepping_runtime_ = 0;
 
-  friend class RepairSetup;
-  friend class BufferMove;
+  friend class rsz::BufferCandidate;
+  friend class rsz::SetupLegacyBase;
+  friend class Resizer;
 };
 
 };  // namespace rsz

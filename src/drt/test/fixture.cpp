@@ -25,9 +25,9 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "src/drt/src/global.h"
 #include "utl/Logger.h"
 
 using odb::dbTechLayerDir;
@@ -175,8 +175,6 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   master->addTerm(std::move(uTerm));
   odb::dbSigType termType = odb::dbSigType::SIGNAL;
   term->setType(termType);
-  odb::dbIoType termDirection = odb::dbIoType::INPUT;
-  term->setDirection(termDirection);
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
@@ -281,6 +279,17 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
                                                {0, 400},
                                                {{100, 200}, {300, 400}});
   auto con = std::make_unique<frSpacingTablePrlConstraint>(tbl);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
+void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
+                                          const frCoord spacing_value)
+{
+  auto con = std::make_unique<frSpacingConstraint>(spacing_value);
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);

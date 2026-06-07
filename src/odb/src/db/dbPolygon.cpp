@@ -30,6 +30,7 @@ template class dbTable<_dbPolygon>;
 
 bool _dbPolygon::operator==(const _dbPolygon& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -53,6 +54,7 @@ bool _dbPolygon::operator==(const _dbPolygon& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbPolygon::operator<(const _dbPolygon& rhs) const
@@ -114,7 +116,7 @@ void _dbPolygon::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-Polygon dbPolygon::getPolygon() const
+const Polygon& dbPolygon::getPolygon() const
 {
   _dbPolygon* obj = (_dbPolygon*) this;
   return obj->polygon_;

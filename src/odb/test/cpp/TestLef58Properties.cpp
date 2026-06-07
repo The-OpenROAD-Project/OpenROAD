@@ -77,6 +77,7 @@ TEST_F(Fixture, test_default)
 
   auto dbTech = db2->getTech();
   double distFactor = 2000;
+  double areaFactor = 2000 * 2000;
   auto layer = dbTech->findLayer("metal1");
   EXPECT_EQ(layer->getLef58Type(), odb::dbTechLayer::LEF58_TYPE::MIMCAP);
   auto rules = layer->getTechLayerSpacingEolRules();
@@ -228,7 +229,7 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(minCutRule->getNumCuts(), 2);
   EXPECT_EQ(minCutRule->getWithinCutDist(), 0.05 * distFactor);
   EXPECT_EQ(minCutRule->getWidth(), 0.09 * distFactor);
-  EXPECT_EQ(minCutRule->getArea(), 2.0 * distFactor);
+  EXPECT_EQ(minCutRule->getArea(), 2.0 * areaFactor);
 
   auto cutLayer = dbTech->findLayer("via1");
 
@@ -393,15 +394,15 @@ TEST_F(Fixture, test_default)
   int cnt = 0;
   for (odb::dbTechLayerAreaRule* subRule : areaRules) {
     if (cnt == 0) {
-      EXPECT_EQ(subRule->getArea(), 0.044 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.044 * areaFactor);
       EXPECT_EQ(subRule->getMask(), 2);
     }
     if (cnt == 1) {
-      EXPECT_EQ(subRule->getArea(), 0.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.34 * areaFactor);
       EXPECT_EQ(subRule->getRectWidth(), 0.12 * distFactor);
     }
     if (cnt == 2) {
-      EXPECT_EQ(subRule->getArea(), 1.01 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 1.01 * areaFactor);
       EXPECT_EQ(subRule->getExceptMinWidth(), 0.09 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().first, 0.1 * distFactor);
       EXPECT_EQ(subRule->getExceptMinSize().second, 0.3 * distFactor);
@@ -410,16 +411,16 @@ TEST_F(Fixture, test_default)
       EXPECT_EQ(subRule->getExceptEdgeLength(), 0.8 * distFactor);
     }
     if (cnt == 3) {
-      EXPECT_EQ(subRule->getArea(), 0.101 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.101 * areaFactor);
       EXPECT_EQ(subRule->getTrimLayer()->getName(), "metal1");
       EXPECT_EQ(subRule->getOverlap(), 1);
     }
     if (cnt == 4) {
-      EXPECT_EQ(subRule->getArea(), 2.34 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 2.34 * areaFactor);
       EXPECT_TRUE(subRule->isExceptRectangle());
     }
     if (cnt == 5) {
-      EXPECT_EQ(subRule->getArea(), 0.78 * distFactor);
+      EXPECT_EQ(subRule->getArea(), 0.78 * areaFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().first, 0.3 * distFactor);
       EXPECT_EQ(subRule->getExceptEdgeLengths().second, 0.7 * distFactor);
     }
@@ -620,4 +621,28 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(layer->getMinWidth(), 280);
   EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
+TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
+{
+  const char* libname = "lef58_antennagateplusdiff.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_antennagateplusdiff.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("metal1");
+  EXPECT_TRUE(layer);
+
+  auto rule1 = layer->getDefaultAntennaRule();
+  EXPECT_TRUE(rule1);
+  EXPECT_EQ(rule1->getGatePlusDiffFactor(), 0.5);
+
+  auto rule2 = layer->getOxide2AntennaRule();
+  EXPECT_TRUE(rule2);
+  auto pwl = rule2->getGatePlusDiffPWL();
+  EXPECT_EQ(pwl.indices.size(), 2);
+  EXPECT_EQ(pwl.indices[0], 1.0);
+  EXPECT_EQ(pwl.ratios[0], 2.0);
+  EXPECT_EQ(pwl.indices[1], 3.0);
+  EXPECT_EQ(pwl.ratios[1], 4.0);
+}
+
 }  // namespace odb

@@ -59,6 +59,80 @@ Without offering any deeper insight some comments about what is shown above:
 - `exec` means host, appears with `ST` and an extra hash at the end
 - `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
+### LTO
+
+The default Bazel build (`fastbuild`) does not enable Link Time Optimization
+(LTO). `-c opt` enables optimization without LTO; `--config=opt` adds LTO
+on top, which improves runtime by ~11% at the cost of a much longer
+(single-threaded) link step. Use `--config=opt` for production binaries
+shipped to end users; keep the default for the local edit-rebuild loop.
+The CMake build has LTO on by default in Release mode -- see the
+[CMake LTO option](Build.md#lto-options).
+
+## Using OpenROAD as a dependency from another project
+
+OpenROAD can be consumed as a Bazel module (`bazel_dep`) from another
+project. The public API consists of two targets:
+
+| Target | Description |
+| --- | --- |
+| `@openroad//:openroad` | The CLI binary |
+| `@openroad//:openroad_py` | Python bindings for scripting |
+
+All other targets (e.g. `openroad_lib`, internal libraries) are
+restricted to OpenROAD's own subpackages and are not part of the
+public API.
+
+### Minimal MODULE.bazel for a downstream project
+
+```starlark
+module(name = "my-project")
+
+bazel_dep(name = "openroad")
+git_override(
+    module_name = "openroad",
+    commit = "<commit-hash>",
+    init_submodules = True,
+    remote = "https://github.com/The-OpenROAD-Project/OpenROAD.git",
+)
+
+# qt-bazel is not in BCR; git_override is root-module-only,
+# so downstream consumers must repeat it.
+bazel_dep(name = "qt-bazel")
+git_override(
+    module_name = "qt-bazel",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+)
+```
+
+### Suggested: pin the C++ toolchain for reproducibility
+
+OpenROAD uses `toolchains_llvm` internally to lock the compiler version
+and ensure reproducible builds across developers and CI. Downstream
+consumers can use any C++20-capable compiler, but pinning the same
+toolchain is recommended to avoid compiler-specific issues:
+
+```starlark
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(llvm_version = "20.1.8")
+use_repo(llvm, "llvm_toolchain")
+register_toolchains("@llvm_toolchain//:all")
+```
+
+### Dev dependencies not leaked to consumers
+
+The following are `dev_dependency` in OpenROAD and will not be forced
+on downstream projects via MVS:
+
+- rules_pkg — only needed for //:install
+- `rules_verilator`, `verilator` — only needed for test/orfs simulation
+- `toolchains_llvm` extension and toolchain registration
+
+The downstream test at `test/downstream/` verifies these invariants.
+
 ## Build without testing
 
     bazelisk build :openroad
@@ -163,7 +237,7 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
     708	      if (pt.x() == x && pt.y() == y) {
     709	        return true;
 
-## Creating an ORFS issue with bazel-orfs targets using `_deps` targes
+## Creating an ORFS issue with bazel-orfs targets using `//:deps`
 
 Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
 
@@ -178,10 +252,10 @@ Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can fi
 
 To create an ORFS `make issue`, follow these steps:
 
-    bazelisk run //test/orfs/mock-array:MockArray_floorplan_deps
+    bazelisk run //:deps -- //test/orfs/mock-array:MockArray_floorplan
 
 - In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
-- bazel-orfs adds a `//test/orfs/mock-array:MockArray_floorplan_deps` target that sets up all the dependencies for running `make do-floorplan`, similarly for `_synth/place/cts/grt/route/final`.
+- bazel-orfs provides a `//:deps` wrapper that builds only the `deps` output group (cheap config/template operations) and deploys the dependencies for running `make do-floorplan`. The same works for any stage: synth, place, cts, grt, route or final.
 - Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
 
 First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
@@ -368,7 +442,7 @@ This will:
 
 First set up a local work folder with all dependencies for the step that you want to work on:
 
-    bazelisk run //test/orfs/gcd:gcd_floorplan_deps
+    bazelisk run //:deps -- //test/orfs/gcd:gcd_floorplan
 
 Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
 
@@ -384,7 +458,7 @@ Consider an error such as:
 
 First set up a folder with all the dependencies to run global placement:
 
-    bazelisk run //test/orfs/gcd:gcd_place_deps
+    bazelisk run //:deps -- //test/orfs/gcd:gcd_place
 
 Drop into a shell that has the build environment set up:
 
@@ -405,3 +479,31 @@ an ORFS checkout):
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
     tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue
+
+### Monitoring progress
+
+whittle.py prints `[whittle]` status lines showing the current phase,
+element counts, .odb file size, and elapsed time.  After a step runs for
+more than 5 minutes, whittle.py also shows the last 10 lines of the
+step's log output so you can tell what the step is doing.
+
+If the .odb size is not shrinking after 20+ steps, try different
+parameters (`--persistence 1` for a coarser first pass, or a higher
+`--multiplier`).  If each step takes more than 10 minutes, check that
+`--error_string` is specific enough (avoid generic strings like "ERROR").
+
+### Using Claude with whittle.py
+
+Point Claude at a GitHub issue that has an attached tarball artifact
+(from `make *_issue`).  Claude can download the artifact, reproduce the
+bug with the latest OpenROAD, run whittle.py, and upload a smaller
+test case.
+
+| Scenario | Recommended flags |
+| --- | --- |
+| Global placement bugs | `--error_string GPL-XXXX --persistence 3 --multiplier 2` |
+| Fast initial reduction | `--persistence 1` first, then increase |
+| Large designs (>100K insts) | Start with `--timeout 600` |
+
+See the `/triage-issue` Claude skill in `.claude/skills/triage-issue/`
+for the full step-by-step workflow.

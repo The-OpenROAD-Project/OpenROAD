@@ -16,13 +16,13 @@ cc_library(
     srcs = [
         "src/MakeRam.cpp",
         "src/layout.cpp",
-        "src/layout.h",
         "src/ram.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
         "include/ram/MakeRam.h",
+        "include/ram/layout.h",
         "include/ram/ram.h",
     ],
     includes = [
@@ -34,7 +34,7 @@ cc_library(
         "//src/dpl",
         "//src/drt",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/pdn",
         "//src/ppl",
         "//src/sta:opensta_lib",

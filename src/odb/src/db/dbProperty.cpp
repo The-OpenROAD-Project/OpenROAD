@@ -34,6 +34,7 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -56,6 +57,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbProperty::operator<(const _dbProperty& rhs) const

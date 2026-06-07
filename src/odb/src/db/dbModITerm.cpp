@@ -19,7 +19,6 @@
 // User Code Begin Includes
 #include <cassert>
 #include <cstdint>
-#include <cstring>
 #include <string>
 
 #include "dbCommon.h"
@@ -33,6 +32,7 @@ template class dbTable<_dbModITerm>;
 
 bool _dbModITerm::operator==(const _dbModITerm& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -59,6 +59,7 @@ bool _dbModITerm::operator==(const _dbModITerm& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModITerm::operator<(const _dbModITerm& rhs) const
@@ -230,7 +231,6 @@ dbModITerm* dbModITerm::create(dbModInst* parentInstance,
 
   _dbModInst* parent = reinterpret_cast<_dbModInst*>(parentInstance);
   _dbBlock* block = static_cast<_dbBlock*>(parent->getOwner());
-  assert(strchr(name, block->hier_delimiter_) == nullptr);
   _dbModITerm* moditerm = block->moditerm_tbl_->create();
 
   // defaults

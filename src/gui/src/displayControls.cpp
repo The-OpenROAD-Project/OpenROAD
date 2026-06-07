@@ -2124,8 +2124,10 @@ void DisplayControls::techInit(odb::dbTech* tech)
   std::mt19937 gen_color(1);
 
   auto generate_next_color = [&gen_color]() -> QColor {
-    return QColor(
-        50 + gen_color() % 200, 50 + gen_color() % 200, 50 + gen_color() % 200);
+    const int blue = 50 + gen_color() % 200;
+    const int green = 50 + gen_color() % 200;
+    const int red = 50 + gen_color() % 200;
+    return QColor(red, green, blue);
   };
 
   // Iterate through the layers and set default colors
@@ -2174,7 +2176,7 @@ void DisplayControls::setCurrentChip(odb::dbChip* chip)
     return;
   }
 
-  std::set<odb::dbTech*> visible_techs;
+  odb::PtrSet<odb::dbTech> visible_techs;
 
   std::function<void(odb::dbChip*)> collect_techs = [&](odb::dbChip* chip) {
     auto tech = chip->getTech();

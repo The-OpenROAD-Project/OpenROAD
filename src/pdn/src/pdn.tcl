@@ -9,7 +9,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
-} ;#checker off
+}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -172,7 +172,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-power_control_network (STAR|DAISY)] \
                                         [-connect_to_pads] \
                                         [-connect_to_pad_layers layers]
-} ;#checker off
+}
 
 proc define_pdn_grid { args } {
   set is_macro 0
@@ -398,7 +398,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]\
                                      [-allow_out_of_die]
-                                     } ;#checker off
+                                     }
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
@@ -670,6 +670,19 @@ proc add_sroute_connect { args } {
       -metalspaces -ongrid -insts} \
     flags {}
 
+  if { ![info exists keys(-layers)] } {
+    utl::error PDN 1193 "The -layers argument is required."
+  }
+  if { [llength $keys(-layers)] != 2 } {
+    utl::error PDN 1195 "The -layers argument must be a list of 2 layers."
+  }
+  if { ![info exists keys(-cut_pitch)] } {
+    utl::error PDN 1194 "The -cut_pitch argument is required."
+  }
+  if { [llength $keys(-cut_pitch)] != 2 } {
+    utl::error PDN 1196 "The -cut_pitch argument must be a list of 2 pitch values."
+  }
+
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
   set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
 
@@ -678,10 +691,10 @@ proc add_sroute_connect { args } {
   set cut_pitch_x [lindex $keys(-cut_pitch) 0]
   set cut_pitch_y [lindex $keys(-cut_pitch) 1]
 
-  set net ""
-  if { [info exists keys(-net)] } {
-    set net $keys(-net)
+  if { ![info exists keys(-net)] } {
+    utl::error PDN 1197 "The -net argument is required."
   }
+  set net $keys(-net) ;# always set after validation
 
   set outerNet ""
   if { [info exists keys(-outerNet)] } {
@@ -845,7 +858,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network -connect_to_pad_layers} \
-    flags {-connect_to_pads} ;# checker off
+    flags {-connect_to_pads}
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"

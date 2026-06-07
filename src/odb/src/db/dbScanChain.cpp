@@ -27,6 +27,7 @@ template class dbTable<_dbScanChain>;
 
 bool _dbScanChain::operator==(const _dbScanChain& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -50,6 +51,7 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanChain::operator<(const _dbScanChain& rhs) const
@@ -105,6 +107,8 @@ void _dbScanChain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["name"].add(name_);
+  info.children["test_mode_name"].add(test_mode_name_);
   scan_partitions_->collectMemInfo(info.children["scan_partitions_"]);
 }
 
@@ -140,23 +144,22 @@ void dbScanChain::setName(std::string_view name)
 }
 
 std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
-    const dbId<dbScanPin>& scan_pin_id)
+    const dbId<_dbScanPin>& scan_pin_id)
 {
   _dbDft* dft = (_dbDft*) getOwner();
-  return ((dbScanPin*) dft->scan_pins_->getPtr((dbId<_dbScanPin>) scan_pin_id))
-      ->getPin();
+  return ((dbScanPin*) dft->scan_pins_->getPtr(scan_pin_id))->getPin();
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbBTerm* pin)
+void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::*field, dbBTerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
-  this->*field = dbScanPin::create(dft, pin);
+  this->*field = dbScanPin::create(dft, pin)->getImpl()->getOID();
 }
 
-void _dbScanChain::setPin(dbId<dbScanPin> _dbScanChain::*field, dbITerm* pin)
+void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::*field, dbITerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
-  this->*field = dbScanPin::create(dft, pin);
+  this->*field = dbScanPin::create(dft, pin)->getImpl()->getOID();
 }
 
 void dbScanChain::setScanIn(dbBTerm* scan_in)

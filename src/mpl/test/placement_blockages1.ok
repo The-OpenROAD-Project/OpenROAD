@@ -1,0 +1,19 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: placement_blockages1
+[INFO ODB-0131]     Created 151 components and 902 component-terminals.
+Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
+	Number of std cell instances: 150
+	Area of std cell instances: 678.30
+	Number of macros: 1
+	Area of macros: 10000.00
+	Base halo (L, B, R, T): (0.00, 0.00, 0.00, 0.00)
+	Area of macros with halos: 10000.00
+	Area of std cell instances + Area of macros: 10678.30
+	Floorplan area: 18678.79
+	Design Utilization: 0.57
+	Floorplan Utilization: 0.08
+	Manufacturing Grid: 10
+
+[WARNING MPL-0026] Design has no IO pins!
+No differences found.

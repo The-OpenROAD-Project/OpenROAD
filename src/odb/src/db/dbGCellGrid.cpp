@@ -46,6 +46,7 @@ static dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.x_grid_valid != rhs.flags_.x_grid_valid) {
     return false;
   }
@@ -79,6 +80,7 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const
@@ -177,16 +179,16 @@ void _dbGCellGrid::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["x_origin"].add(x_origin_);
-  info.children["x_count_"].add(x_count_);
-  info.children["x_step_"].add(x_step_);
-  info.children["y_origin_"].add(y_origin_);
-  info.children["y_count_"].add(y_count_);
-  info.children["y_step_"].add(y_step_);
-  info.children["x_grid_"].add(x_grid_);
-  info.children["y_grid_"].add(y_grid_);
+  info.children["x_count"].add(x_count_);
+  info.children["x_step"].add(x_step_);
+  info.children["y_origin"].add(y_origin_);
+  info.children["y_count"].add(y_count_);
+  info.children["y_step"].add(y_step_);
+  info.children["x_grid"].add(x_grid_);
+  info.children["y_grid"].add(y_grid_);
 
+  // User Code Begin collectMemInfo
   MemInfo& congestion_info = info.children["congestion"];
   for (auto& [layer, data] : congestion_map_) {
     congestion_info.add(data);

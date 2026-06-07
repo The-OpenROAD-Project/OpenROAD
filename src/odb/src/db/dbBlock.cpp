@@ -118,6 +118,7 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -126,11 +127,9 @@
 #include "odb/dbShape.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/defout.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
-#include "odb/lefout.h"
 #include "odb/poly_decomp.h"
 #include "utl/Logger.h"
 
@@ -2517,7 +2516,20 @@ int dbBlock::getGCellTileSize()
   // lambda function to get the average track spacing of a given layer
   auto getAverageTrackSpacing = [this](int layer_idx) -> int {
     dbTech* tech = getTech();
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    // Skip backside routing layers (e.g. BSPDN BPR/BM*/BRDL) so the Nth
+    // routing layer is counted among frontside metals regardless of LEF
+    // ordering.
+    odb::dbTechLayer* tech_layer = nullptr;
+    int count = 0;
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
+        continue;
+      }
+      if (++count == layer_idx) {
+        tech_layer = layer;
+        break;
+      }
+    }
     odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
 
     if (track_grid == nullptr) {
@@ -3268,11 +3280,11 @@ void dbBlock::clearUserInstFlags()
   }
 }
 
-std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
+odb::PtrMap<dbTechLayer, odb::dbTechVia*> dbBlock::getDefaultVias()
 {
   odb::dbTech* tech = getTech();
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-  std::map<dbTechLayer*, odb::dbTechVia*> default_vias;
+  odb::PtrMap<dbTechLayer, odb::dbTechVia*> default_vias;
 
   for (odb::dbTechVia* via : vias) {
     odb::dbStringProperty* prop
@@ -3418,7 +3430,7 @@ int dbBlock::globalConnect(dbGlobalConnect* gc, bool force, bool verbose)
 void dbBlock::clearGlobalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
-  std::set<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
+  odb::PtrSet<dbGlobalConnect> connects(gcs.begin(), gcs.end());
   for (auto* connect : connects) {
     odb::dbGlobalConnect::destroy(connect);
   }
@@ -3494,11 +3506,11 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
   std::vector<_dbGlobalConnect*> non_region_rules;
   std::vector<_dbGlobalConnect*> region_rules;
 
-  std::set<dbITerm*> connected_iterms;
-  std::set<dbITerm*> skipped_iterms;
+  odb::PtrSet<dbITerm> connected_iterms;
+  odb::PtrSet<dbITerm> skipped_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
-  std::set<dbInst*> donottouchinsts;
+  odb::PtrSet<dbInst> donottouchinsts;
   for (dbGlobalConnect* connect : connects) {
     _dbGlobalConnect* gc = (_dbGlobalConnect*) connect;
     if (gc->region_ != 0) {
@@ -3513,7 +3525,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
     std::vector<dbInst*> insts = connect->getInsts();
 
     // remove insts marked do not touch
-    std::set<dbInst*> remove_insts;
+    odb::PtrSet<dbInst> remove_insts;
     for (dbInst* inst : insts) {
       if (inst->isDoNotTouch()) {
         remove_insts.insert(inst);
@@ -3926,35 +3938,38 @@ std::string _dbBlock::makeNewName(
 // If uniquify is IF_NEEDED, unique suffix will be added when necessary.
 // This is added to cover the existing multiple use cases of making a
 // new net name w/ and w/o unique suffix.
-std::string dbBlock::makeNewNetName(dbModInst* parent,
+// If corresponding_flat_net is nullptr, any findNet() hit is a collision
+// (strict mode for flat net creation).
+// If corresponding_flat_net is non-null, only internal flat nets excluding
+// the corresponding one collide (lenient mode for ModNet creation).
+std::string dbBlock::makeNewNetName(const dbModule* parent,
                                     const char* base_name,
-                                    const dbNameUniquifyType& uniquify)
+                                    const dbNameUniquifyType& uniquify,
+                                    dbNet* corresponding_flat_net)
 {
-  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [this](const char* name) { return findNet(name) != nullptr; };
-  return block->makeNewName(
-      parent, base_name, uniquify, block->unique_net_index_, exists);
-}
+  const dbModule* scope = parent ? parent : getTopModule();
+  dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
 
-std::string dbBlock::makeNewModNetName(dbModule* parent,
-                                       const char* base_name,
-                                       const dbNameUniquifyType& uniquify,
-                                       dbNet* corresponding_flat_net)
-{
-  auto exists = [parent, this, corresponding_flat_net](const char* full_name) {
-    const char* base_name_ptr = getBaseName(full_name);
-    if (parent->getModNet(base_name_ptr)
-        || parent->findModBTerm(base_name_ptr)) {
-      return true;
+  auto exists = [this, scope, corresponding_flat_net](const char* name) {
+    if (scope != nullptr) {
+      const char* base = getBaseName(name);
+      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+        return true;
+      }
     }
 
-    // Internal flat net collision check (uses full hierarchical name)
-    // - Allow collision with the corresponding flat net (same logical net)
-    // - Collision with other internal flat nets is not allowed
-    dbNet* existing_net = findNet(full_name);
-    if (existing_net != nullptr && existing_net != corresponding_flat_net) {
-      if (existing_net->isInternalTo(parent)) {
-        return true;  // Collision with a different internal flat net
+    // Flat net collision check
+    dbNet* existing_net = findNet(name);
+    if (existing_net != nullptr) {
+      if (corresponding_flat_net == nullptr) {
+        // Strict mode: any flat net hit is a collision
+        return true;
+      }
+      // Lenient mode: only internal flat nets (excluding the corresponding
+      // one) are collisions
+      if (existing_net != corresponding_flat_net
+          && existing_net->isInternalTo(scope)) {
+        return true;
       }
     }
 
@@ -3962,11 +3977,8 @@ std::string dbBlock::makeNewModNetName(dbModule* parent,
   };
 
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  return block->makeNewName(parent->getModInst(),
-                            base_name,
-                            uniquify,
-                            block->unique_net_index_,
-                            exists);
+  return block->makeNewName(
+      mod_inst, base_name, uniquify, block->unique_net_index_, exists);
 }
 
 std::string dbBlock::makeNewInstName(dbModInst* parent,

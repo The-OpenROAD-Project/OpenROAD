@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "GeoTypes.h"
@@ -58,6 +59,8 @@ class CUGRNet
   int getNumPins() const { return pins_.size(); }
   std::string getName() const { return db_net_->getName(); }
   LayerRange getLayerRange() const { return layer_range_; }
+  void setPins(std::vector<CUGRPin> pins) { pins_ = std::move(pins); }
+  void setLayerRange(LayerRange layer_range) { layer_range_ = layer_range; }
 
  private:
   const int index_;

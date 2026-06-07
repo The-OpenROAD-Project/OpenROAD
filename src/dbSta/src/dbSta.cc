@@ -32,6 +32,7 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -41,6 +42,9 @@
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphCmp.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/LevelizeObserver.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -53,14 +57,15 @@
 #include "sta/PortDirection.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
-#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
+#include "utl/validation.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -113,40 +118,27 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void warn(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
-  void fileWarn(int id,
-                const char* filename,
-                int line,
-                const char* fmt,
-                ...) override __attribute__((format(printf, 5, 6)));
-  void vfileWarn(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 va_list args) override;
-
-  void error(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
-  void fileError(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 ...) override __attribute__((format(printf, 5, 6)));
-  void vfileError(int id,
-                  const char* filename,
-                  int line,
-                  const char* fmt,
-                  va_list args) override;
-
-  void critical(int id, const char* fmt, ...) override
-      __attribute__((format(printf, 3, 4)));
+  void warnMsg(int id, const std::string& formatted_msg) override;
+  void fileWarnMsg(int id,
+                   std::string_view filename,
+                   int line,
+                   const std::string& formatted_msg) override;
+  void errorMsg(int id, const std::string& formatted_msg) override;
+  void fileErrorMsg(int id,
+                    std::string_view filename,
+                    int line,
+                    const std::string& formatted_msg) override;
+  void criticalMsg(int id, const std::string& formatted_msg) override;
+  void fileCriticalMsg(int id,
+                       std::string_view filename,
+                       int line,
+                       const std::string& formatted_msg) override;
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
-  void redirectFileBegin(const char* filename) override;
+  void redirectFileBegin(std::string_view filename) override;
   // Redirect append output to filename until redirectFileEnd is called.
-  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileAppendBegin(std::string_view filename) override;
   void redirectFileEnd() override;
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin() override;
@@ -156,6 +148,7 @@ class dbStaReport : public sta::ReportTcl
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
+  std::string redirect_string_result_;
 };
 
 class dbStaCbk : public odb::dbBlockCallBackObj
@@ -165,6 +158,8 @@ class dbStaCbk : public odb::dbBlockCallBackObj
   void setNetwork(dbNetwork* network);
   void inDbInstCreate(odb::dbInst* inst) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
+  void inDbPostInstRename(odb::dbInst* inst, const char* old_name) override;
+  void inDbPostInstParentChange(odb::dbInst* inst) override;
   void inDbModuleCreate(odb::dbModule* module) override;
   void inDbModuleDestroy(odb::dbModule* module) override;
   void inDbInstSwapMasterBefore(odb::dbInst* inst,
@@ -197,6 +192,8 @@ class dbStaCbk : public odb::dbBlockCallBackObj
 
   dbSta* sta_;
   dbNetwork* network_ = nullptr;
+  // Cached so the per-edit callbacks don't pay a dynamic_cast each time.
+  dbSdcNetwork* sdc_network_ = nullptr;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -300,6 +297,73 @@ void dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
+// Extend the default StaLevelizeObserver (Search + GraphDelayCalc forwarding)
+// to also invalidate dbSta's driver-vertex cache.
+class DbStaLevelizeObserver : public StaLevelizeObserver
+{
+ public:
+  DbStaLevelizeObserver(dbSta* sta, Search* search, GraphDelayCalc* gdc)
+      : StaLevelizeObserver(search, gdc), sta_(sta)
+  {
+  }
+  void levelsChangedBefore() override
+  {
+    StaLevelizeObserver::levelsChangedBefore();
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+  void levelChangedBefore(Vertex* vertex) override
+  {
+    StaLevelizeObserver::levelChangedBefore(vertex);
+    sta_->invalidateLevelizedDrvrVertices();
+  }
+
+ private:
+  dbSta* sta_;
+};
+
+void dbSta::makeObservers()
+{
+  Sta::makeObservers();
+  setLevelizeObserver(
+      new DbStaLevelizeObserver(this, search_, graph_delay_calc_));
+}
+
+void dbSta::invalidateLevelizedDrvrVertices()
+{
+  if (drvr_vertices_level_valid_) {
+    drvr_vertices_level_valid_ = false;
+    levelized_drvr_vertices_.clear();
+  }
+}
+
+const VertexSeq& dbSta::levelizedDrvrVertices()
+{
+  ensureLevelized();
+  if (!drvr_vertices_level_valid_) {
+    Graph* g = graph();
+    // Approx half of vertices are drivers.
+    levelized_drvr_vertices_.reserve(g->vertexCount() / 2);
+    Network* net = network();
+    VertexIterator vertex_iter(g);
+    while (vertex_iter.hasNext()) {
+      Vertex* vertex = vertex_iter.next();
+      if (vertex->isDriver(net)) {
+        levelized_drvr_vertices_.push_back(vertex);
+      }
+    }
+    VertexNameLess name_less(net);
+    std::ranges::sort(levelized_drvr_vertices_,
+                      [&name_less](const Vertex* a, const Vertex* b) {
+                        if (a->level() != b->level()) {
+                          return a->level() < b->level();
+                        }
+                        return name_less(a, b);
+                      });
+    drvr_vertices_level_valid_ = true;
+  }
+  return levelized_drvr_vertices_;
+}
+
 void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 {
   if (library) {
@@ -335,17 +399,17 @@ void dbSta::postReadDb(odb::dbDatabase* db)
   }
 }
 
-Slack dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
+float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return slack(net, min_max);
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets()
+odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {
     const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
@@ -362,11 +426,11 @@ std::set<odb::dbNet*> dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets(const Clock* clk)
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
@@ -657,7 +721,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    std::map<odb::dbMaster*, TypeStats> usage_count;
+    odb::PtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];
@@ -708,28 +772,56 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+// bin_size: fixed bin width in user time units (e.g., ns).
+//           If 0.0, num_bins is used to determine bin width automatically.
+void dbSta::reportTimingHistogram(int num_bins,
+                                  const MinMax* min_max,
+                                  float bin_size) const
 {
-  utl::Histogram<float> histogram(logger_);
+  utl::Validator validator(logger_, utl::STA);
+  validator.check_non_negative("bin_size", bin_size, 71);
+  if (bin_size == 0.0) {
+    validator.check_positive("num_bins", num_bins, 70);
+  }
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
+  utl::Histogram<float> histogram(logger_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
-    float slack = sta_->slack(vertex, min_max);
+    float slack
+        = sta::delayAsFloat(sta_->slack(vertex, min_max), min_max, sta_);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       histogram.addData(time_unit->staToUser(slack));
     }
   }
 
-  histogram.generateBins(num_bins);
+  if (!histogram.hasData()) {
+    logger_->warn(utl::STA, 72, "No constrained paths found.");
+    return;
+  }
+
+  if (bin_size > 0.0) {
+    const float min_slack = histogram.getMinValue();
+    const float max_slack = histogram.getMaxValue();
+    const float hist_min = std::floor(min_slack / bin_size) * bin_size;
+    const float hist_max = std::ceil(max_slack / bin_size) * bin_size;
+    int actual_num_bins
+        = static_cast<int>(std::ceil((hist_max - hist_min) / bin_size));
+    if (actual_num_bins <= 0) {
+      actual_num_bins = 1;
+    }
+    histogram.generateBins(actual_num_bins, hist_min, bin_size);
+  } else {
+    histogram.generateBins(num_bins);
+  }
+
   histogram.report(/*precision=*/3);
 }
 
-void dbSta::reportLogicDepthHistogram(int num_bins,
-                                      bool exclude_buffers,
+std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
                                       bool exclude_inverters) const
 {
-  utl::Histogram<int> histogram(logger_);
-
+  std::vector<int> depths;
+  depths.reserve(sta_->endpoints().size());
   sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : sta_->endpoints()) {
     int path_length = 0;
@@ -750,9 +842,19 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
       }
       path = path->prevPath();
     }
-    histogram.addData(path_length);
+    depths.push_back(path_length);
   }
+  return depths;
+}
 
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+  for (int depth : levelsOfLogic(exclude_buffers, exclude_inverters)) {
+    histogram.addData(depth);
+  }
   histogram.generateBins(num_bins);
   histogram.report();
 }
@@ -995,105 +1097,55 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   return length;
 }
 
-void dbStaReport::warn(int id, const char* fmt, ...)
+void dbStaReport::warnMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->warn(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileWarn(int id,
-                           const char* filename,
-                           int line,
-                           const char* fmt,
-                           ...)
+void dbStaReport::fileWarnMsg(int id,
+                              std::string_view filename,
+                              int line,
+                              const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->warn(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::vfileWarn(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            va_list args)
+void dbStaReport::errorMsg(int id, const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
+  logger_->error(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::error(int id, const char* fmt, ...)
+void dbStaReport::fileErrorMsg(int id,
+                               std::string_view filename,
+                               int line,
+                               const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, buffer_);
-  va_end(args);
+  logger_->error(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::fileError(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            ...)
+void dbStaReport::criticalMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->critical(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::vfileError(int id,
-                             const char* filename,
-                             int line,
-                             const char* fmt,
-                             va_list args)
+void dbStaReport::fileCriticalMsg(int id,
+                                  std::string_view filename,
+                                  int line,
+                                  const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
+  logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::critical(int id, const char* fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->critical(STA, id, "{}", buffer_);
-  va_end(args);
-}
-
-void dbStaReport::redirectFileBegin(const char* filename)
+void dbStaReport::redirectFileBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileBegin(filename);
+  logger_->redirectFileBegin(std::string(filename));
 }
 
-void dbStaReport::redirectFileAppendBegin(const char* filename)
+void dbStaReport::redirectFileAppendBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileAppendBegin(filename);
+  logger_->redirectFileAppendBegin(std::string(filename));
 }
 
 void dbStaReport::redirectFileEnd()
@@ -1111,8 +1163,8 @@ void dbStaReport::redirectStringBegin()
 const char* dbStaReport::redirectStringEnd()
 {
   flush();
-  const std::string string = logger_->redirectStringEnd();
-  return stringPrintTmp("%s", string.c_str());
+  redirect_string_result_ = logger_->redirectStringEnd();
+  return redirect_string_result_.c_str();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1128,18 +1180,52 @@ dbStaCbk::dbStaCbk(dbSta* sta) : sta_(sta)
 void dbStaCbk::setNetwork(dbNetwork* network)
 {
   network_ = network;
+  sdc_network_ = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
 }
+
+// Keep the dbSdcNetwork's lazy literal-lookup map consistent across
+// hierarchy edits. Incremental updates avoid the O(N) DFS rebuild that
+// blanket invalidation forced on every edit — the create-then-query
+// loop in repair_timing used to be O(N^2) here.
 
 void dbStaCbk::inDbInstCreate(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(inst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(inst));
+  // New driver vertices may exist; invalidate cached driver-vertex list.
+  sta_->invalidateLevelizedDrvrVertices();
 }
 
 void dbStaCbk::inDbInstDestroy(odb::dbInst* inst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstDestroyed(network_->dbToSta(inst));
+  }
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
+  // Sta::deleteLeafInstanceBefore calls Levelize::deleteVertexBefore
+  // directly (bypassing the LevelizeObserver), so the dbSta cache must be
+  // invalidated explicitly here to avoid a dangling Vertex* on next query.
+  sta_->invalidateLevelizedDrvrVertices();
+}
+
+void dbStaCbk::inDbPostInstRename(odb::dbInst* inst, const char* /*old_name*/)
+{
+  if (sdc_network_) {
+    sdc_network_->onInstRenamed(network_->dbToSta(inst));
+  }
+}
+
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
+{
+  // Reparenting moves a whole subtree at once and can flip descendants'
+  // pathological status. Drop the cache; reparent is rare.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
 }
 
 void dbStaCbk::inDbModuleCreate(odb::dbModule* module)
@@ -1286,11 +1372,19 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)
 {
+  if (sdc_network_) {
+    sdc_network_->onInstCreated(network_->dbToSta(modinst));
+  }
   sta_->makeInstanceAfter(network_->dbToSta(modinst));
 }
 
 void dbStaCbk::inDbModInstDestroy(odb::dbModInst* modinst)
 {
+  // A modInst destroy takes its whole subtree with it. Surgical erase
+  // would need to walk every cached descendant entry; full invalidate.
+  if (sdc_network_) {
+    sdc_network_->invalidateSdcPathToInstMap();
+  }
   sta_->deleteInstanceBefore(network_->dbToSta(modinst));
 }
 

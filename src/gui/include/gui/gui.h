@@ -39,9 +39,6 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
-class PinDensityDataSource;
-class PlacementDensityDataSource;
-class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -292,7 +289,7 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions() { return options_; }
+  Options* getOptions();
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:
@@ -722,6 +719,30 @@ class Chart
   Chart() = default;
 };
 
+// Optional backend plugged in when the Qt GUI is not running (e.g. the web
+// viewer).  Lets Gui::enabled/redraw/pause work without Qt so that debug
+// graphics (gpl, cts, drt, mpl, ...) light up in headless contexts.
+// Installed via Gui::setHeadlessViewer.  The Qt GUI, when present, always
+// takes precedence: the viewer is only consulted when main_window is null.
+class HeadlessViewer
+{
+ public:
+  virtual ~HeadlessViewer() = default;
+
+  // Called by Renderer::redraw() / Gui::redraw().  Typically broadcasts
+  // a refresh notification to connected clients.
+  virtual void redraw() = 0;
+
+  // Called by Gui::pause().  Should block the calling thread until some
+  // external signal (e.g. a client click) releases it, or until timeout_ms
+  // expires.  timeout_ms == 0 means wait indefinitely.
+  virtual void pause(int timeout_ms) = 0;
+
+  // True while pause() is blocking.  Consumers (like the web tile renderer)
+  // can use this to gate unsafe cross-thread reads of renderer state.
+  virtual bool isPaused() const = 0;
+};
+
 // This is the API for the rest of the program to interact with the
 // GUI.  This class is accessed by the GUI implementation to interact
 // with the rest of the system.  This class itself doesn't hold the
@@ -1008,8 +1029,31 @@ class Gui
   // returns the Gui singleton
   static Gui* get();
 
-  // Will return true if the GUI is active, false otherwise
+  // Will return true if any GUI backend is active (Qt or headless).
+  // Tool renderers should use this to decide whether debug graphics
+  // are available.
   static bool enabled();
+
+  // Will return true only when the Qt main window is running.
+  // Tcl commands that need Qt widgets (selection, zoom, labels, …)
+  // should gate on this rather than enabled().
+  static bool hasUI();
+
+  // Install / inspect a HeadlessViewer (used when the Qt GUI is not
+  // running).  See the HeadlessViewer class comment for semantics.
+  void setHeadlessViewer(HeadlessViewer* viewer);
+  HeadlessViewer* getHeadlessViewer() const { return headless_viewer_; }
+
+  // Factory for gui::Chart instances when the Qt GUI is not running.
+  // The web viewer installs a factory that returns WebChart*.  When the
+  // Qt GUI is running, the main window's ChartsWidget is used instead
+  // and this factory is ignored.
+  using ChartFactory
+      = std::function<Chart*(const std::string& name,
+                             const std::string& x_label,
+                             const std::vector<std::string>& y_labels)>;
+  void setChartFactory(ChartFactory factory);
+  const ChartFactory& getChartFactory() const { return chart_factory_; }
 
   // initialize the GUI
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
@@ -1033,49 +1077,24 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
-  // There are RTTI implementation differences between libstdc++ and libc++,
-  // where the latter seems to generate multiple typeids for classes including
-  // but not limited to sta::Instance* in different compile units. We have been
-  // unable to remedy this.
-  //
-  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
-  // and comparing are done on the type's name instead, which adds a negligible
-  // performance penalty but has the distinct advantage of not crashing when an
-  // Instance is clicked in the GUI.
-  //
-  // In the event the RTTI issue is ever resolved, the following two structs may
-  // be removed.
-  struct TypeInfoHasher
-  {
-    std::size_t operator()(const std::type_index& x) const;
-  };
-  struct TypeInfoComparator
-  {
-    bool operator()(const std::type_index& a, const std::type_index& b) const;
-  };
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index,
-                     std::unique_ptr<const Descriptor>,
-                     TypeInfoHasher,
-                     TypeInfoComparator>
-      descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
+  std::map<HeatMapDataSource*, std::unique_ptr<Renderer>> heat_map_renderers_;
+  std::vector<std::shared_ptr<HeatMapDataSource>> owned_heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
 
-  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
-  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
-
   std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;
 
   std::string main_window_title_ = "OpenROAD";
+
+  // Used when Qt GUI is not active.  Installed by the web viewer.
+  HeadlessViewer* headless_viewer_ = nullptr;
+  ChartFactory chart_factory_;
 };
 
 // The main entry point

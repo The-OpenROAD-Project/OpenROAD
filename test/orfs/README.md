@@ -49,7 +49,7 @@ Debugging using the Bazel `--sandbox_debug` is possible, but not terribly conven
 
 First set up a folder with the necessary dependencies:
 
-    bazelisk run //test/orfs/mock-array:Element_place_deps
+    bazelisk run //:deps -- //test/orfs/mock-array:Element_place
 
 This sets up a `tmp/test/orfs/mock-array/Element_place_deps/make` script that calls `make` on the ORFS setup. Since the place stage failed, build all place sub-stages up to the failing stage:
 
@@ -68,7 +68,7 @@ The `WORK_HOME` is in `tmp/test/orfs/mock-array/Element_place_deps/_main`:
 
 bazel-orfs can set up ORFS design files locally for debugging purposes, leaving bazel-orfs entirely out of the equation when chasing down issues. Such a setup is most often a lot more convenient than using `--sandbox_debug`.
 
-NOTE! keep in mind that these local ORFS design files have the depndencies `_deps` to run a particular stage only. Hence, use the `do-` prefix for doing `do-place`, `do-2_1_floorplan`, etc. so that `make` dependency checking is not used. If you use `make floorplan`, this will try to run synthesis first and not find the prequisite files, nor variables in config.mk, for synthesis and it will fail with bogus and confusing error messages.
+NOTE! keep in mind that the `//:deps` wrapper deploys dependencies for a particular stage only. Hence, use the `do-` prefix for doing `do-place`, `do-2_1_floorplan`, etc. so that `make` dependency checking is not used. If you use `make floorplan`, this will try to run synthesis first and not find the prerequisite files, nor variables in config.mk, for synthesis and it will fail with bogus and confusing error messages.
 
 If you're interested in some other stage, replace `place` with `synth`, `floorplan`, `cts`, `grt`, `route` or `final` below.
 
@@ -109,123 +109,12 @@ To hunt down missing `tags = ["manual"]` run a query like:
 
 Note that OpenROAD *does* want `bazelisk test ...` to run all tests, so test targets should be marked `tags = ["orfs"]` instead, so that `.bazelrc` can skip builds of those targets with the `build --build_tag_filters=-orfs` line.
 
-## eqy tests
+## Using whittle.py to minimize .odb files
 
-`eqy_test` is used to run equivalence checks before and after an ORFS stage, such as before and after floorplan for mock-array. To run the test and keep all the files from the test and see interactive output, run:
+While sv-bugpoint minimizes Verilog source files, `whittle.py` minimizes
+`.odb` database files by iteratively removing instances and nets.  This is
+useful when the bug is in placement, routing, or other physical stages
+where Verilog reduction would not help.
 
-    bazelisk test //test/orfs/mock-array:MockArray_4x4_eqy_test --test_output=streamed --sandbox_debug
-
-If this fails, then it will output the line below. `eqy` uses a very, very large number of files and copying out these files to the bazel-testlogs folder for inspection takes some time:
-
-    Copying 114462 files to bazel-testlogs/test/orfs/mock-array/MockArray_4x4_eqy_test/test.outputs for inspection.
-
-If you just want the files needed to run a locally installed `eqy`, build all the files used in the run above by:
-
-    bazelisk build //test/orfs/mock-array:MockArray_4x4_eqy_test
-
-The files used to run the test are then in `bazel-bin/test/orfs/mock-array/`.
-
-### TL;DR creating archive for standalone eqy test
-
-Create `/tmp/issue.tar.gz`
-
-    bazelisk build //test/orfs/gcd:gcd_eqy_synth_test
-    tar --exclude='*oss_cad_suite*' -czvf /tmp/issue.tar.gz -C "$(bazelisk info bazel-bin)/test/orfs/gcd/gcd_eqy_synth_test.run.sh.runfiles" .
-
-Reproduction instructions:
-
-1. untar archive
-2. cd _main
-3. ~/oss-cad-suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
-
-Comments:
-
-- `~/oss-cad-suite/` should be familiar with anyone versed in eqy as it refers to the [official binary release binaries](https://github.com/YosysHQ/oss-cad-suite-build)
-- Reproduction cases should be minimal in terms of size and context. The above recipe contains some unnecessary files, unnecessary directory structure, etc. Prune the test case further manually to get to the core of the matter.
-
-## Running eqy tests standalone outside bazel
-
-Build the test files:
-
-    bazelisk build //test/orfs/gcd:gcd_eqy_synth_test
-
-This outputs:
-
-    Target //test/orfs/gcd:gcd_eqy_synth_test up-to-date:
-      bazel-bin/test/orfs/gcd/gcd_eqy_synth_test.run.sh
-
-Copy all files needed to run the tests into a working folder `foo`:
-
-    rsync -aL "$(bazelisk info bazel-bin)/test/orfs/gcd/gcd_eqy_synth_test.run.sh.runfiles/" foo/
-
-Change cwd for running the tests:
-
-    cd foo/_main
-
-Bazel sets up both binaries and data files to run the tests, to create a reportable standalone test. A report should include only the data files and not the actual binaries used locally to run the test:
-
-    $ find .
-    .
-    ./test
-    ./test/orfs
-    ./test/orfs/asap7
-    ./test/orfs/asap7/asap7sc7p5t_SIMPLE_RVT_TT_201020.v
-    ./test/orfs/asap7/asap7sc7p5t_INVBUF_RVT_TT_201020.v
-    ./test/orfs/asap7/asap7sc7p5t_AO_RVT_TT_201020.v
-    ./test/orfs/asap7/asap7sc7p5t_OA_RVT_TT_201020.v
-    ./test/orfs/gcd
-    ./test/orfs/gcd/gcd.v
-    ./test/orfs/gcd/gcd_eqy_synth_test.run.sh
-    ./test/orfs/gcd/gcd_eqy_synth.v
-    ./test/orfs/gcd/gcd_eqy_synth_test.eqy
-
-Bazel generated `bazel-bin/test/orfs/gcd/gcd_eqy_synth_test.run.sh` to runs the tests. Examine this script to look at that for clues as to how to run the tests standalone:
-
-    $ head -n 5 test/orfs/gcd/gcd_eqy_synth_test.run.sh 
-    # !/bin/sh
-    set -euo pipefail
-    test_status=0
-    (exec ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy "$@" test/orfs/gcd/gcd_eqy_synth_test.eqy) || test_status=$?
-
-What we want is:
-
-    ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
-
-Running this, we get:
-
-<pre>$ ../bazel-orfs++_repo_rules+oss_cad_suite/bin/eqy test/orfs/gcd/gcd_eqy_synth_test.eqy
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gold</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/gold.log gcd_eqy_synth_test/gold.ys&quot;
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gold</font>: finished (returncode=0)
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:24</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gate</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/gate.log gcd_eqy_synth_test/gate.ys&quot;
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">read_gate</font>: finished (returncode=0)
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">combine</font>: starting process &quot;yosys -ql gcd_eqy_synth_test/combine.log gcd_eqy_synth_test/combine.ys&quot;
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A347BA">combine</font>: finished (returncode=0)
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:25</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#A2734C"><b>Warning: Cannot find entity _*_.*.</b></font>
-[deleted]
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:32</font> [<font color="#12488B">gcd_eqy_synth_test</font>] <font color="#C01C28"><b>Failed to prove equivalence of partition gcd.resp_msg.1</b></font>
-[deleted]
-<font color="#12488B">EQY</font> <font color="#26A269"> 8:05:32</font> [<font color="#12488B">gcd_eqy_synth_test</font>] DONE (FAIL, rc=2)
-</pre>
-
-
-## using sv-bugpoint to whittle down test-cases
-
-[sv-bugpoint](https://github.com/antmicro/sv-bugpoint) can be used to whittle down test-cases to a minimum example.
-
-Let's say that `bazelisk test test/orfs/gcd:eqy_synth_test` fails, first create a script that looks for the error string in the output, in this case a false positive `Failed to prove equivalence of partition gcd.req_rdy`.
-
-After compiling sv-bugpoint, we create a check.sh script:
-
-```bash
-#!/bin/bash
-set -euo pipefail
-cp $1 test/orfs/gcd/
-(bazelisk test test/orfs/gcd:eqy_synth_test --test_timeout=30 --test_output=streamed || error=$?) | tee /dev/tty | grep "Failed to prove equivalence of partition gcd.req_rdy"
-```
-
-- `--test_timeout=30` is a suitable timeout for this test and machine, adjust. Note that the timeout must be handled by Bazel and not a generic `timeout` utility as it would not work correctly with the bazel server.
-
-
-Next, run sv-bugpoint to whittle `test/orfs/gcd/gcd.v` down to a minimal test case:
-
-    ~/sv-bugpoint/build/sv-bugpoint fail check.sh test/orfs/gcd/gcd.v
+See [Bazel.md](../../docs/user/Bazel.md#whittling-down-odb-files) for
+detailed instructions and recommended flags.

@@ -3,7 +3,7 @@
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 13 components and 59 component-terminals.
 [INFO ODB-0133]     Created 16 nets and 30 connections.
- (clk ^) r -0.04:--- f -0.04:---
+(clk ^) r -0.04:--- f -0.04:---
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
@@ -11,4 +11,4 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
     final |       0 |       4 |            0 |   +14.6% |   0.012 |   0.000 | r3/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 4 hold buffers.
- (clk ^) r 0.02:--- f 0.01:---
+(clk ^) r 0.02:--- f 0.01:---

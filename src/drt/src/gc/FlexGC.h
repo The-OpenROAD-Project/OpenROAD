@@ -74,7 +74,7 @@ struct MarkerId
   odb::Rect box;
   frLayerNum lNum;
   frConstraint* con;
-  std::set<frBlockObject*> srcs;
+  frOrderedIdSet<frBlockObject*> srcs;
   bool operator<(const MarkerId& rhs) const
   {
     return std::tie(box, lNum, con, srcs)

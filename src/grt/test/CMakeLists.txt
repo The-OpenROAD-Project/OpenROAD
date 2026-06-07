@@ -8,6 +8,7 @@ or_integration_tests(
     clock_route_alpha
     clock_route_error1
     clock_route_error2
+    colocated_pins
     congestion1
     congestion2
     congestion3
@@ -30,6 +31,7 @@ or_integration_tests(
     gcd_cugr
     gcd_flute
     increase_capacity1
+    incremental_update_net
     infinite_cap
     inst_pin_out_of_die
     invalid_pin_placement
@@ -38,7 +40,12 @@ or_integration_tests(
     modeling_instance_obs
     multiple_calls
     ndr_1w_3s
+    ndr_1w_3s_cugr
     ndr_2w_3s
+    ndr_2w_3s_cugr
+    ndr_multi_cugr
+    ndr_rrr_cugr
+    ndr_upper_layers_cugr
     no_tracks
     obs_out_of_die
     obstruction
@@ -75,6 +82,7 @@ or_integration_tests(
     repair_antennas_only_diodes
     repair_antennas_only_jumpers
     repair_antennas_allow_congestion
+    repair_antennas_from_odb
     report_wire_length1
     report_wire_length2
     report_wire_length3
@@ -88,6 +96,7 @@ or_integration_tests(
     single_row
     skip_large_fanout1
     soft_ndr_4w_6s
+    soft_ndr_4w_6s_cugr
     top_level_term1
     top_level_term2
     top_level_term3
@@ -98,5 +107,12 @@ or_integration_tests(
     upper_layer_net
     write_segments1
     write_segments2
+  PASSFAIL_TESTS
+    congestion_markers_cugr
+    congestion_report_file_cugr
+    snapshot_batched_bus_route
+    snapshot_batched_incremental_state
+    snapshot_batched_smoke
+    snapshot_batched_single_thread_smoke
+    thread_count_reports
 )
-

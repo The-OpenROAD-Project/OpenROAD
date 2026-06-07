@@ -9,8 +9,10 @@ or_integration_tests(
     array_max_wl
     array_no_blockages
     array_repair_clock_nets
+    buffer_ports
     check_buffers
     check_buffers_blockages
+    colocated_sinks
     check_buffers_blockages_merge
     check_buffer_inference1
     check_buffer_inference2

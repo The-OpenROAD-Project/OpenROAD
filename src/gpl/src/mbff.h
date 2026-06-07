@@ -32,6 +32,8 @@ class Scene;
 
 namespace gpl {
 
+inline constexpr const char* kOrigNameProp = "orig_name";
+
 struct Point;
 struct Tray;
 struct Flop;
@@ -93,6 +95,18 @@ class MBFF
   using DataToOutputsMap
       = std::map<const sta::LibertyPort*, FlopOutputs, sta::LibertyPortLess>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
+
+  struct TrayCandidate
+  {
+    odb::dbMaster* master;
+    float area;
+    float leakage;
+    float internal_energy;
+    float width;
+    DataToOutputsMap pin_mapping;
+    std::vector<float> slot_x;
+    std::vector<float> slot_y;
+  };
 
   // MBFF functions
   const sta::LibertyCell* getLibertyCell(const sta::Cell* cell);
@@ -225,12 +239,18 @@ class MBFF
   void ReadFFs();
   void ReadPaths();
   void ReadLibs();
+  void SelectBestTrays(const Mask& mask, float activity);
   void SetTrayNames();
 
   void displayFlopClusters(const char* stage,
                            std::vector<std::vector<Flop>>& clusters);
 
   float getLeakage(odb::dbMaster* master);
+  float getInternalEnergy(odb::dbInst* inst);
+  float clockActivity() const;
+  float getClockPeriod(odb::dbInst* ff_inst);
+  std::vector<float> precomputeClockPeriods(
+      const std::vector<std::vector<Flop>>& FFs);
 
   // OpenROAD vars
   odb::dbDatabase* db_;
@@ -254,6 +274,8 @@ class MBFF
   float single_bit_height_;
   float single_bit_width_;
   float single_bit_power_;
+  float clock_period_;
+  odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars
   std::map<std::string, int> name_to_idx_;
@@ -270,9 +292,11 @@ class MBFF
   ArrayMaskVector<DataToOutputsMap> pin_mappings_;
   ArrayMaskVector<float> tray_area_;
   ArrayMaskVector<float> tray_power_;
+  ArrayMaskVector<float> tray_internal_energy_;
   ArrayMaskVector<float> tray_width_;
   ArrayMaskVector<std::vector<float>> slot_to_tray_x_;
   ArrayMaskVector<std::vector<float>> slot_to_tray_y_;
+  ArrayMaskVector<std::vector<TrayCandidate>> tray_candidates_;
   std::vector<float> norm_area_;
   std::vector<float> norm_power_;
   std::vector<int> unused_;

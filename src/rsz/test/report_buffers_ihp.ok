@@ -204,4 +204,3 @@ sg13g2_dlygate4sd3_1 is the buffer chosen for hold fixing
 ==== set clock buffer footprint to DLY ===
 ==== should get an error ===
 [ERROR CTS-0134] -clock_buffer_footprint cannot be set because -clock_buffer_string is already defined.
-Error: report_buffers_ihp.tcl, 32 CTS-0134

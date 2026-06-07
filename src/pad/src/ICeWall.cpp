@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,7 @@
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -517,33 +519,6 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     const odb::Rect row_bbox = row->getBBox();
 
-    // Check for instances overlapping the corner site
-    bool place_inst = true;
-    for (auto* check_inst : block->getInsts()) {
-      if (check_inst == inst) {
-        continue;
-      }
-      if (!check_inst->isFixed()) {
-        continue;
-      }
-      if (check_inst->getMaster()->isCover()) {
-        continue;
-      }
-      const odb::Rect check_rect = check_inst->getBBox()->getBox();
-      if (row_bbox.overlaps(check_rect)) {
-        place_inst = false;
-        break;
-      }
-    }
-    if (!place_inst) {
-      logger_->warn(
-          utl::PAD,
-          44,
-          "Skipping corner cell placement in {} due to overlapping instances",
-          row->getName());
-      continue;
-    }
-
     const bool create_inst = inst == nullptr;
     if (create_inst) {
       inst = odb::dbInst::create(block, master, corner_name.c_str());
@@ -553,20 +528,20 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    const CheckerOnlyPadPlacer checker(logger_, block, row);
+    const CheckerOnlyPadPlacer checker(logger_, block, row, {inst});
     if (!checker.check(inst)) {
       if (create_inst) {
         logger_->warn(utl::PAD,
                       45,
                       "Skipping corner cell generation for {} due to "
-                      "overlapping bump cell",
+                      "overlapping instances",
                       inst->getName());
         odb::dbInst::destroy(inst);
       } else {
         logger_->warn(utl::PAD,
                       46,
                       "Skipping corner cell placement for {} due to "
-                      "overlapping bump cell",
+                      "overlapping instances",
                       inst->getName());
         inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
       }
@@ -699,7 +674,7 @@ void ICeWall::placePads(const std::vector<odb::dbInst*>& insts,
   }
 
   // Check if bumps are present and have assignments
-  std::map<odb::dbInst*, std::set<odb::dbITerm*>> iterm_connections;
+  odb::PtrMap<odb::dbInst, odb::PtrSet<odb::dbITerm>> iterm_connections;
   for (auto* inst : insts) {
     for (auto* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
@@ -1028,7 +1003,7 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
 
   odb::Rect bond_rect;
   odb::dbTechLayer* bond_layer = nullptr;
-  std::map<odb::dbTechLayer*, int> shape_count;
+  odb::PtrMap<odb::dbTechLayer, int> shape_count;
   for (auto* mterm : bond->getMTerms()) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
@@ -1215,7 +1190,7 @@ void ICeWall::connectByAbutment()
              connections.size());
 
   // begin connections for current signals
-  std::set<odb::dbNet*> special_nets = connectByAbutment(connections);
+  odb::PtrSet<odb::dbNet> special_nets = connectByAbutment(connections);
 
   // make nets for newly formed nets
   for (const auto& [iterm0, iterm1] : connections) {
@@ -1236,11 +1211,11 @@ void ICeWall::connectByAbutment()
   }
 }
 
-std::set<odb::dbNet*> ICeWall::connectByAbutment(
+odb::PtrSet<odb::dbNet> ICeWall::connectByAbutment(
     const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
     const
 {
-  std::set<odb::dbNet*> special_nets;
+  odb::PtrSet<odb::dbNet> special_nets;
   bool changed = false;
   int iter = 0;
 
@@ -1333,7 +1308,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return {};
   }
 
-  using ShapeMap = std::map<odb::dbTechLayer*, std::set<odb::Rect>>;
+  using ShapeMap = odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>>;
   auto populate_map = [](odb::dbITerm* iterm) -> ShapeMap {
     ShapeMap map;
     const odb::dbTransform xform = iterm->getInst()->getTransform();
@@ -1352,7 +1327,7 @@ std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(
     return map;
   };
 
-  std::map<odb::dbITerm*, ShapeMap> iterm_map;
+  odb::PtrMap<odb::dbITerm, ShapeMap> iterm_map;
   for (auto* iterm : inst0->getITerms()) {
     iterm_map[iterm] = populate_map(iterm);
   }

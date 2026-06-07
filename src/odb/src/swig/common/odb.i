@@ -39,6 +39,7 @@ using namespace odb;
 %typemap(in) (uint32_t) = (int);
 %typemap(out) (uint32_t) = (int);
 %typemap(out) (uint64) = (long);
+%typemap(in) (int64_t) = (long);
 %typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y, int& ext};
 
@@ -48,6 +49,7 @@ using namespace odb;
 %ignore odb::dbTechLayerAntennaRule::getDiffPSR() const;
 %ignore odb::dbTechLayerAntennaRule::getDiffCSR() const;
 %ignore odb::dbTechLayerAntennaRule::getAreaDiffReduce() const;
+%ignore odb::dbTechLayerAntennaRule::getGatePlusDiffPWL() const;
 
 // Swig can't handle non-assignable types
 %ignore odb::Point::get(Orientation2D orient) const;
@@ -68,6 +70,12 @@ using namespace odb;
 %include "odb/isotropy.h"
 %include "odb/geom.h"
 %include "polygon.i"
+// Include before db.h so SWIG exposes getId()/getObjectType() on derived
+// Python classes.  getImpl() is internal (not exported by the library);
+// getType(const char*, Logger*) requires utl::Logger which is not in scope.
+%ignore odb::dbObject::getImpl;
+%ignore odb::dbObject::getType(const char*, utl::Logger*);
+%include "odb/dbObject.h"
 %include "odb/db.h"
 
 // Prevent compiler problems when including dbShape.h.
@@ -98,3 +106,10 @@ void set_bterm_top_layer_grid(odb::dbBlock* block,
                               int width,
                               int height,
                               int keepout);
+
+// Python-only: add __eq__, __ne__, __hash__ to all odb db* classes so that
+// two handles obtained via different paths but wrapping the same C++ pointer
+// compare equal.  Placed last so every class is defined before the patch runs.
+#ifdef SWIGPYTHON
+%include "dboperators.i"
+#endif

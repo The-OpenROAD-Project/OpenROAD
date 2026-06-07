@@ -13,6 +13,7 @@
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
@@ -56,6 +57,21 @@ UnfoldedRegionSide mirrorSide(UnfoldedRegionSide side)
 
 }  // namespace
 
+Rect UnfoldedAlignmentMarker::getBBox() const
+{
+  Rect bbox = inst->getBBox()->getBox();
+  parent_chip->transform.apply(bbox);
+  return bbox;
+}
+
+dbOrientType UnfoldedAlignmentMarker::getOrient() const
+{
+  dbTransform inst_xform = inst->getTransform();
+  dbTransform total_xform = inst_xform;
+  total_xform.concat(parent_chip->transform);
+  return total_xform.getOrient();
+}
+
 int UnfoldedRegion::getSurfaceZ() const
 {
   if (isTop()) {
@@ -67,10 +83,30 @@ int UnfoldedRegion::getSurfaceZ() const
   return cuboid.zCenter();
 }
 
+UnfoldedRegion* UnfoldedChip::findUnfoldedRegion(dbChipRegionInst* inst)
+{
+  auto it = region_map.find(inst);
+  return it != region_map.end() ? it->second : nullptr;
+}
+
+UnfoldedBump* UnfoldedChip::findUnfoldedBump(dbChipBumpInst* bump_inst)
+{
+  auto it = bump_inst_map.find(bump_inst);
+  return it != bump_inst_map.end() ? it->second : nullptr;
+}
+
 UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
     : logger_(logger)
 {
   std::vector<dbChipInst*> path;
+  for (dbAlignmentMarkerRule* rule : chip->getDb()->getAlignmentMarkerRules()) {
+    dbMaster* master_a = rule->getMasterA();
+    dbMaster* master_b = rule->getMasterB();
+    alignment_marker_rule_map_[master_a].push_back(rule);
+    if (master_b != master_a) {
+      alignment_marker_rule_map_[master_b].push_back(rule);
+    }
+  }
   for (dbChipInst* inst : chip->getChipInsts()) {
     buildUnfoldedChip(inst, path, dbTransform());
   }
@@ -109,26 +145,30 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   // Transform cuboid to global space
   uf_chip.transform.apply(uf_chip.cuboid);
   unfoldRegions(uf_chip, inst);
+  unfoldAlignmentMarkers(uf_chip);
 
   unfolded_chips_.push_back(std::move(uf_chip));
   UnfoldedChip* created_chip = &unfolded_chips_.back();
-  registerUnfoldedChip(*created_chip);
+  registerUnfoldedChip(created_chip);
 
   path.pop_back();
   return created_chip;
 }
 
-void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
+void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
 {
-  for (auto& region : chip.regions) {
-    region.parent_chip = &chip;
-    chip.region_map[region.region_inst] = &region;
+  chip_map_[chip->name] = chip;
+  for (auto& region : chip->regions) {
+    region.parent_chip = chip;
+    chip->region_map[region.region_inst] = &region;
     for (auto& bump : region.bumps) {
       bump.parent_region = &region;
-      bump_inst_map_[{bump.bump_inst, chip.chip_inst_path}] = &bump;
+      chip->bump_inst_map[bump.bump_inst] = &bump;
     }
   }
-  chip_path_map_[chip.chip_inst_path] = &chip;
+  for (auto& marker : chip->alignment_markers) {
+    marker.parent_chip = chip;
+  }
 }
 
 void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
@@ -186,21 +226,32 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
   }
 }
 
+void UnfoldedModel::unfoldAlignmentMarkers(UnfoldedChip& uf_chip)
+{
+  auto block = uf_chip.chip_inst_path.back()->getMasterChip()->getBlock();
+  if (block == nullptr) {
+    return;
+  }
+  for (dbInst* inst : block->getInsts()) {
+    dbMaster* master = inst->getMaster();
+    if (alignment_marker_rule_map_.find(master)
+        != alignment_marker_rule_map_.end()) {
+      uf_chip.alignment_markers.push_back(
+          {.parent_chip = nullptr, .inst = inst});
+    }
+  }
+}
+
+UnfoldedChip* UnfoldedModel::findUnfoldedChip(const std::string& path)
+{
+  auto it = chip_map_.find(path);
+  return it != chip_map_.end() ? it->second : nullptr;
+}
+
 UnfoldedChip* UnfoldedModel::findUnfoldedChip(
     const std::vector<dbChipInst*>& path)
 {
-  auto it = chip_path_map_.find(path);
-  return it != chip_path_map_.end() ? it->second : nullptr;
-}
-
-UnfoldedRegion* UnfoldedModel::findUnfoldedRegion(UnfoldedChip* chip,
-                                                  dbChipRegionInst* inst)
-{
-  if (!chip || !inst) {
-    return nullptr;
-  }
-  auto it = chip->region_map.find(inst);
-  return it != chip->region_map.end() ? it->second : nullptr;
+  return findUnfoldedChip(getFullPathName(path));
 }
 
 void UnfoldedModel::unfoldConnections(
@@ -208,21 +259,27 @@ void UnfoldedModel::unfoldConnections(
     const std::vector<dbChipInst*>& parent_path)
 {
   for (auto* conn : chip->getChipConns()) {
-    UnfoldedRegion* top = findUnfoldedRegion(
-        findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath())),
-        conn->getTopRegion());
-    UnfoldedRegion* bot = findUnfoldedRegion(
-        findUnfoldedChip(concatPath(parent_path, conn->getBottomRegionPath())),
-        conn->getBottomRegion());
-
-    if (top || bot) {
-      UnfoldedConnection uf_conn{
-          .connection = conn, .top_region = top, .bottom_region = bot};
-      if (top != nullptr && top->isInternalExt()) {
-        top->isUsed = true;
+    UnfoldedChip* top_chip
+        = findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath()));
+    UnfoldedRegion* top_region(nullptr);
+    if (top_chip) {
+      top_region = top_chip->findUnfoldedRegion(conn->getTopRegion());
+    }
+    UnfoldedChip* bot_chip = findUnfoldedChip(
+        concatPath(parent_path, conn->getBottomRegionPath()));
+    UnfoldedRegion* bot_region(nullptr);
+    if (bot_chip) {
+      bot_region = bot_chip->findUnfoldedRegion(conn->getBottomRegion());
+    }
+    if (top_region || bot_region) {
+      UnfoldedConnection uf_conn{.connection = conn,
+                                 .top_region = top_region,
+                                 .bottom_region = bot_region};
+      if (top_region && top_region->isInternalExt()) {
+        top_region->isUsed = true;
       }
-      if (bot != nullptr && bot->isInternalExt()) {
-        bot->isUsed = true;
+      if (bot_region && bot_region->isInternalExt()) {
+        bot_region->isUsed = true;
       }
       unfolded_connections_.push_back(uf_conn);
     }
@@ -238,11 +295,12 @@ void UnfoldedModel::unfoldNets(dbChip* chip,
     for (uint32_t i = 0; i < net->getNumBumpInsts(); i++) {
       std::vector<dbChipInst*> rel_path;
       dbChipBumpInst* b_inst = net->getBumpInst(i, rel_path);
-
-      auto it
-          = bump_inst_map_.find({b_inst, concatPath(parent_path, rel_path)});
-      if (it != bump_inst_map_.end()) {
-        uf_net.connected_bumps.push_back(it->second);
+      UnfoldedChip* chip = findUnfoldedChip(concatPath(parent_path, rel_path));
+      if (chip) {
+        UnfoldedBump* bump = chip->findUnfoldedBump(b_inst);
+        if (bump) {
+          uf_net.connected_bumps.push_back(bump);
+        }
       }
     }
     unfolded_nets_.push_back(std::move(uf_net));

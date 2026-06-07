@@ -87,8 +87,11 @@ add_library(db
     dbGDSLib.cpp
     dbSwapMasterSanityChecker.cpp
     unfoldedModel.cpp
+    util.cpp
+    poly_decomp.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
+    dbAlignmentMarkerRule.cpp
     dbBusPort.cpp
     dbCellEdgeSpacing.cpp
     dbChip.cpp
@@ -97,6 +100,7 @@ add_library(db
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp
+    dbChipPath.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
     dbDatabase.cpp
@@ -186,8 +190,11 @@ target_include_directories(db
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
         ${TCL_INCLUDE_PATH}
+)
+
+target_link_libraries(db
     PRIVATE
-        ${Boost_INCLUDE_DIRS}
+        Boost::headers
 )
 
 set_target_properties(db
@@ -198,7 +205,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        zutil
         utl_lib
         ${TCL_LIBRARY}
 

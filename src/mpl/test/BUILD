@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
-    "boundary_push2",
-    "boundary_push3",
     "centralization1",
     "clocked_macro",
     "fixed_covers",
@@ -19,6 +21,10 @@ COMPULSORY_TESTS = [
     "fixed_macros2",
     "guides1",
     "guides2",
+    "halos1",
+    "halos2",
+    "halos3",
+    "halos4",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -38,16 +44,11 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -70,14 +71,6 @@ filegroup(
             ] + {
                 "boundary_push1": [
                     "testcases/boundary_push1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push2": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push3": [
-                    "testcases/boundary_push2.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "centralization1": [
@@ -119,6 +112,22 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
+                ],
+                "halos1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos2": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos3": [
+                    "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos4": [
+                    "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
                     "testcases/io_constraints1.def",
@@ -215,6 +224,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
@@ -241,13 +254,61 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/mpl",
-        "//src/odb",
+        "//src/mpl:snapper",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "mpl_block_macro_channels_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestBlockMacroChannels.cpp",
+    ],
+    deps = [
+        "//src/mpl",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mpl_pusher_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestPusher.cpp",
+    ],
+    deps = [
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "mpl_man_tcl_check",
+    srcs = ["mpl_man_tcl_check.py"],
+    data = ["//src/mpl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "mpl_readme_msgs_check",
+    data = [
+        "//src/mpl:doc_files",
+        "//src/mpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

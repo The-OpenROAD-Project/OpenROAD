@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "BufferMove.hh"
-#include "RepairDesign.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -23,7 +21,6 @@
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -326,8 +323,7 @@ bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
 
     bool footprint_matches = true;
     if (match_footprint) {
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      const std::string& footprint = buffer->footprint();
       footprint_matches = !lib_has_footprints || isDelayCell(footprint);
     }
 
@@ -416,8 +412,8 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
                  1,
                  "pass {} hold slack {} setup slack {}",
                  pass,
-                 delayAsString(worst_slack, sta_, 3),
-                 delayAsString(sta_->worstSlack(max_), sta_, 3));
+                 delayAsString(worst_slack, 3, sta_),
+                 delayAsString(sta_->worstSlack(max_), 3, sta_));
       int hold_buffer_count_before = inserted_buffer_count_;
       repairHoldPass(hold_failures,
                      buffer_cell,
@@ -448,7 +444,6 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
       repaired = true;
       logger_->info(
           RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
-      resizer_->level_drvr_vertices_valid_ = false;
     }
     if (inserted_buffer_count_ > max_buffer_count) {
       logger_->error(RSZ, 60, "Max buffer count reached.");
@@ -543,8 +538,8 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                const bool allow_setup_violations)
 {
   sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  sta::Mode* mode = end_path->mode(sta_);
   if (end_path) {
+    sta::Mode* mode = end_path->mode(sta_);
     debugPrint(logger_,
                RSZ,
                "repair_hold",
@@ -573,7 +568,6 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
           sta::PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
-          float excluded_cap = 0.0;
           bool loads_have_out_port = false;
           sta::VertexOutEdgeIterator edge_iter(path_vertex, graph_);
           while (edge_iter.hasNext()) {
@@ -582,6 +576,13 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
             if (pred.searchTo(fanout, mode) && pred.searchThru(edge, mode)) {
               sta::Slack fanout_hold_slack = sta_->slack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
+              if (load_pin == nullptr) {
+                continue;
+              }
+              if (!network_->direction(load_pin)->isAnyInput()
+                  && !network_->isTopLevelPort(load_pin)) {
+                continue;
+              }
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
@@ -590,11 +591,6 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                 if (network_->direction(load_pin)->isAnyOutput()
                     && network_->isTopLevelPort(load_pin)) {
                   loads_have_out_port = true;
-                }
-              } else {
-                sta::LibertyPort* load_port = network_->libertyPort(load_pin);
-                if (load_port) {
-                  excluded_cap += load_port->capacitance();
                 }
               }
             }
@@ -612,9 +608,18 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                        delayAsString(slacks[fall_index_][max_index_], sta_),
                        load_pins.size());
             sta::Scene* corner = sta_->cmdScene();
-            float load_cap
-                = graph_delay_calc_->loadCap(end_vertex->pin(), corner, max_)
-                  - excluded_cap;
+            // Compute load cap as the sum of the pin capacitances that the
+            // inserted hold buffer will drive. Using loadCap on the driver pin
+            // would include the full original-net parasitics which are absent
+            // on the post-split net, causing the guard below to over-reject
+            // valid insertions.
+            float load_cap = 0.0;
+            for (const sta::Pin* load_pin : load_pins) {
+              sta::LibertyPort* load_port = network_->libertyPort(load_pin);
+              if (load_port) {
+                load_cap += load_port->capacitance();
+              }
+            }
             sta::ArcDelay buffer_delays[sta::RiseFall::index_count];
             sta::Slew buffer_slews[sta::RiseFall::index_count];
             resizer_->bufferDelays(buffer_cell,
@@ -644,8 +649,8 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               // Despite checking for setup slack to insert the bufffer,
               // increased slews downstream can increase delays and
               // reduce setup slack in ways that are too expensive to
-              // predict. Use the journal to back out the change if
-              // the hold buffer blows through the setup margin.
+              // predict. Open a journal so a failed hold fix can be
+              // rolled back via journalRestore().
               resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
               sta::Slew slew_before = sta_->slew(path_vertex,
@@ -713,13 +718,7 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
 
   // New insert buffer behavior
   sta::Pin* drvr_pin = drvr->pin();
-  odb::dbObject* drvr_db_pin = db_network_->staToDb(drvr_pin);
-  odb::dbNet* drvr_dbnet = nullptr;
-  if (drvr_db_pin->getObjectType() == odb::dbObjectType::dbBTermObj) {
-    drvr_dbnet = static_cast<odb::dbBTerm*>(drvr_db_pin)->getNet();
-  } else {
-    drvr_dbnet = static_cast<odb::dbITerm*>(drvr_db_pin)->getNet();
-  }
+  odb::dbNet* drvr_dbnet = db_network_->findFlatDbNet(drvr_pin);
 
   sta::Net* drvr_net = db_network_->dbToSta(drvr_dbnet);
 
@@ -733,15 +732,18 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
       load_pins_set.insert(const_cast<sta::Pin*>(load_pin));
     }
   }
+  if (load_pins_set.empty()) {
+    return;
+  }
 
   buffer = resizer_->insertBufferBeforeLoads(
       drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
   if (buffer == nullptr) {
-    const char* drvr_pin_name = db_network_->pathName(drvr_pin);
+    std::string drvr_pin_name = db_network_->pathName(drvr_pin);
     logger_->error(RSZ,
                    3009,
                    "insert_buffer failed on drvr_pin '{}'.",
-                   drvr_pin_name ? drvr_pin_name : "<unknown>");
+                   drvr_pin_name.empty() ? "<unknown>" : drvr_pin_name);
     return;
   }
 
@@ -770,19 +772,30 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
   float cap, limit, slack;
   const sta::Scene* corner;
   const sta::RiseFall* tr;
+  float slack_limit_ratio;
+
   sta_->checkCapacitance(
       drvr_pin, sta_->scenes(), max_, cap, limit, slack, tr, corner);
-  float slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
+  // checkCapacitance returns sentinel limit=-1E+30 when no
+  // limit exists, making slack/limit=-1.0 which falsely fails the threshold
+  // check.
+  if (corner) {
+    slack_limit_ratio = slack / limit;
+    if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
+      return false;
+    }
   }
 
   sta::Slew slew;
   sta_->checkSlew(
       drvr_pin, sta_->scenes(), max_, false, slew, limit, slack, tr, corner);
-  slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
+  // checkSlew returns sentinel limit=0.0 when no limit exists, avoid
+  // divide-by-zero
+  if (corner) {
+    slack_limit_ratio = slack / limit;
+    if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
+      return false;
+    }
   }
 
   resizer_->checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
@@ -823,8 +836,8 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         inserted_buffer_count_,
         cloned_gate_count_,
         area_growth / initial_design_area_ * 1e2,
-        delayAsString(wns, sta_, 3),
-        delayAsString(tns, sta_, 3),
+        delayAsString(wns, 3, sta_),
+        delayAsString(tns, 3, sta_),
         worst_vertex->name(network_));
 
     debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());

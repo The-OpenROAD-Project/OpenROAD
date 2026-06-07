@@ -1,10 +1,12 @@
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -30,6 +32,7 @@ COMPULSORY_TESTS = [
     "core_grid_auto_domain",
     "core_grid_auto_domain_multiple_nets",
     "core_grid_bad_metal_specs",
+    "core_grid_bad_metal_specs_no_grid",
     "core_grid_check_connect_layers",
     "core_grid_check_connect_layers_at_setup",
     "core_grid_cut_pitch",
@@ -51,6 +54,7 @@ COMPULSORY_TESTS = [
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
     "core_grid_with_M6_min_area",
+    "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
     "core_grid_with_bterms",
     "core_grid_with_dual_rings",
@@ -137,13 +141,7 @@ COMPULSORY_TESTS = [
     "widthtable",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "pdn_man_tcl_check",
-    "pdn_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -198,6 +196,7 @@ filegroup(
         "gf180/gf180mcu_fd_io.lef",
         "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
         "gf180_data/floorplan.def",
+        "helpers.py",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
         "nangate_bsg_black_parrot/dummy_pads.lef",
@@ -206,6 +205,7 @@ filegroup(
         "nangate_bsg_black_parrot/floorplan_flipchip.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_nogrid.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_short.def",
+        "nangate_data/Nangate45.lef",
         "nangate_existing/floorplan.def",
         "nangate_gcd/floorplan.def",
         "nangate_gcd/floorplan_obstructions.def",
@@ -221,6 +221,7 @@ filegroup(
         "nangate_macros/floorplan_partial_wire_on_macro.def",
         "nangate_macros/floorplan_very_narrow.def",
         "nangate_macros/floorplan_with_jog.def",
+        "pdn_aux.py",
         "repair_channel_inf_loop/floorplan.def",
         "repair_channel_inf_loop/tech_macro.lef",
         "sky130_gcd/floorplan.def",
@@ -279,10 +280,15 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
+            "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
@@ -299,8 +305,25 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "pdn_man_tcl_check",
+    srcs = ["pdn_man_tcl_check.py"],
+    data = ["//src/pdn:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "pdn_readme_msgs_check",
+    data = [
+        "//src/pdn:doc_files",
+        "//src/pdn:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

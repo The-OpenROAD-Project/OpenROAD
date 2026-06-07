@@ -23,6 +23,7 @@ template class dbTable<_dbGDSText>;
 
 bool _dbGDSText::operator==(const _dbGDSText& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -37,6 +38,7 @@ bool _dbGDSText::operator==(const _dbGDSText& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSText::operator<(const _dbGDSText& rhs) const
@@ -79,12 +81,13 @@ void _dbGDSText::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["text"].add(text_);
+
   // User Code Begin collectMemInfo
   info.children["propattr"].add(propattr_);
   for (auto& [i, s] : propattr_) {
     info.children["propattr"].add(s);
   }
-  info.children["text"].add(text_);
   // User Code End collectMemInfo
 }
 
@@ -120,7 +123,7 @@ int16_t dbGDSText::getDatatype() const
   return obj->datatype_;
 }
 
-void dbGDSText::setOrigin(Point origin)
+void dbGDSText::setOrigin(const Point& origin)
 {
   _dbGDSText* obj = (_dbGDSText*) this;
 
@@ -166,17 +169,24 @@ void dbGDSText::setText(const std::string& text)
   obj->text_ = text;
 }
 
-std::string dbGDSText::getText() const
+const std::string& dbGDSText::getText() const
 {
   _dbGDSText* obj = (_dbGDSText*) this;
   return obj->text_;
 }
 
 // User Code Begin dbGDSTextPublicMethods
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSText::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSText::getPropattr() const
 {
   auto* obj = (_dbGDSText*) this;
   return obj->propattr_;
+}
+
+void dbGDSText::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSText*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSText* dbGDSText::create(dbGDSStructure* structure)

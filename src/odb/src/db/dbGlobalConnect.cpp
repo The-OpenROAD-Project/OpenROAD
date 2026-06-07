@@ -22,6 +22,7 @@
 #include "dbLib.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -30,6 +31,7 @@ template class dbTable<_dbGlobalConnect>;
 
 bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (region_ != rhs.region_) {
     return false;
   }
@@ -44,6 +46,7 @@ bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
@@ -94,10 +97,8 @@ void _dbGlobalConnect::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["inst_pattern"].add(inst_pattern_);
   info.children["pin_pattern"].add(pin_pattern_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -126,13 +127,13 @@ dbNet* dbGlobalConnect::getNet() const
   return (dbNet*) par->net_tbl_->getPtr(obj->net_);
 }
 
-std::string dbGlobalConnect::getInstPattern() const
+const std::string& dbGlobalConnect::getInstPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->inst_pattern_;
 }
 
-std::string dbGlobalConnect::getPinPattern() const
+const std::string& dbGlobalConnect::getPinPattern() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   return obj->pin_pattern_;
@@ -256,16 +257,16 @@ void _dbGlobalConnect::testRegex(utl::Logger* logger,
   }
 }
 
-std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
+odb::PtrMap<dbMaster, odb::PtrSet<dbMTerm>> _dbGlobalConnect::getMTermMapping()
 {
   const std::regex pin_regex = std::regex(pin_pattern_);
 
-  std::map<dbMaster*, std::set<dbMTerm*>> mapping;
+  odb::PtrMap<dbMaster, odb::PtrSet<dbMTerm>> mapping;
 
   dbDatabase* db = (dbDatabase*) getImpl()->getDatabase();
   for (dbLib* lib : db->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
-      std::set<dbMTerm*> mterms = getMTermMapping(master, pin_regex);
+      odb::PtrSet<dbMTerm> mterms = getMTermMapping(master, pin_regex);
 
       if (!mterms.empty()) {
         mapping[master] = mterms;
@@ -276,11 +277,11 @@ std::map<dbMaster*, std::set<dbMTerm*>> _dbGlobalConnect::getMTermMapping()
   return mapping;
 }
 
-std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
+odb::PtrSet<dbMTerm> _dbGlobalConnect::getMTermMapping(
     dbMaster* master,
     const std::regex& pin_regex) const
 {
-  std::set<dbMTerm*> mterms;
+  odb::PtrSet<dbMTerm> mterms;
   for (dbMTerm* mterm : master->getMTerms()) {
     if (std::regex_match(mterm->getConstName(), pin_regex)) {
       mterms.insert(mterm);
@@ -290,7 +291,7 @@ std::set<dbMTerm*> _dbGlobalConnect::getMTermMapping(
   return mterms;
 }
 
-std::pair<std::set<dbITerm*>, std::set<dbITerm*>> _dbGlobalConnect::connect(
+std::pair<odb::PtrSet<dbITerm>, odb::PtrSet<dbITerm>> _dbGlobalConnect::connect(
     const std::vector<dbInst*>& insts,
     bool force)
 {
@@ -298,8 +299,8 @@ std::pair<std::set<dbITerm*>, std::set<dbITerm*>> _dbGlobalConnect::connect(
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
   dbNet* net = odb::dbNet::getNet(block, net_);
 
-  std::set<dbITerm*> iterms;
-  std::set<dbITerm*> iterms_skipped;
+  odb::PtrSet<dbITerm> iterms;
+  odb::PtrSet<dbITerm> iterms_skipped;
 
   if (net->isDoNotTouch()) {
     logger->warn(

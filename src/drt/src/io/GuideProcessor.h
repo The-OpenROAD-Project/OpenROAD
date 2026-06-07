@@ -286,6 +286,7 @@ class GuidePathFinder
                   frNet* net,
                   bool force_feed_through,
                   const std::vector<frRect>& rects,
+                  const std::vector<frBlockObject*>& pins,
                   const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
   int getNodeCount() const { return node_count_; }
   int getGuideCount() const { return guide_count_; }
@@ -467,6 +468,7 @@ class GuidePathFinder
   std::vector<bool> visited_;
   std::vector<bool> is_on_path_;
   std::vector<int> prev_idx_;
+  std::vector<frBlockObject*> pins_;
   frBlockObjectMap<std::set<Point3D>> pin_gcell_map_;
   std::vector<frRect> rects_;
 };

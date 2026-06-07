@@ -30,6 +30,9 @@ target_include_directories(grt_lib
     include
   PRIVATE
     src
+    # Header-only abstract interface published by drt; avoid linking
+    # drt_lib to keep grt's dependency surface small.
+    ../drt/include
 )
 
 target_link_libraries(grt_lib
@@ -66,6 +69,7 @@ target_link_libraries(grt
     grt_lib
     dbSta
     gui
+    gui_heatmap_core
     stt
     rsz
 )
@@ -94,6 +98,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       dbSta
       gui
+      gui_heatmap_core
       stt
       OpenSTA
       Boost::boost

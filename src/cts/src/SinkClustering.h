@@ -55,6 +55,8 @@ class SinkClustering
 
   double getWireLength(const std::vector<Point<double>>& points) const;
   int getScaleFactor() const { return scaleFactor_; }
+  double getMaxDiameter() const { return max_diameter_; }
+  double getMaxSize() const { return max_size_; }
 
  private:
   void normalizePoints(float maxDiameter = 10);
@@ -85,6 +87,8 @@ class SinkClustering
   std::vector<std::vector<unsigned>> bestSolution_;
   float maxInternalDiameter_;
   float capPerUnit_;
+  bool use_max_diameter_;
+  bool use_max_size_;
   bool useMaxCapLimit_;
   int scaleFactor_;
   static constexpr double kMaxCapFactor = 10;
@@ -92,6 +96,8 @@ class SinkClustering
   bool firstRun_ = true;
   double xSpan_ = 0.0;
   double ySpan_ = 0.0;
+  double max_diameter_ = 0.0;
+  double max_size_ = 0.0;
   double bestSolutionCost_ = std::numeric_limits<double>::max();
 };
 

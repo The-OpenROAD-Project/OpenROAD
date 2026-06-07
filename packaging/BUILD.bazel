@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+sh_binary(
+    name = "install",
+    srcs = ["//bazel:install.sh"],
+    data = [":tarfile"] + select({
+        # Ship the desktop entry + icon only for GUI builds so install.sh
+        # can register a menu launcher (mirrors the CMake GUI install).
+        "//:platform_gui": ["//src/gui:desktop_files"],
+        "//conditions:default": [],
+    }),
+    env = select({
+        "//:platform_gui": {"OPENROAD_INSTALL_GUI": "1"},
+        "//conditions:default": {},
+    }),
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tarfile",
+    srcs = ["//:openroad"],
+    include_runfiles = True,
+    package_file_name = "openroad.tar",
+    visibility = [
+        "//:__pkg__",
+        "//test:__subpackages__",
+    ],
+)

@@ -528,7 +528,7 @@ int definReader::componentsCallback(
   if (comp->hasHalo() > 0) {
     int left, bottom, right, top;
     comp->haloEdges(&left, &bottom, &right, &top);
-    componentR->halo(left, bottom, right, top);
+    componentR->halo(left, bottom, right, top, comp->hasHaloSoft() > 0);
   }
 
   componentR->placement(comp->placementStatus(),
@@ -857,9 +857,13 @@ int definReader::netCallback(DefParser::defrCallbackType_e /* unused: type */,
             break;
           }
 
-          case DefParser::DEFIPATH_VIRTUALPOINT:
-            UNSUPPORTED("VIRTUAL in net's routing is unsupported");
+          case DefParser::DEFIPATH_VIRTUALPOINT: {
+            int x;
+            int y;
+            path->getVirtualPoint(&x, &y);
+            netR->pathVirtualPoint(x, y);
             break;
+          }
 
           case DefParser::DEFIPATH_MASK:
             netR->pathColor(path->getMask());

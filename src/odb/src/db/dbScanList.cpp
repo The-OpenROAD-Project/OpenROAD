@@ -23,6 +23,7 @@ template class dbTable<_dbScanList>;
 
 bool _dbScanList::operator==(const _dbScanList& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (unused_ != rhs.unused_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbScanList::operator==(const _dbScanList& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanList::operator<(const _dbScanList& rhs) const

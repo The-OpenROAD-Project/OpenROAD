@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="349" height="115"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 95 1 91 1 99"/>
+   <polygon points="17 95 9 91 9 99"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#comp_id_and_name"
+      xlink:title="comp_id_and_name">
+      <rect x="31" y="81" width="148" height="32"/>
+      <rect x="29" y="79" width="148" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="99">comp_id_and_name</text>
+   </a>
+   <rect x="219" y="47" width="28" height="32" rx="10"/>
+   <rect x="217"
+         y="45"
+         width="28"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="227" y="65">*</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="219" y="3" width="82" height="32"/>
+      <rect x="217" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="227" y="21">T_STRING</text>
+   </a>
+   <path class="line"
+         d="m17 95 h2 m0 0 h10 m148 0 h10 m20 0 h10 m0 0 h92 m-122 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m102 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-102 0 h10 m28 0 h10 m0 0 h54 m-112 10 l0 -44 q0 -10 10 -10 m112 54 l0 -44 q0 -10 -10 -10 m-102 0 h10 m82 0 h10 m23 78 h-3"/>
+   <polygon points="339 95 347 91 347 99"/>
+   <polygon points="339 95 331 91 331 99"/>
+</svg>
