@@ -32,8 +32,8 @@ or_integration_tests(
     place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
+    place_pads_placer_fullyblocked
     place_pads_too_many
-    place_pads_uniform_fullyblocked
     place_pads_uniform
     place_pads_uniform_slip
     rdl_route

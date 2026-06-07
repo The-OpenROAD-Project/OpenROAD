@@ -1,4 +1,4 @@
-# Test for placing pads using place_pads with uniform spacing
+# Test for placing pads using place_pads placer mode
 source "helpers.tcl"
 
 # Init chip
@@ -28,6 +28,6 @@ catch {
 } err
 puts $err
 
-set def_file [make_result_file "place_pads_uniform_fullyblocked.def"]
+set def_file [make_result_file "place_pads_placer_fullyblocked.def"]
 write_def $def_file
-diff_files $def_file "place_pads_uniform_fullyblocked.defok"
+diff_files $def_file "place_pads_placer_fullyblocked.defok"
