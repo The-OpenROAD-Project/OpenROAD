@@ -17,6 +17,12 @@ class _dbChipRegionInst;
 class _dbUnfoldedChip;
 class _dbUnfoldedBump;
 
+struct dbUnfoldedRegionFlags
+{
+  uint32_t effective_side_ : 2 = 0;
+  uint32_t spare_bits : 30;
+};
+
 class _dbUnfoldedRegion : public _dbObject
 {
  public:
@@ -30,8 +36,8 @@ class _dbUnfoldedRegion : public _dbObject
   bool operator<(const _dbUnfoldedRegion& rhs) const;
   void collectMemInfo(MemInfo& info);
 
+  dbUnfoldedRegionFlags flags_;
   dbId<_dbChipRegionInst> chip_region_inst_;
-  uint32_t effective_side_;
   dbId<_dbUnfoldedChip> parent_chip_;
   dbId<_dbUnfoldedRegion> chip_next_;
   dbId<_dbUnfoldedBump> bump_;

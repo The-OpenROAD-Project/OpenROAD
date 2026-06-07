@@ -5,6 +5,7 @@
 #include "dbUnfoldedRegion.h"
 
 #include <cstdint>
+#include <cstring>
 
 #include "dbChipRegion.h"
 #include "dbChipRegionInst.h"
@@ -24,10 +25,10 @@ template class dbTable<_dbUnfoldedRegion>;
 bool _dbUnfoldedRegion::operator==(const _dbUnfoldedRegion& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  if (chip_region_inst_ != rhs.chip_region_inst_) {
+  if (flags_.effective_side_ != rhs.flags_.effective_side_) {
     return false;
   }
-  if (effective_side_ != rhs.effective_side_) {
+  if (chip_region_inst_ != rhs.chip_region_inst_) {
     return false;
   }
   if (parent_chip_ != rhs.parent_chip_) {
@@ -51,13 +52,16 @@ bool _dbUnfoldedRegion::operator<(const _dbUnfoldedRegion& rhs) const
 
 _dbUnfoldedRegion::_dbUnfoldedRegion(_dbDatabase* db)
 {
-  effective_side_ = 0;
+  flags_ = {};
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedRegion& obj)
 {
+  uint32_t flags_bit_field;
+  stream >> flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.chip_region_inst_;
-  stream >> obj.effective_side_;
   stream >> obj.parent_chip_;
   stream >> obj.chip_next_;
   stream >> obj.bump_;
@@ -66,8 +70,11 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedRegion& obj)
 
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedRegion& obj)
 {
+  uint32_t flags_bit_field;
+  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
+  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
+  stream << flags_bit_field;
   stream << obj.chip_region_inst_;
-  stream << obj.effective_side_;
   stream << obj.parent_chip_;
   stream << obj.chip_next_;
   stream << obj.bump_;
@@ -124,13 +131,13 @@ Cuboid dbUnfoldedRegion::getCuboid() const
 dbUnfoldedRegion::EffectiveSide dbUnfoldedRegion::getEffectiveSide() const
 {
   _dbUnfoldedRegion* obj = (_dbUnfoldedRegion*) this;
-  return static_cast<EffectiveSide>(obj->effective_side_);
+  return static_cast<EffectiveSide>(obj->flags_.effective_side_);
 }
 
 void dbUnfoldedRegion::setEffectiveSide(EffectiveSide side)
 {
   _dbUnfoldedRegion* obj = (_dbUnfoldedRegion*) this;
-  obj->effective_side_ = static_cast<uint32_t>(side);
+  obj->flags_.effective_side_ = static_cast<uint32_t>(side);
 }
 
 bool dbUnfoldedRegion::isTop() const
