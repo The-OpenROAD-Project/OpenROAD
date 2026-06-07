@@ -53,6 +53,9 @@ COMPULSORY_TESTS = [
     "mirror3",
     "multi_height_one_site_gap_disallow",
     "multi_height_rows",
+    "negotiation01",
+    "negotiation_one_site_gap",
+    "negotiation_regions",
     "obstruction1",
     "obstruction2",
     "one_site_gap_disallow",
@@ -242,6 +245,15 @@ filegroup(
             ],
             "multi_height_rows": [
                 "Nangate45/fake_macros.lef",
+            ],
+            "negotiation01": [
+                "gcd_replace.def",
+            ],
+            "negotiation_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "negotiation_regions": [
+                "regions1.def",
             ],
             "obstruction2": [
                 "Nangate45/fakeram45_64x7.lib",

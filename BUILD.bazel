@@ -8,7 +8,6 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -20,22 +19,6 @@ package(
         # TODO(b/299593765): Fix strict ordering.
         "-libcxx_assertions",
     ],
-)
-
-# Notification target to notify user if --config=opt (with LTO) is not used.
-notification_rule(
-    name = "opt_notification",
-    is_opt = select(
-        {
-            ":lto_on": True,
-            "//conditions:default": False,
-        },
-    ),
-)
-
-config_setting(
-    name = "lto_on",
-    values = {"copt": "-flto"},
 )
 
 exports_files([
@@ -130,6 +113,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/rsz:ui",
     "//src/stt",
     "//src/stt:ui",
+    "//src/syn",
+    "//src/syn:ui",
     "//src/tap",
     "//src/tap:ui",
     "//src/upf",
@@ -194,7 +179,6 @@ cc_library(
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
     ":openroad_version",
-    ":opt_notification",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
@@ -203,6 +187,7 @@ OPENROAD_MAIN_DEPS = [
     "//src/utl",
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
+    "@boost.dll",
     "@boost.stacktrace",
     "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
     "@tcl_lang//:tcl",

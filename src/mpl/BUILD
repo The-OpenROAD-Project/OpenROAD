@@ -93,7 +93,6 @@ cc_library(
         ":mpl_private_hdrs",
         ":pusher",
         ":snapper",
-        "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/par",
@@ -169,5 +168,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/mpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/mpl/test:__pkg__",
+    ],
 )

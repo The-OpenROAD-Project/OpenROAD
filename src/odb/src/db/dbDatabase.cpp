@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include "dbAlignmentMarkerRule.h"
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipConn.h"
@@ -55,6 +56,11 @@
 #include "dbPropertyItr.h"
 #include "dbRSeg.h"
 #include "dbTech.h"
+#include "dbTechLayer.h"
+#include "dbTechLayerAreaRule.h"
+#include "dbTechLayerCutSpacingRule.h"
+#include "dbTechLayerMinCutRule.h"
+#include "dbTechLayerSpacingRule.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
@@ -87,6 +93,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (dbu_per_micron_ != rhs.dbu_per_micron_) {
+    return false;
+  }
+  if (*alignment_marker_rule_tbl_ != *rhs.alignment_marker_rule_tbl_) {
     return false;
   }
   if (*chip_tbl_ != *rhs.chip_tbl_) {
@@ -156,6 +165,11 @@ bool _dbDatabase::operator<(const _dbDatabase& rhs) const
 _dbDatabase::_dbDatabase(_dbDatabase* db)
 {
   dbu_per_micron_ = 0;
+  alignment_marker_rule_tbl_ = new dbTable<_dbAlignmentMarkerRule>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbAlignmentMarkerRuleObj);
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
   chip_hash_.setTable(chip_tbl_);
@@ -285,6 +299,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_net_tbl_;
   }
+  if (obj.isSchema(kSchemaChipAlignmentMarkerRule)) {
+    stream >> *obj.alignment_marker_rule_tbl_;
+  }
   if (obj.isSchema(kSchemaDbuPerMicron)) {
     if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
@@ -317,6 +334,49 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     }
   }
 
+  dbDatabase* db = (dbDatabase*) &obj;
+  // Fix area scaling
+  if (!obj.isSchema(kSchemaStoreAreaAsInt64)) {
+    const int64_t dbu_per_micron = obj.dbu_per_micron_;
+    const int64_t single_dbu_scale = 20000 / dbu_per_micron;
+    const int64_t double_dbu_scaling
+        = (20000 * 20000) / (dbu_per_micron * dbu_per_micron);
+    // Fix techlayer area
+    for (dbTech* tech : db->getTechs()) {
+      for (dbTechLayer* layer : tech->getLayers()) {
+        _dbTechLayer* layer_impl = (_dbTechLayer*) layer;
+        layer_impl->area_ /= double_dbu_scaling;
+
+        for (dbTechLayerAreaRule* area_rule : layer->getTechLayerAreaRules()) {
+          _dbTechLayerAreaRule* area_rule_impl
+              = (_dbTechLayerAreaRule*) area_rule;
+          area_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerCutSpacingRule* cut_spacing_rule :
+             layer->getTechLayerCutSpacingRules()) {
+          _dbTechLayerCutSpacingRule* cut_spacing_rule_impl
+              = (_dbTechLayerCutSpacingRule*) cut_spacing_rule;
+          cut_spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerMinCutRule* min_cut_rule :
+             layer->getTechLayerMinCutRules()) {
+          _dbTechLayerMinCutRule* min_cut_rule_impl
+              = (_dbTechLayerMinCutRule*) min_cut_rule;
+          min_cut_rule_impl->area_ /= single_dbu_scale;
+        }
+
+        for (dbTechLayerSpacingRule* spacing_rule :
+             layer->getV54SpacingRules()) {
+          _dbTechLayerSpacingRule* spacing_rule_impl
+              = (_dbTechLayerSpacingRule*) spacing_rule;
+          spacing_rule_impl->cut_area_ /= single_dbu_scale;
+        }
+      }
+    }
+  }
+
   // Fix up the owner id of properties of this db, this value changes.
   const uint32_t oid = obj.getId();
 
@@ -329,7 +389,6 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   obj.schema_minor_ = kSchemaMinor;
 
   // Set the chipinsts_map_ of the chip
-  dbDatabase* db = (dbDatabase*) &obj;
   for (const auto& inst : db->getChipInsts()) {
     _dbChip* parent_chip = (_dbChip*) inst->getParentChip();
     parent_chip->chipinsts_map_[inst->getName()] = inst->getId();
@@ -344,6 +403,7 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     // Construct unfolded model only if there are multiple chips
     db->constructUnfoldedModel();
   }
+
   // User Code End >>
   return stream;
 }
@@ -370,6 +430,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_conn_tbl_;
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
+  stream << *obj.alignment_marker_rule_tbl_;
   stream << obj.dbu_per_micron_;
   stream << obj.hierarchy_;
   // User Code End <<
@@ -379,6 +440,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
 dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
 {
   switch (type) {
+    case dbAlignmentMarkerRuleObj:
+      return alignment_marker_rule_tbl_;
     case dbChipObj:
       return chip_tbl_;
     case dbPropertyObj:
@@ -413,18 +476,15 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  alignment_marker_rule_tbl_->collectMemInfo(
+      info.children["alignment_marker_rule_tbl_"]);
   chip_tbl_->collectMemInfo(info.children["chip_tbl_"]);
-
+  info.children["chip_hash"].add(chip_hash_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
-
   chip_inst_tbl_->collectMemInfo(info.children["chip_inst_tbl_"]);
-
   chip_region_inst_tbl_->collectMemInfo(info.children["chip_region_inst_tbl_"]);
-
   chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
-
   chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
-
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
@@ -437,6 +497,7 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
 _dbDatabase::~_dbDatabase()
 {
+  delete alignment_marker_rule_tbl_;
   delete chip_tbl_;
   delete prop_tbl_;
   delete chip_inst_tbl_;
@@ -542,6 +603,12 @@ uint32_t dbDatabase::getDbuPerMicron() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return obj->dbu_per_micron_;
+}
+
+dbSet<dbAlignmentMarkerRule> dbDatabase::getAlignmentMarkerRules() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbAlignmentMarkerRule>(obj, obj->alignment_marker_rule_tbl_);
 }
 
 dbSet<dbChip> dbDatabase::getChips() const

@@ -9,6 +9,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -189,18 +190,22 @@ bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
   return obj->flags_.length_valid;
 }
 
-// User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods
 dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
-    dbTechLayer* _layer)
+    dbTechLayer* parent)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerWrongDirSpacingRule* newrule
-      = layer->wrongdir_spacing_rules_tbl_->create();
-  newrule->layer_ = _layer->getImpl()->getOID();
-
-  return ((dbTechLayerWrongDirSpacingRule*) newrule);
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerWrongDirSpacingRule*)
+      _parent->wrongdir_spacing_rules_tbl_->create();
 }
-
+void dbTechLayerWrongDirSpacingRule::destroy(
+    dbTechLayerWrongDirSpacingRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->wrongdir_spacing_rules_tbl_->destroy(
+      (_dbTechLayerWrongDirSpacingRule*) obj);
+}
+// User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods
 dbTechLayerWrongDirSpacingRule*
 dbTechLayerWrongDirSpacingRule::getTechLayerWrongDirSpacingRule(
     dbTechLayer* inly,
@@ -209,15 +214,6 @@ dbTechLayerWrongDirSpacingRule::getTechLayerWrongDirSpacingRule(
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerWrongDirSpacingRule*)
       layer->wrongdir_spacing_rules_tbl_->getPtr(dbid);
-}
-
-void dbTechLayerWrongDirSpacingRule::destroy(
-    dbTechLayerWrongDirSpacingRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->wrongdir_spacing_rules_tbl_->destroy(
-      (_dbTechLayerWrongDirSpacingRule*) rule);
 }
 // User Code End dbTechLayerWrongDirSpacingRulePublicMethods
 }  // namespace odb

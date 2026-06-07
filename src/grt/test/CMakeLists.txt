@@ -40,7 +40,12 @@ or_integration_tests(
     modeling_instance_obs
     multiple_calls
     ndr_1w_3s
+    ndr_1w_3s_cugr
     ndr_2w_3s
+    ndr_2w_3s_cugr
+    ndr_multi_cugr
+    ndr_rrr_cugr
+    ndr_upper_layers_cugr
     no_tracks
     obs_out_of_die
     obstruction
@@ -77,6 +82,7 @@ or_integration_tests(
     repair_antennas_only_diodes
     repair_antennas_only_jumpers
     repair_antennas_allow_congestion
+    repair_antennas_from_odb
     report_wire_length1
     report_wire_length2
     report_wire_length3
@@ -90,6 +96,7 @@ or_integration_tests(
     single_row
     skip_large_fanout1
     soft_ndr_4w_6s
+    soft_ndr_4w_6s_cugr
     top_level_term1
     top_level_term2
     top_level_term3

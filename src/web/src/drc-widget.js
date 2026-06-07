@@ -307,10 +307,35 @@ export class DrcWidget {
         return row;
     }
 
+    highlightMarkerById(markerId, openInspector = false) {
+        const marker = this._findMarkerById(markerId);
+        if (marker) this._highlightMarker(marker, openInspector);
+    }
+
+    _findMarkerById(markerId) {
+        const walk = (node) => {
+            if (!node) return null;
+            if (node.markers) {
+                for (const m of node.markers) {
+                    if (m.id === markerId) return m;
+                }
+            }
+            if (node.subcategories) {
+                for (const sub of node.subcategories) {
+                    const found = walk(sub);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        return walk(this._markerTree);
+    }
+
     _highlightMarker(marker, openInspector = false) {
         this._app.websocketManager.request({
             type: 'drc_highlight',
-            marker_id: marker.id
+            marker_id: marker.id,
+            open_inspector: openInspector,
         }).then(data => {
             if (data.ok && data.bbox) {
                 marker.visited = true;
@@ -321,8 +346,13 @@ export class DrcWidget {
                 this._zoomToBBox(data.bbox);
                 this._redrawAllLayers();
 
-                if (openInspector && this._app.focusComponent) {
-                    this._app.focusComponent('Inspector');
+                if (openInspector) {
+                    if (data.select_id != null && this._app.navigateInspector) {
+                        this._app.navigateInspector(data.select_id);
+                    }
+                    if (this._app.focusComponent) {
+                        this._app.focusComponent('Inspector');
+                    }
                 }
             }
         }).catch(err => {

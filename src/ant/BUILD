@@ -57,7 +57,6 @@ cc_library(
     deps = [
         ":ant",
         "//:ord",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -115,5 +114,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/ant/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/ant/test:__pkg__",
+    ],
 )

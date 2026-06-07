@@ -176,7 +176,6 @@ void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(lib_cell, dont_use);
 }
@@ -184,7 +183,6 @@ set_dont_use(LibertyCell *lib_cell,
 void
 reset_dont_use()
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resetDontUse();
 }
@@ -369,7 +367,7 @@ repair_setup(double setup_margin,
              const char* phases,
              bool skip_pin_swap,
              bool skip_gate_cloning,
-             bool skip_size_down,
+             bool skip_size_down_fanout,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp,
@@ -383,7 +381,7 @@ repair_setup(double setup_margin,
                        max_repairs_per_pass, match_cell_footprint,
                        verbose, sequence, phases,
                        skip_pin_swap, skip_gate_cloning,
-                       skip_size_down,
+                       skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
 }

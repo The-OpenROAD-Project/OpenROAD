@@ -216,7 +216,8 @@ class RepairDesign : sta::dbStaState
                     sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
-                    float& repeater_max_slew);
+                    float& repeater_max_slew,
+                    std::optional<float> load_cap_hint = std::nullopt);
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
@@ -230,7 +231,8 @@ class RepairDesign : sta::dbStaState
                     float& repeater_max_slew,
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
-                    sta::Pin*& repeater_out_pin);
+                    sta::Pin*& repeater_out_pin,
+                    std::optional<float> load_cap_hint = std::nullopt);
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;

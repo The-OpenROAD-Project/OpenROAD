@@ -79,8 +79,6 @@ cc_library(
         "//src/utl",
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
-        "@boost.stacktrace",
-        "@boost.unordered",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
@@ -210,5 +208,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gpl/test:__pkg__",
+    ],
 )

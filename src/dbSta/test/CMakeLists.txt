@@ -21,6 +21,7 @@ or_integration_tests(
     hier_weird_port
     levelize_drvr_vertices1
     make_port
+    modnet_port_alias
     network_edit1
     power1
     read_def_bus_port
@@ -57,6 +58,8 @@ or_integration_tests(
     sta3
     sta4
     sta5
+    sta_to_db1
+    sta_to_db1_hier
     write_sdc1
     write_verilog1
     write_verilog2

@@ -677,6 +677,29 @@ html, body {
     pointer-events: none;
 }
 
+/* Selectability checkbox (second column, next to the visibility checkbox).
+ * Small left margin gives a clear visual separation between the two columns;
+ * disabled state (visibility off) dims the checkbox. */
+.display-controls .vis-sel-cb {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+.display-controls .vis-sel-cb.vis-sel-spacer {
+    /* Layout-only placeholder when a row has no selectability checkbox. */
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    visibility: hidden;
+}
+.display-controls .vis-sel-cb:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.display-controls label.vis-sel-disabled {
+    /* Visually dim labels whose selectability is disabled by visibility. */
+    color: var(--fg-muted);
+}
+
 /* Layer context menu */
 .context-menu {
     position: fixed;
@@ -725,6 +748,10 @@ html, body {
 }
 .tcl-error {
     color: var(--error-text);
+}
+.tcl-static-notice {
+    color: var(--fg-muted);
+    font-style: italic;
 }
 .tcl-input-row {
     display: flex;
@@ -834,6 +861,16 @@ html, body {
 .inspector-prop-value {
     color: var(--fg-primary);
     word-break: break-all;
+}
+.inspector-editable {
+    cursor: text;
+    border-bottom: 1px dashed var(--fg-muted);
+    padding: 0 2px;
+}
+.inspector-editable:focus {
+    outline: none;
+    border-bottom: 1px solid var(--fg-primary);
+    background: var(--bg-input);
 }
 .inspector-group {
     margin: 1px 0;
@@ -1202,6 +1239,27 @@ html, body {
     white-space: nowrap;
     z-index: 100;
     display: none;
+}
+
+.three-d-options {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 100;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--fg-primary);
+    user-select: none;
+}
+
+.three-d-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 }
 
 /* ─── Charts Widget ──────────────────────────────────────────────────── */

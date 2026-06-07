@@ -46,6 +46,7 @@
 
 #ifdef BAZEL_CURRENT_REPOSITORY
 #include "bazel/tcl_library_init.h"
+#include "boost/dll/runtime_symbol_info.hpp"
 #endif
 
 #include "tcl_readline_setup.h"
@@ -77,6 +78,7 @@ using std::string;
   X(rmp)                                 \
   X(cgt)                                 \
   X(stt)                                 \
+  X(syn)                                 \
   X(psm)                                 \
   X(pdn)                                 \
   X(rsz)                                 \
@@ -158,6 +160,7 @@ static void initPython()
 #undef X
 #undef FOREACH_TOOL
 #undef FOREACH_TOOL_WITHOUT_OPENROAD
+#undef FOREACH_SYN_PYTHON_TOOL
 
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
@@ -181,6 +184,32 @@ static void initPython()
 #endif
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+// Point RUNFILES_DIR at the runfiles tree next to the installed binary so it
+// can find its Tcl resources. boost::dll::program_location() asks the OS for
+// the absolute path of the running executable (/proc/self/exe on Linux, etc.),
+// which is robust regardless of how it was launched -- a relative path, a bare
+// name resolved via PATH, or through a symlink -- unlike reconstructing it from
+// argv[0].
+static void setupBazelRunfilesEnvironment()
+{
+  if (getenv("RUNFILES_DIR") != nullptr) {
+    return;
+  }
+
+  boost::dll::fs::error_code ec;
+  boost::dll::fs::path exe_path = boost::dll::program_location(ec);
+  if (ec) {
+    return;
+  }
+
+  exe_path += ".runfiles";
+  if (boost::dll::fs::exists(exe_path)) {
+    setenv("RUNFILES_DIR", exe_path.string().c_str(), /* override */ 0);
+  }
+}
+#endif
 
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
@@ -230,6 +259,10 @@ int main(int argc, char* argv[])
   signal(SIGFPE, handler);
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+  setupBazelRunfilesEnvironment();
+#endif
 
   if (argc == 2 && stringEq(argv[1], "-help")) {
     showUsage(argv[0], init_filename);
@@ -378,20 +411,27 @@ static int tclAppInit(int& argc,
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
 
-    // Start the web server before splash/thread output so the
-    // WebLogSink captures all startup messages for the browser console.
+    // Register the web server's log sink early (before splash/thread output
+    // and read_db) so the WebLogSink captures all startup messages for the
+    // browser console.  The network and browser are NOT opened here — that
+    // happens later in serve(), just before waitForStop(), once the database
+    // is fully loaded.  Opening them here would let a connecting client run
+    // Search::eagerInit on the I/O worker threads while read_db is still
+    // mutating the db on this thread — a coredump in
+    // odb::dbBPinItr::getObject().  See issue #10576.
+    int web_port = 0;
     if (web_enabled) {
-      int port = 0;
       if (web_port_arg) {
         const char* end = web_port_arg + std::strlen(web_port_arg);
-        auto [ptr, ec] = std::from_chars(web_port_arg, end, port);
-        if (ec != std::errc{} || ptr != end || port < 0 || port > 65535) {
+        auto [ptr, ec] = std::from_chars(web_port_arg, end, web_port);
+        if (ec != std::errc{} || ptr != end || web_port < 0
+            || web_port > 65535) {
           fprintf(
               stderr, "Error: invalid -web_port value '%s'\n", web_port_arg);
           exit(EXIT_FAILURE);
         }
       }
-      ord::OpenRoad::openRoad()->getWebServer()->serve(port);
+      ord::OpenRoad::openRoad()->getWebServer()->initLogger();
     }
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
@@ -408,10 +448,12 @@ static int tclAppInit(int& argc,
           ord::OpenRoad::openRoad()->getThreadCount(), false);
     }
 
-    // gui::Gui::enabled() is true when a HeadlessViewer is installed
-    // (which the web server does).  But addRestoreStateCommand() only
-    // works with the Qt event loop — the web server executes scripts
-    // directly on the main thread, like the non-GUI path.
+    // The web server now installs its HeadlessViewer late, in serve() (just
+    // before waitForStop), so gui::Gui::enabled() is still false here in the
+    // web path.  The `&& !web_enabled` is kept defensively: even with a
+    // viewer installed, the web server executes scripts directly on the main
+    // thread (like the non-GUI path), and addRestoreStateCommand() only
+    // works with the Qt event loop.
     const bool gui_enabled = gui::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
@@ -472,10 +514,15 @@ static int tclAppInit(int& argc,
       }
     }
 
-    // Block until the web server is stopped (like QApplication::exec()
+    // read_db and any startup scripts have now run to completion on this
+    // thread, so the database is fully loaded and stable.  Open the network
+    // and browser now: a connecting client's Search::eagerInit will index a
+    // settled db instead of racing read_db (the issue #10576 coredump).
+    // Then block until the web server is stopped (like QApplication::exec()
     // for the GUI).  After this returns, fall through to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
+      server->serve(web_port);
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are

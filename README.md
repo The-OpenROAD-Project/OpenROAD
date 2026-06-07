@@ -280,6 +280,36 @@ transceivers, OpenPower-based Microwatt etc.
 To build OpenROAD tools locally on your machine, follow steps
 from [here](docs/user/Build.md).
 
+### Third-party dependencies: submodules vs. Bazel BCR
+
+OpenROAD ships two build systems, and they source third-party code
+differently:
+
+- **CMake**: CMake has no central registry of versioned dependencies, so
+  third-party sources are vendored as git submodules (see `.gitmodules`
+  and the nested `.gitmodules` files under each submodule). Some of
+  these submodules look like forks but are really just pinned upstream
+  trees; they exist so CMake has a directory to point at. These are
+  upstream mirrors — kept as submodules because that is what CMake can
+  consume.
+- **Bazel**: prefer the idiomatic options, in order:
+  1. A module from the [Bazel Central Registry](https://registry.bazel.build/)
+     (`bazel_dep` in `MODULE.bazel`). This is the default — pinned,
+     mirrored, reproducible, and no submodule needed.
+  2. If the dependency is not on BCR, fetch the upstream repository
+     directly with `http_archive` (preferred) or a module extension.
+     For modules that exist on BCR but need a different revision,
+     `git_override` (pinned by commit) or `archive_override` (pinned
+     by URL + SHA256) can be used. Bring a BUILD overlay only when
+     upstream does not ship one.
+  3. A real fork (with OpenROAD-specific patches) stays as a git
+     submodule because that is also what CMake needs; Bazel then
+     references it via its local path.
+
+The rule of thumb: if Bazel can get it from BCR or directly from the
+upstream repo, do not add a submodule just for Bazel. Submodules are
+the CMake-side compromise, not the source of truth for Bazel builds.
+
 ## Regression Tests
 
 There are a set of executable regression test scripts in `./test/`.

@@ -111,6 +111,8 @@ class IRNetwork
   odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
+  bool hasNodes() const;
+
   // For debug only
   void dumpNodes(const std::map<Node*, std::size_t>& node_map,
                  const std::string& name = "nodes") const;
