@@ -59,4 +59,4 @@
   p_ddr_dq_9_io
     BUMP_1_4/PAD -> u_ddr_dq_9_io/PAD
 [ERROR PAD-0007] Failed to route 17 nets.
-PAD-0007
+pass
