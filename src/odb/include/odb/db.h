@@ -735,6 +735,16 @@ class dbBlock : public dbObject
   dbSet<dbLevelShifter> getLevelShifters();
 
   ///
+  /// Set the UPF version string for this block.
+  ///
+  void setUPFVersion(const std::string& version);
+
+  ///
+  /// Get the UPF version string for this block.
+  ///
+  std::string getUPFVersion() const;
+
+  ///
   /// Get the groups of this block.
   ///
   dbSet<dbGroup> getGroups();

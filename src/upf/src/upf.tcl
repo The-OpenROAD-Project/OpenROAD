@@ -23,6 +23,17 @@ proc read_upf { args } {
   source $keys(-file)
 }
 
+sta::define_cmd_args "upf_version" { version }
+proc upf_version { args } {
+  upf::check_block_exists
+  sta::check_argc_eq1 "upf_version" $args
+  set version [lindex $args 0]
+  set ok [upf::set_upf_version_cmd $version]
+  if { !$ok } {
+    error "upf_version: invalid version '$version'"
+  }
+}
+
 sta::define_cmd_args "write_upf" {file}
 proc write_upf { args } {
   upf::check_block_exists

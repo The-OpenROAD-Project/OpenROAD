@@ -157,7 +157,7 @@ void write_upf(utl::Logger* logger,
                odb::dbBlock* block,
                const std::string& file);
 
-bool upf_version(utl::Logger* logger,
-                 odb::dbBlock* block,
-                 const std::string& version);
+bool set_upf_version(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     const std::string& version);
 }  // namespace upf

@@ -1,0 +1,3 @@
+Expected failure caught for 'abc': upf_version: invalid version 'abc'
+Expected failure caught for '': upf_version: invalid version ''
+upf_version tests passed

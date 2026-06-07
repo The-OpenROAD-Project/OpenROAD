@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,17 @@
 #include "writer.h"
 
 namespace upf {
+
+namespace {
+
+bool is_valid_upf_version(const std::string& version)
+{
+  static const std::unordered_set<std::string> valid_versions
+      = {"1.0", "2.0", "2.1", "3.0", "3.1"};
+  return valid_versions.find(version) != valid_versions.end();
+}
+
+}  // namespace
 
 bool create_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
@@ -1587,15 +1599,26 @@ void write_upf(utl::Logger* logger,
   writer.write(file);
 }
 
-bool upf_version(utl::Logger* logger,
-                 odb::dbBlock* block,
-                 const std::string& version)
+bool set_upf_version(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     const std::string& version)
 {
-  if (version.empty()) {
-    logger->warn(utl::UPF, 62, "upf_version requires a version string");
+  if (block == nullptr) {
+    logger->error(utl::UPF, 26, "No block exists for upf_version");
     return false;
   }
-  logger->info(utl::UPF, 1, "UPF version set to {}", version);
+
+  if (!is_valid_upf_version(version)) {
+    logger->error(
+        utl::UPF,
+        46,
+        "upf_version '{}' is not supported; expected one of 1.0, 2.0, "
+        "2.1, 3.0, 3.1",
+        version);
+    return false;
+  }
+
+  block->setUPFVersion(version);
   return true;
 }
 
