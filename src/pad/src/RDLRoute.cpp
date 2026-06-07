@@ -56,11 +56,6 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
         if (lhs_dist != rhs_dist) {
           return lhs_dist < rhs_dist;
         }
-        const std::string& lhs_name = lhs->getName();
-        const std::string& rhs_name = rhs->getName();
-        if (lhs_name != rhs_name) {
-          return lhs_name < rhs_name;
-        }
         return lhs->getId() < rhs->getId();
       });
 
@@ -100,11 +95,6 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
                                     rhs_shortest->getBBox().center());
 
   if (lhs_dist == rhs_dist) {
-    const std::string& lhs_name = getTerminal()->getName();
-    const std::string& rhs_name = other->getTerminal()->getName();
-    if (lhs_name != rhs_name) {
-      return lhs_name < rhs_name;
-    }
     return getTerminal()->getId() < other->getTerminal()->getId();
   }
 

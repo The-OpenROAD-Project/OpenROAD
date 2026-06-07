@@ -61,16 +61,6 @@ bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
   if (lhs.shape.yMax() != rhs.shape.yMax()) {
     return lhs.shape.yMax() < rhs.shape.yMax();
   }
-  const std::string lhs_layer_name = lhs.layer->getName();
-  const std::string rhs_layer_name = rhs.layer->getName();
-  if (lhs_layer_name != rhs_layer_name) {
-    return lhs_layer_name < rhs_layer_name;
-  }
-  const std::string lhs_term_name = lhs.terminal->getName();
-  const std::string rhs_term_name = rhs.terminal->getName();
-  if (lhs_term_name != rhs_term_name) {
-    return lhs_term_name < rhs_term_name;
-  }
   return lhs.terminal->getId() < rhs.terminal->getId();
 }
 
