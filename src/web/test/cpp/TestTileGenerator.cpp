@@ -297,18 +297,12 @@ TEST_F(TileGeneratorTest, GetLayerColorMapWithBacksideMetals)
   ASSERT_NE(tech, nullptr);
 
   // make metals 1 -> 3 backside
-  odb::dbTechLayer* layer = tech->findLayer("metal1");
-  layer->setBackside(true);
-  layer = tech->findLayer("via1");
-  layer->setBackside(true);
-  layer = tech->findLayer("metal2");
-  layer->setBackside(true);
-  layer = tech->findLayer("via2");
-  layer->setBackside(true);
-  layer = tech->findLayer("metal3");
-  layer->setBackside(true);
-  layer = tech->findLayer("via3");
-  layer->setBackside(true);
+  for (const char* name :
+       {"metal1", "via1", "metal2", "via2", "metal3", "via3"}) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    layer->setBackside(true);
+  }
 
   makeTileGen();
   const auto& colors = tile_gen_->getLayerColorMap();
