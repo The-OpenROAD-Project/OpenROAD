@@ -2134,29 +2134,33 @@ void DisplayControls::techInit(odb::dbTech* tech)
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
     QColor color;
-    if (type == dbTechLayerType::ROUTING) {
-      if (metal < default_metal_colors.size()) {
-        color = default_metal_colors[metal++];
-      } else {
-        // pick a random color as we exceeded the built-in palette size
-        color = generate_next_color();
-      }
-    } else if (type == dbTechLayerType::CUT) {
-      if (via < default_cut_colors.size()) {
-        if (metal != 0) {
-          color = default_cut_colors[via++];
+    if (layer->isBackside()) {
+      color = generate_next_color();
+    } else {
+      if (type == dbTechLayerType::ROUTING) {
+        if (metal < default_metal_colors.size()) {
+          color = default_metal_colors[metal++];
         } else {
-          // via came first, so pick random color
+          // pick a random color as we exceeded the built-in palette size
+          color = generate_next_color();
+        }
+      } else if (type == dbTechLayerType::CUT) {
+        if (via < default_cut_colors.size()) {
+          if (metal != 0) {
+            color = default_cut_colors[via++];
+          } else {
+            // via came first, so pick random color
+            color = generate_next_color();
+          }
+        } else {
+          // pick a random color as we exceeded the built-in palette size
           color = generate_next_color();
         }
       } else {
-        // pick a random color as we exceeded the built-in palette size
+        // Do not draw from the existing palette so the metal layers can claim
+        // those colors.
         color = generate_next_color();
       }
-    } else {
-      // Do not draw from the existing palette so the metal layers can claim
-      // those colors.
-      color = generate_next_color();
     }
     color.setAlpha(180);
     layer_color_[layer] = std::move(color);
