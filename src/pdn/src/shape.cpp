@@ -448,7 +448,16 @@ odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
     }
     bterm->setIoType(odb::dbIoType::INOUT);
   } else {
-    bterm = net_->get1stBTerm();
+    // Attempt to find a bterm with the same name first`
+    for (auto* netbterm : net_->getBTerms()) {
+      if (netbterm->getName() == net_->getName()) {
+        bterm = netbterm;
+        break;
+      }
+    }
+    if (bterm == nullptr) {
+      bterm = net_->get1stBTerm();
+    }
   }
   bterm->setSigType(net_->getSigType());
   bterm->setSpecial();
