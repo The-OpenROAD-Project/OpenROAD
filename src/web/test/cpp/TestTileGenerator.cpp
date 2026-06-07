@@ -290,6 +290,79 @@ TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
   }
 }
 
+// Only frontside metals should consume the palette colors.
+TEST_F(TileGeneratorTest, GetLayerColorMapWithBacksideMetals)
+{
+  odb::dbTech* tech = getDb()->getTech();
+  ASSERT_NE(tech, nullptr);
+
+  // make metals 1 -> 3 backside
+  for (const char* name :
+       {"metal1", "via1", "metal2", "via2", "metal3", "via3"}) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    layer->setBackside(true);
+  }
+
+  makeTileGen();
+  const auto& colors = tile_gen_->getLayerColorMap();
+
+  // Helper: assert a layer's color matches an expected RGB (alpha is always
+  // 180 in both the GUI and the web palette).
+  auto expectColor = [&](const char* name, int r, int g, int b) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    const Color c = colors.at(layer);
+    EXPECT_EQ(c.r, r) << name << " red";
+    EXPECT_EQ(c.g, g) << name << " green";
+    EXPECT_EQ(c.b, b) << name << " blue";
+    EXPECT_EQ(c.a, 180) << name << " alpha";
+  };
+
+  struct LayerColor
+  {
+    const char* name;
+    int r;
+    int g;
+    int b;
+  };
+
+  // All 20 routing layers: metal1..metal14 are the seeded kMetalColors palette
+  // (#00F, #F00, #0D0, ...), metal15..metal20 are the mt19937(1) overflow.
+  const LayerColor kRouting[] = {// Backside
+                                 {"metal1", 209, 191, 141},
+                                 {"metal2", 63, 193, 166},
+                                 {"metal3", 200, 166, 92},
+                                 // Frontside
+                                 {"metal4", 0, 0, 254},
+                                 {"metal5", 254, 0, 0},
+                                 {"metal6", 9, 221, 0},
+                                 {"metal7", 190, 244, 81},
+                                 {"metal8", 222, 33, 96},
+                                 {"metal9", 32, 216, 253}};
+
+  // All 19 cut layers: via1..via14 are the seeded kCutColors palette,
+  // via15..via19 are the mt19937(1) overflow.
+  const LayerColor kCut[] = {// Backside
+                             {"via1", 99, 98, 82},
+                             {"via2", 171, 152, 190},
+                             {"via3", 54, 196, 143},
+                             // Frontside
+                             {"via4", 126, 126, 255},
+                             {"via5", 255, 126, 126},
+                             {"via6", 4, 110, 0},
+                             {"via7", 95, 122, 40},
+                             {"via8", 111, 17, 48},
+                             {"via9", 16, 108, 126}};
+
+  for (const LayerColor& lc : kRouting) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+  for (const LayerColor& lc : kCut) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+}
+
 TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
 {
   makeTileGen();
