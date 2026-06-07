@@ -2085,7 +2085,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   if (user_pin) {
     filtered_pins = {user_pin};
   }
-  // should be pointless
+  // Explicit findRequireds because vertexWorstSlackPath missing findRequired.
   sta_->findRequireds();
 
   initial_design_area_ = resizer_->computeDesignArea();
@@ -2115,6 +2115,12 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     }
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+
+    {
+      utl::DebugScopedTimer timer(sta_runtime);
+      // Bypass Sta::findRequired(drvr) to prevent delay calc update.
+      search_->findRequireds(drvr->level());
+    }
 
     // set rebuffering globals
     setPin(drvr_pin);
@@ -2284,6 +2290,15 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     estimate_parasitics_->updateParasitics();
 
+    {
+      utl::DebugScopedTimer timer(sta_runtime);
+      // Level limited update of net load delays and arrivals
+      // that prevents slew propagation from invalidaing
+      // downstream required times.
+      sta_->findDelays(max_level);
+      search_->findArrivals(max_level);
+    }
+
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 
     if (debug) {
@@ -2363,7 +2378,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    // should be pointless
+    // Explicit findRequireds because vertexWorstSlackPath missing findRequired.
     sta_->findRequireds();
     annotateLoadSlacks(bnet, drvr);
 
