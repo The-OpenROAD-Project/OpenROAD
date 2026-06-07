@@ -89,7 +89,7 @@ class RepairDesign : sta::dbStaState
   bool getLargestSizeCin(const sta::Pin* drvr_pin, float& cin);
   void findBufferSizes();
   bool performGainBuffering(sta::Net* net,
-                            const sta::Pin* drvr_pin,
+                            sta::Vertex* drvr,
                             int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 

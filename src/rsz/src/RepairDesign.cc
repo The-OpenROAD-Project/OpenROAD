@@ -183,7 +183,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Annotating slew for driver {}",
                network_->pathName(drvr->pin()));
-    for (auto rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+    for (auto rf : sta::RiseFall::range()) {
       if (!drvr->slewAnnotated(rf, min_) && !drvr->slewAnnotated(rf, max_)) {
         sta_->setAnnotatedSlew(drvr,
                                resizer_->tgt_slew_corner_,
@@ -237,7 +237,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
         max_fanout = 1e9;
       }
 
-      if (performGainBuffering(net, drvr_pin, max_fanout)) {
+      if (performGainBuffering(net, drvr, max_fanout)) {
         debugPrint(logger_,
                    RSZ,
                    "early_sizing",
@@ -262,12 +262,10 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
       }
     }
 
-    for (auto mm : sta::MinMaxAll::all()->range()) {
-      for (auto rf : sta::RiseFallBoth::riseFall()->range()) {
-        if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
-          drvr->setSlewAnnotated(
-              false, rf, resizer_->tgt_slew_corner_->dcalcAnalysisPtIndex(mm));
-        }
+    for (auto rf : sta::RiseFall::range()) {
+      if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
+        sta_->unsetAnnotatedSlew(drvr, resizer_->tgt_slew_corner_,
+                                 sta::MinMaxAll::all(), rf->asRiseFallBoth());
       }
     }
   }
@@ -417,12 +415,11 @@ void RepairDesign::repairDesign(
     for (auto vertex : annotations_to_clean_up) {
       for (auto corner : sta_->scenes()) {
         for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-          vertex->setSlewAnnotated(
-              false, rf, corner->dcalcAnalysisPtIndex(max_));
+          sta_->unsetAnnotatedSlew(vertex, corner, sta::MinMaxAll::max(),
+                                   rf->asRiseFallBoth());
         }
       }
     }
-    sta_->delaysInvalid();
   }
 
   printProgress(print_iteration,
@@ -671,7 +668,7 @@ void RepairDesign::findBufferSizes()
 ///   construction and critical path isolation.
 ///
 bool RepairDesign::performGainBuffering(sta::Net* net,
-                                        const sta::Pin* drvr_pin,
+                                        sta::Vertex* drvr,
                                         int max_fanout)
 {
   struct EnqueuedPin
@@ -721,9 +718,13 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     }
   };
 
+  Pin* drvr_pin = drvr->pin();
+
   // 1. Collect all sinks
   std::vector<EnqueuedPin> sinks;
 
+  // vertexWorstSlackPath prerequisite.
+  sta_->findRequired(drvr);
   sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
     const sta::Pin* pin = pin_iter->next();
