@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "sat/kissat/kissat.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
