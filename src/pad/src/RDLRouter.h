@@ -133,6 +133,7 @@ class RDLRouter
             int width,
             int spacing,
             bool allow45,
+            bool fixed,
             float turn_penalty,
             int max_iterations);
   ~RDLRouter();
@@ -247,6 +248,7 @@ class RDLRouter
   int width_;
   int spacing_;
   bool allow45_;
+  bool fixed_;
   float turn_penalty_;
   int max_router_iterations_;
 
