@@ -14,7 +14,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipConn;
-class _dbUnfoldedRegionInst;
+class _dbUnfoldedChipRegionInst;
 
 class _dbUnfoldedConn : public _dbObject
 {
@@ -27,8 +27,8 @@ class _dbUnfoldedConn : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipConn> chip_conn_;
-  dbId<_dbUnfoldedRegionInst> top_region_;
-  dbId<_dbUnfoldedRegionInst> bottom_region_;
+  dbId<_dbUnfoldedChipRegionInst> top_region_;
+  dbId<_dbUnfoldedChipRegionInst> bottom_region_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedConn& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedConn& obj);

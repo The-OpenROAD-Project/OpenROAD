@@ -8,7 +8,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbUnfoldedRegionInst.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbUnfoldedConn>;
@@ -77,26 +77,26 @@ dbChipConn* dbUnfoldedConn::getChipConn() const
   return (dbChipConn*) par->chip_conn_tbl_->getPtr(obj->chip_conn_);
 }
 
-dbUnfoldedRegionInst* dbUnfoldedConn::getTopRegion() const
+dbUnfoldedChipRegionInst* dbUnfoldedConn::getTopRegion() const
 {
   _dbUnfoldedConn* obj = (_dbUnfoldedConn*) this;
   if (obj->top_region_ == 0) {
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedRegionInst*) par->unfolded_region_inst_tbl_->getPtr(
-      obj->top_region_);
+  return (dbUnfoldedChipRegionInst*)
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->top_region_);
 }
 
-dbUnfoldedRegionInst* dbUnfoldedConn::getBottomRegion() const
+dbUnfoldedChipRegionInst* dbUnfoldedConn::getBottomRegion() const
 {
   _dbUnfoldedConn* obj = (_dbUnfoldedConn*) this;
   if (obj->bottom_region_ == 0) {
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedRegionInst*) par->unfolded_region_inst_tbl_->getPtr(
-      obj->bottom_region_);
+  return (dbUnfoldedChipRegionInst*)
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->bottom_region_);
 }
 
 }  // namespace odb

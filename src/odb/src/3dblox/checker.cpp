@@ -167,16 +167,16 @@ void matchMarkersBetweenChips(
   }
 }
 
-const char* sideToString(dbUnfoldedRegionInst::EffectiveSide side)
+const char* sideToString(dbUnfoldedChipRegionInst::EffectiveSide side)
 {
   switch (side) {
-    case dbUnfoldedRegionInst::EffectiveSide::TOP:
+    case dbUnfoldedChipRegionInst::EffectiveSide::TOP:
       return "TOP";
-    case dbUnfoldedRegionInst::EffectiveSide::BOTTOM:
+    case dbUnfoldedChipRegionInst::EffectiveSide::BOTTOM:
       return "BOTTOM";
-    case dbUnfoldedRegionInst::EffectiveSide::INTERNAL:
+    case dbUnfoldedChipRegionInst::EffectiveSide::INTERNAL:
       return "INTERNAL";
-    case dbUnfoldedRegionInst::EffectiveSide::INTERNAL_EXT:
+    case dbUnfoldedChipRegionInst::EffectiveSide::INTERNAL_EXT:
       return "INTERNAL_EXT";
   }
   return "UNKNOWN";
@@ -184,8 +184,8 @@ const char* sideToString(dbUnfoldedRegionInst::EffectiveSide side)
 
 MatingSurfaces getMatingSurfaces(dbUnfoldedConn* conn)
 {
-  dbUnfoldedRegionInst* r1 = conn->getTopRegion();
-  dbUnfoldedRegionInst* r2 = conn->getBottomRegion();
+  dbUnfoldedChipRegionInst* r1 = conn->getTopRegion();
+  dbUnfoldedChipRegionInst* r2 = conn->getBottomRegion();
   if (!r1 || !r2) {
     return {.valid = false, .top_z = 0, .bot_z = 0};
   }
@@ -281,9 +281,9 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
       // Case 2: Virtual connection (one region is null) - connect chip to
       // ground
       else if (conn->getTopRegion() || conn->getBottomRegion()) {
-        dbUnfoldedRegionInst* region = conn->getTopRegion()
-                                           ? conn->getTopRegion()
-                                           : conn->getBottomRegion();
+        dbUnfoldedChipRegionInst* region = conn->getTopRegion()
+                                               ? conn->getTopRegion()
+                                               : conn->getBottomRegion();
         auto it = chip_map.find(region->getParentChip());
         if (it != chip_map.end()) {
           uf.unite(it->second, ground_node);
@@ -378,7 +378,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
 {
   // The struct model maintained an isUsed bit on each region; in the
   // dbObject model we derive it here on demand by scanning connections.
-  std::unordered_set<dbUnfoldedRegionInst*> used;
+  std::unordered_set<dbUnfoldedChipRegionInst*> used;
   for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
     if (auto* r = conn->getTopRegion(); r && r->isInternalExt()) {
       used.insert(r);
@@ -390,7 +390,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
 
   dbMarkerCategory* cat = nullptr;
   for (dbUnfoldedChipInst* chip : db_->getUnfoldedChipInsts()) {
-    for (dbUnfoldedRegionInst* region : chip->getRegions()) {
+    for (dbUnfoldedChipRegionInst* region : chip->getRegions()) {
       if (region->isInternalExt() && !used.contains(region)) {
         if (!cat) {
           cat = dbMarkerCategory::createOrReplace(top_cat,
@@ -414,7 +414,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
 
 void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
 {
-  auto describe = [](dbUnfoldedRegionInst* r, dbMarker* marker) {
+  auto describe = [](dbUnfoldedChipRegionInst* r, dbMarker* marker) {
     const Cuboid cuboid = r->getCuboid();
     marker->addSource(r->getChipRegionInst());
     marker->addShape(
@@ -454,7 +454,7 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
   for (dbUnfoldedChipInst* chip : db_->getUnfoldedChipInsts()) {
-    for (dbUnfoldedRegionInst* region : chip->getRegions()) {
+    for (dbUnfoldedChipRegionInst* region : chip->getRegions()) {
       for (dbUnfoldedBumpInst* bump : region->getBumps()) {
         const Point3D p = bump->getGlobalPosition();
         if (!region->getCuboid().getEnclosingRect().intersects(
@@ -554,8 +554,8 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
     if (!isValid(conn)) {
       continue;
     }
-    dbUnfoldedRegionInst* ra = conn->getTopRegion();
-    dbUnfoldedRegionInst* rb = conn->getBottomRegion();
+    dbUnfoldedChipRegionInst* ra = conn->getTopRegion();
+    dbUnfoldedChipRegionInst* rb = conn->getBottomRegion();
     if (!ra || !rb) {
       continue;
     }
@@ -627,8 +627,8 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
     if (!isValid(conn)) {
       continue;
     }
-    dbUnfoldedRegionInst* top_region = conn->getTopRegion();
-    dbUnfoldedRegionInst* bot_region = conn->getBottomRegion();
+    dbUnfoldedChipRegionInst* top_region = conn->getTopRegion();
+    dbUnfoldedChipRegionInst* bot_region = conn->getBottomRegion();
     if (!top_region || !bot_region) {
       continue;
     }

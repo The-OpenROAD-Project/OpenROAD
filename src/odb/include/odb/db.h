@@ -181,8 +181,8 @@ class dbTechLayerWrongDirSpacingRule;
 class dbUnfoldedBumpInst;
 class dbUnfoldedChipInst;
 class dbUnfoldedChipNet;
+class dbUnfoldedChipRegionInst;
 class dbUnfoldedConn;
-class dbUnfoldedRegionInst;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -7625,7 +7625,7 @@ class dbDatabase : public dbObject
 
   dbSet<dbUnfoldedChipInst> getUnfoldedChipInsts() const;
 
-  dbSet<dbUnfoldedRegionInst> getUnfoldedRegionInsts() const;
+  dbSet<dbUnfoldedChipRegionInst> getUnfoldedChipRegionInsts() const;
 
   dbSet<dbUnfoldedBumpInst> getUnfoldedBumpInsts() const;
 
@@ -11415,7 +11415,7 @@ class dbUnfoldedBumpInst : public dbObject
  public:
   dbChipBumpInst* getChipBumpInst() const;
 
-  dbUnfoldedRegionInst* getParentRegion() const;
+  dbUnfoldedChipRegionInst* getParentRegion() const;
 
   // User Code Begin dbUnfoldedBumpInst
   Point3D getGlobalPosition() const;
@@ -11432,7 +11432,7 @@ class dbUnfoldedChipInst : public dbObject
   // User Code Begin dbUnfoldedChipInst
   Cuboid getCuboid() const;
 
-  dbSet<dbUnfoldedRegionInst> getRegions() const;
+  dbSet<dbUnfoldedChipRegionInst> getRegions() const;
 
   ///
   /// Return the chip-instance path that uniquely identifies this unfolded
@@ -11444,7 +11444,7 @@ class dbUnfoldedChipInst : public dbObject
   /// Find the unfolded region within this chip whose source region instance
   /// matches `source`. Returns nullptr if no match.
   ///
-  dbUnfoldedRegionInst* findRegion(dbChipRegionInst* source) const;
+  dbUnfoldedChipRegionInst* findRegion(dbChipRegionInst* source) const;
   // User Code End dbUnfoldedChipInst
 };
 
@@ -11458,17 +11458,7 @@ class dbUnfoldedChipNet : public dbObject
   // User Code End dbUnfoldedChipNet
 };
 
-class dbUnfoldedConn : public dbObject
-{
- public:
-  dbChipConn* getChipConn() const;
-
-  dbUnfoldedRegionInst* getTopRegion() const;
-
-  dbUnfoldedRegionInst* getBottomRegion() const;
-};
-
-class dbUnfoldedRegionInst : public dbObject
+class dbUnfoldedChipRegionInst : public dbObject
 {
  public:
   enum class EffectiveSide
@@ -11483,7 +11473,7 @@ class dbUnfoldedRegionInst : public dbObject
 
   dbUnfoldedChipInst* getParentChip() const;
 
-  // User Code Begin dbUnfoldedRegionInst
+  // User Code Begin dbUnfoldedChipRegionInst
   Cuboid getCuboid() const;
 
   EffectiveSide getEffectiveSide() const;
@@ -11497,7 +11487,17 @@ class dbUnfoldedRegionInst : public dbObject
   int getSurfaceZ() const;
 
   dbSet<dbUnfoldedBumpInst> getBumps() const;
-  // User Code End dbUnfoldedRegionInst
+  // User Code End dbUnfoldedChipRegionInst
+};
+
+class dbUnfoldedConn : public dbObject
+{
+ public:
+  dbChipConn* getChipConn() const;
+
+  dbUnfoldedChipRegionInst* getTopRegion() const;
+
+  dbUnfoldedChipRegionInst* getBottomRegion() const;
 };
 
 // Generator Code End ClassDefinition

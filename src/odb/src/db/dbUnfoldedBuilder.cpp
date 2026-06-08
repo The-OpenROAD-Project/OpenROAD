@@ -19,8 +19,8 @@
 #include "dbUnfoldedBumpInst.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipNet.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "dbUnfoldedConn.h"
-#include "dbUnfoldedRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
@@ -51,14 +51,14 @@ std::string getFullPathName(const std::vector<dbChipInst*>& path)
   return name;
 }
 
-dbUnfoldedRegionInst::EffectiveSide mirrorSide(
-    dbUnfoldedRegionInst::EffectiveSide side)
+dbUnfoldedChipRegionInst::EffectiveSide mirrorSide(
+    dbUnfoldedChipRegionInst::EffectiveSide side)
 {
-  if (side == dbUnfoldedRegionInst::EffectiveSide::TOP) {
-    return dbUnfoldedRegionInst::EffectiveSide::BOTTOM;
+  if (side == dbUnfoldedChipRegionInst::EffectiveSide::TOP) {
+    return dbUnfoldedChipRegionInst::EffectiveSide::BOTTOM;
   }
-  if (side == dbUnfoldedRegionInst::EffectiveSide::BOTTOM) {
-    return dbUnfoldedRegionInst::EffectiveSide::TOP;
+  if (side == dbUnfoldedChipRegionInst::EffectiveSide::BOTTOM) {
+    return dbUnfoldedChipRegionInst::EffectiveSide::TOP;
   }
   return side;
 }
@@ -72,7 +72,7 @@ dbUnfoldedBuilder::dbUnfoldedBuilder(_dbDatabase* db) : db_(db)
 void dbUnfoldedBuilder::build()
 {
   db_->unfolded_chip_inst_tbl_->clear();
-  db_->unfolded_region_inst_tbl_->clear();
+  db_->unfolded_chip_region_inst_tbl_->clear();
   db_->unfolded_bump_inst_tbl_->clear();
   db_->unfolded_conn_tbl_->clear();
   db_->unfolded_chip_net_tbl_->clear();
@@ -137,20 +137,20 @@ void dbUnfoldedBuilder::unfoldRegions(_dbUnfoldedChipInst* uf_chip,
   for (auto* region_inst : inst->getRegions()) {
     auto region = region_inst->getChipRegion();
 
-    dbUnfoldedRegionInst::EffectiveSide side
-        = dbUnfoldedRegionInst::EffectiveSide::INTERNAL;
+    dbUnfoldedChipRegionInst::EffectiveSide side
+        = dbUnfoldedChipRegionInst::EffectiveSide::INTERNAL;
     switch (region->getSide()) {
       case dbChipRegion::Side::FRONT:
-        side = dbUnfoldedRegionInst::EffectiveSide::TOP;
+        side = dbUnfoldedChipRegionInst::EffectiveSide::TOP;
         break;
       case dbChipRegion::Side::BACK:
-        side = dbUnfoldedRegionInst::EffectiveSide::BOTTOM;
+        side = dbUnfoldedChipRegionInst::EffectiveSide::BOTTOM;
         break;
       case dbChipRegion::Side::INTERNAL:
-        side = dbUnfoldedRegionInst::EffectiveSide::INTERNAL;
+        side = dbUnfoldedChipRegionInst::EffectiveSide::INTERNAL;
         break;
       case dbChipRegion::Side::INTERNAL_EXT:
-        side = dbUnfoldedRegionInst::EffectiveSide::INTERNAL_EXT;
+        side = dbUnfoldedChipRegionInst::EffectiveSide::INTERNAL_EXT;
         break;
     }
 
@@ -158,7 +158,8 @@ void dbUnfoldedBuilder::unfoldRegions(_dbUnfoldedChipInst* uf_chip,
       side = mirrorSide(side);
     }
 
-    _dbUnfoldedRegionInst* uf_region = db_->unfolded_region_inst_tbl_->create();
+    _dbUnfoldedChipRegionInst* uf_region
+        = db_->unfolded_chip_region_inst_tbl_->create();
     uf_region->chip_region_inst_ = region_inst->getImpl()->getOID();
     uf_region->flags_.effective_side_ = static_cast<uint32_t>(side);
     uf_region->parent_chip_ = uf_chip->getOID();
@@ -172,7 +173,7 @@ void dbUnfoldedBuilder::unfoldRegions(_dbUnfoldedChipInst* uf_chip,
   ((dbUnfoldedChipInst*) uf_chip)->getRegions().reverse();
 }
 
-void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedRegionInst* uf_region,
+void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
                                     dbChipRegionInst* region_inst)
 {
   auto& chip_bump_map = bump_map_[uf_region->parent_chip_];
@@ -190,7 +191,7 @@ void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedRegionInst* uf_region,
     chip_bump_map[bump_inst] = uf_bump->getOID();
   }
   // Inserts were head-first; reverse to restore source order.
-  ((dbUnfoldedRegionInst*) uf_region)->getBumps().reverse();
+  ((dbUnfoldedChipRegionInst*) uf_region)->getBumps().reverse();
 }
 
 _dbUnfoldedChipInst* dbUnfoldedBuilder::findUnfoldedChip(
@@ -208,7 +209,7 @@ void dbUnfoldedBuilder::unfoldConnections(
     const std::vector<dbChipInst*>& parent_path)
 {
   for (auto* conn : chip->getChipConns()) {
-    dbId<_dbUnfoldedRegionInst> top_region = 0;
+    dbId<_dbUnfoldedChipRegionInst> top_region = 0;
     if (_dbUnfoldedChipInst* top_chip
         = findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath()))) {
       auto& map = region_map_[top_chip->getOID()];
@@ -217,7 +218,7 @@ void dbUnfoldedBuilder::unfoldConnections(
         top_region = it->second;
       }
     }
-    dbId<_dbUnfoldedRegionInst> bot_region = 0;
+    dbId<_dbUnfoldedChipRegionInst> bot_region = 0;
     if (_dbUnfoldedChipInst* bot_chip = findUnfoldedChip(
             concatPath(parent_path, conn->getBottomRegionPath()))) {
       auto& map = region_map_[bot_chip->getOID()];

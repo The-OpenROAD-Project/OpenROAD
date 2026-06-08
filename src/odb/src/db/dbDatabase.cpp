@@ -19,8 +19,8 @@
 #include "dbUnfoldedBumpInst.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipNet.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "dbUnfoldedConn.h"
-#include "dbUnfoldedRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
@@ -68,7 +68,7 @@
 #include "dbTechLayerSpacingRule.h"
 #include "dbUnfoldedBuilder.h"
 #include "dbUnfoldedBumpInstItr.h"
-#include "dbUnfoldedRegionInstItr.h"
+#include "dbUnfoldedChipRegionInstItr.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
@@ -132,7 +132,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*unfolded_chip_inst_tbl_ != *rhs.unfolded_chip_inst_tbl_) {
     return false;
   }
-  if (*unfolded_region_inst_tbl_ != *rhs.unfolded_region_inst_tbl_) {
+  if (*unfolded_chip_region_inst_tbl_ != *rhs.unfolded_chip_region_inst_tbl_) {
     return false;
   }
   if (*unfolded_bump_inst_tbl_ != *rhs.unfolded_bump_inst_tbl_) {
@@ -218,11 +218,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbDatabase::getObjectTable,
       dbUnfoldedChipInstObj);
-  unfolded_region_inst_tbl_ = new dbTable<_dbUnfoldedRegionInst>(
+  unfolded_chip_region_inst_tbl_ = new dbTable<_dbUnfoldedChipRegionInst>(
       this,
       this,
       (GetObjTbl_t) &_dbDatabase::getObjectTable,
-      dbUnfoldedRegionInstObj);
+      dbUnfoldedChipRegionInstObj);
   unfolded_bump_inst_tbl_ = new dbTable<_dbUnfoldedBumpInst>(
       this,
       this,
@@ -272,7 +272,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
-  unfolded_region_itr_ = new dbUnfoldedRegionInstItr(unfolded_region_inst_tbl_);
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
 
   unfolded_bump_itr_ = new dbUnfoldedBumpInstItr(unfolded_bump_inst_tbl_);
   // User Code End Constructor
@@ -507,8 +508,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_net_tbl_;
     case dbUnfoldedChipInstObj:
       return unfolded_chip_inst_tbl_;
-    case dbUnfoldedRegionInstObj:
-      return unfolded_region_inst_tbl_;
+    case dbUnfoldedChipRegionInstObj:
+      return unfolded_chip_region_inst_tbl_;
     case dbUnfoldedBumpInstObj:
       return unfolded_bump_inst_tbl_;
     case dbUnfoldedConnObj:
@@ -547,8 +548,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
   unfolded_chip_inst_tbl_->collectMemInfo(
       info.children["unfolded_chip_inst_tbl_"]);
-  unfolded_region_inst_tbl_->collectMemInfo(
-      info.children["unfolded_region_inst_tbl_"]);
+  unfolded_chip_region_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_region_inst_tbl_"]);
   unfolded_bump_inst_tbl_->collectMemInfo(
       info.children["unfolded_bump_inst_tbl_"]);
   unfolded_conn_tbl_->collectMemInfo(info.children["unfolded_conn_tbl_"]);
@@ -574,7 +575,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_bump_inst_tbl_;
   delete chip_net_tbl_;
   delete unfolded_chip_inst_tbl_;
-  delete unfolded_region_inst_tbl_;
+  delete unfolded_chip_region_inst_tbl_;
   delete unfolded_bump_inst_tbl_;
   delete unfolded_conn_tbl_;
   delete unfolded_chip_net_tbl_;
@@ -641,7 +642,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
-  unfolded_region_itr_ = new dbUnfoldedRegionInstItr(unfolded_region_inst_tbl_);
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
 
   unfolded_bump_itr_ = new dbUnfoldedBumpInstItr(unfolded_bump_inst_tbl_);
 }
@@ -741,10 +743,11 @@ dbSet<dbUnfoldedChipInst> dbDatabase::getUnfoldedChipInsts() const
   return dbSet<dbUnfoldedChipInst>(obj, obj->unfolded_chip_inst_tbl_);
 }
 
-dbSet<dbUnfoldedRegionInst> dbDatabase::getUnfoldedRegionInsts() const
+dbSet<dbUnfoldedChipRegionInst> dbDatabase::getUnfoldedChipRegionInsts() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbUnfoldedRegionInst>(obj, obj->unfolded_region_inst_tbl_);
+  return dbSet<dbUnfoldedChipRegionInst>(obj,
+                                         obj->unfolded_chip_region_inst_tbl_);
 }
 
 dbSet<dbUnfoldedBumpInst> dbDatabase::getUnfoldedBumpInsts() const

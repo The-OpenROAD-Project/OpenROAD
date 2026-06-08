@@ -844,18 +844,18 @@ struct less<odb::dbUnfoldedChipNet*>
 };
 
 template <>
-struct less<odb::dbUnfoldedConn*>
+struct less<odb::dbUnfoldedChipRegionInst*>
 {
-  bool operator()(const odb::dbUnfoldedConn* lhs,
-                  const odb::dbUnfoldedConn* rhs) const
+  bool operator()(const odb::dbUnfoldedChipRegionInst* lhs,
+                  const odb::dbUnfoldedChipRegionInst* rhs) const
       = delete;
 };
 
 template <>
-struct less<odb::dbUnfoldedRegionInst*>
+struct less<odb::dbUnfoldedConn*>
 {
-  bool operator()(const odb::dbUnfoldedRegionInst* lhs,
-                  const odb::dbUnfoldedRegionInst* rhs) const
+  bool operator()(const odb::dbUnfoldedConn* lhs,
+                  const odb::dbUnfoldedConn* rhs) const
       = delete;
 };
 

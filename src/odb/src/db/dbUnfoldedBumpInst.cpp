@@ -11,7 +11,7 @@
 #include "dbInst.h"
 #include "dbTable.h"
 #include "dbUnfoldedChipInst.h"
-#include "dbUnfoldedRegionInst.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 namespace odb {
@@ -82,15 +82,15 @@ dbChipBumpInst* dbUnfoldedBumpInst::getChipBumpInst() const
       obj->chip_bump_inst_);
 }
 
-dbUnfoldedRegionInst* dbUnfoldedBumpInst::getParentRegion() const
+dbUnfoldedChipRegionInst* dbUnfoldedBumpInst::getParentRegion() const
 {
   _dbUnfoldedBumpInst* obj = (_dbUnfoldedBumpInst*) this;
   if (obj->parent_region_ == 0) {
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedRegionInst*) par->unfolded_region_inst_tbl_->getPtr(
-      obj->parent_region_);
+  return (dbUnfoldedChipRegionInst*)
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->parent_region_);
 }
 
 // User Code Begin dbUnfoldedBumpInstPublicMethods
@@ -105,10 +105,10 @@ Point3D dbUnfoldedBumpInst::getGlobalPosition() const
     return Point3D();
   }
   Point pt = inst->getBBox()->getBox().center();
-  dbUnfoldedRegionInst* region
-      = (dbUnfoldedRegionInst*) db->unfolded_region_inst_tbl_->getPtr(
+  dbUnfoldedChipRegionInst* region
+      = (dbUnfoldedChipRegionInst*) db->unfolded_chip_region_inst_tbl_->getPtr(
           obj->parent_region_);
-  _dbUnfoldedRegionInst* _region = (_dbUnfoldedRegionInst*) region;
+  _dbUnfoldedChipRegionInst* _region = (_dbUnfoldedChipRegionInst*) region;
   _dbUnfoldedChipInst* parent_chip
       = db->unfolded_chip_inst_tbl_->getPtr(_region->parent_chip_);
   parent_chip->transform_.apply(pt);

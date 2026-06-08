@@ -211,13 +211,13 @@
       "includes": ["dbChipNet.h", "dbChip.h"]
     },
     {
-      "name": "dbUnfoldedRegionInstItr",
-      "parentObject": "dbUnfoldedRegionInst",
-      "tableName": "unfolded_region_inst_tbl",
+      "name": "dbUnfoldedChipRegionInstItr",
+      "parentObject": "dbUnfoldedChipRegionInst",
+      "tableName": "unfolded_chip_region_inst_tbl",
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbUnfoldedRegionInst.h", "dbUnfoldedChipInst.h"]
+      "includes": ["dbUnfoldedChipRegionInst.h", "dbUnfoldedChipInst.h"]
     },
     {
       "name": "dbUnfoldedBumpInstItr",
@@ -226,7 +226,7 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
-      "includes": ["dbUnfoldedBumpInst.h", "dbUnfoldedRegionInst.h"]
+      "includes": ["dbUnfoldedBumpInst.h", "dbUnfoldedChipRegionInst.h"]
     }
   ],
   "relations":[
@@ -572,9 +572,9 @@
     },
     {
       "parent":"dbDatabase",
-      "child":"dbUnfoldedRegionInst",
+      "child":"dbUnfoldedChipRegionInst",
       "type":"1_n",
-      "tbl_name":"unfolded_region_inst_tbl_",
+      "tbl_name":"unfolded_chip_region_inst_tbl_",
       "flags": ["no-serial"]
     },
     {

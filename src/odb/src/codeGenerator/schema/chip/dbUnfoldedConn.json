@@ -10,13 +10,13 @@
     },
     {
       "name": "top_region_",
-      "type": "dbId<_dbUnfoldedRegionInst>",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
       "flags": ["no-set"],
       "parent": "dbDatabase"
     },
     {
       "name": "bottom_region_",
-      "type": "dbId<_dbUnfoldedRegionInst>",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
       "flags": ["no-set"],
       "parent": "dbDatabase"
     }
@@ -26,6 +26,6 @@
   ],
   "cpp_includes": [
     "dbChipConn.h",
-    "dbUnfoldedRegionInst.h"
+    "dbUnfoldedChipRegionInst.h"
   ]
 }

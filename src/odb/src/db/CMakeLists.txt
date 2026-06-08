@@ -163,8 +163,8 @@ add_library(db
     dbUnfoldedBumpInst.cpp
     dbUnfoldedChipInst.cpp
     dbUnfoldedChipNet.cpp
+    dbUnfoldedChipRegionInst.cpp
     dbUnfoldedConn.cpp
-    dbUnfoldedRegionInst.cpp
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
@@ -189,7 +189,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbScanListScanInstItr.cpp
     dbUnfoldedBumpInstItr.cpp
-    dbUnfoldedRegionInstItr.cpp
+    dbUnfoldedChipRegionInstItr.cpp
     # Generator Code End cpp
 )
 

@@ -1,5 +1,5 @@
 {
-  "name": "dbUnfoldedRegionInst",
+  "name": "dbUnfoldedChipRegionInst",
   "type": "dbObject",
   "enums": [
     {
@@ -36,7 +36,7 @@
     },
     {
       "name": "chip_next_",
-      "type": "dbId<_dbUnfoldedRegionInst>",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
       "flags": ["private"]
     },
     {

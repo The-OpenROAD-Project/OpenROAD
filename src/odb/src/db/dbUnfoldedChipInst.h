@@ -18,7 +18,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipInst;
-class _dbUnfoldedRegionInst;
+class _dbUnfoldedChipRegionInst;
 
 class _dbUnfoldedChipInst : public _dbObject
 {
@@ -36,7 +36,7 @@ class _dbUnfoldedChipInst : public _dbObject
   std::string name_;
   dbVector<dbId<_dbChipInst>> chip_inst_path_;
   dbTransform transform_;
-  dbId<_dbUnfoldedRegionInst> region_;
+  dbId<_dbUnfoldedChipRegionInst> region_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipInst& obj);

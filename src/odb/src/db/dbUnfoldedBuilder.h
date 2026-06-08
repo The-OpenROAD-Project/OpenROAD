@@ -16,7 +16,7 @@ namespace odb {
 class _dbDatabase;
 class _dbUnfoldedBumpInst;
 class _dbUnfoldedChipInst;
-class _dbUnfoldedRegionInst;
+class _dbUnfoldedChipRegionInst;
 class dbChip;
 class dbChipBumpInst;
 class dbChipInst;
@@ -33,7 +33,7 @@ class dbUnfoldedBuilder
                                          std::vector<dbChipInst*>& path,
                                          const dbTransform& parent_xform);
   void unfoldRegions(_dbUnfoldedChipInst* uf_chip, dbChipInst* inst);
-  void unfoldBumps(_dbUnfoldedRegionInst* uf_region,
+  void unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
                    dbChipRegionInst* region_inst);
   void unfoldConnections(dbChip* chip,
                          const std::vector<dbChipInst*>& parent_path);
@@ -45,7 +45,7 @@ class dbUnfoldedBuilder
   std::unordered_map<std::string, dbId<_dbUnfoldedChipInst>> chip_by_path_;
   std::unordered_map<
       uint32_t,
-      std::unordered_map<dbChipRegionInst*, dbId<_dbUnfoldedRegionInst>>>
+      std::unordered_map<dbChipRegionInst*, dbId<_dbUnfoldedChipRegionInst>>>
       region_map_;
   std::unordered_map<
       uint32_t,

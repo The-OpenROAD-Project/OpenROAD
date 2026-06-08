@@ -8,7 +8,7 @@
 
 #include "dbTable.h"
 #include "dbUnfoldedBumpInst.h"
-#include "dbUnfoldedRegionInst.h"
+#include "dbUnfoldedChipRegionInst.h"
 
 namespace odb {
 
@@ -31,7 +31,7 @@ bool dbUnfoldedBumpInstItr::orderReversed() const
 void dbUnfoldedBumpInstItr::reverse(dbObject* parent)
 {
   // User Code Begin reverse
-  _dbUnfoldedRegionInst* region = (_dbUnfoldedRegionInst*) parent;
+  _dbUnfoldedChipRegionInst* region = (_dbUnfoldedChipRegionInst*) parent;
   uint32_t id = region->bump_;
   uint32_t list = 0;
   while (id != 0) {
@@ -67,7 +67,7 @@ uint32_t dbUnfoldedBumpInstItr::size(dbObject* parent) const
 uint32_t dbUnfoldedBumpInstItr::begin(dbObject* parent) const
 {
   // User Code Begin begin
-  return ((_dbUnfoldedRegionInst*) parent)->bump_;
+  return ((_dbUnfoldedChipRegionInst*) parent)->bump_;
   // User Code End begin
 }
 

@@ -17,32 +17,32 @@ class _dbChipRegionInst;
 class _dbUnfoldedChipInst;
 class _dbUnfoldedBumpInst;
 
-struct dbUnfoldedRegionInstFlags
+struct dbUnfoldedChipRegionInstFlags
 {
   uint32_t effective_side_ : 2 = 0;
   uint32_t spare_bits : 30;
 };
 
-class _dbUnfoldedRegionInst : public _dbObject
+class _dbUnfoldedChipRegionInst : public _dbObject
 {
  public:
-  _dbUnfoldedRegionInst(_dbDatabase*);
+  _dbUnfoldedChipRegionInst(_dbDatabase*);
 
-  bool operator==(const _dbUnfoldedRegionInst& rhs) const;
-  bool operator!=(const _dbUnfoldedRegionInst& rhs) const
+  bool operator==(const _dbUnfoldedChipRegionInst& rhs) const;
+  bool operator!=(const _dbUnfoldedChipRegionInst& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbUnfoldedRegionInst& rhs) const;
+  bool operator<(const _dbUnfoldedChipRegionInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  dbUnfoldedRegionInstFlags flags_;
+  dbUnfoldedChipRegionInstFlags flags_;
   dbId<_dbChipRegionInst> chip_region_inst_;
   dbId<_dbUnfoldedChipInst> parent_chip_;
-  dbId<_dbUnfoldedRegionInst> chip_next_;
+  dbId<_dbUnfoldedChipRegionInst> chip_next_;
   dbId<_dbUnfoldedBumpInst> bump_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedRegionInst& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedRegionInst& obj);
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipRegionInst& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipRegionInst& obj);
 }  // namespace odb
 // Generator Code End Header

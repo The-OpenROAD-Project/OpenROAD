@@ -10,7 +10,7 @@
     },
     {
       "name": "parent_region_",
-      "type": "dbId<_dbUnfoldedRegionInst>",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
       "flags": ["no-set"],
       "parent": "dbDatabase"
     },
@@ -27,7 +27,7 @@
     "dbChipBumpInst.h",
     "dbChipBump.h",
     "dbInst.h",
-    "dbUnfoldedRegionInst.h",
+    "dbUnfoldedChipRegionInst.h",
     "dbUnfoldedChipInst.h",
     "odb/geom.h"
   ]

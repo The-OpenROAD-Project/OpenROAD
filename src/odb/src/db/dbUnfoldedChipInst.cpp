@@ -16,7 +16,7 @@
 // User Code Begin Includes
 #include <vector>
 
-#include "dbUnfoldedRegionInstItr.h"  // IWYU pragma: keep
+#include "dbUnfoldedChipRegionInstItr.h"  // IWYU pragma: keep
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbUnfoldedChipInst>;
@@ -101,17 +101,17 @@ Cuboid dbUnfoldedChipInst::getCuboid() const
   return c;
 }
 
-dbSet<dbUnfoldedRegionInst> dbUnfoldedChipInst::getRegions() const
+dbSet<dbUnfoldedChipRegionInst> dbUnfoldedChipInst::getRegions() const
 {
   _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  return dbSet<dbUnfoldedRegionInst>(obj, db->unfolded_region_itr_);
+  return dbSet<dbUnfoldedChipRegionInst>(obj, db->unfolded_region_itr_);
 }
 
-dbUnfoldedRegionInst* dbUnfoldedChipInst::findRegion(
+dbUnfoldedChipRegionInst* dbUnfoldedChipInst::findRegion(
     dbChipRegionInst* source) const
 {
-  for (dbUnfoldedRegionInst* region : getRegions()) {
+  for (dbUnfoldedChipRegionInst* region : getRegions()) {
     if (region->getChipRegionInst() == source) {
       return region;
     }

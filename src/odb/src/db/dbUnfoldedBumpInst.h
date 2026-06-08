@@ -14,7 +14,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipBumpInst;
-class _dbUnfoldedRegionInst;
+class _dbUnfoldedChipRegionInst;
 
 class _dbUnfoldedBumpInst : public _dbObject
 {
@@ -30,7 +30,7 @@ class _dbUnfoldedBumpInst : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipBumpInst> chip_bump_inst_;
-  dbId<_dbUnfoldedRegionInst> parent_region_;
+  dbId<_dbUnfoldedChipRegionInst> parent_region_;
   dbId<_dbUnfoldedBumpInst> region_next_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedBumpInst& obj);

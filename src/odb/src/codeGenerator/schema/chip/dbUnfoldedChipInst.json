@@ -19,7 +19,7 @@
     },
     {
       "name": "region_",
-      "type": "dbId<_dbUnfoldedRegionInst>",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
       "flags": ["private"]
     }
   ],

@@ -128,8 +128,8 @@ static const char* name_tbl[] = {"dbGDSLib",
                                  "dbUnfoldedBumpInst",
                                  "dbUnfoldedChipInst",
                                  "dbUnfoldedChipNet",
+                                 "dbUnfoldedChipRegionInst",
                                  "dbUnfoldedConn",
-                                 "dbUnfoldedRegionInst",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects
@@ -255,8 +255,8 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x9DE679DA, dbUnfoldedBumpInstObj},
        {0x18591EB8, dbUnfoldedChipInstObj},
        {0x5650CD93, dbUnfoldedChipNetObj},
+       {0xB0EB213C, dbUnfoldedChipRegionInstObj},
        {0xCF7B84F0, dbUnfoldedConnObj},
-       {0x4C06DD36, dbUnfoldedRegionInstObj},
        // Generator Code End HashToObjectType
 
        // Lib Objects
@@ -383,8 +383,8 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbUnfoldedBumpInstObj, 0x9DE679DA},
        {dbUnfoldedChipInstObj, 0x18591EB8},
        {dbUnfoldedChipNetObj, 0x5650CD93},
+       {dbUnfoldedChipRegionInstObj, 0xB0EB213C},
        {dbUnfoldedConnObj, 0xCF7B84F0},
-       {dbUnfoldedRegionInstObj, 0x4C06DD36},
        // Generator Code End ObjectTypeToHash
 
        // Lib Objects

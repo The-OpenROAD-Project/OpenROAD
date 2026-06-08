@@ -130,8 +130,8 @@ enum dbObjectType
   dbUnfoldedBumpInstObj,
   dbUnfoldedChipInstObj,
   dbUnfoldedChipNetObj,
+  dbUnfoldedChipRegionInstObj,
   dbUnfoldedConnObj,
-  dbUnfoldedRegionInstObj,
   // Generator Code End DbObjectType
 
   // Lib Objects

@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbUnfoldedRegionInst.h"
+#include "dbUnfoldedChipRegionInst.h"
 
 #include <cstdint>
 #include <cstring>
@@ -20,9 +20,10 @@
 #include "dbUnfoldedBumpInstItr.h"
 // User Code End Includes
 namespace odb {
-template class dbTable<_dbUnfoldedRegionInst>;
+template class dbTable<_dbUnfoldedChipRegionInst>;
 
-bool _dbUnfoldedRegionInst::operator==(const _dbUnfoldedRegionInst& rhs) const
+bool _dbUnfoldedChipRegionInst::operator==(
+    const _dbUnfoldedChipRegionInst& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.effective_side_ != rhs.flags_.effective_side_) {
@@ -45,17 +46,18 @@ bool _dbUnfoldedRegionInst::operator==(const _dbUnfoldedRegionInst& rhs) const
   // NOLINTEND(readability-simplify-boolean-expr)
 }
 
-bool _dbUnfoldedRegionInst::operator<(const _dbUnfoldedRegionInst& rhs) const
+bool _dbUnfoldedChipRegionInst::operator<(
+    const _dbUnfoldedChipRegionInst& rhs) const
 {
   return true;
 }
 
-_dbUnfoldedRegionInst::_dbUnfoldedRegionInst(_dbDatabase* db)
+_dbUnfoldedChipRegionInst::_dbUnfoldedChipRegionInst(_dbDatabase* db)
 {
   flags_ = {};
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedRegionInst& obj)
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipRegionInst& obj)
 {
   uint32_t flags_bit_field;
   stream >> flags_bit_field;
@@ -68,7 +70,7 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedRegionInst& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedRegionInst& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipRegionInst& obj)
 {
   uint32_t flags_bit_field;
   static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
@@ -81,7 +83,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedRegionInst& obj)
   return stream;
 }
 
-void _dbUnfoldedRegionInst::collectMemInfo(MemInfo& info)
+void _dbUnfoldedChipRegionInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
@@ -89,13 +91,13 @@ void _dbUnfoldedRegionInst::collectMemInfo(MemInfo& info)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbUnfoldedRegionInst - Methods
+// dbUnfoldedChipRegionInst - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-dbChipRegionInst* dbUnfoldedRegionInst::getChipRegionInst() const
+dbChipRegionInst* dbUnfoldedChipRegionInst::getChipRegionInst() const
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   if (obj->chip_region_inst_ == 0) {
     return nullptr;
   }
@@ -104,9 +106,9 @@ dbChipRegionInst* dbUnfoldedRegionInst::getChipRegionInst() const
       obj->chip_region_inst_);
 }
 
-dbUnfoldedChipInst* dbUnfoldedRegionInst::getParentChip() const
+dbUnfoldedChipInst* dbUnfoldedChipRegionInst::getParentChip() const
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   if (obj->parent_chip_ == 0) {
     return nullptr;
   }
@@ -115,10 +117,10 @@ dbUnfoldedChipInst* dbUnfoldedRegionInst::getParentChip() const
       obj->parent_chip_);
 }
 
-// User Code Begin dbUnfoldedRegionInstPublicMethods
-Cuboid dbUnfoldedRegionInst::getCuboid() const
+// User Code Begin dbUnfoldedChipRegionInstPublicMethods
+Cuboid dbUnfoldedChipRegionInst::getCuboid() const
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
   dbChipRegionInst* reg_inst
       = (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr(
@@ -130,40 +132,40 @@ Cuboid dbUnfoldedRegionInst::getCuboid() const
   return c;
 }
 
-dbUnfoldedRegionInst::EffectiveSide dbUnfoldedRegionInst::getEffectiveSide()
-    const
+dbUnfoldedChipRegionInst::EffectiveSide
+dbUnfoldedChipRegionInst::getEffectiveSide() const
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   return static_cast<EffectiveSide>(obj->flags_.effective_side_);
 }
 
-void dbUnfoldedRegionInst::setEffectiveSide(EffectiveSide side)
+void dbUnfoldedChipRegionInst::setEffectiveSide(EffectiveSide side)
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   obj->flags_.effective_side_ = static_cast<uint32_t>(side);
 }
 
-bool dbUnfoldedRegionInst::isTop() const
+bool dbUnfoldedChipRegionInst::isTop() const
 {
   return getEffectiveSide() == EffectiveSide::TOP;
 }
 
-bool dbUnfoldedRegionInst::isBottom() const
+bool dbUnfoldedChipRegionInst::isBottom() const
 {
   return getEffectiveSide() == EffectiveSide::BOTTOM;
 }
 
-bool dbUnfoldedRegionInst::isInternal() const
+bool dbUnfoldedChipRegionInst::isInternal() const
 {
   return getEffectiveSide() == EffectiveSide::INTERNAL;
 }
 
-bool dbUnfoldedRegionInst::isInternalExt() const
+bool dbUnfoldedChipRegionInst::isInternalExt() const
 {
   return getEffectiveSide() == EffectiveSide::INTERNAL_EXT;
 }
 
-int dbUnfoldedRegionInst::getSurfaceZ() const
+int dbUnfoldedChipRegionInst::getSurfaceZ() const
 {
   Cuboid c = getCuboid();
   if (isTop()) {
@@ -175,12 +177,12 @@ int dbUnfoldedRegionInst::getSurfaceZ() const
   return c.zCenter();
 }
 
-dbSet<dbUnfoldedBumpInst> dbUnfoldedRegionInst::getBumps() const
+dbSet<dbUnfoldedBumpInst> dbUnfoldedChipRegionInst::getBumps() const
 {
-  _dbUnfoldedRegionInst* obj = (_dbUnfoldedRegionInst*) this;
+  _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
   return dbSet<dbUnfoldedBumpInst>(obj, db->unfolded_bump_itr_);
 }
-// User Code End dbUnfoldedRegionInstPublicMethods
+// User Code End dbUnfoldedChipRegionInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp
