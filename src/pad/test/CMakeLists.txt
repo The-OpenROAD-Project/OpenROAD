@@ -58,4 +58,3 @@ or_integration_tests(
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
-
