@@ -264,8 +264,10 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
 
     for (auto rf : sta::RiseFall::range()) {
       if (!slew_user_annotated.contains(std::make_pair(drvr, rf->index()))) {
-        sta_->unsetAnnotatedSlew(drvr, resizer_->tgt_slew_corner_,
-                                 sta::MinMaxAll::all(), rf->asRiseFallBoth());
+        sta_->unsetAnnotatedSlew(drvr,
+                                 resizer_->tgt_slew_corner_,
+                                 sta::MinMaxAll::all(),
+                                 rf->asRiseFallBoth());
       }
     }
   }
@@ -415,8 +417,8 @@ void RepairDesign::repairDesign(
     for (auto vertex : annotations_to_clean_up) {
       for (auto corner : sta_->scenes()) {
         for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-          sta_->unsetAnnotatedSlew(vertex, corner, sta::MinMaxAll::max(),
-                                   rf->asRiseFallBoth());
+          sta_->unsetAnnotatedSlew(
+              vertex, corner, sta::MinMaxAll::max(), rf->asRiseFallBoth());
         }
       }
     }
