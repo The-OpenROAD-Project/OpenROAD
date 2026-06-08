@@ -15,7 +15,7 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipNet;
-class _dbUnfoldedBump;
+class _dbUnfoldedBumpInst;
 
 class _dbUnfoldedNet : public _dbObject
 {
@@ -28,7 +28,7 @@ class _dbUnfoldedNet : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipNet> chip_net_;
-  dbVector<dbId<_dbUnfoldedBump>> connected_bumps_;
+  dbVector<dbId<_dbUnfoldedBumpInst>> connected_bumps_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedNet& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedNet& obj);

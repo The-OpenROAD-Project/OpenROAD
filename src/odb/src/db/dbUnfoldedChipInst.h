@@ -18,24 +18,27 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbChipInst;
-class _dbUnfoldedRegion;
+class _dbUnfoldedRegionInst;
 
-class _dbUnfoldedChip : public _dbObject
+class _dbUnfoldedChipInst : public _dbObject
 {
  public:
-  _dbUnfoldedChip(_dbDatabase*);
+  _dbUnfoldedChipInst(_dbDatabase*);
 
-  bool operator==(const _dbUnfoldedChip& rhs) const;
-  bool operator!=(const _dbUnfoldedChip& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbUnfoldedChip& rhs) const;
+  bool operator==(const _dbUnfoldedChipInst& rhs) const;
+  bool operator!=(const _dbUnfoldedChipInst& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbUnfoldedChipInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   std::string name_;
   dbVector<dbId<_dbChipInst>> chip_inst_path_;
   dbTransform transform_;
-  dbId<_dbUnfoldedRegion> region_;
+  dbId<_dbUnfoldedRegionInst> region_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChip& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChip& obj);
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipInst& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipInst& obj);
 }  // namespace odb
 // Generator Code End Header

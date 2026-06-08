@@ -14,9 +14,9 @@
 namespace odb {
 
 class _dbDatabase;
-class _dbUnfoldedBump;
-class _dbUnfoldedChip;
-class _dbUnfoldedRegion;
+class _dbUnfoldedBumpInst;
+class _dbUnfoldedChipInst;
+class _dbUnfoldedRegionInst;
 class dbChip;
 class dbChipBumpInst;
 class dbChipInst;
@@ -29,25 +29,27 @@ class dbUnfoldedBuilder
   void build();
 
  private:
-  _dbUnfoldedChip* buildUnfoldedChip(dbChipInst* inst,
-                                     std::vector<dbChipInst*>& path,
-                                     const dbTransform& parent_xform);
-  void unfoldRegions(_dbUnfoldedChip* uf_chip, dbChipInst* inst);
-  void unfoldBumps(_dbUnfoldedRegion* uf_region, dbChipRegionInst* region_inst);
+  _dbUnfoldedChipInst* buildUnfoldedChip(dbChipInst* inst,
+                                         std::vector<dbChipInst*>& path,
+                                         const dbTransform& parent_xform);
+  void unfoldRegions(_dbUnfoldedChipInst* uf_chip, dbChipInst* inst);
+  void unfoldBumps(_dbUnfoldedRegionInst* uf_region,
+                   dbChipRegionInst* region_inst);
   void unfoldConnections(dbChip* chip,
                          const std::vector<dbChipInst*>& parent_path);
   void unfoldNets(dbChip* chip, const std::vector<dbChipInst*>& parent_path);
 
-  _dbUnfoldedChip* findUnfoldedChip(const std::vector<dbChipInst*>& path);
+  _dbUnfoldedChipInst* findUnfoldedChip(const std::vector<dbChipInst*>& path);
 
   _dbDatabase* db_;
-  std::unordered_map<std::string, dbId<_dbUnfoldedChip>> chip_by_path_;
+  std::unordered_map<std::string, dbId<_dbUnfoldedChipInst>> chip_by_path_;
   std::unordered_map<
       uint32_t,
-      std::unordered_map<dbChipRegionInst*, dbId<_dbUnfoldedRegion>>>
+      std::unordered_map<dbChipRegionInst*, dbId<_dbUnfoldedRegionInst>>>
       region_map_;
-  std::unordered_map<uint32_t,
-                     std::unordered_map<dbChipBumpInst*, dbId<_dbUnfoldedBump>>>
+  std::unordered_map<
+      uint32_t,
+      std::unordered_map<dbChipBumpInst*, dbId<_dbUnfoldedBumpInst>>>
       bump_map_;
 };
 

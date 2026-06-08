@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbUnfoldedBump.h"
+#include "dbUnfoldedBumpInst.h"
 
 #include "dbChipBump.h"
 #include "dbChipBumpInst.h"
@@ -10,14 +10,14 @@
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbUnfoldedChip.h"
-#include "dbUnfoldedRegion.h"
+#include "dbUnfoldedChipInst.h"
+#include "dbUnfoldedRegionInst.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 namespace odb {
-template class dbTable<_dbUnfoldedBump>;
+template class dbTable<_dbUnfoldedBumpInst>;
 
-bool _dbUnfoldedBump::operator==(const _dbUnfoldedBump& rhs) const
+bool _dbUnfoldedBumpInst::operator==(const _dbUnfoldedBumpInst& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (chip_bump_inst_ != rhs.chip_bump_inst_) {
@@ -34,16 +34,16 @@ bool _dbUnfoldedBump::operator==(const _dbUnfoldedBump& rhs) const
   // NOLINTEND(readability-simplify-boolean-expr)
 }
 
-bool _dbUnfoldedBump::operator<(const _dbUnfoldedBump& rhs) const
+bool _dbUnfoldedBumpInst::operator<(const _dbUnfoldedBumpInst& rhs) const
 {
   return true;
 }
 
-_dbUnfoldedBump::_dbUnfoldedBump(_dbDatabase* db)
+_dbUnfoldedBumpInst::_dbUnfoldedBumpInst(_dbDatabase* db)
 {
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedBump& obj)
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedBumpInst& obj)
 {
   stream >> obj.chip_bump_inst_;
   stream >> obj.parent_region_;
@@ -51,7 +51,7 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedBump& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedBump& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedBumpInst& obj)
 {
   stream << obj.chip_bump_inst_;
   stream << obj.parent_region_;
@@ -59,7 +59,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedBump& obj)
   return stream;
 }
 
-void _dbUnfoldedBump::collectMemInfo(MemInfo& info)
+void _dbUnfoldedBumpInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
@@ -67,13 +67,13 @@ void _dbUnfoldedBump::collectMemInfo(MemInfo& info)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbUnfoldedBump - Methods
+// dbUnfoldedBumpInst - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-dbChipBumpInst* dbUnfoldedBump::getChipBumpInst() const
+dbChipBumpInst* dbUnfoldedBumpInst::getChipBumpInst() const
 {
-  _dbUnfoldedBump* obj = (_dbUnfoldedBump*) this;
+  _dbUnfoldedBumpInst* obj = (_dbUnfoldedBumpInst*) this;
   if (obj->chip_bump_inst_ == 0) {
     return nullptr;
   }
@@ -82,38 +82,38 @@ dbChipBumpInst* dbUnfoldedBump::getChipBumpInst() const
       obj->chip_bump_inst_);
 }
 
-dbUnfoldedRegion* dbUnfoldedBump::getParentRegion() const
+dbUnfoldedRegionInst* dbUnfoldedBumpInst::getParentRegion() const
 {
-  _dbUnfoldedBump* obj = (_dbUnfoldedBump*) this;
+  _dbUnfoldedBumpInst* obj = (_dbUnfoldedBumpInst*) this;
   if (obj->parent_region_ == 0) {
     return nullptr;
   }
   _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedRegion*) par->unfolded_region_tbl_->getPtr(
+  return (dbUnfoldedRegionInst*) par->unfolded_region_inst_tbl_->getPtr(
       obj->parent_region_);
 }
 
-// User Code Begin dbUnfoldedBumpPublicMethods
-Point3D dbUnfoldedBump::getGlobalPosition() const
+// User Code Begin dbUnfoldedBumpInstPublicMethods
+Point3D dbUnfoldedBumpInst::getGlobalPosition() const
 {
-  _dbUnfoldedBump* obj = (_dbUnfoldedBump*) this;
+  _dbUnfoldedBumpInst* obj = (_dbUnfoldedBumpInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  dbChipBumpInst* bump_inst
-      = (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(obj->chip_bump_inst_);
+  dbChipBumpInst* bump_inst = (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(
+      obj->chip_bump_inst_);
   dbInst* inst = bump_inst->getChipBump()->getInst();
   if (inst == nullptr) {
     return Point3D();
   }
   Point pt = inst->getBBox()->getBox().center();
-  dbUnfoldedRegion* region
-      = (dbUnfoldedRegion*) db->unfolded_region_tbl_->getPtr(
+  dbUnfoldedRegionInst* region
+      = (dbUnfoldedRegionInst*) db->unfolded_region_inst_tbl_->getPtr(
           obj->parent_region_);
-  _dbUnfoldedRegion* _region = (_dbUnfoldedRegion*) region;
-  _dbUnfoldedChip* parent_chip
-      = db->unfolded_chip_tbl_->getPtr(_region->parent_chip_);
+  _dbUnfoldedRegionInst* _region = (_dbUnfoldedRegionInst*) region;
+  _dbUnfoldedChipInst* parent_chip
+      = db->unfolded_chip_inst_tbl_->getPtr(_region->parent_chip_);
   parent_chip->transform_.apply(pt);
   return Point3D(pt.x(), pt.y(), region->getSurfaceZ());
 }
-// User Code End dbUnfoldedBumpPublicMethods
+// User Code End dbUnfoldedBumpInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

@@ -1,5 +1,5 @@
 {
-  "name": "dbUnfoldedChip",
+  "name": "dbUnfoldedChipInst",
   "type": "dbObject",
   "fields": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "name": "region_",
-      "type": "dbId<_dbUnfoldedRegion>",
+      "type": "dbId<_dbUnfoldedRegionInst>",
       "flags": ["private"]
     }
   ],

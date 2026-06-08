@@ -1,5 +1,5 @@
 {
-  "name": "dbUnfoldedRegion",
+  "name": "dbUnfoldedRegionInst",
   "type": "dbObject",
   "enums": [
     {
@@ -30,18 +30,18 @@
     },
     {
       "name": "parent_chip_",
-      "type": "dbId<_dbUnfoldedChip>",
+      "type": "dbId<_dbUnfoldedChipInst>",
       "flags": ["no-set"],
       "parent": "dbDatabase"
     },
     {
       "name": "chip_next_",
-      "type": "dbId<_dbUnfoldedRegion>",
+      "type": "dbId<_dbUnfoldedRegionInst>",
       "flags": ["private"]
     },
     {
       "name": "bump_",
-      "type": "dbId<_dbUnfoldedBump>",
+      "type": "dbId<_dbUnfoldedBumpInst>",
       "flags": ["private"]
     }
   ],
@@ -51,7 +51,7 @@
   "cpp_includes": [
     "dbChipRegionInst.h",
     "dbChipRegion.h",
-    "dbUnfoldedChip.h",
+    "dbUnfoldedChipInst.h",
     "odb/dbSet.h",
     "odb/geom.h"
   ]

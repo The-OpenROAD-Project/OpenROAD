@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbUnfoldedChip.h"
+#include "dbUnfoldedChipInst.h"
 
 #include <string>
 
@@ -16,12 +16,12 @@
 // User Code Begin Includes
 #include <vector>
 
-#include "dbUnfoldedRegionItr.h"  // IWYU pragma: keep
+#include "dbUnfoldedRegionInstItr.h"  // IWYU pragma: keep
 // User Code End Includes
 namespace odb {
-template class dbTable<_dbUnfoldedChip>;
+template class dbTable<_dbUnfoldedChipInst>;
 
-bool _dbUnfoldedChip::operator==(const _dbUnfoldedChip& rhs) const
+bool _dbUnfoldedChipInst::operator==(const _dbUnfoldedChipInst& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
@@ -35,16 +35,16 @@ bool _dbUnfoldedChip::operator==(const _dbUnfoldedChip& rhs) const
   // NOLINTEND(readability-simplify-boolean-expr)
 }
 
-bool _dbUnfoldedChip::operator<(const _dbUnfoldedChip& rhs) const
+bool _dbUnfoldedChipInst::operator<(const _dbUnfoldedChipInst& rhs) const
 {
   return true;
 }
 
-_dbUnfoldedChip::_dbUnfoldedChip(_dbDatabase* db)
+_dbUnfoldedChipInst::_dbUnfoldedChipInst(_dbDatabase* db)
 {
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChip& obj)
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipInst& obj)
 {
   stream >> obj.name_;
   stream >> obj.chip_inst_path_;
@@ -53,7 +53,7 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChip& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChip& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipInst& obj)
 {
   stream << obj.name_;
   stream << obj.chip_inst_path_;
@@ -62,7 +62,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChip& obj)
   return stream;
 }
 
-void _dbUnfoldedChip::collectMemInfo(MemInfo& info)
+void _dbUnfoldedChipInst::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
@@ -73,26 +73,26 @@ void _dbUnfoldedChip::collectMemInfo(MemInfo& info)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbUnfoldedChip - Methods
+// dbUnfoldedChipInst - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-const std::string& dbUnfoldedChip::getName() const
+const std::string& dbUnfoldedChipInst::getName() const
 {
-  _dbUnfoldedChip* obj = (_dbUnfoldedChip*) this;
+  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   return obj->name_;
 }
 
-dbTransform dbUnfoldedChip::getTransform() const
+dbTransform dbUnfoldedChipInst::getTransform() const
 {
-  _dbUnfoldedChip* obj = (_dbUnfoldedChip*) this;
+  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   return obj->transform_;
 }
 
-// User Code Begin dbUnfoldedChipPublicMethods
-Cuboid dbUnfoldedChip::getCuboid() const
+// User Code Begin dbUnfoldedChipInstPublicMethods
+Cuboid dbUnfoldedChipInst::getCuboid() const
 {
-  _dbUnfoldedChip* obj = (_dbUnfoldedChip*) this;
+  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
   dbChipInst* leaf
       = (dbChipInst*) db->chip_inst_tbl_->getPtr(obj->chip_inst_path_.back());
@@ -101,16 +101,17 @@ Cuboid dbUnfoldedChip::getCuboid() const
   return c;
 }
 
-dbSet<dbUnfoldedRegion> dbUnfoldedChip::getRegions() const
+dbSet<dbUnfoldedRegionInst> dbUnfoldedChipInst::getRegions() const
 {
-  _dbUnfoldedChip* obj = (_dbUnfoldedChip*) this;
+  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  return dbSet<dbUnfoldedRegion>(obj, db->unfolded_region_itr_);
+  return dbSet<dbUnfoldedRegionInst>(obj, db->unfolded_region_itr_);
 }
 
-dbUnfoldedRegion* dbUnfoldedChip::findRegion(dbChipRegionInst* source) const
+dbUnfoldedRegionInst* dbUnfoldedChipInst::findRegion(
+    dbChipRegionInst* source) const
 {
-  for (dbUnfoldedRegion* region : getRegions()) {
+  for (dbUnfoldedRegionInst* region : getRegions()) {
     if (region->getChipRegionInst() == source) {
       return region;
     }
@@ -118,9 +119,9 @@ dbUnfoldedRegion* dbUnfoldedChip::findRegion(dbChipRegionInst* source) const
   return nullptr;
 }
 
-std::vector<dbChipInst*> dbUnfoldedChip::getChipInstPath() const
+std::vector<dbChipInst*> dbUnfoldedChipInst::getChipInstPath() const
 {
-  _dbUnfoldedChip* obj = (_dbUnfoldedChip*) this;
+  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
   std::vector<dbChipInst*> path;
   path.reserve(obj->chip_inst_path_.size());
@@ -129,6 +130,6 @@ std::vector<dbChipInst*> dbUnfoldedChip::getChipInstPath() const
   }
   return path;
 }
-// User Code End dbUnfoldedChipPublicMethods
+// User Code End dbUnfoldedChipInstPublicMethods
 }  // namespace odb
 // Generator Code End Cpp

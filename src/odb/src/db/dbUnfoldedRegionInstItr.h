@@ -10,14 +10,15 @@
 #include "odb/dbIterator.h"
 
 namespace odb {
-class _dbUnfoldedBump;
+class _dbUnfoldedRegionInst;
 
-class dbUnfoldedBumpItr : public dbIterator
+class dbUnfoldedRegionInstItr : public dbIterator
 {
  public:
-  dbUnfoldedBumpItr(dbTable<_dbUnfoldedBump>* unfolded_bump_tbl)
+  dbUnfoldedRegionInstItr(
+      dbTable<_dbUnfoldedRegionInst>* unfolded_region_inst_tbl)
   {
-    unfolded_bump_tbl_ = unfolded_bump_tbl;
+    unfolded_region_inst_tbl_ = unfolded_region_inst_tbl;
   }
 
   bool reversible() const override;
@@ -31,7 +32,7 @@ class dbUnfoldedBumpItr : public dbIterator
   dbObject* getObject(uint32_t id, ...) override;
 
  private:
-  dbTable<_dbUnfoldedBump>* unfolded_bump_tbl_;
+  dbTable<_dbUnfoldedRegionInst>* unfolded_region_inst_tbl_;
 };
 
 }  // namespace odb

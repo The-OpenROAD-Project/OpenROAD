@@ -820,18 +820,18 @@ struct less<odb::dbTechLayerWrongDirSpacingRule*>
 };
 
 template <>
-struct less<odb::dbUnfoldedBump*>
+struct less<odb::dbUnfoldedBumpInst*>
 {
-  bool operator()(const odb::dbUnfoldedBump* lhs,
-                  const odb::dbUnfoldedBump* rhs) const
+  bool operator()(const odb::dbUnfoldedBumpInst* lhs,
+                  const odb::dbUnfoldedBumpInst* rhs) const
       = delete;
 };
 
 template <>
-struct less<odb::dbUnfoldedChip*>
+struct less<odb::dbUnfoldedChipInst*>
 {
-  bool operator()(const odb::dbUnfoldedChip* lhs,
-                  const odb::dbUnfoldedChip* rhs) const
+  bool operator()(const odb::dbUnfoldedChipInst* lhs,
+                  const odb::dbUnfoldedChipInst* rhs) const
       = delete;
 };
 
@@ -852,10 +852,10 @@ struct less<odb::dbUnfoldedNet*>
 };
 
 template <>
-struct less<odb::dbUnfoldedRegion*>
+struct less<odb::dbUnfoldedRegionInst*>
 {
-  bool operator()(const odb::dbUnfoldedRegion* lhs,
-                  const odb::dbUnfoldedRegion* rhs) const
+  bool operator()(const odb::dbUnfoldedRegionInst* lhs,
+                  const odb::dbUnfoldedRegionInst* rhs) const
       = delete;
 };
 
