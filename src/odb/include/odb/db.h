@@ -180,8 +180,8 @@ class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 class dbUnfoldedBumpInst;
 class dbUnfoldedChipInst;
+class dbUnfoldedChipNet;
 class dbUnfoldedConn;
-class dbUnfoldedNet;
 class dbUnfoldedRegionInst;
 // Generator Code End ClassDeclarations
 
@@ -7631,7 +7631,7 @@ class dbDatabase : public dbObject
 
   dbSet<dbUnfoldedConn> getUnfoldedConns() const;
 
-  dbSet<dbUnfoldedNet> getUnfoldedNets() const;
+  dbSet<dbUnfoldedChipNet> getUnfoldedChipNets() const;
 
   // User Code Begin dbDatabase
 
@@ -11448,6 +11448,16 @@ class dbUnfoldedChipInst : public dbObject
   // User Code End dbUnfoldedChipInst
 };
 
+class dbUnfoldedChipNet : public dbObject
+{
+ public:
+  dbChipNet* getChipNet() const;
+
+  // User Code Begin dbUnfoldedChipNet
+  std::vector<dbUnfoldedBumpInst*> getConnectedBumps() const;
+  // User Code End dbUnfoldedChipNet
+};
+
 class dbUnfoldedConn : public dbObject
 {
  public:
@@ -11456,16 +11466,6 @@ class dbUnfoldedConn : public dbObject
   dbUnfoldedRegionInst* getTopRegion() const;
 
   dbUnfoldedRegionInst* getBottomRegion() const;
-};
-
-class dbUnfoldedNet : public dbObject
-{
- public:
-  dbChipNet* getChipNet() const;
-
-  // User Code Begin dbUnfoldedNet
-  std::vector<dbUnfoldedBumpInst*> getConnectedBumps() const;
-  // User Code End dbUnfoldedNet
 };
 
 class dbUnfoldedRegionInst : public dbObject

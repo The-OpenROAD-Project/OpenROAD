@@ -18,8 +18,8 @@
 #include "dbTable.h"
 #include "dbUnfoldedBumpInst.h"
 #include "dbUnfoldedChipInst.h"
+#include "dbUnfoldedChipNet.h"
 #include "dbUnfoldedConn.h"
-#include "dbUnfoldedNet.h"
 #include "dbUnfoldedRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -141,7 +141,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*unfolded_conn_tbl_ != *rhs.unfolded_conn_tbl_) {
     return false;
   }
-  if (*unfolded_net_tbl_ != *rhs.unfolded_net_tbl_) {
+  if (*unfolded_chip_net_tbl_ != *rhs.unfolded_chip_net_tbl_) {
     return false;
   }
 
@@ -233,8 +233,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
                                      this,
                                      (GetObjTbl_t) &_dbDatabase::getObjectTable,
                                      dbUnfoldedConnObj);
-  unfolded_net_tbl_ = new dbTable<_dbUnfoldedNet>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbUnfoldedNetObj);
+  unfolded_chip_net_tbl_ = new dbTable<_dbUnfoldedChipNet>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipNetObj);
   // User Code Begin Constructor
   magic1_ = kMagic1;
   magic2_ = kMagic2;
@@ -510,8 +513,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return unfolded_bump_inst_tbl_;
     case dbUnfoldedConnObj:
       return unfolded_conn_tbl_;
-    case dbUnfoldedNetObj:
-      return unfolded_net_tbl_;
+    case dbUnfoldedChipNetObj:
+      return unfolded_chip_net_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return tech_tbl_;
@@ -549,7 +552,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   unfolded_bump_inst_tbl_->collectMemInfo(
       info.children["unfolded_bump_inst_tbl_"]);
   unfolded_conn_tbl_->collectMemInfo(info.children["unfolded_conn_tbl_"]);
-  unfolded_net_tbl_->collectMemInfo(info.children["unfolded_net_tbl_"]);
+  unfolded_chip_net_tbl_->collectMemInfo(
+      info.children["unfolded_chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
   tech_tbl_->collectMemInfo(info.children["tech"]);
@@ -573,7 +577,7 @@ _dbDatabase::~_dbDatabase()
   delete unfolded_region_inst_tbl_;
   delete unfolded_bump_inst_tbl_;
   delete unfolded_conn_tbl_;
-  delete unfolded_net_tbl_;
+  delete unfolded_chip_net_tbl_;
   // User Code Begin Destructor
   delete tech_tbl_;
   delete lib_tbl_;
@@ -755,10 +759,10 @@ dbSet<dbUnfoldedConn> dbDatabase::getUnfoldedConns() const
   return dbSet<dbUnfoldedConn>(obj, obj->unfolded_conn_tbl_);
 }
 
-dbSet<dbUnfoldedNet> dbDatabase::getUnfoldedNets() const
+dbSet<dbUnfoldedChipNet> dbDatabase::getUnfoldedChipNets() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbUnfoldedNet>(obj, obj->unfolded_net_tbl_);
+  return dbSet<dbUnfoldedChipNet>(obj, obj->unfolded_chip_net_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods

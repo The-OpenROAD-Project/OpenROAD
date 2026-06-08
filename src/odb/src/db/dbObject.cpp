@@ -127,8 +127,8 @@ static const char* name_tbl[] = {"dbGDSLib",
                                  "dbTechLayerWrongDirSpacingRule",
                                  "dbUnfoldedBumpInst",
                                  "dbUnfoldedChipInst",
+                                 "dbUnfoldedChipNet",
                                  "dbUnfoldedConn",
-                                 "dbUnfoldedNet",
                                  "dbUnfoldedRegionInst",
                                  // Generator Code End ObjectNames
 
@@ -254,8 +254,8 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0xF73FA7DF, dbTechLayerWrongDirSpacingRuleObj},
        {0x9DE679DA, dbUnfoldedBumpInstObj},
        {0x18591EB8, dbUnfoldedChipInstObj},
+       {0x5650CD93, dbUnfoldedChipNetObj},
        {0xCF7B84F0, dbUnfoldedConnObj},
-       {0xDC63AD55, dbUnfoldedNetObj},
        {0x4C06DD36, dbUnfoldedRegionInstObj},
        // Generator Code End HashToObjectType
 
@@ -382,8 +382,8 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbTechLayerWrongDirSpacingRuleObj, 0xF73FA7DF},
        {dbUnfoldedBumpInstObj, 0x9DE679DA},
        {dbUnfoldedChipInstObj, 0x18591EB8},
+       {dbUnfoldedChipNetObj, 0x5650CD93},
        {dbUnfoldedConnObj, 0xCF7B84F0},
-       {dbUnfoldedNetObj, 0xDC63AD55},
        {dbUnfoldedRegionInstObj, 0x4C06DD36},
        // Generator Code End ObjectTypeToHash
 

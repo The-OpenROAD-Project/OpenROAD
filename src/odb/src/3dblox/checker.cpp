@@ -282,8 +282,8 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
       // ground
       else if (conn->getTopRegion() || conn->getBottomRegion()) {
         dbUnfoldedRegionInst* region = conn->getTopRegion()
-                                       ? conn->getTopRegion()
-                                       : conn->getBottomRegion();
+                                           ? conn->getTopRegion()
+                                           : conn->getBottomRegion();
         auto it = chip_map.find(region->getParentChip());
         if (it != chip_map.end()) {
           uf.unite(it->second, ground_node);
@@ -607,8 +607,8 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
 
 void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
 {
-  std::unordered_map<dbUnfoldedBumpInst*, dbUnfoldedNet*> bump_net_map;
-  for (dbUnfoldedNet* net : db_->getUnfoldedNets()) {
+  std::unordered_map<dbUnfoldedBumpInst*, dbUnfoldedChipNet*> bump_net_map;
+  for (dbUnfoldedChipNet* net : db_->getUnfoldedChipNets()) {
     for (dbUnfoldedBumpInst* bump : net->getConnectedBumps()) {
       bump_net_map[bump] = net;
     }
@@ -652,9 +652,9 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
       auto top_net_it = bump_net_map.find(top_bump);
       auto bot_net_it = bump_net_map.find(bot_bump);
 
-      dbUnfoldedNet* top_net
+      dbUnfoldedChipNet* top_net
           = top_net_it != bump_net_map.end() ? top_net_it->second : nullptr;
-      dbUnfoldedNet* bot_net
+      dbUnfoldedChipNet* bot_net
           = bot_net_it != bump_net_map.end() ? bot_net_it->second : nullptr;
 
       if (top_net != bot_net) {

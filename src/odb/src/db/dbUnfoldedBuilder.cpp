@@ -18,8 +18,8 @@
 #include "dbTable.h"
 #include "dbUnfoldedBumpInst.h"
 #include "dbUnfoldedChipInst.h"
+#include "dbUnfoldedChipNet.h"
 #include "dbUnfoldedConn.h"
-#include "dbUnfoldedNet.h"
 #include "dbUnfoldedRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -75,7 +75,7 @@ void dbUnfoldedBuilder::build()
   db_->unfolded_region_inst_tbl_->clear();
   db_->unfolded_bump_inst_tbl_->clear();
   db_->unfolded_conn_tbl_->clear();
-  db_->unfolded_net_tbl_->clear();
+  db_->unfolded_chip_net_tbl_->clear();
   chip_by_path_.clear();
   region_map_.clear();
   bump_map_.clear();
@@ -239,7 +239,7 @@ void dbUnfoldedBuilder::unfoldNets(dbChip* chip,
                                    const std::vector<dbChipInst*>& parent_path)
 {
   for (auto* net : chip->getChipNets()) {
-    _dbUnfoldedNet* uf_net = db_->unfolded_net_tbl_->create();
+    _dbUnfoldedChipNet* uf_net = db_->unfolded_chip_net_tbl_->create();
     uf_net->chip_net_ = net->getImpl()->getOID();
     for (uint32_t i = 0; i < net->getNumBumpInsts(); i++) {
       std::vector<dbChipInst*> rel_path;

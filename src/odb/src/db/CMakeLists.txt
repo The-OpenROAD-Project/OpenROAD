@@ -162,8 +162,8 @@ add_library(db
     dbTechLayerWrongDirSpacingRule.cpp
     dbUnfoldedBumpInst.cpp
     dbUnfoldedChipInst.cpp
+    dbUnfoldedChipNet.cpp
     dbUnfoldedConn.cpp
-    dbUnfoldedNet.cpp
     dbUnfoldedRegionInst.cpp
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp

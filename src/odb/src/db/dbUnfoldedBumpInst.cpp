@@ -98,8 +98,8 @@ Point3D dbUnfoldedBumpInst::getGlobalPosition() const
 {
   _dbUnfoldedBumpInst* obj = (_dbUnfoldedBumpInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  dbChipBumpInst* bump_inst = (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(
-      obj->chip_bump_inst_);
+  dbChipBumpInst* bump_inst
+      = (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(obj->chip_bump_inst_);
   dbInst* inst = bump_inst->getChipBump()->getInst();
   if (inst == nullptr) {
     return Point3D();

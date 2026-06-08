@@ -17,20 +17,23 @@ class _dbDatabase;
 class _dbChipNet;
 class _dbUnfoldedBumpInst;
 
-class _dbUnfoldedNet : public _dbObject
+class _dbUnfoldedChipNet : public _dbObject
 {
  public:
-  _dbUnfoldedNet(_dbDatabase*);
+  _dbUnfoldedChipNet(_dbDatabase*);
 
-  bool operator==(const _dbUnfoldedNet& rhs) const;
-  bool operator!=(const _dbUnfoldedNet& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbUnfoldedNet& rhs) const;
+  bool operator==(const _dbUnfoldedChipNet& rhs) const;
+  bool operator!=(const _dbUnfoldedChipNet& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbUnfoldedChipNet& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipNet> chip_net_;
   dbVector<dbId<_dbUnfoldedBumpInst>> connected_bumps_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedNet& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedNet& obj);
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipNet& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipNet& obj);
 }  // namespace odb
 // Generator Code End Header

@@ -129,8 +129,8 @@ enum dbObjectType
   dbTechLayerWrongDirSpacingRuleObj,
   dbUnfoldedBumpInstObj,
   dbUnfoldedChipInstObj,
+  dbUnfoldedChipNetObj,
   dbUnfoldedConnObj,
-  dbUnfoldedNetObj,
   dbUnfoldedRegionInstObj,
   // Generator Code End DbObjectType
 
