@@ -310,12 +310,6 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
     }
     return Architecture::Row::Power_UNK;
   };
-  std::cout << "master:" << master->getName() 
-          << " height:" << master->getHeight()
-          << " top_has_pwr:" << top_has_pwr
-          << " top_has_gnd:" << top_has_gnd
-          << " bot_has_pwr:" << bot_has_pwr
-          << " bot_has_gnd:" << bot_has_gnd << std::endl;
 
   return {resolve(top_has_pwr, top_has_gnd), resolve(bot_has_pwr, bot_has_gnd)};
 }
