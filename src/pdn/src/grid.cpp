@@ -1018,7 +1018,7 @@ void Grid::removeGridComponent(GridComponent* component)
 
 std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
     const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
-    bool do_pins,
+    const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
     const Shape::ObstructionTreeMap& obstructions) const
 {
   // write vias first do shapes can be adjusted if needed
@@ -1057,7 +1057,7 @@ std::map<Shape*, std::vector<odb::dbBox*>> Grid::writeToDb(
   odb::PtrSet<odb::dbTechLayer> pin_layers(pin_layers_.begin(),
                                            pin_layers_.end());
   for (auto* component : getGridComponents()) {
-    const auto db_shapes = component->writeToDb(net_map, do_pins, pin_layers);
+    const auto db_shapes = component->writeToDb(net_map, bterm_map, pin_layers);
     shape_map.insert(db_shapes.begin(), db_shapes.end());
   }
 

@@ -655,7 +655,7 @@ void SRoute::createSrouteWires(
 
     for (auto* domain : domains) {
       for (const auto& grid : domain->getGrids()) {
-        grid->writeToDb(net_map, false, obstructions);
+        grid->writeToDb(net_map, {}, obstructions);
         grid->makeRoutingObstructions(db_->getChip()->getBlock());
       }
     }
