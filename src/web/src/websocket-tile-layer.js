@@ -193,11 +193,15 @@ export function createOverlayTileLayer(visibility, app) {
                 }
             };
 
-            tile._websocketRequestId = this._websocketManager.nextId;
+            const requestId = this._websocketManager.nextId;
+            tile._websocketRequestId = requestId;
 
             this._websocketManager.request(
                 buildOverlayRequest(coords)
             ).then(data => {
+                if (tile._websocketRequestId !== requestId) {
+                    return;  // stale response; a newer request superseded this one
+                }
                 if (typeof data === 'string') {
                     tile.src = data;
                 } else {
@@ -222,11 +226,15 @@ export function createOverlayTileLayer(visibility, app) {
                     this._websocketManager.cancel(tile._websocketRequestId);
                 }
 
-                tile._websocketRequestId = this._websocketManager.nextId;
+                const requestId = this._websocketManager.nextId;
+                tile._websocketRequestId = requestId;
 
                 this._websocketManager.request(
                     buildOverlayRequest(coords)
                 ).then(data => {
+                    if (tile._websocketRequestId !== requestId) {
+                        return;  // stale response superseded by a newer refresh
+                    }
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
                     }
@@ -244,6 +252,7 @@ export function createOverlayTileLayer(visibility, app) {
             if (tile && tile.el) {
                 if (tile.el._websocketRequestId !== undefined) {
                     this._websocketManager.cancel(tile.el._websocketRequestId);
+                    tile.el._websocketRequestId = undefined;
                 }
                 if (tile.el.src && tile.el.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.el.src);

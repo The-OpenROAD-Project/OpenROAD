@@ -51,6 +51,7 @@ const CLEAR_FOCUS_SVG =
     '</svg>';
 
 export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
+    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
