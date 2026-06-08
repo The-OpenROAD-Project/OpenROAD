@@ -427,7 +427,9 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     sortByNegotiationOrder(activeCells);
   }
 
-  if (logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
+  // Emit runtime profiling only on iterations that also print a table row
+  // (first 10, then every 10th), to keep the two outputs aligned.
+  if (print_row && logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
     const double total_ms = total_iter_timer.elapsed() * 1e3;
     auto pct = [total_ms](double ms_val) {
       return total_ms > 0 ? 100.0 * ms_val / total_ms : 0.0;
@@ -662,9 +664,13 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   const std::vector<int> extended_search_rows = collectNearestValidRows(
       cell, cell.init_y, cell.init_x, row_search_window_, row_search_cap);
 
-  static int neg_search_print_count = 0;
-  if (neg_search_print_count < 50) {
-    ++neg_search_print_count;
+  // Print diagnostics for the first 2 cells of each distinct height, so we
+  // get coverage across all row heights rather than just the first 50 cells
+  // (which tend to share one height).
+  static std::unordered_map<int, int> neg_search_print_count_by_height;
+  int& height_print_count = neg_search_print_count_by_height[cell.height];
+  if (height_print_count < 10) {
+    ++height_print_count;
     auto rail = [](NLPowerRailType r) {
       return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
     };
@@ -714,7 +720,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     odb::dbSite* site = master ? master->getSite() : nullptr;
 
     logger_->report(
-        "[neg-search {}/50] {} master={} site={} "
+        "[neg-search h={} {}/10] {} master={} site={} "
         "extended_search_rows.size={} seed_valid={} "
         "nearest_below_step={} nearest_above_step={} "
         "rej_oob={} rej_dead={} rej_site={} rej_rail={} "
@@ -722,7 +728,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
         "cell.height={} cell.width={} max_disp_y={} "
         "rail_type={} rail_type_flipped={} flippable={} "
         "fence_id={} init_y={} init_x={} cur_y={} cur_x={}",
-        neg_search_print_count,
+        cell.height,
+        height_print_count,
         cell.db_inst->getName(),
         master ? master->getName().c_str() : "?",
         site ? site->getName().c_str() : "?",
