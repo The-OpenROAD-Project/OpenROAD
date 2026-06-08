@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -660,6 +661,12 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
           state.navigation_history.push_back(state.current_inspected);
         }
         state.current_inspected = sel;
+        // Realign the cycling iterator with the linked target so that
+        // selection_index reflects the object actually being rendered, and
+        // the next Next/Previous starts from this object. If the link goes
+        // outside the multi-selection, point the iterator at end() so the
+        // index serializes as -1 and the nav UI is suppressed.
+        state.selection_itr = state.selection_set.find(sel);
       }
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
@@ -772,6 +779,9 @@ static WebSocketResponse handleSelectionCycle(
         }
         sel = *state.selection_itr;
         state.current_inspected = sel;
+        state.hover_rects.clear();
+        state.timing_rects.clear();
+        state.timing_lines.clear();
         state.navigation_history.clear();
         // Restore selection-set highlights (handleInspect may have
         // replaced them with a single linked object's shapes).

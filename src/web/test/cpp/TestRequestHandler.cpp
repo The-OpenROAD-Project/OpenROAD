@@ -1054,7 +1054,7 @@ TEST_F(SelectHandlerTest, InspectResponseIncludesSelectionMetadata)
   auto resp = handler_->handleInspect(req, state_);
   const std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
-  EXPECT_NE(json.find("\"selection_index\":0"), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
 }
 
 TEST_F(SelectHandlerTest, InspectBackResponseIncludesSelectionMetadata)

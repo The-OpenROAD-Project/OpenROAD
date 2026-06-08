@@ -1105,7 +1105,10 @@ app.websocketManager.readyPromise.then(async () => {
                                           inst.bbox[2], inst.bbox[3]);
                             pulseHighlight(inst.bbox);
                         }
-                    } else {
+                    } else if (!selectRequest.add_to_selection) {
+                        // Shift+click on empty space preserves the existing
+                        // multi-selection on the server, so leave the
+                        // inspector/navigation controls and highlight intact.
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);
