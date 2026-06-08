@@ -367,7 +367,7 @@ function refreshOverlay() {
         app.overlayLayer.refreshTiles();
     }
 }
-app.refreshOverlay = refreshOverlay;
+app.refreshOverlay = scheduleRefreshOverlay;
 
 let _overlayRAF = null;
 function scheduleRefreshOverlay() {
@@ -647,7 +647,7 @@ function createTclConsole(container) {
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
 
-const inspector = createInspectorPanel(app, redrawAllLayers, refreshOverlay);
+const inspector = createInspectorPanel(app, redrawAllLayers, scheduleRefreshOverlay);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
@@ -659,17 +659,17 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(app, redrawAllLayers, refreshOverlay);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers, scheduleRefreshOverlay);
     container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
-    app.drcWidget = new DrcWidget(app, redrawAllLayers, refreshOverlay);
+    app.drcWidget = new DrcWidget(app, redrawAllLayers, scheduleRefreshOverlay);
     container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
-    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers, refreshOverlay);
+    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers, scheduleRefreshOverlay);
 }
 
 function createChartsWidget(container) {

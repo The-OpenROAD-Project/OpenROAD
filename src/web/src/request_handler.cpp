@@ -1834,8 +1834,8 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
   if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
     has_vis_layers = true;
     const auto& arr = it->value().as_array();
-    for (size_t i = 0; i < arr.size(); ++i) {
-      vis_layers.emplace(arr[i].as_string());
+    for (const auto& elem : arr) {
+      vis_layers.emplace(elem.as_string());
     }
   }
 
