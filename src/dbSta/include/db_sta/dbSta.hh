@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "db_sta/dbNetwork.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -257,11 +258,5 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   VertexSeq levelized_drvr_vertices_;
   bool drvr_vertices_level_valid_ = false;
 };
-
-// Utilities for TestCell
-
-sta::LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell);
 
 }  // namespace sta

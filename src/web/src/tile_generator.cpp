@@ -1383,6 +1383,95 @@ std::vector<unsigned char> TileGenerator::generateTile(
   return png_data;
 }
 
+std::vector<unsigned char> TileGenerator::generateOverlayTile(
+    const int z,
+    const int x,
+    int y,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::set<uint32_t>* route_guide_net_ids,
+    const bool has_visible_layers,
+    const std::set<std::string>& visible_layers) const
+{
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
+
+  if (!getChip()) {
+    // No design — return blank transparent PNG.
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+
+  // Short-circuit: if there's nothing to draw, return a blank tile.
+  if (highlight_rects.empty() && highlight_polys.empty()
+      && colored_rects.empty() && flight_lines.empty()
+      && (!route_guide_net_ids || route_guide_net_ids->empty())) {
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+
+  // Compute tile bounding box in DBU (same math as renderTileBuffer).
+  const double num_tiles_at_zoom = pow(2, z);
+  y = num_tiles_at_zoom - 1 - y;  // flip Y
+  const odb::Rect full_bounds = getBounds();
+  if (full_bounds.maxDXDY() <= 0) {
+    std::vector<unsigned char> png;
+    lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+    return png;
+  }
+  const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+  const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
+  const int dbu_x_max = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+  const double scale = kTileSizeInPixel / tile_dbu_size;
+
+  // Draw highlight shapes onto transparent buffer.
+  if (!highlight_rects.empty() || !highlight_polys.empty()) {
+    drawHighlight(image, highlight_rects, highlight_polys, dbu_tile, scale);
+  }
+  if (!colored_rects.empty()) {
+    // Pass empty layer name so all colored rects are drawn regardless of
+    // their per-layer tag (the overlay sits above all base layers).
+    drawColoredHighlight(image, colored_rects, "", dbu_tile, scale);
+  }
+  if (!flight_lines.empty()) {
+    drawFlightLines(image, flight_lines, dbu_tile, scale);
+  }
+  if (route_guide_net_ids && !route_guide_net_ids->empty()) {
+    // Draw route guides only for visible tech layers.
+    for (odb::dbTech* tech : db_->getTechs()) {
+      const auto& colors = getLayerColorMap(tech);
+      for (odb::dbTechLayer* layer : tech->getLayers()) {
+        // Skip layers the user has hidden in Display Controls.
+        // has_visible_layers=true with an empty set means all hidden.
+        if (has_visible_layers && !visible_layers.contains(layer->getName())) {
+          continue;
+        }
+        const auto it = colors.find(layer);
+        if (it == colors.end()) {
+          continue;
+        }
+        drawRouteGuides(image,
+                        *route_guide_net_ids,
+                        layer->getName(),
+                        it->second,
+                        dbu_tile,
+                        scale);
+      }
+    }
+  }
+
+  std::vector<unsigned char> png;
+  lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
+  return png;
+}
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -3518,10 +3607,11 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
                                          const odb::Rect& dbu_tile,
                                          const double scale) const
 {
-  const bool is_instances_layer = (current_layer == "_instances");
+  const bool draw_all = current_layer.empty() || current_layer == "_instances";
   for (const auto& cr : rects) {
-    // Layer filtering: draw on _instances (overview) or matching layer
-    if (!is_instances_layer && !cr.layer.empty() && cr.layer != current_layer) {
+    // Layer filtering: draw on _instances (overview), overlay (empty
+    // current_layer), or matching layer.
+    if (!draw_all && !cr.layer.empty() && cr.layer != current_layer) {
       continue;
     }
     if (!dbu_tile.overlaps(cr.rect)) {
