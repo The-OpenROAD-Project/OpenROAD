@@ -65,6 +65,7 @@ export class WebSocketManager {
         this._cache = null;
         this._isConnected = false;
         this._shutdown = false; // set by server "shutdown" message
+        this._livenessTimer = undefined; // set by _startLivenessMonitor
         this._startLivenessMonitor();
         this.connect();
     }
@@ -144,6 +145,7 @@ export class WebSocketManager {
             this._queue.clear();
             if (this._shutdown) {
                 console.log('WebSocket closed (server stopped)');
+                this._stopLivenessMonitor(); // no socket will reopen
                 return; // don't reconnect after intentional shutdown
             }
             console.log('WebSocket closed, reconnecting...');
@@ -169,7 +171,14 @@ export class WebSocketManager {
         // It still counts as liveness (above) but frees no in-flight slot.
         if (id === 0 && type === 0) {
             const payload = data.slice(8);
-            const msg = JSON.parse(new TextDecoder().decode(payload));
+            let msg;
+            try {
+                msg = JSON.parse(new TextDecoder().decode(payload));
+            } catch (e) {
+                // A malformed push must not break the message loop.
+                console.error('Failed to parse server push JSON:', e);
+                return;
+            }
             // The server announces the in-flight window sized to its machine.
             // Consume it here rather than forwarding to onPush.
             if (msg && msg.type === 'config') {
@@ -268,7 +277,11 @@ export class WebSocketManager {
         // If still queued it never hit the wire — drop it for free (no server
         // work, no buffered bytes). This is the cancellation that actually
         // matters; cancelling an already-sent request can't recall the bytes.
-        if (this._queue.delete(id)) {
+        // Settle the promise so callers don't leak a forever-pending request.
+        const queued = this._queue.get(id);
+        if (queued) {
+            this._queue.delete(id);
+            queued.reject(new Error('Request cancelled'));
             this.onStatusChange();
             return;
         }
@@ -287,11 +300,22 @@ export class WebSocketManager {
         if (typeof setInterval === 'undefined') {
             return;
         }
-        const timer = setInterval(() => this._checkLiveness(),
-                                  LIVENESS_INTERVAL_MS);
+        this._livenessTimer = setInterval(() => this._checkLiveness(),
+                                          LIVENESS_INTERVAL_MS);
         // Don't keep a Node process alive for this timer (no-op in browsers).
-        if (timer && typeof timer.unref === 'function') {
-            timer.unref();
+        if (this._livenessTimer
+            && typeof this._livenessTimer.unref === 'function') {
+            this._livenessTimer.unref();
+        }
+    }
+
+    // Stop the liveness timer. Called on intentional shutdown so the interval
+    // doesn't keep firing _checkLiveness against a socket we'll never reopen.
+    _stopLivenessMonitor() {
+        if (this._livenessTimer !== undefined
+            && typeof clearInterval !== 'undefined') {
+            clearInterval(this._livenessTimer);
+            this._livenessTimer = undefined;
         }
     }
 

@@ -89,6 +89,16 @@ describe('WebSocketManager', () => {
             mgr.handleMessage(buildFrame(999, 0, payload));
             assert.equal(mgr.pending.size, 0);
         });
+
+        it('survives a malformed server-push payload', () => {
+            const mgr = new WebSocketManager('ws://fake');
+            let pushed = false;
+            mgr.onPush = () => { pushed = true; };
+            // id=0 push frame with invalid JSON must not throw or call onPush.
+            const bad = new TextEncoder().encode('{ not json');
+            assert.doesNotThrow(() => mgr.handleMessage(buildFrame(0, 0, bad)));
+            assert.equal(pushed, false, 'no push delivered for malformed JSON');
+        });
     });
 
     describe('request', () => {
@@ -286,6 +296,32 @@ describe('WebSocketManager flow control', () => {
         assert.equal(mgr.socket.sent.length, sentBefore,
             'a queued cancel sends nothing');
     });
+
+    it('cancelling a queued request settles its promise', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+
+        // Saturate the wire so the next request stays queued.
+        const ids = [];
+        for (let i = 0; i < 200; i++) {
+            const p = mgr.request({ type: 'tile', n: i });
+            p.catch(() => {});
+            ids.push(p.requestId);
+        }
+        const queuedId = ids[ids.length - 1];
+        assert.ok(mgr._queue.has(queuedId), 'last request is queued');
+
+        // Re-issue a tracked promise for the queued id so we can observe it.
+        const entry = mgr._queue.get(queuedId);
+        const observed = new Promise((resolve, reject) => {
+            entry.resolve = resolve;
+            entry.reject = reject;
+        });
+
+        mgr.cancel(queuedId);
+        // The promise must reject — not hang forever — so callers clean up.
+        await assert.rejects(observed, { message: 'Request cancelled' });
+    });
 });
 
 describe('WebSocketManager liveness', () => {
@@ -352,6 +388,21 @@ describe('WebSocketManager liveness', () => {
         } finally {
             performance.now = realNow;
         }
+    });
+
+    it('stops the liveness timer on intentional shutdown', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        assert.notEqual(mgr._livenessTimer, undefined,
+            'timer runs while connected');
+
+        // Server-initiated shutdown: the socket closes and must not reconnect,
+        // so the recurring liveness check must be cleared too.
+        mgr._shutdown = true;
+        mgr.socket.readyState = 3; // CLOSED
+        mgr.socket.onclose?.();
+        assert.equal(mgr._livenessTimer, undefined,
+            'liveness timer cleared after shutdown');
     });
 });
 
