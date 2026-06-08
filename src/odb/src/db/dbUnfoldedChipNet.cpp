@@ -8,7 +8,7 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbUnfoldedBumpInst.h"
+#include "dbUnfoldedChipBumpInst.h"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbUnfoldedChipNet>;
@@ -72,15 +72,16 @@ dbChipNet* dbUnfoldedChipNet::getChipNet() const
 }
 
 // User Code Begin dbUnfoldedChipNetPublicMethods
-std::vector<dbUnfoldedBumpInst*> dbUnfoldedChipNet::getConnectedBumps() const
+std::vector<dbUnfoldedChipBumpInst*> dbUnfoldedChipNet::getConnectedBumps()
+    const
 {
   _dbUnfoldedChipNet* obj = (_dbUnfoldedChipNet*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  std::vector<dbUnfoldedBumpInst*> bumps;
+  std::vector<dbUnfoldedChipBumpInst*> bumps;
   bumps.reserve(obj->connected_bumps_.size());
   for (const auto& id : obj->connected_bumps_) {
     bumps.push_back(
-        (dbUnfoldedBumpInst*) db->unfolded_bump_inst_tbl_->getPtr(id));
+        (dbUnfoldedChipBumpInst*) db->unfolded_bump_inst_tbl_->getPtr(id));
   }
   return bumps;
 }

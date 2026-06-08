@@ -10,7 +10,7 @@
     },
     {
       "name": "connected_bumps_",
-      "type": "dbVector<dbId<_dbUnfoldedBumpInst>>",
+      "type": "dbVector<dbId<_dbUnfoldedChipBumpInst>>",
       "flags": ["private"]
     }
   ],
@@ -20,6 +20,6 @@
   ],
   "cpp_includes": [
     "dbChipNet.h",
-    "dbUnfoldedBumpInst.h"
+    "dbUnfoldedChipBumpInst.h"
   ]
 }

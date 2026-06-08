@@ -16,7 +16,7 @@
 #include "dbChipRegionInst.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbUnfoldedBumpInst.h"
+#include "dbUnfoldedChipBumpInst.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipNet.h"
 #include "dbUnfoldedChipRegionInst.h"
@@ -182,7 +182,7 @@ void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
     if (bump->getInst() == nullptr) {
       continue;
     }
-    _dbUnfoldedBumpInst* uf_bump = db_->unfolded_bump_inst_tbl_->create();
+    _dbUnfoldedChipBumpInst* uf_bump = db_->unfolded_bump_inst_tbl_->create();
     uf_bump->chip_bump_inst_ = bump_inst->getImpl()->getOID();
     uf_bump->parent_region_ = uf_region->getOID();
     uf_bump->region_next_ = uf_region->bump_;

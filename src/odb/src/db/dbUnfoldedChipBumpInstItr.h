@@ -10,12 +10,13 @@
 #include "odb/dbIterator.h"
 
 namespace odb {
-class _dbUnfoldedBumpInst;
+class _dbUnfoldedChipBumpInst;
 
-class dbUnfoldedBumpInstItr : public dbIterator
+class dbUnfoldedChipBumpInstItr : public dbIterator
 {
  public:
-  dbUnfoldedBumpInstItr(dbTable<_dbUnfoldedBumpInst>* unfolded_bump_inst_tbl)
+  dbUnfoldedChipBumpInstItr(
+      dbTable<_dbUnfoldedChipBumpInst>* unfolded_bump_inst_tbl)
   {
     unfolded_bump_inst_tbl_ = unfolded_bump_inst_tbl;
   }
@@ -31,7 +32,7 @@ class dbUnfoldedBumpInstItr : public dbIterator
   dbObject* getObject(uint32_t id, ...) override;
 
  private:
-  dbTable<_dbUnfoldedBumpInst>* unfolded_bump_inst_tbl_;
+  dbTable<_dbUnfoldedChipBumpInst>* unfolded_bump_inst_tbl_;
 };
 
 }  // namespace odb

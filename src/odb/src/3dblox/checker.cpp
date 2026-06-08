@@ -455,7 +455,7 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
   int violation_count = 0;
   for (dbUnfoldedChipInst* chip : db_->getUnfoldedChipInsts()) {
     for (dbUnfoldedChipRegionInst* region : chip->getRegions()) {
-      for (dbUnfoldedBumpInst* bump : region->getBumps()) {
+      for (dbUnfoldedChipBumpInst* bump : region->getBumps()) {
         const Point3D p = bump->getGlobalPosition();
         if (!region->getCuboid().getEnclosingRect().intersects(
                 {p.x(), p.y()})) {
@@ -607,14 +607,14 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
 
 void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
 {
-  std::unordered_map<dbUnfoldedBumpInst*, dbUnfoldedChipNet*> bump_net_map;
+  std::unordered_map<dbUnfoldedChipBumpInst*, dbUnfoldedChipNet*> bump_net_map;
   for (dbUnfoldedChipNet* net : db_->getUnfoldedChipNets()) {
-    for (dbUnfoldedBumpInst* bump : net->getConnectedBumps()) {
+    for (dbUnfoldedChipBumpInst* bump : net->getConnectedBumps()) {
       bump_net_map[bump] = net;
     }
   }
 
-  auto get_net_name = [&](dbUnfoldedBumpInst* bump) -> std::string {
+  auto get_net_name = [&](dbUnfoldedChipBumpInst* bump) -> std::string {
     auto it = bump_net_map.find(bump);
     if (it != bump_net_map.end()) {
       return it->second->getChipNet()->getName();
@@ -633,20 +633,20 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
       continue;
     }
 
-    std::map<Point, dbUnfoldedBumpInst*> bot_bumps;
-    for (dbUnfoldedBumpInst* bump : bot_region->getBumps()) {
+    std::map<Point, dbUnfoldedChipBumpInst*> bot_bumps;
+    for (dbUnfoldedChipBumpInst* bump : bot_region->getBumps()) {
       const Point3D pos = bump->getGlobalPosition();
       bot_bumps[Point(pos.x(), pos.y())] = bump;
     }
 
-    for (dbUnfoldedBumpInst* top_bump : top_region->getBumps()) {
+    for (dbUnfoldedChipBumpInst* top_bump : top_region->getBumps()) {
       const Point3D top_pos = top_bump->getGlobalPosition();
       const Point p(top_pos.x(), top_pos.y());
       auto it = bot_bumps.find(p);
       if (it == bot_bumps.end()) {
         continue;
       }
-      dbUnfoldedBumpInst* bot_bump = it->second;
+      dbUnfoldedChipBumpInst* bot_bump = it->second;
 
       // Check logical connectivity
       auto top_net_it = bump_net_map.find(top_bump);

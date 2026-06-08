@@ -178,7 +178,7 @@ class dbTechLayerTwoWiresForbiddenSpcRule;
 class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
-class dbUnfoldedBumpInst;
+class dbUnfoldedChipBumpInst;
 class dbUnfoldedChipInst;
 class dbUnfoldedChipNet;
 class dbUnfoldedChipRegionInst;
@@ -7627,7 +7627,7 @@ class dbDatabase : public dbObject
 
   dbSet<dbUnfoldedChipRegionInst> getUnfoldedChipRegionInsts() const;
 
-  dbSet<dbUnfoldedBumpInst> getUnfoldedBumpInsts() const;
+  dbSet<dbUnfoldedChipBumpInst> getUnfoldedChipBumpInsts() const;
 
   dbSet<dbUnfoldedConn> getUnfoldedConns() const;
 
@@ -11410,16 +11410,16 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
   // User Code End dbTechLayerWrongDirSpacingRule
 };
 
-class dbUnfoldedBumpInst : public dbObject
+class dbUnfoldedChipBumpInst : public dbObject
 {
  public:
   dbChipBumpInst* getChipBumpInst() const;
 
   dbUnfoldedChipRegionInst* getParentRegion() const;
 
-  // User Code Begin dbUnfoldedBumpInst
+  // User Code Begin dbUnfoldedChipBumpInst
   Point3D getGlobalPosition() const;
-  // User Code End dbUnfoldedBumpInst
+  // User Code End dbUnfoldedChipBumpInst
 };
 
 class dbUnfoldedChipInst : public dbObject
@@ -11454,7 +11454,7 @@ class dbUnfoldedChipNet : public dbObject
   dbChipNet* getChipNet() const;
 
   // User Code Begin dbUnfoldedChipNet
-  std::vector<dbUnfoldedBumpInst*> getConnectedBumps() const;
+  std::vector<dbUnfoldedChipBumpInst*> getConnectedBumps() const;
   // User Code End dbUnfoldedChipNet
 };
 
@@ -11486,7 +11486,7 @@ class dbUnfoldedChipRegionInst : public dbObject
 
   int getSurfaceZ() const;
 
-  dbSet<dbUnfoldedBumpInst> getBumps() const;
+  dbSet<dbUnfoldedChipBumpInst> getBumps() const;
   // User Code End dbUnfoldedChipRegionInst
 };
 

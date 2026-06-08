@@ -127,7 +127,7 @@ enum dbObjectType
   dbTechLayerVoltageSpacingObj,
   dbTechLayerWidthTableRuleObj,
   dbTechLayerWrongDirSpacingRuleObj,
-  dbUnfoldedBumpInstObj,
+  dbUnfoldedChipBumpInstObj,
   dbUnfoldedChipInstObj,
   dbUnfoldedChipNetObj,
   dbUnfoldedChipRegionInstObj,

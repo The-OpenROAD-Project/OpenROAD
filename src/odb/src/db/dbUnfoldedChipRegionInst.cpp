@@ -17,7 +17,7 @@
 #include "odb/dbSet.h"
 #include "odb/geom.h"
 // User Code Begin Includes
-#include "dbUnfoldedBumpInstItr.h"
+#include "dbUnfoldedChipBumpInstItr.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbUnfoldedChipRegionInst>;
@@ -177,11 +177,11 @@ int dbUnfoldedChipRegionInst::getSurfaceZ() const
   return c.zCenter();
 }
 
-dbSet<dbUnfoldedBumpInst> dbUnfoldedChipRegionInst::getBumps() const
+dbSet<dbUnfoldedChipBumpInst> dbUnfoldedChipRegionInst::getBumps() const
 {
   _dbUnfoldedChipRegionInst* obj = (_dbUnfoldedChipRegionInst*) this;
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  return dbSet<dbUnfoldedBumpInst>(obj, db->unfolded_bump_itr_);
+  return dbSet<dbUnfoldedChipBumpInst>(obj, db->unfolded_bump_itr_);
 }
 // User Code End dbUnfoldedChipRegionInstPublicMethods
 }  // namespace odb

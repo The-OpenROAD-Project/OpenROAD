@@ -820,10 +820,10 @@ struct less<odb::dbTechLayerWrongDirSpacingRule*>
 };
 
 template <>
-struct less<odb::dbUnfoldedBumpInst*>
+struct less<odb::dbUnfoldedChipBumpInst*>
 {
-  bool operator()(const odb::dbUnfoldedBumpInst* lhs,
-                  const odb::dbUnfoldedBumpInst* rhs) const
+  bool operator()(const odb::dbUnfoldedChipBumpInst* lhs,
+                  const odb::dbUnfoldedChipBumpInst* rhs) const
       = delete;
 };
 

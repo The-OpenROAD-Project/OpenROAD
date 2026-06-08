@@ -15,7 +15,7 @@ class dbOStream;
 class _dbDatabase;
 class _dbChipRegionInst;
 class _dbUnfoldedChipInst;
-class _dbUnfoldedBumpInst;
+class _dbUnfoldedChipBumpInst;
 
 struct dbUnfoldedChipRegionInstFlags
 {
@@ -40,7 +40,7 @@ class _dbUnfoldedChipRegionInst : public _dbObject
   dbId<_dbChipRegionInst> chip_region_inst_;
   dbId<_dbUnfoldedChipInst> parent_chip_;
   dbId<_dbUnfoldedChipRegionInst> chip_next_;
-  dbId<_dbUnfoldedBumpInst> bump_;
+  dbId<_dbUnfoldedChipBumpInst> bump_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipRegionInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipRegionInst& obj);

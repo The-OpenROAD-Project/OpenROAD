@@ -41,7 +41,7 @@
     },
     {
       "name": "bump_",
-      "type": "dbId<_dbUnfoldedBumpInst>",
+      "type": "dbId<_dbUnfoldedChipBumpInst>",
       "flags": ["private"]
     }
   ],

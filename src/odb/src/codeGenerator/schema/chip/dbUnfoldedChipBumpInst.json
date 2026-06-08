@@ -1,5 +1,5 @@
 {
-  "name": "dbUnfoldedBumpInst",
+  "name": "dbUnfoldedChipBumpInst",
   "type": "dbObject",
   "fields": [
     {
@@ -16,7 +16,7 @@
     },
     {
       "name": "region_next_",
-      "type": "dbId<_dbUnfoldedBumpInst>",
+      "type": "dbId<_dbUnfoldedChipBumpInst>",
       "flags": ["private"]
     }
   ],

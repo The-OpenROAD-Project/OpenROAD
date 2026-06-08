@@ -16,7 +16,7 @@
 #include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
-#include "dbUnfoldedBumpInst.h"
+#include "dbUnfoldedChipBumpInst.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipNet.h"
 #include "dbUnfoldedChipRegionInst.h"
@@ -67,7 +67,7 @@
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbUnfoldedBuilder.h"
-#include "dbUnfoldedBumpInstItr.h"
+#include "dbUnfoldedChipBumpInstItr.h"
 #include "dbUnfoldedChipRegionInstItr.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
@@ -223,11 +223,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbDatabase::getObjectTable,
       dbUnfoldedChipRegionInstObj);
-  unfolded_bump_inst_tbl_ = new dbTable<_dbUnfoldedBumpInst>(
+  unfolded_bump_inst_tbl_ = new dbTable<_dbUnfoldedChipBumpInst>(
       this,
       this,
       (GetObjTbl_t) &_dbDatabase::getObjectTable,
-      dbUnfoldedBumpInstObj);
+      dbUnfoldedChipBumpInstObj);
   unfolded_conn_tbl_
       = new dbTable<_dbUnfoldedConn>(this,
                                      this,
@@ -275,7 +275,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   unfolded_region_itr_
       = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
 
-  unfolded_bump_itr_ = new dbUnfoldedBumpInstItr(unfolded_bump_inst_tbl_);
+  unfolded_bump_itr_ = new dbUnfoldedChipBumpInstItr(unfolded_bump_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -510,7 +510,7 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return unfolded_chip_inst_tbl_;
     case dbUnfoldedChipRegionInstObj:
       return unfolded_chip_region_inst_tbl_;
-    case dbUnfoldedBumpInstObj:
+    case dbUnfoldedChipBumpInstObj:
       return unfolded_bump_inst_tbl_;
     case dbUnfoldedConnObj:
       return unfolded_conn_tbl_;
@@ -645,7 +645,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   unfolded_region_itr_
       = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
 
-  unfolded_bump_itr_ = new dbUnfoldedBumpInstItr(unfolded_bump_inst_tbl_);
+  unfolded_bump_itr_ = new dbUnfoldedChipBumpInstItr(unfolded_bump_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -750,10 +750,10 @@ dbSet<dbUnfoldedChipRegionInst> dbDatabase::getUnfoldedChipRegionInsts() const
                                          obj->unfolded_chip_region_inst_tbl_);
 }
 
-dbSet<dbUnfoldedBumpInst> dbDatabase::getUnfoldedBumpInsts() const
+dbSet<dbUnfoldedChipBumpInst> dbDatabase::getUnfoldedChipBumpInsts() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return dbSet<dbUnfoldedBumpInst>(obj, obj->unfolded_bump_inst_tbl_);
+  return dbSet<dbUnfoldedChipBumpInst>(obj, obj->unfolded_bump_inst_tbl_);
 }
 
 dbSet<dbUnfoldedConn> dbDatabase::getUnfoldedConns() const

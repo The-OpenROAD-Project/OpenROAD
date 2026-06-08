@@ -16,24 +16,24 @@ class _dbDatabase;
 class _dbChipBumpInst;
 class _dbUnfoldedChipRegionInst;
 
-class _dbUnfoldedBumpInst : public _dbObject
+class _dbUnfoldedChipBumpInst : public _dbObject
 {
  public:
-  _dbUnfoldedBumpInst(_dbDatabase*);
+  _dbUnfoldedChipBumpInst(_dbDatabase*);
 
-  bool operator==(const _dbUnfoldedBumpInst& rhs) const;
-  bool operator!=(const _dbUnfoldedBumpInst& rhs) const
+  bool operator==(const _dbUnfoldedChipBumpInst& rhs) const;
+  bool operator!=(const _dbUnfoldedChipBumpInst& rhs) const
   {
     return !operator==(rhs);
   }
-  bool operator<(const _dbUnfoldedBumpInst& rhs) const;
+  bool operator<(const _dbUnfoldedChipBumpInst& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipBumpInst> chip_bump_inst_;
   dbId<_dbUnfoldedChipRegionInst> parent_region_;
-  dbId<_dbUnfoldedBumpInst> region_next_;
+  dbId<_dbUnfoldedChipBumpInst> region_next_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedBumpInst& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedBumpInst& obj);
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipBumpInst& obj);
 }  // namespace odb
 // Generator Code End Header
