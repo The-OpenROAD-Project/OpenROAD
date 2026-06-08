@@ -220,6 +220,9 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
     sta::Pin* pin = pit->next();
     const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isOutput()) {
+      if (sta_->isClock(pin, sta_->cmdMode())) {
+        return false;
+      }
       sta::Vertex* v = graph_->pinDrvrVertex(pin);
       if (v == nullptr) {
         continue;
