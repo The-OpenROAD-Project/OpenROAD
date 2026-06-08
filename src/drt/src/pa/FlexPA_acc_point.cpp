@@ -156,15 +156,26 @@ void FlexPA::genAPEnclosedBoundary(std::map<frCoord, frAccessPointEnum>& coords,
   if (layer_num + 1 > getDesign()->getTech()->getTopLayerNum()) {
     return;
   }
-  // hardcode first two single vias
-  const int max_num_via_trial = 2;
-  int cnt = 0;
-  for (auto& [tup, via] : layer_num_to_via_defs_[layer_num + 1][1]) {
-    genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
-    cnt++;
-    if (cnt >= max_num_via_trial) {
+
+  const auto& via_map = layer_num_to_via_defs_[layer_num + 1];
+  int cnt;
+  int groups_used = 0;
+
+  for (const auto& [cut_count, via_set] : via_map) {
+    if (groups_used >= router_cfg_->VIA_MAX_CUT) {
       break;
     }
+
+    cnt = 0;
+    for (const auto& [tup, via] : via_set) {
+      genViaEnclosedCoords(coords, rect, via, layer_num, is_curr_layer_horz);
+      cnt++;
+      if (cnt >= router_cfg_->VIA_CANDIDATE_PER_CUT) {
+        break;
+      }
+    }
+
+    groups_used++;
   }
 }
 
@@ -876,38 +887,46 @@ void FlexPA::filterViaAccess(
     via_in_pin = true;
   }
 
-  const int max_num_via_trial = 2;
   // use std:pair to ensure deterministic behavior
   std::vector<std::pair<int, const frViaDef*>> via_defs;
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
   if (via_defs.empty()) {  // no via map entry
-    // hardcode first two single vias
     auto collect_vias = [&](int adj_layer_num, int max_trial) {
       if (adj_layer_num > router_cfg_->TOP_ROUTING_LAYER) {
         return;
       }
       if (layer_num_to_via_defs_.find(adj_layer_num)
           != layer_num_to_via_defs_.end()) {
-        for (auto& [tup, via_def] : layer_num_to_via_defs_[adj_layer_num][1]) {
-          if (inst_term && inst_term->isStubborn()
-              && avoid_via_defs_.contains(via_def)) {
-            continue;
-          }
-          via_defs.emplace_back(via_defs.size(), via_def);
-          if (via_defs.size() >= max_trial && !deep_search) {
+        int groups_used = 0;
+        for (const auto& [cut_count, via_set] :
+             layer_num_to_via_defs_[adj_layer_num]) {
+          if (groups_used >= router_cfg_->VIA_MAX_CUT) {
             break;
           }
+
+          for (auto& [tup, via_def] : via_set) {
+            if (inst_term && inst_term->isStubborn()
+                && avoid_via_defs_.contains(via_def)) {
+              continue;
+            }
+            via_defs.emplace_back(via_defs.size(), via_def);
+            if (via_defs.size() >= max_trial * (groups_used + 1)
+                && !deep_search) {
+              break;
+            }
+          }
+          groups_used++;
         }
       }
     };
 
     // UP Vias
-    collect_vias(layer_num + 1, max_num_via_trial);
+    collect_vias(layer_num + 1, router_cfg_->VIA_CANDIDATE_PER_CUT);
 
     // DOWN Vias
     if (isIOTerm(inst_term)) {
-      collect_vias(layer_num - 1, max_num_via_trial);
+      collect_vias(layer_num - 1, router_cfg_->VIA_CANDIDATE_PER_CUT);
     }
   }
 
@@ -939,7 +958,8 @@ void FlexPA::filterViaAccess(
         ap->setAccess(frDirEnum::D);
       }
       valid_via_count++;
-      if (valid_via_count >= max_num_via_trial) {
+      if (valid_via_count >= (router_cfg_->VIA_MAX_CUT)
+                                 * (router_cfg_->VIA_CANDIDATE_PER_CUT)) {
         break;
       }
     }
