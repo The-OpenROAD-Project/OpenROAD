@@ -3191,6 +3191,12 @@ class dbInst : public dbObject
   uint32_t getPinAccessIdx() const;
 
   ///
+  /// Get the chip bump associated with this instance.
+  /// Returns a pointer to the dbChipBump object if present, otherwise nullptr.
+  ///
+  dbChipBump* getChipBump() const;
+
+  ///
   /// Create a new instance.
   /// If physical_only is true, the instance can only be added to a top module.
   /// If false, it will be added to the parent module.
@@ -5499,6 +5505,18 @@ class dbMaster : public dbObject
   void setType(dbMasterType type);
 
   ///
+  /// Marks a cell as physically bridging a front-side power layer to a
+  /// LEF58_BACKSIDE layer (typical use: BSPDN tap cells). Tools that
+  /// trace PG-net connectivity should treat the PG pins of such a
+  /// cell as electrically continuous even when they sit on layers
+  /// that disagree on dbTechLayer::isBackside(). Set by the
+  /// LEF58_BACKSIDE_BRIDGE macro property.
+  ///
+  void setBacksideBridge(bool is_bridge);
+
+  bool isBacksideBridge() const;
+
+  ///
   /// Get the Logical equivalent of this master
   /// Returns nullptr if no equivalent was set.
   ///
@@ -5919,6 +5937,21 @@ class dbTech : public dbObject
   /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findRoutingLayer(int level_number);
+
+  ///
+  /// Find the frontside (non-LEF58_BACKSIDE) routing layer closest to
+  /// the substrate (i.e. the lowest routing-level index that is not
+  /// marked backside). Returns nullptr if there is no such layer.
+  ///
+  dbTechLayer* firstFrontsideRoutingLayer();
+
+  ///
+  /// Find the LEF58_BACKSIDE routing layer closest to the substrate
+  /// (i.e. the highest routing-level index that is marked backside,
+  /// since backside metals are stacked outward from M0 toward BRDL in
+  /// LEF order). Returns nullptr if there is no backside routing layer.
+  ///
+  dbTechLayer* firstBacksideRoutingLayer();
 
   ///
   /// Get the technolgy vias. This includes non-default-rule-vias.
@@ -9277,6 +9310,15 @@ class dbTechLayer : public dbObject
 
   LEF58_TYPE getLef58Type() const;
   std::string getLef58TypeString() const;
+
+  ///
+  /// Backside layers are physically located on the wafer's reverse side,
+  /// typically used for buried-power-rail (BPR) and backside power
+  /// delivery (BSPDN). Set by the LEF58_BACKSIDE property.
+  ///
+  void setBackside(bool is_backside);
+
+  bool isBackside() const;
 
   ///
   /// Get the layer name.

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -189,7 +190,7 @@ class NegotiationLegalizer
   [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
-  void updateHistoryCosts();
+  void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
   void sortByNegotiationOrder(std::vector<int>& indices) const;
 
@@ -262,6 +263,10 @@ class NegotiationLegalizer
   std::vector<NLPowerRailType> row_rail_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+
+  // Reusable scratch set for updateHistoryCosts() pixel deduplication,
+  // kept as a member so the per-iteration allocation is amortized.
+  std::unordered_set<int> hist_seen_pixels_;
 
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper

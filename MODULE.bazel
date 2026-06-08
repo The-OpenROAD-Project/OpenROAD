@@ -7,7 +7,20 @@ module(
 
 # --- Regular dependencies (propagated to downstream consumers via MVS) ---
 
-bazel_dep(name = "abc", version = "0.64-yosyshq.bcr.1")
+bazel_dep(name = "abc", version = "0.64-yosyshq.bcr.2")
+
+# Patch abc's non-readline prompt path to flush stdout and exit on EOF.
+# Without this, yosys's coprocess driver (which waits for the "abc NN> "
+# prompt over a pipe) deadlocks when abc is built with use_readline=false.
+# Drop this override once the fix is in a published BCR abc release.
+single_version_override(
+    module_name = "abc",
+    patch_strip = 1,
+    patches = [
+        "//bazel/abc-patches:0001-mainUtils-flush-prompt-and-handle-eof-without-readline.patch",
+    ],
+)
+
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
@@ -30,6 +43,7 @@ bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 bazel_dep(name = "boost.config", version = BOOST_VERSION)
 bazel_dep(name = "boost.container", version = BOOST_VERSION)
 bazel_dep(name = "boost.container_hash", version = BOOST_VERSION)
+bazel_dep(name = "boost.dll", version = BOOST_VERSION)
 bazel_dep(name = "boost.format", version = BOOST_VERSION)
 bazel_dep(name = "boost.fusion", version = BOOST_VERSION)
 bazel_dep(name = "boost.geometry", version = BOOST_VERSION)

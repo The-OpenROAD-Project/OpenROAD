@@ -952,17 +952,21 @@ static odb::PtrMap<odb::dbTechLayer, Color> buildLayerColorMap(
   size_t via = 0;
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     Color c;
-    const odb::dbTechLayerType type = layer->getType();
-    if (type == odb::dbTechLayerType::ROUTING) {
-      c = (metal < kMetalColors.size()) ? kMetalColors[metal++]
-                                        : random_color();
-    } else if (type == odb::dbTechLayerType::CUT) {
-      // GUI: a CUT layer that appears before any ROUTING layer gets a random
-      // color so cuts don't claim the metal palette slots.
-      c = (via < kCutColors.size() && metal != 0) ? kCutColors[via++]
-                                                  : random_color();
-    } else {
+    if (layer->isBackside()) {
       c = random_color();
+    } else {
+      const odb::dbTechLayerType type = layer->getType();
+      if (type == odb::dbTechLayerType::ROUTING) {
+        c = (metal < kMetalColors.size()) ? kMetalColors[metal++]
+                                          : random_color();
+      } else if (type == odb::dbTechLayerType::CUT) {
+        // GUI: a CUT layer that appears before any ROUTING layer gets a random
+        // color so cuts don't claim the metal palette slots.
+        c = (via < kCutColors.size() && metal != 0) ? kCutColors[via++]
+                                                    : random_color();
+      } else {
+        c = random_color();
+      }
     }
     colors[layer] = c;
   }
