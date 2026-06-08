@@ -2730,16 +2730,16 @@ static void compositePixel(unsigned char* dst, const unsigned char* src)
   dst[3] = out_a;
 }
 
-void TileGenerator::saveImage(const std::string& filename,
-                              const odb::Rect& region,
-                              const int width_px,
-                              const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+std::vector<unsigned char> TileGenerator::renderImageToPng(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis) const
 {
   odb::dbBlock* block = getBlock();
   if (!block) {
     logger_->error(utl::WEB, 20, "No design loaded.");
-    return;
+    return {};
   }
 
   // Determine rendering region (DBU).
@@ -2771,7 +2771,7 @@ void TileGenerator::saveImage(const std::string& filename,
 
   if (img_w <= 0 || img_h <= 0) {
     logger_->error(utl::WEB, 21, "Invalid image dimensions.");
-    return;
+    return {};
   }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
@@ -2890,17 +2890,30 @@ void TileGenerator::saveImage(const std::string& filename,
     }
   }
 
-  // Encode to PNG and save.
+  // Encode to PNG bytes.
   std::vector<unsigned char> png_data;
   const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
   if (error) {
     logger_->error(
         utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+    return {};
+  }
+  return png_data;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  std::vector<unsigned char> png_data
+      = renderImageToPng(region, width_px, dbu_per_pixel, vis);
+  if (png_data.empty()) {
     return;
   }
   lodepng::save_file(png_data, filename);
-  logger_->info(
-      utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
+  logger_->info(utl::WEB, 24, "Saved image to {}", filename);
 }
 
 std::vector<unsigned char> TileGenerator::renderOverlayPng(

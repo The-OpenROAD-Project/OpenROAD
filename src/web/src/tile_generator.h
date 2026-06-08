@@ -383,6 +383,14 @@ class TileGenerator
                  double dbu_per_pixel,
                  const TileVisibility& vis) const;
 
+  // Render full design (or region) to PNG bytes in memory.  Same semantics
+  // as saveImage but returns the encoded PNG without touching the filesystem.
+  // Returns an empty vector on error (no design loaded, encode failure, etc.).
+  std::vector<unsigned char> renderImageToPng(const odb::Rect& region,
+                                              int width_px,
+                                              double dbu_per_pixel,
+                                              const TileVisibility& vis) const;
+
   // Render timing path overlay (colored rects + flight lines) to PNG bytes.
   std::vector<unsigned char> renderOverlayPng(
       int width_px,

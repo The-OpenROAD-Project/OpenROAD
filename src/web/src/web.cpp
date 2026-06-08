@@ -80,39 +80,92 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (serves embedded static assets)
+// HTTP helpers — query string parsing and filename sanitization
 //------------------------------------------------------------------------------
 
-static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req)
+namespace {
+
+int hex_to_int(char c)
 {
-  http::response<http::string_body> res{http::status::ok, req.version()};
-  res.set(http::field::server, "Boost.Beast Server (C++17)");
-  res.set(http::field::content_type, "text/plain");
-  res.keep_alive(req.keep_alive());
-  res.set(http::field::access_control_allow_origin, "*");
-
-  if (req.method() == http::verb::get) {
-    std::string file_path(req.target());
-    if (file_path == "/") {
-      file_path = "/index.html";
-    }
-    const auto* asset = findEmbeddedAsset(file_path);
-    if (asset) {
-      res.set(http::field::content_type, asset->content_type);
-      res.body() = std::string(asset->content());
-    } else {
-      res.result(http::status::not_found);
-      res.body() = "Resource not found.";
-    }
-  } else {
-    res.result(http::status::not_found);
-    res.body() = "Resource not found.";
+  if (c >= '0' && c <= '9') {
+    return c - '0';
   }
-
-  res.prepare_payload();
-  return res;
+  if (c >= 'a' && c <= 'f') {
+    return 10 + c - 'a';
+  }
+  if (c >= 'A' && c <= 'F') {
+    return 10 + c - 'A';
+  }
+  return -1;
 }
+
+std::string url_decode(std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '+') {
+      out += ' ';
+    } else if (s[i] == '%' && i + 2 < s.size()) {
+      const int hi = hex_to_int(s[i + 1]);
+      const int lo = hex_to_int(s[i + 2]);
+      if (hi >= 0 && lo >= 0) {
+        out += static_cast<char>((hi << 4) | lo);
+        i += 2;
+      } else {
+        out += s[i];
+      }
+    } else {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+std::map<std::string, std::string> parse_query(std::string_view query)
+{
+  std::map<std::string, std::string> params;
+  std::size_t pos = 0;
+  while (pos < query.size()) {
+    std::size_t amp = query.find('&', pos);
+    if (amp == std::string_view::npos) {
+      amp = query.size();
+    }
+    const std::string_view pair = query.substr(pos, amp - pos);
+    const std::size_t eq = pair.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(url_decode(pair.substr(0, eq)),
+                     url_decode(pair.substr(eq + 1)));
+    } else if (!pair.empty()) {
+      params.emplace(url_decode(pair), std::string{});
+    }
+    pos = amp + 1;
+  }
+  return params;
+}
+
+std::string sanitize_filename(const std::string& name)
+{
+  std::string out;
+  out.reserve(name.size());
+  for (const char c : name) {
+    if (c == '/' || c == '\\' || c == '"' || c == '\n' || c == '\r'
+        || c == '\0') {
+      continue;
+    }
+    out += c;
+  }
+  // Reject leading dots to prevent ".." or hidden paths after stripping.
+  while (!out.empty() && out.front() == '.') {
+    out.erase(0, 1);
+  }
+  if (out.empty()) {
+    out = "layout.png";
+  }
+  return out;
+}
+
+}  // namespace
 
 //------------------------------------------------------------------------------
 // WebSocket session - multiplexes many requests over a single connection
@@ -615,10 +668,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   beast::flat_buffer buffer_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
+  std::shared_ptr<TileGenerator> generator_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket,
+              std::shared_ptr<TileGenerator> generator,
+              utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -631,11 +687,151 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_write();
   void on_write(beast::error_code ec);
   void do_close();
+  http::response<http::string_body> handle_request(
+      http::request<http::string_body>&& req);
+  http::response<http::string_body> handle_download_image(
+      http::request<http::string_body>&& req);
 };
 
-HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
-    : stream_(std::move(socket)), logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket,
+                         std::shared_ptr<TileGenerator> generator,
+                         utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(std::move(generator)),
+      logger_(logger)
 {
+}
+
+http::response<http::string_body> HttpSession::handle_request(
+    http::request<http::string_body>&& req)
+{
+  http::response<http::string_body> res{http::status::ok, req.version()};
+  res.set(http::field::server, "Boost.Beast Server (C++17)");
+  res.set(http::field::content_type, "text/plain");
+  res.keep_alive(req.keep_alive());
+  res.set(http::field::access_control_allow_origin, "*");
+
+  if (req.method() == http::verb::get) {
+    const std::string_view target = req.target();
+    const std::size_t query_pos = target.find('?');
+    const std::string_view path = (query_pos == std::string_view::npos)
+                                      ? target
+                                      : target.substr(0, query_pos);
+    if (path == "/download/image") {
+      return handle_download_image(std::move(req));
+    }
+    std::string file_path
+        = (path == "/") ? std::string("/index.html") : std::string(path);
+    const auto* asset = findEmbeddedAsset(file_path);
+    if (asset) {
+      res.set(http::field::content_type, asset->content_type);
+      res.body() = std::string(asset->content());
+    } else {
+      res.result(http::status::not_found);
+      res.body() = "Resource not found.";
+    }
+  } else {
+    res.result(http::status::not_found);
+    res.body() = "Resource not found.";
+  }
+
+  res.prepare_payload();
+  return res;
+}
+
+http::response<http::string_body> HttpSession::handle_download_image(
+    http::request<http::string_body>&& req)
+{
+  http::response<http::string_body> res{http::status::ok, req.version()};
+  res.set(http::field::server, "Boost.Beast Server (C++17)");
+  res.keep_alive(req.keep_alive());
+  res.set(http::field::access_control_allow_origin, "*");
+
+  auto bad_request = [&](const std::string& message) {
+    res.result(http::status::bad_request);
+    res.set(http::field::content_type, "text/plain");
+    res.body() = message;
+    res.prepare_payload();
+    return res;
+  };
+
+  if (!generator_) {
+    return bad_request("Image generator not available.");
+  }
+
+  const std::string_view target = req.target();
+  const std::size_t query_pos = target.find('?');
+  const std::string_view query = (query_pos == std::string_view::npos)
+                                     ? std::string_view{}
+                                     : target.substr(query_pos + 1);
+  const auto params = parse_query(query);
+
+  const auto type_it = params.find("type");
+  const std::string type
+      = (type_it != params.end()) ? type_it->second : "entire";
+
+  const auto filename_it = params.find("filename");
+  const std::string filename = sanitize_filename(
+      (filename_it != params.end()) ? filename_it->second : "layout.png");
+
+  int width_px = 0;
+  const auto width_it = params.find("width");
+  if (width_it != params.end()) {
+    try {
+      width_px = std::stoi(width_it->second);
+    } catch (const std::exception&) {
+      return bad_request("Invalid width parameter.");
+    }
+  }
+
+  odb::Rect region(0, 0, 0, 0);
+  if (type == "visible") {
+    const auto bbox_it = params.find("bbox");
+    if (bbox_it == params.end()) {
+      return bad_request("Missing bbox for type=visible.");
+    }
+    int coords[4] = {0, 0, 0, 0};
+    std::size_t idx = 0;
+    std::size_t pos = 0;
+    const std::string& bbox = bbox_it->second;
+    while (pos < bbox.size() && idx < 4) {
+      const std::size_t comma = bbox.find(',', pos);
+      const std::string token = bbox.substr(
+          pos, comma == std::string::npos ? std::string::npos : comma - pos);
+      try {
+        coords[idx++] = std::stoi(token);
+      } catch (const std::exception&) {
+        return bad_request("Invalid bbox component.");
+      }
+      if (comma == std::string::npos) {
+        break;
+      }
+      pos = comma + 1;
+    }
+    if (idx != 4) {
+      return bad_request("bbox must have 4 comma-separated integers.");
+    }
+    region = odb::Rect(coords[0], coords[1], coords[2], coords[3]);
+  } else if (type != "entire") {
+    return bad_request("Unknown type (expected 'entire' or 'visible').");
+  }
+
+  std::vector<unsigned char> png;
+  try {
+    png = generator_->renderImageToPng(region, width_px, 0.0, TileVisibility{});
+  } catch (const std::exception& e) {
+    return bad_request(std::string("Render failed: ") + e.what());
+  }
+  if (png.empty()) {
+    return bad_request("Render failed (no design loaded?).");
+  }
+
+  res.set(http::field::content_type, "image/png");
+  res.set(http::field::content_disposition,
+          "attachment; filename=\"" + filename + "\"");
+  res.body().assign(reinterpret_cast<const char*>(png.data()), png.size());
+  res.prepare_payload();
+  return res;
 }
 
 void HttpSession::run_with_request(http::request<http::string_body> req,
@@ -789,7 +985,8 @@ void DetectSession::on_read(beast::error_code ec)
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
+    auto s = std::make_shared<HttpSession>(
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
