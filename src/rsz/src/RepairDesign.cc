@@ -718,7 +718,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     }
   };
 
-  Pin* drvr_pin = drvr->pin();
+  sta::Pin* drvr_pin = drvr->pin();
 
   // 1. Collect all sinks
   std::vector<EnqueuedPin> sinks;
