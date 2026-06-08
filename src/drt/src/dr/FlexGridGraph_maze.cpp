@@ -17,8 +17,8 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
