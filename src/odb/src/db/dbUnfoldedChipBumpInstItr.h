@@ -16,9 +16,9 @@ class dbUnfoldedChipBumpInstItr : public dbIterator
 {
  public:
   dbUnfoldedChipBumpInstItr(
-      dbTable<_dbUnfoldedChipBumpInst>* unfolded_bump_inst_tbl)
+      dbTable<_dbUnfoldedChipBumpInst>* unfolded_chip_bump_inst_tbl)
   {
-    unfolded_bump_inst_tbl_ = unfolded_bump_inst_tbl;
+    unfolded_chip_bump_inst_tbl_ = unfolded_chip_bump_inst_tbl;
   }
 
   bool reversible() const override;
@@ -32,7 +32,7 @@ class dbUnfoldedChipBumpInstItr : public dbIterator
   dbObject* getObject(uint32_t id, ...) override;
 
  private:
-  dbTable<_dbUnfoldedChipBumpInst>* unfolded_bump_inst_tbl_;
+  dbTable<_dbUnfoldedChipBumpInst>* unfolded_chip_bump_inst_tbl_;
 };
 
 }  // namespace odb

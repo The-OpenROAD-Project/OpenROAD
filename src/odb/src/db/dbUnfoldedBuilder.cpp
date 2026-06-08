@@ -73,7 +73,7 @@ void dbUnfoldedBuilder::build()
 {
   db_->unfolded_chip_inst_tbl_->clear();
   db_->unfolded_chip_region_inst_tbl_->clear();
-  db_->unfolded_bump_inst_tbl_->clear();
+  db_->unfolded_chip_bump_inst_tbl_->clear();
   db_->unfolded_conn_tbl_->clear();
   db_->unfolded_chip_net_tbl_->clear();
   chip_by_path_.clear();
@@ -182,7 +182,8 @@ void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
     if (bump->getInst() == nullptr) {
       continue;
     }
-    _dbUnfoldedChipBumpInst* uf_bump = db_->unfolded_bump_inst_tbl_->create();
+    _dbUnfoldedChipBumpInst* uf_bump
+        = db_->unfolded_chip_bump_inst_tbl_->create();
     uf_bump->chip_bump_inst_ = bump_inst->getImpl()->getOID();
     uf_bump->parent_region_ = uf_region->getOID();
     uf_bump->region_next_ = uf_region->bump_;

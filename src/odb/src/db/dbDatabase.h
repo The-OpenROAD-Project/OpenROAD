@@ -347,7 +347,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipNet>* chip_net_tbl_;
   dbTable<_dbUnfoldedChipInst>* unfolded_chip_inst_tbl_;
   dbTable<_dbUnfoldedChipRegionInst>* unfolded_chip_region_inst_tbl_;
-  dbTable<_dbUnfoldedChipBumpInst>* unfolded_bump_inst_tbl_;
+  dbTable<_dbUnfoldedChipBumpInst>* unfolded_chip_bump_inst_tbl_;
   dbTable<_dbUnfoldedConn>* unfolded_conn_tbl_;
   dbTable<_dbUnfoldedChipNet>* unfolded_chip_net_tbl_;
 

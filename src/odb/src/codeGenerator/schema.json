@@ -222,7 +222,7 @@
     {
       "name": "dbUnfoldedChipBumpInstItr",
       "parentObject": "dbUnfoldedChipBumpInst",
-      "tableName": "unfolded_bump_inst_tbl",
+      "tableName": "unfolded_chip_bump_inst_tbl",
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0,
@@ -581,7 +581,7 @@
       "parent":"dbDatabase",
       "child":"dbUnfoldedChipBumpInst",
       "type":"1_n",
-      "tbl_name":"unfolded_bump_inst_tbl_",
+      "tbl_name":"unfolded_chip_bump_inst_tbl_",
       "flags": ["no-serial"]
     },
     {

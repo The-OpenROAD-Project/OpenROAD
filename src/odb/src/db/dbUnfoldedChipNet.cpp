@@ -81,7 +81,7 @@ std::vector<dbUnfoldedChipBumpInst*> dbUnfoldedChipNet::getConnectedBumps()
   bumps.reserve(obj->connected_bumps_.size());
   for (const auto& id : obj->connected_bumps_) {
     bumps.push_back(
-        (dbUnfoldedChipBumpInst*) db->unfolded_bump_inst_tbl_->getPtr(id));
+        (dbUnfoldedChipBumpInst*) db->unfolded_chip_bump_inst_tbl_->getPtr(id));
   }
   return bumps;
 }
