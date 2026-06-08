@@ -207,9 +207,9 @@ export class SchematicWidget {
                 if (this.appState.focusComponent) {
                     this.appState.focusComponent('Inspector');
                 }
-                // Redraw layout tiles to show instance highlight
-                if (this.appState.redrawAllLayers) {
-                    this.appState.redrawAllLayers();
+                // Refresh overlay tiles to show instance highlight
+                if (this.appState.refreshOverlay) {
+                    this.appState.refreshOverlay();
                 }
             })
             .catch(err => {

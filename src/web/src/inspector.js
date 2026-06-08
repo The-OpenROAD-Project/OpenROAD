@@ -62,7 +62,8 @@ const CHEVRON_RIGHT_SVG =
     '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
     '</svg>';
 
-export function createInspectorPanel(app, redrawAllLayers) {
+export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
+    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
@@ -118,7 +119,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         } catch (err) {
             console.error('set_route_guides failed:', err);
         }
-        redrawAllLayers();
+        refreshOverlay();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
@@ -217,14 +218,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
             promise.then(data => {
                 pendingHoverId = null;
                 renderHoverRects(data.rects || []);
-                redrawAllLayers();
+                refreshOverlay();
             }).catch(() => {
                 pendingHoverId = null;
             });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
-            redrawAllLayers();
+            refreshOverlay();
         });
     }
 
@@ -316,8 +317,8 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     }
                     pulseHighlight(data.bbox);
                 }
-                // Redraw tiles to update instance highlight
-                redrawAllLayers();
+                // Refresh overlay to update instance highlight
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -358,7 +359,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     }
                     pulseHighlight(data.bbox);
                 }
-                redrawAllLayers();
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;

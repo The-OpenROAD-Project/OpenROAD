@@ -120,6 +120,7 @@ struct WebSocketRequest
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
+    kOverlayTile,
     kUnknown
   };
 
@@ -312,6 +313,8 @@ class TileHandler
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
+  WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
