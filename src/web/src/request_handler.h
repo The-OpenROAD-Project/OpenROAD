@@ -115,6 +115,8 @@ struct WebSocketRequest
     kDrcUpdateMarker,
     kDrcUpdateCategoryVisibility,
     kDrcHighlight,
+    kSelectNext,
+    kSelectPrev,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
@@ -169,6 +171,10 @@ struct SessionState
 
   gui::Selected current_inspected;
   std::vector<gui::Selected> navigation_history;
+
+  // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
+  gui::SelectionSet selection_set;
+  gui::SelectionSet::const_iterator selection_itr = selection_set.end();
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
@@ -227,6 +233,10 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
+  WebSocketResponse handleSelectNext(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
+                                     SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);

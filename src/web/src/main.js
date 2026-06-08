@@ -651,6 +651,7 @@ const inspector = createInspectorPanel(app, redrawAllLayers, scheduleRefreshOver
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
+const pulseHighlight = inspector.pulseHighlight;
 app.updateInspector = updateInspector;
 app.navigateInspector = inspector.navigateInspector;
 
@@ -1100,6 +1101,9 @@ app.websocketManager.readyPromise.then(async () => {
                 selectable_layers: [...app.selectableLayers],
                 ...vf,
             };
+            if (e.originalEvent && e.originalEvent.shiftKey) {
+                selectRequest.add_to_selection = true;
+            }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
             }
@@ -1121,8 +1125,12 @@ app.websocketManager.readyPromise.then(async () => {
                         if (inst.bbox) {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
                                           inst.bbox[2], inst.bbox[3]);
+                            pulseHighlight(inst.bbox);
                         }
-                    } else {
+                    } else if (!selectRequest.add_to_selection) {
+                        // Shift+click on empty space preserves the existing
+                        // multi-selection on the server, so leave the
+                        // inspector/navigation controls and highlight intact.
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);
