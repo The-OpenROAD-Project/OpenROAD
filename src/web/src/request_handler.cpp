@@ -1695,6 +1695,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleHeatMapTile(req, state);
         });
+  d.add("overlay_tile",
+        WebSocketRequest::kOverlayTile,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleOverlayTile(req, state);
+        });
 }
 
 void TileHandler::initializeHeatMaps(SessionState& state)
@@ -1730,10 +1735,57 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 
   TileVisibility vis;
   vis.parseFromJson(req.json);
+
+  // Snapshot module colors for _modules layer
+  std::map<uint32_t, Color> mod_colors;
+  {
+    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
+    mod_colors = state.module_colors;
+  }
+  const std::map<uint32_t, Color>* mod_ptr
+      = mod_colors.empty() ? nullptr : &mod_colors;
+
+  // Snapshot focus nets
+  std::set<uint32_t> focus_nets;
+  {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    focus_nets = state.focus_net_ids;
+  }
+  const std::set<uint32_t>* focus_ptr
+      = focus_nets.empty() ? nullptr : &focus_nets;
+
+  // Base tiles no longer carry highlights — those are rendered by the
+  // overlay tile layer.  Pass empty vectors so renderTileBuffer skips
+  // drawHighlight / drawColoredHighlight / drawFlightLines / drawRouteGuides.
+  static const std::vector<odb::Rect> no_rects;
+  static const std::vector<odb::Polygon> no_polys;
+  static const std::vector<ColoredRect> no_colored;
+  static const std::vector<FlightLine> no_lines;
+
+  return renderTile(req.id,
+                    std::string(req.json.at("layer").as_string()),
+                    static_cast<int>(req.json.at("z").as_int64()),
+                    static_cast<int>(req.json.at("x").as_int64()),
+                    static_cast<int>(req.json.at("y").as_int64()),
+                    vis,
+                    *gen_,
+                    no_rects,
+                    no_polys,
+                    no_colored,
+                    no_lines,
+                    mod_ptr,
+                    focus_ptr,
+                    nullptr);
+}
+
+WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
   // When debug renderers are active, instance positions change between
   // frames.  Re-derive highlight shapes from the current inspected
   // object so the selection tracks the moving instance.
-  if (vis.debug_renderers) {
+  const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
+  if (debug_renderers) {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     if (state.current_inspected) {
       collectHighlightShapes(state.current_inspected,
@@ -1765,24 +1817,6 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
   }
 
-  // Snapshot module colors for _modules layer
-  std::map<uint32_t, Color> mod_colors;
-  {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    mod_colors = state.module_colors;
-  }
-  const std::map<uint32_t, Color>* mod_ptr
-      = mod_colors.empty() ? nullptr : &mod_colors;
-
-  // Snapshot focus nets
-  std::set<uint32_t> focus_nets;
-  {
-    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
-    focus_nets = state.focus_net_ids;
-  }
-  const std::set<uint32_t>* focus_ptr
-      = focus_nets.empty() ? nullptr : &focus_nets;
-
   // Snapshot route guide nets
   std::set<uint32_t> route_guides;
   {
@@ -1792,20 +1826,34 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::set<uint32_t>* route_guide_ptr
       = route_guides.empty() ? nullptr : &route_guides;
 
-  return renderTile(req.id,
-                    std::string(req.json.at("layer").as_string()),
-                    static_cast<int>(req.json.at("z").as_int64()),
-                    static_cast<int>(req.json.at("x").as_int64()),
-                    static_cast<int>(req.json.at("y").as_int64()),
-                    vis,
-                    *gen_,
-                    rects,
-                    polys,
-                    colored,
-                    lines,
-                    mod_ptr,
-                    focus_ptr,
-                    route_guide_ptr);
+  // Parse visible layers so route guides respect layer visibility.
+  // has_vis_layers=true means the field was present (even if empty,
+  // which means "all layers hidden" — matching pin-marker semantics).
+  bool has_vis_layers = false;
+  std::set<std::string> vis_layers;
+  if (auto it = req.json.find("visible_layers"); it != req.json.end()) {
+    has_vis_layers = true;
+    const auto& arr = it->value().as_array();
+    for (size_t i = 0; i < arr.size(); ++i) {
+      vis_layers.emplace(arr[i].as_string());
+    }
+  }
+
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kPng;
+  resp.payload
+      = gen_->generateOverlayTile(static_cast<int>(req.json.at("z").as_int64()),
+                                  static_cast<int>(req.json.at("x").as_int64()),
+                                  static_cast<int>(req.json.at("y").as_int64()),
+                                  rects,
+                                  polys,
+                                  colored,
+                                  lines,
+                                  route_guide_ptr,
+                                  has_vis_layers,
+                                  vis_layers);
+  return resp;
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(

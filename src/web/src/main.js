@@ -4,7 +4,7 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer } from './websocket-tile-layer.js';
+import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
@@ -359,6 +359,25 @@ function updateHeatMaps(data) {
 }
 app.updateHeatMaps = updateHeatMaps;
 
+// Refresh only the highlight overlay layer (selection, hover, timing,
+// DRC, route guides).  Much cheaper than redrawAllLayers because base
+// geometry tiles are not re-rendered.
+function refreshOverlay() {
+    if (app.overlayLayer) {
+        app.overlayLayer.refreshTiles();
+    }
+}
+app.refreshOverlay = refreshOverlay;
+
+let _overlayRAF = null;
+function scheduleRefreshOverlay() {
+    if (_overlayRAF !== null) return;
+    _overlayRAF = requestAnimationFrame(() => {
+        _overlayRAF = null;
+        refreshOverlay();
+    });
+}
+
 function redrawAllLayers() {
     // Persist visibility and selectability state to cookies so they survive
     // page reloads.
@@ -388,6 +407,9 @@ function redrawAllLayers() {
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
     }
+    // Overlay layer must also refresh on structural changes (e.g. design
+    // reload changes the coordinate space).
+    refreshOverlay();
     // Update ruler and scale bar visibility.
     if (app.rulerManager) {
         app.rulerManager.updateVisibility();
@@ -625,7 +647,7 @@ function createTclConsole(container) {
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
 
-const inspector = createInspectorPanel(app, redrawAllLayers);
+const inspector = createInspectorPanel(app, redrawAllLayers, refreshOverlay);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
@@ -637,17 +659,17 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers, refreshOverlay);
     container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
-    app.drcWidget = new DrcWidget(app, redrawAllLayers);
+    app.drcWidget = new DrcWidget(app, redrawAllLayers, refreshOverlay);
     container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
-    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers);
+    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers, refreshOverlay);
 }
 
 function createChartsWidget(container) {
@@ -1107,7 +1129,7 @@ app.websocketManager.readyPromise.then(async () => {
                             app.highlightRect = null;
                         }
                     }
-                    redrawAllLayers();
+                    refreshOverlay();
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
@@ -1178,6 +1200,22 @@ app.websocketManager.readyPromise.then(async () => {
         populateDisplayControls(app, visibility, selectability,
                                 WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
+
+        // Create the highlight overlay layer — sits above all base/metal
+        // layers but below the heatmap.  Only carries selection, hover,
+        // timing, DRC, and route-guide shapes on a transparent background,
+        // so base tiles stay cached when highlights change.
+        // Skip in static mode: there is no WebSocket server to serve
+        // overlay_tile requests.
+        if (!app.overlayLayer && !staticCache) {
+            const OverlayTileLayer = createOverlayTileLayer(visibility, app);
+            app.overlayLayer = new OverlayTileLayer(app.websocketManager, {
+                zIndex: app.allLayers.length + 5,
+                opacity: 1,
+            });
+            app.overlayLayer.addTo(app.map);
+        }
+
         updateHeatMaps(heatMapData);
 
         // Only show the loading overlay if a design is loaded but shapes

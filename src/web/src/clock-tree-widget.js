@@ -153,9 +153,10 @@ export function computeClockTreeLayout(clockData) {
 }
 
 export class ClockTreeWidget {
-    constructor(container, app, redrawAllLayers) {
+    constructor(container, app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
         this._clockData = [];
         this._selectedClockIdx = 0;
         this._selectedNodeId = -1;
@@ -671,7 +672,7 @@ export class ClockTreeWidget {
             this._app.websocketManager.request({
                 type: 'clock_tree_highlight',
                 inst_name: hit.name,
-            }).then(() => this._redrawAllLayers());
+            }).then(() => this._refreshOverlay());
         } else {
             if (this._selectedNodeId >= 0) {
                 this._selectedNodeId = -1;
@@ -679,7 +680,7 @@ export class ClockTreeWidget {
                 this._app.websocketManager.request({
                     type: 'clock_tree_highlight',
                     inst_name: '',
-                }).then(() => this._redrawAllLayers());
+                }).then(() => this._refreshOverlay());
             }
         }
     }

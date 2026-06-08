@@ -50,7 +50,7 @@ const CLEAR_FOCUS_SVG =
     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
     '</svg>';
 
-export function createInspectorPanel(app, redrawAllLayers) {
+export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
@@ -106,7 +106,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         } catch (err) {
             console.error('set_route_guides failed:', err);
         }
-        redrawAllLayers();
+        refreshOverlay();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
@@ -205,14 +205,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
             promise.then(data => {
                 pendingHoverId = null;
                 renderHoverRects(data.rects || []);
-                redrawAllLayers();
+                refreshOverlay();
             }).catch(() => {
                 pendingHoverId = null;
             });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
-            redrawAllLayers();
+            refreshOverlay();
         });
     }
 
@@ -253,8 +253,8 @@ export function createInspectorPanel(app, redrawAllLayers) {
                         highlightBBox(x1, y1, x2, y2);
                     }
                 }
-                // Redraw tiles to update instance highlight
-                redrawAllLayers();
+                // Refresh overlay to update instance highlight
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -292,7 +292,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     const [x1, y1, x2, y2] = data.bbox;
                     highlightBBox(x1, y1, x2, y2);
                 }
-                redrawAllLayers();
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;

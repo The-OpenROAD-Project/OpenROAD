@@ -226,9 +226,9 @@ TEST_F(TileHandlerTest, EmptyTile)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-TEST_F(TileHandlerTest, UsesHighlightState)
+TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 {
-  // Put a highlight rect in the state
+  // Put a highlight rect in the state — base tiles should NOT include it.
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
@@ -240,8 +240,46 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   req.json = parseObj(
       R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
-  // Should not crash and should return valid PNG
+  // Should not crash and should return valid PNG (without highlights)
   auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(TileHandlerTest, OverlayTileReturnsPng)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.id, 10u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+  // PNG magic bytes
+  EXPECT_GE(resp.payload.size(), 8u);
+  EXPECT_EQ(resp.payload[0], 0x89);
+  EXPECT_EQ(resp.payload[1], 'P');
+  EXPECT_EQ(resp.payload[2], 'N');
+  EXPECT_EQ(resp.payload[3], 'G');
+}
+
+TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
+{
+  // Put a highlight rect in the state
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  // Should not crash and should return valid PNG with highlights
+  auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
 }

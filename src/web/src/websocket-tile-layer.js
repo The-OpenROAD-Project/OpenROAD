@@ -145,3 +145,111 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         }
     });
 }
+
+// Lightweight tile layer that renders only highlight/overlay shapes
+// (selection, hover, timing, DRC, route guides) on a transparent
+// background.  Separated from the base tile layers so that highlight
+// changes don't trigger a full re-render of all geometry tiles.
+export function createOverlayTileLayer(visibility, app) {
+    function buildOverlayRequest(coords) {
+        const req = {
+            type: 'overlay_tile',
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            debug_renderers: !!visibility.debug_renderers,
+        };
+        // Pass visible layers so route guides respect layer visibility.
+        if (app && app.visibleLayerNames) {
+            req.visible_layers = [...app.visibleLayerNames];
+        }
+        return req;
+    }
+    return L.GridLayer.extend({
+        initialize: function(websocketManager, options) {
+            this._websocketManager = websocketManager;
+            L.GridLayer.prototype.initialize.call(this, options);
+        },
+
+        createTile: function(coords, done) {
+            const tile = document.createElement('img');
+            tile.alt = '';
+            tile.setAttribute('role', 'presentation');
+
+            tile._tileDone = false;
+            tile.onload = () => {
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(null, tile);
+                }
+            };
+            tile.onerror = () => {
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(new Error('overlay tile load error'), tile);
+                }
+            };
+
+            tile._websocketRequestId = this._websocketManager.nextId;
+
+            this._websocketManager.request(
+                buildOverlayRequest(coords)
+            ).then(data => {
+                if (typeof data === 'string') {
+                    tile.src = data;
+                } else {
+                    tile.src = URL.createObjectURL(data);
+                }
+            }).catch(() => {});
+
+            return tile;
+        },
+
+        refreshTiles: function() {
+            if (!this._map) return;
+
+            for (const key in this._tiles) {
+                const tileInfo = this._tiles[key];
+                if (!tileInfo || !tileInfo.el) continue;
+
+                const tile = tileInfo.el;
+                const coords = tileInfo.coords;
+
+                if (tile._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile._websocketRequestId);
+                }
+
+                tile._websocketRequestId = this._websocketManager.nextId;
+
+                this._websocketManager.request(
+                    buildOverlayRequest(coords)
+                ).then(data => {
+                    if (tile.src && tile.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(tile.src);
+                    }
+                    if (typeof data === 'string') {
+                        tile.src = data;
+                    } else {
+                        tile.src = URL.createObjectURL(data);
+                    }
+                }).catch(() => {});
+            }
+        },
+
+        _removeTile: function(key) {
+            const tile = this._tiles[key];
+            if (tile && tile.el) {
+                if (tile.el._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile.el._websocketRequestId);
+                }
+                if (tile.el.src && tile.el.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.el.src);
+                }
+            }
+            L.GridLayer.prototype._removeTile.call(this, key);
+        }
+    });
+}
