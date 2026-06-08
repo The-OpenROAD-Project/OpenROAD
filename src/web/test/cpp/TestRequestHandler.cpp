@@ -683,6 +683,42 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
   }
 }
 
+TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  // 1. inspect with use_dbu: true
+  WebSocketRequest inspect_req_dbu;
+  inspect_req_dbu.id = 21;
+  inspect_req_dbu.type = WebSocketRequest::kInspect;
+  inspect_req_dbu.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  auto resp_dbu = handler_->handleInspect(inspect_req_dbu, state_);
+  EXPECT_EQ(resp_dbu.type, WebSocketResponse::kJson);
+  std::string json_dbu = payloadStr(resp_dbu);
+  EXPECT_NE(json_dbu.find("\"value\":\"(2000, 4000), (6000, 8000)\""),
+            std::string::npos)
+      << json_dbu;
+
+  // 2. inspect with use_dbu: false, using select_id: -1 to re-inspect current
+  WebSocketRequest inspect_req_um;
+  inspect_req_um.id = 22;
+  inspect_req_um.type = WebSocketRequest::kInspect;
+  inspect_req_um.json = parseObj(R"({"select_id":-1,"use_dbu":false})");
+
+  auto resp_um = handler_->handleInspect(inspect_req_um, state_);
+  EXPECT_EQ(resp_um.type, WebSocketResponse::kJson);
+  std::string json_um = payloadStr(resp_um);
+  EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json_um;
+}
+
 //------------------------------------------------------------------------------
 // Focus nets tests
 //------------------------------------------------------------------------------

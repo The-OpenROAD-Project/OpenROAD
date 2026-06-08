@@ -199,9 +199,14 @@ html, body {
 #menu-bar .menu-item {
     display: flex;
     justify-content: space-between;
+    position: relative;
     padding: 4px 20px;
     cursor: default;
     white-space: nowrap;
+}
+#menu-bar .menu-check {
+    position: absolute;
+    left: 4px;
 }
 #menu-bar .menu-item:hover {
     background: var(--bg-selected);

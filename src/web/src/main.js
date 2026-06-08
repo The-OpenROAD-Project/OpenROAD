@@ -104,6 +104,7 @@ const app = {
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
     useTrueZ: getCookie('or_use_true_z') === '1',
+    showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
@@ -113,6 +114,24 @@ const app = {
     rulerManager: null,
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
+    },
+    // Format a DBU value as a display string, respecting the showDbu setting.
+    // Mirrors Qt GUI's MainWindow::convertDBUToString.
+    formatDbu(value, addUnits = false) {
+        if (this.showDbu) return String(Math.round(value));
+        const dbuPerUm = this.getDbuPerMicron();
+        const precision = Math.ceil(Math.log10(dbuPerUm));
+        const um = (value / dbuPerUm).toFixed(precision);
+        return addUnits ? um + ' \u00b5m' : um;
+    },
+    // Format a distance (always positive) with auto-scaling units.
+    formatDistance(dbuLength) {
+        if (this.showDbu) return String(Math.round(dbuLength));
+        const dbuPerUm = this.getDbuPerMicron();
+        const um = dbuLength / dbuPerUm;
+        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
+        if (um >= 1) return um.toFixed(3) + ' um';
+        return (um * 1000).toFixed(1) + ' nm';
     },
 };
 
@@ -469,11 +488,7 @@ function createLayoutViewer(container) {
         const { dbuX, dbuY } = latLngToDbu(
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
-        const dbuPerUm = app.getDbuPerMicron();
-        const precision = Math.ceil(Math.log10(dbuPerUm));
-        const xUm = (dbuX / dbuPerUm).toFixed(precision);
-        const yUm = (dbuY / dbuPerUm).toFixed(precision);
-        coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
+        coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
@@ -488,6 +503,16 @@ function createLayoutViewer(container) {
     scaleBarLabel.className = 'scale-bar-label';
     scaleBar.appendChild(scaleBarLabel);
 
+    // Round to the nearest 1/2/5 × 10^n value (e.g. 1, 2, 5, 10, 20, …).
+    function niceRound(value) {
+        const mag = Math.pow(10, Math.floor(Math.log10(value)));
+        const residual = value / mag;
+        if (residual < 1.5) return 1 * mag;
+        if (residual < 3.5) return 2 * mag;
+        if (residual < 7.5) return 5 * mag;
+        return 10 * mag;
+    }
+
     function updateScaleBar() {
         if (!app.designScale || !visibility.scale_bar) {
             scaleBar.style.display = 'none';
@@ -495,34 +520,32 @@ function createLayoutViewer(container) {
         }
         scaleBar.style.display = '';
 
-        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
         // Pixels per DBU at current zoom: designScale * 2^zoom.
         const zoom = app.map.getZoom();
         const pxPerDbu = app.designScale * Math.pow(2, zoom);
-        const pxPerUm = pxPerDbu * dbuPerUm;
 
         // Target bar width: ~15% of the map container width.
         const containerWidth = app.map.getContainer().clientWidth || 400;
         const targetPx = containerWidth * 0.15;
-        const targetUm = targetPx / pxPerUm;
 
-        // Pick a nice round number: 1, 2, 5, 10, 20, 50, ...
-        const mag = Math.pow(10, Math.floor(Math.log10(targetUm)));
-        const residual = targetUm / mag;
-        let niceUm;
-        if (residual < 1.5) niceUm = 1 * mag;
-        else if (residual < 3.5) niceUm = 2 * mag;
-        else if (residual < 7.5) niceUm = 5 * mag;
-        else niceUm = 10 * mag;
+        let barPx, label;
+        if (app.showDbu) {
+            const niceDbu = Math.max(1, niceRound(targetPx / pxPerDbu));
+            barPx = Math.round(niceDbu * pxPerDbu);
+            label = String(Math.round(niceDbu));
+        } else {
+            const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+            const pxPerUm = pxPerDbu * dbuPerUm;
+            const niceUm = niceRound(targetPx / pxPerUm);
 
-        const barPx = Math.round(niceUm * pxPerUm);
+            barPx = Math.round(niceUm * pxPerUm);
 
-        // Format with appropriate units.
-        let label;
-        if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
-        else if (niceUm >= 1) label = niceUm + ' \u00b5m';
-        else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
-        else label = (niceUm * 1e6) + ' pm';
+            // Format with appropriate units.
+            if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
+            else if (niceUm >= 1) label = niceUm + ' \u00b5m';
+            else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
+            else label = (niceUm * 1e6) + ' pm';
+        }
 
         scaleBarLine.style.width = barPx + 'px';
         scaleBarLabel.textContent = label;
@@ -654,6 +677,7 @@ const highlightBBox = inspector.highlightBBox;
 const pulseHighlight = inspector.pulseHighlight;
 app.updateInspector = updateInspector;
 app.navigateInspector = inspector.navigateInspector;
+app.refreshInspector = inspector.refreshInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -924,6 +948,19 @@ app.toggleTheme = function() {
     if (app.clockTreeWidget) app.clockTreeWidget.render();
 };
 
+app.toggleShowDbu = function() {
+    app.showDbu = !app.showDbu;
+    setCookie('or_show_dbu', app.showDbu ? '1' : '0');
+    // Re-render rulers so their labels update.
+    if (app.rulerManager) app.rulerManager._rerenderAll();
+    // Re-render hierarchy browser if present.
+    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Update scale bar.
+    if (app.updateScaleBar) app.updateScaleBar();
+    // Re-request inspector properties with new formatting.
+    if (app.refreshInspector) app.refreshInspector();
+};
+
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
 createMenuBar(app);
@@ -1099,6 +1136,7 @@ app.websocketManager.readyPromise.then(async () => {
                 zoom: Math.round(app.map.getZoom()),
                 visible_layers: [...app.visibleLayerNames],
                 selectable_layers: [...app.selectableLayers],
+                use_dbu: app.showDbu,
                 ...vf,
             };
             if (e.originalEvent && e.originalEvent.shiftKey) {
