@@ -29,7 +29,7 @@ const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnectio
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
-    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
         // After an intentional shutdown the "Server stopped" banner is

@@ -431,6 +431,31 @@ void WebSocketSession::on_accept(beast::error_code ec)
     viewer_hook_->drainLogs();
   }
 
+  // Tell the client how many requests to keep in flight at once. This bounds
+  // the client's send rate so a burst of tile requests (rapid pan/zoom) can't
+  // flood the socket send buffer and wedge the connection. Scale with the
+  // machine size — a larger box can absorb more concurrency — and clamp to a
+  // sane range. Sent first so the client has it before requesting any tiles.
+  {
+    unsigned int cores = std::thread::hardware_concurrency();
+    if (cores == 0) {
+      cores = 4;  // hardware_concurrency may report 0; pick a modest default
+    }
+    int max_in_flight = static_cast<int>(cores) * 4;
+    if (max_in_flight < 16) {
+      max_in_flight = 16;
+    } else if (max_in_flight > 256) {
+      max_in_flight = 256;
+    }
+    WebSocketResponse cfg;
+    cfg.id = 0;
+    cfg.type = WebSocketResponse::kJson;
+    const std::string cfg_json = R"({"type":"config","max_in_flight":)"
+                                 + std::to_string(max_in_flight) + "}";
+    cfg.payload.assign(cfg_json.begin(), cfg_json.end());
+    queue_response(cfg);
+  }
+
   // Build search indices in the background; tiles render without shapes
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
