@@ -50,6 +50,18 @@ const CLEAR_FOCUS_SVG =
     '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>' +
     '</svg>';
 
+// Chevron left: Material "chevron_left"
+const CHEVRON_LEFT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>' +
+    '</svg>';
+
+// Chevron right: Material "chevron_right"
+const CHEVRON_RIGHT_SVG =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
+    '</svg>';
+
 export function createInspectorPanel(app, redrawAllLayers) {
     let lastInspectData = null;
     let pendingInspectId = null;
@@ -216,6 +228,56 @@ export function createInspectorPanel(app, redrawAllLayers) {
         });
     }
 
+    function cycleSelection(direction) {
+        const reqType = direction > 0 ? 'select_next' : 'select_prev';
+        if (pendingInspectId !== null) {
+            app.websocketManager.cancel(pendingInspectId);
+            pendingInspectId = null;
+        }
+        showLoading();
+        const promise = app.websocketManager.request({ type: reqType });
+        pendingInspectId = promise.requestId;
+        promise
+            .then(data => {
+                pendingInspectId = null;
+                if (data.error) {
+                    console.error('Selection cycle error:', data.error);
+                    updateInspector(lastInspectData);
+                    return;
+                }
+                updateInspector(data);
+                // Keep schematic in sync when cycling to an instance.
+                if (data.type === 'Inst' && data.name) {
+                    app.selectedInstanceName = data.name;
+                    if (app.schematicWidget) {
+                        app.schematicWidget.refresh();
+                    }
+                }
+                if (app.map) {
+                    app.map.closePopup();
+                }
+                clearClientHoverHighlight();
+                if (app.highlightRect && app.map) {
+                    app.map.removeLayer(app.highlightRect);
+                    app.highlightRect = null;
+                }
+                if (data.bbox && app.map && app.designScale) {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    if (data.type !== 'Inst') {
+                        highlightBBox(x1, y1, x2, y2);
+                    }
+                    pulseHighlight(data.bbox);
+                }
+                // Redraw tiles to restore selection-set highlights.
+                redrawAllLayers();
+            })
+            .catch(err => {
+                pendingInspectId = null;
+                console.error('Selection cycle failed:', err);
+                updateInspector(lastInspectData);
+            });
+    }
+
     function navigateInspector(selectId) {
         // Cancel previous in-flight inspect request
         if (pendingInspectId !== null) {
@@ -252,6 +314,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     if (data.type !== 'Inst') {
                         highlightBBox(x1, y1, x2, y2);
                     }
+                    pulseHighlight(data.bbox);
                 }
                 // Redraw tiles to update instance highlight
                 redrawAllLayers();
@@ -288,9 +351,12 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     app.map.removeLayer(app.highlightRect);
                     app.highlightRect = null;
                 }
-                if (data.bbox && app.map && app.designScale && data.type !== 'Inst') {
-                    const [x1, y1, x2, y2] = data.bbox;
-                    highlightBBox(x1, y1, x2, y2);
+                if (data.bbox && app.map && app.designScale) {
+                    if (data.type !== 'Inst') {
+                        const [x1, y1, x2, y2] = data.bbox;
+                        highlightBBox(x1, y1, x2, y2);
+                    }
+                    pulseHighlight(data.bbox);
                 }
                 redrawAllLayers();
             })
@@ -308,6 +374,44 @@ export function createInspectorPanel(app, redrawAllLayers) {
         app.highlightRect = L.rectangle(bounds, {
             color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
         }).addTo(app.map);
+    }
+
+    // Briefly pulse the object's bbox so the user can see which object
+    // the inspector is now showing — mirrors the Qt GUI's selection
+    // animation.  The pulse is a filled rectangle that fades in and out
+    // several times, then removes itself.
+    let pulseLayer = null;
+    function pulseHighlight(bbox) {
+        if (!bbox || !app.map || !app.designScale) return;
+        if (pulseLayer) {
+            app.map.removeLayer(pulseLayer);
+            pulseLayer = null;
+        }
+        const [x1, y1, x2, y2] = bbox;
+        const bounds = dbuRectToBounds(
+            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+        pulseLayer = L.rectangle(bounds, {
+            color: '#ff0',
+            weight: 3,
+            fill: true,
+            fillColor: '#ff0',
+            fillOpacity: 0.25,
+            opacity: 1,
+            interactive: false,
+            className: 'selection-pulse',
+            pane: app.hoverHighlightPane,
+        }).addTo(app.map);
+        // Remove after the animation finishes (3 cycles × 350ms = 1050ms).
+        const layerToRemove = pulseLayer;
+        setTimeout(() => {
+            if (layerToRemove && app.map && app.map.hasLayer(layerToRemove)) {
+                app.map.removeLayer(layerToRemove);
+            }
+            if (pulseLayer === layerToRemove) {
+                pulseLayer = null;
+            }
+        }, 1100);
     }
 
     function renderProperty(prop, data) {
@@ -477,6 +581,36 @@ export function createInspectorPanel(app, redrawAllLayers) {
             app.inspectorEl.appendChild(toolbar);
         }
 
+        // Selection navigation bar (visible when multiple objects selected)
+        const selCount = data.selection_count || 0;
+        const selIndex = typeof data.selection_index === 'number'
+            ? data.selection_index : -1;
+        if (selCount > 1 && selIndex >= 0) {
+            const nav = document.createElement('div');
+            nav.className = 'inspector-selection-nav';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'inspector-btn';
+            prevBtn.title = 'Previous (Shift+click to multi-select)';
+            prevBtn.innerHTML = CHEVRON_LEFT_SVG;
+            prevBtn.addEventListener('click', () => cycleSelection(-1));
+
+            const label = document.createElement('span');
+            label.className = 'inspector-selection-label';
+            label.textContent = (selIndex + 1) + ' / ' + selCount;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'inspector-btn';
+            nextBtn.title = 'Next';
+            nextBtn.innerHTML = CHEVRON_RIGHT_SVG;
+            nextBtn.addEventListener('click', () => cycleSelection(+1));
+
+            nav.appendChild(prevBtn);
+            nav.appendChild(label);
+            nav.appendChild(nextBtn);
+            app.inspectorEl.appendChild(nav);
+        }
+
         for (const prop of data.properties) {
             app.inspectorEl.appendChild(renderProperty(prop, data));
         }
@@ -492,5 +626,5 @@ export function createInspectorPanel(app, redrawAllLayers) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox, navigateInspector };
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector };
 }
