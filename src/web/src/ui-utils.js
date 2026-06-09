@@ -35,6 +35,18 @@ export function makeResizableHeaders(table) {
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+            // Releasing the drag fires a click on the common ancestor of the
+            // press/release targets (often the th); swallow it so header
+            // click handlers (e.g. sorting) don't trigger. The timeout
+            // clears the suppressor when no click fires (e.g. release
+            // outside the window).
+            const swallowClick = (e) => e.stopPropagation();
+            document.addEventListener('click', swallowClick,
+                                      { capture: true, once: true });
+            setTimeout(() => {
+                document.removeEventListener('click', swallowClick,
+                                             { capture: true });
+            }, 0);
         };
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();

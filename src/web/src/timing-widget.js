@@ -17,6 +17,9 @@ export class TimingWidget {
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
+        // Default to sorting by slack, matching the Qt GUI.
+        this._sortCol = 'slack';
+        this._sortAscending = true;
 
         this._build();
     }
@@ -77,6 +80,12 @@ export class TimingWidget {
         this._detailTable.className = 'timing-table';
         this._detailTableContainer.appendChild(this._detailTable);
         el.appendChild(this._detailTableContainer);
+
+        // Column-header tooltip (custom div, like the charts/clock-tree
+        // tooltips, rather than the easy-to-miss native title tooltip).
+        this._headerTooltip = document.createElement('div');
+        this._headerTooltip.className = 'timing-header-tooltip';
+        el.appendChild(this._headerTooltip);
 
         this.element = el;
 
@@ -178,6 +187,7 @@ export class TimingWidget {
             this._holdTab.classList.add('active');
             this._setupTab.classList.remove('active');
         }
+        this._applySort();
         this._selectedPathIndex = -1;
         this._pathCountLabel.textContent = paths.length + ' paths';
         this._renderPathTable();
@@ -195,6 +205,7 @@ export class TimingWidget {
             ]);
             this._setupPaths = setupData.paths || [];
             this._holdPaths = holdData.paths || [];
+            this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
             this._renderDetailTable();
@@ -204,6 +215,62 @@ export class TimingWidget {
         }
         this._updateBtn.disabled = false;
         this._updateBtn.textContent = 'Update';
+    }
+
+    // Sort both path lists by the current sort column/order. Paths are
+    // tagged with their server-side index first so timing_highlight
+    // requests keep mapping to the right path after reordering.
+    _applySort() {
+        for (const paths of [this._setupPaths, this._holdPaths]) {
+            paths.forEach((p, i) => {
+                if (p._originalIndex === undefined) p._originalIndex = i;
+            });
+            const dir = this._sortAscending ? 1 : -1;
+            const key = this._sortCol;
+            paths.sort((a, b) => {
+                const va = a[key];
+                const vb = b[key];
+                const cmp = (typeof va === 'number' && typeof vb === 'number') ?
+                    va - vb :
+                    String(va).localeCompare(String(vb));
+                return dir * cmp;
+            });
+        }
+    }
+
+    _showHeaderTooltip(e, text) {
+        if (e.buttons !== 0) {
+            // Mid-drag (e.g. a column resize); don't show a tooltip.
+            this._hideHeaderTooltip();
+            return;
+        }
+        const tip = this._headerTooltip;
+        tip.textContent = text;
+        tip.style.display = 'block';
+        // position: fixed — viewport coordinates, offset from the cursor
+        // and clamped so the tooltip stays inside the viewport.
+        const left = Math.min(e.clientX + 12,
+                              window.innerWidth - tip.offsetWidth - 8);
+        tip.style.left = Math.max(0, left) + 'px';
+        tip.style.top = (e.clientY + 14) + 'px';
+    }
+
+    _hideHeaderTooltip() {
+        this._headerTooltip.style.display = 'none';
+    }
+
+    _sortBy(key) {
+        if (this._sortCol === key) {
+            this._sortAscending = !this._sortAscending;
+        } else {
+            this._sortCol = key;
+            this._sortAscending = true;
+        }
+        this._applySort();
+        this._selectedPathIndex = -1;
+        this._renderPathTable();
+        this._renderDetailTable();
+        this._clearTimingHighlight();
     }
 
     _clearTimingHighlight() {
@@ -233,6 +300,10 @@ export class TimingWidget {
     }
 
     _renderPathTable() {
+        // The hovered header may be replaced by the re-render, in which
+        // case its mouseleave never fires; hide the tooltip explicitly.
+        this._hideHeaderTooltip();
+
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
 
@@ -246,7 +317,16 @@ export class TimingWidget {
         const hr = document.createElement('tr');
         for (const col of TimingWidget.PATH_COLS) {
             const th = document.createElement('th');
-            th.textContent = col;
+            th.classList.add('sortable');
+            th.textContent = col.label +
+                (col.key === this._sortCol ? (this._sortAscending ? ' ▲' : ' ▼') : '');
+            if (col.tooltip) {
+                th.addEventListener('mousemove',
+                    (e) => this._showHeaderTooltip(e, col.tooltip));
+                th.addEventListener('mouseleave',
+                    () => this._hideHeaderTooltip());
+            }
+            th.addEventListener('click', () => this._sortBy(col.key));
             hr.appendChild(th);
         }
         thead.appendChild(hr);
@@ -256,24 +336,13 @@ export class TimingWidget {
         paths.forEach((p, idx) => {
             const tr = document.createElement('tr');
             if (idx === this._selectedPathIndex) tr.classList.add('selected');
-            const vals = [
-                p.end_clk,
-                fmtTime(p.required),
-                fmtTime(p.arrival),
-                fmtTime(p.slack),
-                fmtTime(p.skew),
-                fmtTime(p.path_delay),
-                p.logic_depth,
-                p.fanout,
-                p.start_pin,
-                p.end_pin,
-            ];
-            vals.forEach((v, ci) => {
+            for (const col of TimingWidget.PATH_COLS) {
                 const td = document.createElement('td');
-                td.textContent = v;
-                if (ci === 3 && p.slack < 0) td.classList.add('slack-negative');
+                const v = p[col.key];
+                td.textContent = col.time ? fmtTime(v) : v;
+                if (col.key === 'slack' && p.slack < 0) td.classList.add('slack-negative');
                 tr.appendChild(td);
-            });
+            }
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => this._selectPathRow(idx));
             tbody.appendChild(tr);
@@ -294,15 +363,13 @@ export class TimingWidget {
 
         this._pathTable.appendChild(tbody);
 
-        // Restore previous widths if available, otherwise compute fresh.
+        // Install resize grips, then restore previous widths if available.
+        makeResizableHeaders(this._pathTable);
         if (savedWidths.length > 0 && savedWidths[0]) {
             const newHeaders = this._pathTable.querySelectorAll('thead th');
-            this._pathTable.style.tableLayout = 'fixed';
             newHeaders.forEach((th, i) => {
                 if (i < savedWidths.length) th.style.width = savedWidths[i];
             });
-        } else {
-            makeResizableHeaders(this._pathTable);
         }
     }
 
@@ -378,14 +445,14 @@ export class TimingWidget {
         });
         this._detailTable.appendChild(tbody);
 
+        // Install resize grips, then restore previous widths if available.
+        makeResizableHeaders(this._detailTable);
         if (savedWidths.length > 0 && savedWidths[0]) {
             const newHeaders = this._detailTable.querySelectorAll('thead th');
-            this._detailTable.style.tableLayout = 'fixed';
             newHeaders.forEach((th, i) => {
                 if (i < savedWidths.length) th.style.width = savedWidths[i];
             });
         } else {
-            makeResizableHeaders(this._detailTable);
             // Pin column: set initial width to 30 characters
             const pinTh = this._detailTable.querySelector('thead th');
             if (pinTh) {
@@ -401,6 +468,26 @@ export function fmtTime(v) {
     return typeof v === 'number' ? v.toFixed(4) : String(v);
 }
 
-TimingWidget.PATH_COLS = ['Clock', 'Required', 'Arrival', 'Slack', 'Skew',
-                          'Logic Delay', 'Logic Depth', 'Fanout', 'Start', 'End'];
+// Path table columns: label, path field to display/sort by, time formatting,
+// and header tooltip (tooltips match the Qt GUI's TimingPathsModel).
+TimingWidget.PATH_COLS = [
+    { label: 'Clock', key: 'end_clk' },
+    { label: 'Required', key: 'required', time: true },
+    { label: 'Arrival', key: 'arrival', time: true },
+    { label: 'Slack', key: 'slack', time: true },
+    { label: 'Skew', key: 'skew', time: true,
+      tooltip: 'The difference in arrival times between\n' +
+               'source and destination clock pins of a macro/register,\n' +
+               'adjusted for CRPR and subtracting a clock period.\n' +
+               'Setup and hold times account for internal clock delays.' },
+    { label: 'Logic Delay', key: 'path_delay', time: true,
+      tooltip: 'Path delay from instances (excluding buffers and consecutive '
+               + 'inverter pairs)' },
+    { label: 'Logic Depth', key: 'logic_depth',
+      tooltip: 'Path instances (excluding buffers and consecutive inverter '
+               + 'pairs)' },
+    { label: 'Fanout', key: 'fanout' },
+    { label: 'Start', key: 'start_pin' },
+    { label: 'End', key: 'end_pin' },
+];
 TimingWidget.DETAIL_COLS = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
