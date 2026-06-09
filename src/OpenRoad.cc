@@ -273,8 +273,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
-  web_server_
-      = new web::WebServer(db_, sta_, logger_, tcl_interp, getThreadCount());
+  web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -686,6 +685,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   sta_->setThreadCount(threads_);
   if (global_router_ != nullptr) {
     global_router_->setNumThreads(threads_);
+  }
+  if (web_server_ != nullptr) {
+    web_server_->setThreadCount(threads_);
   }
 }
 
