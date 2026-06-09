@@ -409,7 +409,7 @@ rdl_route
 | `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes. The default value is `2.0`, and the allowed values are floats. |
 | `-max_iterations` | Maximum number of router iterations. The default value is `10`. |
 | `-allow45` | Specifies that 45 degree routing is permitted. |
-| `-fixed` | When specified, routed will be marked as fixed. |
+| `-fixed` | When specified, routes will be marked as fixed. |
 | `nets` | Nets to route. |
 
 ### Selectively routing terminals
