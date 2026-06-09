@@ -1219,5 +1219,62 @@ TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)
       << "tech response missing block name value \"top\"; got: " << json;
 }
 
+TEST_F(TileGeneratorTest, LayerHierarchyBacksideCategory)
+{
+  odb::dbTech* tech = getDb()->getTech();
+
+  // Mark metal1 and via1 as backside.
+  tech->findLayer("metal1")->setBackside(true);
+  tech->findLayer("via1")->setBackside(true);
+
+  makeTileGen();
+  const auto resp = serializeTechResponse(*tile_gen_);
+  ASSERT_TRUE(resp.contains("layer_hierarchy"));
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+
+  // Top-level layers should NOT contain the backside layers.
+  const auto& top_layers = hier.at("layers").as_array();
+  for (const auto& l : top_layers) {
+    const auto& name = l.as_object().at("name").as_string();
+    EXPECT_NE(name, "metal1") << "backside metal1 should not be at top level";
+    EXPECT_NE(name, "via1") << "backside via1 should not be at top level";
+  }
+
+  // A "Backside" category node should exist in instances.
+  const auto& instances = hier.at("instances").as_array();
+  const boost::json::object* backside_node = nullptr;
+  for (const auto& inst : instances) {
+    const auto& obj = inst.as_object();
+    if (obj.at("name").as_string() == "Backside") {
+      backside_node = &obj;
+      break;
+    }
+  }
+  ASSERT_NE(backside_node, nullptr)
+      << "layer_hierarchy missing Backside category node";
+  EXPECT_EQ(backside_node->at("type").as_string(), "category");
+
+  // The backside node should contain exactly metal1 and via1.
+  const auto& bs_layers = backside_node->at("layers").as_array();
+  std::set<std::string> bs_names;
+  for (const auto& l : bs_layers) {
+    bs_names.insert(std::string(l.as_object().at("name").as_string()));
+  }
+  EXPECT_EQ(bs_names, (std::set<std::string>{"metal1", "via1"}));
+}
+
+TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
+{
+  // No layers marked backside — there should be no Backside category.
+  makeTileGen();
+  const auto resp = serializeTechResponse(*tile_gen_);
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+  const auto& instances = hier.at("instances").as_array();
+  for (const auto& inst : instances) {
+    EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
+        << "Backside category should not appear when no layers are backside";
+  }
+}
+
 }  // namespace
 }  // namespace web
