@@ -395,7 +395,14 @@ proc repair_timing { args } {
     }
   }
 
-  return [expr $recovered_power || $repaired_setup || $repaired_hold]
+  set repaired [expr $recovered_power || $repaired_setup || $repaired_hold]
+  if { $repaired } {
+    # Workaround for #10210: incremental repairs can leave a stale CRPR clock
+    # path that crashes a later report; drop the search state so it rebuilds
+    # clean. Remove when fixed in OpenSTA. See Resizer::resetSearchAfterRepair.
+    rsz::reset_search_after_repair
+  }
+  return $repaired
 }
 
 ################################################################
