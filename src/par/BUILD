@@ -55,7 +55,6 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -150,5 +149,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/par/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/par/test:__pkg__",
+    ],
 )

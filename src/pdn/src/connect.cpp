@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "grid.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -44,6 +45,24 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
   if (layer1_->getRoutingLevel() == 0) {
     grid_->getLogger()->error(
         utl::PDN, 5, "{} must be a routing layer", layer1->getName());
+  }
+
+  // Backside-power sanity check. A standard cut-layer via cannot bridge
+  // a front-side metal to a backside metal (BPR / BM* / BRDL); PDN cannot
+  // create TSVs or backside cut vias, so the connection has to be
+  // provided by a tap/bridge cell whose layout already stitches the two
+  // sides together. Refuse the request rather than silently building a
+  // via that won't exist on the die.
+  if (layer0_->isBackside() != layer1_->isBackside()) {
+    grid_->getLogger()->error(
+        utl::PDN,
+        1200,
+        "Connect rule layers ({}, {}) span the front-side/backside "
+        "boundary. PDN cannot create TSVs or vias across this boundary; "
+        "the connection must come from a tap/bridge cell that internally "
+        "stitches the two sides.",
+        layer0_->getName(),
+        layer1_->getName());
   }
 
   if (layer0_->getRoutingLevel() > layer1_->getRoutingLevel()) {
@@ -99,7 +118,8 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
-void Connect::setSplitCuts(const std::map<odb::dbTechLayer*, SplitCut>& splits)
+void Connect::setSplitCuts(
+    const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
   split_cuts_ = splits;
   // remove top and bottom layers of the stack
@@ -895,7 +915,7 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
   if (layer_count != 3) {
     return false;
   }
-  std::set<odb::dbTechLayer*> rule_layers;
+  odb::PtrSet<odb::dbTechLayer> rule_layers;
   for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }

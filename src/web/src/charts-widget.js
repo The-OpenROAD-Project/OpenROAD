@@ -4,6 +4,7 @@
 // Canvas-based slack histogram widget.
 
 import { getThemeColors } from './theme.js';
+import { isStaticMode } from './ui-utils.js';
 
 // Layout margins (pixels)
 export const kLeftMargin = 60;
@@ -155,6 +156,9 @@ export class ChartsWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
         this._updateBtn.textContent = 'Update';
+        if (isStaticMode(this._app)) {
+            this._updateBtn.style.display = 'none';
+        }
 
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
@@ -224,6 +228,10 @@ export class ChartsWidget {
 
         this._ctx = this._canvas.getContext('2d');
         this._bindEvents();
+
+        if (isStaticMode(this._app)) {
+            setTimeout(() => this.update(), 0);
+        }
     }
 
     _bindEvents() {
@@ -365,7 +373,10 @@ export class ChartsWidget {
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('Click "Update" to load histogram', w / 2, h / 2);
+            const msg = isStaticMode(this._app)
+                ? 'No histogram data available'
+                : 'Click "Update" to load histogram';
+            ctx.fillText(msg, w / 2, h / 2);
             return;
         }
 

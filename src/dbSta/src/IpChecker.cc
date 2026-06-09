@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -223,7 +224,7 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   // Collect minimum-width signal pin centers grouped by layer
   // key: layer, value: list of pin center positions along routing direction
-  std::map<odb::dbTechLayer*, std::vector<int>> layer_pin_centers;
+  odb::PtrMap<odb::dbTechLayer, std::vector<int>> layer_pin_centers;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     if (mterm->getSigType().isSupply()) {
@@ -659,7 +660,6 @@ void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
 void IpChecker::checkPinMinArea(odb::dbMaster* master)
 {
   std::string master_name = master->getName();
-  int dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     for (odb::dbMPin* mpin : mterm->getMPins()) {
@@ -669,10 +669,8 @@ void IpChecker::checkPinMinArea(odb::dbMaster* master)
           continue;
         }
 
-        // getArea() returns microns^2, convert to DBU^2
-        double min_area_um2 = layer->getArea();
-        int64_t min_area_dbu2 = static_cast<int64_t>(
-            min_area_um2 * dbu_per_micron * dbu_per_micron);
+        // getArea() returns DBU^2
+        const int64_t min_area_dbu2 = layer->getArea();
 
         odb::Rect rect = box->getBox();
         int64_t shape_area

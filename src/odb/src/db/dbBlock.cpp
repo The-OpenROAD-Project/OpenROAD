@@ -118,6 +118,7 @@
 #include "dbTrackGrid.h"
 #include "dbVia.h"
 #include "dbWire.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
@@ -2515,7 +2516,20 @@ int dbBlock::getGCellTileSize()
   // lambda function to get the average track spacing of a given layer
   auto getAverageTrackSpacing = [this](int layer_idx) -> int {
     dbTech* tech = getTech();
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    // Skip backside routing layers (e.g. BSPDN BPR/BM*/BRDL) so the Nth
+    // routing layer is counted among frontside metals regardless of LEF
+    // ordering.
+    odb::dbTechLayer* tech_layer = nullptr;
+    int count = 0;
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING || layer->isBackside()) {
+        continue;
+      }
+      if (++count == layer_idx) {
+        tech_layer = layer;
+        break;
+      }
+    }
     odb::dbTrackGrid* track_grid = findTrackGrid(tech_layer);
 
     if (track_grid == nullptr) {
@@ -3266,11 +3280,11 @@ void dbBlock::clearUserInstFlags()
   }
 }
 
-std::map<dbTechLayer*, odb::dbTechVia*> dbBlock::getDefaultVias()
+odb::PtrMap<dbTechLayer, odb::dbTechVia*> dbBlock::getDefaultVias()
 {
   odb::dbTech* tech = getTech();
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
-  std::map<dbTechLayer*, odb::dbTechVia*> default_vias;
+  odb::PtrMap<dbTechLayer, odb::dbTechVia*> default_vias;
 
   for (odb::dbTechVia* via : vias) {
     odb::dbStringProperty* prop
@@ -3416,7 +3430,7 @@ int dbBlock::globalConnect(dbGlobalConnect* gc, bool force, bool verbose)
 void dbBlock::clearGlobalConnect()
 {
   dbSet<dbGlobalConnect> gcs = getGlobalConnects();
-  std::set<dbGlobalConnect*> connects(gcs.begin(), gcs.end());
+  odb::PtrSet<dbGlobalConnect> connects(gcs.begin(), gcs.end());
   for (auto* connect : connects) {
     odb::dbGlobalConnect::destroy(connect);
   }
@@ -3492,11 +3506,11 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
   std::vector<_dbGlobalConnect*> non_region_rules;
   std::vector<_dbGlobalConnect*> region_rules;
 
-  std::set<dbITerm*> connected_iterms;
-  std::set<dbITerm*> skipped_iterms;
+  odb::PtrSet<dbITerm> connected_iterms;
+  odb::PtrSet<dbITerm> skipped_iterms;
   // only search for instances once
   std::map<std::string, std::vector<dbInst*>> inst_map;
-  std::set<dbInst*> donottouchinsts;
+  odb::PtrSet<dbInst> donottouchinsts;
   for (dbGlobalConnect* connect : connects) {
     _dbGlobalConnect* gc = (_dbGlobalConnect*) connect;
     if (gc->region_ != 0) {
@@ -3511,7 +3525,7 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects,
     std::vector<dbInst*> insts = connect->getInsts();
 
     // remove insts marked do not touch
-    std::set<dbInst*> remove_insts;
+    odb::PtrSet<dbInst> remove_insts;
     for (dbInst* inst : insts) {
       if (inst->isDoNotTouch()) {
         remove_insts.insert(inst);

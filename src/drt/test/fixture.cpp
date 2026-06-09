@@ -25,9 +25,9 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "src/drt/src/drt-global.h"
 #include "utl/Logger.h"
 
 using odb::dbTechLayerDir;
@@ -279,6 +279,17 @@ void Fixture::makeSpacingConstraint(frLayerNum layer_num)
                                                {0, 400},
                                                {{100, 200}, {300, 400}});
   auto con = std::make_unique<frSpacingTablePrlConstraint>(tbl);
+
+  frTechObject* tech = design->getTech();
+  frLayer* layer = tech->getLayer(layer_num);
+  layer->setMinSpacing(con.get());
+  tech->addUConstraint(std::move(con));
+}
+
+void Fixture::makeSimpleSpacingConstraint(frLayerNum layer_num,
+                                          const frCoord spacing_value)
+{
+  auto con = std::make_unique<frSpacingConstraint>(spacing_value);
 
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);

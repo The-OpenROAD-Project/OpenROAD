@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -25,6 +26,7 @@
 #include "est/EstimateParasitics.h"
 #include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
@@ -84,7 +86,12 @@ class RegisterOdbCallbackGuard;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;
@@ -96,7 +103,7 @@ enum class MoveType : uint8_t
   kClone,
   kSizeUp,
   kSizeUpMatch,
-  kSizeDown,
+  kSizeDownFanout,
   kSwapPins,
   kVtSwap,
   kUnbuffer,
@@ -154,7 +161,7 @@ struct LibraryAnalysisData
   // Cell footprint distribution (footprint_name -> count)
   std::map<std::string, int> cells_by_footprint;
   // LEF site usage distribution (site -> count)
-  std::map<odb::dbSite*, int> cells_by_site;
+  odb::PtrMap<odb::dbSite, int> cells_by_site;
   // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
   std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
 
@@ -293,7 +300,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool loads_on_diff_nets = false);
   odb::dbInst* insertBufferBeforeLoads(
       odb::dbNet* net,
-      const std::set<odb::dbObject*>& loads,
+      const odb::PtrSet<odb::dbObject>& loads,
       odb::dbMaster* buffer_cell,
       const odb::Point* loc = nullptr,
       const char* new_buf_base_name = kDefaultBufBaseName,
@@ -339,7 +346,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const char* phases,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
-                   bool skip_size_down,
+                   bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
                    bool skip_last_gasp,
@@ -483,7 +490,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
-  void findResizeSlacks(bool run_journal_restore);
+  void findResizeSlacks(bool run_journal_restore,
+                        bool run_repair_timing = false,
+                        float repair_tns_end_percent = 0.01);
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -593,7 +602,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
-                  const std::set<odb::dbSite*>& base_sites);
+                  const odb::PtrSet<odb::dbSite>& base_sites);
 
  public:
   //==============================
@@ -640,7 +649,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool getCin(const sta::LibertyCell* cell, float& cin);
   // Resize drvr_pin instance to target slew.
   // Return 1 if resized.
-  int resizeToTargetSlew(const sta::Pin* drvr_pin);
+  int resizeToTargetSlew(const sta::Pin* drvr_pin,
+                         std::optional<float> load_cap_hint = std::nullopt);
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.

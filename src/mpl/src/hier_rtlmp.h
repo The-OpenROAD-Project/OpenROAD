@@ -13,6 +13,7 @@
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -79,7 +80,7 @@ class HierRTLMP
   void setGlobalFence(odb::Rect global_fence);
   void setBaseHalo(int left, int bottom, int right, int top);
   void setGuidanceRegions(
-      const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
+      const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
   void setMacroHalo(odb::dbInst* macro,
                     int left,
                     int bottom,
@@ -292,11 +293,11 @@ class HierRTLMP
                                             0.0f /* guidance */,
                                             0.0f /* fence */};
 
-  std::map<std::string, odb::Rect> fences_;   // macro_name, fence
-  std::map<odb::dbInst*, odb::Rect> guides_;  // Macro -> Guidance Region
+  std::map<std::string, odb::Rect> fences_;     // macro_name, fence
+  odb::PtrMap<odb::dbInst, odb::Rect> guides_;  // Macro -> Guidance Region
 
   HardMacro::Halo base_halo_;
-  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
+  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;

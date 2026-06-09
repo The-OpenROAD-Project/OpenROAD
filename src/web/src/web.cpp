@@ -438,7 +438,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
+    // — whose top chip is HIER and has no dbBlock — still register the
+    // chip observer and send the refresh notification.
+    if (!self->generator_->getChip()) {
       return;
     }
 
@@ -914,13 +917,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp,
-                     int num_threads)
-    : db_(db),
-      sta_(sta),
-      logger_(logger),
-      interp_(interp),
-      num_threads_(num_threads)
+                     Tcl_Interp* interp)
+    : db_(db), sta_(sta), logger_(logger), interp_(interp), num_threads_(1)
 {
 }
 
@@ -975,6 +973,16 @@ WebServer::~WebServer()
   // reactor::shutdown() destroys pending async operations whose
   // handlers reference the dying reactor.  The OS reclaims at exit.
   (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
+  // Remove the WebLogSink from the Logger before leaking viewer_hook_: the
+  // sink holds a raw pointer into the hook and the CLI thread may still emit
+  // log lines.  In the normal path stop() already did this (log_sink_ is
+  // null here); this covers paths where serve()/stop() never ran — e.g.
+  // initLogger() registered the sink but read_db failed and exited.  logger_
+  // outlives us: ~OpenRoad deletes web_server_ before logger_.
+  if (log_sink_) {
+    logger_->removeSink(log_sink_);
+    log_sink_.reset();
+  }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
@@ -1233,6 +1241,7 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>

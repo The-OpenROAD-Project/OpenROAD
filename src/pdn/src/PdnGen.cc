@@ -20,6 +20,7 @@
 #include "domain.h"
 #include "grid.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -71,13 +72,13 @@ void PdnGen::buildGrids(bool trim)
   const std::vector<Grid*> grids = getGrids();
 
   // connect instances already assigned to grids
-  std::set<odb::dbInst*> insts_in_grids;
+  odb::PtrSet<odb::dbInst> insts_in_grids;
   for (auto* grid : grids) {
     auto insts_in_grid = grid->getInstances();
     insts_in_grids.insert(insts_in_grid.begin(), insts_in_grid.end());
   }
 
-  std::set<odb::dbNet*> grid_nets;
+  odb::PtrSet<odb::dbNet> grid_nets;
   for (auto* grid : grids) {
     const auto nets = grid->getNets();
     grid_nets.insert(nets.begin(), nets.end());
@@ -200,7 +201,7 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
 
-  std::map<odb::dbTechLayer*, std::unique_ptr<TechLayer>> tech_layers;
+  odb::PtrMap<odb::dbTechLayer, std::unique_ptr<TechLayer>> tech_layers;
 
   for (auto* grid : grids) {
     if (grid->type() == Grid::kExisting) {
@@ -668,7 +669,7 @@ void PdnGen::makeConnect(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
-    const std::map<odb::dbTechLayer*, std::pair<int, bool>>& split_cuts,
+    const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
     const std::string& dont_use_vias)
 {
   auto con = std::make_unique<Connect>(grid, layer0, layer1);
@@ -686,7 +687,7 @@ void PdnGen::makeConnect(
   con->setMaxColumns(max_columns);
   con->setOnGrid(ongrid);
 
-  std::map<odb::dbTechLayer*, Connect::SplitCut> split_cuts_map;
+  odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> split_cuts_map;
   for (const auto& [layer, cut_def] : split_cuts) {
     split_cuts_map[layer]
         = Connect::SplitCut{std::get<0>(cut_def), std::get<1>(cut_def)};
@@ -768,7 +769,8 @@ void PdnGen::createSrouteWires(
 
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 {
-  std::map<odb::dbNet*, odb::dbSWire*> net_map;
+  odb::PtrMap<odb::dbNet, odb::dbSWire*> net_map;
+  odb::PtrMap<odb::dbNet, odb::dbBTerm*> net_bterm_map;
 
   auto domains = getDomains();
   for (auto* domain : domains) {
@@ -782,8 +784,49 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 
-  // collect all the SWires from the block
   auto* block = db_->getChip()->getBlock();
+
+  odb::PtrSet<odb::dbBTerm> created_bterms;
+  if (add_pins) {
+    for (auto& [net, swire] : net_map) {
+      odb::dbBTerm* bterm = nullptr;
+      if (net->getBTermCount() == 0) {
+        bterm = block->findBTerm(net->getConstName());
+        if (bterm != nullptr) {
+          odb::dbNet* bterm_net = bterm->getNet();
+          if (bterm_net != nullptr && bterm_net != net) {
+            logger_->error(utl::PDN,
+                           214,
+                           "BTerm {} already exists for a different net ({})",
+                           net->getName(),
+                           bterm_net->getName());
+          } else {
+            bterm->connect(net);
+          }
+        } else {
+          bterm = odb::dbBTerm::create(net, net->getConstName());
+          created_bterms.insert(bterm);
+        }
+        bterm->setIoType(odb::dbIoType::INOUT);
+      } else {
+        // Attempt to find a bterm with the same name first
+        for (auto* netbterm : net->getBTerms()) {
+          if (netbterm->getName() == net->getName()) {
+            bterm = netbterm;
+            break;
+          }
+        }
+        if (bterm == nullptr) {
+          bterm = net->get1stBTerm();
+        }
+      }
+      bterm->setSigType(net->getSigType());
+      bterm->setSpecial();
+      net_bterm_map[net] = bterm;
+    }
+  }
+
+  // collect all the SWires from the block
   ShapeVectorMap net_shapes_vec;
   for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, net_shapes_vec);
@@ -796,7 +839,7 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   for (auto& [net, swire] : net_map) {
     for (auto* bterm : net->getBTerms()) {
       auto bpins = bterm->getBPins();
-      std::set<odb::dbBPin*> pins(bpins.begin(), bpins.end());
+      odb::PtrSet<odb::dbBPin> pins(bpins.begin(), bpins.end());
       for (auto* bpin : pins) {
         if (!bpin->getPlacementStatus().isFixed()) {
           odb::dbBPin::destroy(bpin);
@@ -808,7 +851,8 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
   std::map<Shape*, std::vector<odb::dbBox*>> shape_map;
   for (auto* domain : domains) {
     for (const auto& grid : domain->getGrids()) {
-      const auto db_shapes = grid->writeToDb(net_map, add_pins, obstructions);
+      const auto db_shapes
+          = grid->writeToDb(net_map, net_bterm_map, obstructions);
       shape_map.insert(db_shapes.begin(), db_shapes.end());
 
       grid->makeRoutingObstructions(db_->getChip()->getBlock());
@@ -840,6 +884,13 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
     }
   }
 
+  // Remove empty bterms that were not used
+  for (auto* bterm : created_bterms) {
+    if (bterm->getBPins().empty()) {
+      odb::dbBTerm::destroy(bterm);
+    }
+  }
+
   // remove stale results
   odb::dbMarkerCategory* category = block->findMarkerCategory("PDN");
   if (category != nullptr) {
@@ -864,7 +915,7 @@ void PdnGen::ripUp(odb::dbNet* net)
 {
   if (net == nullptr) {
     resetShapes();
-    std::set<odb::dbNet*> nets;
+    odb::PtrSet<odb::dbNet> nets;
     ensureCoreDomain();
     for (auto* domain : getDomains()) {
       for (auto* net : domain->getNets()) {
@@ -888,9 +939,9 @@ void PdnGen::ripUp(odb::dbNet* net)
   Shape::ShapeTreeMap net_shapes = Shape::convertVectorToTree(net_shapes_vec);
 
   // remove bterms that connect to swires
-  std::set<odb::dbBTerm*> terms;
+  odb::PtrSet<odb::dbBTerm> terms;
   for (auto* bterm : net->getBTerms()) {
-    std::set<odb::dbBPin*> pins;
+    odb::PtrSet<odb::dbBPin> pins;
     for (auto* pin : bterm->getBPins()) {
       bool remove = false;
       for (auto* box : pin->getBoxes()) {
@@ -999,7 +1050,7 @@ void PdnGen::checkSetup() const
   }
 }
 
-void PdnGen::repairVias(const std::set<odb::dbNet*>& nets)
+void PdnGen::repairVias(const odb::PtrSet<odb::dbNet>& nets)
 {
   ViaRepair repair(logger_, nets);
   repair.repair();

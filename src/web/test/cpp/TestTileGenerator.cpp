@@ -183,55 +183,184 @@ TEST_F(TileGeneratorTest, GetLayers)
 }
 
 // Layer colors must mirror gui::DisplayControls::techInit so the GUI and the
-// web frontend show the same color for the same layer.  Spot-check the first
-// few entries of each palette and exercise the type-based assignment rules.
+// web frontend show the same color for the same layer.  Nangate45 only has 10
+// routing + 9 cut layers, all within the 14-entry built-in palettes, so we
+// extend the tech to 20 routing + 19 cut layers to also exercise the overflow
+// path: layers past the palette get deterministic mt19937(1)-seeded random
+// colors.  The expected RGB values below were computed by replaying the exact
+// blue/green/red draw order (matching gui::DisplayControls::techInit) over the
+// full getLayers() iteration, including the MASTERSLICE/OVERLAP layers that
+// also consume random draws.
 TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
 {
-  makeTileGen();
-  const auto& colors = tile_gen_->getLayerColorMap();
-
   odb::dbTech* tech = getDb()->getTech();
   ASSERT_NE(tech, nullptr);
 
-  odb::dbTechLayer* metal1 = tech->findLayer("metal1");
-  odb::dbTechLayer* metal2 = tech->findLayer("metal2");
-  odb::dbTechLayer* metal3 = tech->findLayer("metal3");
-  odb::dbTechLayer* via1 = tech->findLayer("via1");
-  odb::dbTechLayer* via2 = tech->findLayer("via2");
-  ASSERT_NE(metal1, nullptr);
-  ASSERT_NE(metal2, nullptr);
-  ASSERT_NE(metal3, nullptr);
-  ASSERT_NE(via1, nullptr);
-  ASSERT_NE(via2, nullptr);
+  // Grow the stack to 20 routing + 19 cut layers (metal11..metal20 +
+  // via10..via19), created interleaved (metalN, via(N-1)) just like a real
+  // LEF, so getLayers() yields them in that order.
+  for (int i = 11; i <= 20; ++i) {
+    odb::dbTechLayer::create(tech,
+                             ("metal" + std::to_string(i)).c_str(),
+                             odb::dbTechLayerType::ROUTING);
+    odb::dbTechLayer::create(tech,
+                             ("via" + std::to_string(i - 1)).c_str(),
+                             odb::dbTechLayerType::CUT);
+  }
 
-  // First three metals match the GUI's seeded #00F, #F00, #0D0 entries.
-  const Color m1 = colors.at(metal1);
-  EXPECT_EQ(m1.r, 0);
-  EXPECT_EQ(m1.g, 0);
-  EXPECT_EQ(m1.b, 254);
-  EXPECT_EQ(m1.a, 180);
+  makeTileGen();
+  const auto& colors = tile_gen_->getLayerColorMap();
 
-  const Color m2 = colors.at(metal2);
-  EXPECT_EQ(m2.r, 254);
-  EXPECT_EQ(m2.g, 0);
-  EXPECT_EQ(m2.b, 0);
+  // Helper: assert a layer's color matches an expected RGB (alpha is always
+  // 180 in both the GUI and the web palette).
+  auto expectColor = [&](const char* name, int r, int g, int b) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    const Color c = colors.at(layer);
+    EXPECT_EQ(c.r, r) << name << " red";
+    EXPECT_EQ(c.g, g) << name << " green";
+    EXPECT_EQ(c.b, b) << name << " blue";
+    EXPECT_EQ(c.a, 180) << name << " alpha";
+  };
 
-  const Color m3 = colors.at(metal3);
-  EXPECT_EQ(m3.r, 9);
-  EXPECT_EQ(m3.g, 221);
-  EXPECT_EQ(m3.b, 0);
+  struct LayerColor
+  {
+    const char* name;
+    int r;
+    int g;
+    int b;
+  };
 
-  // First two cuts match the GUI's cut palette (light blue, light red).
-  const Color v1 = colors.at(via1);
-  EXPECT_EQ(v1.r, 126);
-  EXPECT_EQ(v1.g, 126);
-  EXPECT_EQ(v1.b, 255);
-  EXPECT_EQ(v1.a, 180);
+  // All 20 routing layers: metal1..metal14 are the seeded kMetalColors palette
+  // (#00F, #F00, #0D0, ...), metal15..metal20 are the mt19937(1) overflow.
+  const LayerColor kRouting[] = {
+      {"metal1", 0, 0, 254},
+      {"metal2", 254, 0, 0},
+      {"metal3", 9, 221, 0},
+      {"metal4", 190, 244, 81},
+      {"metal5", 222, 33, 96},
+      {"metal6", 32, 216, 253},
+      {"metal7", 253, 108, 160},
+      {"metal8", 117, 63, 194},
+      {"metal9", 128, 155, 49},
+      {"metal10", 234, 63, 252},
+      {"metal11", 9, 96, 19},
+      {"metal12", 214, 120, 239},
+      {"metal13", 192, 222, 164},
+      {"metal14", 110, 68, 107},
+      // Overflow (random_color past the 14-entry palette).
+      {"metal15", 99, 98, 82},
+      {"metal16", 63, 193, 166},
+      {"metal17", 200, 166, 92},
+      {"metal18", 124, 126, 173},
+      {"metal19", 137, 246, 68},
+      {"metal20", 242, 216, 153},
+  };
 
-  const Color v2 = colors.at(via2);
-  EXPECT_EQ(v2.r, 255);
-  EXPECT_EQ(v2.g, 126);
-  EXPECT_EQ(v2.b, 126);
+  // All 19 cut layers: via1..via14 are the seeded kCutColors palette,
+  // via15..via19 are the mt19937(1) overflow.
+  const LayerColor kCut[] = {
+      {"via1", 126, 126, 255},
+      {"via2", 255, 126, 126},
+      {"via3", 4, 110, 0},
+      {"via4", 95, 122, 40},
+      {"via5", 111, 17, 48},
+      {"via6", 16, 108, 126},
+      {"via7", 126, 54, 80},
+      {"via8", 58, 32, 97},
+      {"via9", 225, 255, 136},
+      {"via10", 117, 32, 126},
+      {"via11", 18, 192, 38},
+      {"via12", 107, 60, 119},
+      {"via13", 96, 111, 82},
+      {"via14", 220, 136, 214},
+      // Overflow (random_color past the 14-entry palette).
+      {"via15", 171, 152, 190},
+      {"via16", 54, 196, 143},
+      {"via17", 104, 79, 102},
+      {"via18", 123, 187, 153},
+      {"via19", 179, 175, 160},
+  };
+
+  for (const LayerColor& lc : kRouting) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+  for (const LayerColor& lc : kCut) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+}
+
+// Only frontside metals should consume the palette colors.
+TEST_F(TileGeneratorTest, GetLayerColorMapWithBacksideMetals)
+{
+  odb::dbTech* tech = getDb()->getTech();
+  ASSERT_NE(tech, nullptr);
+
+  // make metals 1 -> 3 backside
+  for (const char* name :
+       {"metal1", "via1", "metal2", "via2", "metal3", "via3"}) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    layer->setBackside(true);
+  }
+
+  makeTileGen();
+  const auto& colors = tile_gen_->getLayerColorMap();
+
+  // Helper: assert a layer's color matches an expected RGB (alpha is always
+  // 180 in both the GUI and the web palette).
+  auto expectColor = [&](const char* name, int r, int g, int b) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    const Color c = colors.at(layer);
+    EXPECT_EQ(c.r, r) << name << " red";
+    EXPECT_EQ(c.g, g) << name << " green";
+    EXPECT_EQ(c.b, b) << name << " blue";
+    EXPECT_EQ(c.a, 180) << name << " alpha";
+  };
+
+  struct LayerColor
+  {
+    const char* name;
+    int r;
+    int g;
+    int b;
+  };
+
+  // All 20 routing layers: metal1..metal14 are the seeded kMetalColors palette
+  // (#00F, #F00, #0D0, ...), metal15..metal20 are the mt19937(1) overflow.
+  const LayerColor kRouting[] = {// Backside
+                                 {"metal1", 209, 191, 141},
+                                 {"metal2", 63, 193, 166},
+                                 {"metal3", 200, 166, 92},
+                                 // Frontside
+                                 {"metal4", 0, 0, 254},
+                                 {"metal5", 254, 0, 0},
+                                 {"metal6", 9, 221, 0},
+                                 {"metal7", 190, 244, 81},
+                                 {"metal8", 222, 33, 96},
+                                 {"metal9", 32, 216, 253}};
+
+  // All 19 cut layers: via1..via14 are the seeded kCutColors palette,
+  // via15..via19 are the mt19937(1) overflow.
+  const LayerColor kCut[] = {// Backside
+                             {"via1", 99, 98, 82},
+                             {"via2", 171, 152, 190},
+                             {"via3", 54, 196, 143},
+                             // Frontside
+                             {"via4", 126, 126, 255},
+                             {"via5", 255, 126, 126},
+                             {"via6", 4, 110, 0},
+                             {"via7", 95, 122, 40},
+                             {"via8", 111, 17, 48},
+                             {"via9", 16, 108, 126}};
+
+  for (const LayerColor& lc : kRouting) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+  for (const LayerColor& lc : kCut) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
 }
 
 TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
@@ -961,6 +1090,119 @@ TEST_F(RowRenderingTest, RowsDefaultOff)
 //------------------------------------------------------------------------------
 // serializeTechResponse — exercises the contract main.js relies on for the
 // document title (techData.block_name).
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// Selectability — parallel column added to the display panel, mirroring the
+// Qt GUI's selectability column.  Picks (selectAt) require both visible AND
+// selectable, but rendering ignores the selectability flags.
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, SelectableDefaultAllTrue)
+{
+  TileVisibility vis;
+  EXPECT_TRUE(vis.stdcells_selectable);
+  EXPECT_TRUE(vis.macros_selectable);
+  EXPECT_TRUE(vis.net_signal_selectable);
+  EXPECT_TRUE(vis.net_power_selectable);
+  EXPECT_TRUE(vis.net_clock_selectable);
+  EXPECT_TRUE(vis.pins_selectable);
+  EXPECT_TRUE(vis.inst_pins_selectable);
+  EXPECT_TRUE(vis.placement_blockages_selectable);
+  EXPECT_TRUE(vis.routing_obstructions_selectable);
+  EXPECT_FALSE(vis.has_selectable_layers);
+}
+
+TEST_F(TileGeneratorTest, ParseFromJsonReadsSelectableKeys)
+{
+  TileVisibility vis;
+  vis.parseFromJson(
+      parseObj(R"({"s_stdcells":false,"s_macros":true,"s_net_signal":false,)"
+               R"("s_pins":false,"s_inst_pins":false,)"
+               R"("selectable_layers":["metal1","metal2"]})"));
+  EXPECT_FALSE(vis.stdcells_selectable);
+  EXPECT_TRUE(vis.macros_selectable);
+  EXPECT_FALSE(vis.net_signal_selectable);
+  EXPECT_FALSE(vis.pins_selectable);
+  EXPECT_FALSE(vis.inst_pins_selectable);
+  EXPECT_TRUE(vis.has_selectable_layers);
+  EXPECT_TRUE(vis.isLayerSelectable("metal1"));
+  EXPECT_TRUE(vis.isLayerSelectable("metal2"));
+  EXPECT_FALSE(vis.isLayerSelectable("metal3"));
+}
+
+TEST_F(TileGeneratorTest, IsNetSelectableRespectsSignalType)
+{
+  odb::dbNet* sig_net = odb::dbNet::create(block_, "sig");
+  sig_net->setSigType(odb::dbSigType::SIGNAL);
+  odb::dbNet* pwr_net = odb::dbNet::create(block_, "vdd");
+  pwr_net->setSigType(odb::dbSigType::POWER);
+
+  TileVisibility vis;
+  EXPECT_TRUE(vis.isNetSelectable(sig_net));
+  EXPECT_TRUE(vis.isNetSelectable(pwr_net));
+
+  vis.net_signal_selectable = false;
+  EXPECT_FALSE(vis.isNetSelectable(sig_net));
+  EXPECT_TRUE(vis.isNetSelectable(pwr_net));
+}
+
+TEST_F(TileGeneratorTest, IsLayerSelectableDefaultsTrueWhenUnspecified)
+{
+  TileVisibility vis;
+  // No selectable_layers list ⇒ every layer is selectable.
+  EXPECT_TRUE(vis.isLayerSelectable("metal1"));
+  EXPECT_TRUE(vis.isLayerSelectable("anything"));
+}
+
+TEST_F(TileGeneratorTest, SelectAtGatesInstancesBySelectability)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  // Default visibility + selectability ⇒ the inst is picked.
+  TileVisibility vis;
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  EXPECT_EQ(results.size(), 1u);
+
+  // Visible but not selectable ⇒ no pick.
+  TileVisibility vis_no_sel;
+  vis_no_sel.stdcells_selectable = false;
+  auto results_no_sel = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis_no_sel);
+  EXPECT_EQ(results_no_sel.size(), 0u);
+
+  // Confirm the path-through-parseFromJson works too.
+  TileVisibility vis_json;
+  vis_json.parseFromJson(parseObj(R"({"s_stdcells":false})"));
+  auto results_json = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis_json);
+  EXPECT_EQ(results_json.size(), 0u);
+}
+
+TEST_F(TileGeneratorTest, SelectAtGatesInstancesByLayerSelectability)
+{
+  // Layer selectability does NOT gate instance picks (insts aren't on a
+  // layer) — only routing-shape picks.  Confirm an inst still picks when
+  // the selectable_layers list is non-empty but doesn't list anything.
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  const odb::Rect bbox = inst->getBBox()->getBox();
+  const int cx = (bbox.xMin() + bbox.xMax()) / 2;
+  const int cy = (bbox.yMin() + bbox.yMax()) / 2;
+
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"selectable_layers":[]})"));
+  EXPECT_TRUE(vis.has_selectable_layers);
+  auto results = tile_gen_->selectAt(cx, cy, /*zoom=*/0, vis);
+  EXPECT_EQ(results.size(), 1u);
+}
+
 //------------------------------------------------------------------------------
 
 TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)

@@ -18,13 +18,14 @@
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RerouteGenerator.hh"
-#include "SizeDownGenerator.hh"
+#include "SizeDownFanoutGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SizeUpMtGenerator.hh"
 #include "SplitLoadGenerator.hh"
 #include "SwapPinsGenerator.hh"
 #include "UnbufferGenerator.hh"
 #include "VtSwapMtGenerator.hh"
+#include "policy/SetupLegacyPolicy.hh"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
@@ -82,8 +83,8 @@ void SetupLegacyMtPolicy::buildMoveGenerators(
       case MoveType::kSplitLoad:
         generator = std::make_unique<SplitLoadGenerator>(context);
         break;
-      case MoveType::kSizeDown:
-        generator = std::make_unique<SizeDownGenerator>(context);
+      case MoveType::kSizeDownFanout:
+        generator = std::make_unique<SizeDownFanoutGenerator>(context);
         break;
       case MoveType::kSwapPins:
         generator = std::make_unique<SwapPinsGenerator>(context);
@@ -243,7 +244,7 @@ bool SetupLegacyMtPolicy::estimateAndCommitSerialCandidates(
   return false;
 }
 
-bool SetupLegacyMtPolicy::estimateAndCommitSizeDownBatch(
+bool SetupLegacyMtPolicy::estimateAndCommitSizeDownFanoutBatch(
     MoveGenerator& generator,
     const Target& target,
     const int repairs_per_pass,
@@ -309,11 +310,11 @@ bool SetupLegacyMtPolicy::tryRepairTarget(
 
     logConsideringGenerator(generator, prepared_target);
     if (allowsBatchRepair(generator.type())) {
-      if (estimateAndCommitSizeDownBatch(generator,
-                                         prepared_target,
-                                         repairs_per_pass,
-                                         changed,
-                                         accepted_type)) {
+      if (estimateAndCommitSizeDownFanoutBatch(generator,
+                                               prepared_target,
+                                               repairs_per_pass,
+                                               changed,
+                                               accepted_type)) {
         return true;
       }
       continue;

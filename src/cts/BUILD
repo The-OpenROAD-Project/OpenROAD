@@ -95,11 +95,8 @@ cc_library(
         ":cts",
         ":private_hdrs",
         "//:ord",
-        "//src/dbSta",
-        "//src/est",
         "//src/gui",
         "//src/odb/src/db",
-        "//src/rsz",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -154,5 +151,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/cts/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/cts/test:__pkg__",
+    ],
 )

@@ -372,7 +372,7 @@ bool Shape::hasInternalConnections() const
 }
 
 std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
-                                          bool add_pins,
+                                          odb::dbBTerm* bterm,
                                           bool make_rect_as_pin) const
 {
   debugPrint(getLogger(),
@@ -381,7 +381,7 @@ std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
              5,
              "Adding shape {} with pins {} and rect as pin {} / {} {} - {}",
              getReportText(),
-             add_pins,
+             bterm != nullptr,
              make_rect_as_pin,
              is_locked_,
              hasITermConnections(),
@@ -403,56 +403,31 @@ std::vector<odb::dbBox*> Shape::writeToDb(odb::dbSWire* swire,
                                      rect_.yMax(),
                                      type_));
 
-  if (add_pins) {
+  if (bterm != nullptr) {
     if (make_rect_as_pin) {
-      objs.push_back(addBPinToDb(rect_));
+      objs.push_back(addBPinToDb(bterm, rect_));
     }
     const odb::Rect block_area = getGridComponent()->getBlock()->getDieArea();
-    for (const auto& bterm : bterm_connections_) {
-      odb::Rect bterm_shape = bterm;
+    for (const auto& bterm_rect : bterm_connections_) {
+      odb::Rect bterm_shape = bterm_rect;
       // Adjust width of shape when bterm is on the edge of the die area
-      if (bterm.xMin() == block_area.xMin()
-          || bterm.xMax() == block_area.xMax()) {
+      if (bterm_rect.xMin() == block_area.xMin()
+          || bterm_rect.xMax() == block_area.xMax()) {
         bterm_shape.set_ylo(rect_.yMin());
         bterm_shape.set_yhi(rect_.yMax());
-      } else if (bterm.yMin() == block_area.yMin()
-                 || bterm.yMax() == block_area.yMax()) {
+      } else if (bterm_rect.yMin() == block_area.yMin()
+                 || bterm_rect.yMax() == block_area.yMax()) {
         bterm_shape.set_xlo(rect_.xMin());
         bterm_shape.set_xhi(rect_.xMax());
       }
-      objs.push_back(addBPinToDb(bterm_shape));
+      objs.push_back(addBPinToDb(bterm, bterm_shape));
     }
   }
   return objs;
 }
 
-odb::dbBox* Shape::addBPinToDb(const odb::Rect& rect) const
+odb::dbBox* Shape::addBPinToDb(odb::dbBTerm* bterm, const odb::Rect& rect) const
 {
-  // find existing bterm, else make it
-  odb::dbBTerm* bterm = nullptr;
-  if (net_->getBTermCount() == 0) {
-    bterm = getGridComponent()->getBlock()->findBTerm(net_->getConstName());
-    if (bterm != nullptr) {
-      odb::dbNet* net = bterm->getNet();
-      if (net != nullptr && net != net_) {
-        getLogger()->error(utl::PDN,
-                           214,
-                           "BTerm {} already exists for a different net ({})",
-                           net_->getName(),
-                           net->getName());
-      } else {
-        bterm->connect(net_);
-      }
-    } else {
-      bterm = odb::dbBTerm::create(net_, net_->getConstName());
-    }
-    bterm->setIoType(odb::dbIoType::INOUT);
-  } else {
-    bterm = net_->get1stBTerm();
-  }
-  bterm->setSigType(net_->getSigType());
-  bterm->setSpecial();
-
   odb::dbBox* box = nullptr;
 
   odb::dbBPin* pin = nullptr;
@@ -800,7 +775,7 @@ void FollowPinShape::updateTermConnections()
   // remove rows that no longer overlap with shape
 
   const odb::Rect& rect = getRect();
-  std::set<odb::dbRow*> remove_rows;
+  odb::PtrSet<odb::dbRow> remove_rows;
   for (auto* row : rows_) {
     odb::Rect row_rect = row->getBBox();
     if (!rect.intersects(row_rect)) {

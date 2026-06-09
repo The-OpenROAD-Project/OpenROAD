@@ -2763,7 +2763,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));
@@ -2787,7 +2787,7 @@ void FastRouteCore::saveCongestion(const int iter)
 
         const int capacity = tile.capacity;
         const int usage = tile.usage;
-        marker->setComment(fmt::format("capacity:{} usage:{} overflow:{}",
+        marker->setComment(fmt::format("capacity:{} usage:{} congestion:{}",
                                        capacity,
                                        usage,
                                        usage - capacity));

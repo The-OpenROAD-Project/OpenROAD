@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "AbstractGraphics.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "graphicsNone.h"
 #include "initialPlace.h"
@@ -21,7 +22,10 @@
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/Graph.hh"
+#include "sta/Path.hh"
 #include "sta/StaMain.hh"
+#include "sta/StaState.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
@@ -38,6 +42,40 @@ Replace::Replace(odb::dbDatabase* odb,
     : db_(odb), sta_(sta), rs_(resizer), fr_(router), log_(logger)
 {
   graphics_ = std::make_unique<GraphicsNone>();
+
+  // Register "orig_name" report_path field: original pin name before
+  // multi-bit clustering. Reads "orig_name" property off the path
+  // vertex's iterm. Registered at tool init so paths can be reported
+  // even when the design is loaded from an already-clustered .odb
+  // without re-running cluster_flops.
+  if (sta_->findReportPathField(kOrigNameProp) == nullptr) {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    sta_->makeReportPathField(
+        kOrigNameProp,
+        kOrigNameProp,
+        "Orig Name",
+        36,
+        true,
+        nullptr,
+        [network](const sta::Path* path,
+                  const sta::StaState* sta) -> std::string {
+          if (path == nullptr) {
+            return {};
+          }
+          const sta::Pin* pin = path->vertex(sta)->pin();
+          // staToDb requires all three out-params; only iterm is used.
+          odb::dbITerm* iterm = nullptr;
+          odb::dbBTerm* bterm = nullptr;
+          odb::dbModITerm* moditerm = nullptr;
+          network->staToDb(pin, iterm, bterm, moditerm);
+          if (iterm == nullptr) {
+            return {};
+          }
+          odb::dbStringProperty* prop
+              = odb::dbStringProperty::find(iterm, kOrigNameProp);
+          return prop ? prop->getValue() : std::string{};
+        });
+  }
 }
 
 Replace::~Replace() = default;
@@ -272,6 +310,9 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     tb_ = std::make_shared<TimingBase>(nbc_, fr_, rs_, log_);
     tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
     tb_->setTimingNetWeightMax(options.timingNetWeightMax);
+    tb_->setTimingNetsPercentage(options.timingDrivenNetsPercentage);
+    tb_->setRepairTiming(options.timingDrivenRepairTiming);
+    tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
   }
 
   if (!np_) {
@@ -389,10 +430,57 @@ void Replace::setDebug(const int pause_iterations,
 void PlaceOptions::validate(utl::Logger* logger)
 {
   utl::Validator val(logger, GPL);
-  val.check_non_negative("initialPlaceMaxIter", initialPlaceMaxIter, 326);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
-  val.check_positive("initialPlaceMaxFanout", initialPlaceMaxFanout, 327);
-  val.check_range("Target density", density, 0.0f, 1.0f, 328);
+
+  val.check_positive("bin_grid_count", binGridCntX, 400);
+  val.check_range("density", density, 0.0f, 1.0f, 401);
+  val.check_positive("init_density_penalty", initDensityPenaltyFactor, 402);
+  val.check_positive("init_wirelength_coef", initWireLengthCoef, 403);
+  val.check_positive("min_phi_coef", minPhiCoef, 404);
+  val.check_positive("max_phi_coef", maxPhiCoef, 405);
+  val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
+  val.check_non_negative("pad_left", padLeft, 407);
+  val.check_non_negative("pad_right", padRight, 408);
+  val.check_positive("reference_hpwl", referenceHpwl, 409);
+
+  val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
+  val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);
+
+  val.check_positive(
+      "routability_target_rc_metric", routabilityTargetRcMetric, 412);
+  val.check_range("routability_snapshot_overflow",
+                  routabilitySnapshotOverflow,
+                  0.0f,
+                  1.0f,
+                  413);
+  val.check_range(
+      "routability_check_overflow", routabilityCheckOverflow, 0.0f, 1.0f, 414);
+  val.check_range(
+      "routability_max_density", routabilityMaxDensity, 0.0f, 1.0f, 415);
+  val.check_positive(
+      "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
+  val.check_positive(
+      "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
+  val.check_non_negative(
+      "routability_rc_coefficients k1", routabilityRcK1, 418);
+  val.check_non_negative(
+      "routability_rc_coefficients k2", routabilityRcK2, 419);
+  val.check_non_negative(
+      "routability_rc_coefficients k3", routabilityRcK3, 420);
+  val.check_non_negative(
+      "routability_rc_coefficients k4", routabilityRcK4, 421);
+
+  for (const auto& timingNetOverflow : timingNetWeightOverflows) {
+    val.check_positive(
+        "timing_driven_net_reweight_overflow", timingNetOverflow, 422);
+  }
+  val.check_positive("timing_driven_net_weight_max", timingNetWeightMax, 423);
+  val.check_range("timing_driven_nets_percentage",
+                  timingDrivenNetsPercentage,
+                  0.0f,
+                  100.0f,
+                  424);
+  val.check_range(
+      "keep_resize_below_overflow", keepResizeBelowOverflow, 0.0f, 1.0f, 425);
 }
 
 void PlaceOptions::skipIo()

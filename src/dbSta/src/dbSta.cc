@@ -32,11 +32,11 @@
 #include "boost/json/src.hpp"
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "search/Levelize.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -44,6 +44,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphCmp.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/LevelizeObserver.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -296,24 +297,23 @@ void dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-// Levelize::setObserver takes ownership and deletes the prior observer,
-// so this composite must replicate the StaLevelizeObserver behavior that
-// Sta::makeObservers installs (forwarding to Search and GraphDelayCalc)
-// in addition to invalidating dbSta's cache.
-class DbStaLevelizeObserver : public LevelizeObserver
+// Extend the default StaLevelizeObserver (Search + GraphDelayCalc forwarding)
+// to also invalidate dbSta's driver-vertex cache.
+class DbStaLevelizeObserver : public StaLevelizeObserver
 {
  public:
-  explicit DbStaLevelizeObserver(dbSta* sta) : sta_(sta) {}
+  DbStaLevelizeObserver(dbSta* sta, Search* search, GraphDelayCalc* gdc)
+      : StaLevelizeObserver(search, gdc), sta_(sta)
+  {
+  }
   void levelsChangedBefore() override
   {
-    sta_->search()->levelsChangedBefore();
-    sta_->graphDelayCalc()->levelsChangedBefore();
+    StaLevelizeObserver::levelsChangedBefore();
     sta_->invalidateLevelizedDrvrVertices();
   }
   void levelChangedBefore(Vertex* vertex) override
   {
-    sta_->search()->levelChangedBefore(vertex);
-    sta_->graphDelayCalc()->levelChangedBefore(vertex);
+    StaLevelizeObserver::levelChangedBefore(vertex);
     sta_->invalidateLevelizedDrvrVertices();
   }
 
@@ -324,7 +324,8 @@ class DbStaLevelizeObserver : public LevelizeObserver
 void dbSta::makeObservers()
 {
   Sta::makeObservers();
-  levelize_->setObserver(new DbStaLevelizeObserver(this));
+  setLevelizeObserver(
+      new DbStaLevelizeObserver(this, search_, graph_delay_calc_));
 }
 
 void dbSta::invalidateLevelizedDrvrVertices()
@@ -404,11 +405,11 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
   return slack(net, min_max);
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets()
+odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {
     const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
@@ -425,11 +426,11 @@ std::set<odb::dbNet*> dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<odb::dbNet*> dbSta::findClkNets(const Clock* clk)
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(const Clock* clk)
 {
   sta::Mode* mode = cmdMode();
   ensureClkNetwork(mode);
-  std::set<odb::dbNet*> clk_nets;
+  odb::PtrSet<odb::dbNet> clk_nets;
   const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
@@ -720,7 +721,7 @@ void dbSta::reportCellUsage(odb::dbModule* module,
 
   if (verbose) {
     logger_->report("\nCell instance report:");
-    std::map<odb::dbMaster*, TypeStats> usage_count;
+    odb::PtrMap<odb::dbMaster, TypeStats> usage_count;
     for (auto inst : insts) {
       auto master = inst->getMaster();
       auto& stats = usage_count[master];
@@ -816,12 +817,11 @@ void dbSta::reportTimingHistogram(int num_bins,
   histogram.report(/*precision=*/3);
 }
 
-void dbSta::reportLogicDepthHistogram(int num_bins,
-                                      bool exclude_buffers,
+std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
                                       bool exclude_inverters) const
 {
-  utl::Histogram<int> histogram(logger_);
-
+  std::vector<int> depths;
+  depths.reserve(sta_->endpoints().size());
   sta_->worstSlack(MinMax::max());  // Update timing.
   for (sta::Vertex* vertex : sta_->endpoints()) {
     int path_length = 0;
@@ -842,9 +842,19 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
       }
       path = path->prevPath();
     }
-    histogram.addData(path_length);
+    depths.push_back(path_length);
   }
+  return depths;
+}
 
+void dbSta::reportLogicDepthHistogram(int num_bins,
+                                      bool exclude_buffers,
+                                      bool exclude_inverters) const
+{
+  utl::Histogram<int> histogram(logger_);
+  for (int depth : levelsOfLogic(exclude_buffers, exclude_inverters)) {
+    histogram.addData(depth);
+  }
   histogram.generateBins(num_bins);
   histogram.report();
 }
@@ -1387,48 +1397,6 @@ void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 }
 
 ////////////////////////////////////////////////////////////////
-
-sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::enable
-        || signal_type == sta::ScanSignalType::enable_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::input
-        || signal_type == sta::ScanSignalType::input_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::output
-        || signal_type == sta::ScanSignalType::output_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
 
 void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
                                  const char* filename,

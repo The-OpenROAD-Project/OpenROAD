@@ -45,6 +45,7 @@
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -642,10 +643,10 @@ void Resizer::unbufferNet(sta::Net* net)
 }
 
 void Resizer::balanceBin(const vector<odb::dbInst*>& bin,
-                         const std::set<odb::dbSite*>& base_sites)
+                         const odb::PtrSet<odb::dbSite>& base_sites)
 {
   // Maps sites to the total width of all instances using that site
-  map<odb::dbSite*, uint64_t> sites;
+  odb::PtrMap<odb::dbSite, uint64_t> sites;
   uint64_t total_width = 0;
   for (auto inst : bin) {
     auto master = inst->getMaster();
@@ -721,7 +722,7 @@ void Resizer::balanceRowUsage()
   const int x_step = core_width / num_bins + 1;
   const int y_step = core_height / num_bins + 1;
 
-  std::set<odb::dbSite*> base_sites;
+  odb::PtrSet<odb::dbSite> base_sites;
   for (odb::dbRow* row : block_->getRows()) {
     odb::dbSite* site = row->getSite();
     if (site->hasRowPattern()) {
@@ -2532,7 +2533,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   return new_it->second;
 }
 
-int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
+                                std::optional<float> load_cap_hint)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
@@ -2549,10 +2551,19 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
                  revisiting_inst ? " - revisit" : "");
       resized_multi_output_insts_.insert(inst);
     }
-    estimate_parasitics_->ensureWireParasitic(drvr_pin);
-    // Includes net parasitic capacitance.
-    float load_cap
-        = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    // Hint skips ensureWireParasitic, which triggers an incremental
+    // FastRoute per buffer in the repair_design.
+    // Only applies under global-routing parasitics;
+    // placement-based estimation is already cheap.
+    float load_cap;
+    if (load_cap_hint.has_value()
+        && estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kGlobalRouting) {
+      load_cap = *load_cap_hint;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(drvr_pin);
+      load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    }
     if (load_cap > 0.0) {
       sta::LibertyCell* target_cell
           = findTargetCell(cell, load_cap, revisiting_inst);
@@ -2979,7 +2990,9 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore)
+void Resizer::findResizeSlacks(bool run_journal_restore,
+                               bool run_repair_timing,
+                               float repair_tns_end_percent)
 {
   initBlock();
 
@@ -3026,6 +3039,32 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     // TODO: fix the function to understand the parasitics from the global
     // routing.
     fullyRebuffer(nullptr);
+  }
+
+  if (run_repair_timing) {
+    // Conservative repair_timing: only fix worst setup violations.
+    (void) repairSetup(
+        /*setup_margin=*/0.0,
+        repair_tns_end_percent,
+        /*max_passes=*/1,
+        /*max_iterations=*/0,
+        /*max_repairs_per_pass=*/1,
+        /*match_cell_footprint=*/false,
+        /*verbose=*/false,
+        /*sequence=*/parseMoveSequence(""),
+        /*phases=*/"",
+        /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
+        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
+                                     // density
+        /*skip_size_down=*/false,
+        /*skip_buffering=*/false,
+        /*skip_buffer_removal=*/false,
+        /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
+        /*skip_vt_swap=*/true,    // post-placement optimization
+        /*skip_crit_vt_swap=*/true);
+
+    // Re-estimate parasitics after repair_setup
+    estimate_parasitics_->estimateParasitics(parasitics_src);
   }
 
   findResizeSlacks1();
@@ -3382,8 +3421,8 @@ void Resizer::reportDontTouch()
 {
   initBlock();
 
-  std::set<odb::dbInst*> insts;
-  std::set<odb::dbNet*> nets;
+  odb::PtrSet<odb::dbInst> insts;
+  odb::PtrSet<odb::dbNet> nets;
 
   for (auto* inst : block_->getInsts()) {
     if (inst->isDoNotTouch()) {
@@ -4870,7 +4909,7 @@ bool Resizer::repairSetup(double setup_margin,
                           const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
-                          bool skip_size_down,
+                          bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
@@ -4890,7 +4929,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.phases = phases != nullptr ? phases : "";
   config.skip_pin_swap = skip_pin_swap;
   config.skip_gate_cloning = skip_gate_cloning;
-  config.skip_size_down = skip_size_down;
+  config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
   config.skip_last_gasp = skip_last_gasp;
@@ -5428,7 +5467,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
     return nullptr;
   }
 
-  std::set<odb::dbObject*> db_loads;
+  odb::PtrSet<odb::dbObject> db_loads;
   if (loads) {
     for (const sta::Pin* pin : *loads) {
       db_loads.insert(db_network_->staToDb(pin));
@@ -5450,7 +5489,7 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
 
 odb::dbInst* Resizer::insertBufferBeforeLoads(
     odb::dbNet* net,
-    const std::set<odb::dbObject*>& loads,
+    const odb::PtrSet<odb::dbObject>& loads,
     odb::dbMaster* buffer_cell,
     const odb::Point* loc,
     const char* new_buf_base_name,
@@ -6054,8 +6093,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "sizedown") {
-    return MoveType::kSizeDown;
+  if (lower == "size_down_fanout" || lower == "size_down") {
+    return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
     return MoveType::kClone;
@@ -6088,7 +6127,7 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
     std::ranges::transform(lower, lower.begin(), ::tolower);
     if (lower == "size") {
       result.push_back(MoveType::kSizeUp);
-      result.push_back(MoveType::kSizeDown);
+      result.push_back(MoveType::kSizeDownFanout);
       continue;
     }
     result.push_back(moveTypeFromString(lower));

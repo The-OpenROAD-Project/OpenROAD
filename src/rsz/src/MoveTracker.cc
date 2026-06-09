@@ -11,6 +11,7 @@
 #include <limits>
 #include <map>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -186,6 +187,7 @@ void MoveTracker::clear()
   visit_count_.clear();
   moves_.clear();
   pending_moves_.clear();
+  pending_move_levels_ = {};
   current_endpoint_ = nullptr;
 }
 
@@ -262,53 +264,84 @@ void MoveTracker::trackMove(const sta::Pin* pin,
 {
   assert(visit_count_.contains(pin)
          && "Pin must be visited before tracking moves.");
-  pending_moves_.emplace_back(pin, move_type, state);
+  // A move recorded while an ECO journal is open belongs to the innermost
+  // journal level, so a nested restore can reject exactly that level. With
+  // no open journal it goes to the flat bucket commitMoves()/rejectMoves()
+  // drain.
+  if (pending_move_levels_.empty()) {
+    pending_moves_.emplace_back(pin, move_type, state);
+  } else {
+    pending_move_levels_.top().emplace_back(pin, move_type, state);
+  }
+}
+
+void MoveTracker::finalizeMoves(const std::vector<MoveStateData>& level,
+                                const MoveStateType final_state)
+{
+  for (const MoveStateData& move : level) {
+    moves_.emplace_back(move.pin, move_count_++, move.move_type, final_state);
+    // Store in move event list for detailed reports
+    pin_move_events_[move.pin].emplace_back(move.move_type, final_state);
+  }
+
+  // Track per-endpoint statistics
+  if (current_endpoint_ && !level.empty()) {
+    auto& counts = endpoint_move_counts_[current_endpoint_];
+    std::get<0>(counts) += level.size();  // attempts
+    if (final_state == MoveStateType::ATTEMPT_COMMIT) {
+      std::get<2>(counts) += level.size();  // commits
+    } else {
+      std::get<1>(counts) += level.size();  // rejects
+    }
+  }
 }
 
 void MoveTracker::commitMoves()
 {
-  for (const auto& pending_move : pending_moves_) {
-    moves_.emplace_back(pending_move.pin,
-                        move_count_++,
-                        pending_move.move_type,
-                        MoveStateType::ATTEMPT_COMMIT);
-
-    // Store in move event list for detailed reports
-    pin_move_events_[pending_move.pin].emplace_back(
-        pending_move.move_type, MoveStateType::ATTEMPT_COMMIT);
-  }
-
-  // Track per-endpoint statistics
-  if (current_endpoint_ && !pending_moves_.empty()) {
-    auto& counts = endpoint_move_counts_[current_endpoint_];
-    std::get<0>(counts) += pending_moves_.size();  // attempts
-    std::get<2>(counts) += pending_moves_.size();  // commits
-  }
-
+  finalizeMoves(pending_moves_, MoveStateType::ATTEMPT_COMMIT);
   pending_moves_.clear();
 }
 
 void MoveTracker::rejectMoves()
 {
-  for (const auto& pending_move : pending_moves_) {
-    moves_.emplace_back(pending_move.pin,
-                        move_count_++,
-                        pending_move.move_type,
-                        MoveStateType::ATTEMPT_REJECT);
-
-    // Store in move event list for detailed reports
-    pin_move_events_[pending_move.pin].emplace_back(
-        pending_move.move_type, MoveStateType::ATTEMPT_REJECT);
-  }
-
-  // Track per-endpoint statistics
-  if (current_endpoint_ && !pending_moves_.empty()) {
-    auto& counts = endpoint_move_counts_[current_endpoint_];
-    std::get<0>(counts) += pending_moves_.size();  // attempts
-    std::get<1>(counts) += pending_moves_.size();  // rejects
-  }
-
+  finalizeMoves(pending_moves_, MoveStateType::ATTEMPT_REJECT);
   pending_moves_.clear();
+}
+
+void MoveTracker::beginJournal()
+{
+  pending_move_levels_.emplace();
+}
+
+void MoveTracker::commitJournal()
+{
+  if (pending_move_levels_.empty()) {
+    return;
+  }
+  std::vector<MoveStateData> level = std::move(pending_move_levels_.top());
+  pending_move_levels_.pop();
+  if (pending_move_levels_.empty()) {
+    // Outermost commit: the moves are now permanent.
+    finalizeMoves(level, MoveStateType::ATTEMPT_COMMIT);
+  } else {
+    // Nested commit: the moves stay pending against the parent journal so a
+    // later parent restore can still reject them.
+    std::vector<MoveStateData>& parent = pending_move_levels_.top();
+    for (MoveStateData& move : level) {
+      parent.push_back(std::move(move));
+    }
+  }
+}
+
+void MoveTracker::restoreJournal()
+{
+  if (pending_move_levels_.empty()) {
+    return;
+  }
+  // The journal's database edits were undone, so its moves are rejected
+  std::vector<MoveStateData> level = std::move(pending_move_levels_.top());
+  pending_move_levels_.pop();
+  finalizeMoves(level, MoveStateType::ATTEMPT_REJECT);
 }
 
 int MoveTracker::getVisitCount(const sta::Pin* pin) const

@@ -9,6 +9,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -28,7 +29,7 @@ class MBFFTestPeer
  public:
   static bool IsValidTray(MBFF* uut, odb::dbInst* tray)
   {
-    return uut->IsValidTray(tray);
+    return uut->network_->isValidTray(tray);
   }
 };
 

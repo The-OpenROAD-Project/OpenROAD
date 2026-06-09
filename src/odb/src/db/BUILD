@@ -17,6 +17,7 @@ cc_library(
         "*.inc",
     ]),
     hdrs = [
+        "//src/odb:include/odb/PtrSetMap.h",
         "//src/odb:include/odb/db.h",
         "//src/odb:include/odb/dbBlockCallBackObj.h",
         "//src/odb:include/odb/dbBlockSet.h",
@@ -53,7 +54,6 @@ cc_library(
     includes = ["../../include"],
     deps = [
         "//src/utl",
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.container",
         "@boost.geometry",

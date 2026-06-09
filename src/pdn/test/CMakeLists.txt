@@ -2,6 +2,7 @@ or_integration_tests(
   "pdn"
   TESTS
     add_double_global_connection
+    add_pdn_connect_backside_err
     asap7_failed_macro_covered
     asap7_failed_macro_grid
     asap7_macro_covered_partial
@@ -48,7 +49,9 @@ or_integration_tests(
     core_grid_strap_count
     core_grid_strap_outside_core
     core_grid_via_snap
+    core_grid_with_multiple_bterms
     core_grid_with_M6_min_area
+    core_grid_with_M6_min_area_rule
     core_grid_with_M7_pins
     core_grid_with_bterms
     core_grid_with_dual_rings
