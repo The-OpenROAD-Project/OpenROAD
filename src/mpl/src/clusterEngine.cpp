@@ -2210,11 +2210,13 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
                 || (!isVertical(candidate.second)
                     && !isVertical(second_candidate.second)))) {
           auto direction
-            = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+              = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
           if (direction == odb::dbTechLayerDir::VERTICAL) {
-            closest = isVertical(candidate.second) ? second_candidate.second : candidate.second;
+            closest = isVertical(candidate.second) ? second_candidate.second
+                                                   : candidate.second;
           } else {
-            closest = isVertical(candidate.second) ? candidate.second : second_candidate.second;
+            closest = isVertical(candidate.second) ? candidate.second
+                                                   : second_candidate.second;
           }
         }
 
