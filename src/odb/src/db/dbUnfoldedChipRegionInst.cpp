@@ -17,7 +17,7 @@
 #include "odb/dbSet.h"
 #include "odb/geom.h"
 // User Code Begin Includes
-#include "dbUnfoldedChipBumpInstItr.h"
+#include "dbUnfoldedChipBumpInstItr.h"  // IWYU pragma: keep
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbUnfoldedChipRegionInst>;

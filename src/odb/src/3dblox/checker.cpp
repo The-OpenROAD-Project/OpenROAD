@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
@@ -84,8 +85,7 @@ using AlignmentViolationReporter
                          const std::string&)>;
 
 void matchMarkersBetweenChips(
-    const std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>&
-        rules_by_master,
+    const PtrMap<dbMaster, std::vector<dbAlignmentMarkerRule*>>& rules_by_master,
     const std::vector<AlignmentMarkerIndex::Value>& list_a,
     const std::vector<AlignmentMarkerIndex::Value>& list_b,
     dbUnfoldedChipInst* c_a,
@@ -496,8 +496,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
 {
   // Build the per-master rule index. Local to this check; alignment-marker
   // rules are queried only here, so there's no point persisting it.
-  std::unordered_map<dbMaster*, std::vector<dbAlignmentMarkerRule*>>
-      rules_by_master;
+  PtrMap<dbMaster, std::vector<dbAlignmentMarkerRule*>> rules_by_master;
   for (dbAlignmentMarkerRule* rule : db_->getAlignmentMarkerRules()) {
     rules_by_master[rule->getMasterA()].push_back(rule);
     if (rule->getMasterB() != rule->getMasterA()) {
@@ -510,8 +509,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
 
   // Materialize the per-chip marker lists by walking each unfolded chip's
   // leaf block and filtering by master against the rule index.
-  std::unordered_map<dbUnfoldedChipInst*, std::vector<UnfoldedAlignmentMarker>>
-      markers;
+  PtrMap<dbUnfoldedChipInst, std::vector<UnfoldedAlignmentMarker>> markers;
   for (dbUnfoldedChipInst* chip : db_->getUnfoldedChipInsts()) {
     std::vector<dbChipInst*> path = chip->getChipInstPath();
     if (path.empty()) {

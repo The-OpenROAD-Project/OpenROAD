@@ -9,6 +9,9 @@
 #include "dbTable.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipRegionInst.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 
