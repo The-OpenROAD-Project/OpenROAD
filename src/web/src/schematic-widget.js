@@ -199,7 +199,7 @@ export class SchematicWidget {
         const wm = this.appState.websocketManager;
         if (!wm) return;
         console.log('[Schematic] inspect:', instName);
-        wm.request({ type: 'schematic_inspect', inst_name: instName })
+        wm.request({ type: 'schematic_inspect', inst_name: instName, use_dbu: this.appState.showDbu })
             .then(data => {
                 if (this.appState.updateInspector) {
                     this.appState.updateInspector(data);

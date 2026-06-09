@@ -501,15 +501,12 @@ export class RulerManager {
             ? Math.sqrt(dx * dx + dy * dy)
             : dx + dy;
 
-        const fmt = (dbu) => {
-            const um = dbu / dbuPerUm;
-            return um.toFixed(3) + ' um';
-        };
+        const fmt = (dbu) => this._app.formatDbu(dbu, true);
 
         const parseDbu = (str) => {
-            // Parse "123.456 um" → DBU
             const num = parseFloat(str);
             if (isNaN(num)) return null;
+            if (this._app.showDbu) return Math.round(num);
             return Math.round(num * dbuPerUm);
         };
 
@@ -623,11 +620,7 @@ export class RulerManager {
     }
 
     _formatDistance(dbuLength) {
-        const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
-        const um = dbuLength / dbuPerUm;
-        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
-        if (um >= 1) return um.toFixed(3) + ' um';
-        return (um * 1000).toFixed(1) + ' nm';
+        return this._app.formatDistance(dbuLength);
     }
 
     _setCursor(crosshair) {

@@ -157,6 +157,7 @@ RDLRouter::RDLRouter(
     int width,
     int spacing,
     bool allow45,
+    bool fixed,
     float turn_penalty,
     int max_iterations)
     : logger_(logger),
@@ -167,6 +168,7 @@ RDLRouter::RDLRouter(
       width_(width),
       spacing_(spacing),
       allow45_(allow45),
+      fixed_(fixed),
       turn_penalty_(turn_penalty),
       max_router_iterations_(max_iterations),
       routing_map_(routing_map),
@@ -1729,7 +1731,8 @@ void RDLRouter::writeToDb(odb::dbNet* net,
     return;
   }
 
-  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  odb::dbSWire* swire = odb::dbSWire::create(
+      net, fixed_ ? odb::dbWireType::FIXED : odb::dbWireType::ROUTED);
   for (const odb::Rect& stub : stubs) {
     odb::dbSBox::create(swire,
                         layer_,
