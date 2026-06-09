@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -452,6 +453,89 @@ GlobalSizingPolicy::DesignSnap GlobalSizingPolicy::computeDesignSnap() const
   return s;
 }
 
+void GlobalSizingPolicy::computeSlackBudgets()
+{
+  // Per-vertex downsize budget = max(0, slack(v) - margin) / depth(v), where
+  // depth(v) is the gate count on the longest path through v. Distributing by
+  // depth bounds the per-path budget sum by the path slack; using v's own
+  // (worst-path) slack keeps each gate safe on all its paths. Recomputed each
+  // sweep from the live slacks.
+  const size_t n = static_cast<size_t>(graph_->vertexCount()) + 1;
+
+  std::vector<sta::Vertex*> vertices;
+  {
+    sta::VertexIterator vit(graph_);
+    while (vit.hasNext()) {
+      vertices.push_back(vit.next());
+    }
+  }
+  std::ranges::sort(vertices, [](const sta::Vertex* a, const sta::Vertex* b) {
+    return a->level() < b->level();
+  });
+
+  // A gate-internal (cell) arc has both pins on the same leaf instance; only
+  // these add a gate-delay term to a path, so only these increment the depth.
+  auto is_gate_arc = [this](sta::Edge* e) {
+    const sta::Instance* fi = network_->instance(e->from(graph_)->pin());
+    const sta::Instance* ti = network_->instance(e->to(graph_)->pin());
+    return fi != nullptr && fi == ti;
+  };
+
+  // Forward pass (increasing level): gates from a source up to and including v.
+  std::vector<int> fwd(n, 0);
+  for (sta::Vertex* v : vertices) {
+    int best = 0;
+    sta::VertexInEdgeIterator ieit(v, graph_);
+    while (ieit.hasNext()) {
+      sta::Edge* e = ieit.next();
+      if (!isDataArc(e)) {
+        continue;
+      }
+      const sta::VertexId uid = graph_->id(e->from(graph_));
+      best = std::max(best, fwd[uid] + (is_gate_arc(e) ? 1 : 0));
+    }
+    fwd[graph_->id(v)] = best;
+  }
+
+  // Backward pass (decreasing level): gates from v (exclusive) to a sink.
+  std::vector<int> bwd(n, 0);
+  for (sta::Vertex* v : std::views::reverse(vertices)) {
+    int best = 0;
+    sta::VertexOutEdgeIterator oeit(v, graph_);
+    while (oeit.hasNext()) {
+      sta::Edge* e = oeit.next();
+      if (!isDataArc(e)) {
+        continue;
+      }
+      const sta::VertexId wid = graph_->id(e->to(graph_));
+      best = std::max(best, bwd[wid] + (is_gate_arc(e) ? 1 : 0));
+    }
+    bwd[graph_->id(v)] = best;
+  }
+
+  const float margin = lr_params_.setup_slack_margin;
+  const float kSlackSentinel = 1e6f;
+  vertex_budget_.assign(n, 0.0f);
+  for (sta::Vertex* v : vertices) {
+    const sta::VertexId vid = graph_->id(v);
+    const int depth = std::max(1, fwd[vid] + bwd[vid]);
+    const float slack = sta::delayAsFloat(sta_->slack(v, policy_max_));
+    // Unconstrained vertices (no real required time) report a sentinel slack;
+    // leave them effectively unbudgeted so genuinely free gates can downsize.
+    vertex_budget_[vid]
+        = (slack >= kSlackSentinel)
+              ? kSlackSentinel
+              : std::max(0.0f, slack - margin) / static_cast<float>(depth);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "global_sizing",
+             2,
+             "LR budgets: {} vertices, margin={}",
+             n - 1,
+             sta::delayAsString(margin, 3, sta_));
+}
+
 std::vector<LRSubproblem::GateSnapshot> GlobalSizingPolicy::buildSnapshots()
 {
   // Phase A (main thread, delays valid): freeze each evaluable gate's
@@ -459,13 +543,19 @@ std::vector<LRSubproblem::GateSnapshot> GlobalSizingPolicy::buildSnapshots()
   // getSwappableCells / cellLeakage / net-driver caches, so the subsequent
   // parallel phase touches none of them.
   const int lambda_size = static_cast<int>(lambda_.size());
+  const int budget_size = static_cast<int>(vertex_budget_.size());
   std::vector<LRSubproblem::GateSnapshot> snapshots;
   std::unique_ptr<sta::LeafInstanceIterator> iit(
       network_->leafInstanceIterator());
   while (iit->hasNext()) {
     sta::Instance* inst = iit->next();
     LRSubproblem::GateSnapshot snap;
-    if (subproblem_->snapshot(inst, lambda_.data(), lambda_size, snap)) {
+    if (subproblem_->snapshot(inst,
+                              lambda_.data(),
+                              lambda_size,
+                              vertex_budget_.data(),
+                              budget_size,
+                              snap)) {
       snapshots.push_back(std::move(snap));
     }
   }
@@ -549,18 +639,22 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::applyDecisions(
 GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
     const float timing_weight)
 {
-  // Phase A: Freeze per-gate state.
+  // Phase A: Distribute the slack into per-vertex budgets, then freeze per-gate
+  // state (which reads those budgets).
+  computeSlackBudgets();
   std::vector<LRSubproblem::GateSnapshot> snapshots = buildSnapshots();
 
   // Phase B: Score every snapshot independently. Each worker uses its own
   // ArcDelayCalc copy (arc_delay_calc_ is single-threaded shared state); the
   // copy is cached per worker thread and refreshed if the source changes. With
   // a zero-worker pool this runs inline on the calling thread.
+  const float safety = lr_params_.budget_safety_factor;
   sta::ArcDelayCalc* const src = sta_->arcDelayCalc();
   const std::vector<LRSubproblem::GateDecision> decisions
       = thread_pool_->parallelMap(
           snapshots,
-          [this, timing_weight, src](const LRSubproblem::GateSnapshot& snap) {
+          [this, timing_weight, safety, src](
+              const LRSubproblem::GateSnapshot& snap) {
             static thread_local sta::ArcDelayCalc* cached_src = nullptr;
             static thread_local std::unique_ptr<sta::ArcDelayCalc> adc;
             if (adc == nullptr || cached_src != src) {
@@ -568,7 +662,7 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
               cached_src = src;
             }
             return subproblem_->evaluateSnapshot(
-                snap, timing_weight, adc.get());
+                snap, timing_weight, safety, adc.get());
           });
 
   // Phase C: Apply accepted moves serially.

@@ -45,6 +45,11 @@ struct LRParams
   // Dimensionless balance between timing pressure and leakage cost.
   // bias = 1.0 keeps Σλ·d (scaled) ≈ leakage cost on the median gate.
   float timing_bias = 64.0f;
+  // Safety derate (<= 1) on the per-gate distributed downsize budget. The
+  // depth-normalized distribution already guarantees per-path budget sums
+  // <= path slack, so 1.0 is feasible in theory; a value < 1 adds margin for
+  // the un-modeled slew cascade / estimated-vs-routed parasitic gap.
+  float budget_safety_factor = 1.0f;
 };
 
 // GlobalSizingPolicy: Lagrangian-Relaxation-driven global sizing + Vt
@@ -102,6 +107,14 @@ class GlobalSizingPolicy : public OptimizationPolicy
   // after this returns.
   SweepStats singleSweep(float timing_weight);
 
+  // Phase A pre-pass: Compute the per-vertex depth-normalized downsize budget
+  //   budget(v) = max(0, slack(v) - margin) / depth(v)
+  // where depth(v) is the gate count on the longest path through v.
+  // Distributing by depth guarantees the per-path sum of budgets <= path slack,
+  // while using each vertex's own (worst-path) slack keeps every gate within
+  // all its paths.
+  void computeSlackBudgets();
+
   // Phase A: Capture the frozen per-gate snapshots for every evaluable leaf
   // instance, in a stable order. Reads live STA and warms the lazy
   // Liberty/dbNetwork caches on the main thread.
@@ -138,6 +151,9 @@ class GlobalSizingPolicy : public OptimizationPolicy
 
   // Per-edge multipliers, indexed by sta::Edge::id (sparse)
   std::vector<float> lambda_;
+  // Per-vertex depth-normalized downsize budget, indexed by sta::Graph vertex
+  // id. Rebuilt each sweep by computeSlackBudgets().
+  std::vector<float> vertex_budget_;
   // Per-endpoint multipliers, indexed by a dense endpoint index
   std::vector<float> mu_;
   // Dense endpoint bookkeeping
