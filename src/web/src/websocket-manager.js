@@ -33,11 +33,16 @@ const MAX_BUFFERED_BYTES = 512 * 1024;
 //   2. We are saturated (in-flight at the cap) with work still queued, yet have
 //      heard nothing back for DEAD_MS. A slow render is one slow reply among
 //      fast ones, so replies keep flowing; total silence while saturated and
-//      backed up means the server stopped servicing us entirely.
+//      backed up means the server stopped servicing us entirely. This only ever
+//      arms during a request flood (the window is full with more queued) — a
+//      lone slow command (e.g. a timing query that triggers an STA update)
+//      never saturates the window, so it cannot trip this. DEAD_MS is also set
+//      well beyond any plausible single render so a saturated-but-slow burst
+//      can't be mistaken for a dead server.
 // On either, we force-close the socket so onclose reconnects and recovers.
 const STUCK_BYTES = 256 * 1024;
 const STUCK_MS = 12000;
-const DEAD_MS = 15000;
+const DEAD_MS = 30000;
 const LIVENESS_INTERVAL_MS = 3000;
 
 export class WebSocketManager {
@@ -128,34 +133,62 @@ export class WebSocketManager {
             this.handleMessage(event.data);
         };
 
-        this.socket.onclose = () => {
-            this._isConnected = false;
-            this._inFlight = 0;
-            this._bufStuckSince = 0;
-            this.onStatusChange();
-            for (const [id, handler] of this.pending) {
-                handler.reject(new Error('WebSocket closed'));
-            }
-            this.pending.clear();
-            // Drop anything still queued — it never reached the wire. Reject so
-            // callers settle; tile callers .catch() and re-request on reconnect.
-            for (const [id, entry] of this._queue) {
-                entry.reject(new Error('WebSocket closed'));
-            }
-            this._queue.clear();
-            if (this._shutdown) {
-                console.log('WebSocket closed (server stopped)');
-                this._stopLivenessMonitor(); // no socket will reopen
-                return; // don't reconnect after intentional shutdown
-            }
-            console.log('WebSocket closed, reconnecting...');
-            setTimeout(() => this.connect(), this.reconnectDelay);
-            this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
-        };
+        this.socket.onclose = () => this._handleClose();
 
         this.socket.onerror = (err) => {
             console.error('WebSocket error:', err);
         };
+    }
+
+    // Tear down after the socket is gone (rejecting outstanding work) and
+    // schedule a reconnect unless the server told us to shut down. Invoked by
+    // socket.onclose and, for a wedged socket, directly by _forceReconnect().
+    _handleClose() {
+        this._isConnected = false;
+        this._inFlight = 0;
+        this._bufStuckSince = 0;
+        this.onStatusChange();
+        for (const [id, handler] of this.pending) {
+            handler.reject(new Error('WebSocket closed'));
+        }
+        this.pending.clear();
+        // Drop anything still queued — it never reached the wire. Reject so
+        // callers settle; tile callers .catch() and re-request on reconnect.
+        for (const [id, entry] of this._queue) {
+            entry.reject(new Error('WebSocket closed'));
+        }
+        this._queue.clear();
+        if (this._shutdown) {
+            console.log('WebSocket closed (server stopped)');
+            this._stopLivenessMonitor(); // no socket will reopen
+            return; // don't reconnect after intentional shutdown
+        }
+        console.log('WebSocket closed, reconnecting...');
+        setTimeout(() => this.connect(), this.reconnectDelay);
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
+    }
+
+    // Abandon a wedged socket and reconnect now, without waiting for close()
+    // to fire onclose. When the send buffer is stuck, close() only starts its
+    // handshake after the already-buffered bytes drain (which they aren't), so
+    // onclose may not arrive until the TCP timeout — minutes away. Detach the
+    // dead socket's handlers so it can no longer drive our state, run the same
+    // teardown onclose would, then let _handleClose() schedule the reconnect.
+    _forceReconnect() {
+        const dead = this.socket;
+        this.socket = null;
+        if (dead) {
+            dead.onopen = null;
+            dead.onmessage = null;
+            dead.onclose = null;
+            dead.onerror = null;
+            try {
+                dead.close(); // best effort; we no longer depend on it
+            } catch (e) {
+                /* already gone */
+            }
+        }
+        this._handleClose();
     }
 
     handleMessage(data) {
@@ -359,13 +392,11 @@ export class WebSocketManager {
 
         if (wedged) {
             console.warn(`WebSocket connection wedged — ${why}; `
-                + `closing to recover`);
+                + `reconnecting to recover`);
             this._bufStuckSince = 0;
-            try {
-                s.close(); // onclose clears state, rejects pending, reconnects
-            } catch (e) {
-                /* onclose still fires */
-            }
+            // Don't depend on close()/onclose: a stuck send buffer can defer
+            // the close handshake indefinitely. Reconnect immediately.
+            this._forceReconnect();
         }
     }
 

@@ -341,10 +341,15 @@ describe('WebSocketManager liveness', () => {
             mgr._queue.set(99999, { msg: {}, resolve() {}, reject() {} });
             mgr._lastRecvAt = t0;
 
-            const before = mgr.socket.closeCount;
+            const dead = mgr.socket;
+            const before = dead.closeCount;
             mgr._checkLiveness();
-            assert.equal(mgr.socket.closeCount, before + 1,
-                'a wedged connection is closed so onclose can reconnect');
+            assert.equal(dead.closeCount, before + 1,
+                'a wedged connection is closed');
+            assert.equal(dead.onclose, null,
+                'the wedged socket is detached so it cannot drive our state');
+            assert.notEqual(mgr.socket, dead,
+                'we reconnect without waiting for the dead socket to close');
         } finally {
             performance.now = realNow;
         }
@@ -365,6 +370,45 @@ describe('WebSocketManager liveness', () => {
         assert.equal(mgr.socket.closeCount, before, 'idle socket left alone');
     });
 
+    it('does not kill a lone slow command (e.g. a timing/STA update)',
+       async () => {
+        // Emulates a server query that triggers an actual STA update: a single
+        // request is on the wire, nothing is queued behind it, and the server
+        // is silent for far longer than DEAD_MS while it computes. This must
+        // NOT be treated as a dead connection — a lone slow command never
+        // saturates the in-flight window (so Signature 2 cannot arm), and its
+        // small payload never fills the send buffer (so Signature 1 cannot
+        // arm). Only a request flood that saturates the window is a wedge.
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+
+        const realNow = performance.now.bind(performance);
+        const t0 = realNow();
+        try {
+            // Issue one request; _pump() puts it on the wire and we await the
+            // reply. .catch() so the never-settled promise isn't flagged.
+            mgr.request({ type: 'timing_report' }).catch(() => {});
+            assert.equal(mgr._inFlight, 1, 'one request in flight');
+            assert.equal(mgr._queue.size, 0, 'nothing queued behind it');
+            // Bytes left the client (the server is busy, not the transport).
+            mgr.socket.bufferedAmount = 0;
+            mgr._lastRecvAt = t0;
+
+            const dead = mgr.socket;
+            const before = dead.closeCount;
+
+            // 120s later the STA update still hasn't replied — way past DEAD_MS.
+            performance.now = () => t0 + 120000;
+            mgr._checkLiveness();
+
+            assert.equal(mgr.socket, dead, 'connection not abandoned');
+            assert.equal(dead.closeCount, before,
+                'a lone slow command is not mistaken for a dead connection');
+        } finally {
+            performance.now = realNow;
+        }
+    });
+
     it('force-closes when the send buffer is stuck', async () => {
         const mgr = new WebSocketManager('ws://fake');
         await mgr.readyPromise;
@@ -373,18 +417,21 @@ describe('WebSocketManager liveness', () => {
         const t0 = realNow();
         try {
             // Buffer above threshold and not draining across successive checks.
-            mgr.socket.bufferedAmount = 4 * 1024 * 1024;
-            const before = mgr.socket.closeCount;
+            const dead = mgr.socket;
+            dead.bufferedAmount = 4 * 1024 * 1024;
+            const before = dead.closeCount;
 
             performance.now = () => t0;       // first check arms the stuck timer
             mgr._checkLiveness();
-            assert.equal(mgr.socket.closeCount, before,
+            assert.equal(dead.closeCount, before,
                 'not yet — needs to persist');
 
             performance.now = () => t0 + 100000; // 100s later, still not draining
             mgr._checkLiveness();
-            assert.equal(mgr.socket.closeCount, before + 1,
+            assert.equal(dead.closeCount, before + 1,
                 'a non-draining send buffer is treated as wedged');
+            assert.notEqual(mgr.socket, dead,
+                'we reconnect without waiting for the dead socket to close');
         } finally {
             performance.now = realNow;
         }
