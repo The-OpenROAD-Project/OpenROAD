@@ -2188,29 +2188,49 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     }
 
     for (odb::dbMPin* mpin : mterm->getMPins()) {
-      auto direction
-          = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::Rect pin_rect = box->getBox();
 
-        if (direction == odb::dbTechLayerDir::HORIZONTAL) {
-          int dist_left = pin_rect.xMin();
-          int dist_right = master->getWidth() - pin_rect.xMax();
+        std::vector<std::pair<int, Boundary>> dist_to_boundary{
+            {pin_rect.xMin(), Boundary::L},
+            {pin_rect.yMin(), Boundary::B},
+            {master->getWidth() - pin_rect.xMax(), Boundary::R},
+            {master->getHeight() - pin_rect.yMax(), Boundary::T}};
 
-          if (dist_left < dist_right) {
-            halo.left = full_halo.left;
+        std::ranges::sort(dist_to_boundary);
+
+        Boundary closest = dist_to_boundary[0].second;
+
+        auto& candidate = dist_to_boundary[0];
+        auto& second_candidate = dist_to_boundary[1];
+        // The two closest boundaries are in different directions
+        if ((candidate.first == second_candidate.first)
+            && ((isVertical(candidate.second)
+                 && isVertical(second_candidate.second))
+                || (!isVertical(candidate.second)
+                    && !isVertical(second_candidate.second)))) {
+          auto direction
+            = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+          if (direction == odb::dbTechLayerDir::VERTICAL) {
+            closest = isVertical(candidate.second) ? second_candidate.second : candidate.second;
           } else {
-            halo.right = full_halo.right;
+            closest = isVertical(candidate.second) ? candidate.second : second_candidate.second;
           }
-        } else {
-          int dist_bottom = pin_rect.yMin();
-          int dist_top = master->getHeight() - pin_rect.yMax();
+        }
 
-          if (dist_bottom < dist_top) {
+        switch (closest) {
+          case Boundary::B:
             halo.bottom = full_halo.bottom;
-          } else {
+            break;
+          case Boundary::L:
+            halo.left = full_halo.left;
+            break;
+          case Boundary::T:
             halo.top = full_halo.top;
-          }
+            break;
+          case Boundary::R:
+            halo.right = full_halo.right;
+            break;
         }
       }
     }
