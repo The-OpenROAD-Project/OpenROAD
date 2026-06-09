@@ -942,13 +942,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp,
-                     int num_threads)
-    : db_(db),
-      sta_(sta),
-      logger_(logger),
-      interp_(interp),
-      num_threads_(num_threads)
+                     Tcl_Interp* interp)
+    : db_(db), sta_(sta), logger_(logger), interp_(interp), num_threads_(1)
 {
 }
 
