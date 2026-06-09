@@ -460,15 +460,17 @@ void GlobalSizingPolicy::computeSlackBudgets()
   // depth bounds the per-path budget sum by the path slack; using v's own
   // (worst-path) slack keeps each gate safe on all its paths. Recomputed each
   // sweep from the live slacks.
-  const size_t n = static_cast<size_t>(graph_->vertexCount()) + 1;
-
   std::vector<sta::Vertex*> vertices;
+  size_t max_id = 0;
   {
     sta::VertexIterator vit(graph_);
     while (vit.hasNext()) {
-      vertices.push_back(vit.next());
+      sta::Vertex* v = vit.next();
+      vertices.push_back(v);
+      max_id = std::max(max_id, static_cast<size_t>(graph_->id(v)));
     }
   }
+  const size_t n = max_id + 1;
   std::ranges::sort(vertices, [](const sta::Vertex* a, const sta::Vertex* b) {
     return a->level() < b->level();
   });
@@ -531,8 +533,9 @@ void GlobalSizingPolicy::computeSlackBudgets()
              RSZ,
              "global_sizing",
              2,
-             "LR budgets: {} vertices, margin={}",
-             n - 1,
+             "LR budgets: {} vertices (max id {}), margin={}",
+             vertices.size(),
+             max_id,
              sta::delayAsString(margin, 3, sta_));
 }
 
