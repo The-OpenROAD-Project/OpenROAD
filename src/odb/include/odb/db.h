@@ -179,10 +179,10 @@ class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 class dbUnfoldedChipBumpInst;
+class dbUnfoldedChipConn;
 class dbUnfoldedChipInst;
 class dbUnfoldedChipNet;
 class dbUnfoldedChipRegionInst;
-class dbUnfoldedConn;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -7629,7 +7629,7 @@ class dbDatabase : public dbObject
 
   dbSet<dbUnfoldedChipBumpInst> getUnfoldedChipBumpInsts() const;
 
-  dbSet<dbUnfoldedConn> getUnfoldedConns() const;
+  dbSet<dbUnfoldedChipConn> getUnfoldedChipConns() const;
 
   dbSet<dbUnfoldedChipNet> getUnfoldedChipNets() const;
 
@@ -11422,6 +11422,16 @@ class dbUnfoldedChipBumpInst : public dbObject
   // User Code End dbUnfoldedChipBumpInst
 };
 
+class dbUnfoldedChipConn : public dbObject
+{
+ public:
+  dbChipConn* getChipConn() const;
+
+  dbUnfoldedChipRegionInst* getTopRegion() const;
+
+  dbUnfoldedChipRegionInst* getBottomRegion() const;
+};
+
 class dbUnfoldedChipInst : public dbObject
 {
  public:
@@ -11488,16 +11498,6 @@ class dbUnfoldedChipRegionInst : public dbObject
 
   dbSet<dbUnfoldedChipBumpInst> getBumps() const;
   // User Code End dbUnfoldedChipRegionInst
-};
-
-class dbUnfoldedConn : public dbObject
-{
- public:
-  dbChipConn* getChipConn() const;
-
-  dbUnfoldedChipRegionInst* getTopRegion() const;
-
-  dbUnfoldedChipRegionInst* getBottomRegion() const;
 };
 
 // Generator Code End ClassDefinition

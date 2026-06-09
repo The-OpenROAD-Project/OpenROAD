@@ -19,7 +19,7 @@ class _dbUnfoldedChipBumpInst;
 
 struct dbUnfoldedChipRegionInstFlags
 {
-  uint32_t effective_side_ : 2 = 0;
+  uint32_t effective_side_ : 2;
   uint32_t spare_bits : 30;
 };
 

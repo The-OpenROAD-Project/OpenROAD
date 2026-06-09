@@ -16,21 +16,24 @@ class _dbDatabase;
 class _dbChipConn;
 class _dbUnfoldedChipRegionInst;
 
-class _dbUnfoldedConn : public _dbObject
+class _dbUnfoldedChipConn : public _dbObject
 {
  public:
-  _dbUnfoldedConn(_dbDatabase*);
+  _dbUnfoldedChipConn(_dbDatabase*);
 
-  bool operator==(const _dbUnfoldedConn& rhs) const;
-  bool operator!=(const _dbUnfoldedConn& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbUnfoldedConn& rhs) const;
+  bool operator==(const _dbUnfoldedChipConn& rhs) const;
+  bool operator!=(const _dbUnfoldedChipConn& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbUnfoldedChipConn& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbChipConn> chip_conn_;
   dbId<_dbUnfoldedChipRegionInst> top_region_;
   dbId<_dbUnfoldedChipRegionInst> bottom_region_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedConn& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedConn& obj);
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipConn& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipConn& obj);
 }  // namespace odb
 // Generator Code End Header

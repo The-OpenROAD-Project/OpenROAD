@@ -182,7 +182,7 @@ const char* sideToString(dbUnfoldedChipRegionInst::EffectiveSide side)
   return "UNKNOWN";
 }
 
-MatingSurfaces getMatingSurfaces(dbUnfoldedConn* conn)
+MatingSurfaces getMatingSurfaces(dbUnfoldedChipConn* conn)
 {
   dbUnfoldedChipRegionInst* r1 = conn->getTopRegion();
   dbUnfoldedChipRegionInst* r2 = conn->getBottomRegion();
@@ -205,7 +205,7 @@ MatingSurfaces getMatingSurfaces(dbUnfoldedConn* conn)
       .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
 }
 
-bool isValid(dbUnfoldedConn* conn)
+bool isValid(dbUnfoldedChipConn* conn)
 {
   auto* r1 = conn->getTopRegion();
   auto* r2 = conn->getBottomRegion();
@@ -268,7 +268,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
     chip_map[chips[i]] = i;
   }
 
-  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
     if (isValid(conn)) {
       // Case 1: Both regions exist - connect the two chips together
       if (conn->getTopRegion() && conn->getBottomRegion()) {
@@ -379,7 +379,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
   // The struct model maintained an isUsed bit on each region; in the
   // dbObject model we derive it here on demand by scanning connections.
   std::unordered_set<dbUnfoldedChipRegionInst*> used;
-  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
     if (auto* r = conn->getTopRegion(); r && r->isInternalExt()) {
       used.insert(r);
     }
@@ -426,7 +426,7 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
   };
   int count = 0;
   dbMarkerCategory* cat = nullptr;
-  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
     if (!isValid(conn)) {
       if (!cat) {
         cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
@@ -550,7 +550,7 @@ void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat)
     violation_count++;
   };
 
-  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
     if (!isValid(conn)) {
       continue;
     }
@@ -623,7 +623,7 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
   };
 
   dbMarkerCategory* cat = nullptr;
-  for (dbUnfoldedConn* conn : db_->getUnfoldedConns()) {
+  for (dbUnfoldedChipConn* conn : db_->getUnfoldedChipConns()) {
     if (!isValid(conn)) {
       continue;
     }

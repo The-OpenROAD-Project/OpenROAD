@@ -17,10 +17,10 @@
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "dbUnfoldedChipBumpInst.h"
+#include "dbUnfoldedChipConn.h"
 #include "dbUnfoldedChipInst.h"
 #include "dbUnfoldedChipNet.h"
 #include "dbUnfoldedChipRegionInst.h"
-#include "dbUnfoldedConn.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 
@@ -74,7 +74,7 @@ void dbUnfoldedBuilder::build()
   db_->unfolded_chip_inst_tbl_->clear();
   db_->unfolded_chip_region_inst_tbl_->clear();
   db_->unfolded_chip_bump_inst_tbl_->clear();
-  db_->unfolded_conn_tbl_->clear();
+  db_->unfolded_chip_conn_tbl_->clear();
   db_->unfolded_chip_net_tbl_->clear();
   chip_by_path_.clear();
   region_map_.clear();
@@ -229,7 +229,7 @@ void dbUnfoldedBuilder::unfoldConnections(
       }
     }
     if (top_region.isValid() || bot_region.isValid()) {
-      _dbUnfoldedConn* uf_conn = db_->unfolded_conn_tbl_->create();
+      _dbUnfoldedChipConn* uf_conn = db_->unfolded_chip_conn_tbl_->create();
       uf_conn->chip_conn_ = conn->getImpl()->getOID();
       uf_conn->top_region_ = top_region;
       uf_conn->bottom_region_ = bot_region;

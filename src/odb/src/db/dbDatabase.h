@@ -293,7 +293,7 @@ class _dbChipNet;
 class _dbUnfoldedChipInst;
 class _dbUnfoldedChipRegionInst;
 class _dbUnfoldedChipBumpInst;
-class _dbUnfoldedConn;
+class _dbUnfoldedChipConn;
 class _dbUnfoldedChipNet;
 // User Code Begin Classes
 class dbPropertyItr;
@@ -348,7 +348,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbUnfoldedChipInst>* unfolded_chip_inst_tbl_;
   dbTable<_dbUnfoldedChipRegionInst>* unfolded_chip_region_inst_tbl_;
   dbTable<_dbUnfoldedChipBumpInst>* unfolded_chip_bump_inst_tbl_;
-  dbTable<_dbUnfoldedConn>* unfolded_conn_tbl_;
+  dbTable<_dbUnfoldedChipConn>* unfolded_chip_conn_tbl_;
   dbTable<_dbUnfoldedChipNet>* unfolded_chip_net_tbl_;
 
   // User Code Begin Fields

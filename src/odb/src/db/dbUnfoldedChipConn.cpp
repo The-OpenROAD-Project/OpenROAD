@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 // Generator Code Begin Cpp
-#include "dbUnfoldedConn.h"
+#include "dbUnfoldedChipConn.h"
 
 #include "dbChipConn.h"
 #include "dbCore.h"
@@ -11,9 +11,9 @@
 #include "dbUnfoldedChipRegionInst.h"
 #include "odb/db.h"
 namespace odb {
-template class dbTable<_dbUnfoldedConn>;
+template class dbTable<_dbUnfoldedChipConn>;
 
-bool _dbUnfoldedConn::operator==(const _dbUnfoldedConn& rhs) const
+bool _dbUnfoldedChipConn::operator==(const _dbUnfoldedChipConn& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (chip_conn_ != rhs.chip_conn_) {
@@ -30,16 +30,16 @@ bool _dbUnfoldedConn::operator==(const _dbUnfoldedConn& rhs) const
   // NOLINTEND(readability-simplify-boolean-expr)
 }
 
-bool _dbUnfoldedConn::operator<(const _dbUnfoldedConn& rhs) const
+bool _dbUnfoldedChipConn::operator<(const _dbUnfoldedChipConn& rhs) const
 {
   return true;
 }
 
-_dbUnfoldedConn::_dbUnfoldedConn(_dbDatabase* db)
+_dbUnfoldedChipConn::_dbUnfoldedChipConn(_dbDatabase* db)
 {
 }
 
-dbIStream& operator>>(dbIStream& stream, _dbUnfoldedConn& obj)
+dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipConn& obj)
 {
   stream >> obj.chip_conn_;
   stream >> obj.top_region_;
@@ -47,7 +47,7 @@ dbIStream& operator>>(dbIStream& stream, _dbUnfoldedConn& obj)
   return stream;
 }
 
-dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedConn& obj)
+dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedChipConn& obj)
 {
   stream << obj.chip_conn_;
   stream << obj.top_region_;
@@ -55,7 +55,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbUnfoldedConn& obj)
   return stream;
 }
 
-void _dbUnfoldedConn::collectMemInfo(MemInfo& info)
+void _dbUnfoldedChipConn::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
@@ -63,13 +63,13 @@ void _dbUnfoldedConn::collectMemInfo(MemInfo& info)
 
 ////////////////////////////////////////////////////////////////////
 //
-// dbUnfoldedConn - Methods
+// dbUnfoldedChipConn - Methods
 //
 ////////////////////////////////////////////////////////////////////
 
-dbChipConn* dbUnfoldedConn::getChipConn() const
+dbChipConn* dbUnfoldedChipConn::getChipConn() const
 {
-  _dbUnfoldedConn* obj = (_dbUnfoldedConn*) this;
+  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
   if (obj->chip_conn_ == 0) {
     return nullptr;
   }
@@ -77,9 +77,9 @@ dbChipConn* dbUnfoldedConn::getChipConn() const
   return (dbChipConn*) par->chip_conn_tbl_->getPtr(obj->chip_conn_);
 }
 
-dbUnfoldedChipRegionInst* dbUnfoldedConn::getTopRegion() const
+dbUnfoldedChipRegionInst* dbUnfoldedChipConn::getTopRegion() const
 {
-  _dbUnfoldedConn* obj = (_dbUnfoldedConn*) this;
+  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
   if (obj->top_region_ == 0) {
     return nullptr;
   }
@@ -88,9 +88,9 @@ dbUnfoldedChipRegionInst* dbUnfoldedConn::getTopRegion() const
       par->unfolded_chip_region_inst_tbl_->getPtr(obj->top_region_);
 }
 
-dbUnfoldedChipRegionInst* dbUnfoldedConn::getBottomRegion() const
+dbUnfoldedChipRegionInst* dbUnfoldedChipConn::getBottomRegion() const
 {
-  _dbUnfoldedConn* obj = (_dbUnfoldedConn*) this;
+  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
   if (obj->bottom_region_ == 0) {
     return nullptr;
   }

@@ -586,9 +586,9 @@
     },
     {
       "parent":"dbDatabase",
-      "child":"dbUnfoldedConn",
+      "child":"dbUnfoldedChipConn",
       "type":"1_n",
-      "tbl_name":"unfolded_conn_tbl_",
+      "tbl_name":"unfolded_chip_conn_tbl_",
       "flags": ["no-serial"]
     },
     {

@@ -24,7 +24,6 @@
     {
       "name": "effective_side_",
       "type": "uint32_t",
-      "default": 0,
       "bits": 2,
       "flags": ["private"]
     },
