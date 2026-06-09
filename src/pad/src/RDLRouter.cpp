@@ -55,10 +55,10 @@ int64_t integerSqrt(const int64_t value)
     return 0;
   }
   int64_t root = static_cast<int64_t>(std::sqrt(static_cast<double>(value)));
-  while (root > 0 && root * root > value) {
+  while (root > 0 && root > value / root) {
     root--;
   }
-  while ((root + 1) * (root + 1) <= value) {
+  while (value / (root + 1) >= (root + 1)) {
     root++;
   }
   return root;
