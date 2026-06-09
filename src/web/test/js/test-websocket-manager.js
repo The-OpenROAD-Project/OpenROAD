@@ -376,9 +376,9 @@ describe('WebSocketManager liveness', () => {
         // request is on the wire, nothing is queued behind it, and the server
         // is silent for far longer than DEAD_MS while it computes. This must
         // NOT be treated as a dead connection — a lone slow command never
-        // saturates the in-flight window (so Signature 2 cannot arm), and its
+        // saturates the in-flight window (so Signature 2 cannot setup), and its
         // small payload never fills the send buffer (so Signature 1 cannot
-        // arm). Only a request flood that saturates the window is a wedge.
+        // setup). Only a request flood that saturates the window is a wedge.
         const mgr = new WebSocketManager('ws://fake');
         await mgr.readyPromise;
 
