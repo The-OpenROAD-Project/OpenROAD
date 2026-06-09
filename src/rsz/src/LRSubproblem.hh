@@ -125,6 +125,14 @@ class LRSubproblem : public sta::dbStaState
     sta::LibertyCell* cur_cell = nullptr;
     float cur_leakage = 0.0f;
     const sta::Scene* scene = nullptr;
+    // Distributed downsize budget for this gate: the min over its output pins
+    // of the depth-normalized slack budget  max(0, slack - margin) / depth,
+    // frozen on the main thread (computed by the policy's computeSlackBudgets).
+    // A downsize may add at most this much delay on any output pin (times a
+    // safety factor). Because the per-path sum of these budgets is <= the path
+    // slack, simultaneous (Jacobi) downsizes within budget cannot overshoot a
+    // path.
+    float budget = 0.0f;
     std::vector<OutputCtx> outputs;
     std::vector<UpstreamCtx> upstream;
     std::vector<InputMaxCapCtx> inputs;
@@ -153,17 +161,23 @@ class LRSubproblem : public sta::dbStaState
   // MAIN THREAD ONLY. Capture the frozen state needed to evaluate `inst`.
   // Returns false (and leaves `snap` unspecified) when `inst` is don't-touch,
   // has no liberty cell, or has no usable output pin. `lambda` is indexed by
-  // sta::Edge::id (sparse, size `lambda_size`).
+  // sta::Edge::id (sparse, size `lambda_size`). `budget` is the per-vertex
+  // depth-normalized downsize budget indexed by sta::Graph vertex id (size
+  // `budget_size`); the gate's frozen budget is the min over its output pins.
   bool snapshot(sta::Instance* inst,
                 const float* lambda,
                 int lambda_size,
+                const float* budget,
+                int budget_size,
                 GateSnapshot& snap);
 
   // WORKER SAFE. Evaluate the subproblem for a prepared snapshot using the
   // caller-provided per-thread ArcDelayCalc. `timing_weight` scales the Σλ·d
-  // timing term against the leakage objective.
+  // timing term against the leakage objective. `budget_safety` (<= 1) scales
+  // the gate's frozen downsize budget in the feasibility guard.
   GateDecision evaluateSnapshot(const GateSnapshot& snap,
                                 float timing_weight,
+                                float budget_safety,
                                 sta::ArcDelayCalc* arc_delay_calc) const;
 
   // Leakage-equivalent cost for `cell`. Returns Resizer::cellLeakage when
@@ -203,6 +217,18 @@ class LRSubproblem : public sta::dbStaState
   // estimated output slew against the new cell's drive resistance).
   bool candidateDrcOkSnapshot(const GateSnapshot& snap,
                               sta::LibertyCell* replacement) const;
+
+  // Worker-safe downsize feasibility guard over a frozen snapshot. Returns true
+  // iff installing the (lower-leakage) `replacement` adds, on every output pin,
+  // no more delay than `safety * snap.budget`. snap.budget is the depth-
+  // normalized, distributed slack budget frozen by the policy: because the
+  // per-path sum of gate budgets is <= path slack, simultaneous downsizes
+  // within budget cannot overshoot, so no per-gate discount is needed. A gate
+  // with no budget (<= 0) cannot be downsized.
+  bool downsizeFitsSlackBudget(const GateSnapshot& snap,
+                               sta::LibertyCell* replacement,
+                               float safety,
+                               sta::ArcDelayCalc* arc_delay_calc) const;
 
   Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;

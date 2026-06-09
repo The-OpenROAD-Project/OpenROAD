@@ -29,6 +29,8 @@
 
 namespace rsz {
 
+using utl::RSZ;
+
 namespace {
 
 // Resizer::area(Cell*) is protected. Compute the same value through the public
@@ -192,6 +194,8 @@ bool LRSubproblem::applyReplacement(sta::Instance* inst,
 bool LRSubproblem::snapshot(sta::Instance* inst,
                             const float* lambda,
                             const int lambda_size,
+                            const float* budget,
+                            const int budget_size,
                             GateSnapshot& snap)
 {
   init();
@@ -214,6 +218,12 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
   snap.upstream.clear();
   snap.inputs.clear();
   snap.candidates.clear();
+
+  // Min depth-normalized downsize budget over the kept output pins. The policy
+  // precomputes a per-vertex budget (computeSlackBudgets) from the live slacks;
+  // we just freeze the gate's worst (min) value so workers never touch the STA
+  // graph.
+  float worst_budget = std::numeric_limits<float>::max();
 
   std::unique_ptr<sta::InstancePinIterator> pit(network_->pinIterator(inst));
   while (pit->hasNext()) {
@@ -264,6 +274,11 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
                                                   max_mm))
                    : 0.0f;
       o.drive_res = out_port->driveResistance();
+      const sta::VertexId vid = graph_->id(v);
+      const float vbudget = std::cmp_less(vid, budget_size)
+                                ? budget[vid]
+                                : std::numeric_limits<float>::max();
+      worst_budget = std::min(worst_budget, vbudget);
       snap.outputs.push_back(o);
     } else if (dir->isInput()) {
       const sta::LibertyPort* in_port = network_->libertyPort(pin);
@@ -381,6 +396,7 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
   if (snap.outputs.empty()) {
     return false;
   }
+  snap.budget = worst_budget;
 
   // Precompute leakage-equivalent cost for the current cell and every
   // candidate now, on the main thread - leakageOrArea/getSwappableCells mutate
@@ -507,9 +523,44 @@ bool LRSubproblem::candidateDrcOkSnapshot(const GateSnapshot& snap,
   return true;
 }
 
+bool LRSubproblem::downsizeFitsSlackBudget(
+    const GateSnapshot& snap,
+    sta::LibertyCell* replacement,
+    const float safety,
+    sta::ArcDelayCalc* arc_delay_calc) const
+{
+  // snap.budget is the depth-normalized, distributed slack budget.
+  const float budget = safety * snap.budget;
+  if (budget <= 0.0f) {
+    return false;
+  }
+  const sta::Scene* scene = snap.scene;
+  for (const OutputCtx& o : snap.outputs) {
+    if (o.port == nullptr) {
+      continue;
+    }
+    sta::LibertyPort* cand_port = replacement->findLibertyPort(o.port->name());
+    if (cand_port == nullptr) {
+      return false;  // candidate missing this output port - reject
+    }
+    // Δd at the frozen load: extra gate delay the downsize adds on this pin.
+    // Increasing the gate delay by Δd reduces the slack on every path through
+    // the pin by Δd, so Δd must fit the budget.
+    const float d_cur = sta::delayAsFloat(
+        resizer_->gateDelay(o.port, o.load_cap, scene, max_, arc_delay_calc));
+    const float d_cand = sta::delayAsFloat(resizer_->gateDelay(
+        cand_port, o.load_cap, scene, max_, arc_delay_calc));
+    if (d_cand - d_cur > budget) {
+      return false;
+    }
+  }
+  return true;
+}
+
 LRSubproblem::GateDecision LRSubproblem::evaluateSnapshot(
     const GateSnapshot& snap,
     const float timing_weight,
+    const float budget_safety,
     sta::ArcDelayCalc* arc_delay_calc) const
 {
   GateDecision result;
@@ -525,6 +576,15 @@ LRSubproblem::GateDecision LRSubproblem::evaluateSnapshot(
     // Hard DRC filter: reject any candidate that would introduce a max-cap
     // or max-slew violation.
     if (!candidateDrcOkSnapshot(snap, cand.cell)) {
+      continue;
+    }
+    // Downsize slack-budget guard: a candidate with lower leakage than the
+    // current cell is a downsize; only take it if its added delay fits the
+    // gate's distributed slack budget. Upsizes are unconstrained - they only
+    // improve setup.
+    if (cand.leakage < snap.cur_leakage
+        && !downsizeFitsSlackBudget(
+            snap, cand.cell, budget_safety, arc_delay_calc)) {
       continue;
     }
     const float cost = evaluateCellCost(
