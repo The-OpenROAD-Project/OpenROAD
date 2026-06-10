@@ -1251,8 +1251,13 @@ void DisplayControls::findControlsInItems(const std::string& path,
   collectControls(model_->invisibleRootItem(), column, controls);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  // NonPathWildcardConversion makes '*' match across '/' (like the old
+  // QRegExp::Wildcard); the default path mode would translate '*' to "[^/]*",
+  // so a bare '*' would fail to match any control path containing a separator.
   QString regexPattern = QRegularExpression::wildcardToRegularExpression(
-      QString::fromStdString(path));  // Defaults to exact match.
+      QString::fromStdString(path),
+      QRegularExpression::NonPathWildcardConversion);  // Defaults to exact
+                                                       // match.
 
   // Create the QRegularExpression object with the case-insensitive option.
   const QRegularExpression path_compare(
