@@ -383,12 +383,10 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
                                       int extra_wire_length)
 {
   double wire_res, wire_cap;
-  sta::LibertyPort *inp, *outp;
   estimate_parasitics_->wireSignalRC(corner_, wire_res, wire_cap);
-  size.cell->bufferPorts(inp, outp);
 
   const float extra_cap = resizer_->dbuToMeters(extra_wire_length) * wire_cap
-                          + outp->capacitance();
+                          + size.out->capacitance();
 
   const float load_slew
       = (size.driver_resistance
@@ -677,7 +675,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               // This is a long wire, allow for insertion of buffers at the
               // farther end
               insertBufferOptions(opts, level, std::min(full_wl, layer_step));
-              insertInverterOptions(opts, level);
+              insertInverterOptions(opts, level, std::min(full_wl, layer_step));
             } else {
               BnetSeq opts1 = opts;
               for (BnetPtr& opt : opts1) {
@@ -750,7 +748,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 opt = addWire(opt, location, layer, level);
               }
               insertBufferOptions(opts, level, std::min(remaining_wl, step));
-              insertInverterOptions(opts, level);
+              insertInverterOptions(opts, level, std::min(remaining_wl, step));
 
               if (opts.empty()) {
                 logger_->warn(
@@ -1003,16 +1001,20 @@ bool Rebuffer::isRootParityAccepted(const BufferedNetPtr& opt) const
   return !resizer_->isInverterPairEnabled() || opt->parity() == 0;
 }
 
-void Rebuffer::insertInverterOptions(BufferedNetSeq& opts, int level)
+void Rebuffer::insertInverterOptions(BufferedNetSeq& opts,
+                                     int level,
+                                     int next_segment_wl)
 {
   if (!invPairActive()) {
     return;
   }
-  insertInverterCandidates(opts, level);
+  insertInverterCandidates(opts, level, next_segment_wl);
   prunePerParityFrontier(opts);
 }
 
-void Rebuffer::insertInverterCandidates(BnetSeq& opts, int level)
+void Rebuffer::insertInverterCandidates(BnetSeq& opts,
+                                        int level,
+                                        int next_segment_wl)
 {
   if (opts.empty() || inverter_sizes_.empty()) {
     return;
@@ -1044,7 +1046,7 @@ void Rebuffer::insertInverterCandidates(BnetSeq& opts, int level)
     for (const BufferSize& inv_size : inverter_sizes_) {
       // Skip inverters that cannot legally drive the downstream load,
       // mirroring the buffer path in insertBufferOptions.
-      if (!bufferSizeCanDriveLoad(inv_size, opt)) {
+      if (!bufferSizeCanDriveLoad(inv_size, opt, next_segment_wl)) {
         continue;
       }
       sta::LibertyCell* inv_cell = inv_size.cell;
@@ -1795,6 +1797,13 @@ void Rebuffer::init()
       });
     }
   }
+
+  // Same cap-ascending order as buffer_sizes_, so inverter candidate
+  // generation steps through sizes consistently with the buffer path.
+  std::ranges::sort(inverter_sizes_,
+                    [](const BufferSize& a, const BufferSize& b) {
+                      return a.in->capacitance() < b.in->capacitance();
+                    });
 
   buffer_sizes_index_.clear();
   for (auto& size : buffer_sizes_) {
