@@ -20,6 +20,8 @@ import { TclCompleter } from './tcl-completer.js';
 import { getCookie, setCookie, applyGLTheme } from './theme.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
+import { ContextMenu } from './context-menu.js';
+import { LabelManager } from './add-label-widget.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -448,6 +450,10 @@ function scheduleRedrawAllLayers() {
         redrawAllLayers();
     });
 }
+
+// Expose so the context menu can refresh base + overlay tiles after a
+// server-side context_action (select / highlight / clear).
+app.redrawAllLayers = redrawAllLayers;
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -965,6 +971,9 @@ app.toggleShowDbu = function() {
 
 createMenuBar(app);
 
+app.labelManager = new LabelManager(app);
+app.contextMenu = new ContextMenu(app);
+
 // Debug-graphics pause affordance: appended lazily when the first
 // debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
@@ -1194,6 +1203,15 @@ app.websocketManager.readyPromise.then(async () => {
 
             container.addEventListener('mousedown', (e) => {
                 if (e.button !== 2) return;
+                // Right-clicking a label only removes it (handled by the
+                // marker's own contextmenu listener).  Decide here, at
+                // mousedown — the first event of the right-click sequence —
+                // because mouseup (which opens the menu) fires before the
+                // marker's contextmenu, so a later guard can't suppress it.
+                if (e.target && e.target.closest
+                    && e.target.closest('.custom-leaflet-label')) {
+                    return;
+                }
                 rbStart = { x: e.clientX, y: e.clientY };
                 app.map.dragging.disable();
             });
@@ -1228,18 +1246,37 @@ app.websocketManager.readyPromise.then(async () => {
                 rbStart = null;
                 app.map.dragging.enable();
 
-                if (!wasShowing) return;
-
-                // Convert the two screen corners to lat/lng and zoom
                 const rect = container.getBoundingClientRect();
-                const p1 = app.map.containerPointToLatLng([
-                    start.x - rect.left, start.y - rect.top]);
-                const p2 = app.map.containerPointToLatLng([
+
+                if (wasShowing) {
+                    // Drag — rubber-band zoom.
+                    const p1 = app.map.containerPointToLatLng([
+                        start.x - rect.left, start.y - rect.top]);
+                    const p2 = app.map.containerPointToLatLng([
+                        e.clientX - rect.left, e.clientY - rect.top]);
+                    app.map.fitBounds([
+                        [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                        [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+                    ]);
+                    return;
+                }
+
+                // Pure click — show context menu (only over the map container).
+                const overMap = e.clientX >= rect.left && e.clientX <= rect.right
+                             && e.clientY >= rect.top  && e.clientY <= rect.bottom;
+                if (!overMap) return;
+                if (app.rulerManager && app.rulerManager.isActive()) return;
+                if (!app.contextMenu) return;
+                // Right-clicking a label deletes it (handled by the marker's own
+                // contextmenu listener); don't also open the layout menu there.
+                if (e.target && e.target.closest
+                    && e.target.closest('.custom-leaflet-label')) {
+                    return;
+                }
+
+                const latlng = app.map.containerPointToLatLng([
                     e.clientX - rect.left, e.clientY - rect.top]);
-                app.map.fitBounds([
-                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
-                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
-                ]);
+                app.contextMenu.show({ originalEvent: e }, latlng);
             });
         }
 
