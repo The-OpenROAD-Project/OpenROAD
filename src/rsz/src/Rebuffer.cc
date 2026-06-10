@@ -1022,27 +1022,12 @@ void Rebuffer::insertInverterCandidates(BnetSeq& opts,
   BnetSeq inv_opts;
   inv_opts.reserve(opts.size() * inverter_sizes_.size());
 
-  // bufferDelay on an inverter reads arrival_paths_[flipped_rf]
-  bool arrival_path_available[sta::RiseFall::index_count] = {false, false};
-  for (int rf_idx : sta::RiseFall::rangeIndex()) {
-    arrival_path_available[rf_idx] = (arrival_paths_[rf_idx] != nullptr);
-  }
-
   for (const BnetPtr& opt : opts) {
+    // The inverter flips the transition the upstream stage sees. bufferDelay is
+    // null-safe for a flipped transition with no traced arrival path, so no
+    // arrival-path guard is needed here.
     const sta::RiseFallBoth* flipped_rf
         = flipRiseFallBoth(opt->slackTransition());
-    if (flipped_rf) {
-      bool flipped_safe = true;
-      for (auto rf1 : flipped_rf->range()) {
-        if (!arrival_path_available[rf1->index()]) {
-          flipped_safe = false;
-          break;
-        }
-      }
-      if (!flipped_safe) {
-        continue;
-      }
-    }
     for (const BufferSize& inv_size : inverter_sizes_) {
       // Skip inverters that cannot legally drive the downstream load,
       // mirroring the buffer path in insertBufferOptions.
@@ -1442,7 +1427,17 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
 
   if (rf) {
     for (auto rf1 : rf->range()) {
-      const sta::Scene* scene = arrival_paths_[rf1->index()]->scene(sta_);
+      // arrival_paths_ is consulted only for the scene, which is identical
+      // across transitions for this corner. An inverter flips the transition,
+      // so the requested one may have no traced path; fall back to the other
+      // present path instead of dereferencing null (callers need no guard).
+      const sta::Path* arrival = arrival_paths_[rf1->index()]
+                                     ? arrival_paths_[rf1->index()]
+                                     : arrival_paths_[rf1->index() ^ 1];
+      if (arrival == nullptr) {
+        continue;
+      }
+      const sta::Scene* scene = arrival->scene(sta_);
       sta::LibertyPort *input, *output;
       cell->bufferPorts(input, output);
       sta::ArcDelay gate_delays[sta::RiseFall::index_count];
@@ -1650,35 +1645,11 @@ void Rebuffer::insertBufferOptions(
       sta::LibertyPort *in, *out;
       exemplar_cell->bufferPorts(in, out);
 
-      // An inverter exemplar flips the upstream transition (below); the next
-      // DP level reads arrival_paths_ for that flipped transition, so guard
-      // against it being null -- mirrors insertInverterCandidates.
-      bool arrival_path_available[sta::RiseFall::index_count] = {false, false};
-      for (int rf_idx : sta::RiseFall::rangeIndex()) {
-        arrival_path_available[rf_idx] = (arrival_paths_[rf_idx] != nullptr);
-      }
-
       float best_area = sta::INF;
       BnetPtr best_option;
       for (const BnetPtr& load_opt : opts) {
         if (load_opt->area() >= best_area) {
           continue;
-        }
-        if (exemplar_is_inv) {
-          const sta::RiseFallBoth* flipped_rf
-              = flipRiseFallBoth(load_opt->slackTransition());
-          bool flipped_safe = true;
-          if (flipped_rf) {
-            for (auto rf1 : flipped_rf->range()) {
-              if (!arrival_path_available[rf1->index()]) {
-                flipped_safe = false;
-                break;
-              }
-            }
-          }
-          if (!flipped_safe) {
-            continue;
-          }
         }
 
         const FixedDelay cell_delay

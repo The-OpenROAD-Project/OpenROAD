@@ -30,19 +30,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -458.923 |     -458.9 |   -38593.2 |    128 | sink_93/D
-    1460* |       3 |      56 |       40 |      0 |     0 |   +17.9% | -351.845 |     -351.8 |   -34345.8 |    128 | sink_93/D
-    1460+ |       3 |      56 |       40 |      0 |     0 |   +17.9% | -351.845 |     -351.8 |   -34345.8 |    128 | sink_93/D
-    final |       3 |      57 |       40 |      0 |     0 |   +18.0% | -351.845 |     -351.8 |   -34340.1 |    128 | sink_93/D
+    1695* |       3 |      55 |       44 |      0 |     0 |   +15.9% | -349.698 |     -349.7 |   -34372.7 |    128 | sink_93/D
+    final |       3 |      55 |       44 |      0 |     0 |   +15.9% | -349.698 |     -349.7 |   -34372.7 |    128 | sink_93/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 3 buffers.
-[INFO RSZ-0040] Inserted 40 buffers.
-[INFO RSZ-0051] Resized 57 instances: 57 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 44 buffers.
+[INFO RSZ-0051] Resized 55 instances: 55 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
    Iter   |    Area   | Removed | Inserted |   Pins
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |         1
-    final |    -10.5% |      53 |       43 |         0
+    final |     -4.4% |      28 |       33 |         0
 -------------------------------------------------------
 rsz path (repair_timing) inserted inverters: yes
 gpl path (fully_rebuffer) ran without error: yes
