@@ -362,6 +362,26 @@ eliminate_dead_logic
 | ----- | ----- |
 | `-verbose` | Print the net names. |
 
+### Enable Inverter Pair
+
+The `enable_inverter_pair` command enables (or, with `-disable`, disables)
+experimental inverter-pair insertion in the resizer's rebuffer dynamic program.
+When enabled, the resizer may use polarity-preserving inverter pairs as repeaters
+alongside buffers. It is a session-level toggle (off by default) rather than a
+flag on each resizing command because it affects every rebuffer entry point
+(`repair_design`, `repair_timing`, and placement-driven resizing).
+
+```tcl
+enable_inverter_pair
+    [-disable]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-disable` | Disable inverter-pair insertion (the default state). |
+
 ## Useful Developer Commands
 
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
