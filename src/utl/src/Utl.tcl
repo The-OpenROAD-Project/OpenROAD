@@ -193,3 +193,19 @@ proc check_valid_man_path { path } {
 
 # utl namespace end
 }
+
+sta::define_cmd_args "set_db_log_enabled" { tool id enabled }
+proc set_db_log_enabled { args } {
+  sta::check_argc_eq3 "set_db_log_enabled" $args
+  lassign $args tool id enabled
+  sta::check_integer "set_db_log_enabled" $id
+  utl::set_db_log_enabled $tool $id [string is true -strict $enabled]
+}
+
+sta::define_cmd_args "get_db_log_enabled" { tool id }
+proc get_db_log_enabled { args } {
+  sta::check_argc_eq2 "get_db_log_enabled" $args
+  lassign $args tool id
+  sta::check_integer "get_db_log_enabled" $id
+  return [utl::get_db_log_enabled $tool $id]
+}
