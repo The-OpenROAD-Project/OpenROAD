@@ -143,6 +143,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
+    "BAZEL_BUILD",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
