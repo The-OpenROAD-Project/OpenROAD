@@ -41,6 +41,9 @@ cc_library(
     hdrs = [
         "include/tst/fixture.h",
     ],
+    defines = [
+        "BAZEL_BUILD",
+    ],
     includes = [
         "include",
     ],

@@ -290,6 +290,79 @@ TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
   }
 }
 
+// Only frontside metals should consume the palette colors.
+TEST_F(TileGeneratorTest, GetLayerColorMapWithBacksideMetals)
+{
+  odb::dbTech* tech = getDb()->getTech();
+  ASSERT_NE(tech, nullptr);
+
+  // make metals 1 -> 3 backside
+  for (const char* name :
+       {"metal1", "via1", "metal2", "via2", "metal3", "via3"}) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    layer->setBackside(true);
+  }
+
+  makeTileGen();
+  const auto& colors = tile_gen_->getLayerColorMap();
+
+  // Helper: assert a layer's color matches an expected RGB (alpha is always
+  // 180 in both the GUI and the web palette).
+  auto expectColor = [&](const char* name, int r, int g, int b) {
+    odb::dbTechLayer* layer = tech->findLayer(name);
+    ASSERT_NE(layer, nullptr) << "missing layer " << name;
+    const Color c = colors.at(layer);
+    EXPECT_EQ(c.r, r) << name << " red";
+    EXPECT_EQ(c.g, g) << name << " green";
+    EXPECT_EQ(c.b, b) << name << " blue";
+    EXPECT_EQ(c.a, 180) << name << " alpha";
+  };
+
+  struct LayerColor
+  {
+    const char* name;
+    int r;
+    int g;
+    int b;
+  };
+
+  // All 20 routing layers: metal1..metal14 are the seeded kMetalColors palette
+  // (#00F, #F00, #0D0, ...), metal15..metal20 are the mt19937(1) overflow.
+  const LayerColor kRouting[] = {// Backside
+                                 {"metal1", 209, 191, 141},
+                                 {"metal2", 63, 193, 166},
+                                 {"metal3", 200, 166, 92},
+                                 // Frontside
+                                 {"metal4", 0, 0, 254},
+                                 {"metal5", 254, 0, 0},
+                                 {"metal6", 9, 221, 0},
+                                 {"metal7", 190, 244, 81},
+                                 {"metal8", 222, 33, 96},
+                                 {"metal9", 32, 216, 253}};
+
+  // All 19 cut layers: via1..via14 are the seeded kCutColors palette,
+  // via15..via19 are the mt19937(1) overflow.
+  const LayerColor kCut[] = {// Backside
+                             {"via1", 99, 98, 82},
+                             {"via2", 171, 152, 190},
+                             {"via3", 54, 196, 143},
+                             // Frontside
+                             {"via4", 126, 126, 255},
+                             {"via5", 255, 126, 126},
+                             {"via6", 4, 110, 0},
+                             {"via7", 95, 122, 40},
+                             {"via8", 111, 17, 48},
+                             {"via9", 16, 108, 126}};
+
+  for (const LayerColor& lc : kRouting) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+  for (const LayerColor& lc : kCut) {
+    expectColor(lc.name, lc.r, lc.g, lc.b);
+  }
+}
+
 TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
 {
   makeTileGen();
@@ -1144,6 +1217,63 @@ TEST_F(TileGeneratorTest, SerializeTechResponseContainsBlockName)
       << "tech response missing block_name key; got: " << json;
   EXPECT_NE(json.find("\"top\""), std::string::npos)
       << "tech response missing block name value \"top\"; got: " << json;
+}
+
+TEST_F(TileGeneratorTest, LayerHierarchyBacksideCategory)
+{
+  odb::dbTech* tech = getDb()->getTech();
+
+  // Mark metal1 and via1 as backside.
+  tech->findLayer("metal1")->setBackside(true);
+  tech->findLayer("via1")->setBackside(true);
+
+  makeTileGen();
+  const auto resp = serializeTechResponse(*tile_gen_);
+  ASSERT_TRUE(resp.contains("layer_hierarchy"));
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+
+  // Top-level layers should NOT contain the backside layers.
+  const auto& top_layers = hier.at("layers").as_array();
+  for (const auto& l : top_layers) {
+    const auto& name = l.as_object().at("name").as_string();
+    EXPECT_NE(name, "metal1") << "backside metal1 should not be at top level";
+    EXPECT_NE(name, "via1") << "backside via1 should not be at top level";
+  }
+
+  // A "Backside" category node should exist in instances.
+  const auto& instances = hier.at("instances").as_array();
+  const boost::json::object* backside_node = nullptr;
+  for (const auto& inst : instances) {
+    const auto& obj = inst.as_object();
+    if (obj.at("name").as_string() == "Backside") {
+      backside_node = &obj;
+      break;
+    }
+  }
+  ASSERT_NE(backside_node, nullptr)
+      << "layer_hierarchy missing Backside category node";
+  EXPECT_EQ(backside_node->at("type").as_string(), "category");
+
+  // The backside node should contain exactly metal1 and via1.
+  const auto& bs_layers = backside_node->at("layers").as_array();
+  std::set<std::string> bs_names;
+  for (const auto& l : bs_layers) {
+    bs_names.insert(std::string(l.as_object().at("name").as_string()));
+  }
+  EXPECT_EQ(bs_names, (std::set<std::string>{"metal1", "via1"}));
+}
+
+TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
+{
+  // No layers marked backside — there should be no Backside category.
+  makeTileGen();
+  const auto resp = serializeTechResponse(*tile_gen_);
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+  const auto& instances = hier.at("instances").as_array();
+  for (const auto& inst : instances) {
+    EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
+        << "Backside category should not appear when no layers are backside";
+  }
 }
 
 }  // namespace

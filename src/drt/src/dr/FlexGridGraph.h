@@ -25,9 +25,9 @@
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 

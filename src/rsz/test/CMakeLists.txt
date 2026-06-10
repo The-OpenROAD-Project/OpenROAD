@@ -91,6 +91,7 @@ or_integration_tests(
     repair_setup_clone_high_fanout
     repair_setup_crit_vt_asap7
     repair_setup_default_nangate45
+    repair_setup_dont_touch_sizeup
     repair_setup_endpoint_fanin_only
     repair_setup_gcd
     repair_setup_invalid_phase

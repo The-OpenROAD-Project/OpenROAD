@@ -7,7 +7,16 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 sh_binary(
     name = "install",
     srcs = ["//bazel:install.sh"],
-    data = [":tarfile"],
+    data = [":tarfile"] + select({
+        # Ship the desktop entry + icon only for GUI builds so install.sh
+        # can register a menu launcher (mirrors the CMake GUI install).
+        "//:platform_gui": ["//src/gui:desktop_files"],
+        "//conditions:default": [],
+    }),
+    env = select({
+        "//:platform_gui": {"OPENROAD_INSTALL_GUI": "1"},
+        "//conditions:default": {},
+    }),
     visibility = ["//visibility:public"],
 )
 

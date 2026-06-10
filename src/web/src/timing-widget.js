@@ -6,9 +6,10 @@
 import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
-    constructor(app, redrawAllLayers) {
+    constructor(app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
 
         this._currentTab = 'setup';
         this._setupPaths = [];
@@ -207,7 +208,7 @@ export class TimingWidget {
 
     _clearTimingHighlight() {
         this._app.websocketManager.request({ type: 'timing_highlight', path_index: -1 })
-            .then(() => this._redrawAllLayers());
+            .then(() => this._refreshOverlay());
     }
 
     _selectPathRow(idx) {
@@ -227,7 +228,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-        }).then(() => this._redrawAllLayers())
+        }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
     }
 
@@ -327,7 +328,7 @@ export class TimingWidget {
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
             pin_name: nodes[idx].pin,
-        }).then(() => this._redrawAllLayers());
+        }).then(() => this._refreshOverlay());
     }
 
     _renderDetailTable() {

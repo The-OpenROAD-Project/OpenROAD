@@ -199,9 +199,14 @@ html, body {
 #menu-bar .menu-item {
     display: flex;
     justify-content: space-between;
+    position: relative;
     padding: 4px 20px;
     cursor: default;
     white-space: nowrap;
+}
+#menu-bar .menu-check {
+    position: absolute;
+    left: 4px;
 }
 #menu-bar .menu-item:hover {
     background: var(--bg-selected);
@@ -942,6 +947,20 @@ html, body {
     background: var(--bg-context);
     color: var(--fg-muted);
 }
+.inspector-selection-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 0 5px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 4px;
+}
+.inspector-selection-label {
+    font-size: 11px;
+    color: var(--fg-muted);
+    min-width: 40px;
+    text-align: center;
+}
 
 /* Debug-graphics Continue button (fixed top-right, hidden until paused) */
 .debug-continue-btn {
@@ -987,6 +1006,18 @@ html, body {
         stroke-opacity: 0.95;
         fill-opacity: 0.14;
     }
+}
+
+/* Selection pulse: brief flash when the inspector changes its target */
+.selection-pulse {
+    pointer-events: none;
+    animation: selection-pulse 350ms ease-in-out 3;
+    animation-fill-mode: forwards;
+}
+@keyframes selection-pulse {
+    0%   { stroke-opacity: 0;   fill-opacity: 0; }
+    50%  { stroke-opacity: 1;   fill-opacity: 0.28; }
+    100% { stroke-opacity: 0;   fill-opacity: 0; }
 }
 
 /* ─── Timing Widget ────────────────────────────────────────────────────── */

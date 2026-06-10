@@ -46,6 +46,7 @@ or_integration_tests(
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
     rdl_route_failed
+    rdl_route_fixed
     rdl_route_invalid
     rdl_route_keep_existing
     rdl_route_max_iterations
@@ -58,4 +59,3 @@ or_integration_tests(
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
-
