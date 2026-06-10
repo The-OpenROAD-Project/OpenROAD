@@ -62,7 +62,8 @@ const CHEVRON_RIGHT_SVG =
     '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>' +
     '</svg>';
 
-export function createInspectorPanel(app, redrawAllLayers) {
+export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
+    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
@@ -118,7 +119,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         } catch (err) {
             console.error('set_route_guides failed:', err);
         }
-        redrawAllLayers();
+        refreshOverlay();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
@@ -217,14 +218,14 @@ export function createInspectorPanel(app, redrawAllLayers) {
             promise.then(data => {
                 pendingHoverId = null;
                 renderHoverRects(data.rects || []);
-                redrawAllLayers();
+                refreshOverlay();
             }).catch(() => {
                 pendingHoverId = null;
             });
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
-            redrawAllLayers();
+            refreshOverlay();
         });
     }
 
@@ -235,7 +236,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             pendingInspectId = null;
         }
         showLoading();
-        const promise = app.websocketManager.request({ type: reqType });
+        const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
         promise
             .then(data => {
@@ -289,7 +290,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         showLoading();
 
         const promise = app.websocketManager.request(
-            { type: 'inspect', select_id: selectId });
+            { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
@@ -316,8 +317,8 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     }
                     pulseHighlight(data.bbox);
                 }
-                // Redraw tiles to update instance highlight
-                redrawAllLayers();
+                // Refresh overlay to update instance highlight
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -333,7 +334,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
         showLoading();
 
-        const promise = app.websocketManager.request({ type: 'inspect_back' });
+        const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
@@ -358,7 +359,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     }
                     pulseHighlight(data.bbox);
                 }
-                redrawAllLayers();
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;
@@ -626,5 +627,20 @@ export function createInspectorPanel(app, redrawAllLayers) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector };
+    // Re-request the currently inspected object from the server
+    // (e.g. after toggling show-DBU so property formatting changes).
+    // Rulers are client-side so we re-select instead of re-requesting.
+    function refreshInspector() {
+        if (!lastInspectData) return;
+        if (lastInspectData.type === 'Ruler') {
+            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
+                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            }
+            return;
+        }
+        if (!app.websocketManager) return;
+        navigateInspector(-1);
+    }
+
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector, refreshInspector };
 }

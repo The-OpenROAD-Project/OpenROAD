@@ -292,7 +292,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (utils::IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(db_network, liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);

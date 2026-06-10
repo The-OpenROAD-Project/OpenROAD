@@ -226,9 +226,9 @@ TEST_F(TileHandlerTest, EmptyTile)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-TEST_F(TileHandlerTest, UsesHighlightState)
+TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 {
-  // Put a highlight rect in the state
+  // Put a highlight rect in the state — base tiles should NOT include it.
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
@@ -240,8 +240,46 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   req.json = parseObj(
       R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
-  // Should not crash and should return valid PNG
+  // Should not crash and should return valid PNG (without highlights)
   auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(TileHandlerTest, OverlayTileReturnsPng)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.id, 10u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+  // PNG magic bytes
+  EXPECT_GE(resp.payload.size(), 8u);
+  EXPECT_EQ(resp.payload[0], 0x89);
+  EXPECT_EQ(resp.payload[1], 'P');
+  EXPECT_EQ(resp.payload[2], 'N');
+  EXPECT_EQ(resp.payload[3], 'G');
+}
+
+TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
+{
+  // Put a highlight rect in the state
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  // Should not crash and should return valid PNG with highlights
+  auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
 }
@@ -643,6 +681,42 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
     EXPECT_EQ(state_.current_inspected, initial_selected);
     EXPECT_TRUE(state_.navigation_history.empty());
   }
+}
+
+TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  // 1. inspect with use_dbu: true
+  WebSocketRequest inspect_req_dbu;
+  inspect_req_dbu.id = 21;
+  inspect_req_dbu.type = WebSocketRequest::kInspect;
+  inspect_req_dbu.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  auto resp_dbu = handler_->handleInspect(inspect_req_dbu, state_);
+  EXPECT_EQ(resp_dbu.type, WebSocketResponse::kJson);
+  std::string json_dbu = payloadStr(resp_dbu);
+  EXPECT_NE(json_dbu.find("\"value\":\"(2000, 4000), (6000, 8000)\""),
+            std::string::npos)
+      << json_dbu;
+
+  // 2. inspect with use_dbu: false, using select_id: -1 to re-inspect current
+  WebSocketRequest inspect_req_um;
+  inspect_req_um.id = 22;
+  inspect_req_um.type = WebSocketRequest::kInspect;
+  inspect_req_um.json = parseObj(R"({"select_id":-1,"use_dbu":false})");
+
+  auto resp_um = handler_->handleInspect(inspect_req_um, state_);
+  EXPECT_EQ(resp_um.type, WebSocketResponse::kJson);
+  std::string json_um = payloadStr(resp_um);
+  EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json_um;
 }
 
 //------------------------------------------------------------------------------

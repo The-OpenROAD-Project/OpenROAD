@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -37,6 +38,33 @@
 #include "utl/Logger.h"
 
 namespace pad {
+
+namespace {
+
+bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
+{
+  if (lhs.center.x() != rhs.center.x()) {
+    return lhs.center.x() < rhs.center.x();
+  }
+  if (lhs.center.y() != rhs.center.y()) {
+    return lhs.center.y() < rhs.center.y();
+  }
+  if (lhs.shape.xMin() != rhs.shape.xMin()) {
+    return lhs.shape.xMin() < rhs.shape.xMin();
+  }
+  if (lhs.shape.yMin() != rhs.shape.yMin()) {
+    return lhs.shape.yMin() < rhs.shape.yMin();
+  }
+  if (lhs.shape.xMax() != rhs.shape.xMax()) {
+    return lhs.shape.xMax() < rhs.shape.xMax();
+  }
+  if (lhs.shape.yMax() != rhs.shape.yMax()) {
+    return lhs.shape.yMax() < rhs.shape.yMax();
+  }
+  return lhs.terminal->getId() < rhs.terminal->getId();
+}
+
+}  // namespace
 
 class RDLRouterDistanceHeuristic
     : public boost::astar_heuristic<GridGraph, int64_t>
@@ -129,6 +157,7 @@ RDLRouter::RDLRouter(
     int width,
     int spacing,
     bool allow45,
+    bool fixed,
     float turn_penalty,
     int max_iterations)
     : logger_(logger),
@@ -139,6 +168,7 @@ RDLRouter::RDLRouter(
       width_(width),
       spacing_(spacing),
       allow45_(allow45),
+      fixed_(fixed),
       turn_penalty_(turn_penalty),
       max_router_iterations_(max_iterations),
       routing_map_(routing_map),
@@ -464,7 +494,21 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
         }
 
         std::ranges::stable_sort(targets, [](const auto& lhs, const auto& rhs) {
-          return distance(lhs) < distance(rhs);
+          const auto lhs_dist = distance(lhs);
+          const auto rhs_dist = distance(rhs);
+          if (lhs_dist != rhs_dist) {
+            return lhs_dist < rhs_dist;
+          }
+          if (lhs.target0->center.x() != rhs.target0->center.x()) {
+            return lhs.target0->center.x() < rhs.target0->center.x();
+          }
+          if (lhs.target0->center.y() != rhs.target0->center.y()) {
+            return lhs.target0->center.y() < rhs.target0->center.y();
+          }
+          if (lhs.target1->center.x() != rhs.target1->center.x()) {
+            return lhs.target1->center.x() < rhs.target1->center.x();
+          }
+          return lhs.target1->center.y() < rhs.target1->center.y();
         });
 
         debugPrint(
@@ -1554,7 +1598,9 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
     return false;
   }
 
-  const int64_t weight = edge_weight_scale * distance(point0, point1);
+  const int64_t direction_bias = point0.y() == point1.y() ? 1 : 0;
+  const int64_t weight
+      = edge_weight_scale * distance(point0, point1) + direction_bias;
 
   debugPrint(logger_,
              utl::PAD,
@@ -1685,7 +1731,8 @@ void RDLRouter::writeToDb(odb::dbNet* net,
     return;
   }
 
-  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  odb::dbSWire* swire = odb::dbSWire::create(
+      net, fixed_ ? odb::dbWireType::FIXED : odb::dbWireType::ROUTED);
   for (const odb::Rect& stub : stubs) {
     odb::dbSBox::create(swire,
                         layer_,
@@ -2171,6 +2218,10 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
              "{} has {} targets",
              net->getName(),
              targets.size());
+
+  for (auto& [iterm, iterm_targets] : targets) {
+    std::ranges::sort(iterm_targets, compareRouteTargets);
+  }
 
   return targets;
 }

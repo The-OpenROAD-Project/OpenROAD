@@ -60,7 +60,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
-    WebViewerHook* viewer_hook);
+    WebViewerHook* viewer_hook,
+    int max_in_flight);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -72,8 +73,7 @@ class WebServer
   WebServer(odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger,
-            Tcl_Interp* interp,
-            int num_threads);
+            Tcl_Interp* interp);
   ~WebServer();
 
   // Register the WebLogSink with the Logger so startup output is captured
@@ -83,6 +83,10 @@ class WebServer
   // while deferring serve() until the database is fully loaded, which avoids
   // the network threads racing the main thread's db construction.
   void initLogger();
+
+  // Sets the number of thread workers for the server's I/O context.
+  // Must be called before serve() to take effect.
+  void setThreadCount(int num_threads) { num_threads_ = num_threads; }
 
   // Start the web server on the given port.  Launches background
   // I/O threads and returns immediately.  A second call is a no-op if
