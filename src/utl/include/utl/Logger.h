@@ -38,6 +38,7 @@
 #include <tuple>
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <queue>
 #include <deque>
 #include <future>
@@ -930,7 +931,7 @@ class Logger
   // Per-schema enable/disable set.  Logging is enabled by default for
   // all (tool, id) pairs.  Insert a key here to disable it.
   std::unordered_set<SchemaKey, SchemaKeyHasher> db_log_disabled_set_;
-  mutable std::mutex db_log_enabled_mutex_;
+  mutable std::shared_mutex db_log_enabled_mutex_;
 
   // Returns false if the key is in db_log_disabled_set_.
   bool isDbLogEnabled(SchemaKey key) const;

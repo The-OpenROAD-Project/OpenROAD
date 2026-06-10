@@ -1058,7 +1058,7 @@ bool Logger::drainMetadataQueue()
 
 bool Logger::isDbLogEnabled(SchemaKey key) const
 {
-  std::lock_guard<std::mutex> lock(db_log_enabled_mutex_);
+  std::shared_lock<std::shared_mutex> lock(db_log_enabled_mutex_);
   return db_log_disabled_set_.find(key) == db_log_disabled_set_.end();
 }
 
@@ -1067,7 +1067,7 @@ void Logger::setDbLogEnabled(ToolId tool, int id, bool enabled)
   this->info(UTL, 119, "Database logging for {}-{} is {}.",
              tool_names_[tool], id, enabled ? "enabled" : "disabled");
   SchemaKey key{tool, id};
-  std::lock_guard<std::mutex> lock(db_log_enabled_mutex_);
+  std::lock_guard<std::shared_mutex> lock(db_log_enabled_mutex_);
   if (enabled) {
     db_log_disabled_set_.erase(key);
   } else {
