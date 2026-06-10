@@ -235,8 +235,20 @@ void DbvParser::parseRegion(ChipletRegion& region,
     extractValue(region_node, "gds_layer", region.gds_layer);
   }
 
-  if (region_node["coords"]) {
+  if (!region_node["coords"]) {
+    logError("3DBV region " + region.name + " must specify coords.");
+  } else {
     parseCoordinates(region.coords, region_node["coords"]);
+    if (region.coords.size() != 4) {
+      if (region.coords.size() > 4) {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates. Polygonal regions are "
+                   "not yet supported.");
+      } else {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates.");
+      }
+    }
   }
 }
 
