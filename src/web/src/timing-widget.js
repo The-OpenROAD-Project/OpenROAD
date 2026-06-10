@@ -178,12 +178,13 @@ export class TimingWidget {
 
     showPaths(tab, paths) {
         this._currentTab = tab;
+        // Copy so sorting never reorders the caller's array.
         if (tab === 'setup') {
-            this._setupPaths = paths;
+            this._setupPaths = [...paths];
             this._setupTab.classList.add('active');
             this._holdTab.classList.remove('active');
         } else {
-            this._holdPaths = paths;
+            this._holdPaths = [...paths];
             this._holdTab.classList.add('active');
             this._setupTab.classList.remove('active');
         }
@@ -203,8 +204,11 @@ export class TimingWidget {
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
             ]);
-            this._setupPaths = setupData.paths || [];
-            this._holdPaths = holdData.paths || [];
+            // Copy the arrays: in static mode the response is a shared
+            // cached object whose path order must keep matching the
+            // server-side overlay indices, so it must not be sorted.
+            this._setupPaths = [...(setupData.paths || [])];
+            this._holdPaths = [...(holdData.paths || [])];
             this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
