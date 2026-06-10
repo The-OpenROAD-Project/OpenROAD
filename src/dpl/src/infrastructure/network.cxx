@@ -285,17 +285,17 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
       continue;
     }
     for (odb::dbMPin* mpin : mterm->getMPins()) {
-      for (odb::dbBox* box : mpin->getGeometry()) {
-        auto* layer = box->getTechLayer();
+      for (odb::dbBox* pin_box : mpin->getGeometry()) {
+        auto* layer = pin_box->getTechLayer();
         if (layer == nullptr
             || layer->getType() != odb::dbTechLayerType::ROUTING) {
           continue;  // Skip wells/implants/cut layers.
         }
-        const odb::Rect rect = box->getBox();
-        if (rect.yMin() <= y_cell_bot) {
+        const odb::Rect pin_rect = pin_box->getBox();
+        if (pin_rect.yMin() <= y_cell_bot) {
           (is_pwr ? bot_has_pwr : bot_has_gnd) = true;
         }
-        if (rect.yMax() >= y_cell_top) {
+        if (pin_rect.yMax() >= y_cell_top) {
           (is_pwr ? top_has_pwr : top_has_gnd) = true;
         }
       }
@@ -311,7 +311,11 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
     }
     return Architecture::Row::Power_UNK;
   };
-  return {resolve(top_has_pwr, top_has_gnd), resolve(bot_has_pwr, bot_has_gnd)};
+  const int topPwr = resolve(top_has_pwr, top_has_gnd);
+  const int botPwr = resolve(bot_has_pwr, bot_has_gnd);
+  std::cout << master->getConstName() << ", height: " << master->getHeight()
+            << ", return: topPwr:" << topPwr << " botPwr:" << botPwr << "\n";
+  return {topPwr, botPwr};
 }
 
 }  // namespace
