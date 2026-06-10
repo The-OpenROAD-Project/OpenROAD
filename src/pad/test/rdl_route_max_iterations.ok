@@ -13,7 +13,6 @@
 [WARNING PAD-0006] Failed to route the following 18 nets:
   DVDD
     BUMP_11_13/PAD -> u_v18_19/DVDD, u_v18_20/DVDD, u_v18_18/DVDD, u_v18_21/DVDD, u_v18_17/DVDD, ... (67 possible terminals)
-    BUMP_7_3/PAD -> u_v18_3/DVDD, u_v18_4/DVDD, u_v18_2/DVDD, u_v18_5/DVDD, u_v18_1/DVDD, ... (67 possible terminals)
   VSS
     BUMP_0_7/PAD -> u_vss_14/VSS, u_vss_13/VSS, u_vss_15/VSS, u_vss_12/VSS, u_vss_0/VSS, ... (33 possible terminals)
     BUMP_10_13/PAD -> u_vss_9/VSS, u_vss_pll/VSS, u_vss_10/VSS, u_vss_8/VSS, u_vss_7/VSS, ... (33 possible terminals)

@@ -41,6 +41,17 @@ namespace pad {
 
 namespace {
 
+// Order routes by their source terminal id so ripup iteration (and the edge
+// re-add order it drives) is deterministic, not heap-address dependent.
+struct RDLRoutePtrLess
+{
+  bool operator()(const std::shared_ptr<RDLRoute>& lhs,
+                  const std::shared_ptr<RDLRoute>& rhs) const
+  {
+    return lhs->getTerminal()->getId() < rhs->getTerminal()->getId();
+  }
+};
+
 bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
 {
   if (lhs.center.x() != rhs.center.x()) {
@@ -649,7 +660,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
 
       // find routes to ripup
-      std::set<RDLRoutePtr> ripup;
+      std::set<RDLRoutePtr, RDLRoutePtrLess> ripup;
       for (const auto& failed_route : failed) {
         for (const auto& route : routes_) {
           if (!route->isRouted()) {
@@ -1185,15 +1196,11 @@ GridGraphEdgeSet RDLRouter::getVertexEdges(const GridGraphVertex& vertex) const
 {
   GridGraphEdgeSet edges;
 
+  // The graph is undirected, so out_edges already yields every incident edge.
   GridGraph::out_edge_iterator oit, oend;
   std::tie(oit, oend) = boost::out_edges(vertex, graph_);
   for (; oit != oend; oit++) {
     edges.insert(*oit);
-  }
-  GridGraph::in_edge_iterator iit, iend;
-  std::tie(iit, iend) = boost::in_edges(vertex, graph_);
-  for (; iit != iend; iit++) {
-    edges.insert(*iit);
   }
 
   return edges;

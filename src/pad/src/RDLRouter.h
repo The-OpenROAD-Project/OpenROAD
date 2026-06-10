@@ -74,14 +74,8 @@ struct GridGraphEdgeLess
 {
   bool operator()(const GridGraphEdge& lhs, const GridGraphEdge& rhs) const
   {
-    const auto lhs_lo = std::min(lhs.m_source, lhs.m_target);
-    const auto lhs_hi = std::max(lhs.m_source, lhs.m_target);
-    const auto rhs_lo = std::min(rhs.m_source, rhs.m_target);
-    const auto rhs_hi = std::max(rhs.m_source, rhs.m_target);
-    if (lhs_lo != rhs_lo) {
-      return lhs_lo < rhs_lo;
-    }
-    return lhs_hi < rhs_hi;
+    return std::minmax(lhs.m_source, lhs.m_target)
+           < std::minmax(rhs.m_source, rhs.m_target);
   }
 };
 using GridGraphEdgeSet = std::set<GridGraphEdge, GridGraphEdgeLess>;
