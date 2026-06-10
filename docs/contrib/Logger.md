@@ -473,7 +473,7 @@ logToDbBulk is essentially the same as logToDb, except it takes iterators on the
 logToDbMetadata is a "slow path" text to text key-value logging mechanism, useful for logging one-time or infrequent messages(e.g. weights passed as arguments that stay the same across the run) or events. 
 
 ## TCL API Description
-The TCL API is for the user to script how the logger will handle database logging. There are analagous C++ methods that these wrap around. 
+The TCL API is for the user to script how the logger will handle database logging. The setters also have corresponding getters. There are analagous C++ methods that these wrap around. 
 
 utl::start_log_db \[filename\]: Enables logging, runs logger db setup, and starts the background thread.
 
@@ -483,7 +483,7 @@ utl::set_db_log_global_max_mem \[bytes\]: Set overall max memory for pressure me
 
 utl::set_db_log_per_channel_max_mem \[bytes\]: Set per-channel max memory for pressure mechanism
 
-set_db_log_enabled \[tool name(e.g. GPL)\] \[true/false\]: Switch on/off per-tool logging. 
+utl::set_db_log_enabled \[tool name(e.g. GPL)\] \[true/false\]: Switch on/off per-tool logging. 
 
 ## Performance Overhead
 Qualitatively acceptable. Measuring this in real-world use remains TODO. 
