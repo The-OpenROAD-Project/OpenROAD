@@ -44,7 +44,7 @@
 #include "utl/decode.h"
 #include "web/web.h"
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
 #include "bazel/tcl_library_init.h"
 #include "boost/dll/runtime_symbol_info.hpp"
 #endif
@@ -185,7 +185,7 @@ static void initPython()
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
 // Point RUNFILES_DIR at the runfiles tree next to the installed binary so it
 // can find its Tcl resources. boost::dll::program_location() asks the OS for
 // the absolute path of the running executable (/proc/self/exe on Linux, etc.),
@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
   signal(SIGILL, handler);
   signal(SIGSEGV, handler);
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
   setupBazelRunfilesEnvironment();
 #endif
 
@@ -385,7 +385,7 @@ static int tclAppInit(int& argc,
     // Initialize tcl interpreter and readline.
     exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
     if (in_bazel::SetupTclEnvironment(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
@@ -616,7 +616,7 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
-#ifdef BAZEL_CURRENT_REPOSITORY
+#ifdef BAZEL_BUILD
       strcasecmp(BUILD_TYPE, "opt") == 0
 #else
       strcasecmp(BUILD_TYPE, "release") == 0
