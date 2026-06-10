@@ -256,7 +256,7 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
   return segment;
 }
 
-// Returns (topPwr, botPwr) for the master's rails. Power_UNK when an edge
+// Returns (top_pwr, bot_pwr) for the master's rails. Power_UNK when an edge
 // has no rail, or when POWER and GROUND both touch it.
 //
 // Each MPin rectangle is tested individually, since a single MPin can hold
@@ -311,11 +311,11 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
     }
     return Architecture::Row::Power_UNK;
   };
-  const int topPwr = resolve(top_has_pwr, top_has_gnd);
-  const int botPwr = resolve(bot_has_pwr, bot_has_gnd);
-  std::cout << master->getConstName() << ", height: " << master->getHeight()
-            << ", return: topPwr:" << topPwr << " botPwr:" << botPwr << "\n";
-  return {topPwr, botPwr};
+  const int top_pwr = resolve(top_has_pwr, top_has_gnd);
+  const int bot_pwr = resolve(bot_has_pwr, bot_has_gnd);
+  // std::cout << master->getConstName() << ", height: " << master->getHeight()
+  //       << ", return: top_pwr:" << top_pwr << " bot_pwr:" << bot_pwr << "\n";
+  return {top_pwr, bot_pwr};
 }
 
 }  // namespace
