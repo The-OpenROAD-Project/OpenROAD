@@ -3949,6 +3949,7 @@ boost::json::object buildLayerHierarchy(
   json_node["path"] = node.path;
 
   boost::json::array layers_arr;
+  boost::json::array backside_layers_arr;
   if (node.chip) {
     if (odb::dbTech* tech = node.chip->getTech()) {
       const auto& layer_colors = gen.getLayerColorMap(tech);
@@ -3965,7 +3966,11 @@ boost::json::object buildLayerHierarchy(
           layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
                                                   static_cast<int>(c.g),
                                                   static_cast<int>(c.b)};
-          layers_arr.emplace_back(std::move(layer_obj));
+          if (layer->isBackside()) {
+            backside_layers_arr.emplace_back(std::move(layer_obj));
+          } else {
+            layers_arr.emplace_back(std::move(layer_obj));
+          }
         }
       }
     }
@@ -3979,6 +3984,14 @@ boost::json::object buildLayerHierarchy(
       instances_arr.emplace_back(
           buildLayerHierarchy(*child, children_by_parent, gen));
     }
+  }
+  if (!backside_layers_arr.empty()) {
+    boost::json::object backside_node;
+    backside_node["name"] = "Backside";
+    backside_node["type"] = "category";
+    backside_node["layers"] = std::move(backside_layers_arr);
+    backside_node["instances"] = boost::json::array{};
+    instances_arr.emplace_back(std::move(backside_node));
   }
   json_node["instances"] = std::move(instances_arr);
 
