@@ -15,7 +15,7 @@
 [INFO PAD-0037] End of routing iteration 7: 89.5% complete
 [INFO PAD-0037] End of routing iteration 8: 89.0% complete
 [INFO PAD-0037] End of routing iteration 9: 88.8% complete
-[INFO PAD-0037] End of routing iteration 10: 88.8% complete
+[INFO PAD-0037] End of routing iteration 10: 88.4% complete
 [WARNING PAD-0006] Failed to route the following 17 nets:
   DVDD
     BUMP_11_3/PAD -> u_v18_6/DVDD, u_v18_7/DVDD, u_v18_5/DVDD, u_v18_4/DVDD, u_v18_8/DVDD, ... (67 possible terminals)
@@ -27,6 +27,7 @@
     BUMP_15_11/PAD -> u_vzz_15/DVSS, u_vzz_16/DVSS, u_vzz_14/DVSS, u_vzz_13/DVSS, u_vzz_12/DVSS, ... (67 possible terminals)
     BUMP_15_7/PAD -> u_vzz_12/DVSS, u_vzz_13/DVSS, u_vzz_11/DVSS, u_vzz_14/DVSS, u_vzz_10/DVSS, ... (67 possible terminals)
     BUMP_1_9/PAD -> u_vzz_29/DVSS, u_vzz_30/DVSS, u_vzz_28/DVSS, u_vzz_31/DVSS, u_vzz_27/DVSS, ... (67 possible terminals)
+    BUMP_8_15/PAD -> u_vzz_21/DVSS, u_vzz_22/DVSS, u_vzz_20/DVSS, u_vzz_23/DVSS, u_vzz_24/DVSS, ... (67 possible terminals)
   VSS
     BUMP_14_9/PAD -> u_vss_6/VSS, u_vss_5/VSS, u_vss_7/VSS, u_vss_4/VSS, u_vss_8/VSS, ... (33 possible terminals)
     BUMP_16_6/PAD -> u_vss_5/VSS, u_vss_6/VSS, u_vss_4/VSS, u_vss_7/VSS, u_vss_3/VSS, ... (33 possible terminals)

@@ -381,7 +381,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   makeGraph();
 
   // Determine access points
-  std::unordered_map<odb::Point, std::set<GridGraphEdge>> remove_edges;
+  std::unordered_map<odb::Point, GridGraphEdgeSet> remove_edges;
   for (auto& [net, iterm_targets] : routing_targets_) {
     for (auto& [iterm, targets] : iterm_targets) {
       for (auto& target : targets) {
@@ -797,7 +797,7 @@ static odb::Point getValidGridPoint(
 }
 
 void RDLRouter::cleanupGraphEdges(
-    const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges)
+    const std::unordered_map<odb::Point, GridGraphEdgeSet>& edges)
 {
   if (edges.empty()) {
     return;
@@ -824,7 +824,7 @@ void RDLRouter::cleanupGraphEdges(
 
 void RDLRouter::populateTerminalAccessPoints(
     RouteTarget& target,
-    std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const
+    std::unordered_map<odb::Point, GridGraphEdgeSet>& edges) const
 {
   // determine new access point in graph
   std::set<odb::Point> snap_pts;
@@ -1181,10 +1181,9 @@ bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
   return RDLRoute::is45DegreeEdge(pt0, pt1);
 }
 
-std::set<GridGraphEdge> RDLRouter::getVertexEdges(
-    const GridGraphVertex& vertex) const
+GridGraphEdgeSet RDLRouter::getVertexEdges(const GridGraphVertex& vertex) const
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
 
   GridGraph::out_edge_iterator oit, oend;
   std::tie(oit, oend) = boost::out_edges(vertex, graph_);
@@ -1203,7 +1202,7 @@ std::set<GridGraphEdge> RDLRouter::getVertexEdges(
 std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
     const std::vector<GridGraphVertex>& route)
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
   for (const auto& v : route) {
     const auto v_edges = getVertexEdges(v);
     edges.insert(v_edges.begin(), v_edges.end());

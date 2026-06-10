@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -66,6 +67,24 @@ using GridWeightMap
     = boost::property_map<GridGraph, boost::edge_weight_t>::type;
 using GridGraphVertex = GridGraph::vertex_descriptor;
 using GridGraphEdge = GridGraph::edge_descriptor;
+
+// Order edges by (source, target) vertex indices; the descriptor's default
+// operator< compares a heap pointer, giving build-dependent iteration.
+struct GridGraphEdgeLess
+{
+  bool operator()(const GridGraphEdge& lhs, const GridGraphEdge& rhs) const
+  {
+    const auto lhs_lo = std::min(lhs.m_source, lhs.m_target);
+    const auto lhs_hi = std::max(lhs.m_source, lhs.m_target);
+    const auto rhs_lo = std::min(rhs.m_source, rhs.m_target);
+    const auto rhs_hi = std::max(rhs.m_source, rhs.m_target);
+    if (lhs_lo != rhs_lo) {
+      return lhs_lo < rhs_lo;
+    }
+    return lhs_hi < rhs_hi;
+  }
+};
+using GridGraphEdgeSet = std::set<GridGraphEdge, GridGraphEdgeLess>;
 
 struct RouteTarget
 {
@@ -213,11 +232,11 @@ class RDLRouter
 
   void populateTerminalAccessPoints(
       RouteTarget& target,
-      std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const;
+      std::unordered_map<odb::Point, GridGraphEdgeSet>& edges) const;
   void cleanupTerminalAccessPoints(odb::dbITerm* iterm,
                                    std::vector<RouteTarget>& targets) const;
   void cleanupGraphEdges(
-      const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges);
+      const std::unordered_map<odb::Point, GridGraphEdgeSet>& edges);
   std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
                                                     bool do_x) const;
   TerminalAccess insertTerminalAccess(const RouteTarget& target,
@@ -227,7 +246,7 @@ class RDLRouter
   odb::PtrMap<odb::dbITerm, std::vector<RouteTarget>> generateRoutingTargets(
       odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
-  std::set<GridGraphEdge> getVertexEdges(const GridGraphVertex& vertex) const;
+  GridGraphEdgeSet getVertexEdges(const GridGraphVertex& vertex) const;
 
   void buildIntialRouteSet();
   int reportFailedRoutes(
