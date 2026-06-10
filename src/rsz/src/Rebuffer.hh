@@ -99,11 +99,13 @@ class Rebuffer : public sta::dbStaState
                            int level);
 
   // Inverter pair
-  void insertInverterCandidates(BufferedNetSeq& opts,
+  void insertInverterCandidates(BufferedNetSeq& p0,
+                                BufferedNetSeq& p1,
                                 int level,
                                 int next_segment_wl = 0);
-  void prunePerParityFrontier(BufferedNetSeq& opts);
-  void insertInverterOptions(BufferedNetSeq& opts,
+  void pruneFrontier(BufferedNetSeq& opts);
+  void insertInverterOptions(BufferedNetSeq& p0,
+                             BufferedNetSeq& p1,
                              int level,
                              int next_segment_wl = 0);
   bool invPairActive() const;

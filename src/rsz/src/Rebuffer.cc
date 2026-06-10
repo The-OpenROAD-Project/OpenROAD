@@ -59,6 +59,12 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
+// Per-parity option frontier propagated up the rebuffer DP: index 0 holds the
+// even-parity (polarity-preserving) options, index 1 the odd-parity options.
+// insertBufferOptions and junction merging act within a single list;
+// insertInverterOptions is the only step that moves options across lists.
+using ParityFrontier = std::array<BnetSeq, 2>;
+
 Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
@@ -647,8 +653,32 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
     buffer_sizes_.back().cell->bufferPorts(dummy, strong_driver);
   }
 
-  BnetSeq top_opts = visitTree(
-      [&](auto& recurse, int level, const BnetPtr& node) -> BnetSeq {
+  // Per-list helpers. Buffers and junction merging act within a single parity
+  // list; only inverter insertion crosses the two lists. With the flag off
+  // list[1] stays empty and only list[0] is touched, so behavior is unchanged.
+  auto add_wire_all
+      = [this](ParityFrontier& f, const odb::Point& loc, int layer, int lvl) {
+          for (BnetSeq& list : f) {
+            for (BnetPtr& opt : list) {
+              opt = addWire(opt, loc, layer, lvl);
+            }
+          }
+        };
+  auto insert_buf = [this](ParityFrontier& f, int lvl, int wl) {
+    insertBufferOptions(f[0], lvl, wl);
+    insertBufferOptions(f[1], lvl, wl);
+  };
+  auto insert_opts = [this, &insert_buf](ParityFrontier& f, int lvl, int wl) {
+    insert_buf(f, lvl, wl);
+    insertInverterOptions(f[0], f[1], lvl, wl);
+  };
+  auto fr_empty
+      = [](const ParityFrontier& f) { return f[0].empty() && f[1].empty(); };
+  auto fr_size
+      = [](const ParityFrontier& f) { return f[0].size() + f[1].size(); };
+
+  ParityFrontier top_opts = visitTree(
+      [&](auto& recurse, int level, const BnetPtr& node) -> ParityFrontier {
         switch (node->type()) {
           case BnetType::via:
           case BnetType::buffer:
@@ -657,7 +687,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
             if (auto wire_layer = findWireLayer(node)) {
               layer = wire_layer.value();
             }
-            BnetSeq opts = recurse(stripWiresAndBuffersOnBnet(node->ref()));
+            ParityFrontier opts
+                = recurse(stripWiresAndBuffersOnBnet(node->ref()));
             odb::Point location
                 = stripWiresAndBuffersOnBnet(node->ref())->location();
 
@@ -674,27 +705,20 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                          level);
               // This is a long wire, allow for insertion of buffers at the
               // farther end
-              insertBufferOptions(opts, level, std::min(full_wl, layer_step));
-              insertInverterOptions(opts, level, std::min(full_wl, layer_step));
+              insert_opts(opts, level, std::min(full_wl, layer_step));
             } else {
-              BnetSeq opts1 = opts;
-              for (BnetPtr& opt : opts1) {
-                opt = addWire(opt, node->location(), layer, level);
-              }
-              insertBufferOptions(opts1, level, 0);
-              insertInverterOptions(opts1, level);
-              if (opts1.empty()) {
+              ParityFrontier opts1 = opts;
+              add_wire_all(opts1, node->location(), layer, level);
+              insert_opts(opts1, level, 0);
+              if (fr_empty(opts1)) {
                 // if generated options empty, start again but allow for
                 // insertion of buffers at the farther end
                 opts1 = opts;
-                insertBufferOptions(opts1, level, full_wl);
-                for (BnetPtr& opt : opts1) {
-                  opt = addWire(opt, node->location(), layer, level);
-                }
-                insertBufferOptions(opts1, level, 0);
-                insertInverterOptions(opts1, level);
+                insert_buf(opts1, level, full_wl);
+                add_wire_all(opts1, node->location(), layer, level);
+                insert_opts(opts1, level, 0);
               }
-              if (opts1.empty()) {
+              if (fr_empty(opts1)) {
                 // if generated options still empty, this is an internal error
                 // of the algorithm (wire_length_step_ should have been chosen
                 // to always allow a minimal size buffer to drive itself without
@@ -710,7 +734,6 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
 
             utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
             int round = 0;
-            BnetSeq last_valid_opts;
             while (location != node->location()) {
               debugPrint(logger_,
                          RSZ,
@@ -720,9 +743,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                          "",
                          level,
                          round,
-                         opts.size());
+                         fr_size(opts));
 
-              last_valid_opts = opts;
               const int step = layer_step;
 
               // move `location` towards `node->location()` by `step`
@@ -744,13 +766,10 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               const int remaining_wl
                   = odb::Point::manhattanDistance(node->location(), location);
 
-              for (BnetPtr& opt : opts) {
-                opt = addWire(opt, location, layer, level);
-              }
-              insertBufferOptions(opts, level, std::min(remaining_wl, step));
-              insertInverterOptions(opts, level, std::min(remaining_wl, step));
+              add_wire_all(opts, location, layer, level);
+              insert_opts(opts, level, std::min(remaining_wl, step));
 
-              if (opts.empty()) {
+              if (fr_empty(opts)) {
                 logger_->warn(
                     RSZ,
                     2007,
@@ -767,11 +786,11 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
           }
 
           case BnetType::junction: {
-            const BnetSeq& opts_left_all = recurse(node->ref());
-            const BnetSeq& opts_right_all = recurse(node->ref2());
+            ParityFrontier opts_left_all = recurse(node->ref());
+            ParityFrontier opts_right_all = recurse(node->ref2());
 
-            // Junction merge requires equal parity on both sides; with
-            // mixed-parity opts split into 2 buckets and merge per bucket.
+            // Junction merge requires equal parity on both sides, so each
+            // parity list is merged with its same-parity counterpart.
             auto merge_one_bucket = [&](const BnetSeq& opts_left,
                                         const BnetSeq& opts_right) -> BnetSeq {
               BnetSeq opts;
@@ -853,26 +872,9 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               return opts;
             };
 
-            BnetSeq opts;
-            if (invPairActive()) {
-              // Merge same-parity pairs only
-              BnetSeq left_p0, left_p1, right_p0, right_p1;
-              for (const BnetPtr& o : opts_left_all) {
-                (o->parity() == 0 ? left_p0 : left_p1).push_back(o);
-              }
-              for (const BnetPtr& o : opts_right_all) {
-                (o->parity() == 0 ? right_p0 : right_p1).push_back(o);
-              }
-              BnetSeq m0 = merge_one_bucket(left_p0, right_p0);
-              BnetSeq m1 = merge_one_bucket(left_p1, right_p1);
-              auto cap_less = [](const BnetPtr& a, const BnetPtr& b) {
-                return a->cap() < b->cap();
-              };
-              opts.reserve(m0.size() + m1.size());
-              std::ranges::merge(m0, m1, std::back_inserter(opts), cap_less);
-            } else {
-              opts = merge_one_bucket(opts_left_all, opts_right_all);
-            }
+            ParityFrontier opts;
+            opts[0] = merge_one_bucket(opts_left_all[0], opts_right_all[0]);
+            opts[1] = merge_one_bucket(opts_left_all[1], opts_right_all[1]);
             return opts;
           }
 
@@ -885,7 +887,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                        "",
                        level,
                        node->to_string(resizer_));
-            return {node};
+            return {BnetSeq{node}, BnetSeq{}};
           }
           default:
             logger_->error(RSZ, 1004, "unhandled BufferedNet type");
@@ -893,7 +895,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
       },
       tree);
 
-  if (top_opts.empty()) {
+  if (top_opts[0].empty() && top_opts[1].empty()) {
     logger_->warn(
         RSZ,
         2009,
@@ -908,7 +910,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
   int best_index = 0;
   int i = 1;
   debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
-  for (const BufferedNetPtr& p : top_opts) {
+  // Only the even-parity (polarity-preserving) list is valid at the root.
+  for (const BufferedNetPtr& p : top_opts[0]) {
     // Only parity-0 (polarity-preserving) options are valid at the root.
     if (!isRootParityAccepted(p)) {
       continue;
@@ -1001,122 +1004,114 @@ bool Rebuffer::isRootParityAccepted(const BufferedNetPtr& opt) const
   return !resizer_->isInverterPairEnabled() || opt->parity() == 0;
 }
 
-void Rebuffer::insertInverterOptions(BufferedNetSeq& opts,
+void Rebuffer::insertInverterOptions(BnetSeq& p0,
+                                     BnetSeq& p1,
                                      int level,
                                      int next_segment_wl)
 {
   if (!invPairActive()) {
     return;
   }
-  insertInverterCandidates(opts, level, next_segment_wl);
-  prunePerParityFrontier(opts);
+  insertInverterCandidates(p0, p1, level, next_segment_wl);
+  // Only the odd-parity list can shadow across parities; prune both lists only
+  // when inverter options exist (a buffer-only frontier is already pruned).
+  if (!p1.empty()) {
+    pruneFrontier(p0);
+    pruneFrontier(p1);
+  }
 }
 
-void Rebuffer::insertInverterCandidates(BnetSeq& opts,
+void Rebuffer::insertInverterCandidates(BnetSeq& p0,
+                                        BnetSeq& p1,
                                         int level,
                                         int next_segment_wl)
 {
-  if (opts.empty() || inverter_sizes_.empty()) {
+  if (inverter_sizes_.empty()) {
     return;
   }
-  BnetSeq inv_opts;
-  inv_opts.reserve(opts.size() * inverter_sizes_.size());
+  // An inverter flips parity, so options wrapped from one list land in the
+  // other. Collect into `added` first so freshly added options aren't
+  // rewrapped.
+  std::array<BnetSeq*, 2> lists = {&p0, &p1};
+  std::array<BnetSeq, 2> added;
+  for (int p = 0; p < 2; p++) {
+    BnetSeq& dst = added[p ^ 1];
+    const BnetSeq& src = *lists[p];
+    dst.reserve(src.size() * inverter_sizes_.size());
+    for (const BnetPtr& opt : src) {
+      // The inverter flips the transition the upstream stage sees. bufferDelay
+      // is null-safe for a flipped transition with no traced arrival path, so
+      // no arrival-path guard is needed here.
+      const sta::RiseFallBoth* flipped_rf
+          = flipRiseFallBoth(opt->slackTransition());
+      for (const BufferSize& inv_size : inverter_sizes_) {
+        // Skip inverters that cannot legally drive the downstream load,
+        // mirroring the buffer path in insertBufferOptions.
+        if (!bufferSizeCanDriveLoad(inv_size, opt, next_segment_wl)) {
+          continue;
+        }
+        sta::LibertyCell* inv_cell = inv_size.cell;
+        sta::LibertyPort* out = inv_size.out;
+        const float load_cap = opt->cap() + out->capacitance();
+        const FixedDelay inv_delay
+            = bufferDelay(inv_cell, opt->slackTransition(), load_cap);
+        const FixedDelay slack = opt->slack() - inv_delay;
 
-  for (const BnetPtr& opt : opts) {
-    // The inverter flips the transition the upstream stage sees. bufferDelay is
-    // null-safe for a flipped transition with no traced arrival path, so no
-    // arrival-path guard is needed here.
-    const sta::RiseFallBoth* flipped_rf
-        = flipRiseFallBoth(opt->slackTransition());
-    for (const BufferSize& inv_size : inverter_sizes_) {
-      // Skip inverters that cannot legally drive the downstream load,
-      // mirroring the buffer path in insertBufferOptions.
-      if (!bufferSizeCanDriveLoad(inv_size, opt, next_segment_wl)) {
-        continue;
+        BnetPtr z = make_shared<BufferedNet>(BnetType::buffer,
+                                             opt->location(),
+                                             inv_cell,
+                                             opt,
+                                             corner_,
+                                             resizer_,
+                                             estimate_parasitics_);
+        z->setSlack(slack);
+        // Inverter flips the transition; upstream sees flipped_rf.
+        z->setSlackTransition(flipped_rf);
+        z->setDelay(inv_delay);
+
+        debugPrint(logger_,
+                   RSZ,
+                   "rebuffer",
+                   3,
+                   "{:{}s}inv {} on parity {}: {}",
+                   "",
+                   level,
+                   inv_cell->name(),
+                   opt->parity(),
+                   z->to_string(resizer_));
+        dst.push_back(std::move(z));
       }
-      sta::LibertyCell* inv_cell = inv_size.cell;
-      sta::LibertyPort* out = inv_size.out;
-      const float load_cap = opt->cap() + out->capacitance();
-      const FixedDelay inv_delay
-          = bufferDelay(inv_cell, opt->slackTransition(), load_cap);
-      const FixedDelay slack = opt->slack() - inv_delay;
-
-      BnetPtr z = make_shared<BufferedNet>(BnetType::buffer,
-                                           opt->location(),
-                                           inv_cell,
-                                           opt,
-                                           corner_,
-                                           resizer_,
-                                           estimate_parasitics_);
-      z->setSlack(slack);
-      // Inverter flips the transition; upstream sees flipped_rf.
-      z->setSlackTransition(flipped_rf);
-      z->setDelay(inv_delay);
-
-      debugPrint(logger_,
-                 RSZ,
-                 "rebuffer",
-                 3,
-                 "{:{}s}inv {} on parity {}: {}",
-                 "",
-                 level,
-                 inv_cell->name(),
-                 opt->parity(),
-                 z->to_string(resizer_));
-      inv_opts.push_back(std::move(z));
     }
   }
-  opts.insert(opts.end(),
-              std::make_move_iterator(inv_opts.begin()),
-              std::make_move_iterator(inv_opts.end()));
+  p0.insert(p0.end(),
+            std::make_move_iterator(added[0].begin()),
+            std::make_move_iterator(added[0].end()));
+  p1.insert(p1.end(),
+            std::make_move_iterator(added[1].begin()),
+            std::make_move_iterator(added[1].end()));
 }
 
-void Rebuffer::prunePerParityFrontier(BnetSeq& opts)
+void Rebuffer::pruneFrontier(BnetSeq& opts)
 {
   if (opts.empty()) {
     return;
   }
-  if (std::ranges::none_of(opts,
-                           [](const BnetPtr& o) { return o->parity() != 0; })) {
-    return;
-  }
-
-  BnetSeq p0, p1;
-  p0.reserve(opts.size());
-  p1.reserve(opts.size());
+  std::ranges::sort(opts, [](const BnetPtr& a, const BnetPtr& b) {
+    if (a->cap() != b->cap()) {
+      return a->cap() < b->cap();
+    }
+    return a->slack() > b->slack();
+  });
+  BnetSeq kept;
+  kept.reserve(opts.size());
+  FixedDelay best_slack = -FixedDelay::INF;
   for (BnetPtr& o : opts) {
-    (o->parity() == 0 ? p0 : p1).push_back(std::move(o));
+    if (o->slack() > best_slack) {
+      best_slack = o->slack();
+      kept.push_back(std::move(o));
+    }
   }
-
-  auto prune_bucket = [](BnetSeq& bucket) {
-    if (bucket.empty()) {
-      return;
-    }
-    std::ranges::sort(bucket, [](const BnetPtr& a, const BnetPtr& b) {
-      if (a->cap() != b->cap()) {
-        return a->cap() < b->cap();
-      }
-      return a->slack() > b->slack();
-    });
-    BnetSeq kept;
-    kept.reserve(bucket.size());
-    FixedDelay best_slack = -FixedDelay::INF;
-    for (BnetPtr& o : bucket) {
-      if (o->slack() > best_slack) {
-        best_slack = o->slack();
-        kept.push_back(std::move(o));
-      }
-    }
-    bucket.swap(kept);
-  };
-  prune_bucket(p0);
-  prune_bucket(p1);
-
-  opts.clear();
-  opts.reserve(p0.size() + p1.size());
-  auto cap_less
-      = [](const BnetPtr& a, const BnetPtr& b) { return a->cap() < b->cap(); };
-  std::ranges::merge(p0, p1, std::back_inserter(opts), cap_less);
+  opts.swap(kept);
 }
 
 // Recover area on a rebuffering choice without regressing timing
@@ -1237,24 +1232,6 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
                   bucketed[0], bucketed[1], std::back_inserter(opts), cap_less);
             } else {
               pruneCapVsAreaOptions(sta_, opts);
-            }
-            debugPrint(logger_,
-                       RSZ,
-                       "rebuffer",
-                       3,
-                       "{:{}s}junction: {} options",
-                       "",
-                       level,
-                       opts.size());
-            for (const auto& opt : opts) {
-              debugPrint(logger_,
-                         RSZ,
-                         "rebuffer",
-                         3,
-                         "{:{}s} - {}",
-                         "",
-                         level,
-                         opt->to_string(resizer_));
             }
 
             bool assured_found = false;
