@@ -41,29 +41,6 @@ namespace pad {
 
 namespace {
 
-// Deterministic integer square root (floor(sqrt(value))).
-//
-// Casting std::sqrt(double) directly to an integer is not portable across
-// toolchains: when the true root is just below an integer, sqrt may round to
-// k+1.0 on one compiler (truncating to k+1) and k.9999... on another
-// (truncating to k). Since distance() feeds A* and several sort keys, that
-// ±1 flip changes routing tie-breaks. Correcting the floating-point seed
-// below guarantees the exact floor regardless of how sqrt rounded.
-int64_t integerSqrt(const int64_t value)
-{
-  if (value <= 0) {
-    return 0;
-  }
-  int64_t root = static_cast<int64_t>(std::sqrt(static_cast<double>(value)));
-  while (root > 0 && root > value / root) {
-    root--;
-  }
-  while (value / (root + 1) >= (root + 1)) {
-    root++;
-  }
-  return root;
-}
-
 bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
 {
   if (lhs.center.x() != rhs.center.x()) {
@@ -2070,7 +2047,9 @@ int64_t RDLRouter::distance(const odb::Point& p0, const odb::Point& p1)
 {
   const int64_t dx = p0.x() - p1.x();
   const int64_t dy = p0.y() - p1.y();
-  return integerSqrt(dx * dx + dy * dy);
+  // Round, don't truncate: truncating sqrt is off-by-one across toolchains at
+  // exact-integer (Pythagorean) distances, which perturbs routing.
+  return std::llround(std::sqrt(dx * dx + dy * dy));
 }
 
 int64_t RDLRouter::distance(const TargetPair& pair)
