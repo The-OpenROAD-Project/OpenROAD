@@ -614,8 +614,57 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   dbu_per_micron_ = 0;
   hierarchy_ = false;
 
+  alignment_marker_rule_tbl_ = new dbTable<_dbAlignmentMarkerRule>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbAlignmentMarkerRuleObj);
   chip_tbl_ = new dbTable<_dbChip, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipObj);
+  chip_hash_.setTable(chip_tbl_);
+  prop_tbl_ = new dbTable<_dbProperty>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
+  chip_inst_tbl_ = new dbTable<_dbChipInst>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipInstObj);
+  chip_region_inst_tbl_ = new dbTable<_dbChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbChipRegionInstObj);
+  chip_conn_tbl_ = new dbTable<_dbChipConn>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipConnObj);
+  chip_bump_inst_tbl_
+      = new dbTable<_dbChipBumpInst>(this,
+                                     this,
+                                     (GetObjTbl_t) &_dbDatabase::getObjectTable,
+                                     dbChipBumpInstObj);
+  chip_net_tbl_ = new dbTable<_dbChipNet>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
+  unfolded_chip_inst_tbl_ = new dbTable<_dbUnfoldedChipInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipInstObj);
+  unfolded_chip_region_inst_tbl_ = new dbTable<_dbUnfoldedChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipRegionInstObj);
+  unfolded_chip_bump_inst_tbl_ = new dbTable<_dbUnfoldedChipBumpInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipBumpInstObj);
+  unfolded_chip_conn_tbl_ = new dbTable<_dbUnfoldedChipConn>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipConnObj);
+  unfolded_chip_net_tbl_ = new dbTable<_dbUnfoldedChipNet>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipNetObj);
 
   gds_lib_tbl_ = new dbTable<_dbGDSLib, 2>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbGdsLibObj);
@@ -625,9 +674,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   lib_tbl_ = new dbTable<_dbLib>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbLibObj);
-
-  prop_tbl_ = new dbTable<_dbProperty>(
-      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbPropertyObj);
 
   name_cache_ = new _dbNameCache(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable);
