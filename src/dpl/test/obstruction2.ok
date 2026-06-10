@@ -5,6 +5,10 @@
 [INFO ODB-0131]     Created 32 components and 201 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 384 nets and 137 connections.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 31 cells
+[INFO DPL-0389]   height 56.000 um: 1 cells
 [INFO DPL-0006] Core area: 1851.36 um^2, Instances area: 3069.11 um^2, Utilization: 165.8%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 3069.11 um^2, Utilization: 165.8%
 [ERROR DPL-0038] Utilization greater than 100%, impossible to legalize
 DPL-0038

@@ -5,6 +5,10 @@
 [INFO ODB-0131]     Created 25 components and 65 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 4 connections.
 Detailed placement improvement.
+[INFO DPL-0388] Cell height distribution (3 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 22 cells
+[INFO DPL-0389]   height 2.800 um: 2 cells
+[INFO DPL-0389]   height 4.200 um: 1 cells
 [INFO DPL-0401] Setting random seed to 1.
 [INFO DPL-0402] Setting maximum displacement 0 0 to 33600 33600 units.
 [INFO DPL-0320] Collected 0 fixed cells.
@@ -71,4 +75,8 @@ Original HPWL                8.4 u (       5.9,        2.5)
 Final HPWL                   2.5 u (       2.2,        0.3)
 Delta HPWL                 -70.3 % (     -62.8,      -88.0)
 
+[INFO DPL-0388] Cell height distribution (3 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 22 cells
+[INFO DPL-0389]   height 2.800 um: 2 cells
+[INFO DPL-0389]   height 4.200 um: 1 cells
 No differences found.

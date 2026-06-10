@@ -12,14 +12,15 @@ Open-Source Detailed Placement Engine. Its key features are:
 
 #### Diamond Search
 
-The default engine performs a BFS-style diamond search from each cell's
+Former engine performs a BFS-style diamond search from each cell's
 global placement position, expanding outward in Manhattan order until a
 legal site is found.
 
 #### NegotiationLegalizer
 
-An optional two-pass legalizer based on the NBLG paper. Enabled with
-`-use_negotiation` on the `detailed_placement` command.
+The default two-pass legalizer based on the NBLG paper. Used on
+the `detailed_placement` command. The legacy diamond search engine can be
+selected with `-use_old_diamond`.
 
 ```
 Global Placement result
@@ -71,8 +72,11 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
-    [-use_negotiation]
+    [-use_old_diamond]
     [-abacus]
+    [-site_search_window sites]
+    [-row_search_window rows]
+    [-drc_penalty penalty]
 ```
 
 #### Options
@@ -84,8 +88,11 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
-| `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
-| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-use_old_diamond` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
+| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Not effective when `-use_old_diamond` is set. |
+| `-site_search_window` | NegotiationLegalizer: maximum number of sites a cell may be moved left or right of its initial position. Default `20`. |
+| `-row_search_window` | NegotiationLegalizer: maximum number of rows a cell may be moved up or down from its initial position. Default `5`. |
+| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`. |
 
 ### Set Placement Padding
 
@@ -226,7 +233,7 @@ Simply run the following script:
 
 ## Limitations
 
-The following limitations apply when using the NegotiationLegalizer (`-use_negotiation`):
+The following limitations apply when using the NegotiationLegalizer (default):
 
 1. **Abacus cluster chain**: The current Abacus implementation uses a
    simplified cluster structure. A production version should maintain an

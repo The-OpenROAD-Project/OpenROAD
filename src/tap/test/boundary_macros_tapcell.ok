@@ -9,4 +9,7 @@
 [INFO TAP-0003] Inserted 24 endcap corners.
 [INFO TAP-0004] Inserted 9854 endcaps.
 [INFO TAP-0005] Inserted 9474 tapcells.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 22842 cells
+[INFO DPL-0389]   height 56.000 um: 5 cells
 No differences found.

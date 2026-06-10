@@ -125,26 +125,32 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 34 long wires.
 [INFO RSZ-0048] Inserted 101 buffers in 34 nets.
+[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 2802 cells
+[INFO DPL-0389]   height 300.000 um: 225 cells
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261541.21 um^2, Utilization: 83.0%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 20261541.21 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                    2802
-Diamond Move Success:           2802 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 2802 cells
+[INFO DPL-0393]   height 215 row(s): 225 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         36 |        10 |        26
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
-total displacement       3622.0 u
-average displacement        1.2 u
-max displacement          125.2 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL          181960.6 u
-legalized HPWL         182789.1 u
-delta HPWL                    0 %
+legalized HPWL         182904.9 u
+delta HPWL                    1 %
 
 Clock clk
    1.03 source latency inst_12_11/clk ^

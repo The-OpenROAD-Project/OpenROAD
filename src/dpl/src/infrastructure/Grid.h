@@ -150,8 +150,9 @@ class Grid
   std::optional<odb::dbOrientType> getSiteOrientation(GridX x,
                                                       GridY y,
                                                       odb::dbSite* site) const;
-  std::pair<odb::dbSite*, odb::dbOrientType> getShortestSite(GridX grid_x,
-                                                             GridY grid_y);
+  std::pair<odb::dbSite*, odb::dbOrientType> getShortestSite(
+      GridX grid_x,
+      GridY grid_y) const;
 
   void resize(int size) { pixels_.resize(size); }
   void resize(GridY size) { pixels_.resize(size.v); }

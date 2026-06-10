@@ -109,8 +109,11 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool use_negotiation = false,
-                         bool run_abacus = false);
+                         bool use_old_diamond = false,
+                         bool run_abacus = false,
+                         int site_search_window = 0,
+                         int row_search_window = 0,
+                         double drc_penalty = 0.0);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -120,6 +123,8 @@ class Opendp
   void setJumpMoves(int jump_moves);
   void setIterativePlacement(bool iterative);
   void setDeepIterativePlacement(bool deep_iterative);
+  void setNegotiationDebugInterval(int iterative_jump);
+  void setNegotiationDebugStart(int iterative_start);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -172,6 +177,8 @@ class Opendp
 
   odb::Point getOdbLocation(const Node* cell) const;
   odb::Point getDplLocation(const Node* cell) const;
+
+  bool isUseNegotiationLegalizer() { return !use_old_diamond_; }
 
  private:
   using bgPoint
@@ -366,8 +373,10 @@ class Opendp
   std::unique_ptr<PlacementDRC> drc_engine_;
   Journal* journal_ = nullptr;
 
+  // DPL-wide displacement budget set via detailedPlacement() and honored
+  // by every DPL pass (diamond search, and negotiation).
   int max_displacement_x_ = 0;  // sites
-  int max_displacement_y_ = 0;  // sites
+  int max_displacement_y_ = 0;  // rows
   bool disallow_one_site_gaps_ = false;
   std::vector<Node*> placement_failures_;
 
@@ -398,8 +407,10 @@ class Opendp
   int move_count_ = 1;
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
+  int negotiation_debug_interval_ = 1;
+  int negotiation_debug_start_ = 0;
   bool incremental_ = false;
-  bool use_negotiation_ = false;
+  bool use_old_diamond_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;
