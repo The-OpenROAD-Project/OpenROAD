@@ -85,7 +85,8 @@ using AlignmentViolationReporter
                          const std::string&)>;
 
 void matchMarkersBetweenChips(
-    const PtrMap<dbMaster, std::vector<dbAlignmentMarkerRule*>>& rules_by_master,
+    const PtrMap<dbMaster, std::vector<dbAlignmentMarkerRule*>>&
+        rules_by_master,
     const std::vector<AlignmentMarkerIndex::Value>& list_a,
     const std::vector<AlignmentMarkerIndex::Value>& list_b,
     dbUnfoldedChipInst* c_a,
