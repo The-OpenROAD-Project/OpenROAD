@@ -1386,250 +1386,338 @@ TEST_F(TileGeneratorTest, LayerHierarchyNoBacksideCategory)
     EXPECT_NE(inst.as_object().at("name").as_string(), "Backside")
         << "Backside category should not appear when no layers are backside";
   }
-// ─── Anti-moiré band-limit (issue #10463) ────────────────────────────────
+  // ─── Anti-moiré band-limit (issue #10463) ────────────────────────────────
 
-// Build a dense periodic array of small cells whose OUTPUT pitch lands in the
-// sub-pixel regime that aliases into a moiré beat without band-limiting.  N
-// cells per row over the die => output pitch ~ 256/N px at z=0.
-class MoireArrayTest : public TileGeneratorTest
-{
- protected:
-  // Returns the cell pitch in DBU.
-  int buildArray(int n)
+  // Build a dense periodic array of small cells whose OUTPUT pitch lands in the
+  // sub-pixel regime that aliases into a moiré beat without band-limiting.  N
+  // cells per row over the die => output pitch ~ 256/N px at z=0.
+  class MoireArrayTest : public TileGeneratorTest
   {
-    odb::dbMaster* m = lib_->findMaster("INV_X1");
-    EXPECT_NE(m, nullptr);
-    const int pitch = 2 * std::max(m->getWidth(), m->getHeight());
-    const int die = n * pitch;
-    block_->setDieArea(odb::Rect(0, 0, die, die));
-    int id = 0;
-    for (int iy = 0; iy < n; ++iy) {
-      for (int ix = 0; ix < n; ++ix) {
-        odb::dbInst* inst = odb::dbInst::create(
-            block_, m, ("d" + std::to_string(id++)).c_str());
-        inst->setLocation(ix * pitch, iy * pitch);
-        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+   protected:
+    // Returns the cell pitch in DBU.
+    int buildArray(int n)
+    {
+      odb::dbMaster* m = lib_->findMaster("INV_X1");
+      EXPECT_NE(m, nullptr);
+      const int pitch = 2 * std::max(m->getWidth(), m->getHeight());
+      const int die = n * pitch;
+      block_->setDieArea(odb::Rect(0, 0, die, die));
+      int id = 0;
+      for (int iy = 0; iy < n; ++iy) {
+        for (int ix = 0; ix < n; ++ix) {
+          odb::dbInst* inst = odb::dbInst::create(
+              block_, m, ("d" + std::to_string(id++)).c_str());
+          inst->setLocation(ix * pitch, iy * pitch);
+          inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+        }
+      }
+      return pitch;
+    }
+
+    // Build an n x n bump array (master tagged COVER_BUMP) sized so each bump
+    // renders ~target_px CSS px at z=0 (where bounds ~= die, so output size =
+    // cell*256/die).  Used to land bump sizes inside the LOD crossfade band.
+    void buildBumpArrayTargetPx(int n, double target_px)
+    {
+      odb::dbMaster* m = lib_->findMaster("INV_X1");
+      EXPECT_NE(m, nullptr);
+      m->setType(odb::dbMasterType::COVER_BUMP);
+      const int cell = std::max(m->getWidth(), m->getHeight());
+      const int die = static_cast<int>(cell * 256.0 / target_px);
+      const int pitch = die / n;  // output pitch = 256/n px; > cell ⇒ gaps
+      block_->setDieArea(odb::Rect(0, 0, die, die));
+      int id = 0;
+      for (int iy = 0; iy < n; ++iy) {
+        for (int ix = 0; ix < n; ++ix) {
+          odb::dbInst* inst = odb::dbInst::create(
+              block_, m, ("b" + std::to_string(id++)).c_str());
+          inst->setLocation(ix * pitch, iy * pitch);
+          inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+        }
       }
     }
-    return pitch;
+  };
+
+  TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
+  {
+    buildArray(/*n=*/128);  // output pitch ~2 px — the regime that aliases
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels
+        = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+    EXPECT_EQ(w, 256u);
+    const int iw = static_cast<int>(w);
+    const int ih = static_cast<int>(h);
+    // Measure the central macro-uniform window: the full-tile profile is
+    // dominated by the array's outer edge / surrounding margin (a legitimate
+    // low-frequency envelope, not a beat).  In the interior the supersample +
+    // Lanczos-2 decimation must keep the beat band nearly empty — round-8 (1px
+    // coverage) measured ~0.2-0.3 here; the fix drives it to <0.01.
+    const double beat
+        = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
+    EXPECT_LT(beat, 0.06) << "moiré beat present in dense sub-pixel bump array";
   }
 
-  // Build an n x n bump array (master tagged COVER_BUMP) sized so each bump
-  // renders ~target_px CSS px at z=0 (where bounds ~= die, so output size =
-  // cell*256/die).  Used to land bump sizes inside the LOD crossfade band.
-  void buildBumpArrayTargetPx(int n, double target_px)
+  TEST_F(MoireArrayTest, DenseBumpArrayOffGridPitchHasNoBeat)
   {
+    // Property guard: a kPhysBump array whose super-pixel pitch (512/n at z=0)
+    // is off an integer (n=126 → 4.063, etc.) must stay beat-free.  NOTE: this
+    // synthetic (INV_X1-as-bump) does NOT reproduce the strong beat seen on
+    // real designs — that needed large near-pitch footprints whose floor/ceil
+    // rounding closed the sub-pixel gaps (→ sheet) and jittered ±1 px (→ beat).
+    // The AUTHORITATIVE regression check for this fix was a visual A/B on the
+    // real multi_tech_stack.3dbx (RODADA 18): RODADA-17 rendered SUB_M2 as
+    // solid blue sheets; exact-area coverage renders faithful discrete dots / a
+    // faint tint with no beat.  Keep this as a cheap lower-bound guard; the
+    // real gate stays visual (see plan).  Exact area coverage integrates each
+    // pixel independent of sub-pixel phase → no jitter → no beat for any
+    // off-grid pitch.
     odb::dbMaster* m = lib_->findMaster("INV_X1");
-    EXPECT_NE(m, nullptr);
+    ASSERT_NE(m, nullptr);
     m->setType(odb::dbMasterType::COVER_BUMP);
-    const int cell = std::max(m->getWidth(), m->getHeight());
-    const int die = static_cast<int>(cell * 256.0 / target_px);
-    const int pitch = die / n;  // output pitch = 256/n px; > cell ⇒ gaps
-    block_->setDieArea(odb::Rect(0, 0, die, die));
-    int id = 0;
-    for (int iy = 0; iy < n; ++iy) {
-      for (int ix = 0; ix < n; ++ix) {
-        odb::dbInst* inst = odb::dbInst::create(
-            block_, m, ("b" + std::to_string(id++)).c_str());
-        inst->setLocation(ix * pitch, iy * pitch);
-        inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+    for (const int n : {126, 127, 130}) {  // super-pitch 4.063 / 4.031 / 3.938
+      std::vector<odb::dbInst*> existing;
+      for (odb::dbInst* inst : block_->getInsts()) {
+        existing.push_back(inst);
+      }
+      for (odb::dbInst* inst : existing) {
+        odb::dbInst::destroy(inst);
+      }
+      buildArray(n);
+      makeTileGen();
+      unsigned w = 0;
+      unsigned h = 0;
+      auto pixels
+          = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+      const int iw = static_cast<int>(w);
+      const int ih = static_cast<int>(h);
+      const double beat
+          = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
+      EXPECT_LT(beat, 0.06) << "moiré beat at off-grid bump array n=" << n;
+    }
+  }
+
+  TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
+  {
+    // Same array, but viewed zoomed-in (z=3) so the pitch resolves to ~16 px.
+    // Band-limiting must NOT smear it into a flat tint: structure (high block
+    // CV) survives while the beat band stays empty.
+    buildArray(/*n=*/128);
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    // Central tile at z=3 (8x8 tiles); guaranteed to sit inside the array.
+    auto pixels
+        = decodePng(tile_gen_->generateTile("_instances", 3, 4, 4), w, h);
+    // The resolved grid's fundamental (~16 px pitch) legitimately lives in the
+    // beat band, so beatFrac is NOT a valid check here — the point is only that
+    // the structure survived (high block-CV), i.e. it wasn't smeared to a tint.
+    EXPECT_GT(blockAlphaCV(pixels, w, h, 8), 0.10)
+        << "resolved grid was over-blurred into a flat tint";
+  }
+
+  TEST_F(MoireArrayTest, BumpArrayBelowThresholdIsFaithfulTintNotSheet)
+  {
+    // Mark the small master as a bump so classifyInstance() returns kPhysBump
+    // (the fixture has no STA, so it falls back to the COVER_BUMP master type).
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    ASSERT_NE(m, nullptr);
+    m->setType(odb::dbMasterType::COVER_BUMP);
+
+    buildArray(
+        /*n=*/128);  // bumps render ~1 px at z=0 → below the LOD threshold
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels
+        = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+    const int iw = static_cast<int>(w);
+    const int ih = static_cast<int>(h);
+
+    // The sub-resolution array is NOT collapsed into one opaque slab over the
+    // gaps (the rejected "merged sheet").  Each bump becomes a discrete
+    // coverage mark, so the central interior is a FAITHFUL FAINT tint: its mean
+    // alpha reflects the real ~25% fill (pitch = 2x cell) and stays well below
+    // the opaque layer color, while still being non-transparent (bumps
+    // present). The supersample + Lanczos low-pass keeps the beat band empty
+    // (DenseArraySubPixelHasNoBeat); here we guard against the opaque sheet.
+    const int x0 = iw / 4;
+    const int x1 = 3 * iw / 4;
+    const int y0 = ih / 4;
+    const int y1 = 3 * ih / 4;
+    double alpha_sum = 0.0;
+    int n_px = 0;
+    for (int y = y0; y < y1; ++y) {
+      for (int x = x0; x < x1; ++x) {
+        alpha_sum += pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+        ++n_px;
       }
     }
+    const double mean_alpha = alpha_sum / n_px;
+    // _instances overview tints at gray alpha=160; a solid sheet would average
+    // ~160.  Faithful ~25% coverage averages far lower.
+    EXPECT_GT(mean_alpha, 5.0) << "sub-resolution bumps vanished (no coverage)";
+    EXPECT_LT(mean_alpha, 100.0)
+        << "sub-resolution bump array collapsed into an opaque merged sheet";
   }
-};
 
-TEST_F(MoireArrayTest, DenseArraySubPixelHasNoBeat)
-{
-  buildArray(/*n=*/128);  // output pitch ~2 px — the regime that aliases
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
-  EXPECT_EQ(w, 256u);
-  const int iw = static_cast<int>(w);
-  const int ih = static_cast<int>(h);
-  // Measure the central macro-uniform window: the full-tile profile is
-  // dominated by the array's outer edge / surrounding margin (a legitimate
-  // low-frequency envelope, not a beat).  In the interior the supersample +
-  // Lanczos-2 decimation must keep the beat band nearly empty — round-8 (1px
-  // coverage) measured ~0.2-0.3 here; the fix drives it to <0.01.
-  const double beat
-      = beatFracWindow(pixels, iw, iw / 4, ih / 4, 3 * iw / 4, 3 * ih / 4);
-  EXPECT_LT(beat, 0.06) << "moiré beat present in dense sub-pixel bump array";
-}
-
-TEST_F(MoireArrayTest, ResolvedArrayStaysSharp)
-{
-  // Same array, but viewed zoomed-in (z=3) so the pitch resolves to ~16 px.
-  // Band-limiting must NOT smear it into a flat tint: structure (high block
-  // CV) survives while the beat band stays empty.
-  buildArray(/*n=*/128);
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  // Central tile at z=3 (8x8 tiles); guaranteed to sit inside the array.
-  auto pixels = decodePng(tile_gen_->generateTile("_instances", 3, 4, 4), w, h);
-  // The resolved grid's fundamental (~16 px pitch) legitimately lives in the
-  // beat band, so beatFrac is NOT a valid check here — the point is only that
-  // the structure survived (high block-CV), i.e. it wasn't smeared to a tint.
-  EXPECT_GT(blockAlphaCV(pixels, w, h, 8), 0.10)
-      << "resolved grid was over-blurred into a flat tint";
-}
-
-TEST_F(MoireArrayTest, BumpArrayBelowThresholdBecomesSolidBlock)
-{
-  // Mark the small master as a bump so classifyInstance() returns kPhysBump
-  // (the fixture has no STA, so it falls back to the COVER_BUMP master type).
-  odb::dbMaster* m = lib_->findMaster("INV_X1");
-  ASSERT_NE(m, nullptr);
-  m->setType(odb::dbMasterType::COVER_BUMP);
-
-  buildArray(/*n=*/128);  // bumps render ~1-2 px at z=0 → below the 6px LOD
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
-  const int iw = static_cast<int>(w);
-  const int ih = static_cast<int>(h);
-
-  // Crop a central macro-uniform window (avoid the array's outer edge).  With
-  // the LOD rule the sub-resolution bumps are collapsed into one solid block,
-  // so the interior is a flat tint: near-zero block-CV and non-transparent.
-  std::vector<unsigned char> center;
-  const int x0 = iw / 4;
-  const int x1 = 3 * iw / 4;
-  const int y0 = ih / 4;
-  const int y1 = 3 * ih / 4;
-  for (int y = y0; y < y1; ++y) {
-    for (int x = x0; x < x1; ++x) {
-      for (int c = 0; c < 4; ++c) {
-        center.push_back(pixels[(static_cast<size_t>(y) * iw + x) * 4 + c]);
+  TEST_F(MoireArrayTest, BandRendersDiscreteBumpsNotSlab)
+  {
+    // A bump that renders just below the LOD threshold (~6 px) is drawn as a
+    // single discrete coverage mark at its real footprint — NOT a slab covering
+    // the inter-bump gaps.  So the interior shows solid bumps separated by
+    // transparent gaps: moderate coverage (well under a slab's ~full fill) with
+    // some near-opaque bump pixels present.
+    buildBumpArrayTargetPx(/*n=*/16, /*target_px=*/6.0);
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels
+        = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
+    const int iw = static_cast<int>(w);
+    const int ih = static_cast<int>(h);
+    int nonzero = 0;
+    int total = 0;
+    int max_alpha = 0;
+    for (int y = ih / 4; y < 3 * ih / 4; ++y) {
+      for (int x = iw / 4; x < 3 * iw / 4; ++x) {
+        ++total;
+        const int a = pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3];
+        if (a > 0) {
+          ++nonzero;
+        }
+        max_alpha = std::max(max_alpha, a);
       }
     }
+    const double coverage = static_cast<double>(nonzero) / total;
+    // ~6 px bumps on a ~16 px pitch fill ~14% of the area: discrete, with gaps.
+    EXPECT_GT(coverage, 0.03) << "bumps were not drawn (empty interior)";
+    EXPECT_LT(coverage, 0.5) << "interior was slabbed over the gaps (merged "
+                                "sheet, not discrete bumps)";
+    EXPECT_GT(max_alpha, 100)
+        << "bumps are not drawn solid (expected discrete near-opaque marks)";
   }
-  const int cw = x1 - x0;
-  const int ch = y1 - y0;
-  EXPECT_LT(blockAlphaCV(center, cw, ch, 8), 0.03)
-      << "sub-resolution bump array did not collapse to a uniform block";
-  EXPECT_GT(center[(static_cast<size_t>(ch / 2) * cw + cw / 2) * 4 + 3], 0u)
-      << "LOD block is transparent (expected a solid layer-color tint)";
-}
 
-TEST_F(MoireArrayTest, BumpBlockTilesAbutWithoutSeam)
-{
-  // Regression: the LOD block must reach the tile edge where the bump array
-  // continues into the neighbor tile, so adjacent tiles abut with no black
-  // seam (the dark map background showing through a 1px gap).
-  odb::dbMaster* m = lib_->findMaster("INV_X1");
-  ASSERT_NE(m, nullptr);
-  m->setType(odb::dbMasterType::COVER_BUMP);
+  TEST_F(MoireArrayTest, BumpArrayContinuesAcrossTileSeam)
+  {
+    // Removing the global edge-snap must not reintroduce a black seam: a bump
+    // whose footprint straddles the tile boundary is clamped to the edge, so
+    // the array texture continues across adjacent tiles with no dead
+    // transparent band wider than the normal inter-bump gap.
+    odb::dbMaster* m = lib_->findMaster("INV_X1");
+    ASSERT_NE(m, nullptr);
+    m->setType(odb::dbMasterType::COVER_BUMP);
 
-  buildArray(/*n=*/128);
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  // Interior tile at z=1: its right edge borders tile x=1, where the array
-  // continues — the block must fill all the way to that edge.
-  auto pixels = decodePng(tile_gen_->generateTile("_instances", 1, 0, 0), w, h);
-  const int iw = static_cast<int>(w);
-  const int ih = static_cast<int>(h);
-  int opaque_right = 0;
-  for (int y = 0; y < ih; ++y) {
-    if (pixels[(static_cast<size_t>(y) * iw + (iw - 1)) * 4 + 3] > 0) {
-      ++opaque_right;
-    }
-  }
-  EXPECT_GT(opaque_right, ih / 2)
-      << "LOD block does not reach the tile's right edge → black seam between "
-         "tiles";
-}
+    buildArray(/*n=*/128);
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    // Two horizontally adjacent z=1 tiles sharing a boundary inside the array.
+    auto left = decodePng(tile_gen_->generateTile("_instances", 1, 0, 0), w, h);
+    auto right
+        = decodePng(tile_gen_->generateTile("_instances", 1, 1, 0), w, h);
+    const int iw = static_cast<int>(w);
+    const int ih = static_cast<int>(h);
 
-TEST_F(MoireArrayTest, LodCrossfadeFillsGapsInBand)
-{
-  // In the crossfade band (5..8 px) the LOD block is drawn at partial opacity
-  // OVER the individually-drawn bumps, so it still tints the gaps and the array
-  // interior stays largely covered.  With the old hard cut at 6 px, a 6 px bump
-  // would be drawn individually with no block, leaving transparent gaps (low
-  // coverage) — so this both exercises and guards the crossfade.
-  buildBumpArrayTargetPx(/*n=*/16, /*target_px=*/6.0);  // mid-band
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  auto pixels = decodePng(tile_gen_->generateTile("_instances", 0, 0, 0), w, h);
-  const int iw = static_cast<int>(w);
-  const int ih = static_cast<int>(h);
-  int nonzero = 0;
-  int total = 0;
-  for (int y = ih / 4; y < 3 * ih / 4; ++y) {
-    for (int x = iw / 4; x < 3 * iw / 4; ++x) {
-      ++total;
-      if (pixels[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
-        ++nonzero;
+    auto coverage = [&](const std::vector<unsigned char>& px, int xa, int xb) {
+      int nz = 0;
+      int tot = 0;
+      for (int y = 0; y < ih; ++y) {
+        for (int x = xa; x < xb; ++x) {
+          ++tot;
+          if (px[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+            ++nz;
+          }
+        }
+      }
+      return tot > 0 ? static_cast<double>(nz) / tot : 0.0;
+    };
+
+    // Interior coverage (reference) vs the seam neighborhood: a few columns on
+    // each side of the shared edge.  No systematic dropout at the boundary.
+    const double interior = coverage(left, iw / 4, 3 * iw / 4);
+    int seam_nz = 0;
+    int seam_tot = 0;
+    for (int y = 0; y < ih; ++y) {
+      for (int x = iw - 4; x < iw; ++x) {  // left tile, right edge
+        ++seam_tot;
+        if (left[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+          ++seam_nz;
+        }
+      }
+      for (int x = 0; x < 4; ++x) {  // right tile, left edge
+        ++seam_tot;
+        if (right[(static_cast<size_t>(y) * iw + x) * 4 + 3] > 0) {
+          ++seam_nz;
+        }
       }
     }
+    const double seam = static_cast<double>(seam_nz) / seam_tot;
+    ASSERT_GT(interior, 0.0);
+    EXPECT_GT(seam, 0.3 * interior)
+        << "transparent band at the tile boundary → black seam between tiles";
   }
-  EXPECT_GT(static_cast<double>(nonzero) / total, 0.8)
-      << "crossfade band did not tint the gaps (block not blended in)";
-}
 
-TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
-{
-  placeInst("BUF_X16", "buf1", 10000, 10000);
-  makeTileGen();
-  unsigned w = 0;
-  unsigned h = 0;
-  // dpr=2 → the tile is rendered at 256*2 physical pixels so it maps 1:1 onto
-  // a HiDPI device grid (no browser resampling → no re-aliased moiré).
-  auto png = tile_gen_->generateTile("_instances",
-                                     0,
-                                     0,
-                                     0,
-                                     /*vis=*/{},
-                                     /*highlight_rects=*/{},
-                                     /*highlight_polys=*/{},
-                                     /*colored_rects=*/{},
-                                     /*flight_lines=*/{},
-                                     /*module_colors=*/nullptr,
-                                     /*focus_net_ids=*/nullptr,
-                                     /*route_guide_net_ids=*/nullptr,
-                                     /*dpr=*/2.0);
-  auto pixels = decodePng(png, w, h);
-  EXPECT_EQ(w, 512u);
-  EXPECT_EQ(h, 512u);
-  EXPECT_TRUE(hasNonTransparentPixel(pixels));
-}
-
-TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
-{
-  makeTileGen();
-  constexpr size_t kCap = 512;  // mirrors TileGenerator::kTileCacheCap
-  for (size_t i = 0; i < kCap + 10; ++i) {
-    tile_gen_->tileCachePut("k" + std::to_string(i),
-                            {static_cast<unsigned char>(i & 0xff),
-                             static_cast<unsigned char>((i >> 8) & 0xff)});
+  TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
+  {
+    placeInst("BUF_X16", "buf1", 10000, 10000);
+    makeTileGen();
+    unsigned w = 0;
+    unsigned h = 0;
+    // dpr=2 → the tile is rendered at 256*2 physical pixels so it maps 1:1 onto
+    // a HiDPI device grid (no browser resampling → no re-aliased moiré).
+    auto png = tile_gen_->generateTile("_instances",
+                                       0,
+                                       0,
+                                       0,
+                                       /*vis=*/{},
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       /*module_colors=*/nullptr,
+                                       /*focus_net_ids=*/nullptr,
+                                       /*route_guide_net_ids=*/nullptr,
+                                       /*dpr=*/2.0);
+    auto pixels = decodePng(png, w, h);
+    EXPECT_EQ(w, 512u);
+    EXPECT_EQ(h, 512u);
+    EXPECT_TRUE(hasNonTransparentPixel(pixels));
   }
-  EXPECT_EQ(tile_gen_->tileCacheSize(), kCap);
 
-  std::vector<unsigned char> out;
-  // The 10 oldest keys (k0..k9) were evicted.
-  EXPECT_FALSE(tile_gen_->tileCacheGet("k0", out));
-  EXPECT_FALSE(tile_gen_->tileCacheGet("k9", out));
-  // A recent key still returns its exact bytes.
-  ASSERT_TRUE(tile_gen_->tileCacheGet("k" + std::to_string(kCap + 9), out));
-  EXPECT_EQ(out.size(), 2u);
+  TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
+  {
+    makeTileGen();
+    constexpr size_t kCap = 512;  // mirrors TileGenerator::kTileCacheCap
+    for (size_t i = 0; i < kCap + 10; ++i) {
+      tile_gen_->tileCachePut("k" + std::to_string(i),
+                              {static_cast<unsigned char>(i & 0xff),
+                               static_cast<unsigned char>((i >> 8) & 0xff)});
+    }
+    EXPECT_EQ(tile_gen_->tileCacheSize(), kCap);
 
-  // Promotion (LRU): touch the oldest survivor (k10), then overflow by one.
-  // k10 must survive because the touch made it most-recently-used; the next
-  // oldest (k11) is evicted instead.
-  ASSERT_TRUE(tile_gen_->tileCacheGet("k10", out));
-  tile_gen_->tileCachePut("knew", {7});
-  EXPECT_TRUE(tile_gen_->tileCacheGet("k10", out));
-  EXPECT_FALSE(tile_gen_->tileCacheGet("k11", out));
+    std::vector<unsigned char> out;
+    // The 10 oldest keys (k0..k9) were evicted.
+    EXPECT_FALSE(tile_gen_->tileCacheGet("k0", out));
+    EXPECT_FALSE(tile_gen_->tileCacheGet("k9", out));
+    // A recent key still returns its exact bytes.
+    ASSERT_TRUE(tile_gen_->tileCacheGet("k" + std::to_string(kCap + 9), out));
+    EXPECT_EQ(out.size(), 2u);
 
-  // Design reload clears the cache.
-  tile_gen_->eagerInit();
-  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u);
-}
+    // Promotion (LRU): touch the oldest survivor (k10), then overflow by one.
+    // k10 must survive because the touch made it most-recently-used; the next
+    // oldest (k11) is evicted instead.
+    ASSERT_TRUE(tile_gen_->tileCacheGet("k10", out));
+    tile_gen_->tileCachePut("knew", {7});
+    EXPECT_TRUE(tile_gen_->tileCacheGet("k10", out));
+    EXPECT_FALSE(tile_gen_->tileCacheGet("k11", out));
+
+    // Design reload clears the cache.
+    tile_gen_->eagerInit();
+    EXPECT_EQ(tile_gen_->tileCacheSize(), 0u);
+  }
 
 }  // namespace
 }  // namespace web
