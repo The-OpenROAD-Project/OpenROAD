@@ -367,14 +367,9 @@ export class TimingWidget {
 
         this._pathTable.appendChild(tbody);
 
-        // Install resize grips, then restore previous widths if available.
-        makeResizableHeaders(this._pathTable);
-        if (savedWidths.length > 0 && savedWidths[0]) {
-            const newHeaders = this._pathTable.querySelectorAll('thead th');
-            newHeaders.forEach((th, i) => {
-                if (i < savedWidths.length) th.style.width = savedWidths[i];
-            });
-        }
+        // Install resize grips, reusing any previously saved widths to
+        // avoid a measuring reflow.
+        makeResizableHeaders(this._pathTable, savedWidths);
     }
 
     _selectDetailRow(idx) {
@@ -449,14 +444,10 @@ export class TimingWidget {
         });
         this._detailTable.appendChild(tbody);
 
-        // Install resize grips, then restore previous widths if available.
-        makeResizableHeaders(this._detailTable);
-        if (savedWidths.length > 0 && savedWidths[0]) {
-            const newHeaders = this._detailTable.querySelectorAll('thead th');
-            newHeaders.forEach((th, i) => {
-                if (i < savedWidths.length) th.style.width = savedWidths[i];
-            });
-        } else {
+        // Install resize grips, reusing any previously saved widths to
+        // avoid a measuring reflow.
+        makeResizableHeaders(this._detailTable, savedWidths);
+        if (!savedWidths[0]) {
             // Pin column: set initial width to 30 characters
             const pinTh = this._detailTable.querySelector('thead th');
             if (pinTh) {
