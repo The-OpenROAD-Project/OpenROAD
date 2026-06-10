@@ -13,6 +13,7 @@
 #include <memory>
 #include <mutex>
 #include <numbers>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -62,19 +63,12 @@ constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kMinInstNameFontPx = 10;     // minimum readable font size
 constexpr int kMaxInstNameFontPx = 40;     // cap font size for large macros
 constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
-// Anti-moiré LOD for bump arrays, with a crossfade band (CSS px).  When a bump
-// renders at <= kBumpLodLoPx it is not drawn individually — the array region is
-// painted as one solid block of the layer color (the band-limit cannot remove
-// the residual beat of a sub-~1px-pitch array; only collapsing to a tint does).
-// At >= kBumpLodHiPx it is drawn individually (resolved).  In between, both are
-// drawn and the block's opacity ramps from 0 to full, so zooming across the
-// threshold fades block<->detail instead of popping.
-constexpr double kBumpLodLoPx = 5.0;
+// Anti-moiré LOD threshold for bump arrays (CSS px).  Below this size a bump is
+// not rasterized in detail (the per-instance geometry walk is what made dense
+// arrays slow); instead its real per-layer footprint is drawn as a single
+// discrete coverage mark and the supersample + Lanczos low-pass band-limits the
+// result.  At or above it the bump is resolved and drawn normally.
 constexpr double kBumpLodHiPx = 8.0;
-// Only collapse to a solid block when at least this many sub-threshold bumps
-// fall in a tile (a real array); fewer scattered bumps are drawn individually
-// so we never paint a solid slab over mostly-empty space.
-constexpr size_t kBumpLodMinCount = 9;
 
 }  // namespace
 
@@ -325,24 +319,31 @@ bool TileVisibility::isNetSelectable(odb::dbNet* net) const
   return true;
 }
 
-// True when `master` has any obstruction (if vis.blockages) or instance-pin
-// (if vis.inst_pins) geometry on `tech_layer` — or on any layer when
-// `tech_layer` is null (the _instances overview).  Used to decide whether a
-// sub-resolution bump contributes to a given layer tile's solid LOD block, so
-// we don't paint a block on layers where the bump draws nothing.
-static bool bumpHasLayerGeom(odb::dbMaster* master,
-                             odb::dbTechLayer* tech_layer,
-                             const TileVisibility& vis)
+// The bounding box (master-local coordinates) of `master`'s obstruction (if
+// vis.blockages) and instance-pin (if vis.inst_pins) geometry on `tech_layer` —
+// or over all layers when `tech_layer` is null (the _instances overview).
+// Returns nullopt when the bump draws nothing on this layer.  Used to place a
+// sub-resolution bump's anti-moiré LOD mark at its real per-layer footprint, so
+// a secondary layer (e.g. an RDL stub) only tints in proportion to the area it
+// actually covers instead of the whole bump bbox — no opaque sheet.
+static std::optional<odb::Rect> bumpLayerGeomBox(odb::dbMaster* master,
+                                                 odb::dbTechLayer* tech_layer,
+                                                 const TileVisibility& vis)
 {
+  odb::Rect box;
+  box.mergeInit();
+  bool found = false;
   if (vis.blockages) {
     for (odb::dbPolygon* p : master->getPolygonObstructions()) {
       if (!tech_layer || p->getTechLayer() == tech_layer) {
-        return true;
+        box.merge(p->getPolygon().getEnclosingRect());
+        found = true;
       }
     }
     for (odb::dbBox* b : master->getObstructions(false)) {
       if (!tech_layer || b->getTechLayer() == tech_layer) {
-        return true;
+        box.merge(b->getBox());
+        found = true;
       }
     }
   }
@@ -351,18 +352,23 @@ static bool bumpHasLayerGeom(odb::dbMaster* master,
       for (odb::dbMPin* mpin : mterm->getMPins()) {
         for (odb::dbPolygon* pg : mpin->getPolygonGeometry()) {
           if (!tech_layer || pg->getTechLayer() == tech_layer) {
-            return true;
+            box.merge(pg->getPolygon().getEnclosingRect());
+            found = true;
           }
         }
         for (odb::dbBox* g : mpin->getGeometry(false)) {
           if (!tech_layer || g->getTechLayer() == tech_layer) {
-            return true;
+            box.merge(g->getBox());
+            found = true;
           }
         }
       }
     }
   }
-  return false;
+  if (!found) {
+    return std::nullopt;
+  }
+  return box;
 }
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
@@ -2107,14 +2113,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
-        // Sub-resolution bumps collected for the anti-moiré solid LOD block
-        // (filled once after the loop).  In super-pixel coords.  bump_t_* sum
-        // the per-bump crossfade factor t (1 = full block, 0 = full detail);
-        // the block is filled at the mean t (uniform for a single-master
-        // array).
-        std::vector<odb::Rect> small_bumps;
-        double bump_t_sum = 0.0;
-        int bump_t_count = 0;
+        // Sub-resolution bumps collected for the anti-moiré LOD, drawn once
+        // after the loop with EXACT area coverage (no slab, no tile-edge snap,
+        // no integer floor/ceil, no center splat), so a dense array reads as a
+        // faithful band-limited texture instead of an opaque sheet AND does not
+        // alias into a beat.  Each entry is the bump's real per-layer footprint
+        // {fxl, fyl, fxh, fyh} in FRACTIONAL super-pixel coords (y still up).
+        std::vector<std::array<double, 4>> small_bumps;
 
         // Draw instances
         for (odb::dbInst* inst : search_->searchInsts(
@@ -2152,29 +2157,37 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
           const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
 
-          // Anti-moiré LOD with crossfade: a bump small enough to alias into a
-          // moiré-prone grid is collected so the array region is painted as one
-          // solid block after the loop (only when it would actually draw on
-          // this layer: any geometry on _instances; matching tech-layer
-          // geometry otherwise).  Below the band it is NOT drawn individually
-          // (pure block); inside the band it is ALSO drawn individually and the
-          // block fades in (factor t), so zooming across the threshold blends
-          // block<->detail instead of popping.
-          if (inst_cat == InstCategory::kPhysBump
-              && (instances_only
-                  || bumpHasLayerGeom(master, tech_layer, vis))) {
-            const double size_px = static_cast<double>(
-                std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl));
-            const double lo = kBumpLodLoPx * super_per_css;
-            const double hi = kBumpLodHiPx * super_per_css;
-            if (size_px < hi) {
-              small_bumps.emplace_back(loop_xl, loop_yl, loop_xh, loop_yh);
-              bump_t_sum += std::clamp((hi - size_px) / (hi - lo), 0.0, 1.0);
-              ++bump_t_count;
-              if (size_px <= lo) {
-                continue;  // fully collapsed → skip the individual draw
+          // Anti-moiré LOD: a bump small enough to alias into a moiré-prone
+          // grid is not rasterized in detail (the per-instance geometry walk is
+          // what made dense arrays slow); its real per-layer footprint is
+          // collected and drawn after the loop as a single discrete coverage
+          // mark.  The supersample + Lanczos low-pass then band-limits it, so
+          // the array reads as faithful texture with no merged sheet.  Only the
+          // layer where the bump actually draws contributes (any geometry on
+          // _instances; the matching tech-layer footprint otherwise), so a
+          // secondary layer tints in proportion to its own coverage.
+          if (inst_cat == InstCategory::kPhysBump) {
+            std::optional<odb::Rect> geom_box
+                = instances_only ? std::optional<odb::Rect>(inst_bbox)
+                                 : bumpLayerGeomBox(master, tech_layer, vis);
+            if (geom_box) {
+              const double size_px = static_cast<double>(
+                  std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl));
+              const double hi = kBumpLodHiPx * super_per_css;
+              if (size_px < hi) {
+                if (!instances_only) {
+                  inst->getTransform().apply(*geom_box);
+                }
+                // Footprint in FRACTIONAL super-pixel coords (y still up); kept
+                // un-quantized so the post-loop draw can compute exact area
+                // coverage (quantizing here would re-introduce the beat).
+                const double fxl = (geom_box->xMin() - dbu_x_min) * scale;
+                const double fyl = (geom_box->yMin() - dbu_y_min) * scale;
+                const double fxh = (geom_box->xMax() - dbu_x_min) * scale;
+                const double fyh = (geom_box->yMax() - dbu_y_min) * scale;
+                small_bumps.push_back({fxl, fyl, fxh, fyh});
+                continue;  // never rasterize detail below the LOD threshold
               }
-              // in the band → fall through to also draw the bump individually
             }
           }
 
@@ -2430,64 +2443,51 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
         }
 
-        // Anti-moiré LOD: paint the collected sub-resolution bumps.  A dense
-        // array (>= kBumpLodMinCount) becomes ONE solid block of the layer
-        // color covering the bumps AND the gaps between them, so no grid/beat
-        // survives.  A few scattered bumps are drawn as individual solid rects
-        // so we never slab over mostly-empty space.  The block opacity is
-        // scaled by the mean crossfade factor t (1 below the band, 0 at the top
-        // of it) and is drawn OVER any individually-drawn band bumps, fading
-        // block<->detail across the zoom threshold.
+        // Anti-moiré LOD: paint each collected sub-resolution bump with EXACT
+        // area coverage — each super-pixel gets alpha = base.a * (fraction of
+        // the pixel the footprint covers).  No floor/ceil hard edges and no
+        // center splat, so a regular array does NOT pick up width/position
+        // jitter from the sub-pixel phase (the cause of the RODADA-17 beat).
+        // Below Nyquist the exact per-pixel integral is the local mean density
+        // regardless of phase → a faithful faint tint after Lanczos, not a
+        // sheet; when resolvable it is a crisp anti-aliased bump.
         if (!small_bumps.empty()) {
-          const double t_block
-              = bump_t_count > 0 ? bump_t_sum / bump_t_count : 1.0;
-          Color bump_block_color
-              = instances_only ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
-                               : color;
-          bump_block_color.a = static_cast<unsigned char>(
-              std::lround(bump_block_color.a * t_block));
-          const auto fill_rect = [&](const odb::Rect& r) {
-            for (int iy = r.yMin(); iy < r.yMax(); ++iy) {
+          const Color base = instances_only
+                                 ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
+                                 : color;
+          const auto blend_coverage_rect = [&](const double fxl,
+                                               const double fyl,
+                                               const double fxh,
+                                               const double fyh) {
+            const int ix0 = std::max(0, static_cast<int>(std::floor(fxl)));
+            const int iy0 = std::max(0, static_cast<int>(std::floor(fyl)));
+            const int ix1 = std::min(super, static_cast<int>(std::ceil(fxh)));
+            const int iy1 = std::min(super, static_cast<int>(std::ceil(fyh)));
+            for (int iy = iy0; iy < iy1; ++iy) {
+              const double cov_y
+                  = std::min(fyh, iy + 1.0) - std::max(fyl, double(iy));
+              if (cov_y <= 0.0) {
+                continue;
+              }
               const int draw_y = super - 1 - iy;
-              for (int ix = r.xMin(); ix < r.xMax(); ++ix) {
-                blendPixel(image_buffer, ix, draw_y, bump_block_color, super);
+              for (int ix = ix0; ix < ix1; ++ix) {
+                const double cov_x
+                    = std::min(fxh, ix + 1.0) - std::max(fxl, double(ix));
+                const double frac = cov_x * cov_y;
+                if (frac <= 0.0) {
+                  continue;
+                }
+                Color c = base;
+                c.a = static_cast<unsigned char>(
+                    std::lround(base.a * std::clamp(frac, 0.0, 1.0)));
+                if (c.a > 0) {
+                  blendPixel(image_buffer, ix, draw_y, c, super);
+                }
               }
             }
           };
-          if (small_bumps.size() >= kBumpLodMinCount) {
-            odb::Rect block;
-            block.mergeInit();
-            for (const odb::Rect& r : small_bumps) {
-              block.merge(r);
-            }
-            // Snap any block edge that nearly reaches the tile edge OUT to it,
-            // so the LOD blocks of adjacent tiles abut with no transparent seam
-            // where the array continues into the neighbor (the seam would show
-            // the dark map background as a black grid).  The snap margin is
-            // ~1.5x the estimated bump pitch (sqrt of the mean area per bump);
-            // a real array edge (bumps far from that side) is left untouched,
-            // so empty space beyond the array is not over-filled.
-            const double area = static_cast<double>(block.dx()) * block.dy();
-            const int pitch = std::max(
-                1, static_cast<int>(std::sqrt(area / small_bumps.size())));
-            const int margin = pitch + pitch / 2;
-            if (block.xMin() <= margin) {
-              block.set_xlo(0);
-            }
-            if (block.yMin() <= margin) {
-              block.set_ylo(0);
-            }
-            if (block.xMax() >= super - margin) {
-              block.set_xhi(super);
-            }
-            if (block.yMax() >= super - margin) {
-              block.set_yhi(super);
-            }
-            fill_rect(block);
-          } else {
-            for (const odb::Rect& r : small_bumps) {
-              fill_rect(r);
-            }
+          for (const auto& b : small_bumps) {
+            blend_coverage_rect(b[0], b[1], b[2], b[3]);
           }
         }
 

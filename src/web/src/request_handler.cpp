@@ -2374,8 +2374,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
   // the cache session-independent and correct; overlay tiles render fresh.
-  const bool cacheable = mod_ptr == nullptr
-                         && focus_ptr == nullptr
+  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
                          && !vis.debug && !vis.debug_renderers
                          && !vis.debug_live;
 
