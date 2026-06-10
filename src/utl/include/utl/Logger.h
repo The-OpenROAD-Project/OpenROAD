@@ -954,8 +954,28 @@ class Logger
                               std::string_view header,
                               const std::vector<SQLiteType>& types);
 
-  // Entry to database log worker thread
+  // --- Database log worker thread (entry point + phases) ---
+
+  // Entry to database log worker thread.  Launched from startLogDb.
   void logDbLoop();
+
+  // Phase 1: Open the SQLite database, create system tables, populate
+  // tool_names, and signal readiness.  Returns true on success.
+  bool logDbStartup();
+
+  // Phase 2: Main spin loop.  Drains command queues, schedules work
+  // across registered data channels, and applies memory-pressure
+  // gating.  Runs until log_db_running_ becomes false.
+  void logDbMainLoop(
+      std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>,
+                         SchemaKeyHasher>& local_registry);
+
+  // Phase 3: Final drain of all remaining data, WAL checkpoint, and
+  // close of the SQLite database.  local_registry is cleared before
+  // close so TypedQueue destructors can finalize prepared statements.
+  void logDbShutdown(
+      std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>,
+                         SchemaKeyHasher>& local_registry);
 
   // Drain all pending metadata rows into the 'metadata' table.
   // Returns true if any rows were drained.

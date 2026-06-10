@@ -94,6 +94,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@spdlog",
+        "@sqlite3//:sqlite3",
         "@tcl_lang//:tcl",
     ],
 )

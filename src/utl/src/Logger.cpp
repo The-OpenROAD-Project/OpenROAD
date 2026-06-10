@@ -343,15 +343,32 @@ SchemaInfo Logger::syncCreateTable(SchemaKey key,
 }
 
 
-// logDbLoop  (backend thread)
+// logDbLoop  (backend thread entry point)
 void Logger::logDbLoop()
 {
-  // Startup: Open the SQLite database and create system tables.
+  if (!logDbStartup()) {
+    return;
+  }
+
+  // Local registry for the backend thread: SchemaKey -> AbstractQueue.
+  // Populated by processing NewSchemaCommands, drained by schedule logic.
+  std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>, SchemaKeyHasher>
+      local_registry;
+
+  logDbMainLoop(local_registry);
+  // The above will exit when the run flag is lowered
+  logDbShutdown(local_registry);
+}
+
+
+// DB Log Startup
+bool Logger::logDbStartup()
+{
+  // Open the SQLite database.
   int rc = sqlite3_open_v2(db_filename_.c_str(),
                            &db_,
                            SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
                            nullptr);
-  // FIXME: Might be be better ways for this thread to throw fatal errors.
   if (rc != SQLITE_OK) {
     db_start_error_ = sqlite3_errmsg(db_)
                           ? sqlite3_errmsg(db_)
@@ -365,11 +382,11 @@ void Logger::logDbLoop()
     }
     startup_cv_.notify_one();
     log_db_running_ = false;
-    return;
+    return false;
   }
 
-  // We do not care about thread safety or atomicity as there is only one backend thread.
-  // WAL for max speed.
+  // We do not care about thread safety or atomicity as there is only one
+  // backend thread.  WAL for max speed.
   sqlite3_exec(db_, "PRAGMA journal_mode = WAL;", nullptr, nullptr, nullptr);
   sqlite3_exec(db_, "PRAGMA synchronous = OFF;", nullptr, nullptr, nullptr);
 
@@ -403,7 +420,7 @@ void Logger::logDbLoop()
     }
     startup_cv_.notify_one();
     log_db_running_ = false;
-    return;
+    return false;
   }
 
   // Populate tool_names table.
@@ -425,33 +442,35 @@ void Logger::logDbLoop()
       }
       startup_cv_.notify_one();
       log_db_running_ = false;
-      return;
+      return false;
     }
   }
 
   // Signal to startLogDb that the backend is ready.
-  // IMPORTANT: Any critical faults/checks added in the future MUST be calculated before this.
-  // The rest of the code assumes all is well after this point.
+  // IMPORTANT: Any critical faults/checks added in the future MUST be
+  // calculated before this.  The rest of the code assumes all is well
+  // after this point.
   db_ready_ = true;
   {
     std::lock_guard<std::mutex> lock(startup_mutex_);
     startup_done_ = true;
   }
   startup_cv_.notify_one();
+  return true;
+}
 
-  // Main loop spins to drain queues, until stopped flag raised.
-  // Uses a fairly simple round robin + mem pressure scheduling mechanism.
+// DB Log Main loop
 
-
-  // Local registry for the backend thread: SchemaKey -> AbstractQueue
-  std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>, SchemaKeyHasher>
-      local_registry;
-
+void Logger::logDbMainLoop(
+    std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>,
+                       SchemaKeyHasher>& local_registry)
+{
   // Spin until something else lowers the running flag.
+  // Uses a fairly simple round robin + mem pressure scheduling mechanism.
   while (log_db_running_.load(std::memory_order_acquire)) {
     bool did_work = false;
 
-    // First, drain all pending CreateTableCommand entries ---
+    // --- Step 1: Drain all pending CreateTableCommand entries ---
     // These have the highest priority because callers are blocked on them
     // and we cannot do anything else without a registration.
     {
@@ -474,7 +493,7 @@ void Logger::logDbLoop()
       }
     }
 
-    // Drain all pending NewSchemaCommand entries
+    // --- Step 2: Drain all pending NewSchemaCommand entries ---
     {
       std::deque<NewSchemaCommand> pending_commands;
       {
@@ -493,12 +512,12 @@ void Logger::logDbLoop()
       did_work = did_work || !pending_commands.empty();
     }
 
-    // // Phase 3: Drain metadata queue
+    // --- Step 3: Drain metadata queue ---
     if (drainMetadataQueue()) {
       did_work = true;
     }
 
-    // --- Phase 4: Schedule and drain queues ---
+    // --- Step 4: Schedule and drain data queues ---
     size_t total_mem = 0;
     for (auto& entry : local_registry) {
       total_mem += entry.second->approx_size() * entry.second->row_size_bytes();
@@ -506,7 +525,7 @@ void Logger::logDbLoop()
 
     bool drained_some = false;
 
-    // --- Global pressure: fully drain the largest queue ---
+    // Global pressure: fully drain the largest queue.
     bool global_pressure = false;
     if (db_log_global_max_mem_ > 0) {
       const size_t global_limit = static_cast<size_t>(
@@ -530,8 +549,7 @@ void Logger::logDbLoop()
       }
       did_work |= drained_some;
     } else {
-      // --- Per-channel pressure: drain enough to get below 80% ---
-      // TODO: Not sure if this is the best way to deal with this problem but crudely it works.
+      // Per-channel pressure: drain enough to get below 80%.
       for (auto& entry : local_registry) {
         if (db_log_per_channel_max_mem_ == 0) {
           continue;
@@ -552,10 +570,9 @@ void Logger::logDbLoop()
         }
       }
 
-      // Common case round robin. Not sure how well it will scale.
-      // Skip this if under pressure to keep spinning this loop faster.
+      // Common case round robin.  Skip this if under pressure to keep
+      // spinning this loop faster.
       if (!drained_some) {
-        // --- Round-robin: fully clear every queue ---
         for (auto& entry : local_registry) {
           drained_some |= (entry.second->drain_to_db(db_, SIZE_MAX) > 0);
         }
@@ -564,16 +581,18 @@ void Logger::logDbLoop()
     }
 
     if (!did_work) {
-      // FIXME: Consider whether to hardcode this or estimate this by some runtime metric.
-      // We don't want to waste time, but also we can assume we can have a processor for this.
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
+}
 
-  // Shutdown helper: keep draining all queues until nothing remains, then close.
-  // FIXME: There is no mechanism to block new things from being written to queues.
-  // This data will be silently dropped after this finishes. Not a real problem for
-  // the vast majority of usecases, but in the future might be worth addressing.
+//DB Log Shutdown
+void Logger::logDbShutdown(
+    std::unordered_map<SchemaKey, std::shared_ptr<AbstractQueue>,
+                       SchemaKeyHasher>& local_registry)
+{
+  // Drain helper: process all remaining commands / data until nothing
+  // remains.
   auto drain_all = [&]() -> bool {
     bool work = false;
 
@@ -633,7 +652,8 @@ void Logger::logDbLoop()
   // Without this, data in the WAL may not be fully integrated into the
   // main DB file. TRUNCATE mode checkpoints all pages and resets the WAL
   // file to zero bytes for a clean shutdown.
-  sqlite3_exec(db_, "PRAGMA wal_checkpoint(TRUNCATE);", nullptr, nullptr, nullptr);
+  sqlite3_exec(
+      db_, "PRAGMA wal_checkpoint(TRUNCATE);", nullptr, nullptr, nullptr);
 
   sqlite3_close(db_);
   db_ = nullptr;
