@@ -276,6 +276,46 @@ static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
   }
 }
 
+// Convert a gui::Painter::Color to the web tile Color (same RGBA layout).
+static Color toWebColor(const gui::Painter::Color& c)
+{
+  return Color{.r = static_cast<unsigned char>(c.r),
+               .g = static_cast<unsigned char>(c.g),
+               .b = static_cast<unsigned char>(c.b),
+               .a = static_cast<unsigned char>(c.a)};
+}
+
+// Rebuild the derived colored overlay shapes from the per-group object sets.
+// Each group's objects are rasterized via ShapeCollector and tagged with the
+// group's highlight color.  Caller must hold state.selection_mutex.  (v1:
+// polygons are rendered as their enclosing rect; net-line highlights are a
+// future improvement, mirroring the selection-highlight limitation.)
+static void rebuildHighlightGroupShapes(SessionState& state)
+{
+  state.highlight_group_rects.clear();
+  for (int g = 0; g < gui::kNumHighlightSet; ++g) {
+    const Color color = toWebColor(gui::Painter::kHighlightColors[g]);
+    for (const auto& sel : state.highlight_groups[g]) {
+      if (!sel) {
+        continue;
+      }
+      ShapeCollector collector;
+      sel.highlight(collector);
+      for (const auto& r : collector.rects) {
+        state.highlight_group_rects.push_back(ColoredRect{
+            .rect = r, .color = color, .layer = "", .filled = true});
+      }
+      for (const auto& p : collector.polys) {
+        state.highlight_group_rects.push_back(
+            ColoredRect{.rect = p.getEnclosingRect(),
+                        .color = color,
+                        .layer = "",
+                        .filled = true});
+      }
+    }
+  }
+}
+
 static void writeInspectPayload(boost::json::object& o,
                                 const gui::Selected& sel,
                                 std::vector<gui::Selected>& new_selectables,
@@ -546,6 +586,340 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleGet3DData(req);
         });
+  // Select & Highlight Browser.
+  d.add("selection_list",
+        WebSocketRequest::kSelectionList,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectionList(req, state);
+        });
+  d.add("deselect",
+        WebSocketRequest::kDeselect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDeselect(req, state);
+        });
+  d.add("clear_selections",
+        WebSocketRequest::kClearSelections,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClearSelections(req, state);
+        });
+  d.add("dehighlight",
+        WebSocketRequest::kDehighlight,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleDehighlight(req, state);
+        });
+  d.add("clear_highlights",
+        WebSocketRequest::kClearHighlights,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleClearHighlights(req, state);
+        });
+  d.add("set_highlight_group",
+        WebSocketRequest::kSetHighlightGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSetHighlightGroup(req, state);
+        });
+  d.add("change_highlight_group",
+        WebSocketRequest::kChangeHighlightGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleChangeHighlightGroup(req, state);
+        });
+  d.add("browser_inspect",
+        WebSocketRequest::kBrowserInspect,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleBrowserInspect(req, state);
+        });
+}
+
+// ── Select & Highlight Browser ────────────────────────────────────────────
+
+namespace {
+// Read a JSON int array field into a vector<int> (empty if absent).
+std::vector<int> jsonIntList(const boost::json::object& obj, const char* key)
+{
+  std::vector<int> out;
+  if (const auto* v = obj.if_contains(key)) {
+    for (const auto& e : v->as_array()) {
+      out.push_back(static_cast<int>(e.as_int64()));
+    }
+  }
+  return out;
+}
+
+// Create {id,name,type,bbox} for `sel` as a JSON object.
+boost::json::object makeBrowserItem(int id, const gui::Selected& sel)
+{
+  boost::json::object item;
+  item["id"] = id;
+  item["name"] = sel.getName();
+  item["type"] = sel.getTypeName();
+  odb::Rect bbox;
+  if (sel.getBBox(bbox)) {
+    item["bbox"] = bboxArray(bbox);
+  }
+  return item;
+}
+}  // namespace
+
+WebSocketResponse SelectHandler::handleSelectionList(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    // getName/getTypeName/getBBox dispatch to descriptors (not thread-safe).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+
+    boost::json::object root;
+    boost::json::array sel_arr;
+    state.browser_selected.clear();
+    for (const auto& s : state.selection_set) {
+      if (!s) {
+        continue;
+      }
+      const int id = static_cast<int>(state.browser_selected.size());
+      state.browser_selected.push_back(s);
+      sel_arr.emplace_back(makeBrowserItem(id, s));
+    }
+    root["selected"] = std::move(sel_arr);
+
+    boost::json::array hl_arr;
+    state.browser_highlighted.clear();
+    for (int g = 0; g < gui::kNumHighlightSet; ++g) {
+      for (const auto& s : state.highlight_groups[g]) {
+        if (!s) {
+          continue;
+        }
+        const int id = static_cast<int>(state.browser_highlighted.size());
+        state.browser_highlighted.emplace_back(s, g);
+        auto item = makeBrowserItem(id, s);
+        item["group"] = g;
+        hl_arr.emplace_back(std::move(item));
+      }
+    }
+    root["highlighted"] = std::move(hl_arr);
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleDeselect(const WebSocketRequest& req,
+                                                SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::vector<int> ids = jsonIntList(req.json, "ids");
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    for (const int id : ids) {
+      if (id >= 0 && std::cmp_less(id, state.browser_selected.size())) {
+        state.selection_set.erase(state.browser_selected[id]);
+      }
+    }
+    state.selection_itr = state.selection_set.begin();
+    collectMultiHighlightShapes(
+        state.selection_set, state.highlight_rects, state.highlight_polys);
+    boost::json::object root;
+    root["ok"] = true;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleClearSelections(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  state.selection_set.clear();
+  state.selection_itr = state.selection_set.end();
+  state.current_inspected = gui::Selected();
+  state.navigation_history.clear();
+  state.highlight_rects.clear();
+  state.highlight_polys.clear();
+  boost::json::object root;
+  root["ok"] = true;
+  writePayload(resp, root);
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleDehighlight(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::vector<int> ids = jsonIntList(req.json, "ids");
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    for (const int id : ids) {
+      if (id >= 0 && std::cmp_less(id, state.browser_highlighted.size())) {
+        const auto& [sel, group] = state.browser_highlighted[id];
+        state.highlight_groups[group].erase(sel);
+      }
+    }
+    rebuildHighlightGroupShapes(state);
+    boost::json::object root;
+    root["ok"] = true;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleClearHighlights(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  for (auto& group : state.highlight_groups) {
+    group.clear();
+  }
+  state.highlight_group_rects.clear();
+  boost::json::object root;
+  root["ok"] = true;
+  writePayload(resp, root);
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSetHighlightGroup(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const int group = static_cast<int>(req.json.at("group").as_int64());
+    if (group < 0 || group >= gui::kNumHighlightSet) {
+      throw std::runtime_error("invalid highlight group");
+    }
+    const std::vector<int> ids = jsonIntList(req.json, "sel_ids");
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    for (const int id : ids) {
+      if (id < 0 || std::cmp_greater_equal(id, state.browser_selected.size())) {
+        continue;
+      }
+      const gui::Selected& sel = state.browser_selected[id];
+      for (auto& g : state.highlight_groups) {
+        g.erase(sel);
+      }
+      state.highlight_groups[group].insert(sel);
+    }
+    rebuildHighlightGroupShapes(state);
+    boost::json::object root;
+    root["ok"] = true;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleChangeHighlightGroup(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const int group = static_cast<int>(req.json.at("group").as_int64());
+    if (group < 0 || group >= gui::kNumHighlightSet) {
+      throw std::runtime_error("invalid highlight group");
+    }
+    const std::vector<int> ids = jsonIntList(req.json, "hl_ids");
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    for (const int id : ids) {
+      if (id < 0
+          || std::cmp_greater_equal(id, state.browser_highlighted.size())) {
+        continue;
+      }
+      const gui::Selected sel = state.browser_highlighted[id].first;
+      for (auto& g : state.highlight_groups) {
+        g.erase(sel);
+      }
+      state.highlight_groups[group].insert(sel);
+    }
+    rebuildHighlightGroupShapes(state);
+    boost::json::object root;
+    root["ok"] = true;
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleBrowserInspect(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const std::string kind(req.json.at("kind").as_string());
+    const int id = static_cast<int>(req.json.at("id").as_int64());
+
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      if (kind == "highlighted") {
+        if (id >= 0 && std::cmp_less(id, state.browser_highlighted.size())) {
+          sel = state.browser_highlighted[id].first;
+        }
+      } else {
+        if (id >= 0 && std::cmp_less(id, state.browser_selected.size())) {
+          sel = state.browser_selected[id];
+        }
+      }
+      state.current_inspected = sel;
+    }
+
+    boost::json::object root;
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        root, sel, new_selectables, /*can_navigate_back=*/false);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
 }
 
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
@@ -2023,6 +2397,10 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         rects.end(), state.hover_rects.begin(), state.hover_rects.end());
     polys = state.highlight_polys;
     colored = state.timing_rects;
+    // Select & Highlight Browser group shapes (per-group color).
+    colored.insert(colored.end(),
+                   state.highlight_group_rects.begin(),
+                   state.highlight_group_rects.end());
     lines = state.timing_lines;
   }
 

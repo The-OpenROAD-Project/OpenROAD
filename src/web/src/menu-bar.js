@@ -35,6 +35,7 @@ export function createMenuBar(app) {
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
             { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
+            { label: 'Select Highlight', action: () => app.focusComponent('SelectHighlight') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },

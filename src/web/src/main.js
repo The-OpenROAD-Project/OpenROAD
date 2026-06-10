@@ -16,6 +16,7 @@ import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
+import { SelectHighlightWidget } from './select-highlight-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import { getCookie, setCookie, applyGLTheme } from './theme.js';
 import { updateDocumentTitle } from './title.js';
@@ -720,8 +721,8 @@ function createHelpWidget(container) {
 }
 
 function createSelectHighlight(container) {
-    createStubPanel(container, 'Selection',
-        'Selection and highlight browser.');
+    app.selectHighlightWidget = new SelectHighlightWidget(app);
+    container.element.appendChild(app.selectHighlightWidget.element);
 }
 
 function createSchematicWidget(container) {
@@ -730,15 +731,6 @@ function createSchematicWidget(container) {
 
 function create3DViewerWidget(container) {
     app.threeDViewerWidget = new ThreeDViewerWidget(container, app);
-}
-
-function createStubPanel(container, title, description) {
-    const el = document.createElement('div');
-    el.className = 'stub-panel';
-    el.innerHTML =
-        `<div class="stub-title">${title}</div>` +
-        `<div class="stub-desc">${description}</div>`;
-    container.element.appendChild(el);
 }
 
 // ─── Layout Configuration ───────────────────────────────────────────────────
@@ -1176,6 +1168,9 @@ app.websocketManager.readyPromise.then(async () => {
                         }
                     }
                     refreshOverlay();
+                    if (app.selectHighlightWidget) {
+                        app.selectHighlightWidget.update();
+                    }
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
