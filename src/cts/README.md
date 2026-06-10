@@ -179,7 +179,7 @@ set_cts_config
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
 | `-sink_clustering_levels` | ... |
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified the diameter will be automatically chosen between `50, 100 or 200`, based on the tree buffer max cap. |
-| `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified, sinks will be clustered based on buffer max cap. |
+| -sink_clustering_size | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers [0, MAX_INT]. If this is not specified, sinks will be clustered based on the sink buffer's maximum fanout. |
 | `-sink_clustering_levels` | ... |
 | `-skip_nets` | Tcl list containing the clock nets to be skipped (e.g. `{net1, net2}`). If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
