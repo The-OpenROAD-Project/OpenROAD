@@ -161,6 +161,9 @@ class TestAnnealerPacking : public MplTest
   bool annealerPacks(const std::vector<HardMacro>& macros,
                      const odb::Rect& outline)
   {
+    if (macros.empty()) {
+      return true;
+    }
     PhysicalHierarchy tree;
     tree.die_area = outline;
 
