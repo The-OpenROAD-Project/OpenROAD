@@ -166,26 +166,42 @@ class TestAnnealerPacking : public MplTest
 
     block()->setDieArea(outline);
 
+    // Action probabilities mirror HierRTLMP::placeMacros(): a uniform base
+    // probability per action, with sequence-pair swaps scaled x10 and the
+    // exchange move x5 (attenuated by the share of identical masters).
+    constexpr float kBaseActionProb = 0.2f;
+    constexpr float kSeqSwapScale = 10.0f;
+    constexpr float kExchangeScale = 5.0f;
     const float exchange_swap_prob
-        = 0.2f * 5
-          * (1.0f - (inventory().size() / static_cast<float>(macros.size())));
-    const float action_sum = 0.2f * 10 + 0.2f * 10 + 0.2f + exchange_swap_prob;
-    const float pos_swap_prob = 0.2f * 10 / action_sum;
-    const float neg_swap_prob = 0.2f * 10 / action_sum;
-    const float double_swap_prob = 0.2f / action_sum;
+        = kBaseActionProb * kExchangeScale
+          * (1.0f
+             - (static_cast<float>(inventory().size())
+                / static_cast<float>(macros.size())));
+    const float action_sum = 2 * kBaseActionProb * kSeqSwapScale
+                             + kBaseActionProb + exchange_swap_prob;
+    const float pos_swap_prob = kBaseActionProb * kSeqSwapScale / action_sum;
+    const float neg_swap_prob = kBaseActionProb * kSeqSwapScale / action_sum;
+    const float double_swap_prob = kBaseActionProb / action_sum;
 
     constexpr float init_prob = 0.9f;
     constexpr int max_num_step = 2000;
     constexpr int num_runs = 10;
+    // placeMacros() uses num_perturb_per_step_ / 10 as the floor.
+    constexpr int kNumPerturbFloor = 500 / 10;
     const int num_perturb_per_step
-        = std::max(static_cast<int>(macros.size()), 500 / 10);
+        = std::max(static_cast<int>(macros.size()), kNumPerturbFloor);
 
     std::vector<std::unique_ptr<SACoreHardMacro>> sa_runs;
     for (int run_id = 0; run_id < num_runs; ++run_id) {
+      // Weight escalation mirrors placeMacros(): outline pressure grows and
+      // wirelength relaxes with each retry.
+      constexpr float kAreaWeight = 0.1f;
+      constexpr float kBaseWeight = 100.0f;
+      constexpr float kOutlineEscalation = 10.0f;
       SACoreWeights weights;
-      weights.area = 0.1f;
-      weights.outline = 100.0f * (run_id + 1) * 10;
-      weights.wirelength = 100.0f / (run_id + 1);
+      weights.area = kAreaWeight;
+      weights.outline = kBaseWeight * (run_id + 1) * kOutlineEscalation;
+      weights.wirelength = kBaseWeight / (run_id + 1);
 
       auto sa
           = std::make_unique<SACoreHardMacro>(&tree,
