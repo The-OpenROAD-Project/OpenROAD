@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
+#include "MplTest.h"
 #include "SACoreHardMacro.h"
 #include "SimulatedAnnealingCore.h"
 #include "clusterEngine.h"
+#include "gtest/gtest.h"
 #include "mpl-util.h"
 #include "object.h"
-#include "MplTest.h"
-#include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -89,10 +89,10 @@ class TestAnnealerPacking : public MplTest
   {
     std::vector<HardMacro> macros;
     for (const MacroSpec& spec : inventory()) {
-      const int width
-          = static_cast<int>(std::lround((spec.width + 2 * kHaloMicrons) * kDbuPerMicron));
-      const int height
-          = static_cast<int>(std::lround((spec.height + 2 * kHaloMicrons) * kDbuPerMicron));
+      const int width = static_cast<int>(
+          std::lround((spec.width + 2 * kHaloMicrons) * kDbuPerMicron));
+      const int height = static_cast<int>(
+          std::lround((spec.height + 2 * kHaloMicrons) * kDbuPerMicron));
       for (int i = 0; i < spec.count; ++i) {
         macros.emplace_back(
             width, height, std::string(spec.name) + "_" + std::to_string(i));
