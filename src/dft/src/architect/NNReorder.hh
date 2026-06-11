@@ -13,7 +13,7 @@
 namespace dft {
 
 // Order scan cells to reduce wirelength
-void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+void NearestNeighborReorder(std::vector<std::unique_ptr<ScanCell>>& cells,
                             utl::Logger* logger);
 
 }  // namespace dft

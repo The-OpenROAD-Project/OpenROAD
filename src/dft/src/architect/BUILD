@@ -11,13 +11,13 @@ package(
 cc_library(
     name = "architect",
     srcs = [
-        "Opt.cpp",
+        "NNReorder.cpp",
         "ScanArchitect.cpp",
         "ScanArchitectHeuristic.cpp",
         "ScanChain.cpp",
     ],
     hdrs = [
-        "Opt.hh",
+        "NNReorder.hh",
         "ScanArchitect.hh",
         "ScanArchitectHeuristic.hh",
         "ScanChain.hh",
