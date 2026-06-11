@@ -263,8 +263,8 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
 // rails on both edges (e.g. double-height cells with VSS at top and bottom)
 // or include internal straps that would pull a per-pin bbox center off the
 // rail. Only ROUTING-layer geometry counts, to ignore NWELL/PWELL implants
-// encoded as POWER/GROUND pins on MASTERSLICE layers.
-// layers) from polluting the rail detection.
+// (encoded as POWER/GROUND pins on MASTERSLICE layers) from polluting the
+// rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
   odb::Rect bbox;
