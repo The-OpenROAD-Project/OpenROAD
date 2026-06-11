@@ -179,7 +179,6 @@ cc_library(
 # headers to consumers, so direct binary deps are what each Main.cc
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
-    ":openroad_version",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
@@ -188,9 +187,7 @@ OPENROAD_MAIN_DEPS = [
     "//src/utl",
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
-    "@boost.dll",
     "@boost.stacktrace",
-    "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
     "@tcl_lang//:tcl",
 ]
 
