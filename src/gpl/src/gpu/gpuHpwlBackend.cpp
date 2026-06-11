@@ -33,23 +33,33 @@ namespace gpl {
 // Persistent backend-private state: only the per-net bbox outputs and their
 // host mirrors. The pin coords, pin→net CSR, and inst coords live in the
 // shared DeviceState (gpu/deviceState.h).
+// Host copies of the per-net bboxes live in pinned (page-locked) memory:
+// these four ~1 MB device→host transfers run twice per Nesterov iteration,
+// and against pageable memory each cudaMemcpy cost ~0.33 ms of host time on
+// a 290k-net design (~1.5 s per large01 run) vs ~0.1 ms pinned.
+// SharedHostPinnedSpace is the portable alias (CudaHostPinnedSpace /
+// HIPHostPinnedSpace depending on the Kokkos backend).
+using PinnedIntView = Kokkos::View<int*, Kokkos::SharedHostPinnedSpace>;
+
 struct GpuHpwlBackend::Impl
 {
   DeviceState* device_state;  // borrowed
+  int num_threads;            // host fan-out for applyNetBoxesParallel
   Kokkos::View<int*> d_lx;
   Kokkos::View<int*> d_ly;
   Kokkos::View<int*> d_ux;
   Kokkos::View<int*> d_uy;
-  Kokkos::View<int*>::HostMirror h_lx;
-  Kokkos::View<int*>::HostMirror h_ly;
-  Kokkos::View<int*>::HostMirror h_ux;
-  Kokkos::View<int*>::HostMirror h_uy;
+  PinnedIntView h_lx;
+  PinnedIntView h_ly;
+  PinnedIntView h_ux;
+  PinnedIntView h_uy;
 };
 
-GpuHpwlBackend::GpuHpwlBackend(DeviceState* device_state)
+GpuHpwlBackend::GpuHpwlBackend(DeviceState* device_state, int num_threads)
     : impl_(std::make_unique<Impl>())
 {
   impl_->device_state = device_state;
+  impl_->num_threads = num_threads;
 }
 
 GpuHpwlBackend::~GpuHpwlBackend() = default;
@@ -74,10 +84,10 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
     s.d_ly = Kokkos::View<int*>("hpwl_net_ly", n_nets);
     s.d_ux = Kokkos::View<int*>("hpwl_net_ux", n_nets);
     s.d_uy = Kokkos::View<int*>("hpwl_net_uy", n_nets);
-    s.h_lx = Kokkos::create_mirror_view(s.d_lx);
-    s.h_ly = Kokkos::create_mirror_view(s.d_ly);
-    s.h_ux = Kokkos::create_mirror_view(s.d_ux);
-    s.h_uy = Kokkos::create_mirror_view(s.d_uy);
+    s.h_lx = PinnedIntView("hpwl_net_lx_h", n_nets);
+    s.h_ly = PinnedIntView("hpwl_net_ly_h", n_nets);
+    s.h_ux = PinnedIntView("hpwl_net_ux_h", n_nets);
+    s.h_uy = PinnedIntView("hpwl_net_uy_h", n_nets);
   }
 
   // Local refs so the lambdas below capture by value (no implicit `this`).
@@ -205,19 +215,32 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
       },
       total_hpwl);
 
-  // ---- 4. Mirror per-net bbox back to host GNet objects ----
-  // Subsequent code paths (e.g. routeBase, timing-driven weights) read
-  // gNet->lx() / ly() / ux() / uy() and expect them updated.
+  // The per-net boxes stay device-resident: mirroring them to the host every
+  // call cost ~2.4 ms on a 290k-net design (4 D2H copies + the setBox loop,
+  // twice per Nesterov iteration) and nothing on the GPU path reads host
+  // GNet boxes during the loop — see the contract note in ../hpwlBackend.h.
+  // mirrorNetBoxesToHost() below materializes them on demand.
+
+  return total_hpwl;
+}
+
+void GpuHpwlBackend::mirrorNetBoxesToHost(std::vector<GNet>& gNetStor)
+{
+  Impl& s = *impl_;
+  if (s.d_lx.extent(0) != gNetStor.size() || gNetStor.empty()) {
+    return;  // computeHpwl has not run (or ran for a different net count)
+  }
   Kokkos::deep_copy(s.h_lx, s.d_lx);
   Kokkos::deep_copy(s.h_ly, s.d_ly);
   Kokkos::deep_copy(s.h_ux, s.d_ux);
   Kokkos::deep_copy(s.h_uy, s.d_uy);
 
-  for (int i = 0; i < n_nets; ++i) {
-    gNetStor[i].setBox(s.h_lx(i), s.h_ly(i), s.h_ux(i), s.h_uy(i));
-  }
-
-  return total_hpwl;
+  applyNetBoxesParallel(gNetStor,
+                        s.h_lx.data(),
+                        s.h_ly.data(),
+                        s.h_ux.data(),
+                        s.h_uy.data(),
+                        s.num_threads);
 }
 
 }  // namespace gpl

@@ -37,13 +37,15 @@ class GpuHpwlBackend : public HpwlBackend
 {
  public:
   // `device_state` is borrowed; must outlive this backend. Provided by the
-  // factory in ../hpwl.cpp, owned by NesterovBaseCommon.
-  explicit GpuHpwlBackend(DeviceState* device_state);
+  // factory in ../hpwl.cpp, owned by NesterovBaseCommon. `num_threads` fans
+  // out the host-side mirror of per-net boxes (applyNetBoxesParallel).
+  GpuHpwlBackend(DeviceState* device_state, int num_threads);
   ~GpuHpwlBackend() override;
 
-  // Total HPWL over the nets; writes each net's bbox back via GNet::setBox.
-  // Bit-identical to the CPU loop (integer arithmetic, deterministic across
-  // Kokkos backends).
+  // Total HPWL over the nets. Bit-identical to the CPU loop (integer
+  // arithmetic, deterministic across Kokkos backends). Unlike the CPU
+  // backend this does NOT update host GNet boxes — they stay device-resident
+  // until mirrorNetBoxesToHost() (see the contract in ../hpwlBackend.h).
   //
   // Caller invariant: device_state's inst coords must reflect current host
   // GCell positions and pin coords must be up-to-date. NesterovBaseCommon::
@@ -51,11 +53,29 @@ class GpuHpwlBackend : public HpwlBackend
   // updatePinLocations() right before invoking this backend.
   int64_t computeHpwl(std::vector<GNet>& nets) override;
 
+  // Copies the device-resident per-net boxes of the last computeHpwl back to
+  // the host GNet objects (OpenMP setBox fan-out). No-op before the first
+  // computeHpwl.
+  void mirrorNetBoxesToHost(std::vector<GNet>& nets) override;
+
   const char* name() const override { return "GPU (Kokkos)"; }
 
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
+
+// Mirrors the device-computed per-net bounding boxes back onto the host GNet
+// objects (GNet::setBox) with an OpenMP fan-out — each net writes only its
+// own slot, so the loop is embarrassingly parallel. On a 290k-net design the
+// serial version of this loop cost ~2.8 ms per computeHpwl call (~3.1 s over
+// a large01 run). Defined in ../hpwl.cpp, a plain C++ TU: gpuHpwlBackend.cpp
+// is compiled as a CUDA TU, which does not get the OpenMP compile flags.
+void applyNetBoxesParallel(std::vector<GNet>& gNetStor,
+                           const int* lx,
+                           const int* ly,
+                           const int* ux,
+                           const int* uy,
+                           int num_threads);
 
 }  // namespace gpl

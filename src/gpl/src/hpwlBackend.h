@@ -21,10 +21,17 @@ namespace gpl {
 
 class GNet;
 
-// Strategy: computes the total HPWL over a net storage. Implementations also
-// write each net's bounding box back via GNet::setBox — the side effect the
-// legacy CPU loop performed and that later passes (routability, timing)
-// depend on.
+// Strategy: computes the total HPWL over a net storage.
+//
+// Host GNet box contract: the CPU backend updates every net's box as a side
+// effect of computeHpwl (GNet::updateBox, the legacy behavior). The GPU
+// backend keeps the boxes device-resident — mirroring them to the host cost
+// ~2.4 ms per call on a 290k-net design while (as of 2026-06) nothing reads
+// host GNet boxes on the GPU path: the only consumer,
+// updateWireLengthForceWA_native, runs solely under the CPU wirelength
+// backend. Callers that do need host boxes (or future host-side consumers)
+// must call mirrorNetBoxesToHost() first; NesterovPlace does this at the
+// timing-driven boundary and once after the Nesterov loop ends.
 class HpwlBackend
 {
  public:
@@ -35,6 +42,12 @@ class HpwlBackend
   HpwlBackend& operator=(HpwlBackend&&) = delete;
 
   virtual int64_t computeHpwl(std::vector<GNet>& nets) = 0;
+
+  // Refreshes host GNet boxes from the backend's last computeHpwl result.
+  // No-op on the CPU backend (its computeHpwl already updates them); the GPU
+  // backend copies the device-resident boxes back and applies GNet::setBox.
+  // No-op as well if computeHpwl has not run yet.
+  virtual void mirrorNetBoxesToHost(std::vector<GNet>& nets) {}
 
   // Short label for diagnostic logging; constructed-once factory choice.
   virtual const char* name() const = 0;

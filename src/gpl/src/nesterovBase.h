@@ -910,6 +910,10 @@ class NesterovBaseCommon
 
   int64_t getHpwl();
 
+  // Refreshes host GNet boxes from the HPWL backend's last computeHpwl —
+  // no-op on the CPU backend (always fresh). See hpwlBackend.h contract.
+  void mirrorNetBoxesToHost();
+
   void updateDbGCells();
 
   // Device-resident state accessor (may be null when ENABLE_GPU is off).
