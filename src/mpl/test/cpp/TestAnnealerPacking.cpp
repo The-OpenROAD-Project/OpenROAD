@@ -286,8 +286,7 @@ TEST_F(TestAnnealerPacking, DISABLED_ProbeUtilizationCliff)
     const odb::Rect outline = makeOutline(macros, util);
     const bool shelf = shelfPacks(macros, outline);
     const bool sa = annealerPacks(macros, outline);
-    printf("PROBE util=%.2f shelf=%d annealer=%d\n", util, shelf, sa);
-    fflush(stdout);
+    logger_->report("PROBE util={:.2f} shelf={} annealer={}", util, shelf, sa);
   }
 }
 }  // namespace
