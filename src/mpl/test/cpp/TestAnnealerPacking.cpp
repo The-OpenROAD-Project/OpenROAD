@@ -11,11 +11,11 @@
 #include <utility>
 #include <vector>
 
-#include "../../src/SACoreHardMacro.h"
-#include "../../src/SimulatedAnnealingCore.h"
-#include "../../src/clusterEngine.h"
-#include "../../src/mpl-util.h"
-#include "../../src/object.h"
+#include "SACoreHardMacro.h"
+#include "SimulatedAnnealingCore.h"
+#include "clusterEngine.h"
+#include "mpl-util.h"
+#include "object.h"
 #include "MplTest.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
