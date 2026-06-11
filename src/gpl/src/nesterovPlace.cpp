@@ -441,6 +441,16 @@ void NesterovPlace::runTimingDriven(int iter,
 
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
+    // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
+    // repair_design, whose callbacks created/destroyed/resized instances —
+    // the DeviceState topology must be rebuilt from the repaired host
+    // storage (this also reloads net weights and pin offsets). Virtual
+    // iterations only reweighted nets.
+    if (virtual_td_iter) {
+      nbc_->refreshDeviceNetWeights();
+    } else {
+      nbc_->rebuildDeviceState();
+    }
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());

@@ -1858,6 +1858,11 @@ void NesterovBaseCommon::fixPointers()
         if (it != db_bterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
+          // Re-point the BTerm pin's net like the ITerm loop above does —
+          // destroyCbkGNet's swap-remove moves GNet objects between storage
+          // slots, so the pin's old pointer may now reference a different
+          // net (or a popped slot).
+          gPinStor_[gpin_index].setGNet(&gNet);
           if (gPinStor_[gpin_index].getGCell()) {
             gPinStor_[gpin_index].getGCell()->addGPin(&gPinStor_[gpin_index]);
           }
@@ -1877,6 +1882,30 @@ void NesterovBaseCommon::fixPointers()
   // gCellStor_ contents were rebuilt — any device coord copy is stale.
   if (device_state_) {
     device_state_->invalidateCoords();
+  }
+#endif
+}
+
+void NesterovBaseCommon::rebuildDeviceState()
+{
+#ifdef ENABLE_GPU
+  // The TD repair callbacks created, destroyed (swap-remove permutes
+  // storage indices), and resized instances; every construction-time view
+  // and CSR in the DeviceState is invalid. Rebuild in place — backends
+  // borrow the DeviceState by pointer and re-fetch views per call, so the
+  // object identity must survive. fixPointers() must have run first so the
+  // host-side gPin→gCell/gNet wiring this reads is consistent.
+  if (device_state_) {
+    device_state_->rebuild(gCellStor_, gPinStor_, gNetStor_);
+  }
+#endif
+}
+
+void NesterovBaseCommon::refreshDeviceNetWeights()
+{
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->refreshNetWeights(gNetStor_);
   }
 #endif
 }
@@ -2889,6 +2918,21 @@ void NesterovBase::rebuildNbDeviceCtx()
 {
 #ifdef ENABLE_GPU
   if (!nbc_->getDeviceState()) {
+    return;
+  }
+  // TD / routability modes keep the Nesterov coordinate and gradient arrays
+  // host-resident (no device context at all): their boundary events (TD
+  // repair callbacks, filler cut/restore, single-cell updates) mutate the
+  // host arrays mid-run, and re-seeding a rebuilt context from them would
+  // have to round-trip every device-resident array (coords, sum grads,
+  // snapshots) through the host at each boundary to avoid replacing live
+  // momentum state with stale copies. The heavy kernels (HPWL, WA gradient,
+  // density gather) still run on the GPU through the DeviceState-backed
+  // backends; only the (cheap) coordinate bookkeeping stays on the host.
+  if (npVars_->timingDrivenMode || npVars_->routability_driven_mode) {
+    nb_device_ctx_.reset();
+    use_device_density_ = false;
+    host_coords_fresh_ = true;
     return;
   }
   // Always reconstruct: sized to nb_gcells_.size(). Cheap relative to the

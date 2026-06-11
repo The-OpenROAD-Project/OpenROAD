@@ -2,9 +2,11 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // DeviceState — owns the device-resident pool of cell coordinates, per-pin
-// offsets, and the net→pin CSR. Built once per NesterovBaseCommon after the
+// offsets, and the net→pin CSR. Built per NesterovBaseCommon after the
 // gCellStor_ / gPinStor_ / gNetStor_ vectors are populated; reused across
-// every Nesterov iteration to keep coordinate data on the device.
+// every Nesterov iteration to keep coordinate data on the device. Rebuilt
+// in place via rebuild() on the timing-driven boundary, where repair_design
+// callbacks grow, shrink, and permute (swap-remove) the host storage.
 //
 // Consumers of this pool:
 //   - HPWL: reads device pin coords directly, no host re-pack per iteration.
@@ -63,6 +65,19 @@ class DeviceState
   DeviceState(DeviceState&&) = delete;
   DeviceState& operator=(DeviceState&&) = delete;
 
+  // Reload everything from the (mutated) host storage: sizes, CSRs, pin
+  // offsets, net weights, and — when initBinViews already ran — the per-inst
+  // density params. Called once per non-virtual timing-driven iteration,
+  // after fixPointers() has restored host-side consistency; the repair
+  // callbacks create, destroy (swap-remove, permuting indices), and resize
+  // instances, which invalidates every construction-time view and CSR here.
+  // The object identity is preserved so backends holding a DeviceState*
+  // stay valid. Leaves coords invalidated; the next ensureCoordsFresh()
+  // reloads coords and pin locations.
+  void rebuild(const std::vector<GCell>& gCellStor,
+               const std::vector<GPin>& gPinStor,
+               const std::vector<GNet>& gNetStor);
+
   // Allocate bin grid Views + push per-inst density params. Called once
   // from NesterovBase after the BinGrid is initialized (initDensity1).
   // Must precede any density gather kernel or GpuFftBackend solve.
@@ -83,10 +98,10 @@ class DeviceState
   void updatePinLocations();
 
   // Re-push per-net total weights to the device. Net weights change only on
-  // the timing-driven / routability-driven boundary, not inside the Nesterov
-  // inner loop, so they are loaded once at construction. This API exists as
-  // a TODO hook for those boundary callers — currently no caller wires it.
-  // TODO: hook from the rsz/grt-driven net-weight update path.
+  // the timing-driven boundary (TimingBase::executeTimingDriven), not inside
+  // the Nesterov inner loop. Called via
+  // NesterovBaseCommon::refreshDeviceNetWeights after every virtual TD
+  // iteration; non-virtual iterations reload weights through rebuild().
   void refreshNetWeights(const std::vector<GNet>& gNetStor);
 
   // Re-push per-inst density params (half_dx, half_dy, density_scale) after
@@ -142,6 +157,17 @@ class DeviceState
   const KokkosDeviceState& kokkos() const { return *kokkos_; }
 
  private:
+  // Shared by the constructor and rebuild(): (re)allocate the inst/pin/net
+  // views, rebuild both CSRs, and push static attributes + initial coords.
+  void buildTopology(const std::vector<GCell>& gCellStor,
+                     const std::vector<GPin>& gPinStor,
+                     const std::vector<GNet>& gNetStor);
+  // (Re)allocate + fill the per-inst density views (half size, scale,
+  // gradient). Sized num_insts_, so a rebuild() that changed the instance
+  // count must re-run this; the per-bin views are untouched (the bin grid
+  // does not change across the TD boundary).
+  void rebuildInstDensityViews(const std::vector<GCell>& gCellStor);
+
   // Master-thread-only; see ensureCoordsFresh() for the thread-safety
   // rationale. No atomic.
   bool coords_fresh_ = false;

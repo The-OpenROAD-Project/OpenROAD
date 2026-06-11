@@ -42,7 +42,13 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
     : kokkos_(new KokkosDeviceState(), &deleteKokkosDeviceState)
 {
   ensureKokkosInitialized();
+  buildTopology(gCellStor, gPinStor, gNetStor);
+}
 
+void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
+                                const std::vector<GPin>& gPinStor,
+                                const std::vector<GNet>& gNetStor)
+{
   num_insts_ = static_cast<int>(gCellStor.size());
   num_pins_ = static_cast<int>(gPinStor.size());
   num_nets_ = static_cast<int>(gNetStor.size());
@@ -103,17 +109,12 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
   std::vector<int> h_pin_net_id(num_pins_, -1);
   std::vector<int> h_pin_cx_init(num_pins_);
   std::vector<int> h_pin_cy_init(num_pins_);
-  const GNet* net_base = gNetStor.data();
   for (int i = 0; i < num_pins_; ++i) {
     const GPin& gPin = gPinStor[i];
     h_pin_offset_cx[i] = gPin.offsetCx();
     h_pin_offset_cy[i] = gPin.offsetCy();
     const GCell* gCell = gPin.getGCell();
     h_pin_inst_id[i] = gCell ? indexOfGCell(gCellStor, gCell) : -1;
-    // Net index (or -1 for unconnected pins). gPin->getGNet() returns
-    // pointer into gNetStor_; use pointer arithmetic to recover the index.
-    const GNet* gNet = gPin.getGNet();
-    h_pin_net_id[i] = gNet ? static_cast<int>(gNet - net_base) : -1;
     // GPin::cx()/cy() return absolute coords (set in the GPin ctor from the
     // DB pin position; later refreshed by updateLocation for instance pins
     // as cells move). For I/O pins they are the final value; for instance
@@ -139,6 +140,10 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
       // gPin is a pointer into gPinStor_; convert to index.
       const int pin_idx = static_cast<int>(gPin - gPinStor.data());
       h_net_pin_idx[off++] = pin_idx;
+      // Pin→net id derived from the net→pin lists rather than
+      // gPin.getGNet() so both directions of the CSR come from the same
+      // source of truth. Pins on no net keep -1 (skipped by the kernels).
+      h_pin_net_id[pin_idx] = n;
     }
   }
 
@@ -222,6 +227,23 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
 // ~DeviceState() is inline-defaulted in deviceState.h thanks to the
 // function-pointer deleter on kokkos_.
 
+void DeviceState::rebuild(const std::vector<GCell>& gCellStor,
+                          const std::vector<GPin>& gPinStor,
+                          const std::vector<GNet>& gNetStor)
+{
+  buildTopology(gCellStor, gPinStor, gNetStor);
+  // The per-inst density views are sized num_insts_, which may have changed;
+  // the per-bin views (sized to the fixed bin grid) are left as-is. Skip
+  // when initBinViews has not run yet — it uploads the params itself.
+  if (num_bins_ > 0) {
+    rebuildInstDensityViews(gCellStor);
+  }
+  // buildTopology seeded device coords from the host's int-truncated dCx/dCy
+  // snapshot; force the next ensureCoordsFresh() to redo the full coord +
+  // pin-location load so consumers never see the seed values as "fresh".
+  invalidateCoords();
+}
+
 void DeviceState::initBinViews(const BinGrid& binGrid,
                                const std::vector<GCell>& gCellStor)
 {
@@ -243,6 +265,12 @@ void DeviceState::initBinViews(const BinGrid& binGrid,
   s.h_bin_elec_x = Kokkos::create_mirror_view(s.d_bin_elec_x);
   s.h_bin_elec_y = Kokkos::create_mirror_view(s.d_bin_elec_y);
 
+  rebuildInstDensityViews(gCellStor);
+}
+
+void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
+{
+  auto& s = *kokkos_;
   s.d_inst_density_half_dx
       = Kokkos::View<int*>("ds_inst_density_half_dx", num_insts_);
   s.d_inst_density_half_dy
