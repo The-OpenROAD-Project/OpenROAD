@@ -42,10 +42,9 @@ class CpuHpwlBackend : public HpwlBackend
     assert(omp_get_thread_num() == 0);
     int64_t hpwl = 0;
 #pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-    for (auto gNet = nets.begin(); gNet < nets.end(); ++gNet) {
-      // old-style loop for old OpenMP
-      gNet->updateBox();
-      hpwl += gNet->getHpwl();
+    for (auto& gNet : nets) {
+      gNet.updateBox();
+      hpwl += gNet.getHpwl();
     }
     return hpwl;
   }

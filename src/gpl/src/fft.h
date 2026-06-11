@@ -11,6 +11,8 @@
 
 namespace gpl {
 
+class DeviceState;
+
 // FFT — the density-grid context for the Poisson solve. It owns the staging
 // grids and the backend-agnostic accessors; the solve itself is delegated to
 // an FftBackend (the CPU Ooura DCT or the GPU Kokkos solver) selected at

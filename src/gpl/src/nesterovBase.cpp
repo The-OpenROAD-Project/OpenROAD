@@ -968,8 +968,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
 #pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
-    for (auto it = cells.begin(); it < cells.end(); ++it) {
-      const GCellHandle& cell = *it;  // old-style loop for old OpenMP
+    for (const GCellHandle& cell : cells) {
       const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
       const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
       if (cell->isInstance()) {
@@ -2776,12 +2775,12 @@ void NesterovBase::fillFillerDensityGradients(
   // loop is trivially parallel. Only fillers are computed; instance entries are
   // supplied by the caller from the device gather.
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = gCells.begin(); it < gCells.end(); ++it) {
-    if (it->isNesterovBaseCommon()) {
+  for (size_t i = 0; i < gCells.size(); ++i) {
+    if (gCells[i].isNesterovBaseCommon()) {
       continue;  // instance — caller already filled it
     }
-    const GCell* gc = *it;  // old-style loop for old OpenMP
-    out[it - gCells.begin()] = getDensityGradient(gc);
+    const GCell* gc = gCells[i];
+    out[i] = getDensityGradient(gc);
   }
 }
 
