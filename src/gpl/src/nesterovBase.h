@@ -704,7 +704,8 @@ class BinGrid
   void setRegionPoints(int lx, int ly, int ux, int uy);
   void setBinCnt(int binCntX, int binCntY);
   void setBinTargetDensity(float density);
-  void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells);
+  void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
+                                  int parallel_threads = 1);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -1102,6 +1103,14 @@ class NesterovBase
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
+
+  // Fill out[i] with the density gradient for every filler cell in gCells, in
+  // parallel. Used by the GPU density backend, whose per-inst gradients come
+  // from the device but whose fillers (not in DeviceState) need the host
+  // bin-overlap computation — a serial hotspot on the GPU path. Instance
+  // entries (NesterovBaseCommon-backed) are left untouched.
+  void fillFillerDensityGradients(const std::vector<GCellHandle>& gCells,
+                                  std::vector<FloatPoint>& out) const;
 
   // update electrostatic field within Bin
   void updateDensityFieldBin();

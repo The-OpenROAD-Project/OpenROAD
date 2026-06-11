@@ -948,7 +948,8 @@ void BinGrid::updateBinsNonPlaceArea()
 }
 
 // Core Part
-void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
+void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
+                                         int parallel_threads)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -956,45 +957,97 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     bin.setFillerArea(0);
   }
 
-  for (auto& cell : cells) {
-    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-    // The following function is critical runtime hotspot
-    // for global placer.
-    //
-    if (cell->isInstance()) {
-      // macro should have
-      // scale-down with target-density
-      if (cell->isMacroInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-
-            const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                     * cell->getDensityScale()
-                                     * bin.getTargetDensity();
-            bin.addInstPlacedAreaUnscaled(scaledAvea);
-          }
+  // The per-cell scatter below is the dominant host hotspot of the global
+  // placer. On the GPU path it dwarfs everything else (the device sits idle
+  // while this runs serially), and that path already tolerates a few-ULP,
+  // thread-order-dependent result. So parallelize it there, accumulating
+  // per-bin areas into flat buffers with atomics. The CPU-only path keeps the
+  // serial branch for bit-stable regression goldens.
+  if (parallel_threads > 1) {
+    const int nbins = static_cast<int>(bins_.size());
+    std::vector<float> inst_area(nbins, 0.0f);
+    std::vector<float> filler_area(nbins, 0.0f);
+#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+    for (auto it = cells.begin(); it < cells.end(); ++it) {
+      const GCellHandle& cell = *it;  // old-style loop for old OpenMP
+      const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+      if (cell->isInstance()) {
+        const bool macro = cell->isMacroInstance();
+        if (!macro && !cell->isStdInstance()) {
+          continue;
         }
-      }
-      // normal cells
-      else if (cell->isStdInstance()) {
         for (int y = pairY.first; y < pairY.second; y++) {
           for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-            const float scaledArea
+            const int bi = y * binCntX_ + x;
+            Bin& bin = bins_[bi];
+            float v
                 = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-            bin.addInstPlacedAreaUnscaled(scaledArea);
+            if (macro) {
+              v *= bin.getTargetDensity();
+            }
+#pragma omp atomic
+            inst_area[bi] += v;
+          }
+        }
+      } else if (cell->isFiller()) {
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            const int bi = y * binCntX_ + x;
+            const float v = getOverlapDensityArea(bins_[bi], cell)
+                            * cell->getDensityScale();
+#pragma omp atomic
+            filler_area[bi] += v;
           }
         }
       }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                            * cell->getDensityScale());
+    }
+#pragma omp parallel for num_threads(parallel_threads)
+    for (int b = 0; b < nbins; b++) {
+      bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
+      bins_[b].setFillerArea(filler_area[b]);
+    }
+  } else {
+    for (auto& cell : cells) {
+      std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+
+      // The following function is critical runtime hotspot
+      // for global placer.
+      //
+      if (cell->isInstance()) {
+        // macro should have
+        // scale-down with target-density
+        if (cell->isMacroInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+
+              const float scaledAvea = getOverlapDensityArea(bin, cell)
+                                       * cell->getDensityScale()
+                                       * bin.getTargetDensity();
+              bin.addInstPlacedAreaUnscaled(scaledAvea);
+            }
+          }
+        }
+        // normal cells
+        else if (cell->isStdInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+              const float scaledArea
+                  = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+              bin.addInstPlacedAreaUnscaled(scaledArea);
+            }
+          }
+        }
+      } else if (cell->isFiller()) {
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            Bin& bin = bins_[y * binCntX_ + x];
+            bin.addFillerArea(getOverlapDensityArea(bin, cell)
+                              * cell->getDensityScale());
+          }
         }
       }
     }
@@ -2360,7 +2413,16 @@ void NesterovBase::updateGCellDensityCenterLocation(
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
-  bg_.updateBinsGCellDensityArea(nb_gcells_);
+  int scatter_threads = 1;
+#ifdef ENABLE_GPU
+  // GPU path tolerates non-deterministic float ordering; parallelize the
+  // density scatter (the dominant host cost) there. CPU-only stays serial
+  // (scatter_threads == 1) so its regression goldens stay bit-stable.
+  if (nb_device_ctx_ != nullptr) {
+    scatter_threads = static_cast<int>(nbc_->getNumThreads());
+  }
+#endif
+  bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -2671,6 +2733,24 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
   }
 
   return electroForce;
+}
+
+void NesterovBase::fillFillerDensityGradients(
+    const std::vector<GCellHandle>& gCells,
+    std::vector<FloatPoint>& out) const
+{
+  // Bins' electrostatic fields are read-only here (updateDensityFieldBin ran
+  // earlier this iteration) and each cell writes a distinct out[] slot, so the
+  // loop is trivially parallel. Only fillers are computed; instance entries are
+  // supplied by the caller from the device gather.
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (auto it = gCells.begin(); it < gCells.end(); ++it) {
+    if (it->isNesterovBaseCommon()) {
+      continue;  // instance — caller already filled it
+    }
+    const GCell* gc = *it;  // old-style loop for old OpenMP
+    out[it - gCells.begin()] = getDensityGradient(gc);
+  }
 }
 
 // Density field calls

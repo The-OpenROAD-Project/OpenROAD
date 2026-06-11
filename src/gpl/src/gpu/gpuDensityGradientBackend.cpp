@@ -63,16 +63,19 @@ void GpuDensityGradientBackend::getCellGradients(
   materializeHostGrad();
   KokkosDeviceState& ds = impl_->device_state->kokkos();
   NesterovBase* nb = impl_->nb;
-  // Filler: CPU fallback (filler has non-zero density gradient but isn't in
-  // DeviceState). Host bin fields are populated by the FFT unpack.
+  // Instances: read the per-inst gradient from the device gather mirror.
+  // Fillers (not in DeviceState) need the host bin-overlap computation, which
+  // is a serial hotspot on the GPU path — defer them to the parallel batch
+  // pass below instead of computing them one-by-one here.
   mapNbcGrads(
       gCells,
       [&](std::size_t idx) {
         return FloatPoint(ds.h_inst_density_grad_x(idx),
                           ds.h_inst_density_grad_y(idx));
       },
-      [&](const GCellHandle& h) { return nb->getDensityGradient(h); },
+      [](const GCellHandle&) { return FloatPoint(0.0f, 0.0f); },
       out);
+  nb->fillFillerDensityGradients(gCells, out);
 }
 
 FloatPoint GpuDensityGradientBackend::getCellGradient(const GCell* gCell)
