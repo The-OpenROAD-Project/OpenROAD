@@ -54,6 +54,7 @@ COMPULSORY_TESTS = [
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
     "core_grid_with_multiple_bterms",
+    "core_grid_with_no_grid",
     "core_grid_with_M6_min_area",
     "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
@@ -94,6 +95,7 @@ COMPULSORY_TESTS = [
     "macros_cells_via_failure",
     "macros_different_nets",
     "macros_grid_check",
+    "macros_grid_not_used",
     "macros_grid_through",
     "macros_grid_through_without_middle",
     "macros_narrow_channel",
@@ -292,6 +294,12 @@ filegroup(
             "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
+                "ihp_ethmac/tech.lef",
+                "ihp_ethmac/sg13g2.lef",
+                "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
+                "ihp_ethmac/floorplan.def",
+            ],
+            "macros_grid_not_used": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",

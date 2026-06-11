@@ -1013,7 +1013,10 @@ proc define_pdn_grid_macro { args } {
     utl::error PDN 1029 "-name is required"
   }
   if { [has_grid $keys(-name)] } {
-    utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    remove_dummy_grid $keys(-name)
+    if { [has_grid $keys(-name)] } {
+      utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    }
   }
 
   set start_with_power 0
@@ -1049,6 +1052,7 @@ proc define_pdn_grid_macro { args } {
 
   set is_bump [info exists flags(-bump)]
 
+  set insts []
   if { [info exists keys(-instances)] } {
     set insts {}
     foreach inst_pattern $keys(-instances) {
@@ -1067,23 +1071,6 @@ proc define_pdn_grid_macro { args } {
     }
 
     set insts [lsort -unique -command name_cmp $insts]
-    foreach inst $insts {
-      # must match orientation, if provided
-      if { [match_orientation $orients [$inst getOrient]] != 0 } {
-        foreach domain $domains {
-          pdn::make_instance_grid \
-            $domain \
-            $keys(-name) \
-            $start_with_power \
-            $inst \
-            {*}$halo \
-            $pg_pins_to_boundary \
-            $default_grid \
-            $obstructions \
-            $is_bump
-        }
-      }
-    }
   } else {
     set cells {}
     foreach cell_pattern $keys(-cells) {
@@ -1108,23 +1095,37 @@ proc define_pdn_grid_macro { args } {
       foreach inst [[ord::get_db_block] getInsts] {
         # inst must match cells
         if { [$inst getMaster] == $cell } {
-          # must match orientation, if provided
-          if { [match_orientation $orients [$inst getOrient]] != 0 } {
-            foreach domain $domains {
-              pdn::make_instance_grid \
-                $domain $keys(-name) \
-                $start_with_power \
-                $inst \
-                {*}$halo \
-                $pg_pins_to_boundary \
-                $default_grid \
-                $obstructions \
-                $is_bump
-            }
-          }
+          lappend insts $inst
         }
       }
     }
+  }
+
+  set created false
+  foreach inst $insts {
+    # must match orientation, if provided
+    if { [match_orientation $orients [$inst getOrient]] != 0 } {
+      foreach domain $domains {
+        pdn::make_instance_grid \
+          $domain \
+          $keys(-name) \
+          $start_with_power \
+          $inst \
+          {*}$halo \
+          $pg_pins_to_boundary \
+          $default_grid \
+          $obstructions \
+          $is_bump
+        set created true
+      }
+    }
+  }
+
+  if { !$created } {
+    utl::warn PDN 1051 "No instances found for grid (${keys(-name)})."
+    pdn::make_dummy_inst_grid \
+      $domains \
+      $keys(-name)
   }
 }
 
