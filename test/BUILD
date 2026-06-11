@@ -63,7 +63,6 @@ filegroup(
 # From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "commands_without_load",
-    "scan_opt_sky130hd",
 ]
 
 COMPULSORY_TESTS = [
