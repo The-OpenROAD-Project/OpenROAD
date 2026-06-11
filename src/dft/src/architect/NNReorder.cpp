@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "Opt.hh"
+#include "NNReorder.hh"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,7 +28,7 @@ namespace {
 constexpr int kMaxCellsToSearch = 10;
 }  // namespace
 
-void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+void NearestNeighborReorder(std::vector<std::unique_ptr<ScanCell>>& cells,
                             utl::Logger* logger)
 {
   // Nothing to order
