@@ -16,6 +16,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -28,8 +29,6 @@
 #include "sta/Transition.hh"
 
 namespace rsz {
-
-using utl::RSZ;
 
 namespace {
 
