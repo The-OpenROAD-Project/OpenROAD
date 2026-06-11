@@ -221,7 +221,7 @@ class TestAnnealerPacking : public MplTest
                                               num_perturb_per_step,
                                               /* seed */ run_id,
                                               /* graphics */ nullptr,
-                                              &logger_,
+                                              logger_.get(),
                                               block());
       sa->setNumberOfSequencePairMacros(static_cast<int>(macros.size()));
       sa_runs.push_back(std::move(sa));
