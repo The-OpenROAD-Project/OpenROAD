@@ -90,9 +90,9 @@ class TestAnnealerPacking : public MplTest
     std::vector<HardMacro> macros;
     for (const MacroSpec& spec : inventory()) {
       const int width
-          = std::lround((spec.width + 2 * kHaloMicrons) * kDbuPerMicron);
+          = static_cast<int>(std::lround((spec.width + 2 * kHaloMicrons) * kDbuPerMicron));
       const int height
-          = std::lround((spec.height + 2 * kHaloMicrons) * kDbuPerMicron);
+          = static_cast<int>(std::lround((spec.height + 2 * kHaloMicrons) * kDbuPerMicron));
       for (int i = 0; i < spec.count; ++i) {
         macros.emplace_back(
             width, height, std::string(spec.name) + "_" + std::to_string(i));
