@@ -49,6 +49,11 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
     addMetricsSink(metrics_filename);
   }
 
+  const char* disable_source_lines = std::getenv("DISABLE_SOURCE_LINES");
+  if (disable_source_lines != nullptr) {
+    source_lines_enabled_ = false;
+  }
+
   metrics_policies_ = MetricsPolicy::makeDefaultPolicies();
 
   for (auto& counters : message_counters_) {

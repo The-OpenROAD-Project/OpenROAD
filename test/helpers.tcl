@@ -1,4 +1,5 @@
 # Helper functions common to multiple regressions.
+utl::setSourceLinesOff
 
 if { [info exists ::env(TEST_TMPDIR)] } {
   set test_dir $::env(TEST_TMPDIR)

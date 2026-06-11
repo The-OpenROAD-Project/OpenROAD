@@ -74,6 +74,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Strip absolute paths from __FILE__ and std::source_location
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options("-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=")
+    
+    # Optional: If you also compile generated files in your build directory 
+    # and want them to be relative too:
+    add_compile_options("-fmacro-prefix-map=${CMAKE_BINARY_DIR}/=")
+endif()
+
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)
   include(GetGitRevisionDescription)
