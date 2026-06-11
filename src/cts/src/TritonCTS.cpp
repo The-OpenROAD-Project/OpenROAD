@@ -241,7 +241,9 @@ void TritonCTS::setupCharacterization()
 
   double maxWlMicrons
       = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
-  options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+  if(maxWlMicrons > 0) {
+    options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+  }
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(

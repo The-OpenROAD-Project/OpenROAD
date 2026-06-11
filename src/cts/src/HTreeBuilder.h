@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -126,6 +127,35 @@ class HTreeBuilder : public TreeBuilder
         unsigned branchIdx) const
     {
       return branchSinkLocs_[branchIdx];
+    }
+
+    std::pair<unsigned, double> getLargestSinkRegion(
+        unsigned wireSegmentUnit) const
+    {
+      unsigned bestIdx = 0;
+      double bestDim = 0.0;
+      for (unsigned i = 0; i < branchSinkLocs_.size(); ++i) {
+        const auto& sinks = branchSinkLocs_[i];
+        if (sinks.size() < 2) {
+          continue;
+        }
+        double minX = sinks[0].getX();
+        double maxX = minX;
+        double minY = sinks[0].getY();
+        double maxY = minY;
+        for (unsigned j = 1; j < sinks.size(); ++j) {
+          minX = std::min(minX, sinks[j].getX());
+          maxX = std::max(maxX, sinks[j].getX());
+          minY = std::min(minY, sinks[j].getY());
+          maxY = std::max(maxY, sinks[j].getY());
+        }
+        const double dim = std::max(maxX - minX, maxY - minY) * wireSegmentUnit;
+        if (dim > bestDim) {
+          bestDim = dim;
+          bestIdx = i;
+        }
+      }
+      return {bestIdx, bestDim};
     }
 
     void setOutputSlew(unsigned slew) { outputSlew_ = slew; }
