@@ -265,6 +265,24 @@ cc_test(
 )
 
 cc_test(
+    name = "mpl_annealer_packing_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestAnnealerPacking.cpp",
+    ],
+    deps = [
+        "//src/mpl:annealer",
+        "//src/mpl:mpl_private_hdrs",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "mpl_block_macro_channels_unittest",
     srcs = [
         "cpp/MplTest.h",
