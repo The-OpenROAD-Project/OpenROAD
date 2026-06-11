@@ -235,13 +235,12 @@ class TestAnnealerPacking : public MplTest
       thread.join();
     }
 
-    bool valid = false;
-    for (auto& sa : sa_runs) {
+    for (const auto& sa : sa_runs) {
       if (sa->isValid()) {
-        valid = true;
+        return true;
       }
     }
-    return valid;
+    return false;
   }
 };
 
