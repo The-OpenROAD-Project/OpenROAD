@@ -51,8 +51,8 @@ cc_library(
     ],
 )
 
-# Headers owned by :mpl but also consumed by :ui. Kept package-private so
-# nothing outside //src/mpl can depend on them.
+# Headers owned by :mpl but also consumed by :ui and the unit tests. Kept
+# package-private so nothing outside //src/mpl can depend on them.
 cc_library(
     name = "mpl_private_hdrs",
     hdrs = [
@@ -62,22 +62,43 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/mpl:__subpackages__"],
     deps = [
         ":pusher",
         "//src/odb/src/db",
     ],
 )
 
+# The simulated-annealing packing/placement engine. Split out from :mpl so
+# unit tests can drive the annealer directly without pulling in the full
+# hierarchical macro placer.
+cc_library(
+    name = "annealer",
+    srcs = [
+        "src/SACoreHardMacro.cpp",
+        "src/SACoreSoftMacro.cpp",
+        "src/SimulatedAnnealingCore.cpp",
+    ],
+    hdrs = [
+        "src/SACoreHardMacro.h",
+        "src/SACoreSoftMacro.h",
+        "src/SimulatedAnnealingCore.h",
+    ],
+    includes = [
+        "src",
+    ],
+    deps = [
+        ":mpl_private_hdrs",
+        ":pusher",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.random",
+    ],
+)
+
 cc_library(
     name = "mpl",
     srcs = [
-        "src/SACoreHardMacro.cpp",
-        "src/SACoreHardMacro.h",
-        "src/SACoreSoftMacro.cpp",
-        "src/SACoreSoftMacro.h",
-        "src/SimulatedAnnealingCore.cpp",
-        "src/SimulatedAnnealingCore.h",
         "src/clusterEngine.cpp",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
@@ -90,6 +111,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":annealer",
         ":mpl_private_hdrs",
         ":pusher",
         ":snapper",
