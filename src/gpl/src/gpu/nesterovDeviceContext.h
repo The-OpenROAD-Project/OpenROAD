@@ -114,6 +114,45 @@ class NesterovDeviceContext
   // filler grads are CPU-computed and must be explicitly pushed.
   void pushDensityGradsFromHost(const std::vector<FloatPoint>& densityGrads);
 
+  // ---- Device-resident density pipeline ----
+  //
+  // Result of one scatter + Poisson solve. sum_phi is only computed when
+  // densitySolveIteration is called with want_sum_phi (it is a debug-only
+  // metric); otherwise it is 0.
+  struct DensityIterResult
+  {
+    float overflow_area = 0;
+    float overflow_area_unscaled = 0;
+    float sum_phi = 0;
+  };
+
+  // Run the per-iteration density pipeline fully on device: scatter the
+  // `slot` coords into the bin grid (writes DeviceState's d_bin_density),
+  // solve Poisson into DeviceState's d_bin_phi/elec_x/elec_y, and reduce the
+  // overflow sums. Replaces the host updateGCellDensityCenterLocation +
+  // updateDensityFieldBin pair in the Nesterov hot loop.
+  DensityIterResult densitySolveIteration(DeviceState* device_state,
+                                          SlpSlot slot,
+                                          bool want_sum_phi);
+
+  // Gather the density gradient for ALL nb cells (fillers included) from the
+  // device bin field at the `slot` coords, writing d_density_grad_x/y
+  // directly — no host round-trip.
+  void densityGatherToNB(DeviceState* device_state, SlpSlot slot);
+
+  // Slot used by the most recent densitySolveIteration (the field on device
+  // corresponds to these coords). updateGradients gathers from it.
+  SlpSlot lastDensitySlot() const { return last_density_slot_; }
+
+  // Re-upload per-cell density params (dDx/2, dDy/2, densityScale, kind)
+  // after updateDensitySize / routability inflation changed them.
+  void refreshCellDensityParams(const std::vector<GCellHandle>& nb_gcells);
+
+  // Pull current-slot coords to host (curSLP + cur). Used to refresh the
+  // host vectors lazily when the hot loop no longer syncs every iteration.
+  void syncCurCoordsToHost(std::vector<FloatPoint>& curSLP,
+                           std::vector<FloatPoint>& cur);
+
   // Device-side pointer rotation matching NesterovBase::updateNextIter swaps.
   void rotateForNextIter();
 
@@ -121,10 +160,15 @@ class NesterovDeviceContext
   KokkosNesterovState& kokkos() { return *kokkos_; }
 
  private:
+  // Upload the per-bin static arrays (bounds, target density, non-place
+  // areas) and construct the NB-owned Poisson solver. Called from the ctor.
+  void initDensityDeviceState(const BinGrid& bg);
+
   // Type-erased deleter — see deviceState.h for rationale.
   using KokkosDeleter = void (*)(KokkosNesterovState*);
   std::unique_ptr<KokkosNesterovState, KokkosDeleter> kokkos_{nullptr, nullptr};
   int num_cells_ = 0;
+  SlpSlot last_density_slot_ = SlpSlot::Cur;
 
   // Host scratch buffers reused by every push/pull sync call. Sized once
   // in the ctor to num_cells_ — avoids the per-call heap allocation that a

@@ -121,15 +121,17 @@ class DeviceState
   //
   // Usage:
   //   - ensureCoordsFresh(gCellStor) — call before any consumer that reads
-  //     device pin coords (HPWL, WA gradient). No-op if coords are already
-  //     fresh (NB scatter ran this iteration). Otherwise syncs from host
-  //     and updates pin locations. Clears the fresh flag on exit so the
-  //     next iteration's NB scatter sets it again.
+  //     device pin coords (HPWL, WA gradient). No-op while coords are fresh
+  //     (NB scatter ran and no host mutation invalidated them — the flag is
+  //     sticky, NOT one-shot, so repeated consumers in one iteration don't
+  //     clobber device coords with stale host data). Otherwise syncs from
+  //     host and updates pin locations.
   //   - markCoordsFresh() — called by NesterovBase::commitCoordsToDeviceState
   //     after scatterToDeviceState + updatePinLocations.
-  //   - invalidateCoords() — call after host-side mutation of gCellStor
-  //     that happens outside the Nesterov inner loop, to force the next
-  //     ensureCoordsFresh() to re-sync.
+  //   - invalidateCoords() — called by every host-side gCellStor coord
+  //     mutator (updateGCellCenterLocation / updateGCellDensityCenterLocation
+  //     and the db callbacks moveGCell / resizeGCell / fixPointers) so the
+  //     next ensureCoordsFresh() re-syncs.
   void ensureCoordsFresh(const std::vector<GCell>& gCellStor);
   void markCoordsFresh() { coords_fresh_ = true; }
   void invalidateCoords() { coords_fresh_ = false; }

@@ -728,6 +728,15 @@ class BinGrid
   int64_t getOverflowArea() const;
   int64_t getOverflowAreaUnscaled() const;
 
+  // GPU device-resident density path: the per-iteration scatter runs on
+  // device, so the host bins are not updated; the device-reduced overflow
+  // sums are stored here for the updateNextIter consumers.
+  void setOverflowAreas(int64_t overflow_area, int64_t overflow_area_unscaled)
+  {
+    sumOverflowArea_ = overflow_area;
+    sumOverflowAreaUnscaled_ = overflow_area_unscaled;
+  }
+
   // return bins_ index with given gcell
   std::pair<int, int> getDensityMinMaxIdxX(const GCell* gcell) const;
   std::pair<int, int> getDensityMinMaxIdxY(const GCell* gcell) const;
@@ -882,6 +891,11 @@ class NesterovBaseCommon
   // updateSingleGradient via the db callback). Defined in
   // wirelengthGradient.cpp.
   FloatPoint getSingleWireLengthGradientWA(const GCell* gCell);
+
+  // GPU path: run the per-inst gradient gather on device only (no host
+  // copy) so the NB-level device scatter can consume it. No-op on the CPU
+  // backend. Defined in wirelengthGradient.cpp.
+  void prepareDeviceWlGradients();
 
   FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
                                         float wlCoeffX,
@@ -1176,6 +1190,13 @@ class NesterovBase
   void saveSnapshot();
   bool revertToSnapshot();
 
+  // GPU device-resident density path: the hot loop no longer syncs coords
+  // (or host GCell density centers) every iteration. Cold-path consumers
+  // (snapshot, updateDb, routability filler cut/restore, timing-driven)
+  // call this first to lazily refresh host state from the device cur slot.
+  // No-op on the CPU path or when host state is already fresh.
+  void pullCoordsFromDevice();
+
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
   void updateDensityCenterPrevSLP();
@@ -1245,6 +1266,16 @@ class NesterovBase
   std::unique_ptr<FFT> fft_;
   std::unique_ptr<DensityGradientBackend> density_grad_backend_;
   std::unique_ptr<NesterovDeviceContext> nb_device_ctx_;
+
+  // True while the host coord vectors / GCell density centers mirror the
+  // device state. The device-resident hot loop clears it each iteration;
+  // pullCoordsFromDevice() restores it on demand. Always true on CPU.
+  bool host_coords_fresh_ = true;
+
+  // Escape hatch for the device-resident density pipeline: set
+  // GPL_GPU_HOST_DENSITY=1 to fall back to the per-iteration host
+  // scatter/FFT path (the pre-C2 behavior). Read once in initDensity1.
+  bool use_device_density_ = false;
 
   int fillerDx_ = 0;
   int fillerDy_ = 0;

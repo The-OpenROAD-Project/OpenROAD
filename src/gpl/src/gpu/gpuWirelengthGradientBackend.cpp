@@ -76,6 +76,14 @@ void GpuWirelengthGradientBackend::updateForce(float wlCoefX, float wlCoefY)
   s.host_grad_valid = false;
 }
 
+void GpuWirelengthGradientBackend::prepareDeviceGradients()
+{
+  // K5 gather only — leaves the result in d_inst_wl_grad_* for the NB-level
+  // device scatter (scatterWLGradsToNB). No D2H.
+  KokkosDeviceState& ds = impl_->device_state->kokkos();
+  wlop::launchGatherInstGrad(ds, impl_->device_state->numInsts());
+}
+
 // Pull device per-inst gradients into the host mirror. Idempotent for the
 // same updateForce call (cached via Impl::host_grad_valid) so single-cell
 // follow-up reads skip the K5 + copy.

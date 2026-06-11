@@ -95,6 +95,13 @@ class PoissonSolver
   void solvePoissonPotential(Kokkos::View<float*> binDensity,
                              Kokkos::View<float*> potential);
 
+  // Compute Electric Force only — skips the potential IDCT (one of the
+  // four transforms). Used by the device-resident Nesterov hot loop, where
+  // the potential feeds only the debug-only sumPhi metric.
+  void solvePoissonField(Kokkos::View<float*> binDensity,
+                         Kokkos::View<float*> electroForceX,
+                         Kokkos::View<float*> electroForceY);
+
   // device memory management
   void initBackend();
 
@@ -103,6 +110,12 @@ class PoissonSolver
   // extended __host__ __device__ lambda, which NVCC requires in a non-private
   // enclosing function.
   void launchDivideByWSquare();
+
+  // Steps #4-#6 of solvePoisson — w_u/w_v multiply + the two field IDCTs,
+  // reading the a_uv coefficients prepared by steps #1-#2. Public for the
+  // same NVCC extended-lambda reason as launchDivideByWSquare.
+  void solveFieldFromAuv(Kokkos::View<float*> electroForceX,
+                         Kokkos::View<float*> electroForceY);
 
  private:
   int binCntX_;

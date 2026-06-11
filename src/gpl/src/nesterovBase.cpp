@@ -1873,6 +1873,13 @@ void NesterovBaseCommon::fixPointers()
       }
     }
   }
+
+#ifdef ENABLE_GPU
+  // gCellStor_ contents were rebuilt — any device coord copy is stale.
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
 }
 
 void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
@@ -2405,6 +2412,11 @@ void NesterovBase::updateGCellCenterLocation(
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
+#ifdef ENABLE_GPU
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->invalidateCoords();
+  }
+#endif
 }
 
 void NesterovBase::updateGCellDensityCenterLocation(
@@ -2415,6 +2427,11 @@ void NesterovBase::updateGCellDensityCenterLocation(
   }
   int scatter_threads = 1;
 #ifdef ENABLE_GPU
+  // Host coords changed — the device copy is no longer authoritative until
+  // the next commitCoordsToDeviceState (sticky-freshness contract).
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->invalidateCoords();
+  }
   // GPU path tolerates non-deterministic float ordering; parallelize the
   // density scatter (the dominant host cost) there. CPU-only stays serial
   // (scatter_threads == 1) so its regression goldens stay bit-stable.
@@ -2633,6 +2650,21 @@ void NesterovBase::updateDensitySize()
     gCell->setDensitySize(densitySizeX, densitySizeY);
     gCell->setDensityScale(scaleX * scaleY);
   }
+
+#ifdef ENABLE_GPU
+  // Keep the device-side per-cell density params (NB level and the
+  // DeviceState inst mirror used by the legacy gather) in sync — routability
+  // inflation and TD area changes funnel through this method. The numBins()
+  // guard skips the very first call (NesterovBase::init runs this before
+  // initBinViews allocates the DeviceState density views; initBinViews then
+  // uploads the params itself).
+  if (nb_device_ctx_) {
+    nb_device_ctx_->refreshCellDensityParams(nb_gcells_);
+  }
+  if (nbc_->getDeviceState() && nbc_->getDeviceState()->numBins() > 0) {
+    nbc_->getDeviceState()->refreshDensityParams(nbc_->getGCellStor());
+  }
+#endif
 }
 
 void NesterovBase::updateAreas()
@@ -2871,6 +2903,39 @@ void NesterovBase::rebuildNbDeviceCtx()
                                      curSLPSumGrads_,
                                      prevSLPSumGrads_);
   commitCoordsToDeviceState(SlpSlot::Cur);
+  host_coords_fresh_ = true;
+
+  // Device-resident density pipeline (scatter + Poisson + gather on
+  // device, no per-iteration host round-trip). The TD / routability modes
+  // still rely on host-side grads and bins (single-cell callback updates,
+  // filler cut/restore), so they keep the host-staged pipeline.
+  const char* host_density_env = std::getenv("GPL_GPU_HOST_DENSITY");
+  use_device_density_ = !npVars_->timingDrivenMode
+                        && !npVars_->routability_driven_mode
+                        && !(host_density_env && host_density_env[0] == '1');
+#endif
+}
+
+void NesterovBase::pullCoordsFromDevice()
+{
+#ifdef ENABLE_GPU
+  if (!nb_device_ctx_ || host_coords_fresh_) {
+    return;
+  }
+  // The hot loop's rotateForNextIter has already run, so the device "cur"
+  // slots hold the latest accepted iteration. prevSLP is pulled too —
+  // revertToSnapshot pushes it back to device and CPU semantics expect the
+  // live (pre-revert) values there, not stale ones.
+  nb_device_ctx_->syncCurCoordsToHost(curSLPCoordi_, curCoordi_);
+  nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
+  // Host GCell density centers follow the last scattered coords, which on
+  // the CPU path are the curSLP coords after rotation.
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t idx = 0; idx < nb_gcells_.size(); ++idx) {
+    nb_gcells_[idx]->setDensityCenterLocation(curSLPCoordi_[idx].x,
+                                              curSLPCoordi_[idx].y);
+  }
+  host_coords_fresh_ = true;
 #endif
 }
 
@@ -2985,23 +3050,35 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   (void) wlCoeffX;
   (void) wlCoeffY;
 
-  // Bulk-fetch all per-cell wirelength gradients in one backend call.
-  // CPU backend: sequential per-cell pass. GPU backend: one K5 kernel +
-  // one deep_copy. updateWireLengthForceWA is expected to have already run.
-  nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
-  density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
-
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
     SumGradSlot target = SumGradSlot::Cur;
+    SlpSlot coord_slot = SlpSlot::Cur;
     if (&sumGrads == &prevSLPSumGrads_) {
       target = SumGradSlot::Prev;
+      coord_slot = SlpSlot::Prev;
     } else if (&sumGrads == &nextSLPSumGrads_) {
       target = SumGradSlot::Next;
+      coord_slot = SlpSlot::Next;
     }
 
-    nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
-    nb_device_ctx_->pushDensityGradsFromHost(densityGrads);
+    if (use_device_density_) {
+      // Fully device-resident: K5 WL gather (no host copy), NB-level
+      // density gather over all cells (fillers included) straight into
+      // d_density_grad_*. The host wireLengthGrads/densityGrads vectors
+      // stay untouched — their only GPU-path consumers are the
+      // TD/routability callbacks, and those modes disable this pipeline.
+      nbc_->prepareDeviceWlGradients();
+      nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
+      nb_device_ctx_->densityGatherToNB(nbc_->getDeviceState(), coord_slot);
+    } else {
+      // Host-staged: bulk-fetch into the host vectors (also keeps the
+      // TD/routability single-cell callbacks fed), then push back.
+      nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
+      density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
+      nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
+      nb_device_ctx_->pushDensityGradsFromHost(densityGrads);
+    }
     nb_device_ctx_->gradCombine(densityPenalty_,
                                 NesterovPlaceVars::minPreconditioner,
                                 target,
@@ -3019,6 +3096,12 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     return;
   }
 #endif
+
+  // Bulk-fetch all per-cell wirelength gradients in one backend call.
+  // CPU backend: sequential per-cell pass. updateWireLengthForceWA is
+  // expected to have already run.
+  nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
+  density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
 
   // Two-phase: parallel per-cell compute, then deterministic serial reduce.
   const size_t numGCells = nb_gcells_.size();
@@ -3405,6 +3488,21 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
     nb_device_ctx_->nesterovCoordUpdate(stepLength_, coeff);
+    if (use_device_density_) {
+      // Device-resident density pipeline: scatter + Poisson stay on device;
+      // only the overflow scalars (and optionally sumPhi) come back. Host
+      // coords/bins go stale — cold paths refresh via pullCoordsFromDevice.
+      const bool want_sum_phi = log_->debugCheck(GPL, "updateNextIter", 1);
+      const NesterovDeviceContext::DensityIterResult r
+          = nb_device_ctx_->densitySolveIteration(
+              nbc_->getDeviceState(), SlpSlot::Next, want_sum_phi);
+      bg_.setOverflowAreas(static_cast<int64_t>(r.overflow_area),
+                           static_cast<int64_t>(r.overflow_area_unscaled));
+      sumPhi_ = r.sum_phi;
+      commitCoordsToDeviceState(SlpSlot::Next);
+      host_coords_fresh_ = false;
+      return;
+    }
     nb_device_ctx_->syncCoordsToHost(nextSLPCoordi_, nextCoordi_);
     updateGCellDensityCenterLocation(nextSLPCoordi_);
     updateDensityFieldBin();
@@ -3477,7 +3575,10 @@ void NesterovBase::saveSnapshot()
   // On the GPU path updateGradients writes sum-grads only to device; the
   // host vectors stay at zero. Pull both from device before snapshotting so
   // the subsequent revertToSnapshot pushes back real values, not zeros.
+  // With the device-resident density pipeline the coord vectors are stale
+  // too — refresh them first.
   if (nb_device_ctx_) {
+    pullCoordsFromDevice();
     nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
     nb_device_ctx_->syncPrevSumGradsToHost(prevSLPSumGrads_);
   }
@@ -3649,6 +3750,10 @@ bool NesterovBase::revertToSnapshot()
   if (isConverged_) {
     return true;
   }
+  // CPU semantics keep the pre-revert prevSLP coords (they are NOT part of
+  // the snapshot) and push them back to device below. With the
+  // device-resident pipeline the host copies are stale — refresh first.
+  pullCoordsFromDevice();
   // revert back the current density penality
   curCoordi_ = snapshotCoordi_;
   curSLPCoordi_ = snapshotSLPCoordi_;
@@ -3668,6 +3773,7 @@ bool NesterovBase::revertToSnapshot()
                                        curSLPSumGrads_,
                                        prevSLPSumGrads_);
     commitCoordsToDeviceState(SlpSlot::Cur);
+    host_coords_fresh_ = true;
   }
 #endif
 
@@ -3693,6 +3799,11 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setAllLocations(
       bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
 }
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
@@ -3729,6 +3840,11 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   // update gcell
   gcell->updateLocations();
   gcell->setAreaChangeType(GCell::GCellChange::kTimingDriven);
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
 
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
@@ -4031,6 +4147,8 @@ NesterovBaseCommon::destroyCbkGCell(odb::dbInst* db_inst)
 
 void NesterovBase::cutFillerCells(int64_t inflation_area)
 {
+  // Snapshots per-filler host vector state below — must be fresh.
+  pullCoordsFromDevice();
   dbBlock* block = pb_->db()->getChip()->getBlock();
   if (inflation_area < 0) {
     log_->warn(GPL,
@@ -4220,6 +4338,7 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
 void NesterovBase::restoreRemovedFillers()
 {
+  pullCoordsFromDevice();
   log_->info(GPL,
              80,
              "Restoring {} previously removed fillers.",

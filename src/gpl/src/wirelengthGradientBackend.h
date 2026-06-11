@@ -53,6 +53,12 @@ class WirelengthGradientBackend
   // db-callback hook). Backend may cache prior bulk results.
   virtual FloatPoint getCellGradient(const GCell* gCell) = 0;
 
+  // Make the per-inst gradients available on the DEVICE without a host
+  // round-trip. Only meaningful for the GPU backend (runs the K5 gather so
+  // NesterovDeviceContext::scatterWLGradsToNB can read d_inst_wl_grad_*);
+  // the CPU backend has no device buffer and this is a no-op.
+  virtual void prepareDeviceGradients() {}
+
   virtual const char* name() const = 0;
 
  protected:

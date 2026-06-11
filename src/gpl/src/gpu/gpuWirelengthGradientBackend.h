@@ -40,6 +40,7 @@ class GpuWirelengthGradientBackend : public WirelengthGradientBackend
   void getCellGradients(const std::vector<GCellHandle>& gCells,
                         std::vector<FloatPoint>& out) override;
   FloatPoint getCellGradient(const GCell* gCell) override;
+  void prepareDeviceGradients() override;
 
   const char* name() const override { return "GPU (Kokkos)"; }
 

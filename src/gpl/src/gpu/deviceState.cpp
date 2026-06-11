@@ -376,12 +376,13 @@ int DeviceState::numBins() const
 void DeviceState::ensureCoordsFresh(const std::vector<GCell>& gCellStor)
 {
   // Fast path: NB device context already scattered fresh inst coords (and
-  // ran updatePinLocations()) this iteration via commitCoordsToDeviceState.
-  // Skip the host→device round-trip — host gCellStor_::dCx/dCy is
-  // int-truncated and would lose the sub-integer precision the GPU
-  // coord-update kernel produced.
+  // ran updatePinLocations()) via commitCoordsToDeviceState, and no host
+  // mutation has invalidated them since. Skip the host→device round-trip —
+  // host gCellStor_::dCx/dCy is int-truncated and (with the device-resident
+  // density pipeline) may be stale during the hot loop. The flag is sticky:
+  // it stays set until invalidateCoords() reports a host-side coord change
+  // (updateGCellDensityCenterLocation, db callbacks, ...).
   if (coords_fresh_) {
-    coords_fresh_ = false;
     return;
   }
   syncInstCoordsFromHost(gCellStor);

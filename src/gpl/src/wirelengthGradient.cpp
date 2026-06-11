@@ -112,6 +112,11 @@ void NesterovBaseCommon::getAllWireLengthGradientsWA(
   wl_grad_backend_->getCellGradients(gCells, out);
 }
 
+void NesterovBaseCommon::prepareDeviceWlGradients()
+{
+  wl_grad_backend_->prepareDeviceGradients();
+}
+
 FloatPoint NesterovBaseCommon::getSingleWireLengthGradientWA(const GCell* gCell)
 {
   return wl_grad_backend_->getCellGradient(gCell);

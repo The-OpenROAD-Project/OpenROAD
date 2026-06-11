@@ -193,6 +193,31 @@ void PoissonSolver::solvePoisson(Kokkos::View<float*> binDensity,
               d_workSpaceReal1_,
               potential);
 
+  solveFieldFromAuv(electroForceX, electroForceY);
+}
+
+void PoissonSolver::solvePoissonField(Kokkos::View<float*> binDensity,
+                                      Kokkos::View<float*> electroForceX,
+                                      Kokkos::View<float*> electroForceY)
+{
+  // Steps #1-#2 of solvePoisson; the potential IDCT (step #3) is skipped.
+  dct_2d_fft(binCntY_,
+             binCntX_,
+             d_expkM_,
+             d_expkN_,
+             binDensity,
+             d_workSpaceReal1_,
+             d_workSpaceComplex_,
+             d_auv_);
+
+  launchDivideByWSquare();
+
+  solveFieldFromAuv(electroForceX, electroForceY);
+}
+
+void PoissonSolver::solveFieldFromAuv(Kokkos::View<float*> electroForceX,
+                                      Kokkos::View<float*> electroForceY)
+{
   // Step #4. Multiply w_u , w_v
   const auto binCntX = binCntX_;
   const auto binCntY = binCntY_;
