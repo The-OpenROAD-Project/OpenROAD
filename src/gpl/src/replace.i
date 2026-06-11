@@ -78,6 +78,7 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys,
            "-timing_driven_repair_tns_end_percent",
            options.timingDrivenRepairTnsEndPercent);
+  checkKey(keys, "-random_seed", options.initialPlacePerturbationSeed);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {

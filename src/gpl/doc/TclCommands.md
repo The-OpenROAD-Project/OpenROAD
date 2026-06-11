@@ -14,7 +14,7 @@ global_placement
     [-initial_place_max_iter max_iter]
     [-initial_place_max_fanout max_fanout]
     [-verbose_level verbose_level]
-
+    [-random_seed random_seed]
 ```
 
 ## Flow Control
@@ -31,6 +31,7 @@ global_placement
 
 ## Other Options
 * __verbose_level__ [0-10, int] : Set verbose level for RePlAce. Default: 1
+* __random_seed__ [int] : Set random seed for placement perturbation. Perturbation shifts standard cells by grid-aligned offsets (site width / row height pitches, bounded to ~0.5 microns) at the start of global placement. Default is 1.
 
 Note that all of the TCL commands are defined in the
 [../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.tcl)

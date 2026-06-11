@@ -1080,7 +1080,8 @@ NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
       binCntX(isSetBinCnt ? options.binGridCntX : 0),
       binCntY(isSetBinCnt ? options.binGridCntY : 0),
       minPhiCoef(options.minPhiCoef),
-      maxPhiCoef(options.maxPhiCoef)
+      maxPhiCoef(options.maxPhiCoef),
+      initialPlacePerturbationSeed(options.initialPlacePerturbationSeed)
 {
 }
 
@@ -1941,6 +1942,37 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
   }
 }
 
+// Calculate a random initial placement perturbation offset.
+// Standard cells are shifted by up to 0.5 microns in both X and Y directions.
+//
+// The displacement magnitude is:
+//   X direction: random shift up to 0.5um, discrete to site width (site_x).
+//   Y direction: random shift up to 0.5um, discrete to row height (site_y).
+//
+// (Note: Snapping to site/row pitches is done for convenience, but the main
+// goal is simply to introduce a small random layout displacement up to ~0.5um).
+std::pair<int, int> NesterovBase::calculatePlacementPerturbationOffset(
+    int dbu_per_micron) const
+{
+  int site_x = pb_->getSiteSizeX();
+  int site_y = pb_->getSiteSizeY();
+  if (site_x <= 0 || site_y <= 0) {
+    return {0, 0};
+  }
+  // Determine the maximum number of site/row steps corresponding to ~0.5
+  // microns. We guarantee at least 1 site/row step of shift if perturbation is
+  // enabled.
+  int max_x = std::max(1, static_cast<int>(0.5 * dbu_per_micron / site_x));
+  int max_y = std::max(1, static_cast<int>(0.5 * dbu_per_micron / site_y));
+  // Use modulo instead of std::uniform_int_distribution to guarantee
+  // deterministic results across different platforms/compilers.
+  int num_x = (generator_() % max_x) + 1;
+  int num_y = (generator_() % max_y) + 1;
+  int x_offset = num_x * site_x * ((generator_() % 2) ? 1 : -1);
+  int y_offset = num_y * site_y * ((generator_() % 2) ? 1 : -1);
+  return {x_offset, y_offset};
+}
+
 ////////////////////////////////////////////////
 // NesterovBase
 
@@ -1951,7 +1983,7 @@ NesterovBase::NesterovBase(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<NesterovBaseCommon> nbc,
     utl::Logger* log)
-    : nbVars_(nbVars)
+    : nbVars_(nbVars), generator_(nbVars.initialPlacePerturbationSeed)
 {
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
@@ -1961,8 +1993,6 @@ NesterovBase::NesterovBase(
              "---- Initialize Nesterov Region: {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
-  // Set a fixed seed
-  srand(42);
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea();
@@ -1976,8 +2006,8 @@ NesterovBase::NesterovBase(
 
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
-    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    auto [x_offset, y_offset]
+        = calculatePlacementPerturbationOffset(dbu_per_micron);
 
     GCell* gCell = nbc_->pbToNb(pb_inst);
     if (pb_inst != gCell->insts()[0]) {

@@ -104,7 +104,8 @@ global_placement
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
-    [-enable_routing_congestion]
+    [-enable_routing_congestion]\
+    [-random_seed random_seed]
 ```
 
 #### Options
@@ -131,6 +132,7 @@ global_placement
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by grid-aligned offsets (site width / row height pitches, bounded to ~0.5 microns) at the start of global placement to explore layout variations. Default is `1`. |
 
 #### Initial-Placement Arguments
 
