@@ -13,6 +13,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -755,6 +756,7 @@ struct NesterovBaseVars
 
   const float minPhiCoef;
   float maxPhiCoef;  // may be updated after initialization
+  const int initialPlacePerturbationSeed;
 
   static constexpr float minWireLengthForceBar = -300;
 };
@@ -1149,11 +1151,15 @@ class NesterovBase
 
   odb::dbGroup* getGroup() const { return pb_->getGroup(); }
 
+  std::pair<int, int> calculatePlacementPerturbationOffset(
+      int dbu_per_micron) const;
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_ = nullptr;
+  mutable std::mt19937 generator_;
 
   BinGrid bg_;
   std::unique_ptr<FFT> fft_;
