@@ -177,9 +177,10 @@ class TestAnnealerPacking : public MplTest
     constexpr float kExchangeScale = 5.0f;
     const float exchange_swap_prob
         = kBaseActionProb * kExchangeScale
-          * (1.0f
-             - (static_cast<float>(inventory().size())
-                / static_cast<float>(macros.size())));
+          * std::max(0.0f,
+                     1.0f
+                         - (static_cast<float>(inventory().size())
+                            / static_cast<float>(macros.size())));
     const float action_sum = 2 * kBaseActionProb * kSeqSwapScale
                              + kBaseActionProb + exchange_swap_prob;
     const float pos_swap_prob = kBaseActionProb * kSeqSwapScale / action_sum;
