@@ -193,6 +193,9 @@ void CUGR::markResAwareNets(const float percentage)
   worst_net_length_ = 1;
 
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     const auto& tree = net->getRoutingTree();
     const float resistance
         = grid_graph_->getNetResistance(tree, net->getNdrWidths());
@@ -212,6 +215,9 @@ void CUGR::markResAwareNets(const float percentage)
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     slacks.push_back(net->getSlack());
   }
   std::ranges::stable_sort(slacks);
@@ -221,6 +227,9 @@ void CUGR::markResAwareNets(const float percentage)
                        : slacks[std::min(static_cast<size_t>(threshold_index),
                                          slacks.size() - 1)];
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     const bool multi_pin = net->getNumPins() >= 2;
     // Skip short nets (FR's kShortNetThreshold), using the same length
     // metric as the ordering score (routed-tree length, bbox hp pre-route).
