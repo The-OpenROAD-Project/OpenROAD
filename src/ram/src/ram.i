@@ -94,14 +94,13 @@ generate_ram_netlist_cmd(int mask_size,
                     max_tap_dist);
 }
 
-void ram_pdngen(const char* power_pin, const char* ground_pin, 
-                const char* power_net_name, const char* ground_net_name,
+void ram_pdngen(const char* power_net_name, const char* ground_net_name,
                 const char* route_name, int route_width, 
                 const char* ver_name, int ver_width, int ver_pitch,
                 const char* hor_name, int hor_width, int hor_pitch)
 {
   RamGen* ram_gen = ord::getRamGen();
-  ram_gen->ramPdngen(power_pin, ground_pin, power_net_name, ground_net_name,
+  ram_gen->ramPdngen(power_net_name, ground_net_name,
                      route_name, route_width,
                      ver_name, ver_width, ver_pitch, 
                      hor_name, hor_width, hor_pitch);

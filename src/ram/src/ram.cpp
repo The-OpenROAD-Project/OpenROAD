@@ -582,6 +582,14 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
                    ground_count);
   }
 
+  for (auto& [role, name] : pin_map) {
+    if (role.type == PortRoleType::Power) {
+      power_pin_names_.insert(name);
+    } else if (role.type == PortRoleType::Ground) {
+      ground_pin_names_.insert(name);
+    }
+  }
+
   return pin_map;
 }
 
@@ -846,9 +854,7 @@ void RamGen::findMasters()
   }
 }
 
-void RamGen::ramPdngen(const char* power_pin,
-                       const char* ground_pin,
-                       const char* power_net_name,
+void RamGen::ramPdngen(const char* power_net_name,
                        const char* ground_net_name,
                        const char* route_name,
                        int route_width,
@@ -913,8 +919,13 @@ void RamGen::ramPdngen(const char* power_pin,
   ground_net->setSpecial();
   ground_net->setSigType(odb::dbSigType::GROUND);
 
-  block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
-  block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
+  for (const auto& pin_name : power_pin_names_) {
+    block_->addGlobalConnect(nullptr, ".*", pin_name.c_str(), power_net, true);
+  }
+
+  for (const auto& pin_name : ground_pin_names_) {
+    block_->addGlobalConnect(nullptr, ".*", pin_name.c_str(), ground_net, true);
+  }
 
   block_->globalConnect(false, false);
 
