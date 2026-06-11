@@ -199,7 +199,7 @@ export class SchematicWidget {
         const wm = this.appState.websocketManager;
         if (!wm) return;
         console.log('[Schematic] inspect:', instName);
-        wm.request({ type: 'schematic_inspect', inst_name: instName })
+        wm.request({ type: 'schematic_inspect', inst_name: instName, use_dbu: this.appState.showDbu })
             .then(data => {
                 if (this.appState.updateInspector) {
                     this.appState.updateInspector(data);
@@ -207,9 +207,9 @@ export class SchematicWidget {
                 if (this.appState.focusComponent) {
                     this.appState.focusComponent('Inspector');
                 }
-                // Redraw layout tiles to show instance highlight
-                if (this.appState.redrawAllLayers) {
-                    this.appState.redrawAllLayers();
+                // Refresh overlay tiles to show instance highlight
+                if (this.appState.refreshOverlay) {
+                    this.appState.refreshOverlay();
                 }
             })
             .catch(err => {

@@ -20,6 +20,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -76,6 +77,16 @@ odb::dbTech* IRNetwork::getTech() const
   return getBlock()->getTech();
 }
 
+bool IRNetwork::hasNodes() const
+{
+  for (const auto& [layer, nodes] : nodes_) {
+    if (!nodes.empty()) {
+      return true;
+    }
+  }
+  return !iterm_nodes_.empty() || !bpin_nodes_.empty();
+}
+
 void IRNetwork::reset()
 {
   shapes_.clear();
@@ -97,6 +108,12 @@ void IRNetwork::construct()
 
   generateRoutingLayerShapesAndNodes();
   generateCutLayerNodes();
+
+  if (!hasNodes()) {
+    logger_->warn(utl::PSM, 86, "Net {} is empty.", net_->getName());
+    return;
+  }
+
   generateTopLayerFillerNodes();
   sortNodes();
   if (logger_->debugCheck(utl::PSM, "dump", 2)) {
@@ -232,7 +249,8 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate shapes from ITerms: {}");
 
-  auto* base_layer = getTech()->findRoutingLayer(1);
+  odb::dbTechLayer* front_base = getTech()->firstFrontsideRoutingLayer();
+  odb::dbTechLayer* back_base = getTech()->firstBacksideRoutingLayer();
 
   LayerMap<Polygon90Set> shapes_by_layer;
   bool floorplan_asseted = false;
@@ -251,10 +269,57 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
       continue;
     }
 
+    // First pass: figure out which side(s) this iterm has pin geometry on
+    // so we can pick the iterm base node's layer accordingly. Only the
+    // layer matters here, so skip the polygon/transform work.
+    bool has_front_pin = false;
+    bool has_back_pin = false;
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* geom : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = geom->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (layer->isBackside()) {
+          has_back_pin = true;
+        } else {
+          has_front_pin = true;
+        }
+      }
+    }
+
+    // Place the iterm base node on the cell's "primary" side. A
+    // backside-only cell's base belongs on the backside grid so its
+    // pin connects to real shapes; otherwise default to the front side.
+    odb::dbTechLayer* base_layer = front_base;
+    if (!has_front_pin && has_back_pin && back_base != nullptr) {
+      base_layer = back_base;
+    }
+    const bool primary_is_back = base_layer == back_base;
+    const bool is_bridge = inst->getMaster()->isBacksideBridge();
+
     int x, y;
     iterm->getAvgXY(&x, &y);
     auto base_node
         = std::make_unique<ITermNode>(iterm, odb::Point(x, y), base_layer);
+
+    auto link_terminal = [&](Node* term, odb::dbTechLayer* term_layer) {
+      const bool term_is_back = term_layer->isBackside();
+      if (term_is_back == primary_is_back) {
+        // Same-side terminal: ordinary virtual edge into the base node.
+        connections_.push_back(
+            std::make_unique<TermConnection>(base_node.get(), term));
+      } else if (is_bridge) {
+        // Bridge cell: explicit virtual edge across the front/back boundary.
+        connections_.push_back(
+            std::make_unique<BridgeConnection>(base_node.get(), term));
+      }
+      // Non-bridge cross-side terminals are intentionally left
+      // unlinked from the iterm base node. They still join the
+      // local layer graph through cleanupOverlappingNodes(); if
+      // they end up unreachable, that surfaces as an open net,
+      // which is the correct outcome for a malformed PG.
+    };
 
     bool has_routing_term = false;
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
@@ -279,8 +344,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
               auto center = std::make_unique<TerminalNode>(pin_shape, layer);
               terminals.push_back(center.get());
 
-              connections_.push_back(std::make_unique<TermConnection>(
-                  base_node.get(), center.get()));
+              link_terminal(center.get(), layer);
 
               nodes_[layer].push_back(std::move(center));
             }
@@ -297,8 +361,7 @@ IRNetwork::generatePolygonsFromITerms(std::vector<TerminalNode*>& terminals)
           auto center = std::make_unique<TerminalNode>(pin_shape, layer);
           terminals.push_back(center.get());
 
-          connections_.push_back(
-              std::make_unique<TermConnection>(base_node.get(), center.get()));
+          link_terminal(center.get(), layer);
 
           nodes_[layer].push_back(std::move(center));
         }
@@ -1111,9 +1174,9 @@ odb::dbTechLayer* IRNetwork::getTopLayer() const
   return nodes_.rbegin()->first;
 }
 
-std::set<odb::dbTechLayer*> IRNetwork::getLayers() const
+odb::PtrSet<odb::dbTechLayer> IRNetwork::getLayers() const
 {
-  std::set<odb::dbTechLayer*> layers;
+  odb::PtrSet<odb::dbTechLayer> layers;
   for (const auto& [layer, nodes] : nodes_) {
     layers.insert(layer);
   }
@@ -1135,12 +1198,13 @@ IRNetwork::NodeTree IRNetwork::getTopLayerNodeTree() const
   return getNodeTree(getTopLayer());
 }
 
-std::map<odb::dbInst*, Node::NodeSet> IRNetwork::getInstanceNodeMapping() const
+odb::PtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping()
+    const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Generate instance node map: {}");
 
-  std::map<odb::dbInst*, Node::NodeSet> inst_nodes;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> inst_nodes;
   for (const auto& node : iterm_nodes_) {
     odb::dbITerm* iterm = node->getITerm();
     odb::dbInst* inst = iterm->getInst();
@@ -1274,7 +1338,7 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
     return {};
   }
 
-  std::map<odb::dbTechLayer*, std::set<odb::Rect>> nodes;
+  odb::PtrMap<odb::dbTechLayer, std::set<odb::Rect>> nodes;
   for (const auto& bpin : bpin_nodes_) {
     if (bpin->shouldConnect()) {
       nodes[bpin->getLayer()].insert(bpin->getShape());

@@ -398,12 +398,13 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-turn_penalty penalty] \
                                   [-allow45] \
                                   [-max_iterations iterations] \
+                                  [-fixed] \
                                   nets}
 
 proc rdl_route { args } {
   sta::parse_key_args "rdl_route" args \
     keys {-layer -width -spacing -bump_via -pad_via -turn_penalty -max_iterations} \
-    flags {-allow45}
+    flags {-allow45 -fixed}
 
   if { [llength $args] == 1 } {
     set args [lindex $args 0]
@@ -471,6 +472,7 @@ proc rdl_route { args } {
     $nets \
     $width $spacing \
     [info exists flags(-allow45)] \
+    [info exists flags(-fixed)] \
     $penalty \
     $max_iterations
 }

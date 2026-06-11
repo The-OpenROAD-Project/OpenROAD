@@ -9,6 +9,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "ant/AntennaChecker.hh"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbReadVerilog.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
@@ -28,7 +29,7 @@ class MBFFTestPeer
  public:
   static bool IsValidTray(MBFF* uut, odb::dbInst* tray)
   {
-    return uut->IsValidTray(tray);
+    return uut->network_->isValidTray(tray);
   }
 };
 
@@ -69,10 +70,10 @@ class MBFFTestFixture : public tst::Fixture
                                               opendp_.get(),
                                               estimate_parasitics_.get());
 
-    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
     loadTechAndLib("test0",
                    "test0",
                    getFilePath("openroad/src/gpl/test/library/test/test0.lef"));
+    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

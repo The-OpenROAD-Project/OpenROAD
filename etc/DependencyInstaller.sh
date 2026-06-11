@@ -16,11 +16,7 @@ set -euo pipefail
 PREFIX=""
 CI="no"
 SAVE_DEPS_PREFIXES=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    NUM_THREADS=$(sysctl -n hw.logicalcpu)
-else
-    NUM_THREADS=$(nproc)
-fi
+NUM_THREADS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 SKIP_SYSTEM_OR_TOOLS="false"
 BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 CMAKE_PACKAGE_ROOT_ARGS=""
@@ -76,6 +72,15 @@ FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
 OR_TOOLS_VERSION_BIG="9.14"
 OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
+INSTALL_BAZEL="no"
+INSTALL_BAZEL_DEV="no"
+NO_GUI="no"
+BAZELISK_VERSION="1.28.1"
+BAZELISK_CHECKSUM_AMD64="2dc74b7ad6bdd6b6b08f6802d14fc1fd"
+BAZELISK_CHECKSUM_ARM64="94415d08ed2f86a49375f25a7f2f9cca"
+BUILDIFIER_VERSION="8.5.1"
+BUILDIFIER_CHECKSUM_AMD64="72f5953ab6dcc309a4447c2e2d79c680"
+BUILDIFIER_CHECKSUM_ARM64="06f52f0872bde33685c6260110261cf7"
 # ... configuration variables will be added here ...
 
 # ==============================================================================
@@ -155,6 +160,11 @@ _verify_checksum() {
 # ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
+# Note: yosys's compile-time readline dependency (libreadline-dev /
+# readline-devel / readline brew formula) is installed in the per-platform
+# -base package functions below. It used to live in a separate helper invoked
+# from here, but that put a root-only apt-get inside the unprivileged -common
+# phase (see ORFS issue #4266).
 _install_yosys() {
     local yosys_prefix=${PREFIX:-"/usr/local"}
     local yosys_bin=${yosys_prefix}/bin/yosys
@@ -706,6 +716,40 @@ _install_abseil() {
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
 }
 
+# Returns 0 if the given directory looks like a dedicated or-tools install
+# (basename "or-tools" or "ortools"). Used to guard rm -rf so the installer
+# never deletes a shared prefix like ~/.local, /usr, or /usr/local.
+_is_dedicated_or_tools_dir() {
+    local d=$1
+    local base
+    base=$(basename "${d}")
+    [[ "${base}" == "or-tools" || "${base}" == "ortools" ]]
+}
+
+# Surgically remove only the files that or-tools owns inside a shared prefix
+# (e.g. ~/.local, /usr/local). Touches libortools.so*, lib*/cmake/ortools/,
+# include/ortools/, share/ortools/ — never the parent directory or unrelated
+# user files.
+_clean_or_tools_in_shared_prefix() {
+    local prefix=$1
+    # On multiarch systems libortools.so may live at e.g.
+    # /usr/lib/x86_64-linux-gnu/, in which case realpath(dirname(lib)/..) gives
+    # /usr/lib rather than the true prefix /usr. Strip a trailing lib component.
+    if [[ "${prefix}" == */lib || "${prefix}" == */lib64 ]]; then
+        prefix=$(dirname "${prefix}")
+    fi
+    local f
+    # Match libortools.so* both directly under lib/ and one level deeper for
+    # multiarch layouts (e.g. lib/x86_64-linux-gnu/).
+    for f in "${prefix}"/lib/libortools.so*   "${prefix}"/lib/*/libortools.so* \
+             "${prefix}"/lib64/libortools.so* "${prefix}"/lib64/*/libortools.so*; do
+        [[ -e "${f}" || -L "${f}" ]] && rm -f "${f}"
+    done
+    rm -rf "${prefix}/lib/cmake/ortools" "${prefix}/lib64/cmake/ortools"
+    rm -rf "${prefix}/include/ortools"
+    rm -rf "${prefix}/share/ortools"
+}
+
 _install_or_tools() {
     local os=$1
     local os_version=$2
@@ -725,7 +769,9 @@ _install_or_tools() {
         local existing_libs
         local search_paths=""
         if [[ -n "${PREFIX}" ]]; then
-            search_paths="${OR_TOOLS_PATH}"
+            # Look in the dedicated subdir first; fall back to the shared PREFIX
+            # to detect legacy installs that landed directly under PREFIX/lib.
+            search_paths="${OR_TOOLS_PATH} ${PREFIX}"
         else
             search_paths="/usr/local /usr /opt"
         fi
@@ -745,9 +791,12 @@ _install_or_tools() {
                 OR_TOOLS_PATH=${or_tools_install_dir}
                 INSTALL_SUMMARY+=("or-tools: system=${or_tools_installed_version}, required=${OR_TOOLS_VERSION_SMALL}, path=${OR_TOOLS_PATH}, status=skipped")
                 return
-            else
-                log "Found old OR-Tools version ${or_tools_installed_version}. Removing it."
+            elif _is_dedicated_or_tools_dir "${or_tools_install_dir}"; then
+                log "Found old OR-Tools version ${or_tools_installed_version} at ${or_tools_install_dir}. Removing it."
                 rm -rf "${or_tools_install_dir}"
+            else
+                log "Found old OR-Tools version ${or_tools_installed_version} under a shared prefix: ${or_tools_install_dir}. Removing or-tools files only."
+                _clean_or_tools_in_shared_prefix "${or_tools_install_dir}"
             fi
         fi
     fi
@@ -784,6 +833,109 @@ _install_or_tools() {
 # Each dependency will have its own dedicated function for installation and
 # version management. This modular approach makes the script easier to
 # maintain and extend.
+# ------------------------------------------------------------------------------
+# Bazel
+# ------------------------------------------------------------------------------
+_install_bazel() {
+    local bazel_prefix=${PREFIX:-"/usr/local"}
+    log "Checking Bazel (via bazelisk)"
+    if _command_exists "bazelisk"; then
+        log "bazelisk already installed, skipping."
+        INSTALL_SUMMARY+=("Bazel: system=found, required=any, status=skipped")
+        return
+    fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing bazelisk via Homebrew..." brew install bazelisk
+    else
+        local arch
+        arch=$(uname -m)
+        local bazelisk_arch="amd64"
+        if [[ "${arch}" == "aarch64" ]]; then
+            bazelisk_arch="arm64"
+        fi
+        local bazelisk_checksum="${BAZELISK_CHECKSUM_AMD64}"
+        if [[ "${bazelisk_arch}" == "arm64" ]]; then
+            bazelisk_checksum="${BAZELISK_CHECKSUM_ARM64}"
+        fi
+        (
+            cd "${BASE_DIR}"
+            _execute "Downloading bazelisk v${BAZELISK_VERSION}..." curl -Lo bazelisk \
+                "https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-${bazelisk_arch}"
+            _verify_checksum "${bazelisk_checksum}" "bazelisk" || error "Bazelisk checksum failed."
+            chmod +x bazelisk
+            _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
+        )
+        if _command_exists "apt-get"; then
+            _execute "Installing bazel required libraries..." \
+                apt-get -y install --no-install-recommends \
+                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+        elif _command_exists "yum"; then
+            _execute "Installing bazel required libraries..." \
+                yum install -y \
+                glibc-devel libxml2 ncurses-libs zlib libstdc++
+        fi
+        if [[ "${NO_GUI}" != "yes" ]]; then
+            # Install xcb libraries needed for GUI support with Bazel builds
+            if _command_exists "apt-get"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    apt-get -y install --no-install-recommends \
+                    libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
+                    libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
+                    libxcb-xinerama0-dev libxcb-xkb-dev \
+                    libx11-xcb1 libx11-6 libsm6 libice6 \
+                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
+            elif _command_exists "yum"; then
+                _execute "Installing xcb libraries for GUI support..." \
+                    yum install -y \
+                    libxcb-devel xcb-util-devel xcb-util-image-devel \
+                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
+                    libX11-xcb libX11 libSM libICE \
+                    xcb-util-cursor libxcb \
+                    dbus-libs fontconfig \
+                    libxkbcommon libxkbcommon-x11
+            fi
+        fi
+    fi
+    INSTALL_SUMMARY+=("Bazel: system=none, required=latest, status=installed")
+}
+
+# ------------------------------------------------------------------------------
+# Bazel Dev Tools (buildifier, etc.)
+# ------------------------------------------------------------------------------
+_install_bazel_dev() {
+    local bazel_prefix=${PREFIX:-"/usr/local"}
+    log "Checking Bazel dev tools (buildifier)"
+    if _command_exists "buildifier"; then
+        log "buildifier already installed, skipping."
+        INSTALL_SUMMARY+=("buildifier: system=found, required=any, status=skipped")
+        return
+    fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        _execute "Installing buildifier via Homebrew..." brew install buildifier
+    else
+        local arch
+        arch=$(uname -m)
+        local buildifier_arch="amd64"
+        if [[ "${arch}" == "aarch64" ]]; then
+            buildifier_arch="arm64"
+        fi
+        local buildifier_checksum="${BUILDIFIER_CHECKSUM_AMD64}"
+        if [[ "${buildifier_arch}" == "arm64" ]]; then
+            buildifier_checksum="${BUILDIFIER_CHECKSUM_ARM64}"
+        fi
+        (
+            cd "${BASE_DIR}"
+            _execute "Downloading buildifier v${BUILDIFIER_VERSION}..." curl -Lo buildifier \
+                "https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-${buildifier_arch}"
+            _verify_checksum "${buildifier_checksum}" "buildifier" || error "Buildifier checksum failed."
+            chmod +x buildifier
+            _execute "Installing buildifier..." mv buildifier "${bazel_prefix}/bin/buildifier"
+        )
+    fi
+    INSTALL_SUMMARY+=("buildifier: system=none, required=latest, status=installed")
+}
+
 _install_common_dev() {
     log "Install common development dependencies (-common or -all)"
     rm -rf "${BASE_DIR}"
@@ -851,7 +1003,7 @@ _install_ubuntu_packages() {
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
-        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
+        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
@@ -894,8 +1046,8 @@ _install_rhel_packages() {
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
-        qt5-qtimageformats readline tcl-devel tcl-tclreadline \
-        tcl-tclreadline-devel tcl-thread-devel tcllib wget yaml-cpp-devel \
+        qt5-qtimageformats readline-devel tcl-devel \
+        tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
 
     if [[ "${rhel_version}" == "8" ]]; then
@@ -907,7 +1059,6 @@ _install_rhel_packages() {
     if [[ "${rhel_version}" == "9" ]]; then
         _execute "Installing additional packages for RHEL 9..." yum install -y \
             https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/flex-2.6.4-9.el9.x86_64.rpm \
-            https://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/Packages/readline-devel-8.1-4.el9.x86_64.rpm \
             https://rpmfind.net/linux/centos-stream/9-stream/AppStream/x86_64/os/Packages/tcl-devel-8.6.10-7.el9.x86_64.rpm
     fi
 
@@ -958,7 +1109,7 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python readline spdlog tcl-tk@8 zlib swig yaml-cpp
     # _execute "Installing pipx..." brew install pipx
     _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
@@ -981,7 +1132,7 @@ _install_debian_packages() {
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
         libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
-        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev tcl-tclreadline \
+        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
@@ -1043,6 +1194,9 @@ Options:
   -base                       Install base dependencies using package managers. Requires privileged access.
   -common                     Install common dependencies.
   -eqy                        Install equivalence dependencies (yosys, eqy, sby).
+  -bazel                      Download and install bazel (via bazelisk).
+  -bazel-dev                  Download and install bazel developer tools (buildifier, etc.).
+  -no-gui                     Skip GUI-only dependencies (e.g. xcb libraries) when used with -bazel.
   -prefix=DIR                 Install common dependencies in a user-specified directory.
   -local                      Install common dependencies in \${HOME}/.local.
   -ci                         Install dependencies required for CI.
@@ -1068,6 +1222,9 @@ main() {
             -base) option="base" ;;
             -common) option="common" ;;
             -eqy) EQUIVALENCE_DEPS="yes" ;;
+            -bazel) INSTALL_BAZEL="yes" ;;
+            -bazel-dev) INSTALL_BAZEL_DEV="yes" ;;
+            -no-gui) NO_GUI="yes" ;;
             -ci) CI="yes" ;;
             -verbose) VERBOSE_MODE="yes" ;;
             -local)
@@ -1113,11 +1270,33 @@ main() {
         shift 1
     done
 
-    if [[ "${option}" == "none" ]]; then
-        error "You must use one of: -all, -base, or -common."
+    if [[ "${option}" == "none" && "${INSTALL_BAZEL}" == "no" && "${INSTALL_BAZEL_DEV}" == "no" ]]; then
+        error "You must use one of: -all, -base, -common, -bazel, or -bazel-dev."
     fi
 
-    OR_TOOLS_PATH=${PREFIX:-"/opt/or-tools"}
+    # -bazel-dev implies -bazel (you need bazelisk to use buildifier)
+    if [[ "${INSTALL_BAZEL}" == "yes" || "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
+        _install_bazel
+    fi
+
+    if [[ "${INSTALL_BAZEL_DEV}" == "yes" ]]; then
+        _install_bazel_dev
+    fi
+
+    if [[ "${option}" == "none" ]]; then
+        _print_summary
+        rm -rf "${BASE_DIR}"
+        return
+    fi
+
+    # Always install or-tools into a dedicated subdirectory so the installer
+    # can safely remove an old version with `rm -rf` without touching unrelated
+    # files in the prefix (e.g. ~/.local, /usr).
+    if [[ -n "${PREFIX}" ]]; then
+        OR_TOOLS_PATH="${PREFIX}/or-tools"
+    else
+        OR_TOOLS_PATH="/opt/or-tools"
+    fi
 
     if [[ -z "${SAVE_DEPS_PREFIXES}" ]]; then
         local dir

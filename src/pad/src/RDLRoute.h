@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
 #include "RDLRouter.h"
+#include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -53,7 +53,7 @@ class RDLRoute
   odb::dbNet* getNet() const { return iterm_->getNet(); }
 
   const std::vector<odb::dbITerm*>& getTerminals() const { return terminals_; }
-  std::set<odb::dbITerm*> getRoutedTerminals() const;
+  odb::PtrSet<odb::dbITerm> getRoutedTerminals() const;
   const std::set<odb::Rect>& getStubs() const { return stubs_; }
 
   void increasePriority() { priority_++; }
@@ -113,7 +113,7 @@ class RDLRoute
   std::vector<RDLRouter::GridEdge> route_edges_;
   const RouteTarget* route_source_;
   const RouteTarget* route_dest_;
-  std::set<odb::dbITerm*> routed_terminals_;
+  odb::PtrSet<odb::dbITerm> routed_terminals_;
   std::set<odb::Rect> stubs_;
   odb::Rect bbox_;
 

@@ -3,6 +3,7 @@
 
 #include "Graphics.h"
 
+#include <algorithm>
 #include <any>
 #include <cstdlib>
 #include <set>
@@ -15,6 +16,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -83,7 +85,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   // Create a set of selected instances for fast lookup
-  std::set<odb::dbInst*> selected_insts;
+  odb::PtrSet<odb::dbInst> selected_insts;
   auto selection = gui::Gui::get()->selection();
   for (const auto& selected : selection) {
     if (selected.isInst()) {
@@ -144,6 +146,15 @@ void Graphics::drawObjects(gui::Painter& painter)
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
       painter.drawRect(target_bbox);
+
+      // Indicate orientation change at the target location with a corner notch
+      // (mirroring the ODB orientation marker style)
+      painter.setPen(outline_color, /* cosmetic */ true);
+      const int tag_size = std::min(width / 4, height / 8);
+      painter.drawLine(target_bbox.xMin() + tag_size,
+                       target_bbox.yMin(),
+                       target_bbox.xMin(),
+                       target_bbox.yMin() + tag_size * 2);
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {

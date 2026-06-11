@@ -13,6 +13,8 @@ entries:
     title: Git Quickstart
   - file: main/src/utl/README
     title: Man pages
+  - file: user/Bazel-developer-activities.md
+    title: Bazel Developer Activities
 
 - file: main/README2
   title: OpenROAD User Guide

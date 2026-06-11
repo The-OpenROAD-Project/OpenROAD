@@ -14,10 +14,10 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "src/drt/src/drt-global.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -75,6 +75,8 @@ class Fixture : public ::testing::Test
       frCornerTypeEnum type = frCornerTypeEnum::CONVEX);
 
   void makeSpacingConstraint(frLayerNum layer_num);
+
+  void makeSimpleSpacingConstraint(frLayerNum layer_num, frCoord spacing_value);
 
   void makeMetalWidthViaMap(frLayerNum layer_num,
                             odb::dbMetalWidthViaMap* rule);

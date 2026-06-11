@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbCCSegSet.h"
 #include "odb/dbShape.h"
@@ -101,8 +102,9 @@ static void cutRow(dbBlock* block,
     const int seg_end
         = makeSiteLoc(blockage.first, site_width, true, start_origin_x);
     segments.emplace_back(start_origin_x, seg_end);
-    start_origin_x
-        = makeSiteLoc(blockage.second, site_width, false, start_origin_x);
+    start_origin_x = std::max(
+        start_origin_x,
+        makeSiteLoc(blockage.second, site_width, false, start_origin_x));
   }
   // Last segment: from after the last blockage to the row's right edge
   segments.emplace_back(start_origin_x, row_bb.xMax());
@@ -234,7 +236,7 @@ void cutRows(dbBlock* block,
                           return sum + (std::int64_t) row->getSiteCount();
                         });
 
-  std::map<dbRow*, int> placed_row_insts;
+  odb::PtrMap<dbRow, int> placed_row_insts;
   for (dbInst* inst : block->getInsts()) {
     if (!inst->isFixed()) {
       continue;
@@ -518,14 +520,15 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
                                   int64_t& hpwl_x,
                                   int64_t& hpwl_y) const
 {
+  hpwl_x = 0;
+  hpwl_y = 0;
+
   if (net->getSigType().isSupply() || net->isSpecial()) {
     return 0;
   }
 
   Rect bbox = net->getTermBBox();
   if (bbox.isInverted()) {
-    hpwl_x = 0;
-    hpwl_y = 0;
     return 0;
   }
 
@@ -538,10 +541,10 @@ int64_t WireLengthEvaluator::hpwl(dbNet* net,
 void WireLengthEvaluator::reportEachNetHpwl(utl::Logger* logger) const
 {
   for (dbNet* net : block_->getNets()) {
-    int64_t tmp;
+    int64_t tmp_x, tmp_y;
     logger->report("{} {}",
                    net->getConstName(),
-                   block_->dbuToMicrons(hpwl(net, tmp, tmp)));
+                   block_->dbuToMicrons(hpwl(net, tmp_x, tmp_y)));
   }
 }
 

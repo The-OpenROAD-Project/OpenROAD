@@ -50,7 +50,15 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 129;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 132;  // Current revision number
+
+// Revision where dbInst::bump_ was added
+inline constexpr uint32_t kSchemaInstBump = 132;
+// Revision where all areas in the are switched to be stored as int64_t
+inline constexpr uint32_t kSchemaStoreAreaAsInt64 = 131;
+
+// Revision where dbAlignmentMarkerRule was added
+inline constexpr uint32_t kSchemaChipAlignmentMarkerRule = 130;
 
 // Revision where _dbTechLayerAntennaRule was modified to use ARuleRatio for
 // gate_plus_diff
@@ -274,6 +282,7 @@ inline constexpr uint32_t kSchemaAddGlobalConnect = 58;
 // User Code End Consts
 class dbIStream;
 class dbOStream;
+class _dbAlignmentMarkerRule;
 class _dbChip;
 class _dbProperty;
 class _dbChipInst;
@@ -281,6 +290,11 @@ class _dbChipRegionInst;
 class _dbChipConn;
 class _dbChipBumpInst;
 class _dbChipNet;
+class _dbUnfoldedChipInst;
+class _dbUnfoldedChipRegionInst;
+class _dbUnfoldedChipBumpInst;
+class _dbUnfoldedChipConn;
+class _dbUnfoldedChipNet;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
@@ -288,11 +302,12 @@ class dbChipRegionInstItr;
 class dbChipConnItr;
 class dbChipBumpInstItr;
 class dbChipNetItr;
+class dbUnfoldedChipRegionInstItr;
+class dbUnfoldedChipBumpInstItr;
 class _dbNameCache;
 class _dbTech;
 class _dbLib;
 class _dbGDSLib;
-class UnfoldedModel;
 // User Code End Classes
 
 class _dbDatabase : public _dbObject
@@ -321,6 +336,7 @@ class _dbDatabase : public _dbObject
   uint32_t master_id_;
   dbId<_dbChip> chip_;
   uint32_t dbu_per_micron_;
+  dbTable<_dbAlignmentMarkerRule>* alignment_marker_rule_tbl_;
   dbTable<_dbChip, 2>* chip_tbl_;
   dbHashTable<_dbChip, 2> chip_hash_;
   dbTable<_dbProperty>* prop_tbl_;
@@ -329,6 +345,11 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipConn>* chip_conn_tbl_;
   dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
   dbTable<_dbChipNet>* chip_net_tbl_;
+  dbTable<_dbUnfoldedChipInst>* unfolded_chip_inst_tbl_;
+  dbTable<_dbUnfoldedChipRegionInst>* unfolded_chip_region_inst_tbl_;
+  dbTable<_dbUnfoldedChipBumpInst>* unfolded_chip_bump_inst_tbl_;
+  dbTable<_dbUnfoldedChipConn>* unfolded_chip_conn_tbl_;
+  dbTable<_dbUnfoldedChipNet>* unfolded_chip_net_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* tech_tbl_;
@@ -340,13 +361,14 @@ class _dbDatabase : public _dbObject
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
   dbChipBumpInstItr* chip_bump_inst_itr_;
+  dbUnfoldedChipRegionInstItr* unfolded_region_itr_;
+  dbUnfoldedChipBumpInstItr* unfolded_bump_itr_;
   dbChipNetItr* chip_net_itr_;
   int unique_id_;
   bool hierarchy_;
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
-  UnfoldedModel* unfolded_model_;  // non-persistent object
 
   // User Code End Fields
 };

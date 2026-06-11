@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
@@ -112,6 +113,14 @@ class frLayer
     return (fakeCut_ || fakeMasterslice_)
                ? false
                : db_layer_->getType() == odb::dbTechLayerType::ROUTING;
+  }
+  // True for layers tagged with the LEF58_BACKSIDE property (BPR,
+  // backside metals and their cut layers in BSPDN flows). The detailed
+  // router does not currently route on these layers; they are treated
+  // as invisible to TA/DRT.
+  bool isBackside() const
+  {
+    return (fakeCut_ || fakeMasterslice_) ? false : db_layer_->isBackside();
   }
   bool isUnidirectional() const
   {
@@ -647,14 +656,19 @@ class frLayer
 
   void addLef58AreaConstraintRectWidth(frLef58AreaConstraint* in)
   {
-    // This vector should be sorted by rectwidth in an ascending order
-    auto rectwidth = in->getODBRule()->getRectWidth();
+    // This vector should be sorted by rectwidth in an ascending order,
+    // tie-broken by area in an ascending order so that for equal rectwidth the
+    // smallest area constraint takes preference
+    auto rule = in->getODBRule();
+    auto key = std::make_pair(rule->getRectWidth(), rule->getArea());
     auto it = std::ranges::lower_bound(lef58AreaConstraintsRectWidth_.begin(),
                                        lef58AreaConstraintsRectWidth_.end(),
-                                       rectwidth,
+                                       key,
                                        std::ranges::less{},
                                        [](const frLef58AreaConstraint* a) {
-                                         return a->getODBRule()->getRectWidth();
+                                         return std::make_pair(
+                                             a->getODBRule()->getRectWidth(),
+                                             a->getODBRule()->getArea());
                                        });
     lef58AreaConstraintsRectWidth_.insert(it, in);
   }

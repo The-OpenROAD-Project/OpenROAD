@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -92,6 +93,12 @@ struct NegCell
 
   bool fixed{false};
   NLPowerRailType rail_type{NLPowerRailType::kVss};
+  // Bottom rail type of the cell when it is MX-flipped (= the top rail in
+  // the natural R0 orientation).  For most cells this is kVdd (VDD↔VSS swap
+  // at the bottom edge after flip).  For multi-height cells whose power is
+  // symmetric (VSS at both top and bottom, e.g. some double-height flops),
+  // this equals rail_type — flipping cannot fix a power-rail mismatch.
+  NLPowerRailType rail_type_flipped{NLPowerRailType::kVdd};
   int fence_id{-1};      // -1 → default region
   bool flippable{true};  // odd-height cells may require fliping for moving
   bool legal{false};     // updated each negotiation iteration
@@ -160,7 +167,6 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  [[nodiscard]] NLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
@@ -184,7 +190,7 @@ class NegotiationLegalizer
   [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
-  void updateHistoryCosts();
+  void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
   void sortByNegotiationOrder(std::vector<int>& indices) const;
 
@@ -257,6 +263,10 @@ class NegotiationLegalizer
   std::vector<NLPowerRailType> row_rail_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+
+  // Reusable scratch set for updateHistoryCosts() pixel deduplication,
+  // kept as a member so the per-iteration allocation is amortized.
+  std::unordered_set<int> hist_seen_pixels_;
 
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper

@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -6,6 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -52,7 +53,9 @@ COMPULSORY_TESTS = [
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
+    "core_grid_with_multiple_bterms",
     "core_grid_with_M6_min_area",
+    "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
     "core_grid_with_bterms",
     "core_grid_with_dual_rings",
@@ -141,24 +144,6 @@ COMPULSORY_TESTS = [
 
 ALL_TESTS = COMPULSORY_TESTS
 
-PY_TESTS = [
-    "asap7_taper",
-    "core_grid",
-    "core_grid_with_rings",
-    "core_grid_with_routing_obstructions",
-    "existing",
-    "macros",
-    "max_width",
-    "min_width",
-    "offgrid",
-    "power_switch",
-    "repair_vias",
-    "report",
-    "reset",
-    "ripup",
-    "widthtable",
-]
-
 filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
@@ -221,6 +206,7 @@ filegroup(
         "nangate_bsg_black_parrot/floorplan_flipchip.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_nogrid.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_short.def",
+        "nangate_data/Nangate45.lef",
         "nangate_existing/floorplan.def",
         "nangate_gcd/floorplan.def",
         "nangate_gcd/floorplan_obstructions.def",
@@ -295,10 +281,15 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
+            "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
@@ -319,31 +310,6 @@ filegroup(
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
-]
-
-py_library(
-    name = "helpers",
-    srcs = [
-        "helpers.py",
-        "pdn_aux.py",
-    ],
-    imports = ["."],
-    deps = [
-        "//python/openroad:openroadpy",
-    ],
-)
-
-[
-    py_test(
-        name = test_name,
-        srcs = [test_name + ".py"],
-        data = [":" + test_name + "_resources"],
-        deps = [
-            ":helpers",
-            "//python/openroad:openroadpy",
-        ],
-    )
-    for test_name in PY_TESTS
 ]
 
 py_test(

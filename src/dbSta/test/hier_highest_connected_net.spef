@@ -1,0 +1,97 @@
+*SPEF "IEEE 1481-1998"
+*DESIGN "top"
+*DATE "now"
+*VENDOR "n/a"
+*PROGRAM "n/a"
+*VERSION "1.0"
+*DESIGN_FLOW ""
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER [ ]
+*T_UNIT 1 NS
+*C_UNIT 1 PF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*D_NET clk 0.001
+*CONN
+*P clk I
+*I ck_buf:A I
+*CAP
+1 clk 0.0005
+2 ck_buf:A 0.0005
+*RES
+1 clk ck_buf:A 0.1
+*END
+
+*D_NET clk_int 0.002
+*CONN
+*I ck_buf:Z O
+*I ff_top:CK I
+*I ff_out:CK I
+*I sub_inst/ff_sub:CK I
+*CAP
+1 ck_buf:Z 0.0005
+2 ff_top:CK 0.0005
+3 ff_out:CK 0.0005
+4 sub_inst/ff_sub:CK 0.0005
+*RES
+1 ck_buf:Z ff_top:CK 0.1
+2 ck_buf:Z ff_out:CK 0.1
+3 ck_buf:Z sub_inst/ff_sub:CK 0.1
+*END
+
+*D_NET in 0.001
+*CONN
+*P in I
+*I ff_top:D I
+*CAP
+1 in 0.0005
+2 ff_top:D 0.0005
+*RES
+1 in ff_top:D 0.1
+*END
+
+*D_NET out 0.001
+*CONN
+*I ff_out:Q O
+*P out O
+*CAP
+1 ff_out:Q 0.0005
+2 out 0.0005
+*RES
+1 ff_out:Q out 0.1
+*END
+
+*D_NET midnet 0.001
+*CONN
+*I ff_top:Q O
+*I sub_inst/ff_sub:D I
+*CAP
+1 ff_top:Q 0.0005
+2 sub_inst/ff_sub:D 0.0005
+*RES
+1 ff_top:Q sub_inst/ff_sub:D 0.1
+*END
+
+*D_NET intermediate 0.001
+*CONN
+*I sub_inst/buf_sub:Z O
+*I ff_out:D I
+*CAP
+1 sub_inst/buf_sub:Z 0.0005
+2 ff_out:D 0.0005
+*RES
+1 sub_inst/buf_sub:Z ff_out:D 0.1
+*END
+
+*D_NET sub_inst/q_int 0.001
+*CONN
+*I sub_inst/ff_sub:Q O
+*I sub_inst/buf_sub:A I
+*CAP
+1 sub_inst/ff_sub:Q 0.0005
+2 sub_inst/buf_sub:A 0.0005
+*RES
+1 sub_inst/ff_sub:Q sub_inst/buf_sub:A 0.1
+*END

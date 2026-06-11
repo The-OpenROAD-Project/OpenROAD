@@ -43,6 +43,14 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":request_handler_test",
+        ":tile_generator_test",
+    ],
+)
+
 js_test(
     name = "coordinates_test",
     data = JS_FILES,
@@ -87,7 +95,7 @@ js_test(
 
 js_test(
     name = "charts_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-charts-widget.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -127,22 +135,46 @@ js_test(
     no_copy_to_bin = JS_FILES,
 )
 
+js_test(
+    name = "menu_bar_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-menu-bar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "status_indicator_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "theme_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-theme.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "title_test",
+    data = JS_FILES,
+    entry_point = "js/test-title.js",
+    no_copy_to_bin = JS_FILES,
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/gui",
-        "//src/odb",
-        "//src/tst",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
-        "//src/utl",
         "//src/web",
-        "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -151,19 +183,16 @@ cc_test(
 cc_test(
     name = "request_handler_test",
     srcs = ["cpp/TestRequestHandler.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/gui",
-        "//src/odb",
-        "//src/tst",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
-        "//src/utl",
         "//src/web",
-        "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -172,19 +201,17 @@ cc_test(
 cc_test(
     name = "tile_generator_test",
     srcs = ["cpp/TestTileGenerator.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/gui",
-        "//src/odb",
-        "//src/tst",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
-        "//src/utl",
         "//src/web",
+        "//src/web:color",
         "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -193,17 +220,13 @@ cc_test(
 cc_test(
     name = "save_image_test",
     srcs = ["cpp/TestSaveImage.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/gui",
-        "//src/odb",
-        "//src/tst",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
-        "//src/utl",
         "//src/web",
         "//third-party/lodepng",
         "@googletest//:gtest",
@@ -214,17 +237,38 @@ cc_test(
 cc_test(
     name = "snap_test",
     srcs = ["cpp/TestSnap.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "glyph_cache_test",
+    srcs = ["cpp/TestGlyphCache.cpp"],
+    deps = [
+        "//src/gui:gui_stub",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "debug_graphics_test",
+    srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
         "//src/gui",
-        "//src/odb",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -234,19 +278,15 @@ cc_test(
 cc_test(
     name = "save_report_test",
     srcs = ["cpp/TestSaveReport.cpp"],
-    copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/gui",
-        "//src/odb",
-        "//src/tst",
+        "//src/gui:gui_stub",
+        "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
-        "//src/utl",
         "//src/web",
-        "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

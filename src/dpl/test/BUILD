@@ -53,6 +53,9 @@ COMPULSORY_TESTS = [
     "mirror3",
     "multi_height_one_site_gap_disallow",
     "multi_height_rows",
+    "negotiation01",
+    "negotiation_one_site_gap",
+    "negotiation_regions",
     "obstruction1",
     "obstruction2",
     "one_site_gap_disallow",
@@ -84,6 +87,7 @@ COMPULSORY_TESTS = [
     "blockage1-opt",
     "gcd-opt",
     "gcd_no_one_site_gaps-opt",
+    "gcd_no_one_site_sanity",
     "ibex-opt",
     "multi_height1-opt",
     "edge_spacing-opt",
@@ -97,6 +101,7 @@ filegroup(
     name = "regression_resources",
     srcs = [
         "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
         "helpers.tcl",
     ],
 )
@@ -197,6 +202,9 @@ filegroup(
             "gcd_no_one_site_gaps-opt": [
                 "Nangate45_data/Nangate45-opt.lef",
             ],
+            "gcd_no_one_site_sanity": [
+                "Nangate45_data/Nangate45-opt.lef",
+            ],
             "hybrid_cells": [
                 "Nangate45/fake_macros.lef",
             ],
@@ -238,7 +246,17 @@ filegroup(
             "multi_height_rows": [
                 "Nangate45/fake_macros.lef",
             ],
+            "negotiation01": [
+                "gcd_replace.def",
+            ],
+            "negotiation_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "negotiation_regions": [
+                "regions1.def",
+            ],
             "obstruction2": [
+                "Nangate45/fakeram45_64x7.lib",
                 "Nangate45/fakeram45_64x7.lef",
             ],
             "pad01": [
@@ -291,7 +309,8 @@ cc_test(
     srcs = ["dpl_test.cc"],
     deps = [
         "//src/dpl",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

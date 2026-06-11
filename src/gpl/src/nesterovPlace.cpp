@@ -436,7 +436,11 @@ void NesterovPlace::runTimingDriven(int iter,
       nb_gcells_before_td += nb->getGCells().size();
     }
 
-    bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    bool enable_repair_timing = npVars_.timingDrivenIterCounter
+                                == tb_->getTimingNetWeightOverflowSize();
+
+    bool shouldTdProceed
+        = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
@@ -1261,7 +1265,7 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
     if (!found_nb) {
       log_->warn(
           GPL,
-          8,
+          85,
           "Unable to find NesterovBase for group ({}) to insert instance ({}).",
           group->getName(),
           db_inst->getName());

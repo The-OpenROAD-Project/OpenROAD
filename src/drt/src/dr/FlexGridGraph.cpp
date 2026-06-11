@@ -97,7 +97,7 @@ void FlexGridGraph::initGrids(const frLayerCoordTrackPatternMap& xMap,
   srcs_.clear();
   dsts_.clear();
 
-  prevDirs_.resize(capacity * 3, false);
+  prevDirs_.resize(static_cast<std::size_t>(capacity) * 3, false);
   srcs_.resize(capacity, false);
   dsts_.resize(capacity, false);
   guides_.clear();

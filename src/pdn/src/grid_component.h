@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -29,11 +30,11 @@ class GridComponent
  public:
   enum Type
   {
-    Ring,
-    Strap,
-    Followpin,
-    PadConnect,
-    RepairChannel
+    kRing,
+    kStrap,
+    kFollowpin,
+    kPadConnect,
+    kRepairChannel
   };
 
   explicit GridComponent(Grid* grid);
@@ -77,9 +78,9 @@ class GridComponent
   virtual void cutShapes(const Shape::ObstructionTreeMap& obstructions);
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
-      const std::map<odb::dbNet*, odb::dbSWire*>& net_map,
-      bool add_pins,
-      const std::set<odb::dbTechLayer*>& convert_layer_to_pin) const;
+      const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
+      const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
+      const odb::PtrSet<odb::dbTechLayer>& convert_layer_to_pin) const;
 
   virtual void report() const = 0;
   virtual Type type() const = 0;

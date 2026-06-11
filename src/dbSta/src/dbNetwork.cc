@@ -57,11 +57,11 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <set>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <unordered_set>
 #include <vector>
 
 #include "dbEditHierarchy.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -70,6 +70,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "odb/geom.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Iterator.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
@@ -78,6 +79,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/Sequential.hh"
 #include "sta/StringUtil.hh"
 #include "sta/VertexId.hh"
 #include "utl/Logger.h"
@@ -786,6 +788,21 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
+std::string dbNetwork::stripParentPrefix(const std::string& name)
+{
+  size_t pos = name.length();
+  while ((pos = name.rfind('/', pos)) != std::string::npos) {
+    if (pos > 0 && name[pos - 1] == '\\') {
+      // Escaped slash inside a Verilog escaped identifier; not a
+      // hierarchy separator.  Keep searching to the left.
+      pos--;
+    } else {
+      return name.substr(pos + 1);
+    }
+  }
+  return name;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -808,10 +825,7 @@ std::string dbNetwork::name(const Port* port) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = name.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -855,21 +869,7 @@ std::string dbNetwork::name(const Instance* instance) const
   }
 
   if (hasHierarchy()) {
-    size_t last_idx = std::string::npos;
-    size_t pos = name.length();
-    while ((pos = name.rfind('/', pos)) != std::string::npos) {
-      if (pos > 0 && name[pos - 1] == '\\') {
-        // This is an escaped slash, so we should ignore it and continue
-        // searching.
-        pos--;
-      } else {
-        last_idx = pos;
-        break;
-      }
-    }
-    if (last_idx != std::string::npos) {
-      name = name.substr(last_idx + 1);
-    }
+    name = stripParentPrefix(name);
   }
   return name;
 }
@@ -2020,9 +2020,18 @@ void dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
+// Caution:
+//- Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
+// net connected to the given net.
+// - But `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
+// flat net for the given net.
+// - It behaves differently to cope with the issue 9724.
+// - This redefinition may cause another issue later when
+// `Network::highestConnectedNet(Net *net)` is used elsewhere.
 const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
-  return net;
+  const Net* flat = findFlatNet(net);
+  return flat ? flat : net;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -2416,6 +2425,20 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               if (lport) {
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
+                dbMTerm* mterm = staToDb(lport);
+                if (mterm && lport->isClock()
+                    && mterm->getSigType() != dbSigType::CLOCK) {
+                  debugPrint(
+                      logger_,
+                      utl::ORD,
+                      "dbNetwork",
+                      1,
+                      "Updating LEF pin {}/{} from {} to CLOCK from Liberty",
+                      mterm->getMaster()->getName(),
+                      mterm->getName(),
+                      mterm->getSigType().getString());
+                  mterm->setSigType(dbSigType::CLOCK);
+                }
               } else if (!cport->direction()->isPowerGround()
                          && !lcell->findPort(port_name)) {
                 logger_->warn(ORD,
@@ -2540,7 +2563,10 @@ It also checks the legallity of the pin/net combination.
 
 */
 
-void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+void dbNetwork::connectPin(Pin* pin,
+                           Net* flat_net,
+                           Net* hier_net,
+                           bool reassociate_hier_flat)
 {
   // get the type of the pin
   odb::dbITerm* iterm = nullptr;
@@ -2599,9 +2625,9 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
-      // do the house keeping. Mod net must always have the flat net associated
-      // with it.
-      if (flat_net_db) {
+      // Do the house keeping. A mod net must have the correct flat-net
+      // association when the caller is performing a hierarchy edit.
+      if (flat_net_db && reassociate_hier_flat) {
         reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
       }
     }
@@ -2685,12 +2711,10 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
 // Incrementally update drivers.
 void dbNetwork::connectPinAfter(Pin* pin)
 {
-  if (isDriver(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
-  } else if (isHierarchical(pin)) {
-    Net* net = this->net(pin);
-    drivers(net);
+  // Update only an existing cache entry; do not prime the cache here --
+  // drivers() will lazily populate on the first read.
+  if (isDriver(pin) || (isHierarchical(pin) && direction(pin)->isAnyOutput())) {
+    addDriverToCacheIfPresent(net(pin), pin);
   }
 }
 
@@ -2824,7 +2848,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
     removeDriverFromCache(dbToSta(db_net));
 
     // Remove all related hier nets from cache
-    std::set<odb::dbModNet*> modnet_set;
+    odb::PtrSet<odb::dbModNet> modnet_set;
     db_net->findRelatedModNets(modnet_set);
     for (odb::dbModNet* modnet : modnet_set) {
       removeDriverFromCache(dbToSta(modnet));
@@ -2843,7 +2867,7 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   if (db_net) {
     // A dbNet can be associated with multiple dbModNets.
     // We need to update the cache for all of them.
-    std::set<odb::dbModNet*> related_mod_nets;
+    odb::PtrSet<odb::dbModNet> related_mod_nets;
     db_net->findRelatedModNets(related_mod_nets);
     for (odb::dbModNet* related_mod_net : related_mod_nets) {
       removeDriverFromCache(dbToSta(related_mod_net), pin);
@@ -3470,6 +3494,18 @@ const LibertyCell* dbNetwork::libertyCell(const Cell* cell) const
 LibertyCell* dbNetwork::libertyCell(dbInst* inst)
 {
   return libertyCell(dbToSta(inst));
+}
+
+const LibertyCell* dbNetwork::getLibertyCell(const Cell* cell) const
+{
+  const LibertyCell* lib_cell = libertyCell(cell);
+  if (!lib_cell) {
+    return nullptr;
+  }
+  if (const TestCell* test_cell = lib_cell->testCell()) {
+    lib_cell = test_cell;
+  }
+  return lib_cell;
 }
 
 LibertyPort* dbNetwork::libertyPort(const Port* port) const
@@ -4641,7 +4677,7 @@ void dbNetwork::checkSanityUnusedModules() const
   }
 
   // 2. Create a set of all instantiated module masters.
-  std::set<odb::dbModule*> instantiated_masters;
+  odb::PtrSet<odb::dbModule> instantiated_masters;
   for (odb::dbModule* module : all_modules) {
     for (odb::dbModInst* mod_inst : module->getModInsts()) {
       instantiated_masters.insert(mod_inst->getMaster());
@@ -4702,8 +4738,8 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   //
   if (obj != nullptr) {
     // Collect relevant nets from the provided object
-    std::set<odb::dbNet*> nets_to_check;
-    std::set<odb::dbModNet*> mod_nets_to_check;
+    odb::PtrSet<odb::dbNet> nets_to_check;
+    odb::PtrSet<odb::dbModNet> mod_nets_to_check;
 
     auto const obj_type = obj->getObjectType();
     if (obj_type == odb::dbNetObj) {
@@ -4846,7 +4882,7 @@ void dbNetwork::checkSanityNetNames() const
   // Check for name mismatch between flat net and hierchical net
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
-    std::set<odb::dbModNet*> mod_nets;
+    odb::PtrSet<odb::dbModNet> mod_nets;
     if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
@@ -5122,16 +5158,16 @@ PinSet* dbNetwork::drivers(const Net* net)
     return nullptr;
   }
 
-  // Get or create drvrs pin set
-  auto drvrs_entry = net_drvr_pin_map_.find(net);
-  if (drvrs_entry == net_drvr_pin_map_.end()) {
-    std::tie(drvrs_entry, std::ignore)
-        = net_drvr_pin_map_.insert({net, new PinSet(this)});
+  // Cache hit: return the stored set
+  NetDrvrPinsMap::iterator drvrs_entry = net_drvr_pin_map_.find(net);
+  if (drvrs_entry != net_drvr_pin_map_.end()) {
+    return drvrs_entry->second;
   }
 
-  PinSet* drvrs = drvrs_entry->second;
+  // Cache miss: populate
+  PinSet* drvrs = new PinSet(this);
+  net_drvr_pin_map_.insert({net, drvrs});
 
-  // Insert the driver pin of the net
   dbNet* db_net = findFlatDbNet(net);
   if (db_net == nullptr) {
     return drvrs;
@@ -5145,9 +5181,17 @@ PinSet* dbNetwork::drivers(const Net* net)
   return drvrs;
 }
 
+void dbNetwork::addDriverToCacheIfPresent(const Net* net, const Pin* drvr)
+{
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    entry->second->insert(drvr);
+  }
+}
+
 void dbNetwork::removeDriverFromCache(const Net* net)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     delete entry->second;
     net_drvr_pin_map_.erase(entry);
@@ -5156,7 +5200,7 @@ void dbNetwork::removeDriverFromCache(const Net* net)
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
 {
-  auto entry = net_drvr_pin_map_.find(net);
+  NetDrvrPinsMap::iterator entry = net_drvr_pin_map_.find(net);
   if (entry != net_drvr_pin_map_.end()) {
     entry->second->erase(drvr);
   }
@@ -5211,15 +5255,470 @@ Net* dbNetwork::highestNetAbove(Net* net) const
   }
 
   if (modnet) {
+    // Return the flat net associated with this mod net.
+    // Parasitic externality checks in
+    // ConcreteParasiticNetwork::ensureParasiticNode compare against net_ which
+    // is always a flat net (set via makeParasiticNetwork). Returning the
+    // highest mod net causes all pin nodes on hierarchically-connected nets to
+    // compare unequal to net_ and be incorrectly marked as external, making
+    // node_count_ = 0 and crashing PRIMA in measureThresholds.
     if (dbNet* related_dbnet = modnet->findRelatedNet()) {
-      if (odb::dbModNet* highest_modnet
-          = related_dbnet->findModNetInHighestHier()) {
-        return dbToSta(highest_modnet);  // Found the highest modnet
-      }
+      return dbToSta(related_dbnet);
     }
   }
 
   return net;
+}
+
+bool dbNetwork::isClockPin(odb::dbITerm* iterm) const
+{
+  const bool yes = (iterm->getSigType() == odb::dbSigType::CLOCK);
+  const Pin* pin = dbToSta(iterm);
+  return yes || isRegClkPin(pin);
+}
+
+bool dbNetwork::clockOn(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (!lib_cell) {
+    return false;
+  }
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    const FuncExpr* clock = seq.clock();
+    if (clock) {
+      const FuncExpr* left = clock->left();
+      const FuncExpr* right = clock->right();
+      // !CLK
+      if (left && !right) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+static bool portInSequentialFunc(const LibertyCell* lib_cell,
+                                 const LibertyPort* lib_port,
+                                 FuncExpr* (Sequential::*get)() const)
+{
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    if (const FuncExpr* fe = (seq.*get)()) {
+      if (fe->hasPort(lib_port)) {
+        return true;
+      }
+    }
+  }
+  if (const LibertyCell* test_cell = lib_cell->testCell()) {
+    const LibertyPort* test_lib_port
+        = test_cell->findLibertyPort(lib_port->name());
+    if (test_lib_port == nullptr) {
+      return false;
+    }
+    for (const Sequential& seq : test_cell->sequentials()) {
+      if (const FuncExpr* fe = (seq.*get)()) {
+        if (fe->hasPort(test_lib_port)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool dbNetwork::isDPin(odb::dbITerm* iterm) const
+{
+  odb::dbInst* inst = iterm->getInst();
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+
+  const Pin* pin = dbToSta(iterm);
+  if (pin == nullptr) {
+    return false;
+  }
+  const LibertyPort* lib_port = libertyPort(pin);
+  if (lib_port == nullptr) {
+    return false;
+  }
+
+  if (portInSequentialFunc(lib_cell, lib_port, &Sequential::clear)
+      || portInSequentialFunc(lib_cell, lib_port, &Sequential::preset)) {
+    return false;
+  }
+
+  const bool exclude = (isClockPin(iterm) || isSupplyPin(iterm)
+                        || isScanIn(iterm) || isScanEnable(iterm));
+  const bool yes = (iterm->getIoType() == odb::dbIoType::INPUT);
+  return (yes & !exclude);
+}
+
+int dbNetwork::getNumD(odb::dbInst* inst) const
+{
+  int cnt_d = 0;
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell == nullptr) {
+    return 0;
+  }
+
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    const FuncExpr* data = seq.data();
+    if (data) {
+      for (auto port : data->ports()) {
+        odb::dbMTerm* mterm = staToDb(port);
+        if (mterm == nullptr) {
+          continue;
+        }
+        odb::dbITerm* iterm = inst->getITerm(mterm);
+        if (iterm == nullptr) {
+          continue;
+        }
+        cnt_d += !(isScanIn(iterm) || isScanEnable(iterm));
+      }
+    }
+  }
+
+  return cnt_d;
+}
+
+bool dbNetwork::isQPin(odb::dbITerm* iterm) const
+{
+  const bool exclude = (isClockPin(iterm) || isSupplyPin(iterm));
+  const bool yes = (iterm->getIoType() == odb::dbIoType::OUTPUT);
+  return (yes & !exclude);
+}
+
+static const FuncExpr* getFunction(const LibertyPort* port)
+{
+  const FuncExpr* function = port->function();
+  if (function) {
+    return function;
+  }
+
+  LibertyCellPortIterator port_iter(port->libertyCell());
+  while (port_iter.hasNext()) {
+    const LibertyPort* next_port = port_iter.next();
+    function = next_port->function();
+    if (!function) {
+      continue;
+    }
+    if (next_port->hasMembers()) {
+      std::unique_ptr<ConcretePortMemberIterator> mem_iter(
+          next_port->memberIterator());
+      while (mem_iter->hasNext()) {
+        const ConcretePort* mem_port = mem_iter->next();
+        if (mem_port == port) {
+          return function;
+        }
+      }
+    }
+  }
+  return nullptr;
+}
+
+bool dbNetwork::isInvertingQPin(odb::dbITerm* iterm) const
+{
+  odb::dbInst* inst = iterm->getInst();
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (!lib_cell) {
+    return false;
+  }
+
+  std::set<std::string> invert;
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    const LibertyPort* output_inv = seq.outputInv();
+    if (output_inv) {
+      invert.insert(output_inv->name());
+    }
+  }
+
+  const Pin* pin = dbToSta(iterm);
+  const LibertyPort* lib_port = libertyPort(pin);
+  if (!lib_port) {
+    return false;
+  }
+  const FuncExpr* func = getFunction(lib_port);
+  if (!func) {
+    return false;
+  }
+  const LibertyPort* func_port = func->port();
+  if (!func_port) {
+    return false;
+  }
+  std::string func_name = func_port->name();
+  if (func_port->hasMembers()) {
+    LibertyPortMemberIterator port_iter(func_port);
+    while (port_iter.hasNext()) {
+      const LibertyPort* mem_port = port_iter.next();
+      func_name = mem_port->name();
+      break;
+    }
+  }
+  return (invert.count(func_name));
+}
+
+int dbNetwork::getNumQ(odb::dbInst* inst) const
+{
+  int num_q = 0;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    num_q += isQPin(iterm);
+  }
+  return num_q;
+}
+
+bool dbNetwork::hasClear(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (!lib_cell) {
+    return false;
+  }
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    if (seq.clear()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool dbNetwork::isClearPin(odb::dbITerm* iterm) const
+{
+  odb::dbInst* inst = iterm->getInst();
+  const Cell* cell = dbToSta(inst->getMaster());
+  const Pin* pin = dbToSta(iterm);
+  if (pin == nullptr) {
+    return false;
+  }
+  const LibertyPort* lib_port = libertyPort(pin);
+  if (lib_port == nullptr) {
+    return false;
+  }
+  const LibertyCell* lib_cell = libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  return portInSequentialFunc(lib_cell, lib_port, &Sequential::clear);
+}
+
+bool dbNetwork::hasPreset(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (!lib_cell) {
+    return false;
+  }
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    if (seq.preset()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool dbNetwork::isPresetPin(odb::dbITerm* iterm) const
+{
+  odb::dbInst* inst = iterm->getInst();
+  const Cell* cell = dbToSta(inst->getMaster());
+  const Pin* pin = dbToSta(iterm);
+  if (pin == nullptr) {
+    return false;
+  }
+  const LibertyPort* lib_port = libertyPort(pin);
+  if (lib_port == nullptr) {
+    return false;
+  }
+
+  const LibertyCell* lib_cell = libertyCell(cell);
+  if (lib_cell == nullptr) {
+    return false;
+  }
+  return portInSequentialFunc(lib_cell, lib_port, &Sequential::preset);
+}
+
+bool dbNetwork::isScanCell(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  return lib_cell && getLibertyScanIn(lib_cell)
+         && getLibertyScanEnable(lib_cell);
+}
+
+bool dbNetwork::isScanIn(odb::dbITerm* iterm) const
+{
+  const Cell* cell = dbToSta(iterm->getInst()->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell && getLibertyScanIn(lib_cell)) {
+    odb::dbMTerm* mterm = staToDb(getLibertyScanIn(lib_cell));
+    return iterm->getInst()->getITerm(mterm) == iterm;
+  }
+  return false;
+}
+
+odb::dbITerm* dbNetwork::getScanIn(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell && getLibertyScanIn(lib_cell)) {
+    odb::dbMTerm* mterm = staToDb(getLibertyScanIn(lib_cell));
+    return inst->getITerm(mterm);
+  }
+  return nullptr;
+}
+
+bool dbNetwork::isScanEnable(odb::dbITerm* iterm) const
+{
+  const Cell* cell = dbToSta(iterm->getInst()->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell && getLibertyScanEnable(lib_cell)) {
+    odb::dbMTerm* mterm = staToDb(getLibertyScanEnable(lib_cell));
+    return (iterm->getInst()->getITerm(mterm) == iterm);
+  }
+  return false;
+}
+
+odb::dbITerm* dbNetwork::getScanEnable(odb::dbInst* inst) const
+{
+  const Cell* cell = dbToSta(inst->getMaster());
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell && getLibertyScanEnable(lib_cell)) {
+    odb::dbMTerm* mterm = staToDb(getLibertyScanEnable(lib_cell));
+    return inst->getITerm(mterm);
+  }
+  return nullptr;
+}
+
+bool dbNetwork::isSupplyPin(odb::dbITerm* iterm) const
+{
+  return iterm->getSigType().isSupply();
+}
+
+bool dbNetwork::isValidFlop(odb::dbInst* FF) const
+{
+  const Cell* cell = dbToSta(FF->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
+    return false;
+  }
+
+  // We don't want the test_cell which lacks global properties
+  const LibertyCell* base_cell = libertyCell(cell);
+  if (base_cell->isClockGate()) {
+    return false;
+  }
+
+  int q = 0;
+  int qn = 0;
+  int scan = 0;
+  int supply = 0;
+  int preset = 0;
+  int clear = 0;
+  int clock = 0;
+
+  for (odb::dbITerm* iterm : FF->getITerms()) {
+    q += (isQPin(iterm) && !isInvertingQPin(iterm));
+    qn += (isQPin(iterm) && isInvertingQPin(iterm));
+    scan += (isScanIn(iterm) || isScanEnable(iterm));
+    supply += (isSupplyPin(iterm));
+    preset += (isPresetPin(iterm));
+    clear += (isClearPin(iterm));
+    clock += (isClockPin(iterm));
+  }
+  // #D = 1
+  return getNumD(FF) == 1
+         && clock + q + qn + scan + supply + preset + clear + 1
+                == FF->getITerms().size();
+}
+
+bool dbNetwork::isValidTray(odb::dbInst* tray) const
+{
+  const Cell* cell = dbToSta(tray->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  const LibertyCell* lib_cell = getLibertyCell(cell);
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
+    return false;
+  }
+
+  // We don't want the test_cell which lacks global properties
+  const LibertyCell* base_cell = libertyCell(cell);
+  if (base_cell->isClockGate() || base_cell->dontUse()) {
+    return false;
+  }
+
+  int q = 0;
+  int qn = 0;
+  int scan = 0;
+  int supply = 0;
+  int preset = 0;
+  int clear = 0;
+  int clock = 0;
+
+  for (odb::dbITerm* iterm : tray->getITerms()) {
+    q += (isQPin(iterm) && !isInvertingQPin(iterm));
+    qn += (isQPin(iterm) && isInvertingQPin(iterm));
+    scan += (isScanIn(iterm) || isScanEnable(iterm));
+    supply += (isSupplyPin(iterm));
+    preset += (isPresetPin(iterm));
+    clear += (isClearPin(iterm));
+    clock += (isClockPin(iterm));
+  }
+
+  // #D = max(q, qn)
+  return std::max(q, qn) >= 2 && getNumD(tray) == std::max(q, qn)
+         && clock + q + qn + scan + supply + preset + clear + std::max(q, qn)
+                == tray->getITerms().size();
+}
+
+sta::LibertyPort* dbNetwork::getLibertyScanEnable(
+    const LibertyCell* lib_cell) const
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::enable
+        || signal_type == sta::ScanSignalType::enable_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* dbNetwork::getLibertyScanIn(const LibertyCell* lib_cell) const
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::input
+        || signal_type == sta::ScanSignalType::input_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
+}
+
+sta::LibertyPort* dbNetwork::getLibertyScanOut(
+    const LibertyCell* lib_cell) const
+{
+  sta::LibertyCellPortIterator iter(lib_cell);
+  while (iter.hasNext()) {
+    sta::LibertyPort* port = iter.next();
+    sta::ScanSignalType signal_type = port->scanSignalType();
+    if (signal_type == sta::ScanSignalType::output
+        || signal_type == sta::ScanSignalType::output_inverted) {
+      return port;
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace sta

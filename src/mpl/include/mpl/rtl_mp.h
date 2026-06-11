@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -63,7 +64,7 @@ class MacroPlacer
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data);
-
+  void blockMacroChannels();
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
                   const float& y_origin,
@@ -74,7 +75,7 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
-  void setDefaultHalo(int left, int bottom, int right, int top);
+  void setBaseHalo(int left, int bottom, int right, int top);
   void setMacroHalo(odb::dbInst* macro,
                     int left,
                     int bottom,
@@ -93,7 +94,7 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
 
-  std::map<odb::dbInst*, odb::Rect> guidance_regions_;
+  odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };
 
 }  // namespace mpl
