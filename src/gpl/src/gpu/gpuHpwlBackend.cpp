@@ -95,20 +95,24 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
   // ---- 2. Compute per-net bbox in parallel; serial inner over pins ----
   // Pin coords are already on the device (DeviceState::updatePinLocations
   // ran beforehand). Indirection through d_net_pin_idx — the CSR stores
-  // global pin indices into d_pin_cx/d_pin_cy.
+  // global pin indices into d_pin_cx/d_pin_cy. Nets above
+  // kHighFanoutThreshold are deferred to a team-parallel pass below — one
+  // thread walking a clock/reset-class net serializes the launch. Int
+  // min/max is associative, so both passes stay bit-identical to the CPU
+  // updateBox() loop regardless of reduction order.
   Kokkos::parallel_for(
       "hpwl_bbox",
       Kokkos::RangePolicy<ExecSpace>(0, n_nets),
       KOKKOS_LAMBDA(const int i) {
+        const int begin = d_net_pin_off(i);
+        const int end = d_net_pin_off(i + 1);
+        if (end - begin > kHighFanoutThreshold) {
+          return;  // handled by the team-parallel pass below
+        }
         int lx = INT_MAX;
         int ly = INT_MAX;
         int ux = INT_MIN;
         int uy = INT_MIN;
-        const int begin = d_net_pin_off(i);
-        const int end = d_net_pin_off(i + 1);
-        // Serial over pins for determinism (sgizler 80b04e1c1 pattern: do not
-        // rely on parallel_reduce ordering even though min/max are commutative
-        // — keeps results bit-identical to the CPU updateBox() loop).
         for (int j = begin; j < end; ++j) {
           const int pin = d_net_pin_idx(j);
           const int x = d_pin_cx(pin);
@@ -131,6 +135,56 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
         d_ux(i) = ux;
         d_uy(i) = uy;
       });
+
+  const int n_high_fanout
+      = static_cast<int>(ds.d_high_fanout_net_idx.extent(0));
+  if (n_high_fanout > 0) {
+    auto d_high_fanout_net_idx = ds.d_high_fanout_net_idx;
+    using TeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
+    Kokkos::parallel_for(
+        "hpwl_bbox_hf",
+        TeamPolicy(n_high_fanout, Kokkos::AUTO),
+        KOKKOS_LAMBDA(const TeamPolicy::member_type& team) {
+          const int i = d_high_fanout_net_idx(team.league_rank());
+          const int begin = d_net_pin_off(i);
+          const int end = d_net_pin_off(i + 1);
+          int lx, ly, ux, uy;
+          Kokkos::parallel_reduce(
+              Kokkos::TeamThreadRange(team, begin, end),
+              [&](const int j, int& v) {
+                const int x = d_pin_cx(d_net_pin_idx(j));
+                v = x < v ? x : v;
+              },
+              Kokkos::Min<int>(lx));
+          Kokkos::parallel_reduce(
+              Kokkos::TeamThreadRange(team, begin, end),
+              [&](const int j, int& v) {
+                const int y = d_pin_cy(d_net_pin_idx(j));
+                v = y < v ? y : v;
+              },
+              Kokkos::Min<int>(ly));
+          Kokkos::parallel_reduce(
+              Kokkos::TeamThreadRange(team, begin, end),
+              [&](const int j, int& v) {
+                const int x = d_pin_cx(d_net_pin_idx(j));
+                v = x > v ? x : v;
+              },
+              Kokkos::Max<int>(ux));
+          Kokkos::parallel_reduce(
+              Kokkos::TeamThreadRange(team, begin, end),
+              [&](const int j, int& v) {
+                const int y = d_pin_cy(d_net_pin_idx(j));
+                v = y > v ? y : v;
+              },
+              Kokkos::Max<int>(uy));
+          Kokkos::single(Kokkos::PerTeam(team), [&]() {
+            d_lx(i) = lx;
+            d_ly(i) = ly;
+            d_ux(i) = ux;
+            d_uy(i) = uy;
+          });
+        });
+  }
 
   // ---- 3. Sum HPWL across nets (int64 reduction → backend-deterministic) ----
   int64_t total_hpwl = 0;

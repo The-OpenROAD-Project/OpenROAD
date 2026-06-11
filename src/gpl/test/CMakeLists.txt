@@ -170,4 +170,40 @@ if(ENABLE_GPU)
            COMMAND $<TARGET_FILE:fft_gpu_test> --gtest_list_tests)
 
   add_dependencies(build_and_test fft_gpu_test)
+
+  # GPU wirelength-kernel correctness test. Drives the wlop K1/K3 kernels
+  # (src/gpl/src/gpu/wirelengthOp.cpp) on a synthetic net→pin CSR that
+  # includes nets above kHighFanoutThreshold, so the team-parallel
+  # high-fanout pass is exercised without needing a benchmark-sized design.
+  # Unlike fft_gpu_test it includes Kokkos-laden headers directly
+  # (deviceState_kokkos.h / wirelengthOp.h), so the TU must be compiled with
+  # the device language, same as the src/gpu/ sources in ../CMakeLists.txt.
+  # CMake-only, like the rest of the GPU code path.
+  add_executable(wl_gpu_test wl_gpu_test.cc)
+
+  if(Kokkos_ENABLE_CUDA)
+    set_source_files_properties(wl_gpu_test.cc PROPERTIES LANGUAGE CUDA)
+  elseif(Kokkos_ENABLE_HIP)
+    set_source_files_properties(wl_gpu_test.cc PROPERTIES LANGUAGE HIP)
+  endif()
+
+  target_include_directories(wl_gpu_test
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}
+  )
+
+  target_link_libraries(wl_gpu_test
+    GTest::gtest
+    GTest::gtest_main
+    gpl_lib
+  )
+
+  gtest_discover_tests(wl_gpu_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+  )
+  add_test(NAME wl_gpu_test_load_sentinel
+           COMMAND $<TARGET_FILE:wl_gpu_test> --gtest_list_tests)
+
+  add_dependencies(build_and_test wl_gpu_test)
 endif()

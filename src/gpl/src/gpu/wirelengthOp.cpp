@@ -10,9 +10,16 @@
 //   K4 computePinWAGrad — per-pin gradient (eq. 4.13), folds in net weight
 //   K5 gatherInstGrad   — per-inst Σ pin-grad via inst→pin CSR
 //
-// Determinism: no atomics; per-net/per-inst outer parallelism with serial
-// CSR inner loops matches the CPU summation order. Float results may differ
-// from CPU by a few ULP (fastExp / division ordering).
+// Determinism: no atomics. Nets at or below kHighFanoutThreshold use one
+// thread per net with a serial CSR inner loop that matches the CPU summation
+// order; nets above it (clock/reset-class fanout — a single thread walking
+// tens of thousands of pins would serialize the whole launch) are reduced
+// team-parallel with a fixed tree shape, which is deterministic run-to-run
+// on a given build. For those nets the K1 bbox (int min/max, associative)
+// stays bit-identical to the serial result; the K3 float sums reassociate
+// relative to the CPU order, on top of the few-ULP divergence the GPU path
+// already has (fastExp / division ordering). Convergence parity is gated by
+// the HPWL/iteration tolerance checks in the integration tests.
 
 #include "wirelengthOp.h"
 
@@ -68,12 +75,15 @@ void launchUpdateNetBBox(KokkosDeviceState& ds, int n_nets)
       "wlop_K1_net_bbox",
       Kokkos::RangePolicy<ExecSpace>(0, n_nets),
       KOKKOS_LAMBDA(const int i) {
+        const int begin = d_net_pin_off(i);
+        const int end = d_net_pin_off(i + 1);
+        if (end - begin > kHighFanoutThreshold) {
+          return;  // handled by the team-parallel pass below
+        }
         int lx = INT_MAX;
         int ly = INT_MAX;
         int ux = INT_MIN;
         int uy = INT_MIN;
-        const int begin = d_net_pin_off(i);
-        const int end = d_net_pin_off(i + 1);
         for (int j = begin; j < end; ++j) {
           const int p = d_net_pin_idx(j);
           const int x = d_pin_cx(p);
@@ -95,6 +105,60 @@ void launchUpdateNetBBox(KokkosDeviceState& ds, int n_nets)
         d_net_ly(i) = ly;
         d_net_ux(i) = ux;
         d_net_uy(i) = uy;
+      });
+
+  // Team-parallel pass: one team per high-fanout net, pins split across the
+  // team. Int min/max reductions are associative, so the result is
+  // bit-identical to the serial loop above.
+  const int n_high_fanout
+      = static_cast<int>(ds.d_high_fanout_net_idx.extent(0));
+  if (n_high_fanout == 0) {
+    return;
+  }
+  auto d_high_fanout_net_idx = ds.d_high_fanout_net_idx;
+  using TeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
+  Kokkos::parallel_for(
+      "wlop_K1_net_bbox_hf",
+      TeamPolicy(n_high_fanout, Kokkos::AUTO),
+      KOKKOS_LAMBDA(const TeamPolicy::member_type& team) {
+        const int i = d_high_fanout_net_idx(team.league_rank());
+        const int begin = d_net_pin_off(i);
+        const int end = d_net_pin_off(i + 1);
+        int lx, ly, ux, uy;
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, int& v) {
+              const int x = d_pin_cx(d_net_pin_idx(j));
+              v = x < v ? x : v;
+            },
+            Kokkos::Min<int>(lx));
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, int& v) {
+              const int y = d_pin_cy(d_net_pin_idx(j));
+              v = y < v ? y : v;
+            },
+            Kokkos::Min<int>(ly));
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, int& v) {
+              const int x = d_pin_cx(d_net_pin_idx(j));
+              v = x > v ? x : v;
+            },
+            Kokkos::Max<int>(ux));
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, int& v) {
+              const int y = d_pin_cy(d_net_pin_idx(j));
+              v = y > v ? y : v;
+            },
+            Kokkos::Max<int>(uy));
+        Kokkos::single(Kokkos::PerTeam(team), [&]() {
+          d_net_lx(i) = lx;
+          d_net_ly(i) = ly;
+          d_net_ux(i) = ux;
+          d_net_uy(i) = uy;
+        });
       });
 }
 
@@ -181,10 +245,13 @@ void launchComputeBC(KokkosDeviceState& ds, int n_nets)
       "wlop_K3_bc",
       Kokkos::RangePolicy<ExecSpace>(0, n_nets),
       KOKKOS_LAMBDA(const int n) {
-        float bpx = 0, bnx = 0, bpy = 0, bny = 0;
-        float cpx = 0, cnx = 0, cpy = 0, cny = 0;
         const int begin = d_net_pin_off(n);
         const int end = d_net_pin_off(n + 1);
+        if (end - begin > kHighFanoutThreshold) {
+          return;  // handled by the team-parallel pass below
+        }
+        float bpx = 0, bnx = 0, bpy = 0, bny = 0;
+        float cpx = 0, cnx = 0, cpy = 0, cny = 0;
         // Serial CSR inner — same order as CPU's `for (gPin :
         // gNet->getGPins())` loop in updateWireLengthForceWA. Keeps float
         // summation matching.
@@ -213,6 +280,91 @@ void launchComputeBC(KokkosDeviceState& ds, int n_nets)
         d_net_c_neg_x(n) = cnx;
         d_net_c_pos_y(n) = cpy;
         d_net_c_neg_y(n) = cny;
+      });
+
+  // Team-parallel pass: one team per high-fanout net, one tree reduction per
+  // accumulator. The float sums reassociate relative to the CPU serial order
+  // (see the determinism note in the file header); for a net this wide the
+  // tree order actually accumulates less rounding error than the serial
+  // left-to-right loop. Eight passes over the net's pins cost ~µs at this
+  // league size and keep the code free of custom reducers.
+  const int n_high_fanout
+      = static_cast<int>(ds.d_high_fanout_net_idx.extent(0));
+  if (n_high_fanout == 0) {
+    return;
+  }
+  auto d_high_fanout_net_idx = ds.d_high_fanout_net_idx;
+  using TeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
+  Kokkos::parallel_for(
+      "wlop_K3_bc_hf",
+      TeamPolicy(n_high_fanout, Kokkos::AUTO),
+      KOKKOS_LAMBDA(const TeamPolicy::member_type& team) {
+        const int n = d_high_fanout_net_idx(team.league_rank());
+        const int begin = d_net_pin_off(n);
+        const int end = d_net_pin_off(n + 1);
+        float bpx, bnx, bpy, bny, cpx, cnx, cpy, cny;
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              acc += d_pin_a_pos_x(d_net_pin_idx(j));
+            },
+            bpx);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              acc += d_pin_a_neg_x(d_net_pin_idx(j));
+            },
+            bnx);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              acc += d_pin_a_pos_y(d_net_pin_idx(j));
+            },
+            bpy);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              acc += d_pin_a_neg_y(d_net_pin_idx(j));
+            },
+            bny);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              const int p = d_net_pin_idx(j);
+              acc += static_cast<float>(d_pin_cx(p)) * d_pin_a_pos_x(p);
+            },
+            cpx);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              const int p = d_net_pin_idx(j);
+              acc += static_cast<float>(d_pin_cx(p)) * d_pin_a_neg_x(p);
+            },
+            cnx);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              const int p = d_net_pin_idx(j);
+              acc += static_cast<float>(d_pin_cy(p)) * d_pin_a_pos_y(p);
+            },
+            cpy);
+        Kokkos::parallel_reduce(
+            Kokkos::TeamThreadRange(team, begin, end),
+            [&](const int j, float& acc) {
+              const int p = d_net_pin_idx(j);
+              acc += static_cast<float>(d_pin_cy(p)) * d_pin_a_neg_y(p);
+            },
+            cny);
+        Kokkos::single(Kokkos::PerTeam(team), [&]() {
+          d_net_b_pos_x(n) = bpx;
+          d_net_b_neg_x(n) = bnx;
+          d_net_b_pos_y(n) = bpy;
+          d_net_b_neg_y(n) = bny;
+          d_net_c_pos_x(n) = cpx;
+          d_net_c_neg_x(n) = cnx;
+          d_net_c_pos_y(n) = cpy;
+          d_net_c_neg_y(n) = cny;
+        });
       });
 }
 

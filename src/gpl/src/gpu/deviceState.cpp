@@ -133,6 +133,24 @@ void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
   const int total_net_pins = h_net_pin_off[num_nets_];
   s.d_net_pin_idx = Kokkos::View<int*>("ds_net_pin_idx", total_net_pins);
 
+  // High-fanout net list (degree > kHighFanoutThreshold) — these nets are
+  // skipped by the one-thread-per-net kernels and reduced team-parallel
+  // instead. See the threshold's comment in deviceState_kokkos.h.
+  std::vector<int> h_high_fanout_net_idx;
+  for (int n = 0; n < num_nets_; ++n) {
+    if (h_net_pin_off[n + 1] - h_net_pin_off[n] > kHighFanoutThreshold) {
+      h_high_fanout_net_idx.push_back(n);
+    }
+  }
+  s.d_high_fanout_net_idx = Kokkos::View<int*>("ds_high_fanout_net_idx",
+                                               h_high_fanout_net_idx.size());
+  if (!h_high_fanout_net_idx.empty()) {
+    Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
+        h_high_fanout_v(h_high_fanout_net_idx.data(),
+                        h_high_fanout_net_idx.size());
+    Kokkos::deep_copy(s.d_high_fanout_net_idx, h_high_fanout_v);
+  }
+
   std::vector<int> h_net_pin_idx(total_net_pins);
   for (int n = 0; n < num_nets_; ++n) {
     int off = h_net_pin_off[n];

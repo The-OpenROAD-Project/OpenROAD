@@ -16,9 +16,12 @@ struct KokkosDeviceState;
 
 namespace wlop {
 
-// K1: per-net bbox over CSR-listed pins.
+// K1: per-net bbox over CSR-listed pins. One thread per net; nets above
+// kHighFanoutThreshold go through a team-parallel pass instead (bit-identical
+// result — int min/max).
 //
-// Reads:  ds.d_net_pin_off, ds.d_net_pin_idx, ds.d_pin_cx, ds.d_pin_cy
+// Reads:  ds.d_net_pin_off, ds.d_net_pin_idx, ds.d_pin_cx, ds.d_pin_cy,
+//         ds.d_high_fanout_net_idx
 // Writes: ds.d_net_lx, ds.d_net_ly, ds.d_net_ux, ds.d_net_uy
 void launchUpdateNetBBox(KokkosDeviceState& ds, int n_nets);
 
@@ -37,8 +40,11 @@ void launchComputeAPosNeg(KokkosDeviceState& ds,
 // K3: per-net B,C reductions over CSR.
 //   B_neg = Σ a_neg ;        B_pos = Σ a_pos
 //   C_neg = Σ pin · a_neg ;  C_pos = Σ pin · a_pos
+// One thread per net; nets above kHighFanoutThreshold go through a
+// team-parallel pass (float sums reassociate — see wirelengthOp.cpp header).
 //
-// Reads:  ds.d_net_pin_off, ds.d_net_pin_idx, ds.d_pin_cx/cy, ds.d_pin_a_*
+// Reads:  ds.d_net_pin_off, ds.d_net_pin_idx, ds.d_pin_cx/cy, ds.d_pin_a_*,
+//         ds.d_high_fanout_net_idx
 // Writes: ds.d_net_b_*, ds.d_net_c_*
 void launchComputeBC(KokkosDeviceState& ds, int n_nets);
 

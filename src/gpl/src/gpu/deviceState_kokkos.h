@@ -16,6 +16,15 @@
 
 namespace gpl {
 
+// Nets with more pins than this are excluded from the one-thread-per-net
+// kernels (wlop K1/K3 and the HPWL bbox kernel) and handled by team-parallel
+// kernels instead. A single thread walking a clock/reset-class net with tens
+// of thousands of pins serializes the whole launch: on a 67k-pin net the
+// serial inner loop measured ~15 ms/call while every other net combined took
+// ~0.5 ms. 1024 bounds the per-thread serial tail to ~0.1 ms and keeps the
+// team path off the common case (a handful of nets even on large designs).
+constexpr int kHighFanoutThreshold = 1024;
+
 struct KokkosDeviceState
 {
   // Inst-level (size = num_insts):
@@ -38,6 +47,11 @@ struct KokkosDeviceState
   Kokkos::View<int*> d_net_pin_off;
   // Per-net pin indices (size = total_pins, CSR data).
   Kokkos::View<int*> d_net_pin_idx;
+  // Net ids with pin count > kHighFanoutThreshold, ascending. Rebuilt
+  // together with the CSR in DeviceState::buildTopology; sized 0 when no
+  // such net exists. Consumed by the team-parallel passes of wlop K1/K3 and
+  // the HPWL bbox kernel.
+  Kokkos::View<int*> d_high_fanout_net_idx;
 
   // ---- WA wirelength gradient ----
   //
