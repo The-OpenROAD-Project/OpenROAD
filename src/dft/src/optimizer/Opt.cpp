@@ -39,15 +39,12 @@ constexpr int kMaxNeighbors = 50;
 // ---------------------------------------------------------------------------
 
 // Weighted Manhattan distance between two points (int64 to avoid overflow).
-// vertical_weight (Wv) scales the y component:
-//   Wv = 1.0 → standard Manhattan  |  Wv > 1.0 → penalise vertical wiring
-int64_t WeightedDist(const odb::Point& a,
-                     const odb::Point& b,
-                     double wv)
+int64_t Dist(const odb::Point& a,
+                     const odb::Point& b)
 {
   const int64_t dx = std::abs(static_cast<int64_t>(a.x()) - b.x());
   const int64_t dy = std::abs(static_cast<int64_t>(a.y()) - b.y());
-  return dx + static_cast<int64_t>(std::round(dy * wv));
+  return dx + dy;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,12 +62,11 @@ int64_t WeightedDist(const odb::Point& a,
 struct CandidateEdges
 {
   // neighbors[i] = vector of cell indices that are the k nearest neighbours
-  // of cell i, measured by WeightedDist(so[i], si[neighbour]).
+  // of cell i, measured by Dist(so[i], si[neighbour]).
   std::vector<std::vector<int>> neighbors;
 
   void build(const std::vector<odb::Point>& scan_in,
-             const std::vector<odb::Point>& scan_out,
-             double wv)
+             const std::vector<odb::Point>& scan_out)
   {
     const int n = static_cast<int>(scan_in.size());
     neighbors.resize(n);
@@ -101,7 +97,7 @@ struct CandidateEdges
         if (j == i) {
           continue;  // skip self
         }
-        ranked.emplace_back(WeightedDist(scan_out[i], scan_in[j], wv), j);
+        ranked.emplace_back(Dist(scan_out[i], scan_in[j]), j);
       }
       std::sort(ranked.begin(), ranked.end());
       const int limit
@@ -133,8 +129,7 @@ struct CandidateEdges
 // Optimal Solutions", 1994, Section 3.1.
 // ---------------------------------------------------------------------------
 void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
-                     const CandidateEdges& candidates,
-                     double wv)
+                     const CandidateEdges& candidates)
 {
   const int n = static_cast<int>(cells.size());
   if (n < 4) {
@@ -150,7 +145,7 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
 
   // D(i, j) = weighted distance from scan-out of cell i to scan-in of cell j.
   auto D = [&](int i, int j) -> int64_t {
-    return WeightedDist(so[i], si[j], wv);
+    return Dist(so[i], si[j]);
   };
 
   // Identity ↔ position mapping.  identity[pos] = cell id, pos_of[id] = pos.
@@ -164,7 +159,7 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
   std::vector<int64_t> RC(n, 0);
   auto rebuildRC = [&](int from) {
     for (int k = std::max(1, from); k < n; k++) {
-      const int64_t rev = WeightedDist(so[k], si[k - 1], wv);
+      const int64_t rev = Dist(so[k], si[k - 1]);
       RC[k] = RC[k - 1] + (rev - D(k - 1, k));
     }
   };
@@ -228,8 +223,7 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
 //   total gain = g1 + g2 + g3  where g3 = D(k, k+1) - D(k, i+1)
 // ---------------------------------------------------------------------------
 void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
-                       const CandidateEdges& candidates,
-                       double wv)
+                       const CandidateEdges& candidates)
 {
   const int n = static_cast<int>(cells.size());
   if (n < 6) {
@@ -243,7 +237,7 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
 
   auto D = [&](int a, int b) -> int64_t {
-    return WeightedDist(so[a], si[b], wv);
+    return Dist(so[a], si[b]);
   };
 
   // Build a map from ScanCell pointer → original candidate index so we can
@@ -330,8 +324,7 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
 }  // namespace (anonymous)
 
 void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
-                            utl::Logger* logger,
-                            double vertical_weight)
+                            utl::Logger* logger)
 {
   // Nothing to order
   if (cells.empty()) {
@@ -343,8 +336,6 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
       return;
     }
   }
-
-  const double wv = vertical_weight;
 
   // Define the starting node as the lower leftmost, so we don't accidentally
   // start somewhere in the middle
@@ -406,13 +397,13 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     so[i] = cells[i]->getScanOutLocation();
   }
   CandidateEdges candidates;
-  candidates.build(si, so, wv);
+  candidates.build(si, so);
 
   // Improve the nearest-neighbor ordering with local search.
   // 2-Opt corrects for asymmetric scan-in/scan-out pin offsets.
   // 3-Opt (subtour swap) catches direction-preserving improvements.
-  TwoOptScanChain(cells, candidates, wv);
-  ThreeOptScanChain(cells, candidates, wv);
+  TwoOptScanChain(cells, candidates);
+  ThreeOptScanChain(cells, candidates);
 }
 
 }  // namespace dft
