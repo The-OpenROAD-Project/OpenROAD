@@ -609,7 +609,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   schema_major_ = kSchemaMajor;
   schema_minor_ = kSchemaMinor;
   master_id_ = 0;
-  logger_ = nullptr;
   unique_id_ = id;
   dbu_per_micron_ = 0;
   hierarchy_ = false;
