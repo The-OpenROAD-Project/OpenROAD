@@ -2425,6 +2425,20 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               if (lport) {
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
+                dbMTerm* mterm = staToDb(lport);
+                if (mterm && lport->isClock()
+                    && mterm->getSigType() != dbSigType::CLOCK) {
+                  debugPrint(
+                      logger_,
+                      utl::ORD,
+                      "dbNetwork",
+                      1,
+                      "Updating LEF pin {}/{} from {} to CLOCK from Liberty",
+                      mterm->getMaster()->getName(),
+                      mterm->getName(),
+                      mterm->getSigType().getString());
+                  mterm->setSigType(dbSigType::CLOCK);
+                }
               } else if (!cport->direction()->isPowerGround()
                          && !lcell->findPort(port_name)) {
                 logger_->warn(ORD,
