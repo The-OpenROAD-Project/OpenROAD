@@ -1284,17 +1284,18 @@ class NesterovBase
   // True while the host coord vectors / GCell density centers mirror the
   // device state. The device-resident hot loop clears it each iteration;
   // pullCoordsFromDevice() restores it on demand. Always true on CPU.
-  // maybe_unused: only ENABLE_GPU code reads it, but the field stays
-  // unconditional so the class layout is identical in both builds.
-  [[maybe_unused]] bool host_coords_fresh_ = true;
+  // Only ENABLE_GPU code reads it, but the field stays unconditional so
+  // the class layout is identical in both builds (the ctor references it
+  // to keep CPU-only clang builds quiet about the unused private field).
+  bool host_coords_fresh_ = true;
 
   // Escape hatch for the device-resident density pipeline: set
   // GPL_GPU_HOST_DENSITY=1 to fall back to the per-iteration host
   // scatter/FFT staging path. Read in rebuildNbDeviceCtx() (reached from
   // initDensity1 and the filler cut/restore paths); always false in
-  // TD/routability modes regardless of the env var.
-  // maybe_unused: same ENABLE_GPU-only readers as host_coords_fresh_.
-  [[maybe_unused]] bool use_device_density_ = false;
+  // TD/routability modes regardless of the env var. Same ENABLE_GPU-only
+  // readers (and the same ctor reference) as host_coords_fresh_.
+  bool use_device_density_ = false;
 
   int fillerDx_ = 0;
   int fillerDy_ = 0;

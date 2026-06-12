@@ -2098,6 +2098,12 @@ NesterovBase::NesterovBase(
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
+  // Touch the GPU-path bookkeeping fields: only ENABLE_GPU code reads them,
+  // and this no-op use keeps CPU-only clang builds (-Wunused-private-field)
+  // quiet without [[maybe_unused]], which gcc ignores on non-static data
+  // members and escalates under -Werror=attributes.
+  (void) host_coords_fresh_;
+  (void) use_device_density_;
   log_->info(GPL,
              33,
              "---- Initialize Nesterov Region: {}",
