@@ -183,6 +183,11 @@ struct TileVisibility
   bool pin_names = true;          // BTerm name labels on _pins layer
   bool blockages = true;
 
+  // Metal fill (dbFill) shapes.  Indexed by Search but only rasterized when
+  // this is on.  Defaults true so fill geometry is visible without a dedicated
+  // UI toggle (a toggle mirroring the GUI's off-by-default is a follow-up).
+  bool fills = true;
+
   // Instance sub-shapes
   bool inst_names = true;      // Instance name labels on _instances layer
   bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
@@ -202,6 +207,19 @@ struct TileVisibility
   // Tracks (off by default, matching GUI)
   bool tracks_pref = false;
   bool tracks_non_pref = false;
+
+  // Per-layer fill pattern for the active layer's shapes.  A tile request
+  // carries exactly one layer, so a single pattern per request suffices.
+  // Defaults to solid, matching the Qt GUI default brush.
+  FillPattern fill_pattern = FillPattern::kSolid;
+
+  // Per-layer color override for the active layer.  Like fill_pattern, a tile
+  // request carries one layer, so a single color suffices.  When
+  // has_layer_color is false the server falls back to getLayerColorMap.  Only
+  // RGB is sent by the client (the user picks via an <input type="color">);
+  // the alpha is preserved from the resolved layer color at render time.
+  Color layer_color{};
+  bool has_layer_color = false;
 
   // Debug
   bool debug = false;
@@ -515,16 +533,28 @@ class TileGenerator
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
 
+  // `pattern` masks which interior pixels are drawn (hatch/cross/diag); for
+  // kNone only the outline is drawn.  `px_origin_x/y` is the tile's top-left
+  // pixel in the zoom level's global pixel grid (tile_col*256, tile_row*256);
+  // the pattern mask is evaluated in those global coordinates so hatch lines
+  // stay continuous across tile boundaries.  Defaults keep every existing
+  // caller (highlights, pins, modules) on a plain solid fill.
   void fillPolygon(std::vector<unsigned char>& image,
                    const odb::Polygon& poly,
                    const odb::Rect& dbu_tile,
                    double scale,
                    const Color& color,
-                   bool blend = false) const;
+                   bool blend = false,
+                   FillPattern pattern = FillPattern::kSolid,
+                   int px_origin_x = 0,
+                   int px_origin_y = 0) const;
 
   void drawFilledRect(std::vector<unsigned char>& buffer,
                       const odb::Rect& rect,
-                      const Color& color) const;
+                      const Color& color,
+                      FillPattern pattern = FillPattern::kSolid,
+                      int px_origin_x = 0,
+                      int px_origin_y = 0) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,

@@ -1328,16 +1328,19 @@ Search::SnapResult Search::searchNearestEdge(
         }
       }
 
-      // Fills.
-      for (auto* fill : searchFills(block,
-                                    layer,
-                                    search_box.xMin(),
-                                    search_box.yMin(),
-                                    search_box.xMax(),
-                                    search_box.yMax())) {
-        odb::Rect fill_rect;
-        fill->getRect(fill_rect);
-        check_rect(fill_rect);
+      // Fills.  Gated by vis.fills to stay consistent with the render path
+      // (don't let edge-snapping target fills the user has hidden).
+      if (vis.fills) {
+        for (auto* fill : searchFills(block,
+                                      layer,
+                                      search_box.xMin(),
+                                      search_box.yMin(),
+                                      search_box.xMax(),
+                                      search_box.yMax())) {
+          odb::Rect fill_rect;
+          fill->getRect(fill_rect);
+          check_rect(fill_rect);
+        }
       }
 
       // Obstructions.

@@ -20,7 +20,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
     // Tiles don't actually use selectability for rendering, but we
     // send it on every request so the wire schema stays uniform with
     // selectAt requests.
-    function buildTileRequest(coords, layerName) {
+    function buildTileRequest(coords, layerName, fillPattern, fillColor) {
         const vf = {};
         for (const [k, v] of Object.entries(visibility)) {
             vf[k] = !!v;
@@ -36,10 +36,18 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             z: coords.z,
             x: coords.x,
             y: coords.y,
+            // Per-layer fill pattern index (see FillPattern in color.h):
+            // 1 = solid (default), 0 = kNone/outline-only, 2.. = hatch styles.
+            pattern: fillPattern | 0,
             visible_layers: visibleLayers ? [...visibleLayers] : [],
             selectable_layers: selectableLayers ? [...selectableLayers] : [],
             ...vf,
         };
+        // Per-layer color override (RGB) from the Layer Config dialog.  Omitted
+        // when unset so the server uses its default getLayerColorMap color.
+        if (Array.isArray(fillColor) && fillColor.length >= 3) {
+            req.layer_color = [fillColor[0] | 0, fillColor[1] | 0, fillColor[2] | 0];
+        }
         if (app && app.visibleChiplets instanceof Set) {
             req.visible_chiplets = [...app.visibleChiplets];
         }
@@ -49,7 +57,31 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
             this._layerName = layerName;
+            // Per-layer fill pattern index (FillPattern in color.h).  Defaults
+            // to 1 (solid) — note 0 means "outline only" (kNone), so we must
+            // not let an absent option collapse to 0.
+            this._fillPattern = (options && options.fillPattern != null)
+                ? (options.fillPattern | 0)
+                : 1;
+            // Per-layer color override (RGB array) or null to use the server
+            // default color.
+            this._fillColor = (options && Array.isArray(options.fillColor))
+                ? options.fillColor
+                : null;
             L.GridLayer.prototype.initialize.call(this, options);
+        },
+
+        // Change the layer's fill pattern and re-render its tiles in place.
+        setFillPattern: function(fillPattern) {
+            this._fillPattern = fillPattern | 0;
+            this.refreshTiles();
+        },
+
+        // Change the layer's color override (RGB array, or null to reset to
+        // the server default) and re-render its tiles in place.
+        setFillColor: function(rgb) {
+            this._fillColor = Array.isArray(rgb) ? rgb : null;
+            this.refreshTiles();
         },
 
         createTile: function(coords, done) {
@@ -81,7 +113,8 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             tile._websocketRequestId = this._websocketManager.nextId;
 
             this._websocketManager.request(
-                buildTileRequest(coords, this._layerName)
+                buildTileRequest(coords, this._layerName, this._fillPattern,
+                                 this._fillColor)
             ).then(data => {
                 if (typeof data === 'string') {
                     tile.src = data;  // data URI from cache
@@ -115,7 +148,8 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 tile._websocketRequestId = this._websocketManager.nextId;
 
                 this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName)
+                    buildTileRequest(coords, this._layerName, this._fillPattern,
+                                     this._fillColor)
                 ).then(data => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);

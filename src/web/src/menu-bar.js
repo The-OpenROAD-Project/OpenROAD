@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { createModalDialog } from './modal.js';
+
 // Creates a menu bar in #menu-bar and returns keyboard shortcut bindings.
 export function createMenuBar(app) {
     const menus = [
@@ -157,10 +159,7 @@ export function createMenuBar(app) {
 
 function showPathDialog(app, title, tclCmd) {
     const isSave = tclCmd === 'write_db';
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-
-    overlay.innerHTML = `
+    const { overlay, close } = createModalDialog(`
         <div class="modal-dialog file-browser-dialog">
             <h3>${title}</h3>
             <div class="fb-breadcrumb"></div>
@@ -172,9 +171,7 @@ function showPathDialog(app, title, tclCmd) {
                 <button class="cancel">Cancel</button>
                 <button class="primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
             </div>
-        </div>`;
-
-    document.body.appendChild(overlay);
+        </div>`);
 
     const breadcrumb = overlay.querySelector('.fb-breadcrumb');
     const fileList = overlay.querySelector('.fb-file-list');
@@ -184,10 +181,6 @@ function showPathDialog(app, title, tclCmd) {
     const cancelBtn = overlay.querySelector('.cancel');
     let currentPath = '';
     let selectedEntry = null;
-
-    function close() {
-        overlay.remove();
-    }
 
     function updateOkState() {
         const val = pathInput.value.trim();
@@ -366,7 +359,7 @@ function showPathDialog(app, title, tclCmd) {
     });
     okBtn.addEventListener('click', submit);
     cancelBtn.addEventListener('click', close);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    // Escape and backdrop-click dismissal are handled by createModalDialog.
 
     // Start browsing from server's cwd
     navigate('');
