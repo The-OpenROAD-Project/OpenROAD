@@ -2574,6 +2574,10 @@ void TritonCTS::setAllClocksPropagated()
   for (sta::Mode* mode : openSta_->modes()) {
     sta::Sdc* sdc = mode->sdc();
     for (sta::Clock* clk : sdc->clocks()) {
+      // Virtual clocks model external timing and must keep their latency.
+      if (clk->isVirtual()) {
+        continue;
+      }
       openSta_->setPropagatedClock(clk, mode);
     }
   }
