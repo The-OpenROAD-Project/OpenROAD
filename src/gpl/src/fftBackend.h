@@ -49,7 +49,8 @@ class FftBackend
   virtual void solve(BinGridSpan density,
                      BinGridSpan phi,
                      BinGridSpan field_x,
-                     BinGridSpan field_y) = 0;
+                     BinGridSpan field_y)
+      = 0;
 
   // Short label for diagnostic logging; constructed-once factory choice.
   virtual const char* name() const = 0;
