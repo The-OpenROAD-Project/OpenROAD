@@ -898,7 +898,11 @@ void CUGR::updateDbCongestion()
   db_gcell->addGridPatternY(y_corner, y_size, gridline_size);
 
   odb::dbTech* db_tech = db_->getTech();
-  for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
+  // Skip sub-min layers: they hold no routing wire and their 0-capacity edges
+  // would otherwise export as fully-blocked cells.
+  for (int layer = constants_.min_routing_layer;
+       layer < grid_graph_->getNumLayers();
+       layer++) {
     odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
     if (db_layer == nullptr) {
       continue;
