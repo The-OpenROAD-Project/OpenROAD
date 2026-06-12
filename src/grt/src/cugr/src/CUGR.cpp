@@ -1194,8 +1194,10 @@ void CUGR::saveCongestion()
 
   // Emit one marker per congested 3D edge, tagged with its routing
   // layer. Comment carries capacity/usage/congestion and the source of
-  // the congestion (wire segments, via stubs, or both).
-  for (int l = 0; l < num_layers; l++) {
+  // the congestion (wire segments, via stubs, or both). Skip sub-min
+  // layers: their 0-capacity edges carry only pin-access via demand and
+  // would otherwise emit false congestion markers.
+  for (int l = constants_.min_routing_layer; l < num_layers; l++) {
     const int direction = grid_graph_->getLayerDirection(l);
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
     const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
