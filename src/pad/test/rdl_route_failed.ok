@@ -10,53 +10,45 @@
 [INFO PAD-0037] End of routing iteration 2: 85.4% complete
 [INFO PAD-0037] End of routing iteration 3: 81.9% complete
 [INFO PAD-0037] End of routing iteration 4: 84.4% complete
-[INFO PAD-0037] End of routing iteration 5: 89.0% complete
-[INFO PAD-0037] End of routing iteration 6: 89.9% complete
-[INFO PAD-0037] End of routing iteration 7: 89.5% complete
-[INFO PAD-0037] End of routing iteration 8: 89.0% complete
-[INFO PAD-0037] End of routing iteration 9: 88.8% complete
-[INFO PAD-0037] End of routing iteration 10: 88.8% complete
-[WARNING PAD-0006] Failed to route the following 17 nets:
+[INFO PAD-0037] End of routing iteration 5: 89.2% complete
+[INFO PAD-0037] End of routing iteration 6: 90.1% complete
+[INFO PAD-0037] End of routing iteration 7: 90.3% complete
+[INFO PAD-0037] End of routing iteration 8: 90.3% complete
+[INFO PAD-0037] End of routing iteration 9: 89.2% complete
+[INFO PAD-0037] End of routing iteration 10: 90.3% complete
+[WARNING PAD-0006] Failed to route the following 13 nets:
   DVDD
     BUMP_11_3/PAD -> u_v18_6/DVDD, u_v18_7/DVDD, u_v18_5/DVDD, u_v18_4/DVDD, u_v18_8/DVDD, ... (67 possible terminals)
     BUMP_16_11/PAD -> u_v18_15/DVDD, u_v18_16/DVDD, u_v18_14/DVDD, u_v18_13/DVDD, u_v18_12/DVDD, ... (67 possible terminals)
     BUMP_1_13/PAD -> u_v18_26/DVDD, u_v18_27/DVDD, u_v18_28/DVDD, u_v18_25/DVDD, u_v18_29/DVDD, ... (67 possible terminals)
-    BUMP_4_1/PAD -> u_v18_1/DVDD, u_v18_2/DVDD, u_v18_0/DVDD, u_v18_3/DVDD, u_v18_4/DVDD, ... (67 possible terminals)
   DVSS
-    BUMP_0_8/PAD -> u_vzz_30/DVSS, u_vzz_29/DVSS, u_vzz_31/DVSS, u_vzz_32/DVSS, u_vzz_28/DVSS, ... (67 possible terminals)
     BUMP_15_11/PAD -> u_vzz_15/DVSS, u_vzz_16/DVSS, u_vzz_14/DVSS, u_vzz_13/DVSS, u_vzz_12/DVSS, ... (67 possible terminals)
     BUMP_15_7/PAD -> u_vzz_12/DVSS, u_vzz_13/DVSS, u_vzz_11/DVSS, u_vzz_14/DVSS, u_vzz_10/DVSS, ... (67 possible terminals)
     BUMP_1_9/PAD -> u_vzz_29/DVSS, u_vzz_30/DVSS, u_vzz_28/DVSS, u_vzz_31/DVSS, u_vzz_27/DVSS, ... (67 possible terminals)
+  VDD
+    BUMP_11_12/PAD -> u_vdd_9/VDD, u_vdd_pll/VDD, u_vdd_8/VDD, u_vdd_7/VDD, u_vdd_10/VDD, ... (33 possible terminals)
+    BUMP_1_10/PAD -> u_vdd_13/VDD, u_vdd_14/VDD, u_vdd_12/VDD, u_vdd_15/VDD, u_vdd_11/VDD, ... (33 possible terminals)
   VSS
+    BUMP_0_10/PAD -> u_vss_13/VSS, u_vss_14/VSS, u_vss_12/VSS, u_vss_15/VSS, u_vss_11/VSS, ... (33 possible terminals)
     BUMP_14_9/PAD -> u_vss_6/VSS, u_vss_5/VSS, u_vss_7/VSS, u_vss_4/VSS, u_vss_8/VSS, ... (33 possible terminals)
     BUMP_16_6/PAD -> u_vss_5/VSS, u_vss_6/VSS, u_vss_4/VSS, u_vss_7/VSS, u_vss_3/VSS, ... (33 possible terminals)
+  p_bsg_tag_data_o
+    BUMP_2_10/PAD -> u_bsg_tag_data_o/PAD
   p_clk_A_i
     BUMP_7_13/PAD -> u_clk_A_i/PAD
-  p_clk_async_reset_i
-    BUMP_9_14/PAD -> u_clk_async_reset_i/PAD
   p_co2_v_o
     BUMP_0_13/PAD -> u_co2_v_o/PAD
-  p_ddr_addr_15_o
-    BUMP_4_0/PAD -> u_ddr_addr_15_o/PAD
   p_ddr_addr_2_o
     BUMP_8_2/PAD -> u_ddr_addr_2_o/PAD
-  p_ddr_addr_6_o
-    BUMP_7_0/PAD -> u_ddr_addr_6_o/PAD
-  p_ddr_addr_7_o
-    BUMP_7_1/PAD -> u_ddr_addr_7_o/PAD
+  p_ddr_addr_4_o
+    BUMP_7_4/PAD -> u_ddr_addr_4_o/PAD
   p_ddr_ck_n_o
     BUMP_11_4/PAD -> u_ddr_ck_n_o/PAD
-  p_ddr_dq_0_io
-    BUMP_3_7/PAD -> u_ddr_dq_0_io/PAD
-  p_ddr_dq_11_io
-    BUMP_4_5/PAD -> u_ddr_dq_11_io/PAD
-  p_ddr_dq_13_io
-    BUMP_3_5/PAD -> u_ddr_dq_13_io/PAD
-  p_ddr_dq_2_io
-    BUMP_1_8/PAD -> u_ddr_dq_2_io/PAD
+  p_ddr_dq_7_io
+    BUMP_4_10/PAD -> u_ddr_dq_7_io/PAD
   p_ddr_dq_8_io
     BUMP_0_4/PAD -> u_ddr_dq_8_io/PAD
   p_ddr_dq_9_io
     BUMP_1_4/PAD -> u_ddr_dq_9_io/PAD
-[ERROR PAD-0007] Failed to route 17 nets.
+[ERROR PAD-0007] Failed to route 13 nets.
 pass

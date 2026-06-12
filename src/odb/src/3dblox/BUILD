@@ -26,6 +26,7 @@ cc_library(
         "//src/odb/src/lefout",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@spdlog",
         "@yaml-cpp",
     ],
 )

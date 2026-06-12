@@ -914,7 +914,22 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
   int max_layer = block_->getMaxRoutingLayer();
 
   if (max_layer < 0) {
-    max_layer = db_->getTech()->getRoutingLayerCount() / 2;
+    // Fall back to roughly the middle of the frontside routing stack.
+    // Halving the total routing-layer count picks the wrong stack when
+    // backside layers (BPR, BM*, BRDL) push the midpoint below the
+    // frontside boundary; counting only frontside levels keeps the
+    // heuristic on the side that hosts the signal routes whose cut
+    // resistance this function averages.
+    odb::dbTech* tech = db_->getTech();
+    const int total_levels = tech->getRoutingLayerCount();
+    odb::dbTechLayer* first_front = tech->firstFrontsideRoutingLayer();
+    if (first_front != nullptr) {
+      const int first_level = first_front->getRoutingLevel();
+      const int frontside_count = total_levels - first_level + 1;
+      max_layer = first_level - 1 + frontside_count / 2;
+    } else {
+      max_layer = total_levels / 2;
+    }
   }
 
   odb::dbTechLayer* min_tech_layer

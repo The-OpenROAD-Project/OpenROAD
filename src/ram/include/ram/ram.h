@@ -7,6 +7,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -99,9 +100,7 @@ class RamGen
                 odb::dbMaster* tapcell,
                 int max_tap_dist);
 
-  void ramPdngen(const char* power_pin,
-                 const char* ground_pin,
-                 const char* power_net_name,
+  void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
                  const char* route_name,
                  int route_width,
@@ -202,6 +201,9 @@ class RamGen
   odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* latch_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  std::set<std::string> power_pin_names_;
+  std::set<std::string> ground_pin_names_;
 
   std::map<PortRole, std::string> storage_ports_;
   std::map<PortRole, std::string> tristate_ports_;

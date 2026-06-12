@@ -16,6 +16,11 @@
 #include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
+#include "dbUnfoldedChipBumpInst.h"
+#include "dbUnfoldedChipConn.h"
+#include "dbUnfoldedChipInst.h"
+#include "dbUnfoldedChipNet.h"
+#include "dbUnfoldedChipRegionInst.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
@@ -61,11 +66,13 @@
 #include "dbTechLayerCutSpacingRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerSpacingRule.h"
+#include "dbUnfoldedBuilder.h"
+#include "dbUnfoldedChipBumpInstItr.h"
+#include "dbUnfoldedChipRegionInstItr.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
-#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -120,6 +127,21 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
     return false;
   }
   if (*chip_net_tbl_ != *rhs.chip_net_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_inst_tbl_ != *rhs.unfolded_chip_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_region_inst_tbl_ != *rhs.unfolded_chip_region_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_bump_inst_tbl_ != *rhs.unfolded_chip_bump_inst_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_conn_tbl_ != *rhs.unfolded_chip_conn_tbl_) {
+    return false;
+  }
+  if (*unfolded_chip_net_tbl_ != *rhs.unfolded_chip_net_tbl_) {
     return false;
   }
 
@@ -191,6 +213,31 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
                                      dbChipBumpInstObj);
   chip_net_tbl_ = new dbTable<_dbChipNet>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
+  unfolded_chip_inst_tbl_ = new dbTable<_dbUnfoldedChipInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipInstObj);
+  unfolded_chip_region_inst_tbl_ = new dbTable<_dbUnfoldedChipRegionInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipRegionInstObj);
+  unfolded_chip_bump_inst_tbl_ = new dbTable<_dbUnfoldedChipBumpInst>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipBumpInstObj);
+  unfolded_chip_conn_tbl_ = new dbTable<_dbUnfoldedChipConn>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipConnObj);
+  unfolded_chip_net_tbl_ = new dbTable<_dbUnfoldedChipNet>(
+      this,
+      this,
+      (GetObjTbl_t) &_dbDatabase::getObjectTable,
+      dbUnfoldedChipNetObj);
   // User Code Begin Constructor
   magic1_ = kMagic1;
   magic2_ = kMagic2;
@@ -225,7 +272,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
-  unfolded_model_ = nullptr;
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
+
+  unfolded_bump_itr_
+      = new dbUnfoldedChipBumpInstItr(unfolded_chip_bump_inst_tbl_);
   // User Code End Constructor
 }
 
@@ -456,6 +507,16 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_bump_inst_tbl_;
     case dbChipNetObj:
       return chip_net_tbl_;
+    case dbUnfoldedChipInstObj:
+      return unfolded_chip_inst_tbl_;
+    case dbUnfoldedChipRegionInstObj:
+      return unfolded_chip_region_inst_tbl_;
+    case dbUnfoldedChipBumpInstObj:
+      return unfolded_chip_bump_inst_tbl_;
+    case dbUnfoldedChipConnObj:
+      return unfolded_chip_conn_tbl_;
+    case dbUnfoldedChipNetObj:
+      return unfolded_chip_net_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return tech_tbl_;
@@ -486,6 +547,16 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
   chip_conn_tbl_->collectMemInfo(info.children["chip_conn_tbl_"]);
   chip_bump_inst_tbl_->collectMemInfo(info.children["chip_bump_inst_tbl_"]);
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
+  unfolded_chip_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_inst_tbl_"]);
+  unfolded_chip_region_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_region_inst_tbl_"]);
+  unfolded_chip_bump_inst_tbl_->collectMemInfo(
+      info.children["unfolded_chip_bump_inst_tbl_"]);
+  unfolded_chip_conn_tbl_->collectMemInfo(
+      info.children["unfolded_chip_conn_tbl_"]);
+  unfolded_chip_net_tbl_->collectMemInfo(
+      info.children["unfolded_chip_net_tbl_"]);
 
   // User Code Begin collectMemInfo
   tech_tbl_->collectMemInfo(info.children["tech"]);
@@ -505,6 +576,11 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_tbl_;
   delete chip_bump_inst_tbl_;
   delete chip_net_tbl_;
+  delete unfolded_chip_inst_tbl_;
+  delete unfolded_chip_region_inst_tbl_;
+  delete unfolded_chip_bump_inst_tbl_;
+  delete unfolded_chip_conn_tbl_;
+  delete unfolded_chip_net_tbl_;
   // User Code Begin Destructor
   delete tech_tbl_;
   delete lib_tbl_;
@@ -516,7 +592,8 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_itr_;
   delete chip_bump_inst_itr_;
   delete chip_net_itr_;
-  delete unfolded_model_;
+  delete unfolded_region_itr_;
+  delete unfolded_bump_itr_;
   // User Code End Destructor
 }
 
@@ -567,7 +644,11 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
-  unfolded_model_ = nullptr;
+  unfolded_region_itr_
+      = new dbUnfoldedChipRegionInstItr(unfolded_chip_region_inst_tbl_);
+
+  unfolded_bump_itr_
+      = new dbUnfoldedChipBumpInstItr(unfolded_chip_bump_inst_tbl_);
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -657,6 +738,37 @@ dbSet<dbChipNet> dbDatabase::getChipNets() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChipNet>(obj, obj->chip_net_tbl_);
+}
+
+dbSet<dbUnfoldedChipInst> dbDatabase::getUnfoldedChipInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipInst>(obj, obj->unfolded_chip_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipRegionInst> dbDatabase::getUnfoldedChipRegionInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipRegionInst>(obj,
+                                         obj->unfolded_chip_region_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipBumpInst> dbDatabase::getUnfoldedChipBumpInsts() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipBumpInst>(obj, obj->unfolded_chip_bump_inst_tbl_);
+}
+
+dbSet<dbUnfoldedChipConn> dbDatabase::getUnfoldedChipConns() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipConn>(obj, obj->unfolded_chip_conn_tbl_);
+}
+
+dbSet<dbUnfoldedChipNet> dbDatabase::getUnfoldedChipNets() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbUnfoldedChipNet>(obj, obj->unfolded_chip_net_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods
@@ -767,14 +879,18 @@ dbChip* dbDatabase::getChip()
 void dbDatabase::constructUnfoldedModel()
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  delete db->unfolded_model_;
-  db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
+  dbUnfoldedBuilder builder(db);
+  builder.build();
 }
 
-UnfoldedModel* dbDatabase::getUnfoldedModel() const
+dbUnfoldedChipInst* dbDatabase::findUnfoldedChip(const std::string& path) const
 {
-  _dbDatabase* db = (_dbDatabase*) this;
-  return db->unfolded_model_;
+  for (dbUnfoldedChipInst* chip : getUnfoldedChipInsts()) {
+    if (chip->getName() == path) {
+      return chip;
+    }
+  }
+  return nullptr;
 }
 
 dbTech* dbDatabase::getTech()
