@@ -1,0 +1,56 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14814, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14814, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+Design statistics
+Nets:                416
+Special nets:        0
+Routing layers:      6
+Stage 1: Pattern routing.
+Stage 2: Pattern routing with detours.
+Routing statistics
+Wire length:           34080
+Total via count:       2557
+Total congestion:      0
+Min resource:          0.26666635672251626
+Bottleneck:            (1, 90, 156)
+baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
+resistance-aware               WNS: -121.6 ps  TNS: -2860.3 ps
+resistance-aware WNS and TNS not worse than baseline: PASS
+No differences found.

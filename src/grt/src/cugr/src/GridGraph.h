@@ -183,6 +183,25 @@ class GridGraph
 
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
+  // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
+  // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
+  CostT getWireResistanceCost(int layer_index,
+                              PointT u,
+                              PointT v,
+                              int wire_width = 0) const;
+
+  // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
+  // the tech leaves cut-layer resistance unpopulated.
+  CostT getViaResistanceCost(int lower_layer) const;
+
+  // Total tree resistance (wire + via) for res-aware ordering. `ndr_widths`
+  // is the net's per-layer NDR wire width (0 => layer default), matching the
+  // width used by getWireResistanceCost so ordering and cost agree.
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                          const std::vector<int>& ndr_widths) const;
+
+  int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
+
   /**
    * @brief Sets the multiplier applied to the logistic-cost slopes.
    *
@@ -384,6 +403,12 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
+  // First non-zero sheet / via resistance across routing layers: the
+  // reference for the res-aware costs. Scanning (vs. always layer 0) keeps
+  // the cost alive on techs that leave the bottom layer's resistance
+  // undefined.
+  double ref_resistance_ = 0.0;
+  double ref_via_resistance_ = 0.0;
 };
 
 template <typename Type>

@@ -59,6 +59,13 @@ struct Constants
 
   double maze_logistic_slope = 0.5;
 
+  // Min net length (bbox hp) for res-aware; short nets are skipped
+  // because the via cost of climbing exceeds their wire-R savings.
+  int resistance_min_net_length = 3;
+
+  // Scales the res-aware resistance cost to CUGR's wire-cost magnitude.
+  double resistance_weight = 50.0;
+
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;
   double wire_patch_threshold = 2.0;
@@ -92,6 +99,10 @@ class CUGR
   void setCriticalNetsPercentage(float percentage)
   {
     critical_nets_percentage_ = percentage;
+  }
+  void setResistanceAware(bool resistance_aware)
+  {
+    resistance_aware_ = resistance_aware;
   }
   void setCongestionIterations(int iterations)
   {
@@ -134,6 +145,8 @@ class CUGR
    *          at all).
    */
   std::vector<double> computeNdrCosts(odb::dbNet* db_net) const;
+
+  std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
    * @brief Builds the rip-up set of nets touching a congested edge.
    *
@@ -172,9 +185,6 @@ class CUGR
    * is already zero, so designs that finished stage 3 clean pay no
    * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
    * remains when the loop ends.
-   *
-   * See `src/grt/doc/01-iterative-rrr.md` for the cost-model audit
-   * and the rationale for the chosen defaults.
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
@@ -224,8 +234,28 @@ class CUGR
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
 
-  float critical_nets_percentage_ = 0;
+  float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
+
+  bool resistance_aware_ = false;
+  // Per-run normalisers for getResAwareScore (default 1 => well-defined).
+  float worst_slack_ = 1.0f;
+  float worst_resistance_ = 1.0f;
+  int worst_fanout_ = 1;
+  int worst_net_length_ = 1;
+
+  // The initial PatternRoute pass marks a wider critical set because its
+  // placement slack is noisier than the routing slack used later.
+  static constexpr float kPatternRouteWiden = 2.0f;
+
+  // Marks the top-`percentage` >= 2-pin nets res-aware and refreshes the
+  // per-net resistance/length + worst_* ordering normalisers. No-op
+  // unless resistance_aware_.
+  void markResAwareNets(float percentage);
+
+  // FR-style ordering score (lower routes first): slack/resistance/
+  // fanout/length blend, each normalised by the per-run worst.
+  float getResAwareScore(const GRNet* net) const;
 
   std::vector<int> nets_to_route_;
 };
