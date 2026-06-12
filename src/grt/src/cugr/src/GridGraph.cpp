@@ -308,6 +308,12 @@ void GridGraph::computeCongestionInformation()
     CapacityT overflow_sum = 0;
     CapacityT max_overflow = 0;
 
+    // Sub-min layers hold no routing wire, only pin-access via demand on
+    // 0-capacity edges.
+    if (layer_index < constants_.min_routing_layer) {
+      continue;
+    }
+
     auto accumulate = [&](int x, int y) {
       const auto& edge = graph_edges_[layer_index][x][y];
       cap_sum += edge.capacity;
