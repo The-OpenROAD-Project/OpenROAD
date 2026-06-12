@@ -15,9 +15,11 @@ puts "Has grid: [pdn::has_grid CoreNotThere]"
 
 add_pdn_stripe -followpins -layer metal1 -extend_to_core_ring
 
-catch {add_pdn_ring -grid CoreNotThere \
-    -layers {metal5 metal6} -widths 2.0 -spacings 2.0 -core_offsets 2.0} err
+catch {
+  add_pdn_ring -grid CoreNotThere \
+    -layers {metal5 metal6} -widths 2.0 -spacings 2.0 -core_offsets 2.0
+} err
 puts $err
 
-catch {add_pdn_connect -grid CoreNotThere -layers {metal5 metal6}} err
+catch { add_pdn_connect -grid CoreNotThere -layers {metal5 metal6} } err
 puts $err

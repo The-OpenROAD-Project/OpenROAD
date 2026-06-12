@@ -1052,9 +1052,8 @@ proc define_pdn_grid_macro { args } {
 
   set is_bump [info exists flags(-bump)]
 
-  set insts []
+  set insts {}
   if { [info exists keys(-instances)] } {
-    set insts {}
     foreach inst_pattern $keys(-instances) {
       set sub_insts [get_insts $inst_pattern]
       if { [llength $sub_insts] == 0 } {
