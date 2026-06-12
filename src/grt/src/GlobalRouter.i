@@ -177,6 +177,12 @@ set_infinite_cap(bool infinite_capacity)
 }
 // NOTE: Debug-only. Not part of the public incremental API.
 void
+add_dirty_net(odb::dbNet* net)
+{
+  getGlobalRouter()->addDirtyNet(net);
+}
+
+void
 update_cugr_net(odb::dbNet* net)
 {
   getGlobalRouter()->updateCUGRNet(net);
