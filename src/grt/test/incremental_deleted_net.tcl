@@ -25,7 +25,7 @@ set n_extra_net [odb::dbNet_create $block "n_extra"]
 set db [ord::get_db]
 set master [$db findMaster "BUF_X1"]
 if { $master == "NULL" } {
-    utl::error GRT 9999 "Failed to create n_extra net"
+  utl::error GRT 9999 "Failed to find BUF_X1 master"
 }
 set b_extra [odb::dbInst_create $block $master "b_extra"]
 
@@ -43,7 +43,7 @@ odb::dbITerm_connect $b_extra_z $n_extra_net
 
 # e. Remove that buffer so the intermediate net is deleted
 $b1_a disconnect
-odb::dbITerm_connect $b1_a $n2_net   ;# reconnect b1/A back to original n2
+odb::dbITerm_connect $b1_a $n2_net ;# reconnect b1/A back to original n2
 odb::dbInst_destroy $b_extra
 odb::dbNet_destroy $n_extra_net
 
