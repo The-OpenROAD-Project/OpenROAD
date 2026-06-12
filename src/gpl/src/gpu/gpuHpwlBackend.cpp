@@ -33,10 +33,12 @@ namespace gpl {
 // Persistent backend-private state: only the per-net bbox outputs and their
 // host mirrors. The pin coords, pin→net CSR, and inst coords live in the
 // shared DeviceState (gpu/deviceState.h).
-// Host copies of the per-net bboxes live in pinned (page-locked) memory:
-// these four ~1 MB device→host transfers run twice per Nesterov iteration,
-// and against pageable memory each cudaMemcpy cost ~0.33 ms of host time on
-// a 290k-net design (~1.5 s per large01 run) vs ~0.1 ms pinned.
+// Host copies of the per-net bboxes live in pinned (page-locked) memory.
+// Before the lazy mirror these four ~1 MB device→host transfers ran twice
+// per Nesterov iteration; they now run only inside mirrorNetBoxesToHost()
+// (TD boundary, post-loop), where pinned staging keeps the on-demand copy
+// cheap. Against pageable memory each cudaMemcpy cost ~0.33 ms of host time
+// on a 290k-net design vs ~0.1 ms pinned.
 // SharedHostPinnedSpace is the portable alias (CudaHostPinnedSpace /
 // HIPHostPinnedSpace depending on the Kokkos backend).
 using PinnedIntView = Kokkos::View<int*, Kokkos::SharedHostPinnedSpace>;

@@ -1205,9 +1205,10 @@ class NesterovBase
 
   // GPU device-resident density path: the hot loop no longer syncs coords
   // (or host GCell density centers) every iteration. Cold-path consumers
-  // (snapshot, updateDb, routability filler cut/restore, timing-driven)
-  // call this first to lazily refresh host state from the device cur slot.
-  // No-op on the CPU path or when host state is already fresh.
+  // (snapshot save/revert, updateDb, routability filler cut/restore) call
+  // this first to lazily refresh host state from the device cur slot.
+  // No-op on the CPU path or when host state is already fresh. (TD and
+  // routability runs never hold a device context, so they need no call.)
   void pullCoordsFromDevice();
 
   void updateDensityCenterCur();
@@ -1289,7 +1290,9 @@ class NesterovBase
 
   // Escape hatch for the device-resident density pipeline: set
   // GPL_GPU_HOST_DENSITY=1 to fall back to the per-iteration host
-  // scatter/FFT path (the pre-C2 behavior). Read once in initDensity1.
+  // scatter/FFT staging path. Read in rebuildNbDeviceCtx() (reached from
+  // initDensity1 and the filler cut/restore paths); always false in
+  // TD/routability modes regardless of the env var.
   // maybe_unused: same ENABLE_GPU-only readers as host_coords_fresh_.
   [[maybe_unused]] bool use_device_density_ = false;
 

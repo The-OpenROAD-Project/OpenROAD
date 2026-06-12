@@ -55,7 +55,8 @@ class GpuHpwlBackend : public HpwlBackend
 
   // Copies the device-resident per-net boxes of the last computeHpwl back to
   // the host GNet objects (OpenMP setBox fan-out). No-op before the first
-  // computeHpwl.
+  // computeHpwl, and also when the device buffers were sized for a different
+  // net count (i.e. computeHpwl has not rerun since the netlist changed).
   void mirrorNetBoxesToHost(std::vector<GNet>& nets) override;
 
   const char* name() const override { return "GPU (Kokkos)"; }

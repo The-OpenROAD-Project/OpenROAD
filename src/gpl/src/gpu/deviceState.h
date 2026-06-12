@@ -105,8 +105,11 @@ class DeviceState
   void refreshNetWeights(const std::vector<GNet>& gNetStor);
 
   // Re-push per-inst density params (half_dx, half_dy, density_scale) after
-  // the resize callback changes them. Static during the main Nesterov loop.
-  // TODO: hook from the resize callback path.
+  // they change. Called from NesterovBase::updateDensitySize (routability
+  // inflation, TD area changes); non-virtual TD iterations reload them
+  // through rebuild() instead. The call site skips this until initBinViews
+  // has allocated the views (numBins() guard). Static during the main
+  // Nesterov loop.
   void refreshDensityParams(const std::vector<GCell>& gCellStor);
 
   // Counts (for backends to size their own per-net / per-pin buffers).

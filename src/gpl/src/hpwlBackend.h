@@ -26,12 +26,14 @@ class GNet;
 // Host GNet box contract: the CPU backend updates every net's box as a side
 // effect of computeHpwl (GNet::updateBox, the legacy behavior). The GPU
 // backend keeps the boxes device-resident — mirroring them to the host cost
-// ~2.4 ms per call on a 290k-net design while (as of 2026-06) nothing reads
-// host GNet boxes on the GPU path: the only consumer,
-// updateWireLengthForceWA_native, runs solely under the CPU wirelength
-// backend. Callers that do need host boxes (or future host-side consumers)
-// must call mirrorNetBoxesToHost() first; NesterovPlace does this at the
-// timing-driven boundary and once after the Nesterov loop ends.
+// ~2-3 ms per call on a 290k-net design (D2H copies plus the setBox
+// fan-out) while (as of 2026-06) nothing reads host GNet boxes on the GPU
+// path: the only readers — updateWireLengthForceWA_native, which recomputes
+// the boxes itself via GNet::updateBox, and GNet::getHpwl under the CPU
+// HPWL backend — run only on CPU paths. Callers that do need host boxes (or
+// future host-side consumers) must call mirrorNetBoxesToHost() first;
+// NesterovPlace does this at the timing-driven boundary and once after the
+// Nesterov loop ends.
 class HpwlBackend
 {
  public:

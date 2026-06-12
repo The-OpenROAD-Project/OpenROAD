@@ -3473,12 +3473,17 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
-  debugPrint(log_,
-             GPL,
-             "updateNextIter",
-             1,
-             "Gradient: {:g}",
-             getSecondNorm(curSLPSumGrads_));
+  // curSLPSumGrads_ is host-stale on the device-resident path (grads live on
+  // the GPU and are pulled back only at snapshot boundaries), so the norm
+  // would read as 0 there — print it only when the host vector is live.
+  if (!nb_device_ctx_) {
+    debugPrint(log_,
+               GPL,
+               "updateNextIter",
+               1,
+               "Gradient: {:g}",
+               getSecondNorm(curSLPSumGrads_));
+  }
   debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", getSumPhi());
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_unscaled_);

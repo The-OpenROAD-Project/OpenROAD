@@ -21,8 +21,9 @@ namespace gpl {
 // kernels instead. A single thread walking a clock/reset-class net with tens
 // of thousands of pins serializes the whole launch: on a 67k-pin net the
 // serial inner loop measured ~15 ms/call while every other net combined took
-// ~0.5 ms. 1024 bounds the per-thread serial tail to ~0.1 ms and keeps the
-// team path off the common case (a handful of nets even on large designs).
+// ~0.5 ms. 1024 bounds the per-thread serial tail to a couple hundred µs and
+// keeps the team path off the common case (a handful of nets even on large
+// designs).
 constexpr int kHighFanoutThreshold = 1024;
 
 struct KokkosDeviceState
