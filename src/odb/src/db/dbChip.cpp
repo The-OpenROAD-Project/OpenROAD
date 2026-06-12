@@ -11,13 +11,17 @@
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
+#include "dbChipCapNode.h"
 #include "dbChipConn.h"
 #include "dbChipConnItr.h"
 #include "dbChipInst.h"
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
+#include "dbChipNetCapNodeItr.h"
 #include "dbChipNetItr.h"
+#include "dbChipNetRSegItr.h"
 #include "dbChipPath.h"
+#include "dbChipRSeg.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -117,6 +121,12 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (*chip_region_tbl_ != *rhs.chip_region_tbl_) {
     return false;
   }
+  if (*chip_cap_node_tbl_ != *rhs.chip_cap_node_tbl_) {
+    return false;
+  }
+  if (*chip_r_seg_tbl_ != *rhs.chip_r_seg_tbl_) {
+    return false;
+  }
   if (*marker_categories_tbl_ != *rhs.marker_categories_tbl_) {
     return false;
   }
@@ -175,6 +185,10 @@ _dbChip::_dbChip(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbPropertyObj);
   chip_region_tbl_ = new dbTable<_dbChipRegion>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRegionObj);
+  chip_cap_node_tbl_ = new dbTable<_dbChipCapNode>(
+      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipCapNodeObj);
+  chip_r_seg_tbl_ = new dbTable<_dbChipRSeg>(
+      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRSegObj);
   marker_categories_tbl_ = new dbTable<_dbMarkerCategory>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
   chip_path_tbl_ = new dbTable<_dbChipPath>(
@@ -189,6 +203,10 @@ _dbChip::_dbChip(_dbDatabase* db)
   block_itr_ = new dbBlockItr(block_tbl_);
 
   prop_itr_ = new dbPropertyItr(prop_tbl_);
+
+  chip_net_cap_node_itr_ = new dbChipNetCapNodeItr(chip_cap_node_tbl_);
+
+  chip_net_r_seg_itr_ = new dbChipNetRSegItr(chip_r_seg_tbl_);
   // User Code End Constructor
 }
 
@@ -258,6 +276,12 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipRegion)) {
     stream >> *obj.chip_region_tbl_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaChipParasitics)) {
+    stream >> *obj.chip_cap_node_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaChipParasitics)) {
+    stream >> *obj.chip_r_seg_tbl_;
+  }
   if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
   }
@@ -312,6 +336,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.nets_;
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
+  stream << *obj.chip_cap_node_tbl_;
+  stream << *obj.chip_r_seg_tbl_;
   stream << *obj.marker_categories_tbl_;
   // User Code Begin <<
   stream << *obj.block_tbl_;
@@ -330,6 +356,10 @@ dbObjectTable* _dbChip::getObjectTable(dbObjectType type)
       return prop_tbl_;
     case dbChipRegionObj:
       return chip_region_tbl_;
+    case dbChipCapNodeObj:
+      return chip_cap_node_tbl_;
+    case dbChipRSegObj:
+      return chip_r_seg_tbl_;
     case dbMarkerCategoryObj:
       return marker_categories_tbl_;
     case dbChipPathObj:
@@ -353,6 +383,8 @@ void _dbChip::collectMemInfo(MemInfo& info)
   info.children["marker_categories_map"].add(marker_categories_map_);
   prop_tbl_->collectMemInfo(info.children["prop_tbl_"]);
   chip_region_tbl_->collectMemInfo(info.children["chip_region_tbl_"]);
+  chip_cap_node_tbl_->collectMemInfo(info.children["chip_cap_node_tbl_"]);
+  chip_r_seg_tbl_->collectMemInfo(info.children["chip_r_seg_tbl_"]);
   marker_categories_tbl_->collectMemInfo(
       info.children["marker_categories_tbl_"]);
   chip_path_tbl_->collectMemInfo(info.children["chip_path_tbl_"]);
@@ -371,6 +403,8 @@ _dbChip::~_dbChip()
   }
   delete prop_tbl_;
   delete chip_region_tbl_;
+  delete chip_cap_node_tbl_;
+  delete chip_r_seg_tbl_;
   delete marker_categories_tbl_;
   delete chip_path_tbl_;
   // User Code Begin Destructor
@@ -378,6 +412,8 @@ _dbChip::~_dbChip()
   delete name_cache_;
   delete block_itr_;
   delete prop_itr_;
+  delete chip_net_cap_node_itr_;
+  delete chip_net_r_seg_itr_;
 
   while (!callbacks_.empty()) {
     auto _cbitr = callbacks_.begin();
@@ -584,6 +620,18 @@ dbSet<dbChipRegion> dbChip::getChipRegions() const
 {
   _dbChip* obj = (_dbChip*) this;
   return dbSet<dbChipRegion>(obj, obj->chip_region_tbl_);
+}
+
+dbSet<dbChipCapNode> dbChip::getChipCapNodes() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return dbSet<dbChipCapNode>(obj, obj->chip_cap_node_tbl_);
+}
+
+dbSet<dbChipRSeg> dbChip::getChipRSegs() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return dbSet<dbChipRSeg>(obj, obj->chip_r_seg_tbl_);
 }
 
 dbSet<dbMarkerCategory> dbChip::getMarkerCategories() const
