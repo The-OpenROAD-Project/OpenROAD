@@ -118,18 +118,26 @@ export function populateDisplayControls(app, visibility, selectability,
                 = new Set(JSON.parse(decodeURIComponent(raw)));
         }
     } catch (_) { /* ignore */ }
-    try {
-        const raw = getCookie('or_layer_patterns');
-        if (raw) savedLayerPatterns = JSON.parse(decodeURIComponent(raw));
-    } catch (_) { /* ignore */ }
-    try {
-        const raw = getCookie('or_layer_colors');
-        if (raw) savedLayerColors = JSON.parse(decodeURIComponent(raw));
-    } catch (_) { /* ignore */ }
-    try {
-        const raw = getCookie('or_layer_opacity');
-        if (raw) savedLayerOpacity = JSON.parse(decodeURIComponent(raw));
-    } catch (_) { /* ignore */ }
+    // Parse a cookie expected to hold a JSON object ({name: value}).  Guards
+    // against a corrupted/tampered cookie whose JSON is valid but not an object
+    // (e.g. "null" or a number) — using that directly would later throw in
+    // buildLayerSpec (hasOwnProperty.call(null, ...) / writing to a primitive).
+    const parseCookieObject = (name) => {
+        try {
+            const raw = getCookie(name);
+            if (raw) {
+                const parsed = JSON.parse(decodeURIComponent(raw));
+                if (parsed && typeof parsed === 'object'
+                    && !Array.isArray(parsed)) {
+                    return parsed;
+                }
+            }
+        } catch (_) { /* ignore */ }
+        return {};
+    };
+    savedLayerPatterns = parseCookieObject('or_layer_patterns');
+    savedLayerColors = parseCookieObject('or_layer_colors');
+    savedLayerOpacity = parseCookieObject('or_layer_opacity');
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
     // z-index and palette slot regardless of which chiplet it belongs to.
@@ -546,7 +554,7 @@ export function populateDisplayControls(app, visibility, selectability,
 
         const { dialog, close } = createModalDialog(`
             <div class="modal-dialog layer-config-dialog">
-            <h3>Layer Config — ${node.data.name}</h3>
+            <h3 id="lc-title"></h3>
             <div class="layer-config-row">
                 <label for="lc-color">Color</label>
                 <input type="color" id="lc-color" value="${rgbToHex(curColor)}">
@@ -566,6 +574,11 @@ export function populateDisplayControls(app, visibility, selectability,
                 <button id="lc-ok" class="primary">OK</button>
             </div>
             </div>`);
+
+        // Set the title via textContent (not HTML interpolation) so a layer
+        // name from the design can't inject markup.
+        dialog.querySelector('#lc-title').textContent
+            = 'Layer Config — ' + node.data.name;
 
         const colorInput = dialog.querySelector('#lc-color');
         const patternSelect = dialog.querySelector('#lc-pattern');

@@ -759,11 +759,9 @@ inline int posMod(const int v, const int m)
 // left empty; callers draw the outline separately).  Evaluated in global
 // coordinates so hatch lines line up across adjacent tiles.
 //
-// Called per interior pixel, but every call site guards with
-// `pattern != kSolid`, so the overwhelmingly common solid fill pays nothing;
-// only hatch/cross/diagonal fills (rare, user-selected) pay the modulo.  Kept
-// as a single inlinable predicate rather than per-pattern specialized loops to
-// avoid duplicating the scanline/rect rasterizers.
+// Call sites unswitch the loop on the (loop-invariant) pattern, so the common
+// solid fill never reaches here; only hatch/cross/diagonal fills (rare,
+// user-selected) call this, once per interior pixel.
 inline bool patternMask(const web::FillPattern pattern,
                         const int gx,
                         const int gy)
@@ -883,15 +881,26 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
           kTileSizeInPixel, static_cast<int>(std::ceil(x_intercepts[k + 1])));
       const int draw_y = 255 - iy;
       const int gy = px_origin_y + draw_y;
-      for (int ix = ix_min; ix < ix_max; ++ix) {
-        if (pattern != FillPattern::kSolid
-            && !patternMask(pattern, px_origin_x + ix, gy)) {
-          continue;
+      // Unswitch the loop on the (loop-invariant) pattern: the common solid
+      // fill avoids the per-pixel pattern test entirely.
+      if (pattern == FillPattern::kSolid) {
+        for (int ix = ix_min; ix < ix_max; ++ix) {
+          if (blend) {
+            blendPixel(image, ix, draw_y, color);
+          } else {
+            setPixel(image, ix, draw_y, color);
+          }
         }
-        if (blend) {
-          blendPixel(image, ix, draw_y, color);
-        } else {
-          setPixel(image, ix, draw_y, color);
+      } else {
+        for (int ix = ix_min; ix < ix_max; ++ix) {
+          if (!patternMask(pattern, px_origin_x + ix, gy)) {
+            continue;
+          }
+          if (blend) {
+            blendPixel(image, ix, draw_y, color);
+          } else {
+            setPixel(image, ix, draw_y, color);
+          }
         }
       }
     }
@@ -3774,15 +3783,24 @@ void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
     return;
   }
 
-  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
-    const int draw_y = (255 - iy);
-    const int gy = px_origin_y + draw_y;
-    for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
-      if (pattern != FillPattern::kSolid
-          && !patternMask(pattern, px_origin_x + ix, gy)) {
-        continue;
+  // Unswitch the loop on the (loop-invariant) pattern: the common solid fill
+  // avoids the per-pixel pattern test entirely.
+  if (pattern == FillPattern::kSolid) {
+    for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+      const int draw_y = (255 - iy);
+      for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+        setPixel(buffer, ix, draw_y, color);
       }
-      setPixel(buffer, ix, draw_y, color);
+    }
+  } else {
+    for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+      const int draw_y = (255 - iy);
+      const int gy = px_origin_y + draw_y;
+      for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+        if (patternMask(pattern, px_origin_x + ix, gy)) {
+          setPixel(buffer, ix, draw_y, color);
+        }
+      }
     }
   }
 }
