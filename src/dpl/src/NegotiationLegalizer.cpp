@@ -27,6 +27,7 @@
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -728,21 +729,13 @@ bool NegotiationLegalizer::initFromDb()
       }
     }
 
-    cell.flippable
-        = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
-    if (cell.height == 1) {
-      // Consider all single height cells flippable
-      cell.flippable = true;
-    }
-
     debugPrint(logger_,
                utl::DPL,
                "negotiation",
                2,
-               "DEBUG cell init: {} height={} flippable={}",
+               "DEBUG cell init: {} height={}",
                db_inst->getName(),
-               cell.height,
-               cell.flippable);
+               cell.height);
 
     if (padding_ != nullptr) {
       cell.pad_left = padding_->padLeft(db_inst).v;
@@ -1015,21 +1008,26 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  // Verify that the cell's site type is available on the target row.
-  if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
-    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-    if (site != nullptr
-        && !opendp_->grid_->getSiteOrientation(
-            GridX{gridX}, GridY{rowIdx}, site)) {
-      return false;
+  // Mirror Opendp::canBePlaced: the row must offer the cell's site, cell master
+  // must be able to take the orientation the row requires and a multi-row
+  // cell's power stack must line up across the span.
+  if (cell.db_inst != nullptr && opendp_ != nullptr && opendp_->grid_
+      && network_ != nullptr) {
+    auto* dbMaster = cell.db_inst->getMaster();
+    odb::dbSite* site = dbMaster->getSite();
+    if (site != nullptr) {
+      const auto orient = opendp_->grid_->getSiteOrientation(
+          GridX{gridX}, GridY{rowIdx}, site);
+      if (!orient) {
+        return false;
+      }
+      const unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
+      if (!opendp_->checkMasterSym(masterSym, orient.value())) {
+        return false;
+      }
     }
-  }
-  // Check the cell's bottom/top power against the actual spanned
-  // rows and accounts for flipping.  Single-height cells are always compatible
-  // (orientation is resolved separately via getSiteOrientation above).
-  if (cell.db_inst != nullptr && opendp_ != nullptr && network_ != nullptr) {
     Node* node = network_->getNode(cell.db_inst);
-    if (node != nullptr
+    if (node != nullptr && node->getMaster()->isMultiRow()
         && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
       debugPrint(logger_,
                  utl::DPL,

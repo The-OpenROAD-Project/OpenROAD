@@ -83,9 +83,8 @@ struct NegCell
   int pad_right{0};  // right padding (sites)
 
   bool fixed{false};
-  int fence_id{-1};      // -1 → default region
-  bool flippable{true};  // odd-height cells may require fliping for moving
-  bool legal{false};     // updated each negotiation iteration
+  int fence_id{-1};   // -1 → default region
+  bool legal{false};  // updated each negotiation iteration
 
   [[nodiscard]] int displacement() const
   {
