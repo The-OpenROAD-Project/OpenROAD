@@ -796,6 +796,13 @@ void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
   for (int l = min_routing_layer; l < max_routing_layer; l++) {
     odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
     odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    // Backside and frontside routing layers sit on opposite sides of the
+    // substrate, so "adjacent routing level" across the side boundary is
+    // not a physical neighbor relationship and direction agreement there
+    // is not a misconfiguration.
+    if (layer_a->isBackside() != layer_b->isBackside()) {
+      continue;
+    }
     if (layer_a->getDirection() == layer_b->getDirection()) {
       logger_->error(
           GRT,

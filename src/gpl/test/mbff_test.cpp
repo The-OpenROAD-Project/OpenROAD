@@ -70,10 +70,10 @@ class MBFFTestFixture : public tst::Fixture
                                               opendp_.get(),
                                               estimate_parasitics_.get());
 
-    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
     loadTechAndLib("test0",
                    "test0",
                    getFilePath("openroad/src/gpl/test/library/test/test0.lef"));
+    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");
