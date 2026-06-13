@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
 # Install binary and runfiles from bazel build
 
@@ -32,6 +32,8 @@ tar -xf "$TARFILE" -C "$DEST_DIR/bin"
 if [ -e "$DEST_DIR/bin/openroad.repo_mapping" ]; then
     chmod u+w "$DEST_DIR/bin/openroad.repo_mapping"
     rm -rf "$DEST_DIR/bin/openroad.repo_mapping"
+    chmod u+w "$DEST_DIR/bin/openroad.runfiles"
+    rm -rf "$DEST_DIR/bin/openroad.runfiles"
 fi
 
 ABS_DEST="$(realpath "$DEST_DIR")"
