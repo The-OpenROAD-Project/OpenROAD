@@ -187,6 +187,7 @@ OPENROAD_MAIN_DEPS = [
     "//src/utl",
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
+    "@boost.dll",
     "@boost.stacktrace",
     "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
     "@tcl_lang//:tcl",

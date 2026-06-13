@@ -819,6 +819,46 @@ struct less<odb::dbTechLayerWrongDirSpacingRule*>
       = delete;
 };
 
+template <>
+struct less<odb::dbUnfoldedChipBumpInst*>
+{
+  bool operator()(const odb::dbUnfoldedChipBumpInst* lhs,
+                  const odb::dbUnfoldedChipBumpInst* rhs) const
+      = delete;
+};
+
+template <>
+struct less<odb::dbUnfoldedChipConn*>
+{
+  bool operator()(const odb::dbUnfoldedChipConn* lhs,
+                  const odb::dbUnfoldedChipConn* rhs) const
+      = delete;
+};
+
+template <>
+struct less<odb::dbUnfoldedChipInst*>
+{
+  bool operator()(const odb::dbUnfoldedChipInst* lhs,
+                  const odb::dbUnfoldedChipInst* rhs) const
+      = delete;
+};
+
+template <>
+struct less<odb::dbUnfoldedChipNet*>
+{
+  bool operator()(const odb::dbUnfoldedChipNet* lhs,
+                  const odb::dbUnfoldedChipNet* rhs) const
+      = delete;
+};
+
+template <>
+struct less<odb::dbUnfoldedChipRegionInst*>
+{
+  bool operator()(const odb::dbUnfoldedChipRegionInst* lhs,
+                  const odb::dbUnfoldedChipRegionInst* rhs) const
+      = delete;
+};
+
 // Generator Code End Less
 
 }  // namespace std

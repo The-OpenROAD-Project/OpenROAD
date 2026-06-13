@@ -44,8 +44,6 @@ generate_ram [-mask_size bits]
              [-storage_cell name]
              [-tristate_cell name]
              [-inv_cell name]
-             -power_pin name
-             -ground_pin name
              [-power_net_name name]
              [-ground_net_name name]
              -routing_layer config
@@ -71,8 +69,6 @@ generate_ram [-mask_size bits]
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
-| `-power_pin` | Name of the power pin in each standard cell used. Only one name is currently supported. |
-| `-ground_pin` | Name of the ground pin in each standard cell used. Only one name is currently supported. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |
 | `-ground_net_name` | Name of the ground net to create. Default: `VSS`. |

@@ -133,8 +133,6 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-storage_cell name]
                                      [-tristate_cell name]
                                      [-inv_cell name]
-                                     -power_pin name
-                                     -ground_pin name
                                      [-power_net_name name]
                                      [-ground_net_name name]
                                      -routing_layer config
@@ -152,10 +150,10 @@ proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio
            -storage_cell -tristate_cell -inv_cell -rw_ports
-           -r_ports -w_ports -use_latch -power_pin -ground_pin
-           -power_net_name -ground_net_name -routing_layer
-           -ver_layer -hor_layer -filler_cells -tapcell
-           -max_tap_dist -write_behavioral_verilog } flags {}
+           -r_ports -w_ports -use_latch -power_net_name
+           -ground_net_name -routing_layer -ver_layer
+           -hor_layer -filler_cells -tapcell -max_tap_dist
+           -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -220,18 +218,6 @@ proc generate_ram { args } {
   generate_ram_netlist {*}$ram_netlist_args
 
   ord::design_created
-
-  if { [info exists keys(-power_pin)] } {
-    set power_pin $keys(-power_pin)
-  } else {
-    utl::error RAM 5 "The -power_pin argument must be specified."
-  }
-
-  if { [info exists keys(-ground_pin)] } {
-    set ground_pin $keys(-ground_pin)
-  } else {
-    utl::error RAM 6 "The -ground_pin argument must be specified."
-  }
 
   set power_net_name "VDD"
   if { [info exists keys(-power_net_name)] } {
@@ -300,7 +286,7 @@ proc generate_ram { args } {
     utl::error RAM 18 "The -filler_cells argument must be specified."
   }
 
-  ram::ram_pdngen $power_pin $ground_pin $power_net_name $ground_net_name \
+  ram::ram_pdngen $power_net_name $ground_net_name \
     $route_name $route_width \
     $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 

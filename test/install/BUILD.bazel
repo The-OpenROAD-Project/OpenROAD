@@ -6,7 +6,13 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 sh_test(
     name = "install_test",
     srcs = ["install_test.sh"],
-    args = ["$(rootpath //packaging:tarfile)"],
-    data = ["//packaging:tarfile"],
+    args = [
+        "$(rootpath //packaging:tarfile)",
+        "$(rootpath //bazel:install.sh)",
+    ],
+    data = [
+        "//bazel:install.sh",
+        "//packaging:tarfile",
+    ],
     tags = ["local"],
 )

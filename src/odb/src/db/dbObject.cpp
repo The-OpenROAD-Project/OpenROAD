@@ -125,6 +125,11 @@ static const char* name_tbl[] = {"dbGDSLib",
                                  "dbTechLayerVoltageSpacing",
                                  "dbTechLayerWidthTableRule",
                                  "dbTechLayerWrongDirSpacingRule",
+                                 "dbUnfoldedChipBumpInst",
+                                 "dbUnfoldedChipConn",
+                                 "dbUnfoldedChipInst",
+                                 "dbUnfoldedChipNet",
+                                 "dbUnfoldedChipRegionInst",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects
@@ -247,6 +252,11 @@ static const std::unordered_map<uint32_t, dbObjectType> hash_to_object_type
        {0x690396A7, dbTechLayerVoltageSpacingObj},
        {0x7BF3D392, dbTechLayerWidthTableRuleObj},
        {0xF73FA7DF, dbTechLayerWrongDirSpacingRuleObj},
+       {0x4BB868CC, dbUnfoldedChipBumpInstObj},
+       {0x20B450B6, dbUnfoldedChipConnObj},
+       {0x18591EB8, dbUnfoldedChipInstObj},
+       {0x5650CD93, dbUnfoldedChipNetObj},
+       {0xB0EB213C, dbUnfoldedChipRegionInstObj},
        // Generator Code End HashToObjectType
 
        // Lib Objects
@@ -370,6 +380,11 @@ static const std::unordered_map<dbObjectType, uint32_t> object_type_to_hash
        {dbTechLayerVoltageSpacingObj, 0x690396A7},
        {dbTechLayerWidthTableRuleObj, 0x7BF3D392},
        {dbTechLayerWrongDirSpacingRuleObj, 0xF73FA7DF},
+       {dbUnfoldedChipBumpInstObj, 0x4BB868CC},
+       {dbUnfoldedChipConnObj, 0x20B450B6},
+       {dbUnfoldedChipInstObj, 0x18591EB8},
+       {dbUnfoldedChipNetObj, 0x5650CD93},
+       {dbUnfoldedChipRegionInstObj, 0xB0EB213C},
        // Generator Code End ObjectTypeToHash
 
        // Lib Objects

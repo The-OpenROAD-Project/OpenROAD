@@ -4,6 +4,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -235,7 +236,7 @@ void GlobalRouter::saveCongestion()
     fastroute_->saveCongestion();
   }
 
-  if (congestion_file_name_ != nullptr) {
+  if (congestion_file_name_ != nullptr && *congestion_file_name_ != '\0') {
     odb::dbMarkerCategory* tool_category
         = block_->findMarkerCategory("Global route");
     if (tool_category != nullptr) {
@@ -541,15 +542,31 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
     // Repopulate edge usage from routes_ using updateNetResources, which
-    // uses layer_edge_cost (essential to NDR nets).
+    // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
+    // there is too much congestion
+    std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
+    int net_id;
+    bool exists;
     for (const auto& [db_net, groute] : routes_) {
       if (!isDetailedRouted(db_net)) {
         auto it = db_net_map_.find(db_net);
         if (it != db_net_map_.end()) {
           updateNetResources(it->second, false);
+          // Mark the net so congestion-loop releases use the matching
+          // GRoute-based path (updateNetResources) rather than the
+          // sttree-based clearNetRoute (which sees empty sttrees here
+          // and would leave the 3D usage un-released, causing underflow).
+          it->second->setAreSegmentsRestored(true);
+          if (db_net->getNonDefaultRule() != nullptr) {
+            fastroute_->getNetId(db_net, net_id, exists);
+            ndr_nets.emplace_back(db_net, net_id);
+          }
         }
       }
     }
+    // Disable the extra edge cost for NDR nets on congested 2D edges.
+    // Uses routes_ segments directly since sttrees are not yet populated.
+    disableCongestedNDRNetsFromRoutes(ndr_nets);
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -779,6 +796,13 @@ void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
   for (int l = min_routing_layer; l < max_routing_layer; l++) {
     odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
     odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    // Backside and frontside routing layers sit on opposite sides of the
+    // substrate, so "adjacent routing level" across the side boundary is
+    // not a physical neighbor relationship and direction agreement there
+    // is not a misconfiguration.
+    if (layer_a->isBackside() != layer_b->isBackside()) {
+      continue;
+    }
     if (layer_a->getDirection() == layer_b->getDirection()) {
       logger_->error(
           GRT,
@@ -1041,6 +1065,50 @@ void GlobalRouter::updateNetResources(Net* net, bool release_resources)
                       net->getDbNet());
     }
   }
+}
+
+// Disable NDR for any NDR net in ndr_nets that occupies a congested 2D edge,
+// using routes_ segments (real coords) instead of sttrees. This is needed
+// when repairAntennas starts from an uninitialized state where sttrees are
+// empty but routes_ is populated from ODB guides.
+void GlobalRouter::disableCongestedNDRNetsFromRoutes(
+    const std::vector<std::pair<odb::dbNet*, int>>& ndr_nets)
+{
+  using GridSeg = std::array<int, 5>;  // x0, y0, x1, y1, layer
+  std::vector<std::pair<int, std::vector<GridSeg>>> net_grid_segs;
+
+  for (const auto& [db_net, net_id] : ndr_nets) {
+    auto it = routes_.find(db_net);
+    if (it == routes_.end()) {
+      continue;
+    }
+    std::vector<GridSeg> segs;
+    for (const GSegment& seg : it->second) {
+      if (seg.isVia()) {
+        continue;
+      }
+      const int x0
+          = std::max(0,
+                     (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize());
+      const int y0
+          = std::max(0,
+                     (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize());
+      const int x1
+          = std::min((std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize(),
+                     grid_->getXGrids() - 1);
+      const int y1
+          = std::min((std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize(),
+                     grid_->getYGrids() - 1);
+      segs.push_back({x0, y0, x1, y1, seg.final_layer});
+    }
+    net_grid_segs.emplace_back(net_id, std::move(segs));
+  }
+
+  fastroute_->disableNDRNetsFromGridRoutes(net_grid_segs);
 }
 
 // This function is not currently enabled
@@ -1533,10 +1601,9 @@ bool GlobalRouter::pinPositionsChanged(Net* net)
 bool GlobalRouter::newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos)
 {
   for (const Pin& pin : net->getPins()) {
-    if (last_pos.find(RoutePt(pin.getOnGridPosition().getX(),
-                              pin.getOnGridPosition().getY(),
-                              pin.getConnectionLayer()))
-        == last_pos.end()) {
+    if (!last_pos.contains(RoutePt(pin.getOnGridPosition().getX(),
+                                   pin.getOnGridPosition().getY(),
+                                   pin.getConnectionLayer()))) {
       return true;
     }
   }
@@ -1658,18 +1725,22 @@ void GlobalRouter::computeTrackConsumption(
 
     for (odb::dbTechLayerRule* layer_rule : layer_rules) {
       int layerIdx = layer_rule->getLayer()->getRoutingLevel();
-      if (layerIdx > net_max_layer || layerIdx < net_min_layer) {
+
+      if (layerIdx > getMaxRoutingLayer() || layerIdx < getMinRoutingLayer()) {
         continue;
       }
+
       RoutingTracks routing_tracks = getRoutingTracksByIndex(layerIdx);
       int default_width = layer_rule->getLayer()->getWidth();
       int default_pitch = routing_tracks.getTrackPitch();
+      int default_spacing = default_pitch - default_width;
 
       int ndr_spacing = layer_rule->getSpacing();
       int ndr_width = layer_rule->getWidth();
-      int ndr_pitch = ndr_width / 2 + ndr_spacing + default_width / 2;
+      int ndr_pitch = (ndr_width + 2 * ndr_spacing + default_width) / 2;
 
-      int consumption = std::ceil((float) ndr_pitch / default_pitch);
+      // Account for both sides
+      int consumption = 2 * std::ceil((float) ndr_pitch / default_pitch) - 1;
       if (consumption > std::numeric_limits<int8_t>::max()) {
         logger_->error(GRT,
                        272,
@@ -1682,12 +1753,23 @@ void GlobalRouter::computeTrackConsumption(
       track_consumption
           = std::max(track_consumption, static_cast<int8_t>(consumption));
 
+      if (logger_->debugCheck(GRT, "ndrInfo", 2)) {
+        logger_->report(
+            "default_width: {} default_spacing: {} default_pitch: {} "
+            "ndr_spacing: {} ndr_width: {} ndr_pitch: {}",
+            default_width,
+            default_spacing,
+            default_pitch,
+            ndr_spacing,
+            ndr_width,
+            ndr_pitch);
+      }
       if (logger_->debugCheck(GRT, "ndrInfo", 1)) {
         logger_->report(
             "Net: {} NDR cost in {} (float/int): {}/{}  Edge cost: {}",
             net->getConstName(),
             layer_rule->getLayer()->getConstName(),
-            (float) ndr_pitch / default_pitch,
+            2 * (float) ndr_pitch / default_pitch - 1,
             consumption,
             track_consumption);
       }
@@ -2484,7 +2566,7 @@ void GlobalRouter::readGuides(const char* file_name)
         continue;
       }
 
-      if (db_net_map_.find(net) == db_net_map_.end()) {
+      if (!db_net_map_.contains(net)) {
         logger_->warn(GRT,
                       250,
                       "Net {} has guides but is not routed by the global "
@@ -2707,7 +2789,7 @@ void GlobalRouter::addImplicitVias(GRoute& route)
       // present but not metal3) signals a missing intermediate segment, a
       // different problem we do not paper over here.
       if (prev_layer != -1 && layer == prev_layer + 1
-          && existing_vias.count({point.first, point.second, prev_layer})
+          && existing_vias.contains({point.first, point.second, prev_layer})
                  == 0) {
         bridges.emplace_back(point.first,
                              point.second,
@@ -2850,12 +2932,12 @@ void GlobalRouter::fillTileSizeMaps(
 {
   for (const auto& [net, guides] : net_guides) {
     for (const auto& guide : guides) {
-      if (tile_size_x_map.find(guide.second.dx()) == tile_size_x_map.end()) {
+      if (!tile_size_x_map.contains(guide.second.dx())) {
         tile_size_x_map[guide.second.dx()] = 1;
       } else {
         tile_size_x_map[guide.second.dx()]++;
       }
-      if (tile_size_y_map.find(guide.second.dy()) == tile_size_y_map.end()) {
+      if (!tile_size_y_map.contains(guide.second.dy())) {
         tile_size_y_map[guide.second.dy()] = 1;
       } else {
         tile_size_y_map[guide.second.dy()]++;
@@ -3427,8 +3509,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
-    if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        && net->getNumPins() > 1) {
+    if (pad_pins_connections_.contains(db_net) && net->getNumPins() > 1) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }
@@ -3614,7 +3695,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     logger_->error(GRT, 81, "Invalid pin type. Expected Iterm or Bterm.");
   }
 
-  if (routes_.find(db_net) == routes_.end()) {
+  if (!routes_.contains(db_net)) {
     logger_->error(
         GRT, 82, "Didn't find a route for net {}", db_net->getName());
   }
@@ -3686,7 +3767,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     }
 
     for (const RoutePt& neighbor : adj[curr]) {
-      if (visited.find(neighbor) == visited.end()) {
+      if (!visited.contains(neighbor)) {
         visited.insert(neighbor);
         parent[neighbor] = curr;
         q.push(neighbor);
@@ -3854,7 +3935,7 @@ float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
     }
 
     for (const RoutePt& neighbor : adj[curr]) {
-      if (visited.find(neighbor) == visited.end()) {
+      if (!visited.contains(neighbor)) {
         visited.insert(neighbor);
         parent[neighbor] = curr;
         q.push(neighbor);
@@ -4248,7 +4329,7 @@ static void getViaDims(
   prl_up = -1;
   width_down = -1;
   prl_down = -1;
-  if (default_vias.find(tech_layer) != default_vias.end()) {
+  if (default_vias.contains(tech_layer)) {
     for (auto box : default_vias[tech_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
         width_up = std::min(box->getDX(), box->getDY());
@@ -4257,7 +4338,7 @@ static void getViaDims(
       }
     }
   }
-  if (default_vias.find(bottom_layer) != default_vias.end()) {
+  if (default_vias.contains(bottom_layer)) {
     for (auto box : default_vias[bottom_layer]->getBoxes()) {
       if (box->getTechLayer() == tech_layer) {
         width_down = std::min(box->getDX(), box->getDY());
@@ -4534,7 +4615,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
       && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
-    if (db_net_map_.find(db_net) != db_net_map_.end()) {
+    if (db_net_map_.contains(db_net)) {
       delete db_net_map_[db_net];
     }
     db_net_map_[db_net] = net;
@@ -4546,64 +4627,72 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
-  auto it = db_net_map_.find(db_net);
-  if (it == db_net_map_.end() || it->second == nullptr) {
+  if (db_net == nullptr) {
     return;
   }
-  Net* deleted_net = it->second;
 
-  if (deleted_net->isMergedNet()) {
-    Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
-    if (preserved_net->areSegmentsRestored()
-        && deleted_net->areSegmentsRestored()) {
-      // Both preserved and deleted nets have segments restored from ODB. Do
-      // nothing to 3D resources, as the resources used by the deleted net were
-      // included in the preserved net.
-      // clearNetRoute releases sttrees usage (no-op for restored nets) but
-      // keeps db_net in db_net_id_map_; deleteNet then removes the stale entry
-      // so future nets at the same pointer address find no mapping.
-      fastroute_->clearNetRoute(db_net);
-      fastroute_->deleteNet(db_net);
-    } else if (preserved_net->areSegmentsRestored()) {
-      // If preserved net has segments restored from ODB, it won't have routing
-      // data inside FastRouteCore. Instead of merging the deleted net into
-      // preserved net, we just remove it from FastRouteCore and account for its
-      // resources manually with updateNetResources.
-      // clearNetRoute releases the tree usage but keeps db_net in
-      // db_net_id_map_, so updateNetResources can look up the correct
-      // edge_cost. deleteNet then removes the net from the map.
-      fastroute_->clearNetRoute(db_net);
-      updateNetResources(deleted_net, false);
-      fastroute_->deleteNet(db_net);
-    } else if (deleted_net->areSegmentsRestored()) {
-      // If deleted net has segments restored from ODB, we need to mark the
-      // preserved net as having segments restore to ensure proper handling of
-      // the capacities used by the deleted net.
-      // Remove usage from the preserved net.
-      fastroute_->clearNetRoute(preserved_net->getDbNet());
-      fastroute_->clearNetRoute(db_net);
-      // Remove usage from the deleted net.
-      updateNetResources(deleted_net, true);
-      fastroute_->deleteNet(db_net);
-      preserved_net->setAreSegmentsRestored(true);
-      // Include usage of the merged net.
-      updateNetResources(preserved_net, false);
-    } else {
-      fastroute_->mergeNet(db_net, preserved_net->getDbNet());
-    }
+  if (use_cugr_) {
+    cugr_->removeNet(db_net);
   } else {
-    if (deleted_net->areSegmentsRestored()) {
-      fastroute_->clearNetRoute(db_net);
-      updateNetResources(deleted_net, true);
-      fastroute_->deleteNet(db_net);
-    } else {
-      fastroute_->removeNet(db_net);
+    auto it = db_net_map_.find(db_net);
+    if (it == db_net_map_.end() || it->second == nullptr) {
+      return;
     }
+    Net* deleted_net = it->second;
+
+    if (deleted_net->isMergedNet()) {
+      Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
+      if (preserved_net->areSegmentsRestored()
+          && deleted_net->areSegmentsRestored()) {
+        // Both preserved and deleted nets have segments restored from ODB. Do
+        // nothing to 3D resources, as the resources used by the deleted net
+        // were included in the preserved net. clearNetRoute releases sttrees
+        // usage (no-op for restored nets) but keeps db_net in db_net_id_map_;
+        // deleteNet then removes the stale entry so future nets at the same
+        // pointer address find no mapping.
+        fastroute_->clearNetRoute(db_net);
+        fastroute_->deleteNet(db_net);
+      } else if (preserved_net->areSegmentsRestored()) {
+        // If preserved net has segments restored from ODB, it won't have
+        // routing data inside FastRouteCore. Instead of merging the deleted net
+        // into preserved net, we just remove it from FastRouteCore and account
+        // for its resources manually with updateNetResources. clearNetRoute
+        // releases the tree usage but keeps db_net in db_net_id_map_, so
+        // updateNetResources can look up the correct edge_cost. deleteNet then
+        // removes the net from the map.
+        fastroute_->clearNetRoute(db_net);
+        updateNetResources(deleted_net, false);
+        fastroute_->deleteNet(db_net);
+      } else if (deleted_net->areSegmentsRestored()) {
+        // If deleted net has segments restored from ODB, we need to mark the
+        // preserved net as having segments restore to ensure proper handling of
+        // the capacities used by the deleted net.
+        // Remove usage from the preserved net.
+        fastroute_->clearNetRoute(preserved_net->getDbNet());
+        fastroute_->clearNetRoute(db_net);
+        // Remove usage from the deleted net.
+        updateNetResources(deleted_net, true);
+        fastroute_->deleteNet(db_net);
+        preserved_net->setAreSegmentsRestored(true);
+        // Include usage of the merged net.
+        updateNetResources(preserved_net, false);
+      } else {
+        fastroute_->mergeNet(db_net, preserved_net->getDbNet());
+      }
+    } else {
+      if (deleted_net->areSegmentsRestored()) {
+        fastroute_->clearNetRoute(db_net);
+        updateNetResources(deleted_net, true);
+        fastroute_->deleteNet(db_net);
+      } else {
+        fastroute_->removeNet(db_net);
+      }
+    }
+    delete deleted_net;
+    db_net_map_.erase(db_net);
+    dirty_nets_.erase(db_net);
+    routes_.erase(db_net);
   }
-  delete deleted_net;
-  db_net_map_.erase(db_net);
-  dirty_nets_.erase(db_net);
-  routes_.erase(db_net);
 }
 
 void GlobalRouter::updateNetPins(Net* net)
@@ -4947,11 +5036,11 @@ bool GlobalRouter::layerIsBlocked(
 
   // if layer is max or min, then all obs the nearest layer are added
   if (layer == getMaxRoutingLayer()
-      && macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
+      && macro_obs_per_layer.contains(layer - 1)) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
   }
   if (layer == getMinRoutingLayer()
-      && macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
+      && macro_obs_per_layer.contains(layer + 1)) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
   }
 
@@ -4959,10 +5048,10 @@ bool GlobalRouter::layerIsBlocked(
   std::vector<odb::Rect> lower_obs;
 
   // Get Rect vector to layer + 1 and layer - 1
-  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
+  if (macro_obs_per_layer.contains(layer + 1)) {
     upper_obs = macro_obs_per_layer.at(layer + 1);
   }
-  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
+  if (macro_obs_per_layer.contains(layer - 1)) {
     lower_obs = macro_obs_per_layer.at(layer - 1);
   }
 
@@ -5864,7 +5953,7 @@ void GlobalRouter::reportNetWireLength(odb::dbNet* net,
 
   block_ = db_->getChip()->getBlock();
   if (global_route) {
-    if (routes_.find(net) == routes_.end()) {
+    if (!routes_.contains(net)) {
       logger_->warn(
           GRT, 241, "Net {} does not have global route.", net->getName());
       return;
@@ -6151,7 +6240,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     mergeResults(new_route);
 
     bool reroutingOverflow = true;
-    if (fastroute_->has2Doverflow() && !allow_congestion_) {
+    if (fastroute_->totalOverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
@@ -6161,7 +6250,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max >= 0) {
+      while (fastroute_->totalOverflow() && reroutingOverflow && add_max >= 0) {
         // The nets that cross the congestion area are obtained and added to
         // the set
         // if the nets have wires
@@ -6204,10 +6293,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
         mergeResults(new_route);
         add_max--;
       }
-      if (fastroute_->has2Doverflow()) {
+      if (fastroute_->totalOverflow()) {
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
+        reportCongestion();
         // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,
@@ -6238,8 +6328,7 @@ void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
     odb::Point& position = itr.first;
     bool& is_horizontal = itr.second;
     // Find nets with horizontal wires on congestion areas
-    if (is_horizontal
-        && h_nets_in_pos_.find(position) != h_nets_in_pos_.end()) {
+    if (is_horizontal && h_nets_in_pos_.contains(position)) {
       for (odb::dbNet* db_net : h_nets_in_pos_.at(position)) {
         // Avoid modifying supply nets
         if (!db_net->getSigType().isSupply()) {
@@ -6248,8 +6337,7 @@ void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
       }
     }
     // Find nets with vertical wires on congestion areas
-    if (!is_horizontal
-        && v_nets_in_pos_.find(position) != v_nets_in_pos_.end()) {
+    if (!is_horizontal && v_nets_in_pos_.contains(position)) {
       for (odb::dbNet* db_net : v_nets_in_pos_.at(position)) {
         // Avoid modifying supply nets
         if (!db_net->getSigType().isSupply()) {
