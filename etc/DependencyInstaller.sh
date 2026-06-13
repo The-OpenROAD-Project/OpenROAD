@@ -713,7 +713,14 @@ _install_abseil() {
     else
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
     fi
-    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
+    # Emit both the upper- and lower-case root hints. find_package(absl) only
+    # honors the upper-case ABSL_ROOT under policy CMP0144 NEW, but the root
+    # CMakeLists forces CMP0144 OLD on CMake >= 3.27, which silently drops it.
+    # The lower-case absl_ROOT is honored by CMP0074 NEW (already set), matching
+    # ortools_ROOT, so the prefix wins over a system absl regardless of CMP0144.
+    local absl_root_real
+    absl_root_real=$(realpath "${absl_prefix_found}")
+    CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=${absl_root_real} -D absl_ROOT=${absl_root_real} "
 }
 
 # Returns 0 if the given directory looks like a dedicated or-tools install
