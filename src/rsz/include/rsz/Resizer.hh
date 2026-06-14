@@ -379,6 +379,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   int max_passes);
   int holdBufferCount() const;
 
+  // Drop interned STA search state and recompute timing so a stale CRPR clock
+  // path left by incremental repairs is not walked later (#10210 workaround;
+  // graph/parasitics/delays kept). See the definition.
+  void resetSearchAfterRepair();
+
   ////////////////////////////////////////////////////////////////
   bool recoverPower(float recover_power_percent,
                     bool match_cell_footprint,
