@@ -16,6 +16,10 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 "$5" "$6"
 "$7" "$8" || rc=$?
 
+# Python: auto-format then check formatting
+"$9" "${10}"
+"${11}" "${12}" || rc=$?
+
 git -C "$BUILD_WORKSPACE_DIRECTORY" status
 
 if [ "${rc:-0}" -ne 0 ]; then
