@@ -536,6 +536,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSetFocusNets(req, state);
         });
+  d.add("select_fanout_bin",
+        WebSocketRequest::kSelectFanoutBin,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleSelectFanoutBin(req, state);
+        });
   d.add("set_route_guides",
         WebSocketRequest::kSetRouteGuides,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -961,6 +966,105 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
     boost::json::object root;
     root["ok"] = 1;
     root["count"] = static_cast<int>(state.focus_net_ids.size());
+    writePayload(resp, root);
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSelectFanoutBin(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    const int lower = static_cast<int>(req.json.at("lower").as_int64());
+    const int upper = static_cast<int>(req.json.at("upper").as_int64());
+
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("no design loaded");
+    }
+
+    std::vector<odb::dbNet*> matched;
+    for (odb::dbNet* net : block->getNets()) {
+      if (net->getSigType().isSupply()) {
+        continue;
+      }
+      const int term_count = static_cast<int>(net->getITermCount())
+                             + static_cast<int>(net->getBTermCount());
+      const int fanout = std::max(0, term_count - 1);
+      if (fanout >= lower && fanout < upper) {
+        matched.push_back(net);
+      }
+    }
+
+    boost::json::object root;
+    root["count"] = static_cast<int>(matched.size());
+
+    // Selecting/highlighting every net in a densely populated bin (tens of
+    // thousands of nets in a large design) is prohibitively expensive and can
+    // hang or exhaust memory. Cap the selection so navigation stays usable
+    // while reporting the true bin count above.
+    constexpr size_t kMaxFanoutSelection = 1000;
+    const bool truncated = matched.size() > kMaxFanoutSelection;
+    if (truncated) {
+      matched.resize(kMaxFanoutSelection);
+    }
+    root["truncated"] = truncated;
+    root["selection_limit"] = static_cast<int>(kMaxFanoutSelection);
+
+    if (!matched.empty()) {
+      // STA-touching code (descriptors, getProperties) must hold the
+      // shared STA lock.
+      std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+      auto* registry = gui::DescriptorRegistry::instance();
+      gui::SelectionSet new_selection;
+      for (auto* n : matched) {
+        new_selection.insert(registry->makeSelected(n));
+      }
+      gui::Selected first = registry->makeSelected(matched.front());
+
+      std::vector<gui::Selected> new_selectables;
+      writeInspectPayload(root,
+                          first,
+                          new_selectables,
+                          /*can_navigate_back=*/false);
+      {
+        std::lock_guard<std::mutex> lock(state.selectables_mutex);
+        state.selectables = std::move(new_selectables);
+      }
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        state.hover_rects.clear();
+        state.timing_rects.clear();
+        state.timing_lines.clear();
+        state.navigation_history.clear();
+
+        state.selection_set = std::move(new_selection);
+        state.selection_itr = state.selection_set.find(first);
+        if (state.selection_itr == state.selection_set.end()) {
+          state.selection_itr = state.selection_set.begin();
+        }
+        // Highlight every selected net in the layout.
+        collectMultiHighlightShapes(
+            state.selection_set, state.highlight_rects, state.highlight_polys);
+        state.current_inspected = first;
+
+        root["selection_count"]
+            = static_cast<int64_t>(state.selection_set.size());
+        root["selection_index"]
+            = static_cast<int64_t>(selectionIteratorPosition(
+                state.selection_set, state.selection_itr));
+      }
+    }
+
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -1610,6 +1714,11 @@ void TimingHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleSlackHistogram(req);
         });
+  d.add("fanout_histogram",
+        WebSocketRequest::kFanoutHistogram,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleFanoutHistogram(req);
+        });
   d.add("chart_filters",
         WebSocketRequest::kChartFilters,
         [this](const WebSocketRequest& req, SessionState&) {
@@ -1720,6 +1829,25 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
         jsonOr<std::string>(req.json, "path_group", ""),
         jsonOr<std::string>(req.json, "clock_name", ""));
     writePayload(resp, serializeSlackHistogram(histogram));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleFanoutHistogram(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    odb::dbBlock* block = gen_->getBlock();
+    auto histogram = computeFanoutHistogram(block);
+    writePayload(resp, serializeFanoutHistogram(histogram));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
