@@ -22,12 +22,14 @@ target_sources(cut
     abc_library_factory.cpp
     logic_extractor.cpp
     logic_cut.cpp
+    utils.cpp
 )
 
 target_link_libraries(cut
   PUBLIC
     rsz_lib
     ${ABC_LIBRARY}
+    ${MOCKTURTLE_LIBRARY}
   PRIVATE
     odb
     dbSta

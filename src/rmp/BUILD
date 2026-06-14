@@ -35,13 +35,23 @@ cc_library(
 cc_library(
     name = "optimization_strategies",
     srcs = [
+        "src/annealing_strategy.cpp",
         "src/delay_optimization_strategy.cpp",
+        "src/emap_strategy.cpp",
+        "src/genetic_strategy.cpp",
+        "src/gia.cpp",
+        "src/slack_tuning_strategy.cpp",
         "src/zero_slack_strategy.cpp",
     ],
     hdrs = [
+        "src/annealing_strategy.h",
         "src/delay_optimization_strategy.h",
+        "src/emap_strategy.h",
+        "src/genetic_strategy.h",
+        "src/gia.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
+        "src/slack_tuning_strategy.h",
         "src/zero_slack_strategy.h",
     ],
     defines = ["ABC_NAMESPACE=abc"],
@@ -52,11 +62,15 @@ cc_library(
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//third-party:mockturtle",
         "@abc",
         "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
     ],
 )
@@ -65,14 +79,6 @@ cc_library(
     name = "rmp",
     srcs = [
         "src/Restructure.cpp",
-        "src/annealing_strategy.cpp",
-        "src/annealing_strategy.h",
-        "src/genetic_strategy.cpp",
-        "src/genetic_strategy.h",
-        "src/gia.cpp",
-        "src/gia.h",
-        "src/slack_tuning_strategy.cpp",
-        "src/slack_tuning_strategy.h",
     ],
     hdrs = [
         "include/rmp/Restructure.h",
@@ -84,7 +90,6 @@ cc_library(
     ],
     deps = [
         ":optimization_strategies",
-        ":utils",
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -93,8 +98,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
-        "@abseil-cpp//absl/hash",
-        "@abseil-cpp//absl/random:distributions",
     ],
 )
 

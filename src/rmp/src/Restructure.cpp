@@ -28,6 +28,7 @@
 #include "cut/abc_init.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
+#include "emap_strategy.h"
 #include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -725,4 +726,18 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   }
   return status;
 }
+
+void Restructure::resynthEmap(sta::Scene* scene)
+{
+  EmapStrategy emap_strategy(scene,
+                             emap_map_multioutput_,
+                             emap_verbose_,
+                             emap_create_po_buffers_,
+                             emap_insert_buffers_,
+                             emap_min_drive_resistance_,
+                             emap_max_drive_resistance_);
+
+  emap_strategy.OptimizeDesign(open_sta_, name_generator_, resizer_, logger_);
+}
+
 }  // namespace rmp

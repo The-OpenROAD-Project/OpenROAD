@@ -543,8 +543,7 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
       // If pin isn't a primary input or output add to deleted list. The only
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.
-      if (primary_input_or_output_nets.find(connected_net)
-          == primary_input_or_output_nets.end()) {
+      if (!primary_input_or_output_nets.contains(connected_net)) {
         nets_to_be_deleted.insert(connected_net);
       }
     }

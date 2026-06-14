@@ -1,6 +1,6 @@
 include(openroad)
 
-add_executable(CutGTests TestAbc.cc)
+add_executable(CutGTests TestAbc.cc TestMockturtle.cc)
 target_link_libraries(CutGTests
         OpenSTA
         GTest::gtest
@@ -12,6 +12,7 @@ target_link_libraries(CutGTests
         cut
         tst
         ${TCL_LIBRARY}
+        cut_test_helper
 )
 
 target_include_directories(CutGTests
@@ -25,3 +26,5 @@ gtest_discover_tests(CutGTests
 
 add_dependencies(build_and_test CutGTests
 )
+
+add_subdirectory(helper)
