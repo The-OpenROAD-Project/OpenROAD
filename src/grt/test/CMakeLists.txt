@@ -31,6 +31,7 @@ or_integration_tests(
     gcd_cugr
     gcd_flute
     increase_capacity1
+    incremental_restore_vias
     incremental_update_net
     infinite_cap
     inst_pin_out_of_die
