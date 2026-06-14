@@ -26,6 +26,7 @@ or_integration_tests(
     simple01-td-tune
     simple01-td-repair
     simple01-uniform
+    simple01-vcts
     simple02
     simple02-rd
     simple03
