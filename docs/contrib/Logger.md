@@ -454,3 +454,36 @@ cd doc/messages && touch <NUM>.md
 
 ### OpenROAD Tool List
 A full list of tool namespaces can be found [here](DeveloperGuide.md#tool-flow-namespace).
+
+# Binary/Database Logging
+There is also a parallel mechanism for logging large quantities of numeric data to an SQLite database, useful for analysis of the inner workings of tools. 
+
+## Overall Architecture
+The architecture is designed around many threads doing logging, with many different log sources as well. This requires buffering everything, with a background thread draining the buffers into the database. The scheduling is a simple round-robin in the common case where there is no memory pressure(memory pressure is defined as 80% of the maximum). Memory budgets can be set as a global limit or a per-channel limit(as of right now there is no way to specialize this limit for different channels). 
+
+All queues, and their associated schema and other metadata are packaged into channels, which has two sides: the highly templated and specialized side which is exposed to the callers, and the type-erased version which is exposed to the background thread. Therefore, all direct SQLite interactions are done opaquely through the type erased class by the background thread, which controls the raw SQLite pointer. 
+
+## C++ API Description
+Tools can call three different methods in the C++ code. 
+
+First, the primary data logging mechanism is logToDb. This method takes a template list of column names as the template, which are checked at compile time for being valid SQLite column names. The methods do not do any writing themselves, they take the data and enqueue it as quickly as possible into a buffer. The other arguments taken are the table name, and the tool id/message id pair, analagous to how the existing logger functions do it. 
+
+logToDbBulk is essentially the same as logToDb, except it takes iterators on the values, and streams them to the queues in bulk. 
+
+logToDbMetadata is a "slow path" text to text key-value logging mechanism, useful for logging one-time or infrequent messages(e.g. weights passed as arguments that stay the same across the run) or events. 
+
+## TCL API Description
+The TCL API is for the user to script how the logger will handle database logging. The setters also have corresponding getters. There are analagous C++ methods that these wrap around. 
+
+utl::start_log_db \[filename\]: Enables logging, runs logger db setup, and starts the background thread.
+
+utl::stop_log_db : stops background thread, cleans up and closes db logging.
+
+utl::set_db_log_global_max_mem \[bytes\]: Set overall max memory for pressure mechanism
+
+utl::set_db_log_per_channel_max_mem \[bytes\]: Set per-channel max memory for pressure mechanism
+
+utl::set_db_log_enabled \[tool name(e.g. GPL)\] \[true/false\]: Switch on/off per-tool logging. 
+
+## Performance Overhead
+Qualitatively acceptable. Measuring this in real-world use remains TODO. 
