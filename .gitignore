@@ -29,6 +29,7 @@ build
 build_linux
 build_mac
 test/results
+/sandbox
 
 docs/main
 README2.md
