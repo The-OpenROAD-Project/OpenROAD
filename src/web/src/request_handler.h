@@ -121,6 +121,14 @@ struct WebSocketRequest
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kSelectionList,
+    kDeselect,
+    kClearSelections,
+    kDehighlight,
+    kClearHighlights,
+    kSetHighlightGroup,
+    kChangeHighlightGroup,
+    kBrowserInspect,
     kUnknown
   };
 
@@ -175,6 +183,17 @@ struct SessionState
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   gui::SelectionSet selection_set;
   gui::SelectionSet::const_iterator selection_itr = selection_set.end();
+
+  // Highlight groups: objects per color group (mirrors Qt GUI's highlighted_).
+  // The colored overlay shapes are derived from these via
+  // rebuildHighlightGroupShapes().  Guarded by selection_mutex.
+  gui::HighlightSet highlight_groups;
+  std::vector<ColoredRect> highlight_group_rects;
+  // Snapshots built on each selection_list request; browser actions
+  // (deselect / dehighlight / set_highlight_group / ...) reference indices
+  // into these.  Guarded by selection_mutex.
+  std::vector<gui::Selected> browser_selected;
+  std::vector<std::pair<gui::Selected, int>> browser_highlighted;
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
@@ -243,6 +262,24 @@ class SelectHandler
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
+
+  // Select & Highlight Browser.
+  WebSocketResponse handleSelectionList(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleDeselect(const WebSocketRequest& req,
+                                   SessionState& state);
+  WebSocketResponse handleClearSelections(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleDehighlight(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleSetHighlightGroup(const WebSocketRequest& req,
+                                            SessionState& state);
+  WebSocketResponse handleChangeHighlightGroup(const WebSocketRequest& req,
+                                               SessionState& state);
+  WebSocketResponse handleBrowserInspect(const WebSocketRequest& req,
+                                         SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
