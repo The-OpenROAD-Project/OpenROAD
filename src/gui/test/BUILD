@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -10,6 +11,10 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "supported",
 ]
+
+# dump_heatmap_headless requires the full Qt GUI implementation.  The default
+# Bazel openroad binary links the stub GUI, so the equivalent Bazel regression is
+# the C++ heatmap_sync_test against //src/gui:gui_qt_headless below.
 
 filegroup(
     name = "test_resources",
@@ -53,4 +58,16 @@ doc_check_test(
         "//src/gui:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "heatmap_sync_test",
+    srcs = ["heatmap_sync_test.cpp"],
+    deps = [
+        "//src/gui:gui_qt_headless",
+        "//src/odb",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
