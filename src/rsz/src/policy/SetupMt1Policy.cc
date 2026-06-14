@@ -81,6 +81,7 @@ void SetupMt1Policy::buildMoveGenerators(
       case MoveType::kUnbuffer:
       case MoveType::kSplitLoad:
       case MoveType::kReroute:
+      case MoveType::kInvBuffer:
       case MoveType::kCount:
         break;
     }
