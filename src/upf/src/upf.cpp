@@ -54,6 +54,23 @@ bool update_power_domain(utl::Logger* logger,
   return true;
 }
 
+static std::unordered_map<std::string, std::string> power_domain_supply_map;
+
+bool update_power_domain_supply(utl::Logger* logger,
+                                odb::dbBlock* block,
+                                const std::string& name,
+                                const std::string& supply)
+{
+  if (odb::dbPowerDomain::create(block, name.c_str()) == nullptr) {
+    logger->warn(utl::UPF, 62,
+                 "Power domain {} not found",
+                 name);
+    return false;
+  }
+  power_domain_supply_map[name] = supply;
+  return true;
+}
+
 bool create_logic_port(utl::Logger* logger,
                        odb::dbBlock* block,
                        const std::string& name,
