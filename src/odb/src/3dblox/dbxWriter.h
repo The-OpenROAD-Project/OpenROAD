@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "baseWriter.h"
@@ -42,6 +43,8 @@ class DbxWriter : public BaseWriter
   void writeConnection(YAML::Node& connection_node, odb::dbChipConn* conn);
   std::string buildPath(const std::vector<dbChipInst*>& path_insts,
                         odb::dbChipRegionInst* region);
+
+  std::unordered_set<odb::dbChip*> written_def_chips_;
 };
 
 }  // namespace odb

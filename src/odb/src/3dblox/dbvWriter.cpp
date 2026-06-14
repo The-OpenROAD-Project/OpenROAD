@@ -175,14 +175,23 @@ void DbvWriter::writeRegion(YAML::Node& region_node, odb::dbChipRegion* region)
 
 void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
 {
-  if (chiplet->getChipType() != odb::dbChip::ChipType::HIER) {
-    writeLef(external_node, chiplet);
-    if (chiplet->getBlock() != nullptr) {
-      writeDef(external_node, chiplet);
+  if (chiplet->getChipType() == odb::dbChip::ChipType::HIER) {
+    return;
+  }
+  writeLef(external_node, chiplet);
+  if (chiplet->getBlock() != nullptr) {
+    // The physical .def file always lives next to the chiplet master so that
+    // multiple ChipletInsts referencing it don't duplicate output. The YAML
+    // reference is only emitted here when the DEF was supplied under
+    // ChipletDef external (the legacy 3DBlox location). When the DEF was
+    // supplied under ChipletInst external, dbxWriter emits the YAML reference.
+    writeDefFileToDisk(chiplet);
+    if (odb::dbProperty::find(chiplet, "def_under_chipletinst") == nullptr) {
+      writeDefReference(external_node, chiplet);
     }
-    if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
-      external_node["verilog_file"] = prop->getValue();
-    }
+  }
+  if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
+    external_node["verilog_file"].push_back(prop->getValue());
   }
 }
 
@@ -230,14 +239,18 @@ void DbvWriter::writeLef(YAML::Node& external_node, odb::dbChip* chiplet)
   }
 }
 
-void DbvWriter::writeDef(YAML::Node& external_node, odb::dbChip* chiplet)
+void DbvWriter::writeDefFileToDisk(odb::dbChip* chiplet)
 {
   std::string def_file = std::string(chiplet->getName()) + ".def";
   std::string def_file_path = current_dir_path_ + def_file;
   odb::DefOut def_writer(logger_);
-  auto block = chiplet->getBlock();
-  def_writer.writeBlock(block, def_file_path.c_str());
-  external_node["DEF_file"] = def_file;
+  def_writer.writeBlock(chiplet->getBlock(), def_file_path.c_str());
+}
+
+void DbvWriter::writeDefReference(YAML::Node& external_node,
+                                  odb::dbChip* chiplet)
+{
+  external_node["DEF_file"].push_back(std::string(chiplet->getName()) + ".def");
 }
 
 }  // namespace odb

@@ -21,6 +21,7 @@ DbxWriter::DbxWriter(utl::Logger* logger, odb::dbDatabase* db)
 
 void DbxWriter::writeChiplet(const std::string& filename, odb::dbChip* chiplet)
 {
+  written_def_chips_.clear();
   YAML::Node root;
   writeYamlContent(root, chiplet);
   writeYamlToFile(filename, root);
@@ -50,7 +51,8 @@ void DbxWriter::writeDesign(YAML::Node& design_node, odb::dbChip* chiplet)
 {
   design_node["name"] = chiplet->getName();
   YAML::Node external_node = design_node["external"];
-  external_node["verilog_file"] = std::string(chiplet->getName()) + ".v";
+  external_node["verilog_file"].push_back(std::string(chiplet->getName())
+                                          + ".v");
 }
 
 void DbxWriter::writeChipletInsts(YAML::Node& instances_node,
@@ -65,8 +67,18 @@ void DbxWriter::writeChipletInsts(YAML::Node& instances_node,
 void DbxWriter::writeChipletInst(YAML::Node& instance_node,
                                  odb::dbChipInst* inst)
 {
-  auto master_name = inst->getMasterChip()->getName();
-  instance_node["reference"] = master_name;
+  auto* chip = inst->getMasterChip();
+  instance_node["reference"] = chip->getName();
+
+  // Round-trip the DEF reference back under ChipletInst external when the
+  // input declared it there (3DBlox spec #10077). Only write once per master
+  // chip even if multiple ChipletInsts share it.
+  if (odb::dbProperty::find(chip, "def_under_chipletinst") != nullptr
+      && !written_def_chips_.contains(chip)) {
+    YAML::Node external_node = instance_node["external"];
+    external_node["def_file"].push_back(std::string(chip->getName()) + ".def");
+    written_def_chips_.insert(chip);
+  }
 }
 
 void DbxWriter::writeStack(YAML::Node& stack_node, odb::dbChip* chiplet)
