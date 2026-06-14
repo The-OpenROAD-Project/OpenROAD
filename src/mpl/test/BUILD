@@ -40,6 +40,7 @@ COMPULSORY_TESTS = [
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
+    "break_cluster_huge_macro",
     "no_unfixed_macros",
     "orientation_improve1",
     "orientation_improve2",
@@ -72,6 +73,10 @@ filegroup(
                 "boundary_push1": [
                     "testcases/boundary_push1.def",
                     "testcases/orientation_improve1.lef",
+                ],
+                "break_cluster_huge_macro": [
+                    "testcases/break_cluster_huge_macro.def",
+                    "testcases/break_cluster_huge_macro.lef",
                 ],
                 "centralization1": [
                     "testcases/centralization1.def",

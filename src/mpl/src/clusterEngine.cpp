@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -1109,6 +1110,25 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 {
   updateInstancesAssociation(parent);
 
+  // A cluster dominated by one macro cannot be partitioned correctly using
+  // the weighted min-cut algorithm from TritonPart, so we manually
+  // split the macro from the cluster
+  if (parent->getNumMacro() > 0) {
+    auto macros = parent->getLeafMacros();
+    auto max_macro
+        = *std::ranges::max_element(macros, {}, [](const auto& macro) {
+            return macro->getBBox()->getBox().area();
+          });
+
+    if (computeArea(max_macro) > (parent->getArea() / 2)) {
+      splitHugeMacroFromCluster(parent, max_macro);
+      if (isLargeFlatCluster(parent)) {
+        breakLargeFlatCluster(parent);
+      }
+      return;
+    }
+  }
+
   std::map<int, int> cluster_vertex_id_map;
   std::vector<float> vertex_weight;
   int vertex_id = 0;
@@ -1120,9 +1140,11 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   std::vector<odb::dbInst*> insts;
   odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
+
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(macro)));
+    float weight = block_->dbuAreaToMicrons(computeArea(macro));
+    vertex_weight.push_back(weight);
     insts.push_back(macro);
   }
   for (auto& std_cell : parent->getLeafStdCells()) {
@@ -1251,6 +1273,28 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   if (isLargeFlatCluster(raw_part_1)) {
     breakLargeFlatCluster(raw_part_1);
   }
+}
+
+void ClusteringEngine::splitHugeMacroFromCluster(Cluster* cluster,
+                                                 odb::dbInst* huge_macro)
+{
+  // Remove huge macro from parent cluster
+  std::vector<odb::dbInst*> macros = cluster->getLeafMacros();
+  cluster->clearLeafMacros();
+  for (auto* macro : macros) {
+    if (macro != huge_macro) {
+      cluster->addLeafMacro(macro);
+    }
+  }
+  updateInstancesAssociation(cluster);
+  setClusterMetrics(cluster);
+
+  // Create a new cluster for the huge macro
+  auto macro_cluster
+      = std::make_unique<Cluster>(id_, huge_macro->getName(), logger_);
+  macro_cluster->addLeafMacro(huge_macro);
+  macro_cluster->setClusterType(HardMacroCluster);
+  incorporateNewCluster(std::move(macro_cluster), cluster->getParent());
 }
 
 bool ClusteringEngine::partitionerSolutionIsFullyUnbalanced(
@@ -1684,6 +1728,10 @@ void ClusteringEngine::fetchMixedLeaves(
   std::vector<Cluster*> sister_mixed_leaves;
 
   for (auto& child : parent->getChildren()) {
+    if (child->getClusterType() == HardMacroCluster) {
+      continue;
+    }
+
     updateInstancesAssociation(child.get());
 
     if (child->getNumMacro() == 0) {
