@@ -39,7 +39,8 @@ class Grid
   {
     kCore,
     kInstance,
-    kExisting
+    kExisting,
+    kDummy
   };
 
   Grid(VoltageDomain* domain,
@@ -285,6 +286,21 @@ class InstanceGrid : public Grid
                              bool rect_is_min,
                              bool apply_horizontal,
                              bool apply_vertical);
+};
+
+class DummyInstanceGrid : public Grid
+{
+ public:
+  DummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+
+  std::string getLongName() const override;
+
+  Type type() const override { return Grid::kDummy; }
+
+  odb::PtrSet<odb::dbInst> getInstances() const override { return {}; }
+
+  bool isReplaceable() const override { return true; }
+  void checkSetup() const override {};
 };
 
 class BumpGrid : public InstanceGrid
