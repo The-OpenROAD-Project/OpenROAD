@@ -449,6 +449,8 @@ void GPin::clearWaVars()
 
   maxExpSumX_ = maxExpSumY_ = 0;
   minExpSumX_ = minExpSumY_ = 0;
+
+  gradient_ = {0, 0};
 }
 
 void GPin::setMaxExpSumX(float maxExpSumX)
@@ -793,7 +795,7 @@ void BinGrid::initBins()
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
-#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_) collapse(2)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
       const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
@@ -924,113 +926,138 @@ void BinGrid::updateBinsNonPlaceArea()
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 {
-  // clear the Bin-area info
-  for (Bin& bin : bins_) {
-    bin.setInstPlacedAreaUnscaled(0);
-    bin.setFillerArea(0);
-  }
-
-  for (auto& cell : cells) {
-    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-    // The following function is critical runtime hotspot
-    // for global placer.
-    //
-    if (cell->isInstance()) {
-      // macro should have
-      // scale-down with target-density
-      if (cell->isMacroInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-
-            const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                     * cell->getDensityScale()
-                                     * bin.getTargetDensity();
-            bin.addInstPlacedAreaUnscaled(scaledAvea);
-          }
-        }
-      }
-      // normal cells
-      else if (cell->isStdInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-            const float scaledArea
-                = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-            bin.addInstPlacedAreaUnscaled(scaledArea);
-          }
-        }
-      }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                            * cell->getDensityScale());
-        }
-      }
-    }
-  }
-
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
   sumOverflowArea_ = 0;
   sumOverflowAreaUnscaled_ = 0;
-  // update density and overflowArea
-  // for nesterov use and FFT library
-#pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
-  for (auto it = bins_.begin(); it < bins_.end(); ++it) {
-    Bin& bin = *it;  // old-style loop for old OpenMP
+  std::vector<float> overflow_area_vec(bins_.size());
+  std::vector<float> overflow_area_unscaled_vec(bins_.size());
+#pragma omp parallel num_threads(num_threads_)
+  {
+    // clear the Bin-area info
+#pragma omp for
+    for (Bin& bin : bins_) {
+      bin.setInstPlacedAreaUnscaled(0);
+      bin.setFillerArea(0);
+    }
 
-    // Copy unscaled to scaled
-    bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
+#pragma omp for
+    for (auto& cell : cells) {
+      std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
 
-    int64_t binArea = bin.getBinArea();
-    const float scaledBinArea
-        = static_cast<float>(binArea * bin.getTargetDensity());
-    bin.setDensity((static_cast<float>(bin.instPlacedArea())
-                    + static_cast<float>(bin.getFillerArea())
-                    + static_cast<float>(bin.getNonPlaceArea()))
-                   / scaledBinArea);
+      // The following function is critical runtime hotspot
+      // for global placer.
+      //
+      if (cell->isInstance()) {
+        // macro should have
+        // scale-down with target-density
+        if (cell->isMacroInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
 
-    const float overflowArea = std::max(
-        0.0f,
-        static_cast<float>(bin.instPlacedArea())
-            + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-    sumOverflowArea_ += overflowArea;  // NOLINT
+              const float scaledAvea = getOverlapDensityArea(bin, cell)
+                                       * cell->getDensityScale()
+                                       * bin.getTargetDensity();
+              bin.addInstPlacedAreaUnscaled(scaledAvea);
+            }
+          }
+        }
+        // normal cells
+        else if (cell->isStdInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+              const float scaledArea
+                  = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+              bin.addInstPlacedAreaUnscaled(scaledArea);
+            }
+          }
+        }
+      } else if (cell->isFiller()) {
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            Bin& bin = bins_[y * binCntX_ + x];
+            bin.addFillerArea(getOverlapDensityArea(bin, cell)
+                              * cell->getDensityScale());
+          }
+        }
+      }
+    }
 
-    const float overflowAreaUnscaled
-        = std::max(0.0f,
-                   static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                       + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                       - scaledBinArea);
-    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
-    if (overflowAreaUnscaled > 0) {
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "overflow:{}, bin:{},{}",
-                 block->dbuAreaToMicrons(overflowAreaUnscaled),
-                 block->dbuToMicrons(bin.lx()),
-                 block->dbuToMicrons(bin.ly()));
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "binArea:{}, scaledBinArea:{}",
-                 block->dbuAreaToMicrons(binArea),
-                 block->dbuAreaToMicrons(scaledBinArea));
-      debugPrint(
-          log_,
-          GPL,
-          "overflow",
-          1,
-          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
-          block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
-          block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+    // update density and overflowArea
+    // for nesterov use and FFT library
+#pragma omp for
+    for (int i = 0; i < bins_.size(); ++i) {
+      Bin& bin = bins_[i];  // old-style loop for old OpenMP
+
+      // Copy unscaled to scaled
+      bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
+
+      int64_t binArea = bin.getBinArea();
+      const float scaledBinArea
+          = static_cast<float>(binArea * bin.getTargetDensity());
+      bin.setDensity((static_cast<float>(bin.instPlacedArea())
+                      + static_cast<float>(bin.getFillerArea())
+                      + static_cast<float>(bin.getNonPlaceArea()))
+                     / scaledBinArea);
+
+      const float overflowArea = std::max(
+          0.0f,
+          static_cast<float>(bin.instPlacedArea())
+              + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
+      overflow_area_vec[i] = overflowArea;
+
+      const float overflowAreaUnscaled
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
+      overflow_area_unscaled_vec[i] = overflowAreaUnscaled;
+      if (overflowAreaUnscaled > 0) {
+        debugPrint(log_,
+                   GPL,
+                   "overflow",
+                   1,
+                   "overflow:{}, bin:{},{}",
+                   block->dbuAreaToMicrons(overflowAreaUnscaled),
+                   block->dbuToMicrons(bin.lx()),
+                   block->dbuToMicrons(bin.ly()));
+        debugPrint(log_,
+                   GPL,
+                   "overflow",
+                   1,
+                   "binArea:{}, scaledBinArea:{}",
+                   block->dbuAreaToMicrons(binArea),
+                   block->dbuAreaToMicrons(scaledBinArea));
+        debugPrint(
+            log_,
+            GPL,
+            "overflow",
+            1,
+            "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
+            block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
+            block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+      }
+    }
+#pragma omp sections
+    {
+      // This is required because the overflowArea is calculated in float.
+      // So, sumOverflowArea_ is converted to float, added to the overflowArea
+      // and then converted back.
+      // We should change overflowArea to int64_t in the future.
+#pragma omp section
+      {
+        for (auto overflowArea : overflow_area_vec) {
+          sumOverflowArea_ += overflowArea;
+        }
+      }
+#pragma omp section
+      {
+        for (auto overflowAreaUnscaled : overflow_area_unscaled_vec) {
+          sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+        }
+      }
     }
   }
 }
@@ -1293,14 +1320,9 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
-  // clear all WA variables.
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
-    // old-style loop for old OpenMP
-    gPin->clearWaVars();
-  }
 
-  // If checks are very expensive, so short circuit them if debug is not enabled
+  // If checks are very expensive, so short circuit them if debug is not
+  // enabled
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
 #pragma omp parallel for num_threads(num_threads_)
   for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
@@ -1310,6 +1332,9 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
     gNet->updateBox();
 
     for (auto& gPin : gNet->getGPins()) {
+      // clear all WA variables.
+      gPin->clearWaVars();
+
       // The WA terms are shift invariant:
       //
       //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
@@ -1390,6 +1415,10 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         }
       }
     }
+
+    for (auto& gPin : gNet->getGPins()) {
+      gPin->setGradient(getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY));
+    }
   }
 }
 
@@ -1418,7 +1447,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
   FloatPoint gradientPair;
 
   for (auto& gPin : gCell->gPins()) {
-    auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+    auto tmpPair = gPin->getGradient();
 
     debugPrint(log_,
                GPL,
@@ -1629,9 +1658,11 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
 //
 void NesterovBaseCommon::fixPointers()
 {
-  nbc_gcells_.clear();
+  // Reconstruct pointers
+  // Reconstruct cell pointers
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
+  nbc_gcells_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
   for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
@@ -1644,10 +1675,11 @@ void NesterovBaseCommon::fixPointers()
     }
   }
 
-  gPins_.clear();
+  // Reconstruct pin pointers
   gPinMap_.clear();
   db_iterm_to_index_map_.clear();
   db_bterm_to_index_map_.clear();
+  gPins_.clear();
   gPins_.reserve(gPinStor_.size());
   for (size_t i = 0; i < gPinStor_.size(); ++i) {
     GPin& gPin = gPinStor_[i];
@@ -1662,9 +1694,10 @@ void NesterovBaseCommon::fixPointers()
     }
   }
 
-  gNets_.clear();
+  // Reconstruct net pointers
   gNetMap_.clear();
   db_net_to_index_map_.clear();
+  gNets_.clear();
   gNets_.reserve(gNetStor_.size());
   for (size_t i = 0; i < gNetStor_.size(); ++i) {
     GNet& gNet = gNetStor_[i];
@@ -1673,11 +1706,12 @@ void NesterovBaseCommon::fixPointers()
     db_net_to_index_map_[gNet.getPbNet()->getDbNet()] = i;
   }
 
+  // Update pointers inside the objects
+  // Update cell pins
   for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
-
     gCell.clearGPins();
     for (Instance* inst : gCell.insts()) {
       for (odb::dbITerm* iterm : inst->dbInst()->getITerms()) {
@@ -1699,59 +1733,87 @@ void NesterovBaseCommon::fixPointers()
       }
     }
   }
-
+  // Update pin nets and cells
   for (auto& gPin : gPinStor_) {
-    auto iterm = gPin.getPbPin()->getDbITerm();
-    if (iterm != nullptr) {
-      if (isValidSigType(iterm->getSigType())) {
-        auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
-        auto net_it = db_net_to_index_map_.find(iterm->getNet());
-
-        if (inst_it != db_inst_to_nbc_index_map_.end()) {
-          gPin.setGCell(&gCellStor_[inst_it->second]);
-        }
-
-        if (net_it != db_net_to_index_map_.end()) {
-          gPin.setGNet(&gNetStor_[net_it->second]);
-        } else {
-          debugPrint(
-              log_,
-              GPL,
-              "callbacks",
-              1,
-              "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
-              iterm->getNet()->getName(),
-              iterm->getName());
-        }
-      } else {
-        debugPrint(log_,
-                   GPL,
-                   "callbacks",
-                   1,
-                   "warning: invalid type itermType: {}",
-                   iterm->getSigType().getString());
+    auto pin = gPin.getPbPin();
+    odb::dbSigType signal_type;
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    if (pin->isITerm()) {
+      iterm = pin->getDbITerm();
+      signal_type = iterm->getSigType();
+    } else if (pin->isBTerm()) {
+      bterm = pin->getDbBTerm();
+      signal_type = bterm->getSigType();
+    } else {
+      debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
+      continue;
+    }
+    if (!isValidSigType(signal_type)) {
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
+          "warning: invalid signal type ({}) in {} {}",
+          signal_type.getString(),
+          iterm ? "ITerm" : "BTerm",
+          iterm ? iterm->getNet()->getName() : bterm->getNet()->getName());
+      continue;
+    }
+    // set cell
+    if (iterm) {
+      auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
+      if (inst_it != db_inst_to_nbc_index_map_.end()) {
+        gPin.setGCell(&gCellStor_[inst_it->second]);
       }
+    }
+    // set net
+    auto net_it
+        = db_net_to_index_map_.find(iterm ? iterm->getNet() : bterm->getNet());
+    if (net_it != db_net_to_index_map_.end()) {
+      gPin.setGNet(&gNetStor_[net_it->second]);
+    } else {
+      debugPrint(
+          log_,
+          GPL,
+          "callbacks",
+          1,
+          "warning: Net not found in db_net_map_ for {} : {} -> {}",
+          iterm ? "ITerm" : "BTerm",
+          iterm ? iterm->getNet()->getName() : bterm->getNet()->getName(),
+          iterm ? iterm->getName() : bterm->getName());
     }
   }
 
+  // Update net pins
   for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
+    // iterm
     for (odb::dbITerm* iterm : gNet.getPbNet()->getDbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
         auto it = db_iterm_to_index_map_.find(iterm);
         if (it != db_iterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
+        } else {
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warning: gpin not found for ITerm: {}",
+                     iterm->getName());
         }
       }
     }
-
+    // bterm
     for (odb::dbBTerm* bterm : gNet.getPbNet()->getDbNet()->getBTerms()) {
       if (isValidSigType(bterm->getSigType())) {
         auto it = db_bterm_to_index_map_.find(bterm);
         if (it != db_bterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
+          // Usually, cells shouldn't have bterms (is this necessary?)
           if (gPinStor_[gpin_index].getGCell()) {
             gPinStor_[gpin_index].getGCell()->addGPin(&gPinStor_[gpin_index]);
           }
@@ -2038,6 +2100,7 @@ NesterovBase::NesterovBase(
                       region_bbox.xMax(),
                       region_bbox.yMax());
   bg_.setBinTargetDensity(targetDensity_);
+  bg_.setNumThreads(nbc_->getNumThreads());
 
   // update binGrid info
   bg_.initBins();
@@ -2284,6 +2347,7 @@ void NesterovBase::updateGCellCenterLocation(
 void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
@@ -3141,11 +3205,8 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // fill in nextCoordinates with given stepLength_
-  // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
-  // parallel, bit-identical to the serial version.
-  const size_t numGCells = nb_gcells_.size();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t k = 0; k < numGCells; k++) {
+  for (size_t k = 0; k < nb_gcells_.size(); k++) {
     GCell* curGCell = nb_gcells_[k];
     if (curGCell->isLocked()) {
       nextCoordi_[k] = curCoordi_[k];
