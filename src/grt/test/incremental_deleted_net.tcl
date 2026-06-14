@@ -15,7 +15,7 @@ set_routing_layers -signal metal2-metal8 -clock metal3-metal8
 global_route -verbose -use_cugr
 
 # c. Call global_route -start_incremental
-global_route -start_incremental
+global_route -start_incremental -use_cugr
 
 set block [ord::get_db_block]
 set n2_net [$block findNet "n2"]
@@ -51,7 +51,7 @@ odb::dbNet_destroy $n_extra_net
 grt::add_dirty_net $n2_net
 
 # g. Call global_route -end_incremental
-global_route -end_incremental
+global_route -end_incremental -use_cugr
 
 # h. Write guides to a result file
 set guide_file [make_result_file "incremental_deleted_net.guide"]
