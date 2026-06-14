@@ -422,8 +422,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       double cap_margin,       // 0.0-1.0
       double buffer_gain,
       bool match_cell_footprint,
+      bool reroute,
       bool verbose);
   int repairDesignBufferCount() const;
+  // Try to reroute the net driven by drvr_pin to a lower-resistance layer.
+  // Returns true if the reroute was accepted (net marked dirty for incremental
+  // global re-routing and parasitics invalidated).  Returns false if the net
+  // was already rerouted, doesn't exist, or the expected resistance reduction
+  // is below the threshold.
+  bool tryRerouteNet(const sta::Pin* drvr_pin);
   // for debugging
   void repairNet(sta::Net* net,
                  double max_wire_length,  // meters
