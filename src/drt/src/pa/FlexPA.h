@@ -715,6 +715,10 @@ class FlexPA
 
   void prepPattern();
 
+  frAccessPoint* DPNodeToAccessPoint(
+      FlexDPNode* node,
+      const std::vector<std::pair<frMPin*, frInstTerm*>>& pins);
+
   /**
    * @brief generates valid access patterns for the unique inst, considers both
    * x and y of prepPatternInstHelper.
