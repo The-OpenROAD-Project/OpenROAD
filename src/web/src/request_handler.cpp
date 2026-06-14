@@ -1007,6 +1007,18 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     boost::json::object root;
     root["count"] = static_cast<int>(matched.size());
 
+    // Selecting/highlighting every net in a densely populated bin (tens of
+    // thousands of nets in a large design) is prohibitively expensive and can
+    // hang or exhaust memory. Cap the selection so navigation stays usable
+    // while reporting the true bin count above.
+    constexpr size_t kMaxFanoutSelection = 1000;
+    const bool truncated = matched.size() > kMaxFanoutSelection;
+    if (truncated) {
+      matched.resize(kMaxFanoutSelection);
+    }
+    root["truncated"] = truncated;
+    root["selection_limit"] = static_cast<int>(kMaxFanoutSelection);
+
     if (!matched.empty()) {
       // STA-touching code (descriptors, getProperties) must hold the
       // shared STA lock.

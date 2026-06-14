@@ -681,6 +681,11 @@ export class ChartsWidget {
                 lower: bar.lower,
                 upper: bar.upper,
             });
+            if (resp && resp.truncated) {
+                console.warn(
+                    `Fanout bin has ${resp.count} nets; selection capped at `
+                    + `${resp.selection_limit} for performance.`);
+            }
             if (this._app.updateInspector) {
                 this._app.updateInspector(resp);
             }
