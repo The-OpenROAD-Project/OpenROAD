@@ -2473,15 +2473,10 @@ void TritonCTS::findCandidateDummyCells(
   std::ranges::sort(
       dummyCandidates,
       [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-        const float cap1 = getInputCap(cell1), cap2 = getInputCap(cell2);
-        if (cap1 < cap2) {
-          return true;
+        if (getInputCap(cell1) != getInputCap(cell2)) {
+          return getInputCap(cell1) < getInputCap(cell2);
         }
-        if (cap2 < cap1) {
-          return false;
-        }
-        // dummyCandidates is unordered; tie-break for stable output.
-        return std::string(cell1->name()) < std::string(cell2->name());
+        return cell1->id() < cell2->id();
       });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
