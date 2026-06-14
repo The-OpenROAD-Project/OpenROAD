@@ -436,7 +436,7 @@ proc clock_tree_synthesis { args } {
     utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
 
-  cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
+  cts::set_sink_clustering true
 
   if { [info exists keys(-sink_clustering_size)] } {
     set size $keys(-sink_clustering_size)
