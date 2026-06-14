@@ -439,8 +439,23 @@ void NesterovPlace::runTimingDriven(int iter,
     bool enable_repair_timing = npVars_.timingDrivenIterCounter
                                 == tb_->getTimingNetWeightOverflowSize();
 
+    // Refresh host GNet boxes before handing control to rsz/STA — the GPU
+    // HPWL backend keeps them device-resident during the loop (no-op on the
+    // CPU backend, whose computeHpwl maintains them eagerly).
+    nbc_->mirrorNetBoxesToHost();
+
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
+    // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
+    // repair_design, whose callbacks created/destroyed/resized instances —
+    // the DeviceState topology must be rebuilt from the repaired host
+    // storage (this also reloads net weights and pin offsets). Virtual
+    // iterations only reweighted nets.
+    if (virtual_td_iter) {
+      nbc_->refreshDeviceNetWeights();
+    } else {
+      nbc_->rebuildDeviceState();
+    }
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
@@ -1138,6 +1153,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
   }
 
+  // The GPU HPWL backend keeps per-net boxes device-resident during the
+  // loop (no host reader exists there — see hpwlBackend.h). Materialize
+  // them once now so any post-placement host consumer sees the final
+  // boxes. No-op on the CPU backend.
+  nbc_->mirrorNetBoxesToHost();
+
   reportResults(nesterov_iter, original_area, td_accumulated_delta_area);
 
   // In all case, including divergence, the db should be updated.
@@ -1220,6 +1241,11 @@ void NesterovPlace::updateNextIter(int iter)
 
 void NesterovPlace::updateDb()
 {
+  // The GPU device-resident density pipeline leaves host GCell coords
+  // stale during the hot loop; refresh them before writing to the DB.
+  for (auto& nb : nbVec_) {
+    nb->pullCoordsFromDevice();
+  }
   nbc_->updateDbGCells();
 }
 
