@@ -2,6 +2,11 @@ source helpers.tcl
 
 read_lef sky130hs/sky130hs.tlef
 
+# The generated DEF/Verilog are checked below; optional debug shape messages
+# make the log comparison platform-dependent.
+suppress_message RCX 437
+suppress_message RCX 438
+
 bench_wires -len 100 -all
 
 set def_file [make_result_file generate_pattern.def]
