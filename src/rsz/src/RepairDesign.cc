@@ -656,7 +656,7 @@ void RepairDesign::findBufferSizes()
                       }
                       // buffer_fast_sizes_ is unordered; tie-break for stable
                       // output.
-                      return std::string(a->name()) < std::string(b->name());
+                      return std::string_view(a->name()) < std::string_view(b->name());
                     });
 }
 
