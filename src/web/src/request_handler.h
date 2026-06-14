@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <regex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -66,6 +67,25 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
+
+    // Defense-in-depth: reject dangerous Tcl commands that could
+    // escape the web interface sandbox.  This is a best-effort
+    // blocklist; the primary protection is the 127.0.0.1 bind.
+    // Only exec and socket are blocked — source and load are
+    // intentionally allowed for legitimate web workflows.
+    // NOTE: In R"(...)" raw strings, backslashes are literal, so
+    // \s in the pattern becomes the regex escape \s (whitespace).
+    static const std::regex dangerous(
+        R"((^|[\s;\[\{])(::)?(exec|socket)([\s;\]\}]|$))",
+        std::regex::ECMAScript | std::regex::optimize);
+    if (std::regex_search(cmd, dangerous)) {
+      Result r;
+      r.result = "Blocked by web server security: exec and socket are "
+                 "not allowed over the web interface.";
+      r.is_error = true;
+      return r;
+    }
+
     const int rc = Tcl_Eval(interp, cmd.c_str());
     Result r;
     r.result = Tcl_GetStringResult(interp);
@@ -195,15 +215,6 @@ struct SessionState
   std::string active_heatmap;
 };
 
-// Optional-field accessor: returns the JSON value at `key` converted to T,
-// or `default_val` when the key is missing.  Throws
-// (boost::system::system_error) when the key is present but the JSON type
-// doesn't convert to T — that's a frontend/backend contract violation, surface
-// it.
-//
-// For required fields, prefer the bare boost::json idiom
-// `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
-// which throws on either missing or wrong-typed input.
 template <class T>
 T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
 {
