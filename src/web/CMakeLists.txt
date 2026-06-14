@@ -20,6 +20,7 @@ set(WEB_ASSET_FILES
     src/ui-utils.js
     src/checkbox-tree-model.js
     src/vis-tree.js
+    src/modal.js
     src/websocket-manager.js
     src/websocket-tile-layer.js
     src/display-controls.js
@@ -55,6 +56,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ui-utils.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/checkbox-tree-model.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/vis-tree.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/modal.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js

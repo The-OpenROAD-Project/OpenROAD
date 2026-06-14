@@ -303,6 +303,33 @@ html, body {
     cursor: default;
 }
 
+/* Layer Config dialog */
+.layer-config-dialog .layer-config-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+}
+.layer-config-dialog .layer-config-row label {
+    flex: 0 0 90px;
+}
+.layer-config-dialog select,
+.layer-config-dialog input[type="range"] {
+    flex: 1;
+}
+.layer-config-dialog input[type="color"] {
+    width: 48px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-main);
+    cursor: pointer;
+}
+.layer-config-dialog #lc-opacity-val {
+    flex: 0 0 40px;
+    text-align: right;
+}
+
 /* File browser dialog */
 .file-browser-dialog {
     min-width: 520px;

@@ -6,6 +6,7 @@
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
+import { createModalDialog } from './modal.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -97,6 +98,15 @@ export function populateDisplayControls(app, visibility, selectability,
     // Restore saved hidden-layers and non-selectable-layers sets.
     let savedHiddenLayers = new Set();
     let savedNonSelectableLayers = new Set();
+    // Per-layer fill pattern, keyed by tech-layer name (like color, a pattern
+    // is a property of the layer, so it is shared across chiplets).  Maps
+    // layer name → FillPattern index; absent means solid.
+    let savedLayerPatterns = {};
+    // Per-layer color overrides ({name: [r,g,b]}) and opacity ({name: 0..1}),
+    // keyed by tech-layer name like the pattern map.  Set via the Layer Config
+    // dialog.
+    let savedLayerColors = {};
+    let savedLayerOpacity = {};
     try {
         const raw = getCookie('or_hidden_layers');
         if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
@@ -108,6 +118,26 @@ export function populateDisplayControls(app, visibility, selectability,
                 = new Set(JSON.parse(decodeURIComponent(raw)));
         }
     } catch (_) { /* ignore */ }
+    // Parse a cookie expected to hold a JSON object ({name: value}).  Guards
+    // against a corrupted/tampered cookie whose JSON is valid but not an object
+    // (e.g. "null" or a number) — using that directly would later throw in
+    // buildLayerSpec (hasOwnProperty.call(null, ...) / writing to a primitive).
+    const parseCookieObject = (name) => {
+        try {
+            const raw = getCookie(name);
+            if (raw) {
+                const parsed = JSON.parse(decodeURIComponent(raw));
+                if (parsed && typeof parsed === 'object'
+                    && !Array.isArray(parsed)) {
+                    return parsed;
+                }
+            }
+        } catch (_) { /* ignore */ }
+        return {};
+    };
+    savedLayerPatterns = parseCookieObject('or_layer_patterns');
+    savedLayerColors = parseCookieObject('or_layer_colors');
+    savedLayerOpacity = parseCookieObject('or_layer_opacity');
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
     // z-index and palette slot regardless of which chiplet it belongs to.
@@ -128,9 +158,21 @@ export function populateDisplayControls(app, visibility, selectability,
                 const name = layerObj.name || layerObj;
                 const slot = nextLayerSlot++;
                 const zIndex = slot + 3;
+                // Default to 1 (solid); a stored 0 (outline-only) must survive.
+                const pattern = Object.prototype.hasOwnProperty.call(
+                    savedLayerPatterns, name) ? (savedLayerPatterns[name] | 0) : 1;
+                // Color override (RGB array) and opacity from the Layer Config
+                // dialog, if previously set.  Color falls back to the server
+                // default; opacity to 0.7.
+                const colorOverride = Array.isArray(savedLayerColors[name])
+                    ? savedLayerColors[name] : null;
+                const opacity = (typeof savedLayerOpacity[name] === 'number')
+                    ? savedLayerOpacity[name] : 0.7;
                 const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
+                    opacity: opacity,
                     zIndex: zIndex,
+                    fillPattern: pattern,
+                    fillColor: colorOverride,
                 });
 
                 const id = `${parentId}/${name}`;
@@ -148,7 +190,11 @@ export function populateDisplayControls(app, visibility, selectability,
                 layerIds.push(id);
                 children.push({
                     id,
-                    data: { name, layer, color: layerObj.color, colorIndex: slot, nodeId: id },
+                    data: { name, layer,
+                            color: colorOverride || layerObj.color,
+                            serverColor: layerObj.color,
+                            colorIndex: slot, nodeId: id, pattern,
+                            opacity },
                     checked: visible,
                 });
             });
@@ -178,14 +224,24 @@ export function populateDisplayControls(app, visibility, selectability,
         layerSpec = {
             id: 'layers_parent',
             children: techData.layers.map((name, index) => {
+                // Mirror the hierarchy path so saved per-layer pattern/color/
+                // opacity (or_layer_*) also apply on this old-backend fallback.
+                const pattern = Object.prototype.hasOwnProperty.call(
+                    savedLayerPatterns, name) ? (savedLayerPatterns[name] | 0) : 1;
+                const colorOverride = Array.isArray(savedLayerColors[name])
+                    ? savedLayerColors[name] : null;
+                const opacity = (typeof savedLayerOpacity[name] === 'number')
+                    ? savedLayerOpacity[name] : 0.7;
                 const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                    opacity: 0.7,
+                    opacity: opacity,
                     zIndex: index + 3,
+                    fillPattern: pattern,
+                    fillColor: colorOverride,
                 });
 
                 const id = `layers_parent/${name}`;
                 layer._nodeId = id;
-                
+
                 const visible = !savedHiddenLayers.has(id);
                 if (visible) {
                     layer.addTo(app.map);
@@ -195,8 +251,15 @@ export function populateDisplayControls(app, visibility, selectability,
                 app.allLayers.push(layer);
                 leafletLayers.push(layer);
 
+                const serverColor = (techData.layer_colors
+                    && techData.layer_colors[index]) || null;
                 layerIds.push(id);
-                return { id, data: { name, layer, colorIndex: index, nodeId: id }, checked: visible };
+                return { id, data: { name, layer,
+                                     color: colorOverride || serverColor,
+                                     serverColor,
+                                     colorIndex: index, nodeId: id, pattern,
+                                     opacity },
+                         checked: visible };
             }),
         };
     }
@@ -391,6 +454,149 @@ export function populateDisplayControls(app, visibility, selectability,
         { label: 'Show layer range \u2191',   fn: (i) => layerRangeSet(i, 0, 1, n) },
     ];
 
+    // Fill patterns offered in the Layer Config dialog.  `value` is the
+    // FillPattern index (see color.h) sent to the server with each tile request.
+    const fillPatternItems = [
+        { label: 'Solid',             value: 1 },
+        { label: 'Horizontal',        value: 2 },
+        { label: 'Vertical',          value: 3 },
+        { label: 'Cross',             value: 4 },
+        { label: 'Diagonal cross',    value: 5 },
+        { label: 'Forward diagonal',  value: 6 },
+        { label: 'Backward diagonal', value: 7 },
+        { label: 'None (outline)',    value: 0 },
+    ];
+
+    // Apply a fill pattern to a layer node: re-render its tiles and persist
+    // the choice (keyed by layer name) to the or_layer_patterns cookie.
+    function applyLayerPattern(node, value) {
+        node.data.pattern = value;
+        if (node.data.layer && node.data.layer.setFillPattern) {
+            node.data.layer.setFillPattern(value);
+        }
+        if (value === 1 || value === undefined) {
+            delete savedLayerPatterns[node.data.name];  // solid is the default
+        } else {
+            savedLayerPatterns[node.data.name] = value;
+        }
+        setCookie('or_layer_patterns',
+                  encodeURIComponent(JSON.stringify(savedLayerPatterns)));
+    }
+
+    // RGB array ⇄ "#rrggbb" hex helpers for the <input type="color"> control.
+    function rgbToHex(rgb) {
+        const h = (v) => Math.max(0, Math.min(255, v | 0))
+            .toString(16).padStart(2, '0');
+        return `#${h(rgb[0])}${h(rgb[1])}${h(rgb[2])}`;
+    }
+    function hexToRgb(hex) {
+        const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+        return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)]
+                 : [200, 200, 200];
+    }
+
+    // Apply a color override (RGB array) to a layer node: update the swatch,
+    // re-render its tiles, and persist to the or_layer_colors cookie.
+    function applyLayerColor(node, rgb) {
+        node.data.color = rgb;
+        if (node.colorSwatch) {
+            node.colorSwatch.style.backgroundColor
+                = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+        }
+        // If the chosen color matches the server default, clear the override so
+        // the layer reverts to getLayerColorMap and the choice doesn't get
+        // pinned in the (global, name-keyed) cookie across designs/sessions.
+        const def = node.data.serverColor;
+        const isDefault = Array.isArray(def) && def[0] === rgb[0]
+            && def[1] === rgb[1] && def[2] === rgb[2];
+        if (node.data.layer && node.data.layer.setFillColor) {
+            node.data.layer.setFillColor(isDefault ? null : rgb);
+        }
+        if (isDefault) {
+            delete savedLayerColors[node.data.name];
+        } else {
+            savedLayerColors[node.data.name] = rgb;
+        }
+        setCookie('or_layer_colors',
+                  encodeURIComponent(JSON.stringify(savedLayerColors)));
+    }
+
+    // Apply a layer opacity (0..1) client-side via Leaflet and persist it.
+    function applyLayerOpacity(node, value) {
+        node.data.opacity = value;
+        if (node.data.layer && node.data.layer.setOpacity) {
+            node.data.layer.setOpacity(value);
+        }
+        if (value === 0.7) {
+            delete savedLayerOpacity[node.data.name];  // 0.7 is the default
+        } else {
+            savedLayerOpacity[node.data.name] = value;
+        }
+        setCookie('or_layer_opacity',
+                  encodeURIComponent(JSON.stringify(savedLayerOpacity)));
+    }
+
+    // Modal "Layer Config" dialog (color + fill pattern + opacity), mirroring
+    // the Qt GUI's DisplayColorDialog.  Opened by double-clicking the swatch.
+    // Uses the shared createModalDialog lifecycle (overlay/Escape/backdrop).
+    function showLayerConfigDialog(node) {
+        const curColor = Array.isArray(node.data.color)
+            ? node.data.color : [200, 200, 200];
+        const curPattern = (node.data.pattern == null)
+            ? 1 : (node.data.pattern | 0);
+        const curOpacity = (typeof node.data.opacity === 'number')
+            ? node.data.opacity : 0.7;
+
+        const patternOptions = fillPatternItems.map(
+            (p) => `<option value="${p.value}"`
+                + (p.value === curPattern ? ' selected' : '')
+                + `>${p.label}</option>`).join('');
+
+        const { dialog, close } = createModalDialog(`
+            <div class="modal-dialog layer-config-dialog">
+            <h3 id="lc-title"></h3>
+            <div class="layer-config-row">
+                <label for="lc-color">Color</label>
+                <input type="color" id="lc-color" value="${rgbToHex(curColor)}">
+            </div>
+            <div class="layer-config-row">
+                <label for="lc-pattern">Fill pattern</label>
+                <select id="lc-pattern">${patternOptions}</select>
+            </div>
+            <div class="layer-config-row">
+                <label for="lc-opacity">Opacity</label>
+                <input type="range" id="lc-opacity" min="0" max="100"
+                       value="${Math.round(curOpacity * 100)}">
+                <span id="lc-opacity-val">${Math.round(curOpacity * 100)}%</span>
+            </div>
+            <div class="modal-buttons">
+                <button id="lc-cancel">Cancel</button>
+                <button id="lc-ok" class="primary">OK</button>
+            </div>
+            </div>`);
+
+        // Set the title via textContent (not HTML interpolation) so a layer
+        // name from the design can't inject markup.
+        dialog.querySelector('#lc-title').textContent
+            = 'Layer Config — ' + node.data.name;
+
+        const colorInput = dialog.querySelector('#lc-color');
+        const patternSelect = dialog.querySelector('#lc-pattern');
+        const opacityInput = dialog.querySelector('#lc-opacity');
+        const opacityVal = dialog.querySelector('#lc-opacity-val');
+        opacityInput.addEventListener('input', () => {
+            opacityVal.textContent = opacityInput.value + '%';
+        });
+
+        dialog.querySelector('#lc-cancel').addEventListener('click', close);
+        dialog.querySelector('#lc-ok').addEventListener('click', () => {
+            applyLayerColor(node, hexToRgb(colorInput.value));
+            applyLayerPattern(node, parseInt(patternSelect.value, 10));
+            applyLayerOpacity(node, (parseInt(opacityInput.value, 10) || 0) / 100);
+            close();
+        });
+    }
+
     document.addEventListener('click', (e) => {
         if (!contextMenu.contains(e.target)) hideContextMenu();
     });
@@ -434,11 +640,22 @@ export function populateDisplayControls(app, visibility, selectability,
             colorSwatch.className = 'layer-color';
             const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
             colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+            colorSwatch.style.cursor = 'pointer';
+            colorSwatch.title = 'Double-click to configure layer';
+            node.colorSwatch = colorSwatch;  // so applyLayerColor can update it
+            // Double-click the swatch to open the Layer Config dialog (color,
+            // fill pattern, opacity) — mirrors the Qt GUI DisplayColorDialog.
+            colorSwatch.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showLayerConfigDialog(node);
+            });
             label.appendChild(colorSwatch);
 
             label.appendChild(document.createTextNode(name));
 
-            // Setup context menu for layer
+            // Setup context menu for layer (visibility ranges; fill pattern now
+            // lives in the Layer Config dialog).
             label.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -886,6 +1103,7 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'placement_blockages', label: 'Placement' },
         { key: 'routing_obstructions', label: 'Routing' },
     ]});
+    visTree.add({ key: 'fills', label: 'Metal Fill' });
     if (techData.sites && techData.sites.length > 0) {
         visTree.add({ label: 'Rows', visKey: 'rows', addSelectable: true,
             children: techData.sites.map(name => ({

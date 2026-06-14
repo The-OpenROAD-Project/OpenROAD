@@ -115,6 +115,7 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"inst_pins",          &TileVisibility::inst_pins,          true},
     {"inst_pin_names",     &TileVisibility::inst_pin_names,     true},
     {"blockages",              &TileVisibility::blockages,              true},
+    {"fills",                  &TileVisibility::fills,                  true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
     {"rows",                   &TileVisibility::rows,                   false},
@@ -132,6 +133,36 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
   // fall back to the per-field default when a flag is omitted.
   for (const auto& f : kFields) {
     this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
+  }
+
+  // Per-layer fill pattern (index into FillPattern, mirroring the GUI brush
+  // order).  Clamp out-of-range values to solid so a bad payload can't index
+  // past the enum.
+  {
+    const int64_t p = jsonOr<int64_t>(
+        json, "pattern", static_cast<int64_t>(FillPattern::kSolid));
+    constexpr int64_t kMaxPattern = static_cast<int64_t>(FillPattern::kBDiag);
+    fill_pattern = (p >= 0 && p <= kMaxPattern) ? static_cast<FillPattern>(p)
+                                                : FillPattern::kSolid;
+  }
+
+  // Per-layer color override, sent as [r, g, b] (0-255).  Absent ⇒ fall back
+  // to the server's getLayerColorMap.  Alpha is not sent; it is taken from the
+  // resolved layer color at render time.
+  has_layer_color = false;
+  if (auto it = json.find("layer_color");
+      it != json.end() && it->value().is_array()) {
+    const auto& arr = it->value().as_array();
+    if (arr.size() >= 3) {
+      auto channel = [](const boost::json::value& v) -> unsigned char {
+        const int64_t c = v.is_int64() ? v.as_int64() : 0;
+        return static_cast<unsigned char>(std::clamp<int64_t>(c, 0, 255));
+      };
+      layer_color.r = channel(arr[0]);
+      layer_color.g = channel(arr[1]);
+      layer_color.b = channel(arr[2]);
+      has_layer_color = true;
+    }
   }
 
   // Bound the visibility-filter sizes so a malformed/oversized payload
@@ -709,12 +740,66 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
   image[index + 3] = c.a;
 }
 
+namespace {
+
+// Fixed screen-space geometry of the hatch patterns, in pixels.  Independent
+// of zoom so the pattern density looks the same at every level, mirroring how
+// Qt brushes paint in device space rather than world space.
+constexpr int kFillPatternSpacing = 6;    // distance between hatch lines
+constexpr int kFillPatternLineWidth = 1;  // hatch line thickness
+
+// Always-positive modulo so the diagonal masks behave for negative (gx-gy).
+inline int posMod(const int v, const int m)
+{
+  return ((v % m) + m) % m;
+}
+
+// Returns whether the interior pixel at GLOBAL pixel coordinate (gx, gy)
+// belongs to the pattern's painted set.  kNone always returns false (interior
+// left empty; callers draw the outline separately).  Evaluated in global
+// coordinates so hatch lines line up across adjacent tiles.
+//
+// Call sites unswitch the loop on the (loop-invariant) pattern, so the common
+// solid fill never reaches here; only hatch/cross/diagonal fills (rare,
+// user-selected) call this, once per interior pixel.
+inline bool patternMask(const web::FillPattern pattern,
+                        const int gx,
+                        const int gy)
+{
+  constexpr int kS = kFillPatternSpacing;
+  constexpr int kW = kFillPatternLineWidth;
+  switch (pattern) {
+    case web::FillPattern::kSolid:
+      return true;
+    case web::FillPattern::kNone:
+      return false;
+    case web::FillPattern::kHorizontal:
+      return posMod(gy, kS) < kW;
+    case web::FillPattern::kVertical:
+      return posMod(gx, kS) < kW;
+    case web::FillPattern::kCross:
+      return posMod(gy, kS) < kW || posMod(gx, kS) < kW;
+    case web::FillPattern::kFDiag:
+      return posMod(gx + gy, kS) < kW;
+    case web::FillPattern::kBDiag:
+      return posMod(gx - gy, kS) < kW;
+    case web::FillPattern::kDiagCross:
+      return posMod(gx + gy, kS) < kW || posMod(gx - gy, kS) < kW;
+  }
+  return true;
+}
+
+}  // namespace
+
 void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
                                 const odb::Polygon& poly,
                                 const odb::Rect& dbu_tile,
                                 const double scale,
                                 const Color& color,
-                                const bool blend) const
+                                const bool blend,
+                                const FillPattern pattern,
+                                const int px_origin_x,
+                                const int px_origin_y) const
 {
   const auto& points = poly.getPoints();
   const int n = static_cast<int>(points.size());
@@ -727,6 +812,40 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
   for (int i = 0; i < n; ++i) {
     px[i] = (points[i].x() - dbu_tile.xMin()) * scale;
     py[i] = (points[i].y() - dbu_tile.yMin()) * scale;
+  }
+
+  // kNone: paint only the polygon outline, leaving the interior empty.
+  // Walk each edge with Bresenham so the outline honors `blend` (drawLine is
+  // opaque setPixel only); matters if a blended caller ever requests kNone.
+  if (pattern == FillPattern::kNone) {
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+      int x0 = static_cast<int>(px[j]), y0 = 255 - static_cast<int>(py[j]);
+      const int x1 = static_cast<int>(px[i]),
+                y1 = 255 - static_cast<int>(py[i]);
+      const int dx = std::abs(x1 - x0), dy = -std::abs(y1 - y0);
+      const int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+      int err = dx + dy;
+      while (true) {
+        if (blend) {
+          blendPixel(image, x0, y0, color);
+        } else {
+          setPixel(image, x0, y0, color);
+        }
+        if (x0 == x1 && y0 == y1) {
+          break;
+        }
+        const int e2 = 2 * err;
+        if (e2 >= dy) {
+          err += dy;
+          x0 += sx;
+        }
+        if (e2 <= dx) {
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+    return;
   }
 
   // Compute pixel bounding box, clamped to tile.
@@ -761,11 +880,27 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
       const int ix_max = std::min(
           kTileSizeInPixel, static_cast<int>(std::ceil(x_intercepts[k + 1])));
       const int draw_y = 255 - iy;
-      for (int ix = ix_min; ix < ix_max; ++ix) {
-        if (blend) {
-          blendPixel(image, ix, draw_y, color);
-        } else {
-          setPixel(image, ix, draw_y, color);
+      const int gy = px_origin_y + draw_y;
+      // Unswitch the loop on the (loop-invariant) pattern: the common solid
+      // fill avoids the per-pixel pattern test entirely.
+      if (pattern == FillPattern::kSolid) {
+        for (int ix = ix_min; ix < ix_max; ++ix) {
+          if (blend) {
+            blendPixel(image, ix, draw_y, color);
+          } else {
+            setPixel(image, ix, draw_y, color);
+          }
+        }
+      } else {
+        for (int ix = ix_min; ix < ix_max; ++ix) {
+          if (!patternMask(pattern, px_origin_x + ix, gy)) {
+            continue;
+          }
+          if (blend) {
+            blendPixel(image, ix, draw_y, color);
+          } else {
+            setPixel(image, ix, draw_y, color);
+          }
         }
       }
     }
@@ -1516,6 +1651,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
+    // Top-left pixel of this tile in the zoom level's global pixel grid,
+    // captured before the Y flip below (which converts to DBU-up tile
+    // coordinates).  Used so the layer fill pattern stays continuous across
+    // tile seams — see fillPolygon/drawFilledRect.
+    const int px_origin_x = x * kTileSizeInPixel;
+    const int px_origin_y = y * kTileSizeInPixel;
+    const FillPattern fill_pattern = vis.fill_pattern;
     y = num_tiles_at_zoom - 1 - y;  // flip
     const odb::Rect full_bounds = getBounds();
     // Guard against an empty/invalid design footprint.  Without this,
@@ -1665,7 +1807,26 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           color = it->second;
         }
       }
+      // Per-request color override (from the Layer Config dialog): take the
+      // user's RGB but keep the resolved layer alpha so transparency stays
+      // consistent with the default look.
+      if (vis.has_layer_color) {
+        color.r = vis.layer_color.r;
+        color.g = vis.layer_color.g;
+        color.b = vis.layer_color.b;
+      }
       const Color obs_color = color.lighter();
+
+      // For non-routing layers (implant/masterslice/overlap/…), the master and
+      // block "obstruction" geometry IS the layer's own geometry, so draw it in
+      // the layer color (like the Qt GUI's drawInstanceShapes/drawObstructions
+      // which use the layer brush) instead of the faint obstruction shade used
+      // for routing-layer blockages.
+      const bool layer_is_routing
+          = tech_layer
+            && (tech_layer->getRoutingLevel() > 0
+                || tech_layer->getType() == odb::dbTechLayerType::CUT);
+      const Color obs_fill = layer_is_routing ? obs_color : color;
 
       // Special "_modules" layer: draw filled module-colored rectangles
       const bool modules_layer
@@ -2099,7 +2260,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Polygon poly = poly_obs->getPolygon();
                 inst->getTransform().apply(poly);
-                fillPolygon(image_buffer, poly, dbu_tile, scale, obs_color);
+                fillPolygon(image_buffer,
+                            poly,
+                            dbu_tile,
+                            scale,
+                            obs_fill,
+                            /*blend=*/false,
+                            fill_pattern,
+                            px_origin_x,
+                            px_origin_y);
               }
               for (odb::dbBox* obs : master->getObstructions(false)) {
                 if (tech_layer && obs->getTechLayer() != tech_layer) {
@@ -2113,7 +2282,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 const odb::Rect overlap = box.intersect(dbu_tile);
                 const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-                drawFilledRect(image_buffer, draw, obs_color);
+                drawFilledRect(image_buffer,
+                               draw,
+                               obs_fill,
+                               fill_pattern,
+                               px_origin_x,
+                               px_origin_y);
               }
             }
 
@@ -2126,7 +2300,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Polygon poly = poly_geom->getPolygon();
                     inst->getTransform().apply(poly);
-                    fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+                    fillPolygon(image_buffer,
+                                poly,
+                                dbu_tile,
+                                scale,
+                                color,
+                                /*blend=*/false,
+                                fill_pattern,
+                                px_origin_x,
+                                px_origin_y);
                   }
                   for (odb::dbBox* geom : mpin->getGeometry(false)) {
                     if (tech_layer && geom->getTechLayer() != tech_layer) {
@@ -2140,7 +2322,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     const odb::Rect overlap = box.intersect(dbu_tile);
                     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-                    drawFilledRect(image_buffer, draw, color);
+                    drawFilledRect(image_buffer,
+                                   draw,
+                                   color,
+                                   fill_pattern,
+                                   px_origin_x,
+                                   px_origin_y);
                   }
                 }
               }
@@ -2261,7 +2448,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             const odb::Rect overlap = box.intersect(dbu_tile);
             const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-            drawFilledRect(image_buffer, draw, color);
+            drawFilledRect(image_buffer,
+                           draw,
+                           color,
+                           fill_pattern,
+                           px_origin_x,
+                           px_origin_y);
           }
         }
 
@@ -2287,7 +2479,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Polygon& poly = std::get<1>(shape);
-            fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+            fillPolygon(image_buffer,
+                        poly,
+                        dbu_tile,
+                        scale,
+                        color,
+                        /*blend=*/false,
+                        fill_pattern,
+                        px_origin_x,
+                        px_origin_y);
           }
         }
 
@@ -2331,7 +2531,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               const odb::Rect overlap = box.intersect(dbu_tile);
               const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              drawFilledRect(image_buffer, draw, color);
+              drawFilledRect(image_buffer,
+                             draw,
+                             color,
+                             fill_pattern,
+                             px_origin_x,
+                             px_origin_y);
             }
           }
         }
@@ -2385,7 +2590,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 const odb::Rect overlap = box.intersect(dbu_tile);
                 const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-                drawFilledRect(image_buffer, draw, color);
+                drawFilledRect(image_buffer,
+                               draw,
+                               color,
+                               fill_pattern,
+                               px_origin_x,
+                               px_origin_y);
               }
             }
           }
@@ -2419,8 +2629,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
         }
 
-        // Draw routing obstructions (dbObstruction) on per-layer tiles.
-        // Same diagonal white hash lines.
+        // Draw block obstructions (dbObstruction) on per-layer tiles, gated by
+        // routing_obstructions for every layer (preserves the prior toggle
+        // semantics).  Only the RENDER differs by layer type: routing/cut →
+        // diagonal white hash (routing blockage); non-routing (implant/other) →
+        // the obstruction IS the layer geometry, so fill in the layer color +
+        // pattern.
         if (!instances_only && tech_layer && vis.routing_obstructions) {
           const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
           constexpr int kPixelPeriod = 20;
@@ -2438,6 +2652,15 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             }
             const odb::Rect overlap = box.intersect(dbu_tile);
             const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+            if (!layer_is_routing) {
+              drawFilledRect(image_buffer,
+                             draw,
+                             color,
+                             fill_pattern,
+                             px_origin_x,
+                             px_origin_y);
+              continue;
+            }
             const int ox = (int) (dbu_x_min * scale);
             const int oy = (int) (dbu_y_min * scale);
             for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
@@ -2447,6 +2670,34 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
               }
             }
+          }
+        }
+
+        // Draw metal fill (dbFill) on per-layer tiles, in the layer color +
+        // pattern.  Indexed by Search but not drawn elsewhere; the GUI draws
+        // these in drawLayer via searchFills.  Skip the rtree query (and its
+        // first-use index build) entirely when the design has no fills.
+        if (!instances_only && tech_layer && vis.fills
+            && !block->getFills().empty()) {
+          for (odb::dbFill* fill : search_->searchFills(block,
+                                                        tech_layer,
+                                                        dbu_x_min,
+                                                        dbu_y_min,
+                                                        dbu_x_max,
+                                                        dbu_y_max)) {
+            odb::Rect box;
+            fill->getRect(box);
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+            drawFilledRect(image_buffer,
+                           draw,
+                           color,
+                           fill_pattern,
+                           px_origin_x,
+                           px_origin_y);
           }
         }
 
@@ -3514,12 +3765,42 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
 
 void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
                                    const odb::Rect& rect,
-                                   const Color& color) const
+                                   const Color& color,
+                                   const FillPattern pattern,
+                                   const int px_origin_x,
+                                   const int px_origin_y) const
 {
-  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+  // kNone: paint only the rectangle border, leaving the interior empty.
+  if (pattern == FillPattern::kNone) {
     for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+      setPixel(buffer, ix, 255 - rect.yMin(), color);
+      setPixel(buffer, ix, 255 - (rect.yMax() - 1), color);
+    }
+    for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+      setPixel(buffer, rect.xMin(), 255 - iy, color);
+      setPixel(buffer, rect.xMax() - 1, 255 - iy, color);
+    }
+    return;
+  }
+
+  // Unswitch the loop on the (loop-invariant) pattern: the common solid fill
+  // avoids the per-pixel pattern test entirely.
+  if (pattern == FillPattern::kSolid) {
+    for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
       const int draw_y = (255 - iy);
-      setPixel(buffer, ix, draw_y, color);
+      for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+        setPixel(buffer, ix, draw_y, color);
+      }
+    }
+  } else {
+    for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+      const int draw_y = (255 - iy);
+      const int gy = px_origin_y + draw_y;
+      for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+        if (patternMask(pattern, px_origin_x + ix, gy)) {
+          setPixel(buffer, ix, draw_y, color);
+        }
+      }
     }
   }
 }
@@ -3948,29 +4229,42 @@ boost::json::object buildLayerHierarchy(
   json_node["type"] = (node.inst == nullptr) ? "block" : "instance";
   json_node["path"] = node.path;
 
+  // Group layers by type, mirroring gui::DisplayControls::addTech:
+  // routing/cut form the main "Layers" group, IMPLANT and everything else
+  // (masterslice, overlap, …) get their own folders so the web tree reaches
+  // structural parity with the Qt GUI.  NOTE: implant/other geometry is not
+  // yet indexed by Search (which serves routing/special-net shapes), so those
+  // category tiles may render empty until the search index is extended; the
+  // tree entries are emitted regardless so the categories are visible.
   boost::json::array layers_arr;
   boost::json::array backside_layers_arr;
+  boost::json::array implant_layers_arr;
+  boost::json::array other_layers_arr;
   if (node.chip) {
     if (odb::dbTech* tech = node.chip->getTech()) {
       const auto& layer_colors = gen.getLayerColorMap(tech);
       for (odb::dbTechLayer* layer : tech->getLayers()) {
-        if (layer->getRoutingLevel() > 0
-            || layer->getType() == odb::dbTechLayerType::CUT) {
-          boost::json::object layer_obj;
-          layer_obj["name"] = layer->getName();
-          Color c{.r = 200, .g = 200, .b = 200, .a = 180};
-          auto it = layer_colors.find(layer);
-          if (it != layer_colors.end()) {
-            c = it->second;
-          }
-          layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
-                                                  static_cast<int>(c.g),
-                                                  static_cast<int>(c.b)};
+        boost::json::object layer_obj;
+        layer_obj["name"] = layer->getName();
+        Color c{.r = 200, .g = 200, .b = 200, .a = 180};
+        auto it = layer_colors.find(layer);
+        if (it != layer_colors.end()) {
+          c = it->second;
+        }
+        layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
+                                                static_cast<int>(c.g),
+                                                static_cast<int>(c.b)};
+        const odb::dbTechLayerType type = layer->getType();
+        if (layer->getRoutingLevel() > 0 || type == odb::dbTechLayerType::CUT) {
           if (layer->isBackside()) {
             backside_layers_arr.emplace_back(std::move(layer_obj));
           } else {
             layers_arr.emplace_back(std::move(layer_obj));
           }
+        } else if (type == odb::dbTechLayerType::IMPLANT) {
+          implant_layers_arr.emplace_back(std::move(layer_obj));
+        } else {
+          other_layers_arr.emplace_back(std::move(layer_obj));
         }
       }
     }
@@ -3985,14 +4279,24 @@ boost::json::object buildLayerHierarchy(
           buildLayerHierarchy(*child, children_by_parent, gen));
     }
   }
-  if (!backside_layers_arr.empty()) {
-    boost::json::object backside_node;
-    backside_node["name"] = "Backside";
-    backside_node["type"] = "category";
-    backside_node["layers"] = std::move(backside_layers_arr);
-    backside_node["instances"] = boost::json::array{};
-    instances_arr.emplace_back(std::move(backside_node));
-  }
+  // Emit a "category" folder node (Backside / Implant / Other) holding the
+  // grouped layers.  Category nodes carry no chiplet path, so the frontend
+  // treats them as pure UI folders (see buildLayerSpec).
+  auto add_category
+      = [&instances_arr](const char* name, boost::json::array&& layers) {
+          if (layers.empty()) {
+            return;
+          }
+          boost::json::object cat_node;
+          cat_node["name"] = name;
+          cat_node["type"] = "category";
+          cat_node["layers"] = std::move(layers);
+          cat_node["instances"] = boost::json::array{};
+          instances_arr.emplace_back(std::move(cat_node));
+        };
+  add_category("Backside", std::move(backside_layers_arr));
+  add_category("Implant", std::move(implant_layers_arr));
+  add_category("Other", std::move(other_layers_arr));
   json_node["instances"] = std::move(instances_arr);
 
   return json_node;
