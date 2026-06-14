@@ -647,16 +647,10 @@ void RepairDesign::findBufferSizes()
                    resizer_->buffer_fast_sizes_.end()};
   std::ranges::sort(buffer_sizes_,
                     [=](sta::LibertyCell* a, sta::LibertyCell* b) {
-                      const float cin_a = bufferCin(a), cin_b = bufferCin(b);
-                      if (cin_a < cin_b) {
-                        return true;
+                      if (bufferCin(a) != bufferCin(b)) {
+                        return bufferCin(a) < bufferCin(b);
                       }
-                      if (cin_b < cin_a) {
-                        return false;
-                      }
-                      // buffer_fast_sizes_ is unordered; tie-break for stable
-                      // output.
-                      return std::string_view(a->name()) < std::string_view(b->name());
+                      return a->id() < b->id();
                     });
 }
 
