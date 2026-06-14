@@ -3,12 +3,15 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
 #include <string_view>
 #include <unordered_set>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -79,6 +82,15 @@ class dbNetwork : public ConcreteNetwork
   void removeObserver(dbNetworkObserver* observer);
 
   odb::dbBlock* block() const { return block_; }
+  // Top dbChip when a 3Dbx design is active; null otherwise.
+  odb::dbChip* topChip() const { return top_chip_; }
+  void setTopChip(odb::dbChip* chip);
+  // Master block of a chiplet instance; null if the master chip is itself
+  // hierarchical (no own dbBlock).
+  odb::dbBlock* blockOf(odb::dbChipInst* chip_inst) const;
+  // True when chip_inst's master block is referenced by exactly one
+  // chip-inst (the caller). Used to gate descent into the master's body.
+  bool blockOwnedUniquelyBy(odb::dbChipInst* chip_inst) const;
   utl::Logger* getLogger() const { return logger_; }
   void makeLibrary(odb::dbLib* lib);
   void makeCell(Library* library, odb::dbMaster* master);
@@ -151,6 +163,15 @@ class dbNetwork : public ConcreteNetwork
   Net* dbToSta(odb::dbModNet* net) const;
   Port* dbToSta(odb::dbModBTerm* modbterm) const;
   Term* dbToStaTerm(odb::dbModBTerm* modbterm) const;
+
+  // dbChipBumpInst uses the pointer-tag scheme (lower-3-bits tag);
+  // dbChipInst / dbChipNet are discriminated at decode via dbObject type id.
+  Pin* dbToSta(odb::dbChipBumpInst* bump_inst) const;
+  Instance* dbToSta(odb::dbChipInst* chip_inst) const;
+  Net* dbToSta(odb::dbChipNet* chip_net) const;
+  odb::dbChipBumpInst* staToDbChipBumpInst(const Pin* pin) const;
+  odb::dbChipInst* staToDbChipInst(const Instance* instance) const;
+  odb::dbChipNet* staToDbChipNet(const Net* net) const;
 
   PortDirection* dbToSta(const odb::dbSigType& sig_type,
                          const odb::dbIoType& io_type) const;
@@ -449,6 +470,9 @@ class dbNetwork : public ConcreteNetwork
   void disableHierarchy() { db_->setHierarchy(false); }
   bool hasHierarchy() const { return db_->hasHierarchy(); }
   bool hasHierarchicalElements() const;
+  // 3DIC gate: true when top_chip_ is a hierarchical chip (no own dbBlock,
+  // owns dbChipInsts). Chip-aware iterators key off this.
+  bool has3DicChip() const;
   void reassociateHierFlatNet(odb::dbModNet* mod_net,
                               odb::dbNet* new_flat_net,
                               odb::dbNet* orig_flat_net);
@@ -490,10 +514,12 @@ class dbNetwork : public ConcreteNetwork
   void readDbNetlistAfter();
   void checkLibertyCellsWithoutLef() const;
   void makeTopCell();
+  void makeTopCellForChip(odb::dbChip* chip);
   void findConstantNets();
   void makeAccessHashes();
   bool portMsbFirst(std::string_view port_name, std::string_view cell_name);
   ObjectId getDbNwkObjectId(const odb::dbObject* object) const;
+  ObjectId blockDiscBits(const odb::dbObject* obj, odb::dbObjectType typ) const;
 
   ////////////////////////////////////////////////////////////////
   // Debug functions
@@ -502,6 +528,38 @@ class dbNetwork : public ConcreteNetwork
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
   odb::dbBlock* block_ = nullptr;
+  odb::dbChip* top_chip_ = nullptr;
+  // One synthetic Cell per dbChip master referenced by a chiplet inst. The
+  // Cell has no LibertyCell binding; STA property queries that go through
+  // libertyCell(Cell*) need a non-null Cell* to avoid a null deref.
+  odb::PtrMap<odb::dbChip, Cell*> chip_master_cells_;
+  // Reverse lookup: bump-inst -> owning chip-net. ensureBumpToChipNet-
+  // CacheFresh() rebuilds it on chip-net-count change so net(chip_bump_
+  // _pin) sees chip-nets created via the odb API post-setTopChip().
+  // Caveat: in-place addBumpInst/removeBumpInst on an existing chip-net
+  // (no count change) is NOT detected — see 3DIC_TODO.md TODO 4.
+  mutable odb::PtrMap<odb::dbChipBumpInst, odb::dbChipNet*> bump_to_chip_net_;
+  mutable size_t bump_to_chip_net_cache_size_ = 0;
+  void ensureBumpToChipNetCacheFresh() const;
+  // STA vertex-id storage for chip-bump-inst pins. _dbChipBumpInst has no
+  // staVertexId field on the odb side; keep the mapping here.
+  odb::PtrMap<odb::dbChipBumpInst, VertexId> chip_bump_vertex_ids_;
+  // Reverse lookup: chiplet master dbBlock -> chip-inst that placed it.
+  // Built in setTopChip. Only contains blocks whose master is referenced
+  // by exactly one chip-inst — shared masters (e.g. two chip-insts of
+  // the same chiplet) are skipped, since their inner dbInsts would alias
+  // across chip-insts and break STA's per-pin Vertex assumption.
+  odb::PtrMap<odb::dbBlock, odb::dbChipInst*> block_to_chip_inst_;
+  // Per-block discriminator stamped into upper bits of getDbNwkObjectId
+  // so iterms/bterms/insts/nets from different chiplet blocks (each
+  // numbered from 1) don't collide in NetSet/PinSet keys.
+  odb::PtrMap<odb::dbBlock, uint32_t> block_disc_;
+  // Synthetic (non-Liberty) Library owning the chip-master Cells built in
+  // makeTopCellForChip. The Cells have no LibertyCell binding; a clock
+  // anchored on a chip-bump pin propagates because the pin is BIDIRECT
+  // (dual load/driver vertices, both clock-seeded) and the driver fans out
+  // via the fat-net wire-edge model — no synthesized timing arc.
+  Library* chip_master_lib_ = nullptr;
   Instance* top_instance_;
   Cell* top_cell_ = nullptr;
   std::set<dbNetworkObserver*> observers_;
@@ -516,6 +574,9 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBMODINST_ID = 0x6;
   static constexpr unsigned DBMODNET_ID = 0x7;
   static constexpr unsigned DBMODULE_ID = 0x8;
+  static constexpr unsigned DBCHIPINST_ID = 0x9;
+  static constexpr unsigned DBCHIPBUMP_INST_ID = 0xA;
+  static constexpr unsigned DBCHIPNET_ID = 0xB;
   static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;

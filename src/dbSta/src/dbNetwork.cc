@@ -95,6 +95,12 @@ using odb::dbBTerm;
 using odb::dbBTermObj;
 using odb::dbBusPort;
 using odb::dbChip;
+using odb::dbChipBumpInst;
+using odb::dbChipBumpInstObj;
+using odb::dbChipInst;
+using odb::dbChipInstObj;
+using odb::dbChipNet;
+using odb::dbChipNetObj;
 using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbInstObj;
@@ -190,26 +196,76 @@ PinInfo getPinInfo(const dbNetwork* network, const Pin* pin)
 // lower 4  bits used to encode type
 //
 
+// 3DIC chiplets each own a private dbBlock that numbers its
+// iterms/bterms/insts/nets from 1, so two "clk" nets (one per chiplet)
+// hash to the same id and collide in NetSet/PinSet. Steal the top
+// kBlockTagWidth bits for a per-block discriminator allocated in
+// setTopChip(). 8 bits = 255 unique chiplet blocks (0 reserved for
+// non-3DIC); leaves 20 bits for the per-block db_id (~1M objects per
+// block, ample for typical chiplet sizes).
+static constexpr unsigned kBlockTagWidth = 8;
+static constexpr ObjectId kBlockTagMask = (1U << kBlockTagWidth) - 1;
+static constexpr unsigned kBlockTagShift = 32 - kBlockTagWidth;
+
+ObjectId dbNetwork::blockDiscBits(const dbObject* obj, dbObjectType typ) const
+{
+  if (block_disc_.empty()) {
+    return 0;
+  }
+  odb::dbBlock* blk = nullptr;
+  switch (typ) {
+    case dbITermObj:
+      blk = static_cast<const dbITerm*>(obj)->getBlock();
+      break;
+    case dbBTermObj:
+      blk = static_cast<const dbBTerm*>(obj)->getBlock();
+      break;
+    case dbInstObj:
+      blk = static_cast<const dbInst*>(obj)->getBlock();
+      break;
+    case dbNetObj:
+      blk = static_cast<const dbNet*>(obj)->getBlock();
+      break;
+    default:
+      return 0;
+  }
+  if (blk == nullptr) {
+    return 0;
+  }
+  auto it = block_disc_.find(blk);
+  if (it == block_disc_.end()) {
+    return 0;
+  }
+  return (it->second & kBlockTagMask) << kBlockTagShift;
+}
+
 ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
 {
   const dbObjectType typ = object->getObjectType();
   const ObjectId db_id = object->getId();
-  if (db_id > (std::numeric_limits<ObjectId>::max() >> DBIDTAG_WIDTH)) {
+  // In 3DIC mode the top kBlockTagWidth bits encode block_disc, leaving
+  // 32 - DBIDTAG_WIDTH - kBlockTagWidth bits for the per-block db_id.
+  // In non-3DIC mode block_disc is always 0, so the full
+  // (32 - DBIDTAG_WIDTH) bits are available.
+  const unsigned db_id_bits = has3DicChip()
+                                  ? (32 - DBIDTAG_WIDTH - kBlockTagWidth)
+                                  : (32 - DBIDTAG_WIDTH);
+  if (db_id > ((1ULL << db_id_bits) - 1)) {
     logger_->error(ORD, 2019, "Database id exceeds capacity");
   }
 
   switch (typ) {
     case dbITermObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBITERM_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBITERM_ID;
     } break;
     case dbBTermObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBBTERM_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBBTERM_ID;
     } break;
     case dbInstObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBINST_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBINST_ID;
     } break;
     case dbNetObj: {
-      return ((db_id << DBIDTAG_WIDTH) | DBNET_ID);
+      return blockDiscBits(object, typ) | (db_id << DBIDTAG_WIDTH) | DBNET_ID;
     } break;
     case dbModITermObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBMODITERM_ID);
@@ -225,6 +281,15 @@ ObjectId dbNetwork::getDbNwkObjectId(const dbObject* object) const
     } break;
     case dbModuleObj: {
       return ((db_id << DBIDTAG_WIDTH) | DBMODULE_ID);
+    } break;
+    case dbChipInstObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBCHIPINST_ID);
+    } break;
+    case dbChipBumpInstObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBCHIPBUMP_INST_ID);
+    } break;
+    case dbChipNetObj: {
+      return ((db_id << DBIDTAG_WIDTH) | DBCHIPNET_ID);
     } break;
     default:
       logger_->error(
@@ -251,6 +316,7 @@ enum class PinPointerTags : std::uintptr_t
   kDbIterm = 1U,
   kDbBterm = 2U,
   kDbModIterm = 3U,
+  kDbChipBumpInst = 4U,
 };
 
 //
@@ -270,10 +336,19 @@ class DbInstanceChildIterator : public InstanceChildIterator
  private:
   const dbNetwork* network_;
   bool top_;
+  // When true, only chipinst_iter_ is valid. The other iterators are
+  // default-constructed and unsafe to compare/deref.
+  bool chip_walk_ = false;
   dbSet<dbInst>::iterator dbinst_iter_;
   dbSet<dbInst>::iterator dbinst_end_;
   dbSet<odb::dbModInst>::iterator modinst_iter_;
   dbSet<odb::dbModInst>::iterator modinst_end_;
+  dbSet<odb::dbChipInst>::iterator chipinst_iter_;
+  dbSet<odb::dbChipInst>::iterator chipinst_end_;
+  // Flat list of inner dbInsts collected at construction when the
+  // topInstance child walk needs to surface chiplet bodies.
+  std::vector<dbInst*> flat_inner_insts_;
+  size_t flat_inner_idx_ = 0;
 };
 
 DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
@@ -281,6 +356,39 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
     : network_(network)
 {
   dbBlock* block = network->block();
+
+  // Chip-hierarchy gate runs before block/module gates so the chip-inst
+  // path is independent of hasHierarchy(). On the top instance the
+  // iterator FLATTENS: yields every chip-inst AND, for each uniquely
+  // owned chiplet master block, that block's inner dbInsts. STA's
+  // leafInstanceIterator then sees both populations as leaves and
+  // Graph::makePinVertices creates Vertices for chip-bump pins and inner
+  // ITerm/BTerm pins both.
+  if (network->has3DicChip() && instance == network->topInstance()) {
+    top_ = true;
+    chip_walk_ = true;
+    dbSet<odb::dbChipInst> chip_insts = network->topChip()->getChipInsts();
+    chipinst_iter_ = chip_insts.begin();
+    chipinst_end_ = chip_insts.end();
+    // TODO: migrate this inner-inst enumeration into UnfoldedModel and drop
+    // the blockOwnedUniquelyBy filter once chip-inst Instance* is rekeyed
+    // to be path-aware (UnfoldedChip*).
+    for (odb::dbChipInst* chip_inst : chip_insts) {
+      if (network->blockOwnedUniquelyBy(chip_inst)) {
+        if (dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
+          for (dbInst* inst : mb->getInsts()) {
+            flat_inner_insts_.push_back(inst);
+          }
+        }
+      }
+    }
+    return;
+  }
+  // Chip-insts themselves are leaves (Stage 4 model). Their bodies are
+  // surfaced via the topInstance flat walk above.
+  if (network->staToDbChipInst(instance) != nullptr) {
+    return;
+  }
 
   // original code for non hierarchy
   if (!network->hasHierarchy()) {
@@ -318,11 +426,26 @@ DbInstanceChildIterator::DbInstanceChildIterator(const Instance* instance,
 
 bool DbInstanceChildIterator::hasNext()
 {
+  if (chip_walk_) {
+    return chipinst_iter_ != chipinst_end_
+           || flat_inner_idx_ < flat_inner_insts_.size();
+  }
   return !((dbinst_iter_ == dbinst_end_) && (modinst_iter_ == modinst_end_));
 }
 
 Instance* DbInstanceChildIterator::next()
 {
+  if (chip_walk_) {
+    if (chipinst_iter_ != chipinst_end_) {
+      odb::dbChipInst* child = *chipinst_iter_;
+      chipinst_iter_++;
+      return network_->dbToSta(child);
+    }
+    if (flat_inner_idx_ < flat_inner_insts_.size()) {
+      return network_->dbToSta(flat_inner_insts_[flat_inner_idx_++]);
+    }
+    return nullptr;
+  }
   Instance* ret = nullptr;
   if (dbinst_iter_ != dbinst_end_) {
     dbInst* child = *dbinst_iter_;
@@ -351,12 +474,26 @@ class DbInstanceNetIterator : public InstanceNetIterator
   dbSet<odb::dbModNet>::iterator mod_net_end_;
   std::vector<dbNet*> flat_nets_vec_;
   size_t flat_net_idx_ = 0;
+  dbSet<odb::dbChipNet>::iterator chip_net_iter_;
+  dbSet<odb::dbChipNet>::iterator chip_net_end_;
+  // Short-circuit flag — chip-net iterators are only valid in this path;
+  // the other iterators stay default-constructed (UB to compare).
+  bool chip_walk_ = false;
 };
 
 DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
                                              const dbNetwork* network)
     : network_(network)
 {
+  if (network_->has3DicChip()) {
+    if (instance == network_->topInstance()) {
+      dbSet<odb::dbChipNet> nets = network_->topChip()->getChipNets();
+      chip_walk_ = true;
+      chip_net_iter_ = nets.begin();
+      chip_net_end_ = nets.end();
+    }
+    return;
+  }
   if (network_->hasHierarchy()) {
     //
     // In hierarchical flow, the net iterator collects both hierarchical
@@ -437,6 +574,16 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
 
 bool DbInstanceNetIterator::hasNext()
 {
+  if (chip_walk_) {
+    return chip_net_iter_ != chip_net_end_;
+  }
+  // 3DIC mode: only the top-instance chip-net walk (chip_walk_) is valid.
+  // For any other instance the ctor returns early and the legacy iter_/end_
+  // members are left default-constructed, so report empty instead of
+  // comparing them (default-constructed dbSet iterators are UB to compare).
+  if (network_->has3DicChip()) {
+    return false;
+  }
   if (network_->hasHierarchy()) {
     if (mod_net_iter_ != mod_net_end_) {
       return true;
@@ -448,6 +595,18 @@ bool DbInstanceNetIterator::hasNext()
 
 Net* DbInstanceNetIterator::next()
 {
+  if (chip_walk_) {
+    if (chip_net_iter_ != chip_net_end_) {
+      odb::dbChipNet* net = *chip_net_iter_;
+      chip_net_iter_++;
+      return network_->dbToSta(net);
+    }
+    return nullptr;
+  }
+  // 3DIC, non-top instance: empty (see hasNext) — never touch iter_.
+  if (network_->has3DicChip()) {
+    return nullptr;
+  }
   if (network_->hasHierarchy()) {
     if (mod_net_iter_ != mod_net_end_) {
       odb::dbModNet* net = *mod_net_iter_;
@@ -485,6 +644,13 @@ class DbInstancePinIterator : public InstancePinIterator
   Pin* next_ = nullptr;
   dbInst* db_inst_;
   odb::dbModInst* mod_inst_;
+  // Flattened bump-inst list for a chip-inst pin walk (collected at
+  // construction; per-region nesting is hidden from callers).
+  std::vector<odb::dbChipBumpInst*> chip_bumps_;
+  size_t chip_bumps_idx_ = 0;
+  // When true, iitr_/mi_itr_ are default-constructed and unsafe to compare;
+  // hasNext must short-circuit through the chip_bumps_ path only.
+  bool chip_inst_ = false;
 };
 
 DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
@@ -496,6 +662,14 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
   mod_inst_ = nullptr;
 
   if (top_) {
+    // 3DIC top has no block. Route through the empty-chip_bumps_ path so
+    // hasNext short-circuits without touching default-constructed BTerm
+    // iterators. Stage 5+ may expose chip-net bumps as top pins.
+    if (network->has3DicChip()) {
+      top_ = false;
+      chip_inst_ = true;
+      return;
+    }
     dbBlock* block = network->block();
     // it is possible that a block might not have been created if no design
     // has been read in.
@@ -503,18 +677,29 @@ DbInstancePinIterator::DbInstancePinIterator(const Instance* inst,
       bitr_ = block->getBTerms().begin();
       bitr_end_ = block->getBTerms().end();
     }
-  } else {
-    dbInst* db_inst;
-    odb::dbModInst* mod_inst;
-    network_->staToDb(inst, db_inst, mod_inst);
-    if (db_inst) {
-      iitr_ = db_inst->getITerms().begin();
-      iitr_end_ = db_inst->getITerms().end();
-    } else if (mod_inst) {
-      if (network_->hasHierarchy()) {
-        mi_itr_ = mod_inst->getModITerms().begin();
-        mi_itr_end_ = mod_inst->getModITerms().end();
+    return;
+  }
+
+  if (dbChipInst* chip_inst = network_->staToDbChipInst(inst)) {
+    chip_inst_ = true;
+    for (odb::dbChipRegionInst* region : chip_inst->getRegions()) {
+      for (odb::dbChipBumpInst* bump : region->getChipBumpInsts()) {
+        chip_bumps_.push_back(bump);
       }
+    }
+    return;
+  }
+
+  dbInst* db_inst;
+  odb::dbModInst* mod_inst;
+  network_->staToDb(inst, db_inst, mod_inst);
+  if (db_inst) {
+    iitr_ = db_inst->getITerms().begin();
+    iitr_end_ = db_inst->getITerms().end();
+  } else if (mod_inst) {
+    if (network_->hasHierarchy()) {
+      mi_itr_ = mod_inst->getModITerms().begin();
+      mi_itr_end_ = mod_inst->getModITerms().end();
     }
   }
 }
@@ -530,6 +715,14 @@ bool DbInstancePinIterator::hasNext()
         return true;
       }
       bitr_++;
+    }
+    return false;
+  }
+
+  if (chip_inst_) {
+    if (chip_bumps_idx_ < chip_bumps_.size()) {
+      next_ = network_->dbToSta(chip_bumps_[chip_bumps_idx_++]);
+      return true;
     }
     return false;
   }
@@ -574,15 +767,33 @@ class DbNetPinIterator : public NetPinIterator
   dbSet<dbModITerm>::iterator mitr_end_;
   Pin* next_;
   const dbNetwork* network_;
+  // Chip-net mode: bump-inst pins are pre-collected; legacy iter members
+  // stay default-constructed (UB to compare).
+  std::vector<odb::dbChipBumpInst*> chip_bumps_;
+  size_t chip_bumps_idx_ = 0;
+  bool chip_walk_ = false;
 };
 
 DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
 {
+  network_ = network;
+  next_ = nullptr;
+
+  if (odb::dbChipNet* chip_net = network_->staToDbChipNet(net)) {
+    chip_walk_ = true;
+    const uint32_t n = chip_net->getNumBumpInsts();
+    std::vector<odb::dbChipInst*> path;
+    for (uint32_t i = 0; i < n; ++i) {
+      if (odb::dbChipBumpInst* bump = chip_net->getBumpInst(i, path)) {
+        chip_bumps_.push_back(bump);
+      }
+    }
+    return;
+  }
+
   dbNet* dnet = nullptr;
   odb::dbModNet* modnet = nullptr;
-  network_ = network;
   network->staToDb(net, dnet, modnet);
-  next_ = nullptr;
   if (dnet) {
     iitr_ = dnet->getITerms().begin();
     iitr_end_ = dnet->getITerms().end();
@@ -597,6 +808,13 @@ DbNetPinIterator::DbNetPinIterator(const Net* net, const dbNetwork* network)
 
 bool DbNetPinIterator::hasNext()
 {
+  if (chip_walk_) {
+    if (chip_bumps_idx_ < chip_bumps_.size()) {
+      next_ = network_->dbToSta(chip_bumps_[chip_bumps_idx_++]);
+      return true;
+    }
+    return false;
+  }
   while (iitr_ != iitr_end_) {
     dbITerm* iterm = *iitr_;
     if (!network_->isPGSupply(iterm)) {
@@ -702,10 +920,183 @@ void dbNetwork::setBlock(dbBlock* block)
   readDbNetlistAfter();
 }
 
+void dbNetwork::setTopChip(dbChip* chip)
+{
+  top_chip_ = chip;
+  bump_to_chip_net_.clear();
+  bump_to_chip_net_cache_size_ = 0;
+  block_to_chip_inst_.clear();
+  block_disc_.clear();
+  if (chip == nullptr) {
+    return;
+  }
+  // chiplet block -> chip-inst, but only when the master block is
+  // referenced by exactly one chip-inst. Shared-master chip-insts can't
+  // descend into the same dbBlock (inner dbInst pointers would alias)
+  // and stay treated as leaves.
+  odb::PtrMap<odb::dbBlock, int> block_refcount;
+  uint32_t next_disc = 1;
+  // block_disc values are masked to kBlockTagWidth bits when stamped
+  // into the ObjectId. Beyond the mask, distinct chiplet blocks alias
+  // to one another in NetSet/PinSet keys, silently merging pins/nets
+  // across chiplets. Error out so wrong timing isn't produced quietly.
+  constexpr uint32_t kMaxBlockDisc = (1U << kBlockTagWidth) - 1;
+  for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    if (odb::dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
+      block_refcount[mb]++;
+      block_to_chip_inst_[mb] = chip_inst;
+      if (block_disc_.emplace(mb, next_disc).second) {
+        if (next_disc > kMaxBlockDisc) {
+          logger_->error(utl::STA,
+                         3004,
+                         "3DIC design has more than {} unique chiplet "
+                         "blocks; per-block ObjectId discriminator "
+                         "({} bits) overflows. Widen kBlockTagWidth in "
+                         "dbNetwork.cc or reduce unique chiplet "
+                         "definitions.",
+                         kMaxBlockDisc,
+                         kBlockTagWidth);
+        }
+        ++next_disc;
+      }
+    }
+  }
+  for (auto& [block, cnt] : block_refcount) {
+    if (cnt > 1) {
+      block_to_chip_inst_.erase(block);
+    }
+  }
+  // Leaf chip with own dbBlock: route through the existing flat path.
+  if (chip->getBlock() != nullptr) {
+    if (block_ == nullptr) {
+      block_ = chip->getBlock();
+    }
+    return;
+  }
+  // Hierarchical chip (no own block): synthesize a top cell so STA can
+  // see the chip-inst children via topInstance().
+  if (!chip->getChipInsts().empty()) {
+    makeTopCellForChip(chip);
+  }
+}
+
+void dbNetwork::ensureBumpToChipNetCacheFresh() const
+{
+  if (top_chip_ == nullptr) {
+    return;
+  }
+  // Detect chip-nets added between cache builds by tracking the odb
+  // chip-net count. Rebuild on any size mismatch — covers tcl/C++
+  // callers that dbChipNet_create + addBumpInst after read_3dbx.
+  //
+  // Caveat: this still misses in-place bump-inst rewires on an EXISTING
+  // chip-net (addBumpInst without creating a new net first). dbCbk
+  // currently emits no chip-net / bump-inst signals, so callback-driven
+  // invalidation isn't possible yet. See 3DIC_TODO.md.
+  const dbSet<odb::dbChipNet> chip_nets = top_chip_->getChipNets();
+  if (bump_to_chip_net_cache_size_ == chip_nets.size()
+      && !bump_to_chip_net_.empty()) {
+    return;
+  }
+  bump_to_chip_net_.clear();
+  for (odb::dbChipNet* chip_net : chip_nets) {
+    const uint32_t n = chip_net->getNumBumpInsts();
+    std::vector<dbChipInst*> path;
+    for (uint32_t i = 0; i < n; ++i) {
+      odb::dbChipBumpInst* bump_inst = chip_net->getBumpInst(i, path);
+      if (bump_inst != nullptr) {
+        bump_to_chip_net_[bump_inst] = chip_net;
+      }
+    }
+  }
+  bump_to_chip_net_cache_size_ = chip_nets.size();
+}
+
+void dbNetwork::makeTopCellForChip(dbChip* chip)
+{
+  if (top_cell_) {
+    Library* old_lib = library(top_cell_);
+    deleteLibrary(old_lib);
+  }
+  if (chip_master_lib_) {
+    deleteLibrary(chip_master_lib_);
+    chip_master_lib_ = nullptr;
+  }
+  chip_master_cells_.clear();
+  const char* design_name = chip->getName();
+  Library* top_lib = makeLibrary(design_name, "");
+  top_cell_ = makeCell(top_lib, design_name, false, "");
+  // One plain Cell per chip master with a Port per chip-bump bterm,
+  // backing cell()/port()/name()/direction() for chip-inst and chip-bump
+  // pins. No LibertyCell, so chip-bump pins read as BIDIRECT and a clock
+  // anchored on one propagates through the fat-net wire model on its own
+  // (no timing arc, no OpenSTA-private LibertyBuilder).
+  chip_master_lib_ = makeLibrary("3dic_chip_master_lib", "");
+  for (dbChipInst* chip_inst : chip->getChipInsts()) {
+    dbChip* master = chip_inst->getMasterChip();
+    if (master == nullptr || chip_master_cells_.contains(master)) {
+      continue;
+    }
+    Cell* master_cell
+        = makeCell(chip_master_lib_, master->getName(), false, "");
+    chip_master_cells_[master] = master_cell;
+    for (odb::dbChipRegion* region : master->getChipRegions()) {
+      for (odb::dbChipBump* bump : region->getChipBumps()) {
+        odb::dbBTerm* bterm = bump->getBTerm();
+        if (bterm == nullptr) {
+          continue;
+        }
+        Port* port = makePort(master_cell, bterm->getConstName());
+        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
+        registerConcretePort(port);
+      }
+    }
+  }
+}
+
+dbBlock* dbNetwork::blockOf(dbChipInst* chip_inst) const
+{
+  if (chip_inst == nullptr) {
+    return nullptr;
+  }
+  return chip_inst->getMasterChip()->getBlock();
+}
+
+bool dbNetwork::blockOwnedUniquelyBy(dbChipInst* chip_inst) const
+{
+  if (chip_inst == nullptr) {
+    return false;
+  }
+  dbBlock* mb = blockOf(chip_inst);
+  if (mb == nullptr) {
+    return false;
+  }
+  auto it = block_to_chip_inst_.find(mb);
+  return it != block_to_chip_inst_.end() && it->second == chip_inst;
+}
+
+bool dbNetwork::has3DicChip() const
+{
+  if (top_chip_ == nullptr || top_chip_->getBlock() != nullptr) {
+    return false;
+  }
+  return !top_chip_->getChipInsts().empty();
+}
+
 void dbNetwork::clear()
 {
   ConcreteNetwork::clear();
   db_ = nullptr;
+  top_chip_ = nullptr;
+  // Owned by the libraries destroyed in ConcreteNetwork::clear(); drop
+  // dangling pointers.
+  chip_master_cells_.clear();
+  bump_to_chip_net_.clear();
+  bump_to_chip_net_cache_size_ = 0;
+  chip_bump_vertex_ids_.clear();
+  block_to_chip_inst_.clear();
+  block_disc_.clear();
+  chip_master_lib_ = nullptr;
 }
 
 Instance* dbNetwork::topInstance() const
@@ -781,7 +1172,14 @@ ObjectId dbNetwork::id(const Instance* instance) const
   if (instance == top_instance_) {
     return 0;
   }
-  if (hasHierarchy()) {
+  if (dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    return getDbNwkObjectId(chip_inst);
+  }
+  // 3DIC: inner dbInsts of distinct chiplet blocks are each numbered from 1,
+  // so raw getId() collides across chiplets and InstanceSet (sorted by id())
+  // merges them — dropping e.g. one chiplet's registers. Route through the
+  // block-discriminated encoder, like id(Pin*)/id(Net*).
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(instance);
     return getDbNwkObjectId(obj);
   }
@@ -854,7 +1252,14 @@ std::string dbNetwork::busName(const Port* port) const
 std::string dbNetwork::name(const Instance* instance) const
 {
   if (instance == top_instance_) {
+    if (has3DicChip()) {
+      return top_chip_->getName();
+    }
     return block_->getConstName();
+  }
+
+  if (dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    return chip_inst->getName();
   }
 
   dbInst* db_inst;
@@ -1014,6 +1419,10 @@ Cell* dbNetwork::cell(const Instance* instance) const
   if (instance == top_instance_) {
     return reinterpret_cast<Cell*>(top_cell_);
   }
+  if (dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    auto it = chip_master_cells_.find(chip_inst->getMasterChip());
+    return it != chip_master_cells_.end() ? it->second : nullptr;
+  }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
@@ -1032,6 +1441,23 @@ Instance* dbNetwork::parent(const Instance* instance) const
 {
   if (instance == top_instance_) {
     return nullptr;
+  }
+  if (staToDbChipInst(instance) != nullptr) {
+    // Single-level chip hierarchy in v1; deeper nesting is post-v1.
+    return top_instance_;
+  }
+  // Inner dbInst living in a chiplet's block: parent is the chip-inst
+  // that placed that chiplet (resolved via block_to_chip_inst_).
+  if (has3DicChip()) {
+    dbInst* maybe_inner = nullptr;
+    odb::dbModInst* maybe_mi = nullptr;
+    staToDb(instance, maybe_inner, maybe_mi);
+    if (maybe_inner) {
+      auto it = block_to_chip_inst_.find(maybe_inner->getBlock());
+      if (it != block_to_chip_inst_.end()) {
+        return dbToSta(it->second);
+      }
+    }
   }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1092,6 +1518,12 @@ bool dbNetwork::isLeaf(const Instance* instance) const
   if (instance == top_instance_) {
     return false;
   }
+  // Chip-insts are reported as leaves so STA's Graph::makeVerticesAndEdges
+  // creates Vertices for their chip-bump pins. Their inner dbInsts get
+  // surfaced separately by the topInstance childIterator's flat walk.
+  if (staToDbChipInst(instance) != nullptr) {
+    return true;
+  }
   if (hasHierarchy()) {
     dbMaster* db_master;
     dbModule* db_module;
@@ -1105,6 +1537,28 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 Instance* dbNetwork::findInstance(std::string_view path_name) const
 {
   std::string path_name_str(path_name);
+  if (has3DicChip()) {
+    // Top-level chip-inst lookup (O(1) via odb's name-indexed map).
+    if (dbChipInst* chip_inst = top_chip_->findChipInst(path_name_str)) {
+      return dbToSta(chip_inst);
+    }
+    // "<chip_inst>/<inner_inst>" — escape-aware split at the last divider.
+    std::string chip_name, inner_name;
+    pathNameLast(path_name_str, chip_name, inner_name);
+    if (chip_name.empty()) {
+      return nullptr;
+    }
+    dbChipInst* chip_inst = top_chip_->findChipInst(chip_name);
+    if (chip_inst == nullptr || !blockOwnedUniquelyBy(chip_inst)) {
+      return nullptr;
+    }
+    if (dbBlock* mb = chip_inst->getMasterChip()->getBlock()) {
+      if (dbInst* inner = mb->findInst(inner_name.c_str())) {
+        return dbToSta(inner);
+      }
+    }
+    return nullptr;
+  }
   if (hasHierarchy()) {  // are we in hierarchical mode ?
     // find a hierarchical module instance first
     odb::dbModInst* mod_inst = block()->findModInst(path_name_str.c_str());
@@ -1152,6 +1606,14 @@ Instance* dbNetwork::findChild(const Instance* parent,
   std::string name_str(name);
   const char* name_cstr = name_str.c_str();
   if (parent == top_instance_) {
+    if (has3DicChip()) {
+      for (dbChipInst* chip_inst : top_chip_->getChipInsts()) {
+        if (chip_inst->getName() == name_str) {
+          return dbToSta(chip_inst);
+        }
+      }
+      return nullptr;
+    }
     dbInst* inst = block_->findInst(name_cstr);
     if (!inst) {
       dbModule* top_module = block_->getTopModule();
@@ -1185,8 +1647,22 @@ Pin* dbNetwork::findPin(const Instance* instance,
   std::string port_name_str(port_name);
   const char* port_name_cstr = port_name_str.c_str();
   if (instance == top_instance_) {
+    if (has3DicChip()) {
+      return nullptr;
+    }
     dbBTerm* bterm = block_->findBTerm(port_name_cstr);
     return dbToSta(bterm);
+  }
+  if (dbChipInst* chip_inst = staToDbChipInst(instance)) {
+    for (odb::dbChipRegionInst* region : chip_inst->getRegions()) {
+      for (odb::dbChipBumpInst* bump : region->getChipBumpInsts()) {
+        odb::dbBTerm* bterm = bump->getChipBump()->getBTerm();
+        if (bterm && port_name_str == bterm->getName()) {
+          return dbToSta(bump);
+        }
+      }
+    }
+    return nullptr;
   }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1221,6 +1697,15 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 //
 Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
 {
+  if (has3DicChip()) {
+    const std::string name_str(net_name);
+    for (odb::dbChipNet* chip_net : top_chip_->getChipNets()) {
+      if (chip_net->getName() == name_str) {
+        return dbToSta(chip_net);
+      }
+    }
+    return nullptr;
+  }
   std::string net_sname(net_name);
   const char* net_cname = net_sname.c_str();
   for (dbModule* dbm : block_->getModules()) {
@@ -1239,6 +1724,13 @@ Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
 Net* dbNetwork::findNet(const Instance* instance,
                         std::string_view net_name) const
 {
+  if (has3DicChip()) {
+    if (instance != top_instance_) {
+      return nullptr;
+    }
+    return findNetAllScopes(net_name);
+  }
+
   dbModule* scope = nullptr;
 
   std::string net_sname(net_name);
@@ -1282,6 +1774,23 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
                                      const PatternMatch* pattern,
                                      NetSeq& nets) const
 {
+  if (has3DicChip()) {
+    if (instance != top_instance_) {
+      return;
+    }
+    if (pattern->hasWildcards()) {
+      for (odb::dbChipNet* chip_net : top_chip_->getChipNets()) {
+        if (pattern->match(chip_net->getName())) {
+          nets.push_back(dbToSta(chip_net));
+        }
+      }
+    } else {
+      if (Net* net = findNetAllScopes(pattern->pattern())) {
+        nets.push_back(net);
+      }
+    }
+    return;
+  }
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
       for (dbNet* dnet : block_->getNets()) {
@@ -1366,13 +1875,23 @@ void dbNetwork::setAttribute(Instance* instance,
 
 ObjectId dbNetwork::id(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    return getDbNwkObjectId(bump);
+  }
+
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
 
   staToDb(pin, iterm, bterm, moditerm);
 
-  if (hasHierarchy()) {
+  // In 3DIC mode every chiplet block numbers its own iterms/bterms from 1,
+  // so the raw-id branch below collides across blocks. Route inner pins
+  // through the tagged encoder (which mixes the block id in via
+  // blockDiscBits) so PinSet/visited_pins dedup stays correct when
+  // visitConnectedPins descends into multiple chiplet inner nets — the
+  // pin-side counterpart of the id(Net*) discriminator.
+  if (hasHierarchy() || has3DicChip()) {
     // get the id for hierarchical objects using dbid.
     std::uintptr_t tag_value
         = reinterpret_cast<std::uintptr_t>(pin) & kPointerTagMask;
@@ -1394,6 +1913,10 @@ ObjectId dbNetwork::id(const Pin* pin) const
 
 Instance* dbNetwork::instance(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    return dbToSta(bump->getChipRegionInst()->getChipInst());
+  }
+
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
@@ -1404,6 +1927,16 @@ Instance* dbNetwork::instance(const Pin* pin) const
     return dbToSta(dinst);
   }
   if (bterm) {
+    // dbBTerm belonging to a chiplet's inner block: owner is the
+    // chip-inst, not the synthetic top. Without this STA treats the
+    // inner BTerm pin as a top-level port and crashes downstream when
+    // it can't find a matching Port on top_cell_.
+    if (has3DicChip()) {
+      auto it = block_to_chip_inst_.find(bterm->getBlock());
+      if (it != block_to_chip_inst_.end()) {
+        return dbToSta(it->second);
+      }
+    }
     return top_instance_;
   }
   if (moditerm) {
@@ -1415,6 +1948,12 @@ Instance* dbNetwork::instance(const Pin* pin) const
 
 Net* dbNetwork::net(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    ensureBumpToChipNetCacheFresh();
+    auto it = bump_to_chip_net_.find(bump);
+    return it != bump_to_chip_net_.end() ? dbToSta(it->second) : nullptr;
+  }
+
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
@@ -1510,6 +2049,13 @@ void dbNetwork::net(const Pin* pin,
 
 Term* dbNetwork::term(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    if (odb::dbBTerm* inner = bump->getChipBump()->getBTerm()) {
+      return dbToStaTerm(inner);
+    }
+    return nullptr;
+  }
+
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
@@ -1532,6 +2078,19 @@ Term* dbNetwork::term(const Pin* pin) const
 
 Port* dbNetwork::port(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    odb::dbBTerm* bterm = bump->getChipBump()->getBTerm();
+    if (bterm == nullptr) {
+      return nullptr;
+    }
+    dbChip* master = bump->getChipRegionInst()->getChipInst()->getMasterChip();
+    auto it = chip_master_cells_.find(master);
+    if (it == chip_master_cells_.end()) {
+      return nullptr;
+    }
+    return findPort(it->second, bterm->getConstName());
+  }
+
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModITerm* moditerm;
@@ -1586,6 +2145,18 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     return lib_port->direction();
   }
 
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    // Report BIDIRECT so Graph::makeWireEdgesFromPin runs on every bump
+    // regardless of the underlying bterm's IoType. Without this an INPUT
+    // bump (e.g. clk) has no outgoing wire edges and a clock anchored on
+    // it never reaches the chiplet's internal loads.
+    odb::dbChipBump* chip_bump = bump->getChipBump();
+    if (chip_bump != nullptr && chip_bump->getBTerm() != nullptr) {
+      return PortDirection::bidirect();
+    }
+    return nullptr;
+  }
+
   dbITerm* iterm;
   dbBTerm* bterm;
   dbModITerm* moditerm;
@@ -1622,6 +2193,10 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
 
 VertexId dbNetwork::vertexId(const Pin* pin) const
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    auto it = chip_bump_vertex_ids_.find(bump);
+    return it != chip_bump_vertex_ids_.end() ? it->second : object_id_null;
+  }
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* miterm = nullptr;
@@ -1637,6 +2212,10 @@ VertexId dbNetwork::vertexId(const Pin* pin) const
 
 void dbNetwork::setVertexId(Pin* pin, VertexId id)
 {
+  if (odb::dbChipBumpInst* bump = staToDbChipBumpInst(pin)) {
+    chip_bump_vertex_ids_[bump] = id;
+    return;
+  }
   dbITerm* iterm = nullptr;
   dbBTerm* bterm = nullptr;
   dbModITerm* moditerm = nullptr;
@@ -1757,10 +2336,19 @@ bool dbNetwork::isPlaced(const Pin* pin) const
 
 ObjectId dbNetwork::id(const Net* net) const
 {
+  if (staToDbChipNet(net) != nullptr) {
+    const dbObject* obj = reinterpret_cast<const dbObject*>(net);
+    return getDbNwkObjectId(obj);
+  }
   odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
-  if (hasHierarchy()) {
+  // In 3DIC mode every chiplet block numbers its own nets from 1, so
+  // raw dnet->getId() collides across blocks. Route through the tagged
+  // encoder (which mixes the block id in) to keep NetSet/visited_nets
+  // dedup working when visitConnectedPins descends into multiple
+  // chiplet inner nets.
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(net);
     return getDbNwkObjectId(obj);
   }
@@ -1785,6 +2373,10 @@ std::string dbNetwork::pathName(const Net* net) const
   // created in the top instance the path name is just
   // its full name, ditto hierarchical mode.
   // For a modnet in hierarchy mode things are a bit more interesting.
+
+  if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
+    return chip_net->getName();
+  }
 
   odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
@@ -1828,6 +2420,10 @@ std::string dbNetwork::pathName(const Net* net) const
 
 std::string dbNetwork::name(const Net* net) const
 {
+  if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
+    return chip_net->getName();
+  }
+
   odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
   staToDb(net, dnet, modnet);
@@ -1953,6 +2549,44 @@ void dbNetwork::visitConnectedPins(const Net* net,
   }
 
   visited_nets.insert(net);
+
+  // Cross-chiplet net: visit each bump-inst Pin AND descend into the
+  // chiplet's inner net (via term()) so the visitor sees driver/load pins
+  // inside every chiplet sharing this chip-net. STA's wire-edge model is a
+  // fat net — direct drvr → load edges across hierarchy — so descending
+  // here lets Graph::makeWireEdgesFromPin form cross-chiplet wire edges
+  // (e.g. chipA/buf/Z → chipB/buf/A) without needing dual vertices on the
+  // chip-bump pin itself.
+  if (odb::dbChipNet* chip_net = staToDbChipNet(net)) {
+    const uint32_t n = chip_net->getNumBumpInsts();
+    std::vector<dbChipInst*> path;
+    for (uint32_t i = 0; i < n; ++i) {
+      odb::dbChipBumpInst* bump = chip_net->getBumpInst(i, path);
+      if (bump == nullptr) {
+        continue;
+      }
+      Pin* bump_pin = dbToSta(bump);
+      visitor(bump_pin);
+      // Only descend into the chiplet body for a uniquely-owned master
+      // block. Two chip-insts sharing a master alias the same inner
+      // dbNet/dbInst pointers, so descending would collapse both instances
+      // onto one shared inner net (visited_nets dedup) and silently mis-time
+      // them. Shared masters stay opaque (bump pin only) — consistent with
+      // block_to_chip_inst_ and the DbInstanceChildIterator flat-walk, and
+      // with the documented shared-master limitation (see 3DIC.md). Full
+      // support needs path-aware identities (3DIC_TODO.md TODO 1).
+      dbChipInst* owner = bump->getChipRegionInst()->getChipInst();
+      if (blockOwnedUniquelyBy(owner)) {
+        if (Term* inner_term = term(bump_pin)) {
+          if (Net* inner_net = this->net(inner_term)) {
+            visitConnectedPins(inner_net, visitor, visited_nets);
+          }
+        }
+      }
+    }
+    return;
+  }
+
   staToDb(net, db_net, mod_net);
 
   if (mod_net) {
@@ -2038,7 +2672,10 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 
 ObjectId dbNetwork::id(const Term* term) const
 {
-  if (hasHierarchy()) {
+  // 3DIC: like id(Pin*)/id(Net*), route inner chiplet bterms through the
+  // block-discriminated encoder so per-block ids don't collide across
+  // chiplets and the encoding agrees with id(Pin*) for the same bterm.
+  if (hasHierarchy() || has3DicChip()) {
     const dbObject* obj = reinterpret_cast<const dbObject*>(term);
     return getDbNwkObjectId(obj);
   }
@@ -2058,6 +2695,26 @@ Pin* dbNetwork::pin(const Term* term) const
   dbITerm* iterm = nullptr;
   staToDb(term, iterm, bterm, modbterm);
   if (bterm) {
+    // Chiplet boundary: an inner BTerm with a backing dbChipBump maps
+    // upward to the chip-bump-inst on the chip-inst that placed this
+    // chiplet. Returning the chip-bump-inst Pin lets STA walk up across
+    // the chiplet boundary.
+    if (has3DicChip()) {
+      if (odb::dbChipBump* bump = bterm->getChipBump()) {
+        if (auto it = block_to_chip_inst_.find(bterm->getBlock());
+            it != block_to_chip_inst_.end()) {
+          odb::dbChipInst* chip_inst = it->second;
+          if (odb::dbChipRegionInst* region_inst
+              = chip_inst->findChipRegionInst(bump->getChipRegion())) {
+            for (odb::dbChipBumpInst* bi : region_inst->getChipBumpInsts()) {
+              if (bi->getChipBump() == bump) {
+                return dbToSta(bi);
+              }
+            }
+          }
+        }
+      }
+    }
     return dbToSta(bterm);
   }
   if (modbterm) {
@@ -3010,6 +3667,11 @@ void dbNetwork::staToDb(const Instance* instance,
     } else if (type == dbModInstObj) {
       db_inst = nullptr;
       mod_inst = static_cast<odb::dbModInst*>(obj);
+    } else if (type == dbChipInstObj) {
+      // Decoded via staToDbChipInst(); explicit nulls — out-params are not
+      // default-initialized by callers and would otherwise carry garbage.
+      db_inst = nullptr;
+      mod_inst = nullptr;
     } else {
       logger_->error(ORD, 2016, "Instance is not dbInst or odb::dbModInst");
     }
@@ -3021,9 +3683,14 @@ void dbNetwork::staToDb(const Instance* instance,
 
 dbNet* dbNetwork::staToDb(const Net* net) const
 {
-  dbNet* db_net = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
-  assert(!db_net || db_net->getObjectType() == odb::dbNetObj);
-  return db_net;
+  if (net == nullptr) {
+    return nullptr;
+  }
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+  if (obj->getObjectType() != odb::dbNetObj) {
+    return nullptr;
+  }
+  return static_cast<dbNet*>(obj);
 }
 
 dbNet* dbNetwork::flatNet(const Net* net) const
@@ -3051,6 +3718,8 @@ void dbNetwork::staToDb(const Net* net,
       dnet = static_cast<dbNet*>(obj);
     } else if (type == odb::dbModNetObj) {
       modnet = static_cast<odb::dbModNet*>(obj);
+    } else if (type == dbChipNetObj) {
+      // Decoded via staToDbChipNet(); both out-params remain null.
     } else {
       logger_->error(ORD, 2034, "Net is not dbNet or odb::dbModNet");
     }
@@ -3149,6 +3818,10 @@ void dbNetwork::staToDb(const Pin* pin,
         break;
       case PinPointerTags::kDbModIterm:
         moditerm = reinterpret_cast<dbModITerm*>(pointer_without_tag);
+        break;
+      case PinPointerTags::kDbChipBumpInst:
+        // Decoded via staToDbChipBumpInst(); leave iterm/bterm/moditerm null
+        // so callers see "no match" rather than misclassify the pin.
         break;
       case PinPointerTags::kNone:
         logger_->error(ORD, 2018, "Pin is not ITerm or BTerm or modITerm.");
@@ -3406,6 +4079,68 @@ Pin* dbNetwork::dbToSta(dbITerm* iterm) const
   return reinterpret_cast<Pin*>(
       unaligned_pointer
       + static_cast<std::uintptr_t>(PinPointerTags::kDbIterm));
+}
+
+Pin* dbNetwork::dbToSta(dbChipBumpInst* bump_inst) const
+{
+  if (bump_inst == nullptr) {
+    return nullptr;
+  }
+  char* unaligned_pointer = reinterpret_cast<char*>(bump_inst);
+  return reinterpret_cast<Pin*>(
+      unaligned_pointer
+      + static_cast<std::uintptr_t>(PinPointerTags::kDbChipBumpInst));
+}
+
+Instance* dbNetwork::dbToSta(dbChipInst* chip_inst) const
+{
+  return reinterpret_cast<Instance*>(chip_inst);
+}
+
+Net* dbNetwork::dbToSta(dbChipNet* chip_net) const
+{
+  return reinterpret_cast<Net*>(chip_net);
+}
+
+dbChipBumpInst* dbNetwork::staToDbChipBumpInst(const Pin* pin) const
+{
+  if (pin == nullptr) {
+    return nullptr;
+  }
+  std::uintptr_t pointer_with_tag = reinterpret_cast<std::uintptr_t>(pin);
+  PinPointerTags tag_value
+      = static_cast<PinPointerTags>(pointer_with_tag & kPointerTagMask);
+  if (tag_value != PinPointerTags::kDbChipBumpInst) {
+    return nullptr;
+  }
+  const char* char_pointer_pin = reinterpret_cast<const char*>(pin);
+  char* pointer_without_tag = const_cast<char*>(
+      char_pointer_pin - static_cast<std::uintptr_t>(tag_value));
+  return reinterpret_cast<dbChipBumpInst*>(pointer_without_tag);
+}
+
+dbChipInst* dbNetwork::staToDbChipInst(const Instance* instance) const
+{
+  if (instance == nullptr || instance == top_instance_) {
+    return nullptr;
+  }
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Instance*>(instance));
+  if (obj->getObjectType() != dbChipInstObj) {
+    return nullptr;
+  }
+  return static_cast<dbChipInst*>(obj);
+}
+
+dbChipNet* dbNetwork::staToDbChipNet(const Net* net) const
+{
+  if (net == nullptr) {
+    return nullptr;
+  }
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+  if (obj->getObjectType() != dbChipNetObj) {
+    return nullptr;
+  }
+  return static_cast<dbChipNet*>(obj);
 }
 
 Pin* dbNetwork::dbToSta(dbObject* term_obj) const

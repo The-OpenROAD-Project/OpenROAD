@@ -1292,3 +1292,38 @@ proc destroy_routes { } {
   $block destroyRoutes
 }
 }
+
+sta::define_cmd_args "report_3dic_summary" {}
+
+proc report_3dic_summary { args } {
+  sta::parse_key_args "report_3dic_summary" args keys {} flags {}
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::warn ODB 405 "No chip loaded; nothing to report."
+    return
+  }
+  set chip_insts [$chip getChipInsts]
+  set chip_nets [$chip getChipNets]
+  set chip_conns [$chip getChipConns]
+  set inst_count [llength $chip_insts]
+  set net_count [llength $chip_nets]
+  set conn_count [llength $chip_conns]
+  set bump_inst_count 0
+  foreach n $chip_nets {
+    incr bump_inst_count [$n getNumBumpInsts]
+  }
+  utl::report "3DIC summary for chip [$chip getName]:"
+  utl::report "  chiplets        : $inst_count"
+  utl::report "  top-level nets  : $net_count"
+  utl::report "  3D bond regions : $conn_count"
+  utl::report "  bump pads       : $bump_inst_count"
+  if { $inst_count > 0 } {
+    utl::report "  chiplet instances:"
+    foreach ci $chip_insts {
+      set ref [$ci getMasterChip]
+      set ref_name [expr { $ref == "NULL" ? "<unbound>" : [$ref getName] }]
+      utl::report "    [$ci getName] (reference: $ref_name)"
+    }
+  }
+}

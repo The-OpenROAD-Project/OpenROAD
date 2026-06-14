@@ -2,6 +2,7 @@
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 
@@ -329,6 +330,52 @@ TEST_F(TestDbSta, StalePrevPath)
   EXPECT_NE(pre_pin_name, post_pin_name)
       << "but slot content should differ after free+reuse. before="
       << pre_pin_name << " after=" << post_pin_name;
+}
+
+TEST_F(TestDbSta, Chip3DicEncodeDecodeRoundTrip)
+{
+  std::string test_name = "TestDbSta_0";
+  readVerilogAndSetup(test_name + ".v");
+
+  EXPECT_EQ(db_network_->dbToSta(static_cast<odb::dbChipBumpInst*>(nullptr)),
+            nullptr);
+  EXPECT_EQ(db_network_->dbToSta(static_cast<odb::dbChipInst*>(nullptr)),
+            nullptr);
+  EXPECT_EQ(db_network_->dbToSta(static_cast<odb::dbChipNet*>(nullptr)),
+            nullptr);
+  EXPECT_EQ(db_network_->staToDbChipBumpInst(nullptr), nullptr);
+  EXPECT_EQ(db_network_->staToDbChipInst(nullptr), nullptr);
+  EXPECT_EQ(db_network_->staToDbChipNet(nullptr), nullptr);
+
+  // Round-trip uses fake aligned storage; encode/decode are pure pointer
+  // arithmetic with no dereference of the bump-inst pointer.
+  alignas(16) char fake_storage[sizeof(void*) * 4] = {};
+  auto* fake_bump = reinterpret_cast<odb::dbChipBumpInst*>(&fake_storage[0]);
+
+  Pin* pin = db_network_->dbToSta(fake_bump);
+  ASSERT_NE(pin, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(pin) & 0b111U, 4U);
+
+  odb::dbChipBumpInst* decoded = db_network_->staToDbChipBumpInst(pin);
+  EXPECT_EQ(decoded, fake_bump);
+
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  odb::dbModITerm* moditerm = nullptr;
+  db_network_->staToDb(pin, iterm, bterm, moditerm);
+  EXPECT_EQ(iterm, nullptr);
+  EXPECT_EQ(bterm, nullptr);
+  EXPECT_EQ(moditerm, nullptr);
+
+  odb::dbInst* any_inst = nullptr;
+  for (odb::dbInst* i : block_->getInsts()) {
+    any_inst = i;
+    break;
+  }
+  ASSERT_NE(any_inst, nullptr);
+  odb::dbITerm* real_iterm = *any_inst->getITerms().begin();
+  Pin* iterm_pin = db_network_->dbToSta(real_iterm);
+  EXPECT_EQ(db_network_->staToDbChipBumpInst(iterm_pin), nullptr);
 }
 
 }  // namespace sta

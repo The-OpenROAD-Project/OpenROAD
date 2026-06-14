@@ -490,6 +490,14 @@ add_3dblox_alignment_marker_rule
 | `-tolerance` | Maximum allowed center-to-center misalignment in microns. Must be positive. Defaults to 0 (exact alignment required). |
 | `-relative_orientations` | Optional Tcl list of allowed orientations of master_b relative to master_a (e.g. `{R0 MY}`). When omitted, orientations are not constrained. |
 
+### Report 3DIC Summary
+
+This command prints a structural summary of the loaded 3DBlox chip database — chiplet instance count, top-level (chip-net) count, 3D bond region (chip-conn) count, total bump pad count, and per-chiplet-instance reference names. Useful as a post-`read_3dbx` sanity check or to dump the structural state mid-flow.
+
+```tcl
+report_3dic_summary
+```
+
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
