@@ -119,7 +119,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "78f19f25cec73bdec3517a76465dec7ce17ce227"
+BAZEL_ORFS_COMMIT = "05bbceb78baaf04fc8ff251f7c04f37f1f5ffc66"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
