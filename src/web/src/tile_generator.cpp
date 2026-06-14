@@ -1393,7 +1393,8 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const std::vector<FlightLine>& flight_lines,
     const std::set<uint32_t>* route_guide_net_ids,
     const bool has_visible_layers,
-    const std::set<std::string>& visible_layers) const
+    const std::set<std::string>& visible_layers,
+    const std::vector<ColoredPolygon>& colored_polys) const
 {
   constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
@@ -1407,7 +1408,7 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
 
   // Short-circuit: if there's nothing to draw, return a blank tile.
   if (highlight_rects.empty() && highlight_polys.empty()
-      && colored_rects.empty() && flight_lines.empty()
+      && colored_rects.empty() && colored_polys.empty() && flight_lines.empty()
       && (!route_guide_net_ids || route_guide_net_ids->empty())) {
     std::vector<unsigned char> png;
     lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
@@ -1439,6 +1440,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     // Pass empty layer name so all colored rects are drawn regardless of
     // their per-layer tag (the overlay sits above all base layers).
     drawColoredHighlight(image, colored_rects, "", dbu_tile, scale);
+  }
+  if (!colored_polys.empty()) {
+    drawColoredPolygons(image, colored_polys, dbu_tile, scale);
   }
   if (!flight_lines.empty()) {
     drawFlightLines(image, flight_lines, dbu_tile, scale);
@@ -2819,16 +2823,16 @@ static void compositePixel(unsigned char* dst, const unsigned char* src)
   dst[3] = out_a;
 }
 
-void TileGenerator::saveImage(const std::string& filename,
-                              const odb::Rect& region,
-                              const int width_px,
-                              const double dbu_per_pixel,
-                              const TileVisibility& vis) const
+std::vector<unsigned char> TileGenerator::renderImagePng(
+    const odb::Rect& region,
+    const int width_px,
+    const double dbu_per_pixel,
+    const TileVisibility& vis) const
 {
   odb::dbBlock* block = getBlock();
   if (!block) {
     logger_->error(utl::WEB, 20, "No design loaded.");
-    return;
+    return {};
   }
 
   // Determine rendering region (DBU).
@@ -2860,7 +2864,7 @@ void TileGenerator::saveImage(const std::string& filename,
 
   if (img_w <= 0 || img_h <= 0) {
     logger_->error(utl::WEB, 21, "Invalid image dimensions.");
-    return;
+    return {};
   }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
@@ -2979,17 +2983,30 @@ void TileGenerator::saveImage(const std::string& filename,
     }
   }
 
-  // Encode to PNG and save.
+  // Encode to PNG.
   std::vector<unsigned char> png_data;
   const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
   if (error) {
     logger_->error(
         utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+    return {};
+  }
+  return png_data;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  const std::vector<unsigned char> png_data
+      = renderImagePng(region, width_px, dbu_per_pixel, vis);
+  if (png_data.empty()) {
     return;
   }
   lodepng::save_file(png_data, filename);
-  logger_->info(
-      utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
+  logger_->info(utl::WEB, 24, "Saved image to {}", filename);
 }
 
 std::vector<unsigned char> TileGenerator::renderOverlayPng(
@@ -3583,19 +3600,54 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
     // Semi-transparent yellow fill
     fillPolygon(image, poly, dbu_tile, scale, fill, /*blend=*/true);
 
-    // Solid yellow border — draw each edge
+    // Solid yellow border — draw each edge, wrapping the last point back to
+    // the first so the outline is closed even if the point list is open.
     const auto& points = poly.getPoints();
     const int n = static_cast<int>(points.size());
-    for (int i = 0; i < n - 1; ++i) {
-      const int px0
-          = static_cast<int>((points[i].x() - dbu_tile.xMin()) * scale);
+    for (int i = 0; i < n; ++i) {
+      const odb::Point& p0 = points[i];
+      const odb::Point& p1 = points[(i + 1) % n];
+      const int px0 = static_cast<int>((p0.x() - dbu_tile.xMin()) * scale);
       const int py0
-          = 255 - static_cast<int>((points[i].y() - dbu_tile.yMin()) * scale);
-      const int px1
-          = static_cast<int>((points[i + 1].x() - dbu_tile.xMin()) * scale);
+          = 255 - static_cast<int>((p0.y() - dbu_tile.yMin()) * scale);
+      const int px1 = static_cast<int>((p1.x() - dbu_tile.xMin()) * scale);
       const int py1
-          = 255
-            - static_cast<int>((points[i + 1].y() - dbu_tile.yMin()) * scale);
+          = 255 - static_cast<int>((p1.y() - dbu_tile.yMin()) * scale);
+      drawLine(image, px0, py0, px1, py1, border);
+    }
+  }
+}
+
+void TileGenerator::drawColoredPolygons(
+    std::vector<unsigned char>& image,
+    const std::vector<ColoredPolygon>& polys,
+    const odb::Rect& dbu_tile,
+    const double scale) const
+{
+  for (const ColoredPolygon& cp : polys) {
+    const odb::Polygon& poly = cp.poly;
+    if (!dbu_tile.overlaps(poly.getEnclosingRect())) {
+      continue;
+    }
+    Color border = cp.color;
+    border.a = 255;
+
+    // Semi-transparent fill in the shape's color.
+    fillPolygon(image, poly, dbu_tile, scale, cp.color, /*blend=*/true);
+
+    // Solid outline — draw each edge, wrapping the last point back to the
+    // first so the outline is closed even if the point list is open.
+    const auto& points = poly.getPoints();
+    const int n = static_cast<int>(points.size());
+    for (int i = 0; i < n; ++i) {
+      const odb::Point& p0 = points[i];
+      const odb::Point& p1 = points[(i + 1) % n];
+      const int px0 = static_cast<int>((p0.x() - dbu_tile.xMin()) * scale);
+      const int py0
+          = 255 - static_cast<int>((p0.y() - dbu_tile.yMin()) * scale);
+      const int px1 = static_cast<int>((p1.x() - dbu_tile.xMin()) * scale);
+      const int py1
+          = 255 - static_cast<int>((p1.y() - dbu_tile.yMin()) * scale);
       drawLine(image, px0, py0, px1, py1, border);
     }
   }

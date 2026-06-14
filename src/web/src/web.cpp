@@ -5,6 +5,7 @@
 
 #include <netinet/in.h>
 
+#include <algorithm>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -80,11 +81,115 @@ static std::vector<unsigned char> serialize_response(
 }
 
 //------------------------------------------------------------------------------
-// HTTP request handler (serves embedded static assets)
+// HTTP request handler (serves embedded static assets + image downloads)
 //------------------------------------------------------------------------------
 
+namespace {
+
+// Parse the "k=v&k2=v2" query of a request target into a map.
+std::map<std::string, std::string> parseQuery(std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  const auto qpos = target.find('?');
+  if (qpos == std::string_view::npos) {
+    return params;
+  }
+  const std::string_view qs = target.substr(qpos + 1);
+  std::size_t start = 0;
+  while (start < qs.size()) {
+    std::size_t amp = qs.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = qs.size();
+    }
+    const std::string_view kv = qs.substr(start, amp - start);
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     std::string(kv.substr(eq + 1)));
+    }
+    start = amp + 1;
+  }
+  return params;
+}
+
+// Parse "x0,y0,x1,y1" (DBU) into a Rect.  Returns false on malformed input.
+bool parseBbox(const std::string& s, odb::Rect& out)
+{
+  int v[4];
+  int idx = 0;
+  std::size_t start = 0;
+  while (idx < 4) {
+    std::size_t comma = s.find(',', start);
+    const std::string tok = s.substr(
+        start, comma == std::string::npos ? std::string::npos : comma - start);
+    try {
+      v[idx++] = std::stoi(tok);
+    } catch (const std::exception&) {
+      return false;
+    }
+    if (comma == std::string::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+  if (idx != 4) {
+    return false;
+  }
+  out = odb::Rect(std::min(v[0], v[2]),
+                  std::min(v[1], v[3]),
+                  std::max(v[0], v[2]),
+                  std::max(v[1], v[3]));
+  return true;
+}
+
+// Render the layout image requested by /download/image into `res`.
+void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
+                         std::string_view target,
+                         http::response<http::string_body>& res)
+{
+  if (!generator) {
+    res.result(http::status::not_found);
+    res.body() = "No design loaded.";
+    return;
+  }
+  const auto params = parseQuery(target);
+  const auto type_it = params.find("type");
+  const std::string type = type_it == params.end() ? "entire" : type_it->second;
+
+  odb::Rect region;  // zero-area => entire die (renderImagePng default)
+  if (type == "visible") {
+    const auto bbox_it = params.find("bbox");
+    if (bbox_it == params.end() || !parseBbox(bbox_it->second, region)) {
+      res.result(http::status::bad_request);
+      res.body() = "Missing or malformed bbox.";
+      return;
+    }
+  }
+
+  // The HTTP route has no access to the WebSocket session's layer
+  // visibility, so render with defaults (all layers visible).
+  const std::vector<unsigned char> png = generator->renderImagePng(
+      region, /*width_px=*/0, /*dbu_per_pixel=*/0, TileVisibility{});
+  if (png.empty()) {
+    res.result(http::status::internal_server_error);
+    res.body() = "Image render failed.";
+    return;
+  }
+
+  const auto fname_it = params.find("filename");
+  const std::string filename
+      = fname_it == params.end() ? "layout.png" : fname_it->second;
+  res.set(http::field::content_type, "image/png");
+  res.set(http::field::content_disposition,
+          "attachment; filename=\"" + filename + "\"");
+  res.body().assign(reinterpret_cast<const char*>(png.data()), png.size());
+}
+
+}  // namespace
+
 static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req)
+    http::request<http::string_body>&& req,
+    const std::shared_ptr<TileGenerator>& generator)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -93,17 +198,27 @@ static http::response<http::string_body> handle_request(
   res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
-    std::string file_path(req.target());
-    if (file_path == "/") {
-      file_path = "/index.html";
+    std::string target(req.target());
+    // Strip any query string for route matching / asset lookup.
+    std::string path = target;
+    if (const auto qpos = path.find('?'); qpos != std::string::npos) {
+      path.resize(qpos);
     }
-    const auto* asset = findEmbeddedAsset(file_path);
-    if (asset) {
-      res.set(http::field::content_type, asset->content_type);
-      res.body() = std::string(asset->content());
+
+    if (path == "/download/image") {
+      handleImageDownload(generator, target, res);
     } else {
-      res.result(http::status::not_found);
-      res.body() = "Resource not found.";
+      if (path == "/") {
+        path = "/index.html";
+      }
+      const auto* asset = findEmbeddedAsset(path);
+      if (asset) {
+        res.set(http::field::content_type, asset->content_type);
+        res.body() = std::string(asset->content());
+      } else {
+        res.result(http::status::not_found);
+        res.body() = "Resource not found.";
+      }
     }
   } else {
     res.result(http::status::not_found);
@@ -636,10 +751,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   beast::flat_buffer buffer_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
+  std::shared_ptr<TileGenerator> generator_;
   utl::Logger* logger_;
 
  public:
-  HttpSession(Tcp::socket&& socket, utl::Logger* logger);
+  HttpSession(Tcp::socket&& socket,
+              std::shared_ptr<TileGenerator> generator,
+              utl::Logger* logger);
 
   void run() { do_read(); }
 
@@ -654,8 +772,12 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void do_close();
 };
 
-HttpSession::HttpSession(Tcp::socket&& socket, utl::Logger* logger)
-    : stream_(std::move(socket)), logger_(logger)
+HttpSession::HttpSession(Tcp::socket&& socket,
+                         std::shared_ptr<TileGenerator> generator,
+                         utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(std::move(generator)),
+      logger_(logger)
 {
 }
 
@@ -692,7 +814,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_)));
+      handle_request(std::move(req_), generator_));
   do_write();
 }
 
@@ -815,7 +937,8 @@ void DetectSession::on_read(beast::error_code ec)
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(stream_.release_socket(), logger_);
+    auto s = std::make_shared<HttpSession>(
+        stream_.release_socket(), generator_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
