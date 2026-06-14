@@ -58,5 +58,5 @@ add_pdn_connect \
   -grid macro \
   -layers "met4 met5"
 
-catch {pdngen} err
+catch { pdngen } err
 puts $err
