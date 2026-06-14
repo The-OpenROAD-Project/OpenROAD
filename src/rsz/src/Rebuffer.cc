@@ -1508,7 +1508,7 @@ void Rebuffer::init()
       return false;
     }
     // buffer_fast_sizes_ is unordered; tie-break for stable output.
-    return std::string(a.cell->name()) < std::string(b.cell->name());
+    return std::string_view(a.cell->name()) < std::string_view(b.cell->name());
   });
 
   buffer_sizes_index_.clear();
