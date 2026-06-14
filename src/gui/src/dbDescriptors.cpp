@@ -848,7 +848,7 @@ bool DbMasterDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto master = std::any_cast<odb::dbMaster*>(object);
   master->getPlacementBoundary(bbox);
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMasterDescriptor::highlight(const std::any& object,
@@ -1014,20 +1014,17 @@ bool DbNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto net = getObject(object);
   auto wire = net->getWire();
-  bool has_box = false;
   bbox.mergeInit();
   if (wire) {
     const auto opt_bbox = wire->getBBox();
     if (opt_bbox) {
       bbox.merge(opt_bbox.value());
-      has_box = true;
     }
   }
-  if (!has_box) {
+  if (bbox.isInverted()) {
     // a wire bbox was not found, try using guides
     for (odb::dbGuide* guide : net->getGuides()) {
       bbox.merge(guide->getBox());
-      has_box = true;
     }
   }
 
@@ -1036,17 +1033,15 @@ bool DbNetDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
       continue;
     }
     bbox.merge(inst_term->getBBox());
-    has_box = true;
   }
 
   for (auto blk_term : net->getBTerms()) {
     for (auto pin : blk_term->getBPins()) {
       bbox.merge(pin->getBBox());
-      has_box = true;
     }
   }
 
-  return has_box;
+  return !bbox.isInverted();
 }
 
 void DbNetDescriptor::findSourcesAndSinks(
@@ -2163,7 +2158,7 @@ bool DbITermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   auto iterm = std::any_cast<odb::dbITerm*>(object);
   if (iterm->getInst()->getPlacementStatus().isPlaced()) {
     bbox = iterm->getBBox();
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -2500,7 +2495,7 @@ bool DbMTermDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto mterm = std::any_cast<odb::dbMTerm*>(object);
   bbox = mterm->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMTermDescriptor::highlight(const std::any& object,
@@ -2744,7 +2739,7 @@ bool DbBlockageDescriptor::getBBox(const std::any& object,
   auto* blockage = std::any_cast<odb::dbBlockage*>(object);
   odb::dbBox* box = blockage->getBBox();
   bbox = box->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbBlockageDescriptor::highlight(const std::any& object,
@@ -2861,7 +2856,7 @@ bool DbObstructionDescriptor::getBBox(const std::any& object,
   auto obs = std::any_cast<odb::dbObstruction*>(object);
   odb::dbBox* box = obs->getBBox();
   bbox = box->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbObstructionDescriptor::highlight(const std::any& object,
@@ -3301,7 +3296,7 @@ bool DbTermAccessPointDescriptor::getBBox(const std::any& object,
     xform.apply(pt);
   }
   bbox = {pt, pt};
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbTermAccessPointDescriptor::highlight(const std::any& object,
@@ -3440,7 +3435,7 @@ bool DbGroupDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   auto* region = group->getRegion();
   if (region != nullptr && region->getBoundaries().size() == 1) {
     bbox = region->getBoundaries().begin()->getBox();
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -3552,7 +3547,7 @@ bool DbRegionDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
     odb::Rect box_rect = box->getBox();
     bbox.merge(box_rect);
   }
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbRegionDescriptor::highlight(const std::any& object,
@@ -4765,7 +4760,7 @@ bool DbSiteDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   if (isSpecificSite(object)) {
     bbox = getRect(object);
-    return true;
+    return !bbox.isInverted();
   }
 
   return false;
@@ -4908,7 +4903,7 @@ bool DbRowDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto* row = std::any_cast<odb::dbRow*>(object);
   bbox = row->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbRowDescriptor::highlight(const std::any& object, Painter& painter) const
@@ -4973,12 +4968,10 @@ bool DbMarkerCategoryDescriptor::getBBox(const std::any& object,
 {
   auto* category = std::any_cast<odb::dbMarkerCategory*>(object);
   bbox.mergeInit();
-  bool has_bbox = false;
   for (odb::dbMarker* marker : category->getAllMarkers()) {
     bbox.merge(marker->getBBox());
-    has_bbox = true;
   }
-  return has_bbox;
+  return !bbox.isInverted();
 }
 
 void DbMarkerCategoryDescriptor::highlight(const std::any& object,
@@ -5073,7 +5066,7 @@ bool DbMarkerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   auto* marker = std::any_cast<odb::dbMarker*>(object);
   bbox = marker->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbMarkerDescriptor::highlight(const std::any& object,
@@ -5211,7 +5204,7 @@ bool DbScanInstDescriptor::getBBox(const std::any& object,
   auto* scan_inst = std::any_cast<odb::dbScanInst*>(object);
   auto* inst = scan_inst->getInst();
   bbox = inst->getBBox()->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbScanInstDescriptor::highlight(const std::any& object,
@@ -5540,7 +5533,7 @@ bool DbBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   bbox = getObject(object)->getBox();
   const auto xform = getTransform(object);
   xform.apply(bbox);
-  return true;
+  return !bbox.isInverted();
 }
 
 Selected DbBoxDescriptor::makeSelected(const std::any& object) const
@@ -5705,7 +5698,7 @@ std::string DbSBoxDescriptor::getTypeName() const
 bool DbSBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   bbox = getObject(object)->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbSBoxDescriptor::highlight(const std::any& object, Painter& painter) const
@@ -6000,7 +5993,7 @@ bool DbWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   const auto box = obj->getBBox();
   if (box.has_value()) {
     bbox = *box;
-    return true;
+    return !bbox.isInverted();
   }
   return false;
 }
@@ -6080,7 +6073,7 @@ bool DbSWireDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   for (auto* box : obj->getWires()) {
     bbox.merge(box->getBox());
   }
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbSWireDescriptor::highlight(const std::any& object,
