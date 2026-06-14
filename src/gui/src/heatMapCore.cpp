@@ -30,6 +30,8 @@
 #include "heatMapPlacementDensity.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/unfoldedModel.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
@@ -1225,6 +1227,53 @@ sta::Scene* PowerDensityDataSource::getScene() const
   // or the named scene no longer exists (e.g. before timing analysis runs).
   const auto& scenes = sta_->scenes();
   return scenes.empty() ? nullptr : scenes[0];
+}
+
+ExternalHeatMapDataSource::ExternalHeatMapDataSource(
+    utl::Logger* logger,
+    const std::string& name,
+    const std::string& short_name,
+    std::vector<Entry> data)
+    : HeatMapDataSource(logger, name, short_name, "ExternalHeatMap"),
+      data_entries_(std::move(data))
+{
+}
+
+bool ExternalHeatMapDataSource::populateMap()
+{
+  if (getChip() == nullptr || data_entries_.empty()) {
+    return false;
+  }
+  const double dbu_per_micron = getDbuPerMicron();
+  for (const auto& entry : data_entries_) {
+    const int x0 = static_cast<int>(std::round(entry.x0 * dbu_per_micron));
+    const int y0 = static_cast<int>(std::round(entry.y0 * dbu_per_micron));
+    const int x1 = static_cast<int>(std::round(entry.x1 * dbu_per_micron));
+    const int y1 = static_cast<int>(std::round(entry.y1 * dbu_per_micron));
+    odb::Rect rect(
+        std::min(x0, x1), std::min(y0, y1), std::max(x0, x1), std::max(y0, y1));
+    transform_.apply(rect);
+    addToMap(rect, entry.value);
+  }
+  return true;
+}
+
+odb::Rect ExternalHeatMapDataSource::getBounds() const
+{
+  odb::Rect bounds = HeatMapDataSource::getBounds();
+  transform_.apply(bounds);
+  return bounds;
+}
+
+void ExternalHeatMapDataSource::combineMapData(
+    bool base_has_value,
+    double& base,
+    const double new_data,
+    const double /* data_area */,
+    const double /* intersection_area */,
+    const double /* rect_area */)
+{
+  base = base_has_value ? std::max(base, new_data) : new_data;
 }
 
 HeatMapSourceRegistration::HeatMapSourceRegistration(std::string name,
