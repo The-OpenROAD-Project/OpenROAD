@@ -11,6 +11,7 @@ load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regress
 package(features = ["layering_check"])
 
 COMPULSORY_TESTS = [
+    "cutclass_enclosure",
     "down_access_term",
     "drc_test",
     "ispd18_sample",

@@ -1,6 +1,7 @@
 or_integration_tests(
   "drt"
   TESTS
+    cutclass_enclosure
     down_access_term
     drc_test
     ispd18_sample
