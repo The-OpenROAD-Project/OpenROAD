@@ -1,7 +1,7 @@
 <svg  xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   xmlns:s="https://github.com/nturley/netlistsvg"
-  width="800" height="500">
+  width="800" height="760">
   <!-- OpenROAD custom netlistsvg skin.
        Based on netlistsvg's default.svg, with two changes:
        (1) every logic-gate symbol carries an s:attribute="ref" label so the
@@ -258,7 +258,7 @@ path, rect, circle, polygon {
        test/visual/gen_compound.mjs).  First-level gates abut the second-level gate; the
        output Y port sits at the second-level gate's nose so netlistsvg routes
        the output wire straight to it. -->
-  <g s:type="aoi21" transform="translate(50,360)" s:width="52" s:height="42">
+  <g s:type="aoi21" transform="translate(20,360)" s:width="52" s:height="42">
     <s:alias val="aoi21"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi21</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -273,7 +273,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="17.5" s:pid="Y"/>
   </g>
 
-  <g s:type="aoi22" transform="translate(50,360)" s:width="52" s:height="56">
+  <g s:type="aoi22" transform="translate(96,360)" s:width="52" s:height="56">
     <s:alias val="aoi22"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi22</text>
     <path d="M0,1 L0,27 L10,27 A10 13 0 0 0 10,1 Z" class="$cell_id"/>
@@ -289,7 +289,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="28" s:pid="Y"/>
   </g>
 
-  <g s:type="aoi211" transform="translate(50,360)" s:width="52" s:height="56">
+  <g s:type="aoi211" transform="translate(172,360)" s:width="52" s:height="56">
     <s:alias val="aoi211"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi211</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -306,7 +306,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="24.5" s:pid="Y"/>
   </g>
 
-  <g s:type="aoi221" transform="translate(50,360)" s:width="52" s:height="70">
+  <g s:type="aoi221" transform="translate(248,360)" s:width="52" s:height="70">
     <s:alias val="aoi221"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi221</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -324,7 +324,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="31.5" s:pid="Y"/>
   </g>
 
-  <g s:type="aoi222" transform="translate(50,360)" s:width="52" s:height="84">
+  <g s:type="aoi222" transform="translate(324,360)" s:width="52" s:height="84">
     <s:alias val="aoi222"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi222</text>
     <path d="M0,1 L0,27 L10,27 A10 13 0 0 0 10,1 Z" class="$cell_id"/>
@@ -343,7 +343,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="42" s:pid="Y"/>
   </g>
 
-  <g s:type="aoi33" transform="translate(50,360)" s:width="52" s:height="84">
+  <g s:type="aoi33" transform="translate(400,360)" s:width="52" s:height="84">
     <s:alias val="aoi33"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">aoi33</text>
     <path d="M0,1 L0,41 L10,41 A10 20 0 0 0 10,1 Z" class="$cell_id"/>
@@ -361,7 +361,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="42" s:pid="Y"/>
   </g>
 
-  <g s:type="oai21" transform="translate(50,360)" s:width="52" s:height="42">
+  <g s:type="oai21" transform="translate(20,470)" s:width="52" s:height="42">
     <s:alias val="oai21"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai21</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -378,7 +378,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="17.5" s:pid="Y"/>
   </g>
 
-  <g s:type="oai22" transform="translate(50,360)" s:width="52" s:height="56">
+  <g s:type="oai22" transform="translate(96,470)" s:width="52" s:height="56">
     <s:alias val="oai22"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai22</text>
     <path d="M0,27 L10,27 A10 13 0 0 0 10,1 L0,1" class="$cell_id"/>
@@ -399,7 +399,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="28" s:pid="Y"/>
   </g>
 
-  <g s:type="oai211" transform="translate(50,360)" s:width="52" s:height="56">
+  <g s:type="oai211" transform="translate(172,470)" s:width="52" s:height="56">
     <s:alias val="oai211"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai211</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -418,7 +418,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="24.5" s:pid="Y"/>
   </g>
 
-  <g s:type="oai221" transform="translate(50,360)" s:width="52" s:height="70">
+  <g s:type="oai221" transform="translate(248,470)" s:width="52" s:height="70">
     <s:alias val="oai221"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai221</text>
     <path d="M0,7 L20,7" class="$cell_id"/>
@@ -441,7 +441,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="31.5" s:pid="Y"/>
   </g>
 
-  <g s:type="oai222" transform="translate(50,360)" s:width="52" s:height="84">
+  <g s:type="oai222" transform="translate(324,470)" s:width="52" s:height="84">
     <s:alias val="oai222"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai222</text>
     <path d="M0,27 L10,27 A10 13 0 0 0 10,1 L0,1" class="$cell_id"/>
@@ -468,7 +468,7 @@ path, rect, circle, polygon {
     <g s:x="52" s:y="42" s:pid="Y"/>
   </g>
 
-  <g s:type="oai33" transform="translate(50,360)" s:width="52" s:height="84">
+  <g s:type="oai33" transform="translate(400,470)" s:width="52" s:height="84">
     <s:alias val="oai33"/>
     <text x="26" y="-4" class="nodelabel $cell_id" s:attribute="ref">oai33</text>
     <path d="M0,41 L10,41 A10 20 0 0 0 10,1 L0,1" class="$cell_id"/>
@@ -494,7 +494,7 @@ path, rect, circle, polygon {
   </g>
 
   <!-- Wider basic gates (>2 inputs); generated, see test/visual/gen_multi.mjs. -->
-  <g s:type="and3" transform="translate(50,400)" s:width="30" s:height="36">
+  <g s:type="and3" transform="translate(20,580)" s:width="30" s:height="36">
     <s:alias val="and3"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">and3</text>
     <path d="M0,0 L0,36 L15,36 A15 18 0 0 0 15,0 Z" class="$cell_id"/>
@@ -505,7 +505,7 @@ path, rect, circle, polygon {
     <g s:x="30" s:y="18" s:pid="Y"/>
   </g>
 
-  <g s:type="nand3" transform="translate(50,400)" s:width="38" s:height="36">
+  <g s:type="nand3" transform="translate(82,580)" s:width="38" s:height="36">
     <s:alias val="nand3"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">nand3</text>
     <path d="M0,0 L0,36 L15,36 A15 18 0 0 0 15,0 Z" class="$cell_id"/>
@@ -517,7 +517,7 @@ path, rect, circle, polygon {
     <g s:x="38" s:y="18" s:pid="Y"/>
   </g>
 
-  <g s:type="or3" transform="translate(50,400)" s:width="30" s:height="36">
+  <g s:type="or3" transform="translate(144,580)" s:width="30" s:height="36">
     <s:alias val="or3"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">or3</text>
     <path d="M0,36 L15,36 A15 18 0 0 0 15,0 L0,0" class="$cell_id"/>
@@ -529,7 +529,7 @@ path, rect, circle, polygon {
     <g s:x="30" s:y="18" s:pid="Y"/>
   </g>
 
-  <g s:type="nor3" transform="translate(50,400)" s:width="38" s:height="36">
+  <g s:type="nor3" transform="translate(206,580)" s:width="38" s:height="36">
     <s:alias val="nor3"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">nor3</text>
     <path d="M0,36 L15,36 A15 18 0 0 0 15,0 L0,0" class="$cell_id"/>
@@ -542,7 +542,7 @@ path, rect, circle, polygon {
     <g s:x="38" s:y="18" s:pid="Y"/>
   </g>
 
-  <g s:type="and4" transform="translate(50,400)" s:width="30" s:height="48">
+  <g s:type="and4" transform="translate(20,654)" s:width="30" s:height="48">
     <s:alias val="and4"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">and4</text>
     <path d="M0,0 L0,48 L15,48 A15 24 0 0 0 15,0 Z" class="$cell_id"/>
@@ -554,7 +554,7 @@ path, rect, circle, polygon {
     <g s:x="30" s:y="24" s:pid="Y"/>
   </g>
 
-  <g s:type="nand4" transform="translate(50,400)" s:width="38" s:height="48">
+  <g s:type="nand4" transform="translate(82,654)" s:width="38" s:height="48">
     <s:alias val="nand4"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">nand4</text>
     <path d="M0,0 L0,48 L15,48 A15 24 0 0 0 15,0 Z" class="$cell_id"/>
@@ -567,7 +567,7 @@ path, rect, circle, polygon {
     <g s:x="38" s:y="24" s:pid="Y"/>
   </g>
 
-  <g s:type="or4" transform="translate(50,400)" s:width="30" s:height="48">
+  <g s:type="or4" transform="translate(144,654)" s:width="30" s:height="48">
     <s:alias val="or4"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">or4</text>
     <path d="M0,48 L15,48 A15 24 0 0 0 15,0 L0,0" class="$cell_id"/>
@@ -580,7 +580,7 @@ path, rect, circle, polygon {
     <g s:x="30" s:y="24" s:pid="Y"/>
   </g>
 
-  <g s:type="nor4" transform="translate(50,400)" s:width="38" s:height="48">
+  <g s:type="nor4" transform="translate(206,654)" s:width="38" s:height="48">
     <s:alias val="nor4"/>
     <text x="15" y="-4" class="nodelabel $cell_id" s:attribute="ref">nor4</text>
     <path d="M0,48 L15,48 A15 24 0 0 0 15,0 L0,0" class="$cell_id"/>

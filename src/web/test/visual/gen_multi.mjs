@@ -14,7 +14,10 @@ const R = 3;       // inversion bubble radius
 
 function n(v) { return Number(v.toFixed(2)); }
 
-function symbol(name, base, inverting, nIn) {
+// originX/originY position the template in the skin; netlistsvg overwrites the
+// transform per instance at layout time, so the position only matters for
+// previewing the raw skin file.  Returns {svg, w, h}.
+function symbol(name, base, inverting, nIn, originX, originY) {
   const H = nIn * ROW;
   const mid = H / 2;
   const draw = [];
@@ -32,7 +35,7 @@ function symbol(name, base, inverting, nIn) {
   }
 
   const lines = [];
-  lines.push(`  <g s:type="${name}" transform="translate(50,400)" s:width="${outX}" s:height="${H}">`);
+  lines.push(`  <g s:type="${name}" transform="translate(${originX},${originY})" s:width="${outX}" s:height="${H}">`);
   lines.push(`    <s:alias val="${name}"/>`);
   lines.push(`    <text x="${n(W / 2)}" y="-4" class="nodelabel $cell_id" s:attribute="ref">${name}</text>`);
   for (const d of draw) lines.push(`    ${d}`);
@@ -43,14 +46,29 @@ function symbol(name, base, inverting, nIn) {
   }
   lines.push(`    <g s:x="${n(outX)}" s:y="${n(mid)}" s:pid="Y"/>`);
   lines.push('  </g>');
-  return lines.join('\n');
+  return { svg: lines.join('\n'), w: outX, h: H };
 }
 
-const out = [];
-for (const nIn of [3, 4]) {
-  out.push(symbol('and' + nIn, 'and', false, nIn));
-  out.push(symbol('nand' + nIn, 'and', true, nIn));
-  out.push(symbol('or' + nIn, 'or', false, nIn));
-  out.push(symbol('nor' + nIn, 'or', true, nIn));
+// Lay the templates out in a grid (below the compound block's y-band) so the
+// raw skin file is inspectable.  Cells are sized to the largest symbol.
+function layoutGrid(defs, { baseX, baseY, cols, gapX, gapY }) {
+  const built = defs.map((d) => ({ d, ...symbol(...d, 0, 0) }));
+  const colPitch = Math.max(...built.map((b) => b.w)) + gapX;
+  const rowPitch = Math.max(...built.map((b) => b.h)) + gapY;
+  return built.map((b, i) => {
+    const x = baseX + (i % cols) * colPitch;
+    const y = baseY + Math.floor(i / cols) * rowPitch;
+    return symbol(...b.d, x, y).svg;
+  });
 }
+
+const defs = [];
+for (const nIn of [3, 4]) {
+  defs.push(['and' + nIn, 'and', false, nIn]);
+  defs.push(['nand' + nIn, 'and', true, nIn]);
+  defs.push(['or' + nIn, 'or', false, nIn]);
+  defs.push(['nor' + nIn, 'or', true, nIn]);
+}
+const out = layoutGrid(defs,
+  { baseX: 20, baseY: 580, cols: 4, gapX: 24, gapY: 26 });
 console.log(out.join('\n\n'));

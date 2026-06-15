@@ -27,7 +27,10 @@ function line(x1, y1, x2, y2) { return `<path d="M${x1},${y1} L${x2},${y2}" clas
 function n(v) { return Number(v.toFixed(2)); }
 
 // terms: array of sizes (1 = literal, >=2 = sub-gate).  isAoi: AND->NOR else OR->NAND.
-function buildSymbol(type, terms, isAoi) {
+// originX/originY position the template in the skin; netlistsvg overwrites the
+// transform per instance at layout time, so the position only matters for
+// previewing the raw skin file.  Returns {svg, w, h}.
+function buildSymbol(type, terms, isAoi, originX, originY) {
   const subBase = isAoi ? 'and' : 'or';
   const totalInputs = terms.reduce((a, s) => a + s, 0);
   const H = totalInputs * ROW;
@@ -86,32 +89,48 @@ function buildSymbol(type, terms, isAoi) {
   const W = outX;
 
   const lines = [];
-  lines.push(`  <g s:type="${type}" transform="translate(50,360)" s:width="${W}" s:height="${H}">`);
+  lines.push(`  <g s:type="${type}" transform="translate(${originX},${originY})" s:width="${W}" s:height="${H}">`);
   lines.push(`    <s:alias val="${type}"/>`);
   lines.push(`    <text x="${n(W / 2)}" y="-4" class="nodelabel $cell_id" s:attribute="ref">${type}</text>`);
   for (const d of draw) lines.push(`    ${d}`);
   lines.push('');
   for (const p of ports) lines.push(`    ${p}`);
   lines.push('  </g>');
-  return lines.join('\n');
+  return { svg: lines.join('\n'), w: W, h: H };
+}
+
+// Lay the templates out in a grid so the raw skin file is inspectable (no
+// overlap).  Cells are sized to the largest symbol so nothing collides.
+function layoutGrid(defs, { baseX, baseY, cols, gapX, gapY }) {
+  const built = defs.map(([type, terms, isAoi]) =>
+    ({ type, terms, isAoi, ...buildSymbol(type, terms, isAoi, 0, 0) }));
+  const colPitch = Math.max(...built.map((b) => b.w)) + gapX;
+  const rowPitch = Math.max(...built.map((b) => b.h)) + gapY;
+  return built.map((b, i) => {
+    const x = baseX + (i % cols) * colPitch;
+    const y = baseY + Math.floor(i / cols) * rowPitch;
+    return buildSymbol(b.type, b.terms, b.isAoi, x, y).svg;
+  });
 }
 
 // Term-size arrays are listed smallest-first because canonicalizeCell() in
 // ../../src/schematic-widget.js assigns port ids (A, B, …) term-by-term in
 // ascending size order; the symbol's port layout must match that mapping.  The
 // type name uses the descending-size convention (e.g. terms [1,2] -> "aoi21").
-const symbols = [
-  buildSymbol('aoi21', [1, 2], true),
-  buildSymbol('aoi22', [2, 2], true),
-  buildSymbol('aoi211', [1, 1, 2], true),
-  buildSymbol('aoi221', [1, 2, 2], true),
-  buildSymbol('aoi222', [2, 2, 2], true),
-  buildSymbol('aoi33', [3, 3], true),
-  buildSymbol('oai21', [1, 2], false),
-  buildSymbol('oai22', [2, 2], false),
-  buildSymbol('oai211', [1, 1, 2], false),
-  buildSymbol('oai221', [1, 2, 2], false),
-  buildSymbol('oai222', [2, 2, 2], false),
-  buildSymbol('oai33', [3, 3], false),
+const defs = [
+  ['aoi21', [1, 2], true],
+  ['aoi22', [2, 2], true],
+  ['aoi211', [1, 1, 2], true],
+  ['aoi221', [1, 2, 2], true],
+  ['aoi222', [2, 2, 2], true],
+  ['aoi33', [3, 3], true],
+  ['oai21', [1, 2], false],
+  ['oai22', [2, 2], false],
+  ['oai211', [1, 1, 2], false],
+  ['oai221', [1, 2, 2], false],
+  ['oai222', [2, 2, 2], false],
+  ['oai33', [3, 3], false],
 ];
+const symbols = layoutGrid(defs,
+  { baseX: 20, baseY: 360, cols: 6, gapX: 24, gapY: 26 });
 console.log(symbols.join('\n\n'));
