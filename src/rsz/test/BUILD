@@ -247,6 +247,7 @@ TESTS = [
     "repair_setup_vtswap_legacy_asap7",
     "repair_setup_vt_swap2",
     "measured_vt_swap",
+    "global_sizing_presize",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS

@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0127] Reading DEF file: repair_setup2.def
+[INFO ODB-0128] Design: td1
+[INFO ODB-0130]     Created 6 pins.
+[INFO ODB-0131]     Created 3 components and 15 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 7 nets and 9 connections.
+[INFO ODB-0134] Finished DEF file: repair_setup2.def
+[INFO RSZ-0416] GLOBAL_SIZING presize mode 2 enabled: presizing to the largest leakage Liberty cell.
+[INFO RSZ-0415] GLOBAL_SIZING presize mode 2: 3/3 editable instances replaced.
+[INFO RSZ-0400] GLOBAL_SIZING: 1 cells replaced (loop); 3/3 sweeps accepted, 0 rolled back; 1 replacements attempted in total (1 upsize, 0 downsize).
+[INFO RSZ-0409] GLOBAL_SIZING QoR: WNS -0.278 -> -0.157 (0.121); TNS -0.5 -> -0.3 (0.2); leakage 7.89e-08 -> 2.43e-07W (+208.47%); area 3.46e-12 -> 7.45e-12m^2 (+115.38%).
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+------------------------------------------------------------------------------------------------------------------------------
+    final |       0 |       0 |        0 |      0 |     0 |  +115.4% |   -0.157 |       -0.4 |       -0.3 |      2 | y2
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.

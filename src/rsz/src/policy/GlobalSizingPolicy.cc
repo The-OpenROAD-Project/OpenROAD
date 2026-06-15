@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -39,10 +38,13 @@
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
+#include "utl/env.h"
 
 namespace rsz {
 
 using utl::RSZ;
+
+constexpr char kGlobalSizingPresizeEnv[] = "RSZ_GLOBAL_SIZING_PRESIZE_MODE";
 
 GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
                                        MoveCommitter& committer,
@@ -53,6 +55,130 @@ GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
 }
 
 GlobalSizingPolicy::~GlobalSizingPolicy() = default;
+
+GlobalSizingPolicy::PresizeMode GlobalSizingPolicy::readPresizeMode() const
+{
+  const int parsed = utl::readEnvarInt(kGlobalSizingPresizeEnv, 0);
+  if (parsed < 0 || parsed > static_cast<int>(PresizeMode::kMaxSizeMinVt)) {
+    logger_->warn(RSZ,
+                  413,
+                  "Ignoring invalid {} value {}; expected 0, 1, or 2. "
+                  "Using default value 0.",
+                  kGlobalSizingPresizeEnv,
+                  parsed);
+    return PresizeMode::kDisabled;
+  }
+
+  return static_cast<PresizeMode>(parsed);
+}
+
+sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
+    sta::LibertyCell* current_cell,
+    const PresizeMode mode,
+    PresizeCellCache& presize_cell_cache) const
+{
+  PresizeCellCache::iterator cache_itr = presize_cell_cache.find(current_cell);
+  if (cache_itr != presize_cell_cache.end()) {
+    return cache_itr->second;
+  }
+
+  const sta::LibertyCellSeq candidates
+      = resizer_.getSwappableCells(current_cell);
+
+  // best starts at current_cell, so the current cell is always part of the
+  // comparison even when getSwappableCells does not return it. An explicit
+  // membership scan / push_back is therefore redundant.
+  sta::LibertyCell* best = current_cell;
+  std::optional<float> best_leak = resizer_.cellLeakage(best);
+  for (sta::LibertyCell* candidate : candidates) {
+    const std::optional<float> candidate_leak = resizer_.cellLeakage(candidate);
+    if (!candidate_leak.has_value()) {
+      continue;
+    }
+
+    if (!best_leak.has_value()) {
+      best = candidate;
+      best_leak = candidate_leak;
+      continue;
+    }
+
+    if (*candidate_leak != *best_leak) {
+      const bool better_leakage = mode == PresizeMode::kMinSizeMaxVt
+                                      ? *candidate_leak < *best_leak
+                                      : *candidate_leak > *best_leak;
+      if (better_leakage) {
+        best = candidate;
+        best_leak = candidate_leak;
+      }
+      continue;
+    }
+
+    const float candidate_drive = resizer_.cellDriveResistance(candidate);
+    const float best_drive = resizer_.cellDriveResistance(best);
+    if (candidate_drive != best_drive) {
+      const bool better_drive = mode == PresizeMode::kMinSizeMaxVt
+                                    ? candidate_drive > best_drive
+                                    : candidate_drive < best_drive;
+      if (better_drive) {
+        best = candidate;
+        best_leak = candidate_leak;
+      }
+    }
+  }
+
+  presize_cell_cache.emplace(current_cell, best);
+
+  return best;
+}
+
+int GlobalSizingPolicy::applyPresize(const PresizeMode mode)
+{
+  if (mode == PresizeMode::kDisabled) {
+    return 0;
+  }
+
+  const char* target_cell = mode == PresizeMode::kMinSizeMaxVt
+                                ? "smallest leakage Liberty cell"
+                                : "largest leakage Liberty cell";
+  logger_->info(RSZ,
+                416,
+                "GLOBAL_SIZING presize mode {} enabled: presizing to the {}.",
+                static_cast<int>(mode),
+                target_cell);
+
+  int editable_count = 0;
+  int replacements = 0;
+  PresizeCellCache presize_cell_cache;
+  std::unique_ptr<sta::LeafInstanceIterator> iit(
+      network_->leafInstanceIterator());
+  while (iit->hasNext()) {
+    sta::Instance* inst = iit->next();
+    if (!resizer_.isEditableLogicStdCell(inst)) {
+      continue;
+    }
+    ++editable_count;
+
+    sta::LibertyCell* current_cell = network_->libertyCell(inst);
+    sta::LibertyCell* replacement
+        = selectPresizeCell(current_cell, mode, presize_cell_cache);
+    if (replacement != current_cell
+        && resizer_.replaceCell(inst, replacement, false)) {
+      ++replacements;
+    }
+  }
+
+  if (replacements > 0) {
+    resizer_.updateParasiticsAndTiming();
+  }
+  logger_->info(RSZ,
+                415,
+                "GLOBAL_SIZING presize mode {}: {}/{} editable instances "
+                "replaced.",
+                static_cast<int>(mode),
+                replacements,
+                editable_count);
+  return replacements;
+}
 
 bool GlobalSizingPolicy::isDataArc(const sta::Edge* edge) const
 {
@@ -830,14 +956,6 @@ void GlobalSizingPolicy::iterate()
     return;
   }
 
-  allocate();
-  seedMultipliers(lr_params_);
-  projectFlowBalance(lr_params_);
-
-  subproblem_->init();
-
-  const float timing_weight = computeAutoTimingWeight(lr_params_);
-
   const DesignSnap pre = computeDesignSnap();
   const float wns_pre = sta::delayAsFloat(sta_->worstSlack(policy_max_));
   const float tns_pre
@@ -855,6 +973,16 @@ void GlobalSizingPolicy::iterate()
              sta::delayAsString(wns_pre, 3, sta_),
              sta::delayAsString(tns_pre, 1, sta_));
 
+  resizer_.journalBegin();
+  applyPresize(readPresizeMode());
+  allocate();
+  seedMultipliers(lr_params_);
+  projectFlowBalance(lr_params_);
+
+  subproblem_->init();
+
+  const float timing_weight = computeAutoTimingWeight(lr_params_);
+
   const int max_iter = (lr_params_.max_iterations > 0)
                            ? lr_params_.max_iterations
                            : LRParams{}.max_iterations;
@@ -870,7 +998,6 @@ void GlobalSizingPolicy::iterate()
   int rejected_iters = 0;
   int consec_zero = 0;
   int consec_reject = 0;
-  resizer_.journalBegin();
   for (int iter = 0; iter < max_iter; ++iter) {
     // Global sizing only drives WNS upward; once it meets the setup margin
     // there is no timing left to recover and further sweeps would only spend
