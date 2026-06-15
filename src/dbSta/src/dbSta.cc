@@ -1654,7 +1654,7 @@ void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
 
         bool is_external = false;
         if (from_pin) {
-          std::string_view pin_name = network()->name(from_pin);
+          std::string pin_name = network()->name(from_pin);
           std::string mod_prefix = db_mod_inst->getName();
           mod_prefix += "/";  // e.g., "_202_/"
           if (!pin_name.starts_with(mod_prefix)) {
