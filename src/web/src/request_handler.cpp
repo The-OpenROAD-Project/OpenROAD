@@ -31,6 +31,8 @@
 #include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
@@ -41,6 +43,9 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/PortDirection.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
@@ -1053,6 +1058,259 @@ static const char* ioTypeToDirection(odb::dbIoType io_type)
   return "inout";
 }
 
+// Result of classifying an instance against the schematic gate symbols the web
+// viewer can draw.
+struct GateClass
+{
+  // "and"/"nand"/"or"/"nor"/"xor"/"xnor"/"not"/"buf" for simple gates,
+  // "aoi"/"oai" for compound and/or-invert gates, or "" when the cell is not a
+  // recognised combinational gate.
+  std::string kind;
+  // For "aoi"/"oai" only: the input pin names of each first-level term (e.g.
+  // AOI21 -> {{"A"}, {"B1", "B2"}}).  A one-pin term is a literal fed straight
+  // into the second-level gate; multi-pin terms become an AND (aoi) or OR (oai)
+  // sub-gate.  The viewer uses the pin names to align each input to its real
+  // port.  Empty otherwise.
+  std::vector<std::vector<std::string>> terms;
+};
+
+// Append the operands of `e`, flattening nested nodes that share `op`, so that
+// e.g. or(or(a,b),c) yields {a, b, c}.
+static void flattenFuncExpr(sta::FuncExpr* e,
+                            sta::FuncExpr::Op op,
+                            std::vector<sta::FuncExpr*>& out)
+{
+  if (e != nullptr && e->op() == op) {
+    flattenFuncExpr(e->left(), op, out);
+    flattenFuncExpr(e->right(), op, out);
+  } else if (e != nullptr) {
+    out.push_back(e);
+  }
+}
+
+// Classify an and/or-invert tree: `func` is the expression with its leading
+// inversion already removed, and `top` is its (and_ or or_) root operator.  An
+// AOI is an OR of product terms (each a literal or an AND of literals); an OAI
+// is the dual.  Returns the input pin names grouped by term, or an empty vector
+// when the structure is anything else (e.g. a MUX, whose terms contain inverted
+// literals).
+static std::vector<std::vector<std::string>> classifyAoiOai(
+    sta::FuncExpr* func,
+    sta::FuncExpr::Op top)
+{
+  static constexpr int kMaxTerms = 4;
+  static constexpr int kMaxInputs = 6;
+  const sta::FuncExpr::Op term_op = (top == sta::FuncExpr::Op::and_)
+                                        ? sta::FuncExpr::Op::or_
+                                        : sta::FuncExpr::Op::and_;
+
+  std::vector<sta::FuncExpr*> terms;
+  flattenFuncExpr(func, top, terms);
+  if (terms.size() < 2 || static_cast<int>(terms.size()) > kMaxTerms) {
+    return {};
+  }
+
+  std::vector<std::vector<std::string>> groups;
+  int total = 0;
+  for (sta::FuncExpr* term : terms) {
+    if (term->op() == sta::FuncExpr::Op::port) {
+      groups.push_back({term->port()->name()});
+      total += 1;
+      continue;
+    }
+    if (term->op() != term_op) {
+      return {};  // not a pure product/sum-of-literals term (e.g. a MUX)
+    }
+    std::vector<sta::FuncExpr*> literals;
+    flattenFuncExpr(term, term_op, literals);
+    std::vector<std::string> names;
+    for (sta::FuncExpr* lit : literals) {
+      if (lit->op() != sta::FuncExpr::Op::port) {
+        return {};
+      }
+      names.push_back(lit->port()->name());
+    }
+    total += static_cast<int>(names.size());
+    groups.push_back(std::move(names));
+  }
+  if (total > kMaxInputs) {
+    return {};
+  }
+  return groups;
+}
+
+// Classify a leaf instance into a schematic gate symbol using its Liberty
+// function, so the web schematic viewer can draw a recognisable gate outline
+// (AND/OR/XOR/inverter/buffer, plus compound AOI/OAI) around the cell.
+//
+// The result is emitted only as a rendering *hint*: the cell still carries its
+// real master name and pin names, so it keeps its instance label and port
+// labels and falls back to a plain box if the viewer ignores the hint.
+// Anything more complex (tristates, sequential cells, macros, XOR/MUX trees
+// wider than two inputs, ...) returns an empty kind and is drawn as a box,
+// which is the conventional way such cells appear on a schematic anyway.
+static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
+{
+  GateClass result;
+  if (network == nullptr) {
+    return result;
+  }
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  if (cell == nullptr || cell->hasSequentials() || cell->isClockGate()
+      || cell->isMacro()) {
+    return result;
+  }
+
+  // Find the single functional output port.  Bail out on bussed cells or any
+  // cell with more than one driven output (e.g. full adders, *_QN flops).
+  sta::LibertyPort* out_port = nullptr;
+  sta::FuncExpr* func = nullptr;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    sta::LibertyPort* port = port_iter.next();
+    if (port->isBus() || port->hasMembers()) {
+      return result;
+    }
+    if (!port->direction()->isOutput()) {
+      continue;
+    }
+    if (port->tristateEnable() != nullptr) {
+      return result;
+    }
+    sta::FuncExpr* f = port->function();
+    if (f == nullptr) {
+      continue;
+    }
+    if (out_port != nullptr) {
+      return result;  // more than one functional output
+    }
+    out_port = port;
+    func = f;
+  }
+  if (out_port == nullptr || func == nullptr) {
+    return result;
+  }
+
+  // Peel a leading inversion so AND/NAND, OR/NOR, XOR/XNOR and BUF/NOT share a
+  // path.
+  bool inverting = false;
+  if (func->op() == sta::FuncExpr::Op::not_) {
+    inverting = true;
+    func = func->left();
+  }
+  if (func == nullptr) {
+    return result;
+  }
+
+  // Single input: buffer (Y = A) or inverter (Y = !A).
+  if (func->op() == sta::FuncExpr::Op::port) {
+    result.kind = inverting ? "not" : "buf";
+    return result;
+  }
+
+  // A flat AND/OR/XOR of N plain ports is a basic N-input gate (N >= 2).  The
+  // viewer derives the input count from the cell's ports, so only the kind is
+  // emitted.
+  const sta::FuncExpr::Op top = func->op();
+  if (top == sta::FuncExpr::Op::and_ || top == sta::FuncExpr::Op::or_
+      || top == sta::FuncExpr::Op::xor_) {
+    std::vector<sta::FuncExpr*> operands;
+    flattenFuncExpr(func, top, operands);
+    bool all_ports = true;
+    for (sta::FuncExpr* op : operands) {
+      if (op->op() != sta::FuncExpr::Op::port) {
+        all_ports = false;
+        break;
+      }
+    }
+    if (all_ports && operands.size() >= 2) {
+      switch (top) {
+        case sta::FuncExpr::Op::and_:
+          result.kind = inverting ? "nand" : "and";
+          return result;
+        case sta::FuncExpr::Op::or_:
+          result.kind = inverting ? "nor" : "or";
+          return result;
+        default:  // xor_
+          result.kind = inverting ? "xnor" : "xor";
+          return result;
+      }
+    }
+  }
+
+  // Compound and/or-invert gate (AOI/OAI).  These always invert, and their root
+  // is an AND (OAI) or OR (AOI) of product/sum terms (at least one a sub-gate).
+  if (inverting
+      && (func->op() == sta::FuncExpr::Op::and_
+          || func->op() == sta::FuncExpr::Op::or_)) {
+    std::vector<std::vector<std::string>> terms
+        = classifyAoiOai(func, func->op());
+    if (!terms.empty()) {
+      result.kind = (func->op() == sta::FuncExpr::Op::or_) ? "aoi" : "oai";
+      result.terms = std::move(terms);
+    }
+  }
+  return result;
+}
+
+// Emit one Yosys-format cell object for `inst` into `cells`.  The cell is
+// always emitted verbatim (master name + real pin names) so netlistsvg renders
+// it with its instance and port labels.  When it classifies as a standard
+// logic gate, a non-standard "gate_kind" field is added that the viewer uses to
+// draw a gate-shaped outline instead of a box.  Only nets present in
+// `net_to_id` are wired; pins on other nets are skipped.
+static void emitSchematicCell(boost::json::object& cells,
+                              odb::dbInst* inst,
+                              sta::dbNetwork* network,
+                              odb::PtrMap<odb::dbNet, int>& net_to_id)
+{
+  boost::json::object cell;
+  cell["hide_name"] = 0;
+  cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
+                                   : std::string("$unknown");
+  cell["attributes"] = boost::json::object{};
+  cell["parameters"] = boost::json::object{};
+
+  const GateClass gate = classifyGate(network, inst);
+  if (!gate.kind.empty()) {
+    cell["gate_kind"] = gate.kind;
+    if (!gate.terms.empty()) {
+      boost::json::array terms;
+      for (const std::vector<std::string>& group : gate.terms) {
+        boost::json::array pins;
+        for (const std::string& pin : group) {
+          pins.push_back(boost::json::string(pin));
+        }
+        terms.push_back(std::move(pins));
+      }
+      cell["gate_terms"] = std::move(terms);
+    }
+  }
+
+  boost::json::object port_directions;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
+      continue;
+    }
+    port_directions[iterm->getMTerm()->getName()]
+        = ioTypeToDirection(iterm->getIoType());
+  }
+  cell["port_directions"] = std::move(port_directions);
+
+  boost::json::object connections;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (!net || !net_to_id.contains(net)) {
+      continue;
+    }
+    connections[iterm->getMTerm()->getName()]
+        = boost::json::array{net_to_id[net]};
+  }
+  cell["connections"] = std::move(connections);
+
+  cells[inst->getName()] = std::move(cell);
+}
+
 WebSocketResponse SelectHandler::handleSchematicCone(
     const WebSocketRequest& req)
 {
@@ -1193,37 +1451,11 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     }
     top["ports"] = std::move(ports);
 
+    sta::dbNetwork* network
+        = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : all_insts) {
-      boost::json::object cell;
-      cell["hide_name"] = 0;
-      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
-                                       : std::string("$unknown");
-      cell["attributes"] = boost::json::object{};
-      cell["parameters"] = boost::json::object{};
-
-      boost::json::object port_directions;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
-          continue;
-        }
-        port_directions[iterm->getMTerm()->getName()]
-            = ioTypeToDirection(iterm->getIoType());
-      }
-      cell["port_directions"] = std::move(port_directions);
-
-      boost::json::object connections;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (!net || !net_to_id.contains(net)) {
-          continue;
-        }
-        connections[iterm->getMTerm()->getName()]
-            = boost::json::array{net_to_id[net]};
-      }
-      cell["connections"] = std::move(connections);
-
-      cells[inst->getName()] = std::move(cell);
+      emitSchematicCell(cells, inst, network, net_to_id);
     }
     top["cells"] = std::move(cells);
 
@@ -1283,37 +1515,11 @@ WebSocketResponse SelectHandler::handleSchematicFull(
     }
     top["ports"] = std::move(ports);
 
+    sta::dbNetwork* network
+        = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : block->getInsts()) {
-      boost::json::object cell;
-      cell["hide_name"] = 0;
-      cell["type"] = inst->getMaster() ? inst->getMaster()->getName()
-                                       : std::string("$unknown");
-      cell["attributes"] = boost::json::object{};
-      cell["parameters"] = boost::json::object{};
-
-      boost::json::object port_directions;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet()) {
-          continue;
-        }
-        port_directions[iterm->getMTerm()->getName()]
-            = ioTypeToDirection(iterm->getIoType());
-      }
-      cell["port_directions"] = std::move(port_directions);
-
-      boost::json::object connections;
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (!net) {
-          continue;
-        }
-        connections[iterm->getMTerm()->getName()]
-            = boost::json::array{net_to_id[net]};
-      }
-      cell["connections"] = std::move(connections);
-
-      cells[inst->getName()] = std::move(cell);
+      emitSchematicCell(cells, inst, network, net_to_id);
     }
     top["cells"] = std::move(cells);
 
