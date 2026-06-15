@@ -1213,6 +1213,7 @@ proc add_3dblox_alignment_marker_rule { args } {
 # On-demand structural summary of a 3DIC (3DBlox) design: chiplet, chip-net,
 # bond-region and bump counts, plus per-chip-inst master references. Useful as
 # a post-read sanity check before cross-chiplet timing.
+sta::define_cmd_args "report_3dic_summary" {}
 proc report_3dic_summary { args } {
   sta::parse_key_args "report_3dic_summary" args keys {} flags {}
   set db [ord::get_db]
