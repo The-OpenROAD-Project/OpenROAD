@@ -356,6 +356,8 @@ class GlobalRouter
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   void updateNetPins(Net* net);
+  bool isSecondaryPowerNet(odb::dbNet* db_net) const;
+  void routeSecondaryPowerNets();
 
   void getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
