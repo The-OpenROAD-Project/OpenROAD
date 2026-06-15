@@ -14,7 +14,6 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -648,8 +647,12 @@ void RepairDesign::findBufferSizes()
                    resizer_->buffer_fast_sizes_.end()};
   std::ranges::sort(buffer_sizes_,
                     [=](sta::LibertyCell* a, sta::LibertyCell* b) {
-                      return std::make_tuple(bufferCin(a), a->id())
-                             < std::make_tuple(bufferCin(b), b->id());
+                      const float cin_a = bufferCin(a);
+                      const float cin_b = bufferCin(b);
+                      if (cin_a != cin_b) {
+                        return cin_a < cin_b;
+                      }
+                      return a->id() < b->id();
                     });
 }
 
