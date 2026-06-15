@@ -399,12 +399,17 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
   // db_cbk_ (which would unhook all but the last chiplet).
   chiplet_cbks_.clear();
   bool hier_master_seen = false;
-  // NOTE (Track B): this hooks callbacks on TOP-LEVEL chiplet blocks only. A
-  // HIER master has no own dbBlock (skipped below), so leaf blocks nested
-  // under hierarchical chiplets are NOT hooked -- edits inside them would be
-  // invisible to STA. The fix is to walk the unfolded model
-  // (db->getUnfoldedChipInsts(), which recurses into HIER) and hook one cbk
-  // per distinct leaf dbBlock*. Gated for now by the STA-3001 warning below.
+  // Dedupe by block: a chiplet master placed by >1 chip-inst (duplicated
+  // master) maps to one shared dbBlock. A dbBlock holds a LIST of callbacks,
+  // so hooking one per chip-inst would register multiple live callbacks on
+  // that block and fire each db edit once per placement (redundant, and unsafe
+  // for any non-idempotent handler). One callback per distinct block suffices.
+  // NOTE (Track B): this hooks TOP-LEVEL chiplet blocks only. A HIER master has
+  // no own dbBlock (skipped below), so leaf blocks nested under hierarchical
+  // chiplets are NOT hooked. The fix is to walk the unfolded model
+  // (db->getUnfoldedChipInsts(), which recurses into HIER) and hook one cbk per
+  // distinct leaf dbBlock*. Gated for now by the STA-3001 warning below.
+  odb::PtrSet<odb::dbBlock> hooked_blocks;
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
     if (master != nullptr
@@ -414,6 +419,9 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
     odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
     if (chiplet_block == nullptr) {
       continue;
+    }
+    if (!hooked_blocks.insert(chiplet_block).second) {
+      continue;  // already hooked (shared/duplicated master block)
     }
     auto cbk = std::make_unique<dbStaCbk>(this);
     cbk->setNetwork(db_network_);
