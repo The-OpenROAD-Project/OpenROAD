@@ -22,7 +22,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -2474,8 +2473,12 @@ void TritonCTS::findCandidateDummyCells(
   std::ranges::sort(
       dummyCandidates,
       [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-        return std::make_tuple(getInputCap(cell1), cell1->id())
-               < std::make_tuple(getInputCap(cell2), cell2->id());
+        const float cap1 = getInputCap(cell1);
+        const float cap2 = getInputCap(cell2);
+        if (cap1 != cap2) {
+          return cap1 < cap2;
+        }
+        return cell1->id() < cell2->id();
       });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
