@@ -18,6 +18,7 @@ sh_binary(
         "//conditions:default": {},
     }),
     visibility = ["//visibility:public"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
 pkg_tar(

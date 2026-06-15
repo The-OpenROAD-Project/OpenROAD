@@ -1931,6 +1931,13 @@ void TritonCTS::writeClockNDRsToDb(TreeBuilder* builder)
   odb::dbTech* tech = db_->getTech();
   for (int i = 1; i <= tech->getRoutingLayerCount(); i++) {
     odb::dbTechLayer* layer = tech->findRoutingLayer(i);
+    // Backside routing layers (BPR, BM*, BRDL) are not clock-routing
+    // targets; clock trees live on the frontside. Skip them so we do
+    // not create NDR rules whose widths/spacings are derived from
+    // backside design rules and would never apply to a clock net.
+    if (layer->isBackside()) {
+      continue;
+    }
     odb::dbTechLayerRule* layerRule = clockNDR->getLayerRule(layer);
     if (!layerRule) {
       layerRule = odb::dbTechLayerRule::create(clockNDR, layer);

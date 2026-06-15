@@ -1,14 +1,34 @@
 #!/usr/bin/env bash
-set -e
 
-# Install binary and runfiles from bazel build
+# --- begin runfiles.bash initialization v3 ---
+# Locate the runfiles library so we can resolve data dependencies regardless of
+# whether runfiles are materialized as a directory (Linux) or only described by
+# a manifest (macOS, remote execution).
+set -uo pipefail
+set +e
+f=bazel_tools/tools/bash/runfiles/runfiles.bash
+# shellcheck disable=SC1090
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
 
-BAZEL_BIN=$(cd "$BUILD_WORKSPACE_DIRECTORY"; bazel info bazel-bin)
-TARFILE="$BAZEL_BIN/packaging/openroad.tar"
+# Install binary and runfiles from bazel build.
+#
+# Resolve the packaged tarball from this script's runfiles rather than via
+# `bazel info bazel-bin`. The latter is evaluated with no compilation mode, so
+# it resolves to the repo default (`-c opt`) and would install the optimized
+# binary even for `bazel run -c dbg //:install` -- silently dropping debug
+# symbols. The runfiles copy always matches the configuration this target was
+# built with.
+TARFILE="$(rlocation openroad/packaging/openroad.tar)"
 
-# The desktop entry is built into bazel-bin only for GUI builds
-# --//:platform=gui
-DESKTOP_SRC="$BAZEL_BIN/src/gui/openroad.desktop"
+# The desktop entry is built only for GUI builds (--//:platform=gui); for CLI
+# builds it is absent from the runfiles, so resolve it lazily below. The icon
+# is a source file, independent of build configuration.
 ICON_SRC="$BUILD_WORKSPACE_DIRECTORY/src/gui/resources/icon.png"
 
 INSTALL_DESKTOP=0
@@ -46,8 +66,10 @@ rm -f "$ABS_DEST/share/openroad/gui/icon.png"
 rm -f "$APPS_DIR/openroad.desktop"
 
 # Install the desktop entry (menu launcher + icon) if Bazel built it, i.e.
-# this is a GUI build.
-if [ "$INSTALL_DESKTOP" = "1" ] && [ -f "$DESKTOP_SRC" ]; then
+# this is a GUI build. The generated entry is a data dep only for GUI builds,
+# so rlocation may not find it; tolerate that and fall back to skipping.
+DESKTOP_SRC="$(rlocation openroad/src/gui/openroad.desktop 2>/dev/null || true)"
+if [ "$INSTALL_DESKTOP" = "1" ] && [ -n "$DESKTOP_SRC" ] && [ -f "$DESKTOP_SRC" ]; then
     GUI_SHARE="$ABS_DEST/share/openroad/gui"
     mkdir -p "$GUI_SHARE"
     cp -f "$ICON_SRC" "$GUI_SHARE/icon.png"

@@ -17,7 +17,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/drt/src/global.h"
+#include "src/drt/src/drt-global.h"
 #include "utl/Logger.h"
 
 namespace odb {
