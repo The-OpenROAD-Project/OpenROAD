@@ -28,4 +28,29 @@ proc set_debug { args } {
 
   exa::set_debug_cmd
 }
+
+# Multithreaded exercise of logToDb, logToDbBulk, and logToDbMetadata.
+# Both tables share the same idx range [0, num_entries) so they can be
+# cross-indexed via a JOIN on the idx column.
+proc db_log_test { args } {
+  sta::parse_key_args "db_log_test" args \
+    keys {-threads -num_entries -chunks} flags {}
+
+  set num_threads 4
+  if { [info exists keys(-threads)] } {
+    set num_threads $keys(-threads)
+  }
+  set num_entries 100000
+  if { [info exists keys(-num_entries)] } {
+    set num_entries $keys(-num_entries)
+  }
+  set num_chunks 4
+  if { [info exists keys(-chunks)] } {
+    set num_chunks $keys(-chunks)
+  }
+
+  sta::check_argc_eq0 "db_log_test" $args
+
+  exa::db_log_test_cmd $num_threads $num_entries $num_chunks
+}
 }
