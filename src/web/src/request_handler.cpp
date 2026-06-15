@@ -1191,11 +1191,13 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
     return result;
   }
 
-  // Peel a leading inversion so AND/NAND, OR/NOR, XOR/XNOR and BUF/NOT share a
-  // path.
+  // Peel leading inversions so AND/NAND, OR/NOR, XOR/XNOR and BUF/NOT share a
+  // path.  Some cells (e.g. higher drive-strength variants) model the output
+  // with stacked inverters, so the function can be nested NOTs like !(!(!(x)));
+  // an odd count is inverting, an even count is not.
   bool inverting = false;
-  if (func->op() == sta::FuncExpr::Op::not_) {
-    inverting = true;
+  while (func != nullptr && func->op() == sta::FuncExpr::Op::not_) {
+    inverting = !inverting;
     func = func->left();
   }
   if (func == nullptr) {
@@ -1262,7 +1264,8 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
 static void emitSchematicCell(boost::json::object& cells,
                               odb::dbInst* inst,
                               sta::dbNetwork* network,
-                              odb::PtrMap<odb::dbNet, int>& net_to_id)
+                              odb::PtrMap<odb::dbNet, int>& net_to_id,
+                              int& next_net_id)
 {
   boost::json::object cell;
   cell["hide_name"] = 0;
@@ -1287,25 +1290,30 @@ static void emitSchematicCell(boost::json::object& cells,
     }
   }
 
+  // Emit every signal port, even dangling or out-of-scope ones.  A pin whose
+  // net is absent from net_to_id (unconnected, or on a net outside the rendered
+  // cone) gets a fresh synthetic bit id so netlistsvg still sees the pin and
+  // draws the full symbol with a short dangling stub — otherwise a cell with
+  // all such pins would collapse to a bare name label with no shape.  Synthetic
+  // ids are deliberately left out of `netnames`, so they stay anonymous.
+  // Power/ground pins are skipped: they aren't part of the logic schematic and
+  // would otherwise render as spurious dangling stubs (and, for PDKs that mark
+  // supplies as input/output, throw off the gate-symbol pin mapping).
   boost::json::object port_directions;
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
-      continue;
-    }
-    port_directions[iterm->getMTerm()->getName()]
-        = ioTypeToDirection(iterm->getIoType());
-  }
-  cell["port_directions"] = std::move(port_directions);
-
   boost::json::object connections;
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (!net || !net_to_id.contains(net)) {
+    if (iterm->getSigType().isSupply()) {
       continue;
     }
-    connections[iterm->getMTerm()->getName()]
-        = boost::json::array{net_to_id[net]};
+    const std::string& pin = iterm->getMTerm()->getName();
+    port_directions[pin] = ioTypeToDirection(iterm->getIoType());
+
+    odb::dbNet* net = iterm->getNet();
+    const int bit
+        = (net && net_to_id.contains(net)) ? net_to_id[net] : next_net_id++;
+    connections[pin] = boost::json::array{bit};
   }
+  cell["port_directions"] = std::move(port_directions);
   cell["connections"] = std::move(connections);
 
   cells[inst->getName()] = std::move(cell);
@@ -1455,7 +1463,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : all_insts) {
-      emitSchematicCell(cells, inst, network, net_to_id);
+      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
     }
     top["cells"] = std::move(cells);
 
@@ -1519,7 +1527,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : block->getInsts()) {
-      emitSchematicCell(cells, inst, network, net_to_id);
+      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
     }
     top["cells"] = std::move(cells);
 

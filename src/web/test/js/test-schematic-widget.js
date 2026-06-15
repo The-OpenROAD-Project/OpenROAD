@@ -116,16 +116,47 @@ describe('canonicalizeCell', () => {
         assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'Y']);
     });
 
-    it('leaves unsupported compound arities unchanged (labelled box)', () => {
-        const orig = cell({
+    it('maps AOI211 (literals A,B; AND pair C,D)', () => {
+        // !((C1 & C2) | B | A): smallest terms first -> the two literals get
+        // pids A,B and the AND pair gets C,D.
+        const got = canonicalizeCell(cell({
             type: 'AOI211_X1', gate_kind: 'aoi',
-            gate_terms: [['A'], ['B'], ['C1', 'C2']],
-            port_directions: { A: 'input', B: 'input', C1: 'input', C2: 'input', ZN: 'output' },
-            connections: { A: [1], B: [2], C1: [3], C2: [4], ZN: [5] },
+            gate_terms: [['C1', 'C2'], ['B'], ['A']],
+            port_directions: { C1: 'input', C2: 'input', B: 'input', A: 'input', ZN: 'output' },
+            connections: { C1: [3], C2: [4], B: [2], A: [1], ZN: [5] },
+        }));
+        assert.equal(got.type, 'aoi211');
+        assert.deepEqual(got.connections, { A: [2], B: [1], C: [3], D: [4], Y: [5] });
+        assert.deepEqual(got.port_labels, { A: 'B', B: 'A', C: 'C1', D: 'C2', Y: 'ZN' });
+    });
+
+    it('maps OAI33 to its symbol with six inputs A..F', () => {
+        const got = canonicalizeCell(cell({
+            type: 'OAI33_X1', gate_kind: 'oai',
+            gate_terms: [['A1', 'A2', 'A3'], ['B1', 'B2', 'B3']],
+            port_directions: {
+                A1: 'input', A2: 'input', A3: 'input',
+                B1: 'input', B2: 'input', B3: 'input', ZN: 'output',
+            },
+            connections: { A1: [1], A2: [2], A3: [3], B1: [4], B2: [5], B3: [6], ZN: [7] },
+        }));
+        assert.equal(got.type, 'oai33');
+        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'E', 'F', 'Y']);
+    });
+
+    it('leaves unsupported compound arities unchanged (labelled box)', () => {
+        // A four-term AOI (aoi2111) has no skin symbol, so it stays a box.
+        const orig = cell({
+            type: 'AOI2111_X1', gate_kind: 'aoi',
+            gate_terms: [['A'], ['B'], ['C'], ['D1', 'D2']],
+            port_directions: {
+                A: 'input', B: 'input', C: 'input', D1: 'input', D2: 'input', ZN: 'output',
+            },
+            connections: { A: [1], B: [2], C: [3], D1: [4], D2: [5], ZN: [6] },
         });
         const got = canonicalizeCell(orig);
-        assert.equal(got.type, 'AOI211_X1');           // type unchanged
-        assert.ok(got.connections.C1 && got.connections.ZN);  // real pins kept
+        assert.equal(got.type, 'AOI2111_X1');          // type unchanged
+        assert.ok(got.connections.D1 && got.connections.ZN);  // real pins kept
         assert.equal(got.port_labels, undefined);      // no remap -> no labels
     });
 

@@ -506,7 +506,10 @@ const SKIN_SIMPLE_TYPE = {
 
 // Compound gate types the skin actually draws.  Unsupported arities are left as
 // labelled generic boxes (which keep the design's real pin names).
-const SKIN_COMPOUND_TYPES = new Set(['aoi21', 'aoi22', 'oai21', 'oai22']);
+const SKIN_COMPOUND_TYPES = new Set([
+    'aoi21', 'aoi22', 'aoi211', 'aoi221', 'aoi222', 'aoi33',
+    'oai21', 'oai22', 'oai211', 'oai221', 'oai222', 'oai33',
+]);
 
 // Wider (>2-input) basic gates the skin draws, named kind+arity.  2-input gates
 // use the Yosys primitive aliases in SKIN_SIMPLE_TYPE instead.

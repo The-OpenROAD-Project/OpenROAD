@@ -1756,6 +1756,71 @@ TEST_F(SchematicHandlerTest, AoiGateKeepsMasterNameAndRealPins)
   EXPECT_TRUE(conns.contains("B2"));
 }
 
+TEST_F(SchematicHandlerTest, NestedInversionStillClassifies)
+{
+  // Higher drive-strength variants can model the output with stacked inverters,
+  // so the Liberty function is nested NOTs, e.g. AOI211_X4 is
+  // !(!(!(((C1 & C2) | B) | A))).  Classification must peel all the inversions
+  // (odd count -> inverting) and still recognise the AOI211, not fall back to a
+  // box like a single-peel would.
+  makeGate("AOI211_X4",
+           "g_aoi211x4",
+           {{"a", "C1"}, {"b", "C2"}, {"c", "B"}, {"d", "A"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_aoi211x4").as_object();
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "aoi");
+
+  std::vector<int> got;
+  for (auto& t : cell.at("gate_terms").as_array()) {
+    got.push_back(static_cast<int>(t.as_array().size()));
+  }
+  std::sort(got.begin(), got.end());
+  EXPECT_EQ(got, (std::vector<int>{1, 1, 2}));
+}
+
+TEST_F(SchematicHandlerTest, DanglingPortsStillEmitted)
+{
+  // An instance whose pins are all unconnected must still emit every port with
+  // a connection bit, so netlistsvg draws the full symbol (with dangling stubs)
+  // instead of collapsing the cell to a bare name label with no shape.  The
+  // synthetic bits stand in for the missing nets and must be distinct.
+  makeGate("AND2_X1", "g_dangling", {});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_dangling").as_object();
+
+  // The gate is still classified from its Liberty function regardless of
+  // connectivity.
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "and");
+
+  auto& dirs = cell.at("port_directions").as_object();
+  EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("A2").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+
+  auto& conns = cell.at("connections").as_object();
+  ASSERT_TRUE(conns.contains("A1"));
+  ASSERT_TRUE(conns.contains("A2"));
+  ASSERT_TRUE(conns.contains("ZN"));
+
+  // Power/ground pins must not leak into the schematic as dangling stubs; only
+  // the three signal pins are emitted.
+  EXPECT_FALSE(dirs.contains("VDD"));
+  EXPECT_FALSE(dirs.contains("VSS"));
+  EXPECT_EQ(dirs.size(), 3u);
+  EXPECT_EQ(conns.size(), 3u);
+
+  // Each dangling pin gets its own synthetic bit id (no two pins share a net).
+  std::set<int64_t> bits;
+  for (const char* pin : {"A1", "A2", "ZN"}) {
+    auto& arr = conns.at(pin).as_array();
+    ASSERT_EQ(arr.size(), 1u) << pin;
+    bits.insert(arr.at(0).as_int64());
+  }
+  EXPECT_EQ(bits.size(), 3u);
+}
+
 TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
 {
   // A MUX is not an AOI/OAI (its terms contain an inverted select), so it stays

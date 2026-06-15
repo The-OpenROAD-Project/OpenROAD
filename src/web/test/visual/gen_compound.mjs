@@ -96,10 +96,22 @@ function buildSymbol(type, terms, isAoi) {
   return lines.join('\n');
 }
 
+// Term-size arrays are listed smallest-first because canonicalizeCell() in
+// ../../src/schematic-widget.js assigns port ids (A, B, …) term-by-term in
+// ascending size order; the symbol's port layout must match that mapping.  The
+// type name uses the descending-size convention (e.g. terms [1,2] -> "aoi21").
 const symbols = [
   buildSymbol('aoi21', [1, 2], true),
   buildSymbol('aoi22', [2, 2], true),
+  buildSymbol('aoi211', [1, 1, 2], true),
+  buildSymbol('aoi221', [1, 2, 2], true),
+  buildSymbol('aoi222', [2, 2, 2], true),
+  buildSymbol('aoi33', [3, 3], true),
   buildSymbol('oai21', [1, 2], false),
   buildSymbol('oai22', [2, 2], false),
+  buildSymbol('oai211', [1, 1, 2], false),
+  buildSymbol('oai221', [1, 2, 2], false),
+  buildSymbol('oai222', [2, 2, 2], false),
+  buildSymbol('oai33', [3, 3], false),
 ];
 console.log(symbols.join('\n\n'));
