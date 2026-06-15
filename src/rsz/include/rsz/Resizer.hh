@@ -699,6 +699,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
                   sta::Slew slews[sta::RiseFall::index_count]);
+  // Worker-safe overload: uses the caller-provided ArcDelayCalc instead of the
+  // shared member, so the table-model lookup can run concurrently.
+  void gateDelays(const sta::LibertyPort* drvr_port,
+                  float load_cap,
+                  const sta::Scene* scene,
+                  const sta::MinMax* min_max,
+                  sta::ArcDelayCalc* arc_delay_calc,
+                  // Return values.
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  sta::Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Slew in_slews[sta::RiseFall::index_count],
@@ -711,6 +721,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                           float load_cap,
                           const sta::Scene* scene,
                           const sta::MinMax* min_max);
+  // Worker-safe overload (see gateDelays above).
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
+                          float load_cap,
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max,
+                          sta::ArcDelayCalc* arc_delay_calc);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const sta::RiseFall* rf,
                           float load_cap,
@@ -1037,6 +1053,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class OdbCallBack;
   friend class SetupLegacyBase;
   friend class RepairTargetCollector;
+  friend class LRSubproblem;
   friend class DelayEstimatorReporter;
 };
 
