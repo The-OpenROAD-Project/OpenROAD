@@ -32,9 +32,6 @@ class _dbUnfoldedChipBumpInst : public _dbObject
   dbId<_dbChipBumpInst> chip_bump_inst_;
   dbId<_dbUnfoldedChipRegionInst> parent_region_;
   dbId<_dbUnfoldedChipBumpInst> region_next_;
-  // Pads sizeof to a multiple of 8 so dbTable packs every object 8-byte
-  // aligned; dbNetwork tags chip-bump Pin* in the low 3 pointer bits.
-  // no-serial.
   uint32_t pad_for_pointer_tag_alignment_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj);
