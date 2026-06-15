@@ -1500,12 +1500,8 @@ void Rebuffer::init()
   }
 
   std::ranges::sort(buffer_sizes_, [=](BufferSize a, BufferSize b) {
-    const float cin_a = bufferCin(a.cell);
-    const float cin_b = bufferCin(b.cell);
-    if (cin_a != cin_b) {
-      return cin_a < cin_b;
-    }
-    return a.cell->id() < b.cell->id();
+    return std::make_tuple(bufferCin(a.cell), a.cell->id())
+           < std::make_tuple(bufferCin(b.cell), b.cell->id());
   });
 
   buffer_sizes_index_.clear();
