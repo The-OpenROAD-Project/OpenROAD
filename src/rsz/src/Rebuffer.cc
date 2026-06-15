@@ -2085,6 +2085,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   if (user_pin) {
     filtered_pins = {user_pin};
   }
+  // Explicit findRequireds because vertexWorstSlackPath missing findRequired.
   sta_->findRequireds();
 
   initial_design_area_ = resizer_->computeDesignArea();
@@ -2117,6 +2118,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(sta_runtime);
+      // Bypass Sta::findRequired(drvr) to prevent delay calc update.
       search_->findRequireds(drvr->level());
     }
 
@@ -2290,6 +2292,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(sta_runtime);
+      // Level limited update of net load delays and arrivals
+      // that prevents slew propagation from invalidaing
+      // downstream required times.
       sta_->findDelays(max_level);
       search_->findArrivals(max_level);
     }
@@ -2373,6 +2378,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
+    // Explicit findRequireds because vertexWorstSlackPath missing findRequired.
     sta_->findRequireds();
     annotateLoadSlacks(bnet, drvr);
 
