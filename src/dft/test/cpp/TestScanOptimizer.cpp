@@ -291,7 +291,7 @@ TEST(TestScanOptimizer, AsymmetricPinsTwoOptFindsOptimalOrder)
 // ---------------------------------------------------------------------------
 
 // Construct a case where two interleaved subtours benefit from being swapped.
-// The optimizer (2-Opt + 3-Opt + Or-Opt) should find the optimal ordering.
+// The optimizer (2-Opt + 3-Opt) should find the optimal ordering.
 //
 // Layout: 8 cells on a line at x = 0,10,20,...,70.
 // Input order: 0, 4, 1, 5, 2, 6, 3, 7 (two interleaved ascending runs).
@@ -354,7 +354,7 @@ TEST(TestScanOptimizer, LargeInstanceAllCellsPreserved)
 }
 
 // Small chains (< 6 cells) should not crash in 3-Opt and still optimise via
-// 2-Opt and Or-Opt.
+// 2-Opt.
 TEST(TestScanOptimizer, SmallChainHandledCorrectly)
 {
   utl::Logger logger;
