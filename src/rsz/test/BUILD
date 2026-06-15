@@ -256,6 +256,8 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "global_sizing",
+    "global_sizing_threads",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -280,6 +282,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
     "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],

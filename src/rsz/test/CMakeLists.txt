@@ -238,6 +238,8 @@ or_integration_tests(
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1
+    global_sizing
+    global_sizing_threads
     cpp_tests
 )
 
