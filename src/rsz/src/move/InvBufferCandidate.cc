@@ -12,6 +12,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
@@ -136,7 +137,6 @@ MoveResult InvBufferCandidate::apply()
         int dy = 0;
         db_drvr->getLocation(dx, dy);
         drvr_loc = {dx, dy};
-        drvr_loc_found = true;
         break;
       }
     }
@@ -216,6 +216,9 @@ MoveResult InvBufferCandidate::apply()
                               parent,
                               inv2_loc,
                               odb::dbNameUniquifyType::IF_NEEDED);
+  if (inv1 == nullptr || inv2 == nullptr) {
+    return rejectedMove();
+  }
 
   sta::Net* mid_net = db_network->makeNet(
       base_mid, parent, odb::dbNameUniquifyType::IF_NEEDED);

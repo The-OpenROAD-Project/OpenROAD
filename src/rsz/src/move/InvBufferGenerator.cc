@@ -11,10 +11,13 @@
 
 #include "InvBufferCandidate.hh"
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "utl/Logger.h"
 
