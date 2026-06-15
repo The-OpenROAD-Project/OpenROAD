@@ -4,8 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbUnfoldedChipBumpInst.h"
 
-#include <cstdint>
-
 #include "dbChipBump.h"
 #include "dbChipBumpInst.h"
 #include "dbCore.h"
