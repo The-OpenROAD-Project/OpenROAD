@@ -10,7 +10,6 @@
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
 [INFO ODB-0133]     Created 5 nets and 7 connections.
-[INFO STA-3000] 3DIC STA active: 2 chiplets, 4 top-level nets, 2 3D bond regions, 6 bump pads.
 3DIC summary for chip top:
   chiplets        : 2
   top-level nets  : 4

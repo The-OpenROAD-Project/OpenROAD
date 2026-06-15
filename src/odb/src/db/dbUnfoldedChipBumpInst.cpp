@@ -17,6 +17,16 @@
 namespace odb {
 template class dbTable<_dbUnfoldedChipBumpInst>;
 
+// dbNetwork tags chip-bump Pin* using the low 3 bits of a
+// dbUnfoldedChipBumpInst*, which requires every object in the dbTable page to
+// be 8-byte aligned (i.e. sizeof a multiple of 8 -- see
+// pad_for_pointer_tag_alignment_). Guard so a future field addition can't
+// silently re-break the tag encoding.
+static_assert(
+    sizeof(_dbUnfoldedChipBumpInst) % 8 == 0,
+    "_dbUnfoldedChipBumpInst must be 8-byte sized for the dbNetwork "
+    "chip-bump Pin* pointer tag; adjust pad_for_pointer_tag_alignment_");
+
 bool _dbUnfoldedChipBumpInst::operator==(
     const _dbUnfoldedChipBumpInst& rhs) const
 {
@@ -43,6 +53,7 @@ bool _dbUnfoldedChipBumpInst::operator<(
 
 _dbUnfoldedChipBumpInst::_dbUnfoldedChipBumpInst(_dbDatabase* db)
 {
+  pad_for_pointer_tag_alignment_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbUnfoldedChipBumpInst& obj)

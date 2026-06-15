@@ -3,12 +3,14 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
 #include <string_view>
 #include <unordered_set>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -158,6 +160,44 @@ class dbNetwork : public ConcreteNetwork
   bool isPGSupply(odb::dbITerm* iterm) const;
   bool isPGSupply(odb::dbBTerm* bterm) const;
   bool isPGSupply(odb::dbNet* net) const;
+
+  // ---- 3DIC (3DBlox) cross-chiplet STA ----
+  // Top dbChip when a 3Dbx design is active; null otherwise.
+  odb::dbChip* topChip() const { return top_chip_; }
+  void setTopChip(odb::dbChip* chip);
+  // True when top_chip_ is a hierarchical chip (no own dbBlock, owns
+  // dbChipInsts). Chip-aware iterators/accessors gate on this first.
+  bool has3DicChip() const;
+  // Master block of a chiplet instance; null if the master chip is itself
+  // hierarchical (no own dbBlock).
+  odb::dbBlock* blockOf(odb::dbChipInst* chip_inst) const;
+  // True when chip_inst's master block is placed by exactly one chip-inst.
+  // Gates descent into the master body — shared masters alias inner dbInsts
+  // and would break STA's per-pin Vertex assumption (see Track A5 guard).
+  bool blockOwnedUniquelyBy(odb::dbChipInst* chip_inst) const;
+
+  // Encode/decode chip db objects as STA handles. A chip-bump Pin is the
+  // per-unfold-path dbUnfoldedChipBumpInst (so duplicated chiplet masters get
+  // distinct bump vertices), tagged in the low-3-bit pointer tag
+  // (kDbChipBumpInst — needs 8-byte alignment). A dbChipInst (Instance) /
+  // dbChipNet (Net) is a plain reinterpret_cast, discriminated at decode by
+  // dbObject::getObjectType().
+  Pin* dbToSta(odb::dbUnfoldedChipBumpInst* bump_inst) const;
+  Instance* dbToSta(odb::dbChipInst* chip_inst) const;
+  Net* dbToSta(odb::dbChipNet* chip_net) const;
+  odb::dbUnfoldedChipBumpInst* staToUnfoldedBump(const Pin* pin) const;
+  odb::dbChipInst* staToDbChipInst(const Instance* instance) const;
+  odb::dbChipNet* staToDbChipNet(const Net* net) const;
+  // Raw chip-inst / chip-net -> their per-unfold-path objects (built in
+  // setTopChip). Used by the chip-aware iterators to enumerate unfolded bumps.
+  odb::dbUnfoldedChipInst* unfoldedChipInst(odb::dbChipInst* chip_inst) const;
+  odb::dbUnfoldedChipNet* unfoldedChipNet(odb::dbChipNet* chip_net) const;
+
+  // Synthesize the top Cell for a hierarchical chip plus one plain Cell per
+  // chiplet master (a Port per chip-bump bterm). No LibertyCell binding, so
+  // chip-inst/chip-bump property queries have a non-null Cell*/Port* and
+  // chip-bump pins read as BIDIRECT (clock propagates via the fat-net model).
+  void makeTopCellForChip(odb::dbChip* chip);
 
   // dbStaCbk::inDbBTermCreate
   Port* makeTopPort(odb::dbBTerm* bterm);
@@ -516,9 +556,23 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBMODINST_ID = 0x6;
   static constexpr unsigned DBMODNET_ID = 0x7;
   static constexpr unsigned DBMODULE_ID = 0x8;
+  static constexpr unsigned DBCHIPINST_ID = 0x9;
+  static constexpr unsigned DBCHIPBUMP_INST_ID = 0xA;
+  static constexpr unsigned DBCHIPNET_ID = 0xB;
+  static constexpr unsigned DBUNFOLDEDCHIPBUMP_INST_ID = 0xC;
   static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
+  // 3DIC: width of the per-chiplet-block discriminator stamped into the upper
+  // bits of an encoded ObjectId. With DBIDTAG_WIDTH=4 tag bits and a 20-bit
+  // per-block db_id, this leaves 8 bits -> up to 255 unique chiplet blocks.
+  static constexpr unsigned kBlockTagWidth = 8;
+  static constexpr unsigned kBlockTagShift = 32 - kBlockTagWidth;        // 24
+  static constexpr uint32_t kBlockTagMask = (1U << kBlockTagWidth) - 1;  // 0xFF
+  // Stamp the per-block discriminator into the top bits of an ObjectId for
+  // iterm/bterm/inst/net so identically-numbered objects in different chiplet
+  // blocks don't collide as NetSet/PinSet keys. 0 when not in 3DIC mode.
+  ObjectId blockDiscBits(const odb::dbObject* obj, odb::dbObjectType typ) const;
 
  private:
   const LibertyCell* getLibertyCell(const Cell* cell) const;
@@ -535,6 +589,50 @@ class dbNetwork : public ConcreteNetwork
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
+
+  // ---- 3DIC (3DBlox) state ----
+  // Top dbChip of a 3Dbx design (hierarchical chip, no own dbBlock).
+  odb::dbChip* top_chip_ = nullptr;
+  // Chiplet master dbBlock -> the chip-inst that placed it; only blocks
+  // placed by exactly one chip-inst (shared masters are skipped — their
+  // inner dbInsts would alias across placements; see Track A5 guard).
+  odb::PtrMap<odb::dbBlock, odb::dbChipInst*> block_to_chip_inst_;
+  // Per-block 1..N discriminator stamped into upper ObjectId bits so
+  // iterms/bterms/insts/nets from different chiplet blocks (each numbered
+  // from 1) don't collide in NetSet/PinSet keys.
+  odb::PtrMap<odb::dbBlock, uint32_t> block_disc_;
+  // One synthetic (non-Liberty) Cell per chiplet master, backing
+  // cell()/port()/name() for chip-inst and chip-bump pins. Owned by
+  // chip_master_lib_. Reset in clear() (ConcreteNetwork::clear destroys the
+  // owning libraries).
+  odb::PtrMap<odb::dbChip, Cell*> chip_master_cells_;
+  Library* chip_master_lib_ = nullptr;
+  // STA vertex-id for chip-bump pins, keyed by the per-unfold-path
+  // dbUnfoldedChipBumpInst (no sta_vertex_id_ field on the odb object yet).
+  // Reset on clear() and on an unfolded-model rebuild (keys change).
+  mutable odb::PtrMap<odb::dbUnfoldedChipBumpInst, VertexId>
+      chip_bump_vertex_ids_;
+  // Reverse lookups derived from the unfolded model (lazily refreshed by
+  // ensureUnfoldedMapsFresh when the top chip-net count changes — picks up
+  // Tcl-created chip-nets after read_3dbx):
+  //   unfolded bump -> owning chip-net (for net(pin))
+  //   raw chip-inst -> its unfolded chip-inst (for the pin iterator)
+  //   raw chip-net  -> its unfolded chip-net  (for the net-pin iterator)
+  mutable odb::PtrMap<odb::dbUnfoldedChipBumpInst, odb::dbChipNet*>
+      bump_to_chip_net_;
+  mutable odb::PtrMap<odb::dbChipInst, odb::dbUnfoldedChipInst*>
+      chip_inst_to_unfolded_;
+  mutable odb::PtrMap<odb::dbChipNet, odb::dbUnfoldedChipNet*>
+      chip_net_to_unfolded_;
+  mutable size_t unfolded_cache_net_count_ = 0;
+  // Whether the maps above have been built at least once. Distinct from
+  // (count == 0): a design legitimately with zero chip-nets is "built" with
+  // empty maps and must not rebuild on every accessor call.
+  mutable bool unfolded_built_ = false;
+  // (Re)build the unfolded model if the chip-net count changed, then rebuild
+  // the lookup maps above. const so the chip-aware accessors can call it.
+  void ensureUnfoldedMapsFresh() const;
+  void buildUnfoldedMaps() const;
 };
 
 }  // namespace sta

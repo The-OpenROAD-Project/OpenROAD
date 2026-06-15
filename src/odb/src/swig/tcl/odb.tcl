@@ -1210,6 +1210,39 @@ proc add_3dblox_alignment_marker_rule { args } {
   }
 }
 
+# On-demand structural summary of a 3DIC (3DBlox) design: chiplet, chip-net,
+# bond-region and bump counts, plus per-chip-inst master references. Useful as
+# a post-read sanity check before cross-chiplet timing.
+proc report_3dic_summary { args } {
+  sta::parse_key_args "report_3dic_summary" args keys {} flags {}
+  set db [ord::get_db]
+  set chip [$db getChip]
+  if { $chip == "NULL" } {
+    utl::warn ODB 405 "No chip loaded; nothing to report."
+    return
+  }
+  set chip_insts [$chip getChipInsts]
+  set chip_nets [$chip getChipNets]
+  set chip_conns [$chip getChipConns]
+  set bump_inst_count 0
+  foreach n $chip_nets {
+    incr bump_inst_count [$n getNumBumpInsts]
+  }
+  utl::report "3DIC summary for chip [$chip getName]:"
+  utl::report "  chiplets        : [llength $chip_insts]"
+  utl::report "  top-level nets  : [llength $chip_nets]"
+  utl::report "  3D bond regions : [llength $chip_conns]"
+  utl::report "  bump pads       : $bump_inst_count"
+  if { [llength $chip_insts] > 0 } {
+    utl::report "  chiplet instances:"
+    foreach ci $chip_insts {
+      set ref [$ci getMasterChip]
+      set ref_name [expr { $ref == "NULL" ? "<unbound>" : [$ref getName] }]
+      utl::report "    [$ci getName] (reference: $ref_name)"
+    }
+  }
+}
+
 namespace eval odb {
 proc resolve_master { cell { lib_name "" } } {
   set db [ord::get_db]
