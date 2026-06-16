@@ -16,9 +16,9 @@
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 

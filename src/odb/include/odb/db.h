@@ -178,6 +178,11 @@ class dbTechLayerTwoWiresForbiddenSpcRule;
 class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
+class dbUnfoldedChipBumpInst;
+class dbUnfoldedChipConn;
+class dbUnfoldedChipInst;
+class dbUnfoldedChipNet;
+class dbUnfoldedChipRegionInst;
 // Generator Code End ClassDeclarations
 
 // Extraction Objects
@@ -185,8 +190,6 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
-
-class UnfoldedModel;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -7620,6 +7623,16 @@ class dbDatabase : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  dbSet<dbUnfoldedChipInst> getUnfoldedChipInsts() const;
+
+  dbSet<dbUnfoldedChipRegionInst> getUnfoldedChipRegionInsts() const;
+
+  dbSet<dbUnfoldedChipBumpInst> getUnfoldedChipBumpInsts() const;
+
+  dbSet<dbUnfoldedChipConn> getUnfoldedChipConns() const;
+
+  dbSet<dbUnfoldedChipNet> getUnfoldedChipNets() const;
+
   // User Code Begin dbDatabase
 
   void setHierarchy(bool value);
@@ -7670,7 +7683,6 @@ class dbDatabase : public dbObject
 
   void constructUnfoldedModel();
 
-  UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
@@ -7800,6 +7812,12 @@ class dbDatabase : public dbObject
   /// Translate a database-id back to a pointer.
   ///
   static dbDatabase* getDatabase(uint32_t oid);
+
+  ///
+  /// Find an unfolded chip by its full path name (slash-joined chip-inst
+  /// names). Returns nullptr if no match.
+  ///
+  dbUnfoldedChipInst* findUnfoldedChip(const std::string& path) const;
   // User Code End dbDatabase
 };
 
@@ -11390,6 +11408,96 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
       uint32_t dbid);
 
   // User Code End dbTechLayerWrongDirSpacingRule
+};
+
+class dbUnfoldedChipBumpInst : public dbObject
+{
+ public:
+  dbChipBumpInst* getChipBumpInst() const;
+
+  dbUnfoldedChipRegionInst* getParentRegion() const;
+
+  // User Code Begin dbUnfoldedChipBumpInst
+  Point3D getGlobalPosition() const;
+  // User Code End dbUnfoldedChipBumpInst
+};
+
+class dbUnfoldedChipConn : public dbObject
+{
+ public:
+  dbChipConn* getChipConn() const;
+
+  dbUnfoldedChipRegionInst* getTopRegion() const;
+
+  dbUnfoldedChipRegionInst* getBottomRegion() const;
+};
+
+class dbUnfoldedChipInst : public dbObject
+{
+ public:
+  const std::string& getName() const;
+
+  dbTransform getTransform() const;
+
+  // User Code Begin dbUnfoldedChipInst
+  Cuboid getCuboid() const;
+
+  dbSet<dbUnfoldedChipRegionInst> getRegions() const;
+
+  ///
+  /// Return the chip-instance path that uniquely identifies this unfolded
+  /// chip in the folded hierarchy (top-most chip inst first, leaf last).
+  ///
+  std::vector<dbChipInst*> getChipInstPath() const;
+
+  ///
+  /// Find the unfolded region within this chip whose source region instance
+  /// matches `source`. Returns nullptr if no match.
+  ///
+  dbUnfoldedChipRegionInst* findRegion(dbChipRegionInst* source) const;
+  // User Code End dbUnfoldedChipInst
+};
+
+class dbUnfoldedChipNet : public dbObject
+{
+ public:
+  dbChipNet* getChipNet() const;
+
+  // User Code Begin dbUnfoldedChipNet
+  std::vector<dbUnfoldedChipBumpInst*> getConnectedBumps() const;
+  // User Code End dbUnfoldedChipNet
+};
+
+class dbUnfoldedChipRegionInst : public dbObject
+{
+ public:
+  enum class EffectiveSide
+  {
+    TOP,
+    BOTTOM,
+    INTERNAL,
+    INTERNAL_EXT
+  };
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  dbUnfoldedChipInst* getParentChip() const;
+
+  // User Code Begin dbUnfoldedChipRegionInst
+  Cuboid getCuboid() const;
+
+  EffectiveSide getEffectiveSide() const;
+  void setEffectiveSide(EffectiveSide side);
+
+  bool isTop() const;
+  bool isBottom() const;
+  bool isInternal() const;
+  bool isInternalExt() const;
+
+  int getSurfaceZ() const;
+
+  dbSet<dbUnfoldedChipBumpInst> getBumps() const;
+  // User Code End dbUnfoldedChipRegionInst
 };
 
 // Generator Code End ClassDefinition

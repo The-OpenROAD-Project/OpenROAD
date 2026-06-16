@@ -14,9 +14,9 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "global.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 

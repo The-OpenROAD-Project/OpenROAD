@@ -226,9 +226,9 @@ TEST_F(TileHandlerTest, EmptyTile)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-TEST_F(TileHandlerTest, UsesHighlightState)
+TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 {
-  // Put a highlight rect in the state
+  // Put a highlight rect in the state — base tiles should NOT include it.
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
@@ -240,8 +240,46 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   req.json = parseObj(
       R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
-  // Should not crash and should return valid PNG
+  // Should not crash and should return valid PNG (without highlights)
   auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(TileHandlerTest, OverlayTileReturnsPng)
+{
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.id, 10u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+  // PNG magic bytes
+  EXPECT_GE(resp.payload.size(), 8u);
+  EXPECT_EQ(resp.payload[0], 0x89);
+  EXPECT_EQ(resp.payload[1], 'P');
+  EXPECT_EQ(resp.payload[2], 'N');
+  EXPECT_EQ(resp.payload[3], 'G');
+}
+
+TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
+{
+  // Put a highlight rect in the state
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
+
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0})");
+
+  // Should not crash and should return valid PNG with highlights
+  auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
 }
@@ -645,6 +683,42 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
   }
 }
 
+TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  // 1. inspect with use_dbu: true
+  WebSocketRequest inspect_req_dbu;
+  inspect_req_dbu.id = 21;
+  inspect_req_dbu.type = WebSocketRequest::kInspect;
+  inspect_req_dbu.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  auto resp_dbu = handler_->handleInspect(inspect_req_dbu, state_);
+  EXPECT_EQ(resp_dbu.type, WebSocketResponse::kJson);
+  std::string json_dbu = payloadStr(resp_dbu);
+  EXPECT_NE(json_dbu.find("\"value\":\"(2000, 4000), (6000, 8000)\""),
+            std::string::npos)
+      << json_dbu;
+
+  // 2. inspect with use_dbu: false, using select_id: -1 to re-inspect current
+  WebSocketRequest inspect_req_um;
+  inspect_req_um.id = 22;
+  inspect_req_um.type = WebSocketRequest::kInspect;
+  inspect_req_um.json = parseObj(R"({"select_id":-1,"use_dbu":false})");
+
+  auto resp_um = handler_->handleInspect(inspect_req_um, state_);
+  EXPECT_EQ(resp_um.type, WebSocketResponse::kJson);
+  std::string json_um = payloadStr(resp_um);
+  EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json_um;
+}
+
 //------------------------------------------------------------------------------
 // Focus nets tests
 //------------------------------------------------------------------------------
@@ -799,6 +873,314 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   auto resp = tile_handler->handleTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);  // PNG
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// Multi-selection tests
+//------------------------------------------------------------------------------
+
+// Helper: populate selection_set with two fake objects and point the
+// iterator at whichever position (0 = begin, 1 = second).
+// Because SelectionSet is std::set, iteration order is by operator<
+// (FakeDescriptor::lessThan compares pointer addresses).
+void populateSelectionSet(SessionState& st,
+                          const gui::Selected& a,
+                          const gui::Selected& b,
+                          int itr_pos)
+{
+  std::lock_guard<std::mutex> lock(st.selection_mutex);
+  st.selection_set.insert(a);
+  st.selection_set.insert(b);
+  st.selection_itr = st.selection_set.begin();
+  if (itr_pos > 0) {
+    std::advance(st.selection_itr, itr_pos);
+  }
+  st.current_inspected = *st.selection_itr;
+}
+
+// Verify that a select response always includes selection metadata.
+TEST_F(SelectHandlerTest, SelectResponseIncludesSelectionMetadata)
+{
+  WebSocketRequest req;
+  req.id = 30;
+  req.type = WebSocketRequest::kSelect;
+  req.json
+      = parseObj(R"({"dbu_x":1000,"dbu_y":1000,"zoom":0,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\""), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\""), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectEmptyAreaClearsSelectionSet)
+{
+  // Pre-populate selection set
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+    state_.selection_itr = state_.selection_set.begin();
+  }
+
+  WebSocketRequest req;
+  req.id = 31;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.selection_set.empty());
+}
+
+// Normal click (no add_to_selection) clears any pre-existing selection set.
+TEST_F(SelectHandlerTest, SelectNormalClickClearsPreviousSelectionSet)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  // Normal click at empty area should clear the set
+  WebSocketRequest req;
+  req.id = 32;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[]})");
+
+  handler_->handleSelect(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.selection_set.empty());
+}
+
+// Shift+click on empty space should preserve the existing selection set.
+TEST_F(SelectHandlerTest, AddToSelectionEmptyHitPreservesSet)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+    state_.selection_itr = state_.selection_set.begin();
+  }
+
+  WebSocketRequest req;
+  req.id = 33;
+  req.type = WebSocketRequest::kSelect;
+  req.json = parseObj(
+      R"({"dbu_x":99000,"dbu_y":99000,"zoom":10,"visible_layers":[],"add_to_selection":true})");
+
+  handler_->handleSelect(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+// Verify SelectionSet deduplicates (std::set property).
+TEST_F(SelectHandlerTest, SelectionSetDeduplicates)
+{
+  const auto sel = makeFakeSelected(&fake_current_);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(sel);
+    state_.selection_set.insert(sel);  // duplicate
+  }
+  EXPECT_EQ(state_.selection_set.size(), 1u);
+}
+
+TEST_F(SelectHandlerTest, SelectNextCyclesForward)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+
+  WebSocketRequest req;
+  req.id = 37;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  auto expected = std::next(state_.selection_set.begin());
+  EXPECT_EQ(state_.selection_itr, expected);
+}
+
+TEST_F(SelectHandlerTest, SelectNextWrapsAround)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);  // at the end
+
+  WebSocketRequest req;
+  req.id = 38;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, state_.selection_set.begin());
+}
+
+TEST_F(SelectHandlerTest, SelectPrevCyclesBackward)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+
+  WebSocketRequest req;
+  req.id = 39;
+  req.type = WebSocketRequest::kSelectPrev;
+
+  auto resp = handler_->handleSelectPrev(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, state_.selection_set.begin());
+}
+
+TEST_F(SelectHandlerTest, SelectPrevWrapsAround)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);  // at the start
+
+  WebSocketRequest req;
+  req.id = 40;
+  req.type = WebSocketRequest::kSelectPrev;
+
+  auto resp = handler_->handleSelectPrev(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.selection_itr, std::next(state_.selection_set.begin()));
+}
+
+TEST_F(SelectHandlerTest, SelectNextEmptySetReturnsError)
+{
+  WebSocketRequest req;
+  req.id = 41;
+  req.type = WebSocketRequest::kSelectNext;
+
+  auto resp = handler_->handleSelectNext(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":0"), std::string::npos);
+  EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+  }
+
+  WebSocketRequest req;
+  req.id = 42;
+  req.type = WebSocketRequest::kSelectNext;
+
+  handler_->handleSelectNext(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.navigation_history.empty());
+}
+
+TEST_F(SelectHandlerTest, InspectResponseIncludesSelectionMetadata)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {makeFakeSelected(&fake_previous_)};
+  }
+
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+
+  auto resp = handler_->handleInspect(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"selection_index\":1"), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, InspectBackResponseIncludesSelectionMetadata)
+{
+  populateSelectionSet(state_,
+                       makeFakeSelected(&fake_current_),
+                       makeFakeSelected(&fake_previous_),
+                       1);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_current_));
+  }
+
+  WebSocketRequest req;
+  req.id = 44;
+  req.type = WebSocketRequest::kInspectBack;
+
+  auto resp = handler_->handleInspectBack(req, state_);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"selection_count\":2"), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, SelectNextRestoresSelectionSetHighlights)
+{
+  const auto sel_a = makeFakeSelected(&fake_current_);
+  const auto sel_b = makeFakeSelected(&fake_previous_);
+
+  populateSelectionSet(state_, sel_a, sel_b, 0);
+
+  const odb::Rect stale_rect(9999, 9999, 10000, 10000);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects = {stale_rect};
+    state_.highlight_polys.clear();
+  }
+
+  WebSocketRequest req;
+  req.id = 50;
+  req.type = WebSocketRequest::kSelectNext;
+  handler_->handleSelectNext(req, state_);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_rects.size(), 2u);
+  bool found_current = false;
+  bool found_previous = false;
+  for (const auto& r : state_.highlight_rects) {
+    EXPECT_FALSE(r == stale_rect);
+    found_current |= r == fake_current_.bbox;
+    found_previous |= r == fake_previous_.bbox;
+  }
+  EXPECT_TRUE(found_current);
+  EXPECT_TRUE(found_previous);
 }
 
 //------------------------------------------------------------------------------

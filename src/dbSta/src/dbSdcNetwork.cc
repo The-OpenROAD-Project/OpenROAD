@@ -50,7 +50,7 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
     } else {
       // Look for a match with path dividers escaped.
       std::string escaped
-          = escapeChars(pattern->pattern(), divider_, '\0', escape_);
+          = escapeChars(pattern->pattern(), divider_, '\0', '\0', escape_);
       inst = findInstance(escaped.c_str());
       if (inst) {
         insts.push_back(inst);
@@ -99,7 +99,7 @@ NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
     } else {
       // Look for a match with path dividers escaped.
       std::string escaped
-          = escapeChars(pattern->pattern(), divider_, '\0', escape_);
+          = escapeChars(pattern->pattern(), divider_, '\0', '\0', escape_);
       net = findNet(escaped.c_str());
       if (net) {
         nets.push_back(net);
