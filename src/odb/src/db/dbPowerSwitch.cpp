@@ -194,13 +194,14 @@ void _dbPowerSwitch::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["in_supply_port"].add(in_supply_port_);
   info.children["control_port"].add(control_port_);
   info.children["acknowledge_port"].add(acknowledge_port_);
   info.children["on_state"].add(on_state_);
   info.children["port_map"].add(port_map_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

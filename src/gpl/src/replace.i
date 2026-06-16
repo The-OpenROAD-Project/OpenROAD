@@ -24,6 +24,7 @@ static gpl::PlaceOptions getOptions(
 
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
+  checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
   checkFlag(
@@ -68,11 +69,15 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
+  checkKey(keys, "-timing_driven_nets_percentage", options.timingDrivenNetsPercentage);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
   checkKey(keys, "-init_wirelength_coef", options.initWireLengthCoef);
   checkKey(keys, "-reference_hpwl", options.referenceHpwl);
+  checkKey(keys,
+           "-timing_driven_repair_tns_end_percent",
+           options.timingDrivenRepairTnsEndPercent);
 
   if (auto it = keys.find("-density"); it != keys.end()) {
     if (it->second == "uniform") {

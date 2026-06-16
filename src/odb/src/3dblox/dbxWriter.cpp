@@ -49,6 +49,8 @@ void DbxWriter::writeYamlContent(YAML::Node& root, odb::dbChip* chiplet)
 void DbxWriter::writeDesign(YAML::Node& design_node, odb::dbChip* chiplet)
 {
   design_node["name"] = chiplet->getName();
+  YAML::Node external_node = design_node["external"];
+  external_node["verilog_file"] = std::string(chiplet->getName()) + ".v";
 }
 
 void DbxWriter::writeChipletInsts(YAML::Node& instances_node,

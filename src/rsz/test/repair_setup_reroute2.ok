@@ -1,0 +1,27 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 366 components and 1951 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+worst slack max -3597.44
+tns max -133188.516
+[INFO RSZ-0100] Repair move sequence: RerouteMove 
+[INFO RSZ-0094] Found 53 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 5 out of 53 (10.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: REROUTE
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3597.437 |  -104190.9 |  -133188.5 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+      36* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2268.607 |   -76334.5 |   -94939.4 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2268.607 |   -76334.5 |   -94939.4 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0053] Rerouted 29 nets resistance-aware.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -2268.61
+tns max -94939.422

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -264,6 +265,19 @@ class HardMacro
       bottom = halo->yMin();
       right = halo->xMax();
       top = halo->yMax();
+    }
+
+    Halo floorTo(const Halo& minimum) const
+    {
+      return {std::max(left, minimum.left),
+              std::max(bottom, minimum.bottom),
+              std::max(right, minimum.right),
+              std::max(top, minimum.top)};
+    }
+
+    bool isZero() const
+    {
+      return left == 0 && bottom == 0 && right == 0 && top == 0;
     }
   };
 

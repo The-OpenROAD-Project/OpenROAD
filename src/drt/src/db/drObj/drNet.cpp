@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "db/drObj/drBlockObject.h"
+#include "db/drObj/drFig.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
 #include "db/obj/frAccess.h"

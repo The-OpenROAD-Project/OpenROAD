@@ -13,6 +13,7 @@
 #include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
@@ -50,7 +51,7 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
 
   // Static empty sets for DbNetDescriptor — in the full GUI build,
   // MainWindow::init() re-registers with real widget-owned sets.
-  static const std::set<odb::dbNet*> empty_net_set;
+  static const odb::PtrSet<odb::dbNet> empty_net_set;
 
   registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db, sta));
   registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db, sta));

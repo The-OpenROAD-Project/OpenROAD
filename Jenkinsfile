@@ -1,4 +1,5 @@
 @Library('utils@main') _
-node() {
-    pipelineOR()
+
+k8sPodTemplate(coordinator: true, cloud: utilPickCloud()) {
+    pipelineOR(k8s: true)
 }

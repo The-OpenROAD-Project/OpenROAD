@@ -8,14 +8,23 @@
 
 #include "utl/Logger.h"
 
+#ifndef BAZEL
 namespace ord {
 // Defined in OpenRoad.i
 utl::Logger* getLogger();
 }  // namespace ord
+#endif
 
 namespace utl {
 
+#ifdef BAZEL
+static Logger* getLogger()
+{
+  return Logger::defaultLogger();
+}
+#else
 using ord::getLogger;
+#endif
 
 void report(const char* msg)
 {

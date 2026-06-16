@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+module top (clk);
+ input clk;
+
+ wire net_c;
+ wire net_b;
+
+ child h1 (.clk(clk),
+    .\pathA/midB/leaf (net_b),
+    .\pathA/midC/leaf (net_c));
+endmodule
+module child (clk,
+    \pathA/midB/leaf ,
+    \pathA/midC/leaf );
+ input clk;
+ output \pathA/midB/leaf ;
+ output \pathA/midC/leaf ;
+
+
+ DFF_X1 ff_b (.CK(clk),
+    .Q(\pathA/midB/leaf ));
+ DFF_X1 ff_c (.CK(clk),
+    .Q(\pathA/midC/leaf ));
+endmodule

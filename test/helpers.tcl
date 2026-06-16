@@ -202,6 +202,13 @@ proc diff_files { file1 file2 { ignore "" } } {
   }
 }
 
+proc require_snapshot_batched_activity { test_name } {
+  if { [grt::get_snapshot_batch_count] <= 0 } {
+    utl::error GRT 713 \
+      "$test_name did not execute snapshot-batched routing."
+  }
+}
+
 proc run_unit_test_and_exit { relative_path } {
   set test_dir [pwd]
   set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]

@@ -3,7 +3,7 @@
     "fields":[
       {
         "name":"name_",
-        "type":"char*",
+        "type":"char *",
         "default":"nullptr",
         "flags":["no-set"]
       },

@@ -48,7 +48,7 @@ set_debug_level ODB replace_design_check_sanity 1
 report_wns
 report_tns
 
-replace_arith_modules -path_count 100
+replace_arith_modules -path_count 10
 
 report_wns
 report_tns

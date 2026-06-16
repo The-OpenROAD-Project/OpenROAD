@@ -9,4 +9,9 @@ catch {
   rdl_route -layer metal10 -width 10 -spacing 10 -max_iterations 4 \
     "VDD DVDD VSS DVSS p_*"
 } error
-puts $error
+if { ![string match "*PAD-0007" $error] } {
+  puts $error
+  error "Expected PAD-0007, got a different failure"
+}
+
+puts pass

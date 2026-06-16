@@ -14,7 +14,9 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
 [INFO RSZ-0032] Inserted 6 hold buffers.
 Repair timing output passed/skipped equivalence test
 worst slack min 0.21
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 231206.75 um^2, Instances area: 210.20 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21

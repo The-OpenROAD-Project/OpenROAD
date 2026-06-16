@@ -126,8 +126,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     // Selection
     std::ranges::stable_sort(
         population, std::ranges::greater{}, &SolutionSlack::WorstSlack);
-    std::vector<SolutionSlack> newPopulation;
-    newPopulation.reserve(population_size_);
+    std::vector<SolutionSlack> new_population;
+    new_population.reserve(population_size_);
     for (int j = 0; j < population_size_; j++) {
       std::vector<size_t> tournament(tournament_size_);
       std::generate_n(tournament.begin(), tournament_size_, [&]() {
@@ -141,17 +141,17 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
                                static_cast<double>(tournament_probability_));
       });
       if (winner != tournament.end()) {
-        newPopulation.emplace_back(population[*winner]);
+        new_population.emplace_back(population[*winner]);
       }
     }
-    removeDuplicates(newPopulation, logger);
+    removeDuplicates(new_population, logger);
 
     // No winners from tournament, use first candidate
-    if (newPopulation.empty()) {
-      newPopulation.emplace_back(population.front());
+    if (new_population.empty()) {
+      new_population.emplace_back(population.front());
     }
 
-    population = std::move(newPopulation);
+    population = std::move(new_population);
 
     for (const auto& candidate : population) {
       debugPrint(logger, RMP, "genetic", 1, candidate.toString());

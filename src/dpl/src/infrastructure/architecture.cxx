@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "architecture.h"
+#include "infrastructure/architecture.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,11 +12,11 @@
 #include <utility>
 #include <vector>
 
-#include "Objects.h"
-#include "Padding.h"
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
-#include "network.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 

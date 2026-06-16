@@ -5,6 +5,9 @@
 
 set -e
 
+script_dir="$(dirname "$(readlink -f "$0")")"
+bazel_pending=()
+
 for test_name in "${@:1}"
 do
     if [ -f "results/${test_name}-tcl.def" ]; then
@@ -14,6 +17,10 @@ do
         cp "results/${test_name}-py.def" "${test_name}.defok"
         echo "${test_name}"
     else
-        echo "\"${test_name}\" def file not found"
+        bazel_pending+=("${test_name}")
     fi
 done
+
+if [ ${#bazel_pending[@]} -gt 0 ]; then
+    "${script_dir}/bazel_save.sh" defok def "${bazel_pending[@]}"
+fi

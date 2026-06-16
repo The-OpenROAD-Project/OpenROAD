@@ -688,6 +688,10 @@ void IOPlacer::findSlots(const std::set<int>& layers,
         = is_die_polygon ? findLayerSlots(layer, Edge::polygonEdge, line, true)
                          : findLayerSlots(layer, edge, empty_line, false);
 
+    if (slots.empty()) {
+      continue;
+    }
+
     // Remove slots that violates the min distance before reversing the vector.
     // This ensures that mirrored positions will exists for every slot.
     int slot_count = 0;
@@ -2575,8 +2579,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                         bool placed_status)
 {
   if (width == 0 && height == 0) {
-    const int database_unit = getTech()->getDbUnitsPerMicron();
-    const double min_area = layer->getArea() * database_unit * database_unit;
+    const double min_area = layer->getArea();
     if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       width = layer->getMinWidth();
       height
@@ -2849,7 +2852,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
           i, init_track_y[i], num_track_y[i], min_spacing_y[i]);
     }
 
-    min_area_y = hor_layer->getArea() * database_unit * database_unit;
+    min_area_y = hor_layer->getArea();
     min_width_y = hor_layer->getWidth();
 
     min_spacings_y[hor_layer_idx] = std::move(min_spacing_y);
@@ -2875,7 +2878,7 @@ void IOPlacer::initCore(const std::set<int>& hor_layer_idxs,
           i, init_track_x[i], num_track_x[i], min_spacing_x[i]);
     }
 
-    min_area_x = ver_layer->getArea() * database_unit * database_unit;
+    min_area_x = ver_layer->getArea();
     min_width_x = ver_layer->getWidth();
 
     min_spacings_x[ver_layer_idx] = std::move(min_spacing_x);

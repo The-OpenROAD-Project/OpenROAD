@@ -1,8 +1,17 @@
-Test 1: Command name completion 'read_db'
-PASS: Test 1 returned empty (as expected for mock failure)
-
-Test 2: Argument completion 'read_db '
-PASS: Test 2 returned list of length > 0
-
-Test 3: write_lef completion
-PASS: Test 3 returned list of length > 0
+PASS: Test 1 candidate list contains 'read_db'
+PASS: Test 2 'place_' returns >=3 candidates all starting with place_
+PASS: Test 3 empty line returns full command list (>=50, includes read_lef)
+PASS: Test 4 flag completion returns bare flags (each starts with '-')
+PASS: Test 5 flag narrowing 'place_bondpad -b' -> only -b* and not empty
+PASS: Test 6 variable completion finds defined var with '$' prefix
+PASS: Test 7 file completion at arg position finds files in pwd
+PASS: Test 8 bracket boundary: '[set_' completes as command position
+PASS: Test 9 'pu' includes the Tcl builtin 'puts'
+PASS: Test 10 user proc 'ord_completion_test_proc' appears in candidates
+PASS: Test 11 flag completion after positional arg
+PASS: Test 12 namespace variable completion produces '$ns::' not bare '$ns'
+PASS: Test 13 namespace candidates are prefix-filtered
+PASS: Test 14 completion inside namespace surfaces variables
+PASS: Test 15 sub-namespace enumeration produces '$outer::inner::'
+PASS: Test 16 command-only namespace falls back to commands (no '$')
+PASS: Test 17 file completion with non-empty leaf filters to 'ord_*'

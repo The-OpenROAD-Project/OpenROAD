@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="903" height="89"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="51" y="23" width="92" height="32"/>
+      <rect x="49" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="163" y="23" width="92" height="32"/>
+      <rect x="161" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="171" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="275" y="23" width="92" height="32"/>
+      <rect x="273" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="283" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="387" y="23" width="92" height="32"/>
+      <rect x="385" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="395" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="519" y="55" width="92" height="32"/>
+      <rect x="517" y="53" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="527" y="73">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="631" y="55" width="92" height="32"/>
+      <rect x="629" y="53" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="639" y="73">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="743" y="55" width="92" height="32"/>
+      <rect x="741" y="53" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="751" y="73">int_number</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m20 0 h10 m0 0 h814 m-844 0 h20 m824 0 h20 m-864 0 q10 0 10 10 m844 0 q0 -10 10 -10 m-854 10 v12 m844 0 v-12 m-844 12 q0 10 10 10 m824 0 q10 0 10 -10 m-834 10 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m20 0 h10 m0 0 h326 m-356 0 h20 m336 0 h20 m-376 0 q10 0 10 10 m356 0 q0 -10 10 -10 m-366 10 v12 m356 0 v-12 m-356 12 q0 10 10 10 m336 0 q10 0 10 -10 m-346 10 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m43 -64 h-3"/>
+   <polygon points="893 5 901 1 901 9"/>
+   <polygon points="893 5 885 1 885 9"/>
+</svg>

@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -110,9 +111,7 @@ void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["class_name"].add(class_name_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -206,7 +205,7 @@ void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
   obj->class_name_ = class_name;
 }
 
-std::string dbTechLayerEolKeepOutRule::getClassName() const
+const std::string& dbTechLayerEolKeepOutRule::getClassName() const
 {
   _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
   return obj->class_name_;
@@ -254,17 +253,20 @@ bool dbTechLayerEolKeepOutRule::isExceptWithin() const
   return obj->flags_.except_within;
 }
 
-// User Code Begin dbTechLayerEolKeepOutRulePublicMethods
-
 dbTechLayerEolKeepOutRule* dbTechLayerEolKeepOutRule::create(
-    dbTechLayer* _layer)
+    dbTechLayer* parent)
 {
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerEolKeepOutRule* newrule
-      = layer->eol_keep_out_rules_tbl_->create();
-  return ((dbTechLayerEolKeepOutRule*) newrule);
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerEolKeepOutRule*)
+      _parent->eol_keep_out_rules_tbl_->create();
 }
-
+void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->eol_keep_out_rules_tbl_->destroy((_dbTechLayerEolKeepOutRule*) obj);
+}
+// User Code Begin dbTechLayerEolKeepOutRulePublicMethods
 dbTechLayerEolKeepOutRule*
 dbTechLayerEolKeepOutRule::getTechLayerEolKeepOutRule(dbTechLayer* inly,
                                                       uint32_t dbid)
@@ -273,13 +275,6 @@ dbTechLayerEolKeepOutRule::getTechLayerEolKeepOutRule(dbTechLayer* inly,
   return (dbTechLayerEolKeepOutRule*) layer->eol_keep_out_rules_tbl_->getPtr(
       dbid);
 }
-void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->eol_keep_out_rules_tbl_->destroy((_dbTechLayerEolKeepOutRule*) rule);
-}
-
 // User Code End dbTechLayerEolKeepOutRulePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

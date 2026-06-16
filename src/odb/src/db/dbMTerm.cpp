@@ -24,7 +24,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {
@@ -400,45 +399,49 @@ dbTechAntennaPinModel* dbMTerm::getOxide2AntennaModel() const
       mterm->oxide2_);
 }
 
+// Returns the impl-side tech that owns this mterm's master, or nullptr if
+// the master is somehow not yet attached to a lib. Uses _dbLib::getTech
+// (the lib-scoped accessor) instead of dbDatabase::getTech, which is not
+// usable in multi-tech databases.
+static _dbTech* getMTermTech(_dbMTerm* mterm)
+{
+  _dbMaster* master = (_dbMaster*) mterm->getOwner();
+  if (master == nullptr) {
+    return nullptr;
+  }
+  _dbLib* lib = (_dbLib*) master->getOwner();
+  return lib != nullptr ? lib->getTech() : nullptr;
+}
+
 void dbMTerm::getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
   _dbTechAntennaPinModel::getAntennaValues(
-      mterm->getDatabase(), mterm->diffarea_, data);
+      getMTermTech(mterm), mterm->diffarea_, data);
 }
 
-void dbMTerm::writeAntennaLef(lefout& writer) const
+void dbMTerm::getPartialMetalArea(
+    std::vector<std::pair<double, dbTechLayer*>>& data)
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
+  _dbTechAntennaPinModel::getAntennaValues(
+      getMTermTech(mterm), mterm->par_met_area_, data);
+}
 
-  dbMaster* tpmtr = (dbMaster*) mterm->getOwner();
-  dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
-  dbTech* tech = tplib->getTech();
+void dbMTerm::getPartialMetalSideArea(
+    std::vector<std::pair<double, dbTechLayer*>>& data)
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  _dbTechAntennaPinModel::getAntennaValues(
+      getMTermTech(mterm), mterm->par_met_sidearea_, data);
+}
 
-  for (auto ant : mterm->par_met_area_) {
-    ant->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->par_met_sidearea_) {
-    ant->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->par_cut_area_) {
-    ant->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->diffarea_) {
-    ant->writeLef("ANTENNADIFFAREA", tech, writer);
-  }
-
-  if (hasDefaultAntennaModel()) {
-    getDefaultAntennaModel()->writeLef(tech, writer);
-  }
-
-  if (hasOxide2AntennaModel()) {
-    fmt::print(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
-    getOxide2AntennaModel()->writeLef(tech, writer);
-  }
+void dbMTerm::getPartialCutArea(
+    std::vector<std::pair<double, dbTechLayer*>>& data)
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  _dbTechAntennaPinModel::getAntennaValues(
+      getMTermTech(mterm), mterm->par_cut_area_, data);
 }
 
 dbMTerm* dbMTerm::create(dbMaster* master,

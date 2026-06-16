@@ -176,6 +176,108 @@ describe('Inspector focus nets', () => {
         });
     });
 
+    describe('selection navigation bar', () => {
+        it('does not show nav bar for single selection', () => {
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 1,
+                selection_index: 0,
+            });
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            assert.equal(nav, null, 'nav bar should not be shown for single selection');
+        });
+
+        it('shows nav bar when selection_count > 1', () => {
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 3,
+                selection_index: 1,
+            });
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            assert.ok(nav, 'nav bar should be present');
+            const label = nav.querySelector('.inspector-selection-label');
+            assert.equal(label.textContent, '2 / 3');
+        });
+
+        it('does not show nav bar without selection metadata', () => {
+            panel.updateInspector(instData('buf1'));
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            assert.equal(nav, null);
+        });
+
+        it('prev button sends select_prev request', () => {
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 2,
+                selection_index: 1,
+            });
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            const prevBtn = nav.querySelectorAll('.inspector-btn')[0];
+            prevBtn.click();
+            assert.equal(app._requests.length, 1);
+            assert.equal(app._requests[0].type, 'select_prev');
+        });
+
+        it('next button sends select_next request', () => {
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 2,
+                selection_index: 0,
+            });
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            const btns = nav.querySelectorAll('.inspector-btn');
+            const nextBtn = btns[btns.length - 1];
+            nextBtn.click();
+            assert.equal(app._requests.length, 1);
+            assert.equal(app._requests[0].type, 'select_next');
+        });
+
+        it('next button refreshes schematic selection for cycled Inst', async () => {
+            let schematicRefreshes = 0;
+            app.map = { closePopup() {} };
+            app.schematicWidget = {
+                refresh() { schematicRefreshes++; },
+            };
+            app.selectedInstanceName = 'buf1';
+            app.websocketManager.request = msg => {
+                app._requests.push(msg);
+                const p = Promise.resolve({
+                    ...instData('buf2'),
+                    selection_count: 2,
+                    selection_index: 1,
+                });
+                p.requestId = 1;
+                return p;
+            };
+
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 2,
+                selection_index: 0,
+            });
+            const nav = app.inspectorEl.querySelector('.inspector-selection-nav');
+            const btns = nav.querySelectorAll('.inspector-btn');
+            btns[btns.length - 1].click();
+
+            await new Promise(r => setTimeout(r, 0));
+
+            assert.equal(app._requests[0].type, 'select_next');
+            assert.equal(app.selectedInstanceName, 'buf2');
+            assert.equal(schematicRefreshes, 1);
+            assert.equal(redraws, 1);
+        });
+
+        it('label shows correct 1-indexed position', () => {
+            panel.updateInspector({
+                ...instData('buf1'),
+                selection_count: 5,
+                selection_index: 3,
+            });
+            const label = app.inspectorEl.querySelector('.inspector-selection-label');
+            assert.equal(label.textContent, '4 / 5');
+        });
+    });
+
     describe('properties rendering', () => {
         it('renders leaf properties', () => {
             panel.updateInspector({

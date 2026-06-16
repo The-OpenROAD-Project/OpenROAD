@@ -8,7 +8,9 @@
 [INFO ANT-0002] Found 8 net violations.
 [INFO ANT-0001] Found 8 pin violations.
 [INFO GRT-0012] Found 8 antenna violations.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 78411.11 um^2, Instances area: 6265.73 um^2, Utilization: 8.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                     367

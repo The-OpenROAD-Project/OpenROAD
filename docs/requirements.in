@@ -1,0 +1,9 @@
+sphinx-external-toc==0.3.1
+sphinx
+sphinx-autobuild
+myst-parser
+sphinxcontrib-mermaid
+sphinx-book-theme
+sphinx-copybutton
+sphinx-tabs
+sphinx-llm

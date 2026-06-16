@@ -682,15 +682,13 @@ std::pair<bool, bool> RouteBase::routability(
            / nbVec_[i]->getNesterovInstsArea())
           * 100.0f;
     log_->info(GPL,
-               51,
-               format_label_um2_with_delta,
-               "Inflated area:",
+               86,
+               "Inflated area:              {:10.3f} um^2 ({:+.2f}%)",
                inflated_area_delta_microns,
                inflated_area_delta_percentage);
     log_->info(GPL,
                52,
-               format_label_float,
-               "Placement target density:",
+               "Placement target density:   {:10.4f}",
                nbVec_[i]->getTargetDensity());
 
     prev_white_space_area[i] = nbVec_[i]->getWhiteSpaceArea();
@@ -762,45 +760,39 @@ std::pair<bool, bool> RouteBase::routability(
     log_->info(
         GPL,
         58,
-        format_label_um2_with_delta,
-        "White space area:",
+        "White space area:           {:10.3f} um^2 ({:+.2f}%)",
         block->dbuAreaToMicrons(nbVec_[i]->getWhiteSpaceArea()),
         percentDiff(prev_white_space_area[i], nbVec_[i]->getWhiteSpaceArea()));
 
     log_->info(GPL,
                59,
-               format_label_um2_with_delta,
-               "Movable instances area:",
+               "Movable instances area:     {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(nbVec_[i]->getMovableArea()),
                percentDiff(prev_movable_area[i], nbVec_[i]->getMovableArea()));
 
     log_->info(GPL,
                60,
-               format_label_um2_with_delta,
-               "Total filler area:",
+               "Total filler area:          {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(nbVec_[i]->getTotalFillerArea()),
                percentDiff(prev_total_filler_area[i],
                            nbVec_[i]->getTotalFillerArea()));
 
     log_->info(GPL,
                61,
-               format_label_um2_with_delta,
-               "Total non-inflated area:",
+               "Total non-inflated area:    {:10.3f} um^2 ({:+.2f}%)",
                block->dbuAreaToMicrons(new_total_gcells_area),
                percentDiff(prev_total_gcells_area[i], new_total_gcells_area));
 
     log_->info(
         GPL,
         62,
-        format_label_um2_with_delta,
-        "Total inflated area:",
+        "Total inflated area:        {:10.3f} um^2 ({:+.2f}%)",
         block->dbuAreaToMicrons(new_expected_gcells_area),
         percentDiff(prev_expected_gcells_area[i], new_expected_gcells_area));
 
     log_->info(GPL,
                63,
-               format_label_float,
-               "New Target Density:",
+               "New Target Density:         {:10.4f}",
                nbVec_[i]->getTargetDensity());
 
     // update densitySizes for all gCell
@@ -822,8 +814,8 @@ void RouteBase::updateRudyAverage(bool verbose)
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
-    // Escape the case when blockage ratio is too huge
-    if (ratio >= 0.0f) {
+    // Escape the case when blockage ratio is too huge or non-finite
+    if (std::isfinite(ratio) && ratio >= 0.0f) {
       total_route_overflow_ += std::fmax(0.0, -1 + ratio);
       edge_cong_array.push_back(ratio);
 

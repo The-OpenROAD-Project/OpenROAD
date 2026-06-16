@@ -7,11 +7,11 @@
 
 #include <algorithm>
 #include <cassert>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Network.hh"
@@ -467,7 +467,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
   odb::dbModBTerm* dest_mod_bterm = dest_pin->getChildModBTerm();
   odb::dbModNet* dest_mod_bterm_net = dest_mod_bterm->getModNet();
 
-  std::set<odb::dbITerm*> load_iterms;
+  odb::PtrSet<odb::dbITerm> load_iterms;
   odb::dbModInst* dest_mod_inst = dest_pin->getParent();
   for (odb::dbITerm* iterm : dest_mod_bterm_net->getITerms()) {
     if (iterm == source_pin) {
@@ -586,7 +586,7 @@ void dbEditHierarchy::cleanUnusedHierPins(
     const std::vector<odb::dbModule*>& source_parent_tree,
     const std::vector<odb::dbModule*>& dest_parent_tree) const
 {
-  std::set<odb::dbModInst*> cleaned_up;
+  odb::PtrSet<odb::dbModInst> cleaned_up;
   for (auto module_to_clean_up : source_parent_tree) {
     odb::dbModInst* mi = module_to_clean_up->getModInst();
     if (mi) {

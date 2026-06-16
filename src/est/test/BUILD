@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -37,3 +38,21 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+cc_test(
+    name = "TestEstimateParasitics",
+    srcs = ["cpp/TestEstimateParasitics.cc"],
+    data = ["cpp/TestEstimateParasitics.v"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

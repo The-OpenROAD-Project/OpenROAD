@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="537" height="71"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 51 1 47 1 55"/>
+   <polygon points="17 51 9 47 9 55"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#start_group"
+      xlink:title="start_group">
+      <rect x="31" y="37" width="94" height="32"/>
+      <rect x="29" y="35" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="55">start_group</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#group_member"
+      xlink:title="group_member">
+      <rect x="165" y="3" width="116" height="32"/>
+      <rect x="163" y="1" width="116" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="173" y="21">group_member</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#group_option"
+      xlink:title="group_option">
+      <rect x="341" y="3" width="104" height="32"/>
+      <rect x="339" y="1" width="104" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="349" y="21">group_option</text>
+   </a>
+   <rect x="485" y="37" width="24" height="32" rx="10"/>
+   <rect x="483"
+         y="35"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="493" y="55">;</text>
+   <path class="line"
+         d="m17 51 h2 m0 0 h10 m94 0 h10 m20 0 h10 m0 0 h126 m-156 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m136 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-136 0 h10 m116 0 h10 m40 34 h10 m0 0 h114 m-144 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m124 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-124 0 h10 m104 0 h10 m20 34 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="527 51 535 47 535 55"/>
+   <polygon points="527 51 519 47 519 55"/>
+</svg>

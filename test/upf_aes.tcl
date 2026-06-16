@@ -2,6 +2,27 @@ source "helpers.tcl"
 source "flow_helpers.tcl"
 source "sky130hd/sky130hd.vars"
 
+proc write_regions_section { input_def output_regions } {
+  set in_stream [open $input_def r]
+  set out_stream [open $output_regions w]
+  set copy_lines 0
+
+  while { [gets $in_stream line] >= 0 } {
+    if { [string match "REGIONS *" $line] } {
+      set copy_lines 1
+    }
+    if { $copy_lines } {
+      puts $out_stream $line
+      if { [string trim $line] == "END REGIONS" } {
+        break
+      }
+    }
+  }
+
+  close $in_stream
+  close $out_stream
+}
+
 read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
@@ -38,4 +59,10 @@ check_placement
 
 set def_file [make_result_file upf_aes.def]
 write_def $def_file
-diff_file $def_file upf_aes.defok
+if { [info exists ::env(BAZEL_TEST)] } {
+  set regions_file [make_result_file upf_aes.regions]
+  write_regions_section $def_file $regions_file
+  diff_file $regions_file upf_aes.regionsok
+} else {
+  diff_file $def_file upf_aes.defok
+}

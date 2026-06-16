@@ -73,6 +73,12 @@ class dbOStream
     return *this;
   }
 
+  dbOStream& operator<<(int64_t c)
+  {
+    writeValueAsBytes(c);
+    return *this;
+  }
+
   dbOStream& operator<<(uint64_t c)
   {
     writeValueAsBytes(c);
@@ -311,6 +317,12 @@ class dbIStream
   }
 
   dbIStream& operator>>(int& c)
+  {
+    f_.read(reinterpret_cast<char*>(&c), sizeof(c));
+    return *this;
+  }
+
+  dbIStream& operator>>(int64_t& c)
   {
     f_.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;

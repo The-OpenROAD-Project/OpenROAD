@@ -12,7 +12,6 @@ swig_lib(NAME      est
 
 add_library(est_lib
     EstimateParasitics.cpp
-    EstimateParasiticsCallBack.cpp
     MakeWireParasitics.cpp
     OdbCallBack.cpp
     SteinerTree.cpp

@@ -55,6 +55,9 @@ class lefinReader
   // convert distance value to db-units
   int dbdist(double value) { return lround(value * dist_factor_); }
 
+  // convert area value to squared db-units
+  int64_t dbarea(const double value) { return llround(value * area_factor_); }
+
   enum AntennaType
   {
     ANTENNA_INPUT_GATE_AREA,
@@ -172,9 +175,6 @@ class lefinReader
   void init();
   void setDBUPerMicron(int dbu);
 
-  // convert area value to squared db-units
-  int dbarea(const double value) { return lround(value * area_factor_); }
-
   bool readLefInner(const char* lef_file);
   bool readLef(const char* lef_file);
   bool addGeoms(dbObject* object,
@@ -224,6 +224,9 @@ class lefin
 
   // convert distance value to db-units
   int dbdist(double value);
+
+  // convert area value to db-units^2
+  int64_t dbarea(double value);
 
   // Create a technology from the tech-data of this LEF file.
   dbTech* createTech(const char* name, const char* lef_file);

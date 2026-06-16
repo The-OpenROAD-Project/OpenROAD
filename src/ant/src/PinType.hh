@@ -13,24 +13,20 @@ namespace ant {
 
 struct PinType
 {
-  bool isITerm;
+  bool is_iterm;
   std::string name;
   union
   {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
   };
-  PinType(std::string name_, odb::dbITerm* iterm_)
+  PinType(std::string name, odb::dbITerm* iterm)
+      : is_iterm(true), name(std::move(name)), iterm(iterm)
   {
-    name = std::move(name_);
-    iterm = iterm_;
-    isITerm = true;
   }
-  PinType(std::string name_, odb::dbBTerm* bterm_)
+  PinType(std::string name, odb::dbBTerm* bterm)
+      : is_iterm(false), name(std::move(name)), bterm(bterm)
   {
-    name = std::move(name_);
-    bterm = bterm_;
-    isITerm = false;
   }
   bool operator==(const PinType& t) const { return (this->name == t.name); }
 };

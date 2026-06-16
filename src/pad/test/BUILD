@@ -26,6 +26,7 @@ COMPULSORY_TESTS = [
     "place_bondpad_stagger",
     "place_corners_avoid_bumps",
     "place_corners_avoid_overlap",
+    "place_corners_avoid_overlap_with_overlapobs",
     "place_io_terminals_empty_call",
     "place_pad",
     "place_pad_hv",
@@ -38,6 +39,7 @@ COMPULSORY_TESTS = [
     "place_pads_bumps_bump_overlap",
     "place_pads_bumps_strategy_placer_blockages",
     "place_pads_bumps_strategy",
+    "place_pads_placer_fullyblocked",
     "place_pads_too_many",
     "place_pads_uniform",
     "place_pads_uniform_slip",
@@ -52,21 +54,18 @@ COMPULSORY_TESTS = [
     "rdl_route_bump_to_bump_only",
     "rdl_route_bump_via",
     "rdl_route_failed",
+    "rdl_route_fixed",
     "rdl_route_invalid",
     "rdl_route_keep_existing",
     "rdl_route_max_iterations",
     "rdl_route_ports",
+    "rdl_route_probe",
     "rdl_route_single_target",
     "rdl_route_skip_iterm",
     "rdl_route_via",
     "skywater130_caravel",
     "skywater130_coyote_tc",
     "skywater130_overlapping_filler",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "rdl_route_single_target",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -115,6 +114,10 @@ filegroup(
         "Nangate45_io/dummy_pads.lib",
         "Nangate45_io/dummy_pads_m9.lef",
         "Nangate45_io/dummy_pads_stagger.lef",
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_L_1x_220121a.lef",
+        "asap7_data/probe.lef",
+        "asap7_data/rdl_route_probe.def",
         "helpers.tcl",
         "passive_tech/bumps.lef",
         "passive_tech/floorplan.def",
@@ -213,7 +216,6 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

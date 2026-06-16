@@ -7,15 +7,44 @@ include("openroad")
 
 find_package(ortools REQUIRED)
 
+add_library(mpl_snapper
+  src/snapper.cpp
+)
+
+target_include_directories(mpl_snapper
+  PUBLIC
+    src
+)
+
+target_link_libraries(mpl_snapper
+    utl_lib
+    odb
+)
+
+add_library(mpl_pusher
+  src/pusher.cpp
+  src/object.cpp
+  src/shapes.cpp
+)
+
+target_include_directories(mpl_pusher
+  PUBLIC
+    src
+    include
+)
+
+target_link_libraries(mpl_pusher
+    utl_lib
+    odb
+)
+
 add_library(mpl_lib
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
-  src/object.cpp
   src/SimulatedAnnealingCore.cpp
   src/SACoreHardMacro.cpp
   src/SACoreSoftMacro.cpp
   src/clusterEngine.cpp
-  src/shapes.cpp
 )
 
 target_include_directories(mpl_lib
@@ -24,6 +53,8 @@ target_include_directories(mpl_lib
 )
 
 target_link_libraries(mpl_lib
+    mpl_pusher
+    mpl_snapper
     utl_lib
     dbSta_lib
     OpenSTA

@@ -19,8 +19,7 @@ cc_library(
     includes = ["."],  # not needed after no cmake
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/tst",
-        "//src/utl",
     ],
 )

@@ -7,6 +7,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 

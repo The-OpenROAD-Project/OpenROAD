@@ -13,7 +13,7 @@ using utl::GUI;
 bool check_gui(const char* command)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  if (!gui::Gui::enabled()) {
+  if (!gui::Gui::hasUI()) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -505,7 +505,9 @@ const std::string input_dialog(const char* title, const char* question)
 // language to avoid conflicts in C++.
 void gui_pause(int timeout = 0)
 {
-  if (!check_gui("pause")) {
+  if (!gui::Gui::enabled()) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->info(GUI, 96, "Command pause is not usable in non-GUI mode");
     return;
   }
   auto gui = gui::Gui::get();

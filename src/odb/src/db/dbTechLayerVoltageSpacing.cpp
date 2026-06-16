@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -84,6 +85,8 @@ void _dbTechLayerVoltageSpacing::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  info.children["table"].add(table_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -120,6 +123,20 @@ bool dbTechLayerVoltageSpacing::isTocutBelow() const
   return obj->flags_.tocut_below;
 }
 
+dbTechLayerVoltageSpacing* dbTechLayerVoltageSpacing::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerVoltageSpacing*)
+      _parent->voltage_spacing_rules_tbl_->create();
+}
+void dbTechLayerVoltageSpacing::destroy(dbTechLayerVoltageSpacing* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->voltage_spacing_rules_tbl_->destroy(
+      (_dbTechLayerVoltageSpacing*) obj);
+}
 // User Code Begin dbTechLayerVoltageSpacingPublicMethods
 void dbTechLayerVoltageSpacing::addEntry(float voltage, int spacing)
 {
@@ -131,23 +148,6 @@ const std::map<float, int>& dbTechLayerVoltageSpacing::getTable() const
 {
   _dbTechLayerVoltageSpacing* obj = (_dbTechLayerVoltageSpacing*) this;
   return obj->table_;
-}
-
-dbTechLayerVoltageSpacing* dbTechLayerVoltageSpacing::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerVoltageSpacing* newrule
-      = layer->voltage_spacing_rules_tbl_->create();
-  return ((dbTechLayerVoltageSpacing*) newrule);
-}
-
-void dbTechLayerVoltageSpacing::destroy(dbTechLayerVoltageSpacing* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->voltage_spacing_rules_tbl_->destroy(
-      (_dbTechLayerVoltageSpacing*) rule);
 }
 // User Code End dbTechLayerVoltageSpacingPublicMethods
 }  // namespace odb

@@ -6,13 +6,14 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "make_8x8_sky130",
+    "make_7x7_nangate45",
 ]
 
-MANUAL_FOR_BAZEL_TESTS = [
-    "make_8x8",
+PASSFAIL_TESTS = [
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -47,7 +48,15 @@ filegroup(
             [
                 test_name + ".*",
             ],
-        ),
+        ) + {
+            "make_7x7_nangate45": [
+                "make_7x7_nangate45_behavioral.vok",
+                "Nangate45/Nangate45.lef",
+                "Nangate45/Nangate45_tech.lef",
+                "Nangate45/Nangate45_typ.lib",
+            ],
+            "make_8x8_sky130": ["make_8x8_sky130_behavioral.vok"],
+        }.get(test_name, []),
     )
     for test_name in ALL_TESTS
 ]
@@ -55,8 +64,10 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        size = "large",
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

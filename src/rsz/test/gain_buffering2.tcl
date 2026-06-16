@@ -7,8 +7,8 @@ read_liberty sky130hd/sky130hd_tt.lib
 read_verilog gain_buffering1.v
 link_design top
 
-# Initialize floorplan
-initialize_floorplan -site unithd -die_area {0 0 100 100} -core_area {10 10 90 90}
+# Load the placed fixture to keep this test independent of floorplan and placement.
+read_def -floorplan_initialize gain_buffering2.def
 
 create_clock -name clk -period 1.0 [get_ports clk]
 
@@ -21,23 +21,6 @@ set_dont_use {sky130_fd_sc_hd__probe_*
   	sky130_fd_sc_hd__bufbuf_*}
 
 set_dont_touch _53_
-
-# Spread cells to have a PLACED state
-set i 0
-foreach inst [get_cells -hierarchical *] {
-  set name [get_full_name $inst]
-  # Spread them out significantly to make centroid interesting
-  # _69_ is a driver, others are loads.
-  # Let's put _69_ at (10, 10) and loads at various places.
-  if { $name == "_69_" } {
-    place_inst -name $name -location "10 10"
-  } else {
-    set x [expr 20 + ($i % 5) * 15]
-    set y [expr 20 + ($i / 5) * 10]
-    place_inst -name $name -location "$x $y"
-  }
-  incr i
-}
 
 # Run parasitic estimation
 estimate_parasitics -placement

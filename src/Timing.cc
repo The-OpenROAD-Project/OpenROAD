@@ -13,13 +13,14 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "ord/Design.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
-#include "sta/DelayFloat.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -159,10 +160,8 @@ float Timing::getPinArrivalTime(sta::Clock* clk,
                                 const sta::RiseFall* rf)
 {
   sta::dbSta* sta = getSta();
-  if (clk) {
-    return sta::delayAsFloat(sta->arrival(
-        vertex, rf, clk->edge(clk_rf), sta->scenes(), sta::MinMax::max()));
-  }
+  (void) clk;
+  (void) clk_rf;
   return sta::delayAsFloat(sta->arrival(
       vertex, rf->asRiseFallBoth(), sta->scenes(), sta::MinMax::max()));
 }
@@ -284,7 +283,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
   sta::Port* port = network->dbToSta(input);
   sta::LibertyPort* lib_port = network->libertyPort(port);
 
-  std::set<odb::dbMTerm*> outputs;
+  odb::PtrSet<odb::dbMTerm> outputs;
   for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
     const sta::TimingRole* role = arc_set->role();
     if (role->isTimingCheck() || role->isAsyncTimingCheck()
@@ -292,7 +291,7 @@ std::vector<odb::dbMTerm*> Timing::getTimingFanoutFrom(odb::dbMTerm* input)
       continue;
     }
     sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
+    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name().c_str());
     if (to_mterm) {
       outputs.insert(to_mterm);
     }
@@ -460,9 +459,7 @@ std::vector<ClockInfo> Timing::getClockInfo()
     ClockInfo info;
     info.name = clk->name();
     info.period = clk->period();
-    if (clk->waveform()) {
-      info.waveform = *clk->waveform();
-    }
+    info.waveform = clk->waveform();
     for (const sta::Pin* pin : clk->pins()) {
       auto [iterm, bterm] = staToDBPin(pin);
       if (iterm) {

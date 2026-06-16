@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="421" height="113"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#placement_status"
+      xlink:title="placement_status">
+      <rect x="51" y="3" width="134" height="32"/>
+      <rect x="49" y="1" width="134" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">placement_status</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="205" y="3" width="32" height="32"/>
+      <rect x="203" y="1" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="213" y="21">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#orient"
+      xlink:title="orient">
+      <rect x="257" y="3" width="56" height="32"/>
+      <rect x="255" y="1" width="56" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="265" y="21">orient</text>
+   </a>
+   <rect x="51" y="47" width="30" height="32" rx="10"/>
+   <rect x="49"
+         y="45"
+         width="30"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="59" y="65">+</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_UNPLACED"
+      xlink:title="K_UNPLACED">
+      <rect x="101" y="47" width="104" height="32"/>
+      <rect x="99" y="45" width="104" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="109" y="65">K_UNPLACED</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="245" y="79" width="32" height="32"/>
+      <rect x="243" y="77" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="253" y="97">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#orient"
+      xlink:title="orient">
+      <rect x="297" y="79" width="56" height="32"/>
+      <rect x="295" y="77" width="56" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="305" y="97">orient</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m134 0 h10 m0 0 h10 m32 0 h10 m0 0 h10 m56 0 h10 m0 0 h60 m-362 0 h20 m342 0 h20 m-382 0 q10 0 10 10 m362 0 q0 -10 10 -10 m-372 10 v24 m362 0 v-24 m-362 24 q0 10 10 10 m342 0 q10 0 10 -10 m-352 10 h10 m30 0 h10 m0 0 h10 m104 0 h10 m20 0 h10 m0 0 h118 m-148 0 h20 m128 0 h20 m-168 0 q10 0 10 10 m148 0 q0 -10 10 -10 m-158 10 v12 m148 0 v-12 m-148 12 q0 10 10 10 m128 0 q10 0 10 -10 m-138 10 h10 m32 0 h10 m0 0 h10 m56 0 h10 m43 -76 h-3"/>
+   <polygon points="411 17 419 13 419 21"/>
+   <polygon points="411 17 403 13 403 21"/>
+</svg>

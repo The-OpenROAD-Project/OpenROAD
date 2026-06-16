@@ -29,11 +29,11 @@ def correct_bison_env_for_action(env, bison):
 
     bison_env["BISON_PKGDATADIR"] = bison_env["BISON_PKGDATADIR"].replace(
         bison_runfiles_dir,
-        "external/{}".format(bison.owner.workspace_name),
+        "external/{}".format(bison.owner.workspace_name),  # buildifier: disable=external-path
     )
     bison_env["M4"] = bison_env["M4"].replace(
         bison_runfiles_dir,
-        "{}/external/{}".format(bison.root.path, bison.owner.workspace_name),
+        "{}/external/{}".format(bison.root.path, bison.owner.workspace_name),  # buildifier: disable=external-path
     )
 
     return bison_env

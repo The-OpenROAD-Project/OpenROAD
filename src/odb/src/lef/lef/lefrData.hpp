@@ -42,6 +42,7 @@
 #include "lefiKRDefs.hpp"
 #include "lefiLayer.hpp"
 #include "lefiMacro.hpp"
+#include "lefiMisc.hpp"
 #include "lefiNonDefault.hpp"
 #include "lefiProp.hpp"
 #include "lefiPropType.hpp"

@@ -163,13 +163,22 @@ void PriorityQueue::ChangePriority(
 // The hope is doing this will incentivize in preventing corking effect
 bool PriorityQueue::CompareElementLargeThan(int index_a, int index_b)
 {
-  if (vertices_[index_a]->GetGain() > vertices_[index_b]->GetGain()) {
+  const auto& gain_a = vertices_[index_a];
+  const auto& gain_b = vertices_[index_b];
+  if (gain_a->GetGain() > gain_b->GetGain()) {
     return true;
   }
-  return (
-      (vertices_[index_a]->GetGain() == vertices_[index_b]->GetGain())
-      && (hypergraph_->GetVertexWeights(vertices_[index_a]->GetVertex())
-          < hypergraph_->GetVertexWeights(vertices_[index_b]->GetVertex())));
+  if (gain_a->GetGain() < gain_b->GetGain()) {
+    return false;
+  }
+
+  const auto& weight_a = hypergraph_->GetVertexWeights(gain_a->GetVertex());
+  const auto& weight_b = hypergraph_->GetVertexWeights(gain_b->GetVertex());
+  if (weight_a != weight_b) {
+    return weight_a < weight_b;
+  }
+
+  return gain_a->GetVertex() < gain_b->GetVertex();
 }
 
 // push the element at location index to its ordered location

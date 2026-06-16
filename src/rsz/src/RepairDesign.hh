@@ -216,7 +216,8 @@ class RepairDesign : sta::dbStaState
                     sta::PinSeq& load_pins,
                     float& repeater_cap,
                     float& repeater_fanout,
-                    float& repeater_max_slew);
+                    float& repeater_max_slew,
+                    std::optional<float> load_cap_hint = std::nullopt);
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
@@ -230,7 +231,8 @@ class RepairDesign : sta::dbStaState
                     float& repeater_max_slew,
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
-                    sta::Pin*& repeater_out_pin);
+                    sta::Pin*& repeater_out_pin,
+                    std::optional<float> load_cap_hint = std::nullopt);
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
@@ -239,7 +241,8 @@ class RepairDesign : sta::dbStaState
   void printProgress(int iteration,
                      bool force,
                      bool end,
-                     int repaired_net_count) const;
+                     int repaired_net_count,
+                     int total_vertices) const;
 
   void computeSlewRCFactor();
 
@@ -250,7 +253,7 @@ class RepairDesign : sta::dbStaState
   est::EstimateParasitics* estimate_parasitics_;
   int dbu_ = 0;
   double initial_design_area_ = 0;
-  est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::none;
+  est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::kNone;
 
   // Gain buffering
   std::vector<sta::LibertyCell*> buffer_sizes_;

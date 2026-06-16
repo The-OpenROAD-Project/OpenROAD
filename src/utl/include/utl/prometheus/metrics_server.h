@@ -36,6 +36,7 @@ class PrometheusMetricsServer
   ~PrometheusMetricsServer();
 
   bool is_ready() { return is_ready_; }
+  bool has_startup_failed() { return startup_failed_; }
   uint16_t port() { return port_; }
 
   void SetRegistry(std::shared_ptr<PrometheusRegistry>& new_registry_ptr)
@@ -50,6 +51,7 @@ class PrometheusMetricsServer
   std::atomic<utl::Logger*> logger_;
   bool shutdown_ = false;
   bool is_ready_ = false;
+  bool startup_failed_ = false;
 
   void RunServer();
   void WorkerFunction();

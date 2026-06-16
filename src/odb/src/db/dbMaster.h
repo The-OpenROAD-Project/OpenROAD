@@ -39,7 +39,8 @@ struct dbMasterFlags
   uint32_t mark : 1;
   uint32_t sequential : 1;
   uint32_t special_power : 1;
-  uint32_t spare_bits_19 : 19;
+  uint32_t is_backside_bridge : 1;
+  uint32_t spare_bits_19 : 18;
 };
 
 class _dbMaster : public _dbObject

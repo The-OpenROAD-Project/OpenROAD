@@ -3,7 +3,10 @@
 
 %{
 #include "ifp/InitFloorplan.hh"
+#include "odb/PtrSetMap.h"
 %}
+
+%include "odb/PtrSetMap.h"
 
 %include "../../Exception-py.i"
 
@@ -26,13 +29,13 @@
   const char *str = PyUnicode_AsUTF8AndSize($input, &size);
 
   if (strcasecmp(str, "NONE") == 0) {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   } else if (strcasecmp(str, "EVEN") == 0) {
-    $1 = ifp::RowParity::EVEN;
+    $1 = ifp::RowParity::kEven;
   } else if (strcasecmp(str, "ODD") == 0) {
-    $1 = ifp::RowParity::ODD;
+    $1 = ifp::RowParity::kOdd;
   } else {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   }
 }
 
@@ -42,7 +45,9 @@
 // before these definitions
 namespace std {
   %template(site_list)    std::vector<odb::dbSite*>;
-  %template(site_set)     std::set<odb::dbSite*>;
+  %template(site_set)     std::set<odb::dbSite*, odb::ODBPtrLess>;
 }
+
+%apply const std::set<odb::dbSite*, odb::ODBPtrLess>& { const odb::PtrSet<odb::dbSite>& };
 
 %include "ifp/InitFloorplan.hh"

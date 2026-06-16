@@ -1,5 +1,5 @@
 # Test if the bundled nets inside annealing are correct for a block with
-# two blocked regions for pins and Macro -> IO connections.
+# two available regions for pins and Macro -> IO connections.
 source "helpers.tcl"
 
 read_lef Nangate45/Nangate45.lef
@@ -13,7 +13,7 @@ exclude_io_pin_region -region bottom:* -region left:* \
   -region top:40-150 -region right:40-125
 
 set_thread_count 0
-rtl_macro_placer -report_directory [make_result_dir] -halo_width 4.0
+rtl_macro_placer -report_directory [make_result_dir]
 
 set def_file [make_result_file "io_constraints6.def"]
 write_def $def_file

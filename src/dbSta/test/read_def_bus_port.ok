@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: test_bus_port
+[INFO ODB-0130]     Created 9 pins.
+[INFO ODB-0133]     Created 9 nets and 0 connections.
+port_count: 9
+scalar: kv_write[3][write_en]
+write_entry_count: 5
+write_offset_count: 2
+clk: clk

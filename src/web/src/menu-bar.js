@@ -16,6 +16,8 @@ export function createMenuBar(app) {
             { label: 'Zoom Out', shortcut: 'Shift+Z', action: () => app.map.zoomOut() },
             { type: 'separator' },
             { label: 'Toggle Theme', shortcut: 'T', action: () => app.toggleTheme() },
+            { label: 'Show DBU', action: () => app.toggleShowDbu(),
+              checked: () => app.showDbu },
             { type: 'separator' },
             { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
             { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
@@ -28,6 +30,7 @@ export function createMenuBar(app) {
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
+            { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
@@ -75,6 +78,16 @@ export function createMenuBar(app) {
             // Track items with dynamic enabled state for refresh on open.
             if (item.enabledWhen) row._enabledWhen = item.enabledWhen;
 
+            // Checkmark indicator for toggle items.
+            let checkEl = null;
+            if (item.checked) {
+                checkEl = document.createElement('span');
+                checkEl.className = 'menu-check';
+                checkEl.textContent = item.checked() ? '\u2713' : '';
+                row.appendChild(checkEl);
+                row._checkedFn = item.checked;
+            }
+
             const text = document.createElement('span');
             text.textContent = item.label;
             row.appendChild(text);
@@ -104,6 +117,10 @@ export function createMenuBar(app) {
             for (const row of dropdown.querySelectorAll('.menu-item')) {
                 if (row._enabledWhen) {
                     row.classList.toggle('disabled', !row._enabledWhen());
+                }
+                if (row._checkedFn) {
+                    const check = row.querySelector('.menu-check');
+                    if (check) check.textContent = row._checkedFn() ? '\u2713' : '';
                 }
             }
         }
@@ -310,7 +327,7 @@ function showPathDialog(app, title, tclCmd) {
                 cmd: `${tclCmd} ${path}`,
             });
 
-            if (resp.error) {
+            if (resp.is_error) {
                 errorDiv.textContent = resp.output || resp.result || 'Command failed';
                 errorDiv.style.display = '';
                 okBtn.disabled = false;

@@ -1163,7 +1163,85 @@ proc all_pins_placed { args } {
   return 1
 }
 
+sta::define_cmd_args "add_3dblox_alignment_marker_rule" \
+  {[-lib_a lib_a] -master_a master_a \
+   [-lib_b lib_b] -master_b master_b \
+   [-tolerance tolerance_um] \
+   [-relative_orientations relative_orientations]}
+
+proc add_3dblox_alignment_marker_rule { args } {
+  sta::parse_key_args "add_3dblox_alignment_marker_rule" args \
+    keys {-lib_a -master_a -lib_b -master_b -tolerance -relative_orientations} \
+    flags {}
+  sta::check_argc_eq0 "add_3dblox_alignment_marker_rule" $args
+
+  foreach req {-master_a -master_b} {
+    if { ![info exists keys($req)] } {
+      utl::error ODB 475 "$req is required"
+    }
+  }
+
+  set lib_a ""
+  if { [info exists keys(-lib_a)] } {
+    set lib_a $keys(-lib_a)
+  }
+  set lib_b ""
+  if { [info exists keys(-lib_b)] } {
+    set lib_b $keys(-lib_b)
+  }
+
+  set master_a [odb::resolve_master $keys(-master_a) $lib_a]
+  set master_b [odb::resolve_master $keys(-master_b) $lib_b]
+
+  set rule [odb::dbAlignmentMarkerRule_create $master_a $master_b]
+
+  if { [info exists keys(-tolerance)] } {
+    set tol $keys(-tolerance)
+    sta::check_positive_float "-tolerance" $tol
+    set db [ord::get_db]
+    set tol_dbu [expr { int(round($tol * [$db getDbuPerMicron])) }]
+    $rule setTolerance $tol_dbu
+  }
+
+  if { [info exists keys(-relative_orientations)] } {
+    foreach o $keys(-relative_orientations) {
+      $rule addRelativeOrientation $o
+    }
+  }
+}
+
 namespace eval odb {
+proc resolve_master { cell { lib_name "" } } {
+  set db [ord::get_db]
+  if { $lib_name ne "" } {
+    set lib [$db findLib $lib_name]
+    if { $lib == "NULL" } {
+      utl::error ODB 473 "Library '$lib_name' not found"
+    }
+    set m [$lib findMaster $cell]
+    if { $m == "NULL" } {
+      utl::error ODB 474 "Master '$cell' not found in library '$lib_name'"
+    }
+    return $m
+  }
+  set matches {}
+  foreach lib [$db getLibs] {
+    set m [$lib findMaster $cell]
+    if { $m != "NULL" } {
+      lappend matches [list [$lib getName] $m]
+    }
+  }
+  if { [llength $matches] == 0 } {
+    utl::error ODB 472 "Master '$cell' not found in any library"
+  }
+  if { [llength $matches] > 1 } {
+    set libs [join [lmap p $matches { lindex $p 0 }] ", "]
+    utl::error ODB 412 \
+      "Master '$cell' is ambiguous (found in: $libs). Use -lib_<side>."
+  }
+  return [lindex [lindex $matches 0] 1]
+}
+
 proc add_direction_constraint { dir edge begin end } {
   set block [get_block]
 

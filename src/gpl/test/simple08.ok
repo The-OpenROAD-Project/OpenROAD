@@ -49,7 +49,7 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0028] Bin count (X, Y):          64 ,     64
 [INFO GPL-0029] Bin size (W * H):       0.359 *  0.510 um
 [INFO GPL-0030] Number of bins:                   4096
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

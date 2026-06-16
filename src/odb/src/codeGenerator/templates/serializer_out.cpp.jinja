@@ -18,7 +18,7 @@
         stream << {{field.name}}bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
-          stream << {% if field.table %}*{% endif %}obj.{{field.name}};
+          stream << {% if field.kind.serialize_deref() %}*{% endif %}obj.{{field.name}};
         {% endif %}
       {% endif %}
     {% endfor %}

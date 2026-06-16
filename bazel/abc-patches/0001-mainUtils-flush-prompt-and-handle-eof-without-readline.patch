@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Matt Liberty <mliberty@precisioninno.com>
+Date: Fri, 30 May 2026 00:00:00 +0000
+Subject: [PATCH] mainUtils: match readline behavior when ABC_USE_READLINE is
+ undefined
+
+The non-readline branch of Abc_UtilsGetUsersInput has three behavioral
+gaps versus the readline branch that break callers driving abc as a
+coprocess over a pipe (e.g. yosys's techmap/abc.cc, which waits for the
+"abc NN> " prompt with the source command echoed back via
+read_until_abc_done()):
+
+  1. The prompt is written with fprintf() but never flushed. With stdout
+     fully buffered (pipe), the prompt never reaches the reader; the
+     reader waits for the prompt, abc waits in fgets(), deadlock.
+
+  2. There is no echo of the line read from stdin. readline() displays
+     each character as it is typed (and on a pipe, readline's stream
+     handling still emits the line + newline to its output). Without
+     that, yosys never sees the "abc NN> source ..." pattern it requires
+     to advance state.
+
+  3. EOF on stdin is silently ignored: fgets() returns NULL, the
+     function returns a stale Prompt buffer, and the caller loops. The
+     readline branch exits(0) when readline() returns NULL.
+
+Fix all three. Echo only when stdin is not a tty -- on a tty the kernel
+already echoes typed characters, and double-echo would be visible.
+
+Upstreaming to YosysHQ/abc and berkeley-abc/abc.
+
+Signed-off-by: Matt Liberty <mliberty@precisioninno.com>
+---
+ src/base/main/mainUtils.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/base/main/mainUtils.c b/src/base/main/mainUtils.c
+--- a/src/base/main/mainUtils.c
++++ b/src/base/main/mainUtils.c
+@@ -18,6 +18,8 @@
+
+ ***********************************************************************/
+
++#include <unistd.h>
++
+ #include "base/abc/abc.h"
+ #include "mainInt.h"
+
+@@ -91,7 +93,13 @@
+     {
+     char * pRetValue;
+     fprintf( pAbc->Out, "%s", Prompt );
++    fflush( pAbc->Out );
+     pRetValue = fgets( Prompt, 5000, stdin );
++    if ( pRetValue == NULL ) { exit(0); }
++    if ( !isatty( fileno(stdin) ) ) {
++        fputs( Prompt, pAbc->Out );
++        fflush( pAbc->Out );
++    }
+     return Prompt;
+     }
+ #endif

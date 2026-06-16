@@ -52,11 +52,12 @@ class TestManTclCheck(unittest.TestCase):
                 continue
             tool_dir = os.path.dirname(path)
             with open(path) as f:
-                results = [x for x in extract_tcl_code(f.read()) if "gui::" not in x]
+                results = [
+                    x
+                    for x in extract_tcl_code(f.read())
+                    if "gui::" not in x and "utl::" not in x
+                ]
             readme_dict[tool_dir] = len(results)
-            # for pad, remove make_fake_io_site because it is a hidden cmd arg
-            if "pad" in tool_dir:
-                readme_dict[tool_dir] -= 1
 
         for tool_dir in help_dict:
             h = help_dict[tool_dir]
@@ -67,13 +68,10 @@ class TestManTclCheck(unittest.TestCase):
                 p,
                 f"{tool_dir}: help count ({h}) != proc count ({p})",
             )
-            # README may document commands from other modules, so
-            # only require that all code commands are documented (h <= r).
-            self.assertLessEqual(
+            self.assertEqual(
                 h,
                 r,
-                f"{tool_dir}: help count ({h}) > readme count ({r})"
-                " — undocumented commands",
+                f"{tool_dir}: help count ({h}) != readme count ({r})",
             )
 
 

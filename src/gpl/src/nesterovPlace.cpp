@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -207,7 +208,7 @@ void NesterovPlace::init()
 
     // bin, FFT, wlen update with prevSLPCoordi.
     nb->updateDensityCenterPrevSLP();
-    nb->updateDensityForceBin();
+    nb->updateDensityFieldBin();
   }
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
@@ -276,9 +277,11 @@ void NesterovPlace::updateIterGraphics(
     int timing_driven_count,
     bool& final_routability_image_saved)
 {
-  if (!graphics_ || !graphics_->enabled()) {
+  if (!graphics_ || !graphics_->enabled() || !npVars_.debug) {
     return;
   }
+
+  graphics_->addIter(iter, average_overflow_unscaled_);
 
   // For JPEG Saving
   updateDb();
@@ -292,11 +295,6 @@ void NesterovPlace::updateIterGraphics(
     rb_->updateRudyAverage(/*verbose=*/false);
   }
 
-  graphics_->addIter(iter, average_overflow_unscaled_);
-
-  if (!npVars_.debug) {
-    return;
-  }
   int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
     bool update
@@ -438,7 +436,11 @@ void NesterovPlace::runTimingDriven(int iter,
       nb_gcells_before_td += nb->getGCells().size();
     }
 
-    bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    bool enable_repair_timing = npVars_.timingDrivenIterCounter
+                                == tb_->getTimingNetWeightOverflowSize();
+
+    bool shouldTdProceed
+        = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
@@ -1263,7 +1265,7 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
     if (!found_nb) {
       log_->warn(
           GPL,
-          8,
+          85,
           "Unable to find NesterovBase for group ({}) to insert instance ({}).",
           group->getName(),
           db_inst->getName());

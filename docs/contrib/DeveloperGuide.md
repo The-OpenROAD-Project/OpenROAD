@@ -305,6 +305,23 @@ ln -sf build/compile_commands.json .  # make compilation db visible
 /bin/sh etc/run-clang-tidy-cached.cc
 ```
 
+Alternatively, you can run `clang-tidy` hermetically through Bazel — no
+cmake configuration or Clang Tooling setup is required, and the toolchain
+matches what CI will use:
+
+```shell
+# Single module:
+bazel build --config=lint //src/<module>/...
+
+# Full lint scope (excludes upstream submodules):
+bazel build --config=lint -- //src/... //third-party/... \
+    -//src/sta/... -//third-party/abc/...
+```
+
+Reports land under `bazel-bin/<pkg>/<target>_rules_lint/` as
+`*.AspectRulesLintClangTidy.out` files. Generated files (SWIG, bison, flex)
+and targets tagged `no-lint` are skipped automatically.
+
 ## Doxygen
 
 OpenROAD uses Doxygen style comments to generate documentation.

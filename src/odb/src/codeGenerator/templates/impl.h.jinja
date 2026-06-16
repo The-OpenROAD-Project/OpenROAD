@@ -62,7 +62,7 @@ namespace odb {
       {% if field.comment %}
         {{field.comment}}
       {% endif %}
-      {{field.type}} {{field.name}};
+      {{field.member_decl}} {{field.name}};
     {% endfor %}
 
     // User Code Begin Fields

@@ -1,5 +1,7 @@
+#include <map>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "helper.h"
@@ -433,6 +435,147 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   // Verify the reverse link is also consistent
   EXPECT_EQ(bump->getBTerm(), sig1);
   EXPECT_EQ(bump->getChipRegion(), region);
+}
+
+// ---------------------------------------------------------------------------
+// Path Assertion Parser Tests
+// ---------------------------------------------------------------------------
+
+class PathAssertionFixture : public tst::Fixture
+{
+ protected:
+  ThreeDBlox parser_{&logger_, db_.get()};
+};
+
+TEST_F(PathAssertionFixture, test_path_assertions_from_file)
+{
+  std::string path = getFilePath(prefix + "data/path_assertions.3dbx");
+  parser_.readDbx(path);
+
+  dbChip* chip = db_->findChip("TopDesign");
+  ASSERT_NE(chip, nullptr);
+  auto chip_paths = chip->getChipPaths();
+  ASSERT_EQ(chip_paths.size(), 2);
+
+  // Build a map for lookup by name
+  std::map<std::string, dbChipPath*> paths_by_name;
+  for (auto* p : chip_paths) {
+    paths_by_name[p->getName()] = p;
+  }
+
+  // Path1: 3 entries, one negated
+  ASSERT_EQ(paths_by_name.count("Path1"), 1u);
+  const std::vector<dbChipPath::Entry> e1
+      = paths_by_name["Path1"]->getEntries();
+  ASSERT_EQ(e1.size(), 3u);
+  ASSERT_NE(e1[0].region, nullptr);
+  ASSERT_EQ(e1[0].chip_inst_path.size(), 1u);
+  EXPECT_EQ(e1[0].chip_inst_path[0]->getName(), "soc_inst");
+  EXPECT_EQ(e1[0].region->getChipRegion()->getName(), "front_reg");
+  EXPECT_FALSE(e1[0].negated);
+  ASSERT_NE(e1[1].region, nullptr);
+  ASSERT_EQ(e1[1].chip_inst_path.size(), 1u);
+  EXPECT_EQ(e1[1].chip_inst_path[0]->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e1[1].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_TRUE(e1[1].negated);
+  ASSERT_NE(e1[2].region, nullptr);
+  ASSERT_EQ(e1[2].chip_inst_path.size(), 1u);
+  EXPECT_EQ(e1[2].chip_inst_path[0]->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e1[2].region->getChipRegion()->getName(), "front_reg");
+  EXPECT_FALSE(e1[2].negated);
+
+  // Path2: 2 entries, none negated
+  ASSERT_EQ(paths_by_name.count("Path2"), 1u);
+  const std::vector<dbChipPath::Entry> e2
+      = paths_by_name["Path2"]->getEntries();
+  ASSERT_EQ(e2.size(), 2u);
+  ASSERT_NE(e2[0].region, nullptr);
+  ASSERT_EQ(e2[0].chip_inst_path.size(), 1u);
+  EXPECT_EQ(e2[0].chip_inst_path[0]->getName(), "soc_inst");
+  EXPECT_EQ(e2[0].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_FALSE(e2[0].negated);
+  ASSERT_NE(e2[1].region, nullptr);
+  ASSERT_EQ(e2[1].chip_inst_path.size(), 1u);
+  EXPECT_EQ(e2[1].chip_inst_path[0]->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e2[1].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_FALSE(e2[1].negated);
+}
+
+TEST_F(PathAssertionFixture, test_path_assertions_no_path_block)
+{
+  std::string path = getFilePath(prefix + "data/example.3dbx");
+  parser_.readDbx(path);
+
+  dbChip* chip = db_->findChip("TopDesign");
+  ASSERT_NE(chip, nullptr);
+  EXPECT_EQ(chip->getChipPaths().size(), 0u);
+}
+
+// Test that chip_inst_path correctly disambiguates the same
+// dbChipRegionInst in a folded model with multiple hierarchy levels.
+//
+// Hierarchy:
+//   TopDesign (HIER)
+//     ├── hier1 (SubHier, HIER)
+//     │     └── die_inst (LeafChip, DIE) → region r1
+//     └── hier2 (SubHier, HIER)
+//           └── die_inst (LeafChip, DIE) → region r1
+//
+// hier1/die_inst and hier2/die_inst share the same dbChipRegionInst
+// for r1, so chip_inst_path is required to distinguish them.
+TEST_F(PathAssertionFixture, test_path_assertions_folded_model)
+{
+  // Build hierarchy programmatically
+  dbTech* tech = dbTech::create(db_.get(), "test_tech");
+  dbChip* leaf_chip
+      = dbChip::create(db_.get(), tech, "LeafChip", dbChip::ChipType::DIE);
+  ASSERT_NE(leaf_chip, nullptr);
+  leaf_chip->setWidth(100);
+  leaf_chip->setHeight(100);
+  leaf_chip->setThickness(50);
+  dbChipRegion::create(leaf_chip, "r1", dbChipRegion::Side::FRONT, nullptr);
+
+  dbChip* sub_hier
+      = dbChip::create(db_.get(), nullptr, "SubHier", dbChip::ChipType::HIER);
+  ASSERT_NE(sub_hier, nullptr);
+  dbChipInst* die_inst = dbChipInst::create(sub_hier, leaf_chip, "die_inst");
+  ASSERT_NE(die_inst, nullptr);
+
+  dbChip* top
+      = dbChip::create(db_.get(), nullptr, "Top", dbChip::ChipType::HIER);
+  ASSERT_NE(top, nullptr);
+  dbChipInst* hier1 = dbChipInst::create(top, sub_hier, "hier1");
+  dbChipInst* hier2 = dbChipInst::create(top, sub_hier, "hier2");
+  ASSERT_NE(hier1, nullptr);
+  ASSERT_NE(hier2, nullptr);
+
+  // Both hier1/die_inst and hier2/die_inst share the same dbChipRegionInst
+  dbChipRegionInst* region_inst = die_inst->findChipRegionInst("r1");
+  ASSERT_NE(region_inst, nullptr);
+
+  // Create a path assertion with entries for both hierarchical paths
+  dbChipPath* chip_path = dbChipPath::create(top, "Path1");
+  chip_path->addEntry({hier1, die_inst}, region_inst, false);
+  chip_path->addEntry({hier2, die_inst}, region_inst, true);
+
+  // Verify entries
+  std::vector<dbChipPath::Entry> entries = chip_path->getEntries();
+  ASSERT_EQ(entries.size(), 2u);
+
+  // Both entries point to the same region inst (folded model)
+  EXPECT_EQ(entries[0].region, entries[1].region);
+  EXPECT_EQ(entries[0].region, region_inst);
+
+  // But they have different chip_inst_path to disambiguate
+  ASSERT_EQ(entries[0].chip_inst_path.size(), 2u);
+  EXPECT_EQ(entries[0].chip_inst_path[0]->getName(), "hier1");
+  EXPECT_EQ(entries[0].chip_inst_path[1]->getName(), "die_inst");
+  EXPECT_FALSE(entries[0].negated);
+
+  ASSERT_EQ(entries[1].chip_inst_path.size(), 2u);
+  EXPECT_EQ(entries[1].chip_inst_path[0]->getName(), "hier2");
+  EXPECT_EQ(entries[1].chip_inst_path[1]->getName(), "die_inst");
+  EXPECT_TRUE(entries[1].negated);
 }
 
 }  // namespace

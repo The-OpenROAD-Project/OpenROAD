@@ -33,10 +33,18 @@
 #include <cstdarg>
 #include <cstdio>
 
+#include "lefiArray.hpp"
+#include "lefiCrossTalk.hpp"
 #include "lefiDefs.hpp"
 #include "lefiKRDefs.hpp"
+#include "lefiLayer.hpp"
+#include "lefiMacro.hpp"
+#include "lefiNonDefault.hpp"
+#include "lefiProp.hpp"
+#include "lefiUnits.hpp"
 #include "lefiUser.hpp"
 #include "lefiUtil.hpp"
+#include "lefiViaRule.hpp"
 
 inline constexpr int MAX_LEF_MSGS = 4701;
 

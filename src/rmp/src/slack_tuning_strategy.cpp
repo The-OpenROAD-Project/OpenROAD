@@ -39,19 +39,19 @@ std::string SolutionSlack::toString() const
     return "[]";
   }
 
-  std::ostringstream resStream;
-  resStream << '[' << std::to_string(solution_.front().id);
+  std::ostringstream res_stream;
+  res_stream << '[' << std::to_string(solution_.front().id);
   for (int i = 1; i < solution_.size(); i++) {
-    resStream << ", " << std::to_string(solution_[i].id);
+    res_stream << ", " << std::to_string(solution_[i].id);
   }
-  resStream << "], worst slack: ";
+  res_stream << "], worst slack: ";
 
   if (worst_slack_) {
-    resStream << *worst_slack_;
+    res_stream << *worst_slack_;
   } else {
-    resStream << "not computed";
+    res_stream << "not computed";
   }
-  return resStream.str();
+  return res_stream.str();
 }
 
 SolutionSlack::ResultOps SolutionSlack::RandomNeighbor(

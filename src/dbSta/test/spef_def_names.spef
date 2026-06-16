@@ -1,0 +1,68 @@
+*SPEF "IEEE 1481-1998"
+*DESIGN "top"
+*DATE "Mon Jan 1 00:00:00 2026"
+*VENDOR "synthetic"
+*PROGRAM "spef_def_names"
+*VERSION "1.0"
+*DESIGN_FLOW "MISSING_NETS"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER [ ]
+*T_UNIT 1.0 PS
+*C_UNIT 1.0 PF
+*R_UNIT 1.0 OHM
+*L_UNIT 1.0 HENRY
+
+*PORTS
+in I
+out O
+
+*D_NET in 0.300
+*CONN
+*P in I
+*I b_plain:A I *L .003
+*I cts\/leaf_buf:A I *L .003
+*I bus\[0\]:A I *L .003
+*CAP
+1 in 0.10
+2 b_plain:A 0.05
+3 cts\/leaf_buf:A 0.05
+4 bus\[0\]:A 0.05
+*RES
+5 in b_plain:A 50
+6 in cts\/leaf_buf:A 50
+7 in bus\[0\]:A 50
+*END
+
+*D_NET n_plain 0.250
+*CONN
+*I b_plain:Z O
+*I b_sink_a:A I *L .003
+*CAP
+1 b_plain:Z 0.10
+2 b_sink_a:A 0.05
+*RES
+3 b_plain:Z b_sink_a:A 50
+*END
+
+*D_NET cts\/leaf_net 0.250
+*CONN
+*I cts\/leaf_buf:Z O
+*I b_sink_b:A I *L .003
+*CAP
+1 cts\/leaf_buf:Z 0.10
+2 b_sink_b:A 0.05
+*RES
+3 cts\/leaf_buf:Z b_sink_b:A 50
+*END
+
+*D_NET bus_n\[0\] 0.250
+*CONN
+*I bus\[0\]:Z O
+*I b_sink_c:A I *L .003
+*CAP
+1 bus\[0\]:Z 0.10
+2 b_sink_c:A 0.05
+*RES
+3 bus\[0\]:Z b_sink_c:A 50
+*END

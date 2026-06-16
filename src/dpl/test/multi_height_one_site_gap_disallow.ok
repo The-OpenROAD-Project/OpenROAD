@@ -5,7 +5,9 @@
 [INFO ODB-0131]     Created 3 components and 15 component-terminals.
 [INFO ODB-0133]     Created 6 nets and 0 connections.
 [WARNING DPL-0003] -disallow_one_site_gaps is deprecated
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 54.26 um^2, Instances area: 6.38 um^2, Utilization: 11.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                       3

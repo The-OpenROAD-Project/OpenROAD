@@ -54,7 +54,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
@@ -85,9 +85,8 @@ cc_library(
         ":stt",
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
-        "@boost.multi_array",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -142,5 +141,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/stt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/stt/test:__pkg__",
+    ],
 )

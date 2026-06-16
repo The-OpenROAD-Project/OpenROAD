@@ -3,9 +3,12 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "int",
+      "type": "int64_t",
       "default": "0",
-      "name": "area_"
+      "name": "area_",
+      "flags": [
+        "custom-serial"
+      ]
     },
     {
       "type": "int",

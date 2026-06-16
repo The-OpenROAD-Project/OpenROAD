@@ -220,9 +220,10 @@ repair_timing
     [-libraries libs]
     [-allow_setup_violations]
     [-sequence]
+    [-phases]
     [-skip_pin_swap]
     [-skip_gate_cloning]
-    [-skip_size_down]
+    [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_last_gasp]
@@ -248,10 +249,11 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,vt_swap,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
+| `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
-| `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
+| `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
@@ -485,6 +487,30 @@ report_buffers
 | ----- | ----- |
 | `-filtered` | Report buffers after filtering based on threshold voltage, cell footprint, drive strength and cell site.  Subset of filtered buffers are used for rebuffering. |
 
+### Reporting Delay Estimator Accuracy
+
+The `report_delay_estimator_accuracy` command compares a delay
+estimator's predictions against the reference STA delay for a candidate
+library cell at the given instance.  It is intended as a developer aid
+for evaluating estimator accuracy when sizing.
+
+```tcl
+report_delay_estimator_accuracy
+    -inst instance
+    -lib_cell lib_cell
+    -estimator estimator
+    [-delay_levels level]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
+| `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
+| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
+
 ### Optimizing Arithmetic Modules
 
 The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing models.
@@ -638,6 +664,53 @@ Simply run the following script:
 ```
 
 ## Limitations
+
+## Using the Python interface to rsz
+
+```{warning}
+The `Python` interface is currently in development and is subject to change.
+```
+
+The `Python` API tries to stay close to the API defined in the `C++` class
+`Resizer` that is located [here](./include/rsz/Resizer.hh).
+
+When initializing a design, a sequence of `Python` commands might look like
+the following:
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLiberty("my_lib.lib")
+tech.readLef("my_tech.lef")
+
+design = Design(tech)
+design.readDef("my_design.def")
+
+resizer = design.getResizer()
+```
+
+Here are some common operations on the `Resizer` object:
+
+```python
+resizer.setMaxUtilization(0.8)
+resizer.bufferInputs(None, False)
+resizer.bufferOutputs(None, False)
+resizer.repairDesign(0.0, 0.0, 0.0, 0.0, False, False)
+resizer.repairClkNets(0.0)
+resizer.repairClkInverters()
+resizer.repairHold(0.0, 0.0, False, 0.2, 10000, -1, False, False)
+resizer.eliminateDeadLogic(True)
+resizer.reportLongWires(10, 2)
+resizer.reportDontUse()
+resizer.reportDontTouch()
+```
+
+There are also some useful `Python` functions located in the
+[`rsz_aux.py`](./test/rsz_aux.py) file that provide Pythonic keyword-argument
+wrappers with unit conversions (microns → metres, nanoseconds → seconds,
+percentages → fractions), but these are not considered part of the *final*
+API and may be subject to change.
 
 ## FAQs
 

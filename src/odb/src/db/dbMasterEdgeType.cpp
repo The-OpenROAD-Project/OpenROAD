@@ -81,9 +81,7 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["edge_type"].add(edge_type_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -99,7 +97,7 @@ void dbMasterEdgeType::setEdgeType(const std::string& edge_type)
   obj->edge_type_ = edge_type;
 }
 
-std::string dbMasterEdgeType::getEdgeType() const
+const std::string& dbMasterEdgeType::getEdgeType() const
 {
   _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
   return obj->edge_type_;

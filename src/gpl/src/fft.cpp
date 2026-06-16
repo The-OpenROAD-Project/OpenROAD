@@ -12,128 +12,129 @@
 
 namespace gpl {
 
-FFT::FFT(int binCntX, int binCntY, float binSizeX, float binSizeY)
-    : binCntX_(binCntX),
-      binCntY_(binCntY),
-      binSizeX_(binSizeX),
-      binSizeY_(binSizeY)
+FFT::FFT(int bin_cnt_x, int bin_cnt_y, float bin_size_x, float bin_size_y)
+    : bin_cnt_X_(bin_cnt_x),
+      bin_cnt_y_(bin_cnt_y),
+      bin_size_x_(bin_size_x),
+      bin_size_y_(bin_size_y)
 {
-  binDensity_ = new float*[binCntX_];
-  electroPhi_ = new float*[binCntX_];
-  electroForceX_ = new float*[binCntX_];
-  electroForceY_ = new float*[binCntX_];
+  bin_density_ = new float*[bin_cnt_X_];
+  electro_phi_ = new float*[bin_cnt_X_];
+  electro_field_x_ = new float*[bin_cnt_X_];
+  electro_field_y_ = new float*[bin_cnt_X_];
 
-  for (int i = 0; i < binCntX_; i++) {
-    binDensity_[i] = new float[binCntY_];
-    electroPhi_[i] = new float[binCntY_];
-    electroForceX_[i] = new float[binCntY_];
-    electroForceY_[i] = new float[binCntY_];
+  for (int i = 0; i < bin_cnt_X_; i++) {
+    bin_density_[i] = new float[bin_cnt_y_];
+    electro_phi_[i] = new float[bin_cnt_y_];
+    electro_field_x_[i] = new float[bin_cnt_y_];
+    electro_field_y_[i] = new float[bin_cnt_y_];
 
-    for (int j = 0; j < binCntY_; j++) {
-      binDensity_[i][j] = electroPhi_[i][j] = electroForceX_[i][j]
-          = electroForceY_[i][j] = 0.0f;
+    for (int j = 0; j < bin_cnt_y_; j++) {
+      bin_density_[i][j] = electro_phi_[i][j] = electro_field_x_[i][j]
+          = electro_field_y_[i][j] = 0.0f;
     }
   }
 
-  csTable_.resize(std::max(binCntX_, binCntY_) * 3 / 2, 0);
+  cs_table_.resize(std::max(bin_cnt_X_, bin_cnt_y_) * 3 / 2, 0);
 
-  wx_.resize(binCntX_, 0);
-  wxSquare_.resize(binCntX_, 0);
-  wy_.resize(binCntY_, 0);
-  wySquare_.resize(binCntY_, 0);
+  wx_.resize(bin_cnt_X_, 0);
+  wx_square_.resize(bin_cnt_X_, 0);
+  wy_.resize(bin_cnt_y_, 0);
+  wy_square_.resize(bin_cnt_y_, 0);
 
-  workArea_.resize(round(sqrt(std::max(binCntX_, binCntY_))) + 2, 0);
+  work_area_.resize(round(sqrt(std::max(bin_cnt_X_, bin_cnt_y_))) + 2, 0);
 
   constexpr auto kPi = std::numbers::pi_v<long double>;
 
-  for (int i = 0; i < binCntX_; i++) {
-    wx_[i] = kPi * static_cast<float>(i) / static_cast<float>(binCntX_);
-    wxSquare_[i] = wx_[i] * wx_[i];
+  for (int i = 0; i < bin_cnt_X_; i++) {
+    wx_[i] = kPi * static_cast<float>(i) / static_cast<float>(bin_cnt_X_);
+    wx_square_[i] = wx_[i] * wx_[i];
   }
 
-  for (int i = 0; i < binCntY_; i++) {
-    wy_[i] = kPi * static_cast<float>(i) / static_cast<float>(binCntY_)
-             * binSizeY_ / binSizeX_;
-    wySquare_[i] = wy_[i] * wy_[i];
+  for (int i = 0; i < bin_cnt_y_; i++) {
+    wy_[i] = kPi * static_cast<float>(i) / static_cast<float>(bin_cnt_y_)
+             * bin_size_y_ / bin_size_x_;
+    wy_square_[i] = wy_[i] * wy_[i];
   }
 }
 
 FFT::~FFT()
 {
   using std::vector;
-  for (int i = 0; i < binCntX_; i++) {
-    delete[] binDensity_[i];
-    delete[] electroPhi_[i];
-    delete[] electroForceX_[i];
-    delete[] electroForceY_[i];
+  for (int i = 0; i < bin_cnt_X_; i++) {
+    delete[] bin_density_[i];
+    delete[] electro_phi_[i];
+    delete[] electro_field_x_[i];
+    delete[] electro_field_y_[i];
   }
-  delete[] binDensity_;
-  delete[] electroPhi_;
-  delete[] electroForceX_;
-  delete[] electroForceY_;
+  delete[] bin_density_;
+  delete[] electro_phi_;
+  delete[] electro_field_x_;
+  delete[] electro_field_y_;
 
-  csTable_.clear();
+  cs_table_.clear();
   wx_.clear();
-  wxSquare_.clear();
+  wx_square_.clear();
   wy_.clear();
-  wySquare_.clear();
+  wy_square_.clear();
 
-  workArea_.clear();
+  work_area_.clear();
 }
 
 void FFT::updateDensity(int x, int y, float density)
 {
-  binDensity_[x][y] = density;
+  bin_density_[x][y] = density;
 }
 
-std::pair<float, float> FFT::getElectroForce(int x, int y) const
+std::pair<float, float> FFT::getElectroField(int x, int y) const
 {
-  return std::make_pair(electroForceX_[x][y], electroForceY_[x][y]);
+  return std::make_pair(electro_field_x_[x][y], electro_field_y_[x][y]);
 }
 
 float FFT::getElectroPhi(int x, int y) const
 {
-  return electroPhi_[x][y];
+  return electro_phi_[x][y];
 }
 
 void FFT::doFFT()
 {
-  ddct2d(binCntX_,
-         binCntY_,
+  ddct2d(bin_cnt_X_,
+         bin_cnt_y_,
          -1,
-         binDensity_,
+         bin_density_,
          nullptr,
-         workArea_.data(),
-         csTable_.data());
+         work_area_.data(),
+         cs_table_.data());
 
-  for (int i = 0; i < binCntX_; i++) {
-    binDensity_[i][0] *= 0.5;
+  // Normalizations required to perform the inverse operation
+  for (int i = 1; i < bin_cnt_X_; i++) {
+    bin_density_[i][0] *= 0.5;
   }
-
-  for (int i = 0; i < binCntY_; i++) {
-    binDensity_[0][i] *= 0.5;
+  for (int i = 1; i < bin_cnt_y_; i++) {
+    bin_density_[0][i] *= 0.5;
   }
-
-  for (int i = 0; i < binCntX_; i++) {
-    for (int j = 0; j < binCntY_; j++) {
-      binDensity_[i][j] *= 4.0 / binCntX_ / binCntY_;
+  for (int i = 0; i < bin_cnt_X_; i++) {
+    for (int j = 0; j < bin_cnt_y_; j++) {
+      bin_density_[i][j] *= 4.0 / bin_cnt_X_ / bin_cnt_y_;
     }
   }
 
-  for (int i = 0; i < binCntX_; i++) {
+  // Solve the PDE in the new basis
+  for (int i = 0; i < bin_cnt_X_; i++) {
     float wx = wx_[i];
-    float wx2 = wxSquare_[i];
+    float wx2 = wx_square_[i];
 
-    for (int j = 0; j < binCntY_; j++) {
+    for (int j = 0; j < bin_cnt_y_; j++) {
       float wy = wy_[j];
-      float wy2 = wySquare_[j];
+      float wy2 = wy_square_[j];
 
-      float density = binDensity_[i][j];
+      float density = bin_density_[i][j];
       float phi = 0;
-      float electroX = 0, electroY = 0;
+      float electro_x = 0, electro_y = 0;
 
       if (i == 0 && j == 0) {
-        phi = electroX = electroY = 0.0f;
+        // Removes the DC component
+        phi = electro_x = electro_y = 0.0f;
       } else {
         //////////// lutong
         //  denom =
@@ -147,36 +148,38 @@ void FFT::doFFT()
         // a_ey = a_phi * wy / 2.0 ;
         ///////////
         phi = density / (wx2 + wy2);
-        electroX = phi * wx;
-        electroY = phi * wy;
+        electro_x = phi * wx;
+        electro_y = phi * wy;
       }
-      electroPhi_[i][j] = phi;
-      electroForceX_[i][j] = electroX;
-      electroForceY_[i][j] = electroY;
+
+      electro_phi_[i][j] = phi;
+      electro_field_x_[i][j] = electro_x;
+      electro_field_y_[i][j] = electro_y;
     }
   }
+
   // Inverse DCT
-  ddct2d(binCntX_,
-         binCntY_,
+  ddct2d(bin_cnt_X_,
+         bin_cnt_y_,
          1,
-         electroPhi_,
+         electro_phi_,
          nullptr,
-         workArea_.data(),
-         csTable_.data());
-  ddsct2d(binCntX_,
-          binCntY_,
+         work_area_.data(),
+         cs_table_.data());
+  ddsct2d(bin_cnt_X_,
+          bin_cnt_y_,
           1,
-          electroForceX_,
+          electro_field_x_,
           nullptr,
-          workArea_.data(),
-          csTable_.data());
-  ddcst2d(binCntX_,
-          binCntY_,
+          work_area_.data(),
+          cs_table_.data());
+  ddcst2d(bin_cnt_X_,
+          bin_cnt_y_,
           1,
-          electroForceY_,
+          electro_field_y_,
           nullptr,
-          workArea_.data(),
-          csTable_.data());
+          work_area_.data(),
+          cs_table_.data());
 }
 
 }  // namespace gpl

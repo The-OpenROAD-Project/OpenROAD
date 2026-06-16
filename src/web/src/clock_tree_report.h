@@ -21,15 +21,15 @@ struct ClockTreeNode
 
   enum Type
   {
-    ROOT,
-    BUFFER,
-    INVERTER,
-    CLOCK_GATE,
-    REGISTER,
-    MACRO,
-    UNKNOWN
+    kRoot,
+    kBuffer,
+    kInverter,
+    kClockGate,
+    kRegister,
+    kMacro,
+    kUnknown
   };
-  Type type = UNKNOWN;
+  Type type = kUnknown;
 
   float arrival = 0.0f;  // input arrival (user time units)
   float delay = 0.0f;    // cell delay (user time units)

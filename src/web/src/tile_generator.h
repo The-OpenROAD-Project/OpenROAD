@@ -4,18 +4,27 @@
 #pragma once
 
 #include <any>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/json/object.hpp"
 #include "color.h"
+#include "glyph_cache.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "web_painter.h"
 
 namespace sta {
 class dbSta;
@@ -37,7 +46,9 @@ struct ColoredRect
 {
   odb::Rect rect;
   Color color;
-  std::string layer;  // empty = draw on all layers
+  std::string layer;    // empty = draw on all layers
+  bool filled = false;  // true = filled rect + outline (DRC markers)
+                        // false = centerline (timing paths)
 };
 
 struct FlightLine
@@ -51,9 +62,71 @@ struct SelectionResult
 {
   std::any object;  // dbInst*, dbNet*, etc.
   std::string name;
-  std::string type_name;  // "Inst", "Net", etc.
+  std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
+  // Fast-path tag for sort/count.  type_name is a string so `selectAt`
+  // can serialize it later, but the sort comparator runs on every
+  // result pair — comparing two short strings ("Inst" / "Net") per
+  // comparison adds up.  `is_inst` is set alongside type_name and
+  // dominates the sort.
+  bool is_inst = false;
 };
+
+// One node in the chiplet tree rooted at db->getChip().  The root has
+// inst==nullptr and an identity world_xfm; descendants accumulate
+// dbChipInst transforms top-down.  See collectChiplets().
+struct ChipletNode
+{
+  odb::dbChip* chip = nullptr;
+  odb::dbBlock* block = nullptr;    // chip->getBlock()
+  odb::dbChipInst* inst = nullptr;  // null for root
+  odb::dbTransform world_xfm;       // local-to-root transform
+  std::string path;                 // "top.soc_inst.subip" — unique
+  std::string parent_path;          // path of the parent ("" for the root)
+  std::string name;                 // "top" or inst->getName()
+  int depth = 0;
+  int global_z = 0;
+};
+
+// Walk the dbChip → dbChipInst → masterChip hierarchy depth-first and
+// return a flat list with each chiplet's accumulated world transform.
+// Related Qt code: `LayoutViewer::getChips()` returns a flat
+// (dbChipInst → dbChip) PtrMap with no transform composition — this
+// function additionally accumulates `dbTransform`s top-down and assigns
+// stable hierarchical paths so the web renderer can place each chiplet.
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
+
+// Coarse instance category, derived once per inst and reused by both
+// isInstVisible and isInstSelectable so the two stay in lock-step.
+enum class InstCategory
+{
+  kStdCells,
+  kMacros,
+  kPadInput,
+  kPadOutput,
+  kPadInout,
+  kPadPower,
+  kPadSpacer,
+  kPadAreaIO,
+  kPadOther,
+  kPhysEndcap,
+  kPhysFill,
+  kPhysWelltap,
+  kPhysTie,
+  kPhysAntenna,
+  kPhysCover,
+  kPhysBump,
+  kPhysOther,
+  kStdBufInv,
+  kStdBufInvTiming,
+  kStdClockBufInv,
+  kStdClockGate,
+  kStdLevelShift,
+  kStdSequential,
+  kStdCombinational,
+};
+
+InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
 
 struct TileVisibility
 {
@@ -98,11 +171,22 @@ struct TileVisibility
   bool net_scan = true;
   bool net_analog = true;
 
-  // Shapes
-  bool routing = true;
-  bool special_nets = true;
-  bool pins = true;
+  // Shapes — routing sub-types
+  bool routing = true;            // parent flag (kept for backward compat)
+  bool routing_segments = true;   // regular wire segments
+  bool routing_vias = true;       // regular vias
+  bool special_nets = true;       // parent flag (kept for backward compat)
+  bool srouting_segments = true;  // special-net segments/straps
+  bool srouting_vias = true;      // special-net vias
+  bool pins = true;               // BTerm (IO pin) shapes on tech layers
+  bool pin_markers = true;        // BTerm direction markers on _pins layer
+  bool pin_names = true;          // BTerm name labels on _pins layer
   bool blockages = true;
+
+  // Instance sub-shapes
+  bool inst_names = true;      // Instance name labels on _instances layer
+  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
+  bool inst_pin_names = true;  // ITerm name labels
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -110,7 +194,9 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json_;  // stored for dynamic per-site lookups
+  // Per-site visibility, populated from any "site_<name>" int keys in the
+  // payload during parseFromJson().
+  std::unordered_map<std::string, bool> sites;
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)
@@ -120,10 +206,97 @@ struct TileVisibility
   // Debug
   bool debug = false;
 
-  void parseFromJson(const std::string& json);
+  // When true the tile renderer iterates gui::Gui::renderers() and
+  // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
+  // graphics overlay.  Off by default so tiles stay cheap.
+  bool debug_renderers = false;
+
+  // When debug_renderers is on, normally the overlay only renders while
+  // the placer is paused (avoids racing against mutating renderer state).
+  // Setting debug_live=true opts in to non-blocking streaming: the
+  // overlay renders every frame even when not paused, accepting the
+  // occasional inconsistency for smoother visualization.
+  bool debug_live = false;
+
+  // Per-metal-layer visibility: when has_visible_layers is true, pin marker
+  // rendering skips BPin boxes whose tech layer is not in this set.
+  std::set<std::string> visible_layers;
+  bool has_visible_layers = false;
+
+  // Per-chiplet visibility: when has_visible_chiplets is true, the tile
+  // renderer skips ChipletNodes whose `path` is not in this set.  Empty
+  // set with the flag off renders every chiplet (default).  Paths match
+  // ChipletNode::path produced by collectChiplets() (e.g. "top.soc_inst").
+  std::set<std::string> visible_chiplets;
+  bool has_visible_chiplets = false;
+  bool isChipletVisible(const std::string& path) const;
+
+  // ── Selectability ──
+  // Parallel to the visibility flags above: when off, the corresponding
+  // class of object is still rendered but is not pickable by selectAt().
+  // Mirrors the Qt GUI's displayControls "selectable" column.
+  // Defaults are all true (everything selectable), matching the Qt GUI.
+  bool stdcells_selectable = true;
+  bool macros_selectable = true;
+
+  bool pad_input_selectable = true;
+  bool pad_output_selectable = true;
+  bool pad_inout_selectable = true;
+  bool pad_power_selectable = true;
+  bool pad_spacer_selectable = true;
+  bool pad_areaio_selectable = true;
+  bool pad_other_selectable = true;
+
+  bool phys_fill_selectable = true;
+  bool phys_endcap_selectable = true;
+  bool phys_welltap_selectable = true;
+  bool phys_tie_selectable = true;
+  bool phys_antenna_selectable = true;
+  bool phys_cover_selectable = true;
+  bool phys_bump_selectable = true;
+  bool phys_other_selectable = true;
+
+  bool std_bufinv_selectable = true;
+  bool std_bufinv_timing_selectable = true;
+  bool std_clock_bufinv_selectable = true;
+  bool std_clock_gate_selectable = true;
+  bool std_level_shift_selectable = true;
+  bool std_sequential_selectable = true;
+  bool std_combinational_selectable = true;
+
+  bool net_signal_selectable = true;
+  bool net_power_selectable = true;
+  bool net_ground_selectable = true;
+  bool net_clock_selectable = true;
+  bool net_reset_selectable = true;
+  bool net_tieoff_selectable = true;
+  bool net_scan_selectable = true;
+  bool net_analog_selectable = true;
+
+  bool pins_selectable = true;
+  bool inst_pins_selectable = true;
+
+  bool placement_blockages_selectable = true;
+  bool routing_obstructions_selectable = true;
+
+  // Per-site selectability (peer to `sites`).  Defaults to true when
+  // unspecified — checked only when the corresponding row is selectable.
+  std::unordered_map<std::string, bool> site_selectable;
+
+  // Per-metal-layer selectability.  When has_selectable_layers is true,
+  // selectAt() skips layers not in this set.
+  std::set<std::string> selectable_layers;
+  bool has_selectable_layers = false;
+
+  void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+
+  bool isNetSelectable(odb::dbNet* net) const;
+  bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
+  bool isSiteSelectable(const std::string& site_name) const;
+  bool isLayerSelectable(const std::string& layer_name) const;
 };
 
 class TileGenerator
@@ -139,9 +312,15 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
 
   odb::Rect getBounds() const;
+  int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
+
+  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // lazily and cached; the cache is rebuilt only if the tech changes.
+  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
+                                                               = nullptr) const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -167,6 +346,16 @@ class TileGenerator
                     const std::set<std::string>& visible_layers) const;
 
   odb::dbBlock* getBlock() const;
+  odb::dbChip* getChip() const;
+  odb::dbTech* getTech() const;
+  odb::dbDatabase* getDb() const { return db_; }
+
+  // Cached, sorted list of chiplets reachable from db_->getChip().
+  // The cache is invalidated by eagerInit() and rebuilt lazily on the
+  // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
+  // selectAt) read it on every tile / click; the free function
+  // `collectChiplets` is kept for tests and one-shot callers.
+  const std::vector<ChipletNode>& chiplets() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -181,12 +370,85 @@ class TileGenerator
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+
+  // Render only highlight/overlay shapes (selection, hover, timing, DRC,
+  // route guides, flight lines) on a fully transparent background.  Used
+  // by the overlay tile layer so base tiles can stay cached when only
+  // highlights change.
+  std::vector<unsigned char> generateOverlayTile(
+      int z,
+      int x,
+      int y,
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      bool has_visible_layers = false,
+      const std::set<std::string>& visible_layers = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
                                                  int y) const;
 
+  // Render full design (or region) to a PNG file.  Works without a running
+  // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel,
+                 const TileVisibility& vis) const;
+
+  // Render timing path overlay (colored rects + flight lines) to PNG bytes.
+  std::vector<unsigned char> renderOverlayPng(
+      int width_px,
+      const std::vector<ColoredRect>& rects,
+      const std::vector<FlightLine>& lines) const;
+
+  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  //
+  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
+  // installed DebugOverlayCallback (if any).  The callback is
+  // responsible for iterating any registered gui::Renderer instances
+  // and drawing their output onto the image buffer.  Kept as a
+  // callback rather than a direct gui::Gui::get() call so that
+  // libweb.a has no undefined references to the gui/SWIG library —
+  // test executables that link libweb don't need to pull in ord.
+  using DebugOverlayCallback
+      = std::function<void(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double pixels_per_dbu,
+                           bool debug_live)>;
+  // Install (or clear with `{}`) the debug-overlay callback.  Global
+  // process state; installed by WebServer on serve() and cleared on
+  // shutdown.
+  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+
+  // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
+  // buffer.  Public so that the debug-overlay callback (living in
+  // web.cpp, which is only in the main openroad binary) can reuse
+  // TileGenerator's line/polygon/bitmap primitives.
+  void rasterizeWebPainterOps(std::vector<unsigned char>& image,
+                              const std::vector<DrawOp>& ops,
+                              const odb::Rect& dbu_tile,
+                              double scale) const;
+
  private:
+  // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
+  // Same signature as generateTile but returns raw pixels.
+  std::vector<unsigned char> renderTileBuffer(
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis = {},
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::set<uint32_t>* focus_net_ids = nullptr,
+      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
@@ -197,14 +459,25 @@ class TileGenerator
                         int x,
                         int y) const;
 
-  static int getBitmapTextWidth(std::string_view text, int scale);
-  static int getBitmapTextHeight(int scale);
-  static void drawBitmapText(std::vector<unsigned char>& image,
-                             int x,
-                             int y,
-                             std::string_view text,
-                             int scale,
-                             const Color& color);
+  // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
+  // handle so callers lock the glyph cache once per rendering context rather
+  // than once per character.
+  static int getTextWidth(std::string_view text,
+                          const GlyphCache::FontSize& font);
+  static int getTextHeight(const GlyphCache::FontSize& font);
+  static void drawText(std::vector<unsigned char>& image,
+                       int x,
+                       int y,
+                       std::string_view text,
+                       const GlyphCache::FontSize& font,
+                       const Color& color);
+  // Draw text rotated 90° CW (reads top-to-bottom).
+  static void drawTextRotated(std::vector<unsigned char>& image,
+                              int x,
+                              int y,
+                              std::string_view text,
+                              const GlyphCache::FontSize& font,
+                              const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -222,6 +495,14 @@ class TileGenerator
                        const std::vector<FlightLine>& lines,
                        const odb::Rect& dbu_tile,
                        double scale) const;
+
+  // Private counterpart of setDebugOverlayCallback: invokes the
+  // installed callback (if any) for this tile.  See the public API
+  // above for rationale.
+  void drawRendererOverlay(std::vector<unsigned char>& image,
+                           const odb::Rect& dbu_tile,
+                           double scale,
+                           bool debug_live) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
@@ -241,6 +522,10 @@ class TileGenerator
                    const Color& color,
                    bool blend = false) const;
 
+  void drawFilledRect(std::vector<unsigned char>& buffer,
+                      const odb::Rect& rect,
+                      const Color& color) const;
+
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
                          int y,
@@ -251,12 +536,35 @@ class TileGenerator
                        int y0,
                        int x1,
                        int y1,
-                       const Color& c);
+                       const Color& c,
+                       int width = 3);
+
+  void computePinLabelMargin();
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
+  int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
+
+  // Cached layer-color map keyed by tech (see getLayerColorMap).  Each tech is
+  // computed once and kept; std::map reference stability means a returned ref
+  // stays valid even if another tech is added later.
+  mutable std::mutex layer_colors_mutex_;
+  mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
+      layer_colors_by_tech_;
+
+  // Cached chiplet traversal.  See chiplets().  Invalidated in
+  // eagerInit() and also auto-invalidated when the chiplet hierarchy
+  // signature (root pointer + total dbChipInst count) changes — this
+  // catches Tcl-driven dbChipInst::create/destroy between eagerInit
+  // calls, which dbBlockCallBackObj does not surface.
+  mutable std::mutex chiplets_mutex_;
+  mutable std::vector<ChipletNode> chiplets_cache_;
+  mutable bool chiplets_cache_valid_ = false;
+  mutable odb::dbChip* chiplets_cache_root_ = nullptr;
+  mutable size_t chiplets_cache_inst_count_ = 0;
+
   static constexpr int kTileSizeInPixel = 256;
 };
 
@@ -278,5 +586,11 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// ── JSON serialization helpers for TileGenerator responses ──
+
+boost::json::object serializeTechResponse(const TileGenerator& gen);
+boost::json::object serializeBoundsResponse(const TileGenerator& gen,
+                                            bool shapes_ready);
 
 }  // namespace web

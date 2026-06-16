@@ -17,9 +17,9 @@ set assignments [list \
       {*}[match_pins io_ins_left.*]]] \
   left right \
   [list [concat \
-    {*}[match_pins io_lsbIns_.*]] \
+    {*}[match_pins io_lsbIns.*]] \
     [concat \
-      {*}[match_pins io_lsbOuts_.*]]]]
+      {*}[match_pins io_lsbOuts.*]]]]
 
 proc zip { list1 list2 } {
   set result {}

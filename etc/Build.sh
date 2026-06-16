@@ -10,7 +10,7 @@ buildDir="build"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  numThreads=$(sysctl -n hw.ncpu)
+  numThreads=$(sysctl -n hw.logicalcpu)
 else
   cat << EOF
 WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
@@ -18,11 +18,12 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=""
-isNinja=no
+cmakeOptions=()
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
+useBazel=no
+noGui=no
 
 _help() {
     cat <<EOF
@@ -46,7 +47,6 @@ OPTIONS:
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
   -no-tests                                     Disable GTest
-  -ninja                                        Use Ninja build system
   -cpp20                                        Use C++20 standard
   -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
@@ -55,11 +55,14 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -bazel                                        Use Bazel instead of CMake to build
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
                                                  or from system "/etc".
+  -local                                        Install OpenROAD in \${HOME}/.local.
+  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
 
 EOF
     exit "${1:-1}"
@@ -80,35 +83,51 @@ while [ "$#" -gt 0 ]; do
         -h|-help)
             _help 0
             ;;
+        -local)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${HOME}/.local")
+            INSTALL_PREFIX_SET=1
+            ;;
+        -prefix=*)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
+            INSTALL_PREFIX_SET=1
+            ;;
         -no-gui)
-            cmakeOptions+=" -DBUILD_GUI=OFF"
+            cmakeOptions+=("-DBUILD_GUI=OFF")
+            noGui=yes
             ;;
         -no-tests)
-            cmakeOptions+=" -DENABLE_TESTS=OFF"
-            ;;
-        -ninja)
-            cmakeOptions+=" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja"
-            isNinja=yes
+            cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
         -cpp20)
-            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
             ;;
         -build-man)
-            cmakeOptions+=" -DBUILD_MAN=ON"
+            cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
+            cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
-            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
-            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            cmakeOptions+=" ${1#*=}"
+            # Use xargs to safely parse the quoted string into array elements without eval
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(echo "${1#*=}" | xargs printf '%s\n')
             ;;
         -clean )
             cleanBefore=yes
@@ -135,7 +154,10 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=" -DGPU=ON"
+            cmakeOptions+=("-DGPU=ON")
+            ;;
+        -bazel)
+            useBazel=yes
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -153,7 +175,11 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -202,8 +228,64 @@ mkdir -p "${buildDir}"
 __logging
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
-    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
+
+    _bison=$(brew --prefix bison 2>/dev/null || true)
+    _flex=$(brew --prefix flex 2>/dev/null || true)
+    _ortools=$(brew --prefix or-tools 2>/dev/null || true)
+
+    if [[ -z "$_bison" || ! -d "$_bison/bin" ]]; then
+        echo "[ERROR] bison not found or broken. Run: brew install bison" >&2
+        exit 1
+    fi
+    if [[ -z "$_flex" || ! -d "$_flex/bin" ]]; then
+        echo "[ERROR] flex not found or broken. Run: brew install flex" >&2
+        exit 1
+    fi
+    if [[ -z "$_ortools" || ! -d "$_ortools/lib" || ! -d "$_ortools/include" ]]; then
+        echo "[ERROR] or-tools not found or broken. Run: brew install or-tools" >&2
+        exit 1
+    fi
+
+    export PATH="$_bison/bin:$_flex/bin:$PATH"
+    export CMAKE_PREFIX_PATH="${_ortools}"
+
+    _qt5=$(brew --prefix qt@5 2>/dev/null || true)
+    if [[ -z "$_qt5" || ! -d "$_qt5/lib" ]]; then
+        echo "[ERROR] qt@5 not found or broken. Run: brew install qt@5" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DQt5_DIR=$_qt5/lib/cmake/Qt5"
+
+    _tcl8=$(brew --prefix tcl-tk@8 2>/dev/null || true)     
+    if [[ -z "$_tcl8" || ! -d "$_tcl8/lib" || ! -d "$_tcl8/include" ]]; then
+        echo "[ERROR] tcl-tk@8 not found or broken. Run: brew install tcl-tk@8" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DTCL_LIBRARY=$_tcl8/lib/libtcl8.6.dylib"
+
+    cmakeOptions+=" -DTCL_INCLUDE_PATH=$_tcl8/include"
+    cmakeOptions+=" -DFLEX_INCLUDE_DIR=$_flex/include"
+
+    cmakeOptions+=" -DCMAKE_CXX_FLAGS=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED"
+
+    _icu="$(brew --prefix icu4c 2>/dev/null || true)"
+    if [[ -z "$_icu" || ! -d "$_icu/lib" ]]; then
+        echo "[ERROR] icu4c not found or broken. Run: brew install icu4c" >&2
+        exit 1
+    fi
+
+    export LDFLAGS="-L$_icu/lib"
+    export CPPFLAGS="-I$_icu/include" 
+    export PKG_CONFIG_PATH="$_icu/lib/pkgconfig"
+
+    _extra_lib_paths=("$(brew --prefix)/lib")
+
+    _joined_paths="$(IFS=:; echo "${_extra_lib_paths[*]}")"
+
+    export LIBRARY_PATH="${_joined_paths}${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    echo "[INFO] General LIBRARY_PATH=$LIBRARY_PATH"
 fi
 
 # ==============================================================================
@@ -258,11 +340,20 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-if [[ "$isNinja" == "yes" ]]; then
-    eval cmake "${cmakeOptions}" -B "${buildDir}" .
-    cd "${buildDir}"
-    CLICOLOR_FORCE=1 ninja build_and_test
+if [[ "$useBazel" == "yes" ]]; then
+    echo "[INFO] Building with Bazel."
+    bazel_cmd="bazel"
+    if command -v bazelisk &> /dev/null; then
+        bazel_cmd="bazelisk"
+    fi
+    bazelArgs=("--config=opt" "--jobs=${numThreads}")
+    if [[ "$noGui" == "yes" ]]; then
+        bazelArgs+=("--//:platform=cli")
+    else
+        bazelArgs+=("--//:platform=gui")
+    fi
+    "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
     exit 0
 fi
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"

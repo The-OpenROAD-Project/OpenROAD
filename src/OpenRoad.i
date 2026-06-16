@@ -17,6 +17,10 @@
 #include <thread>
 #include <vector>
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ helper functions used by the interface functions.
@@ -249,13 +253,13 @@ using odb::dbTech;
 }
 
 %typemap(in) vector<const char*> * {
-  int argc;
+  Tcl_Size argc;
   Tcl_Obj **argv;
 
   if (Tcl_ListObjGetElements(interp, $input, &argc, &argv) == TCL_OK) {
     vector<const char*>* seq = new vector<const char*>;
-    for (int i = 0; i < argc; i++) {
-      int length;
+    for (Tcl_Size i = 0; i < argc; i++) {
+      Tcl_Size length;
       const char* str = Tcl_GetStringFromObj(argv[i], &length);
       seq->push_back(str);
     }
@@ -267,7 +271,7 @@ using odb::dbTech;
 }
 
 %typemap(in) utl::ToolId {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }
@@ -644,6 +648,17 @@ void report_hpwl()
   w.reportHpwl(getLogger());
 }
 
+void report_design_area_metrics_cmd()
+{
+  dbDatabase* db = OpenRoad::openRoad()->getDb();
+  odb::dbChip* chip = db->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  dbBlock* block = chip->getBlock();
+  odb::blockMetrics(block, getLogger());
 }
+
+} // namespace ord
 
 %} // inline

@@ -1,0 +1,415 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#include <atomic>
+#include <chrono>
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "gtest/gtest.h"
+#include "gui/gui.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "tile_generator.h"
+#include "web_chart.h"
+#include "web_painter.h"
+#include "web_viewer_hook.h"
+namespace web {
+namespace {
+
+TEST(WebPainterTest, RecordsRect)
+{
+  WebPainter painter(odb::Rect(0, 0, 1000, 1000), 0.256);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true);
+  painter.setBrush(gui::Painter::kBlue);
+  painter.drawRect(odb::Rect(10, 20, 100, 200));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  const auto* rect = std::get_if<DrawRectOp>(painter.ops().data());
+  ASSERT_NE(rect, nullptr);
+  EXPECT_EQ(rect->rect.xMin(), 10);
+  EXPECT_EQ(rect->rect.yMax(), 200);
+  EXPECT_EQ(rect->pen.color.r, 0xff);
+  EXPECT_TRUE(rect->pen.cosmetic);
+  EXPECT_EQ(rect->brush.color.b, 0xff);
+}
+
+TEST(WebPainterTest, RecordsLine)
+{
+  WebPainter painter(odb::Rect(0, 0, 1000, 1000), 1.0);
+  painter.setPen(gui::Painter::kGreen, /*cosmetic=*/false, /*width=*/3);
+  painter.drawLine(odb::Point(1, 2), odb::Point(3, 4));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  const auto* line = std::get_if<DrawLineOp>(painter.ops().data());
+  ASSERT_NE(line, nullptr);
+  EXPECT_EQ(line->p1.x(), 1);
+  EXPECT_EQ(line->p2.y(), 4);
+  EXPECT_EQ(line->pen.width, 3);
+}
+
+TEST(WebPainterTest, KeepsWideStrokeRectNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawRect(odb::Rect(-2, 10, -1, 20));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawRectOp>(painter.ops().data()), nullptr);
+}
+
+TEST(WebPainterTest, KeepsWideStrokeLineNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawLine(odb::Point(-10, 101), odb::Point(110, 101));
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawLineOp>(painter.ops().data()), nullptr);
+}
+
+TEST(WebPainterTest, KeepsWideStrokeCircleNearTileEdge)
+{
+  WebPainter painter(odb::Rect(0, 0, 100, 100), 1.0);
+  painter.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  painter.drawCircle(102, 50, 1);
+
+  ASSERT_EQ(painter.ops().size(), 1u);
+  EXPECT_NE(std::get_if<DrawCircleOp>(painter.ops().data()), nullptr);
+}
+
+TEST(WebPainterTest, SaveRestoreState)
+{
+  WebPainter painter(odb::Rect(0, 0, 1000, 1000), 1.0);
+  painter.setPen(gui::Painter::kRed);
+  painter.saveState();
+  painter.setPen(gui::Painter::kGreen);
+  painter.drawRect(odb::Rect(0, 0, 10, 10));
+  painter.restoreState();
+  painter.drawRect(odb::Rect(0, 0, 10, 10));
+
+  ASSERT_EQ(painter.ops().size(), 2u);
+  const auto* r1 = std::get_if<DrawRectOp>(painter.ops().data());
+  const auto* r2 = std::get_if<DrawRectOp>(&painter.ops()[1]);
+  ASSERT_NE(r1, nullptr);
+  ASSERT_NE(r2, nullptr);
+  EXPECT_EQ(r1->pen.color.g, 0xff);  // green
+  EXPECT_EQ(r2->pen.color.r, 0xff);  // red (restored)
+}
+
+// Helper: register a dummy client so pause() actually blocks
+// (with no clients, pause() returns immediately).
+static std::size_t registerDummyClient(WebViewerHook& hook)
+{
+  return hook.sessions().add([](const std::string&) {});
+}
+
+TEST(SessionRegistryTest, BroadcastAndWaitNoSessions)
+{
+  SessionRegistry registry;
+  // No sessions registered — should return true immediately.
+  EXPECT_TRUE(registry.broadcastAndWait("{}", std::chrono::milliseconds(100)));
+}
+
+TEST(SessionRegistryTest, BroadcastAndWaitFencesComplete)
+{
+  SessionRegistry registry;
+  std::string received;
+
+  // Register a session whose SendAndWaitFn invokes the fence only after
+  // the simulated write has completed.
+  auto token = registry.add(
+      [&received](const std::string& json) { received = json; },
+      [&received](const std::string& json, std::function<void()> fence) {
+        std::thread([&received, json, fence = std::move(fence)]() {
+          received = json;
+          fence();
+        }).detach();
+      });
+
+  EXPECT_TRUE(registry.broadcastAndWait(R"({"type":"shutdown"})",
+                                        std::chrono::seconds(2)));
+  EXPECT_EQ(received, R"({"type":"shutdown"})");
+  registry.remove(token);
+}
+
+TEST(SessionRegistryTest, BroadcastAndWaitTimesOut)
+{
+  SessionRegistry registry;
+
+  // Register a session whose SendAndWaitFn silently drops the fence.
+  auto token = registry.add(
+      [](const std::string&) {},
+      [](const std::string&, const std::function<void()>& /*fence*/) {
+        /* never called */
+      });
+
+  const auto t0 = std::chrono::steady_clock::now();
+  EXPECT_FALSE(registry.broadcastAndWait("{}", std::chrono::milliseconds(200)));
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+
+  // Should have waited approximately the timeout, not longer.
+  EXPECT_GE(elapsed, std::chrono::milliseconds(150));
+  EXPECT_LT(elapsed, std::chrono::seconds(2));
+  registry.remove(token);
+}
+
+TEST(SessionRegistryTest, BroadcastAndWaitDeadSession)
+{
+  SessionRegistry registry;
+  std::atomic<bool> send_called{false};
+
+  // Register a session whose SendAndWaitFn calls the fence immediately
+  // (simulating a dead session that signals right away).
+  auto token = registry.add(
+      [&send_called](const std::string&) { send_called = true; },
+      [&send_called](const std::string&, const std::function<void()>& fence) {
+        send_called = true;
+        fence();
+      });
+
+  EXPECT_TRUE(registry.broadcastAndWait("{}", std::chrono::milliseconds(100)));
+  EXPECT_TRUE(send_called);
+  registry.remove(token);
+}
+
+TEST(SessionRegistryTest, BroadcastAndWaitLegacySendOnly)
+{
+  SessionRegistry registry;
+  std::string received;
+
+  // Register with SendFn only (no SendAndWaitFn) — legacy path.
+  auto token
+      = registry.add([&received](const std::string& json) { received = json; });
+
+  // Should return true immediately since there are no fenceable sessions.
+  EXPECT_TRUE(registry.broadcastAndWait(R"({"ok":true})",
+                                        std::chrono::milliseconds(100)));
+  EXPECT_EQ(received, R"({"ok":true})");
+  registry.remove(token);
+}
+
+TEST(SessionRegistryTest, WaitForClientCanBeInterrupted)
+{
+  SessionRegistry registry;
+  std::atomic<bool> interrupted{false};
+  std::atomic<bool> waiting{false};
+  bool got_client = true;
+
+  std::thread waiter([&]() {
+    got_client = registry.waitForClient(/*timeout_seconds=*/30, [&]() {
+      waiting.store(true);
+      return interrupted.load();
+    });
+  });
+
+  for (int i = 0; i < 200 && !waiting.load(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_TRUE(waiting.load());
+
+  const auto t0 = std::chrono::steady_clock::now();
+  interrupted.store(true);
+  registry.notifyClientWaiters();
+  waiter.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_FALSE(got_client);
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
+}
+
+TEST(WebViewerHookTest, PauseUnblocksOnContinue)
+{
+  WebViewerHook hook;
+  auto token = registerDummyClient(hook);
+  std::atomic<bool> resumed{false};
+  std::thread waiter([&]() {
+    hook.pause(/*timeout_ms=*/0);
+    resumed.store(true);
+  });
+
+  // Wait up to 500ms for the waiter to be inside pause().  isPaused()
+  // should flip to true during that window.
+  for (int i = 0; i < 50 && !hook.isPaused(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(hook.isPaused());
+
+  hook.continueExecution();
+  waiter.join();
+  EXPECT_TRUE(resumed.load());
+  EXPECT_FALSE(hook.isPaused());
+  hook.sessions().remove(token);
+}
+
+TEST(WebViewerHookTest, PauseReturnsWhenNoClientsConnect)
+{
+  WebViewerHook hook;
+  // No registered clients → pause waits for a client, then gives up.
+  // Register a client after a short delay to unblock faster.
+  std::thread late_register([&]() {
+    // Don't register — let the wait-for-client timeout expire.
+    // The internal timeout is 30s but we can't speed that up in a
+    // unit test without injecting it as a parameter, so just verify
+    // that pause() eventually returns and doesn't hang forever.
+  });
+  late_register.join();
+  // Instead, test the fast path: register a client, then remove it
+  // before calling pause.  pause() sees no clients and waits, but
+  // we add one quickly to unblock.
+  std::atomic<bool> done{false};
+  std::thread pauser([&]() {
+    hook.pause(/*timeout_ms=*/0);
+    done.store(true);
+  });
+  // Give pause() a moment to enter waitForClient, then register.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  auto token = registerDummyClient(hook);
+  // Now pause is inside the pause CV wait — continue to unblock.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  hook.continueExecution();
+  pauser.join();
+  EXPECT_TRUE(done.load());
+  EXPECT_FALSE(hook.isPaused());
+  hook.sessions().remove(token);
+}
+
+TEST(WebViewerHookTest, ContinueInterruptsWaitForClient)
+{
+  WebViewerHook hook;
+  std::atomic<bool> done{false};
+  std::thread pauser([&]() {
+    hook.pause(/*timeout_ms=*/0);
+    done.store(true);
+  });
+
+  // Give pause() a chance to enter the no-client wait.  continueExecution()
+  // must wake that path instead of relying on the 30s client-connect timeout.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  const auto t0 = std::chrono::steady_clock::now();
+  hook.continueExecution();
+  pauser.join();
+
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_TRUE(done.load());
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
+  EXPECT_FALSE(hook.isPaused());
+
+  const auto token = registerDummyClient(hook);
+  const auto t1 = std::chrono::steady_clock::now();
+  hook.pause(/*timeout_ms=*/50);
+  const auto next_elapsed = std::chrono::steady_clock::now() - t1;
+  EXPECT_GE(next_elapsed, std::chrono::milliseconds(40));
+  hook.sessions().remove(token);
+}
+
+TEST(WebViewerHookTest, DestructorUnblocksPausedThread)
+{
+  std::atomic<bool> resumed{false};
+  std::thread waiter;
+  {
+    WebViewerHook hook;
+    registerDummyClient(hook);
+    waiter = std::thread([&]() {
+      hook.pause(/*timeout_ms=*/0);
+      resumed.store(true);
+    });
+    // Wait until the thread is definitely inside pause().
+    for (int i = 0; i < 200 && !hook.isPaused(); ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    ASSERT_TRUE(hook.isPaused())
+        << "Thread didn't reach pause() within 2s — test is broken";
+  }  // hook destroyed → should signal cv → waiter returns
+  waiter.join();
+  EXPECT_TRUE(resumed.load());
+}
+
+TEST(WebViewerHookTest, PauseTimeoutReturns)
+{
+  WebViewerHook hook;
+  registerDummyClient(hook);
+  const auto t0 = std::chrono::steady_clock::now();
+  hook.pause(/*timeout_ms=*/50);
+  const auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_GE(elapsed, std::chrono::milliseconds(40));
+  EXPECT_LT(elapsed, std::chrono::milliseconds(5000));
+  EXPECT_FALSE(hook.isPaused());
+}
+
+TEST(WebViewerHookTest, SessionBroadcast)
+{
+  WebViewerHook hook;
+  std::vector<std::string> seen;
+  std::mutex m;
+  const auto token = hook.sessions().add([&](const std::string& s) {
+    std::lock_guard<std::mutex> lock(m);
+    seen.push_back(s);
+  });
+  hook.redraw();
+  hook.sessions().remove(token);
+  hook.redraw();  // should not reach our callback
+
+  std::lock_guard<std::mutex> lock(m);
+  ASSERT_EQ(seen.size(), 1u);
+  EXPECT_NE(seen[0].find("debug_refresh"), std::string::npos);
+}
+
+TEST(WebViewerHookTest, CreatesChartAndTracksIt)
+{
+  WebViewerHook hook;
+  gui::Chart* c1 = hook.createChart("GPL", "iter", {"hpwl", "overflow"});
+  ASSERT_NE(c1, nullptr);
+  c1->setXAxisFormat("%d");
+  c1->addPoint(0, {1.0, 2.0});
+  c1->addPoint(1, {3.0, 4.0});
+
+  const auto charts = hook.charts();
+  ASSERT_EQ(charts.size(), 1u);
+  EXPECT_EQ(charts[0]->name(), "GPL");
+  EXPECT_EQ(charts[0]->xAxisFormat(), "%d");
+  const auto pts = charts[0]->points();
+  ASSERT_EQ(pts.size(), 2u);
+  EXPECT_EQ(pts[1].x, 1);
+  EXPECT_EQ(pts[1].ys[1], 4.0);
+}
+
+TEST(WebRasterizerTest, HonorsCosmeticPenWidth)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  TileGenerator gen(db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
+  const odb::Rect dbu_tile(0, 0, 256, 256);
+
+  WebPainter narrow(dbu_tile, 1.0);
+  narrow.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/1);
+  narrow.drawLine(odb::Point(10, 128), odb::Point(40, 128));
+
+  WebPainter wide(dbu_tile, 1.0);
+  wide.setPen(gui::Painter::kRed, /*cosmetic=*/true, /*width=*/4);
+  wide.drawLine(odb::Point(10, 128), odb::Point(40, 128));
+
+  const int image_bytes = 256 * 256 * 4;
+  std::vector<unsigned char> narrow_image(image_bytes, 0);
+  std::vector<unsigned char> wide_image(image_bytes, 0);
+  gen.rasterizeWebPainterOps(narrow_image, narrow.ops(), dbu_tile, 1.0);
+  gen.rasterizeWebPainterOps(wide_image, wide.ops(), dbu_tile, 1.0);
+
+  const auto alpha_at
+      = [](const std::vector<unsigned char>& image, int x, int y) {
+          return image[(y * 256 + x) * 4 + 3];
+        };
+  const int screen_y = 255 - 128;
+  EXPECT_EQ(alpha_at(narrow_image, 20, screen_y - 1), 0);
+  EXPECT_GT(alpha_at(wide_image, 20, screen_y - 1), 0);
+}
+
+}  // namespace
+}  // namespace web

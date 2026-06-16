@@ -1,0 +1,67 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 170 components and 1258 component-terminals.
+[INFO ODB-0133]     Created 15 nets and 72 connections.
+[INFO GRT-0020] Min routing layer: met1
+[INFO GRT-0021] Max routing layer: met5
+[INFO GRT-0022] Global adjustment: 70%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer li1     Track-Pitch = 0.4800  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met1    Track-Pitch = 0.3700  line-2-Via Pitch: 0.3400
+[INFO GRT-0088] Layer met2    Track-Pitch = 0.4800  line-2-Via Pitch: 0.3500
+[INFO GRT-0088] Layer met3    Track-Pitch = 0.7400  line-2-Via Pitch: 0.6150
+[INFO GRT-0088] Layer met4    Track-Pitch = 0.9600  line-2-Via Pitch: 1.0400
+[INFO GRT-0088] Layer met5    Track-Pitch = 3.3300  line-2-Via Pitch: 3.1100
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 13
+[INFO GRT-0019] Found 6 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 12
+Design statistics
+Nets:                15
+Special nets:        0
+Routing layers:      6
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+li1        Vertical            0             0          0.00%
+met1       Horizontal      27555         13777          50.00%
+met2       Vertical        21571         10786          50.00%
+met3       Horizontal      14023          4207          70.00%
+met4       Vertical        10804          3241          70.00%
+met5       Horizontal       3108          1413          54.54%
+---------------------------------------------------------------
+
+Stage 1: Pattern routing.
+Stage 2: Pattern routing with detours.
+Stage 3: Maze routing on sparsified graph.
+[INFO GRT-0117] Start extra iteration 1/5
+[WARNING GRT-0305] Demoted 2 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[INFO GRT-0117] Start extra iteration 2/5
+[INFO GRT-0306] Iterative RRR soft-demoted 2 NDR net(s) total.
+Routing statistics
+Wire length:           2918
+Total via count:       138
+Total congestion:      0
+Min resource:          0.8611112303204012
+Bottleneck:            (3, 15, 21)
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1             13777           199            1.44%             0 /  0 /  0
+met2             10786           129            1.20%             0 /  0 /  0
+met3              4207            25            0.59%             0 /  0 /  0
+met4              3241            13            0.40%             0 /  0 /  0
+met5              1413             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            33424           366            1.10%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 1641 um
+[INFO GRT-0014] Routed nets: 15
+No differences found.

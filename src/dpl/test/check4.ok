@@ -6,5 +6,5 @@
 [INFO ODB-0133]     Created 2 nets and 0 connections.
 [WARNING DPL-0006] Site aligned check failed (1).
  FILL01
-[ERROR DPL-0033] detailed placement checks failed.
+[ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033

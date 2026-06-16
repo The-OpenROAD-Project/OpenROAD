@@ -10,6 +10,7 @@
 #include <ctime>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"

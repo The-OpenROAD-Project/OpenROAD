@@ -29,3 +29,7 @@ report_long_wires 10
 
 report_floating_nets -verbose
 report_design_area
+
+set def_file [make_result_file gcd_resize.def]
+write_def $def_file
+diff_files gcd_resize.defok $def_file

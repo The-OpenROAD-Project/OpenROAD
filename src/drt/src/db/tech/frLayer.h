@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
@@ -110,6 +111,14 @@ class frLayer
     return (fakeCut_ || fakeMasterslice_)
                ? false
                : db_layer_->getType() == odb::dbTechLayerType::ROUTING;
+  }
+  // True for layers tagged with the LEF58_BACKSIDE property (BPR,
+  // backside metals and their cut layers in BSPDN flows). The detailed
+  // router does not currently route on these layers; they are treated
+  // as invisible to TA/DRT.
+  bool isBackside() const
+  {
+    return (fakeCut_ || fakeMasterslice_) ? false : db_layer_->isBackside();
   }
   bool isUnidirectional() const
   {

@@ -25,6 +25,7 @@
 #include "est/EstimateParasitics.h"
 #include "ir_network.h"
 #include "node.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -124,36 +125,25 @@ bool IRSolver::check(bool check_bterms)
     return connected_.value();
   }
 
-  // set to true and unset if it failed
-  connected_ = true;
-  if (check_bterms && !checkBTerms()) {
-    reportMissingBTerm();
+  if (!network_->hasNodes()) {
     connected_ = false;
-  }
-  if (!checkOpen()) {
-    reportUnconnectedNodes();
-    connected_ = false;
-  }
-  if (!checkShort()) {
-    connected_ = false;
+  } else {
+    // set to true and unset if it failed
+    connected_ = true;
+    if (check_bterms && !checkBTerms()) {
+      reportMissingBTerm();
+      connected_ = false;
+    }
+    if (!checkOpen()) {
+      reportUnconnectedNodes();
+      connected_ = false;
+    }
+    if (!checkShort()) {
+      connected_ = false;
+    }
   }
 
   return connected_.value();
-}
-
-bool IRSolver::wasNodeVisited(const std::unique_ptr<ITermNode>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const std::unique_ptr<Node>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const Node* node) const
-{
-  return visited_.find(node) != visited_.end();
 }
 
 bool IRSolver::checkOpen()
@@ -161,7 +151,7 @@ bool IRSolver::checkOpen()
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Check open: {}");
 
-  visited_.clear();
+  network_->clearVisitedNodes();
   const std::size_t total_nodes = network_->getNodeCount(true);
   const auto connections_map = network_->getConnectionMap();
 
@@ -179,7 +169,7 @@ bool IRSolver::checkOpen()
   while (!queue.empty()) {
     Node* node = queue.front();
     queue.pop();
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       // already been here, so we can continue to next node
       continue;
     }
@@ -196,11 +186,11 @@ bool IRSolver::checkOpen()
                  total_nodes);
     }
 
-    visited_.insert(node);
+    node->setVisited(true);
 
     for (const auto* conn : connections_map.at(node)) {
       Node* next = conn->getOtherNode(node);
-      if (wasNodeVisited(next)) {
+      if (next->isVisited()) {
         // already been here, so we do not need to add it to the queue
         continue;
       }
@@ -210,7 +200,7 @@ bool IRSolver::checkOpen()
 
   for (const auto& [layer, layer_nodes] : network_->getNodes()) {
     for (const auto& node : layer_nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -249,7 +239,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
 
   for (const auto& [layer, nodes] : network_->getNodes()) {
     for (const auto& node : nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -258,7 +248,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   }
 
   for (const auto& node : network_->getITermNodes()) {
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       continue;
     }
 
@@ -307,7 +297,7 @@ void IRSolver::reportUnconnectedNodes() const
         marker->addShape(node->getPoint());
       }
     }
-    std::map<odb::dbTechLayer*, IRNetwork::ShapeTree> shapes;
+    odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
     odb::dbMarkerCategory* category
         = odb::dbMarkerCategory::create(net_category, "Unconnected shape");
 
@@ -353,7 +343,7 @@ void IRSolver::reportUnconnectedNodes() const
   }
 
   if (!results.unconnected_iterms.empty()) {
-    std::set<odb::dbInst*> insts;
+    odb::PtrSet<odb::dbInst> insts;
     for (const auto& node : results.unconnected_iterms) {
       insts.insert(node->getITerm()->getInst());
       logger_->warn(utl::PSM,
@@ -833,7 +823,7 @@ IRSolver::Power IRSolver::buildNodeCurrentMap(
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
   // Build power map
-  std::map<odb::dbInst*, Power> instance_powers;
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
   const auto inst_nodes = network_->getInstanceNodeMapping();
   const Voltage power_voltage = getPowerNetVoltage(corner);
   if (power_voltage == 0) {
@@ -1016,6 +1006,14 @@ void IRSolver::solve(sta::Scene* corner,
     network_->construct();
   }
 
+  if (!network_->hasNodes()) {
+    voltages_.erase(corner);
+    currents_.erase(corner);
+    solution_voltages_.erase(corner);
+    solution_power_.erase(corner);
+    return;
+  }
+
   assertResistanceMap(corner);
 
   // Reset
@@ -1168,13 +1166,13 @@ void IRSolver::solve(sta::Scene* corner,
   solution_power_[corner] = total_power;
 }
 
-std::map<odb::dbInst*, IRSolver::Power> IRSolver::getInstancePower(
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
     sta::Scene* corner) const
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Power calculation: {}");
 
-  std::map<odb::dbInst*, IRSolver::Power> inst_power;
+  odb::PtrMap<odb::dbInst, IRSolver::Power> inst_power;
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::unique_ptr<sta::LeafInstanceIterator> inst_iter(

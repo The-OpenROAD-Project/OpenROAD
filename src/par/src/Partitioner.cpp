@@ -8,6 +8,7 @@
 #include <numeric>
 #include <random>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -132,9 +133,8 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
         }
       }  // finish current path
     }  // finish all the paths
-    std::shuffle(path_vertices.begin(),
-                 path_vertices.end(),
-                 std::default_random_engine(seed_));
+    std::mt19937 generator(seed_);
+    DeterministicShuffle(path_vertices.begin(), path_vertices.end(), generator);
   }
   // Step 3: check remaining vertices
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
@@ -142,8 +142,8 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
       vertices.push_back(v);
     }
   }
-  std::shuffle(
-      vertices.begin(), vertices.end(), std::default_random_engine(seed_));
+  std::mt19937 generator(seed_);
+  DeterministicShuffle(vertices.begin(), vertices.end(), generator);
   // Step 4: concatenate path_vertices and vertices
   // Here we insert path_vertices at the beginning,
   // Hopefully we can push all the path_vertices into one block
@@ -339,7 +339,7 @@ void Partitioner::VilePart(const HGraphPtr& hgraph,
   // Step 2: sort remaining vertices based on vertex
   // define the sort function
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
-    return average_sizes[x] < average_sizes[y];
+    return std::tie(average_sizes[x], x) < std::tie(average_sizes[y], y);
   };
   std::ranges::sort(unvisited, lambda_sort_criteria);
   // Evenly distribute all the vertices into blocks based on sorted order

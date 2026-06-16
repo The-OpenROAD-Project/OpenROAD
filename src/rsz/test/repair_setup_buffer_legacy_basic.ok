@@ -1,0 +1,59 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 17 components and 92 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 7 nets and 30 connections.
+worst slack max -0.33
+tns max -0.420
+[INFO RSZ-0100] Repair move sequence: BufferMove 
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
+       8* |       0 |       0 |        7 |      0 |     0 |   +11.9% |   -0.192 |       -0.2 |       -0.2 |      4 | r2/D
+    final |       0 |       0 |        7 |      0 |     0 |   +11.9% |   -0.192 |       -0.2 |       -0.2 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 7 buffers.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.19
+tns max -0.192
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X1)
+   0.102    0.102 ^ r1/Q (DFF_X1)
+   0.002    0.104 ^ u1/A (BUF_X1)
+   0.043    0.146 ^ u1/Z (BUF_X1)
+   0.002    0.148 ^ u2/A (BUF_X1)
+   0.042    0.190 ^ u2/Z (BUF_X1)
+   0.002    0.192 ^ u3/A (BUF_X1)
+   0.042    0.234 ^ u3/Z (BUF_X1)
+   0.002    0.235 ^ u4/A (BUF_X1)
+   0.042    0.278 ^ u4/Z (BUF_X1)
+   0.002    0.279 ^ u5/A (BUF_X1)
+   0.116    0.395 ^ u5/Z (BUF_X1)
+   0.049    0.444 ^ r2/D (DFF_X1)
+            0.444   data arrival time
+
+   0.300    0.300   clock clk (rise edge)
+   0.000    0.300   clock network delay (ideal)
+   0.000    0.300   clock reconvergence pessimism
+            0.300 ^ r2/CK (DFF_X1)
+  -0.048    0.252   library setup time
+            0.252   data required time
+-----------------------------------------------------------
+            0.252   data required time
+           -0.444   data arrival time
+-----------------------------------------------------------
+           -0.192   slack (VIOLATED)
+
+

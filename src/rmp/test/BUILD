@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -121,10 +121,24 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+# Genetic/annealing tests run significantly longer than the "small" 300s
+# default; bump their size under concurrent load.
+LONG_RUNNING_TESTS = [
+    "aes_genetic",
+    "gcd_genetic",
+    "aes_annealing",
+    "gcd_annealing1",
+    "gcd_annealing2",
+]
+
 [
     regression_test(
         name = test_name,
-        data = [":" + test_name + "_resources"],
+        size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
+        data = [
+            ":" + test_name + "_resources",
+            "//src/rmp:rmp_py",
+        ],
         tags = [],
         visibility = ["//visibility:public"],
     )
@@ -142,23 +156,19 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -173,23 +183,19 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 

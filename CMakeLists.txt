@@ -9,8 +9,17 @@ cmake_policy(SET CMP0078 NEW)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 
-# Allows <PackageName>_ROOT to be used
+# CMP0074: Allows find_package to use <PackageName>_ROOT variables. This
+# policy was the original mechanism for letting users specify custom
+# dependency locations.
 cmake_policy(SET CMP0074 NEW)
+
+# CMP0144: Standardizes the use of <PACKAGENAME>_ROOT (uppercase) variables
+# in find_package. Newer CMake modules rely on this policy for consistent
+# behavior. Setting both CMP0074 and CMP0144 ensures that both older and
+# newer find modules correctly respect custom dependency paths, which is
+# critical for builds in non-standard environments.
+cmake_policy(SET CMP0144 NEW)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
   # Disallows <PACKAGENAME>_ROOT in find_package.
@@ -51,7 +60,7 @@ option(TSAN "Enable Thread Sanitizer" OFF)
 option(UBSAN "Enable Undefined Behavior Sanitizer" OFF)
 
 project(OpenROAD VERSION 1
-  LANGUAGES CXX
+  LANGUAGES C CXX
 )
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
@@ -64,6 +73,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+set_property(DIRECTORY PROPERTY TEST_DISCOVERY_TIMEOUT 60)
 
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)
@@ -108,7 +119,7 @@ message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # Detect OS distribution and version from /etc/os-release
-# LTO is known to cause build errors on Debian 11 and Rocky Linux 8
+# LTO is known to cause build errors on Rocky Linux 8
 set(LTO_UNSUPPORTED_OS FALSE)
 if(EXISTS "/etc/os-release")
   file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
@@ -124,10 +135,19 @@ if(EXISTS "/etc/os-release")
   endforeach()
 
   # Check for unsupported OS for LTO
-  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
-     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
+  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
     set(LTO_UNSUPPORTED_OS TRUE)
     message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
+    # Rocky 8 ships gcc 8 in /usr/lib64/libstdc++.so.6.  gcc-toolset-13's
+    # `-lstdc++` resolves through a linker script that pulls
+    # libstdc++_nonshared.a (fill-in for <filesystem> etc.).  When that
+    # archive's TUs (e.g. fs_path80.o) are pulled into a link with many
+    # OpenROAD .a/.so inputs, the order/visibility of the system
+    # libstdc++.so.6 ends up such that ld can't resolve internal helpers
+    # like basic_string::resize and _Sp_counted_*.  Statically link
+    # libstdc++/libgcc to sidestep the fill-in archive entirely.
+    add_link_options(-static-libstdc++ -static-libgcc)
+    message(STATUS "Rocky 8: enabling -static-libstdc++ -static-libgcc to avoid libstdc++_nonshared.a link errors")
   endif()
 endif()
 
@@ -239,5 +259,5 @@ message(STATUS " GUI Support    : ${BUILD_GUI}")
 message(STATUS " Python Bindings: ${BUILD_PYTHON}")
 message(STATUS " Tests Enabled  : ${ENABLE_TESTS}")
 message(STATUS "=========================================================")
-message(STATUS " Configuration complete. You can now run 'make' or 'ninja'.")
+message(STATUS " Configuration complete.")
 message(STATUS "")

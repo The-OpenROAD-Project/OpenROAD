@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025-2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 #
-# Auto-fix then lint. Delegates to tcl_tidy.sh and tcl_lint_test.sh
-# so that file-discovery logic is not duplicated (DRY).
+# Auto-fix then lint. Delegates to per-language tidy/lint scripts so
+# that file-discovery logic is not duplicated (DRY).
 set -euo pipefail
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
@@ -11,6 +11,10 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # TCL: auto-format then lint
 "$1" "$2"
 "$3" "$4" || rc=$?
+
+# Bazel: auto-format then lint
+"$5" "$6"
+"$7" "$8" || rc=$?
 
 git -C "$BUILD_WORKSPACE_DIRECTORY" status
 

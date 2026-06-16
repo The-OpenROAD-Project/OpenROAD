@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="361" height="125"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CENTERTOCENTER"
+      xlink:title="K_CENTERTOCENTER">
+      <rect x="51" y="3" width="150" height="32"/>
+      <rect x="49" y="1" width="150" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_CENTERTOCENTER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SAMENET"
+      xlink:title="K_SAMENET">
+      <rect x="51" y="47" width="94" height="32"/>
+      <rect x="49" y="45" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_SAMENET</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#opt_samenetPGonly"
+      xlink:title="opt_samenetPGonly">
+      <rect x="165" y="47" width="148" height="32"/>
+      <rect x="163" y="45" width="148" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="173" y="65">opt_samenetPGonly</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_PARALLELOVERLAP"
+      xlink:title="K_PARALLELOVERLAP">
+      <rect x="51" y="91" width="154" height="32"/>
+      <rect x="49" y="89" width="154" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_PARALLELOVERLAP</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m150 0 h10 m0 0 h112 m-302 0 h20 m282 0 h20 m-322 0 q10 0 10 10 m302 0 q0 -10 10 -10 m-312 10 v24 m302 0 v-24 m-302 24 q0 10 10 10 m282 0 q10 0 10 -10 m-292 10 h10 m94 0 h10 m0 0 h10 m148 0 h10 m-292 -10 v20 m302 0 v-20 m-302 20 v24 m302 0 v-24 m-302 24 q0 10 10 10 m282 0 q10 0 10 -10 m-292 10 h10 m154 0 h10 m0 0 h108 m23 -88 h-3"/>
+   <polygon points="351 17 359 13 359 21"/>
+   <polygon points="351 17 343 13 343 21"/>
+</svg>

@@ -103,7 +103,7 @@ void _dbGDSARef::collectMemInfo(MemInfo& info)
 //
 ////////////////////////////////////////////////////////////////////
 
-void dbGDSARef::setOrigin(Point origin)
+void dbGDSARef::setOrigin(const Point& origin)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
 
@@ -116,7 +116,7 @@ Point dbGDSARef::getOrigin() const
   return obj->origin_;
 }
 
-void dbGDSARef::setLr(Point lr)
+void dbGDSARef::setLr(const Point& lr)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
 
@@ -129,7 +129,7 @@ Point dbGDSARef::getLr() const
   return obj->lr_;
 }
 
-void dbGDSARef::setUl(Point ul)
+void dbGDSARef::setUl(const Point& ul)
 {
   _dbGDSARef* obj = (_dbGDSARef*) this;
 
@@ -194,10 +194,17 @@ dbGDSStructure* dbGDSARef::getStructure() const
   return (dbGDSStructure*) lib->gdsstructure_tbl_->getPtr(obj->structure_);
 }
 
-std::vector<std::pair<std::int16_t, std::string>>& dbGDSARef::getPropattr()
+const std::vector<std::pair<std::int16_t, std::string>>&
+dbGDSARef::getPropattr() const
 {
   auto* obj = (_dbGDSARef*) this;
   return obj->propattr_;
+}
+
+void dbGDSARef::addPropattr(std::int16_t type, const std::string& value)
+{
+  auto* obj = (_dbGDSARef*) this;
+  obj->propattr_.emplace_back(type, value);
 }
 
 dbGDSARef* dbGDSARef::create(dbGDSStructure* parent, dbGDSStructure* child)

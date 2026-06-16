@@ -75,22 +75,12 @@ enum frBlockObjectEnum
   frcInstBlockage,
   frcAccessPattern,
   frcMarker,
-  frcNode,
   frcPatchWire,
-  frcRPin,
   frcAccessPoint,
-  frcAccessPoints,
   frcPinAccess,
   frcCMap,
   frcGCellPattern,
   frcTrackPattern,
-  grcNode,
-  grcNet,
-  grcPin,
-  grcAccessPattern,
-  grcPathSeg,
-  grcRef,
-  grcVia,
   drcNet,
   drcPin,
   drcAccessPattern,
@@ -117,12 +107,6 @@ enum class frGuideEnum
   frcGuideGlobal,
   frcGuideTrunk,
   frcGuideShortConn
-};
-enum class frNodeTypeEnum
-{
-  frcSteiner,
-  frcBoundaryPin,
-  frcPin
 };
 
 enum class frConstraintTypeEnum

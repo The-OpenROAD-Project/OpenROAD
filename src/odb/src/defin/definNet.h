@@ -36,6 +36,7 @@ class definNet : public definBase
   dbTechLayerRule* _taper_rule{nullptr};
   dbTechNonDefaultRule* _non_default_rule{nullptr};
   dbTechNonDefaultRule* _rule_for_path{nullptr};
+  int _prev_junction_id{-1};
   std::map<std::string, dbVia*> _rotated_vias;
 
   void getUniqueViaName(std::string& viaName);
@@ -59,6 +60,7 @@ class definNet : public definBase
   void pathTaperRule(const char* layer, const char* rule);
   void pathPoint(int x, int y);
   void pathPoint(int x, int y, int ext);
+  void pathVirtualPoint(int x, int y);
   void pathVia(const char* via);
   void pathVia(const char* via, dbOrientType orient);
   void pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2);

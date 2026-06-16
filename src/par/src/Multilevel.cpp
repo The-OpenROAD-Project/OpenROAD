@@ -10,6 +10,7 @@
 #include <queue>
 #include <random>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -22,7 +23,6 @@
 #include "KWayPMRefine.h"
 #include "Partitioner.h"
 #include "Utilities.h"
-#include "boost/random/uniform_int_distribution.hpp"
 #include "boost/range/iterator_range_core.hpp"
 #include "utl/Logger.h"
 
@@ -272,8 +272,6 @@ void MultilevelPartitioner::InitialPartition(
              "Running Initial Partitioning...");
   std::mt19937 gen;
   gen.seed(seed_);
-  boost::random::uniform_int_distribution<> dist(
-      0, std::numeric_limits<int>::max());
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
@@ -289,7 +287,9 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = dist(gen);
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -317,7 +317,9 @@ void MultilevelPartitioner::InitialPartition(
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = dist(gen);
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i + num_initial_random_solutions_];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -405,7 +407,8 @@ void MultilevelPartitioner::InitialPartition(
   std::iota(solution_ids.begin(), solution_ids.end(), 0);
   // define compare function
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
-    return initial_solutions_cost[x] < initial_solutions_cost[y];
+    return std::tie(initial_solutions_cost[x], x)
+           < std::tie(initial_solutions_cost[y], y);
   };
   std::ranges::sort(solution_ids, lambda_sort_criteria);
   // pick the top num_best_initial_solutions_ solutions

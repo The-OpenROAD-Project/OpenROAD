@@ -2,6 +2,9 @@ from openroad import Design, Tech
 import helpers
 import drt_aux
 
+bazel_working_dir = "/_main/src/drt/test/"
+helpers.if_bazel_change_working_dir_to(bazel_working_dir)
+
 tech = Tech()
 tech.readLef("sky130hs/sky130hs.tlef")
 tech.readLef("sky130hs/sky130hs_std_cell.lef")

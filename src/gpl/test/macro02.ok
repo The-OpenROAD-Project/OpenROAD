@@ -60,7 +60,7 @@
 [INFO GPL-0028] Bin count (X, Y):         256 ,    256
 [INFO GPL-0029] Bin size (W * H):       3.827 *  3.046 um
 [INFO GPL-0030] Number of bins:                  65536
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

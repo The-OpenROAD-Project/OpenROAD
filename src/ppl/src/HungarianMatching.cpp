@@ -164,14 +164,15 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-    logger_->error(utl::PPL,
-                   82,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin {} placement.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA",
-                   mirrored_pin.getName());
+    logger_->error(
+        utl::PPL,
+        82,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not "
+        "a valid position for pin {} placement.",
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        layer ? layer->getName() : "NA",
+        mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }

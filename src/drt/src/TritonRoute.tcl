@@ -4,7 +4,6 @@
 sta::define_cmd_args "detailed_route" {
     [-output_maze filename]
     [-output_drc filename]
-    [-output_cmap filename]
     [-output_guide_coverage filename]
     [-drc_report_iter_step step]
     [-db_process_node name]
@@ -33,7 +32,7 @@ sta::define_cmd_args "detailed_route" {
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
+    keys {-output_maze -output_drc -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
@@ -69,11 +68,6 @@ proc detailed_route { args } {
     set drc_report_iter_step $keys(-drc_report_iter_step)
   } else {
     set drc_report_iter_step 0
-  }
-  if { [info exists keys(-output_cmap)] } {
-    set output_cmap $keys(-output_cmap)
-  } else {
-    set output_cmap ""
   }
   if { [info exists keys(-output_guide_coverage)] } {
     set output_guide_coverage $keys(-output_guide_coverage)
@@ -167,7 +161,7 @@ proc detailed_route { args } {
   } else {
     set min_access_points -1
   }
-  drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
+  drt::detailed_route_cmd $output_maze $output_drc \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $via_access_layer $or_seed $or_k $verbose \

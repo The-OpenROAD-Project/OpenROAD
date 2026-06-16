@@ -27,6 +27,15 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 // to clang-tidy as-is. Typical use could be for instance
 //   run-clang-tidy-cached.cc --checks="-*,modernize-use-override" --fix
 //
+// To restrict processing to a subset of files, pass one or more --filter=REGEX
+// arguments. The regex is matched (regex_search) against each candidate path;
+// any match keeps the file. Filter args are not forwarded to clang-tidy and
+// do not affect the cache key, e.g.
+//   run-clang-tidy-cached.cc --filter='src/odb/' --filter='src/cts/'
+//
+// To print the files that would be checked (one per line on stdout) and exit
+// without running clang-tidy, pass --list-files.
+//
 // Note: useful environment variables to configure are
 //  CLANG_TIDY         = binary to run; default would just be clang-tidy.
 //  CLANG_TIDY_CONFIG  = override configuration file in kConfig.clang_tidy_file
@@ -39,6 +48,7 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 #include <unistd.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cerrno>
 #include <cinttypes>
 #include <csignal>
@@ -115,6 +125,9 @@ struct ConfigValues
   // Usually good to keep on, but it can result in situations in which a header
   // that is included by a lot of other files results in lots of reprocessing.
   bool revisit_if_any_include_changes = true;
+
+  // Run clang-tidy with Unix `nice`, so that it does not bog down the system.
+  bool run_with_nice = true;
 
   // Clang tidy configuration: clang tidy files with checks. This can be
   // overriden with environment variable CLANG_TIDY_CONFIG
@@ -294,6 +307,7 @@ class ClangTidyRunner
     if (work_queue->empty()) {
       return;
     }
+    const std::string nice_cmd = kConfig.run_with_nice ? "nice " : "";
     const char* jobs_env_str = getenv("CLANG_TIDY_JOBS");
     const int jobs_env_num = jobs_env_str ? atoi(jobs_env_str) : -1;
     const int kJobs = (jobs_env_num > 0 ? jobs_env_num
@@ -308,8 +322,14 @@ class ClangTidyRunner
 
     const std::string uniquifier = "." + std::to_string(getpid());
     std::mutex queue_access_lock;
+    std::atomic<bool> fatal_stop{false};
+    std::string fatal_output;
+    std::string fatal_file;
     auto clang_tidy_runner = [&]() {
       for (;;) {
+        if (fatal_stop.load()) {
+          return;
+        }
         filepath_contenthash_t work;
         {
           const std::lock_guard<std::mutex> lock(queue_access_lock);
@@ -326,9 +346,9 @@ class ClangTidyRunner
         const std::string tmp_out = final_out.string() + uniquifier + ".tmp";
         // Putting the file to clang-tidy early in the command line so that
         // it is easy to find with `ps` or `top`.
-        const std::string command = clang_tidy_ + " '" + work.first.string()
-                                    + "'" + clang_tidy_args_ + "> '" + tmp_out
-                                    + "' 2>/dev/null";
+        const std::string command
+            = nice_cmd + clang_tidy_ + " '" + work.first.string() + "'"
+              + clang_tidy_args_ + "> '" + tmp_out + "' 2>&1";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN
@@ -340,6 +360,30 @@ class ClangTidyRunner
         }
         // NOLINTEND
 #endif
+        // Detect systemic clang-tidy failure (bad config, missing compile db,
+        // etc.): non-zero exit with no check findings in output. Abort the
+        // run and surface the error instead of silently caching empty output.
+#ifdef WIFEXITED
+        // NOLINTBEGIN
+        if (WIFEXITED(r) && WEXITSTATUS(r) != 0) {
+          // NOLINTEND
+#else
+        if (r != 0) {
+#endif
+          const std::string out = GetContent(tmp_out);
+          static const std::regex check_finding(
+              R"(\[[a-zA-Z0-9.]+-[a-zA-Z0-9.-]+\])");
+          if (!std::regex_search(out, check_finding)) {
+            bool expected = false;
+            if (fatal_stop.compare_exchange_strong(expected, true)) {
+              fatal_output = out;
+              fatal_file = work.first.string();
+            }
+            std::error_code ignored_error;
+            fs::remove(tmp_out, ignored_error);
+            return;
+          }
+        }
         const std::string filter_filename = work.first.filename().string();
         RepairFilenameOccurences(filter_filename, tmp_out, tmp_out);
         fs::rename(tmp_out, final_out);  // atomic replacement
@@ -355,6 +399,12 @@ class ClangTidyRunner
     }
     if (print_progress) {
       fprintf(stderr, "     \n");  // Clean out progress counter.
+    }
+    if (fatal_stop.load()) {
+      std::cerr << "\nclang-tidy failed on " << fatal_file
+                << " (aborting; output below):\n"
+                << fatal_output << "\n";
+      exit(EXIT_FAILURE);
     }
   }
 
@@ -478,8 +528,12 @@ class ClangTidyRunner
 class FileGatherer
 {
  public:
-  FileGatherer(ContentAddressedStore& store, std::string_view search_dir)
-      : store_(store), root_dir_(search_dir.empty() ? "." : search_dir)
+  FileGatherer(ContentAddressedStore& store,
+               std::string_view search_dir,
+               std::vector<std::regex> path_filters)
+      : store_(store),
+        root_dir_(search_dir.empty() ? "." : search_dir),
+        path_filters_(std::move(path_filters))
   {
   }
 
@@ -506,7 +560,7 @@ class FileGatherer
         continue;
       }
       const auto extension = p.extension();
-      if (ConsiderExtension(extension.string())) {
+      if (ConsiderExtension(extension.string()) && PassesPathFilters(file)) {
         files_of_interest_.emplace_back(p, 0);  // <- hash to be filled later.
       }
       // Remember content hash of header, so that we can make changed headers
@@ -616,9 +670,30 @@ class FileGatherer
     return checks_seen.size();
   }
 
+  void PrintFilesOfInterest() const
+  {
+    for (const auto& f : files_of_interest_) {
+      std::cout << f.first.string() << "\n";
+    }
+  }
+
  private:
+  bool PassesPathFilters(const std::string& file) const
+  {
+    if (path_filters_.empty()) {
+      return true;
+    }
+    for (const auto& re : path_filters_) {
+      if (std::regex_search(file, re)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   ContentAddressedStore& store_;
   const std::string root_dir_;
+  const std::vector<std::regex> path_filters_;
   std::vector<filepath_contenthash_t> files_of_interest_;
 };
 }  // namespace
@@ -659,12 +734,50 @@ int main(int argc, char* argv[])
     // Cache prefix not set, choose name of directory
     cache_prefix = fs::current_path().filename().string() + "_";
   }
-  ClangTidyRunner runner(cache_prefix, compile_db_file, argc, argv);
+
+  // Peel off --filter=REGEX args (repeatable; OR semantics) and --list-files
+  // before forwarding remaining args to clang-tidy. Filters narrow which paths
+  // the source walk keeps; they do not flow into clang-tidy or the cache key,
+  // so the same file content always lands on the same cache entry.
+  std::vector<std::regex> path_filters;
+  std::vector<char*> forward_argv;
+  bool list_files_only = false;
+  forward_argv.reserve(argc);
+  forward_argv.push_back(argv[0]);
+  for (int i = 1; i < argc; ++i) {
+    constexpr std::string_view kFilterPrefix = "--filter=";
+    constexpr std::string_view kListFiles = "--list-files";
+    const std::string_view a = argv[i];
+    if (a.substr(0, kFilterPrefix.size()) == kFilterPrefix) {
+      const std::string pattern{a.substr(kFilterPrefix.size())};
+      try {
+        path_filters.emplace_back(pattern);
+      } catch (const std::regex_error& e) {
+        std::cerr << "Invalid --filter regex: " << pattern << " (" << e.what()
+                  << ")\n";
+        return EXIT_FAILURE;
+      }
+    } else if (a == kListFiles) {
+      list_files_only = true;
+    } else {
+      forward_argv.push_back(argv[i]);
+    }
+  }
+  const int forward_argc = static_cast<int>(forward_argv.size());
+
+  ClangTidyRunner runner(
+      cache_prefix, compile_db_file, forward_argc, forward_argv.data());
   ContentAddressedStore store(runner.project_cache_dir());
   std::cerr << "Cache dir " << runner.project_cache_dir() << "\n";
 
-  FileGatherer cc_file_gatherer(store, kConfig.start_dir);
+  FileGatherer cc_file_gatherer(
+      store, kConfig.start_dir, std::move(path_filters));
   auto work_list = cc_file_gatherer.BuildWorkList(build_env_latest_change);
+
+  if (list_files_only) {
+    cc_file_gatherer.PrintFilesOfInterest();
+    return EXIT_SUCCESS;
+  }
 
   // Now the expensive part...
   runner.RunClangTidyOn(store, &work_list);

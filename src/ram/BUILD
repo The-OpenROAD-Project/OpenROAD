@@ -34,7 +34,7 @@ cc_library(
         "//src/dpl",
         "//src/drt",
         "//src/grt",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/pdn",
         "//src/ppl",
         "//src/sta:opensta_lib",

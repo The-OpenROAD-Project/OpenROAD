@@ -111,6 +111,7 @@ void _dbChipRegion::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
+  info.children["name"].add(name_);
   chip_bump_tbl_->collectMemInfo(info.children["chip_bump_tbl_"]);
 }
 
@@ -125,7 +126,7 @@ _dbChipRegion::~_dbChipRegion()
 //
 ////////////////////////////////////////////////////////////////////
 
-std::string dbChipRegion::getName() const
+const std::string& dbChipRegion::getName() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   return obj->name_;

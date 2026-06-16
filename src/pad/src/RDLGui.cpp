@@ -11,6 +11,7 @@
 #include "RDLRoute.h"
 #include "RDLRouter.h"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/geom.h"
 
 namespace pad {
@@ -44,7 +45,7 @@ void RDLGui::drawObjects(gui::Painter& painter)
 
   const auto& vertex_map = router_->getVertexMap();
 
-  std::map<odb::dbITerm*, RDLRoute*> routes;
+  odb::PtrMap<odb::dbITerm, RDLRoute*> routes;
   for (const auto& route : router_->getRoutes()) {
     routes[route->getTerminal()] = route.get();
   }

@@ -6,6 +6,7 @@
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTech;
@@ -35,7 +36,8 @@ class PlacementDRC
 {
  public:
   // Constructor
-  PlacementDRC(Grid* grid,
+  PlacementDRC(utl::Logger* logger,
+               Grid* grid,
                odb::dbTech* tech,
                Padding* padding,
                bool disallow_one_site_gap);
@@ -62,12 +64,20 @@ class PlacementDRC
                 GridY y,
                 const odb::dbOrientType& orient) const;
 
+  // Count the number of DRC check categories that fail (0–4)
+  int countDRCViolations(const Node* cell) const;
+  int countDRCViolations(const Node* cell,
+                         GridX x,
+                         GridY y,
+                         const odb::dbOrientType& orient) const;
+
   int getEdgeTypeIdx(const std::string& edge_type) const;
   bool hasCellEdgeSpacingTable() const;
   int getMaxSpacing(int edge_type_idx) const;
 
  private:
   // Member variables
+  utl::Logger* logger_{nullptr};
   Grid* grid_{nullptr};        // Pointer to the grid for placement
   Padding* padding_{nullptr};  // Pointer to the padding
   std::unordered_map<std::string, int> edge_types_indices_;

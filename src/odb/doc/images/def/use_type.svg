@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="189" height="345"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SIGNAL"
+      xlink:title="K_SIGNAL">
+      <rect x="51" y="3" width="82" height="32"/>
+      <rect x="49" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_SIGNAL</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_POWER"
+      xlink:title="K_POWER">
+      <rect x="51" y="47" width="82" height="32"/>
+      <rect x="49" y="45" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_POWER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_GROUND"
+      xlink:title="K_GROUND">
+      <rect x="51" y="91" width="90" height="32"/>
+      <rect x="49" y="89" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_GROUND</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CLOCK"
+      xlink:title="K_CLOCK">
+      <rect x="51" y="135" width="78" height="32"/>
+      <rect x="49" y="133" width="78" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">K_CLOCK</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_TIEOFF"
+      xlink:title="K_TIEOFF">
+      <rect x="51" y="179" width="80" height="32"/>
+      <rect x="49" y="177" width="80" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">K_TIEOFF</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ANALOG"
+      xlink:title="K_ANALOG">
+      <rect x="51" y="223" width="86" height="32"/>
+      <rect x="49" y="221" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">K_ANALOG</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SCAN"
+      xlink:title="K_SCAN">
+      <rect x="51" y="267" width="70" height="32"/>
+      <rect x="49" y="265" width="70" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="285">K_SCAN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RESET"
+      xlink:title="K_RESET">
+      <rect x="51" y="311" width="76" height="32"/>
+      <rect x="49" y="309" width="76" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="329">K_RESET</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m82 0 h10 m0 0 h8 m-130 0 h20 m110 0 h20 m-150 0 q10 0 10 10 m130 0 q0 -10 10 -10 m-140 10 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m82 0 h10 m0 0 h8 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m90 0 h10 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m78 0 h10 m0 0 h12 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m80 0 h10 m0 0 h10 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m86 0 h10 m0 0 h4 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m70 0 h10 m0 0 h20 m-120 -10 v20 m130 0 v-20 m-130 20 v24 m130 0 v-24 m-130 24 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m76 0 h10 m0 0 h14 m23 -308 h-3"/>
+   <polygon points="179 17 187 13 187 21"/>
+   <polygon points="179 17 171 13 171 21"/>
+</svg>

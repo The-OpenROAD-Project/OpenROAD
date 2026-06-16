@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: td1
+[INFO ODB-0252]     Updated 9 pins.
+[INFO ODB-0253]     Updated 4 components.
+[INFO ODB-0254]     Updated 11 nets and 13 connections.
+worst slack max -0.04
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        11
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U5/ZN: Cell AND2_X4, pins A1 <-> A2
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U4/ZN: Cell AND4_X4, pins A4 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U4: Net net1 is "don't touch"
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U3/ZN: Cell NAND2_X4, pins A2 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U4/ZN: Cell AND4_X4, pins A4 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U4: Net net1 is "don't touch"
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U3/ZN: Already swapped U3
+       9* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10+ |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+      11+ |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+    final |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.

@@ -366,8 +366,10 @@ void dbTable<T, page_size>::destroy(T* t)
 
   page->alloc_cnt_--;
   const uint32_t offset = t->offset_in_bytes_;
+  const uint32_t oid = t->oid_;
   t->~T();  // call destructor
   o->offset_in_bytes_ = offset & ~kAllocBit;
+  o->oid_ = oid;
 
   const uint32_t id_in_page = t - (T*) page->objects_;
   const uint32_t id = page->page_addr_ + id_in_page;

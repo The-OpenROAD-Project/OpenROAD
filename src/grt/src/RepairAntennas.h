@@ -18,6 +18,7 @@
 #include "dpl/Opendp.h"
 #include "grt/GRoute.h"
 #include "grt/RoutePt.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -46,7 +47,7 @@ class GlobalRouter;
 class Net;
 class Pin;
 
-using AntennaViolations = std::map<odb::dbNet*, std::vector<ant::Violation>>;
+using AntennaViolations = odb::PtrMap<odb::dbNet, std::vector<ant::Violation>>;
 
 struct RoutePtPins
 {

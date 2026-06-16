@@ -176,7 +176,6 @@ void
 set_dont_use(LibertyCell *lib_cell,
              bool dont_use)
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->setDontUse(lib_cell, dont_use);
 }
@@ -184,7 +183,6 @@ set_dont_use(LibertyCell *lib_cell,
 void
 reset_dont_use()
 {
-  ensureLinked();
   Resizer *resizer = getResizer();
   resizer->resetDontUse();
 }
@@ -366,9 +364,10 @@ repair_setup(double setup_margin,
              bool match_cell_footprint,
              bool verbose,
              std::vector<rsz::MoveType> sequence,
+             const char* phases,
              bool skip_pin_swap,
              bool skip_gate_cloning,
-             bool skip_size_down,
+             bool skip_size_down_fanout,
              bool skip_buffering,
              bool skip_buffer_removal,
              bool skip_last_gasp,
@@ -380,9 +379,9 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence,
+                       verbose, sequence, phases,
                        skip_pin_swap, skip_gate_cloning,
-                       skip_size_down,
+                       skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal,
                        skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
 }
@@ -616,6 +615,30 @@ void report_buffers_cmd(bool filtered)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportBuffers(filtered);
+}
+
+void report_delay_estimator_accuracy_cmd(Instance* inst,
+                                         LibertyCell* replacement,
+                                         const char* estimator,
+                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracy(
+      inst, replacement, std::string(estimator), delay_levels);
+}
+
+bool is_valid_accuracy_estimator_cmd(const char* name)
+{
+  return Resizer::isValidDelayEstimatorName(std::string(name));
+}
+
+const char* accuracy_estimator_names_cmd()
+{
+  static const std::string names = []() {
+    return Resizer::delayEstimatorNames();
+  }();
+  return names.c_str();
 }
 
 void

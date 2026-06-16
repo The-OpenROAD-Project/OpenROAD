@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="979" height="389"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_LAYER"
+      xlink:title="K_LAYER">
+      <rect x="71" y="3" width="74" height="32"/>
+      <rect x="69" y="1" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="21">K_LAYER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="165" y="3" width="82" height="32"/>
+      <rect x="163" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="173" y="21">T_STRING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#layer_exceptpgnet"
+      xlink:title="layer_exceptpgnet">
+      <rect x="267" y="3" width="138" height="32"/>
+      <rect x="265" y="1" width="138" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="275" y="21">layer_exceptpgnet</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#layer_spacing"
+      xlink:title="layer_spacing">
+      <rect x="425" y="3" width="108" height="32"/>
+      <rect x="423" y="1" width="108" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="433" y="21">layer_spacing</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_WIDTH"
+      xlink:title="K_WIDTH">
+      <rect x="71" y="47" width="80" height="32"/>
+      <rect x="69" y="45" width="80" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="65">K_WIDTH</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="171" y="47" width="92" height="32"/>
+      <rect x="169" y="45" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="179" y="65">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_PATH"
+      xlink:title="K_PATH">
+      <rect x="71" y="91" width="68" height="32"/>
+      <rect x="69" y="89" width="68" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="109">K_PATH</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#maskColor"
+      xlink:title="maskColor">
+      <rect x="159" y="91" width="86" height="32"/>
+      <rect x="157" y="89" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="167" y="109">maskColor</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#firstPt"
+      xlink:title="firstPt">
+      <rect x="285" y="91" width="58" height="32"/>
+      <rect x="283" y="89" width="58" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="293" y="109">firstPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#otherPts"
+      xlink:title="otherPts">
+      <rect x="363" y="91" width="74" height="32"/>
+      <rect x="361" y="89" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="371" y="109">otherPts</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ITERATE"
+      xlink:title="K_ITERATE">
+      <rect x="285" y="135" width="88" height="32"/>
+      <rect x="283" y="133" width="88" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="293" y="153">K_ITERATE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#firstPt"
+      xlink:title="firstPt">
+      <rect x="393" y="135" width="58" height="32"/>
+      <rect x="391" y="133" width="58" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="401" y="153">firstPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#otherPts"
+      xlink:title="otherPts">
+      <rect x="471" y="135" width="74" height="32"/>
+      <rect x="469" y="133" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="479" y="153">otherPts</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#stepPattern"
+      xlink:title="stepPattern">
+      <rect x="565" y="135" width="94" height="32"/>
+      <rect x="563" y="133" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="573" y="153">stepPattern</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RECT"
+      xlink:title="K_RECT">
+      <rect x="71" y="179" width="68" height="32"/>
+      <rect x="69" y="177" width="68" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="197">K_RECT</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#maskColor"
+      xlink:title="maskColor">
+      <rect x="159" y="179" width="86" height="32"/>
+      <rect x="157" y="177" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="167" y="197">maskColor</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="285" y="179" width="32" height="32"/>
+      <rect x="283" y="177" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="293" y="197">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="337" y="179" width="32" height="32"/>
+      <rect x="335" y="177" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="345" y="197">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ITERATE"
+      xlink:title="K_ITERATE">
+      <rect x="285" y="223" width="88" height="32"/>
+      <rect x="283" y="221" width="88" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="293" y="241">K_ITERATE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="393" y="223" width="32" height="32"/>
+      <rect x="391" y="221" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="401" y="241">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="445" y="223" width="32" height="32"/>
+      <rect x="443" y="221" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="453" y="241">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#stepPattern"
+      xlink:title="stepPattern">
+      <rect x="497" y="223" width="94" height="32"/>
+      <rect x="495" y="221" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="505" y="241">stepPattern</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_POLYGON"
+      xlink:title="K_POLYGON">
+      <rect x="71" y="267" width="96" height="32"/>
+      <rect x="69" y="265" width="96" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="285">K_POLYGON</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#maskColor"
+      xlink:title="maskColor">
+      <rect x="187" y="267" width="86" height="32"/>
+      <rect x="185" y="265" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="195" y="285">maskColor</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#firstPt"
+      xlink:title="firstPt">
+      <rect x="313" y="267" width="58" height="32"/>
+      <rect x="311" y="265" width="58" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="321" y="285">firstPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nextPt"
+      xlink:title="nextPt">
+      <rect x="391" y="267" width="60" height="32"/>
+      <rect x="389" y="265" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="399" y="285">nextPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nextPt"
+      xlink:title="nextPt">
+      <rect x="471" y="267" width="60" height="32"/>
+      <rect x="469" y="265" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="479" y="285">nextPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#otherPts"
+      xlink:title="otherPts">
+      <rect x="551" y="267" width="74" height="32"/>
+      <rect x="549" y="265" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="559" y="285">otherPts</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ITERATE"
+      xlink:title="K_ITERATE">
+      <rect x="313" y="311" width="88" height="32"/>
+      <rect x="311" y="309" width="88" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="321" y="329">K_ITERATE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#firstPt"
+      xlink:title="firstPt">
+      <rect x="421" y="311" width="58" height="32"/>
+      <rect x="419" y="309" width="58" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="429" y="329">firstPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nextPt"
+      xlink:title="nextPt">
+      <rect x="499" y="311" width="60" height="32"/>
+      <rect x="497" y="309" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="507" y="329">nextPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#nextPt"
+      xlink:title="nextPt">
+      <rect x="579" y="311" width="60" height="32"/>
+      <rect x="577" y="309" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="587" y="329">nextPt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#otherPts"
+      xlink:title="otherPts">
+      <rect x="659" y="311" width="74" height="32"/>
+      <rect x="657" y="309" width="74" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="667" y="329">otherPts</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#stepPattern"
+      xlink:title="stepPattern">
+      <rect x="753" y="311" width="94" height="32"/>
+      <rect x="751" y="309" width="94" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="761" y="329">stepPattern</text>
+   </a>
+   <rect x="907" y="3" width="24" height="32" rx="10"/>
+   <rect x="905"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="915" y="21">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#via_placement"
+      xlink:title="via_placement">
+      <rect x="51" y="355" width="112" height="32"/>
+      <rect x="49" y="353" width="112" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="373">via_placement</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m40 0 h10 m74 0 h10 m0 0 h10 m82 0 h10 m0 0 h10 m138 0 h10 m0 0 h10 m108 0 h10 m0 0 h334 m-836 0 h20 m816 0 h20 m-856 0 q10 0 10 10 m836 0 q0 -10 10 -10 m-846 10 v24 m836 0 v-24 m-836 24 q0 10 10 10 m816 0 q10 0 10 -10 m-826 10 h10 m80 0 h10 m0 0 h10 m92 0 h10 m0 0 h604 m-826 -10 v20 m836 0 v-20 m-836 20 v24 m836 0 v-24 m-836 24 q0 10 10 10 m816 0 q10 0 10 -10 m-826 10 h10 m68 0 h10 m0 0 h10 m86 0 h10 m20 0 h10 m58 0 h10 m0 0 h10 m74 0 h10 m0 0 h222 m-414 0 h20 m394 0 h20 m-434 0 q10 0 10 10 m414 0 q0 -10 10 -10 m-424 10 v24 m414 0 v-24 m-414 24 q0 10 10 10 m394 0 q10 0 10 -10 m-404 10 h10 m88 0 h10 m0 0 h10 m58 0 h10 m0 0 h10 m74 0 h10 m0 0 h10 m94 0 h10 m20 -44 h188 m-826 -10 v20 m836 0 v-20 m-836 20 v68 m836 0 v-68 m-836 68 q0 10 10 10 m816 0 q10 0 10 -10 m-826 10 h10 m68 0 h10 m0 0 h10 m86 0 h10 m20 0 h10 m32 0 h10 m0 0 h10 m32 0 h10 m0 0 h222 m-346 0 h20 m326 0 h20 m-366 0 q10 0 10 10 m346 0 q0 -10 10 -10 m-356 10 v24 m346 0 v-24 m-346 24 q0 10 10 10 m326 0 q10 0 10 -10 m-336 10 h10 m88 0 h10 m0 0 h10 m32 0 h10 m0 0 h10 m32 0 h10 m0 0 h10 m94 0 h10 m20 -44 h256 m-826 -10 v20 m836 0 v-20 m-836 20 v68 m836 0 v-68 m-836 68 q0 10 10 10 m816 0 q10 0 10 -10 m-826 10 h10 m96 0 h10 m0 0 h10 m86 0 h10 m20 0 h10 m58 0 h10 m0 0 h10 m60 0 h10 m0 0 h10 m60 0 h10 m0 0 h10 m74 0 h10 m0 0 h222 m-574 0 h20 m554 0 h20 m-594 0 q10 0 10 10 m574 0 q0 -10 10 -10 m-584 10 v24 m574 0 v-24 m-574 24 q0 10 10 10 m554 0 q10 0 10 -10 m-564 10 h10 m88 0 h10 m0 0 h10 m58 0 h10 m0 0 h10 m60 0 h10 m0 0 h10 m60 0 h10 m0 0 h10 m74 0 h10 m0 0 h10 m94 0 h10 m40 -308 h10 m24 0 h10 m-920 0 h20 m900 0 h20 m-940 0 q10 0 10 10 m920 0 q0 -10 10 -10 m-930 10 v332 m920 0 v-332 m-920 332 q0 10 10 10 m900 0 q10 0 10 -10 m-910 10 h10 m112 0 h10 m0 0 h768 m23 -352 h-3"/>
+   <polygon points="969 17 977 13 977 21"/>
+   <polygon points="969 17 961 13 961 21"/>
+</svg>

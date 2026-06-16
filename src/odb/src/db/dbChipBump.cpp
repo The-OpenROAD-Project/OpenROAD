@@ -163,12 +163,21 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
                   "as the chip region {}",
                   inst->getName(),
                   chip_region->getName());
-    return nullptr;
   }
+  if (inst->getChipBump() != nullptr) {
+    logger->error(
+        utl::ODB,
+        534,
+        "Cannot create chip bump. Inst {} already has an associated chip bump",
+        inst->getName());
+  }
+
   _dbChipBump* obj = _chip_region->chip_bump_tbl_->create();
   obj->inst_ = _inst->getOID();
   obj->chip_ = _chip->getOID();
   obj->chip_region_ = _chip_region->getOID();
+  _inst->chip_region_ = _chip_region->getOID();
+  _inst->bump_ = obj->getOID();
   return (dbChipBump*) obj;
 }
 

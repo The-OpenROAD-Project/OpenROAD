@@ -20,6 +20,11 @@ ChipletDef:
     regions:
       front_reg:
         side: front
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
       back_reg:
         side: back
         coords:

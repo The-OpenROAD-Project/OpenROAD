@@ -18,10 +18,12 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace odb {
 class dbBlock;
+class dbChip;
 class Rect;
 }  // namespace odb
 
@@ -91,7 +93,7 @@ class HeatMapDataSource
 
   void registerHeatMap();
 
-  virtual void setBlock(odb::dbBlock* block) { block_ = block; }
+  virtual void setChip(odb::dbChip* chip) { chip_ = chip; }
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
   bool getUseDBU() const { return use_dbu_; }
 
@@ -156,8 +158,9 @@ class HeatMapDataSource
   virtual double getGridSizeMaximumValue() const { return 100.0; }
   // The default implementation uses the block's bounds
   virtual odb::Rect getBounds() const;
-  odb::dbBlock* getBlock() const { return block_; }
-
+  odb::dbChip* getChip() const { return chip_; }
+  odb::dbBlock* getBlock() const;
+  double getDbuPerMicron() const;
   // map controls
   void update() { destroyMap(); }
   void ensureMap();
@@ -230,7 +233,7 @@ class HeatMapDataSource
 
   // Returns the set of selected dbInst* objects when use_selected_only_ is
   // enabled, or an empty set (meaning no filtering) when it is disabled.
-  std::set<odb::dbInst*> getSelectedInsts() const;
+  odb::PtrSet<odb::dbInst> getSelectedInsts() const;
 
  private:
   const std::string name_;
@@ -243,7 +246,7 @@ class HeatMapDataSource
   bool colors_correct_;
   bool issue_redraw_;
 
-  odb::dbBlock* block_;
+  odb::dbChip* chip_;
   utl::Logger* logger_;
   double grid_x_size_;
   double grid_y_size_;

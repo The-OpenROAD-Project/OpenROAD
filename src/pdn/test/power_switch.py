@@ -3,6 +3,9 @@ from openroad import Design, Tech
 import pdn_aux
 import helpers
 
+bazel_working_dir = "/_main/src/pdn/test/"
+helpers.if_bazel_change_working_dir_to(bazel_working_dir)
+
 tech = Tech()
 tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")

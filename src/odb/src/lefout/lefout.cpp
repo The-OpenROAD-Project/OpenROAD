@@ -7,11 +7,16 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ostream>
+#include <set>
+#include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -19,6 +24,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "spdlog/fmt/ostr.h"
 #include "utl/scope.h"
 
@@ -58,17 +64,19 @@ void lefout::insertObstruction(dbTechLayer* layer,
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
-void lefout::writeVersion(const std::string& version)
+void lefout::writeVersion(std::ostream& out, const std::string& version)
 {
-  fmt::print(_out, "VERSION {} ;\n", version);
+  fmt::print(out, "VERSION {} ;\n", version);
 }
 
 template <typename GenericBox>
-void lefout::writeBoxes(dbBlock* block,
-                        dbSet<GenericBox>& boxes,
-                        const char* indent)
+odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
+                                      dbBlock* block,
+                                      dbSet<GenericBox>& boxes,
+                                      const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
+  odb::PtrSet<dbVia> vias;
 
   for (GenericBox* generic_box : boxes) {
     if (generic_box == nullptr) {
@@ -86,10 +94,11 @@ void lefout::writeBoxes(dbBlock* block,
       }
       if (box->getBlockVia()) {
         via_name = block->getName() + "_" + box->getBlockVia()->getName();
+        vias.insert(box->getBlockVia());
       }
 
       const Point pt = box->getViaXY();
-      fmt::print(_out,
+      fmt::print(out,
                  "{}VIA {:.11g} {:.11g} {} ;\n",
                  indent,
                  lefdist(pt.getX()),
@@ -105,19 +114,22 @@ void lefout::writeBoxes(dbBlock* block,
       }
 
       if (cur_layer != layer) {
-        fmt::print(_out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+        fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
         cur_layer = layer;
       }
 
-      writeBox(indent, box);
+      writeBox(out, indent, box);
     }
   }
+
+  return vias;
 }
 
 template <>
-void lefout::writeBoxes(dbBlock* block,
-                        dbSet<dbPolygon>& boxes,
-                        const char* indent)
+odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
+                                      dbBlock* block,
+                                      dbSet<dbPolygon>& boxes,
+                                      const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
 
@@ -136,22 +148,24 @@ void lefout::writeBoxes(dbBlock* block,
     }
 
     if (cur_layer != layer) {
-      fmt::print(_out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+      fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
       cur_layer = layer;
     }
 
-    writePolygon(indent, box);
+    writePolygon(out, indent, box);
   }
+
+  return {};
 }
 
-void lefout::writeBox(const std::string& indent, dbBox* box)
+void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
 {
   int x1 = box->xMin();
   int y1 = box->yMin();
   int x2 = box->xMax();
   int y2 = box->yMax();
 
-  fmt::print(_out,
+  fmt::print(out,
              "{}  RECT  {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
              indent.c_str(),
              lefdist(x1),
@@ -160,37 +174,35 @@ void lefout::writeBox(const std::string& indent, dbBox* box)
              lefdist(y2));
 }
 
-void lefout::writePolygon(const std::string& indent, dbPolygon* polygon)
+void lefout::writePolygon(std::ostream& out,
+                          const std::string& indent,
+                          dbPolygon* polygon)
 {
-  fmt::print(_out, "{}  POLYGON  ", indent.c_str());
+  fmt::print(out, "{}  POLYGON  ", indent.c_str());
 
   for (const Point& pt : polygon->getPolygon().getPoints()) {
     int x = pt.x();
     int y = pt.y();
-    fmt::print(_out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
+    fmt::print(out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
   }
 
-  fmt::print(_out, ";\n");
+  fmt::print(out, ";\n");
 }
 
-void lefout::writeRect(const std::string& indent,
-                       const boost::polygon::rectangle_data<int>& rect)
+void lefout::writeRect(std::ostream& out,
+                       const std::string& indent,
+                       const Rect& rect)
 {
-  int x1 = boost::polygon::xl(rect);
-  int y1 = boost::polygon::yl(rect);
-  int x2 = boost::polygon::xh(rect);
-  int y2 = boost::polygon::yh(rect);
-
-  fmt::print(_out,
+  fmt::print(out,
              "{}  RECT  {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
              indent.c_str(),
-             lefdist(x1),
-             lefdist(y1),
-             lefdist(x2),
-             lefdist(y2));
+             lefdist(rect.xMin()),
+             lefdist(rect.yMin()),
+             lefdist(rect.xMax()),
+             lefdist(rect.yMax()));
 }
 
-void lefout::writeHeader(dbBlock* db_block)
+void lefout::writeHeader(std::ostream& out, dbBlock* db_block)
 {
   char left_bus_delimiter = 0;
   char right_bus_delimiter = 0;
@@ -210,31 +222,31 @@ void lefout::writeHeader(dbBlock* db_block)
     hier_delimiter = '|';
   }
 
-  writeVersion("5.8");
-  writeBusBitChars(left_bus_delimiter, right_bus_delimiter);
-  writeDividerChar(hier_delimiter);
-  writeUnits(/*database_units = */ db_block->getDbUnitsPerMicron());
+  writeVersion(out, "5.8");
+  writeBusBitChars(out, left_bus_delimiter, right_bus_delimiter);
+  writeDividerChar(out, hier_delimiter);
+  writeUnits(out, /*database_units = */ db_block->getDbUnitsPerMicron());
 }
 
-void lefout::writeObstructions(dbBlock* db_block)
+void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
 {
   ObstructionMap obstructions;
   getObstructions(db_block, obstructions);
 
-  fmt::print(_out, "{}", "  OBS\n");
+  fmt::print(out, "{}", "  OBS\n");
   dbBox* block_bounding_box = db_block->getBBox();
   for (const auto& [tech_layer, polySet] : obstructions) {
-    fmt::print(_out, "    LAYER {} ;\n", tech_layer->getName().c_str());
+    fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers_) {
-      writeBox("   ", block_bounding_box);
+      writeBox(out, "   ", block_bounding_box);
     } else {
       const int bloat = determineBloat(tech_layer);
       boost::polygon::polygon_90_set_data<int> shrink_poly = polySet;
       shrink_poly.shrink2(bloat, bloat, bloat, bloat);
 
       // Decompose the polygon set to rectanges in non-preferred direction
-      std::vector<boost::polygon::rectangle_data<int>> rects;
+      std::vector<Rect> rects;
       if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
         shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL);
       } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
@@ -244,11 +256,11 @@ void lefout::writeObstructions(dbBlock* db_block)
       }
 
       for (const auto& rect : rects) {
-        writeRect("   ", rect);
+        writeRect(out, "   ", rect);
       }
     }
   }
-  fmt::print(_out, "  END\n");
+  fmt::print(out, "  END\n");
 }
 
 void lefout::getObstructions(dbBlock* db_block,
@@ -316,7 +328,7 @@ void lefout::findLayerViaObstructions(ObstructionMap& obstructions,
   std::vector<dbShape> via_shapes;
   box->getViaBoxes(via_shapes);
   for (dbShape db_shape : via_shapes) {
-    if (db_shape.isViaBox()) {
+    if (db_shape.getTechLayer() == nullptr) {
       continue;
     }
     insertObstruction(db_shape.getTechLayer(), db_shape.getBox(), obstructions);
@@ -338,13 +350,22 @@ void lefout::findWireLayerObstructions(ObstructionMap& obstructions,
 
   for (wire_shape_itr.begin(wire); wire_shape_itr.next(shape);) {
     if (shape.isVia()) {
-      continue;
+      std::vector<dbShape> via_shapes;
+      dbShape::getViaBoxes(shape, via_shapes);
+      for (dbShape db_shape : via_shapes) {
+        if (db_shape.getTechLayer() == nullptr) {
+          continue;
+        }
+        insertObstruction(
+            db_shape.getTechLayer(), db_shape.getBox(), obstructions);
+      }
+    } else {
+      insertObstruction(shape.getTechLayer(), shape.getBox(), obstructions);
     }
-    insertObstruction(shape.getTechLayer(), shape.getBox(), obstructions);
   }
 }
 
-void lefout::writeHeader(dbLib* lib)
+void lefout::writeHeader(std::ostream& out, dbLib* lib)
 {
   dbTech* tech = lib->getTech();
 
@@ -366,64 +387,65 @@ void lefout::writeHeader(dbLib* lib)
     hier_delimiter = '|';
   }
 
-  writeVersion(tech->getLefVersionStr());
-  writeNameCaseSensitive(tech->getNamesCaseSensitive());
-  writeBusBitChars(left_bus_delimiter, right_bus_delimiter);
-  writeDividerChar(hier_delimiter);
-  writePropertyDefinitions(lib);
+  writeVersion(out, tech->getLefVersionStr());
+  writeNameCaseSensitive(out, tech->getNamesCaseSensitive());
+  writeBusBitChars(out, left_bus_delimiter, right_bus_delimiter);
+  writeDividerChar(out, hier_delimiter);
+  writePropertyDefinitions(out, lib);
 
   if (lib->getLefUnits()) {
-    writeUnits(lib->getLefUnits());
+    writeUnits(out, lib->getLefUnits());
   }
 }
 
-void lefout::writeDividerChar(char hier_delimiter)
+void lefout::writeDividerChar(std::ostream& out, char hier_delimiter)
 {
-  fmt::print(_out, "DIVIDERCHAR \"{}\" ;\n", hier_delimiter);
+  fmt::print(out, "DIVIDERCHAR \"{}\" ;\n", hier_delimiter);
 }
 
-void lefout::writeUnits(int database_units)
+void lefout::writeUnits(std::ostream& out, int database_units)
 {
-  fmt::print(_out, "{}", "UNITS\n");
-  fmt::print(_out, "    DATABASE MICRONS {} ;\n", database_units);
-  fmt::print(_out, "{}", "END UNITS\n");
+  fmt::print(out, "{}", "UNITS\n");
+  fmt::print(out, "    DATABASE MICRONS {} ;\n", database_units);
+  fmt::print(out, "{}", "END UNITS\n");
 }
 
-void lefout::writeBusBitChars(char left_bus_delimiter, char right_bus_delimiter)
+void lefout::writeBusBitChars(std::ostream& out,
+                              char left_bus_delimiter,
+                              char right_bus_delimiter)
 {
-  fmt::print(_out,
-             "BUSBITCHARS \"{}{}\" ;\n",
-             left_bus_delimiter,
-             right_bus_delimiter);
+  fmt::print(
+      out, "BUSBITCHARS \"{}{}\" ;\n", left_bus_delimiter, right_bus_delimiter);
 }
 
-void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
+void lefout::writeNameCaseSensitive(std::ostream& out,
+                                    const dbOnOffType on_off_type)
 {
-  fmt::print(_out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
+  fmt::print(out, "NAMESCASESENSITIVE {} ;\n", on_off_type.getString());
 }
 
-void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
+void lefout::writeBlockVia(std::ostream& out, dbBlock* db_block, dbVia* via)
 {
   std::string name = db_block->getName() + "_" + via->getName();
 
   if (via->isDefault()) {
-    fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
+    fmt::print(out, "\nVIA {} DEFAULT\n", name.c_str());
   } else {
-    fmt::print(_out, "\nVIA {}\n", name.c_str());
+    fmt::print(out, "\nVIA {}\n", name.c_str());
   }
 
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(db_block, boxes, "    ");
+    writeBoxes(out, db_block, boxes, "    ");
   } else {
     std::string rname = rule->getName();
-    fmt::print(_out, "  VIARULE {} ;\n", rname.c_str());
+    fmt::print(out, "  VIARULE {} ;\n", rname.c_str());
 
     const dbViaParams P = via->getViaParams();
 
-    fmt::print(_out,
+    fmt::print(out,
                "  CUTSIZE {:.11g} {:.11g} ;\n",
                lefdist(P.getXCutSize()),
                lefdist(P.getYCutSize()));
@@ -431,12 +453,12 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
     std::string bot = P.getBottomLayer()->getName();
     std::string cut = P.getCutLayer()->getName();
     fmt::print(
-        _out, "  LAYERS {} {} {} ;\n", bot.c_str(), cut.c_str(), top.c_str());
-    fmt::print(_out,
+        out, "  LAYERS {} {} {} ;\n", bot.c_str(), cut.c_str(), top.c_str());
+    fmt::print(out,
                "  CUTSPACING {:.11g} {:.11g} ;\n",
                lefdist(P.getXCutSpacing()),
                lefdist(P.getYCutSpacing()));
-    fmt::print(_out,
+    fmt::print(out,
                "  ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
                lefdist(P.getXBottomEnclosure()),
                lefdist(P.getYBottomEnclosure()),
@@ -445,11 +467,11 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
     if ((P.getNumCutRows() != 1) || (P.getNumCutCols() != 1)) {
       fmt::print(
-          _out, "  ROWCOL {} {} ;\n", P.getNumCutRows(), P.getNumCutCols());
+          out, "  ROWCOL {} {} ;\n", P.getNumCutRows(), P.getNumCutCols());
     }
 
     if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0)) {
-      fmt::print(_out,
+      fmt::print(out,
                  "  ORIGIN {:.11g} {:.11g} ;\n",
                  lefdist(P.getXOrigin()),
                  lefdist(P.getYOrigin()));
@@ -457,7 +479,7 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
     if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
         || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0)) {
-      fmt::print(_out,
+      fmt::print(out,
                  "  OFFSET {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
                  lefdist(P.getXBottomOffset()),
                  lefdist(P.getYBottomOffset()),
@@ -467,43 +489,57 @@ void lefout::writeBlockVia(dbBlock* db_block, dbVia* via)
 
     std::string pname = via->getPattern();
     if (strcmp(pname.c_str(), "") != 0) {
-      fmt::print(_out, "  PATTERNNAME {} ;\n", pname.c_str());
+      fmt::print(out, "  PATTERNNAME {} ;\n", pname.c_str());
     }
   }
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeBlock(dbBlock* db_block)
+void lefout::writeBlock(std::ostream& out, dbBlock* db_block)
 {
   Rect die_area = db_block->getDieArea();
   double size_x = lefdist(die_area.xMax());
   double size_y = lefdist(die_area.yMax());
 
-  for (auto via : db_block->getVias()) {
-    writeBlockVia(db_block, via);
+  std::ostringstream macro_stream;
+
+  fmt::print(macro_stream, "\nMACRO {}\n", db_block->getName().c_str());
+  fmt::print(macro_stream, "  FOREIGN {} 0 0 ;\n", db_block->getName().c_str());
+  fmt::print(macro_stream, "  CLASS BLOCK ;\n");
+  fmt::print(macro_stream, "  SIZE {:.11g} BY {:.11g} ;\n", size_x, size_y);
+  const odb::PtrSet<dbVia> vias = writePins(macro_stream, db_block);
+
+  writeObstructions(macro_stream, db_block);
+  fmt::print(macro_stream, "END {}\n", db_block->getName().c_str());
+
+  // Write vias before macro
+  for (dbVia* via : vias) {
+    writeBlockVia(out, db_block, via);
   }
 
-  fmt::print(_out, "\nMACRO {}\n", db_block->getName().c_str());
-  fmt::print(_out, "  FOREIGN {} 0 0 ;\n", db_block->getName().c_str());
-  fmt::print(_out, "  CLASS BLOCK ;\n");
-  fmt::print(_out, "  SIZE {:.11g} BY {:.11g} ;\n", size_x, size_y);
-  writePins(db_block);
-  writeObstructions(db_block);
-  fmt::print(_out, "END {}\n", db_block->getName().c_str());
+  out << macro_stream.str();
 }
 
-void lefout::writePins(dbBlock* db_block)
+odb::PtrSet<dbVia> lefout::writePins(std::ostream& out, dbBlock* db_block)
 {
-  writePowerPins(db_block);
-  writeBlockTerms(db_block);
+  odb::PtrSet<dbVia> vias;
+
+  const auto power_vias = writePowerPins(out, db_block);
+  vias.insert(power_vias.begin(), power_vias.end());
+
+  const auto block_vias = writeBlockTerms(out, db_block);
+  vias.insert(block_vias.begin(), block_vias.end());
+
+  return vias;
 }
 
-void lefout::writeBlockTerms(dbBlock* db_block)
+odb::PtrSet<dbVia> lefout::writeBlockTerms(std::ostream& out, dbBlock* db_block)
 {
+  odb::PtrSet<dbVia> vias;
   for (dbBTerm* b_term : db_block->getBTerms()) {
-    fmt::print(_out, "  PIN {}\n", b_term->getName().c_str());
-    fmt::print(_out, "    DIRECTION {} ;\n", b_term->getIoType().getString());
+    fmt::print(out, "  PIN {}\n", b_term->getName().c_str());
+    fmt::print(out, "    DIRECTION {} ;\n", b_term->getIoType().getString());
 
     std::string sig_type = "SIGNAL";
     switch (b_term->getSigType().getValue()) {
@@ -530,20 +566,26 @@ void lefout::writeBlockTerms(dbBlock* db_block)
         sig_type = "CLOCK";
         break;
     }
-    fmt::print(_out, "    USE {} ;\n", sig_type);
+    fmt::print(out, "    USE {} ;\n", sig_type);
 
     for (dbBPin* db_b_pin : b_term->getBPins()) {
-      fmt::print(_out, "{}", "    PORT\n");
+      fmt::print(out, "{}", "    PORT\n");
       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
-      writeBoxes(db_block, term_pins, "      ");
-      fmt::print(_out, "{}", "    END\n");
+      const auto boxvias = writeBoxes(out, db_block, term_pins, "      ");
+      vias.insert(boxvias.begin(), boxvias.end());
+      fmt::print(out, "{}", "    END\n");
     }
-    fmt::print(_out, "  END {}\n", b_term->getName().c_str());
+    fmt::print(out, "  END {}\n", b_term->getName().c_str());
   }
+
+  return vias;
 }
 
-void lefout::writePowerPins(dbBlock* db_block)
-{  // Power Ground.
+odb::PtrSet<dbVia> lefout::writePowerPins(std::ostream& out, dbBlock* db_block)
+{
+  odb::PtrSet<dbVia> vias;
+
+  // Power Ground.
   for (dbNet* net : db_block->getNets()) {
     if (!net->getSigType().isSupply()) {
       continue;
@@ -552,50 +594,54 @@ void lefout::writePowerPins(dbBlock* db_block)
       // net already has pins that will be added
       continue;
     }
-    fmt::print(_out, "  PIN {}\n", net->getName().c_str());
-    fmt::print(_out, "    USE {} ;\n", net->getSigType().getString());
+    fmt::print(out, "  PIN {}\n", net->getName().c_str());
+    fmt::print(out, "    USE {} ;\n", net->getSigType().getString());
     fmt::print(
-        _out, "    DIRECTION {} ;\n", dbIoType(dbIoType::INOUT).getString());
+        out, "    DIRECTION {} ;\n", dbIoType(dbIoType::INOUT).getString());
     for (dbSWire* special_wire : net->getSWires()) {
-      fmt::print(_out, "    PORT\n");
+      fmt::print(out, "    PORT\n");
       dbSet<dbSBox> wires = special_wire->getWires();
-      writeBoxes(db_block, wires, /*indent=*/"      ");
-      fmt::print(_out, "    END\n");
+      const auto boxvias
+          = writeBoxes(out, db_block, wires, /*indent=*/"      ");
+      vias.insert(boxvias.begin(), boxvias.end());
+      fmt::print(out, "    END\n");
     }
-    fmt::print(_out, "  END {}\n", net->getName().c_str());
+    fmt::print(out, "  END {}\n", net->getName().c_str());
   }
+
+  return vias;
 }
 
-void lefout::writeTechBody(dbTech* tech)
+void lefout::writeTechBody(std::ostream& out, dbTech* tech)
 {
   assert(tech);
 
   if (tech->hasNoWireExtAtPin()) {
-    fmt::print(_out,
+    fmt::print(out,
                "NOWIREEXTENSIONATPIN {} ;\n",
                tech->getNoWireExtAtPin().getString());
   }
 
   if (tech->hasClearanceMeasure()) {
-    fmt::print(_out,
+    fmt::print(out,
                "CLEARANCEMEASURE {} ;\n",
                tech->getClearanceMeasure().getString());
   }
 
   if (tech->hasUseMinSpacingObs()) {
-    fmt::print(_out,
+    fmt::print(out,
                "USEMINSPACING OBS {} ;\n",
                tech->getUseMinSpacingObs().getString());
   }
 
   if (tech->hasUseMinSpacingPin()) {
-    fmt::print(_out,
+    fmt::print(out,
                "USEMINSPACING PIN {} ;\n",
                tech->getUseMinSpacingPin().getString());
   }
 
   if (tech->hasManufacturingGrid()) {
-    fmt::print(_out,
+    fmt::print(out,
                "MANUFACTURINGGRID {:.11g} ;\n",
                lefdist(tech->getManufacturingGrid()));
   }
@@ -605,11 +651,11 @@ void lefout::writeTechBody(dbTech* tech)
 
   for (litr = layers.begin(); litr != layers.end(); ++litr) {
     dbTechLayer* layer = *litr;
-    writeLayer(layer);
+    writeLayer(out, layer);
   }
 
-  writeViaMap(tech, false);
-  writeViaMap(tech, true);
+  writeViaMap(out, tech, false);
+  writeViaMap(out, tech, true);
 
   // VIA's not using generate rule and not default
   dbSet<dbTechVia> vias = tech->getVias();
@@ -620,7 +666,7 @@ void lefout::writeTechBody(dbTech* tech)
 
     if (via->getNonDefaultRule() == nullptr) {
       if (via->getViaGenerateRule() == nullptr) {
-        writeVia(via);
+        writeVia(out, via);
       }
     }
   }
@@ -630,7 +676,7 @@ void lefout::writeTechBody(dbTech* tech)
 
   for (vritr = via_rules.begin(); vritr != via_rules.end(); ++vritr) {
     dbTechViaRule* rule = *vritr;
-    writeTechViaRule(rule);
+    writeTechViaRule(out, rule);
   }
 
   dbSet<dbTechViaGenerateRule> via_gen_rules = tech->getViaGenerateRules();
@@ -639,7 +685,7 @@ void lefout::writeTechBody(dbTech* tech)
   for (vgritr = via_gen_rules.begin(); vgritr != via_gen_rules.end();
        ++vgritr) {
     dbTechViaGenerateRule* rule = *vgritr;
-    writeTechViaGenerateRule(rule);
+    writeTechViaGenerateRule(out, rule);
   }
 
   // VIA's using generate rule
@@ -650,7 +696,7 @@ void lefout::writeTechBody(dbTech* tech)
 
     if (via->getNonDefaultRule() == nullptr) {
       if (via->getViaGenerateRule() != nullptr) {
-        writeVia(via);
+        writeVia(out, via);
       }
     }
   }
@@ -659,14 +705,14 @@ void lefout::writeTechBody(dbTech* tech)
   tech->getSameNetRules(srules);
 
   if (srules.begin() != srules.end()) {
-    fmt::print(_out, "\nSPACING\n");
+    fmt::print(out, "\nSPACING\n");
 
     std::vector<dbTechSameNetRule*>::iterator sritr;
     for (sritr = srules.begin(); sritr != srules.end(); ++sritr) {
-      writeSameNetRule(*sritr);
+      writeSameNetRule(out, *sritr);
     }
 
-    fmt::print(_out, "\nEND SPACING\n");
+    fmt::print(out, "\nEND SPACING\n");
   }
 
   dbSet<dbTechNonDefaultRule> rules = tech->getNonDefaultRules();
@@ -674,11 +720,13 @@ void lefout::writeTechBody(dbTech* tech)
 
   for (ritr = rules.begin(); ritr != rules.end(); ++ritr) {
     dbTechNonDefaultRule* rule = *ritr;
-    writeNonDefaultRule(tech, rule);
+    writeNonDefaultRule(out, tech, rule);
   }
 }
 
-void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
+void lefout::writeViaMap(std::ostream& out,
+                         dbTech* tech,
+                         const bool use_via_cut_class)
 {
   auto via_map_set = tech->getMetalWidthViaMap();
   bool found = false;
@@ -691,11 +739,11 @@ void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
   if (!found) {
     return;
   }
-  fmt::print(_out, "PROPERTYDEFINITIONS\n");
-  fmt::print(_out, " LIBRARY LEF58_METALWIDTHVIAMAP STRING\n");
-  fmt::print(_out, "  \"METALWIDTHVIAMAP\n");
+  fmt::print(out, "PROPERTYDEFINITIONS\n");
+  fmt::print(out, " LIBRARY LEF58_METALWIDTHVIAMAP STRING\n");
+  fmt::print(out, "  \"METALWIDTHVIAMAP\n");
   if (use_via_cut_class) {
-    fmt::print(_out, "   USEVIACUTCLASS\n");
+    fmt::print(out, "   USEVIACUTCLASS\n");
   }
   for (auto via_map : via_map_set) {
     if (via_map->isViaCutClass() != use_via_cut_class) {
@@ -704,7 +752,7 @@ void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
     if (via_map->getBelowLayerWidthLow() == via_map->getBelowLayerWidthHigh()
         && via_map->getAboveLayerWidthLow()
                == via_map->getAboveLayerWidthHigh()) {
-      fmt::print(_out,
+      fmt::print(out,
                  "   VIA {} {} {} {} {}\n",
                  via_map->getCutLayer()->getName(),
                  lefdist(via_map->getBelowLayerWidthLow()),
@@ -712,7 +760,7 @@ void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
                  via_map->getViaName(),
                  via_map->isPgVia() ? "PGVIA" : "");
     } else {
-      fmt::print(_out,
+      fmt::print(out,
                  "   VIA {} {} {} {} {} {} {}\n",
                  via_map->getCutLayer()->getName(),
                  lefdist(via_map->getBelowLayerWidthLow()),
@@ -723,18 +771,20 @@ void lefout::writeViaMap(dbTech* tech, const bool use_via_cut_class)
                  via_map->isPgVia() ? "PGVIA" : "");
     }
   }
-  fmt::print(_out, "   ;\n");
-  fmt::print(_out, " \" ;\n");
-  fmt::print(_out, "END PROPERTYDEFINITIONS\n");
+  fmt::print(out, "   ;\n");
+  fmt::print(out, " \" ;\n");
+  fmt::print(out, "END PROPERTYDEFINITIONS\n");
 }
 
-void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
+void lefout::writeNonDefaultRule(std::ostream& out,
+                                 dbTech* tech,
+                                 dbTechNonDefaultRule* rule)
 {
   std::string name = rule->getName();
-  fmt::print(_out, "\nNONDEFAULTRULE {}\n", name.c_str());
+  fmt::print(out, "\nNONDEFAULTRULE {}\n", name.c_str());
 
   if (rule->getHardSpacing()) {
-    fmt::print(_out, "{}", "HARDSPACING ;\n");
+    fmt::print(out, "{}", "HARDSPACING ;\n");
   }
 
   std::vector<dbTechLayerRule*> layer_rules;
@@ -742,7 +792,7 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 
   std::vector<dbTechLayerRule*>::iterator litr;
   for (litr = layer_rules.begin(); litr != layer_rules.end(); ++litr) {
-    writeLayerRule(*litr);
+    writeLayerRule(out, *litr);
   }
 
   std::vector<dbTechVia*> vias;
@@ -750,21 +800,21 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 
   std::vector<dbTechVia*>::iterator vitr;
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
-    writeVia(*vitr);
+    writeVia(out, *vitr);
   }
 
   std::vector<dbTechSameNetRule*> srules;
   rule->getSameNetRules(srules);
 
   if (srules.begin() != srules.end()) {
-    fmt::print(_out, "\nSPACING\n");
+    fmt::print(out, "\nSPACING\n");
 
     std::vector<dbTechSameNetRule*>::iterator sritr;
     for (sritr = srules.begin(); sritr != srules.end(); ++sritr) {
-      writeSameNetRule(*sritr);
+      writeSameNetRule(out, *sritr);
     }
 
-    fmt::print(_out, "\nEND SPACING\n");
+    fmt::print(out, "\nEND SPACING\n");
   }
 
   std::vector<dbTechVia*> use_vias;
@@ -774,7 +824,7 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
   for (uvitr = use_vias.begin(); uvitr != use_vias.end(); ++uvitr) {
     dbTechVia* via = *uvitr;
     std::string vname = via->getName();
-    fmt::print(_out, "USEVIA {} ;\n", vname.c_str());
+    fmt::print(out, "USEVIA {} ;\n", vname.c_str());
   }
 
   std::vector<dbTechViaGenerateRule*> use_rules;
@@ -784,7 +834,7 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
   for (uvritr = use_rules.begin(); uvritr != use_rules.end(); ++uvritr) {
     dbTechViaGenerateRule* rule = *uvritr;
     std::string rname = rule->getName();
-    fmt::print(_out, "USEVIARULE {} ;\n", rname.c_str());
+    fmt::print(out, "USEVIARULE {} ;\n", rname.c_str());
   }
 
   dbSet<dbTechLayer> layers = tech->getLayers();
@@ -796,14 +846,14 @@ void lefout::writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule)
 
     if (rule->getMinCuts(layer, count)) {
       std::string lname = layer->getName();
-      fmt::print(_out, "MINCUTS {} {} ;\n", lname.c_str(), count);
+      fmt::print(out, "MINCUTS {} {} ;\n", lname.c_str(), count);
     }
   }
 
-  fmt::print(_out, "\nEND {}\n", name.c_str());
+  fmt::print(out, "\nEND {}\n", name.c_str());
 }
 
-void lefout::writeLayerRule(dbTechLayerRule* rule)
+void lefout::writeLayerRule(std::ostream& out, dbTechLayerRule* rule)
 {
   dbTechLayer* layer = rule->getLayer();
   std::string name;
@@ -812,44 +862,43 @@ void lefout::writeLayerRule(dbTechLayerRule* rule)
   } else {
     name = layer->getName();
   }
-  fmt::print(_out, "\nLAYER {}\n", name.c_str());
+  fmt::print(out, "\nLAYER {}\n", name.c_str());
 
   if (rule->getWidth()) {
-    fmt::print(_out, "    WIDTH {:.11g} ;\n", lefdist(rule->getWidth()));
+    fmt::print(out, "    WIDTH {:.11g} ;\n", lefdist(rule->getWidth()));
   }
 
   if (rule->getSpacing()) {
-    fmt::print(_out, "    SPACING {:.11g} ;\n", lefdist(rule->getSpacing()));
+    fmt::print(out, "    SPACING {:.11g} ;\n", lefdist(rule->getSpacing()));
   }
 
   if (rule->getWireExtension() != 0.0) {
-    fmt::print(_out,
+    fmt::print(out,
                "    WIREEXTENSION {:.11g} ;\n",
                lefdist(rule->getWireExtension()));
   }
 
   if (rule->getResistance() != 0.0) {
-    fmt::print(
-        _out, "    RESISTANCE RPERSQ {:.11g} ;\n", rule->getResistance());
+    fmt::print(out, "    RESISTANCE RPERSQ {:.11g} ;\n", rule->getResistance());
   }
 
   if (rule->getCapacitance() != 0.0) {
     fmt::print(
-        _out, "    CAPACITANCE CPERSQDIST {:.11g} ;\n", rule->getCapacitance());
+        out, "    CAPACITANCE CPERSQDIST {:.11g} ;\n", rule->getCapacitance());
   }
 
   if (rule->getEdgeCapacitance() != 0.0) {
     fmt::print(
-        _out, "      EDGECAPACITANCE {:.11g} ;\n", rule->getEdgeCapacitance());
+        out, "      EDGECAPACITANCE {:.11g} ;\n", rule->getEdgeCapacitance());
   }
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeTechViaRule(dbTechViaRule* rule)
+void lefout::writeTechViaRule(std::ostream& out, dbTechViaRule* rule)
 {
   std::string name = rule->getName();
-  fmt::print(_out, "\nVIARULE {}\n", name.c_str());
+  fmt::print(out, "\nVIARULE {}\n", name.c_str());
 
   uint32_t idx;
 
@@ -857,18 +906,18 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
     dbTechLayer* layer = layrule->getLayer();
     std::string lname = layer->getName();
-    fmt::print(_out, "    LAYER {} ;\n", lname.c_str());
+    fmt::print(out, "    LAYER {} ;\n", lname.c_str());
 
     if (layrule->getDirection() == dbTechLayerDir::VERTICAL) {
-      fmt::print(_out, "      DIRECTION VERTICAL ;\n");
+      fmt::print(out, "      DIRECTION VERTICAL ;\n");
     } else if (layrule->getDirection() == dbTechLayerDir::HORIZONTAL) {
-      fmt::print(_out, "      DIRECTION HORIZONTAL ;\n");
+      fmt::print(out, "      DIRECTION HORIZONTAL ;\n");
     }
 
     if (layrule->hasWidth()) {
       int minW, maxW;
       layrule->getWidth(minW, maxW);
-      fmt::print(_out,
+      fmt::print(out,
                  "      WIDTH {:.11g} TO {:.11g} ;\n",
                  lefdist(minW),
                  lefdist(maxW));
@@ -878,20 +927,21 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
   for (idx = 0; idx < rule->getViaCount(); ++idx) {
     dbTechVia* via = rule->getVia(idx);
     std::string vname = via->getName();
-    fmt::print(_out, "    VIA {} ;\n", vname.c_str());
+    fmt::print(out, "    VIA {} ;\n", vname.c_str());
   }
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
+void lefout::writeTechViaGenerateRule(std::ostream& out,
+                                      dbTechViaGenerateRule* rule)
 {
   std::string name = rule->getName();
 
   if (rule->isDefault()) {
-    fmt::print(_out, "\nVIARULE {} GENERATE DEFAULT\n", name.c_str());
+    fmt::print(out, "\nVIARULE {} GENERATE DEFAULT\n", name.c_str());
   } else {
-    fmt::print(_out, "\nVIARULE {} GENERATE \n", name.c_str());
+    fmt::print(out, "\nVIARULE {} GENERATE \n", name.c_str());
   }
 
   uint32_t idx;
@@ -900,21 +950,21 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
     dbTechLayer* layer = layrule->getLayer();
     std::string lname = layer->getName();
-    fmt::print(_out, "    LAYER {} ;\n", lname.c_str());
+    fmt::print(out, "    LAYER {} ;\n", lname.c_str());
 
     if (layrule->getDirection() == dbTechLayerDir::VERTICAL) {
-      fmt::print(_out, "      DIRECTION VERTICAL ;\n");
+      fmt::print(out, "      DIRECTION VERTICAL ;\n");
     } else if (layrule->getDirection() == dbTechLayerDir::HORIZONTAL) {
-      fmt::print(_out, "      DIRECTION HORIZONTAL ;\n");
+      fmt::print(out, "      DIRECTION HORIZONTAL ;\n");
     }
 
     if (layrule->hasOverhang()) {
       fmt::print(
-          _out, "      OVERHANG {:.11g} ;\n", lefdist(layrule->getOverhang()));
+          out, "      OVERHANG {:.11g} ;\n", lefdist(layrule->getOverhang()));
     }
 
     if (layrule->hasMetalOverhang()) {
-      fmt::print(_out,
+      fmt::print(out,
                  "      METALOVERHANG {:.11g} ;\n",
                  lefdist(layrule->getMetalOverhang()));
     }
@@ -922,7 +972,7 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     if (layrule->hasEnclosure()) {
       int overhang1, overhang2;
       layrule->getEnclosure(overhang1, overhang2);
-      fmt::print(_out,
+      fmt::print(out,
                  "      ENCLOSURE {:.11g} {:.11g} ;\n",
                  lefdist(overhang1),
                  lefdist(overhang2));
@@ -931,7 +981,7 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     if (layrule->hasWidth()) {
       int minW, maxW;
       layrule->getWidth(minW, maxW);
-      fmt::print(_out,
+      fmt::print(out,
                  "      WIDTH {:.11g} TO {:.11g} ;\n",
                  lefdist(minW),
                  lefdist(maxW));
@@ -940,7 +990,7 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     if (layrule->hasRect()) {
       Rect r;
       layrule->getRect(r);
-      fmt::print(_out,
+      fmt::print(out,
                  "      RECT  {:.11g} {:.11g}  {:.11g} {:.11g}  ;\n",
                  lefdist(r.xMin()),
                  lefdist(r.yMin()),
@@ -951,22 +1001,21 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     if (layrule->hasSpacing()) {
       int spacing_x, spacing_y;
       layrule->getSpacing(spacing_x, spacing_y);
-      fmt::print(_out,
+      fmt::print(out,
                  "      SPACING {:.11g} BY {:.11g} ;\n",
                  lefdist(spacing_x),
                  lefdist(spacing_y));
     }
 
     if (layrule->hasResistance()) {
-      fmt::print(
-          _out, "      RESISTANCE {:.11g} ;\n", layrule->getResistance());
+      fmt::print(out, "      RESISTANCE {:.11g} ;\n", layrule->getResistance());
     }
   }
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeSameNetRule(dbTechSameNetRule* rule)
+void lefout::writeSameNetRule(std::ostream& out, dbTechSameNetRule* rule)
 {
   dbTechLayer* l1 = rule->getLayer1();
   dbTechLayer* l2 = rule->getLayer2();
@@ -986,13 +1035,13 @@ void lefout::writeSameNetRule(dbTechSameNetRule* rule)
   }
 
   if (rule->getAllowStackedVias()) {
-    fmt::print(_out,
+    fmt::print(out,
                "  SAMENET {} {} {:.11g} STACK ;\n",
                n1.c_str(),
                n2.c_str(),
                lefdist(rule->getSpacing()));
   } else {
-    fmt::print(_out,
+    fmt::print(out,
                "  SAMENET {} {} {:.11g} ;\n",
                n1.c_str(),
                n2.c_str(),
@@ -1000,7 +1049,7 @@ void lefout::writeSameNetRule(dbTechSameNetRule* rule)
   }
 }
 
-void lefout::writeLayer(dbTechLayer* layer)
+void lefout::writeLayer(std::ostream& out, dbTechLayer* layer)
 {
   std::string name;
   if (use_alias_ && layer->hasAlias()) {
@@ -1009,46 +1058,46 @@ void lefout::writeLayer(dbTechLayer* layer)
     name = layer->getName();
   }
 
-  fmt::print(_out, "\nLAYER {}\n", name.c_str());
-  fmt::print(_out, "    TYPE {} ;\n", layer->getType().getString());
+  fmt::print(out, "\nLAYER {}\n", name.c_str());
+  fmt::print(out, "    TYPE {} ;\n", layer->getType().getString());
 
   if (layer->getNumMasks() > 1) {
-    fmt::print(_out, "    MASK {} ;\n", layer->getNumMasks());
+    fmt::print(out, "    MASK {} ;\n", layer->getNumMasks());
   }
 
   if (layer->getPitch()) {
-    fmt::print(_out, "    PITCH {:.11g} ;\n", lefdist(layer->getPitch()));
+    fmt::print(out, "    PITCH {:.11g} ;\n", lefdist(layer->getPitch()));
   }
 
   if (layer->getWidth()) {
-    fmt::print(_out, "    WIDTH {:.11g} ;\n", lefdist(layer->getWidth()));
+    fmt::print(out, "    WIDTH {:.11g} ;\n", lefdist(layer->getWidth()));
   }
 
   if (layer->getWireExtension() != 0.0) {
-    fmt::print(_out,
+    fmt::print(out,
                "    WIREEXTENSION {:.11g} ;\n",
                lefdist(layer->getWireExtension()));
   }
 
   if (layer->hasArea()) {
-    fmt::print(_out, "    AREA {:.11g} ;\n", layer->getArea());
+    fmt::print(out, "    AREA {:.11g} ;\n", lefarea(layer->getArea()));
   }
 
   uint32_t thickness;
   if (layer->getThickness(thickness)) {
-    fmt::print(_out, "    THICKNESS {:.11g} ;\n", lefdist(thickness));
+    fmt::print(out, "    THICKNESS {:.11g} ;\n", lefdist(thickness));
   }
 
   if (layer->hasMaxWidth()) {
-    fmt::print(_out, "    MAXWIDTH {:.11g} ;\n", lefdist(layer->getMaxWidth()));
+    fmt::print(out, "    MAXWIDTH {:.11g} ;\n", lefdist(layer->getMaxWidth()));
   }
 
   if (layer->hasMinStep()) {
-    fmt::print(_out, "    MINSTEP {:.11g} ;\n", lefdist(layer->getMinStep()));
+    fmt::print(out, "    MINSTEP {:.11g} ;\n", lefdist(layer->getMinStep()));
   }
 
   if (layer->hasProtrusion()) {
-    fmt::print(_out,
+    fmt::print(out,
                "    PROTRUSIONWIDTH {:.11g}  LENGTH {:.11g}  WIDTH {:.11g} ;\n",
                lefdist(layer->getProtrusionWidth()),
                lefdist(layer->getProtrusionLength()),
@@ -1056,98 +1105,436 @@ void lefout::writeLayer(dbTechLayer* layer)
   }
 
   for (auto rule : layer->getV54SpacingRules()) {
-    rule->writeLef(*this);
+    writeSpacingRuleLef(out, rule);
   }
 
   if (layer->hasV55SpacingRules()) {
-    layer->printV55SpacingRules(*this);
+    writeV55SpacingRules(out, layer);
     auto inf_rules = layer->getV55InfluenceRules();
     if (!inf_rules.empty()) {
-      fmt::print(_out, "SPACINGTABLE INFLUENCE");
+      fmt::print(out, "SPACINGTABLE INFLUENCE");
       for (auto rule : inf_rules) {
-        rule->writeLef(*this);
+        writeV55InfluenceEntryLef(out, rule);
       }
-      fmt::print(_out, " ;\n");
+      fmt::print(out, " ;\n");
     }
   }
 
   std::vector<dbTechMinCutRule*> cut_rules;
-  std::vector<dbTechMinCutRule*>::const_iterator citr;
   if (layer->getMinimumCutRules(cut_rules)) {
-    for (citr = cut_rules.begin(); citr != cut_rules.end(); citr++) {
-      (*citr)->writeLef(*this);
+    for (auto* rule : cut_rules) {
+      writeMinCutRuleLef(out, rule);
     }
   }
 
   std::vector<dbTechMinEncRule*> enc_rules;
-  std::vector<dbTechMinEncRule*>::const_iterator eitr;
   if (layer->getMinEnclosureRules(enc_rules)) {
-    for (eitr = enc_rules.begin(); eitr != enc_rules.end(); eitr++) {
-      (*eitr)->writeLef(*this);
+    for (auto* rule : enc_rules) {
+      writeMinEncRuleLef(out, rule);
     }
   }
 
-  layer->writeAntennaRulesLef(*this);
+  writeAntennaRulesLef(out, layer);
 
   if (layer->getDirection() != dbTechLayerDir::NONE) {
-    fmt::print(_out, "    DIRECTION {} ;\n", layer->getDirection().getString());
+    fmt::print(out, "    DIRECTION {} ;\n", layer->getDirection().getString());
   }
 
   if (layer->getResistance() != 0.0) {
     if (layer->getType() == dbTechLayerType::CUT) {
-      fmt::print(_out, "    RESISTANCE {:.11g} ;\n", layer->getResistance());
+      fmt::print(out, "    RESISTANCE {:.11g} ;\n", layer->getResistance());
     } else {
       fmt::print(
-          _out, "    RESISTANCE RPERSQ {:.11g} ;\n", layer->getResistance());
+          out, "    RESISTANCE RPERSQ {:.11g} ;\n", layer->getResistance());
     }
   }
 
   if (layer->getCapacitance() != 0.0) {
-    fmt::print(_out,
-               "    CAPACITANCE CPERSQDIST {:.11g} ;\n",
-               layer->getCapacitance());
+    fmt::print(
+        out, "    CAPACITANCE CPERSQDIST {:.11g} ;\n", layer->getCapacitance());
   }
 
   if (layer->getEdgeCapacitance() != 0.0) {
     fmt::print(
-        _out, "    EDGECAPACITANCE {:.11g} ;\n", layer->getEdgeCapacitance());
+        out, "    EDGECAPACITANCE {:.11g} ;\n", layer->getEdgeCapacitance());
   }
 
-  fmt::print(_out, "{}", dbProperty::writeProperties(layer));
+  fmt::print(out, "{}", dbProperty::writeProperties(layer));
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeVia(dbTechVia* via)
+void lefout::writeSpacingRuleLef(std::ostream& out,
+                                 dbTechLayerSpacingRule* rule)
+{
+  uint32_t rmin, rmax, length_or_influence, cut_spacing, numcuts;
+  bool except_same_pgnet;
+  dbTechLayer* rulely;
+
+  fmt::print(out, "    SPACING {:g} ", lefdist(rule->getSpacing()));
+
+  if (rule->getCutCenterToCenter()) {
+    fmt::print(out, "    CENTERTOCENTER ");
+  }
+
+  if (rule->getCutSameNet()) {
+    fmt::print(out, "    SAMENET ");
+  }
+
+  if (rule->getCutParallelOverlap()) {
+    fmt::print(out, "    PARALLELOVERLAP ");
+  }
+
+  if (rule->getCutArea() > 0) {
+    fmt::print(out, "    AREA {:g} ", lefarea(rule->getCutArea()));
+  }
+
+  if (rule->getRange(rmin, rmax)) {
+    fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    if (rule->hasUseLengthThreshold()) {
+      fmt::print(out, "USELENGTHTHRESHOLD ");
+    } else if (rule->getInfluence(length_or_influence)) {
+      fmt::print(out, "INFLUENCE {:g} ", lefdist(length_or_influence));
+      if (rule->getInfluenceRange(rmin, rmax)) {
+        fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+      }
+    } else if (rule->getRangeRange(rmin, rmax)) {
+      fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    }
+  } else if (rule->getLengthThreshold(length_or_influence)) {
+    fmt::print(out, "LENGTHTHRESHOLD {:g} ", lefdist(length_or_influence));
+    if (rule->getLengthThresholdRange(rmin, rmax)) {
+      fmt::print(out, "RANGE {:g} {:g} ", lefdist(rmin), lefdist(rmax));
+    }
+  } else if (rule->getCutLayer4Spacing(rulely)) {
+    fmt::print(out, "LAYER {} ", rulely->getName().c_str());
+  } else if (rule->getAdjacentCuts(numcuts,
+                                   length_or_influence,
+                                   cut_spacing,
+                                   except_same_pgnet)) {
+    fmt::print(out,
+               "ADJACENTCUTS {} WITHIN {:g} ",
+               numcuts,
+               lefdist(length_or_influence));
+    if (except_same_pgnet) {
+      fmt::print(out, "EXCEPTSAMEPGNET ");
+    }
+  } else {
+    uint32_t width, within, parallelSpace, parallelWithin;
+    bool parallelEdge, twoEdges;
+    if (rule->getEol(width,
+                     within,
+                     parallelEdge,
+                     parallelSpace,
+                     parallelWithin,
+                     twoEdges)) {
+      fmt::print(
+          out, "ENDOFLINE {:g} WITHIN {:g} ", lefdist(width), lefdist(within));
+      if (parallelEdge) {
+        fmt::print(out,
+                   "PARALLELEDGE {:g} WITHIN {:g} ",
+                   lefdist(parallelSpace),
+                   lefdist(parallelWithin));
+        if (twoEdges) {
+          fmt::print(out, " TWOEDGES ");
+        }
+      }
+    }
+  }
+  fmt::print(out, " ;\n");
+}
+
+void lefout::writeV55SpacingRules(std::ostream& out, dbTechLayer* layer)
+{
+  std::vector<uint32_t> width_idx;
+  std::vector<uint32_t> length_idx;
+  std::vector<std::vector<uint32_t>> sptbl;
+  layer->getV55SpacingWidthsAndLengths(width_idx, length_idx);
+  layer->getV55SpacingTable(sptbl);
+
+  fmt::print(out, "SPACINGTABLE\n");
+  fmt::print(out, "  PARALLELRUNLENGTH");
+  for (uint32_t length : length_idx) {
+    fmt::print(out, " {:.3f}", lefdist(length));
+  }
+
+  for (size_t row = 0; row < width_idx.size(); ++row) {
+    fmt::print(out, "\n");
+    fmt::print(out, "  WIDTH {:.3f}\t", lefdist(width_idx[row]));
+    for (uint32_t spacing : sptbl[row]) {
+      fmt::print(out, " {:.3f}", lefdist(spacing));
+    }
+  }
+
+  fmt::print(out, " ;\n");
+}
+
+void lefout::writeV55InfluenceEntryLef(std::ostream& out,
+                                       dbTechV55InfluenceEntry* entry)
+{
+  uint32_t inf_width, inf_within, inf_spacing;
+  entry->getV55InfluenceEntry(inf_width, inf_within, inf_spacing);
+  fmt::print(out,
+             "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
+             lefdist(inf_width),
+             lefdist(inf_within),
+             lefdist(inf_spacing));
+}
+
+void lefout::writeMinCutRuleLef(std::ostream& out, dbTechMinCutRule* rule)
+{
+  uint32_t numcuts = 0;
+  uint32_t cut_width = 0;
+  rule->getMinimumCuts(numcuts, cut_width);
+  fmt::print(
+      out, "    MINIMUMCUT {}  WIDTH {:g} ", numcuts, lefdist(cut_width));
+
+  uint32_t cut_distance;
+  if (rule->getCutDistance(cut_distance)) {
+    fmt::print(out, "WITHIN {:g} ", lefdist(cut_distance));
+  }
+
+  if (rule->isAboveOnly()) {
+    fmt::print(out, "{}", "FROMABOVE ");
+  } else if (rule->isBelowOnly()) {
+    fmt::print(out, "{}", "FROMBELOW ");
+  }
+
+  uint32_t length, distance;
+  if (rule->getLengthForCuts(length, distance)) {
+    fmt::print(
+        out, "LENGTH {:g}  WITHIN {:g} ", lefdist(length), lefdist(distance));
+  }
+  fmt::print(out, ";\n");
+}
+
+void lefout::writeMinEncRuleLef(std::ostream& out, dbTechMinEncRule* rule)
+{
+  int64_t enc_area;
+  uint32_t enc_width;
+  rule->getEnclosure(enc_area);
+  fmt::print(out, "    MINENCLOSEDAREA {:g} ", lefarea(enc_area));
+  if (rule->getEnclosureWidth(enc_width)) {
+    fmt::print(out, "WIDTH {:g} ", lefdist(enc_width));
+  }
+  fmt::print(out, "{}", ";\n");
+}
+
+void lefout::writeAntennaRulesLef(std::ostream& out, dbTechLayer* layer)
+{
+  bool prt_model
+      = (layer->hasDefaultAntennaRule() && layer->hasOxide2AntennaRule());
+
+  if (prt_model) {
+    fmt::print(out, "    ANTENNAMODEL OXIDE1 ;\n");
+  }
+  if (layer->hasDefaultAntennaRule()) {
+    writeAntennaRuleLef(out, layer->getDefaultAntennaRule());
+  }
+
+  if (prt_model) {
+    fmt::print(out, "    ANTENNAMODEL OXIDE2 ;\n");
+  }
+  if (layer->hasOxide2AntennaRule()) {
+    writeAntennaRuleLef(out, layer->getOxide2AntennaRule());
+  }
+}
+
+namespace {
+
+void writePwlPair(std::ostream& out,
+                  const char* keyword,
+                  const dbTechLayerAntennaRule::pwl_pair& pwl)
+{
+  fmt::print(out, "    {}  PWL ( ", keyword);
+  for (size_t i = 0; i < pwl.indices.size() && i < pwl.ratios.size(); ++i) {
+    fmt::print(out, "( {:g} {:g} ) ", pwl.indices[i], pwl.ratios[i]);
+  }
+  fmt::print(out, ") ;\n");
+}
+
+}  // namespace
+
+void lefout::writeAntennaRuleLef(std::ostream& out,
+                                 dbTechLayerAntennaRule* rule)
+{
+  if (rule->hasAreaFactor()) {
+    fmt::print(out,
+               "    ANTENNAAREAFACTOR {:g} {};\n",
+               rule->getAreaFactor(),
+               rule->isAreaFactorDiffUseOnly() ? "DIFFUSEONLY " : "");
+  }
+
+  if (rule->hasAntennaCumRoutingPlusCut()) {
+    fmt::print(out, "    ANTENNACUMROUTINGPLUSCUT ;\n");
+  }
+
+  auto gate_plus_diff_pwl = rule->getGatePlusDiffPWL();
+  if (gate_plus_diff_pwl.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNAGATEPLUSDIFF", gate_plus_diff_pwl);
+  } else if (rule->getGatePlusDiffFactor() > 0.0) {
+    fmt::print(
+        out, "    ANTENNAGATEPLUSDIFF {:g} ;\n", rule->getGatePlusDiffFactor());
+  }
+
+  if (rule->getAreaMinusDiffFactor() > 0.0) {
+    fmt::print(out,
+               "    ANTENNAAREAMINUSDIFF {:g} ;\n",
+               rule->getAreaMinusDiffFactor());
+  }
+
+  if (rule->hasSideAreaFactor()) {
+    fmt::print(out,
+               "    ANTENNASIDEAREAFACTOR {:g} {};\n",
+               rule->getSideAreaFactor(),
+               rule->isSideAreaFactorDiffUseOnly() ? "DIFFUSEONLY" : "");
+  }
+
+  if (rule->getPAR() > 0) {
+    fmt::print(out, "    ANTENNAAREARATIO {:g} ;\n", rule->getPAR());
+  }
+
+  auto diff_par = rule->getDiffPAR();
+  if (diff_par.ratios.size() == 1 && diff_par.ratios[0] > 0) {
+    fmt::print(out, "    ANTENNADIFFAREARATIO {:g} ;\n", diff_par.ratios[0]);
+  } else if (diff_par.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNADIFFAREARATIO", diff_par);
+  }
+
+  if (rule->getCAR() > 0) {
+    fmt::print(out, "    ANTENNACUMAREARATIO {:g} ;\n", rule->getCAR());
+  }
+
+  auto diff_car = rule->getDiffCAR();
+  if (diff_car.ratios.size() == 1 && diff_car.ratios[0] > 0) {
+    fmt::print(out, "    ANTENNACUMDIFFAREARATIO {:g} ;\n", diff_car.ratios[0]);
+  } else if (diff_car.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNACUMDIFFAREARATIO", diff_car);
+  }
+
+  if (rule->getPSR() > 0) {
+    fmt::print(out, "    ANTENNASIDEAREARATIO {:g} ;\n", rule->getPSR());
+  }
+
+  auto diff_psr = rule->getDiffPSR();
+  if (diff_psr.ratios.size() == 1 && diff_psr.ratios[0] > 0) {
+    fmt::print(
+        out, "    ANTENNADIFFSIDEAREARATIO {:g} ;\n", diff_psr.ratios[0]);
+  } else if (diff_psr.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNADIFFSIDEAREARATIO", diff_psr);
+  }
+
+  if (rule->getCSR() > 0) {
+    fmt::print(out, "    ANTENNACUMSIDEAREARATIO {:g} ;\n", rule->getCSR());
+  }
+
+  auto diff_csr = rule->getDiffCSR();
+  if (diff_csr.ratios.size() == 1 && diff_csr.ratios[0] > 0) {
+    fmt::print(
+        out, "    ANTENNACUMDIFFSIDEAREARATIO {:g} ;\n", diff_csr.ratios[0]);
+  } else if (diff_csr.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNACUMDIFFSIDEAREARATIO", diff_csr);
+  }
+
+  auto area_diff_reduce = rule->getAreaDiffReduce();
+  if (area_diff_reduce.ratios.size() > 1) {
+    writePwlPair(out, "ANTENNAAREADIFFREDUCEPWL", area_diff_reduce);
+  }
+}
+
+namespace {
+
+// Emit one "<header> <area> [LAYER <name>] ;" line per element.
+void writeAntennaAreas(
+    std::ostream& out,
+    const char* header,
+    const std::vector<std::pair<double, dbTechLayer*>>& values)
+{
+  for (const auto& [area, layer] : values) {
+    fmt::print(out, "        {} {:g} ", header, area);
+    if (layer != nullptr) {
+      fmt::print(out, "LAYER {} ", layer->getName().c_str());
+    }
+    fmt::print(out, ";\n");
+  }
+}
+
+}  // namespace
+
+void lefout::writeAntennaPinModelLef(std::ostream& out,
+                                     dbTechAntennaPinModel* model)
+{
+  std::vector<std::pair<double, dbTechLayer*>> values;
+
+  model->getGateArea(values);
+  writeAntennaAreas(out, "ANTENNAGATEAREA", values);
+
+  model->getMaxAreaCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXAREACAR", values);
+
+  model->getMaxSideAreaCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXSIDEAREACAR", values);
+
+  model->getMaxCutCAR(values);
+  writeAntennaAreas(out, "ANTENNAMAXCUTCAR", values);
+}
+
+void lefout::writeMTermAntennaLef(std::ostream& out, dbMTerm* mterm)
+{
+  std::vector<std::pair<double, dbTechLayer*>> values;
+
+  mterm->getPartialMetalArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALMETALAREA", values);
+
+  mterm->getPartialMetalSideArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALMETALSIDEAREA", values);
+
+  mterm->getPartialCutArea(values);
+  writeAntennaAreas(out, "ANTENNAPARTIALCUTAREA", values);
+
+  mterm->getDiffArea(values);
+  writeAntennaAreas(out, "ANTENNADIFFAREA", values);
+
+  if (mterm->hasDefaultAntennaModel()) {
+    writeAntennaPinModelLef(out, mterm->getDefaultAntennaModel());
+  }
+
+  if (mterm->hasOxide2AntennaModel()) {
+    fmt::print(out, "        ANTENNAMODEL OXIDE2 ;\n");
+    writeAntennaPinModelLef(out, mterm->getOxide2AntennaModel());
+  }
+}
+
+void lefout::writeVia(std::ostream& out, dbTechVia* via)
 {
   std::string name = via->getName();
 
   if (via->isDefault()) {
-    fmt::print(_out, "\nVIA {} DEFAULT\n", name.c_str());
+    fmt::print(out, "\nVIA {} DEFAULT\n", name.c_str());
   } else {
-    fmt::print(_out, "\nVIA {}\n", name.c_str());
+    fmt::print(out, "\nVIA {}\n", name.c_str());
   }
 
   if (via->isTopOfStack()) {
-    fmt::print(_out, "    TOPOFSTACKONLY\n");
+    fmt::print(out, "    TOPOFSTACKONLY\n");
   }
 
   if (via->getResistance() != 0.0) {
-    fmt::print(_out, "    RESISTANCE {:.11g} ;\n", via->getResistance());
+    fmt::print(out, "    RESISTANCE {:.11g} ;\n", via->getResistance());
   }
 
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
   if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
-    writeBoxes(nullptr, boxes, "    ");
+    writeBoxes(out, nullptr, boxes, "    ");
   } else {
     std::string rname = rule->getName();
-    fmt::print(_out, "\n    VIARULE {} \n", rname.c_str());
+    fmt::print(out, "\n    VIARULE {} \n", rname.c_str());
 
     const dbViaParams P = via->getViaParams();
 
-    fmt::print(_out,
+    fmt::print(out,
                " + CUTSIZE {:.11g} {:.11g}\n",
                lefdist(P.getXCutSize()),
                lefdist(P.getYCutSize()));
@@ -1155,12 +1542,12 @@ void lefout::writeVia(dbTechVia* via)
     std::string bot = P.getBottomLayer()->getName();
     std::string cut = P.getCutLayer()->getName();
     fmt::print(
-        _out, " + LAYERS {} {} {}\n", bot.c_str(), cut.c_str(), top.c_str());
-    fmt::print(_out,
+        out, " + LAYERS {} {} {}\n", bot.c_str(), cut.c_str(), top.c_str());
+    fmt::print(out,
                " + CUTSPACING {:.11g} {:.11g}\n",
                lefdist(P.getXCutSpacing()),
                lefdist(P.getYCutSpacing()));
-    fmt::print(_out,
+    fmt::print(out,
                " + ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g}\n",
                lefdist(P.getXBottomEnclosure()),
                lefdist(P.getYBottomEnclosure()),
@@ -1169,11 +1556,11 @@ void lefout::writeVia(dbTechVia* via)
 
     if ((P.getNumCutRows() != 1) || (P.getNumCutCols() != 1)) {
       fmt::print(
-          _out, " + ROWCOL {} {}\n", P.getNumCutRows(), P.getNumCutCols());
+          out, " + ROWCOL {} {}\n", P.getNumCutRows(), P.getNumCutCols());
     }
 
     if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0)) {
-      fmt::print(_out,
+      fmt::print(out,
                  " + ORIGIN {:.11g} {:.11g}\n",
                  lefdist(P.getXOrigin()),
                  lefdist(P.getYOrigin()));
@@ -1181,7 +1568,7 @@ void lefout::writeVia(dbTechVia* via)
 
     if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
         || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0)) {
-      fmt::print(_out,
+      fmt::print(out,
                  " + OFFSET {:.11g} {:.11g} {:.11g} {:.11g}\n",
                  lefdist(P.getXBottomOffset()),
                  lefdist(P.getYBottomOffset()),
@@ -1191,21 +1578,21 @@ void lefout::writeVia(dbTechVia* via)
 
     std::string pname = via->getPattern();
     if (strcmp(pname.c_str(), "") != 0) {
-      fmt::print(_out, " + PATTERNNAME {}\n", pname.c_str());
+      fmt::print(out, " + PATTERNNAME {}\n", pname.c_str());
     }
   }
 
-  fmt::print(_out, "END {}\n", name.c_str());
+  fmt::print(out, "END {}\n", name.c_str());
 }
 
-void lefout::writeLibBody(dbLib* lib)
+void lefout::writeLibBody(std::ostream& out, dbLib* lib)
 {
   dbSet<dbSite> sites = lib->getSites();
   dbSet<dbSite>::iterator site_itr;
 
   for (site_itr = sites.begin(); site_itr != sites.end(); ++site_itr) {
     dbSite* site = *site_itr;
-    writeSite(site);
+    writeSite(out, site);
   }
 
   dbSet<dbMaster> masters = lib->getMasters();
@@ -1217,64 +1604,64 @@ void lefout::writeLibBody(dbLib* lib)
     if (write_marked_masters_ && !master->isMarked()) {
       continue;
     }
-    writeMaster(master);
+    writeMaster(out, master);
   }
 }
 
-void lefout::writeSite(dbSite* site)
+void lefout::writeSite(std::ostream& out, dbSite* site)
 {
   std::string n = site->getName();
 
-  fmt::print(_out, "SITE {}\n", n.c_str());
+  fmt::print(out, "SITE {}\n", n.c_str());
   dbSiteClass sclass = site->getClass();
-  fmt::print(_out, "    CLASS {} ;\n", sclass.getString());
+  fmt::print(out, "    CLASS {} ;\n", sclass.getString());
 
   if (site->getSymmetryX() || site->getSymmetryY() || site->getSymmetryR90()) {
-    fmt::print(_out, "{}", "    SYMMETRY");
+    fmt::print(out, "{}", "    SYMMETRY");
 
     if (site->getSymmetryX()) {
-      fmt::print(_out, "{}", " X");
+      fmt::print(out, "{}", " X");
     }
 
     if (site->getSymmetryY()) {
-      fmt::print(_out, "{}", " Y");
+      fmt::print(out, "{}", " Y");
     }
 
     if (site->getSymmetryR90()) {
-      fmt::print(_out, "{}", " R90");
+      fmt::print(out, "{}", " R90");
     }
 
-    fmt::print(_out, "{}", " ;\n");
+    fmt::print(out, "{}", " ;\n");
   }
 
   if (site->getWidth() || site->getHeight()) {
-    fmt::print(_out,
+    fmt::print(out,
                "    SIZE {:.11g} BY {:.11g} ;\n",
                lefdist(site->getWidth()),
                lefdist(site->getHeight()));
   }
 
-  fmt::print(_out, "END {}\n", n.c_str());
+  fmt::print(out, "END {}\n", n.c_str());
 }
 
-void lefout::writeMaster(dbMaster* master)
+void lefout::writeMaster(std::ostream& out, dbMaster* master)
 {
   std::string name = master->getName();
 
   if (use_master_ids_) {
-    fmt::print(_out,
+    fmt::print(out,
                "\nMACRO M{}\n",
                static_cast<std::uint32_t>(master->getMasterId()));
   } else {
-    fmt::print(_out, "\nMACRO {}\n", name.c_str());
+    fmt::print(out, "\nMACRO {}\n", name.c_str());
   }
 
-  fmt::print(_out, "    CLASS {} ;\n", master->getType().getString());
+  fmt::print(out, "    CLASS {} ;\n", master->getType().getString());
 
   const odb::Point origin = master->getOrigin();
 
   if (origin != Point()) {
-    fmt::print(_out,
+    fmt::print(out,
                "    ORIGIN {:.11g} {:.11g} ;\n",
                lefdist(origin.x()),
                lefdist(origin.y()));
@@ -1283,22 +1670,22 @@ void lefout::writeMaster(dbMaster* master)
   if (master->getEEQ()) {
     std::string eeq = master->getEEQ()->getName();
     if (use_master_ids_) {
-      fmt::print(_out,
+      fmt::print(out,
                  "    EEQ M{} ;\n",
                  static_cast<std::uint32_t>(master->getEEQ()->getMasterId()));
     } else {
-      fmt::print(_out, "    EEQ {} ;\n", eeq.c_str());
+      fmt::print(out, "    EEQ {} ;\n", eeq.c_str());
     }
   }
 
   if (master->getLEQ()) {
     std::string leq = master->getLEQ()->getName();
     if (use_master_ids_) {
-      fmt::print(_out,
+      fmt::print(out,
                  "    LEQ M{} ;\n",
                  static_cast<std::uint32_t>(master->getLEQ()->getMasterId()));
     } else {
-      fmt::print(_out, "    LEQ {} ;\n", leq.c_str());
+      fmt::print(out, "    LEQ {} ;\n", leq.c_str());
     }
   }
 
@@ -1306,26 +1693,26 @@ void lefout::writeMaster(dbMaster* master)
   int h = master->getHeight();
 
   if ((w != 0) || (h != 0)) {
-    fmt::print(_out, "    SIZE {:.11g} BY {:.11g} ;\n", lefdist(w), lefdist(h));
+    fmt::print(out, "    SIZE {:.11g} BY {:.11g} ;\n", lefdist(w), lefdist(h));
   }
 
   if (master->getSymmetryX() || master->getSymmetryY()
       || master->getSymmetryR90()) {
-    fmt::print(_out, "{}", "    SYMMETRY");
+    fmt::print(out, "{}", "    SYMMETRY");
 
     if (master->getSymmetryX()) {
-      fmt::print(_out, "{}", " X");
+      fmt::print(out, "{}", " X");
     }
 
     if (master->getSymmetryY()) {
-      fmt::print(_out, "{}", " Y");
+      fmt::print(out, "{}", " Y");
     }
 
     if (master->getSymmetryR90()) {
-      fmt::print(_out, "{}", " R90");
+      fmt::print(out, "{}", " R90");
     }
 
-    fmt::print(_out, "{}", " ;\n");
+    fmt::print(out, "{}", " ;\n");
   }
 
   if (origin != Point()) {
@@ -1335,7 +1722,7 @@ void lefout::writeMaster(dbMaster* master)
 
   if (master->getSite()) {
     std::string site = master->getSite()->getName();
-    fmt::print(_out, "    SITE {} ;\n", site.c_str());
+    fmt::print(out, "    SITE {} ;\n", site.c_str());
   }
 
   dbSet<dbMTerm> mterms = master->getMTerms();
@@ -1343,17 +1730,17 @@ void lefout::writeMaster(dbMaster* master)
 
   for (mitr = mterms.begin(); mitr != mterms.end(); ++mitr) {
     dbMTerm* mterm = *mitr;
-    writeMTerm(mterm);
+    writeMTerm(out, mterm);
   }
 
   dbSet<dbPolygon> poly_obs = master->getPolygonObstructions();
   dbSet<dbBox> obs = master->getObstructions(false);
 
   if (poly_obs.begin() != poly_obs.end() || obs.begin() != obs.end()) {
-    fmt::print(_out, "{}", "    OBS\n");
-    writeBoxes(nullptr, poly_obs, "      ");
-    writeBoxes(nullptr, obs, "      ");
-    fmt::print(_out, "{}", "    END\n");
+    fmt::print(out, "{}", "    OBS\n");
+    writeBoxes(out, nullptr, poly_obs, "      ");
+    writeBoxes(out, nullptr, obs, "      ");
+    fmt::print(out, "{}", "    END\n");
   }
 
   if (origin != Point()) {
@@ -1363,21 +1750,21 @@ void lefout::writeMaster(dbMaster* master)
 
   if (use_master_ids_) {
     fmt::print(
-        _out, "END M{}\n", static_cast<std::uint32_t>(master->getMasterId()));
+        out, "END M{}\n", static_cast<std::uint32_t>(master->getMasterId()));
   } else {
-    fmt::print(_out, "END {}\n", name.c_str());
+    fmt::print(out, "END {}\n", name.c_str());
   }
 }
 
-void lefout::writeMTerm(dbMTerm* mterm)
+void lefout::writeMTerm(std::ostream& out, dbMTerm* mterm)
 {
   std::string name = mterm->getName();
 
-  fmt::print(_out, "    PIN {}\n", name.c_str());
-  fmt::print(_out, "        DIRECTION {} ; \n", mterm->getIoType().getString());
-  fmt::print(_out, "        USE {} ; \n", mterm->getSigType().getString());
+  fmt::print(out, "    PIN {}\n", name.c_str());
+  fmt::print(out, "        DIRECTION {} ; \n", mterm->getIoType().getString());
+  fmt::print(out, "        USE {} ; \n", mterm->getSigType().getString());
 
-  mterm->writeAntennaLef(*this);
+  writeMTermAntennaLef(out, mterm);
   dbSet<dbMPin> pins = mterm->getMPins();
   dbSet<dbMPin>::iterator pitr;
 
@@ -1389,17 +1776,17 @@ void lefout::writeMTerm(dbMTerm* mterm)
 
     if (poly_geoms.begin() != poly_geoms.end()
         || geoms.begin() != geoms.end()) {
-      fmt::print(_out, "        PORT\n");
-      writeBoxes(nullptr, poly_geoms, "            ");
-      writeBoxes(nullptr, geoms, "            ");
-      fmt::print(_out, "        END\n");
+      fmt::print(out, "        PORT\n");
+      writeBoxes(out, nullptr, poly_geoms, "            ");
+      writeBoxes(out, nullptr, geoms, "            ");
+      fmt::print(out, "        END\n");
     }
   }
 
-  fmt::print(_out, "    END {}\n", name.c_str());
+  fmt::print(out, "    END {}\n", name.c_str());
 }
 
-void lefout::writePropertyDefinition(dbProperty* prop)
+void lefout::writePropertyDefinition(std::ostream& out, dbProperty* prop)
 {
   std::string propName = prop->getName();
   dbObjectType owner_type = prop->getPropOwner()->getObjectType();
@@ -1445,21 +1832,22 @@ void lefout::writePropertyDefinition(dbProperty* prop)
     default:
       return;
   }
-  fmt::print(_out,
+  fmt::print(out,
              "    {} {} {} ",
              objectType.c_str(),
              propName.c_str(),
              propType.c_str());
   if (owner_type == dbLibObj) {
-    fmt::print(_out, "{}", "\n        ");
-    fmt::print(_out, "{}", dbProperty::writePropValue(prop));
-    fmt::print(_out, "{}", "\n    ");
+    fmt::print(out, "{}", "\n        ");
+    fmt::print(out, "{}", dbProperty::writePropValue(prop));
+    fmt::print(out, "{}", "\n    ");
   }
 
-  fmt::print(_out, "{}", ";\n");
+  fmt::print(out, "{}", ";\n");
 }
 
 inline void lefout::writeObjectPropertyDefinitions(
+    std::ostream& out,
     dbObject* obj,
     std::unordered_map<std::string, int16_t>& propertiesMap)
 {
@@ -1497,58 +1885,58 @@ inline void lefout::writeObjectPropertyDefinitions(
       continue;
     }
     propertiesMap[prop->getName()] |= 0x1 << bitNumber;
-    writePropertyDefinition(prop);
+    writePropertyDefinition(out, prop);
   }
 }
 
-void lefout::writePropertyDefinitions(dbLib* lib)
+void lefout::writePropertyDefinitions(std::ostream& out, dbLib* lib)
 {
   std::unordered_map<std::string, int16_t> propertiesMap;
   dbTech* tech = lib->getTech();
 
-  fmt::print(_out, "{}", "\nPROPERTYDEFINITIONS\n");
+  fmt::print(out, "{}", "\nPROPERTYDEFINITIONS\n");
 
   // writing property definitions of objectType LAYER
   for (dbTechLayer* layer : tech->getLayers()) {
-    writeObjectPropertyDefinitions(layer, propertiesMap);
+    writeObjectPropertyDefinitions(out, layer, propertiesMap);
   }
 
   // writing property definitions of objectType LIBRARY
-  writeObjectPropertyDefinitions(lib, propertiesMap);
+  writeObjectPropertyDefinitions(out, lib, propertiesMap);
 
   // writing property definitions of objectType MACRO
   for (dbMaster* master : lib->getMasters()) {
-    writeObjectPropertyDefinitions(master, propertiesMap);
+    writeObjectPropertyDefinitions(out, master, propertiesMap);
     for (dbMTerm* term : master->getMTerms()) {
       for (dbMPin* pin : term->getMPins()) {
-        writeObjectPropertyDefinitions(pin, propertiesMap);
+        writeObjectPropertyDefinitions(out, pin, propertiesMap);
       }
     }
   }
 
   // writing property definitions of objectType VIA
   for (dbTechVia* via : tech->getVias()) {
-    writeObjectPropertyDefinitions(via, propertiesMap);
+    writeObjectPropertyDefinitions(out, via, propertiesMap);
   }
 
   // writing property definitions of objectType VIARULE
   for (dbTechViaRule* vrule : tech->getViaRules()) {
-    writeObjectPropertyDefinitions(vrule, propertiesMap);
+    writeObjectPropertyDefinitions(out, vrule, propertiesMap);
   }
 
   // writing property definitions of objectType NONDEFAULTRULE
   for (dbTechNonDefaultRule* nrule : tech->getNonDefaultRules()) {
-    writeObjectPropertyDefinitions(nrule, propertiesMap);
+    writeObjectPropertyDefinitions(out, nrule, propertiesMap);
   }
 
-  fmt::print(_out, "{}", "END PROPERTYDEFINITIONS\n\n");
+  fmt::print(out, "{}", "END PROPERTYDEFINITIONS\n\n");
 }
 
 void lefout::writeTech(dbTech* tech)
 {
   dist_factor_ = 1.0 / tech->getDbUnitsPerMicron();
   area_factor_ = dist_factor_ * dist_factor_;
-  writeTechBody(tech);
+  writeTechBody(_out, tech);
 
   fmt::print(_out, "END LIBRARY\n");
 }
@@ -1557,8 +1945,8 @@ void lefout::writeLib(dbLib* lib)
 {
   dist_factor_ = 1.0 / lib->getDbUnitsPerMicron();
   area_factor_ = dist_factor_ * dist_factor_;
-  writeHeader(lib);
-  writeLibBody(lib);
+  writeHeader(_out, lib);
+  writeLibBody(_out, lib);
   fmt::print(_out, "END LIBRARY\n");
 }
 
@@ -1567,9 +1955,9 @@ void lefout::writeTechAndLib(dbLib* lib)
   dist_factor_ = 1.0 / lib->getDbUnitsPerMicron();
   area_factor_ = dist_factor_ * dist_factor_;
   dbTech* tech = lib->getTech();
-  writeHeader(lib);
-  writeTechBody(tech);
-  writeLibBody(lib);
+  writeHeader(_out, lib);
+  writeTechBody(_out, tech);
+  writeLibBody(_out, lib);
   fmt::print(_out, "END LIBRARY\n");
 }
 
@@ -1579,8 +1967,8 @@ void lefout::writeAbstractLef(dbBlock* db_block)
                               1.0 / db_block->getDbUnitsPerMicron());
   utl::SetAndRestore set_area(area_factor_, dist_factor_ * dist_factor_);
 
-  writeHeader(db_block);
-  writeBlock(db_block);
+  writeHeader(_out, db_block);
+  writeBlock(_out, db_block);
   fmt::print(_out, "END LIBRARY\n");
 }
 

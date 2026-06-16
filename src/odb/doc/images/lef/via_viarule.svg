@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="973" height="203"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_VIARULE"
+      xlink:title="K_VIARULE">
+      <rect x="31" y="3" width="90" height="32"/>
+      <rect x="29" y="1" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="21">K_VIARULE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="141" y="3" width="82" height="32"/>
+      <rect x="139" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="149" y="21">T_STRING</text>
+   </a>
+   <rect x="243" y="3" width="24" height="32" rx="10"/>
+   <rect x="241"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="251" y="21">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CUTSIZE"
+      xlink:title="K_CUTSIZE">
+      <rect x="287" y="3" width="90" height="32"/>
+      <rect x="285" y="1" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="295" y="21">K_CUTSIZE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="397" y="3" width="92" height="32"/>
+      <rect x="395" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="405" y="21">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="509" y="3" width="92" height="32"/>
+      <rect x="507" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="517" y="21">int_number</text>
+   </a>
+   <rect x="621" y="3" width="24" height="32" rx="10"/>
+   <rect x="619"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="629" y="21">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_LAYERS"
+      xlink:title="K_LAYERS">
+      <rect x="665" y="3" width="82" height="32"/>
+      <rect x="663" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="673" y="21">K_LAYERS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="767" y="3" width="82" height="32"/>
+      <rect x="765" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="775" y="21">T_STRING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="869" y="3" width="82" height="32"/>
+      <rect x="867" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="877" y="21">T_STRING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="44" y="69" width="82" height="32"/>
+      <rect x="42" y="67" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="52" y="87">T_STRING</text>
+   </a>
+   <rect x="146" y="69" width="24" height="32" rx="10"/>
+   <rect x="144"
+         y="67"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="154" y="87">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CUTSPACING"
+      xlink:title="K_CUTSPACING">
+      <rect x="190" y="69" width="118" height="32"/>
+      <rect x="188" y="67" width="118" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="198" y="87">K_CUTSPACING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="328" y="69" width="92" height="32"/>
+      <rect x="326" y="67" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="336" y="87">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="440" y="69" width="92" height="32"/>
+      <rect x="438" y="67" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="448" y="87">int_number</text>
+   </a>
+   <rect x="552" y="69" width="24" height="32" rx="10"/>
+   <rect x="550"
+         y="67"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="560" y="87">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ENCLOSURE"
+      xlink:title="K_ENCLOSURE">
+      <rect x="596" y="69" width="112" height="32"/>
+      <rect x="594" y="67" width="112" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="604" y="87">K_ENCLOSURE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="728" y="69" width="92" height="32"/>
+      <rect x="726" y="67" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="736" y="87">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="840" y="69" width="92" height="32"/>
+      <rect x="838" y="67" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="848" y="87">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="499" y="169" width="92" height="32"/>
+      <rect x="497" y="167" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="507" y="187">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="611" y="169" width="92" height="32"/>
+      <rect x="609" y="167" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="619" y="187">int_number</text>
+   </a>
+   <rect x="723" y="169" width="24" height="32" rx="10"/>
+   <rect x="721"
+         y="167"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="731" y="187">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#via_viarule_option"
+      xlink:title="via_viarule_option">
+      <rect x="787" y="135" width="138" height="32"/>
+      <rect x="785" y="133" width="138" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="795" y="153">via_viarule_option</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m0 0 h10 m90 0 h10 m0 0 h10 m82 0 h10 m0 0 h10 m24 0 h10 m0 0 h10 m90 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m24 0 h10 m0 0 h10 m82 0 h10 m0 0 h10 m82 0 h10 m0 0 h10 m82 0 h10 m2 0 l2 0 m2 0 l2 0 m2 0 l2 0 m-951 66 l2 0 m2 0 l2 0 m2 0 l2 0 m2 0 h10 m82 0 h10 m0 0 h10 m24 0 h10 m0 0 h10 m118 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m24 0 h10 m0 0 h10 m112 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m2 0 l2 0 m2 0 l2 0 m2 0 l2 0 m-477 100 l2 0 m2 0 l2 0 m2 0 l2 0 m2 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m24 0 h10 m20 0 h10 m0 0 h148 m-178 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m158 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-158 0 h10 m138 0 h10 m23 34 h-3"/>
+   <polygon points="963 183 971 179 971 187"/>
+   <polygon points="963 183 955 179 955 187"/>
+</svg>

@@ -10,6 +10,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -100,14 +101,15 @@ void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["length_tbl"].add(length_tbl_);
   info.children["width_tbl"].add(width_tbl_);
+  info.children["influence_tbl"].add(influence_tbl_);
+
+  // User Code Begin collectMemInfo
   MemInfo& spacing_info = info.children["spacing_tbl"];
   for (const auto& s : spacing_tbl_) {
     spacing_info.add(s);
   }
-  info.children["influence_tbl"].add(influence_tbl_);
   info.children["within_tbl"].add(_within_tbl_);
   // User Code End collectMemInfo
 }
@@ -181,6 +183,21 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
   return obj->flags_.exceept_eol;
 }
 
+dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
+    dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerSpacingTablePrlRule*)
+      _parent->spacing_table_prl_rules_tbl_->create();
+}
+void dbTechLayerSpacingTablePrlRule::destroy(
+    dbTechLayerSpacingTablePrlRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->spacing_table_prl_rules_tbl_->destroy(
+      (_dbTechLayerSpacingTablePrlRule*) obj);
+}
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
 
 uint32_t _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
@@ -236,16 +253,6 @@ void dbTechLayerSpacingTablePrlRule::setSpacingTableInfluence(
       = (_dbTechLayerSpacingTablePrlRule*) this;
   obj->influence_tbl_ = influence_tbl;
 }
-
-dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
-    dbTechLayer* _layer)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerSpacingTablePrlRule* newrule
-      = layer->spacing_table_prl_rules_tbl_->create();
-  return ((dbTechLayerSpacingTablePrlRule*) newrule);
-}
-
 dbTechLayerSpacingTablePrlRule*
 dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
     dbTechLayer* inly,
@@ -255,16 +262,6 @@ dbTechLayerSpacingTablePrlRule::getTechLayerSpacingTablePrlRule(
   return (dbTechLayerSpacingTablePrlRule*)
       layer->spacing_table_prl_rules_tbl_->getPtr(dbid);
 }
-
-void dbTechLayerSpacingTablePrlRule::destroy(
-    dbTechLayerSpacingTablePrlRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->spacing_table_prl_rules_tbl_->destroy(
-      (_dbTechLayerSpacingTablePrlRule*) rule);
-}
-
 int dbTechLayerSpacingTablePrlRule::getSpacing(const int width,
                                                const int length) const
 {

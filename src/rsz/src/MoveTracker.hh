@@ -1,0 +1,311 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <map>
+#include <set>
+#include <stack>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "OptimizerTypes.hh"
+#include "db_sta/dbNetwork.hh"
+#include "odb/dbBlockCallBackObj.h"
+#include "sta/Delay.hh"
+
+namespace odb {
+class dbBlock;
+class dbITerm;
+}  // namespace odb
+
+namespace sta {
+class Pin;
+class Sta;
+class PathEnd;
+}  // namespace sta
+
+namespace utl {
+class Logger;
+}  // namespace utl
+
+namespace rsz {
+
+class Resizer;
+
+// === Tracked pin data =======================================================
+
+// Reporting metadata for one driver pin visited during repair setup.
+// Stored in MoveTracker::pin_info_ and used by the final success/failure/
+// missed-opportunity reports.  pin_name and endpoint_name snapshot the path
+// names at visit time so reports stay stable even if later ECOs replace or
+// delete the original ITerms. gate_type, load_delay, and intrinsic_delay let
+// reports show *why* a pin was (or was not) repaired without re-querying STA
+// at report time.
+struct PinInfo
+{
+  std::string pin_name;
+  std::string endpoint_name;
+  std::string gate_type;
+  float load_delay;
+  float intrinsic_delay;
+  float pin_slack;
+  float endpoint_slack;
+
+  PinInfo()
+      : pin_name("unknown"),
+        gate_type("unknown"),
+        load_delay(0.0),
+        intrinsic_delay(0.0),
+        pin_slack(0.0),
+        endpoint_slack(0.0)
+  {
+  }
+
+  PinInfo(const std::string& pin_path_name,
+          const std::string& endpoint_path_name,
+          const std::string& gt,
+          float ld,
+          float id,
+          float pin_slk,
+          float ep_slk)
+      : pin_name(pin_path_name),
+        endpoint_name(endpoint_path_name),
+        gate_type(gt),
+        load_delay(ld),
+        intrinsic_delay(id),
+        pin_slack(pin_slk),
+        endpoint_slack(ep_slk)
+  {
+  }
+};
+
+// === Tracked move event data ===============================================
+
+enum class MoveStateType
+{
+  ATTEMPT = 0,
+  ATTEMPT_REJECT = 1,
+  ATTEMPT_COMMIT = 2
+};
+
+// One move-attempt event recorded by the tracker.  Events start in
+// `pending_moves_` and migrate to `moves_` on commitMoves() or are
+// discarded on rejectMoves(), mirroring the ECO journal lifecycle.
+struct MoveStateData
+{
+  const sta::Pin* pin;
+  int order;
+  std::string move_type;
+  MoveStateType state;
+
+  MoveStateData(const sta::Pin* p,
+                int c,
+                const std::string& mt,
+                MoveStateType s)
+      : pin(p), order(c), move_type(mt), state(s)
+  {
+  }
+
+  MoveStateData(const sta::Pin* p, const std::string& mt, MoveStateType s)
+      : pin(p), order(0), move_type(mt), state(s)
+  {
+  }
+};
+
+// Class to track optimization moves (attempts, commits, rejections) for pins.
+// Provides statistics and summaries of which pins were attempted for
+// optimization, which moves succeeded, and which failed.
+class MoveTracker : public odb::dbBlockCallBackObj
+{
+ public:
+  // === Lifecycle and ODB callbacks =========================================
+  MoveTracker(Resizer& resizer, bool report_enabled);
+  ~MoveTracker() override = default;
+
+  void inDbITermDestroy(odb::dbITerm* iterm) override;
+  void inDbITermCreate(odb::dbITerm* iterm) override;
+
+  bool reportEnabled() const { return report_enabled_; }
+
+  // === Current endpoint and violator tracking ==============================
+  // Set the current endpoint being optimized
+  void setCurrentEndpoint(const sta::Pin* endpoint_pin);
+
+  // Track all critical pins collected by RepairTargetCollector
+  void trackCriticalPins(const std::vector<const sta::Pin*>& critical_pins);
+
+  // Track that a pin was identified as a violator for potential optimization
+  void trackViolator(const sta::Pin* pin);
+
+  // Track violator with detailed information for reporting
+  void trackViolatorWithInfo(const sta::Pin* pin,
+                             const std::string& gate_type,
+                             float load_delay,
+                             float intrinsic_delay,
+                             float pin_slack,
+                             float endpoint_slack);
+
+  // === Move event lifecycle ================================================
+  // Track an attempted move on a pin
+  void trackMove(const sta::Pin* pin,
+                 const std::string& move_type,
+                 MoveStateType state);
+
+  // Commit all pending moves (mark them as successful)
+  void commitMoves();
+
+  // Reject all pending moves (mark them as failed)
+  void rejectMoves();
+
+  // === Nested ECO journal support ==========================================
+  // MoveCommitter mirrors its ECO journal stack here. A move recorded with
+  // trackMove() while a journal is open lands in the innermost level;
+  // restoreJournal() rejects exactly that level's moves, and commitJournal()
+  // either finalizes them (outermost journal) or merges them into the parent
+  // level (nested journal) so a later parent restore can still reject them.
+  void beginJournal();
+  void commitJournal();
+  void restoreJournal();
+
+  // === Phase and final reports =============================================
+  // Print statistics summary for current pass and cumulative totals
+  void printMoveSummary(const std::string& title);
+
+  // Print per-endpoint optimization statistics
+  void printEndpointSummary(const std::string& title);
+
+  // Print three comprehensive optimization reports
+  void printSuccessReport(const std::string& title);
+  void printFailureReport(const std::string& title);
+  void printMissedOpportunitiesReport(const std::string& title);
+
+  // Print pre- and post-optimization slack distribution
+  void printSlackDistribution(const std::string& title);
+
+  // Print detailed analysis of endpoints in the top (most critical) bin
+  void printTopBinEndpoints(const std::string& title, int max_endpoints = 20);
+
+  // Print histogram of path slacks for the most critical endpoint
+  void printCriticalEndpointPathHistogram(const std::string& title);
+
+  // === Slack snapshots ======================================================
+  // Capture initial slack for all pins (call at start of optimization)
+  void captureInitialSlackDistribution();
+
+  // Capture original slack for all endpoints (call once before any phases)
+  void captureOriginalEndpointSlack();
+
+  // Capture pre-phase slack for all endpoints (call at start of each phase)
+  void capturePrePhaseSlack();
+
+  // === Tracking queries and reset ==========================================
+  // Get the visit count for a specific pin
+  int getVisitCount(const sta::Pin* pin) const;
+
+  // Clear all tracking data for the current pass
+  void clear();
+
+  // Get total statistics
+  int getTotalAttempts() const { return total_attempt_count_; }
+  int getTotalCommits() const { return total_commit_count_; }
+  int getTotalRejects() const { return total_reject_count_; }
+
+  // Terminal-state log of every finalized move (committed or rejected),
+  // in finalize order.
+  const std::vector<MoveStateData>& moveLog() const { return moves_; }
+
+ private:
+  // === Summary maintenance ==================================================
+  void clearMoveSummary();
+  // Migrate a level of pending moves into the committed move log with the given
+  // terminal state, updating per-pin and per-endpoint statistics.
+  void finalizeMoves(const std::vector<MoveStateData>& level,
+                     MoveStateType final_state);
+  std::string pinPathName(const sta::Pin* pin) const;
+
+  // === Report helpers =======================================================
+  // Helper function to enumerate paths to an endpoint and count negative slack
+  // paths Returns a vector of (path_slack, path_end) pairs for all paths to the
+  // endpoint
+  std::vector<std::pair<sta::Slack, const sta::PathEnd*>>
+  enumerateEndpointPaths(const sta::Pin* endpoint_pin, int max_paths = 100);
+
+  // Helper function to draw a histogram given bin labels and counts
+  void drawHistogram(const std::string& title,
+                     const std::vector<std::string>& bin_labels,
+                     const std::vector<int>& bin_counts,
+                     const std::string& value_label = "Slack (ns)",
+                     const std::string& count_label = "Count");
+
+  // === Shared services ======================================================
+  utl::Logger* logger_;
+  sta::Sta* sta_;
+  sta::dbNetwork* db_network_;
+  bool report_enabled_{false};
+
+  // === Current phase tracking ==============================================
+  // Current endpoint being optimized
+  const sta::Pin* current_endpoint_;
+
+  // Current pass tracking
+  int move_count_;
+  std::map<const sta::Pin*, int> visit_count_;
+  std::vector<MoveStateData> moves_;
+  // Moves tracked outside any ECO journal (e.g. MeasuredVtSwapPolicy);
+  // flushed directly by commitMoves() / rejectMoves().
+  std::vector<MoveStateData> pending_moves_;
+  // One pending-move level per open ECO journal, innermost on top. Mirrors
+  // MoveCommitter's journal stack; see beginJournal()/commitJournal()/
+  // restoreJournal().
+  std::stack<std::vector<MoveStateData>> pending_move_levels_;
+
+  // === Cumulative move statistics ==========================================
+  // Cumulative statistics across all passes
+  int total_move_count_;
+  int total_no_attempt_count_;
+  int total_attempt_count_;
+  int total_reject_count_;
+  int total_commit_count_;
+  std::map<std::string, std::tuple<int, int, int>> total_move_type_counts_;
+
+  // === Endpoint summaries ===================================================
+  // Per-endpoint tracking: endpoint_pin -> (attempts, rejects, commits)
+  std::map<const sta::Pin*, std::tuple<int, int, int>> endpoint_move_counts_;
+
+  // Per-endpoint slack tracking: endpoint_pin -> (original_slack,
+  // pre_phase_slack, post_phase_slack)
+  // - original_slack: slack at very start of optimization (before any phases)
+  // - pre_phase_slack: slack at start of current phase
+  // - post_phase_slack: slack at end of current phase
+  std::map<const sta::Pin*, std::tuple<float, float, float>> endpoint_slack_;
+
+  // === Final report data ====================================================
+  // Detailed tracking for final reports (persists across clear() calls)
+  // Map: pin -> vector of (move_type, state)
+  std::map<const sta::Pin*, std::vector<std::pair<std::string, MoveStateType>>>
+      pin_move_events_;
+
+  // Set of all pins that were visited (even if no moves attempted)
+  std::set<const sta::Pin*> all_visited_pins_;
+
+  // Set of all critical pins identified by RepairTargetCollector
+  std::set<const sta::Pin*> all_critical_pins_;
+
+  // Map pin to detailed information (endpoint, gate type, delays)
+  std::map<const sta::Pin*, PinInfo> pin_info_;
+
+  // === Slack snapshot backup ===============================================
+  // Initial slack distribution (captured at start of optimization).
+  // Entries are moved to backup maps in inDbITermDestroy() and restored in
+  // inDbITermCreate() when ODB recycles the same pointer on undo. Committed
+  // deletes leave entries in the backup where they are harmlessly ignored.
+  std::map<const sta::Pin*, float> initial_pin_slack_;
+  std::map<const sta::Pin*, float> initial_endpoint_slack_;
+  std::map<const sta::Pin*, float> backup_pin_slack_;
+  std::map<const sta::Pin*, float> backup_endpoint_slack_;
+};
+
+}  // namespace rsz

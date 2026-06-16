@@ -97,9 +97,7 @@ void _dbMetalWidthViaMap::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["via_name"].add(via_name_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -187,7 +185,7 @@ void dbMetalWidthViaMap::setViaName(const std::string& via_name)
   obj->via_name_ = via_name;
 }
 
-std::string dbMetalWidthViaMap::getViaName() const
+const std::string& dbMetalWidthViaMap::getViaName() const
 {
   _dbMetalWidthViaMap* obj = (_dbMetalWidthViaMap*) this;
   return obj->via_name_;

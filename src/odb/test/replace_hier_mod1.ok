@@ -48,7 +48,9 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000007 HPWL: 79932
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000001 HPWL: 80607
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 80632
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 60.38 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21
@@ -138,7 +140,7 @@ Equivalence check - pre
 Repair timing output passed/skipped equivalence test
 ### swap bc1 to inv_chain ###
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0083] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -182,7 +184,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):           2 ,     32
 [INFO GPL-0029] Bin size (W * H):      19.950 * 37.494 um
 [INFO GPL-0030] Number of bins:                     64
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -219,7 +221,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 300. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
       310 |   0.1375 |  2.608555e+02 | +142.91% |  5.67e-07 |      
       311 |   0.0997 |  2.649455e+02 |          |  6.13e-07 |      
 ---------------------------------------------------------------
@@ -232,7 +234,9 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 59.85 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21
@@ -321,7 +325,7 @@ Equivalence check - swap (buffer_chain -> inv_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to buffer_chain ###
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0083] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -365,7 +369,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):           2 ,     32
 [INFO GPL-0029] Bin size (W * H):      19.950 * 37.494 um
 [INFO GPL-0030] Number of bins:                     64
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -382,7 +386,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
        10 |   0.4272 |  3.684500e+01 |  -86.41% |  1.18e-12 |      
        20 |   0.4163 |  2.992050e+01 |  -18.79% |  1.58e-12 |      
        30 |   0.4015 |  2.609400e+01 |  -12.79% |  2.10e-12 |      
@@ -440,7 +444,9 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 60.38 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21
@@ -529,7 +535,7 @@ Equivalence check - swap for rollback (inv_chain -> buffer_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to inv_chain ###
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
-[INFO GPL-0006] Execute incremental mode global placement.
+[INFO GPL-0083] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
@@ -573,7 +579,7 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0028] Bin count (X, Y):           2 ,     32
 [INFO GPL-0029] Bin size (W * H):      19.950 * 37.494 um
 [INFO GPL-0030] Number of bins:                     64
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -590,7 +596,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
        10 |   0.3890 |  3.538500e+01 |  -76.44% |  1.18e-12 |      
        20 |   0.3919 |  2.646600e+01 |  -25.21% |  1.57e-12 |      
        30 |   0.3934 |  2.313500e+01 |  -12.59% |  2.09e-12 |      
@@ -648,7 +654,9 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 59.85 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      21

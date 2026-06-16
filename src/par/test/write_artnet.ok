@@ -8,7 +8,7 @@ getFromPAR done
 #primary inputs: 36
 #primary outputs: 18
 Ratio of Region I: 0.5
-Rent's exponent: 0.5446304
+Rent's exponent: 0.5461884
 Average #pins per instances: 3.2
 Ratio of #sequential instances to the #instances: 0.08192771
 Maximum depth of any timing path: 17

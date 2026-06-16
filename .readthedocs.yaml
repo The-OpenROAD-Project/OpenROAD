@@ -15,7 +15,7 @@ build:
     - libasound2
     - graphviz
   tools:
-    python: "3.7"
+    python: "3.10"
     nodejs: "16"
   jobs:
     post_install:

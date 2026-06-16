@@ -18,7 +18,7 @@ class TestWriteReadDbHier : public tst::IntegratedFixture
 {
  protected:
   TestWriteReadDbHier()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/odb/test/")
   {
   }

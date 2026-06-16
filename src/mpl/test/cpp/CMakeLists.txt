@@ -16,6 +16,25 @@ add_executable(TestSnapper TestSnapper.cpp)
 target_link_libraries(TestSnapper ${TEST_LIBS})
 gtest_discover_tests(TestSnapper WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_executable(TestBlockMacroChannels TestBlockMacroChannels.cpp)
+target_link_libraries(TestBlockMacroChannels ${TEST_LIBS})
+gtest_discover_tests(TestBlockMacroChannels
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_executable(TestPusher TestPusher.cpp)
+target_link_libraries(TestPusher
+  GTest::gtest
+  GTest::gtest_main
+  GTest::gmock
+  odb
+  mpl_pusher
+  tst
+)
+gtest_discover_tests(TestPusher WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_dependencies(build_and_test
   TestSnapper
+  TestBlockMacroChannels
+  TestPusher
 )

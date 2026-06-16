@@ -20,8 +20,9 @@ The `define_pin_shape_pattern` command defines a pin placement grid on the
 specified layer. This grid has positions inside the die area, not only at
 the edges of the die boundary.
 
+<!-- checker: skip -->
 ```tcl
-define_pin_shape_pattern 
+define_pin_shape_pattern
     [-layer layer]
     [-x_step x_step]
     [-y_step y_step]
@@ -63,8 +64,9 @@ It is possible to use the `-region`, `-group` and `-order` arguments together
 per `set_io_pin_constraint` call, but the `-mirrored_pins` argument should be
 called alone.
 
+<!-- checker: skip -->
 ```tcl
-set_io_pin_constraint 
+set_io_pin_constraint
     [-direction direction]
     [-pin_names names]
     [-region edge:interval]
@@ -103,8 +105,9 @@ cannot be placed.
 It is possible to use the `-region` argument multiple times in a single call
 of `exclude_io_pin_region`.
 
+<!-- checker: skip -->
 ```tcl
-exclude_io_pin_region 
+exclude_io_pin_region
     -region edge:interval
 ```
 
@@ -120,6 +123,7 @@ The `clear_io_pin_constraints` command clears all the previously-defined
 constraints and pin shape patterns created with `set_io_pin_constraint` or
 `define_pin_shape_pattern`.
 
+<!-- checker: skip -->
 ```tcl
 clear_io_pin_constraints
 ```
@@ -306,6 +310,21 @@ write_pin_placement
 | ----- | ----- |
 | `file_name` | The name of the file with the pin placement. |
 | `-placed_status` | When this flag is enabled, the file will be generated´with the `-placed_status` flag in each `place_pin` command call. |
+
+### Rectilinear Floorplans
+
+The `place_pins` command supports designs with a rectilinear
+(non-rectangular) die outline, such as those created by
+`initialize_floorplan` with a polygonal `-die_area` (see the
+[`ifp` documentation](../ifp/README.md#rectilinear-floorplans)).
+Rectilinear mode is detected automatically from the die polygon stored in the
+database; no extra option is required. Pins are distributed along the
+edges of the polygonal die boundary.
+
+<!-- checker: skip -->
+```tcl
+place_pins -hor_layers metal3 -ver_layers metal2
+```
 
 ## Useful Developer Commands
 

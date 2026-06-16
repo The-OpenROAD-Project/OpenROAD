@@ -1,0 +1,92 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 14 components and 70 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 28 connections.
+[INFO ODB-0133]     Created 9 nets and 28 connections.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X1)
+   0.224    0.224 ^ r1/Q (DFF_X1)
+   0.023    0.247 ^ u1/A (INV_X8)
+   0.001    0.248 v u1/ZN (INV_X8)
+   0.002    0.250 v u2/A (INV_X1)
+   0.039    0.288 ^ u2/ZN (INV_X1)
+   0.002    0.290 ^ u3/A (INV_X1)
+   0.022    0.312 v u3/ZN (INV_X1)
+   0.002    0.314 v u4/A (INV_X1)
+   0.032    0.347 ^ u4/ZN (INV_X1)
+   0.002    0.349 ^ u5/A (INV_X1)
+   0.052    0.400 v u5/ZN (INV_X1)
+   0.046    0.447 v r2/D (DFF_X1)
+            0.447   data arrival time
+
+   0.350    0.350   clock clk (rise edge)
+   0.000    0.350   clock network delay (ideal)
+   0.000    0.350   clock reconvergence pessimism
+            0.350 ^ r2/CK (DFF_X1)
+  -0.062    0.288   library setup time
+            0.288   data required time
+-----------------------------------------------------------
+            0.288   data required time
+           -0.447   data arrival time
+-----------------------------------------------------------
+           -0.159   slack (VIOLATED)
+
+
+[INFO RSZ-0100] Repair move sequence: SizeUpMatchMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.159 |       -0.2 |       -0.2 |      1 | r2/D
+       5* |       0 |       4 |        0 |      0 |     0 |   +17.1% |   -0.071 |       -0.1 |       -0.1 |      1 | r2/D
+    final |       0 |       5 |        0 |      0 |     0 |   +18.3% |   -0.012 |       -0.0 |       -0.0 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 5 instances: 1 up, 4 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X2)
+   0.165    0.165 ^ r1/Q (DFF_X2)
+   0.022    0.187 ^ u1/A (INV_X8)
+   0.012    0.199 v u1/ZN (INV_X8)
+   0.005    0.204 v u2/A (INV_X8)
+   0.018    0.222 ^ u2/ZN (INV_X8)
+   0.005    0.227 ^ u3/A (INV_X8)
+   0.008    0.236 v u3/ZN (INV_X8)
+   0.004    0.240 v u4/A (INV_X8)
+   0.012    0.252 ^ u4/ZN (INV_X8)
+   0.005    0.257 ^ u5/A (INV_X8)
+   0.011    0.268 v u5/ZN (INV_X8)
+   0.038    0.306 v r2/D (DFF_X1)
+            0.306   data arrival time
+
+   0.350    0.350   clock clk (rise edge)
+   0.000    0.350   clock network delay (ideal)
+   0.000    0.350   clock reconvergence pessimism
+            0.350 ^ r2/CK (DFF_X1)
+  -0.056    0.294   library setup time
+            0.294   data required time
+-----------------------------------------------------------
+            0.294   data required time
+           -0.306   data arrival time
+-----------------------------------------------------------
+           -0.012   slack (VIOLATED)
+
+

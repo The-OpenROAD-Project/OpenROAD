@@ -22,7 +22,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       populated_(false),
       colors_correct_(false),
       issue_redraw_(true),
-      block_(nullptr),
+      chip_(nullptr),
       logger_(logger),
       grid_x_size_(10.0),
       grid_y_size_(10.0),
@@ -35,8 +35,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
-      renderer_(nullptr),
-      setup_(nullptr),
+      use_selected_only_(false),
       color_generator_(SpectrumGenerator(100.0))
 {
 }
@@ -192,29 +191,6 @@ double GlobalRoutingDataSource::getGridYSize() const
 }
 
 //////////
-
-HeatMapRenderer::HeatMapRenderer(HeatMapDataSource& datasource)
-    : datasource_(datasource), first_paint_(true)
-{
-}
-
-void HeatMapRenderer::drawObjects(Painter& painter)
-{
-}
-
-std::string HeatMapRenderer::getSettingsGroupName()
-{
-  return kGroupnamePrefix;
-}
-
-Renderer::Settings HeatMapRenderer::getSettings()
-{
-  return {};
-}
-
-void HeatMapRenderer::setSettings(const Renderer::Settings& settings)
-{
-}
 
 //////////
 PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,

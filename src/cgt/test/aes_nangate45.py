@@ -1,6 +1,8 @@
 from openroad import Tech
 import helpers
 
+helpers.if_bazel_change_working_dir_to("/_main/src/cgt/test/")
+
 tech = Tech()
 
 tech.readLiberty("Nangate45/Nangate45_typ.lib")

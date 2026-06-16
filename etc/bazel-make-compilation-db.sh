@@ -60,7 +60,7 @@ for f in bazel-out/../../../external/*/include/python3.*/Python.h; do
 done >> compile_flags.txt
 
 # Since we don't do per-file define extraction in compile_flag.txt,
-# add them here globally
+# to avoid polluting the global namespace, selectively add necessary ones here.
 cat >> compile_flags.txt <<EOF
 -DABC_USE_STDINT_H=1
 -DABC_NAMESPACE=abc
@@ -68,9 +68,13 @@ cat >> compile_flags.txt <<EOF
 -DBUILD_TYPE="opt"
 -DBUILD_PYTHON=false
 -DBUILD_GUI=true
+-DSLANG_NO_YOSYS
+-DSLANG_MUX_LOWERING
 EOF
 
-# If there are two styles of comp-dbs, tools might have issues. Warn user.
-if [ -r compile_commands.json ]; then
-  printf "\n\033[1;31mSuggest to remove old compile_commands.json to not interfere with compile_flags.txt\033[0m\n\n"
-fi
+# If there are two styles of comp-dbs, tools might choose wrong one. Warn user.
+for f in compile_commands.json build/compile_commands.json ; do
+  if [ -r "$f" ]; then
+    printf "\n\033[1;31mSuggest to remove old %s to not interfere with compile_flags.txt\033[0m\n\n" "$f"
+  fi
+done

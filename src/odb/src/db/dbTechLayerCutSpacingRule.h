@@ -99,7 +99,7 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   uint32_t two_cuts_;
   uint32_t prl_;
   uint32_t par_length_;
-  int cut_area_;
+  int64_t cut_area_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj);

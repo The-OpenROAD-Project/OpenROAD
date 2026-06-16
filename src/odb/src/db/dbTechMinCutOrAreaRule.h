@@ -91,7 +91,7 @@ class _dbTechMinEncRule : public _dbObject
   };
 
   Flags flags_;
-  uint32_t area_;
+  int64_t area_;
   uint32_t width_;
 
   _dbTechMinEncRule(_dbDatabase* db);

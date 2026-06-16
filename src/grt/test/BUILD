@@ -11,6 +11,7 @@ TESTS = [
     "clock_route_alpha",
     "clock_route_error1",
     "clock_route_error2",
+    "colocated_pins",
     "congestion1",
     "congestion2",
     "congestion3",
@@ -33,6 +34,7 @@ TESTS = [
     "gcd_cugr",
     "gcd_flute",
     "increase_capacity1",
+    "incremental_deleted_net",
     "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
@@ -42,7 +44,12 @@ TESTS = [
     "modeling_instance_obs",
     "multiple_calls",
     "ndr_1w_3s",
+    "ndr_1w_3s_cugr",
     "ndr_2w_3s",
+    "ndr_2w_3s_cugr",
+    "ndr_multi_cugr",
+    "ndr_rrr_cugr",
+    "ndr_upper_layers_cugr",
     "no_tracks",
     "obs_out_of_die",
     "obstruction",
@@ -79,6 +86,7 @@ TESTS = [
     "repair_antennas_only_diodes",
     "repair_antennas_only_jumpers",
     "repair_antennas_allow_congestion",
+    "repair_antennas_from_odb",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -92,6 +100,7 @@ TESTS = [
     "single_row",
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
+    "soft_ndr_4w_6s_cugr",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -131,6 +140,58 @@ MANUAL_FOR_BAZEL_TESTS = [
     data = [":test_resources"],
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "snapshot_batched_bus_route",
+    check_log = False,
+    check_passfail = True,
+    data = [
+        "bus_route.tcl",
+        ":test_resources",
+    ],
+)
+
+regression_test(
+    name = "snapshot_batched_incremental_state",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_markers_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_report_file_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
 
 py_test(
     name = "grt_man_tcl_check",

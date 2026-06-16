@@ -118,12 +118,13 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["elements"].add(elements_);
   info.children["power_switch"].add(power_switch_);
   info.children["isolation"].add(isolation_);
   info.children["levelshifters"].add(levelshifters_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

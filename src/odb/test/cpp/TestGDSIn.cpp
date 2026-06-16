@@ -162,7 +162,7 @@ TEST_F(Fixture, edit)
   box->setDatatype(4);
   box->setBounds({0, 0, 1000, 1000});
 
-  box->getPropattr().emplace_back(12, "test");
+  box->addPropattr(12, "test");
 
   dbGDSSRef* sref = dbGDSSRef::create(str3, str1);
   sref->setTransform(dbGDSSTrans(false, 2.0, 90));

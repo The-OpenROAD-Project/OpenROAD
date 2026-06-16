@@ -43,6 +43,7 @@
 #include "utl/unique_name.h"
 
 namespace abc {
+// NOLINTBEGIN(readability-identifier-naming)
 extern Abc_Ntk_t* Abc_NtkFromAigPhase(Aig_Man_t* pMan);
 extern Abc_Ntk_t* Abc_NtkFromCellMappedGia(Gia_Man_t* p, int fUseBuffs);
 extern Abc_Ntk_t* Abc_NtkFromDarChoices(Abc_Ntk_t* pNtkOld, Aig_Man_t* pMan);
@@ -79,6 +80,7 @@ extern Vec_Ptr_t* Abc_NtkCollectCiNames(Abc_Ntk_t* pNtk);
 extern Vec_Ptr_t* Abc_NtkCollectCoNames(Abc_Ntk_t* pNtk);
 extern void Abc_NtkRedirectCiCo(Abc_Ntk_t* pNtk);
 extern void Abc_FrameSetLibGen(void* pLib);
+// NOLINTEND(readability-identifier-naming)
 }  // namespace abc
 
 namespace rmp {

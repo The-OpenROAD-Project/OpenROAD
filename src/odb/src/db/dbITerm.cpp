@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,7 @@
 #include "dbModNet.h"
 #include "dbNet.h"
 #include "dbTable.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -800,7 +802,9 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   if (ap != nullptr) {
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
     _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-    _ap->iterms_.push_back(iterm->getOID());
+    auto& iterms = _ap->iterms_;
+    auto pos = std::lower_bound(iterms.begin(), iterms.end(), iterm->getOID());
+    iterms.insert(pos, iterm->getOID());
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
   }
@@ -811,12 +815,13 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   }
 }
 
-std::map<dbMPin*, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints() const
+odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> dbITerm::getAccessPoints()
+    const
 {
   _dbBlock* block = (_dbBlock*) getBlock();
   auto mterm = getMTerm();
   uint32_t pin_access_idx = getInst()->getPinAccessIdx();
-  std::map<dbMPin*, std::vector<dbAccessPoint*>> aps;
+  odb::PtrMap<dbMPin, std::vector<dbAccessPoint*>> aps;
   for (auto mpin : mterm->getMPins()) {
     _dbMPin* pin = (_dbMPin*) mpin;
     if (pin->aps_.size() > pin_access_idx) {
@@ -860,8 +865,16 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 void dbITerm::clearPrefAccessPoints()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
-  // destroying APs of other iterms.
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  // Remove this iterm from each AP's back-reference list before clearing.
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
+    if (ap_id.isValid()) {
+      auto* ap = block->ap_tbl_->getPtr(ap_id);
+      auto& iterms = ap->iterms_;
+      iterms.erase(std::remove(iterms.begin(), iterms.end(), iterm->getOID()),
+                   iterms.end());
+    }
+  }
   iterm->aps_.clear();
 }
 

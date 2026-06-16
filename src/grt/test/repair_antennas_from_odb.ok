@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+[INFO ANT-0002] Found 8 net violations.
+[INFO ANT-0001] Found 8 pin violations.
+[INFO GRT-0012] Found 8 antenna violations.
+[INFO GRT-0302] Inserted 7 jumpers for 7 nets.
+[INFO GRT-0012] Found 2 antenna violations.
+[INFO DPL-0006] Core area: 78411.11 um^2, Instances area: 6246.55 um^2, Utilization: 8.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     373
+Diamond Move Success:            373 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+[INFO GRT-0015] Inserted 2 diodes.
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
+No differences found.
+No differences found.
