@@ -188,8 +188,9 @@ void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
         case MoveType::kReroute:
           move_sequence_.push_back(MoveType::kReroute);
           break;
-        case MoveType::kInvBuffer:
-          pushMoveIfEnabled(!config_.skip_inv_buffer, MoveType::kInvBuffer);
+        case MoveType::kBufferToInverters:
+          pushMoveIfEnabled(!config_.skip_buffer_to_inverters,
+                            MoveType::kBufferToInverters);
           break;
         case MoveType::kCount:
           break;
@@ -597,7 +598,7 @@ int SetupLegacyBase::repairProgressIncrement(const MoveType type,
 {
   switch (type) {
     case MoveType::kUnbuffer:
-    case MoveType::kInvBuffer:
+    case MoveType::kBufferToInverters:
       return repairs_per_pass;
     default:
       return 1;

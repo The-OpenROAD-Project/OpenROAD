@@ -1,5 +1,5 @@
-# Hierarchical InvBufferMove fixture: same geometry as the flat variant, but
-# the BUF_X4 lives inside submod m1, so its iterms carry modnets after
+# Hierarchical BufferToInvertersMove fixture: same geometry as the flat variant,
+# but the BUF_X4 lives inside submod m1, so its iterms carry modnets after
 # link_design -hier. The instance name in DEF must match the post-link flat
 # name (m1/u1).
 VERSION 5.8 ;

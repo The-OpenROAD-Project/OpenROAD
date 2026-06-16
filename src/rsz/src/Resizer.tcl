@@ -247,7 +247,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_size_down]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
-                                        [-skip_inv_buffer]\
+                                        [-skip_buffer_to_inverters]\
                                         [-skip_last_gasp]\
                                         [-skip_vt_swap]\
                                         [-skip_crit_vt_swap]\
@@ -270,7 +270,7 @@ proc repair_timing { args } {
             -phases -policy -policies \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-             -skip_size_down -skip_buffering -skip_buffer_removal -skip_inv_buffer \
+             -skip_size_down -skip_buffering -skip_buffer_removal -skip_buffer_to_inverters \
              -skip_last_gasp -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint \
              -verbose}
 
@@ -324,7 +324,7 @@ proc repair_timing { args } {
   set skip_size_down_fanout [info exists flags(-skip_size_down)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
-  set skip_inv_buffer [info exists flags(-skip_inv_buffer)]
+  set skip_buffer_to_inverters [info exists flags(-skip_buffer_to_inverters)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
@@ -389,7 +389,7 @@ proc repair_timing { args } {
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
         $sequence $phases \
         $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
-        $skip_buffer_removal $skip_inv_buffer $skip_last_gasp $skip_vt_swap \
+        $skip_buffer_removal $skip_buffer_to_inverters $skip_last_gasp $skip_vt_swap \
         $skip_crit_vt_swap]
     }
     if { $hold } {

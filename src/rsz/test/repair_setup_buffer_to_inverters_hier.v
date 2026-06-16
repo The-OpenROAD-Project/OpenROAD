@@ -1,8 +1,8 @@
-// Hierarchical version of repair_setup_inv_buffer:
+// Hierarchical version of repair_setup_buffer_to_inverters:
 // the BUF_X4 lives inside submodule m1 with both its A pin (driven by the
 // top-level r1q wire crossing the module boundary) and its Z pin (driving the
 // m1 output port that feeds top-level r2/D) carrying modnets after
-// link_design -hier. This is the netlist shape that crashed InvBufferMove
+// link_design -hier. This is the netlist shape that crashed BufferToInvertersMove
 // before the flat/hier net-handling fix.
 
 module submod(in, out);

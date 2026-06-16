@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "InvBufferGenerator.hh"
+#include "BufferToInvertersGenerator.hh"
 
 #include <cmath>
 #include <limits>
@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "InvBufferCandidate.hh"
+#include "BufferToInvertersCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
@@ -25,13 +25,14 @@ namespace rsz {
 
 using utl::RSZ;
 
-InvBufferGenerator::InvBufferGenerator(const GeneratorContext& context)
+BufferToInvertersGenerator::BufferToInvertersGenerator(
+    const GeneratorContext& context)
     : MoveGenerator(context)
 {
 }
 
-std::vector<std::unique_ptr<MoveCandidate>> InvBufferGenerator::generate(
-    const Target& target)
+std::vector<std::unique_ptr<MoveCandidate>>
+BufferToInvertersGenerator::generate(const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
 
@@ -62,7 +63,7 @@ std::vector<std::unique_ptr<MoveCandidate>> InvBufferGenerator::generate(
   if (committer_.hasBlockingBufferRemovalMove(drvr, reason)) {
     debugPrint(resizer_.logger(),
                RSZ,
-               "inv_buffer_move",
+               "buffer_to_inverters_move",
                4,
                "Buffer {} is not inv-buffered because {}",
                db_network->name(drvr),
@@ -75,7 +76,7 @@ std::vector<std::unique_ptr<MoveCandidate>> InvBufferGenerator::generate(
     debugPrint(
         resizer_.logger(),
         RSZ,
-        "inv_buffer_move",
+        "buffer_to_inverters_move",
         4,
         "Buffer {} is not inv-buffered because canRemoveBuffer rejected it",
         db_network->name(drvr));
@@ -125,15 +126,15 @@ std::vector<std::unique_ptr<MoveCandidate>> InvBufferGenerator::generate(
   if (best_inv == nullptr) {
     debugPrint(resizer_.logger(),
                RSZ,
-               "inv_buffer_move",
+               "buffer_to_inverters_move",
                4,
                "Buffer {} has no usable inverter replacement",
                db_network->name(drvr));
     return candidates;
   }
 
-  candidates.push_back(
-      std::make_unique<InvBufferCandidate>(resizer_, target, drvr, best_inv));
+  candidates.push_back(std::make_unique<BufferToInvertersCandidate>(
+      resizer_, target, drvr, best_inv));
   return candidates;
 }
 

@@ -14,14 +14,14 @@ namespace rsz {
 
 // Replace one buffer instance with a pair of cascaded inverters. The generator
 // picks an inverter cell whose drive resistance is closest to the original
-// buffer's, and emits a single InvBufferCandidate when the buffer can be safely
-// deleted.
-class InvBufferGenerator : public MoveGenerator
+// buffer's, and emits a single BufferToInvertersCandidate when the buffer can
+// be safely deleted.
+class BufferToInvertersGenerator : public MoveGenerator
 {
  public:
-  explicit InvBufferGenerator(const GeneratorContext& context);
+  explicit BufferToInvertersGenerator(const GeneratorContext& context);
 
-  MoveType type() const override { return MoveType::kInvBuffer; }
+  MoveType type() const override { return MoveType::kBufferToInverters; }
 
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;

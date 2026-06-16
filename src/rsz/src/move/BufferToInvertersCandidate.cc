@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "InvBufferCandidate.hh"
+#include "BufferToInvertersCandidate.hh"
 
 #include <cstdint>
 #include <memory>
@@ -25,15 +25,16 @@ namespace rsz {
 
 using utl::RSZ;
 
-InvBufferCandidate::InvBufferCandidate(Resizer& resizer,
-                                       const Target& target,
-                                       sta::Instance* buffer,
-                                       sta::LibertyCell* inv_cell)
+BufferToInvertersCandidate::BufferToInvertersCandidate(
+    Resizer& resizer,
+    const Target& target,
+    sta::Instance* buffer,
+    sta::LibertyCell* inv_cell)
     : MoveCandidate(resizer, target), buffer_(buffer), inv_cell_(inv_cell)
 {
 }
 
-MoveResult InvBufferCandidate::apply()
+MoveResult BufferToInvertersCandidate::apply()
 {
   sta::dbNetwork* db_network = resizer_.dbNetwork();
   sta::dbSta* sta = resizer_.sta();
@@ -216,17 +217,18 @@ MoveResult InvBufferCandidate::apply()
   resizer_.invalidateParasitics(mid_net);
   resizer_.invalidateParasitics(output_net);
 
-  debugPrint(logger,
-             RSZ,
-             "inv_buffer_move",
-             1,
-             "ACCEPT InvBufferMove: Replaced buffer {} with two {} inverters",
-             buffer_name,
-             inv_cell_->name());
+  debugPrint(
+      logger,
+      RSZ,
+      "buffer_to_inverters_move",
+      1,
+      "ACCEPT BufferToInvertersMove: Replaced buffer {} with two {} inverters",
+      buffer_name,
+      inv_cell_->name());
 
   return {
       .accepted = true,
-      .type = MoveType::kInvBuffer,
+      .type = MoveType::kBufferToInverters,
       .move_count = 1,
       .touched_instances = {inv1, inv2},
   };

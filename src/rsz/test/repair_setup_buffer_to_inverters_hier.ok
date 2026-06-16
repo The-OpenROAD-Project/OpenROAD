@@ -5,7 +5,7 @@
 [WARNING ODB-0249] skipping undefined net VDD encountered in FLOORPLAN DEF
 [INFO ODB-0252]     Updated 1 pins.
 [INFO ODB-0253]     Updated 3 components.
-[INFO RSZ-0100] Repair move sequence: InvBufferMove 
+[INFO RSZ-0100] Repair move sequence: BufferToInvertersMove 
 [INFO RSZ-0094] Found 1 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  

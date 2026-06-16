@@ -88,7 +88,7 @@ using namespace rsz;
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_inv_buffer,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap)
@@ -100,7 +100,7 @@ using namespace rsz;
                               match_cell_footprint, verbose, move_seq,
                               phases ? phases : "",
                               skip_pin_swap, skip_gate_cloning, skip_size_down_fanout,
-                              skip_buffering, skip_buffer_removal, skip_inv_buffer,
+                              skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
                               skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
   }
 }

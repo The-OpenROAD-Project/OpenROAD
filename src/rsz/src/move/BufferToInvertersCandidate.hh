@@ -17,16 +17,16 @@ namespace rsz {
 
 // This move replaces a buffer with two inverters evenly placed along
 // the fanout wire.
-class InvBufferCandidate : public MoveCandidate
+class BufferToInvertersCandidate : public MoveCandidate
 {
  public:
-  InvBufferCandidate(Resizer& resizer,
-                     const Target& target,
-                     sta::Instance* buffer,
-                     sta::LibertyCell* inv_cell);
+  BufferToInvertersCandidate(Resizer& resizer,
+                             const Target& target,
+                             sta::Instance* buffer,
+                             sta::LibertyCell* inv_cell);
 
   MoveResult apply() override;
-  MoveType type() const override { return MoveType::kInvBuffer; }
+  MoveType type() const override { return MoveType::kBufferToInverters; }
 
  private:
   sta::Instance* buffer_{nullptr};

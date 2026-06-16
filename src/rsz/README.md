@@ -226,7 +226,7 @@ repair_timing
     [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
-    [-skip_inv_buffer]
+    [-skip_buffer_to_inverters]
     [-skip_last_gasp]
     [-skip_vt_swap]
     [-skip_crit_vt_swap]
@@ -257,7 +257,7 @@ repair_timing
 | `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
-| `-skip_inv_buffer` | Flag to skip inverter buffering.  The default is to perform buffer-to-double inverter replacement transform during setup fixing. |
+| `-skip_buffer_to_inverters` | Flag to skip buffer-inverters swap.  The default is to perform buffer-to-double inverter replacement transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |

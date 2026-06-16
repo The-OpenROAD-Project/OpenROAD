@@ -1,4 +1,4 @@
-# InvBufferMove fixture: a single buffer drives a long wire to a far flop.
+# BufferToInvertersMove fixture: a single buffer drives a long wire to a far flop.
 # Splitting that wire with two cascaded inverters at 1/3 and 2/3 of the
 # driver-to-load span shortens each segment enough that the cell-delay cost
 # of the extra inverter is paid back many times over in wire-delay savings.

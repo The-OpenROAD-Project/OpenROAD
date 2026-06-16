@@ -109,7 +109,7 @@ enum class MoveType : uint8_t
   kUnbuffer,
   kSplitLoad,
   kReroute,
-  kInvBuffer,
+  kBufferToInverters,
   kCount
 };
 
@@ -350,7 +350,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_size_down_fanout,
                    bool skip_buffering,
                    bool skip_buffer_removal,
-                   bool skip_inv_buffer,
+                   bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap);
