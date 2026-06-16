@@ -1800,35 +1800,22 @@ bool extMain::modelExists(const char* extRules)
   return true;
 }
 
-void extMain::makeBlockRCsegs(const char* netNames,
-                              uint32_t cc_up,
-                              uint32_t ccFlag,
-                              double resBound,
-                              bool mergeViaRes,
-                              double ccThres,
-                              int contextDepth,
-                              const char* extRules)
+void extMain::makeBlockRCsegs()
 {
-  if (!modelExists(extRules)) {
+  if (!modelExists(rules_file_path_)) {
     return;
   }
 
   uint32_t debugNetId = 0;
 
   _diagFlow = true;
-  _couplingFlag = ccFlag;
-  _coupleThreshold = ccThres;
   _usingMetalPlanes = true;
-  _ccUp = cc_up;
-  _couplingFlag = ccFlag;
-  _ccContextDepth = contextDepth;
-  _mergeViaRes = mergeViaRes;
-  _mergeResBound = resBound;
 
   if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
-    const char* rulesfile
-        = extRules ? extRules : _prevControl->_ruleFileName.c_str();
+      || ((_processCornerTable == nullptr) && (rules_file_path_ != nullptr))) {
+    const char* rulesfile = rules_file_path_
+                                ? rules_file_path_
+                                : _prevControl->_ruleFileName.c_str();
 
     // Reading model file
     if (!setCorners(rulesfile)) {
@@ -1843,7 +1830,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
   _foreign = false;  // extract after read_spef
 
   std::vector<dbNet*> inets;
-  _allNet = !findSomeNet(_block, netNames, inets, logger_);
+  _allNet = !findSomeNet(_block, target_nets_names_, inets, logger_);
   for (auto net : inets) {
     net->setMark(true);
   }

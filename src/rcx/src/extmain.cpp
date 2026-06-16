@@ -31,6 +31,21 @@ void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
   logger_ = logger;
 }
 
+void extMain::setExtractionOptions(const ExtractOptions& options)
+{
+  _couplingFlag = options.cc_model;
+  _coupleThreshold = options.coupling_threshold;
+  _ccUp = options.cc_up;
+  _ccContextDepth = options.context_depth;
+  _mergeViaRes = !options.no_merge_via_res;
+  _mergeResBound = options.max_res;
+  _lef_res = options.lef_res;
+  _lefRC = options.lef_rc;
+  _dbgOption = options._dbg;
+  rules_file_path_ = options.ext_model_file;
+  target_nets_names_ = options.net;
+}
+
 void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
