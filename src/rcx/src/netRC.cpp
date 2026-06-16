@@ -1813,12 +1813,12 @@ void extMain::makeBlockRCsegs()
 
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && (rules_file_path_ != nullptr))) {
-    const char* rulesfile = rules_file_path_
-                                ? rules_file_path_
-                                : _prevControl->_ruleFileName.c_str();
+    const char* rules_file_path = rules_file_path_
+                                      ? rules_file_path_
+                                      : _prevControl->_ruleFileName.c_str();
 
     // Reading model file
-    if (!setCorners(rulesfile)) {
+    if (!setCorners(rules_file_path)) {
       logger_->info(RCX, 128, "skipping Extraction ...");
       return;
     }

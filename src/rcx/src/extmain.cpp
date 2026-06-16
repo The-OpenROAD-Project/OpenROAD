@@ -8,6 +8,7 @@
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 using odb::dbBlock;
