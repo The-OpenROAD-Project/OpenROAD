@@ -32,6 +32,7 @@ or_integration_tests(
     place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
+    place_pads_placer_fullyblocked
     place_pads_too_many
     place_pads_uniform
     place_pads_uniform_slip
@@ -46,6 +47,7 @@ or_integration_tests(
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
     rdl_route_failed
+    rdl_route_fixed
     rdl_route_invalid
     rdl_route_keep_existing
     rdl_route_max_iterations
@@ -58,4 +60,3 @@ or_integration_tests(
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
-

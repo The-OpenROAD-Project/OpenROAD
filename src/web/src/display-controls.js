@@ -154,13 +154,18 @@ export function populateDisplayControls(app, visibility, selectability,
             });
         }
 
+        const nodeData = { name: hierarchyNode.name, isInstance: true };
+        // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
+        // backend emits in layer_hierarchy; it matches ChipletNode::path
+        // exactly so toggling this node can drive app.visibleChiplets.
+        // Category nodes (e.g. "Backside") are pure UI folders — they have
+        // no chiplet path and must not participate in chiplet sync.
+        if (hierarchyNode.type !== 'category') {
+            nodeData.chipletPath = hierarchyNode.path;
+        }
         return {
             id: parentId,
-            // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
-            // backend emits in layer_hierarchy; it matches ChipletNode::path
-            // exactly so toggling this node can drive app.visibleChiplets.
-            data: { name: hierarchyNode.name, isInstance: true,
-                    chipletPath: hierarchyNode.path },
+            data: nodeData,
             children: children,
         };
     }

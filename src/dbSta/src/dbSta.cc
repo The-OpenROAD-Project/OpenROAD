@@ -1398,48 +1398,6 @@ void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 
 ////////////////////////////////////////////////////////////////
 
-sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::enable
-        || signal_type == sta::ScanSignalType::enable_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::input
-        || signal_type == sta::ScanSignalType::input_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::output
-        || signal_type == sta::ScanSignalType::output_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
 void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
                                  const char* filename,
                                  const MinMax* min_max)
@@ -1644,7 +1602,7 @@ void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
 
         bool is_external = false;
         if (from_pin) {
-          std::string_view pin_name = network()->name(from_pin);
+          std::string pin_name = network()->name(from_pin);
           std::string mod_prefix = db_mod_inst->getName();
           mod_prefix += "/";  // e.g., "_202_/"
           if (!pin_name.starts_with(mod_prefix)) {
