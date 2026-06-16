@@ -6,4 +6,4 @@
 	url = ../../The-OpenROAD-Project/abc.git
 [submodule "third-party/slang-elab"]
 	path = third-party/slang-elab
-	url = ../../povik/yosys-slang
+	url = ../../povik/yosys-slang.git
