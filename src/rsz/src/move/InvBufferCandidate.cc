@@ -45,6 +45,12 @@ MoveResult InvBufferCandidate::apply()
   // resolution, location queries) happens up front so a failure path returns
   // rejectedMove() without having mutated anything.
 
+  const sta::Path* prev_path = target_.prevDriverPath(resizer_);
+  sta::Vertex* prev_vertex = prev_path ? prev_path->vertex(sta) : nullptr;
+  if (prev_vertex == nullptr) {
+    return rejectedMove();
+  }
+
   sta::LibertyCell* orig_cell = db_network->libertyCell(buffer_);
   if (orig_cell == nullptr || !orig_cell->isBuffer()) {
     return rejectedMove();
@@ -100,47 +106,9 @@ MoveResult InvBufferCandidate::apply()
     buffer_loc = {bx, by};
   }
 
-  // Upstream driver location: prefer the prev-driver path the target already
-  // carries; fall back to scanning the input net's drivers.
-  odb::Point drvr_loc = buffer_loc;
-  bool drvr_loc_found = false;
-  if (const sta::Path* prev = target_.prevDriverPath(resizer_)) {
-    if (sta::Vertex* v = prev->vertex(sta)) {
-      const sta::Pin* prev_pin = v->pin();
-      sta::Instance* prev_inst
-          = prev_pin != nullptr ? db_network->instance(prev_pin) : nullptr;
-      if (prev_inst != nullptr) {
-        if (odb::dbInst* db_prev = db_network->staToDb(prev_inst)) {
-          int dx = 0;
-          int dy = 0;
-          db_prev->getLocation(dx, dy);
-          drvr_loc = {dx, dy};
-          drvr_loc_found = true;
-        }
-      }
-    }
-  }
-  if (!drvr_loc_found) {
-    std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
-        db_network->connectedPinIterator(input_net));
-    while (pin_iter->hasNext()) {
-      const sta::Pin* pin = pin_iter->next();
-      if (pin == buffer_in_pin || !db_network->isDriver(pin)) {
-        continue;
-      }
-      sta::Instance* drvr_inst = db_network->instance(pin);
-      if (drvr_inst == nullptr) {
-        continue;
-      }
-      if (odb::dbInst* db_drvr = db_network->staToDb(drvr_inst)) {
-        int dx = 0;
-        int dy = 0;
-        db_drvr->getLocation(dx, dy);
-        drvr_loc = {dx, dy};
-        break;
-      }
-    }
-  }
+  // Upstream driver location
+  const sta::Pin* prev_pin = prev_vertex->pin();
+  odb::Point drvr_loc = resizer_.dbNetwork()->location(prev_pin);
 
   // Load centroid for the second inverter
   int64_t lx_sum = 0;
@@ -151,21 +119,13 @@ MoveResult InvBufferCandidate::apply()
         db_network->connectedPinIterator(output_net));
     while (pin_iter->hasNext()) {
       const sta::Pin* pin = pin_iter->next();
-      if (pin == buffer_out_pin || !db_network->isLoad(pin)) {
+      if (!db_network->isLoad(pin)) {
         continue;
       }
-      sta::Instance* load_inst = db_network->instance(pin);
-      if (load_inst == nullptr) {
-        continue;
-      }
-      if (odb::dbInst* db_load = db_network->staToDb(load_inst)) {
-        int lxc = 0;
-        int lyc = 0;
-        db_load->getLocation(lxc, lyc);
-        lx_sum += lxc;
-        ly_sum += lyc;
-        ++load_count;
-      }
+      odb::Point loc = resizer_.dbNetwork()->location(pin);
+      lx_sum += loc.x();
+      ly_sum += loc.y();
+      ++load_count;
     }
   }
   const odb::Point load_centroid

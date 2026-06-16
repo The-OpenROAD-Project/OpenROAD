@@ -26,11 +26,11 @@ Path Type: max
    0.000    0.000   clock clk (rise edge)
    0.000    0.000   clock network delay (ideal)
    0.000    0.000 ^ r1/CK (DFF_X1)
-   0.212    0.212 ^ r1/Q (DFF_X1)
-   0.124    0.336 ^ m1/u1_inv1/A (INV_X4)
-   0.043    0.379 v m1/u1_inv1/ZN (INV_X4)
-   0.106    0.485 v m1/u1_inv2/A (INV_X4)
-   0.089    0.574 ^ m1/u1_inv2/ZN (INV_X4)
+   0.211    0.211 ^ r1/Q (DFF_X1)
+   0.123    0.335 ^ m1/u1_inv1/A (INV_X4)
+   0.043    0.378 v m1/u1_inv1/ZN (INV_X4)
+   0.106    0.484 v m1/u1_inv2/A (INV_X4)
+   0.089    0.573 ^ m1/u1_inv2/ZN (INV_X4)
    0.096    0.669 ^ r2/D (DFF_X1)
             0.669   data arrival time
 
