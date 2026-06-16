@@ -200,7 +200,7 @@ repolarize:
 
   for (int i = 0; i < ninputs - 1; i++) {
     const int mark = i;
-    for (; popcount[i] == popcount[i + 1] && i < ninputs - 1;) {
+    for (; i < ninputs - 1 && popcount[i] == popcount[i + 1];) {
       tied[mark]++;
       i++;
     }
