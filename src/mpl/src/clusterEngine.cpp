@@ -2204,11 +2204,7 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
         auto& candidate = dist_to_boundary[0];
         auto& second_candidate = dist_to_boundary[1];
         // The two closest boundaries are in different directions
-        if ((candidate.first == second_candidate.first)
-            && ((isVertical(candidate.second)
-                 && isVertical(second_candidate.second))
-                || (!isVertical(candidate.second)
-                    && !isVertical(second_candidate.second)))) {
+        if (isEquidistantDifferentDirections(candidate, second_candidate)) {
           auto direction
               = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
           if (direction == odb::dbTechLayerDir::VERTICAL) {
@@ -2267,6 +2263,17 @@ int ClusteringEngine::getMinimumSpacing() const
     }
   }
   return spacing;
+}
+
+bool ClusteringEngine::isEquidistantDifferentDirections(
+    std::pair<int, Boundary> candidate,
+    std::pair<int, Boundary> second_candidate) const
+{
+  return (candidate.first == second_candidate.first)
+         && ((isVertical(candidate.second)
+              && !isVertical(second_candidate.second))
+             || (!isVertical(candidate.second)
+                 && isVertical(second_candidate.second)));
 }
 
 ///////////////////////////////////////////////

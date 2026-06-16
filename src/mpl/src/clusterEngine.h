@@ -229,6 +229,9 @@ class ClusteringEngine
 
   HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
   int getMinimumSpacing() const;
+  bool isEquidistantDifferentDirections(
+      std::pair<int, Boundary> candidate,
+      std::pair<int, Boundary> second_candidate) const;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;
