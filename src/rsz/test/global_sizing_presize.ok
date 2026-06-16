@@ -9,10 +9,10 @@
 [INFO RSZ-0416] GLOBAL_SIZING presize mode 2 enabled: presizing to the largest leakage Liberty cell.
 [INFO RSZ-0415] GLOBAL_SIZING presize mode 2: 3/3 editable instances replaced.
 [INFO RSZ-0400] GLOBAL_SIZING: 1 cells replaced (loop); 3/3 sweeps accepted, 0 rolled back; 1 replacements attempted in total (1 upsize, 0 downsize).
-[INFO RSZ-0409] GLOBAL_SIZING QoR: WNS -0.278 -> -0.157 (0.121); TNS -0.5 -> -0.3 (0.2); leakage 7.89e-08 -> 2.43e-07W (+208.47%); area 3.46e-12 -> 7.45e-12m^2 (+115.38%).
+[INFO RSZ-0409] GLOBAL_SIZING QoR: WNS -0.278 -> -0.157 (0.121); TNS -0.5 -> -0.3 (0.2); leakage 7.89e-08 -> 1.93e-07W (+144.65%); area 3.46e-12 -> 6.38e-12m^2 (+84.62%).
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
 ------------------------------------------------------------------------------------------------------------------------------
-    final |       0 |       0 |        0 |      0 |     0 |  +115.4% |   -0.157 |       -0.4 |       -0.3 |      2 | y2
+    final |       0 |       0 |        0 |      0 |     0 |   +84.6% |   -0.157 |       -0.4 |       -0.3 |      2 | y2
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.

@@ -976,7 +976,7 @@ void GlobalSizingPolicy::iterate()
              sta::delayAsString(tns_pre, 1, sta_));
 
   resizer_.journalBegin();
-  applyPresize(readPresizeMode());
+  const int presize_replacements = applyPresize(readPresizeMode());
   allocate();
   seedMultipliers(lr_params_);
   projectFlowBalance(lr_params_);
@@ -992,6 +992,15 @@ void GlobalSizingPolicy::iterate()
   LRParams iter_params = lr_params_;
 
   float best_wns = wns_pre;
+  if (presize_replacements > 0) {
+    const float presize_wns = sta::delayAsFloat(sta_->worstSlack(policy_max_));
+    if (!resizer_.overMaxArea()) {
+      // Preserve a successful presize pass before the loop can stop early.
+      resizer_.journalEnd();
+      resizer_.journalBegin();
+      best_wns = presize_wns;
+    }
+  }
   int total_committed = 0;
   int total_attempted = 0;
   int total_upsizes = 0;
