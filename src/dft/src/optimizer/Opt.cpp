@@ -283,14 +283,16 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
             std::rotate(cells.begin() + i + 1,
                         cells.begin() + j + 1,
                         cells.begin() + k + 1);
-            // Refresh caches for the affected range.
+            std::rotate(si.begin() + i + 1,
+                        si.begin() + j + 1,
+                        si.begin() + k + 1);
+            std::rotate(so.begin() + i + 1,
+                        so.begin() + j + 1,
+                        so.begin() + k + 1);
+            std::rotate(identity.begin() + i + 1,
+                        identity.begin() + j + 1,
+                        identity.begin() + k + 1);
             for (int m = i + 1; m <= k; m++) {
-              si[m] = cells[m]->getScanInLocation();
-              so[m] = cells[m]->getScanOutLocation();
-            }
-            // Rebuild identity/pos for affected range.
-            for (int m = i + 1; m <= k; m++) {
-              identity[m] = ptr_to_id[cells[m].get()];
               pos_of[identity[m]] = m;
             }
             improved = true;
