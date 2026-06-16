@@ -1401,14 +1401,20 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::unique_ptr<SACoreSoftMacro> best_sa;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
+    // We need to track the utilization indices, because, when creating the
+    // annealers' batch, we skip invalid utilization values.
+    std::vector<int> sa_batch_utilization_indices;
     const int number_of_attempts
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
 
     for (int i = 0; i < number_of_attempts; i++) {
-      const float utilization = utilization_list[run_id++];
+      const int utilization_index = run_id++;
+      const float utilization = utilization_list[utilization_index];
       if (!validUtilization(utilization, outline, macros)) {
         continue;
       }
+
+      sa_batch_utilization_indices.push_back(utilization_index);
 
       std::vector<SoftMacro> inflated_macros
           = applyUtilization(utilization, outline, macros);
@@ -1462,17 +1468,14 @@ void HierRTLMP::placeChildren(Cluster* parent)
       }
     }
 
-    const bool first_batch = remaining_runs == total_number_of_runs;
     remaining_runs -= number_of_attempts;
 
     for (int sa_index = 0; sa_index < sa_batch.size(); ++sa_index) {
       auto& sa = sa_batch[sa_index];
 
       if (sa->isValid()) {
-        if (!first_batch || sa != sa_batch.front()) {
-          const int utilization_index
-              = (run_id - number_of_attempts) + sa_index;
-
+        const int utilization_index = sa_batch_utilization_indices[sa_index];
+        if (utilization_index != 0) {
           logger_->warn(MPL,
                         55,
                         "Couldn't find a solution for the specified "
