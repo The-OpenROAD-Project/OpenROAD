@@ -27,6 +27,7 @@
 #include "sta/StringUtil.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace ifp {
@@ -137,10 +138,12 @@ void InitFloorplan::initFloorplan(
     const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDie(die);
   makeRows(core, base_site, additional_sites, row_parity, flipped_sites, gap);
+  logger_->info(IFP, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void InitFloorplan::makeDieUtilization(double utilization,
