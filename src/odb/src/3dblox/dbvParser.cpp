@@ -27,7 +27,7 @@ DbvData DbvParser::parseFile(const std::string& filename)
   current_file_path_ = filename;
   std::ifstream file(filename);
   if (!file.is_open()) {
-    logError("3DBV Parser Error: Cannot open file: " + filename);
+    logError("Cannot open file");
   }
 
   std::stringstream buffer;
@@ -235,8 +235,20 @@ void DbvParser::parseRegion(ChipletRegion& region,
     extractValue(region_node, "gds_layer", region.gds_layer);
   }
 
-  if (region_node["coords"]) {
+  if (!region_node["coords"]) {
+    logError("3DBV region " + region.name + " must specify coords.");
+  } else {
     parseCoordinates(region.coords, region_node["coords"]);
+    if (region.coords.size() != 4) {
+      if (region.coords.size() > 4) {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates. Polygonal regions are "
+                   "not yet supported.");
+      } else {
+        logError("3DBV region " + region.name
+                 + " must have exactly 4 coordinates.");
+      }
+    }
   }
 }
 

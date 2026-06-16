@@ -64,9 +64,9 @@ class frMarker : public frFig
   odb::Rect getBBox() const override { return bbox_; }
   frLayerNum getLayerNum() const { return layerNum_; }
 
-  const std::set<frBlockObject*>& getSrcs() const { return srcs_; }
+  const frOrderedIdSet<frBlockObject*>& getSrcs() const { return srcs_; }
 
-  void setSrcs(const std::set<frBlockObject*>& srcs) { srcs_ = srcs; }
+  void setSrcs(const frOrderedIdSet<frBlockObject*>& srcs) { srcs_ = srcs; }
 
   std::vector<
       std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>&
@@ -104,7 +104,7 @@ class frMarker : public frFig
   frConstraint* constraint_{nullptr};
   odb::Rect bbox_;
   frLayerNum layerNum_{0};
-  std::set<frBlockObject*> srcs_;
+  frOrderedIdSet<frBlockObject*> srcs_;
   std::vector<
       std::pair<frBlockObject*, std::tuple<frLayerNum, odb::Rect, bool>>>
       victims_;  // obj, isFixed

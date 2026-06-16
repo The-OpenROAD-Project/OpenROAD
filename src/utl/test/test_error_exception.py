@@ -1,3 +1,8 @@
+import traceback
+
 import utl
 
-utl.error(utl.CTS, 99, "Arbitrary CTS error message")
+try:
+    utl.error(utl.CTS, 99, "Arbitrary CTS error message")
+except RuntimeError:
+    traceback.print_exc()

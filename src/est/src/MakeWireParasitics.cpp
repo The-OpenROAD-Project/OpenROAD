@@ -3,6 +3,7 @@
 
 #include "MakeWireParasitics.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
@@ -86,6 +87,7 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
     Parasitics* parasitics = corner->parasitics(min_max_);
     Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
 
+    resistor_id_ = 1;
     makeRouteParasitics(
         parasitics, net, route, sta_net, corner, parasitic, node_map);
     makeParasiticsToPins(
@@ -95,9 +97,11 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
       spef_writer->writeNet(corner, sta_net, parasitic, parasitics);
     }
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
@@ -128,14 +132,17 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
     Parasitics* parasitics = corner->parasitics(min_max_);
     Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
 
+    resistor_id_ = 1;
     makeRouteParasitics(
         parasitics, net, route, sta_net, corner, parasitic, node_map);
     makePartialParasiticsToPins(
         parasitics, pin_grid_locs, node_map, corner, parasitic, net);
 
-    arc_delay_calc_->reduceParasitic(
-        parasitic, sta_net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(sta_net);
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, sta_net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(sta_net);
+    }
   }
 }
 
@@ -168,7 +175,6 @@ void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
 {
   const int min_routing_layer = global_router_->getMinRoutingLayer();
 
-  size_t resistor_id_ = 1;
   for (grt::GSegment& segment : route) {
     const int wire_length_dbu = segment.length();
 
@@ -333,8 +339,11 @@ void MakeWireParasitics::makeParasiticsToPin(sta::Parasitics* parasitics,
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST,
@@ -440,8 +449,11 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
     parasitics->incrCap(pin_node, cap / 2.0);
+    // Floor the resistance so the conductance matrix stays non-singular
+    // when the pin sits exactly on its grid node (zero-length attachment).
+    const float pin_grid_R = std::max(res + via_res, 1.0e-3f);
     parasitics->makeResistor(
-        parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
+        parasitic, resistor_id_++, pin_grid_R, pin_node, grid_node);
     parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST, 350, "Missing route to pin {}.", pin_name);
@@ -541,10 +553,7 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
 
 float MakeWireParasitics::getNetSlack(odb::dbNet* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net);
-  float slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net, sta::MinMax::max());
 }
 ////////////////////////////////////////////////////////////////
 

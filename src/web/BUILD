@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -12,49 +11,183 @@ package(
     features = ["layering_check"],
 )
 
-npm_link_all_packages(name = "node_modules")
+py_binary(
+    name = "embed_report_assets",
+    srcs = ["src/embed_report_assets.py"],
+    main = "src/embed_report_assets.py",
+)
+
+py_binary(
+    name = "embed_web_assets",
+    srcs = ["src/embed_web_assets.py"],
+    main = "src/embed_web_assets.py",
+)
+
+genrule(
+    name = "report_assets",
+    srcs = [
+        "src/style.css",
+        "src/theme.js",
+        "src/3d-viewer-widget.js",
+        "src/coordinates.js",
+        "src/ui-utils.js",
+        "src/checkbox-tree-model.js",
+        "src/vis-tree.js",
+        "src/websocket-manager.js",
+        "src/websocket-tile-layer.js",
+        "src/display-controls.js",
+        "src/inspector.js",
+        "src/ruler.js",
+        "src/tcl-completer.js",
+        "src/hierarchy-browser.js",
+        "src/menu-bar.js",
+        "src/title.js",
+        "src/clock-tree-widget.js",
+        "src/schematic-widget.js",
+        "src/charts-widget.js",
+        "src/timing-widget.js",
+        "src/drc-widget.js",
+        "src/main.js",
+    ],
+    outs = ["src/report_assets.cpp"],
+    cmd = "$(execpath :embed_report_assets)" +
+          " --output $@" +
+          " --css $(location src/style.css)" +
+          " --js $(location src/theme.js)" +
+          " $(location src/3d-viewer-widget.js)" +
+          " $(location src/coordinates.js)" +
+          " $(location src/ui-utils.js)" +
+          " $(location src/checkbox-tree-model.js)" +
+          " $(location src/vis-tree.js)" +
+          " $(location src/websocket-manager.js)" +
+          " $(location src/websocket-tile-layer.js)" +
+          " $(location src/display-controls.js)" +
+          " $(location src/inspector.js)" +
+          " $(location src/ruler.js)" +
+          " $(location src/tcl-completer.js)" +
+          " $(location src/hierarchy-browser.js)" +
+          " $(location src/menu-bar.js)" +
+          " $(location src/title.js)" +
+          " $(location src/clock-tree-widget.js)" +
+          " $(location src/schematic-widget.js)" +
+          " $(location src/charts-widget.js)" +
+          " $(location src/timing-widget.js)" +
+          " $(location src/drc-widget.js)" +
+          " $(location src/main.js)",
+    tools = [":embed_report_assets"],
+)
+
+_WEB_ASSET_FILES = [
+    "src/index.html",
+    "src/style.css",
+    "src/theme.js",
+    "src/3d-viewer-widget.js",
+    "src/coordinates.js",
+    "src/ui-utils.js",
+    "src/checkbox-tree-model.js",
+    "src/vis-tree.js",
+    "src/websocket-manager.js",
+    "src/websocket-tile-layer.js",
+    "src/display-controls.js",
+    "src/inspector.js",
+    "src/ruler.js",
+    "src/tcl-completer.js",
+    "src/hierarchy-browser.js",
+    "src/menu-bar.js",
+    "src/title.js",
+    "src/clock-tree-widget.js",
+    "src/schematic-widget.js",
+    "src/charts-widget.js",
+    "src/timing-widget.js",
+    "src/drc-widget.js",
+    "src/main.js",
+]
+
+genrule(
+    name = "web_assets",
+    srcs = _WEB_ASSET_FILES,
+    outs = ["src/web_assets.cpp"],
+    cmd = "$(execpath :embed_web_assets) --output $@ " +
+          " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
+    tools = [":embed_web_assets"],
+)
+
+cc_library(
+    name = "color",
+    srcs = ["src/color.cpp"],
+    hdrs = ["src/color.h"],
+    includes = ["src"],
+    visibility = ["//src/web/test:__pkg__"],
+)
 
 cc_library(
     name = "web",
     srcs = [
         "src/clock_tree_report.cpp",
-        "src/clock_tree_report.h",
-        "src/color.cpp",
-        "src/color.h",
+        "src/font_atlas.h",
+        "src/font_data.cpp",
+        "src/font_data.h",
+        "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
-        "src/json_builder.h",
+        "src/module_color_palette.h",
+        "src/request_dispatcher.h",
         "src/request_handler.cpp",
-        "src/request_handler.h",
         "src/search.cpp",
         "src/search.h",
         "src/tile_generator.cpp",
-        "src/tile_generator.h",
         "src/timing_report.cpp",
-        "src/timing_report.h",
         "src/web.cpp",
+        "src/web_assets.h",
+        "src/web_chart.cpp",
+        "src/web_painter.cpp",
+        "src/web_serve.cpp",
+        "src/web_viewer_hook.cpp",
+        ":report_assets",
+        ":web_assets",
     ],
     hdrs = [
         "include/web/web.h",
+        # The following are used by tests, but they are not broken
+        # out as library. So TODO: make them visible for the tests
+        # to properly depend on this library and see the includes.
+        # If these are meant to be used in tests with specific dependencies,
+        # these should be put (together with their *.cpp files) into separate
+        # libraries, with visibility for the //src/web/test path (see :color).
+        "src/glyph_cache.h",
+        "src/tile_generator.h",
+        "src/timing_report.h",
+        "src/web_chart.h",
+        "src/web_painter.h",
+        "src/web_viewer_hook.h",
+        "src/request_handler.h",
+        "src/clock_tree_report.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
-        "-Isrc/web/src",
+        "-DBOOST_JSON_HEADER_ONLY",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
+        ":color",
+        "//:cli_completer",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
+        "//third-party/stb_truetype",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
+        "@boost.json",
+        "@boost.system",
+        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
@@ -69,16 +202,13 @@ cc_library(
     hdrs = [
         "include/web/MakeWeb.h",
     ],
-    copts = [
-        "-Isrc/web/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":web",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -92,6 +222,11 @@ tcl_encode(
     ],
     char_array_name = "web_tcl_inits",
     namespace = "web",
+)
+
+filegroup(
+    name = "js_files",
+    srcs = glob(["src/*.js"]),
 )
 
 tcl_wrap_cc(
@@ -109,10 +244,4 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
-)
-
-js_library(
-    name = "js_sources",
-    srcs = glob(["src/*.js"]),
-    visibility = ["//src/web:__subpackages__"],
 )

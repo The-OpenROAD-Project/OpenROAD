@@ -1,0 +1,37 @@
+{
+  "name": "dbUnfoldedChipInst",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags": ["no-set"]
+    },
+    {
+      "name": "chip_inst_path_",
+      "type": "dbVector<dbId<_dbChipInst>>",
+      "flags": ["private"]
+    },
+    {
+      "name": "transform_",
+      "type": "dbTransform",
+      "flags": ["no-set"]
+    },
+    {
+      "name": "region_",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "odb/dbId.h",
+    "odb/geom.h",
+    "odb/dbTransform.h",
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbChipInst.h",
+    "odb/geom.h",
+    "odb/dbSet.h"
+  ]
+}

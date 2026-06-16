@@ -16,6 +16,12 @@ class lefMacroClassTypeParser
  public:
   static bool parse(std::string_view, dbMaster*);
 };
+
+class lefMacroBacksideBridgeParser
+{
+ public:
+  static bool parse(std::string_view, dbMaster*);
+};
 class lefMacroEdgeTypeParser
 {
  public:

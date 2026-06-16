@@ -6,6 +6,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 
 #include "odb/db.h"
@@ -168,7 +169,10 @@ class dbNetwork : public ConcreteNetwork
   // generic connect pin -> net, supports all pin/net types
   void connectPin(Pin* pin, Net* net);
   // generic connect pin -> flat_net, hier_net.
-  void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
+  void connectPin(Pin* pin,
+                  Net* flat_net,
+                  Net* hier_net,
+                  bool reassociate_hier_flat = true);
   // hierarchical support functions
   odb::dbModule* getNetDriverParentModule(Net* net,
                                           Pin*& driver_pin,
@@ -206,7 +210,7 @@ class dbNetwork : public ConcreteNetwork
   //
   ////////////////////////////////////////////////////////////////
 
-  bool linkNetwork(const char* top_cell_name,
+  bool linkNetwork(std::string_view top_cell_name,
                    bool make_black_boxes,
                    Report* report) override;
   bool isLinked() const override;
@@ -217,37 +221,39 @@ class dbNetwork : public ConcreteNetwork
   Instance* topInstance() const override;
   bool isTopInstanceOrNull(const Instance* instance) const;
   // Name local to containing cell/instance.
-  const char* name(const Instance* instance) const override;
-  const char* name(const Port* port) const override;
+  std::string name(const Instance* instance) const override;
+  std::string name(const Port* port) const override;
   // Path name functions needed hierarchical verilog netlists.
   using ConcreteNetwork::pathName;
-  const char* pathName(const Net* net) const override;
+  std::string pathName(const Net* net) const override;
 
-  const char* busName(const Port* port) const override;
+  std::string busName(const Port* port) const override;
   ObjectId id(const Instance* instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
   using ConcreteNetwork::isLeaf;
   bool isLeaf(const Instance* instance) const override;
   bool isLeaf(const Pin* pin) const override;
-  Port* findPort(const Cell* cell, const char* name) const override;
-  Instance* findInstance(const char* path_name) const override;
-  Instance* findChild(const Instance* parent, const char* name) const override;
+  Port* findPort(const Cell* cell, std::string_view name) const override;
+  Instance* findInstance(std::string_view path_name) const override;
+  Instance* findChild(const Instance* parent,
+                      std::string_view name) const override;
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
   std::string getAttribute(const Instance* inst,
-                           const std::string& key) const override;
+                           std::string_view key) const override;
   void setAttribute(Instance* instance,
-                    const std::string& key,
-                    const std::string& value) override;
+                    std::string_view key,
+                    std::string_view value) override;
   odb::dbModNet* findModNetForPin(const Pin*);
   odb::dbModInst* getModInst(Instance* inst) const;
 
   ////////////////////////////////////////////////////////////////
   // Pin functions
   ObjectId id(const Pin* pin) const override;
-  Pin* findPin(const Instance* instance, const char* port_name) const override;
+  Pin* findPin(const Instance* instance,
+               std::string_view port_name) const override;
   Pin* findPin(const Instance* instance, const Port* port) const override;
   Port* port(const Pin* pin) const override;
   Instance* instance(const Pin* pin) const override;
@@ -298,12 +304,12 @@ class dbNetwork : public ConcreteNetwork
 
   ////////////////////////////////////////////////////////////////
   // Cell functions
-  const char* name(const Cell* cell) const override;
+  std::string name(const Cell* cell) const override;
   std::string getAttribute(const Cell* cell,
-                           const std::string& key) const override;
+                           std::string_view key) const override;
   void setAttribute(Cell* cell,
-                    const std::string& key,
-                    const std::string& value) override;
+                    std::string_view key,
+                    std::string_view value) override;
 
   bool isConcreteCell(const Cell*) const;
   void registerHierModule(const Cell* cell);
@@ -323,13 +329,14 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Net functions
   ObjectId id(const Net* net) const override;
-  Net* findNet(const Instance* instance, const char* net_name) const override;
-  Net* findNetAllScopes(const char* net_name) const;
+  Net* findNet(const Instance* instance,
+               std::string_view net_name) const override;
+  Net* findNetAllScopes(std::string_view net_name) const;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
                             NetSeq& nets) const override;
-  const char* name(const Net* net) const override;
+  std::string name(const Net* net) const override;
   Instance* instance(const Net* net) const override;
   bool isPower(const Net* net) const override;
   bool isGround(const Net* net) const override;
@@ -360,13 +367,16 @@ class dbNetwork : public ConcreteNetwork
 
   // Return the highest net above the given net.
   // - If the net is a flat net, return it.
-  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  // - If the net is a hier net (dbModNet), return the associated flat dbNet.
+  // This ensures parasitic externality checks in ensureParasiticNode work
+  // correctly: net_ is always a flat net, so the comparison net != net_
+  // must also operate on flat nets.
   Net* highestNetAbove(Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
   Instance* makeInstance(LibertyCell* cell,
-                         const char* name,
+                         std::string_view name,
                          Instance* parent) override;
   void makePins(Instance* inst) override;
   void replaceCell(Instance* inst, Cell* cell) override;
@@ -382,18 +392,56 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(Instance* parent = nullptr);
-  Net* makeNet(const char* name, Instance* parent) override;
-  Net* makeNet(const char* base_name,
+  Net* makeNet(std::string_view name, Instance* parent) override;
+  Net* makeNet(std::string_view base_name,
                Instance* parent,
                const odb::dbNameUniquifyType& uniquify);
   Pin* makePin(Instance* inst, Port* port, Net* net) override;
-  Port* makePort(Cell* cell, const char* name) override;
+  Port* makePort(Cell* cell, std::string_view name) override;
   void deleteNet(Net* net) override;
   void deleteNetBefore(const Net* net);
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
+
+  ////////////////////////////////////////////////////////////////
+  // Sequential / Flop / Scan flop utility functions
+  // clock pin functions
+  bool isClockPin(odb::dbITerm* iterm) const;
+  bool clockOn(odb::dbInst* inst) const;
+
+  // d pin functions
+  bool isDPin(odb::dbITerm* iterm) const;
+  int getNumD(odb::dbInst* inst) const;
+
+  // q(n) pin functions
+  bool isQPin(odb::dbITerm* iterm) const;
+  bool isInvertingQPin(odb::dbITerm* iterm) const;
+  int getNumQ(odb::dbInst* inst) const;
+
+  // clear/preset pin functions
+  bool hasClear(odb::dbInst* inst) const;
+  bool isClearPin(odb::dbITerm* iterm) const;
+  bool hasPreset(odb::dbInst* inst) const;
+  bool isPresetPin(odb::dbITerm* iterm) const;
+
+  // scan cell/pin functions
+  bool isScanCell(odb::dbInst* inst) const;
+  bool isScanIn(odb::dbITerm* iterm) const;
+  odb::dbITerm* getScanIn(odb::dbInst* inst) const;
+  bool isScanEnable(odb::dbITerm* iterm) const;
+  odb::dbITerm* getScanEnable(odb::dbInst* inst) const;
+  LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell) const;
+  LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell) const;
+  LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell) const;
+
+  // supply pin functions
+  bool isSupplyPin(odb::dbITerm* iterm) const;
+  bool isValidFlop(odb::dbInst* FF) const;
+  bool isValidTray(odb::dbInst* tray) const;
+
+  ////////////////////////////////////////////////////////////////
 
   // hierarchy handler, set in openroad tested in network child traverserser
 
@@ -421,8 +469,6 @@ class dbNetwork : public ConcreteNetwork
   PortMemberIterator* memberIterator(const Port* port) const override;
   PinSet* drivers(const Pin* pin) override;
   PinSet* drivers(const Net* net) override;
-  void removeDriverFromCache(const Net* net);
-  void removeDriverFromCache(const Net* net, const Pin* drvr);
 
   using Network::cell;
   using Network::direction;
@@ -446,7 +492,7 @@ class dbNetwork : public ConcreteNetwork
   void makeTopCell();
   void findConstantNets();
   void makeAccessHashes();
-  bool portMsbFirst(const char* port_name, const char* cell_name);
+  bool portMsbFirst(std::string_view port_name, std::string_view cell_name);
   ObjectId getDbNwkObjectId(const odb::dbObject* object) const;
 
   ////////////////////////////////////////////////////////////////
@@ -475,6 +521,17 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
+  const LibertyCell* getLibertyCell(const Cell* cell) const;
+  void addDriverToCacheIfPresent(const Net* net, const Pin* drvr);
+  void removeDriverFromCache(const Net* net);
+  void removeDriverFromCache(const Net* net, const Pin* drvr);
+
+  // Strip the parent-instance prefix from a hierarchical name, treating
+  // backslash-escaped slashes (\/) as literal name characters rather than
+  // hierarchy separators.  Used to recover an in-module name from a
+  // path-qualified one stored in ODB.
+  static std::string stripParentPrefix(const std::string& name);
+
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;

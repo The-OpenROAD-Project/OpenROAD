@@ -2,7 +2,9 @@
 [INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
 [INFO ODB-0128] Design: regions3
 [INFO ODB-0131]     Created 2 components and 10 component-terminals.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 16.49 um^2, Instances area: 3.19 um^2, Utilization: 19.4%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                       0

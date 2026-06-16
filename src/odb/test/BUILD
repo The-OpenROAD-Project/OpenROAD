@@ -174,9 +174,11 @@ COMPULSORY_TESTS = [
     "floorplan_initialize3",
     "gcd_abstract_lef",
     "gcd_abstract_lef_with_power",
+    "gcd_abstract_lef_via_only_layer",
     "gcd_def_access",
     "gcd_pdn_def_access",
     "import_package",
+    "lef58_backside_bridge",
     "lef_data_access",
     "lef_mask",
     "multi_tech",
@@ -187,6 +189,7 @@ COMPULSORY_TESTS = [
     "read_3dbx",
     "read_db",
     "read_def",
+    "read_def_virtual",
     "read_def58",
     "read_lef",
     "read_zipped",
@@ -216,9 +219,8 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
+    "read_3dbv_fail",
+    "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -228,11 +230,6 @@ PASSFAIL_TESTS = [
     "test_module",
     "test_net",
     "test_wire_codec",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "replace_hier_mod1",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -287,6 +284,8 @@ filegroup(
         "data/example2.bmap",
         "data/example3.bmap",
         "data/example4.bmap",
+        "data/example_no_coords.3dbv",
+        "data/example_polygon.3dbv",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -294,19 +293,24 @@ filegroup(
         "data/gcd/floorplan.def",
         "data/gcd/gcd.def",
         "data/gcd/gcd_nangate45_route.def",
+        "data/gcd/gcd_nangate45_route_via_only_layer.def",
         "data/gcd/gcd_nangate45_route_with_power_pins.def",
         "data/gcd/gcd_pdn.def",
         "data/gscl45nm.lef",
         "data/gscl45nm.lef.gz",
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
+        "data/lef58_antennagateplusdiff.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
+        "data/path_assertions.3dbx",
         "data/rounding.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",
+        "data/virtual_route.def",
+        "data/virtual_route_invalid.def",
         "dump_netlists.tcl",
         "dump_netlists_withfill.tcl",
         "fake_macros.def",
@@ -338,6 +342,12 @@ filegroup(
         "sky130hd/work_around_yosys/formal_pdk.v",
     ],
     visibility = ["//src/odb/test/cpp:__subpackages__"],
+)
+
+filegroup(
+    name = "design_odb_data",
+    srcs = ["data/design.odb"],
+    visibility = ["//visibility:public"],
 )
 
 [
@@ -389,7 +399,6 @@ filegroup(
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -410,4 +419,33 @@ doc_check_test(
         "//src/odb:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        "//src/odb/test/cpp:Test3DBloxChecker",
+        "//src/odb/test/cpp:Test3DBloxParser",
+        "//src/odb/test/cpp:Test3DBloxVerilogWriter",
+        "//src/odb/test/cpp:TestAbstractLef",
+        "//src/odb/test/cpp:TestAccessPoint",
+        "//src/odb/test/cpp:TestCallBacks",
+        "//src/odb/test/cpp:TestChips",
+        "//src/odb/test/cpp:TestDbWire",
+        "//src/odb/test/cpp:TestGCellGrid",
+        "//src/odb/test/cpp:TestGDSIn",
+        "//src/odb/test/cpp:TestGeom",
+        "//src/odb/test/cpp:TestGroup",
+        "//src/odb/test/cpp:TestGuide",
+        "//src/odb/test/cpp:TestJournal",
+        "//src/odb/test/cpp:TestLef58Properties",
+        "//src/odb/test/cpp:TestMaster",
+        "//src/odb/test/cpp:TestModule",
+        "//src/odb/test/cpp:TestNetTrack",
+        "//src/odb/test/cpp:TestObjectType",
+        "//src/odb/test/cpp:TestPolygonalFloorplan",
+        "//src/odb/test/cpp:TestSwapMaster",
+        "//src/odb/test/cpp:TestSwapMasterUnusedPort",
+        "//src/odb/test/cpp:TestWriteReadDbHier",
+    ],
 )

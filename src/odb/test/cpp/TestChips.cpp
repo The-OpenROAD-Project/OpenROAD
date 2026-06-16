@@ -3,6 +3,7 @@
 #include <fstream>
 #include <ios>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -366,6 +367,7 @@ TEST_F(ChipHierarchyFixture, test_chip_bumps)
   auto io_inst_region_r1_bump_inst
       = *io_inst_region_r1->getChipBumpInsts().begin();
   EXPECT_EQ(io_inst_region_r1_bump_inst->getChipBump(), io_bump);
+  EXPECT_EQ(io_bump->getInst()->getChipBump(), io_bump);
   EXPECT_EQ(io_inst_region_r1_bump_inst->getChipRegionInst(),
             io_inst_region_r1);
 

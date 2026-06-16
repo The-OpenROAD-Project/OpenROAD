@@ -91,7 +91,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )
@@ -106,16 +106,13 @@ cc_library(
     hdrs = [
         "include/rcx/MakeOpenRCX.h",
     ],
-    copts = [
-        "-Isrc/rcx/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rcx",
         "//:ord",
-        "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -177,5 +174,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rcx/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rcx/test:__pkg__",
+    ],
 )

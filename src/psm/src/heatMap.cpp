@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "gui/heatMap.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Sta.hh"
@@ -94,14 +95,14 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       [this](const std::string& value) { setCorner(value); });
 }
 
-void IRDropDataSource::setBlock(odb::dbBlock* block)
+void IRDropDataSource::setChip(odb::dbChip* chip)
 {
-  if (block && block->getParent()) {
-    return;  // not the top block so ignore it
-  }
-  gui::HeatMapDataSource::setBlock(block);
-  if (block != nullptr) {
-    tech_ = block->getTech();
+  gui::HeatMapDataSource::setChip(chip);
+  if (chip != nullptr) {
+    odb::dbBlock* block = chip->getBlock();
+    tech_ = block != nullptr ? block->getTech() : nullptr;
+  } else {
+    tech_ = nullptr;
   }
 }
 
@@ -122,7 +123,7 @@ bool IRDropDataSource::populateMap()
   }
   ensureLayer();
 
-  std::map<odb::dbTechLayer*, PDNSim::IRDropByPoint> ir_drops;
+  odb::PtrMap<odb::dbTechLayer, PDNSim::IRDropByPoint> ir_drops;
 
   for (auto* layer : tech_->getLayers()) {
     psm_->getIRDropForLayer(net_, corner_, layer, ir_drops[layer]);

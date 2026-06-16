@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 
 namespace ord {
@@ -29,23 +30,23 @@ class Blif
  public:
   Blif(utl::Logger* logger,
        sta::dbSta* sta,
-       const std::string& const0_cell_,
-       const std::string& const0_cell_port_,
-       const std::string& const1_cell_,
-       const std::string& const1_cell_port_,
-       int call_id_);
-  void setReplaceableInstances(std::set<odb::dbInst*>& insts);
+       const std::string& const0_cell,
+       const std::string& const0_cell_port,
+       const std::string& const1_cell,
+       const std::string& const1_cell_port,
+       int call_id);
+  void setReplaceableInstances(odb::PtrSet<odb::dbInst>& insts);
   void addReplaceableInstance(odb::dbInst* inst);
   bool writeBlif(const char* file_name, bool write_arrival_requireds = false);
   bool readBlif(const char* file_name, odb::dbBlock* block);
   bool inspectBlif(const char* file_name, int& num_instances);
   float getRequiredTime(sta::Pin* term, bool is_rise);
   float getArrivalTime(sta::Pin* term, bool is_rise);
-  void addArrival(sta::Pin* pin, const std::string& netName);
-  void addRequired(sta::Pin* pin, const std::string& netName);
+  void addArrival(sta::Pin* pin, const std::string& net_name);
+  void addRequired(sta::Pin* pin, const std::string& net_name);
 
  private:
-  std::set<odb::dbInst*> instances_to_optimize_;
+  odb::PtrSet<odb::dbInst> instances_to_optimize_;
   utl::Logger* logger_;
   sta::dbSta* open_sta_ = nullptr;
   std::string const0_cell_;

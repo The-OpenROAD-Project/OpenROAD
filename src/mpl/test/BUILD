@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -13,8 +13,6 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
-    "boundary_push2",
-    "boundary_push3",
     "centralization1",
     "clocked_macro",
     "fixed_covers",
@@ -25,6 +23,8 @@ COMPULSORY_TESTS = [
     "guides2",
     "halos1",
     "halos2",
+    "halos3",
+    "halos4",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -44,6 +44,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]
 
@@ -70,14 +71,6 @@ filegroup(
             ] + {
                 "boundary_push1": [
                     "testcases/boundary_push1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push2": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push3": [
-                    "testcases/boundary_push2.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "centralization1": [
@@ -126,6 +119,14 @@ filegroup(
                 ],
                 "halos2": [
                     "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos3": [
+                    "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos4": [
+                    "testcases/halo3.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
@@ -223,6 +224,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
@@ -249,10 +254,9 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/mpl",
-        "//src/odb",
+        "//src/mpl:snapper",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
@@ -261,15 +265,30 @@ cc_test(
 )
 
 cc_test(
-    name = "TestSnapper",
+    name = "mpl_block_macro_channels_unittest",
     srcs = [
         "cpp/MplTest.h",
-        "cpp/TestSnapper.cpp",
+        "cpp/TestBlockMacroChannels.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/mpl",
-        "//src/odb",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mpl_pusher_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestPusher.cpp",
+    ],
+    deps = [
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",

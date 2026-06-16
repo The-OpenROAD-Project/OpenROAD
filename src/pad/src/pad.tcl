@@ -122,13 +122,13 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       [-rotation_vertical rotation] \
                                       [-rotation_corner rotation] \
                                       [-ring_index index]
-} ;# checker off
+}
 
 proc make_io_sites { args } {
   sta::parse_key_args "make_io_sites" args \
     keys {-horizontal_site -vertical_site -corner_site -offset -rotation \
       -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
-    flags {} ;# checker off
+    flags {}
 
   sta::check_argc_eq0 "make_io_sites" $args
   set index -1
@@ -398,12 +398,13 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-turn_penalty penalty] \
                                   [-allow45] \
                                   [-max_iterations iterations] \
+                                  [-fixed] \
                                   nets}
 
 proc rdl_route { args } {
   sta::parse_key_args "rdl_route" args \
     keys {-layer -width -spacing -bump_via -pad_via -turn_penalty -max_iterations} \
-    flags {-allow45}
+    flags {-allow45 -fixed}
 
   if { [llength $args] == 1 } {
     set args [lindex $args 0]
@@ -471,6 +472,7 @@ proc rdl_route { args } {
     $nets \
     $width $spacing \
     [info exists flags(-allow45)] \
+    [info exists flags(-fixed)] \
     $penalty \
     $max_iterations
 }

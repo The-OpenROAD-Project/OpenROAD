@@ -55,11 +55,12 @@ cc_library(
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
         "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
         "@boost.polygon",
@@ -121,5 +122,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/pdn/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pdn/test:__pkg__",
+    ],
 )

@@ -61,12 +61,20 @@ the two umbrella targets.
 | `//:lint_tcl_test` | `sh_test` | Runs `tclint .` (lint rules) |
 | `//:fmt_tcl_test` | `sh_test` | Runs `tclfmt --check .` (formatting) |
 | `//:tidy_tcl` | `sh_binary` | Runs `tclfmt --in-place .` (auto-format) |
+| `//:lint_bzl_test` | `sh_test` | Runs `buildifier -mode=check -lint=warn` (lint rules) |
+| `//:fmt_bzl_test` | `sh_test` | Runs `buildifier -mode=check -lint=off` (formatting) |
+| `//:tidy_bzl` | `sh_binary` | Runs `buildifier -mode=fix -lint=fix` (auto-format) |
 
 ## Configuration
 
 TCL linting and formatting are controlled by `tclint.toml` at the repository
 root. See the [tclint documentation](https://tclint.readthedocs.io/) for
 available options.
+
+Bazel formatting and linting are controlled by `.buildifier.json` at the
+repository root. The test scripts (`bzl_lint_test.sh`, `bzl_fmt_test.sh`)
+explicitly pass `-mode=check` to override the default `mode: fix` in that
+config, ensuring they remain read-only checks.
 
 ## POLA
 
@@ -95,10 +103,8 @@ To add a new linter (e.g., C++ tidy):
 The following linters and formatters are planned for `//:lint_test` and
 `//:fix_lint`, replacing their ad-hoc CI equivalents:
 
-- **C++ clang-tidy** — static analysis for C++ sources
 - **C++ clang-format** — formatting check/fix for C++ and header files
 - **Python ruff** — lint + format for Python scripts in `etc/`, `docs/`, tests
-- **Buildifier** — lint + format for BUILD, .bzl, and MODULE.bazel files
 - **ShellCheck** — lint for bash scripts in `test/`, `bazel/`, `etc/`
 - **Duplicate message ID check** — replace Jenkins "Find Duplicated Message IDs" stage
 - **Doc consistency checks** — replace Jenkins "Documentation Checks" stage
@@ -114,3 +120,9 @@ The GitHub Actions workflow (`.github/workflows/github-actions-lint-tcl.yml`)
 runs the same `tclint` and `tclfmt` checks. Once Bazel lint targets are
 validated in CI, the GitHub Actions workflow can be retired. The same applies
 to the Jenkins documentation and duplicate ID check stages.
+
+C++ clang-tidy is provided via a separate Bazel aspect (`--config=lint`)
+rather than the `//:lint_test` umbrella. Aspects participate in Bazel's
+per-action cache, which the `sh_test`-based umbrella does not, so incremental
+C++ lint scales better that way. See the "Code Linting and Formatting"
+section of `docs/contrib/DeveloperGuide.md` for usage.
