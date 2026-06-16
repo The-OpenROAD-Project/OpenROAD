@@ -238,6 +238,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
     findDisplacementStats();
     updateDbInstLocations();
+      logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
   }
 }
 

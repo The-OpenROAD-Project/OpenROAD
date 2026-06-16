@@ -108,6 +108,7 @@ void InitFloorplan::initFloorplan(
     const odb::PtrSet<odb::dbSite>& flipped_sites,
     const int gap)
 {
+  utl::Timer timer;
   checkGap(gap);
 
   makeDieUtilization(utilization,
