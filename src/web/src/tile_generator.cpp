@@ -54,6 +54,18 @@ namespace {
 // (DSP-validated); larger S only adds cost.
 constexpr int kCoverageSupersample = 2;
 
+// Extra binomial prefilter convolved into the Lanczos-2 taps, in source
+// (super-pixel) space.  Lanczos-2 alone is a SOFT filter that leaks ~10-20 %
+// just below the output Nyquist, so a dense periodic array (bumps, vias, dense
+// routing) whose pitch lands near the output Nyquist — the worst moiré-beat
+// regime — survives the decimation as a low-frequency beat.  [1,2,1]/4 has an
+// EXACT zero at the source Nyquist and unit DC gain: it deepens the stopband so
+// that near-Nyquist tone is nulled instead of leaked, while leaving the local
+// MEAN (and any resolved detail well below Nyquist) untouched.  Because it is
+// DC-preserving it can only band-limit, never merge geometry into an opaque
+// block — it cannot reintroduce the rejected "merged sheet" artifact.
+constexpr std::array<double, 3> kLanczosPrefilterBinomial = {0.25, 0.5, 0.25};
+
 constexpr float kPinMarkerSizeRatio = 0.02;
 constexpr int kMinPinMarkerSize = 8;
 constexpr int kMinPinNameSizePixels = 20;
@@ -1616,6 +1628,16 @@ static std::vector<unsigned char> lanczos2Downsample(
     int src_dim,
     int dst_dim);
 
+// Forward declaration; defined below near lanczos2Downsample.  In-place
+// separable [1,2,1]/4 binomial low-pass of a float plane over a sub-region
+// (used to band-limit the bump-coverage density before it is composited).
+static void binomialBlurRegion(std::vector<float>& plane,
+                               int stride,
+                               int x0,
+                               int y0,
+                               int x1,
+                               int y1);
+
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -2443,51 +2465,108 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
         }
 
-        // Anti-moiré LOD: paint each collected sub-resolution bump with EXACT
-        // area coverage — each super-pixel gets alpha = base.a * (fraction of
-        // the pixel the footprint covers).  No floor/ceil hard edges and no
-        // center splat, so a regular array does NOT pick up width/position
-        // jitter from the sub-pixel phase (the cause of the RODADA-17 beat).
-        // Below Nyquist the exact per-pixel integral is the local mean density
-        // regardless of phase → a faithful faint tint after Lanczos, not a
-        // sheet; when resolvable it is a crisp anti-aliased bump.
+        // Anti-moiré LOD: render the collected sub-resolution bumps as a
+        // FAITHFUL, BEAT-FREE tint — never a merged opaque sheet.  Each bump
+        // adds its EXACT fractional area to a LINEAR density plane (the
+        // per-pixel area integral is the true local coverage, independent of
+        // the sub-pixel phase — no width/position jitter, the RODADA-17 beat
+        // cause).  A separable [1,2,1]/4 binomial low-pass (exact zero at
+        // Nyquist, unit DC gain) then NULLS the near-Nyquist tone the array
+        // would otherwise leak as a moiré beat through the soft Lanczos-2
+        // decimation, while leaving the local MEAN density untouched.  The
+        // plane is composited ONCE with alpha = base.a * coverage, so a
+        // 25 %-filled array stays ~25 % translucent: a faint tint, never an
+        // opaque block over the inter-bump gaps.  Accumulating linearly (vs.
+        // per-bump alpha-over) keeps the density proportional even where
+        // footprints share a pixel.
         if (!small_bumps.empty()) {
           const Color base = instances_only
                                  ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
                                  : color;
-          const auto blend_coverage_rect = [&](const double fxl,
-                                               const double fyl,
-                                               const double fxh,
-                                               const double fyh) {
-            const int ix0 = std::max(0, static_cast<int>(std::floor(fxl)));
-            const int iy0 = std::max(0, static_cast<int>(std::floor(fyl)));
-            const int ix1 = std::min(super, static_cast<int>(std::ceil(fxh)));
-            const int iy1 = std::min(super, static_cast<int>(std::ceil(fyh)));
+          // Linear coverage density, super-pixel resolution (y still up).
+          // thread_local + bounded clear/scan so it is reused cheaply and a
+          // sparse array touches only its own footprint.
+          static thread_local std::vector<float> density;
+          density.resize(static_cast<size_t>(super) * super);
+
+          // Union bbox of the bumps, grown by the kernel radius so the blur can
+          // feather the array's real edge into a zeroed margin; clamped to the
+          // tile so a continuing array stays flat at the boundary (no seam).
+          constexpr int kRadius = 1;
+          double min_x = small_bumps.front()[0];
+          double min_y = small_bumps.front()[1];
+          double max_x = small_bumps.front()[2];
+          double max_y = small_bumps.front()[3];
+          for (const auto& b : small_bumps) {
+            min_x = std::min(min_x, b[0]);
+            min_y = std::min(min_y, b[1]);
+            max_x = std::max(max_x, b[2]);
+            max_y = std::max(max_y, b[3]);
+          }
+          const int rx0 = std::clamp(
+              static_cast<int>(std::floor(min_x)) - kRadius, 0, super);
+          const int ry0 = std::clamp(
+              static_cast<int>(std::floor(min_y)) - kRadius, 0, super);
+          const int rx1 = std::clamp(
+              static_cast<int>(std::ceil(max_x)) + kRadius, 0, super);
+          const int ry1 = std::clamp(
+              static_cast<int>(std::ceil(max_y)) + kRadius, 0, super);
+
+          // Clear only the working region.  Index through data() so the
+          // one-past-the-row end pointer (rx1 == super) is well-formed instead
+          // of tripping operator[]'s bounds assertion.
+          float* const dptr = density.data();
+          for (int iy = ry0; iy < ry1; ++iy) {
+            const size_t base = static_cast<size_t>(iy) * super;
+            std::fill(dptr + base + rx0, dptr + base + rx1, 0.0f);
+          }
+
+          // Accumulate exact per-pixel area coverage.
+          for (const auto& b : small_bumps) {
+            const double fxl = b[0];
+            const double fyl = b[1];
+            const double fxh = b[2];
+            const double fyh = b[3];
+            const int ix0 = std::max(rx0, static_cast<int>(std::floor(fxl)));
+            const int iy0 = std::max(ry0, static_cast<int>(std::floor(fyl)));
+            const int ix1 = std::min(rx1, static_cast<int>(std::ceil(fxh)));
+            const int iy1 = std::min(ry1, static_cast<int>(std::ceil(fyh)));
             for (int iy = iy0; iy < iy1; ++iy) {
               const double cov_y
                   = std::min(fyh, iy + 1.0) - std::max(fyl, double(iy));
               if (cov_y <= 0.0) {
                 continue;
               }
-              const int draw_y = super - 1 - iy;
+              float* row = &density[static_cast<size_t>(iy) * super];
               for (int ix = ix0; ix < ix1; ++ix) {
                 const double cov_x
                     = std::min(fxh, ix + 1.0) - std::max(fxl, double(ix));
-                const double frac = cov_x * cov_y;
-                if (frac <= 0.0) {
+                if (cov_x <= 0.0) {
                   continue;
                 }
-                Color c = base;
-                c.a = static_cast<unsigned char>(
-                    std::lround(base.a * std::clamp(frac, 0.0, 1.0)));
-                if (c.a > 0) {
-                  blendPixel(image_buffer, ix, draw_y, c, super);
-                }
+                row[ix] += static_cast<float>(cov_x * cov_y);
               }
             }
-          };
-          for (const auto& b : small_bumps) {
-            blend_coverage_rect(b[0], b[1], b[2], b[3]);
+          }
+
+          // Band-limit the density (kills the beat, keeps the mean), then
+          // composite the faithful tint once.
+          binomialBlurRegion(density, super, rx0, ry0, rx1, ry1);
+          for (int iy = ry0; iy < ry1; ++iy) {
+            const int draw_y = super - 1 - iy;
+            const float* row = &density[static_cast<size_t>(iy) * super];
+            for (int ix = rx0; ix < rx1; ++ix) {
+              const float d = row[ix];
+              if (d <= 0.0f) {
+                continue;
+              }
+              Color c = base;
+              c.a = static_cast<unsigned char>(
+                  std::lround(base.a * std::clamp(d, 0.0f, 1.0f)));
+              if (c.a > 0) {
+                blendPixel(image_buffer, ix, draw_y, c, super);
+              }
+            }
           }
         }
 
@@ -3152,8 +3231,12 @@ static double lanczos2Kernel(const double t)
 // For integer decimation S = src_dim/dst_dim, precompute per-output-pixel taps
 // (clamped source index + normalized weight).  The kernel argument is scaled by
 // 1/S so the cutoff is the destination Nyquist (this is what suppresses the
-// beat).  Edge pixels clamp the source index and renormalize by the unclamped
-// weight sum, so uniform regions and the tile border stay flat.
+// beat).  The Lanczos weights are additionally convolved with a binomial
+// prefilter (kLanczosPrefilterBinomial) in source space, which puts an exact
+// zero at the source Nyquist and deepens the soft Lanczos stopband so a dense
+// periodic array near the output Nyquist is nulled rather than leaked.  Edge
+// pixels clamp the source index and renormalize by the weight sum, so uniform
+// regions and the tile border stay flat (DC-preserving → no seam, no sheet).
 static std::vector<std::vector<std::pair<int, float>>> buildLanczos2Taps(
     const int src_dim,
     const int dst_dim)
@@ -3165,20 +3248,28 @@ static std::vector<std::vector<std::pair<int, float>>> buildLanczos2Taps(
     const double c = (o + 0.5) * s - 0.5;  // source-sample center
     const int i0 = static_cast<int>(std::ceil(c - radius));
     const int i1 = static_cast<int>(std::floor(c + radius));
-    double wsum = 0.0;
-    std::vector<std::pair<int, float>>& row = taps[o];
+    // Accumulate the Lanczos weight of each source sample, spread by the
+    // binomial prefilter onto its neighbours; clamp-to-edge and merge by
+    // clamped index (a std::map keeps the indices sorted and deduplicated).
+    std::map<int, double> acc;
     for (int i = i0; i <= i1; ++i) {
       const double w = lanczos2Kernel((i - c) / s);
       if (w == 0.0) {
         continue;
       }
-      row.emplace_back(std::clamp(i, 0, src_dim - 1), static_cast<float>(w));
+      for (int k = -1; k <= 1; ++k) {
+        const int idx = std::clamp(i + k, 0, src_dim - 1);
+        acc[idx] += w * kLanczosPrefilterBinomial[k + 1];
+      }
+    }
+    double wsum = 0.0;
+    for (const auto& [idx, w] : acc) {
       wsum += w;
     }
-    if (wsum != 0.0) {
-      for (auto& [idx, w] : row) {
-        w = static_cast<float>(w / wsum);
-      }
+    std::vector<std::pair<int, float>>& row = taps[o];
+    row.reserve(acc.size());
+    for (const auto& [idx, w] : acc) {
+      row.emplace_back(idx, static_cast<float>(wsum != 0.0 ? w / wsum : w));
     }
   }
   return taps;
@@ -3203,6 +3294,57 @@ static const std::vector<std::vector<std::pair<int, float>>>& getLanczos2Taps(
     it = cache.emplace(key, buildLanczos2Taps(src_dim, dst_dim)).first;
   }
   return it->second;
+}
+
+// In-place separable [1,2,1]/4 binomial low-pass of a float plane over the
+// half-open region [x0,x1) x [y0,y1) (row stride `stride`), clamp-to-edge at
+// the region boundary.  The binomial has an EXACT zero at Nyquist and unit DC
+// gain: it nulls the near-Nyquist tone a dense periodic array would otherwise
+// leak as a moiré beat, while leaving the local MEAN untouched.  Applied to the
+// linear bump-coverage density this keeps a faithful faint tint (mean coverage
+// preserved) — never a merged opaque sheet.  Clamp-to-edge at the tile boundary
+// keeps a continuing array flat there, so adjacent tiles abut with no seam.
+static void binomialBlurRegion(std::vector<float>& plane,
+                               const int stride,
+                               const int x0,
+                               const int y0,
+                               const int x1,
+                               const int y1)
+{
+  if (x1 <= x0 || y1 <= y0) {
+    return;
+  }
+  static thread_local std::vector<float> line;
+  // Horizontal pass.
+  line.resize(x1 - x0);
+  for (int y = y0; y < y1; ++y) {
+    float* row = &plane[static_cast<size_t>(y) * stride];
+    for (int x = x0; x < x1; ++x) {
+      const float l = row[x > x0 ? x - 1 : x0];
+      const float r = row[x < x1 - 1 ? x + 1 : x1 - 1];
+      line[x - x0] = 0.25f * l + 0.5f * row[x] + 0.25f * r;
+    }
+    for (int x = x0; x < x1; ++x) {
+      row[x] = line[x - x0];
+    }
+  }
+  // Vertical pass.
+  line.resize(y1 - y0);
+  for (int x = x0; x < x1; ++x) {
+    for (int y = y0; y < y1; ++y) {
+      const float u
+          = plane[static_cast<size_t>(y > y0 ? y - 1 : y0) * stride + x];
+      const float d
+          = plane[static_cast<size_t>(y < y1 - 1 ? y + 1 : y1 - 1) * stride
+                  + x];
+      line[y - y0] = 0.25f * u
+                     + 0.5f * plane[static_cast<size_t>(y) * stride + x]
+                     + 0.25f * d;
+    }
+    for (int y = y0; y < y1; ++y) {
+      plane[static_cast<size_t>(y) * stride + x] = line[y - y0];
+    }
+  }
 }
 
 // Separable Lanczos-2 downsample of a straight-alpha RGBA buffer from src_dim^2
