@@ -126,10 +126,10 @@ def make_design(tech):
     logger.suppressMessage(utl.IFP, 500)
     logger.suppressMessage(utl.IFP, 501)
     logger.suppressMessage(utl.MPL, 500)
-    logger.suppressMessage(utl.RSZ, 500)
-    logger.suppressMessage(utl.RSZ, 501)
-    logger.suppressMessage(utl.RSZ, 502)
-    logger.suppressMessage(utl.RSZ, 503)
+    logger.suppressMessage(utl.RSZ, 504)
+    logger.suppressMessage(utl.RSZ, 505)
+    logger.suppressMessage(utl.RSZ, 506)
+    logger.suppressMessage(utl.RSZ, 507)
     logger.suppressMessage(utl.PDN, 500)
 
     return design

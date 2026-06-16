@@ -4745,7 +4745,7 @@ void Resizer::repairDesign(double max_wire_length,
   }
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
-  logger_->info(RSZ, 500, "Runtime: {:.2f}s", timer.elapsed());
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -4943,7 +4943,7 @@ bool Resizer::repairSetup(double setup_margin,
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
   bool result = optimizer.run();
-  logger_->info(RSZ, 501, "Runtime: {:.2f}s", timer.elapsed());
+  logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
   return result;
 }
 
@@ -5029,7 +5029,7 @@ bool Resizer::repairHold(
                                          max_passes,
                                          max_iterations,
                                          verbose);
-  logger_->info(RSZ, 502, "Runtime: {:.2f}s", timer.elapsed());
+  logger_->info(RSZ, 506, "Runtime: {:.2f}s", timer.elapsed());
   return result;
 }
 
@@ -5074,7 +5074,7 @@ bool Resizer::recoverPower(float recover_power_percent,
     opendp_->initMacrosAndGrid();
   }
   bool result = recover_power_->recoverPower(recover_power_percent, verbose);
-  logger_->info(RSZ, 503, "Runtime: {:.2f}s", timer.elapsed());
+  logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
   return result;
 }
 ////////////////////////////////////////////////////////////////

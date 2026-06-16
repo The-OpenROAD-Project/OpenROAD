@@ -312,10 +312,10 @@ suppress_message GPL 500
 suppress_message IFP 500
 suppress_message IFP 501
 suppress_message MPL 500
-suppress_message RSZ 500
-suppress_message RSZ 501
-suppress_message RSZ 502
-suppress_message RSZ 503
+suppress_message RSZ 504
+suppress_message RSZ 505
+suppress_message RSZ 506
+suppress_message RSZ 507
 suppress_message PDN 500
 
 proc get_3dblox_marker_count { category_name } {
