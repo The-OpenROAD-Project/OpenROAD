@@ -234,23 +234,13 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
     return Dist(so[a], si[b]);
   };
 
-  // Build a map from ScanCell pointer → original candidate index so we can
-  // recover identity after rotates.
-  std::unordered_map<const ScanCell*, int> ptr_to_id;
-  for (int i = 0; i < n; i++) {
-    ptr_to_id[cells[i].get()] = i;
-  }
-
   // identity[pos] = original candidate index of cell at this position.
   // pos_of[id]    = current position of the cell with original index id.
   std::vector<int> identity(n), pos_of(n);
-  auto rebuildIdentity = [&]() {
-    for (int i = 0; i < n; i++) {
-      identity[i] = ptr_to_id[cells[i].get()];
-      pos_of[identity[i]] = i;
-    }
-  };
-  rebuildIdentity();
+  for (int i = 0; i < n; i++) {
+    identity[i] = i;
+    pos_of[i] = i;
+  }
 
   bool improved = true;
   while (improved) {
