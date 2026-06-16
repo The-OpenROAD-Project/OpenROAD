@@ -186,15 +186,9 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
                              - D(i + 1, j + 1) - (RC[j] - RC[i + 1]);
         if (gain > 0) {
           std::reverse(cells.begin() + i + 1, cells.begin() + j + 1);
-          // Refresh pin-location cache and identity/pos arrays.
-          for (int k = i + 1; k <= j; k++) {
-            si[k] = cells[k]->getScanInLocation();
-            so[k] = cells[k]->getScanOutLocation();
-          }
-          // The reversed segment swaps identities.
-          for (int lo = i + 1, hi = j; lo < hi; lo++, hi--) {
-            std::swap(identity[lo], identity[hi]);
-          }
+          std::reverse(si.begin() + i + 1, si.begin() + j + 1);
+          std::reverse(so.begin() + i + 1, so.begin() + j + 1);
+          std::reverse(identity.begin() + i + 1, identity.begin() + j + 1);
           for (int k = i + 1; k <= j; k++) {
             pos_of[identity[k]] = k;
           }
