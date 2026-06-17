@@ -6,6 +6,7 @@
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
 import { getCookie, setCookie } from './theme.js';
+import { rgbToHex } from './ui-utils.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
 // `lower` layers below and `upper` layers above are included.
@@ -918,6 +919,15 @@ export function populateDisplayControls(app, visibility, selectability,
         ]},
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
+        { key: 'regions', label: 'Regions' },
+        { key: 'gcell_grid', label: 'GCell grid' },
+        { key: 'manufacturing_grid', label: 'Manufacturing grid' },
+        { key: 'access_points', label: 'Access points' },
+        { key: 'flywires', label: 'Flywires' },
+        { key: 'flywires_only', label: 'Flywires only' },
+        { key: 'focused_nets_guides', label: 'Focused nets guides' },
+        { key: 'detailed', label: 'Detailed view' },
+        { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });
@@ -929,6 +939,44 @@ export function populateDisplayControls(app, visibility, selectability,
         ],
     });
     visTree.render(app.displayControlsEl);
+
+    // Background color picker (mirrors the Qt GUI's Misc/Background swatch).
+    // Overrides the theme's --bg-map on the layout canvas and persists the
+    // choice in localStorage.
+    const bgRow = document.createElement('label');
+    bgRow.className = 'vis-bg-color';
+    const bgText = document.createElement('span');
+    bgText.textContent = 'Background';
+    const bgInput = document.createElement('input');
+    bgInput.type = 'color';
+    let savedBg = null;
+    try {
+        savedBg = localStorage.getItem('or_bg_color');
+    } catch (_) {
+        // Ignore storage access errors.
+    }
+    if (savedBg) {
+        bgInput.value = savedBg;
+    } else if (app.mapDiv && typeof getComputedStyle === 'function') {
+        // No saved color: seed the picker from the current theme background.
+        const hex = rgbToHex(getComputedStyle(app.mapDiv).backgroundColor);
+        if (hex) {
+            bgInput.value = hex;
+        }
+    }
+    bgInput.addEventListener('input', () => {
+        if (app.mapDiv) {
+            app.mapDiv.style.backgroundColor = bgInput.value;
+        }
+        try {
+            localStorage.setItem('or_bg_color', bgInput.value);
+        } catch (_) {
+            // Ignore storage access errors.
+        }
+    });
+    bgRow.appendChild(bgText);
+    bgRow.appendChild(bgInput);
+    app.displayControlsEl.appendChild(bgRow);
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {

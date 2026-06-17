@@ -17,6 +17,8 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -31,6 +33,7 @@
 #include "boost/beast/websocket.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
@@ -1041,6 +1044,105 @@ static std::string base64Encode(const std::vector<unsigned char>& data)
     result += (i + 2 < data.size()) ? kChars[b2 & 0x3F] : '=';
   }
   return result;
+}
+
+void WebServer::setDisplayControl(const std::string& key,
+                                  const std::string& type,
+                                  const bool value)
+{
+  {
+    std::lock_guard<std::mutex> lock(display_state_mutex_);
+    if (!display_state_.contains(type)) {
+      display_state_[type] = boost::json::object();
+    }
+    display_state_[type].as_object()[key] = value;
+  }
+  broadcastDisplayControls();
+}
+
+bool WebServer::checkDisplayControl(const std::string& key,
+                                    const std::string& type) const
+{
+  {
+    std::lock_guard<std::mutex> lock(display_state_mutex_);
+    if (const auto* t = display_state_.if_contains(type); t && t->is_object()) {
+      if (const auto* v = t->as_object().if_contains(key); v && v->is_bool()) {
+        return v->as_bool();
+      }
+    }
+  }
+  // Unset: fall back to the frontend defaults (main.js `visibility`).  Most
+  // controls default visible; these are off by default.  Selectability
+  // defaults to true for everything.
+  static const std::set<std::string> kVisibleOffByDefault
+      = {"phys_fill",
+         "rows",
+         "tracks_pref",
+         "tracks_non_pref",
+         "module_view",
+         "debug",
+         "gcell_grid",
+         "manufacturing_grid",
+         "access_points",
+         "flywires",
+         "flywires_only",
+         "detailed",
+         "debug_renderers",
+         "debug_live"};
+  return !(type == "visible" && kVisibleOffByDefault.contains(key));
+}
+
+void WebServer::saveDisplayControls(const std::string& filename) const
+{
+  std::lock_guard<std::mutex> lock(display_state_mutex_);
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 50, "Cannot open file for writing: {}", filename);
+    return;
+  }
+  out << boost::json::serialize(display_state_);
+}
+
+bool WebServer::restoreDisplayControls(const std::string& filename)
+{
+  std::ifstream in(filename);
+  if (!in) {
+    logger_->error(utl::WEB, 51, "Cannot open file for reading: {}", filename);
+    return false;
+  }
+  std::ostringstream ss;
+  ss << in.rdbuf();
+  boost::json::value parsed;
+  try {
+    parsed = boost::json::parse(ss.str());
+  } catch (const std::exception& e) {
+    logger_->error(utl::WEB, 52, "Invalid display controls file: {}", e.what());
+    return false;
+  }
+  if (!parsed.is_object()) {
+    logger_->error(utl::WEB, 53, "Display controls file is not a JSON object");
+    return false;
+  }
+  {
+    std::lock_guard<std::mutex> lock(display_state_mutex_);
+    display_state_ = parsed.as_object();
+  }
+  broadcastDisplayControls();
+  return true;
+}
+
+void WebServer::broadcastDisplayControls()
+{
+  if (!viewer_hook_) {
+    return;  // not serving — nothing to push
+  }
+  boost::json::object msg;
+  msg["type"] = "display_controls";
+  {
+    std::lock_guard<std::mutex> lock(display_state_mutex_);
+    msg["state"] = display_state_;
+  }
+  viewer_hook_->sessions().broadcast(boost::json::serialize(msg));
 }
 
 void WebServer::saveReport(const std::string& filename,

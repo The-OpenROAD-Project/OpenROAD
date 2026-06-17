@@ -14,6 +14,7 @@
 
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/steady_timer.hpp"
+#include "boost/json/object.hpp"
 #include "odb/db.h"
 #include "spdlog/common.h"
 #include "tcl.h"
@@ -122,12 +123,29 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  // Tcl-driven display-control state, mirroring the Qt GUI's
+  // set/check/save/restore_display_controls.  `type` is "visible" or
+  // "selectable"; `key` is a web visibility key (e.g. "scale_bar").
+  // setDisplayControl/restoreDisplayControls broadcast the change to any
+  // connected web clients so the live UI updates.
+  void setDisplayControl(const std::string& key,
+                         const std::string& type,
+                         bool value);
+  bool checkDisplayControl(const std::string& key,
+                           const std::string& type) const;
+  void saveDisplayControls(const std::string& filename) const;
+  bool restoreDisplayControls(const std::string& filename);
+
   // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
   // times and from any thread; after it returns, isRunning() is false and
   // serve() may be called again to restart the server.
   void stop();
 
  private:
+  // Serializes display_state_ to a "display_controls" server-push message
+  // and broadcasts it to connected clients (no-op when not serving).
+  void broadcastDisplayControls();
+
   // Stops ioc_, joins every worker thread except the current one, and
   // clears threads_. Detaches the current thread if it happens to be a
   // worker (would otherwise raise EDEADLK on self-join).
@@ -140,6 +158,11 @@ class WebServer
   int num_threads_ = 0;
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
+
+  // Tcl-driven display-control state: {"visible":{key:bool}, "selectable":
+  // {key:bool}}.  Authoritative for set/check/save/restore_display_controls.
+  mutable std::mutex display_state_mutex_;
+  boost::json::object display_state_;
 
   // Background I/O context and worker threads (non-null while running).
   std::unique_ptr<boost::asio::io_context> ioc_;

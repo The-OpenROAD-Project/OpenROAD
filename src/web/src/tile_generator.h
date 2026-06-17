@@ -203,6 +203,27 @@ struct TileVisibility
   bool tracks_pref = false;
   bool tracks_non_pref = false;
 
+  // Overlay annotations (Misc) — drawn layer-independently on the overlay
+  // tile.  Defaults mirror the Qt GUI display-controls Misc group
+  // (regions checked, grids unchecked).
+  bool gcell_grid = false;
+  bool manufacturing_grid = false;
+  bool regions = true;
+  bool access_points = false;
+  // Flight-line ("flywire") overlays for net connectivity.  flywires draws
+  // lines for unrouted nets only; flywires_only draws them for every signal
+  // net.  focused_nets_guides gates the route-guide overlay (default on so
+  // guides set via the inspector stay visible).
+  bool flywires = false;
+  bool flywires_only = false;
+  bool focused_nets_guides = true;
+  // Force full detail regardless of zoom (mirrors the GUI "Detailed view":
+  // draw individual sites even when sub-threshold in pixels).
+  bool detailed = false;
+  // Whether the selection/hover highlight overlay is drawn (mirrors the GUI
+  // "Highlight selected" toggle; on by default).
+  bool highlight_selected = true;
+
   // Debug
   bool debug = false;
 
@@ -385,7 +406,12 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       bool has_visible_layers = false,
-      const std::set<std::string>& visible_layers = {}) const;
+      const std::set<std::string>& visible_layers = {},
+      const TileVisibility& vis = {},
+      // Hover highlight is drawn unconditionally (not gated by
+      // vis.highlight_selected), since hover is transient feedback rather
+      // than a persistent selection highlight.
+      const std::vector<odb::Rect>& hover_rects = {}) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
@@ -495,6 +521,27 @@ class TileGenerator
                        const std::vector<FlightLine>& lines,
                        const odb::Rect& dbu_tile,
                        double scale) const;
+
+  // Layer-independent overlay annotations (Misc group).  Mirror the Qt
+  // GUI's RenderThread::drawGCellGrid / drawManufacturingGrid / drawRegions.
+  void drawGCellGrid(std::vector<unsigned char>& image,
+                     const odb::Rect& dbu_tile,
+                     double scale) const;
+  void drawManufacturingGrid(std::vector<unsigned char>& image,
+                             const odb::Rect& dbu_tile,
+                             double scale) const;
+  void drawRegions(std::vector<unsigned char>& image,
+                   const odb::Rect& dbu_tile,
+                   double scale) const;
+  void drawAccessPoints(std::vector<unsigned char>& image,
+                        const odb::Rect& dbu_tile,
+                        double scale,
+                        bool has_visible_layers,
+                        const std::set<std::string>& visible_layers) const;
+  void drawFlywires(std::vector<unsigned char>& image,
+                    const odb::Rect& dbu_tile,
+                    double scale,
+                    bool include_routed) const;
 
   // Private counterpart of setDebugOverlayCallback: invokes the
   // installed callback (if any) for this tile.  See the public API

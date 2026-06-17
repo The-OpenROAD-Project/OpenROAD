@@ -120,6 +120,15 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     {"rows",                   &TileVisibility::rows,                   false},
     {"tracks_pref",            &TileVisibility::tracks_pref,            false},
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
+    {"gcell_grid",             &TileVisibility::gcell_grid,             false},
+    {"manufacturing_grid",     &TileVisibility::manufacturing_grid,     false},
+    {"regions",                &TileVisibility::regions,                true},
+    {"access_points",          &TileVisibility::access_points,          false},
+    {"flywires",               &TileVisibility::flywires,               false},
+    {"flywires_only",          &TileVisibility::flywires_only,          false},
+    {"focused_nets_guides",    &TileVisibility::focused_nets_guides,    true},
+    {"detailed",               &TileVisibility::detailed,               false},
+    {"highlight_selected",     &TileVisibility::highlight_selected,     true},
     {"debug",                  &TileVisibility::debug,                  false},
     {"debug_renderers",        &TileVisibility::debug_renderers,        false},
     {"debug_live",             &TileVisibility::debug_live,             false},
@@ -1393,7 +1402,9 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     const std::vector<FlightLine>& flight_lines,
     const std::set<uint32_t>* route_guide_net_ids,
     const bool has_visible_layers,
-    const std::set<std::string>& visible_layers) const
+    const std::set<std::string>& visible_layers,
+    const TileVisibility& vis,
+    const std::vector<odb::Rect>& hover_rects) const
 {
   constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image(kBufferSize, 0);  // fully transparent
@@ -1405,10 +1416,20 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
     return png;
   }
 
+  // Layer-independent Misc annotations drawn straight onto the overlay.
+  const bool draw_grids = vis.gcell_grid || vis.manufacturing_grid
+                          || vis.regions || vis.access_points || vis.flywires
+                          || vis.flywires_only;
+  // Selection highlight is gated by "Highlight selected"; hover never is.
+  const bool draw_selection
+      = vis.highlight_selected
+        && (!highlight_rects.empty() || !highlight_polys.empty());
+
   // Short-circuit: if there's nothing to draw, return a blank tile.
-  if (highlight_rects.empty() && highlight_polys.empty()
-      && colored_rects.empty() && flight_lines.empty()
-      && (!route_guide_net_ids || route_guide_net_ids->empty())) {
+  if (!draw_selection && hover_rects.empty() && colored_rects.empty()
+      && flight_lines.empty()
+      && (!route_guide_net_ids || route_guide_net_ids->empty())
+      && !draw_grids) {
     std::vector<unsigned char> png;
     lodepng::encode(png, image, kTileSizeInPixel, kTileSizeInPixel);
     return png;
@@ -1431,9 +1452,13 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
   const double scale = kTileSizeInPixel / tile_dbu_size;
 
-  // Draw highlight shapes onto transparent buffer.
-  if (!highlight_rects.empty() || !highlight_polys.empty()) {
+  // Draw selection highlight (gated by the GUI-style "Highlight selected"
+  // toggle), then hover highlight (always drawn — transient feedback).
+  if (draw_selection) {
     drawHighlight(image, highlight_rects, highlight_polys, dbu_tile, scale);
+  }
+  if (!hover_rects.empty()) {
+    drawHighlight(image, hover_rects, {}, dbu_tile, scale);
   }
   if (!colored_rects.empty()) {
     // Pass empty layer name so all colored rects are drawn regardless of
@@ -1443,7 +1468,8 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   if (!flight_lines.empty()) {
     drawFlightLines(image, flight_lines, dbu_tile, scale);
   }
-  if (route_guide_net_ids && !route_guide_net_ids->empty()) {
+  if (route_guide_net_ids && !route_guide_net_ids->empty()
+      && vis.focused_nets_guides) {
     // Draw route guides only for visible tech layers.
     for (odb::dbTech* tech : db_->getTechs()) {
       const auto& colors = getLayerColorMap(tech);
@@ -1465,6 +1491,25 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
                         scale);
       }
     }
+  }
+
+  // Layer-independent Misc annotations (grids, regions).  Regions sit below
+  // the line grids so the grids stay legible on top of region fills.
+  if (vis.regions) {
+    drawRegions(image, dbu_tile, scale);
+  }
+  if (vis.gcell_grid) {
+    drawGCellGrid(image, dbu_tile, scale);
+  }
+  if (vis.manufacturing_grid) {
+    drawManufacturingGrid(image, dbu_tile, scale);
+  }
+  if (vis.access_points) {
+    drawAccessPoints(
+        image, dbu_tile, scale, has_visible_layers, visible_layers);
+  }
+  if (vis.flywires || vis.flywires_only) {
+    drawFlywires(image, dbu_tile, scale, /*include_routed=*/vis.flywires_only);
   }
 
   std::vector<unsigned char> png;
@@ -2500,7 +2545,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
 
               const int site_w_px = static_cast<int>(site_w * scale);
-              if (site_w_px >= 5) {
+              // "Detailed view" forces individual sites even when sub-5px,
+              // matching the Qt GUI's isDetailedVisibility() override.
+              if (site_w_px >= 5 || vis.detailed) {
                 odb::Point pt = row->getOrigin();
                 const int spacing = row->getSpacing();
                 const int count = row->getSiteCount();
@@ -3742,6 +3789,193 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
   }
 }
 
+void TileGenerator::drawGCellGrid(std::vector<unsigned char>& image,
+                                  const odb::Rect& dbu_tile,
+                                  const double scale) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+  odb::dbGCellGrid* grid = block->getGCellGrid();
+  if (!grid) {
+    return;
+  }
+  const odb::Rect die_area = block->getDieArea();
+  if (!dbu_tile.intersects(die_area)) {
+    return;
+  }
+  const odb::Rect draw_bounds = dbu_tile.intersect(die_area);
+
+  std::vector<int> x_grid, y_grid;
+  grid->getGridX(x_grid);
+  grid->getGridY(y_grid);
+
+  // White lines, matching the Qt GUI (RenderThread::drawGCellGrid).
+  const Color color{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  const int py_lo
+      = 255 - static_cast<int>((draw_bounds.yMin() - dbu_tile.yMin()) * scale);
+  const int py_hi
+      = 255 - static_cast<int>((draw_bounds.yMax() - dbu_tile.yMin()) * scale);
+  for (const int gx : x_grid) {
+    if (gx < draw_bounds.xMin() || gx > draw_bounds.xMax()) {
+      continue;
+    }
+    const int px = static_cast<int>((gx - dbu_tile.xMin()) * scale);
+    drawLine(image, px, py_lo, px, py_hi, color);
+  }
+
+  const int px_lo
+      = static_cast<int>((draw_bounds.xMin() - dbu_tile.xMin()) * scale);
+  const int px_hi
+      = static_cast<int>((draw_bounds.xMax() - dbu_tile.xMin()) * scale);
+  for (const int gy : y_grid) {
+    if (gy < draw_bounds.yMin() || gy > draw_bounds.yMax()) {
+      continue;
+    }
+    const int py = 255 - static_cast<int>((gy - dbu_tile.yMin()) * scale);
+    drawLine(image, px_lo, py, px_hi, py, color);
+  }
+}
+
+void TileGenerator::drawManufacturingGrid(std::vector<unsigned char>& image,
+                                          const odb::Rect& dbu_tile,
+                                          const double scale) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+  odb::dbTech* tech = block->getTech();
+  if (!tech || !tech->hasManufacturingGrid()) {
+    return;
+  }
+  const int grid = tech->getManufacturingGrid();  // DBU
+  if (grid <= 0) {
+    return;
+  }
+  // Only draw when grid points are at least 5 px apart, matching the Qt GUI
+  // (RenderThread::drawManufacturingGrid).  scale is pixels-per-DBU.
+  if (grid * scale < 5.0) {
+    return;
+  }
+
+  const Color color{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  const int first_x = ((dbu_tile.xMin() / grid) + 1) * grid;
+  const int last_x = (dbu_tile.xMax() / grid) * grid;
+  const int first_y = ((dbu_tile.yMin() / grid) + 1) * grid;
+  const int last_y = (dbu_tile.yMax() / grid) * grid;
+  for (int gx = first_x; gx <= last_x; gx += grid) {
+    const int px = static_cast<int>((gx - dbu_tile.xMin()) * scale);
+    for (int gy = first_y; gy <= last_y; gy += grid) {
+      const int py = 255 - static_cast<int>((gy - dbu_tile.yMin()) * scale);
+      blendPixel(image, px, py, color);
+    }
+  }
+}
+
+void TileGenerator::drawRegions(std::vector<unsigned char>& image,
+                                const odb::Rect& dbu_tile,
+                                const double scale) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+  // Semi-transparent gray fill, matching the Qt GUI's default region
+  // color/pattern (RenderThread::drawRegions).
+  const Color fill{.r = 0x70, .g = 0x70, .b = 0x70, .a = 0x70};
+  for (odb::dbRegion* region : block->getRegions()) {
+    for (odb::dbBox* box : region->getBoundaries()) {
+      const odb::Rect rbox = box->getBox();
+      if (rbox.area() <= 0 || !dbu_tile.overlaps(rbox)) {
+        continue;
+      }
+      const odb::Rect overlap = rbox.intersect(dbu_tile);
+      const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+      for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+        for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+          blendPixel(image, ix, 255 - iy, fill);
+        }
+      }
+    }
+  }
+}
+
+void TileGenerator::drawAccessPoints(
+    std::vector<unsigned char>& image,
+    const odb::Rect& dbu_tile,
+    const double scale,
+    const bool has_visible_layers,
+    const std::set<std::string>& visible_layers) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+  // Access-point markers are ~100 DBU "X" glyphs; skip when they'd be
+  // sub-pixel, matching the Qt GUI's shapeSizeLimit gate
+  // (RenderThread::drawAccessPoints).
+  constexpr int kShapeSizeDbu = 100;
+  if (kShapeSizeDbu * scale < 1.0) {
+    return;
+  }
+  const int half_px
+      = std::max(1, static_cast<int>(kShapeSizeDbu * scale / 2.0));
+
+  const Color has_access{.r = 0, .g = 200, .b = 0, .a = 255};
+  const Color no_access{.r = 220, .g = 0, .b = 0, .a = 255};
+
+  auto draw = [&](odb::dbAccessPoint* ap, const odb::dbTransform& xform) {
+    if (!ap) {
+      return;
+    }
+    odb::dbTechLayer* layer = ap->getLayer();
+    if (has_visible_layers && layer != nullptr
+        && !visible_layers.contains(layer->getName())) {
+      return;
+    }
+    odb::Point pt = ap->getPoint();
+    xform.apply(pt);
+    if (!dbu_tile.intersects(pt)) {
+      return;
+    }
+    const int px = static_cast<int>((pt.x() - dbu_tile.xMin()) * scale);
+    const int py = 255 - static_cast<int>((pt.y() - dbu_tile.yMin()) * scale);
+    const Color c = ap->hasAccess() ? has_access : no_access;
+    drawLine(image, px - half_px, py - half_px, px + half_px, py + half_px, c);
+    drawLine(image, px - half_px, py + half_px, px + half_px, py - half_px, c);
+  };
+
+  // Instance-pin access points within this tile.
+  for (odb::dbInst* inst : search_->searchInsts(block,
+                                                dbu_tile.xMin(),
+                                                dbu_tile.yMin(),
+                                                dbu_tile.xMax(),
+                                                dbu_tile.yMax())) {
+    int x = 0, y = 0;
+    inst->getLocation(x, y);
+    const odb::dbTransform xform({x, y});
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      for (odb::dbAccessPoint* ap : iterm->getPrefAccessPoints()) {
+        draw(ap, xform);
+      }
+    }
+  }
+
+  // Block (IO) pin access points.
+  const odb::dbTransform identity;
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    for (odb::dbBPin* bpin : bterm->getBPins()) {
+      for (odb::dbAccessPoint* ap : bpin->getAccessPoints()) {
+        draw(ap, identity);
+      }
+    }
+  }
+}
+
 void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
                                     const std::set<uint32_t>& net_ids,
                                     const std::string& layer,
@@ -3853,6 +4087,87 @@ static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
     }
   }
   return {0, 0};
+}
+
+void TileGenerator::drawFlywires(std::vector<unsigned char>& image,
+                                 const odb::Rect& dbu_tile,
+                                 const double scale,
+                                 const bool include_routed) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return;
+  }
+  // Yellow flight lines between a net's driver and its sinks, mirroring the
+  // Qt GUI flywire overlay (dbDescriptors net flywires).
+  const Color color{.r = 255, .g = 255, .b = 0, .a = 160};
+  // Per-tile cap: flywires iterate every net, so bound the work on huge
+  // designs.  Once the cap is hit we stop scanning nets and note it (a
+  // debug-only message, since this runs per tile and must not spam).
+  constexpr size_t kMaxFlywiresPerTile = 20000;
+  std::vector<FlightLine> lines;
+  bool capped = false;
+  for (odb::dbNet* net : block->getNets()) {
+    if (lines.size() >= kMaxFlywiresPerTile) {
+      capped = true;
+      break;
+    }
+    if (net->getSigType().isSupply()) {
+      continue;  // skip power/ground
+    }
+    if (!include_routed && net->getWire() != nullptr) {
+      continue;  // flywires mode: unrouted nets only
+    }
+
+    odb::Point driver;
+    bool have_driver = false;
+    std::vector<odb::Point> sinks;
+    auto add_pt = [&](const odb::Point& p, const bool is_driver) {
+      if (is_driver && !have_driver) {
+        driver = p;
+        have_driver = true;
+      } else {
+        sinks.push_back(p);
+      }
+    };
+    for (odb::dbITerm* iterm : net->getITerms()) {
+      add_pt(getPinLocation(iterm, nullptr),
+             iterm->getIoType() == odb::dbIoType::OUTPUT);
+    }
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      // A primary INPUT bterm drives signal into the block.
+      add_pt(getPinLocation(nullptr, bterm),
+             bterm->getIoType() == odb::dbIoType::INPUT);
+    }
+    if (!have_driver) {
+      if (sinks.empty()) {
+        continue;
+      }
+      driver = sinks.front();
+      sinks.erase(sinks.begin());
+    }
+    for (const odb::Point& sink : sinks) {
+      const odb::Rect seg(std::min(driver.x(), sink.x()),
+                          std::min(driver.y(), sink.y()),
+                          std::max(driver.x(), sink.x()),
+                          std::max(driver.y(), sink.y()));
+      if (!dbu_tile.intersects(seg)) {
+        continue;  // segment bbox can't cross this tile
+      }
+      lines.push_back({driver, sink, color});
+    }
+  }
+  if (capped) {
+    debugPrint(logger_,
+               utl::WEB,
+               "tile",
+               1,
+               "flywires: hit per-tile cap of {} lines; some omitted",
+               kMaxFlywiresPerTile);
+  }
+  if (!lines.empty()) {
+    drawFlightLines(image, lines, dbu_tile, scale);
+  }
 }
 
 void collectNetShapes(odb::dbNet* net,

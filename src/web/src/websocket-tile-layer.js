@@ -158,6 +158,15 @@ export function createOverlayTileLayer(visibility, app) {
             x: coords.x,
             y: coords.y,
             debug_renderers: !!visibility.debug_renderers,
+            // Layer-independent Misc annotations drawn on the overlay tile.
+            gcell_grid: !!visibility.gcell_grid,
+            manufacturing_grid: !!visibility.manufacturing_grid,
+            regions: !!visibility.regions,
+            access_points: !!visibility.access_points,
+            flywires: !!visibility.flywires,
+            flywires_only: !!visibility.flywires_only,
+            focused_nets_guides: visibility.focused_nets_guides !== false,
+            highlight_selected: visibility.highlight_selected !== false,
         };
         // Pass visible layers so route guides respect layer visibility.
         if (app && app.visibleLayerNames) {

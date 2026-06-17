@@ -9,6 +9,36 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Format a micron length for the scale-bar label, picking the most readable
+// unit (mm / µm / nm / pm) and trimming floating-point noise so e.g.
+// 0.3 µm doesn't render as "0.30000000000000004 µm".  Mirrors the unit
+// ladder used by the Qt GUI's drawScaleBar().
+export function formatScaleBarLabel(niceUm) {
+    const trim = (n) => Number(n.toFixed(6)).toString();
+    if (niceUm >= 1000) {
+        return trim(niceUm / 1000) + ' mm';
+    }
+    if (niceUm >= 1) {
+        return trim(niceUm) + ' µm';
+    }
+    if (niceUm >= 0.001) {
+        return trim(niceUm * 1000) + ' nm';
+    }
+    return trim(niceUm * 1e6) + ' pm';
+}
+
+// Convert a CSS rgb()/rgba() color string (e.g. "rgb(17, 17, 17)") to a
+// #rrggbb hex string usable as an <input type="color"> value.  Returns null
+// when the input can't be parsed.
+export function rgbToHex(rgb) {
+    const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(rgb || '');
+    if (!m) {
+        return null;
+    }
+    const h = (n) => Number(n).toString(16).padStart(2, '0');
+    return '#' + h(m[1]) + h(m[2]) + h(m[3]);
+}
+
 // Make table column headers resizable by dragging.
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of

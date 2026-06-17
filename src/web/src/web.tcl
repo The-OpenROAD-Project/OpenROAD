@@ -159,3 +159,38 @@ proc web_save_report { args } {
 
   web::save_report_cmd $path $max_setup $max_hold
 }
+
+# Display-control state commands, mirroring the native GUI's
+# set/check/save/restore_display_controls.  `display_type` is "visible" or
+# "selectable"; `name` is a web visibility key (e.g. "scale_bar").  Changes
+# are pushed to any connected web clients so the live UI updates.
+sta::define_cmd_args "set_display_controls" { name display_type value }
+proc set_display_controls { name display_type value } {
+  if { $display_type ne "visible" && $display_type ne "selectable" } {
+    utl::error WEB 54 "display_type must be 'visible' or 'selectable'."
+  }
+  if { $value eq "true" || $value eq "1" } {
+    set val 1
+  } else {
+    set val 0
+  }
+  web::set_display_controls_cmd $name $display_type $val
+}
+
+sta::define_cmd_args "check_display_controls" { name display_type }
+proc check_display_controls { name display_type } {
+  if { $display_type ne "visible" && $display_type ne "selectable" } {
+    utl::error WEB 55 "display_type must be 'visible' or 'selectable'."
+  }
+  return [web::check_display_controls_cmd $name $display_type]
+}
+
+sta::define_cmd_args "save_display_controls" { filename }
+proc save_display_controls { filename } {
+  web::save_display_controls_cmd $filename
+}
+
+sta::define_cmd_args "restore_display_controls" { filename }
+proc restore_display_controls { filename } {
+  web::restore_display_controls_cmd $filename
+}

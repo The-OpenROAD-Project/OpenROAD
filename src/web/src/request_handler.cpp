@@ -2011,16 +2011,17 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     }
   }
 
-  // Snapshot current highlight state
+  // Snapshot current highlight state.  Keep selection and hover separate so
+  // the "Highlight selected" toggle can gate selection without hiding hover.
   std::vector<odb::Rect> rects;
+  std::vector<odb::Rect> hover;
   std::vector<odb::Polygon> polys;
   std::vector<ColoredRect> colored;
   std::vector<FlightLine> lines;
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     rects = state.highlight_rects;
-    rects.insert(
-        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+    hover = state.hover_rects;
     polys = state.highlight_polys;
     colored = state.timing_rects;
     lines = state.timing_lines;
@@ -2056,6 +2057,11 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
     }
   }
 
+  // Layer-independent Misc annotations (grids, regions) are drawn on the
+  // overlay; pull their toggles out of the request payload.
+  TileVisibility vis;
+  vis.parseFromJson(req.json);
+
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kPng;
@@ -2069,7 +2075,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                   lines,
                                   route_guide_ptr,
                                   has_vis_layers,
-                                  vis_layers);
+                                  vis_layers,
+                                  vis,
+                                  hover);
   return resp;
 }
 

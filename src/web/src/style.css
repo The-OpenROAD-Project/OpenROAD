@@ -1404,6 +1404,15 @@ html, body {
     color: var(--fg-primary);
 }
 
+.vis-bg-color {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    color: var(--fg-primary);
+}
+
 .heatmap-setting input[type="number"],
 .heatmap-setting select {
     width: 96px;

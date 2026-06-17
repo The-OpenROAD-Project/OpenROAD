@@ -10,7 +10,7 @@ import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
-import { isStaticMode } from './ui-utils.js';
+import { isStaticMode, formatScaleBarLabel } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -199,6 +199,18 @@ const visibility = {
     // Misc
     rulers: true,
     scale_bar: true,
+    // Overlay grids / regions (Misc) — defaults mirror the Qt GUI.
+    regions: true,
+    gcell_grid: false,
+    manufacturing_grid: false,
+    access_points: false,
+    // Flight-line ("flywire") overlays.
+    flywires: false,
+    flywires_only: false,
+    focused_nets_guides: true,
+    // Level-of-detail and selection highlight (mirror GUI Misc toggles).
+    detailed: false,
+    highlight_selected: true,
     // Debug
     debug: false,
 };
@@ -456,6 +468,17 @@ function createLayoutViewer(container) {
     mapDiv.style.height = '100%';
     mapDiv.style.backgroundColor = 'var(--bg-map)';
     container.element.appendChild(mapDiv);
+    // Expose the canvas so the display-controls background picker can recolor
+    // it; apply any previously-saved background color.
+    app.mapDiv = mapDiv;
+    try {
+        const savedBg = localStorage.getItem('or_bg_color');
+        if (savedBg) {
+            mapDiv.style.backgroundColor = savedBg;
+        }
+    } catch (_) {
+        // Ignore storage access errors (e.g. privacy mode).
+    }
 
     const heatMapLegend = document.createElement('div');
     heatMapLegend.className = 'heatmap-map-legend hidden';
@@ -540,11 +563,7 @@ function createLayoutViewer(container) {
 
             barPx = Math.round(niceUm * pxPerUm);
 
-            // Format with appropriate units.
-            if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
-            else if (niceUm >= 1) label = niceUm + ' \u00b5m';
-            else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
-            else label = (niceUm * 1e6) + ' pm';
+            label = formatScaleBarLabel(niceUm);
         }
 
         scaleBarLine.style.width = barPx + 'px';
@@ -991,6 +1010,24 @@ app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+    } else if (msg.type === 'display_controls') {
+        // Tcl set/restore_display_controls pushed new state; apply it to the
+        // local visibility/selectability and rebuild the controls panel.
+        const st = msg.state || {};
+        if (st.visible) {
+            for (const [k, v] of Object.entries(st.visible)) {
+                visibility[k] = !!v;
+            }
+        }
+        if (st.selectable) {
+            for (const [k, v] of Object.entries(st.selectable)) {
+                selectability[k] = !!v;
+            }
+        }
+        if (app._repopulateDisplayControls) {
+            app._repopulateDisplayControls();
+        }
+        redrawAllLayers();
     } else if (msg.type === 'drcUpdated') {
         if (app._drcUpdateTimeout) {
             clearTimeout(app._drcUpdateTimeout);
@@ -1246,6 +1283,12 @@ app.websocketManager.readyPromise.then(async () => {
         populateDisplayControls(app, visibility, selectability,
                                 WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
+
+        // Lets a server-pushed display_controls message rebuild the panel
+        // from the (mutated) visibility/selectability objects.
+        app._repopulateDisplayControls = () => populateDisplayControls(
+            app, visibility, selectability, WebSocketTileLayer, techData,
+            redrawAllLayers, HeatMapTileLayer);
 
         // Create the highlight overlay layer — sits above all base/metal
         // layers but below the heatmap.  Only carries selection, hover,

@@ -59,6 +59,34 @@ save_report_cmd(const char* filename,
   server->saveReport(filename, max_setup, max_hold);
 }
 
+void
+set_display_controls_cmd(const char* name, const char* type, int value)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->setDisplayControl(name, type, value != 0);
+}
+
+bool
+check_display_controls_cmd(const char* name, const char* type)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  return server->checkDisplayControl(name, type);
+}
+
+void
+save_display_controls_cmd(const char* filename)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->saveDisplayControls(filename);
+}
+
+bool
+restore_display_controls_cmd(const char* filename)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  return server->restoreDisplayControls(filename);
+}
+
 } // namespace web
 
 %} // inline
