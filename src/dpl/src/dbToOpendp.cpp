@@ -195,16 +195,20 @@ void Opendp::importDb()
     }
     height_counts[node->getHeight().v]++;
   }
-  logger_->info(utl::DPL,
-                388,
-                "Cell height distribution ({} unique micron height(s)):",
-                height_counts.size());
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "Cell height distribution ({} unique micron height(s)):",
+             height_counts.size());
   for (const auto& [height, count] : height_counts) {
-    logger_->info(utl::DPL,
-                  389,
-                  "  height {:.3f} um: {} cells",
-                  block_->dbuToMicrons(height),
-                  count);
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "  height {:.3f} um: {} cells",
+               block_->dbuToMicrons(height),
+               count);
   }
 }
 
