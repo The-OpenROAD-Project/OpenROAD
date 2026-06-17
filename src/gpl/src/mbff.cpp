@@ -2182,7 +2182,7 @@ bool MBFF::IsValidTray(dbInst* tray)
   if (cell == nullptr) {
     return false;
   }
-  const sta::LibertyCell* lib_cell = network_->getLibertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
