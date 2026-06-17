@@ -3863,10 +3863,22 @@ void TileGenerator::drawManufacturingGrid(std::vector<unsigned char>& image,
 
   const Color color{.r = 255, .g = 255, .b = 255, .a = 255};
 
-  const int first_x = ((dbu_tile.xMin() / grid) + 1) * grid;
-  const int last_x = (dbu_tile.xMax() / grid) * grid;
-  const int first_y = ((dbu_tile.yMin() / grid) + 1) * grid;
-  const int last_y = (dbu_tile.yMax() / grid) * grid;
+  // First/last grid line at or inside the tile.  ceil/floor on doubles so
+  // negative coordinates and lines exactly on the tile boundary are handled
+  // correctly (integer division truncates toward zero).  blendPixel()
+  // bounds-checks px/py, so no explicit guard is needed below.
+  const int first_x
+      = static_cast<int>(std::ceil(static_cast<double>(dbu_tile.xMin()) / grid))
+        * grid;
+  const int last_x = static_cast<int>(std::floor(
+                         static_cast<double>(dbu_tile.xMax()) / grid))
+                     * grid;
+  const int first_y
+      = static_cast<int>(std::ceil(static_cast<double>(dbu_tile.yMin()) / grid))
+        * grid;
+  const int last_y = static_cast<int>(std::floor(
+                         static_cast<double>(dbu_tile.yMax()) / grid))
+                     * grid;
   for (int gx = first_x; gx <= last_x; gx += grid) {
     const int px = static_cast<int>((gx - dbu_tile.xMin()) * scale);
     for (int gy = first_y; gy <= last_y; gy += grid) {

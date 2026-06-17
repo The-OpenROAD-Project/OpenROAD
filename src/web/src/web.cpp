@@ -1097,7 +1097,8 @@ void WebServer::saveDisplayControls(const std::string& filename) const
   std::lock_guard<std::mutex> lock(display_state_mutex_);
   std::ofstream out(filename);
   if (!out) {
-    logger_->error(utl::WEB, 50, "Cannot open file for writing: {}", filename);
+    // warn (not error): a failed save must not abort the Tcl command/server.
+    logger_->warn(utl::WEB, 50, "Cannot open file for writing: {}", filename);
     return;
   }
   out << boost::json::serialize(display_state_);
@@ -1107,7 +1108,8 @@ bool WebServer::restoreDisplayControls(const std::string& filename)
 {
   std::ifstream in(filename);
   if (!in) {
-    logger_->error(utl::WEB, 51, "Cannot open file for reading: {}", filename);
+    // warn (not error): missing/unreadable file is recoverable — return false.
+    logger_->warn(utl::WEB, 51, "Cannot open file for reading: {}", filename);
     return false;
   }
   std::ostringstream ss;
@@ -1116,11 +1118,11 @@ bool WebServer::restoreDisplayControls(const std::string& filename)
   try {
     parsed = boost::json::parse(ss.str());
   } catch (const std::exception& e) {
-    logger_->error(utl::WEB, 52, "Invalid display controls file: {}", e.what());
+    logger_->warn(utl::WEB, 52, "Invalid display controls file: {}", e.what());
     return false;
   }
   if (!parsed.is_object()) {
-    logger_->error(utl::WEB, 53, "Display controls file is not a JSON object");
+    logger_->warn(utl::WEB, 53, "Display controls file is not a JSON object");
     return false;
   }
   {
