@@ -727,8 +727,8 @@ bool NegotiationLegalizer::initFromDb()
           }
           const int dy_dbu = dpl_grid->gridYToDbu(GridY{gy}).v
                              - dpl_grid->gridYToDbu(GridY{cell.init_y}).v;
-          const int dist = std::abs(gx - cell.init_x) * site_width_
-                           + std::abs(dy_dbu);
+          const int dist
+              = std::abs(gx - cell.init_x) * site_width_ + std::abs(dy_dbu);
           pq.emplace(dist, gx, gy);
         };
 
@@ -817,13 +817,13 @@ bool NegotiationLegalizer::initFromDb()
   for (const NegCell& c : cells_) {
     neg_height_counts[c.height]++;
   }
-  logger_->info(utl::DPL,
-                392,
-                "Negotiation cell height distribution ({} unique row-count(s)):",
-                neg_height_counts.size());
+  logger_->info(
+      utl::DPL,
+      392,
+      "Negotiation cell height distribution ({} unique row-count(s)):",
+      neg_height_counts.size());
   for (const auto& [height, count] : neg_height_counts) {
-    logger_->info(
-        utl::DPL, 393, "  height {} row(s): {} cells", height, count);
+    logger_->info(utl::DPL, 393, "  height {} row(s): {} cells", height, count);
   }
 
   return true;
