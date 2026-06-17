@@ -32,6 +32,16 @@ namespace rsz {
 // the policy.
 struct LRParams
 {
+  // Optional pre-LR initialization: Replace every editable instance with
+  // the smallest (kMinSizeMaxVt) or largest (kMaxSizeMinVt) leakage equivalent
+  // cell before LR runs.
+  enum class PresizeMode
+  {
+    kDisabled = 0,
+    kMinSizeMaxVt = 1,
+    kMaxSizeMinVt = 2,
+  };
+  PresizeMode presize_mode = PresizeMode::kDisabled;
   float setup_slack_margin = 0.0f;
   int max_iterations = 20;
   // Step size α for the dual-subgradient update on λ.
@@ -76,25 +86,21 @@ class GlobalSizingPolicy : public OptimizationPolicy
   void iterate() override;
 
  private:
-  enum class PresizeMode
-  {
-    kDisabled = 0,
-    kMinSizeMaxVt = 1,
-    kMaxSizeMinVt = 2,
-  };
   using PresizeCellCache
       = std::unordered_map<sta::LibertyCell*, sta::LibertyCell*>;
 
   // === Setup ================================================================
-  // Parse the optional env-var override for the LR starting point.
-  PresizeMode readPresizeMode() const;
+  // Apply any RSZ_GLOBAL_SIZING_* env-var overrides onto lr_params_. Called
+  // once from start(); silently keeps the struct default when the variable is
+  // unset. Throws (via utl::readEnvar*) on malformed values.
+  void loadLrEnvars();
   // Pick the deterministic presize target within the swappable-equivalent set.
   sta::LibertyCell* selectPresizeCell(
       sta::LibertyCell* current_cell,
-      PresizeMode mode,
+      LRParams::PresizeMode mode,
       PresizeCellCache& presize_cell_cache) const;
   // Apply the selected presize to the live design before LR state is seeded.
-  int applyPresize(PresizeMode mode);
+  int applyPresize(LRParams::PresizeMode mode);
   // Discover graph size (edges, endpoints), set dcalc_ap_, size vectors.
   void allocate();
   // Delay-proportional λ seed + WNS-biased μ seed.

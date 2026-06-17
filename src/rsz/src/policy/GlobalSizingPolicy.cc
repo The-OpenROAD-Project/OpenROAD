@@ -47,6 +47,15 @@ namespace rsz {
 using utl::RSZ;
 
 constexpr char kGlobalSizingPresizeEnv[] = "RSZ_GLOBAL_SIZING_PRESIZE_MODE";
+constexpr char kLrSetupSlackMarginEnv[]
+    = "RSZ_GLOBAL_SIZING_SETUP_SLACK_MARGIN";
+constexpr char kLrMaxIterationsEnv[] = "RSZ_GLOBAL_SIZING_MAX_ITERATIONS";
+constexpr char kLrBetaEnv[] = "RSZ_GLOBAL_SIZING_BETA";
+constexpr char kLrMuExponentEnv[] = "RSZ_GLOBAL_SIZING_MU_EXPONENT";
+constexpr char kLrLambdaFloorEnv[] = "RSZ_GLOBAL_SIZING_LAMBDA_FLOOR";
+constexpr char kLrTimingBiasEnv[] = "RSZ_GLOBAL_SIZING_TIMING_BIAS";
+constexpr char kLrBudgetSafetyFactorEnv[]
+    = "RSZ_GLOBAL_SIZING_BUDGET_SAFETY_FACTOR";
 
 GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
                                        MoveCommitter& committer,
@@ -58,25 +67,42 @@ GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
 
 GlobalSizingPolicy::~GlobalSizingPolicy() = default;
 
-GlobalSizingPolicy::PresizeMode GlobalSizingPolicy::readPresizeMode() const
+void GlobalSizingPolicy::loadLrEnvars()
 {
-  const int parsed = utl::readEnvarInt(kGlobalSizingPresizeEnv, 0);
-  if (parsed < 0 || parsed > static_cast<int>(PresizeMode::kMaxSizeMinVt)) {
+  const int presize_default = static_cast<int>(lr_params_.presize_mode);
+  const int presize_parsed
+      = utl::readEnvarInt(kGlobalSizingPresizeEnv, presize_default);
+  if (presize_parsed < 0
+      || presize_parsed
+             > static_cast<int>(LRParams::PresizeMode::kMaxSizeMinVt)) {
     logger_->warn(RSZ,
                   413,
                   "Ignoring invalid {} value {}; expected 0, 1, or 2. "
                   "Using default value 0.",
                   kGlobalSizingPresizeEnv,
-                  parsed);
-    return PresizeMode::kDisabled;
+                  presize_parsed);
+  } else {
+    lr_params_.presize_mode
+        = static_cast<LRParams::PresizeMode>(presize_parsed);
   }
-
-  return static_cast<PresizeMode>(parsed);
+  lr_params_.setup_slack_margin = utl::readEnvarFloat(
+      kLrSetupSlackMarginEnv, lr_params_.setup_slack_margin);
+  lr_params_.max_iterations
+      = utl::readEnvarInt(kLrMaxIterationsEnv, lr_params_.max_iterations);
+  lr_params_.beta = utl::readEnvarFloat(kLrBetaEnv, lr_params_.beta);
+  lr_params_.mu_exponent
+      = utl::readEnvarFloat(kLrMuExponentEnv, lr_params_.mu_exponent);
+  lr_params_.lambda_floor
+      = utl::readEnvarFloat(kLrLambdaFloorEnv, lr_params_.lambda_floor);
+  lr_params_.timing_bias
+      = utl::readEnvarFloat(kLrTimingBiasEnv, lr_params_.timing_bias);
+  lr_params_.budget_safety_factor = utl::readEnvarFloat(
+      kLrBudgetSafetyFactorEnv, lr_params_.budget_safety_factor);
 }
 
 sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
     sta::LibertyCell* current_cell,
-    const PresizeMode mode,
+    const LRParams::PresizeMode mode,
     PresizeCellCache& presize_cell_cache) const
 {
   // Use the cache if this cell has been searched before
@@ -90,6 +116,8 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
 
   sta::LibertyCell* best = current_cell;
   std::optional<float> best_leak = resizer_.cellLeakage(best);
+  // Lazily resolved on the first leakage tie; refreshed when best changes.
+  std::optional<float> best_drive;
   for (sta::LibertyCell* candidate : candidates) {
     const std::optional<float> candidate_leak = resizer_.cellLeakage(candidate);
     if (!candidate_leak.has_value()) {
@@ -99,30 +127,36 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
     if (!best_leak.has_value()) {
       best = candidate;
       best_leak = candidate_leak;
+      best_drive.reset();
       continue;
     }
 
     if (*candidate_leak != *best_leak) {
-      const bool better_leakage = mode == PresizeMode::kMinSizeMaxVt
+      const bool better_leakage = mode == LRParams::PresizeMode::kMinSizeMaxVt
                                       ? *candidate_leak < *best_leak
                                       : *candidate_leak > *best_leak;
       if (better_leakage) {
         best = candidate;
         best_leak = candidate_leak;
+        best_drive.reset();
       }
       continue;
     }
 
+    if (!best_drive.has_value()) {
+      best_drive = resizer_.cellDriveResistance(best);
+    }
     const float candidate_drive = resizer_.cellDriveResistance(candidate);
-    const float best_drive = resizer_.cellDriveResistance(best);
-    if (candidate_drive != best_drive) {
-      const bool better_drive = mode == PresizeMode::kMinSizeMaxVt
-                                    ? candidate_drive > best_drive
-                                    : candidate_drive < best_drive;
-      if (better_drive) {
-        best = candidate;
-        best_leak = candidate_leak;
-      }
+    if (candidate_drive == *best_drive) {
+      continue;
+    }
+    const bool better_drive = mode == LRParams::PresizeMode::kMinSizeMaxVt
+                                  ? candidate_drive > *best_drive
+                                  : candidate_drive < *best_drive;
+    if (better_drive) {
+      best = candidate;
+      best_leak = candidate_leak;
+      best_drive = candidate_drive;
     }
   }
 
@@ -130,13 +164,13 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
   return best;
 }
 
-int GlobalSizingPolicy::applyPresize(const PresizeMode mode)
+int GlobalSizingPolicy::applyPresize(const LRParams::PresizeMode mode)
 {
-  if (mode == PresizeMode::kDisabled) {
+  if (mode == LRParams::PresizeMode::kDisabled) {
     return 0;
   }
 
-  const char* target_cell = mode == PresizeMode::kMinSizeMaxVt
+  const char* target_cell = mode == LRParams::PresizeMode::kMinSizeMaxVt
                                 ? "smallest leakage Liberty cell"
                                 : "largest leakage Liberty cell";
   logger_->info(RSZ,
@@ -161,11 +195,14 @@ int GlobalSizingPolicy::applyPresize(const PresizeMode mode)
     sta::LibertyCell* replacement
         = selectPresizeCell(current_cell, mode, presize_cell_cache);
     if (replacement != current_cell
-        && resizer_.replaceCell(inst, replacement, false)) {
+        && resizer_.replaceCell(inst, replacement)) {
       ++replacements;
     }
   }
 
+  // Presize is applied into the outer journal in iterate(); seedMultipliers /
+  // projectFlowBalance / computeAutoTimingWeight need fresh slacks, so refresh
+  // parasitics + required times here.
   if (replacements > 0) {
     resizer_.updateParasiticsAndTiming();
   }
@@ -919,6 +956,7 @@ bool GlobalSizingPolicy::start()
   if (!OptimizationPolicy::start()) {
     return false;
   }
+  loadLrEnvars();
   db_network_ = resizer_.dbNetwork();
   subproblem_ = std::make_unique<LRSubproblem>(&resizer_);
   // Phase B fans the per-gate evaluations across the OpenROAD thread budget
@@ -954,7 +992,9 @@ void GlobalSizingPolicy::iterate()
              sta::delayAsString(tns_pre, 1, sta_));
 
   resizer_.journalBegin();
-  const int presize_replacements = applyPresize(readPresizeMode());
+
+  applyPresize(lr_params_.presize_mode);
+
   allocate();
   seedMultipliers(lr_params_);
   projectFlowBalance(lr_params_);
