@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <any>
+#include <cstdint>
 #include <exception>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
