@@ -389,6 +389,7 @@ export class SchematicWidget {
             this._svgIdToInstName.clear();
             this.svgContainer.innerHTML = svgString;
             this._svgEl = this.svgContainer.querySelector('svg');
+            this._scopeSkinStyles();
 
             // Build SVG-id → ODB instance-name map.
             // netlistsvg renders each cell with id="cell_<instName>", so we
@@ -487,6 +488,47 @@ export class SchematicWidget {
         }
     }
 
+    // netlistsvg's skin embeds a <style> with unscoped element selectors
+    // (e.g. `svg { fill:none; stroke:#000 }`, `text { fill:#000 }`). A <style>
+    // inside an inline SVG is NOT scoped to that SVG -- once injected into the
+    // page its rules apply document-wide, clobbering the fill/stroke of every
+    // other inline-SVG icon in the app (the inspector/ruler buttons rendered as
+    // black, unfilled outlines). Prefix each rule with the widget's container
+    // class so the skin only styles this schematic.
+    _scopeSkinStyles() {
+        if (!this._svgEl) return;
+        const scope = '.schematic-widget';
+        for (const styleEl of this._svgEl.querySelectorAll('style')) {
+            const sheet = styleEl.sheet;
+            if (!sheet) continue;
+            let rules;
+            try {
+                rules = sheet.cssRules;
+            } catch (e) {
+                continue;  // Should not happen for same-origin inline styles.
+            }
+            for (const rule of rules) {
+                if (!rule.selectorText) continue;
+                rule.selectorText = scopeCssSelector(rule.selectorText, scope);
+            }
+        }
+    }
+}
+
+// Prefix every comma-separated selector in `selectorText` with `scope` so the
+// rule only matches descendants of the scope container. Idempotent: selectors
+// already carrying the scope are left untouched (a re-render must not nest the
+// prefix repeatedly).
+export function scopeCssSelector(selectorText, scope) {
+    return selectorText
+        .split(',')
+        .map((sel) => {
+            const trimmed = sel.trim();
+            return trimmed.startsWith(scope + ' ') || trimmed === scope
+                ? trimmed
+                : `${scope} ${trimmed}`;
+        })
+        .join(', ');
 }
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
