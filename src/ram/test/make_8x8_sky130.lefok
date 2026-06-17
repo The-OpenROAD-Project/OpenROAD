@@ -13,16 +13,16 @@ MACRO RAM8x8
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met3 ;
-        RECT  109.6 1.55 110.4 1.85 ;
+      LAYER met2 ;
+        RECT  94.92 23.995 95.06 24.48 ;
     END
   END clk
   PIN we[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER met3 ;
-        RECT  109.6 2.91 110.4 3.21 ;
+      LAYER met2 ;
+        RECT  99.52 23.995 99.66 24.48 ;
     END
   END we[0]
   PIN addr_rw[0]
@@ -46,7 +46,7 @@ MACRO RAM8x8
     USE SIGNAL ;
     PORT
       LAYER met3 ;
-        RECT  109.6 5.63 110.4 5.93 ;
+        RECT  109.6 1.55 110.4 1.85 ;
     END
   END addr_rw[2]
   PIN D[0]
