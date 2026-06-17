@@ -3,9 +3,9 @@ or_integration_tests(
   TESTS
     bus_route
     clock_route
+    clock_route_alpha
     clock_route_cugr
     clock_route_cugr2
-    clock_route_alpha
     clock_route_error1
     clock_route_error2
     colocated_pins
@@ -31,6 +31,7 @@ or_integration_tests(
     gcd_cugr
     gcd_flute
     increase_capacity1
+    incremental_deleted_net
     incremental_update_net
     infinite_cap
     inst_pin_out_of_die
@@ -77,12 +78,12 @@ or_integration_tests(
     repair_antennas2
     repair_antennas3
     repair_antennas4
+    repair_antennas_allow_congestion
     repair_antennas_error1
     repair_antennas_error2
+    repair_antennas_from_odb
     repair_antennas_only_diodes
     repair_antennas_only_jumpers
-    repair_antennas_allow_congestion
-    repair_antennas_from_odb
     report_wire_length1
     report_wire_length2
     report_wire_length3
@@ -112,7 +113,7 @@ or_integration_tests(
     congestion_report_file_cugr
     snapshot_batched_bus_route
     snapshot_batched_incremental_state
-    snapshot_batched_smoke
     snapshot_batched_single_thread_smoke
+    snapshot_batched_smoke
     thread_count_reports
 )
