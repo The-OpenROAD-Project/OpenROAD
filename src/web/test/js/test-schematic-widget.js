@@ -233,6 +233,23 @@ describe('scopeCssSelector', () => {
         assert.equal(
             scopeCssSelector('.schematic-widget svg', SCOPE),
             '.schematic-widget svg');
+        // The scope followed by a combinator or class/pseudo is still scoped.
+        assert.equal(
+            scopeCssSelector('.schematic-widget>svg', SCOPE),
+            '.schematic-widget>svg');
+        assert.equal(
+            scopeCssSelector('.schematic-widget.active', SCOPE),
+            '.schematic-widget.active');
+        assert.equal(
+            scopeCssSelector('.schematic-widget:hover', SCOPE),
+            '.schematic-widget:hover');
+    });
+
+    it('still scopes a different class that shares the scope as a prefix', () => {
+        // `.schematic-widget-foo` is a distinct class, not the scope itself.
+        assert.equal(
+            scopeCssSelector('.schematic-widget-foo', SCOPE),
+            '.schematic-widget .schematic-widget-foo');
     });
 
     it('still scopes a selector that merely contains the scope word elsewhere',

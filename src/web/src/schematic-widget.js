@@ -498,36 +498,48 @@ export class SchematicWidget {
     _scopeSkinStyles() {
         if (!this._svgEl) return;
         const scope = '.schematic-widget';
+        // Recurse so selectors nested inside @media/@supports blocks (which
+        // expose .cssRules but no .selectorText) are scoped too.
+        const scopeRules = (rules) => {
+            for (const rule of rules) {
+                if (rule.selectorText) {
+                    rule.selectorText = scopeCssSelector(rule.selectorText, scope);
+                } else if (rule.cssRules) {
+                    scopeRules(rule.cssRules);
+                }
+            }
+        };
         for (const styleEl of this._svgEl.querySelectorAll('style')) {
             const sheet = styleEl.sheet;
             if (!sheet) continue;
-            let rules;
             try {
-                rules = sheet.cssRules;
+                scopeRules(sheet.cssRules);
             } catch (e) {
                 continue;  // Should not happen for same-origin inline styles.
-            }
-            for (const rule of rules) {
-                if (!rule.selectorText) continue;
-                rule.selectorText = scopeCssSelector(rule.selectorText, scope);
             }
         }
     }
 }
 
 // Prefix every comma-separated selector in `selectorText` with `scope` so the
-// rule only matches descendants of the scope container. Idempotent: selectors
-// already carrying the scope are left untouched (a re-render must not nest the
-// prefix repeatedly).
+// rule only matches descendants of the scope container. Idempotent: a selector
+// already carrying the scope is left untouched, so a re-render never nests the
+// prefix. "Already scoped" means it begins with `scope` and the next character
+// is not part of an identifier -- so `.scope`, `.scope svg`, `.scope>svg` and
+// `.scope.active` are kept, while a different class like `.scope-foo` is still
+// scoped.
 export function scopeCssSelector(selectorText, scope) {
     return selectorText
         .split(',')
         .map((sel) => {
             const trimmed = sel.trim();
-            return trimmed.startsWith(scope + ' ') || trimmed === scope
-                ? trimmed
-                : `${scope} ${trimmed}`;
+            if (!trimmed) return '';
+            const after = trimmed.charAt(scope.length);
+            const alreadyScoped = trimmed.startsWith(scope)
+                && (after === '' || !/[\w-]/.test(after));
+            return alreadyScoped ? trimmed : `${scope} ${trimmed}`;
         })
+        .filter(Boolean)
         .join(', ');
 }
 
