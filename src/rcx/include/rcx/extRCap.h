@@ -1758,6 +1758,7 @@ class extMain
                      uint32_t* cornerTable);
 
   void setExtractionOptions_v2(ExtractOptions options);
+  void setExtractionOptions(const ExtractOptions& options);
   uint32_t makeNetRCsegs_v2(odb::dbNet* net, bool skipStartWarning = false);
   uint32_t resetMapNodes_v2(odb::dbWire* wire);
 
@@ -2124,14 +2125,7 @@ class extMain
   void updatePrevControl();
   void getPrevControl();
 
-  void makeBlockRCsegs(const char* netNames,
-                       uint32_t cc_up,
-                       uint32_t ccFlag,
-                       double resBound,
-                       bool mergeViaRes,
-                       double ccThres,
-                       int contextDepth,
-                       const char* extRules);
+  void makeBlockRCsegs();
 
   uint32_t getShortSrcJid(uint32_t jid);
   void make1stRSeg(odb::dbNet* net,
@@ -2723,6 +2717,8 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
+  const char* rules_file_path_{nullptr};
+  const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
   int _netNoWireCnt = 0;

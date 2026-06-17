@@ -98,6 +98,11 @@ GridGraph::GridGraph(const Design* design,
       }
     }
 
+    // Layers below min_routing_layer are not routable; leave capacity 0.
+    if (layer_index < constants_.min_routing_layer) {
+      continue;
+    }
+
     // Initialize edges' capacity to the number of tracks
     if (direction == MetalLayer::V) {
       for (size_t x = 0; x < x_size_; x++) {
@@ -116,10 +121,13 @@ GridGraph::GridGraph(const Design* design,
     }
   }
 
-  // Deduct obstacles usage for layers EXCEPT Metal 1
+  // Deduct obstacles usage for routable layers (skip any layer below
+  // min_routing_layer, whose capacity is held at 0).
   std::vector<std::vector<BoxT>> obstacles(num_layers_);
   design->getAllObstacles(obstacles, true);
-  for (int layer_index = 1; layer_index < num_layers_; layer_index++) {
+  for (int layer_index = std::max(1, constants_.min_routing_layer);
+       layer_index < num_layers_;
+       layer_index++) {
     const MetalLayer& layer = design->getLayer(layer_index);
     const int direction = layer.getDirection();
     const int n_grids = gridlines_[1 - direction].size() - 1;
@@ -299,6 +307,12 @@ void GridGraph::computeCongestionInformation()
     CapacityT usage_sum = 0;
     CapacityT overflow_sum = 0;
     CapacityT max_overflow = 0;
+
+    // Sub-min layers hold no routing wire, only pin-access via demand on
+    // 0-capacity edges.
+    if (layer_index < constants_.min_routing_layer) {
+      continue;
+    }
 
     auto accumulate = [&](int x, int y) {
       const auto& edge = graph_edges_[layer_index][x][y];
@@ -689,6 +703,14 @@ void GridGraph::commitWire(const int layer_index,
                            const bool rip_up,
                            const double net_factor)
 {
+  // Wire must never land below min_routing_layer.
+  if (layer_index < constants_.min_routing_layer) {
+    logger_->error(utl::GRT,
+                   307,
+                   "Wire committed on layer {} below min routing layer {}.",
+                   layer_names_[layer_index],
+                   layer_names_[constants_.min_routing_layer]);
+  }
   const int direction = layer_directions_[layer_index];
   const int edge_length = getEdgeLength(direction, lower[direction]);
   if (rip_up) {
