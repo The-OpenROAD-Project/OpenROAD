@@ -7,10 +7,7 @@
 # and matches the serial result.
 source "helpers.tcl"
 
-# Thread count and result-file stem are overridable by the _threads variant.
-if { ![info exists global_sizing_threads] } {
-  set global_sizing_threads 1
-}
+set ::env(RSZ_GLOBAL_SIZING_PRESIZE_MODE) 2
 
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -21,6 +18,7 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-set_thread_count $global_sizing_threads
 repair_timing -setup -phases GLOBAL_SIZING
 report_worst_slack -max -digits 3
+
+unset ::env(RSZ_GLOBAL_SIZING_PRESIZE_MODE)

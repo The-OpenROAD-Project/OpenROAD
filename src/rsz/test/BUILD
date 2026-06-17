@@ -247,6 +247,7 @@ TESTS = [
     "measured_vt_swap",
     "global_sizing",
     "global_sizing_threads",
+    "global_sizing_presize",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS

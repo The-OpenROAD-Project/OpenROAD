@@ -19,6 +19,7 @@
 
 namespace sta {
 class Edge;
+class LibertyCell;
 class Vertex;
 class dbNetwork;
 }  // namespace sta
@@ -75,7 +76,25 @@ class GlobalSizingPolicy : public OptimizationPolicy
   void iterate() override;
 
  private:
+  enum class PresizeMode
+  {
+    kDisabled = 0,
+    kMinSizeMaxVt = 1,
+    kMaxSizeMinVt = 2,
+  };
+  using PresizeCellCache
+      = std::unordered_map<sta::LibertyCell*, sta::LibertyCell*>;
+
   // === Setup ================================================================
+  // Parse the optional env-var override for the LR starting point.
+  PresizeMode readPresizeMode() const;
+  // Pick the deterministic presize target within the swappable-equivalent set.
+  sta::LibertyCell* selectPresizeCell(
+      sta::LibertyCell* current_cell,
+      PresizeMode mode,
+      PresizeCellCache& presize_cell_cache) const;
+  // Apply the selected presize to the live design before LR state is seeded.
+  int applyPresize(PresizeMode mode);
   // Discover graph size (edges, endpoints), set dcalc_ap_, size vectors.
   void allocate();
   // Delay-proportional λ seed + WNS-biased μ seed.
