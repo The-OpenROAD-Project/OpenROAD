@@ -4,7 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -42,6 +41,10 @@ struct LRParams
     kMaxSizeMinVt = 2,
   };
   PresizeMode presize_mode = PresizeMode::kDisabled;
+  // Optional clock network sizing: Global sizing excludes clock network
+  // instances by default. Can be enabled for post-CTS timing repair for better
+  // clock performance.
+  bool include_clock_network = false;
   float setup_slack_margin = 0.0f;
   int max_iterations = 20;
   // Step size α for the dual-subgradient update on λ.

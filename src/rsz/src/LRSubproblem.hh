@@ -169,6 +169,7 @@ class LRSubproblem : public sta::dbStaState
                 int lambda_size,
                 const float* budget,
                 int budget_size,
+                bool include_clock_network,
                 GateSnapshot& snap);
 
   // WORKER SAFE. Evaluate the subproblem for a prepared snapshot using the

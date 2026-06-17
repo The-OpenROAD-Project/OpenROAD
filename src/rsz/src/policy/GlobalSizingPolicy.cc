@@ -47,6 +47,8 @@ namespace rsz {
 using utl::RSZ;
 
 constexpr char kGlobalSizingPresizeEnv[] = "RSZ_GLOBAL_SIZING_PRESIZE_MODE";
+constexpr char kIncludeClockNetworkEnv[]
+    = "RSZ_GLOBAL_SIZING_INCLUDE_CLOCK_NETWORK";
 constexpr char kLrSetupSlackMarginEnv[]
     = "RSZ_GLOBAL_SIZING_SETUP_SLACK_MARGIN";
 constexpr char kLrMaxIterationsEnv[] = "RSZ_GLOBAL_SIZING_MAX_ITERATIONS";
@@ -85,6 +87,8 @@ void GlobalSizingPolicy::loadLrEnvars()
     lr_params_.presize_mode
         = static_cast<LRParams::PresizeMode>(presize_parsed);
   }
+  lr_params_.include_clock_network = utl::readEnvarBool(
+      kIncludeClockNetworkEnv, lr_params_.include_clock_network);
   lr_params_.setup_slack_margin = utl::readEnvarFloat(
       kLrSetupSlackMarginEnv, lr_params_.setup_slack_margin);
   lr_params_.max_iterations
@@ -719,6 +723,7 @@ std::vector<LRSubproblem::GateSnapshot> GlobalSizingPolicy::buildSnapshots()
                               lambda_size,
                               vertex_budget_.data(),
                               budget_size,
+                              lr_params_.include_clock_network,
                               snap)) {
       snapshots.push_back(std::move(snap));
     }

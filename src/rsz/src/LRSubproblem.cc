@@ -195,6 +195,7 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
                             const int lambda_size,
                             const float* budget,
                             const int budget_size,
+                            const bool include_clock_network,
                             GateSnapshot& snap)
 {
   init();
@@ -229,7 +230,7 @@ bool LRSubproblem::snapshot(sta::Instance* inst,
     sta::Pin* pin = pit->next();
     const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isOutput()) {
-      if (sta_->isClock(pin, sta_->cmdMode())) {
+      if (!include_clock_network && sta_->isClock(pin, sta_->cmdMode())) {
         return false;
       }
       sta::Vertex* v = graph_->pinDrvrVertex(pin);
