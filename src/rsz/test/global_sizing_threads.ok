@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0400] GLOBAL_SIZING: 236 cells replaced (loop); 16/17 sweeps accepted, 1 rolled back; 272 replacements attempted in total (162 upsize, 110 downsize).
+[INFO RSZ-0409] GLOBAL_SIZING QoR: WNS -0.362 -> -0.313 (0.049); TNS -10.7 -> -9.3 (1.3); leakage 1.55e-05 -> 1.88e-05W (+20.82%); area 7e-10 -> 7.8e-10m^2 (+11.40%).
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt
+------------------------------------------------------------------------------------------------------------------------------
+    final |       0 |       0 |        0 |      0 |     0 |   +11.9% |   -0.313 |       -9.2 |       -9.3 |     35 | _877_/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.313

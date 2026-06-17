@@ -245,6 +245,8 @@ TESTS = [
     "repair_setup_vtswap_legacy_asap7",
     "repair_setup_vt_swap2",
     "measured_vt_swap",
+    "global_sizing",
+    "global_sizing_threads",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
@@ -254,8 +256,6 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
-    "global_sizing",
-    "global_sizing_threads",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS

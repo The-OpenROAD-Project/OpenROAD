@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -168,8 +167,8 @@ void GlobalSizingPolicy::seedMultipliers(const LRParams& params)
   }
 
   // μ_k = max(0, margin - slack_k)^p  (WNS-biased endpoint seed).
-  // Then normalize so max(μ) = 1 - this decouples the LR pressure's scale
-  // from the raw slack units so that downstream λ·d terms are predictable.
+  // Then normalize so max(μ) = 1 - this decouples the LR pressure's scale from
+  // the raw slack units so that downstream λ·d terms are predictable.
   float mu_max_raw = 0.0f;
   int mu_nonzero = 0;
   const float margin = params.setup_slack_margin;
@@ -321,7 +320,7 @@ void GlobalSizingPolicy::updateMultipliers(const LRParams& params)
 void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
 {
   // Collect all vertices and sort by level (descending) so we visit endpoints
-  // before their predecessors
+  // before their predecessors.
   std::vector<sta::Vertex*> vertices;
   {
     sta::VertexIterator vit(graph_);
@@ -349,11 +348,12 @@ void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
         if (!isDataArc(e)) {
           continue;
         }
-        // lambda_ is sized to the edge-id space captured in allocate(). A
-        // sweep can replace cells and the subsequent updateParasitics()/
-        // findRequireds() rebuild arcs, minting edge ids beyond that space, so
-        // an id may now be >= lambda_.size(). Such arcs carry no multiplier;
-        // skip them, matching the guard in updateMultipliers().
+        // lambda_ is sized to the edge-id space captured in allocate().
+        // A sweep can replace cells and the subsequent
+        // updateParasitics()/findRequireds() rebuild arcs, minting edge ids
+        // beyond that space, so an id may now be >= lambda_.size(). Such arcs
+        // carry no multiplier; skip them, matching the guard in
+        // updateMultipliers().
         const sta::EdgeId id = graph_->id(e);
         if (static_cast<size_t>(id) >= lambda_.size()) {
           continue;
@@ -483,7 +483,7 @@ void GlobalSizingPolicy::computeSlackBudgets()
     return fi != nullptr && fi == ti;
   };
 
-  // Forward pass (increasing level): gates from a source up to and including v.
+  // Forward pass (increasing level): Gates from a source up to and including v
   std::vector<int> fwd(n, 0);
   for (sta::Vertex* v : vertices) {
     int best = 0;
@@ -499,7 +499,7 @@ void GlobalSizingPolicy::computeSlackBudgets()
     fwd[graph_->id(v)] = best;
   }
 
-  // Backward pass (decreasing level): gates from v (exclusive) to a sink.
+  // Backward pass (decreasing level): Gates from v (exclusive) to a sink
   std::vector<int> bwd(n, 0);
   for (sta::Vertex* v : std::views::reverse(vertices)) {
     int best = 0;
@@ -642,15 +642,15 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::applyDecisions(
 GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
     const float timing_weight)
 {
-  // Phase A: Distribute the slack into per-vertex budgets, then freeze per-gate
-  // state (which reads those budgets).
+  // Phase A: Distribute the slack into per-vertex budgets, then freeze
+  // per-gate state (which reads those budgets).
   computeSlackBudgets();
   std::vector<LRSubproblem::GateSnapshot> snapshots = buildSnapshots();
 
   // Phase B: Score every snapshot independently. Each worker uses its own
   // ArcDelayCalc copy (arc_delay_calc_ is single-threaded shared state); the
   // copy is cached per worker thread and refreshed if the source changes. With
-  // a zero-worker pool this runs inline on the calling thread.
+  // a zero-worker pool, this runs inline on the calling thread.
   const float safety = lr_params_.budget_safety_factor;
   sta::ArcDelayCalc* const src = sta_->arcDelayCalc();
   const std::vector<LRSubproblem::GateDecision> decisions
@@ -693,25 +693,7 @@ float GlobalSizingPolicy::computeAutoTimingWeight(const LRParams& params) const
 
     leakages.push_back(subproblem_->leakageOrArea(cell));
 
-    // Per-gate timing pressure used to anchor the leakage<->timing scale.
-    //
-    // This medians ONLY the output-cone term Σλ·d_out, NOT the full cost
-    // function. The upstream-Cin term is deliberately excluded here even
-    // though it is part of evaluateCell's cost.
-    //
-    // Reason: computeAutoTimingWeight calibrates a gain, so it must be
-    // anchored to the *actionable* timing pressure - the part of the
-    // timing cost that varies as a gate is resized and therefore trades
-    // against leakage in the argmin. d_out swings 2-3x across candidate
-    // cells, so its level is a faithful proxy for that actionable swing.
-    // The upstream-Cin term's level is a full upstream gate delay d_U
-    // that is almost entirely a constant w.r.t. this gate's cell choice
-    // (intrinsic delay + the driver's other-fanout load); its level is
-    // a DC offset, not a signal. Folding it in inflated T_med ~2x,
-    // collapsed tw ~2x, and starved the output-cone term - see
-    // notes_lr/08_upstream_cin_tw_regression.md. tw cancels in
-    // evaluateCell's timing-vs-timing comparison, so the upstream-Cin
-    // term still works correctly at the output-cone-anchored tw.
+    // Per-gate timing pressure used to anchor the leakage<->timing scale
     float gate_t = 0.0f;
     bool has_pressure = false;
     std::unique_ptr<sta::InstancePinIterator> pit(network_->pinIterator(inst));
@@ -981,8 +963,8 @@ void GlobalSizingPolicy::iterate()
     }
   }
 
-  // Journal will always be open and regardless of how the loop exited,
-  // we need to restore to the best checkpoint here
+  // Journal will always be open and regardless of how the loop exited, we need
+  // to restore to the best checkpoint here.
   resizer_.journalRestore();
 
   const DesignSnap post = computeDesignSnap();

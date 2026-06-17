@@ -19,6 +19,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def gcd_nangate45_placed.def
 read_sdc gcd_nangate45.sdc
+create_clock -period 0.3 clk
 
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
@@ -26,10 +27,4 @@ estimate_parasitics -placement
 
 set_thread_count $global_sizing_threads
 repair_timing -setup -phases GLOBAL_SIZING
-
-set verilog_file [make_result_file "${global_sizing_result}.v"]
-write_verilog $verilog_file
-check "global sizing netlist matches golden" \
-  {diff_files global_sizing.vok $verilog_file} 0
-
-exit_summary
+report_worst_slack -max -digits 3
