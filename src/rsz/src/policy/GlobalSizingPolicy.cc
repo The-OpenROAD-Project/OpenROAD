@@ -991,6 +991,10 @@ void GlobalSizingPolicy::iterate()
              sta::delayAsString(wns_pre, 3, sta_),
              sta::delayAsString(tns_pre, 1, sta_));
 
+  // Outer journal: Wraps presize + LR. Final accept compares post-LR WNS to
+  // wns_pre so a presize that regressed WNS but was rescued by LR (or was net
+  // worse and LR could not recover) is committed or rolled back as a single
+  // decision. Inner LR-loop checkpoints nest under this outer ECO.
   resizer_.journalBegin();
 
   applyPresize(lr_params_.presize_mode);
@@ -1009,16 +1013,11 @@ void GlobalSizingPolicy::iterate()
   const float wns_eps = 1e-12f;
   LRParams iter_params = lr_params_;
 
-  float best_wns = wns_pre;
-  if (presize_replacements > 0) {
-    const float presize_wns = sta::delayAsFloat(sta_->worstSlack(policy_max_));
-    if (!resizer_.overMaxArea()) {
-      // Preserve a successful presize pass before the loop can stop early.
-      resizer_.journalEnd();
-      resizer_.journalBegin();
-      best_wns = presize_wns;
-    }
-  }
+  // LR oscillation baseline = WNS at the moment the inner LR journal opens
+  // (post-presize). The inner loop checkpoints whenever it matches or beats
+  // this; the outer decision below judges whether the final state beat wns_pre.
+  float best_wns = sta::delayAsFloat(sta_->worstSlack(policy_max_));
+
   int total_committed = 0;
   int total_attempted = 0;
   int total_upsizes = 0;
@@ -1138,9 +1137,28 @@ void GlobalSizingPolicy::iterate()
     }
   }
 
-  // Journal will always be open and regardless of how the loop exited, we need
-  // to restore to the best checkpoint here.
+  // Inner LR journal: Always open at loop exit; undo any drift past the last
+  // checkpoint so the live state matches the best LR achieved (or post-presize
+  // if LR never checkpointed).
   resizer_.journalRestore();
+
+  // Outer journal: Commit if the final state beats the truly-original WNS and
+  // stays within the area budget; otherwise roll back presize + LR entirely.
+  const float wns_after = sta::delayAsFloat(sta_->worstSlack(policy_max_));
+  const bool outer_accept
+      = sta::fuzzyGreaterEqual(wns_after, wns_pre) && !resizer_.overMaxArea();
+  if (outer_accept) {
+    resizer_.journalEnd();
+  } else {
+    debugPrint(logger_,
+               RSZ,
+               "global_sizing",
+               1,
+               "Outer rollback: WNS {} < pre {} (or overMaxArea)",
+               sta::delayAsString(wns_after, 3, sta_),
+               sta::delayAsString(wns_pre, 3, sta_));
+    resizer_.journalRestore();
+  }
 
   const DesignSnap post = computeDesignSnap();
   const float wns_post = sta::delayAsFloat(sta_->worstSlack(policy_max_));
