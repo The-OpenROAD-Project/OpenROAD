@@ -1076,6 +1076,7 @@ int TritonRoute::main()
   if (!router_cfg_->SINGLE_STEP_DR) {
     endFR();
   }
+  logger_->info(DRT, 501, "Runtime: {:.2f}s", timer.elapsed());
   return 0;
 }
 

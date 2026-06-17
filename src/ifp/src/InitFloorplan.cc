@@ -126,6 +126,7 @@ void InitFloorplan::initFloorplan(
                       row_parity,
                       flipped_sites,
                       gap);
+  logger_->info(IFP, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 // The base_site determines the single-height rows.  For hybrid rows it is
