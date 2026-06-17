@@ -4,8 +4,9 @@
 // The density force is calculated by solving the Poisson equation.
 // Derived from UCSD's DG-RePlAce (github.com/ABKGroup/DG-RePlAce,
 // BSD-3-Clause, Copyright (c) The Regents of the University of California),
-// via the Kokkos conversion in PR #5352. Per the DG-RePlAce sources, the
-// Poisson solver was originally developed by Jaekyung Kim (POSTECH).
+// via the Kokkos conversion in PR #5352. The Poisson solver itself was
+// originally written by Jaekyung Im (jkim97@postech.ac.kr, POSTECH); we
+// thank him for his contribution.
 
 #pragma once
 
