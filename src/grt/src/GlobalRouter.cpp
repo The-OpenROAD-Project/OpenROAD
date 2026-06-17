@@ -365,7 +365,14 @@ void GlobalRouter::startIncremental()
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
-    initFastRoute(min_layer, max_layer);
+    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+    if (use_cugr_) {
+      odb::PtrSet<odb::dbNet> clock_nets;
+      findClockNets(nets, clock_nets);
+
+      cugr_->setCongestionIterations(congestion_iterations_);
+      cugr_->init(min_layer, max_layer, clock_nets);
+    }
   }
   grouter_cbk_ = new GRouteDbCbk(this);
   grouter_cbk_->addOwner(block_);
@@ -4620,6 +4627,9 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
     }
     db_net_map_[db_net] = net;
     updateNetPins(net);
+    if (use_cugr_) {
+      cugr_->updateNet(db_net);
+    }
     return net;
   }
   return nullptr;
@@ -5390,6 +5400,10 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
+  if (use_cugr_) {
+    addDirtyNet(db_net1);
+    return;
+  }
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
   // Try to connect the routing of the two nets
@@ -6177,23 +6191,28 @@ AbstractGrouteRenderer* GlobalRouter::getRenderer()
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
+  if (use_cugr_) {
+    cugr_->updateNet(net);
+  }
+
   db_net_map_[net]->setDirtyNet(true);
   db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
 }
 
-void GlobalRouter::updateCUGRNet(odb::dbNet* net)
-{
-  if (use_cugr_) {
-    cugr_->updateNet(net);
-  }
-}
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
     pa->updateDirtyPinAccess();
   }
+
+  if (use_cugr_) {
+    cugr_->routeIncremental();
+    routes_ = cugr_->getRoutes();
+    return {};
+  }
+
   std::vector<Net*> dirty_nets;
 
   if (!initialized_) {

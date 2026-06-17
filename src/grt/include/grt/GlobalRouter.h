@@ -237,7 +237,6 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  void updateCUGRNet(odb::dbNet* net);
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
