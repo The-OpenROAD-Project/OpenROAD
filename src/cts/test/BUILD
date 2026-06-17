@@ -51,6 +51,7 @@ COMPULSORY_TESTS = [
     "sink_clustering_collision",
     "skip_nets",
     "twice",
+    "virtual_clock_latency",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -215,6 +216,9 @@ filegroup(
                 "gated_clock2.def",
             ],
             "twice": [
+                "16sinks.def",
+            ],
+            "virtual_clock_latency": [
                 "16sinks.def",
             ],
         }.get(test_name, []),
