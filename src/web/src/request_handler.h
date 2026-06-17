@@ -95,6 +95,8 @@ struct WebSocketRequest
     kClockTree,
     kClockTreeHighlight,
     kSlackHistogram,
+    kFanoutHistogram,
+    kSelectFanoutBin,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -231,6 +233,8 @@ class SelectHandler
                                 SessionState& state);
   WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
                                        SessionState& state);
+  WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
+                                          SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -276,6 +280,7 @@ class TimingHandler
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
   WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
