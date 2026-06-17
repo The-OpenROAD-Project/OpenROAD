@@ -691,42 +691,68 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
+// The display-control accessors below dereference the (Qt) main_window.
+// In headless/web mode the Qt GUI is never shown, so main_window is null:
+// degrade gracefully (mirrors the guards in register/unregisterRenderer)
+// instead of crashing.  This lets gui::Renderer::checkDisplayControl() be
+// called safely from the web tile renderer's debug-graphics overlay.
 void Gui::setDisplayControlsColor(const std::string& name,
                                   const Painter::Color& color)
 {
+  if (main_window == nullptr) {
+    return;
+  }
   const QColor qcolor(color.r, color.g, color.b, color.a);
   main_window->getControls()->setControlByPath(name, qcolor);
 }
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+  if (main_window == nullptr) {
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, true, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsVisible(const std::string& name)
 {
+  if (main_window == nullptr) {
+    return true;  // no Qt controls (headless/web): treat as visible
+  }
   return main_window->getControls()->checkControlByPath(name, true);
 }
 
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
+  if (main_window == nullptr) {
+    return;
+  }
   main_window->getControls()->setControlByPath(
       name, false, value ? Qt::Checked : Qt::Unchecked);
 }
 
 bool Gui::checkDisplayControlsSelectable(const std::string& name)
 {
+  if (main_window == nullptr) {
+    return false;  // no Qt controls (headless/web): default not selectable
+  }
   return main_window->getControls()->checkControlByPath(name, false);
 }
 
 void Gui::saveDisplayControls()
 {
+  if (main_window == nullptr) {
+    return;
+  }
   main_window->getControls()->save();
 }
 
 void Gui::restoreDisplayControls()
 {
+  if (main_window == nullptr) {
+    return;
+  }
   main_window->getControls()->restore();
 }
 
