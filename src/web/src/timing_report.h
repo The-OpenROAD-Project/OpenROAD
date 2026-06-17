@@ -9,6 +9,10 @@
 
 #include "boost/json/object.hpp"
 
+namespace odb {
+class dbBlock;
+}  // namespace odb
+
 namespace sta {
 class dbSta;
 class Path;
@@ -67,6 +71,19 @@ struct ChartFilters
   std::vector<std::string> clocks;
 };
 
+struct FanoutHistogramBin
+{
+  int lower;  // bin lower edge (inclusive, in loads)
+  int upper;  // bin upper edge (exclusive, in loads)
+  int count;  // number of nets in this bin
+};
+
+struct FanoutHistogramResult
+{
+  std::vector<FanoutHistogramBin> bins;
+  int total_nets = 0;
+};
+
 class TimingReport
 {
  public:
@@ -104,5 +121,10 @@ boost::json::object serializeTimingPaths(
     const std::vector<TimingPathSummary>& paths);
 boost::json::object serializeSlackHistogram(const SlackHistogramResult& h);
 boost::json::object serializeChartFilters(const ChartFilters& f);
+
+// Net fanout histogram (loads = term_count - 1, skipping power/ground nets).
+// Free function: depends only on odb, not STA.
+FanoutHistogramResult computeFanoutHistogram(odb::dbBlock* block);
+boost::json::object serializeFanoutHistogram(const FanoutHistogramResult& h);
 
 }  // namespace web
