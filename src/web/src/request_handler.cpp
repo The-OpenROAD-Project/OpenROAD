@@ -991,6 +991,13 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
       throw std::runtime_error("no design loaded");
     }
 
+    // odb is not thread-safe against design-mutating Tcl commands, and the
+    // descriptor/getProperties work below is not thread-safe against STA;
+    // serialize the entire net walk and inspection with the shared STA lock.
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
+    ScopedDbuFormat dbu_fmt(block, use_dbu);
+
     std::vector<odb::dbNet*> matched;
     for (odb::dbNet* net : block->getNets()) {
       if (net->getSigType().isSupply()) {
@@ -1020,10 +1027,6 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
     root["selection_limit"] = static_cast<int>(kMaxFanoutSelection);
 
     if (!matched.empty()) {
-      // STA-touching code (descriptors, getProperties) must hold the
-      // shared STA lock.
-      std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-
       auto* registry = gui::DescriptorRegistry::instance();
       gui::SelectionSet new_selection;
       for (auto* n : matched) {

@@ -364,13 +364,17 @@ export class ChartsWidget {
 
     async _fetchHistogram() {
         try {
+            // Remember which tab issued this request so a response that arrives
+            // after the user switches tabs can be discarded instead of being
+            // rendered/interpreted as the wrong histogram type.
+            const requestedTab = this._currentTab;
             let req;
-            if (this._currentTab === 'fanout') {
+            if (requestedTab === 'fanout') {
                 req = { type: 'fanout_histogram' };
             } else {
                 req = {
                     type: 'slack_histogram',
-                    is_setup: this._currentTab === 'setup',
+                    is_setup: requestedTab === 'setup',
                 };
                 if (this._pathGroupSelect.value) {
                     req.path_group = this._pathGroupSelect.value;
@@ -380,10 +384,14 @@ export class ChartsWidget {
                 }
             }
             const data = await this._app.websocketManager.request(req);
+            // Stale response: the user switched tabs while this was in flight.
+            if (this._currentTab !== requestedTab) {
+                return;
+            }
             this._histogramData = data;
             this._syncView();
 
-            if (this._currentTab === 'fanout') {
+            if (requestedTab === 'fanout') {
                 const total = data.total_nets || 0;
                 this._statusLabel.textContent = `${total} nets`;
             } else {
@@ -680,6 +688,7 @@ export class ChartsWidget {
                 type: 'select_fanout_bin',
                 lower: bar.lower,
                 upper: bar.upper,
+                use_dbu: this._app.showDbu,
             });
             if (resp && resp.truncated) {
                 console.warn(

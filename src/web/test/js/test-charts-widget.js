@@ -354,4 +354,56 @@ describe('ChartsWidget fanout tab', () => {
                 app.requests.filter((r) => r.type === 'timing_report').length,
                 0);
         });
+
+    it('forwards the Show DBU flag when selecting a fanout bin',
+        async () => {
+            const { app, widget } = createWidget({
+                fanout_histogram: fanoutResponse,
+            });
+            app.showDbu = true;
+            widget._selectTab('fanout');
+            await widget.update();
+            widget._bars = [{
+                x: 0, y: 0, width: 160, height: 120,
+                count: 12, lower: 1, upper: 2,
+            }];
+            widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+            await widget._handleDblClick({ clientX: 50, clientY: 50 });
+            const sel = app.requests.find(
+                (r) => r.type === 'select_fanout_bin');
+            assert.ok(sel, 'select_fanout_bin is requested');
+            assert.equal(sel.use_dbu, true);
+        });
+
+    it('discards a histogram response after the tab changes', async () => {
+        // A request whose resolution we control, so we can switch tabs while
+        // it is still in flight.
+        let resolveReq;
+        const requests = [];
+        const app = {
+            requests,
+            websocketManager: {
+                request(msg) {
+                    requests.push(msg);
+                    return new Promise((resolve) => { resolveReq = resolve; });
+                },
+            },
+            focusComponent() {},
+        };
+        installCanvasStubs();
+        const widget = new ChartsWidget(app, () => {});
+        document.body.appendChild(widget.element);
+
+        widget._currentTab = 'fanout';
+        const pending = widget._fetchHistogram();
+        // User switches back to Setup before the fanout response arrives.
+        widget._currentTab = 'setup';
+        resolveReq(fanoutResponse);
+        await pending;
+
+        // The stale fanout payload must not be adopted as the active data,
+        // nor reported in the (now Setup) status label.
+        assert.notEqual(widget._histogramData, fanoutResponse);
+        assert.doesNotMatch(widget._statusLabel.textContent, /20 nets/);
+    });
 });
