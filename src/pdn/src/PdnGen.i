@@ -4,6 +4,7 @@
 %{
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
+#include "utl/timer.h"
 #include <array>
 #include <regex>
 #include <memory>
@@ -46,6 +47,17 @@ using utl::PDN;
 %inline %{
 
 namespace pdn {
+
+void run_pdngen(bool trim, bool add_pins, const char* report_file)
+{
+  utl::Timer timer;
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->checkSetup();
+  pdngen->buildGrids(trim);
+  pdngen->writeToDb(add_pins, report_file);
+  pdngen->resetShapes();
+  ord::getLogger()->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
+}
 
 void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {

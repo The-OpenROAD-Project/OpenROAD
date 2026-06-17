@@ -61,10 +61,7 @@ proc pdngen { args } {
     set failed_via_report $keys(-failed_via_report)
   }
 
-  pdn::check_setup
-  pdn::build_grids $trim
-  pdn::write_to_db $add_pins $failed_via_report
-  pdn::reset_shapes
+  pdn::run_pdngen $trim $add_pins $failed_via_report
 }
 
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
