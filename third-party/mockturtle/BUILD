@@ -25,3 +25,14 @@ cc_library(
         "@spdlog",
     ],
 )
+
+cc_test(
+    name = "mockturtle_emap_test",
+    srcs = ["test/algorithms/emap.cpp"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mockturtle",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
