@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    canonicalizeCell, canonicalizeForSkin,
+    canonicalizeCell, canonicalizeForSkin, scopeCssSelector,
 } from '../../src/schematic-widget.js';
 
 // Helper: a server-style cell object.
@@ -198,4 +198,66 @@ describe('canonicalizeForSkin', () => {
         const json = { foo: 1 };
         assert.strictEqual(canonicalizeForSkin(json), json);
     });
+});
+
+// netlistsvg's skin injects a <style> with unscoped element selectors that
+// would otherwise leak document-wide (e.g. `svg { fill:none }` clobbering every
+// inline-SVG icon in the app). scopeCssSelector() prefixes each selector with
+// the widget container so the skin only styles the schematic.
+describe('scopeCssSelector', () => {
+    const SCOPE = '.schematic-widget';
+
+    it('prefixes a bare element selector', () => {
+        assert.equal(scopeCssSelector('svg', SCOPE), '.schematic-widget svg');
+    });
+
+    it('prefixes each selector in a comma list independently', () => {
+        assert.equal(
+            scopeCssSelector('svg, text, .splitjoinBody', SCOPE),
+            '.schematic-widget svg, .schematic-widget text, '
+                + '.schematic-widget .splitjoinBody');
+    });
+
+    it('trims whitespace around list members', () => {
+        assert.equal(
+            scopeCssSelector('  svg ,  text  ', SCOPE),
+            '.schematic-widget svg, .schematic-widget text');
+    });
+
+    it('is idempotent: already-scoped selectors are left untouched', () => {
+        const once = scopeCssSelector('svg, text', SCOPE);
+        assert.equal(scopeCssSelector(once, SCOPE), once);
+    });
+
+    it('does not re-prefix a selector that already starts with the scope', () => {
+        assert.equal(
+            scopeCssSelector('.schematic-widget svg', SCOPE),
+            '.schematic-widget svg');
+        // The scope followed by a combinator or class/pseudo is still scoped.
+        assert.equal(
+            scopeCssSelector('.schematic-widget>svg', SCOPE),
+            '.schematic-widget>svg');
+        assert.equal(
+            scopeCssSelector('.schematic-widget.active', SCOPE),
+            '.schematic-widget.active');
+        assert.equal(
+            scopeCssSelector('.schematic-widget:hover', SCOPE),
+            '.schematic-widget:hover');
+    });
+
+    it('still scopes a different class that shares the scope as a prefix', () => {
+        // `.schematic-widget-foo` is a distinct class, not the scope itself.
+        assert.equal(
+            scopeCssSelector('.schematic-widget-foo', SCOPE),
+            '.schematic-widget .schematic-widget-foo');
+    });
+
+    it('still scopes a selector that merely contains the scope word elsewhere',
+       () => {
+           // The scope only counts as "already applied" at the start, so a
+           // descendant reference to it elsewhere must still be prefixed.
+           assert.equal(
+               scopeCssSelector('div .schematic-widget', SCOPE),
+               '.schematic-widget div .schematic-widget');
+       });
 });

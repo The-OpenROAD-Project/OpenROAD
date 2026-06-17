@@ -389,6 +389,7 @@ export class SchematicWidget {
             this._svgIdToInstName.clear();
             this.svgContainer.innerHTML = svgString;
             this._svgEl = this.svgContainer.querySelector('svg');
+            this._scopeSkinStyles();
 
             // Build SVG-id → ODB instance-name map.
             // netlistsvg renders each cell with id="cell_<instName>", so we
@@ -487,6 +488,59 @@ export class SchematicWidget {
         }
     }
 
+    // netlistsvg's skin embeds a <style> with unscoped element selectors
+    // (e.g. `svg { fill:none; stroke:#000 }`, `text { fill:#000 }`). A <style>
+    // inside an inline SVG is NOT scoped to that SVG -- once injected into the
+    // page its rules apply document-wide, clobbering the fill/stroke of every
+    // other inline-SVG icon in the app (the inspector/ruler buttons rendered as
+    // black, unfilled outlines). Prefix each rule with the widget's container
+    // class so the skin only styles this schematic.
+    _scopeSkinStyles() {
+        if (!this._svgEl) return;
+        const scope = '.schematic-widget';
+        // Recurse so selectors nested inside @media/@supports blocks (which
+        // expose .cssRules but no .selectorText) are scoped too.
+        const scopeRules = (rules) => {
+            for (const rule of rules) {
+                if (rule.selectorText) {
+                    rule.selectorText = scopeCssSelector(rule.selectorText, scope);
+                } else if (rule.cssRules) {
+                    scopeRules(rule.cssRules);
+                }
+            }
+        };
+        for (const styleEl of this._svgEl.querySelectorAll('style')) {
+            const sheet = styleEl.sheet;
+            if (!sheet) continue;
+            try {
+                scopeRules(sheet.cssRules);
+            } catch (e) {
+                continue;  // Should not happen for same-origin inline styles.
+            }
+        }
+    }
+}
+
+// Prefix every comma-separated selector in `selectorText` with `scope` so the
+// rule only matches descendants of the scope container. Idempotent: a selector
+// already carrying the scope is left untouched, so a re-render never nests the
+// prefix. "Already scoped" means it begins with `scope` and the next character
+// is not part of an identifier -- so `.scope`, `.scope svg`, `.scope>svg` and
+// `.scope.active` are kept, while a different class like `.scope-foo` is still
+// scoped.
+export function scopeCssSelector(selectorText, scope) {
+    return selectorText
+        .split(',')
+        .map((sel) => {
+            const trimmed = sel.trim();
+            if (!trimmed) return '';
+            const after = trimmed.charAt(scope.length);
+            const alreadyScoped = trimmed.startsWith(scope)
+                && (after === '' || !/[\w-]/.test(after));
+            return alreadyScoped ? trimmed : `${scope} ${trimmed}`;
+        })
+        .filter(Boolean)
+        .join(', ');
 }
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
