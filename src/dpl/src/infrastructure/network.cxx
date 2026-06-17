@@ -18,6 +18,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,8 +314,6 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
   };
   const int top_pwr = resolve(top_has_pwr, top_has_gnd);
   const int bot_pwr = resolve(bot_has_pwr, bot_has_gnd);
-  // std::cout << master->getConstName() << ", height: " << master->getHeight()
-  //       << ", return: top_pwr:" << top_pwr << " bot_pwr:" << bot_pwr << "\n";
   return {top_pwr, bot_pwr};
 }
 
@@ -341,6 +340,15 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   auto master_pwrs = getMasterPwrs(db_master);
   master->setTopPowerType(master_pwrs.first);
   master->setBottomPowerType(master_pwrs.second);
+  debugPrint(logger_,
+             utl::DPL,
+             "rail_align",
+             1,
+             "{}, height: {}, return: top_pwr:{} bot_pwr:{}",
+             db_master->getConstName(),
+             db_master->getHeight(),
+             master_pwrs.first,
+             master_pwrs.second);
   master->clearEdges();
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;
