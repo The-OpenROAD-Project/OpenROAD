@@ -6,6 +6,23 @@
 # binary can start with cleared runfiles env vars.
 set -euo pipefail
 
+# Locate the real runfiles.bash within this test's own runfiles (it is a data
+# dep via @bazel_tools//tools/bash/runfiles). The install.sh cleanup test below
+# seeds a copy into a fake runfiles tree so the script under test can perform
+# its own runfiles initialization. rlocation is unreliable here because of
+# bzlmod repo-mapping, so resolve the path directly from the runfiles dir or
+# manifest, matching the canonical runfiles.bash lookup.
+RUNFILES_BASH_PATH=bazel_tools/tools/bash/runfiles/runfiles.bash
+RUNFILES_BASH_SRC="${RUNFILES_DIR:-/dev/null}/$RUNFILES_BASH_PATH"
+if [ ! -f "$RUNFILES_BASH_SRC" ]; then
+    RUNFILES_BASH_SRC="$(grep -sm1 "^$RUNFILES_BASH_PATH " \
+        "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')"
+fi
+if [ ! -f "$RUNFILES_BASH_SRC" ]; then
+    echo "FAIL: cannot locate runfiles.bash in test runfiles"
+    exit 1
+fi
+
 # Resolve to absolute paths now: the script cd's into a temp dir below, after
 # which these runfiles-relative args would no longer resolve.
 TARFILE="$(realpath "$1")"
@@ -78,9 +95,9 @@ fi
 # ---------------------------------------------------------------------------
 # install.sh artifact cleanup test.
 #
-# Runs the real, unmodified bazel/install.sh inside a self-contained fake
-# workspace (a fake `bazel info bazel-bin`, a minimal tarball, and synthetic
-# desktop/icon sources) so no live bazel is needed. Verifies that install.sh:
+# Runs the real, unmodified bazel/install.sh against a self-contained fake
+# runfiles tree (a minimal tarball + synthetic desktop entry, with the icon as
+# a source) so no live bazel is needed. Verifies that install.sh:
 #   1. removes stale binary runfiles before re-extracting (existing cleanup);
 #   2. installs the GUI launcher + icon for a GUI build, with the
 #      @OPENROAD_PREFIX@/Exec placeholders substituted;
@@ -88,34 +105,35 @@ fi
 #   4. removes the stale launcher + icon when a later install is NOT a GUI
 #      build (the unconditional GUI cleanup).
 # ---------------------------------------------------------------------------
-SHIM_DIR=$(mktemp -d)     # holds the fake `bazel` on PATH
+RF=$(mktemp -d)           # fake runfiles tree install.sh resolves artifacts from
 WS=$(mktemp -d)           # BUILD_WORKSPACE_DIRECTORY (icon source lives here)
-BB=$(mktemp -d)           # fake bazel-bin (tarball + desktop entry live here)
 PREFIX=$(mktemp -d)       # install destination (DEST_DIR)
 FAKE_HOME=$(mktemp -d)    # controls APPS_DIR (~/.local/share/applications)
-trap 'rm -rf "$DEST_DIR" "$WORK_DIR" "$SHIM_DIR" "$WS" "$BB" "$PREFIX" "$FAKE_HOME"' EXIT
+trap 'rm -rf "$DEST_DIR" "$WORK_DIR" "$RF" "$WS" "$PREFIX" "$FAKE_HOME"' EXIT
 
-# Fake `bazel`: install.sh only ever calls `bazel info bazel-bin`.
-cat > "$SHIM_DIR/bazel" <<EOF
-#!/usr/bin/env bash
-[ "\$1" = "info" ] && [ "\$2" = "bazel-bin" ] && { echo "$BB"; exit 0; }
-exit 1
-EOF
-chmod +x "$SHIM_DIR/bazel"
+# install.sh resolves its data deps from runfiles via rlocation, so stage a
+# self-contained fake runfiles tree mirroring the real layout: artifacts under
+# _main/ (the main repo's canonical name) and a _repo_mapping translating the
+# apparent module name "openroad" to it. A copy of the real runfiles.bash lets
+# install.sh's own runfiles initialization succeed.
+mkdir -p "$RF/bazel_tools/tools/bash/runfiles" \
+         "$RF/_main/packaging" "$RF/_main/src/gui" \
+         "$WS/src/gui/resources"
+cp "$RUNFILES_BASH_SRC" "$RF/bazel_tools/tools/bash/runfiles/runfiles.bash"
+printf ',openroad,_main\n' > "$RF/_repo_mapping"
 
 # Minimal tarball: install.sh just extracts it into PREFIX/bin; the binary
 # itself is irrelevant to the cleanup logic, so a dummy file keeps this fast.
-mkdir -p "$BB/packaging" "$BB/src/gui" "$WS/src/gui/resources"
 TAR_SRC=$(mktemp -d)
 echo "dummy" > "$TAR_SRC/openroad"
-tar -cf "$BB/packaging/openroad.tar" -C "$TAR_SRC" .
+tar -cf "$RF/_main/packaging/openroad.tar" -C "$TAR_SRC" .
 rm -rf "$TAR_SRC"
 
 # Synthetic icon + desktop template mirroring //src/gui:desktop_entry: the
 # template carries the @OPENROAD_PREFIX@ placeholder and an "Exec=openroad ..."
 # line, both rewritten by install.sh at install time.
 echo "icon-v1" > "$WS/src/gui/resources/icon.png"
-cat > "$BB/src/gui/openroad.desktop" <<'EOF'
+cat > "$RF/_main/src/gui/openroad.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=OpenROAD
@@ -124,12 +142,15 @@ Icon=@OPENROAD_PREFIX@/share/openroad/gui/icon.png
 Categories=Development;Electronics
 EOF
 
-# Run the real install.sh; arg $1 controls OPENROAD_INSTALL_GUI.
+# Run the real install.sh; arg $1 controls OPENROAD_INSTALL_GUI. RUNFILES_DIR
+# points at the fake tree; RUNFILES_MANIFEST_FILE is cleared so the runfiles
+# library uses directory-based resolution against it.
 run_install() {
-    env PATH="$SHIM_DIR:$PATH" \
+    env -u RUNFILES_MANIFEST_FILE \
         HOME="$FAKE_HOME" \
         BUILD_WORKSPACE_DIRECTORY="$WS" \
         OPENROAD_INSTALL_GUI="$1" \
+        RUNFILES_DIR="$RF" \
         bash "$INSTALL_SH" "$PREFIX" > /dev/null
 }
 
