@@ -2176,6 +2176,47 @@ Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
   return Point{tray_center_x, tray_center_y};
 }
 
+bool MBFF::IsValidTray(dbInst* tray)
+{
+  const sta::Cell* cell = network_->dbToSta(tray->getMaster());
+  if (cell == nullptr) {
+    return false;
+  }
+  const sta::LibertyCell* lib_cell = network_->getLibertyCell(cell);
+  if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
+    return false;
+  }
+
+  // We don't want the test_cell which lacks global properties
+  const sta::LibertyCell* base_cell = network_->libertyCell(cell);
+  if (base_cell->isClockGate() || resizer_->dontUse(base_cell)) {
+    return false;
+  }
+
+  int q = 0;
+  int qn = 0;
+  int scan = 0;
+  int supply = 0;
+  int preset = 0;
+  int clear = 0;
+  int clock = 0;
+
+  for (dbITerm* iterm : tray->getITerms()) {
+    q += (network_->isQPin(iterm) && !network_->isInvertingQPin(iterm));
+    qn += (network_->isQPin(iterm) && network_->isInvertingQPin(iterm));
+    scan += (network_->isScanIn(iterm) || network_->isScanEnable(iterm));
+    supply += (network_->isSupplyPin(iterm));
+    preset += (network_->isPresetPin(iterm));
+    clear += (network_->isClearPin(iterm));
+    clock += (network_->isClockPin(iterm));
+  }
+
+  // #D = max(q, qn)
+  return std::max(q, qn) >= 2 && network_->getNumD(tray) == std::max(q, qn)
+         && clock + q + qn + scan + supply + preset + clear + std::max(q, qn)
+                == tray->getITerms().size();
+}
+
 void MBFF::ReadLibs()
 {
   test_idx_ = 0;
@@ -2184,7 +2225,7 @@ void MBFF::ReadLibs()
       const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
-      if (!network_->isValidTray(tmp_tray)) {
+      if (!IsValidTray(tmp_tray)) {
         dbInst::destroy(tmp_tray);
         --test_idx_;
         continue;
