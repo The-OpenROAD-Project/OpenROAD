@@ -23,12 +23,12 @@ close $f
 set ord_exe [info nameofexecutable]
 
 # After the exec/run step
-catch {exec $ord_exe -log $log_file -no_splash -no_init -exit $test_script}
+catch { exec $ord_exe -log $log_file -no_splash -no_init -exit $test_script }
 
 # 4. explicitly check file exists before opening it
 if { ![file exists $log_file] } {
-    puts "FAIL: Log file does not exist: $log_file"
-    exit 1
+  puts "FAIL: Log file does not exist: $log_file"
+  exit 1
 }
 
 set f [open $log_file r]
@@ -36,28 +36,32 @@ set content [read $f]
 close $f
 
 # 1. A real OR command appears as "cmd: <command>"
-if { [regexp "cmd: suppress_message ODB 127" $content] && \
-     [regexp "cmd: help help" $content] } {
-    puts "PASS: Found logged commands"
+if {
+  [regexp "cmd: suppress_message ODB 127" $content] &&
+  [regexp "cmd: help help" $content]
+} {
+  puts "PASS: Found logged commands"
 } else {
-    puts "FAIL: Logged commands not found"
-    exit 1
+  puts "FAIL: Logged commands not found"
+  exit 1
 }
 
 if { [regexp "cmd: suppress_message ORD 30" $content] } {
-    puts "PASS: Found nested sourced command"
+  puts "PASS: Found nested sourced command"
 } else {
-    puts "FAIL: Nested sourced command not found"
-    exit 1
+  puts "FAIL: Nested sourced command not found"
+  exit 1
 }
 
 # 2. Tcl builtins do NOT appear: assert "cmd: set", "cmd: if", "cmd: puts", "cmd: while" are all absent
-if { [regexp "cmd: set" $content] || [regexp "cmd: if" $content] || \
-     [regexp "cmd: puts" $content] || [regexp "cmd: while" $content] } {
-    puts "FAIL: internal commands logged"
-    exit 1
+if {
+  [regexp "cmd: set" $content] || [regexp "cmd: if" $content] ||
+  [regexp "cmd: puts" $content] || [regexp "cmd: while" $content]
+} {
+  puts "FAIL: internal commands logged"
+  exit 1
 } else {
-    puts "PASS: internal commands not logged"
+  puts "PASS: internal commands not logged"
 }
 
 puts "pass"
