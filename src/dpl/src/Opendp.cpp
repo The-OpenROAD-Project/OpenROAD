@@ -30,6 +30,7 @@
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -134,6 +135,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int row_search_window,
                                const double drc_penalty)
 {
+  utl::Timer timer;
   incremental_ = incremental;
   use_negotiation_ |= use_negotiation;
   importDb();
@@ -277,6 +279,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     findDisplacementStats();
     updateDbInstLocations();
   }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Opendp::updateDbInstLocations()
