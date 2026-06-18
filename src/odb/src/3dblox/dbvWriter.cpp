@@ -181,7 +181,7 @@ void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
       writeDef(external_node, chiplet);
     }
     if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
-      external_node["verilog_file"] = prop->getValue();
+      external_node["verilog_file"] = makeFlowStringList(prop->getValue());
     }
   }
 }
@@ -237,7 +237,7 @@ void DbvWriter::writeDef(YAML::Node& external_node, odb::dbChip* chiplet)
   odb::DefOut def_writer(logger_);
   auto block = chiplet->getBlock();
   def_writer.writeBlock(block, def_file_path.c_str());
-  external_node["DEF_file"] = def_file;
+  external_node["DEF_file"] = makeFlowStringList(def_file);
 }
 
 }  // namespace odb

@@ -8,21 +8,21 @@ Header:
 Design:
   name: "TopDesign"
   external:
-    verilog_file: "top.v"
+    verilog_file: ["top.v"]
 
 ChipletInst:
   soc_inst:
     reference: SoC
     external:
-      verilog_file: "soc.v"
-      sdc_file: "/path/to/soc.sdc"
-      def_file: "/path/to/soc.def"
+      verilog_file: ["soc.v"]
+      sdc_file: ["/path/to/soc.sdc"]
+      def_file: ["/path/to/soc.def"]
   soc_inst_duplicate:
     reference: SoC
     external:
-      verilog_file: "soc.v"
-      sdc_file: "/path/to/soc.sdc"
-      def_file: "/path/to/soc.def"
+      verilog_file: ["soc.v"]
+      sdc_file: ["/path/to/soc.sdc"]
+      def_file: ["/path/to/soc.def"]
 
 Stack:
   soc_inst:

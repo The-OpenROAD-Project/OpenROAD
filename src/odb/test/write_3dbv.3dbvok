@@ -15,7 +15,7 @@ ChipletDef:
     external:
       APR_tech_file: [Nangate45_tech.lef]
       LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
-      DEF_file: SoC.def
+      DEF_file: [SoC.def]
     regions:
       back_reg:
         side: back

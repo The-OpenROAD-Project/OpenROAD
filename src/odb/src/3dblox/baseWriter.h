@@ -26,6 +26,9 @@ class BaseWriter
  protected:
   // Common YAML content writing
   void writeHeader(YAML::Node& header_node);
+  // Builds a flow-style YAML list holding a single string. The 3DBlox spec
+  // requires every external argument to be a YAML list of strings.
+  YAML::Node makeFlowStringList(const std::string& value);
   void writeCoordinates(YAML::Node& coords_node, const odb::Rect& rect);
   void writeCoordinate(YAML::Node& coord_node, const odb::Point& point);
   void logError(const std::string& message);

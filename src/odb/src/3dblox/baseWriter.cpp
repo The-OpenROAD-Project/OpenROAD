@@ -38,6 +38,14 @@ void BaseWriter::writeYamlToFile(const std::string& filename,
   out << root;
 }
 
+YAML::Node BaseWriter::makeFlowStringList(const std::string& value)
+{
+  YAML::Node list_node;
+  list_node.SetStyle(YAML::EmitterStyle::Flow);
+  list_node.push_back(value);
+  return list_node;
+}
+
 void BaseWriter::writeCoordinate(YAML::Node& coord_node,
                                  const odb::Point& point)
 {
