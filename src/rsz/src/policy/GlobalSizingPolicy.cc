@@ -168,7 +168,8 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
   return best;
 }
 
-int GlobalSizingPolicy::applyPresize(const LRParams::PresizeMode mode)
+int GlobalSizingPolicy::applyPresize(const LRParams::PresizeMode mode,
+                                     const bool include_clock_network)
 {
   if (mode == LRParams::PresizeMode::kDisabled) {
     return 0;
@@ -191,6 +192,22 @@ int GlobalSizingPolicy::applyPresize(const LRParams::PresizeMode mode)
   while (iit->hasNext()) {
     sta::Instance* inst = iit->next();
     if (!resizer_.isEditableLogicStdCell(inst)) {
+      continue;
+    }
+    bool is_clock = false;
+    if (!include_clock_network) {
+      std::unique_ptr<sta::InstancePinIterator> port_iter(
+          network_->pinIterator(inst));
+      while (port_iter->hasNext()) {
+        sta::Pin* pin = port_iter->next();
+        if (network_->direction(pin)->isOutput()
+            && !sta_->isClock(pin, sta_->cmdMode())) {
+          is_clock = true;
+          break;
+        }
+      }
+    }
+    if (is_clock) {
       continue;
     }
     ++editable_count;
@@ -1002,7 +1019,7 @@ void GlobalSizingPolicy::iterate()
   // decision. Inner LR-loop checkpoints nest under this outer ECO.
   resizer_.journalBegin();
 
-  applyPresize(lr_params_.presize_mode);
+  applyPresize(lr_params_.presize_mode, lr_params_.include_clock_network);
 
   allocate();
   seedMultipliers(lr_params_);

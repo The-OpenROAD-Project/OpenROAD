@@ -103,7 +103,7 @@ class GlobalSizingPolicy : public OptimizationPolicy
       LRParams::PresizeMode mode,
       PresizeCellCache& presize_cell_cache) const;
   // Apply the selected presize to the live design before LR state is seeded.
-  int applyPresize(LRParams::PresizeMode mode);
+  int applyPresize(LRParams::PresizeMode mode, bool include_clock_network);
   // Discover graph size (edges, endpoints), set dcalc_ap_, size vectors.
   void allocate();
   // Delay-proportional λ seed + WNS-biased μ seed.
