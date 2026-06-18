@@ -6207,7 +6207,6 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
