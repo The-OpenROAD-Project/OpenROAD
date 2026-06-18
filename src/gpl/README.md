@@ -241,7 +241,7 @@ Debug mode requires the GUI. With ORFS, one way to arrange for showing the GUI w
 If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
 
 ```
-#adds padding and gets global placement uniform target density
+# adds padding and gets global placement uniform target density
 get_global_placement_uniform_density -pad_left -pad_right 
 ```
 Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
