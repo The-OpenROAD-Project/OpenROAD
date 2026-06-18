@@ -27,6 +27,8 @@ or_integration_tests(
     simple01-td-repair
     simple01-uniform
     simple01-vcts
+    simple01-vcts-clamp
+    simple01-vcts-noclk
     simple02
     simple02-rd
     simple03
