@@ -2098,6 +2098,15 @@ NetRouteMap FastRouteCore::run()
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
   int last_total_overflow = 0;
+  // Number of times the soft-NDR disable path has restarted the overflow
+  // iterations. Each restart re-runs up to overflow_iterations_ rounds, so
+  // disabling NDR nets one at a time with a full reset per net is O(N) full
+  // loops. When many clock nets carry an (auto-applied) NDR that cannot be
+  // honored, this caused a severe runtime regression (issue #8466). Bound the
+  // number of restarts; once exceeded we disable every remaining congested
+  // NDR net in a single batch instead of one-per-restart.
+  int soft_ndr_resets = 0;
+  const int max_soft_ndr_resets = 4;
   float overflow_reduction_percent = -1;
   // Minimum overflow stagnation
   int minofl_stagnant = 0;
@@ -2348,11 +2357,22 @@ NetRouteMap FastRouteCore::run()
 
         std::vector<int> net_ids;
 
-        // If the congestion is not that high (note that the overflow is
-        // inflated by 100x when there is no capacity available for a NDR net in
-        // a specific edge)
-        if (total_overflow_ < soft_ndr_overflow_th) {
-          // Select one NDR net to be disabled
+        if (soft_ndr_resets >= max_soft_ndr_resets) {
+          // We have already restarted the overflow loop many times, disabling
+          // NDR nets one (or a few) at a time. Disabling nets individually with
+          // a full loop reset per restart is O(N) full overflow loops, which
+          // caused a severe runtime regression when many clock nets carry an
+          // (auto-applied) NDR that cannot be honored (issue #8466). Once the
+          // restart budget is exhausted, disable every remaining congested NDR
+          // net in a single batch so the loop is guaranteed to make progress
+          // and terminate.
+          for (const auto& ndr : graph2d_.getCongestedNDRnets()) {
+            net_ids.push_back(ndr.net_id);
+          }
+        } else if (total_overflow_ < soft_ndr_overflow_th) {
+          // If the congestion is not that high (note that the overflow is
+          // inflated by 100x when there is no capacity available for a NDR net
+          // in a specific edge), select one NDR net to be disabled.
           int net_id = graph2d_.getOneCongestedNDRnet();
           if (net_id != -1) {
             net_ids.push_back(net_id);
@@ -2365,6 +2385,7 @@ NetRouteMap FastRouteCore::run()
         if (!net_ids.empty()) {
           // Apply the soft NDR to the selected list of nets
           applySoftNDR(net_ids);
+          soft_ndr_resets++;
 
           // Reset loop parameters
           overflow_increases = 0;
