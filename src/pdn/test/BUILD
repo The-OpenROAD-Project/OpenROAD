@@ -6,6 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -52,6 +53,7 @@ COMPULSORY_TESTS = [
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
+    "core_grid_with_multiple_bterms",
     "core_grid_with_M6_min_area",
     "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
@@ -279,6 +281,10 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],

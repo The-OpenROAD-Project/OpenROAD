@@ -21,8 +21,8 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
-#include "global.h"
 
 namespace drt {
 class frNet;

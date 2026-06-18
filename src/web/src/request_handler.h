@@ -95,6 +95,8 @@ struct WebSocketRequest
     kClockTree,
     kClockTreeHighlight,
     kSlackHistogram,
+    kFanoutHistogram,
+    kSelectFanoutBin,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
@@ -115,9 +117,12 @@ struct WebSocketRequest
     kDrcUpdateMarker,
     kDrcUpdateCategoryVisibility,
     kDrcHighlight,
+    kSelectNext,
+    kSelectPrev,
     kDebugContinue,
     kDebugCharts,
     kGet3DData,
+    kOverlayTile,
     kUnknown
   };
 
@@ -168,6 +173,10 @@ struct SessionState
 
   gui::Selected current_inspected;
   std::vector<gui::Selected> navigation_history;
+
+  // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
+  gui::SelectionSet selection_set;
+  gui::SelectionSet::const_iterator selection_itr = selection_set.end();
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
@@ -224,8 +233,14 @@ class SelectHandler
                                 SessionState& state);
   WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
                                        SessionState& state);
+  WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
+                                          SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
+  WebSocketResponse handleSelectNext(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
+                                     SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
@@ -265,6 +280,7 @@ class TimingHandler
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
   WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
@@ -302,6 +318,8 @@ class TileHandler
   void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
+  WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);

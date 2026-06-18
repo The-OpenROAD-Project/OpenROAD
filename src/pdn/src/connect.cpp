@@ -47,6 +47,24 @@ Connect::Connect(Grid* grid, odb::dbTechLayer* layer0, odb::dbTechLayer* layer1)
         utl::PDN, 5, "{} must be a routing layer", layer1->getName());
   }
 
+  // Backside-power sanity check. A standard cut-layer via cannot bridge
+  // a front-side metal to a backside metal (BPR / BM* / BRDL); PDN cannot
+  // create TSVs or backside cut vias, so the connection has to be
+  // provided by a tap/bridge cell whose layout already stitches the two
+  // sides together. Refuse the request rather than silently building a
+  // via that won't exist on the die.
+  if (layer0_->isBackside() != layer1_->isBackside()) {
+    grid_->getLogger()->error(
+        utl::PDN,
+        1200,
+        "Connect rule layers ({}, {}) span the front-side/backside "
+        "boundary. PDN cannot create TSVs or vias across this boundary; "
+        "the connection must come from a tap/bridge cell that internally "
+        "stitches the two sides.",
+        layer0_->getName(),
+        layer1_->getName());
+  }
+
   if (layer0_->getRoutingLevel() > layer1_->getRoutingLevel()) {
     // ensure layer0 is below layer1
     std::swap(layer0_, layer1_);

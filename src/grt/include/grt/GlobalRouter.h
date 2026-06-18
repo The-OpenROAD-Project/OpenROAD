@@ -174,6 +174,8 @@ class GlobalRouter
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void updateNetResources(Net* net, bool release_resources);
+  void disableCongestedNDRNetsFromRoutes(
+      const std::vector<std::pair<odb::dbNet*, int>>& ndr_nets);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
   bool updateUncoveredPinsPositions(odb::dbNet* db_net,
@@ -296,6 +298,10 @@ class GlobalRouter
                           int via_layer,
                           GRoute& route);
   void updateVias();
+  // Insert explicit via segments wherever adjacent routing layers meet at a
+  // grid point but no via connects them, so the route handed to parasitics
+  // estimation is electrically connected (correct-by-construction).
+  void addImplicitVias(GRoute& route);
 
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,

@@ -1264,10 +1264,6 @@ dbITerm* dbNet::getFirstOutput() const
       continue;
     }
 
-    if (tr->isClocked()) {
-      continue;
-    }
-
     if (tr->getIoType() != dbIoType::OUTPUT) {
       continue;
     }
