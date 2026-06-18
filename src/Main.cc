@@ -101,8 +101,6 @@ namespace {
 typedef int Tcl_Size;
 #endif
 
-
-
 struct CommandTraceData
 {
   utl::Logger* logger;

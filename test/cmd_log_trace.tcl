@@ -55,7 +55,8 @@ if { [regexp "cmd: suppress_message ORD 30" $content] } {
   exit 1
 }
 
-# 2. Tcl builtins do NOT appear: assert "cmd: set", "cmd: if", "cmd: puts", "cmd: while" are all absent
+# 2. Tcl builtins do NOT appear:
+# assert "cmd: set", "cmd: if", "cmd: puts", "cmd: while" are all absent
 if {
   [regexp "cmd: set" $content] || [regexp "cmd: if" $content] ||
   [regexp "cmd: puts" $content] || [regexp "cmd: while" $content]
