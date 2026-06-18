@@ -181,7 +181,11 @@ void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
       writeDef(external_node, chiplet);
     }
     if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
-      external_node["verilog_file"] = prop->getValue();
+      // Per the 3DBlox spec, every external argument is a YAML list of strings.
+      YAML::Node verilog_node;
+      verilog_node.SetStyle(YAML::EmitterStyle::Flow);
+      verilog_node.push_back(prop->getValue());
+      external_node["verilog_file"] = verilog_node;
     }
   }
 }
@@ -237,7 +241,11 @@ void DbvWriter::writeDef(YAML::Node& external_node, odb::dbChip* chiplet)
   odb::DefOut def_writer(logger_);
   auto block = chiplet->getBlock();
   def_writer.writeBlock(block, def_file_path.c_str());
-  external_node["DEF_file"] = def_file;
+  // Per the 3DBlox spec, every external argument is a YAML list of strings.
+  YAML::Node def_node;
+  def_node.SetStyle(YAML::EmitterStyle::Flow);
+  def_node.push_back(def_file);
+  external_node["DEF_file"] = def_node;
 }
 
 }  // namespace odb
