@@ -85,6 +85,7 @@ TESTS = [
     "repair_antennas_error2",
     "repair_antennas_only_diodes",
     "repair_antennas_only_jumpers",
+    "repair_antennas_incr_underflow",
     "repair_antennas_allow_congestion",
     "repair_antennas_from_odb",
     "report_wire_length1",
