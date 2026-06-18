@@ -60,6 +60,20 @@ warn_regexp_c = re.compile(
     re.VERBOSE | re.MULTILINE,
 )
 
+# Regex for logToDb / logToDbBulk calls (share the same id namespace).
+logtodb_regexp_c = re.compile(
+    r"""
+      (?:->|\.)                                        # deref
+      logToDb(?:Bulk)?                                  # logToDb or logToDbBulk
+      <.+?>                                            # template header
+      \s*\(\s*                                         # (
+      (?:utl::)?(?P<tool>[A-Z]{3})                     # tool
+      \s*,\s*                                          # ,
+      (?P<id>\d+)                                      # id
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
+
 
 warn_regexp_tcl = re.compile(
     r"""
@@ -104,6 +118,24 @@ def scan_file(path, file_name, msgs):
         value = "{:25} {} {} {}".format(position, message, message_type, file_link)
 
         msgs[key].add(value)
+
+    if not file_name.endswith("tcl"):
+        for match in re.finditer(logtodb_regexp_c, lines):
+            tool = match.group("tool")
+            msg_id = int(match.group("id"))
+            key = "{} {:04d}".format(tool, msg_id)
+
+            line_num = lines[0 : match.start()].count("\n") + 1
+            position = "{}:{}".format(file_name, line_num)
+            file_link = os.path.join(path, file_name).strip("../").replace("\\", "/")
+            file_link = "https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}".format(
+                file_link, line_num
+            )
+            value = "{:25} {:<50} DB_LOG {}".format(
+                position, "(database log)", file_link
+            )
+
+            msgs[key].add(value)
 
 
 def scan_dir(path, files, msgs):

@@ -33,6 +33,14 @@ void set_debug_cmd()
   }
 }
 
+void db_log_test_cmd(int num_threads,
+                       int num_entries,
+                       int num_chunks)
+{
+  exa::Example* example = ord::OpenRoad::openRoad()->getExample();
+  example->dbLogTest(num_threads, num_entries, num_chunks);
+}
+
 } // namespace exa
 
 %} // inline

@@ -1004,7 +1004,7 @@ _install_ubuntu_packages() {
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
-        tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
+        tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata sqlite3 libsqlite3-dev
 
     local packages=()
     if _version_compare "$1" -ge "25.04"; then
