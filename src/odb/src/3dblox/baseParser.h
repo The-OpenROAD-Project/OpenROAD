@@ -36,6 +36,14 @@ class BaseParser
   void parseDefines(std::string& content);
   std::string resolvePath(const std::string& path);
   void resolvePaths(const std::string& path, std::vector<std::string>& paths);
+  // Extracts a single resolved path from `parent[key]`, accepting either a
+  // scalar or a single-element list. Returns "" if the key is absent/empty and
+  // emits a parser error (terminal) when more than one entry is given, since
+  // these external fields are single-valued per the 3DBlox spec. `context`
+  // identifies the owning element in the error message.
+  std::string extractSinglePathFromList(const YAML::Node& parent,
+                                        const std::string& key,
+                                        const std::string& context);
 
   // Utility methods
   void logError(const std::string& message);

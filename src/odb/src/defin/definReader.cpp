@@ -371,16 +371,26 @@ int definReader::designCallback(
   } else {
     block_name = design;
   }
-  if (reader->_mode != defin::DEFAULT) {
-    reader->_block = reader->chip_->getBlock();
-  } else {
+  if (reader->_mode == defin::DEFAULT) {
     reader->_block = dbBlock::create(
         reader->chip_, block_name.c_str(), reader->hier_delimiter_);
+  } else if (reader->_mode == defin::THREE_D_BLOX) {
+    // The block is expected to already exist (created when the chiplet
+    // definition was read). Be robust and create it if it does not.
+    reader->_block = reader->chip_->getBlock();
+    if (reader->_block == nullptr) {
+      reader->_block = dbBlock::create(
+          reader->chip_, block_name.c_str(), reader->hier_delimiter_);
+    }
+  } else {
+    reader->_block = reader->chip_->getBlock();
   }
   if (reader->_mode == defin::DEFAULT) {
     reader->_block->setBusDelimiters(reader->left_bus_delimiter_,
                                      reader->right_bus_delimiter_);
   }
+  // FLOORPLAN/INCREMENTAL/THREE_D_BLOX read onto a pre-existing block and keep
+  // its bus delimiters (set when the block was first created).
   reader->_logger->info(utl::ODB, 128, "Design: {}", design);
   assert(reader->_block);
   reader->setBlock(reader->_block);
@@ -485,7 +495,11 @@ int definReader::componentsCallback(
   CHECKBLOCK
   definComponent* componentR = reader->_componentR.get();
   std::string id = comp->id();
-  if (reader->_mode != defin::DEFAULT) {
+  // FLOORPLAN/INCREMENTAL only update components that already exist; skip the
+  // ones they don't know about. DEFAULT and THREE_D_BLOX create them instead
+  // (THREE_D_BLOX find-or-creates, so bumps already in the block are reused).
+  if (reader->_mode == defin::FLOORPLAN
+      || reader->_mode == defin::INCREMENTAL) {
     if (reader->_block->findInst(id.c_str()) == nullptr) {
       // Try escaping the hierarchy and see if that matches
       boost::replace_all(id, "/", "\\/");
@@ -567,7 +581,8 @@ int definReader::dieAreaCallback(
   CHECKBLOCK
   const DefParser::defiPoints points = box->getPoint();
 
-  if (reader->_mode == defin::DEFAULT || reader->_mode == defin::FLOORPLAN) {
+  if (reader->_mode == defin::DEFAULT || reader->_mode == defin::FLOORPLAN
+      || reader->_mode == defin::THREE_D_BLOX) {
     std::vector<Point> P;
     reader->translate(points, P);
 
@@ -1830,7 +1845,7 @@ void definReader::setLibs(std::vector<dbLib*>& lib_names)
   _rowR->setLibs(lib_names);
 }
 
-void definReader::readChip(std::vector<dbLib*>& libs,
+bool definReader::readChip(std::vector<dbLib*>& libs,
                            const char* file,
                            dbChip* chip,
                            const bool issue_callback)
@@ -1850,9 +1865,13 @@ void definReader::readChip(std::vector<dbLib*>& libs,
   _logger->info(utl::ODB, 127, "Reading DEF file: {}", file);
 
   if (!createBlock(file)) {
-    dbChip::destroy(chip);
+    // In THREE_D_BLOX mode the chip pre-exists (created from the chiplet
+    // definition), so it must not be destroyed on a DEF read failure.
+    if (_mode != defin::THREE_D_BLOX) {
+      dbChip::destroy(chip);
+    }
     _logger->warn(utl::ODB, 129, "Error: Failed to read DEF file");
-    return;
+    return false;
   }
 
   if (_pinR->_bterm_cnt) {
@@ -1905,6 +1924,7 @@ void definReader::readChip(std::vector<dbLib*>& libs,
   if (issue_callback) {
     _db->triggerPostReadDef(_block, _mode == defin::FLOORPLAN);
   }
+  return true;
 }
 
 static inline bool hasSuffix(const std::string& str, const std::string& suffix)
@@ -1934,7 +1954,8 @@ bool definReader::createBlock(const char* file)
   DefParser::defrSetContextWarningLogFunction(
       contextWarningLogFunctionCallback);
 
-  if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN) {
+  if (_mode == defin::DEFAULT || _mode == defin::FLOORPLAN
+      || _mode == defin::THREE_D_BLOX) {
     defrSetDieAreaCbk(dieAreaCallback);
     defrSetTrackCbk(trackCallback);
     defrSetRowCbk(rowCallback);
