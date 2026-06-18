@@ -27,8 +27,6 @@ namespace gpl {
 
 using utl::GPL;
 
-ClockBase::ClockBase() = default;
-
 ClockBase::ClockBase(sta::dbSta* sta, odb::dbDatabase* db, utl::Logger* log)
     : sta_(sta), db_(db), log_(log)
 {

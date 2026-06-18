@@ -29,7 +29,6 @@ class NesterovBaseCommon;
 class ClockBase
 {
  public:
-  ClockBase();
   ClockBase(sta::dbSta* sta, odb::dbDatabase* db, utl::Logger* log);
   ~ClockBase();
 
