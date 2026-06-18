@@ -69,8 +69,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       180 |   0.6842 |  2.089633e+03 |   +0.78% |  4.47e-10 |      
       190 |   0.6686 |  2.111814e+03 |   +1.06% |  7.28e-10 |      
       200 |   0.6478 |  2.138892e+03 |   +1.28% |  1.19e-09 |      
-[INFO GPL-0164] Virtual CTS iteration 1, overflow: 0.634.
 [INFO GPL-0162] Virtual CTS: set 34 virtual clock insertion delays.
+[INFO GPL-0164] Virtual CTS iteration 1, overflow: 0.634.
 [INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
 [INFO GPL-0101]    Iter: 206, overflow: 0.634, keep resizer changes at: 1, HPWL: 4312728
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -111,9 +111,8 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       290 |   0.2736 |  2.466450e+03 |   +0.20% |  8.32e-08 |      
       300 |   0.2233 |  2.468702e+03 |   +0.09% |  1.23e-07 |      
       310 |   0.2039 |  2.495370e+03 |   +1.08% |  1.80e-07 |      
-[INFO GPL-0164] Virtual CTS iteration 2, overflow: 0.193.
-[INFO GPL-0163] Virtual CTS: removed virtual clock insertion delays.
 [INFO GPL-0162] Virtual CTS: set 34 virtual clock insertion delays.
+[INFO GPL-0164] Virtual CTS iteration 2, overflow: 0.193.
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
 [INFO GPL-0101]    Iter: 315, overflow: 0.193, keep resizer changes at: 1, HPWL: 5019737
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -158,7 +157,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1006]   Suggested Target Densities:
 [INFO GPL-1007]     - For 90% usage of free space: 0.7059
 [INFO GPL-1008]     - For 80% usage of free space: 0.7942
-[INFO GPL-0163] Virtual CTS: removed virtual clock insertion delays.
 [INFO GPL-1011] Original area (um^2): 600.99
 [INFO GPL-1013] Total timing-driven delta area: 5.05 (+0.84%)
 [INFO GPL-1014] Final placement area: 606.05 (+0.84%)

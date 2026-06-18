@@ -256,7 +256,11 @@ void ClockBase::removeVirtualCts()
   }
   virtual_inserts_.clear();
 
-  log_->info(GPL, 163, "Virtual CTS: removed virtual clock insertion delays.");
+  debugPrint(log_,
+             GPL,
+             "virtual_cts",
+             1,
+             "Virtual CTS: removed virtual clock insertion delays.");
 }
 
 bool ClockBase::getPinLocation(const sta::Pin* pin, int& x, int& y) const

@@ -388,13 +388,12 @@ void NesterovPlace::runTimingDriven(int iter,
     // update db's instance location from current density coordinates
     updateDb();
 
-    if (cb_) {
+    if (cb_ && cb_->executeVirtualCts()) {
       log_->info(GPL,
                  164,
                  "Virtual CTS iteration {}, overflow: {:.3f}.",
                  ++virtual_cts_count,
                  average_overflow_unscaled_);
-      cb_->executeVirtualCts();
     }
 
     if (graphics_ && graphics_->enabled()) {
