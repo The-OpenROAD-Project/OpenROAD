@@ -62,6 +62,7 @@
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
+#include "utl/timer.h"
 
 namespace grt {
 
@@ -384,7 +385,7 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
-  auto start = std::chrono::steady_clock::now();
+  utl::Timer timer;
   bool has_routable_nets = false;
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
@@ -436,13 +437,11 @@ void GlobalRouter::globalRoute(bool save_guides)
   }
 
   finishGlobalRouting(save_guides);
-  auto end = std::chrono::steady_clock::now();
   if (verbose_) {
-    auto runtime
-        = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-    int hour = runtime.count() / 3600;
-    int min = (runtime.count() % 3600) / 60;
-    int sec = runtime.count() % 60;
+    const int elapsed = static_cast<int>(timer.elapsed());
+    const int hour = elapsed / 3600;
+    const int min = (elapsed % 3600) / 60;
+    const int sec = elapsed % 60;
     logger_->info(
         GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
   }
@@ -909,6 +908,13 @@ void GlobalRouter::checkAdjacentLayersDirection(int min_routing_layer,
   for (int l = min_routing_layer; l < max_routing_layer; l++) {
     odb::dbTechLayer* layer_a = tech->findRoutingLayer(l);
     odb::dbTechLayer* layer_b = tech->findRoutingLayer(l + 1);
+    // Backside and frontside routing layers sit on opposite sides of the
+    // substrate, so "adjacent routing level" across the side boundary is
+    // not a physical neighbor relationship and direction agreement there
+    // is not a misconfiguration.
+    if (layer_a->isBackside() != layer_b->isBackside()) {
+      continue;
+    }
     if (layer_a->getDirection() == layer_b->getDirection()) {
       logger_->error(
           GRT,

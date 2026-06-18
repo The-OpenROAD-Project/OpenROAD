@@ -41,6 +41,17 @@ namespace pad {
 
 namespace {
 
+// Order routes by their source terminal id so ripup iteration (and the edge
+// re-add order it drives) is deterministic, not heap-address dependent.
+struct RDLRoutePtrLess
+{
+  bool operator()(const std::shared_ptr<RDLRoute>& lhs,
+                  const std::shared_ptr<RDLRoute>& rhs) const
+  {
+    return lhs->getTerminal()->getId() < rhs->getTerminal()->getId();
+  }
+};
+
 bool compareRouteTargets(const RouteTarget& lhs, const RouteTarget& rhs)
 {
   if (lhs.center.x() != rhs.center.x()) {
@@ -381,7 +392,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   makeGraph();
 
   // Determine access points
-  std::unordered_map<odb::Point, std::set<GridGraphEdge>> remove_edges;
+  std::unordered_map<odb::Point, GridGraphEdgeSet> remove_edges;
   for (auto& [net, iterm_targets] : routing_targets_) {
     for (auto& [iterm, targets] : iterm_targets) {
       for (auto& target : targets) {
@@ -649,7 +660,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       }
 
       // find routes to ripup
-      std::set<RDLRoutePtr> ripup;
+      std::set<RDLRoutePtr, RDLRoutePtrLess> ripup;
       for (const auto& failed_route : failed) {
         for (const auto& route : routes_) {
           if (!route->isRouted()) {
@@ -797,7 +808,7 @@ static odb::Point getValidGridPoint(
 }
 
 void RDLRouter::cleanupGraphEdges(
-    const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges)
+    const std::unordered_map<odb::Point, GridGraphEdgeSet>& edges)
 {
   if (edges.empty()) {
     return;
@@ -824,7 +835,7 @@ void RDLRouter::cleanupGraphEdges(
 
 void RDLRouter::populateTerminalAccessPoints(
     RouteTarget& target,
-    std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const
+    std::unordered_map<odb::Point, GridGraphEdgeSet>& edges) const
 {
   // determine new access point in graph
   std::set<odb::Point> snap_pts;
@@ -1181,20 +1192,15 @@ bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
   return RDLRoute::is45DegreeEdge(pt0, pt1);
 }
 
-std::set<GridGraphEdge> RDLRouter::getVertexEdges(
-    const GridGraphVertex& vertex) const
+GridGraphEdgeSet RDLRouter::getVertexEdges(const GridGraphVertex& vertex) const
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
 
+  // The graph is undirected, so out_edges already yields every incident edge.
   GridGraph::out_edge_iterator oit, oend;
   std::tie(oit, oend) = boost::out_edges(vertex, graph_);
   for (; oit != oend; oit++) {
     edges.insert(*oit);
-  }
-  GridGraph::in_edge_iterator iit, iend;
-  std::tie(iit, iend) = boost::in_edges(vertex, graph_);
-  for (; iit != iend; iit++) {
-    edges.insert(*iit);
   }
 
   return edges;
@@ -1203,7 +1209,7 @@ std::set<GridGraphEdge> RDLRouter::getVertexEdges(
 std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
     const std::vector<GridGraphVertex>& route)
 {
-  std::set<GridGraphEdge> edges;
+  GridGraphEdgeSet edges;
   for (const auto& v : route) {
     const auto v_edges = getVertexEdges(v);
     edges.insert(v_edges.begin(), v_edges.end());
