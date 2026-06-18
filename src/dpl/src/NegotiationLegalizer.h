@@ -170,7 +170,8 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for GUI updates)
+  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
+                                     // GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 
@@ -296,7 +297,8 @@ class NegotiationLegalizer
 
   // Cells that actually changed position during the current negotiation
   // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional colors.
+  // are rendered in grey while current-iteration movers keep directional
+  // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
   int row_search_window_{kRowSearchWindow};
   double drc_penalty_{kDrcPenalty};

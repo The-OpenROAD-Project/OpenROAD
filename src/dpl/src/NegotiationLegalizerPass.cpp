@@ -221,8 +221,8 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
     const int actual_iter = iter + max_iter_neg_;
     const bool print_row = actual_iter < 10 || actual_iter % 10 == 0;
-    const int phase_2_violations
-        = negotiationIter(active, actual_iter, /*updateHistory=*/true, print_row);
+    const int phase_2_violations = negotiationIter(
+        active, actual_iter, /*updateHistory=*/true, print_row);
     if (print_row) {
       last_printed_iter_ = actual_iter;
     }
@@ -501,7 +501,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   last_illegal_cells_ = illegalCellCount;
   last_illegal_sites_ = illegalSiteCount;
 
-  const std::string iter_label = "-> Stuck cells summary | iter " + std::to_string(iter);
+  const std::string iter_label
+      = "-> Stuck cells summary | iter " + std::to_string(iter);
   printStuckSummary(iter_label.c_str(),
                     stuck_no_candidate_count_iter_,
                     stuck_same_pos_count_iter_,
@@ -516,7 +517,8 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                     illegalSiteCount);
   }
   if (debug_observer_) {
-    debug_observer_->addNegotiationViolationsPoint(iter, totalViolations, illegalCellCount, illegalSiteCount);
+    debug_observer_->addNegotiationViolationsPoint(
+        iter, totalViolations, illegalCellCount, illegalSiteCount);
   }
   if (opendp_->iterative_debug_ && debug_observer_
       && iter >= opendp_->negotiation_debug_start_
@@ -543,8 +545,7 @@ void NegotiationLegalizer::ripUp(int cell_idx)
 
 void NegotiationLegalizer::place(int cell_idx, int x, int y)
 {
-  const bool did_move
-      = (x != cells_[cell_idx].x || y != cells_[cell_idx].y);
+  const bool did_move = (x != cells_[cell_idx].x || y != cells_[cell_idx].y);
   cells_[cell_idx].x = x;
   cells_[cell_idx].y = y;
   addUsage(cell_idx, 1);
@@ -732,35 +733,36 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       ++stuck_no_candidate_count_iter_;
       ++stuck_no_candidate_by_height_iter_[cell.height];
       debugPrint(logger_,
-                utl::DPL,
-                "negotiation",
-                1,
-                "findBestLocation: no valid candidate found for cell '{}' "
-                "(iter {}, size {} rows x {} sites) — all {} candidate "
-                "filtered, cell may be stuck.",
-                cell.db_inst->getName(),
-                iter,
-                cell.height,
-                cell.width,
-                prof_candidates_filtered_);
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "findBestLocation: no valid candidate found for cell '{}' "
+                 "(iter {}, size {} rows x {} sites) — all {} candidate "
+                 "filtered, cell may be stuck.",
+                 cell.db_inst->getName(),
+                 iter,
+                 cell.height,
+                 cell.width,
+                 prof_candidates_filtered_);
     }
 
     else if (best_x == cell.x && best_y == cell.y) {
-      // Valid sites are available, although the best choice is the current position.
+      // Valid sites are available, although the best choice is the current
+      // position.
       ++stuck_same_pos_count_;
       ++stuck_same_pos_by_height_[cell.height];
       ++stuck_same_pos_count_iter_;
       ++stuck_same_pos_by_height_iter_[cell.height];
       debugPrint(logger_,
-                utl::DPL,
-                "negotiation",
-                1,
-                "Negotiation: best location for cell '{}' at iteration {} "
-                "(size {} rows x {} sites) is its current position.",
-                cell.db_inst->getName(),
-                iter,
-                cell.height,
-                cell.width);
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "Negotiation: best location for cell '{}' at iteration {} "
+                 "(size {} rows x {} sites) is its current position.",
+                 cell.db_inst->getName(),
+                 iter,
+                 cell.height,
+                 cell.width);
     }
   }
   return {best_x, best_y};

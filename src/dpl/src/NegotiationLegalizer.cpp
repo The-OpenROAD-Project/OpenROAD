@@ -100,10 +100,8 @@ void NegotiationLegalizer::legalize()
                 site_search_window_,
                 row_search_window_);
 
-  logger_->info(utl::DPL,
-                1104,
-                "NegotiationLegalizer DRC penalty: {}.",
-                drc_penalty_);
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
@@ -239,7 +237,9 @@ void NegotiationLegalizer::legalize()
     commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    logger_->report("Committing post-init positions to odb; debug move line drawings will exclude gpl-to-init displacement.");
+    logger_->report(
+        "Committing post-init positions to odb; debug move line drawings will "
+        "exclude gpl-to-init displacement.");
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
     logger_->report(run_abacus_
@@ -341,8 +341,12 @@ void NegotiationLegalizer::legalize()
   }
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "commitNegotiationPosToOdb: {}");
+    utl::DebugScopedTimer t(flush_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "commitNegotiationPosToOdb: {}");
     commitNegotiationPosToOdb();
   }
 
@@ -388,7 +392,8 @@ void NegotiationLegalizer::legalize()
 }
 
 // ===========================================================================
-// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI
+// reflects them
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToOdb()
@@ -477,7 +482,8 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
 }
 
 // ===========================================================================
-// commitNegotiationPosToDpl – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure
+// (Node)
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToDpl()
