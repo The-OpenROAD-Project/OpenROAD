@@ -472,7 +472,18 @@ void RepairHold::findHoldViolations(sta::VertexSeq& ends,
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
   for (sta::Vertex* end : ends) {
     const sta::Slack slack = sta_->slack(end, min_);
-    if (!sta_->isClock(end->pin(), sta_->cmdMode()) && slack < hold_margin) {
+    // Skip endpoints that lie on the clock network so we do not try to fix
+    // hold on the clock tree itself.  isClock() reports any pin in a clock
+    // network's combinational fanout, which incorrectly includes register
+    // data (D) pins that sample a signal sourced from a clock (e.g. a clock
+    // used as data crossing into a different sampling-clock domain).  Such
+    // register data pins are genuine hold endpoints: they carry a timing
+    // check (hasChecks()).  Only exclude clock pins that are NOT data check
+    // endpoints, so real cross-clock-domain hold violations are not silently
+    // skipped.  See OpenROAD issue #8075.
+    const bool clk_tree_endpoint
+        = sta_->isClock(end->pin(), sta_->cmdMode()) && !end->hasChecks();
+    if (!clk_tree_endpoint && slack < hold_margin) {
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
