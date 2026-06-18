@@ -722,7 +722,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   }
 
-  if(logger_->debugCheck(utl::DPL, "negotiation", 1)) {
+  if (logger_->debugCheck(utl::DPL, "negotiation", 1)) {
     if (best_cost == static_cast<double>(kInfCost)) {
       // Every candidate in the search window was filtered out (out-of-die,
       // invalid row, or fence violation).  The cell falls back to its current
@@ -745,8 +745,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                 prof_candidates_filtered_);
     }
 
-    if (best_x == cell.x && best_y == cell.y) {
-      // Valid sites are available, although the best choise is the current position.
+    else if (best_x == cell.x && best_y == cell.y) {
+      // Valid sites are available, although the best choice is the current position.
       ++stuck_same_pos_count_;
       ++stuck_same_pos_by_height_[cell.height];
       ++stuck_same_pos_count_iter_;
