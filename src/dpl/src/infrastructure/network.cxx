@@ -18,6 +18,7 @@
 #include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "utl/Logger.h"
 namespace dpl {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,43 +257,64 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
   return segment;
 }
 
+// Returns (top_pwr, bot_pwr) for the master's rails. Power_UNK when an edge
+// has no rail, or when POWER and GROUND both touch it.
+//
+// Each MPin rectangle is tested individually, since a single MPin can hold
+// rails on both edges (e.g. double-height cells with VSS at top and bottom)
+// or include internal straps that would pull a per-pin bbox center off the
+// rail. Only ROUTING-layer geometry counts, to ignore NWELL/PWELL implants
+// (encoded as POWER/GROUND pins on MASTERSLICE layers) from polluting the
+// rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
-  int maxPwr = std::numeric_limits<int>::min();
-  int minPwr = std::numeric_limits<int>::max();
-  int maxGnd = std::numeric_limits<int>::min();
-  int minGnd = std::numeric_limits<int>::max();
+  odb::Rect bbox;
+  master->getPlacementBoundary(bbox);
+  const int y_cell_bot = bbox.yMin();
+  const int y_cell_top = bbox.yMax();
 
-  bool isVdd = false;
-  bool isGnd = false;
+  bool bot_has_pwr = false;
+  bool bot_has_gnd = false;
+  bool top_has_pwr = false;
+  bool top_has_gnd = false;
+
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == odb::dbSigType::POWER) {
-      isVdd = true;
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        // Geometry or box?
-        const int y = mpin->getBBox().yCenter();
-        minPwr = std::min(minPwr, y);
-        maxPwr = std::max(maxPwr, y);
-      }
-    } else if (mterm->getSigType() == odb::dbSigType::GROUND) {
-      isGnd = true;
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        // Geometry or box?
-        const int y = mpin->getBBox().yCenter();
-        minGnd = std::min(minGnd, y);
-        maxGnd = std::max(maxGnd, y);
+    const odb::dbSigType st = mterm->getSigType();
+    const bool is_pwr = (st == odb::dbSigType::POWER);
+    const bool is_gnd = (st == odb::dbSigType::GROUND);
+    if (!is_pwr && !is_gnd) {
+      continue;
+    }
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* pin_box : mpin->getGeometry()) {
+        auto* layer = pin_box->getTechLayer();
+        if (layer == nullptr
+            || layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;  // Skip wells/implants/cut layers.
+        }
+        const odb::Rect pin_rect = pin_box->getBox();
+        if (pin_rect.yMin() <= y_cell_bot) {
+          (is_pwr ? bot_has_pwr : bot_has_gnd) = true;
+        }
+        if (pin_rect.yMax() >= y_cell_top) {
+          (is_pwr ? top_has_pwr : top_has_gnd) = true;
+        }
       }
     }
   }
-  int topPwr = Architecture::Row::Power_UNK;
-  int botPwr = Architecture::Row::Power_UNK;
-  if (isVdd && isGnd) {
-    topPwr = (maxPwr > maxGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
-    botPwr = (minPwr < minGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
-  }
-  return {topPwr, botPwr};
+
+  const auto resolve = [](bool has_pwr, bool has_gnd) {
+    if (has_pwr && !has_gnd) {
+      return Architecture::Row::Power_VDD;
+    }
+    if (has_gnd && !has_pwr) {
+      return Architecture::Row::Power_VSS;
+    }
+    return Architecture::Row::Power_UNK;
+  };
+  const int top_pwr = resolve(top_has_pwr, top_has_gnd);
+  const int bot_pwr = resolve(bot_has_pwr, bot_has_gnd);
+  return {top_pwr, bot_pwr};
 }
 
 }  // namespace
@@ -318,6 +340,15 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   auto master_pwrs = getMasterPwrs(db_master);
   master->setTopPowerType(master_pwrs.first);
   master->setBottomPowerType(master_pwrs.second);
+  debugPrint(logger_,
+             utl::DPL,
+             "rail_align",
+             1,
+             "{}, height: {}, return: top_pwr:{} bot_pwr:{}",
+             db_master->getConstName(),
+             db_master->getHeight(),
+             master_pwrs.first,
+             master_pwrs.second);
   master->clearEdges();
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;

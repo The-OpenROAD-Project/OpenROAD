@@ -60,6 +60,7 @@ Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
   network_ = std::make_unique<Network>();
+  network_->init(logger);
   arch_ = std::make_unique<Architecture>();
 }
 
