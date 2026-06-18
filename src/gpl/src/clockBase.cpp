@@ -229,6 +229,10 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
   sta::Sdc* sdc = sta_->cmdSdc();
 
   for (int i = 0; i < n; ++i) {
+    // Preserve user-specified clock latency; do not overwrite or delete it.
+    if (hasUserClockLatency(clk, sinks[i].pin)) {
+      continue;
+    }
     const float delay = static_cast<float>(tree_dist[i] * scale);
     // Use setClockLatency (network latency) rather than setClockInsertion
     // (source latency).  During global placement the clock is ideal
@@ -296,6 +300,24 @@ bool ClockBase::getPinLocation(const sta::Pin* pin, int& x, int& y) const
     }
   }
 
+  return false;
+}
+
+bool ClockBase::hasUserClockLatency(const sta::Clock* clk,
+                                    const sta::Pin* pin) const
+{
+  sta::Sdc* sdc = sta_->cmdSdc();
+  for (const sta::RiseFall* rf :
+       {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+    for (const sta::MinMax* mm : {sta::MinMax::min(), sta::MinMax::max()}) {
+      float latency = 0.0f;
+      bool exists = false;
+      sdc->clockLatency(clk, pin, rf, mm, latency, exists);
+      if (exists) {
+        return true;
+      }
+    }
+  }
   return false;
 }
 

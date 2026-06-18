@@ -69,6 +69,9 @@ class ClockBase
   // Get the instance origin (in DBU) for a given STA pin.
   // Returns false if the pin has no placement location.
   bool getPinLocation(const sta::Pin* pin, int& x, int& y) const;
+
+  // True if the user already set a clock latency on this clk/pin.
+  bool hasUserClockLatency(const sta::Clock* clk, const sta::Pin* pin) const;
 };
 
 }  // namespace gpl

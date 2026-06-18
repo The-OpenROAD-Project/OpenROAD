@@ -29,6 +29,7 @@ or_integration_tests(
     simple01-vcts
     simple01-vcts-clamp
     simple01-vcts-noclk
+    simple01-vcts-userlat
     simple02
     simple02-rd
     simple03
