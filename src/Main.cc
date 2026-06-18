@@ -97,6 +97,12 @@ FOREACH_TOOL(X)
 
 namespace {
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+typedef int Tcl_Size;
+#endif
+
+
+
 struct CommandTraceData
 {
   utl::Logger* logger;
@@ -108,7 +114,7 @@ int logCommandCallback(ClientData clientData,
                        int level,
                        const char* command,
                        Tcl_Command commandInfo,
-                       int objc,
+                       Tcl_Size objc,
                        Tcl_Obj* const objv[])
 {
   (void) interp;
@@ -125,7 +131,7 @@ int logCommandCallback(ClientData clientData,
   }
   Tcl_DString ds;
   Tcl_DStringInit(&ds);
-  for (int i = 0; i < objc; ++i) {
+  for (Tcl_Size i = 0; i < objc; ++i) {
     Tcl_DStringAppendElement(&ds, Tcl_GetString(objv[i]));
   }
   data->logger->report("cmd: {}", Tcl_DStringValue(&ds));
@@ -143,10 +149,10 @@ std::unordered_set<std::string> getTclCommands(Tcl_Interp* interp)
   std::unordered_set<std::string> cmds;
   if (Tcl_Eval(interp, "info commands") == TCL_OK) {
     Tcl_Obj* cmd_list = Tcl_GetObjResult(interp);
-    int objc = 0;
+    Tcl_Size objc = 0;
     Tcl_Obj** objv = nullptr;
     if (Tcl_ListObjGetElements(interp, cmd_list, &objc, &objv) == TCL_OK) {
-      for (int i = 0; i < objc; ++i) {
+      for (Tcl_Size i = 0; i < objc; ++i) {
         cmds.insert(Tcl_GetString(objv[i]));
       }
     }
