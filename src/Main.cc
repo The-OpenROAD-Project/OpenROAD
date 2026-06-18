@@ -126,7 +126,13 @@ int logCommandCallback(ClientData clientData,
     return TCL_OK;
   }
   const char* cmd_name = Tcl_GetString(objv[0]);
-  if (cmd_name == nullptr || data->whitelist.count(cmd_name) == 0) {
+  if (cmd_name == nullptr) {
+    return TCL_OK;
+  }
+  if (std::strncmp(cmd_name, "::", 2) == 0) {
+    cmd_name += 2;
+  }
+  if (data->whitelist.count(cmd_name) == 0) {
     return TCL_OK;
   }
   Tcl_DString ds;
@@ -176,8 +182,12 @@ void setupCommandTrace(Tcl_Interp* interp,
       trace_data->whitelist.insert(cmd);
     }
   }
-  Tcl_CreateObjTrace(
-      interp, 0, 0, logCommandCallback, trace_data, deleteCommandTrace);
+  Tcl_CreateObjTrace(interp,
+                     0,
+                     TCL_ALLOW_INLINE_COMPILATION,
+                     logCommandCallback,
+                     trace_data,
+                     deleteCommandTrace);
 }
 
 }  // namespace
