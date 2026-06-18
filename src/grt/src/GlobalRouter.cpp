@@ -365,13 +365,15 @@ void GlobalRouter::startIncremental()
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
-    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
     if (use_cugr_) {
+      std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
       odb::PtrSet<odb::dbNet> clock_nets;
       findClockNets(nets, clock_nets);
 
       cugr_->setCongestionIterations(congestion_iterations_);
       cugr_->init(min_layer, max_layer, clock_nets);
+    } else {
+      initFastRoute(min_layer, max_layer);
     }
   }
   grouter_cbk_ = new GRouteDbCbk(this);
@@ -6191,12 +6193,17 @@ AbstractGrouteRenderer* GlobalRouter::getRenderer()
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
 {
+  auto it = db_net_map_.find(net);
+  if (it == db_net_map_.end()) {
+    return;
+  }
+
   if (use_cugr_) {
     cugr_->updateNet(net);
   }
 
-  db_net_map_[net]->setDirtyNet(true);
-  db_net_map_[net]->saveLastPinPositions();
+  it->second->setDirtyNet(true);
+  it->second->saveLastPinPositions();
   dirty_nets_.insert(net);
 }
 
