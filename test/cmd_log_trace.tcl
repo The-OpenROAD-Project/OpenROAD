@@ -14,6 +14,7 @@ close $f
 set f [open $test_script w]
 puts $f "suppress_message ODB 127"
 puts $f "help help"
+puts $f "::help help"
 puts $f "set x 1"
 puts $f "if { \$x == 1 } { puts \"internal_skip_if\" }"
 puts $f "while { \$x < 1 } { puts \"internal_skip_while\" }"
@@ -38,7 +39,8 @@ close $f
 # 1. A real OR command appears as "cmd: <command>"
 if {
   [regexp "cmd: suppress_message ODB 127" $content] &&
-  [regexp "cmd: help help" $content]
+  [regexp "cmd: help help" $content] &&
+  [regexp "cmd: ::help help" $content]
 } {
   puts "PASS: Found logged commands"
 } else {
