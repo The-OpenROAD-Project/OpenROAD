@@ -134,7 +134,7 @@ global_placement
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 | `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
-| `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Default is 0.10 (10%). |
+| `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
 
 #### Initial-Placement Arguments
 
