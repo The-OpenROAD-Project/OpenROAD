@@ -112,7 +112,7 @@ int logCommandCallback(ClientData clientData,
                        int level,
                        const char* command,
                        Tcl_Command commandInfo,
-                       Tcl_Size objc,
+                       int objc,
                        Tcl_Obj* const objv[])
 {
   (void) interp;
@@ -135,7 +135,7 @@ int logCommandCallback(ClientData clientData,
   }
   Tcl_DString ds;
   Tcl_DStringInit(&ds);
-  for (Tcl_Size i = 0; i < objc; ++i) {
+  for (int i = 0; i < objc; ++i) {
     Tcl_DStringAppendElement(&ds, Tcl_GetString(objv[i]));
   }
   data->logger->report("cmd: {}", Tcl_DStringValue(&ds));
