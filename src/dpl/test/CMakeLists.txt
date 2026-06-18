@@ -8,6 +8,7 @@ or_integration_tests(
     blockage01
     cell_on_block1
     cell_on_block2
+    centered_floorplan
     check1
     check2
     check3
