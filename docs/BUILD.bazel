@@ -67,5 +67,6 @@ man_pages(
         "//docs/src/scripts:manpage.py",
         "//docs/src/scripts:extract_utils.py",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )

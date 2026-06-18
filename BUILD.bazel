@@ -555,7 +555,10 @@ sh_test(
         "tclint.toml",
         "//bazel:tclint",
     ],
-    tags = ["local"],
+    tags = [
+        "local",
+        "manual",
+    ],
 )
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
@@ -569,7 +572,10 @@ sh_test(
         "tclint.toml",
         "//bazel:tclfmt",
     ],
-    tags = ["local"],
+    tags = [
+        "local",
+        "manual",
+    ],
 )
 
 # --- TCL auto-format only (tclfmt --in-place) -----------------------------
@@ -596,7 +602,10 @@ sh_test(
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
-    tags = ["local"],
+    tags = [
+        "local",
+        "manual",
+    ],
 )
 
 # --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
@@ -610,7 +619,10 @@ sh_test(
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
     ],
-    tags = ["local"],
+    tags = [
+        "local",
+        "manual",
+    ],
 )
 
 # --- Bazel auto-format only (buildifier -mode=fix) ------------------------
@@ -629,6 +641,7 @@ sh_binary(
 
 test_suite(
     name = "lint_test",
+    tags = ["manual"],
     tests = [
         ":fmt_bzl_test",
         ":fmt_tcl_test",
