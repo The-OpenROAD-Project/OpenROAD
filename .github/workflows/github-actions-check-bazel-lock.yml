@@ -12,5 +12,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
-      - name: Verify lock file is up to date
-        run: bazelisk mod deps --lockfile_mode=error
+      - name: Update lock file to check for differences
+        run: |
+          cp MODULE.bazel MODULE.bazel.before
+          bazelisk mod deps --lockfile_mode=update
+
+      - name: Differences to be adressed
+        run: |
+          echo "If there are discrepancies, apply the following patch"
+          diff MODULE.bazel.before MODULE.bazel
