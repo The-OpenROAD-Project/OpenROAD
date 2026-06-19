@@ -10,6 +10,7 @@
 #include "OptimizerTypes.hh"
 #include "RerouteCandidate.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
