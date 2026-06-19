@@ -727,7 +727,8 @@ void GlobalRouter::routeSecondaryPowerNets()
           int64_t dist = std::abs(pin_pt.x() - closest_x)
                          + std::abs(pin_pt.y() - closest_y);
           // Prefer straps closer in routing layers
-          dist += 1000LL * std::abs(pin_level - swire_level);
+          constexpr int64_t kLayerPenalty = 1000;
+          dist += kLayerPenalty * std::abs(pin_level - swire_level);
 
           if (dist < min_dist) {
             min_dist = dist;
@@ -771,14 +772,6 @@ void GlobalRouter::routeSecondaryPowerNets()
       // Add via stack from pin layer to strap layer
       int min_l = std::min(pin_level, closest_swire_level);
       int max_l = std::max(pin_level, closest_swire_level);
-      for (int l = min_l; l <= max_l; ++l) {
-        route.emplace_back(closest_grid_pt.x(),
-                           closest_grid_pt.y(),
-                           l,
-                           closest_grid_pt.x(),
-                           closest_grid_pt.y(),
-                           l);
-      }
       for (int l = min_l; l < max_l; ++l) {
         route.emplace_back(closest_grid_pt.x(),
                            closest_grid_pt.y(),
@@ -786,6 +779,14 @@ void GlobalRouter::routeSecondaryPowerNets()
                            closest_grid_pt.x(),
                            closest_grid_pt.y(),
                            l + 1);
+      }
+      if (min_l < max_l) {
+        route.emplace_back(closest_grid_pt.x(),
+                           closest_grid_pt.y(),
+                           max_l,
+                           closest_grid_pt.x(),
+                           closest_grid_pt.y(),
+                           max_l);
       }
     }
   }
