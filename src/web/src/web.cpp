@@ -1089,6 +1089,9 @@ void WebServer::saveReport(const std::string& filename,
     hist_hold = hist_setup;
     filters = boost::json::serialize(serializeChartFilters({}));
   }
+  // Net fanout histogram depends only on odb, so it's always populated.
+  const std::string hist_fanout = boost::json::serialize(
+      serializeFanoutHistogram(computeFanoutHistogram(block)));
   const std::string tech_json
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
@@ -1222,6 +1225,8 @@ window.__STATIC_CACHE__ = {
       << hist_setup << R"(,
     "slack_histogram:hold": )"
       << hist_hold << R"(,
+    "fanout_histogram": )"
+      << hist_fanout << R"(,
     "chart_filters": )"
       << filters << R"(,
     "module_hierarchy": )"

@@ -118,6 +118,11 @@ void Connect::setOnGrid(const std::vector<odb::dbTechLayer*>& layers)
   ongrid_.insert(layers.begin(), layers.end());
 }
 
+void Connect::setMinWidthLayers(const std::vector<odb::dbTechLayer*>& layers)
+{
+  min_width_layers_.insert(layers.begin(), layers.end());
+}
+
 void Connect::setSplitCuts(
     const odb::PtrMap<odb::dbTechLayer, SplitCut>& splits)
 {
@@ -274,7 +279,17 @@ void Connect::generateMinEnclosureViaRects(
       new_rects.insert(new_rect);
     }
 
-    layer_rects.insert(new_rects.begin(), new_rects.end());
+    if (min_width_layers_.contains(layer)) {
+      // Layer was requested to stay at min width: drop the full-overlap rect so
+      // the via cannot fill the stripe with extra rows in the width direction.
+      // The layer carries no strap of its own, so a fat metal patch would block
+      // adjacent routing tracks (and oversize the bridge when the layer jogs to
+      // an on-grid neighbor).  It can still grow along the preferred routing
+      // direction to honor min-area and to bridge.
+      layer_rects = std::move(new_rects);
+    } else {
+      layer_rects.insert(new_rects.begin(), new_rects.end());
+    }
   }
 }
 

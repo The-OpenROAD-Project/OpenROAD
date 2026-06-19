@@ -55,6 +55,7 @@
 #include "sta/Sdc.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace cts {
 
@@ -85,6 +86,7 @@ TritonCTS::~TritonCTS()
 
 void TritonCTS::runTritonCts()
 {
+  utl::Timer timer;
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
   options_->addOwner(block);
@@ -121,6 +123,7 @@ void TritonCTS::runTritonCts()
   regTreeRootBufIndex_ = 0;
   delayBufIndex_ = 0;
   options_->removeOwner();
+  logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -2473,7 +2476,12 @@ void TritonCTS::findCandidateDummyCells(
   std::ranges::sort(
       dummyCandidates,
       [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-        return (getInputCap(cell1) < getInputCap(cell2));
+        const float cap1 = getInputCap(cell1);
+        const float cap2 = getInputCap(cell2);
+        if (cap1 != cap2) {
+          return cap1 < cap2;
+        }
+        return cell1->id() < cell2->id();
       });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
@@ -2574,6 +2582,10 @@ void TritonCTS::setAllClocksPropagated()
   for (sta::Mode* mode : openSta_->modes()) {
     sta::Sdc* sdc = mode->sdc();
     for (sta::Clock* clk : sdc->clocks()) {
+      // Virtual clocks model external timing and must keep their latency.
+      if (clk->isVirtual()) {
+        continue;
+      }
       openSta_->setPropagatedClock(clk, mode);
     }
   }
