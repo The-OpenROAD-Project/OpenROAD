@@ -4754,9 +4754,8 @@ int Resizer::repairDesignBufferCount() const
 
 bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
 {
-  if (global_router_ == nullptr || !global_router_->haveRoutes()
-      || estimate_parasitics_->getParasiticsSrc()
-             != est::ParasiticsSrc::kGlobalRouting) {
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
     return false;
   }
 
@@ -4776,13 +4775,13 @@ bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
 
   const float resistance = global_router_->getFRNetResistance(db_net);
   const float estimated_resistance
-      = global_router_->getFRNetResistanceOnMinClockLayer(db_net);
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
   float reduction_ratio = 0.0f;
   if (resistance > 0.0f) {
     reduction_ratio = (resistance - estimated_resistance) / resistance;
   }
 
-  constexpr float kMinResistanceReduction = 0.40f;
+  constexpr float kMinResistanceReduction = 0.70f;
   if (reduction_ratio < kMinResistanceReduction) {
     return false;
   }
