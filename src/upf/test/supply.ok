@@ -1,0 +1,14 @@
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+PASS: __upf_version = '2.0'
+PASS: __upf_supply_port:VDD = 'in'
+PASS: __upf_supply_port:VSS = 'in'
+PASS: __upf_supply_net:VDD_NET = 'PD_D1'
+PASS: __upf_supply_net:VSS_NET = 'PD_D1'
+PASS: __upf_supply_net_conn:VDD_NET = 'VDD'
+PASS: __upf_supply_net_conn:VSS_NET = 'VSS'
+PASS: PD_TOP -include_scope element '.' present
+PASS: __upf_supply = 'primary VDD_NET'
+PASS: __upf_iso_isolation_supply = 'VDD_NET'
+PASS: __upf_iso_source = 'VDD_NET'
+PASS: __upf_iso_sink = 'VSS_NET'
