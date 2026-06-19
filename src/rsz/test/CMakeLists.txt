@@ -239,6 +239,7 @@ or_integration_tests(
     repair_setup_legacy_mt
     repair_setup_mt1
     cpp_tests
+    buffer_ports_data_only
 )
 
 add_subdirectory(cpp)

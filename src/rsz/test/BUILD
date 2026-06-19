@@ -256,6 +256,7 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
+    "buffer_ports_data_only",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS

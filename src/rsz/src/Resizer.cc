@@ -1019,6 +1019,17 @@ void Resizer::findBuffers()
     if (master == nullptr) {
       continue;
     }
+
+    // Exclude dedicated delay cells and clock-delay buffers from the
+    // data-buffer candidate set (issue #10622). getBufferList() keeps these
+    // (so hold fixing can still use them); they must be pruned here so they
+    // are not chosen for general data buffering.
+    if (exclude_clock_buffers_ && getBufferUse(buffer) == BufferUse::DELAY) {
+      debugRDPrint2("findBuffers: {} is not added because it is a delay cell",
+                    buffer->name());
+      continue;
+    }
+
     auto vt_type = cellVTType(master);
     bool footprint_matches
         = best_footprint.empty() || (best_footprint == footprint);
@@ -6272,7 +6283,42 @@ BufferUse Resizer::getBufferUse(sta::LibertyCell* buffer)
     }
   }
 
+  // Dedicated delay cells and clock-delay buffers should not be used as
+  // general-purpose data buffers. They show up in some PDKs (notably sky130)
+  // with the same "buf" footprint as normal data buffers, so they would
+  // otherwise leak into the data-buffer candidate set (see issue #10622).
+  // They remain available where appropriate (e.g. hold delay insertion uses
+  // getBufferList(), which only excludes CLOCK buffers).
+  if (isDelayCell(buffer)) {
+    return BufferUse::DELAY;
+  }
+
   return BufferUse::DATA;
+}
+
+bool Resizer::isDelayCell(sta::LibertyCell* buffer) const
+{
+  // Match dedicated delay cells and clock-delay buffers by name pattern.
+  // "dly" reliably identifies delay cells across PDKs without matching normal
+  // data buffers (buf/bufbuf/clkbuf do not contain "dly"):
+  //   sky130: clkdlybuf*, dlygate*, dlymetal*
+  //   gf180:  dlya*, dlyb*, dlyc*, dlyd*
+  const std::string& name = buffer->name();
+  if (containsIgnoreCase(name, "dly")) {
+    return true;
+  }
+
+  // Match by dedicated delay-cell footprint when the library provides one.
+  //   common: DEL (leading 3nm), DLY (7nm/12nm), sky130: "delay"
+  const std::string& footprint = buffer->footprint();
+  if (!footprint.empty()
+      && (containsIgnoreCase(footprint, "delay")
+          || containsIgnoreCase(footprint, "DEL")
+          || containsIgnoreCase(footprint, "DLY"))) {
+    return true;
+  }
+
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////
