@@ -533,6 +533,7 @@ def add_pdn_connect(
     max_rows=0,
     max_columns=0,
     ongrid=[],  # list of layer names that should be on grid?
+    min_width_layers=[],  # list of pass-through layers to keep at min width
     split_cuts={},  # dictionary of layer name to pitch,
     split_cuts_staggered=False,
     dont_use_vias="",
@@ -566,6 +567,7 @@ def add_pdn_connect(
             fixed_generate_vias.append(generate_via)
 
     ongrid_list = [get_layer(l) for l in ongrid]
+    min_width_list = [get_layer(l) for l in min_width_layers]
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
@@ -585,6 +587,7 @@ def add_pdn_connect(
             max_rows,
             max_columns,
             ongrid_list,
+            min_width_list,
             split_cuts_dict,
             dont_use_vias,
         )

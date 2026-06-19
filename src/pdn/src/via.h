@@ -710,7 +710,8 @@ class TechViaGenerator : public ViaGenerator
   bool mostlyContains(const odb::Rect& full_shape,
                       const odb::Rect& intersection,
                       const odb::Rect& small_shape,
-                      const Constraint& constraint) const;
+                      const Constraint& constraint,
+                      odb::dbTechLayer* layer) const;
 };
 
 class Via
