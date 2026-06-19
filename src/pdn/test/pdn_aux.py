@@ -566,8 +566,8 @@ def add_pdn_connect(
         if bool(generate_via):
             fixed_generate_vias.append(generate_via)
 
-    ongrid_list = [get_layer(l) for l in ongrid]
-    min_width_list = [get_layer(l) for l in min_width_layers]
+    ongrid_list = [get_layer(design, l) for l in ongrid]
+    min_width_list = [get_layer(design, l) for l in min_width_layers]
 
     split_cuts_layers = [get_layer(l) for l in split_cuts.keys()]
     split_cuts_pitches = [design.micronToDBU(x) for x in split_cuts.values()]
