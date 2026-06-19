@@ -66,6 +66,193 @@ bool create_logic_port(utl::Logger* logger,
   return true;
 }
 
+namespace {
+
+// Property-name prefixes used to persist supply-net constructs on the block.
+// OpenROAD's odb schema has no dedicated supply-net/supply-port object, so we
+// piggy-back on the generic dbProperty mechanism. This keeps the information
+// queryable and round-trippable through DB save/load without a schema bump.
+constexpr char kUpfVersionProp[] = "__upf_version";
+constexpr char kSupplyPortPrefix[] = "__upf_supply_port:";
+constexpr char kSupplyNetPrefix[] = "__upf_supply_net:";
+constexpr char kSupplyNetConnPrefix[] = "__upf_supply_net_conn:";
+
+void setStringProperty(odb::dbBlock* block,
+                       const std::string& name,
+                       const std::string& value)
+{
+  odb::dbStringProperty* prop
+      = odb::dbStringProperty::find(block, name.c_str());
+  if (prop != nullptr) {
+    prop->setValue(value.c_str());
+  } else {
+    odb::dbStringProperty::create(block, name.c_str(), value.c_str());
+  }
+}
+
+}  // namespace
+
+bool set_upf_version(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     const std::string& version)
+{
+  // Accept the documented UPF versions. Anything else is flagged but still
+  // stored, so that strict UPF files do not silently misbehave.
+  static const std::vector<std::string> kKnownVersions
+      = {"1.0", "2.0", "2.1", "3.0", "3.1"};
+  bool known = false;
+  for (const auto& v : kKnownVersions) {
+    if (v == version) {
+      known = true;
+      break;
+    }
+  }
+  if (!known) {
+    logger->warn(utl::UPF,
+                 80,
+                 "Unrecognized UPF version '{}'; accepting it as-is. OpenROAD "
+                 "does not implement version-specific behavior.",
+                 version);
+  }
+  setStringProperty(block, kUpfVersionProp, version);
+  return true;
+}
+
+bool create_supply_port(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& name,
+                        const std::string& direction)
+{
+  if (!direction.empty() && direction != "in" && direction != "out") {
+    logger->warn(utl::UPF,
+                 81,
+                 "Invalid -direction '{}' for supply port {} (expected in or "
+                 "out)",
+                 direction,
+                 name);
+    return false;
+  }
+
+  const std::string prop_name = kSupplyPortPrefix + name;
+  if (odb::dbStringProperty::find(block, prop_name.c_str()) != nullptr) {
+    logger->warn(utl::UPF, 82, "Supply port {} already exists", name);
+    return false;
+  }
+  odb::dbStringProperty::create(block, prop_name.c_str(), direction.c_str());
+  return true;
+}
+
+bool create_supply_net(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const std::string& name,
+                       const std::string& domain,
+                       bool reuse)
+{
+  if (!domain.empty() && block->findPowerDomain(domain.c_str()) == nullptr) {
+    logger->warn(utl::UPF,
+                 83,
+                 "Couldn't retrieve power domain {} while creating supply net "
+                 "{}",
+                 domain,
+                 name);
+    return false;
+  }
+
+  const std::string prop_name = kSupplyNetPrefix + name;
+  odb::dbStringProperty* existing
+      = odb::dbStringProperty::find(block, prop_name.c_str());
+  if (existing != nullptr) {
+    if (!reuse) {
+      logger->warn(utl::UPF, 84, "Supply net {} already exists", name);
+      return false;
+    }
+    // -reuse: tolerate the redeclaration, refresh the domain association.
+    existing->setValue(domain.c_str());
+    return true;
+  }
+  odb::dbStringProperty::create(block, prop_name.c_str(), domain.c_str());
+  return true;
+}
+
+bool connect_supply_net(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& net,
+                        const std::string& port)
+{
+  const std::string net_prop = kSupplyNetPrefix + net;
+  if (odb::dbStringProperty::find(block, net_prop.c_str()) == nullptr) {
+    logger->warn(utl::UPF,
+                 85,
+                 "Couldn't retrieve supply net {} while connecting it",
+                 net);
+    return false;
+  }
+
+  if (!port.empty()) {
+    const std::string port_prop = kSupplyPortPrefix + port;
+    if (odb::dbStringProperty::find(block, port_prop.c_str()) == nullptr) {
+      logger->warn(utl::UPF,
+                   86,
+                   "Couldn't retrieve supply port {} while connecting supply "
+                   "net {}",
+                   port,
+                   net);
+      return false;
+    }
+  }
+
+  setStringProperty(block, kSupplyNetConnPrefix + net, port);
+  return true;
+}
+
+bool set_power_domain_supply(utl::Logger* logger,
+                             odb::dbBlock* block,
+                             const std::string& domain,
+                             const std::string& supply)
+{
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
+  if (pd == nullptr) {
+    logger->warn(utl::UPF,
+                 87,
+                 "Couldn't retrieve power domain {} while setting -supply",
+                 domain);
+    return false;
+  }
+  odb::dbStringProperty* prop = odb::dbStringProperty::find(pd, "__upf_supply");
+  if (prop != nullptr) {
+    prop->setValue(supply.c_str());
+  } else {
+    odb::dbStringProperty::create(pd, "__upf_supply", supply.c_str());
+  }
+  return true;
+}
+
+bool set_isolation_supply(utl::Logger* logger,
+                          odb::dbBlock* block,
+                          const std::string& isolation,
+                          const std::string& key,
+                          const std::string& value)
+{
+  odb::dbIsolation* iso = block->findIsolation(isolation.c_str());
+  if (iso == nullptr) {
+    logger->warn(utl::UPF,
+                 88,
+                 "Couldn't retrieve isolation {} while setting -{}",
+                 isolation,
+                 key);
+    return false;
+  }
+  const std::string prop_name = "__upf_iso_" + key;
+  odb::dbStringProperty* prop
+      = odb::dbStringProperty::find(iso, prop_name.c_str());
+  if (prop != nullptr) {
+    prop->setValue(value.c_str());
+  } else {
+    odb::dbStringProperty::create(iso, prop_name.c_str(), value.c_str());
+  }
+  return true;
+}
+
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const std::string& name,
