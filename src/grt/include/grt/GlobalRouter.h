@@ -317,7 +317,7 @@ class GlobalRouter
   float getLayerResistance(int layer, int length, odb::dbNet* net);
   float getViaResistance(int from_layer, int to_layer);
   float getFRNetResistance(odb::dbNet* db_net);
-  float getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net);
+  float getFRNetResistanceOnMinResistanceLayer(odb::dbNet* db_net);
   double dbuToMicrons(int dbu);
   float estimatePathResistance(odb::dbObject* pin1,
                                odb::dbObject* pin2,

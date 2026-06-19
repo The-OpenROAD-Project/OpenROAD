@@ -3674,12 +3674,28 @@ float GlobalRouter::getFRNetResistance(odb::dbNet* db_net)
   return fastroute_->getNetResistance(db_net);
 }
 
-float GlobalRouter::getFRNetResistanceOnMinClockLayer(odb::dbNet* db_net)
+float GlobalRouter::getFRNetResistanceOnMinResistanceLayer(odb::dbNet* db_net)
 {
-  int min_layer = getMinLayerForClock() > 0 ? getMinLayerForClock()
-                                            : getMinRoutingLayer();
+  const int min_routing_layer = getMinRoutingLayer();
+  const int max_routing_layer = getMaxRoutingLayer();
+  int min_res_layer = min_routing_layer;
+  float min_res_per_width = std::numeric_limits<float>::max();
+  for (const auto& [layer_idx, tech_layer] : routing_layers_) {
+    if (layer_idx < min_routing_layer || layer_idx > max_routing_layer) {
+      continue;
+    }
+    const float width = static_cast<float>(tech_layer->getWidth());
+    const float resistance = static_cast<float>(tech_layer->getResistance());
+    if (width > 0 && resistance > 0) {
+      const float res_per_width = resistance / width;
+      if (res_per_width < min_res_per_width) {
+        min_res_per_width = res_per_width;
+        min_res_layer = layer_idx;
+      }
+    }
+  }
   // FastRouteCore uses 0-based layer indices; routing layer numbers are 1-based
-  return fastroute_->getNetResistanceOnLayer(db_net, min_layer - 1);
+  return fastroute_->getNetResistanceOnLayer(db_net, min_res_layer - 1);
 }
 
 float GlobalRouter::estimatePathResistance(odb::dbObject* pin1,
