@@ -72,6 +72,7 @@ class Design
   BoxT getDieRegion() const { return die_region_; }
 
   void updateNet(odb::dbNet* db_net);
+  void removeNet(odb::dbNet* db_net);
 
  private:
   void read();

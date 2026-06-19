@@ -9,6 +9,7 @@ or_integration_tests(
     aes_test_vdd
     aes_test_vss
     check_power_grid
+    check_power_grid_backside
     check_power_grid_disconnected
     check_power_grid_disconnected_macro
     check_power_grid_empty_net

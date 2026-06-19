@@ -24,10 +24,10 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frGCellPattern.h"
 #include "db/tech/frLayer.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -1721,7 +1721,7 @@ GuidePathFinder::commitPathToGuides(
     const odb::Point begin
         = getDesign()->getTopBlock()->getGCellCenter(box.ll());
     const odb::Point end = getDesign()->getTopBlock()->getGCellCenter(box.ur());
-    auto guide = std::make_unique<frGuide>(begin, layer_num, end, layer_num);
+    auto guide = std::make_unique<frGuide>(begin, layer_num, end);
     net_->addGuide(std::move(guide));
   }
   return gr_pins;
@@ -1956,30 +1956,14 @@ void GuideProcessor::saveGuidesUpdates()
       odb::Point epIdx = getDesign()->getTopBlock()->getGCellIdx(ep);
       odb::Rect bbox = getDesign()->getTopBlock()->getGCellBox(bpIdx);
       odb::Rect ebox = getDesign()->getTopBlock()->getGCellBox(epIdx);
-      frLayerNum bNum = guide->getBeginLayerNum();
-      frLayerNum eNum = guide->getEndLayerNum();
-      if (bNum != eNum) {
-        for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
-             lNum += 2) {
-          auto layer = getTech()->getLayer(lNum);
-          auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(
-              dbNet,
-              dbLayer,
-              dbLayer,
-              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
-              false);
-        }
-      } else {
-        auto layerName = getTech()->getLayer(bNum)->getName();
-        auto dbLayer = dbTech->findLayer(layerName.c_str());
-        odb::dbGuide::create(
-            dbNet,
-            dbLayer,
-            dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
-            false);
-      }
+      const frLayerNum layer_num = guide->getLayerNum();
+      auto layerName = getTech()->getLayer(layer_num)->getName();
+      auto dbLayer = dbTech->findLayer(layerName.c_str());
+      odb::dbGuide::create(dbNet,
+                           dbLayer,
+                           dbLayer,
+                           {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+                           false);
     }
     auto dbGuides = dbNet->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible()) {

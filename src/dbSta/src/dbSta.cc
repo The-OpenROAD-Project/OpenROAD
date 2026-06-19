@@ -37,7 +37,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
-#include "search/Levelize.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -45,6 +44,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphCmp.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/LevelizeObserver.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -297,24 +297,23 @@ void dbSta::makeSdcNetwork()
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-// Levelize::setObserver takes ownership and deletes the prior observer,
-// so this composite must replicate the StaLevelizeObserver behavior that
-// Sta::makeObservers installs (forwarding to Search and GraphDelayCalc)
-// in addition to invalidating dbSta's cache.
-class DbStaLevelizeObserver : public LevelizeObserver
+// Extend the default StaLevelizeObserver (Search + GraphDelayCalc forwarding)
+// to also invalidate dbSta's driver-vertex cache.
+class DbStaLevelizeObserver : public StaLevelizeObserver
 {
  public:
-  explicit DbStaLevelizeObserver(dbSta* sta) : sta_(sta) {}
+  DbStaLevelizeObserver(dbSta* sta, Search* search, GraphDelayCalc* gdc)
+      : StaLevelizeObserver(search, gdc), sta_(sta)
+  {
+  }
   void levelsChangedBefore() override
   {
-    sta_->search()->levelsChangedBefore();
-    sta_->graphDelayCalc()->levelsChangedBefore();
+    StaLevelizeObserver::levelsChangedBefore();
     sta_->invalidateLevelizedDrvrVertices();
   }
   void levelChangedBefore(Vertex* vertex) override
   {
-    sta_->search()->levelChangedBefore(vertex);
-    sta_->graphDelayCalc()->levelChangedBefore(vertex);
+    StaLevelizeObserver::levelChangedBefore(vertex);
     sta_->invalidateLevelizedDrvrVertices();
   }
 
@@ -325,7 +324,8 @@ class DbStaLevelizeObserver : public LevelizeObserver
 void dbSta::makeObservers()
 {
   Sta::makeObservers();
-  levelize_->setObserver(new DbStaLevelizeObserver(this));
+  setLevelizeObserver(
+      new DbStaLevelizeObserver(this, search_, graph_delay_calc_));
 }
 
 void dbSta::invalidateLevelizedDrvrVertices()
@@ -1398,48 +1398,6 @@ void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 
 ////////////////////////////////////////////////////////////////
 
-sta::LibertyPort* getLibertyScanEnable(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::enable
-        || signal_type == sta::ScanSignalType::enable_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanIn(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::input
-        || signal_type == sta::ScanSignalType::input_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
-sta::LibertyPort* getLibertyScanOut(const sta::LibertyCell* lib_cell)
-{
-  sta::LibertyCellPortIterator iter(lib_cell);
-  while (iter.hasNext()) {
-    sta::LibertyPort* port = iter.next();
-    sta::ScanSignalType signal_type = port->scanSignalType();
-    if (signal_type == sta::ScanSignalType::output
-        || signal_type == sta::ScanSignalType::output_inverted) {
-      return port;
-    }
-  }
-  return nullptr;
-}
-
 void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
                                  const char* filename,
                                  const MinMax* min_max)
@@ -1644,7 +1602,7 @@ void dbSta::dumpModInstGraphConnections(const char* mod_inst_name,
 
         bool is_external = false;
         if (from_pin) {
-          std::string_view pin_name = network()->name(from_pin);
+          std::string pin_name = network()->name(from_pin);
           std::string mod_prefix = db_mod_inst->getName();
           mod_prefix += "/";  // e.g., "_202_/"
           if (!pin_name.starts_with(mod_prefix)) {

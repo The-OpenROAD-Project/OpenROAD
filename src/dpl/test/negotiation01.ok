@@ -10,11 +10,11 @@ Negotiation iteration 0: total overflow 12.
 Negotiation iteration 1: total overflow 0.
 Placement Analysis
 ---------------------------------
-total displacement        205.8 u
+total displacement        204.4 u
 average displacement        0.4 u
 max displacement            1.4 u
 original HPWL            6950.8 u
-legalized HPWL           7812.4 u
+legalized HPWL           7808.0 u
 delta HPWL                   12 %
 
 No differences found.

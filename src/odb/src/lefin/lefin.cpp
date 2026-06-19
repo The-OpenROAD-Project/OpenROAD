@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -679,6 +680,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_RECTONLY")) {
         valid
             = lefTechLayerRectOnlyParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_EOLEXTENSIONSPACING")) {
@@ -741,6 +745,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         valid = parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_BACKSIDE")) {
+        valid
+            = lefTechLayerBacksideParser::parse(layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
         KeepOutZoneParser parser(l, this);
         parser.parse(layer->propValue(iii));
@@ -833,7 +840,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       cur_rule->setSpacingNotchLengthValid(layer->hasSpacingNotchLength(j));
 
       if (layer->hasSpacingArea(j)) {
-        cur_rule->setCutArea(dbdist(layer->spacingArea(j)));
+        cur_rule->setCutArea(dbarea(layer->spacingArea(j)));
       }
 
       if (layer->hasSpacingRange(j)) {
@@ -1125,7 +1132,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   if (layer->hasArea()) {
-    l->setArea(layer->area());
+    l->setArea(dbarea(layer->area()));
   }
 
   if (layer->hasThickness()) {
@@ -1255,6 +1262,8 @@ void lefinReader::macro(LefParser::lefiMacro* macro)
       valid = lefMacroClassTypeParser::parse(macro->propValue(i), master_);
     } else if (!strcmp(macro->propName(i), "LEF58_EDGETYPE")) {
       lefMacroEdgeTypeParser(master_, this).parse(macro->propValue(i));
+    } else if (!strcmp(macro->propName(i), "LEF58_BACKSIDE_BRIDGE")) {
+      valid = lefMacroBacksideBridgeParser::parse(macro->propValue(i), master_);
     } else {
       dbStringProperty::create(
           master_, macro->propName(i), macro->propValue(i));
@@ -2594,6 +2603,11 @@ lefin::~lefin()
 int lefin::dbdist(double value)
 {
   return reader_->dbdist(value);
+}
+
+int64_t lefin::dbarea(double value)
+{
+  return reader_->dbarea(value);
 }
 
 dbTech* lefin::createTech(const char* name, const char* lef_file)

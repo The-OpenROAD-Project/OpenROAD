@@ -92,8 +92,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   // window so the loop can create space organically.
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
+  // Build a spatial index once: bucket movable cells by their bottom row (y),
+  // each bucket sorted by x.  Each seed then only scans the few rows in its
+  // y-window and binary-searches the x-range, so the total cost is proportional
+  // to the number of cells actually inside the search windows.
   std::vector<std::vector<std::pair<int, int>>> row_buckets(grid_h_);
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+  for (int i = 0; std::cmp_less(i, cells_.size()); ++i) {
     const NegCell& nb = cells_[i];
     if (nb.fixed || nb.y < 0 || nb.y >= grid_h_ || active_set.contains(i)) {
       continue;
@@ -996,18 +1000,10 @@ double NegotiationLegalizer::adaptivePf(int iter) const
 void NegotiationLegalizer::updateHistoryCosts(
     const std::vector<int>& activeCells)
 {
-  // Only visit pixels covered by an active cell's footprint instead of
-  // scanning the whole grid (which is O(grid_w * grid_h) every iteration).
-  //
-  // An overused pixel that actually affects negotiationCost must have
-  // capacity > 0 (capacity-0 blockage/fixed pixels short-circuit before
-  // hist_cost is read, so bumping them is a dead write).  A capacity-1 pixel
-  // is overused only when >= 2 movable cells overlap it, and any overlapping
-  // cell is illegal and therefore in the active set.  So active-cell
-  // footprints cover every overused pixel whose hist_cost is ever consumed.
-  //
-  // Footprints of overlapping cells share pixels, so dedupe to bump each
-  // pixel exactly once (matching the original single-pass-per-pixel scan).
+  // Walk active-cell footprints instead of the full grid: every overused
+  // pixel whose hist_cost is read has >= 2 overlapping cells, and at least
+  // one of them is illegal (hence active). Dedupe shared pixels so each is
+  // bumped once.
   hist_seen_pixels_.clear();
   for (int idx : activeCells) {
     const NegCell& cell = cells_[idx];
@@ -1131,7 +1127,10 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     if (a.height != b.height) {
       return a.height < b.height;
     }
-    return a.width < b.width;
+    if (a.width != b.width) {
+      return a.width < b.width;
+    }
+    return a.idx < b.idx;
   });
 
   for (size_t i = 0; i < keys.size(); ++i) {

@@ -174,6 +174,8 @@ class GlobalRouter
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
   void updateNetResources(Net* net, bool release_resources);
+  void disableCongestedNDRNetsFromRoutes(
+      const std::vector<std::pair<odb::dbNet*, int>>& ndr_nets);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
   bool updateUncoveredPinsPositions(odb::dbNet* db_net,
