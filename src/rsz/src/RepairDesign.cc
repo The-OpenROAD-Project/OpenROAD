@@ -2273,7 +2273,9 @@ bool RepairDesign::makeRepeater(
   // Resize repeater as we back up by levels.
   if (resize) {
     sta::Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
-    resizer_->resizeToTargetSlew(buffer_out_pin, load_cap_hint);
+    // Retire resizeToTargetSlew (#8013); use the modern cap-ratio sizing.
+    resizer_->resizeToCapRatio(
+        buffer_out_pin, /*upsize_only=*/false, load_cap_hint);
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   }

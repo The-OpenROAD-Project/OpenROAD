@@ -2605,17 +2605,28 @@ bool Resizer::getCin(const sta::LibertyCell* cell, float& cin)
   return false;
 }
 
-int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
+int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin,
+                              bool upsize_only,
+                              std::optional<float> load_cap_hint)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
   if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
       && isLogicStdCell(inst)) {
     float cin, load_cap;
-    estimate_parasitics_->ensureWireParasitic(drvr_pin);
-
-    // Includes net parasitic capacitance.
-    load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    // Hint skips ensureWireParasitic, which triggers an incremental
+    // FastRoute per buffer in the repair_design.
+    // Only applies under global-routing parasitics;
+    // placement-based estimation is already cheap.
+    if (load_cap_hint.has_value()
+        && estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kGlobalRouting) {
+      load_cap = *load_cap_hint;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(drvr_pin);
+      // Includes net parasitic capacitance.
+      load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    }
     if (load_cap > 0.0 && getCin(cell, cin)) {
       float cap_ratio
           = cell->isBuffer() ? buffer_sizing_cap_ratio_ : sizing_cap_ratio_;

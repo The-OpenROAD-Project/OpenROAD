@@ -12,10 +12,12 @@ worst slack max -0.17
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.174 |       -0.2 |       -6.9 |     40 | load35/D
-      56* |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
-    final |       0 |       0 |        6 |      0 |     0 |    +3.0% |   -0.121 |       -0.1 |       -3.9 |     40 | load18/D
+      56* |       0 |       0 |        6 |      0 |     0 |    +3.2% |   -0.123 |       -0.1 |       -3.9 |     40 | load18/D
+    final |       0 |       0 |        6 |      0 |     0 |    +3.2% |   -0.123 |       -0.1 |       -3.9 |     40 | load18/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 6 buffers, 6 to split loads.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -0.12
-No differences found.
+Differences found at line 52.
+    - split3 BUF_X1 + SOURCE TIMING + PLACED ( 4135 1695 ) N ;
+    - split3 BUF_X2 + SOURCE TIMING + PLACED ( 4135 1695 ) N ;

@@ -654,7 +654,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   // Resize drvr_pin instance to target cap ratio.
   // Return 1 if resized.
-  int resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only);
+  int resizeToCapRatio(const sta::Pin* drvr_pin,
+                       bool upsize_only,
+                       std::optional<float> load_cap_hint = std::nullopt);
 
   ////////////////////////////////////////////////////////////////
 
