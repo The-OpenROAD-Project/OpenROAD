@@ -60,6 +60,10 @@ class drNet : public drBlockObject
   void clearRouteConnFigs() { routeConnFigs_.clear(); }
   frNet* getFrNet() const { return fNet_; }
   void setFrNet(frNet* net) { fNet_ = net; }
+  // True when this net should still be auto-tapered to min width near pins.
+  // Honors both the global AUTO_TAPER_NDR_NETS config and the per-net
+  // disable flag carried on the frNet.
+  bool autoTaperEnabled(bool global_enabled) const;
   const frOrderedIdSet<frBlockObject*>& getFrNetTerms() const
   {
     return fNetTerms_;

@@ -14,7 +14,7 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
-#include "db/obj/frInstTerm.h"
+#include "db/obj/frNet.h" #include "db/obj/frInstTerm.h"
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
@@ -104,6 +104,11 @@ void drNet::incNRipupAvoids()
 bool drNet::hasNDR() const
 {
   return getFrNet()->getNondefaultRule() != nullptr;
+}
+
+bool drNet::autoTaperEnabled(bool global_enabled) const
+{
+  return global_enabled && !fNet_->isAutoTaperDisabled();
 }
 
 bool drNet::isClockNet() const

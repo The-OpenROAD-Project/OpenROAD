@@ -166,6 +166,10 @@ class frNet : public frBlockObject
   bool hasJumpers() { return has_jumpers_; }
   void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
   bool toBeDeleted() { return to_be_deleted_; }
+  // When true, DRT must not auto-taper this net to minimum width near pin
+  // connections (per-net override of router_cfg_->AUTO_TAPER_NDR_NETS).
+  void setDisableAutoTaper(bool in) { disable_auto_taper_ = in; }
+  bool isAutoTaperDisabled() const { return disable_auto_taper_; }
 
  protected:
   frString name_;
@@ -194,5 +198,8 @@ class frNet : public frBlockObject
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
   bool to_be_deleted_{false};
+  // Per-net override: when true, auto-taper to min width near pins is
+  // suppressed for this net even if AUTO_TAPER_NDR_NETS is globally enabled.
+  bool disable_auto_taper_{false};
 };
 }  // namespace drt

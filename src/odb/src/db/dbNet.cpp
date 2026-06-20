@@ -100,7 +100,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.special = 0;
   flags_.wild_connect = 0;
   flags_.wire_ordered = 0;
-  flags_.unused2 = 0;
+  flags_.disable_auto_taper = 0;
   flags_.disconnected = 0;
   flags_.spef = 0;
   flags_.select = 0;
@@ -215,6 +215,10 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.wire_ordered != rhs.flags_.wire_ordered) {
+    return false;
+  }
+
+  if (flags_.disable_auto_taper != rhs.flags_.disable_auto_taper) {
     return false;
   }
 
@@ -2437,6 +2441,26 @@ void dbNet::setJumpers(bool has_jumpers)
   _dbDatabase* db = net->getImpl()->getDatabase();
   if (db->isSchema(kSchemaHasJumpers)) {
     net->flags_.has_jumpers = has_jumpers ? 1 : 0;
+  }
+}
+
+bool dbNet::disableAutoTaper()
+{
+  bool disable_auto_taper = false;
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(kSchemaNetDisableAutoTaper)) {
+    disable_auto_taper = net->flags_.disable_auto_taper == 1;
+  }
+  return disable_auto_taper;
+}
+
+void dbNet::setDisableAutoTaper(bool disable_auto_taper)
+{
+  _dbNet* net = (_dbNet*) this;
+  _dbDatabase* db = net->getImpl()->getDatabase();
+  if (db->isSchema(kSchemaNetDisableAutoTaper)) {
+    net->flags_.disable_auto_taper = disable_auto_taper ? 1 : 0;
   }
 }
 
