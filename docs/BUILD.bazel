@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("//bazel:man_pages.bzl", "man_pages")
 load("@openroad-pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_pages.bzl", "man_pages")
 
 man_pages(
     name = "man_pages",
