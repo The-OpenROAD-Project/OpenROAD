@@ -13,10 +13,27 @@ package(
 )
 
 cc_library(
+    name = "rsz_private_hdrs",
+    hdrs = [
+        "src/BufferedNet.hh",
+        "src/ResizerObserver.hh",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "rsz",
     srcs = [
         "src/BufferedNet.cc",
-        "src/BufferedNet.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
         "src/DelayEstimator.cc",
@@ -46,7 +63,6 @@ cc_library(
         "src/RepairTargetCollector.cc",
         "src/RepairTargetCollector.hh",
         "src/Resizer.cc",
-        "src/ResizerObserver.hh",
         "src/SwapArithModules.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
@@ -141,6 +157,7 @@ cc_library(
     ],
     linkopts = ["-pthread"],
     deps = [
+        ":rsz_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
@@ -161,11 +178,9 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/BufferedNet.hh",
         "src/Graphics.cc",
         "src/Graphics.hh",
         "src/MakeResizer.cc",
-        "src/ResizerObserver.hh",
         ":swig",
         ":tcl",
     ],
@@ -178,6 +193,7 @@ cc_library(
     ],
     deps = [
         ":rsz",
+        ":rsz_private_hdrs",
         "//:ord",
         "//src/dbSta:dbNetwork",
         "//src/gui",
