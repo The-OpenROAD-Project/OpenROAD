@@ -5433,6 +5433,9 @@ std::vector<odb::dbNet*> GlobalRouter::getNetsToRoute()
 void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   if (use_cugr_) {
+    // TODO: Fully support merging nets in CUGR.
+    // For now, we simply rip up and add the base net to the dirty list
+    // to be completely re-routed from scratch.
     addDirtyNet(db_net1);
     return;
   }
