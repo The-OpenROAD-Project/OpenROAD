@@ -12,6 +12,7 @@
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
+#include "rsz/GlobalSizingConfig.hh"
 #include "rsz/Resizer.hh"
 #include "sta/GraphClass.hh"
 #include "sta/MinMax.hh"
@@ -24,47 +25,6 @@ class dbNetwork;
 }  // namespace sta
 
 namespace rsz {
-
-// Tunables for the Lagrangian-Relaxation global sizing driver. Internal to the
-// policy - not user-facing through Tcl. Live here as a struct so each piece has
-// a stable name and so we can plug in env-var overrides later without rewriting
-// the policy.
-struct LRParams
-{
-  // Optional pre-LR initialization: Replace every editable instance with
-  // the smallest (kMinSizeMaxVt) or largest (kMaxSizeMinVt) leakage equivalent
-  // cell before LR runs.
-  enum class PresizeMode
-  {
-    kDisabled = 0,
-    kMinSizeMaxVt = 1,
-    kMaxSizeMinVt = 2,
-  };
-  PresizeMode presize_mode = PresizeMode::kDisabled;
-  // Optional clock network sizing: Global sizing excludes clock network
-  // instances by default. Can be enabled for post-CTS timing repair for better
-  // clock performance.
-  bool include_clock_network = false;
-  float setup_slack_margin = 0.0f;
-  int max_iterations = 20;
-  // Step size α for the dual-subgradient update on λ.
-  //   λ_e ← max(floor, λ_e · (1 + α · g_e_norm))
-  // with g_e_norm ∈ [-1, 0]. Tight arcs (g=0) are unchanged; arcs at full
-  // slack (g=-1) shrink to (1-α)·λ. Halved on pass rejection.
-  float beta = 0.6f;
-  // Endpoint seed exponent: mu_k ~ max(0, margin - slack_k)^p.
-  float mu_exponent = 2.0f;
-  // Floor for multipliers (subgradient floor so unused arcs can re-enter).
-  float lambda_floor = 1e-12f;
-  // Dimensionless balance between timing pressure and leakage cost.
-  // bias = 1.0 keeps Σλ·d (scaled) ≈ leakage cost on the median gate.
-  float timing_bias = 64.0f;
-  // Safety derate (<= 1) on the per-gate distributed downsize budget. The
-  // depth-normalized distribution already guarantees per-path budget sums
-  // <= path slack, so 1.0 is feasible in theory; a value < 1 adds margin for
-  // the un-modeled slew cascade / estimated-vs-routed parasitic gap.
-  float budget_safety_factor = 1.0f;
-};
 
 // GlobalSizingPolicy: Lagrangian-Relaxation-driven global sizing + Vt
 // assignment, packaged as an OptimizationPolicy phase.
@@ -93,30 +53,27 @@ class GlobalSizingPolicy : public OptimizationPolicy
       = std::unordered_map<sta::LibertyCell*, sta::LibertyCell*>;
 
   // === Setup ================================================================
-  // Apply any RSZ_GLOBAL_SIZING_* env-var overrides onto lr_params_. Called
-  // once from start(); silently keeps the struct default when the variable is
-  // unset. Throws (via utl::readEnvar*) on malformed values.
-  void loadLrEnvars();
   // Pick the deterministic presize target within the swappable-equivalent set.
   sta::LibertyCell* selectPresizeCell(
       sta::LibertyCell* current_cell,
-      LRParams::PresizeMode mode,
+      GlobalSizingConfig::PresizeMode mode,
       PresizeCellCache& presize_cell_cache) const;
   // Apply the selected presize to the live design before LR state is seeded.
-  int applyPresize(LRParams::PresizeMode mode, bool include_clock_network);
+  int applyPresize(GlobalSizingConfig::PresizeMode mode,
+                   bool include_clock_network);
   // Discover graph size (edges, endpoints), set dcalc_ap_, size vectors.
   void allocate();
   // Delay-proportional λ seed + WNS-biased μ seed.
-  void seedMultipliers(const LRParams& params);
+  void seedMultipliers(const GlobalSizingConfig& params);
   // Multiplicative λ update via dual-subgradient + re-seed of μ from the
   // current slack picture. Called at the start of each outer iteration
   // after iteration 0.
-  void updateMultipliers(const LRParams& params);
+  void updateMultipliers(const GlobalSizingConfig& params);
   // Reverse-topological projection onto the KKT flow-balance polytope.
   // After projection:
   //   Σλ_in(v) = Σλ_out(v) for internal v
   //   Σλ_in(k) = μ_k for each endpoint k
-  void projectFlowBalance(const LRParams& params);
+  void projectFlowBalance(const GlobalSizingConfig& params);
   // Tally of one Jacobi sweep. `moves` is the total cell replacements applied
   // to the journal this sweep (tentative - the pass-acceptance test in
   // iterate() may still roll the whole sweep back).
@@ -157,7 +114,7 @@ class GlobalSizingPolicy : public OptimizationPolicy
   // Auto-scale timing weight so the output-cone timing term is comparable to
   // the leakage term on the median gate of this design. Anchored to the
   // output-cone term only (not the upstream-Cin term).
-  float computeAutoTimingWeight(const LRParams& params) const;
+  float computeAutoTimingWeight(const GlobalSizingConfig& params) const;
 
   // === Diagnostics ==========================================================
   struct DesignSnap
@@ -174,7 +131,7 @@ class GlobalSizingPolicy : public OptimizationPolicy
   float edgeMaxArcDelay(sta::Edge* edge) const;
 
   // === Policy state =========================================================
-  LRParams lr_params_;
+  GlobalSizingConfig gs_config_;
   sta::dbNetwork* db_network_ = nullptr;
 
   // Per-edge multipliers, indexed by sta::Edge::id (sparse)

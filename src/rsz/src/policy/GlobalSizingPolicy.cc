@@ -21,6 +21,7 @@
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "rsz/GlobalSizingConfig.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
@@ -40,24 +41,10 @@
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
-#include "utl/env.h"
 
 namespace rsz {
 
 using utl::RSZ;
-
-constexpr char kGlobalSizingPresizeEnv[] = "RSZ_GLOBAL_SIZING_PRESIZE_MODE";
-constexpr char kIncludeClockNetworkEnv[]
-    = "RSZ_GLOBAL_SIZING_INCLUDE_CLOCK_NETWORK";
-constexpr char kLrSetupSlackMarginEnv[]
-    = "RSZ_GLOBAL_SIZING_SETUP_SLACK_MARGIN";
-constexpr char kLrMaxIterationsEnv[] = "RSZ_GLOBAL_SIZING_MAX_ITERATIONS";
-constexpr char kLrBetaEnv[] = "RSZ_GLOBAL_SIZING_BETA";
-constexpr char kLrMuExponentEnv[] = "RSZ_GLOBAL_SIZING_MU_EXPONENT";
-constexpr char kLrLambdaFloorEnv[] = "RSZ_GLOBAL_SIZING_LAMBDA_FLOOR";
-constexpr char kLrTimingBiasEnv[] = "RSZ_GLOBAL_SIZING_TIMING_BIAS";
-constexpr char kLrBudgetSafetyFactorEnv[]
-    = "RSZ_GLOBAL_SIZING_BUDGET_SAFETY_FACTOR";
 
 GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
                                        MoveCommitter& committer,
@@ -69,44 +56,9 @@ GlobalSizingPolicy::GlobalSizingPolicy(Resizer& resizer,
 
 GlobalSizingPolicy::~GlobalSizingPolicy() = default;
 
-void GlobalSizingPolicy::loadLrEnvars()
-{
-  const int presize_default = static_cast<int>(lr_params_.presize_mode);
-  const int presize_parsed
-      = utl::readEnvarInt(kGlobalSizingPresizeEnv, presize_default);
-  if (presize_parsed < 0
-      || presize_parsed
-             > static_cast<int>(LRParams::PresizeMode::kMaxSizeMinVt)) {
-    logger_->warn(RSZ,
-                  413,
-                  "Ignoring invalid {} value {}; expected 0, 1, or 2. "
-                  "Using default value 0.",
-                  kGlobalSizingPresizeEnv,
-                  presize_parsed);
-  } else {
-    lr_params_.presize_mode
-        = static_cast<LRParams::PresizeMode>(presize_parsed);
-  }
-  lr_params_.include_clock_network = utl::readEnvarBool(
-      kIncludeClockNetworkEnv, lr_params_.include_clock_network);
-  lr_params_.setup_slack_margin = utl::readEnvarFloat(
-      kLrSetupSlackMarginEnv, lr_params_.setup_slack_margin);
-  lr_params_.max_iterations
-      = utl::readEnvarInt(kLrMaxIterationsEnv, lr_params_.max_iterations);
-  lr_params_.beta = utl::readEnvarFloat(kLrBetaEnv, lr_params_.beta);
-  lr_params_.mu_exponent
-      = utl::readEnvarFloat(kLrMuExponentEnv, lr_params_.mu_exponent);
-  lr_params_.lambda_floor
-      = utl::readEnvarFloat(kLrLambdaFloorEnv, lr_params_.lambda_floor);
-  lr_params_.timing_bias
-      = utl::readEnvarFloat(kLrTimingBiasEnv, lr_params_.timing_bias);
-  lr_params_.budget_safety_factor = utl::readEnvarFloat(
-      kLrBudgetSafetyFactorEnv, lr_params_.budget_safety_factor);
-}
-
 sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
     sta::LibertyCell* current_cell,
-    const LRParams::PresizeMode mode,
+    const GlobalSizingConfig::PresizeMode mode,
     PresizeCellCache& presize_cell_cache) const
 {
   // Use the cache if this cell has been searched before
@@ -136,9 +88,10 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
     }
 
     if (*candidate_leak != *best_leak) {
-      const bool better_leakage = mode == LRParams::PresizeMode::kMinSizeMaxVt
-                                      ? *candidate_leak < *best_leak
-                                      : *candidate_leak > *best_leak;
+      const bool better_leakage
+          = mode == GlobalSizingConfig::PresizeMode::kMinSizeMaxVt
+                ? *candidate_leak < *best_leak
+                : *candidate_leak > *best_leak;
       if (better_leakage) {
         best = candidate;
         best_leak = candidate_leak;
@@ -154,9 +107,10 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
     if (candidate_drive == *best_drive) {
       continue;
     }
-    const bool better_drive = mode == LRParams::PresizeMode::kMinSizeMaxVt
-                                  ? candidate_drive > *best_drive
-                                  : candidate_drive < *best_drive;
+    const bool better_drive
+        = mode == GlobalSizingConfig::PresizeMode::kMinSizeMaxVt
+              ? candidate_drive > *best_drive
+              : candidate_drive < *best_drive;
     if (better_drive) {
       best = candidate;
       best_leak = candidate_leak;
@@ -168,16 +122,17 @@ sta::LibertyCell* GlobalSizingPolicy::selectPresizeCell(
   return best;
 }
 
-int GlobalSizingPolicy::applyPresize(const LRParams::PresizeMode mode,
+int GlobalSizingPolicy::applyPresize(const GlobalSizingConfig::PresizeMode mode,
                                      const bool include_clock_network)
 {
-  if (mode == LRParams::PresizeMode::kDisabled) {
+  if (mode == GlobalSizingConfig::PresizeMode::kDisabled) {
     return 0;
   }
 
-  const char* target_cell = mode == LRParams::PresizeMode::kMinSizeMaxVt
-                                ? "smallest leakage Liberty cell"
-                                : "largest leakage Liberty cell";
+  const char* target_cell
+      = mode == GlobalSizingConfig::PresizeMode::kMinSizeMaxVt
+            ? "smallest leakage Liberty cell"
+            : "largest leakage Liberty cell";
   logger_->info(RSZ,
                 416,
                 "GLOBAL_SIZING: Presize {} enabled for {}.",
@@ -323,7 +278,7 @@ void GlobalSizingPolicy::allocate()
              dcalc_ap_);
 }
 
-void GlobalSizingPolicy::seedMultipliers(const LRParams& params)
+void GlobalSizingPolicy::seedMultipliers(const GlobalSizingConfig& params)
 {
   // λ_e = d_e  (delay-proportional seed, max arc delay across rise/fall)
   float lambda_sum = 0.0f;
@@ -395,7 +350,7 @@ void GlobalSizingPolicy::seedMultipliers(const LRParams& params)
              mu_max);
 }
 
-void GlobalSizingPolicy::updateMultipliers(const LRParams& params)
+void GlobalSizingPolicy::updateMultipliers(const GlobalSizingConfig& params)
 {
   // μ: re-seed from current endpoint slacks. Fresh seed (rather than a
   // multiplicative μ update) avoids the lock-in where an endpoint whose μ
@@ -499,7 +454,7 @@ void GlobalSizingPolicy::updateMultipliers(const LRParams& params)
              endpoint_vertices_.size());
 }
 
-void GlobalSizingPolicy::projectFlowBalance(const LRParams& params)
+void GlobalSizingPolicy::projectFlowBalance(const GlobalSizingConfig& params)
 {
   // Collect all vertices and sort by level (descending) so we visit endpoints
   // before their predecessors.
@@ -697,7 +652,7 @@ void GlobalSizingPolicy::computeSlackBudgets()
     bwd[graph_->id(v)] = best;
   }
 
-  const float margin = lr_params_.setup_slack_margin;
+  const float margin = gs_config_.setup_slack_margin;
   const float kSlackSentinel = 1e6f;
   vertex_budget_.assign(n, 0.0f);
   for (sta::Vertex* v : vertices) {
@@ -740,7 +695,7 @@ std::vector<LRSubproblem::GateSnapshot> GlobalSizingPolicy::buildSnapshots()
                               lambda_size,
                               vertex_budget_.data(),
                               budget_size,
-                              lr_params_.include_clock_network,
+                              gs_config_.include_clock_network,
                               snap)) {
       snapshots.push_back(std::move(snap));
     }
@@ -834,7 +789,7 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
   // ArcDelayCalc copy (arc_delay_calc_ is single-threaded shared state); the
   // copy is cached per worker thread and refreshed if the source changes. With
   // a zero-worker pool, this runs inline on the calling thread.
-  const float safety = lr_params_.budget_safety_factor;
+  const float safety = gs_config_.budget_safety_factor;
   sta::ArcDelayCalc* const src = sta_->arcDelayCalc();
   const std::vector<LRSubproblem::GateDecision> decisions
       = thread_pool_->parallelMap(
@@ -855,7 +810,8 @@ GlobalSizingPolicy::SweepStats GlobalSizingPolicy::singleSweep(
   return applyDecisions(decisions, static_cast<int>(snapshots.size()));
 }
 
-float GlobalSizingPolicy::computeAutoTimingWeight(const LRParams& params) const
+float GlobalSizingPolicy::computeAutoTimingWeight(
+    const GlobalSizingConfig& params) const
 {
   std::vector<float> leakages;
   std::vector<float> timings;
@@ -978,7 +934,7 @@ bool GlobalSizingPolicy::start()
   if (!OptimizationPolicy::start()) {
     return false;
   }
-  loadLrEnvars();
+  gs_config_ = resizer_.globalSizingConfig();
   db_network_ = resizer_.dbNetwork();
   subproblem_ = std::make_unique<LRSubproblem>(&resizer_);
   // Phase B fans the per-gate evaluations across the OpenROAD thread budget
@@ -1019,21 +975,21 @@ void GlobalSizingPolicy::iterate()
   // decision. Inner LR-loop checkpoints nest under this outer ECO.
   resizer_.journalBegin();
 
-  applyPresize(lr_params_.presize_mode, lr_params_.include_clock_network);
+  applyPresize(gs_config_.presize_mode, gs_config_.include_clock_network);
 
   allocate();
-  seedMultipliers(lr_params_);
-  projectFlowBalance(lr_params_);
+  seedMultipliers(gs_config_);
+  projectFlowBalance(gs_config_);
 
   subproblem_->init();
 
-  const float timing_weight = computeAutoTimingWeight(lr_params_);
+  const float timing_weight = computeAutoTimingWeight(gs_config_);
 
-  const int max_iter = (lr_params_.max_iterations > 0)
-                           ? lr_params_.max_iterations
-                           : LRParams{}.max_iterations;
+  const int max_iter = (gs_config_.max_iterations > 0)
+                           ? gs_config_.max_iterations
+                           : GlobalSizingConfig{}.max_iterations;
   const float wns_eps = 1e-12f;
-  LRParams iter_params = lr_params_;
+  GlobalSizingConfig iter_params = gs_config_;
 
   // LR oscillation baseline = WNS at the moment the inner LR journal opens
   // (post-presize). The inner loop checkpoints whenever it matches or beats
@@ -1054,14 +1010,14 @@ void GlobalSizingPolicy::iterate()
     // there is no timing left to recover and further sweeps would only spend
     // area and leakage.
     const float wns_now = sta::delayAsFloat(sta_->worstSlack(policy_max_));
-    if (sta::fuzzyGreaterEqual(wns_now, lr_params_.setup_slack_margin)) {
+    if (sta::fuzzyGreaterEqual(wns_now, gs_config_.setup_slack_margin)) {
       debugPrint(logger_,
                  RSZ,
                  "global_sizing",
                  1,
                  "LR stop: WNS {} meets setup margin {}",
                  sta::delayAsString(wns_now, 3, sta_),
-                 sta::delayAsString(lr_params_.setup_slack_margin, 3, sta_));
+                 sta::delayAsString(gs_config_.setup_slack_margin, 3, sta_));
       break;
     }
 

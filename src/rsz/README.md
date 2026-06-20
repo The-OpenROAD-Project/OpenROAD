@@ -449,6 +449,74 @@ reset_opt_config
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
+### Setting Global Sizing Configuration
+
+The `set_global_sizing_config` command configures the Lagrangian-Relaxation
+global sizing driver. These options only affect
+`repair_timing -phases GLOBAL_SIZING`; they have no effect on other phases.
+Values persist on the block as dbProperties.
+
+Typical use sets only `-presize_mode` and `-include_clock_network`; the
+remaining options are LR-algorithm tuning hyperparameters that most users
+should leave at their defaults.
+
+```tcl
+set_global_sizing_config
+    [-presize_mode mode]
+    [-include_clock_network boolean_value]
+    [-setup_slack_margin float_value]
+    [-max_iterations int_value]
+    [-beta float_value]
+    [-mu_exponent float_value]
+    [-lambda_floor float_value]
+    [-timing_bias float_value]
+    [-budget_safety_factor float_value]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-presize_mode` | Pre-LR initialization. One of `disabled` (default), `min_size_max_vt` (replace every editable instance with its smallest-leakage equivalent), or `max_size_min_vt` (replace every editable instance with its largest-leakage equivalent). |
+| `-include_clock_network` | If true, allow global sizing to size clock network instances. Default false (clock instances are excluded). |
+| `-setup_slack_margin` | WNS target for the LR convergence check. Default 0.0. |
+| `-max_iterations` | Maximum LR outer-loop iterations. Default 20. |
+| `-beta` | Step size α for the dual-subgradient update on λ. Default 0.6. |
+| `-mu_exponent` | Endpoint seed exponent for μ. Default 2.0. |
+| `-lambda_floor` | Floor on per-edge multipliers so unused arcs can re-enter. Default 1e-12. |
+| `-timing_bias` | Dimensionless balance between timing pressure and leakage cost. Default 64.0. |
+| `-budget_safety_factor` | Safety derate (≤ 1) on the per-gate distributed downsize budget. Default 1.0. |
+
+### Reporting Global Sizing Configuration
+
+The `report_global_sizing_config` command reports the current global sizing
+configuration. Each value shows the configured override or `undefined` when
+the option has not been set (the policy falls back to its built-in default).
+
+```tcl
+report_global_sizing_config
+```
+
+### Resetting Global Sizing Configuration
+
+The `reset_global_sizing_config` command clears global sizing configuration
+that was applied with `set_global_sizing_config`. With no options, all
+global sizing configuration is reset. Cleared options revert to the
+policy's built-in defaults.
+
+```tcl
+reset_global_sizing_config
+    [-presize_mode]
+    [-include_clock_network]
+    [-setup_slack_margin]
+    [-max_iterations]
+    [-beta]
+    [-mu_exponent]
+    [-lambda_floor]
+    [-timing_bias]
+    [-budget_safety_factor]
+```
+
 ### Finding Equivalent Cells
 
 The `report_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
