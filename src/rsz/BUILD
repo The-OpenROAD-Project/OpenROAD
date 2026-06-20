@@ -134,6 +134,7 @@ cc_library(
         "src/policy/SetupWnsPolicy.hh",
     ],
     hdrs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
         "include/rsz/Resizer.hh",
     ],
@@ -223,6 +224,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
+        "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/Resizer.hh",
         "src/Resizer-py.i",
         "//:error_swig-py",
