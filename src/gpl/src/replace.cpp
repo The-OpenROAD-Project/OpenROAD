@@ -4,6 +4,7 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
+#include <cmath>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -324,13 +325,16 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     float skew_fraction = options.virtualCtsMaxSkewFraction;
     // Clamp to a sane range; a negative value yields negative insertion
     // delays and values above the clock period make no physical sense.
-    if (skew_fraction < 0.0f || skew_fraction > 1.0f) {
+    if (std::isnan(skew_fraction) || skew_fraction < 0.0f
+        || skew_fraction > 1.0f) {
       log_->warn(GPL,
                  165,
                  "virtual_cts_max_skew_fraction {} out of range [0, 1]; "
                  "clamping.",
                  skew_fraction);
-      skew_fraction = std::clamp(skew_fraction, 0.0f, 1.0f);
+      skew_fraction = std::isnan(skew_fraction)
+                          ? 0.10f
+                          : std::clamp(skew_fraction, 0.0f, 1.0f);
     }
     cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
     cb_->setMaxSkewFraction(skew_fraction);
