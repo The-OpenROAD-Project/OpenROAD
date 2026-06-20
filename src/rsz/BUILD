@@ -148,6 +148,7 @@ cc_library(
         "//src/est",
         "//src/grt",
         "//src/grt:groute",
+        "//src/grt:route_pt",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/stt",
