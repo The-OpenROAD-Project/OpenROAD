@@ -179,7 +179,9 @@ proc global_route { args } {
   # Only update the use_cugr flag when not in incremental start/end mode.
   # During -start_incremental / -end_incremental, preserve the flag that was
   # set during the initial global_route call.
-  set is_incremental_bracket [expr { [info exists flags(-start_incremental)] || [info exists flags(-end_incremental)] }]
+  set is_inc_start [info exists flags(-start_incremental)]
+  set is_inc_end [info exists flags(-end_incremental)]
+  set is_incremental_bracket [expr { $is_inc_start || $is_inc_end }]
   if { !$is_incremental_bracket } {
     grt::set_use_cugr [info exists flags(-use_cugr)]
   }
