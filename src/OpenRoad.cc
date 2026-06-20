@@ -112,7 +112,10 @@ using odb::dbTech;
 
 using utl::ORD;
 
-OpenRoad* OpenRoad::app_ = nullptr;
+// Note: OpenRoad::app_, OpenRoad::openRoad(), OpenRoad::setOpenRoad(),
+// OpenRoad::getDbNetwork() and ord::getOpenRoad() are defined in
+// OpenRoadSingleton.cc so that those symbols live in the `ord_app`
+// static archive (see issue #9563).
 
 OpenRoad::OpenRoad()
 {
@@ -159,26 +162,6 @@ OpenRoad::~OpenRoad()
   delete service_registry_;
 }
 
-sta::dbNetwork* OpenRoad::getDbNetwork()
-{
-  return sta_->getDbNetwork();
-}
-
-/* static */
-OpenRoad* OpenRoad::openRoad()
-{
-  return app_;
-}
-
-/* static */
-void OpenRoad::setOpenRoad(OpenRoad* app, bool reinit_ok)
-{
-  if (!reinit_ok && app_) {
-    std::cerr << "Attempt to reinitialize the application.\n";
-    exit(1);
-  }
-  app_ = app;
-}
 
 ////////////////////////////////////////////////////////////////
 

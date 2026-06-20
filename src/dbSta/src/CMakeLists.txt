@@ -81,6 +81,13 @@ target_include_directories(dbSta
 )
 
 target_link_libraries(dbSta
+  PUBLIC
+    # The SWIG-generated dbStaTCL_wrap.cxx references
+    # ord::OpenRoad::openRoad(), ord::OpenRoad::getDbNetwork() and
+    # ord::getOpenRoad().  Link ord_app PUBLICly so consumers of the
+    # static dbSta archive (e.g. CutGTests) can resolve those symbols
+    # under strict linking (issue #9563).
+    ord_app
   PRIVATE
     OpenSTA
     odb
