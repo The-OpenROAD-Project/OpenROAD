@@ -6231,10 +6231,6 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
     return;
   }
 
-  if (use_cugr_) {
-    cugr_->updateNet(net);
-  }
-
   it->second->setDirtyNet(true);
   it->second->saveLastPinPositions();
   dirty_nets_.insert(net);
@@ -6247,6 +6243,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
+    for (odb::dbNet* net : dirty_nets_) {
+      cugr_->updateNet(net);
+    }
+    dirty_nets_.clear();
     cugr_->routeIncremental();
     routes_ = cugr_->getRoutes();
     return {};
