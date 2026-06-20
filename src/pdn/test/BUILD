@@ -115,6 +115,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip_connect_overpads",
     "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
+    "pads_black_parrot_macro_grid",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
