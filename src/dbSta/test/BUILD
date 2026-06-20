@@ -81,6 +81,7 @@ ALL_TESTS = [
     "write_verilog8",
     "write_verilog9",
     "write_verilog9_hier",
+    "write_verilog10",
 ]
 
 filegroup(
@@ -285,6 +286,9 @@ filegroup(
             ],
             "write_verilog9_hier": [
                 "write_verilog9.v",
+            ],
+            "write_verilog10": [
+                "write_verilog10.def",
             ],
         }.get(test_name, []),
     )
