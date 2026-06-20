@@ -148,6 +148,7 @@ void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
 void GlobalRouter::clear()
 {
   routes_.clear();
+  initial_steiner_wl_.clear();
   for (auto [ignored, net] : db_net_map_) {
     delete net;
   }
@@ -473,6 +474,10 @@ void GlobalRouter::globalRoute(bool save_guides)
       addRemainingGuides(routes_, nets, min_layer, max_layer);
     } else {
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+      // Capture the initial Steiner-tree wirelength per net for the detour
+      // metric, before any overflow-removal routing alters the topology.
+      // Read-only: does not feed the routing engine.
+      computeInitialSteinerWirelengths(nets);
       if (verbose_) {
         reportResources();
       }
@@ -4235,6 +4240,202 @@ void GlobalRouter::computeWirelength()
                   18,
                   "Total wirelength: {} um",
                   total_wirelength / block_->getDefUnits());
+  }
+}
+
+// Build the initial Steiner topology for a net using the same STT builder that
+// FastRoute uses, and return its total wirelength in dbu. Pin positions are the
+// on-grid (track-snapped) positions in dbu, so the result is directly
+// comparable with the final routed wirelength from computeNetWirelength().
+// Read-only: this does not feed the routing engine.
+int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
+{
+  std::vector<Pin>& pins = net->getPins();
+  const int pin_count = static_cast<int>(pins.size());
+  if (pin_count < 2) {
+    return 0;
+  }
+
+  std::vector<int> x;
+  std::vector<int> y;
+  x.reserve(pin_count);
+  y.reserve(pin_count);
+  int driver_index = 0;
+  for (int i = 0; i < pin_count; i++) {
+    const odb::Point& pos = pins[i].getOnGridPosition();
+    x.push_back(pos.getX());
+    y.push_back(pos.getY());
+    if (pins[i].isDriver()) {
+      driver_index = i;
+    }
+  }
+
+  // A two-pin net's Steiner WL is just the HPWL of its pins.
+  if (pin_count == 2) {
+    return std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
+  }
+
+  stt::Tree tree = stt_builder_->makeSteinerTree(x, y, driver_index);
+  return tree.length;
+}
+
+void GlobalRouter::computeInitialSteinerWirelengths(
+    const std::vector<Net*>& nets)
+{
+  initial_steiner_wl_.clear();
+  for (Net* net : nets) {
+    if (net == nullptr) {
+      continue;
+    }
+    odb::dbNet* db_net = net->getDbNet();
+    const int wl = computeNetInitialSteinerWirelength(net);
+    initial_steiner_wl_[db_net] = wl;
+  }
+}
+
+void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
+{
+  block_ = db_->getChip()->getBlock();
+
+  auto init_iter = initial_steiner_wl_.find(net);
+  if (init_iter == initial_steiner_wl_.end()) {
+    logger_->warn(GRT,
+                  330,
+                  "Net {} does not have an initial Steiner wirelength. Run "
+                  "global_route first.",
+                  net->getName());
+    return;
+  }
+  if (!routes_.contains(net)) {
+    logger_->warn(
+        GRT, 331, "Net {} does not have a global route.", net->getName());
+    return;
+  }
+
+  const int64_t initial_wl = init_iter->second;
+  const int64_t final_wl = computeNetWirelength(net);
+  const int64_t delta = final_wl - initial_wl;
+  const double ratio
+      = (initial_wl > 0) ? static_cast<double>(final_wl) / initial_wl : 1.0;
+
+  logger_->info(GRT,
+                332,
+                "Net {} detour: initial {:.2f}um, final {:.2f}um, delta "
+                "{:.2f}um, ratio {:.3f}",
+                net->getName(),
+                block_->dbuToMicrons(initial_wl),
+                block_->dbuToMicrons(final_wl),
+                block_->dbuToMicrons(delta),
+                ratio);
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::ofstream out(file, std::ios::app);
+    if (out.is_open()) {
+      out << "grt_detour: " << net->getName() << " "
+          << block_->dbuToMicrons(initial_wl) << " "
+          << block_->dbuToMicrons(final_wl) << " "
+          << block_->dbuToMicrons(delta) << " " << ratio << "\n";
+    }
+  }
+}
+
+void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
+{
+  block_ = db_->getChip()->getBlock();
+
+  if (initial_steiner_wl_.empty()) {
+    logger_->warn(GRT,
+                  333,
+                  "No initial Steiner wirelengths captured. Run global_route "
+                  "first.");
+    return;
+  }
+
+  struct DetourEntry
+  {
+    odb::dbNet* net;
+    int64_t initial_wl;
+    int64_t final_wl;
+    int64_t delta;
+    double ratio;
+  };
+
+  std::vector<DetourEntry> entries;
+  int64_t total_initial = 0;
+  int64_t total_final = 0;
+  for (const auto& [net, initial_wl] : initial_steiner_wl_) {
+    if (!routes_.contains(net)) {
+      continue;
+    }
+    const int64_t final_wl = computeNetWirelength(net);
+    // Only nets with a meaningful (multi-pin) initial topology are useful.
+    if (initial_wl <= 0) {
+      continue;
+    }
+    const int64_t delta = final_wl - initial_wl;
+    const double ratio = static_cast<double>(final_wl) / initial_wl;
+    entries.push_back({net, initial_wl, final_wl, delta, ratio});
+    total_initial += initial_wl;
+    total_final += final_wl;
+  }
+
+  if (entries.empty()) {
+    logger_->warn(
+        GRT, 334, "No routed multi-pin nets available for detour reporting.");
+    return;
+  }
+
+  std::sort(entries.begin(),
+            entries.end(),
+            [](const DetourEntry& a, const DetourEntry& b) {
+              return a.ratio > b.ratio;
+            });
+
+  const double total_ratio
+      = (total_initial > 0) ? static_cast<double>(total_final) / total_initial
+                            : 1.0;
+
+  logger_->report("Detour metric (final routed WL vs initial Steiner WL):");
+  logger_->report("  Nets analyzed: {}", entries.size());
+  logger_->report("  Total initial Steiner WL: {:.2f}um",
+                  block_->dbuToMicrons(total_initial));
+  logger_->report("  Total final routed WL:    {:.2f}um",
+                  block_->dbuToMicrons(total_final));
+  logger_->report("  Total detour:             {:.2f}um (ratio {:.3f})",
+                  block_->dbuToMicrons(total_final - total_initial),
+                  total_ratio);
+
+  const int n = (top_n <= 0)
+                    ? static_cast<int>(entries.size())
+                    : std::min(top_n, static_cast<int>(entries.size()));
+  logger_->report("  Worst {} nets by detour ratio:", n);
+  logger_->report("    {:>10}  {:>10}  {:>10}  {:>7}  net",
+                  "initial_um",
+                  "final_um",
+                  "delta_um",
+                  "ratio");
+  for (int i = 0; i < n; i++) {
+    const DetourEntry& e = entries[i];
+    logger_->report("    {:>10.2f}  {:>10.2f}  {:>10.2f}  {:>7.3f}  {}",
+                    block_->dbuToMicrons(e.initial_wl),
+                    block_->dbuToMicrons(e.final_wl),
+                    block_->dbuToMicrons(e.delta),
+                    e.ratio,
+                    e.net->getName());
+  }
+
+  std::string file(file_name);
+  if (!file.empty()) {
+    std::ofstream out(file, std::ios::app);
+    if (out.is_open()) {
+      for (const DetourEntry& e : entries) {
+        out << "grt_detour: " << e.net->getName() << " "
+            << block_->dbuToMicrons(e.initial_wl) << " "
+            << block_->dbuToMicrons(e.final_wl) << " "
+            << block_->dbuToMicrons(e.delta) << " " << e.ratio << "\n";
+      }
+    }
   }
 }
 
