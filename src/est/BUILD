@@ -24,6 +24,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//src/grt:groute",
+        "//src/grt:route_pt",
         "//src/sta:opensta_lib",
     ],
 )
