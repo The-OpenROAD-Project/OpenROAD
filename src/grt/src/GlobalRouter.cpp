@@ -4659,9 +4659,6 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
     }
     db_net_map_[db_net] = net;
     updateNetPins(net);
-    if (use_cugr_) {
-      cugr_->updateNet(db_net);
-    }
     return net;
   }
   return nullptr;
