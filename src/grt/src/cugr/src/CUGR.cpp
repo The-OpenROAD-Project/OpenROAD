@@ -1302,8 +1302,6 @@ void CUGR::routeIncremental()
     }
     route();
   }
-
-  printStatistics();
 }
 
 }  // namespace grt

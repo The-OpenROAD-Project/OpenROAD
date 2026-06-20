@@ -375,7 +375,7 @@ class GlobalRouter
   odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets, bool incremental = false);
   std::vector<Net*> initNets(bool check_pin_placement = true);
-  void initCUGR(int min_routing_layer, int max_routing_layer);
+  void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);

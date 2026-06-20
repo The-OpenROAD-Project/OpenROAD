@@ -183,7 +183,7 @@ std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
   return nets;
 }
 
-void GlobalRouter::initCUGR(int min_routing_layer, int max_routing_layer)
+void GlobalRouter::initRoutingGrid(int min_routing_layer, int max_routing_layer)
 {
   // configFastRoute() handles the GRT-0300 timing-availability warning and
   // sets the critical nets percentage to 0 when no liberty is loaded.
@@ -387,7 +387,7 @@ void GlobalRouter::startIncremental()
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     if (use_cugr_) {
-      initCUGR(min_layer, max_layer);
+      initRoutingGrid(min_layer, max_layer);
       std::vector<Net*> nets = initNets(true);
       initialized_ = true;
       odb::PtrSet<odb::dbNet> clock_nets;
@@ -441,7 +441,7 @@ void GlobalRouter::globalRoute(bool save_guides)
     getMinMaxLayer(min_layer, max_layer);
 
     if (use_cugr_) {
-      initCUGR(min_layer, max_layer);
+      initRoutingGrid(min_layer, max_layer);
       std::vector<Net*> nets = initNets(true);
       initialized_ = true;
       odb::PtrSet<odb::dbNet> clock_nets;
