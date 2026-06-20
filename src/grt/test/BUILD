@@ -193,6 +193,13 @@ regression_test(
     data = [":test_resources"],
 )
 
+regression_test(
+    name = "incremental_repair_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
