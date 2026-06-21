@@ -19,5 +19,9 @@ jobs:
 
       - name: Differences to be adressed
         run: |
-          echo "If there are discrepancies, apply the following patch"
-          diff MODULE.bazel.before MODULE.bazel
+          if ! diff MODULE.bazel.before MODULE.bazel ; then
+            echo "Run"
+            echo "bazelisk mod deps --lockfile_mode=update"
+            echo "and update pull request"
+            exit 1
+          fi
