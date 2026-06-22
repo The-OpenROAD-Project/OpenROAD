@@ -36,6 +36,7 @@ add_library(gpl_lib
   src/fftsg2d.cpp
   src/routeBase.cpp
   src/timingBase.cpp
+  src/clockBase.cpp
   src/graphicsNone.cpp
   src/solver.cpp
   src/mbff.cpp
@@ -66,6 +67,7 @@ target_link_libraries(gpl_lib
     Eigen3::Eigen
     odb
     OpenSTA
+    dbSta_lib
     rsz_lib
     grt_lib
     ortools::ortools

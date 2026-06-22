@@ -89,6 +89,7 @@
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
+#include "utl/timer.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -4732,6 +4733,7 @@ void Resizer::repairDesign(double max_wire_length,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -4743,6 +4745,7 @@ void Resizer::repairDesign(double max_wire_length,
   }
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -4916,6 +4919,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
 {
+  utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
   config.setup_slack_margin = setup_margin;
@@ -4938,7 +4942,9 @@ bool Resizer::repairSetup(double setup_margin,
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
-  return optimizer.run();
+  bool result = optimizer.run();
+  logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::reportSwappablePins()
@@ -4997,6 +5003,7 @@ bool Resizer::repairHold(
     bool match_cell_footprint,
     bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   // Some technologies such as nangate45 don't have delay cells. Hence,
@@ -5015,13 +5022,15 @@ bool Resizer::repairHold(
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return repair_hold_->repairHold(setup_margin,
-                                  hold_margin,
-                                  allow_setup_violations,
-                                  max_buffer_percent,
-                                  max_passes,
-                                  max_iterations,
-                                  verbose);
+  bool result = repair_hold_->repairHold(setup_margin,
+                                         hold_margin,
+                                         allow_setup_violations,
+                                         max_buffer_percent,
+                                         max_passes,
+                                         max_iterations,
+                                         verbose);
+  logger_->info(RSZ, 506, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::repairHold(const sta::Pin* end_pin,
@@ -5054,6 +5063,7 @@ bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -5063,7 +5073,9 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  bool result = recover_power_->recoverPower(recover_power_percent, verbose);
+  logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,
