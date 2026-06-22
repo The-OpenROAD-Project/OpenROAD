@@ -845,15 +845,6 @@ void DetailedMgr::assignCellsToSegments(
   for (Node* nd : nodesToConsider) {
     const int nRowsSpanned = arch_->getCellHeightInRows(nd);
 
-    if (nd->isBlock()) {
-      logger_->error(
-          DPL,
-          403,
-          "Instance {} is a macro that is placed but not fixed. Mark placed "
-          "macros as FIXED before running improve_placement.",
-          nd->getDbInst()->getName());
-    }
-
     if (nRowsSpanned == 1) {
       // Single height.
       DetailedSeg* segPtr = findClosestSegment(nd);
