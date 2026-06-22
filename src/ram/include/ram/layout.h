@@ -53,6 +53,8 @@ class Layout
 
   void addCell(std::unique_ptr<Cell> cell);
 
+  bool insertCell(std::unique_ptr<Cell> cell, int idx);
+
   void layoutInit();
 
   void placeLayout();
@@ -85,6 +87,8 @@ class Grid
   bool insertLayout(std::unique_ptr<Layout> layout, int index);
 
   void addCell(std::unique_ptr<Cell> cell, int idx);
+
+  bool insertCell(std::unique_ptr<Cell> cell, int layout_idx, int cell_idx);
 
   void gridInit();
 

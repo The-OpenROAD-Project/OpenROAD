@@ -4,6 +4,7 @@
 %{
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
+#include "utl/timer.h"
 #include <array>
 #include <regex>
 #include <memory>
@@ -46,6 +47,17 @@ using utl::PDN;
 %inline %{
 
 namespace pdn {
+
+void run_pdngen(bool trim, bool add_pins, const char* report_file)
+{
+  utl::Timer timer;
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->checkSetup();
+  pdngen->buildGrids(trim);
+  pdngen->writeToDb(add_pins, report_file);
+  pdngen->resetShapes();
+  ord::getLogger()->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
+}
 
 void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {
@@ -272,6 +284,7 @@ void make_connect(const char* grid_name,
                   int max_rows,
                   int max_columns,
                   const std::vector<odb::dbTechLayer*>& ongrid,
+                  const std::vector<odb::dbTechLayer*>& min_width_layers,
                   const std::vector<odb::dbTechLayer*>& split_cuts_layers,
                   const std::vector<int>& split_cut_pitches,
                   const bool split_cut_stagger,
@@ -283,7 +296,7 @@ void make_connect(const char* grid_name,
     split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
   for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, split_cuts, dont_use_vias);
+    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, min_width_layers, split_cuts, dont_use_vias);
   }
 }
 

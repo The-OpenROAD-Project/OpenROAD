@@ -48,7 +48,6 @@ cc_library(
         "//src/syn/src/ir",
         "//src/utl",
         "@abc",
-        "@boost.stacktrace",
     ],
 )
 
