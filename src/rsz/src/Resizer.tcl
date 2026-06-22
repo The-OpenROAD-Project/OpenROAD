@@ -399,6 +399,239 @@ proc repair_timing { args } {
 }
 
 ################################################################
+#
+# repair_timing_eco -- ECO-driven timing-fix loop with a change report.
+#
+# Orchestrates the convergent-closure loop on top of the existing
+# repair_timing engine and the existing begin_eco/write_eco ECO machinery:
+#
+#   1. Snapshot baseline timing (WNS/TNS) and the netlist state.
+#   2. begin_eco, then run the *real* repair_timing engine (all repair_timing
+#      options pass through unchanged -- nothing is reimplemented and no
+#      repair_timing default is altered).  set_dont_touch is honored because
+#      the underlying resizer skips dont_touch instances/nets, so clean parts
+#      of the design are not perturbed.
+#   3. With the ECO journal still open, snapshot the post-fix timing and
+#      netlist state and compute the *actual* delta (gates resized with
+#      before/after sizes, buffers inserted/removed, nets modified) and print
+#      a concise audit-trail summary plus WNS/TNS before -> after.
+#   4. Optionally write_eco <file> so the exact change set can be replayed.
+#
+# The counts are derived from the real netlist delta (not estimated): every
+# edit the ECO journal records is a netlist/placement change, so the
+# before/after netlist diff is an exact reconstruction of the captured ECO.
+# See ECO_CLOSURE_INVESTIGATION.md for the journal-action analysis.
+
+sta::define_cmd_args "repair_timing_eco" {[-eco_file filename]\
+                                          [repair_timing options...]}
+
+proc repair_timing_eco { args } {
+  # Pull out our own -eco_file key; everything else passes through to
+  # repair_timing verbatim so we never duplicate its option surface.
+  set eco_file ""
+  set passthrough {}
+  set n [llength $args]
+  for { set i 0 } { $i < $n } { incr i } {
+    set a [lindex $args $i]
+    if { $a eq "-eco_file" } {
+      incr i
+      if { $i >= $n } {
+        utl::error RSZ 240 "-eco_file requires a filename argument."
+      }
+      set eco_file [lindex $args $i]
+    } else {
+      lappend passthrough $a
+    }
+  }
+
+  set block [rsz::eco_block "repair_timing_eco"]
+
+  # --- Phase 1: baseline snapshot ---
+  set wns_before [rsz::eco_wns]
+  set tns_before [rsz::eco_tns]
+  set snap_before [rsz::eco_netlist_snapshot $block]
+
+  # --- Phase 2: capture the targeted fix as an ECO ---
+  # begin_eco opens an outer journal; repair_timing's internal nested journals
+  # commit into it, so the open journal holds the full delta.  We never call
+  # endEco (the supported, crash-free capture flow -- see investigation doc).
+  begin_eco
+  repair_timing {*}$passthrough
+
+  # --- Phase 3: post-fix snapshot + delta (journal still open) ---
+  set wns_after [rsz::eco_wns]
+  set tns_after [rsz::eco_tns]
+  set snap_after [rsz::eco_netlist_snapshot $block]
+
+  set delta [rsz::eco_compute_delta $snap_before $snap_after]
+  rsz::eco_report_summary $delta \
+    $wns_before $tns_before $wns_after $tns_after
+
+  # --- Phase 4: optionally persist the exact change set ---
+  if { $eco_file ne "" } {
+    write_eco $eco_file
+    utl::report "ECO change set written ([file tail $eco_file])"
+  }
+
+  return $delta
+}
+
+# Resolve the current block, raising a clean error when no design is loaded.
+proc rsz::eco_block { cmd } {
+  set db [ord::get_db]
+  if { $db eq "NULL" } {
+    utl::error RSZ 241 "no database is loaded; $cmd requires a design."
+  }
+  set chip [$db getChip]
+  if { $chip eq "NULL" } {
+    utl::error RSZ 242 "no chip is loaded; $cmd requires a design."
+  }
+  set block [$chip getBlock]
+  if { $block eq "NULL" } {
+    utl::error RSZ 243 "no block is loaded; $cmd requires a design."
+  }
+  return $block
+}
+
+# Worst negative slack (clamped at 0 -- positive slack reports as 0 WNS),
+# using the same primitives as the resizer's own PPA reporting.
+proc rsz::eco_wns { } {
+  set wns [sta::worst_slack_cmd max]
+  if { $wns > 0.0 } {
+    set wns 0.0
+  }
+  return $wns
+}
+
+proc rsz::eco_tns { } {
+  return [sta::total_negative_slack_cmd max]
+}
+
+# Snapshot of the netlist: a dict of instance-name -> master-name and a dict
+# of net-name -> sorted pin-connectivity list.  Resizes (master swap), buffer
+# insertion/removal (inst + net create/destroy) and pin swaps (connectivity
+# change) are all captured by diffing two of these.
+proc rsz::eco_netlist_snapshot { block } {
+  set insts [dict create]
+  foreach inst [$block getInsts] {
+    dict set insts [$inst getName] [[$inst getMaster] getName]
+  }
+  set nets [dict create]
+  foreach net [$block getNets] {
+    set conns {}
+    foreach iterm [$net getITerms] {
+      lappend conns "[[$iterm getInst] getName]/[[$iterm getMTerm] getName]"
+    }
+    dict set nets [$net getName] [lsort $conns]
+  }
+  return [list $insts $nets]
+}
+
+# Classify a master name as a buffer/inverter via its liberty cell.
+# Returns 1 for buffers/inverters, 0 otherwise; 0 if the cell is unknown.
+proc rsz::eco_is_buffer_master { master_name } {
+  set cell [sta::find_liberty_cell $master_name]
+  if { $cell eq "" || $cell eq "NULL" } {
+    return 0
+  }
+  if { [get_property $cell is_buffer] || [get_property $cell is_inverter] } {
+    return 1
+  }
+  return 0
+}
+
+# Compute the netlist delta between two snapshots.  Returns a dict with:
+#   resized       : list of {inst before_master after_master}
+#   bufs_inserted : count of added buffer/inverter instances
+#   bufs_removed  : count of removed buffer/inverter instances
+#   insts_added   : count of added instances (any kind)
+#   insts_removed : count of removed instances (any kind)
+#   nets_modified : count of nets whose connectivity changed (plus added/removed)
+proc rsz::eco_compute_delta { before after } {
+  lassign $before insts_b nets_b
+  lassign $after insts_a nets_a
+
+  set resized {}
+  set bufs_inserted 0
+  set bufs_removed 0
+  set insts_added 0
+  set insts_removed 0
+
+  # Resized: present in both, master changed.
+  dict for { name master_b } $insts_b {
+    if { [dict exists $insts_a $name] } {
+      set master_a [dict get $insts_a $name]
+      if { $master_a ne $master_b } {
+        lappend resized [list $name $master_b $master_a]
+      }
+    } else {
+      # Removed instance.
+      incr insts_removed
+      if { [rsz::eco_is_buffer_master $master_b] } {
+        incr bufs_removed
+      }
+    }
+  }
+  # Added instances.
+  dict for { name master_a } $insts_a {
+    if { ![dict exists $insts_b $name] } {
+      incr insts_added
+      if { [rsz::eco_is_buffer_master $master_a] } {
+        incr bufs_inserted
+      }
+    }
+  }
+
+  # Nets modified: connectivity changed, or net added/removed.
+  set nets_modified 0
+  dict for { name conns_b } $nets_b {
+    if { [dict exists $nets_a $name] } {
+      if { [dict get $nets_a $name] ne $conns_b } {
+        incr nets_modified
+      }
+    } else {
+      incr nets_modified
+    }
+  }
+  dict for { name conns_a } $nets_a {
+    if { ![dict exists $nets_b $name] } {
+      incr nets_modified
+    }
+  }
+
+  return [dict create \
+    resized $resized \
+    bufs_inserted $bufs_inserted \
+    bufs_removed $bufs_removed \
+    insts_added $insts_added \
+    insts_removed $insts_removed \
+    nets_modified $nets_modified]
+}
+
+# Print a concise, human-auditable change + timing summary.
+proc rsz::eco_report_summary { delta wns_b tns_b wns_a tns_a } {
+  set resized [dict get $delta resized]
+  utl::report ""
+  utl::report "==================== ECO change summary ===================="
+  utl::report [format "  Gates resized      : %d" [llength $resized]]
+  foreach r $resized {
+    lassign $r name before after
+    utl::report [format "      %-20s %s -> %s" $name $before $after]
+  }
+  utl::report [format "  Buffers inserted   : %d" [dict get $delta bufs_inserted]]
+  utl::report [format "  Buffers removed    : %d" [dict get $delta bufs_removed]]
+  utl::report [format "  Instances added    : %d" [dict get $delta insts_added]]
+  utl::report [format "  Instances removed  : %d" [dict get $delta insts_removed]]
+  utl::report [format "  Nets modified      : %d" [dict get $delta nets_modified]]
+  utl::report "  ----------------------------------------------------------"
+  utl::report [format "  WNS (ns)  %12.4f -> %12.4f" \
+    [expr { $wns_b * 1e9 }] [expr { $wns_a * 1e9 }]]
+  utl::report [format "  TNS (ns)  %12.4f -> %12.4f" \
+    [expr { $tns_b * 1e9 }] [expr { $tns_a * 1e9 }]]
+  utl::report "============================================================"
+}
+
+################################################################
 
 sta::define_cmd_args "report_design_area" {}
 

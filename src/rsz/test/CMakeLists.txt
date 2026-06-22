@@ -24,6 +24,7 @@ or_integration_tests(
     eliminate_dead_logic1
     eliminate_dead_logic2
     eco_round_trip
+    repair_timing_eco
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1
