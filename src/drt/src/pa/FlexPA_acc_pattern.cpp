@@ -522,7 +522,9 @@ int FlexPA::getEdgeCost(
           }
         }
 
-        has_vio = !genPatternsGC({target_obj}, objs, Edge);
+        if (!genPatternsGC({target_obj}, objs, Edge)) {
+          return violation_cost;
+        }
       }
     }
   }
