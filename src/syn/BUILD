@@ -15,6 +15,9 @@ cc_library(
     name = "syn",
     srcs = [
         "src/flow/abc.cc",
+        "src/flow/acd.cc",
+        "src/flow/acd.h",
+        "src/flow/acd_timing.cc",
         "src/flow/bitblast.cc",
         "src/flow/combinational_mapper.cc",
         "src/flow/combinational_mapper_npn.cc",
