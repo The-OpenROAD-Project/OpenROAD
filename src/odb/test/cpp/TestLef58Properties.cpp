@@ -645,4 +645,36 @@ TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
   EXPECT_EQ(pwl.ratios[1], 4.0);
 }
 
+// Regression test for issue #10668: a CELLEDGESPACINGTABLE EDGETYPE group name
+// that is numeric or a single character (e.g. "1") must parse correctly and
+// must not trigger ODB-0299 (parse mismatch).
+TEST_F(Fixture, TestLef58CellEdgeSpacingNumericEdgeType)
+{
+  const char* libname = "lef58_celledgespacing_numeric.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_celledgespacing_numeric.lef");
+
+  dbTech* tech = db_->getTech();
+  auto cell_edge_spacing_tbl = tech->getCellEdgeSpacingTable();
+  // All three entries must be parsed (numeric, mixed numeric/alpha, and alpha).
+  EXPECT_EQ(cell_edge_spacing_tbl.size(), 3);
+
+  auto it = cell_edge_spacing_tbl.begin();
+  auto edge_spc = *it;
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.4 * 1000);
+
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G2");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.2 * 1000);
+
+  // Alpha/multi-char group names (the pre-existing form) must still work.
+  edge_spc = *(++it);
+  EXPECT_EQ(edge_spc->getFirstEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSecondEdgeType(), "G1");
+  EXPECT_EQ(edge_spc->getSpacing(), 0.1 * 1000);
+}
+
 }  // namespace odb
