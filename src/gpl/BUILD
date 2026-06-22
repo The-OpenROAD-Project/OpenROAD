@@ -38,6 +38,8 @@ cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
