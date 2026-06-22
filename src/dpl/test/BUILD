@@ -47,6 +47,7 @@ COMPULSORY_TESTS = [
     "hybrid_cells",
     "hybrid_cells2",
     "ibex",
+    "macro_placed_not_fixed",
     "max_disp1",
     "mirror1",
     "mirror2",
@@ -222,6 +223,10 @@ filegroup(
             ],
             "low_util03": [
                 "ibex_core_replace.def",
+            ],
+            "macro_placed_not_fixed": [
+                "block2.lef",
+                "cell_on_block1.def",
             ],
             "max_disp1": [
                 "Nangate45/fakeram45_1024x32.lef",
