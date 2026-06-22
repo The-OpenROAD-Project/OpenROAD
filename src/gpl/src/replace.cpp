@@ -248,7 +248,8 @@ void Replace::runMBFF(const int max_sz,
                       const float alpha,
                       const float beta,
                       const int threads,
-                      const int num_paths)
+                      const int num_paths,
+                      const float clock_power_weight)
 {
   MBFF pntset(db_,
               sta_,
@@ -259,7 +260,7 @@ void Replace::runMBFF(const int max_sz,
               num_paths,
               gui_debug_,
               graphics_->MakeNew(log_));
-  pntset.Run(max_sz, alpha, beta);
+  pntset.Run(max_sz, alpha, beta, clock_power_weight);
 }
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,

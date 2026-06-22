@@ -91,11 +91,13 @@ sta::define_cmd_args "cluster_flops" {\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size -num_paths } \
+    keys { -tray_weight -timing_weight -max_split_size -num_paths \
+      -clock_power_weight } \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -106,6 +108,7 @@ proc cluster_flops { args } {
   set timing_weight 0.1
   set max_split_size 500
   set num_paths 0
+  set clock_power_weight 0.0
 
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
@@ -123,7 +126,15 @@ proc cluster_flops { args } {
     set num_paths $keys(-num_paths)
   }
 
-  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
+  if { [info exists keys(-clock_power_weight)] } {
+    set clock_power_weight $keys(-clock_power_weight)
+    if { $clock_power_weight < 0 } {
+      utl::error GPL 115 "-clock_power_weight must be non-negative."
+    }
+  }
+
+  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \
+    $num_paths $clock_power_weight
 }
 
 sta::define_cmd_args "global_placement_debug" {

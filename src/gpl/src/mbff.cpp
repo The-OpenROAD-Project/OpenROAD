@@ -1989,7 +1989,14 @@ void MBFF::SetRatios(const Mask& array_mask)
         const float tray_total
             = tray_power_[array_mask][i]
               + tray_internal_energy_[array_mask][i] * activity;
-        norm_power_[i] = (tray_total / slot_cnt) / single_bit_power_;
+        // Credit clock-tree power saved by banking. An N-bit tray presents one
+        // clock sink instead of N, so the per-sink clock-tree power p_ct is
+        // added to both the tray (one sink) and the single-bit baseline (one
+        // sink). With p_ct = 0 this reduces to the legacy ratio; with p_ct > 0
+        // larger trays become relatively cheaper, promoting higher banking.
+        const float p_ct = clock_power_weight_ * single_bit_power_;
+        norm_power_[i]
+            = ((tray_total + p_ct) / slot_cnt) / (single_bit_power_ + p_ct);
         debugPrint(log_,
                    GPL,
                    "mbff",
@@ -2079,8 +2086,12 @@ void MBFF::SetTrayNames()
   }
 }
 
-void MBFF::Run(const int mx_sz, const float alpha, const float beta)
+void MBFF::Run(const int mx_sz,
+               const float alpha,
+               const float beta,
+               const float clock_power_weight)
 {
+  clock_power_weight_ = clock_power_weight;
   std::srand(1);
   omp_set_num_threads(num_threads_);
 
@@ -2445,6 +2456,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       single_bit_width_(0.0),
       single_bit_power_(0.0),
       clock_period_(0.0),
+      clock_power_weight_(0.0),
       single_bit_master_(nullptr),
       test_idx_(-1)
 {

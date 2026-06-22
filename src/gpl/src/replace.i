@@ -145,11 +145,12 @@ replace_nesterov_place_cmd(const std::map<std::string, std::string>& keys,
 
 
 void
-replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths) 
+replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
+                     float clock_power_weight)
 {
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
-  replace->runMBFF(max_sz, alpha, beta, threads, num_paths);   
+  replace->runMBFF(max_sz, alpha, beta, threads, num_paths, clock_power_weight);
 }
 
 

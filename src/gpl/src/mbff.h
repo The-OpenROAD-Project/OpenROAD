@@ -55,7 +55,7 @@ class MBFF
        std::unique_ptr<AbstractGraphics> graphics);
 
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta);
+  void Run(int mx_sz, float alpha, float beta, float clock_power_weight = 0.0);
 
  private:
   enum PortName
@@ -242,6 +242,9 @@ class MBFF
   float single_bit_width_;
   float single_bit_power_;
   float clock_period_;
+  // Per-sink clock-tree power expressed as a multiple of single_bit_power_.
+  // 0 reproduces the legacy cost model (clock-tree savings not credited).
+  float clock_power_weight_;
   odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars
