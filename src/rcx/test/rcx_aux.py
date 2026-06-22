@@ -35,7 +35,6 @@ def extract_parasitics(
     opts.corner = corner
     opts.max_res = max_res
     opts.coupling_threshold = coupling_threshold
-    opts.signal_table = 3
     opts.cc_model = cc_model
     opts.context_depth = context_depth
     opts.lef_res = lef_res

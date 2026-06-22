@@ -3,8 +3,13 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 #
 # Lint all TCL files using tclint.
+
 set -euo pipefail
-TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+TOOL="$(realpath "$1")"
+GIT="$(realpath "$2")"
+
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"
-git ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "$TOOL"
+
+"${GIT}" ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "${TOOL}"
