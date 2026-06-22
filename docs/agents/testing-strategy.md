@@ -131,8 +131,9 @@ The existing fixture stack already supports this:
   `PASSFAIL_TESTS` where possible.
 - Treat the C++ test as the source of truth for correctness; bindings prove
   plumbing only. Do **not** duplicate algorithm assertions across Tcl + Python.
-- A linter can enumerate public commands from the `.tcl`/`.i` files and flag any
-  without a smoke test, guaranteeing binding coverage without hand-curation.
+- A future linter (not yet implemented) could enumerate public commands from the
+  `.tcl`/`.i` files and flag any without a smoke test, guaranteeing binding
+  coverage without hand-curation.
 
 ## Decision tree for a new test
 
@@ -182,9 +183,9 @@ at once.
 6. **Delete the superseded Tcl/Python test(s) and their artifacts, and
    de-register from BOTH build systems** -- in this same change. Remove the
    `.tcl`/`.py` and its `.ok`/`.defok`/`.vok`; drop the name from
-   `test/CMakeLists.txt` (`or_integration_tests`) **and** `test/BUILD`
-   (`regression_test`). Remove checked-in DEF/LEF data only if nothing else
-   references it (grep first -- fixtures like Nangate45 and shared `data/` files
+   `src/<module>/test/CMakeLists.txt` (`or_integration_tests`) **and**
+   `src/<module>/test/BUILD` (`regression_test`). Remove checked-in DEF/LEF data
+   only if nothing else references it (grep first -- fixtures like Nangate45 and shared `data/` files
    are used by many tests).
 7. **Check residual binding coverage.** Removing a *golden* test does not have to
    mean the command loses all Tcl/Python exercise: a command is often also
