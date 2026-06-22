@@ -1123,28 +1123,43 @@ Divergence occured in 2 regions.
 [INFO GPL-1012] Total routability artificial inflation: 6798.17 (+1.62%)
 [INFO GPL-1013] Total timing-driven delta area: -27509.56 (-6.55%)
 [INFO GPL-1014] Final placement area: 399199.60 (-4.93%)
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 45687 cells
 [INFO DPL-0006] Core area: 878902.94 um^2, Instances area: 341319.85 um^2, Utilization: 38.8%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 341319.85 um^2, Utilization: 38.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 1413 sites horizontally, +/- 238 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                   16901
-Diamond Move Success:          16901 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 45687 cells
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       4845 |      2521 |      2112
+        1 |       4571 |      2465 |      1894
+        2 |       4568 |      2464 |      1892
+        3 |       4568 |      2464 |      1892
+        4 |       4568 |      2464 |      1892
+        5 |       4568 |      2464 |      1892
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 4568 for 3 consecutive iterations.
+Using old diamond search for 2464 remaining illegal cells.
+diamond recovery: recovered 2464/2464 stuck cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          0 |         0 |         0
+Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
-total displacement     879467.5 u
-average displacement       19.2 u
-max displacement          916.7 u
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
 original HPWL         1908308.4 u
-legalized HPWL        2601543.7 u
-delta HPWL                   36 %
+legalized HPWL        2619684.6 u
+delta HPWL                   37 %
 
 Detailed placement improvement.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 45687 cells
 [INFO DPL-0401] Setting random seed to 1.
 [INFO DPL-0402] Setting maximum displacement 0 0 to 1878640 1878640 units.
 [INFO DPL-0320] Collected 739 fixed cells.
@@ -1159,43 +1174,44 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 [INFO DPL-0303] Running algorithm for independent set matching.
 [INFO DPL-0300] Set matching objective is wirelength.
-[INFO DPL-0301] Pass   1 of matching; objective is 2.601865e+09.
-[INFO DPL-0302] End of matching; objective is 2.590371e+09, improvement is 0.44 percent.
+[INFO DPL-0301] Pass   1 of matching; objective is 2.619732e+09.
+[INFO DPL-0302] End of matching; objective is 2.608054e+09, improvement is 0.45 percent.
 [INFO DPL-0303] Running algorithm for global swaps.
-[INFO DPL-0306] Pass   1 of global swaps; hpwl is 2.541692e+09.
-[INFO DPL-0306] Pass   2 of global swaps; hpwl is 2.517641e+09.
-[INFO DPL-0307] End of global swaps; objective is 2.517641e+09, improvement is 2.81 percent.
+[INFO DPL-0306] Pass   1 of global swaps; hpwl is 2.537157e+09.
+[INFO DPL-0306] Pass   2 of global swaps; hpwl is 2.507871e+09.
+[INFO DPL-0306] Pass   3 of global swaps; hpwl is 2.492022e+09.
+[INFO DPL-0307] End of global swaps; objective is 2.492022e+09, improvement is 4.45 percent.
 [INFO DPL-0303] Running algorithm for vertical swaps.
-[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 2.495215e+09.
-[INFO DPL-0309] End of vertical swaps; objective is 2.495215e+09, improvement is 0.89 percent.
+[INFO DPL-0308] Pass   1 of vertical swaps; hpwl is 2.469738e+09.
+[INFO DPL-0309] End of vertical swaps; objective is 2.469738e+09, improvement is 0.89 percent.
 [INFO DPL-0303] Running algorithm for reordering.
-[INFO DPL-0304] Pass   1 of reordering; objective is 2.463748e+09.
-[INFO DPL-0304] Pass   2 of reordering; objective is 2.447123e+09.
-[INFO DPL-0305] End of reordering; objective is 2.447123e+09, improvement is 1.93 percent.
+[INFO DPL-0304] Pass   1 of reordering; objective is 2.443135e+09.
+[INFO DPL-0304] Pass   2 of reordering; objective is 2.430032e+09.
+[INFO DPL-0305] End of reordering; objective is 2.430032e+09, improvement is 1.61 percent.
 [INFO DPL-0303] Running algorithm for random improvement.
 [INFO DPL-0324] Random improver is using random generator.
 [INFO DPL-0325] Random improver is using hpwl objective.
 [INFO DPL-0326] Random improver cost string is (a).
 [INFO DPL-0332] End of pass, Generator random called 913740 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 913740, swaps 283298, moves 615561 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.438493e+09, Scratch cost 2.391353e+09, Incremental cost 2.391353e+09, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 2.391353e+09.
-[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.93 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 913740, swaps 300780, moves 604772 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.421186e+09, Scratch cost 2.376944e+09, Incremental cost 2.376944e+09, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 2.376944e+09.
+[INFO DPL-0327] Pass   1 of random improver; improvement in cost is 1.83 percent.
 [INFO DPL-0332] End of pass, Generator random called 913740 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 1827480, swaps 576102, moves 1222543 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.391353e+09, Scratch cost 2.362597e+09, Incremental cost 2.362597e+09, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 2.362597e+09.
-[INFO DPL-0327] Pass   2 of random improver; improvement in cost is 1.20 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 1827480, swaps 609845, moves 1201642 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.376944e+09, Scratch cost 2.347789e+09, Incremental cost 2.347789e+09, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 2.347789e+09.
+[INFO DPL-0327] Pass   2 of random improver; improvement in cost is 1.23 percent.
 [INFO DPL-0332] End of pass, Generator random called 913740 times.
-[INFO DPL-0335] Generator random, Cumulative attempts 2741220, swaps 876868, moves 1822077 since last reset.
-[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.362597e+09, Scratch cost 2.339663e+09, Incremental cost 2.339663e+09, Mismatch? N
-[INFO DPL-0338] End of pass, Total cost is 2.339663e+09.
-[INFO DPL-0327] Pass   3 of random improver; improvement in cost is 0.97 percent.
-[INFO DPL-0328] End of random improver; improvement is 4.052914 percent.
+[INFO DPL-0335] Generator random, Cumulative attempts 2741220, swaps 925883, moves 1791689 since last reset.
+[INFO DPL-0333] End of pass, Objective hpwl, Initial cost 2.347789e+09, Scratch cost 2.324834e+09, Incremental cost 2.324834e+09, Mismatch? N
+[INFO DPL-0338] End of pass, Total cost is 2.324834e+09.
+[INFO DPL-0327] Pass   3 of random improver; improvement in cost is 0.98 percent.
+[INFO DPL-0328] End of random improver; improvement is 3.979546 percent.
 [INFO DPL-0380] Cell flipping.
 [INFO DPL-0382] Changed 0 cell orientations for row compatibility.
-[INFO DPL-0383] Performed 12577 cell flips.
-[INFO DPL-0384] End of flipping; objective is 2.330832e+09, improvement is 0.75 percent.
+[INFO DPL-0383] Performed 12479 cell flips.
+[INFO DPL-0384] End of flipping; objective is 2.316856e+09, improvement is 0.75 percent.
 [INFO DPL-0313] Found 0 cells in wrong regions.
 [INFO DPL-0315] Found 0 row alignment problems.
 [INFO DPL-0314] Found 0 site alignment problems.
@@ -1203,8 +1219,10 @@ Detailed placement improvement.
 [INFO DPL-0312] Found 0 edge spacing violations and 0 padding violations.
 Detailed Improvement Results
 ------------------------------------------
-Original HPWL          2601543.7 u ( 1620463.4,   981080.3)
-Final HPWL             2330971.0 u ( 1430995.2,   899975.8)
-Delta HPWL                 -10.4 % (     -11.7,       -8.3)
+Original HPWL          2619684.6 u ( 1613078.4,  1006606.2)
+Final HPWL             2316895.6 u ( 1424757.0,   892138.6)
+Delta HPWL                 -11.6 % (     -11.7,      -11.4)
 
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 2.720 um: 45687 cells
 No differences found.

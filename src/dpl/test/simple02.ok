@@ -4,18 +4,16 @@
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 1 cells
 [INFO DPL-0006] Core area: 34.05 um^2, Instances area: 1.86 um^2, Utilization: 5.5%
+[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 1.86 um^2, Utilization: 5.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       1
-Diamond Move Success:              1 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
+[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 1 cells
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -25,4 +23,6 @@ original HPWL               8.9 u
 legalized HPWL              9.1 u
 delta HPWL                    2 %
 
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 1 cells
 No differences found.

@@ -7,4 +7,6 @@
 [INFO ODB-0303] The initial 57 rows (24054 sites) were cut with 1 shapes for a total of 57 rows (24038 sites).
 [INFO TAP-0003] Inserted 6 endcap corners.
 [INFO TAP-0004] Inserted 933 endcaps.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 939 cells
 No differences found.

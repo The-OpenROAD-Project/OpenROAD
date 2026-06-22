@@ -104,6 +104,16 @@ void Opendp::setDeepIterativePlacement(const bool deep_iterative)
   }
 }
 
+void Opendp::setNegotiationDebugInterval(const int iterative_jump)
+{
+  negotiation_debug_interval_ = std::max(1, iterative_jump);
+}
+
+void Opendp::setNegotiationDebugStart(const int iterative_start)
+{
+  negotiation_debug_start_ = std::max(0, iterative_start);
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
@@ -118,12 +128,15 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_negotiation,
-                               const bool run_abacus)
+                               const bool use_old_diamond,
+                               const bool run_abacus,
+                               const int site_search_window,
+                               const int row_search_window,
+                               const double drc_penalty)
 {
   utl::Timer timer;
   incremental_ = incremental;
-  use_negotiation_ |= use_negotiation;
+  use_old_diamond_ |= use_old_diamond;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -148,11 +161,22 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                      * static_cast<int64_t>(node->getHeight().v);
       }
     }
+    int64_t total_inst_area = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      odb::dbMaster* master = inst->getMaster();
+      total_inst_area += static_cast<int64_t>(master->getWidth())
+                         * static_cast<int64_t>(master->getHeight());
+    }
     const double utilization = core_area > 0
                                    ? (static_cast<double>(inst_area)
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
+    const double total_utilization = core_area > 0
+                                         ? (static_cast<double>(total_inst_area)
+                                            / static_cast<double>(core_area))
+                                               * 100.0
+                                         : 0.0;
     logger_->info(DPL,
                   6,
                   "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
@@ -160,7 +184,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                   block_->dbuAreaToMicrons(core_area),
                   block_->dbuAreaToMicrons(inst_area),
                   utilization);
-    logger_->metric("utilizatin__before__dpl", utilization);
+    logger_->info(DPL,
+                  7,
+                  "All instances area (incl. macros/pads/fixed): {:.2f} um^2, "
+                  "Utilization: {:.1f}%",
+                  block_->dbuAreaToMicrons(total_inst_area),
+                  total_utilization);
+    logger_->metric("utilization__before__dpl", total_utilization);
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
@@ -185,7 +215,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                 max_displacement_x_,
                 max_displacement_y_);
 
-  if (!use_negotiation_) {
+  if (use_old_diamond_) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
     findDisplacementStats();
@@ -223,8 +253,17 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
+    if (site_search_window > 0) {
+      negotiation.setSiteSearchWindow(site_search_window);
+    }
+    if (row_search_window > 0) {
+      negotiation.setRowSearchWindow(row_search_window);
+    }
+    if (drc_penalty > 0.0) {
+      negotiation.setDrcPenalty(drc_penalty);
+    }
     negotiation.legalize();
-    negotiation.setDplPositions();
+    negotiation.commitNegotiationPosToDpl();
 
     if (negotiation.numViolations() > 0) {
       logger_->warn(DPL,
@@ -234,6 +273,11 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                     negotiation.numViolations());
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
+      const auto illegal_nodes = negotiation.getIllegalNodes();
+      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
     }
 
     findDisplacementStats();

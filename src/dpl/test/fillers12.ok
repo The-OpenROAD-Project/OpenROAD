@@ -1,5 +1,9 @@
 [INFO ODB-0227] LEF file: fillers12.lef, created 2 layers, 2 library cells
 [INFO ODB-0128] Design: fillers12
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 1 cells
 [INFO DPL-0001] Placed 8 filler instances.
+[INFO DPL-0388] Cell height distribution (1 unique micron height(s)):
+[INFO DPL-0389]   height 1.400 um: 9 cells
 No differences found.
