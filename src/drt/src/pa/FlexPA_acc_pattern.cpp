@@ -496,64 +496,59 @@ int FlexPA::getEdgeCost(
 
     has_vio = !genPatternsGC({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
+    if (has_vio) {
+      return violation_cost;
+    }
 
-    // look back for GN14
-    if (!has_vio) {
-      // check one more back
-      if (prev_node->hasPrevNode()) {
-        auto prev_prev_node = prev_node->getPrevNode();
-        auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
-            = prev_prev_node->getIdx();
-        if (!prev_prev_node->isSource()) {
-          const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
-          const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
-          const frAccessPoint* ap_3
-              = pa_3->getAccessPoint(prev_prev_acc_point_idx);
-          std::unique_ptr<frVia> via3;
-          if (ap_3->hasAccess(frDirEnum::U)) {
-            odb::Point pt3(ap_3->getPoint());
-            xform.apply(pt3);
-            via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
-            if (inst_term_3->hasNet()) {
-              objs.emplace_back(via3.get(), inst_term_3->getNet());
-            } else {
-              objs.emplace_back(via3.get(), inst_term_3);
-            }
+    // check one more back
+    if (prev_node->hasPrevNode()) {
+      auto prev_prev_node = prev_node->getPrevNode();
+      auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
+          = prev_prev_node->getIdx();
+      if (!prev_prev_node->isSource()) {
+        const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
+        const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
+        const frAccessPoint* ap_3
+            = pa_3->getAccessPoint(prev_prev_acc_point_idx);
+        std::unique_ptr<frVia> via3;
+        if (ap_3->hasAccess(frDirEnum::U)) {
+          odb::Point pt3(ap_3->getPoint());
+          xform.apply(pt3);
+          via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
+          if (inst_term_3->hasNet()) {
+            objs.emplace_back(via3.get(), inst_term_3->getNet());
+          } else {
+            objs.emplace_back(via3.get(), inst_term_3);
           }
-
-          has_vio = !genPatternsGC({target_obj}, objs, Edge);
         }
+
+        has_vio = !genPatternsGC({target_obj}, objs, Edge);
       }
     }
   }
 
-  if (!has_vio) {
-    if ((prev_pin_idx == 0
-         && used_access_points.find(
-                std::make_pair(prev_pin_idx, prev_acc_point_idx))
-                != used_access_points.end())
-        || (curr_pin_idx == (int) pins.size() - 1
-            && used_access_points.find(
-                   std::make_pair(curr_pin_idx, curr_acc_point_idx))
-                   != used_access_points.end())) {
-      edge_cost = 100;
-    } else if (viol_access_points.find(
-                   std::make_pair(prev_pin_idx, prev_acc_point_idx))
-                   != viol_access_points.end()
-               || viol_access_points.find(
-                      std::make_pair(curr_pin_idx, curr_acc_point_idx))
-                      != viol_access_points.end()) {
-      edge_cost = 1000;
-    } else {
-      const int prev_node_cost = prev_node->getNodeCost();
-      const int curr_node_cost = curr_node->getNodeCost();
-      edge_cost = (prev_node_cost + curr_node_cost) / 2;
-    }
-  } else {
-    edge_cost = 1000 /*violation cost*/;
+  if ((prev_pin_idx == 0
+       && used_access_points.find(
+              std::make_pair(prev_pin_idx, prev_acc_point_idx))
+              != used_access_points.end())
+      || (curr_pin_idx == (int) pins.size() - 1
+          && used_access_points.find(
+                 std::make_pair(curr_pin_idx, curr_acc_point_idx))
+                 != used_access_points.end())) {
+    return repeated_ap_cost;
   }
 
-  return edge_cost;
+  if (viol_access_points.find(std::make_pair(prev_pin_idx, prev_acc_point_idx))
+          != viol_access_points.end()
+      || viol_access_points.find(
+             std::make_pair(curr_pin_idx, curr_acc_point_idx))
+             != viol_access_points.end()) {
+    return violation_cost;
+  }
+
+  const int prev_node_cost = prev_node->getNodeCost();
+  const int curr_node_cost = curr_node->getNodeCost();
+  return prev_node_cost + curr_node_cost;
 }
 
 std::vector<int> FlexPA::extractAccessPatternFromNodes(
