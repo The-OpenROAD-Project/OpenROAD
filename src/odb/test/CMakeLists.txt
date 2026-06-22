@@ -60,7 +60,6 @@ or_integration_tests(
     row_settings
     sky130hd_multi_patterned
     smash_vias
-    swap_master
     transform
     wire_encoder
     write_cdl
