@@ -59,7 +59,7 @@ class ManPage:
         # it is okay for a function to have no switches.
         # assert self.switches, print("func switches not set")
         filepath = f"{dst_dir}/{self.name}.md"
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             self.write_header(f)
             self.write_name(f)
             self.write_synopsis(f)
