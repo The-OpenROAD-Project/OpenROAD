@@ -747,16 +747,20 @@ class HeadlessViewer
   // assume "everything visible, nothing selectable" so headless renderers draw
   // by default without a Qt widget.  Viewers that track their own visibility
   // model (e.g. the web viewer) may override these.
-  virtual bool checkDisplayControlVisible(const std::string& name)
+  virtual bool checkDisplayControlVisible(const std::string& /* name */)
   {
     return true;
   }
-  virtual bool checkDisplayControlSelectable(const std::string& name)
+  virtual bool checkDisplayControlSelectable(const std::string& /* name */)
   {
     return false;
   }
-  virtual void setDisplayControlVisible(const std::string& name, bool value) {}
-  virtual void setDisplayControlSelectable(const std::string& name, bool value)
+  virtual void setDisplayControlVisible(const std::string& /* name */,
+                                        bool /* value */)
+  {
+  }
+  virtual void setDisplayControlSelectable(const std::string& /* name */,
+                                           bool /* value */)
   {
   }
 };
