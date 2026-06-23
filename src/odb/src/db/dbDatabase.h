@@ -50,7 +50,11 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 132;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 133;  // Current revision number
+
+// Revision where the corner data (corner count + corner/factor lists) was
+// removed from dbExtControl
+inline constexpr uint32_t kSchemaRemoveExtControlCornerData = 133;
 
 // Revision where dbInst::bump_ was added
 inline constexpr uint32_t kSchemaInstBump = 132;
