@@ -78,6 +78,7 @@ or_integration_tests(
     repair_antennas2
     repair_antennas3
     repair_antennas4
+    repair_antennas_adjacent_jumpers
     repair_antennas_allow_congestion
     repair_antennas_error1
     repair_antennas_error2
