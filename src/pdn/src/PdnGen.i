@@ -284,6 +284,7 @@ void make_connect(const char* grid_name,
                   int max_rows,
                   int max_columns,
                   const std::vector<odb::dbTechLayer*>& ongrid,
+                  const std::vector<odb::dbTechLayer*>& min_width_layers,
                   const std::vector<odb::dbTechLayer*>& split_cuts_layers,
                   const std::vector<int>& split_cut_pitches,
                   const bool split_cut_stagger,
@@ -295,7 +296,7 @@ void make_connect(const char* grid_name,
     split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
   for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, split_cuts, dont_use_vias);
+    pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, min_width_layers, split_cuts, dont_use_vias);
   }
 }
 

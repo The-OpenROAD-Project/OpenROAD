@@ -149,6 +149,7 @@ class PdnGen
       int max_rows,
       int max_columns,
       const std::vector<odb::dbTechLayer*>& ongrid,
+      const std::vector<odb::dbTechLayer*>& min_width_layers,
       const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
       const std::string& dont_use_vias);
 
