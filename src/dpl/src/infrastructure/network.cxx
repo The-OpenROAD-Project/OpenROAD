@@ -349,6 +349,21 @@ Master* Network::addMaster(odb::dbMaster* db_master,
              db_master->getHeight(),
              master_pwrs.first,
              master_pwrs.second);
+  if (master_pwrs.first == Architecture::Row::Power_UNK
+      || master_pwrs.second == Architecture::Row::Power_UNK) {
+    logger_->warn(utl::DPL,
+                  555,
+                  "Master {} (type:{}, macro:{}, height:{}, multi-row:{}) has "
+                  "an undetermined power rail (top:{} bot:{}); its cells will "
+                  "not be power-aligned.",
+                  db_master->getConstName(),
+                  db_master->getType().getString(),
+                  db_master->isBlock(),
+                  db_master->getHeight(),
+                  master->isMultiRow(),
+                  master_pwrs.first,
+                  master_pwrs.second);
+  }
   master->clearEdges();
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;
