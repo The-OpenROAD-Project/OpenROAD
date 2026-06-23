@@ -193,7 +193,8 @@ void GlobalRouter::initRoutingGrid(int min_routing_layer, int max_routing_layer)
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
 }
 
-std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer, int max_routing_layer)
+std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
+                                         int max_routing_layer)
 {
   initRoutingGrid(min_routing_layer, max_routing_layer);
   std::vector<Net*> nets = initNets(true);
