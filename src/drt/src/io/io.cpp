@@ -1856,7 +1856,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               "Unsupported branch EXACTALIGNED in LEF58_SPACING ADJACENTCUTS "
               "for layer {}, skipping rule.",
               layer->getName());
-          break;
+          continue;
         }
         if (rule->isExceptSamePgnet()) {
           logger_->warn(DRT,
@@ -1864,7 +1864,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                         "Unsupported branch EXCEPTSAMEPGNET in LEF58_SPACING "
                         "ADJACENTCUTS for layer {}, skipping rule.",
                         layer->getName());
-          break;
+          continue;
         }
         if (rule->isCutClassToAll()) {
           logger_->warn(
@@ -1873,7 +1873,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               "Unsupported branch TO ALL in LEF58_SPACING ADJACENTCUTS "
               "for layer {}, skipping rule.",
               layer->getName());
-          break;
+          continue;
         }
         if (rule->isSideParallelOverlap()) {
           logger_->warn(
@@ -1882,7 +1882,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               "Unsupported branch SIDEPARALLELOVERLAP in LEF58_SPACING "
               "ADJACENTCUTS for layer {}, skipping rule.",
               layer->getName());
-          break;
+          continue;
         }
         if (rule->isSameMask()) {
           logger_->warn(
@@ -1891,7 +1891,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               "Unsupported branch SAMEMASK in LEF58_SPACING ADJACENTCUTS "
               "for layer {}, skipping rule.",
               layer->getName());
-          break;
+          continue;
         }
         auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
@@ -1942,7 +1942,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                         "Unsupported branch STACK in LEF58_SPACING LAYER "
                         "for layer {}, skipping rule.",
                         layer->getName());
-          break;
+          continue;
         }
         if (rule->isOrthogonalSpacingValid()) {
           logger_->warn(
@@ -1951,7 +1951,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               "Unsupported branch ORTHOGONALSPACING in LEF58_SPACING LAYER "
               "for layer {}, skipping rule.",
               layer->getName());
-          break;
+          continue;
         }
         if (rule->getCutClass() != nullptr) {
           if (rule->isShortEdgeOnly()) {
@@ -1961,7 +1961,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                 "Unsupported branch SHORTEDGEONLY in LEF58_SPACING LAYER "
                 "for layer {}, skipping rule.",
                 layer->getName());
-            break;
+            continue;
           }
           if (rule->isConcaveCorner()) {
             if (rule->isConcaveCornerWidth()) {
@@ -1970,7 +1970,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                             "Unsupported branch WIDTH in LEF58_SPACING LAYER "
                             "for layer {}, skipping rule.",
                             layer->getName());
-              break;
+              continue;
             }
             if (rule->isConcaveCornerParallel()) {
               logger_->warn(
@@ -1979,7 +1979,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                   "Unsupported branch PARALLEL in LEF58_SPACING LAYER "
                   "for layer {}, skipping rule.",
                   layer->getName());
-              break;
+              continue;
             }
             if (rule->isConcaveCornerEdgeLength()) {
               logger_->warn(
@@ -1988,7 +1988,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                   "Unsupported branch EDGELENGTH in LEF58_SPACING LAYER "
                   "for layer {}, skipping rule.",
                   layer->getName());
-              break;
+              continue;
             }
           }
           if (rule->isExtensionValid()) {
@@ -1997,7 +1997,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                           "Unsupported branch EXTENSION in LEF58_SPACING LAYER "
                           "for layer {}, skipping rule.",
                           layer->getName());
-            break;
+            continue;
           }
           if (rule->isAboveWidthValid()) {
             logger_->warn(
@@ -2006,7 +2006,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                 "Unsupported branch ABOVEWIDTH in LEF58_SPACING LAYER "
                 "for layer {}, skipping rule.",
                 layer->getName());
-            break;
+            continue;
           }
           if (rule->isMaskOverlap()) {
             logger_->warn(
@@ -2015,7 +2015,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                 "Unsupported branch MASKOVERLAP in LEF58_SPACING LAYER "
                 "for layer {}, skipping rule.",
                 layer->getName());
-            break;
+            continue;
           }
           if (rule->isWrongDirection()) {
             logger_->warn(
@@ -2024,7 +2024,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                 "Unsupported branch WRONGDIRECTION in LEF58_SPACING LAYER "
                 "for layer {}, skipping rule.",
                 layer->getName());
-            break;
+            continue;
           }
         }
         auto con = std::make_unique<frLef58CutSpacingConstraint>();
