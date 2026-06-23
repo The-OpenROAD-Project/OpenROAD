@@ -35,8 +35,8 @@ TESTS = [
     "gcd_flute",
     "increase_capacity1",
     "incremental_deleted_net",
-    "incremental_update_net",
     "incremental_repair_cugr",
+    "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
@@ -193,7 +193,6 @@ regression_test(
     check_passfail = True,
     data = [":test_resources"],
 )
-
 
 py_test(
     name = "grt_man_tcl_check",
