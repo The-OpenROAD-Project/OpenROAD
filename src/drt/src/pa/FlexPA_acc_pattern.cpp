@@ -67,7 +67,7 @@ void FlexPA::removeFromInstsSet(frInst* inst)
 
 void FlexPA::addToInstsSet(frInst* inst)
 {
-  if (insts_set_.find(inst) != insts_set_.end()) {
+  if (insts_set_.contains(inst)) {
     return;
   }
   if (!unique_insts_.hasUnique(inst)) {
@@ -455,9 +455,14 @@ int FlexPA::getEdgeCost(
                                 prev_acc_point_idx,
                                 curr_acc_point_idx,
                                 max_access_point_size);
+
+  // edge know to be a violation
+  if (vio_edges[edge_idx] == 1) {
+    return violation_cost;
+  }
+
+  // edge not known to be a violation of not
   if (vio_edges[edge_idx] != -1) {
-    has_vio = (vio_edges[edge_idx] == 1);
-  } else {
     odb::dbTransform xform = unique_inst->getNoRotationTransform();
     // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
@@ -529,22 +534,14 @@ int FlexPA::getEdgeCost(
     }
   }
 
-  if ((prev_pin_idx == 0
-       && used_access_points.find(
-              std::make_pair(prev_pin_idx, prev_acc_point_idx))
-              != used_access_points.end())
+  if ((prev_pin_idx == 0 && used_access_points.contains(prev_node->getIdx()))
       || (curr_pin_idx == (int) pins.size() - 1
-          && used_access_points.find(
-                 std::make_pair(curr_pin_idx, curr_acc_point_idx))
-                 != used_access_points.end())) {
+          && used_access_points.contains(curr_node->getIdx()))) {
     return repeated_ap_cost;
   }
 
-  if (viol_access_points.find(std::make_pair(prev_pin_idx, prev_acc_point_idx))
-          != viol_access_points.end()
-      || viol_access_points.find(
-             std::make_pair(curr_pin_idx, curr_acc_point_idx))
-             != viol_access_points.end()) {
+  if (viol_access_points.contains(prev_node->getIdx())
+      || viol_access_points.contains(curr_node->getIdx())) {
     return violation_cost;
   }
 
@@ -597,7 +594,7 @@ bool FlexPA::genPatternsCommit(
   std::vector<int> access_pattern = extractAccessPatternFromNodes(
       unique_inst, nodes, pins, used_access_points);
   // not a new access pattern
-  if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
+  if (inst_access_patterns.contains(access_pattern)) {
     return false;
   }
 
@@ -648,7 +645,7 @@ bool FlexPA::genPatternsCommit(
     }
     uint64_t n_no_ap_pins = 0;
     for (auto& pin : inst_term->getTerm()->getPins()) {
-      if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
+      if (!pin_to_access_point.contains(pin.get())) {
         n_no_ap_pins++;
         pin_access_pattern->addAccessPoint(nullptr);
       } else {
@@ -691,7 +688,7 @@ bool FlexPA::genPatternsCommit(
       if (inst_term->hasNet()) {
         owner = inst_term->getNet();
       }
-      if (owners.find(owner) != owners.end()) {
+      if (owners.contains(owner)) {
         viol_access_points.insert({pin_idx, acc_pattern_idx});  // idx ;
       }
     }
