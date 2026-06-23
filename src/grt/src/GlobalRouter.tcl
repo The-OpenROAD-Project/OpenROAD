@@ -146,6 +146,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-critical_nets_percentage percent] \
+                                  [-res_aware_nets_percentage percent] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
                                   [-snapshot_batched_width width] \
@@ -160,7 +161,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step \
+          -grid_origin -critical_nets_percentage -res_aware_nets_percentage \
+          -congestion_report_iter_step \
           -skip_large_fanout_nets -snapshot_batched_width
          } \
     flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
@@ -221,6 +223,12 @@ proc global_route { args } {
     set percentage $keys(-critical_nets_percentage)
     sta::check_percent "-critical_nets_percentage" $percentage
     grt::set_critical_nets_percentage $percentage
+  }
+
+  if { [info exists keys(-res_aware_nets_percentage)] } {
+    set res_aware_percentage $keys(-res_aware_nets_percentage)
+    sta::check_percent "-res_aware_nets_percentage" $res_aware_percentage
+    grt::set_res_aware_nets_percentage $res_aware_percentage
   }
 
   if { [info exists keys(-skip_large_fanout_nets)] } {

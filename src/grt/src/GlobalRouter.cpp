@@ -2400,6 +2400,11 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
   fastroute_->setResistanceAware(resistance_aware);
 }
 
+void GlobalRouter::setResAwareNetsPercentage(float percentage)
+{
+  fastroute_->setResAwareNetsPercentage(percentage);
+}
+
 void GlobalRouter::setMacroExtension(int macro_extension)
 {
   macro_extension_ = macro_extension;

@@ -242,6 +242,8 @@ class FastRouteCore
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
+  void setResAwareNetsPercentage(float percentage);
+  float getResAwareNetsPercentage() { return res_aware_nets_percentage_; };
   void setOverflowIterations(int iterations);
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
@@ -329,7 +331,7 @@ class FastRouteCore
   double dbuToMicrons(int dbu);
   odb::Rect globalRoutingToBox(const GSegment& route);
   NetRouteMap getRoutes();
-  void updateSlacks(float percentage = 0.15);
+  void updateSlacks(float percentage);
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
@@ -778,6 +780,7 @@ class FastRouteCore
   int grid_hv_;
   bool verbose_;
   float critical_nets_percentage_;
+  float res_aware_nets_percentage_ = 0.15;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
