@@ -2996,6 +2996,18 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
   auto& treenodes = sttrees_[netID].nodes;
 
   // Setting the values needed for each TreeNode
+  //
+  // Coordinate deduplication: non-terminal nodes that share a grid (x,y)
+  // position with an earlier node are aliased (stackAlias) to that earlier
+  // node. The original implementation found the earliest matching node with an
+  // O(numpoints) linear scan, making the whole loop O(numpoints^2). For large
+  // multi-pin nets this dominates global routing runtime. We replace the scan
+  // with a hash-map keyed by the packed (x,y) position, mapping to the dcor
+  // index of the FIRST node inserted at that position. This yields identical
+  // results (same first-match semantics, same xcor_/ycor_/dcor_ contents)
+  // with O(1) average lookups.
+  auto& coord_map = tree_node_coord_dedup_;
+  coord_map.clear();
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
@@ -3006,6 +3018,11 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].lID = BIG_INT;
     treenodes[d].status = 0;
 
+    // Pack the int16_t grid coordinates into a single 32-bit key.
+    const int32_t key
+        = (static_cast<int32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
+          | static_cast<int32_t>(static_cast<uint16_t>(treenodes[d].y));
+
     if (d < num_terminals) {
       const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
       treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
@@ -3013,20 +3030,21 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 
+      // Terminals are always appended (they are never aliased away), matching
+      // the original behavior. Record only the first dcor per position so
+      // later lookups resolve to the earliest insertion, as the linear scan
+      // did.
+      coord_map.try_emplace(key, d);
       xcor_[numpoints] = treenodes[d].x;
       ycor_[numpoints] = treenodes[d].y;
       dcor_[numpoints] = d;
       numpoints++;
     } else {
-      bool redundant = false;
-      for (int k = 0; k < numpoints; k++) {
-        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
-          treenodes[d].stackAlias = dcor_[k];
-          redundant = true;
-          break;
-        }
-      }
-      if (!redundant) {
+      const auto it = coord_map.find(key);
+      if (it != coord_map.end()) {
+        treenodes[d].stackAlias = it->second;
+      } else {
+        coord_map.emplace(key, d);
         xcor_[numpoints] = treenodes[d].x;
         ycor_[numpoints] = treenodes[d].y;
         dcor_[numpoints] = d;
