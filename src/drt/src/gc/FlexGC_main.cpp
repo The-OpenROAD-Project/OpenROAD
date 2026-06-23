@@ -2113,6 +2113,16 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin,
   if (!drcBox_.contains(bbox2)) {
     return;
   }
+  // Do not patch or mark shapes containing fixed geometry (e.g. a library pin
+  // or macro metal); the router must not modify foundry-clean fixed shapes.
+  // Mirrors the fixed-edge bail-out in checkMetalShape_minArea.
+  for (auto& edges : pin->getPolygonEdges()) {
+    for (auto& edge : edges) {
+      if (edge->isFixed()) {
+        return;
+      }
+    }
+  }
   const bool is_rect = poly->size() == 4;
   const auto curr_area = gtl::area(*poly);
   if (is_rect) {  // iterate through rectwidth constraints first
