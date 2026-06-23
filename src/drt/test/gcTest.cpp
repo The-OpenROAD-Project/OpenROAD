@@ -600,6 +600,36 @@ TEST_F(GCFixture, min_enclosed_area)
              odb::Rect(50, 50, 150, 150));
 }
 
+using Lef58AreaFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaFixture, lef58_area)
+{
+  const bool legal = GetParam();
+  // The wire below provides 200 x 100 = 20000 DBU^2.  Require just under that
+  // when legal and just over it when illegal.
+  makeLef58AreaConstraint(2, /* area */ legal ? 20000 : 30000);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 150));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaSuite, Lef58AreaFixture, testing::Bool());
+
 // Check for a spacing table influence violation.
 TEST_F(GCFixture, spacing_table_infl_vertical)
 {
