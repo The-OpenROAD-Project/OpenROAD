@@ -95,7 +95,8 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
     return false;
   }
 
-  const sta::Slack end_slack = sta_->slack(end_vertex, max_);
+  const sta::Slack end_slack
+      = target_collector_->getEndpointEffectiveSlack(end_vertex);
   sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, max_);
   if (end_path == nullptr) {
     return false;
@@ -299,7 +300,8 @@ void SetupLegacyBase::saveImprovedCheckpoint(
 void SetupLegacyBase::refreshEndpointSlacks(
     SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
-  endpoint_state.end_slack = sta_->slack(endpoint_state.end, max_);
+  endpoint_state.end_slack
+      = target_collector_->getEndpointEffectiveSlack(endpoint_state.end);
   sta_->worstSlack(
       max_, endpoint_state.worst_slack, endpoint_state.worst_vertex);
 }

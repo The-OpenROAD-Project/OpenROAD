@@ -169,6 +169,10 @@ class RepairTargetCollector
 
   // Public endpoint collection for TNS Phase
   void collectViolatingEndpoints();
+  // Effective slack includes hidden setup debt from latch time borrowing.
+  // A latch endpoint with reported slack of zero but positive borrow is treated
+  // as a setup violation by subtracting the borrow from the reported slack.
+  sta::Slack getEndpointEffectiveSlack(sta::Vertex* endpoint) const;
   sta::Slack getPathSlackByIndex(const sta::Pin* endpoint_pin, int path_index);
   const vector<std::pair<const sta::Pin*, sta::Slack>>& getViolatingEndpoints()
       const

@@ -239,6 +239,7 @@ or_integration_tests(
     global_sizing_threads
     global_sizing_presize
   PASSFAIL_TESTS
+    inferred_clock_gator_time_borrow
     repair_setup_legacy_mt
     repair_setup_mt1
     cpp_tests

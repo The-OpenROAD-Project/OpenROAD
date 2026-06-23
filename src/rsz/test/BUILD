@@ -257,6 +257,7 @@ PASSFAIL_TESTS = [
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
     # "cpp_tests",
+    "inferred_clock_gator_time_borrow",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
 ]

@@ -812,9 +812,9 @@ void RepairTargetCollector::collectViolatingEndpoints()
 
   const sta::VertexSet& endpoints = sta_->endpoints();
   for (sta::Vertex* endpoint : endpoints) {
-    const sta::Slack endpoint_slack = sta_->slack(endpoint, max_);
-    if (sta::fuzzyLess(endpoint_slack, slack_margin_)) {
-      violating_endpoints_.emplace_back(endpoint->pin(), endpoint_slack);
+    const sta::Slack effective_slack = getEndpointEffectiveSlack(endpoint);
+    if (sta::fuzzyLess(effective_slack, slack_margin_)) {
+      violating_endpoints_.emplace_back(endpoint->pin(), effective_slack);
     }
   }
 
@@ -830,6 +830,55 @@ void RepairTargetCollector::collectViolatingEndpoints()
              sta_->endpoints().size(),
              int(violating_endpoints_.size() / double(sta_->endpoints().size())
                  * 100));
+}
+
+sta::Slack RepairTargetCollector::getEndpointEffectiveSlack(
+    sta::Vertex* endpoint) const
+{
+  const sta::Slack reported_slack = sta_->slack(endpoint, max_);
+  if (sta::fuzzyGreater(reported_slack, slack_margin_)) {
+    return reported_slack;
+  }
+
+  sta::PinSet* to_pins = new sta::PinSet(network_);
+  to_pins->insert(endpoint->pin());
+  sta::ExceptionTo* to = sdc_->makeExceptionTo(to_pins,
+                                               nullptr,
+                                               nullptr,
+                                               sta::RiseFallBoth::riseFall(),
+                                               sta::RiseFallBoth::riseFall());
+
+  sta::StringSeq group_names;
+  sta::PathEndSeq path_ends
+      = search_->findPathEnds(nullptr,                // from
+                              nullptr,                // thrus
+                              to,                     // to
+                              false,                  // unconstrained
+                              sta_->scenes(),         // scene
+                              sta::MinMaxAll::max(),  // min_max
+                              1,                      // group_path_count
+                              1,                      // endpoint_path_count
+                              false,                  // unique_pins
+                              false,                  // unique_edges
+                              -sta::INF,              // slack_min
+                              sta::INF,               // slack_max
+                              true,                   // sort_by_slack
+                              group_names,            // group_names
+                              true,
+                              false,
+                              true,
+                              true,
+                              true,
+                              true);  // checks
+
+  if (path_ends.empty()) {
+    return reported_slack;
+  }
+
+  // Treat consumed latch transparency as hidden setup debt for repair_timing.
+  // Only positive borrow adds debt; flop endpoints report zero borrow.
+  const sta::Arrival borrow = path_ends[0]->borrow(search_);
+  return reported_slack - std::max<float>(borrow, 0.0f);
 }
 
 void RepairTargetCollector::collectViolatingStartpoints()
