@@ -36,6 +36,7 @@ TESTS = [
     "increase_capacity1",
     "incremental_deleted_net",
     "incremental_update_net",
+    "incremental_repair_cugr",
     "infinite_cap",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
@@ -193,12 +194,6 @@ regression_test(
     data = [":test_resources"],
 )
 
-regression_test(
-    name = "incremental_repair_cugr",
-    check_log = False,
-    check_passfail = True,
-    data = [":test_resources"],
-)
 
 py_test(
     name = "grt_man_tcl_check",

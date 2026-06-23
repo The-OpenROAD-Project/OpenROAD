@@ -33,6 +33,7 @@ or_integration_tests(
     increase_capacity1
     incremental_deleted_net
     incremental_update_net
+    incremental_repair_cugr
     infinite_cap
     inst_pin_out_of_die
     invalid_pin_placement
@@ -116,5 +117,4 @@ or_integration_tests(
     snapshot_batched_single_thread_smoke
     snapshot_batched_smoke
     thread_count_reports
-    incremental_repair_cugr
 )
