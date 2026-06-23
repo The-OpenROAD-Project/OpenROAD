@@ -185,17 +185,25 @@ std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
 
 void GlobalRouter::initRoutingGrid(int min_routing_layer, int max_routing_layer)
 {
-  // configFastRoute() handles the GRT-0300 timing-availability warning and
-  // sets the critical nets percentage to 0 when no liberty is loaded.
-  // We call it here so the CUGR path gets the same early warning as
-  // the FastRoute path (before any routing-layer log messages).
-  configFastRoute();
   initRoutingLayers(min_routing_layer, max_routing_layer);
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
   computeObstructionsAdjustments();
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
+}
+
+std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer, int max_routing_layer)
+{
+  initRoutingGrid(min_routing_layer, max_routing_layer);
+  std::vector<Net*> nets = initNets(true);
+  initialized_ = true;
+  odb::PtrSet<odb::dbNet> clock_nets;
+  findClockNets(nets, clock_nets);
+
+  cugr_->setCongestionIterations(congestion_iterations_);
+  cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
+  return nets;
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
@@ -387,14 +395,7 @@ void GlobalRouter::startIncremental()
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     if (use_cugr_) {
-      initRoutingGrid(min_layer, max_layer);
-      std::vector<Net*> nets = initNets(true);
-      initialized_ = true;
-      odb::PtrSet<odb::dbNet> clock_nets;
-      findClockNets(nets, clock_nets);
-
-      cugr_->setCongestionIterations(congestion_iterations_);
-      cugr_->init(min_layer, max_layer, clock_nets);
+      initCUGR(min_layer, max_layer);
     } else {
       initFastRoute(min_layer, max_layer);
     }
@@ -441,13 +442,7 @@ void GlobalRouter::globalRoute(bool save_guides)
     getMinMaxLayer(min_layer, max_layer);
 
     if (use_cugr_) {
-      initRoutingGrid(min_layer, max_layer);
-      std::vector<Net*> nets = initNets(true);
-      initialized_ = true;
-      odb::PtrSet<odb::dbNet> clock_nets;
-      findClockNets(nets, clock_nets);
-      cugr_->setCongestionIterations(congestion_iterations_);
-      cugr_->init(min_layer, max_layer, clock_nets);
+      std::vector<Net*> nets = initCUGR(min_layer, max_layer);
       if (verbose_) {
         reportResources();
       }
