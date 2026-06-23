@@ -283,11 +283,12 @@ void Opendp::createNetwork()
                        "macros before detailed placement.",
                        inst->getName());
       }
-      logger_->warn(utl::DPL,
-                    404,
-                    "Macro {} is placed but not fixed; treating it as fixed. "
-                    "Mark it FIXED to silence this warning.",
-                    inst->getName());
+      logger_->warn(
+          utl::DPL,
+          404,
+          "Macro {} is placed but not fixed; treating it as fixed during "
+          "legalization. Mark it FIXED to silence this warning.",
+          inst->getName());
       node->setFixed(true);
     }
     if (isFiller(inst)) {
