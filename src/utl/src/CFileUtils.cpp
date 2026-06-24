@@ -84,7 +84,7 @@ std::ifstream OpenInputStream(const std::string& filename, Logger* logger)
   // other non-regular file, so a single check rejects all the cases where a
   // plain ifstream would otherwise open (or appear to open) and read nothing.
   std::error_code ec;
-  if (!std::filesystem::is_regular_file(filename, ec) || ec) {
+  if (!std::filesystem::is_regular_file(filename, ec)) {
     logger->error(UTL, 15, "{} is not a readable file", filename);
   }
   std::ifstream stream(filename);
