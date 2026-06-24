@@ -68,3 +68,10 @@ if { $iso == "NULL" } {
   check_block_prop $iso "__upf_iso_source" "VDD_NET"
   check_block_prop $iso "__upf_iso_sink" "VSS_NET"
 }
+
+# Connecting a net to multiple ports must accumulate, not overwrite
+# (regression for #10720: connect_supply_net is invoked once per port, so
+# overwriting kept only the last port). VDD_NET already has VDD from the UPF;
+# adding {VDD VSS} should de-dup VDD and append VSS.
+connect_supply_net VDD_NET -ports {VDD VSS}
+check_block_prop $block "__upf_supply_net_conn:VDD_NET" "VDD VSS"
