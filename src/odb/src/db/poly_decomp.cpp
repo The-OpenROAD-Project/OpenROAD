@@ -54,6 +54,38 @@ void staircaseTrapezoid(const std::vector<gtl::point_data<int>>& v,
     y_hi = std::max(y_hi, gtl::y(p));
   }
 
+  // Fast path: a trapezoid with no sloped sides is an axis-aligned rectangle.
+  // The straight body of an octagonal pad fractures into such trapezoids, and
+  // they can be thousands of DBU tall; emit one rectangle directly instead of
+  // walking the band one DBU at a time. The output is identical to what the
+  // per-band loop would coalesce into.
+  bool has_sloped_edge = false;
+  for (int i = 0; i < n; ++i) {
+    const auto& a = v[i];
+    const auto& b = v[(i + 1) % n];
+    if (gtl::x(a) != gtl::x(b) && gtl::y(a) != gtl::y(b)) {
+      has_sloped_edge = true;
+      break;
+    }
+  }
+  if (!has_sloped_edge) {
+    int x_lo = std::numeric_limits<int>::max();
+    int x_hi = std::numeric_limits<int>::min();
+    for (const auto& p : v) {
+      x_lo = std::min(x_lo, gtl::x(p));
+      x_hi = std::max(x_hi, gtl::x(p));
+    }
+    if (x_hi > x_lo && y_hi > y_lo) {
+      if (!rects.empty() && rects.back().xMin() == x_lo
+          && rects.back().xMax() == x_hi && rects.back().yMax() == y_lo) {
+        rects.back().set_yhi(y_hi);
+      } else {
+        rects.emplace_back(x_lo, y_lo, x_hi, y_hi);
+      }
+    }
+    return;
+  }
+
   for (int y = y_lo; y < y_hi; ++y) {
     const double y_mid = y + 0.5;
     double x_min = std::numeric_limits<double>::max();
