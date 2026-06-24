@@ -342,18 +342,12 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
   }
 
   DataToOutputsMap ret;
-  if (!q_pins.empty() && !qn_pins.empty()) {
-    for (size_t i = 0; i < d_pins.size(); i++) {
-      ret[d_pins[i]] = {q_pins[i], qn_pins[i]};
-    }
-  } else if (!q_pins.empty()) {
-    for (size_t i = 0; i < d_pins.size(); i++) {
-      ret[d_pins[i]] = {q_pins[i], nullptr};
-    }
-  } else {
-    for (size_t i = 0; i < d_pins.size(); i++) {
-      ret[d_pins[i]] = {nullptr, qn_pins[i]};
-    }
+  for (size_t i = 0; i < d_pins.size(); i++) {
+    // Avoid out-of-bounds access if the cell has asymmetric output pin counts.
+    const sta::LibertyPort* q_pin = (i < q_pins.size()) ? q_pins[i] : nullptr;
+    const sta::LibertyPort* qn_pin
+        = (i < qn_pins.size()) ? qn_pins[i] : nullptr;
+    ret[d_pins[i]] = {q_pin, qn_pin};
   }
 
   return ret;
@@ -2171,8 +2165,8 @@ Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
   }
   std::sort(all_x.begin(), all_x.end());
   std::sort(all_y.begin(), all_y.end());
-  const float tray_center_x = (all_x[0] + all_x[num_slots - 1]) / 2.0;
-  const float tray_center_y = (all_y[0] + all_y[num_slots - 1]) / 2.0;
+  const float tray_center_x = (all_x[0] + all_x[num_slots - 1]) / 2.0f;
+  const float tray_center_y = (all_y[0] + all_y[num_slots - 1]) / 2.0f;
   return Point{tray_center_x, tray_center_y};
 }
 
@@ -2181,6 +2175,11 @@ void MBFF::ReadLibs()
   test_idx_ = 0;
   for (odb::dbLib* lib : db_->getLibs()) {
     for (dbMaster* master : lib->getMasters()) {
+      sta::Cell* cell = network_->dbToSta(master);
+      if (cell == nullptr || network_->libertyCell(cell) == nullptr) {
+        continue;
+      }
+
       const std::string tray_name = "test_tray_" + std::to_string(test_idx_++);
       dbInst* tmp_tray = dbInst::create(block_, master, tray_name.c_str());
 
@@ -2191,7 +2190,9 @@ void MBFF::ReadLibs()
       }
 
       const int num_slots = network_->getNumD(tmp_tray);
-      if ((num_slots & (num_slots - 1)) != 0) {
+      if (num_slots <= 0 || (num_slots & (num_slots - 1)) != 0) {
+        dbInst::destroy(tmp_tray);
+        --test_idx_;
         continue;  // non-power of 2 not supported
       }
       const int idx = GetBitIdx(num_slots);
@@ -2228,6 +2229,7 @@ void MBFF::ReadLibs()
       std::vector<Point> q;
       std::vector<Point> qn;
 
+      bool valid_master = true;
       for (const auto& p : pin_mapping) {
         dbITerm* d_pin = tmp_tray->findITerm(p.first->name().c_str());
         dbITerm* q_pin
@@ -2236,6 +2238,34 @@ void MBFF::ReadLibs()
         dbITerm* qn_pin
             = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name().c_str())
                            : nullptr);
+
+        if (d_pin == nullptr) {
+          log_->warn(GPL,
+                     140,
+                     "D-pin {} not found on tray {}",
+                     p.first->name(),
+                     master->getName());
+          valid_master = false;
+          break;
+        }
+        if (p.second.q && q_pin == nullptr) {
+          log_->warn(GPL,
+                     141,
+                     "Q-pin {} not found on tray {}",
+                     p.second.q->name(),
+                     master->getName());
+          valid_master = false;
+          break;
+        }
+        if (p.second.qn && qn_pin == nullptr) {
+          log_->warn(GPL,
+                     142,
+                     "QN-pin {} not found on tray {}",
+                     p.second.qn->name(),
+                     master->getName());
+          valid_master = false;
+          break;
+        }
 
         d.push_back(Point{
             d_pin->getBBox().xCenter() / multiplier_,
@@ -2257,23 +2287,31 @@ void MBFF::ReadLibs()
         }
       }
 
+      // Verify that the resolved input pin vector is of sufficient size
+      // to avoid out-of-bounds access on d[i] in the subsequent slot geometry
+      // loop.
+      if (!valid_master || d.size() < num_slots) {
+        dbInst::destroy(tmp_tray);
+        --test_idx_;
+        continue;
+      }
+
       std::vector<float> slot_x;
       std::vector<float> slot_y;
       for (int i = 0; i < num_slots; i++) {
-        if (!q.empty() && !qn.empty()) {
-          slot_x.push_back((std::max(d[i].x, std::max(q[i].x, qn[i].x))
-                            + std::min(d[i].x, std::min(q[i].x, qn[i].x)))
-                           / 2.0);
-          slot_y.push_back((std::max(d[i].y, std::max(q[i].y, qn[i].y))
-                            + std::min(d[i].y, std::min(q[i].y, qn[i].y)))
-                           / 2.0);
-        } else if (!q.empty()) {
-          slot_x.push_back((d[i].x + q[i].x) / 2.0);
-          slot_y.push_back((d[i].y + q[i].y) / 2.0);
-        } else {
-          slot_x.push_back((d[i].x + qn[i].x) / 2.0);
-          slot_y.push_back((d[i].y + qn[i].y) / 2.0);
-        }
+        // Fall back to using D-pin coordinates if Q or QN is missing or out of
+        // bounds.
+        const float q_x = (i < q.size()) ? q[i].x : d[i].x;
+        const float q_y = (i < q.size()) ? q[i].y : d[i].y;
+        const float qn_x = (i < qn.size()) ? qn[i].x : d[i].x;
+        const float qn_y = (i < qn.size()) ? qn[i].y : d[i].y;
+
+        slot_x.push_back((std::max(d[i].x, std::max(q_x, qn_x))
+                          + std::min(d[i].x, std::min(q_x, qn_x)))
+                         / 2.0f);
+        slot_y.push_back((std::max(d[i].y, std::max(q_y, qn_y))
+                          + std::min(d[i].y, std::min(q_y, qn_y)))
+                         / 2.0f);
       }
 
       tray_candidates_[array_mask][idx].push_back(
