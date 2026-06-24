@@ -207,7 +207,7 @@ MBFF::PortName MBFF::PortType(const sta::LibertyPort* lib_port, dbInst* inst)
   }
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   for (const sta::Sequential& seq : lib_cell->sequentials()) {
     // function
     if (sta::LibertyPort::equiv(lib_port, seq.output())) {
@@ -280,7 +280,7 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
   }
 
   const sta::Cell* cell = network_->dbToSta(inst->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   const auto& seqs = lib_cell->sequentials();
   if (!seqs.empty()) {
     ret.func_idx = GetMatchingFunc(seqs.front().data(), inst, isTray);
@@ -294,7 +294,7 @@ MBFF::Mask MBFF::GetArrayMask(dbInst* inst, const bool isTray)
 MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
 {
   const sta::Cell* cell = network_->dbToSta(tray->getMaster());
-  const sta::LibertyCell* lib_cell = network_->libertyCell(cell);
+  const sta::LibertyCell* lib_cell = network_->testCell(cell);
   sta::LibertyCellPortIterator port_itr(lib_cell);
 
   std::vector<const sta::LibertyPort*> d_pins;

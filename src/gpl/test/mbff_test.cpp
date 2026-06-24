@@ -31,6 +31,7 @@ class MBFFTestPeer
   {
     return uut->network_->isValidTray(tray);
   }
+  static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
 };
 
 namespace {
@@ -144,6 +145,14 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2CLPS")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2SECLPS")));
+}
+
+TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)
+{
+  // In test0.lib, cells like MBFF2SE have their sequential definition
+  // nested inside a test_cell block. Without consistent Liberty cell views,
+  // GetPinMapping returns empty vectors and triggers an out-of-bounds crash.
+  EXPECT_NO_FATAL_FAILURE(MBFFTestPeer::ReadLibs(mbff_.get()));
 }
 
 }  // namespace
