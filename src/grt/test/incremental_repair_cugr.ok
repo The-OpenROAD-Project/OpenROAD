@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
 [INFO GRT-0004] Blockages: 0
-[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0019] Found 1 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
 Design statistics
@@ -69,4 +69,71 @@ Total            91834          2445            2.66%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
-No differences found.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       579
+[WARNING RSZ-0104] Net _437_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _436_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _435_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _434_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _433_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _432_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _431_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _430_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _429_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _428_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _427_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _426_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _425_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _424_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _423_ only has one pin. Check if it is intended to be dangling.
+[WARNING RSZ-0104] Net _422_ only has one pin. Check if it is intended to be dangling.
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 6286.11 um^2, Instances area: 756.24 um^2, Utilization: 12.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     508
+Diamond Move Success:            508 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            6591.3 u
+legalized HPWL           6591.3 u
+delta HPWL                    0 %
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0098] No setup violations found
+[WARNING DPL-0037] Use remove_fillers before detailed placement.
+[INFO DPL-0006] Core area: 6286.11 um^2, Instances area: 756.24 um^2, Utilization: 12.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     508
+Diamond Move Success:            508 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          0.0 u
+average displacement        0.0 u
+max displacement            0.0 u
+original HPWL            6591.3 u
+legalized HPWL           6591.3 u
+delta HPWL                    0 %
+
+pass
