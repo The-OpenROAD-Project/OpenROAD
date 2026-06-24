@@ -456,12 +456,17 @@ int FlexPA::getEdgeCost(
                                 curr_acc_point_idx,
                                 max_access_point_size);
 
-  // edge know to be of violation type
+  // vio_edges caches wether a pair of aps have violations betweem themselves.
+  // -1: No cache exists
+  // 0: Already cached as no violation
+  // 1: Already caches as having a violation
+
+  // Edge cached as having a violation
   if (vio_edges[edge_idx] == 1) {
     return violation_cost;
   }
 
-  // edge not known to be of violation or not
+  // Violation status of the edge is not cached, has to be calculated
   if (vio_edges[edge_idx] == -1) {
     odb::dbTransform xform = unique_inst->getNoRotationTransform();
     // check DRC
