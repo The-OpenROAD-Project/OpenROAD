@@ -2276,7 +2276,6 @@ class extMain
   void genScaledExt();
   void makeCornerNameMap();
   void getExtractedCorners();
-  void makeCornerMapFromExtControl();
   bool checkLayerResistance();
 
   uint32_t getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
