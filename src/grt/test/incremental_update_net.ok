@@ -4,7 +4,6 @@
 [INFO ODB-0131]     Created 4 components and 16 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 8 connections.
 [INFO ODB-0133]     Created 5 nets and 8 connections.
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal8
 [INFO GRT-0022] Global adjustment: 50%
