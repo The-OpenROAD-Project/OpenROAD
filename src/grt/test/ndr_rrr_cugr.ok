@@ -8,7 +8,6 @@
 [WARNING ODB-1003] (metal8) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.4
 [WARNING ODB-1003] (metal9) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
 [WARNING ODB-1003] (metal10) layer's width from (NDR_2W) NDR is not defined. Using the default value 0.8
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
