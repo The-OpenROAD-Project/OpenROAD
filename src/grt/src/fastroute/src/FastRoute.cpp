@@ -2106,7 +2106,7 @@ NetRouteMap FastRouteCore::run()
   // number of restarts; once exceeded we disable every remaining congested
   // NDR net in a single batch instead of one-per-restart.
   int soft_ndr_resets = 0;
-  const int max_soft_ndr_resets = 4;
+  constexpr int max_soft_ndr_resets = 4;
   float overflow_reduction_percent = -1;
   // Minimum overflow stagnation
   int minofl_stagnant = 0;
@@ -2366,7 +2366,9 @@ NetRouteMap FastRouteCore::run()
           // restart budget is exhausted, disable every remaining congested NDR
           // net in a single batch so the loop is guaranteed to make progress
           // and terminate.
-          for (const auto& ndr : graph2d_.getCongestedNDRnets()) {
+          const auto congested_ndrs = graph2d_.getCongestedNDRnets();
+          net_ids.reserve(congested_ndrs.size());
+          for (const auto& ndr : congested_ndrs) {
             net_ids.push_back(ndr.net_id);
           }
         } else if (total_overflow_ < soft_ndr_overflow_th) {
