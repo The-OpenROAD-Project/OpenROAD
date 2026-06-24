@@ -1439,6 +1439,17 @@ int extMain::getDbCornerModel(const char* name)
 void extMain::makeCornerNameMap()
 {
   // Stores the corner names and count on the dbBlock.
+  if (!_block) {
+    logger_->error(
+        utl::RCX, 12, "Could not make corner name map. No block found.");
+  }
+
+  if (_cornerCnt == 0) {
+    logger_->error(
+        utl::RCX,
+        13,
+        "Could not make corner name map. The number of corner is undefined.");
+  }
 
   extCorner** map = new extCorner*[_cornerCnt];
   for (uint32_t jj = 0; jj < _cornerCnt; jj++) {
@@ -1628,6 +1639,14 @@ void extMain::getPrevControl()
   if (!_prevControl) {
     return;
   }
+
+  if (!_block) {
+    logger_->error(
+        utl::RCX,
+        6,
+        "Could not access previous extraction control. No block found.");
+  }
+
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
   _extracted = _prevControl->_extracted;
