@@ -154,6 +154,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setResAwareNetsPercentage(float percentage);
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
   int getSnapshotBatchCount() const;
@@ -237,7 +238,6 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
-  void updateCUGRNet(odb::dbNet* net);
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
@@ -375,6 +375,9 @@ class GlobalRouter
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets, bool incremental = false);
+  std::vector<Net*> initNets(bool check_pin_placement = true);
+  void initRoutingGrid(int min_routing_layer, int max_routing_layer);
+  std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);

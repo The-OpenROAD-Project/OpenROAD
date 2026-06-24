@@ -42,6 +42,7 @@ or_integration_tests(
     hybrid_cells
     hybrid_cells2
     ibex
+    macro_placed_not_fixed
     max_disp1
     mirror1
     mirror2

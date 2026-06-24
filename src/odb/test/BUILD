@@ -220,6 +220,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     # pass-fail
     "read_3dbv_fail",
+    "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
