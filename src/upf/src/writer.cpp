@@ -26,6 +26,12 @@ void UPFWriter::write(const std::string& file)
 
   writeHeader();
 
+  const auto version = block_->getUPFVersion();
+  if (!version.empty()) {
+    stream_ << "upf_version " << version << '\n';
+    stream_ << '\n';
+  }
+
   writeTitle("Power domains");
   for (auto* domain : block_->getPowerDomains()) {
     writeDomain(domain);

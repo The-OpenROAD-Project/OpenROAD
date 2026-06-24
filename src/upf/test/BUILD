@@ -12,6 +12,7 @@ COMPULSORY_TESTS = [
     "write",
     "isolation",
     "isolation_select",
+    "upf_version",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS

@@ -841,6 +841,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block.inst_scan_inst_map_;
   stream << block.unique_net_index_;
   stream << block.unique_inst_index_;
+  stream << block.upf_version_;
 
   //---------------------------------------------------------- stream out
   // properties
@@ -1095,6 +1096,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(kSchemaUniqueIndices)) {
     stream >> block.unique_net_index_;
     stream >> block.unique_inst_index_;
+  }
+  if (db->isSchema(kSchemaBlockUpfVersion)) {
+    stream >> block.upf_version_;
   }
 
   //---------------------------------------------------------- stream in
@@ -2000,6 +2004,18 @@ dbLevelShifter* dbBlock::findLevelShifter(const char* name)
 {
   _dbBlock* block = (_dbBlock*) this;
   return (dbLevelShifter*) block->levelshifter_hash_.find(name);
+}
+
+void dbBlock::setUPFVersion(const std::string& version)
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->upf_version_ = version;
+}
+
+std::string dbBlock::getUPFVersion() const
+{
+  const _dbBlock* block = (const _dbBlock*) this;
+  return block->upf_version_;
 }
 
 dbModInst* dbBlock::findModInst(const char* path)

@@ -230,6 +230,7 @@ class _dbBlock : public _dbObject
   uint32_t unique_net_index_{1};  // unique index used to create a new net name
   uint32_t unique_inst_index_{
       1};  // unique index used to create a new inst name
+  std::string upf_version_;
 
   // NON-PERSISTANT-STREAMED-MEMBERS
   dbTable<_dbBTerm>* bterm_tbl_;
