@@ -290,6 +290,26 @@ void Opendp::createNetwork()
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
+    // A placed-but-not-fixed macro must be treated as an obstacle, not a
+    // movable cell.  Force it fixed here so both detailed_placement and
+    // improve_placement see it as a blockage instead of trying to legalize it.
+    Node* node = network_->getNode(inst);
+    if (node->isBlock() && !node->isFixed()) {
+      if (!inst->isPlaced()) {
+        logger_->error(utl::DPL,
+                       405,
+                       "Macro {} is neither placed nor fixed. Place and fix "
+                       "macros before detailed placement.",
+                       inst->getName());
+      }
+      logger_->warn(
+          utl::DPL,
+          404,
+          "Macro {} is placed but not fixed; treating it as fixed during "
+          "legalization. Mark it FIXED to silence this warning.",
+          inst->getName());
+      node->setFixed(true);
+    }
     if (isFiller(inst)) {
       have_fillers_ = true;
     }

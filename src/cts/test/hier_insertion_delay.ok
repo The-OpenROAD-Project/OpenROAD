@@ -50,42 +50,27 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 1229790
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1229790
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 1229790
-[INFO DPL-0388] Cell height distribution (2 unique micron height(s)):
-[INFO DPL-0389]   height 1.400 um: 278 cells
-[INFO DPL-0389]   height 10.000 um: 1 cells
+[WARNING DPL-0404] Macro inst_0 is placed but not fixed; treating it as fixed during legalization. Mark it FIXED to silence this warning.
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 1357.12 um^2, Utilization: 2.8%
-[INFO DPL-0007] All instances area (incl. macros/pads/fixed): 1357.12 um^2, Utilization: 2.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1102] Legalizing using negotiation legalizer.
-[INFO DPL-1103] NegotiationLegalizer search window: +/-20 sites horizontally, +/-5 rows vertically.
-[INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
-[INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 278 cells
-[INFO DPL-0393]   height 8 row(s): 1 cells
-          |      Total |  Illegal |  Illegal
-Iteration | Violations |    Cells |    Sites
----------------------------------------------
-        0 |      99529 |       279 |      4743
-        1 |      45269 |       273 |      4638
-        2 |      28479 |       257 |      4303
-        3 |      21107 |       223 |      3715
-        4 |      16079 |       201 |      3280
-        5 |      12408 |       140 |      2334
-        6 |      10572 |       114 |      1937
-        7 |       9127 |       105 |      1779
-        8 |       6934 |        84 |      1425
-        9 |       4689 |        65 |      1105
-       10 |       2538 |        44 |       745
-       13 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 13.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     278
+Diamond Move Success:            278 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement          0.0 u
-average displacement        0.0 u
-max displacement            0.0 u
+total displacement      10261.3 u
+average displacement       36.8 u
+max displacement           56.4 u
 original HPWL             605.0 u
-legalized HPWL            626.0 u
-delta HPWL                    3 %
+legalized HPWL            640.2 u
+delta HPWL                    6 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
@@ -104,8 +89,8 @@ delta HPWL                    3 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(25840, 109599), (25840, 109599)].
-[INFO CTS-0024]  Normalized sink region: [(1.84571, 7.8285), (1.84571, 7.8285)].
+[INFO CTS-0023]  Original sink region: [(-9500, 10499), (-9500, 10499)].
+[INFO CTS-0024]  Normalized sink region: [(-0.678571, 0.749929), (-0.678571, 0.749929)].
 [INFO CTS-0025]     Width:  0.0000.
 [INFO CTS-0026]     Height: 0.0000.
  Level 1
@@ -125,14 +110,14 @@ delta HPWL                    3 %
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 28.
-[INFO CTS-0024]  Normalized sink region: [(0.230714, 0.52), (3.53129, 12.76)].
-[INFO CTS-0025]     Width:  3.3006.
-[INFO CTS-0026]     Height: 12.2400.
+[INFO CTS-0024]  Normalized sink region: [(0.806143, 0.417571), (4.959, 6.37757)].
+[INFO CTS-0025]     Width:  4.1529.
+[INFO CTS-0026]     Height: 5.9600.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
-    Sub-region size: 3.3006 X 6.1200
-[INFO CTS-0034]     Segment length (rounded): 3.
+    Sub-region size: 4.1529 X 2.9800
+[INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
 [INFO CTS-0018]     Created 2 clock buffers.
@@ -152,7 +137,7 @@ delta HPWL                    3 %
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 280
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 47.95 um
+[INFO CTS-0101]  Average sink wire length 27.32 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core

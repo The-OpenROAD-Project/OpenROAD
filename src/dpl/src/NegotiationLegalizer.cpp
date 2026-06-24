@@ -23,6 +23,7 @@
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "optimization/detailed_orient.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -551,34 +552,6 @@ bool NegotiationLegalizer::initFromDb()
   grid_w_ = dpl_grid->getRowSiteCount().v;
   grid_h_ = dpl_grid->getRowCount().v;
 
-  // Assign power-rail types from DB row orientations.
-  // R0/MY = right-side-up → VSS rail at bottom; MX/R180 = flipped → VDD at
-  // bottom.  Rows missing from the DB default to VSS.
-  // Use gridSnapDownY() so this works on hybrid-row designs (where rows do
-  // not share a common height).
-  row_rail_.clear();
-  row_rail_.resize(grid_h_, NLPowerRailType::kVss);
-  for (auto* db_row : block->getRows()) {
-    const int y_dbu = db_row->getOrigin().y() - die_ylo_;
-    if (y_dbu < 0) {
-      continue;
-    }
-    const int r = dpl_grid->gridSnapDownY(DbuY{y_dbu}).v;
-    if (r < 0 || r >= grid_h_) {
-      continue;
-    }
-    // Verify the row's origin actually lands on a grid row boundary
-    // (otherwise the orientation we'd assign would be ambiguous).
-    if (dpl_grid->gridYToDbu(GridY{r}).v != y_dbu) {
-      continue;
-    }
-    const auto orient = db_row->getOrient();
-    row_rail_[r]
-        = (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180)
-              ? NLPowerRailType::kVdd
-              : NLPowerRailType::kVss;
-  }
-
   // Build NegCell records from all placed instances.
   cells_.clear();
   cells_.reserve(block->getInsts().size());
@@ -912,58 +885,13 @@ bool NegotiationLegalizer::initFromDb()
       }
     }
 
-    // Derive power-rail types directly from the LEF geometry stored by the
-    // Network — never infer from the cell's current row or orientation.
-    //
-    // rail_type         = bottom rail in R0 (unflipped) orientation.
-    //                     For most CORE cells this is kVss (VSS at bottom).
-    // rail_type_flipped = bottom rail in MX (flipped) orientation, which
-    //                     equals the TOP rail in R0.  For most cells: kVdd.
-    //                     For symmetric multi-height cells whose VSS appears
-    //                     at both top and bottom (e.g. some double-height
-    //                     flops): kVss — meaning a flip cannot resolve a
-    //                     VDD-bottom row mismatch.
-    {
-      int bot_pwr = Architecture::Row::Power_UNK;
-      int top_pwr = Architecture::Row::Power_UNK;
-      if (network_ != nullptr) {
-        if (Master* dpl_master = network_->getMaster(master)) {
-          bot_pwr = dpl_master->getBottomPowerType();
-          top_pwr = dpl_master->getTopPowerType();
-        }
-      }
-      auto toRailType = [](int pwr, NLPowerRailType fallback) {
-        if (pwr == Architecture::Row::Power_VSS) {
-          return NLPowerRailType::kVss;
-        }
-        if (pwr == Architecture::Row::Power_VDD) {
-          return NLPowerRailType::kVdd;
-        }
-        return fallback;
-      };
-      cell.rail_type = toRailType(bot_pwr, NLPowerRailType::kVss);
-      cell.rail_type_flipped = toRailType(top_pwr, NLPowerRailType::kVdd);
-    }
-
-    cell.flippable
-        = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
-    if (cell.height == 1) {
-      // Consider all single height cells flippable
-      cell.flippable = true;
-    }
-
-    debugPrint(
-        logger_,
-        utl::DPL,
-        "negotiation",
-        2,
-        "DEBUG cell init: {} height={} flippable={} rail_type={} "
-        "rail_type_flipped={}",
-        db_inst->getName(),
-        cell.height,
-        cell.flippable,
-        cell.rail_type == NLPowerRailType::kVss ? "kVss" : "kVdd",
-        cell.rail_type_flipped == NLPowerRailType::kVss ? "kVss" : "kVdd");
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               2,
+               "DEBUG cell init: {} height={}",
+               db_inst->getName(),
+               cell.height);
 
     if (padding_ != nullptr) {
       cell.pad_left = padding_->padLeft(db_inst).v;
@@ -1249,11 +1177,7 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  // Bottom-row site type must match the cell's declared site. The returned
-  // orientation also implicitly handles rail alignment for single-row
-  // cells: R0 vs MX flips the cell's power pins so a VSS-bottom master can
-  // legally land on an MX (VDD-bottom) row, etc. Matches the first-row-only
-  // site check in Opendp::checkPixels / CheckPlacement.
+  // Verify that the cell's site type is available on the target row.
   if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr
@@ -1276,44 +1200,6 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
     }
   }
   return true;
-}
-
-std::vector<int> NegotiationLegalizer::collectNearestValidRows(
-    const NegCell& cell,
-    int seed_y,
-    int probe_x,
-    int count_per_side,
-    int max_scan) const
-{
-  std::vector<int> rows;
-  rows.reserve(2 * count_per_side + 1);
-
-  if (isValidRow(seed_y, cell, probe_x)) {
-    rows.push_back(seed_y);
-  }
-
-  int found_below = 0;
-  int found_above = 0;
-  for (int step = 1; step <= max_scan; ++step) {
-    if (found_below < count_per_side) {
-      const int below_y = seed_y + step;
-      if (isValidRow(below_y, cell, probe_x)) {
-        rows.push_back(below_y);
-        ++found_below;
-      }
-    }
-    if (found_above < count_per_side) {
-      const int above_y = seed_y - step;
-      if (isValidRow(above_y, cell, probe_x)) {
-        rows.push_back(above_y);
-        ++found_above;
-      }
-    }
-    if (found_below >= count_per_side && found_above >= count_per_side) {
-      break;
-    }
-  }
-  return rows;
 }
 
 bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
