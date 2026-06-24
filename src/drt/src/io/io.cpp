@@ -54,6 +54,12 @@ using odb::dbTechLayerType;
 
 namespace drt {
 
+static bool isSecondaryPowerNet(odb::dbNet* db_net)
+{
+  return db_net->getSigType().isSupply() && !db_net->isSpecial()
+         && !db_net->getSWires().empty();
+}
+
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
                    utl::Logger* loggerIn,
@@ -936,7 +942,7 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
       // for each path end
     }
   }
-  if (net->isSpecial()) {
+  if (net->isSpecial() || isSecondaryPowerNet(net)) {
     for (auto swire : net->getSWires()) {
       for (auto box : swire->getWires()) {
         if (!box->isVia()) {
@@ -1032,12 +1038,14 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   bool has_jumpers = db_net->hasJumpers();
   bool is_abuted = db_net->isConnectedByAbutment();
   if (!is_special && db_net->getSigType().isSupply()) {
-    logger_->error(DRT,
-                   305,
-                   "Net {} of signal type {} is not routable by TritonRoute. "
-                   "Move to special nets.",
-                   db_net->getName(),
-                   db_net->getSigType().getString());
+    if (!isSecondaryPowerNet(db_net)) {
+      logger_->error(DRT,
+                     305,
+                     "Net {} of signal type {} is not routable by TritonRoute. "
+                     "Move to special nets.",
+                     db_net->getName(),
+                     db_net->getSigType().getString());
+    }
   }
   std::unique_ptr<frNet> net_in
       = std::make_unique<frNet>(db_net->getName(), router_cfg_);
@@ -1054,7 +1062,11 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
   updateNetRouting(net_in.get(), db_net);
-  net_in->setType(db_net->getSigType());
+  if (isSecondaryPowerNet(db_net)) {
+    net_in->setType(odb::dbSigType::SIGNAL);
+  } else {
+    net_in->setType(db_net->getSigType());
+  }
   frNet* raw_net_in = net_in.get();
   if (is_special) {
     getBlock()->addSNet(std::move(net_in));
