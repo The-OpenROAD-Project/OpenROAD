@@ -1644,16 +1644,7 @@ void FlexGCWorker::Impl::checkMetalShape_minArea(gcPin* pin,
   if (allow_patching) {
     checkMetalShape_addPatch(pin, reqArea);
   } else {
-    auto net = poly->getNet();
-    auto marker = std::make_unique<frMarker>();
-    marker->setBBox(bbox2);
-    marker->setLayerNum(layerNum);
-    marker->setConstraint(con);
-    marker->addSrc(net->getOwner());
-    marker->addVictim(net->getOwner(), std::make_tuple(layerNum, bbox2, false));
-    marker->addAggressor(net->getOwner(),
-                         std::make_tuple(layerNum, bbox2, false));
-    addMarker(std::move(marker));
+    checkMetalShape_addMarker(pin, con, bbox2);
   }
 }
 
@@ -2095,9 +2086,15 @@ void FlexGCWorker::Impl::checkMetalShape_minEnclosedArea(gcPin* pin)
   }
 }
 
-void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
+void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin,
+                                                   bool allow_patching)
 {
-  if (ignoreMinArea_ || !targetNet_) {
+  if (ignoreMinArea_) {
+    return;
+  }
+  // Patching requires a target net (and an associated drWorker); marking does
+  // not.
+  if (allow_patching && !targetNet_) {
     return;
   }
 
@@ -2113,8 +2110,18 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
   gtl::extents(bbox, *pin->getPolygon());
   const odb::Rect bbox2(
       gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
-  if (!drWorker_->getDrcBox().contains(bbox2)) {
+  if (!drcBox_.contains(bbox2)) {
     return;
+  }
+  // Do not patch or mark shapes containing fixed geometry (e.g. a library pin
+  // or macro metal); the router must not modify foundry-clean fixed shapes.
+  // Mirrors the fixed-edge bail-out in checkMetalShape_minArea.
+  for (auto& edges : pin->getPolygonEdges()) {
+    for (auto& edge : edges) {
+      if (edge->isFixed()) {
+        return;
+      }
+    }
   }
   const bool is_rect = poly->size() == 4;
   const auto curr_area = gtl::area(*poly);
@@ -2125,7 +2132,11 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
         // we found a rectwidth constraint that is satisfied
         const auto min_area = db_rule->getArea();
         if (curr_area < min_area) {
-          checkMetalShape_addPatch(pin, min_area);
+          if (allow_patching) {
+            checkMetalShape_addPatch(pin, min_area);
+          } else {
+            checkMetalShape_addMarker(pin, con, bbox2);
+          }
         }
         return;
       }
@@ -2142,7 +2153,11 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
     }
     if (!db_rule->isExceptRectangle()
         || checkMetalShape_lef58Area_exceptRectangle(poly, db_rule)) {
-      checkMetalShape_addPatch(pin, min_area);
+      if (allow_patching) {
+        checkMetalShape_addPatch(pin, min_area);
+      } else {
+        checkMetalShape_addMarker(pin, con, bbox2);
+      }
       break;
     }
   }
@@ -2283,6 +2298,24 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   pwires_.push_back(std::move(patch));
 }
 
+void FlexGCWorker::Impl::checkMetalShape_addMarker(gcPin* pin,
+                                                   frConstraint* con,
+                                                   const odb::Rect& bbox)
+{
+  auto poly = pin->getPolygon();
+  auto layer_num = poly->getLayerNum();
+  auto net = poly->getNet();
+  auto marker = std::make_unique<frMarker>();
+  marker->setBBox(bbox);
+  marker->setLayerNum(layer_num);
+  marker->setConstraint(con);
+  marker->addSrc(net->getOwner());
+  marker->addVictim(net->getOwner(), std::make_tuple(layer_num, bbox, false));
+  marker->addAggressor(net->getOwner(),
+                       std::make_tuple(layer_num, bbox, false));
+  addMarker(std::move(marker));
+}
+
 void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
     drPatchWire* patch,
     const std::vector<drNet*>* dr_nets)
@@ -2353,9 +2386,7 @@ void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin, bool allow_patching)
   checkMetalShape_minEnclosedArea(pin);
 
   // lef58 area
-  if (allow_patching) {
-    checkMetalShape_lef58Area(pin);
-  }
+  checkMetalShape_lef58Area(pin, allow_patching);
 }
 
 void FlexGCWorker::Impl::checkMetalShape(bool allow_patching)

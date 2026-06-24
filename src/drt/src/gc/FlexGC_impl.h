@@ -534,13 +534,16 @@ class FlexGCWorker::Impl
                               frMinimumcutConstraint* con);
   void checkMinimumCut_main(gcRect* rect);
   void checkMinimumCut();
-  void checkMetalShape_lef58Area(gcPin* pin);
+  void checkMetalShape_lef58Area(gcPin* pin, bool allow_patching);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,
       odb::dbTechLayerAreaRule* db_rule);
   bool checkMetalShape_lef58Area_rectWidth(gcPolygon* poly,
                                            odb::dbTechLayerAreaRule* db_rule);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
+  void checkMetalShape_addMarker(gcPin* pin,
+                                 frConstraint* con,
+                                 const odb::Rect& bbox);
   void checkMetalShape_patchOwner_helper(drPatchWire* patch,
                                          const std::vector<drNet*>* dr_nets);
 

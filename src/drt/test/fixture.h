@@ -92,6 +92,12 @@ class Fixture : public ::testing::Test
 
   void makeMinEnclosedAreaConstraint(frLayerNum layer_num);
 
+  odb::dbTechLayerAreaRule* makeLef58AreaConstraint(frLayerNum layer_num,
+                                                    int64_t area,
+                                                    int rect_width = -1,
+                                                    bool except_rectangle
+                                                    = false);
+
   void makeSpacingEndOfLineConstraint(frLayerNum layer_num,
                                       frCoord par_space = -1,
                                       frCoord par_within = -1,
