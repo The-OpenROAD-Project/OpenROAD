@@ -12,12 +12,12 @@
 #include "db/tech/frConstraint.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/drt/src/drt-global.h"
 #include "utl/Logger.h"
 
 namespace odb {

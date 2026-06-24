@@ -22,12 +22,12 @@
 #include "db/tech/frLookupTbl.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/drt/src/drt-global.h"
 #include "utl/Logger.h"
 
 using odb::dbTechLayerDir;
