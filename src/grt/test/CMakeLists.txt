@@ -32,6 +32,7 @@ or_integration_tests(
     gcd_flute
     increase_capacity1
     incremental_deleted_net
+    incremental_repair_cugr
     incremental_update_net
     infinite_cap
     inst_pin_out_of_die
@@ -78,6 +79,7 @@ or_integration_tests(
     repair_antennas2
     repair_antennas3
     repair_antennas4
+    repair_antennas_adjacent_jumpers
     repair_antennas_allow_congestion
     repair_antennas_error1
     repair_antennas_error2
@@ -92,6 +94,7 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    res_aware_nets_percentage
     set_nets_to_route1
     silence
     single_row
