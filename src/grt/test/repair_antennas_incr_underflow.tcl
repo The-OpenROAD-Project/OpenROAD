@@ -13,10 +13,8 @@
 #
 # NOTE: The original heap-underflow trigger is specific to the ihp130 sg13g2
 # tinyRocket design (external test case, not in this repo), so this test does
-# not by itself force the underflow on the available sky130 designs. It guards
-# the antenna-repair incremental reroute code path against regressions. The
-# fail-before/pass-after behavior of the fix was verified with deterministic
-# fault injection into mazeRouteMSMDOrder3D (see AGENT_REPORT.md).
+# not by itself force the underflow on the available sky130 designs; it guards
+# the antenna-repair incremental reroute code path against regressions.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
