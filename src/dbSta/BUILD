@@ -134,7 +134,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/db_sta/IpChecker.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
