@@ -201,7 +201,23 @@ bool connect_supply_net(utl::Logger* logger,
     }
   }
 
-  setStringProperty(block, kSupplyNetConnPrefix + net, port);
+  // A supply net may be connected to multiple supply ports; keep the
+  // connections as a space-separated list instead of overwriting previous ones.
+  const std::string conn_prop = kSupplyNetConnPrefix + net;
+  odb::dbStringProperty* conn
+      = odb::dbStringProperty::find(block, conn_prop.c_str());
+  if (conn == nullptr) {
+    odb::dbStringProperty::create(block, conn_prop.c_str(), port.c_str());
+  } else if (!port.empty()) {
+    std::string ports = conn->getValue();
+    if ((" " + ports + " ").find(" " + port + " ") == std::string::npos) {
+      if (!ports.empty()) {
+        ports += " ";
+      }
+      ports += port;
+      conn->setValue(ports.c_str());
+    }
+  }
   return true;
 }
 
