@@ -393,6 +393,13 @@ struct less<odb::dbChipRegionInst*>
 };
 
 template <>
+struct less<odb::dbCorner*>
+{
+  bool operator()(const odb::dbCorner* lhs, const odb::dbCorner* rhs) const
+      = delete;
+};
+
+template <>
 struct less<odb::dbDatabase*>
 {
   bool operator()(const odb::dbDatabase* lhs, const odb::dbDatabase* rhs) const

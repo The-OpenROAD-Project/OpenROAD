@@ -121,6 +121,7 @@ class dbChipNet;
 class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
+class dbCorner;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -7573,6 +7574,16 @@ class dbChipRegionInst : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   // User Code End dbChipRegionInst
+};
+
+class dbCorner : public dbObject
+{
+ public:
+  const std::string& getName() const;
+
+  // User Code Begin dbCorner
+  static dbCorner* create(dbBlock* block, const std::string& name);
+  // User Code End dbCorner
 };
 
 class dbDatabase : public dbObject

@@ -1,6 +1,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+sta::define_cmd_args "add_corner" {name}
+
+proc add_corner { args } {
+  sta::parse_key_args "add_corner" args keys {} flags {}
+  sta::check_argc_eq1 "add_corner" $args
+
+  set name $args
+  set db [ord::get_db]
+  set chip [$db getChip]
+
+  if { $chip == "NULL" } {
+    utl::error ODB 566 "Could not add corner $name. No design is loaded."
+  }
+
+  set block [$chip getBlock]
+  odb::dbCorner_create $block $name
+}
+
 sta::define_cmd_args "create_physical_cluster" {cluster_name}
 
 proc create_physical_cluster { args } {
