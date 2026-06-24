@@ -1407,17 +1407,59 @@ void FastRouteCore::updateRouteGridsLayer(int x1,
     TreeEdge* treeedge = &(treeedges[edgeID]);
     // Only process edges that have actual routing
     if (treeedge->len > 0 || treeedge->route.routelen > 0) {
-      int routeLen = treeedge->route.routelen;
-      std::vector<GPoint3D>& grids = treeedge->route.grids;
+      const int routeLen = treeedge->route.routelen;
+      const std::vector<GPoint3D>& grids = treeedge->route.grids;
 
-      // If the point is within the specified rectangular region AND on the
-      // original layer
+      std::vector<GPoint3D> new_grids;
+      new_grids.reserve(grids.size() + 4);
+      bool modified = false;
+
       for (int i = 0; i <= routeLen; i++) {
-        if (grids[i].x >= x1 && grids[i].x <= x2 && grids[i].y >= y1
-            && grids[i].y <= y2 && grids[i].layer == layer) {
-          // Update to the new layer
-          grids[i].layer = new_layer;
+        const bool in_region = grids[i].x >= x1 && grids[i].x <= x2
+                               && grids[i].y >= y1 && grids[i].y <= y2
+                               && grids[i].layer == layer;
+        if (!in_region) {
+          new_grids.push_back(grids[i]);
+          continue;
         }
+        modified = true;
+        // Check whether the previous/next grid point is outside the promoted
+        // region. When the first (or last) promoted point is adjacent to an
+        // unpromoted point we insert a via-transition copy on the old layer so
+        // that releaseNetResources sees a layer change (via) rather than a
+        // same-layer horizontal/vertical edge at the boundary. Without this,
+        // two back-to-back jumpers whose promoted endpoints are adjacent
+        // (e.g. right endpoint of jumper A at x=107 and left endpoint of
+        // jumper B at x=108) merge into a single same-layer chain and
+        // releaseNetResources under-decrements the edge that was never
+        // incremented.
+        const bool prev_outside = (i == 0) || grids[i - 1].x < x1
+                                  || grids[i - 1].x > x2 || grids[i - 1].y < y1
+                                  || grids[i - 1].y > y2
+                                  || grids[i - 1].layer != layer;
+        const bool next_outside = (i == routeLen) || grids[i + 1].x < x1
+                                  || grids[i + 1].x > x2 || grids[i + 1].y < y1
+                                  || grids[i + 1].y > y2
+                                  || grids[i + 1].layer != layer;
+
+        // Insert old-layer via point before the first promoted point
+        if (prev_outside && i > 0) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+        GPoint3D promoted = grids[i];
+        promoted.layer = new_layer;
+        new_grids.push_back(promoted);
+        // Insert old-layer via point after the last promoted point
+        if (next_outside && i < routeLen) {
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
+        }
+      }
+
+      if (modified) {
+        treeedge->route.routelen = static_cast<int>(new_grids.size()) - 1;
+        treeedge->route.grids = std::move(new_grids);
       }
     }
   }
