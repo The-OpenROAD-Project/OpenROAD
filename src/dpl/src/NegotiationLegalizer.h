@@ -124,21 +124,6 @@ struct AbacusCluster
 };
 
 // ---------------------------------------------------------------------------
-// RowRejection
-// ---------------------------------------------------------------------------
-// Reason isValidRow rejected a (rowIdx, cell, gridX) tuple. kValid means the
-// row passed every check. Used by diagnostic code that wants to break down
-// *why* a Y-search returned few/no valid rows.
-enum class RowRejection
-{
-  kValid,
-  kOutOfBounds,
-  kDeadRow,
-  kSiteTypeMismatch,
-  kRailMismatch,
-};
-
-// ---------------------------------------------------------------------------
 // NegotiationLegalizer
 // ---------------------------------------------------------------------------
 class NegotiationLegalizer
@@ -233,9 +218,6 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
-  [[nodiscard]] RowRejection rowRejectionReason(int rowIdx,
-                                                const NegCell& cell,
-                                                int gridX) const;
   // Collect up to `count_per_side` rail-/site-compatible rows on each
   // side of `seed_y`, plus `seed_y` itself when valid. Walks outward
   // one row at a time and stops after `max_scan` steps in each direction.

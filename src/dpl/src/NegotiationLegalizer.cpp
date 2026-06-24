@@ -1237,17 +1237,16 @@ bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
   return x >= 0 && y >= 0 && x + w <= grid_w_ && y + h <= grid_h_;
 }
 
-RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
-                                                      const NegCell& cell,
-                                                      int gridX) const
+bool NegotiationLegalizer::isValidRow(int rowIdx,
+                                      const NegCell& cell,
+                                      int gridX) const
 {
   if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
-    return RowRejection::kOutOfBounds;
+    return false;
   }
-  // Every row the cell spans must have real sites.
   for (int dy = 0; dy < cell.height; ++dy) {
     if (!row_has_sites_[rowIdx + dy]) {
-      return RowRejection::kDeadRow;
+      return false;
     }
   }
   // Bottom-row site type must match the cell's declared site. The returned
@@ -1260,19 +1259,9 @@ RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
     if (site != nullptr
         && !opendp_->grid_->getSiteOrientation(
             GridX{gridX}, GridY{rowIdx}, site)) {
-      return RowRejection::kSiteTypeMismatch;
+      return false;
     }
   }
-  //
-  // const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
-  // const bool bottom_rail_ok
-  //     = (row_bottom_rail == cell.rail_type)
-  //       || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
-  // if (!bottom_rail_ok) {
-  //   return RowRejection::kRailMismatch;
-  // }
-  //
-
   // For multi-row cells, verify the master's power-pin stack lines up with
   // the PDN rail stack across the entire span. Mirrors the check in
   // Opendp::checkPixels (which diamond search ultimately uses); the
@@ -1282,35 +1271,11 @@ RowRejection NegotiationLegalizer::rowRejectionReason(int rowIdx,
     if (Node* node = network_->getNode(cell.db_inst)) {
       if (node->getMaster()->isMultiRow()
           && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
-        return RowRejection::kRailMismatch;
+        return false;
       }
     }
   }
-  return RowRejection::kValid;
-}
-
-bool NegotiationLegalizer::isValidRow(int rowIdx,
-                                      const NegCell& cell,
-                                      int gridX) const
-{
-  const RowRejection reason = rowRejectionReason(rowIdx, cell, gridX);
-  auto railStr = [](NLPowerRailType r) {
-    return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
-  };
-  const bool ret = (reason == RowRejection::kValid);
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation",
-             2,
-             "rowIdx: {}, cell: {}, cell.rail_type: {}, "
-             "rail_type_flipped: {}, flippable: {}, is_valid: {}",
-             rowIdx,
-             cell.db_inst ? cell.db_inst->getName() : "?",
-             railStr(cell.rail_type),
-             railStr(cell.rail_type_flipped),
-             cell.flippable,
-             ret);
-  return ret;
+  return true;
 }
 
 std::vector<int> NegotiationLegalizer::collectNearestValidRows(
