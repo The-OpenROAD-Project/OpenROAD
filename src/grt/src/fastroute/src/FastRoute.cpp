@@ -2776,6 +2776,11 @@ void FastRouteCore::setCriticalNetsPercentage(float u)
   critical_nets_percentage_ = u;
 }
 
+void FastRouteCore::setResAwareNetsPercentage(float percentage)
+{
+  res_aware_nets_percentage_ = percentage;
+}
+
 void FastRouteCore::setOverflowIterations(int iterations)
 {
   overflow_iterations_ = iterations;
