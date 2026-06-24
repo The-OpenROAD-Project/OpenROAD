@@ -2402,7 +2402,19 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
 
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
-  fastroute_->setResAwareNetsPercentage(percentage);
+  if (!resistance_aware_) {
+    percentage = 0;
+    logger_->warn(GRT,
+                  308,
+                  "Resistance-aware routing is not enabled, setting res-aware "
+                  "nets percentage to 0.");
+  }
+  if (use_cugr_) {
+    // TODO
+    // cugr_->setResAwareNetsPercentage(percentage);
+  } else {
+    fastroute_->setResAwareNetsPercentage(percentage);
+  }
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)

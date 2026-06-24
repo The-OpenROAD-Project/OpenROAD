@@ -671,7 +671,7 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
 
 // Update and sort the critical nets. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
-void FastRouteCore::updateSlacks(float percentage)
+void FastRouteCore::updateSlacks()
 {
   // Check if liberty file was loaded before calculating slack
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
@@ -736,6 +736,8 @@ void FastRouteCore::updateSlacks(float percentage)
         };
 
   std::ranges::stable_sort(res_aware_list, compareSlack);
+
+  float percentage = res_aware_nets_percentage_ / 100.0;
 
   // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
@@ -1289,7 +1291,7 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
-  updateSlacks(res_aware_nets_percentage_);
+  updateSlacks();
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {

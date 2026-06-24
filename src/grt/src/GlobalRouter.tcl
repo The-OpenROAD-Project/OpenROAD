@@ -225,12 +225,6 @@ proc global_route { args } {
     grt::set_critical_nets_percentage $percentage
   }
 
-  if { [info exists keys(-res_aware_nets_percentage)] } {
-    set res_aware_percentage $keys(-res_aware_nets_percentage)
-    sta::check_percent "-res_aware_nets_percentage" $res_aware_percentage
-    grt::set_res_aware_nets_percentage $res_aware_percentage
-  }
-
   if { [info exists keys(-skip_large_fanout_nets)] } {
     set fanout $keys(-skip_large_fanout_nets)
     sta::check_positive_integer "-skip_large_fanout_nets" $fanout
@@ -242,6 +236,12 @@ proc global_route { args } {
 
   set resistance_aware [info exists flags(-resistance_aware)]
   grt::set_resistance_aware $resistance_aware
+
+  if { [info exists keys(-res_aware_nets_percentage)] } {
+    set res_aware_percentage $keys(-res_aware_nets_percentage)
+    sta::check_percent "-res_aware_nets_percentage" $res_aware_percentage
+    grt::set_res_aware_nets_percentage $res_aware_percentage
+  }
 
   if { [info exists keys(-snapshot_batched_width)] } {
     set snapshot_batched_width $keys(-snapshot_batched_width)
