@@ -617,58 +617,10 @@ bool NegotiationLegalizer::initFromDb()
     if (!cell.fixed) {
       // Check that the full cell footprint (width x height) fits on valid
       // sites.
-      auto isValidSite =
-          [&](int pixel_left, int pixel_bottom, bool verbose = false) -> bool {
-        const bool past_left = pixel_left < 0;
-        const bool past_bottom = pixel_bottom < 0;
-        const bool past_right = pixel_left + cell.width > grid_w_;
-        const bool past_top = pixel_bottom + cell.height > grid_h_;
-        if (past_left || past_right || past_bottom || past_top) {
-          if (!verbose) {
-            return false;
-          }
-          std::string detail;
-          if (past_left) {
-            detail += fmt::format(
-                " left edge of footprint is at column {} (before grid "
-                "column 0);",
-                pixel_left);
-          }
-          if (past_bottom) {
-            detail += fmt::format(
-                " bottom edge of footprint is at row {} (below grid "
-                "row 0);",
-                pixel_bottom);
-          }
-          if (past_right) {
-            detail += fmt::format(
-                " right edge of footprint is at column {} (past grid "
-                "width {});",
-                pixel_left + cell.width,
-                grid_w_);
-          }
-          if (past_top) {
-            detail += fmt::format(
-                " top edge of footprint is at row {} (past grid "
-                "height {});",
-                pixel_bottom + cell.height,
-                grid_h_);
-          }
-          debugPrint(logger_,
-                     utl::DPL,
-                     "negotiation",
-                     1,
-                     "Position grid ({}, {}) rejected for instance '{}': "
-                     "cell footprint {}x{} sites does not fit in grid "
-                     "{}x{} sites.{}",
-                     pixel_left,
-                     pixel_bottom,
-                     cell.db_inst->getName(),
-                     cell.width,
-                     cell.height,
-                     grid_w_,
-                     grid_h_,
-                     detail);
+      auto isValidSite = [&](int pixel_left, int pixel_bottom) -> bool {
+        if (pixel_left < 0 || pixel_bottom < 0
+            || pixel_left + cell.width > grid_w_
+            || pixel_bottom + cell.height > grid_h_) {
           return false;
         }
         // Site-type matching is enforced by isValidRow inside the negotiation
@@ -678,39 +630,6 @@ bool NegotiationLegalizer::initFromDb()
             const auto& p = dpl_grid->pixel(GridY{pixel_bottom + row_offset},
                                             GridX{pixel_left + col_offset});
             if (!p.is_valid) {
-              if (!verbose) {
-                return false;
-              }
-              const auto [row_site, row_orient]
-                  = dpl_grid->getShortestSite(GridX{pixel_left + col_offset},
-                                              GridY{pixel_bottom + row_offset});
-              const std::string cause
-                  = (row_site != nullptr)
-                        ? fmt::format(
-                              "a hard dbBlockage covers it (row site '{}' "
-                              "exists at this pixel but was invalidated)",
-                              row_site->getName())
-                        : std::string(
-                              "no row covers this pixel (gap, off-die "
-                              "area, or fragmented-row gap)");
-              debugPrint(logger_,
-                         utl::DPL,
-                         "negotiation",
-                         1,
-                         "Position grid ({}, {}) rejected for instance "
-                         "'{}': pixel ({}, {}) inside the {}x{} footprint "
-                         "is marked invalid (hopeless={}, "
-                         "blocked_layers=0x{:x}); {}.",
-                         pixel_left,
-                         pixel_bottom,
-                         cell.db_inst->getName(),
-                         pixel_left + col_offset,
-                         pixel_bottom + row_offset,
-                         cell.width,
-                         cell.height,
-                         p.is_hopeless,
-                         p.blocked_layers,
-                         cause);
               return false;
             }
           }
@@ -764,7 +683,7 @@ bool NegotiationLegalizer::initFromDb()
         return false;
       };
 
-      if (!isValidSite(cell.init_x, cell.init_y, /*verbose=*/true)
+      if (!isValidSite(cell.init_x, cell.init_y)
           || !isInRegionOk(cell.init_x, cell.init_y)) {
         debugPrint(logger_,
                    utl::DPL,
@@ -1177,26 +1096,35 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  // Verify that the cell's site type is available on the target row.
-  if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
-    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-    if (site != nullptr
-        && !opendp_->grid_->getSiteOrientation(
-            GridX{gridX}, GridY{rowIdx}, site)) {
-      return false;
-    }
-  }
-  // For multi-row cells, verify the master's power-pin stack lines up with
-  // the PDN rail stack across the entire span. Mirrors the check in
-  // Opendp::checkPixels (which diamond search ultimately uses); the
-  // single-row rail constraint is already captured by getSiteOrientation
-  // above (orientation encodes which power pin sits at the bottom).
-  if (cell.db_inst != nullptr && network_ != nullptr && opendp_ != nullptr) {
-    if (Node* node = network_->getNode(cell.db_inst)) {
-      if (node->getMaster()->isMultiRow()
-          && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
+  // Mirror Opendp::canBePlaced: the row must offer the cell's site, cell master
+  // must be able to take the orientation the row requires and a multi-row
+  // cell's power stack must line up across the span.
+  if (cell.db_inst != nullptr && opendp_ != nullptr && opendp_->grid_
+      && network_ != nullptr) {
+    auto* dbMaster = cell.db_inst->getMaster();
+    odb::dbSite* site = dbMaster->getSite();
+    if (site != nullptr) {
+      const auto orient = opendp_->grid_->getSiteOrientation(
+          GridX{gridX}, GridY{rowIdx}, site);
+      if (!orient) {
         return false;
       }
+      const unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
+      if (!opendp_->checkMasterSym(masterSym, orient.value())) {
+        return false;
+      }
+    }
+    Node* node = network_->getNode(cell.db_inst);
+    if (node != nullptr && node->getMaster()->isMultiRow()
+        && !opendp_->checkRowPowerCompatible(node, GridY{rowIdx})) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 2,
+                 "rowIdx: {}, cell: {}, power incompatible",
+                 rowIdx,
+                 cell.db_inst->getName());
+      return false;
     }
   }
   return true;
