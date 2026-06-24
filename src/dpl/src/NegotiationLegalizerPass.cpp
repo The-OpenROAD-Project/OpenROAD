@@ -664,97 +664,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   const std::vector<int> extended_search_rows = collectNearestValidRows(
       cell, cell.init_y, cell.init_x, row_search_window_, row_search_cap);
 
-  // Print diagnostics for the first 2 cells of each distinct height, so we
-  // get coverage across all row heights rather than just the first 50 cells
-  // (which tend to share one height).
-  static std::unordered_map<int, int> neg_search_print_count_by_height;
-  int& height_print_count = neg_search_print_count_by_height[cell.height];
-  if (height_print_count < 10) {
-    ++height_print_count;
-    auto rail = [](NLPowerRailType r) {
-      return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
-    };
-
-    // Re-scan the same window to attribute rejections by reason and find
-    // the nearest valid row above/below the seed. Diagnostic-only, only
-    // runs for the first 50 cells.
-    int rej_oob = 0, rej_dead = 0, rej_site = 0, rej_rail = 0;
-    int nearest_below_step = -1;  // step distance to first valid row > seed
-    int nearest_above_step = -1;  // step distance to first valid row < seed
-    for (int step = 1; step <= row_search_cap; ++step) {
-      const int below = cell.init_y + step;
-      const int above = cell.init_y - step;
-      const auto rb = rowRejectionReason(below, cell, cell.init_x);
-      const auto ra = rowRejectionReason(above, cell, cell.init_x);
-      auto bump = [&](RowRejection r) {
-        switch (r) {
-          case RowRejection::kOutOfBounds:
-            ++rej_oob;
-            break;
-          case RowRejection::kDeadRow:
-            ++rej_dead;
-            break;
-          case RowRejection::kSiteTypeMismatch:
-            ++rej_site;
-            break;
-          case RowRejection::kRailMismatch:
-            ++rej_rail;
-            break;
-          case RowRejection::kValid:
-            break;
-        }
-      };
-      bump(rb);
-      bump(ra);
-      if (rb == RowRejection::kValid && nearest_below_step == -1) {
-        nearest_below_step = step;
-      }
-      if (ra == RowRejection::kValid && nearest_above_step == -1) {
-        nearest_above_step = step;
-      }
-    }
-    const bool seed_valid = rowRejectionReason(cell.init_y, cell, cell.init_x)
-                            == RowRejection::kValid;
-
-    odb::dbMaster* master = cell.db_inst->getMaster();
-    odb::dbSite* site = master ? master->getSite() : nullptr;
-
-    logger_->report(
-        "[neg-search h={} {}/10] {} master={} site={} "
-        "extended_search_rows.size={} seed_valid={} "
-        "nearest_below_step={} nearest_above_step={} "
-        "rej_oob={} rej_dead={} rej_site={} rej_rail={} "
-        "row_search_cap={} row_search_window={} "
-        "cell.height={} cell.width={} max_disp_y={} "
-        "rail_type={} rail_type_flipped={} flippable={} "
-        "fence_id={} init_y={} init_x={} cur_y={} cur_x={}",
-        cell.height,
-        height_print_count,
-        cell.db_inst->getName(),
-        master ? master->getName().c_str() : "?",
-        site ? site->getName().c_str() : "?",
-        extended_search_rows.size(),
-        seed_valid,
-        nearest_below_step,
-        nearest_above_step,
-        rej_oob,
-        rej_dead,
-        rej_site,
-        rej_rail,
-        row_search_cap,
-        row_search_window_,
-        cell.height,
-        cell.width,
-        opendp_->max_displacement_y_,
-        rail(cell.rail_type),
-        rail(cell.rail_type_flipped),
-        cell.flippable,
-        cell.fence_id,
-        cell.init_y,
-        cell.init_x,
-        cell.y,
-        cell.x);
-  }
   {
     utl::DebugScopedTimer t(prof_init_search_s_);
     for (int ty : extended_search_rows) {
@@ -1190,31 +1099,30 @@ void NegotiationLegalizer::cellSwap()
 {
   const int maxDisp = maxDisplacement();
 
-  // Group movable cells by (height, width, rail_type).
+  // Group movable cells by (height, width).  Power-rail compatibility of any
+  // candidate swap is enforced below by isValidRow(), so it need not be part
+  // of the grouping key.
   struct GroupKey
   {
     int height;
     int width;
-    NLPowerRailType rail;
     bool operator==(const GroupKey& o) const
     {
-      return height == o.height && width == o.width && rail == o.rail;
+      return height == o.height && width == o.width;
     }
   };
   struct GroupKeyHash
   {
     size_t operator()(const GroupKey& k) const
     {
-      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8)
-             ^ (std::hash<int>()(static_cast<int>(k.rail)) << 16);
+      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8);
     }
   };
 
   std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed) {
-      groups[{cells_[i].height, cells_[i].width, cells_[i].rail_type}]
-          .push_back(i);
+      groups[{cells_[i].height, cells_[i].width}].push_back(i);
     }
   }
 

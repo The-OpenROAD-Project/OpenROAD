@@ -276,6 +276,9 @@ void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)
 dbTechLayer* dbTechLayerAreaRule::getTrimLayer() const
 {
   _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  if (!obj->trim_layer_.isValid()) {
+    return nullptr;
+  }
   odb::dbTech* tech = getDb()->getTech();
   return odb::dbTechLayer::getTechLayer(tech, obj->trim_layer_);
 }

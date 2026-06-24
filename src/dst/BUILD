@@ -53,7 +53,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/dst/Distributed.h",
         "src/MakeDistributed.cc",
         ":swig",
         ":tcl",
@@ -65,6 +64,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":dst",
         "//:ord",
         "//src/utl",
         "@boost.asio",

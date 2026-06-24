@@ -4,7 +4,6 @@
 [INFO ODB-0131]     Created 4 components and 16 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 8 connections.
 [INFO ODB-0133]     Created 5 nets and 8 connections.
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal8
 [INFO GRT-0022] Global adjustment: 50%
@@ -65,5 +64,12 @@ Total             7828            47            0.60%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 319 um
 [INFO GRT-0014] Routed nets: 5
+Stage 1: Pattern routing.
+Routing statistics
+Wire length:           709
+Total via count:       28
+Total congestion:      0
+Min resource:          1.5
+Bottleneck:            (6, 0, 0)
 Summary 1 / 1 (100% pass)
 pass

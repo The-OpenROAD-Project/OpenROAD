@@ -46,15 +46,6 @@ constexpr double kGamma = 0.005;       // adaptive-pf γ
 constexpr int kIth = 300;              // pf ramp-up threshold iteration
 
 // ---------------------------------------------------------------------------
-// NLPowerRailType
-// ---------------------------------------------------------------------------
-enum class NLPowerRailType
-{
-  kVss = 0,
-  kVdd = 1
-};
-
-// ---------------------------------------------------------------------------
 // FenceRect / FenceRegion
 // ---------------------------------------------------------------------------
 struct FenceRect
@@ -94,16 +85,8 @@ struct NegCell
   int pad_right{0};  // right padding (sites)
 
   bool fixed{false};
-  NLPowerRailType rail_type{NLPowerRailType::kVss};
-  // Bottom rail type of the cell when it is MX-flipped (= the top rail in
-  // the natural R0 orientation).  For most cells this is kVdd (VDD↔VSS swap
-  // at the bottom edge after flip).  For multi-height cells whose power is
-  // symmetric (VSS at both top and bottom, e.g. some double-height flops),
-  // this equals rail_type — flipping cannot fix a power-rail mismatch.
-  NLPowerRailType rail_type_flipped{NLPowerRailType::kVdd};
-  int fence_id{-1};      // -1 → default region
-  bool flippable{true};  // odd-height cells may require fliping for moving
-  bool legal{false};     // updated each negotiation iteration
+  int fence_id{-1};   // -1 → default region
+  bool legal{false};  // updated each negotiation iteration
 
   [[nodiscard]] int displacement() const
   {
@@ -121,21 +104,6 @@ struct AbacusCluster
   double total_weight{0.0};
   double total_q{0.0};  // Σ w_i * x_i^0
   int total_width{0};   // Σ cell widths (sites)
-};
-
-// ---------------------------------------------------------------------------
-// RowRejection
-// ---------------------------------------------------------------------------
-// Reason isValidRow rejected a (rowIdx, cell, gridX) tuple. kValid means the
-// row passed every check. Used by diagnostic code that wants to break down
-// *why* a Y-search returned few/no valid rows.
-enum class RowRejection
-{
-  kValid,
-  kOutOfBounds,
-  kDeadRow,
-  kSiteTypeMismatch,
-  kRailMismatch,
 };
 
 // ---------------------------------------------------------------------------
@@ -159,7 +127,7 @@ class NegotiationLegalizer
 
   // Main entry point – call instead of (or after) the existing opendp path.
   // May be called multiple times on the same object; internal state is reset
-  // at the start of each call (cells_, grid_, fences_, row_rail_ are cleared).
+  // at the start of each call (cells_, grid_, fences_ are cleared).
   void legalize();
 
   // Pass positions back to the DPL original structure.
@@ -231,9 +199,6 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
-  [[nodiscard]] RowRejection rowRejectionReason(int rowIdx,
-                                                const NegCell& cell,
-                                                int gridX) const;
   // Collect up to `count_per_side` rail-/site-compatible rows on each
   // side of `seed_y`, plus `seed_y` itself when valid. Walks outward
   // one row at a time and stops after `max_scan` steps in each direction.
@@ -301,7 +266,6 @@ class NegotiationLegalizer
 
   std::vector<NegCell> cells_;
   std::vector<FenceRegion> fences_;
-  std::vector<NLPowerRailType> row_rail_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
 
