@@ -257,24 +257,15 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
   return segment;
 }
 
-// Returns (top_pwr, bot_pwr) for the master's rails. Power_UNK when an edge
-// has no rail, or when POWER and GROUND both touch it.
-//
-// Each MPin rectangle is tested individually, since a single MPin can hold
-// rails on both edges (e.g. double-height cells with VSS at top and bottom)
-// or include internal straps that would pull a per-pin bbox center off the
-// rail. Only ROUTING-layer geometry counts, to ignore NWELL/PWELL implants
-// (encoded as POWER/GROUND pins on MASTERSLICE layers) from polluting the
-// rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
-  int maxPwr = std::numeric_limits<int>::min();
-  int minPwr = std::numeric_limits<int>::max();
-  int maxGnd = std::numeric_limits<int>::min();
-  int minGnd = std::numeric_limits<int>::max();
+  int max_pwr = std::numeric_limits<int>::min();
+  int min_pwr = std::numeric_limits<int>::max();
+  int max_gnd = std::numeric_limits<int>::min();
+  int min_gnd = std::numeric_limits<int>::max();
 
-  bool isVdd = false;
-  bool isGnd = false;
+  bool has_pwr = false;
+  bool has_gnd = false;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     const odb::dbSigType st = mterm->getSigType();
@@ -294,32 +285,31 @@ std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
           continue;
         }
 
-        // Only count the rail as present when routing geometry is confirmed
         const int y = box->getBox().yCenter();
 
         if (is_pwr) {
-          isVdd = true;
-          minPwr = std::min(minPwr, y);
-          maxPwr = std::max(maxPwr, y);
+          has_pwr = true;
+          min_pwr = std::min(min_pwr, y);
+          max_pwr = std::max(max_pwr, y);
         } else {
-          isGnd = true;
-          minGnd = std::min(minGnd, y);
-          maxGnd = std::max(maxGnd, y);
+          has_gnd = true;
+          min_gnd = std::min(min_gnd, y);
+          max_gnd = std::max(max_gnd, y);
         }
       }
     }
   }
 
-  int topPwr = Architecture::Row::Power_UNK;
-  int botPwr = Architecture::Row::Power_UNK;
+  int top_pwr = Architecture::Row::Power_UNK;
+  int bot_pwr = Architecture::Row::Power_UNK;
 
-  if (isVdd && isGnd) {
-    topPwr = (maxPwr > maxGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
-    botPwr = (minPwr < minGnd) ? Architecture::Row::Power_VDD
-                               : Architecture::Row::Power_VSS;
+  if (has_pwr && has_gnd) {
+    top_pwr = (max_pwr > max_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
+    bot_pwr = (min_pwr < min_gnd) ? Architecture::Row::Power_VDD
+                                  : Architecture::Row::Power_VSS;
   }
-  return {topPwr, botPwr};
+  return {top_pwr, bot_pwr};
 }
 
 }  // namespace
