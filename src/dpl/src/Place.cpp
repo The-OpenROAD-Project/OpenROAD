@@ -1150,7 +1150,6 @@ DbuPt Opendp::legalPt(const Node* cell, const DbuPt& pt) const
   // Align with row site.
   const GridX grid_x{divRound(core_x.v, site_width.v)};
   const DbuX legal_x{gridToDbu(grid_x, site_width)};
-  // Align to row
   const DbuY core_y
       = std::clamp(pt.y, DbuY{0}, DbuY{core_.dy()} - cell->getHeight());
   const GridY grid_y = grid_->gridRoundY(core_y);
