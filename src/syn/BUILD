@@ -20,7 +20,6 @@ cc_library(
         "src/flow/combinational_mapper_npn.cc",
         "src/flow/combinational_mapper_npn.h",
         "src/flow/constant_fold.cc",
-        "src/flow/constant_fold.h",
         "src/flow/export.cc",
         "src/flow/export.h",
         "src/flow/import.cc",
@@ -33,6 +32,7 @@ cc_library(
     ],
     hdrs = [
         "include/syn/synthesis.h",
+        "src/flow/constant_fold.h",
     ],
     includes = [
         "include",
