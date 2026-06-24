@@ -1448,7 +1448,7 @@ void extMain::makeCornerNameMap()
     logger_->error(
         utl::RCX,
         13,
-        "Could not make corner name map. The number of corner is undefined.");
+        "Could not make corner name map. The number of corners is undefined.");
   }
 
   extCorner** map = new extCorner*[_cornerCnt];
