@@ -1444,14 +1444,16 @@ void FastRouteCore::updateRouteGridsLayer(int x1,
 
         // Insert old-layer via point before the first promoted point
         if (prev_outside && i > 0) {
-          new_grids.push_back({grids[i].x, grids[i].y, (int16_t) layer});
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
         }
         GPoint3D promoted = grids[i];
         promoted.layer = new_layer;
         new_grids.push_back(promoted);
         // Insert old-layer via point after the last promoted point
         if (next_outside && i < routeLen) {
-          new_grids.push_back({grids[i].x, grids[i].y, (int16_t) layer});
+          new_grids.push_back(
+              {grids[i].x, grids[i].y, static_cast<int16_t>(layer)});
         }
       }
 
