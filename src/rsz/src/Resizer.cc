@@ -2557,7 +2557,7 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
     // Only applies under global-routing parasitics;
     // placement-based estimation is already cheap.
     float load_cap;
-    if (load_cap_hint.has_value()
+    if (load_cap_hint.has_value() && *load_cap_hint > 0.0
         && estimate_parasitics_->getParasiticsSrc()
                == est::ParasiticsSrc::kGlobalRouting) {
       load_cap = *load_cap_hint;
@@ -2618,7 +2618,7 @@ int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin,
     // FastRoute per buffer in the repair_design.
     // Only applies under global-routing parasitics;
     // placement-based estimation is already cheap.
-    if (load_cap_hint.has_value()
+    if (load_cap_hint.has_value() && *load_cap_hint > 0.0
         && estimate_parasitics_->getParasiticsSrc()
                == est::ParasiticsSrc::kGlobalRouting) {
       load_cap = *load_cap_hint;
