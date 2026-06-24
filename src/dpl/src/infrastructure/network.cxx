@@ -268,53 +268,58 @@ odb::Rect getBoundarySegment(const odb::Rect& bbox,
 // rail detection.
 std::pair<int, int> getMasterPwrs(odb::dbMaster* master)
 {
-  odb::Rect bbox;
-  master->getPlacementBoundary(bbox);
-  const int y_cell_bot = bbox.yMin();
-  const int y_cell_top = bbox.yMax();
+  int maxPwr = std::numeric_limits<int>::min();
+  int minPwr = std::numeric_limits<int>::max();
+  int maxGnd = std::numeric_limits<int>::min();
+  int minGnd = std::numeric_limits<int>::max();
 
-  bool bot_has_pwr = false;
-  bool bot_has_gnd = false;
-  bool top_has_pwr = false;
-  bool top_has_gnd = false;
+  bool isVdd = false;
+  bool isGnd = false;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     const odb::dbSigType st = mterm->getSigType();
     const bool is_pwr = (st == odb::dbSigType::POWER);
     const bool is_gnd = (st == odb::dbSigType::GROUND);
+
     if (!is_pwr && !is_gnd) {
       continue;
     }
+
     for (odb::dbMPin* mpin : mterm->getMPins()) {
-      for (odb::dbBox* pin_box : mpin->getGeometry()) {
-        auto* layer = pin_box->getTechLayer();
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        // Skip wells, implants, cuts, and null layers
         if (layer == nullptr
             || layer->getType() != odb::dbTechLayerType::ROUTING) {
-          continue;  // Skip wells/implants/cut layers.
+          continue;
         }
-        const odb::Rect pin_rect = pin_box->getBox();
-        if (pin_rect.yMin() <= y_cell_bot) {
-          (is_pwr ? bot_has_pwr : bot_has_gnd) = true;
-        }
-        if (pin_rect.yMax() >= y_cell_top) {
-          (is_pwr ? top_has_pwr : top_has_gnd) = true;
+
+        // Only count the rail as present when routing geometry is confirmed
+        const int y = box->getBox().yCenter();
+
+        if (is_pwr) {
+          isVdd = true;
+          minPwr = std::min(minPwr, y);
+          maxPwr = std::max(maxPwr, y);
+        } else {
+          isGnd = true;
+          minGnd = std::min(minGnd, y);
+          maxGnd = std::max(maxGnd, y);
         }
       }
     }
   }
 
-  const auto resolve = [](bool has_pwr, bool has_gnd) {
-    if (has_pwr && !has_gnd) {
-      return Architecture::Row::Power_VDD;
-    }
-    if (has_gnd && !has_pwr) {
-      return Architecture::Row::Power_VSS;
-    }
-    return Architecture::Row::Power_UNK;
-  };
-  const int top_pwr = resolve(top_has_pwr, top_has_gnd);
-  const int bot_pwr = resolve(bot_has_pwr, bot_has_gnd);
-  return {top_pwr, bot_pwr};
+  int topPwr = Architecture::Row::Power_UNK;
+  int botPwr = Architecture::Row::Power_UNK;
+
+  if (isVdd && isGnd) {
+    topPwr = (maxPwr > maxGnd) ? Architecture::Row::Power_VDD
+                               : Architecture::Row::Power_VSS;
+    botPwr = (minPwr < minGnd) ? Architecture::Row::Power_VDD
+                               : Architecture::Row::Power_VSS;
+  }
+  return {topPwr, botPwr};
 }
 
 }  // namespace
