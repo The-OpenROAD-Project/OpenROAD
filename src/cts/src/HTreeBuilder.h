@@ -133,7 +133,7 @@ class HTreeBuilder : public TreeBuilder
         unsigned wireSegmentUnit) const
     {
       unsigned bestIdx = 0;
-      double bestDim = 0.0;
+      double bestHpwl = 0.0;
       for (unsigned i = 0; i < branchSinkLocs_.size(); ++i) {
         const auto& sinks = branchSinkLocs_[i];
         if (sinks.size() < 2) {
@@ -149,13 +149,13 @@ class HTreeBuilder : public TreeBuilder
           minY = std::min(minY, sinks[j].getY());
           maxY = std::max(maxY, sinks[j].getY());
         }
-        const double dim = std::max(maxX - minX, maxY - minY) * wireSegmentUnit;
-        if (dim > bestDim) {
-          bestDim = dim;
+        const double hpwl = ((maxX - minX) + (maxY - minY)) * wireSegmentUnit;
+        if (hpwl > bestHpwl) {
+          bestHpwl = hpwl;
           bestIdx = i;
         }
       }
-      return {bestIdx, bestDim};
+      return {bestIdx, bestHpwl};
     }
 
     void setOutputSlew(unsigned slew) { outputSlew_ = slew; }
