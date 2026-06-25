@@ -1620,8 +1620,12 @@ void GlobalRouter::reportNetDegree(const std::vector<Net*>& nets)
   }
   int min_degree, max_degree;
   computeNetDegree(nets, min_degree, max_degree);
-  min_degree = nets.empty() ? 0 : min_degree;
-  max_degree = nets.empty() ? 0 : max_degree;
+  // No routable net passed the degree filter; report zeros instead of the
+  // sentinel min_degree.
+  if (nets.empty() || min_degree == std::numeric_limits<int>::max()) {
+    min_degree = 0;
+    max_degree = 0;
+  }
   logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
   logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
 }
