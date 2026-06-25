@@ -16,7 +16,6 @@ class dbExtControl : public dbObject
 {
  public:
   // PERSISTANT-MEMBERS
-  bool _independentExtCorners;
   bool _foreign;
   bool _wireStamped;
   bool _rsegCoord;
