@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 # --- begin runfiles.bash initialization v3 ---
 # Locate the runfiles library so we can resolve data dependencies regardless of
 # whether runfiles are materialized as a directory (Linux) or only described by
@@ -52,6 +54,8 @@ tar -xf "$TARFILE" -C "$DEST_DIR/bin"
 if [ -e "$DEST_DIR/bin/openroad.repo_mapping" ]; then
     chmod u+w "$DEST_DIR/bin/openroad.repo_mapping"
     rm -rf "$DEST_DIR/bin/openroad.repo_mapping"
+    chmod u+w "$DEST_DIR/bin/openroad.runfiles"
+    rm -rf "$DEST_DIR/bin/openroad.runfiles"
 fi
 
 ABS_DEST="$(realpath "$DEST_DIR")"

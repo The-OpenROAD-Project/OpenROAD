@@ -64,5 +64,12 @@ Total             7828            47            0.60%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 319 um
 [INFO GRT-0014] Routed nets: 5
+Stage 1: Pattern routing.
+Routing statistics
+Wire length:           709
+Total via count:       28
+Total congestion:      0
+Min resource:          1.5
+Bottleneck:            (6, 0, 0)
 Summary 1 / 1 (100% pass)
 pass

@@ -50,6 +50,7 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000012 HPWL: 1229790
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1229790
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000012 HPWL: 1229790
+[WARNING DPL-0404] Macro inst_0 is placed but not fixed; treating it as fixed during legalization. Mark it FIXED to silence this warning.
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 1357.12 um^2, Utilization: 2.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1101] Legalizing using diamond search.
@@ -64,11 +65,11 @@ Total Placement Failures:          0
 ---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement       9387.3 u
-average displacement       33.6 u
-max displacement           51.8 u
+total displacement      10261.3 u
+average displacement       36.8 u
+max displacement           56.4 u
 original HPWL             605.0 u
-legalized HPWL            641.4 u
+legalized HPWL            640.2 u
 delta HPWL                    6 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
@@ -109,13 +110,13 @@ delta HPWL                    6 %
 [INFO CTS-0204] A clustering solution was found from clustering size of 10 and clustering diameter of 60.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 28.
-[INFO CTS-0024]  Normalized sink region: [(0.369143, 0.371964), (5.02957, 6.24)].
-[INFO CTS-0025]     Width:  4.6604.
-[INFO CTS-0026]     Height: 5.8680.
+[INFO CTS-0024]  Normalized sink region: [(0.806143, 0.417571), (4.959, 6.37757)].
+[INFO CTS-0025]     Width:  4.1529.
+[INFO CTS-0026]     Height: 5.9600.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 14
-    Sub-region size: 4.6604 X 2.9340
+    Sub-region size: 4.1529 X 2.9800
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 28.
@@ -136,7 +137,7 @@ delta HPWL                    6 %
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 280
 [INFO CTS-0100]  Leaf buffers 28
-[INFO CTS-0101]  Average sink wire length 31.00 um
+[INFO CTS-0101]  Average sink wire length 27.32 um
 [INFO CTS-0102]  Path depth 2 - 3
 [INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0033] Balancing latency for clock core
