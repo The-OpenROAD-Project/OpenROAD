@@ -208,6 +208,15 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportNetDegree(nets);
 
   cugr_->setCongestionIterations(congestion_iterations_);
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    if (cugr_->getCriticalNetsPercentage() != 0) {
+      logger_->warn(
+          GRT,
+          309,
+          "Timing is not available, setting critical nets percentage to 0.");
+    }
+    cugr_->setCriticalNetsPercentage(0);
+  }
   cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
   return nets;
 }
@@ -2519,6 +2528,7 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
   fastroute_->setResistanceAware(resistance_aware);
+  cugr_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
