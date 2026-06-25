@@ -376,6 +376,11 @@ class GlobalRouter
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
   void initNetlist(std::vector<Net*>& nets, bool incremental = false);
+  void computeNetDegree(const std::vector<Net*>& nets,
+                        int& min_degree,
+                        int& max_degree);
+  void reportNetDegree(const std::vector<Net*>& nets);
+  void reportMacrosAndBlockages();
   std::vector<Net*> initNets(bool check_pin_placement = true);
   void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
