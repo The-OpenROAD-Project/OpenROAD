@@ -898,7 +898,11 @@ void CUGR::updateDbCongestion()
   db_gcell->addGridPatternY(y_corner, y_size, gridline_size);
 
   odb::dbTech* db_tech = db_->getTech();
-  for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
+  // Skip sub-min layers: they hold no routing wire and their 0-capacity edges
+  // would otherwise export as fully-blocked cells.
+  for (int layer = constants_.min_routing_layer;
+       layer < grid_graph_->getNumLayers();
+       layer++) {
     odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
     if (db_layer == nullptr) {
       continue;
@@ -967,6 +971,9 @@ void CUGR::getBTermsAccessPoints(
 
 void CUGR::addDirtyNet(odb::dbNet* net)
 {
+  if (!design_) {
+    return;
+  }
   auto it = db_net_map_.find(net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
@@ -983,6 +990,9 @@ void CUGR::addDirtyNet(odb::dbNet* net)
 
 void CUGR::updateNet(odb::dbNet* db_net)
 {
+  if (!design_) {
+    return;
+  }
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
@@ -1012,6 +1022,9 @@ void CUGR::updateNet(odb::dbNet* db_net)
 
 void CUGR::removeNet(odb::dbNet* db_net)
 {
+  if (!design_) {
+    return;
+  }
   auto it = db_net_map_.find(db_net);
   if (it == db_net_map_.end()) {
     design_->removeNet(db_net);
@@ -1190,8 +1203,10 @@ void CUGR::saveCongestion()
 
   // Emit one marker per congested 3D edge, tagged with its routing
   // layer. Comment carries capacity/usage/congestion and the source of
-  // the congestion (wire segments, via stubs, or both).
-  for (int l = 0; l < num_layers; l++) {
+  // the congestion (wire segments, via stubs, or both). Skip sub-min
+  // layers: their 0-capacity edges carry only pin-access via demand and
+  // would otherwise emit false congestion markers.
+  for (int l = constants_.min_routing_layer; l < num_layers; l++) {
     const int direction = grid_graph_->getLayerDirection(l);
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
     const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
@@ -1287,8 +1302,6 @@ void CUGR::routeIncremental()
     }
     route();
   }
-
-  printStatistics();
 }
 
 }  // namespace grt

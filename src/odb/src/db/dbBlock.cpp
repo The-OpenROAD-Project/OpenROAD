@@ -2756,12 +2756,6 @@ int dbBlock::getCornersPerBlock()
   return block->corners_per_block_;
 }
 
-bool dbBlock::extCornersAreIndependent()
-{
-  bool independent = getExtControl()->_independentExtCorners;
-  return independent;
-}
-
 int dbBlock::getExtDbCount()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2834,13 +2828,6 @@ void dbBlock::initParasiticsValueTables()
   block->c_val_tbl_->push_back(0.0);
 }
 
-void dbBlock::setCornersPerBlock(int cornersPerBlock)
-{
-  initParasiticsValueTables();
-  _dbBlock* block = (_dbBlock*) this;
-  block->corners_per_block_ = cornersPerBlock;
-}
-
 void dbBlock::setCornerCount(int cornersStoredCnt,
                              int extDbCnt,
                              const char* name_list)
@@ -2882,54 +2869,6 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
     }
     block->corner_name_list_ = strdup((char*) name_list);
   }
-}
-dbBlock* dbBlock::getExtCornerBlock(uint32_t corner)
-{
-  dbBlock* block = findExtCornerBlock(corner);
-  if (!block) {
-    block = this;
-  }
-  return block;
-}
-
-dbBlock* dbBlock::findExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  return findChild(cornerName);
-}
-
-dbBlock* dbBlock::createExtCornerBlock(uint32_t corner)
-{
-  char cornerName[64];
-  sprintf(cornerName, "extCornerBlock__%d", corner);
-  dbBlock* extBlk = dbBlock::create(this, cornerName, '/');
-  assert(extBlk);
-  char name[64];
-  for (dbNet* net : getNets()) {
-    sprintf(name, "%d", net->getId());
-    dbNet* xnet = dbNet::create(extBlk, name, true);
-    if (xnet == nullptr) {
-      getImpl()->getLogger()->error(
-          utl::ODB, 8, "Cannot duplicate net {}", net->getConstName());
-    }
-    if (xnet->getId() != net->getId()) {
-      getImpl()->getLogger()->warn(utl::ODB,
-                                   9,
-                                   "id mismatch ({},{}) for net {}",
-                                   xnet->getId(),
-                                   net->getId(),
-                                   net->getConstName());
-    }
-    dbSigType ty = net->getSigType();
-    if (ty.isSupply()) {
-      xnet->setSpecial();
-    }
-
-    xnet->setSigType(ty);
-  }
-  extBlk->setCornersPerBlock(1);
-  return extBlk;
 }
 
 char* dbBlock::getCornerNameList()
@@ -3149,15 +3088,6 @@ void dbBlock::destroyCornerParasitics(std::vector<dbNet*>& nets)
 void dbBlock::destroyParasitics(std::vector<dbNet*>& nets)
 {
   destroyCornerParasitics(nets);
-  if (!extCornersAreIndependent()) {
-    return;
-  }
-  int numcorners = getCornerCount();
-  dbBlock* extBlock;
-  for (int corner = 1; corner < numcorners; corner++) {
-    extBlock = findExtCornerBlock(corner);
-    extBlock->destroyCornerParasitics(nets);
-  }
 }
 
 void dbBlock::getCcHaloNets(std::vector<dbNet*>& changedNets,

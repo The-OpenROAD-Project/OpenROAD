@@ -10,6 +10,7 @@
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/Units.hh"
 #include "tst/IntegratedFixture.h"

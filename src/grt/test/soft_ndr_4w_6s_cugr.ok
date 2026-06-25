@@ -28,7 +28,7 @@ Routing layers:      6
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-li1        Vertical        21571         21571          0.00%
+li1        Vertical            0             0          0.00%
 met1       Horizontal      27555         13777          50.00%
 met2       Vertical        21571         10786          50.00%
 met3       Horizontal      14023          4207          70.00%
@@ -53,14 +53,14 @@ Bottleneck:            (3, 15, 21)
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
-li1              21571             6            0.03%             0 /  0 /  0
+li1                  0             0            0.00%             0 /  0 /  0
 met1             13777           199            1.44%             0 /  0 /  0
 met2             10786           129            1.20%             0 /  0 /  0
 met3              4207            25            0.59%             0 /  0 /  0
 met4              3241            13            0.40%             0 /  0 /  0
 met5              1413             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            54995           372            0.68%             0 /  0 /  0
+Total            33424           366            1.10%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15
