@@ -13,7 +13,7 @@ read_upf -file data/isolation/mpd_top_supply.upf
 # isolation supply associations are stored on the dbIsolation object.
 set block [[[ord::get_db] getChip] getBlock]
 
-proc check_block_prop {block name expected} {
+proc check_block_prop { block name expected } {
   set prop [odb::dbStringProperty_find $block $name]
   if { $prop == "NULL" } {
     puts "FAIL: missing property $name"
