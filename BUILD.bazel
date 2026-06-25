@@ -143,6 +143,7 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
+    "BAZEL_BUILD",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
@@ -178,7 +179,6 @@ cc_library(
 # headers to consumers, so direct binary deps are what each Main.cc
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
-    ":openroad_version",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
@@ -188,7 +188,6 @@ OPENROAD_MAIN_DEPS = [
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
     "@boost.stacktrace",
-    "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
     "@tcl_lang//:tcl",
 ]
 
@@ -549,10 +548,14 @@ build_test(
 sh_test(
     name = "lint_tcl_test",
     srcs = ["//bazel:tcl_lint_test.sh"],
-    args = ["$(rootpath //bazel:tclint)"],
+    args = [
+        "$(rootpath //bazel:tclint)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclint",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -563,10 +566,14 @@ sh_test(
 sh_test(
     name = "fmt_tcl_test",
     srcs = ["//bazel:tcl_fmt_test.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
+    args = [
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath @git)",
+    ],
     data = [
         "tclint.toml",
         "//bazel:tclfmt",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -590,10 +597,14 @@ sh_binary(
 sh_test(
     name = "lint_bzl_test",
     srcs = ["//bazel:bzl_lint_test.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
     tags = ["local"],
 )
@@ -604,10 +615,14 @@ sh_test(
 sh_test(
     name = "fmt_bzl_test",
     srcs = ["//bazel:bzl_fmt_test.sh"],
-    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    args = [
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath @git)",
+    ],
     data = [
         "MODULE.bazel",
         "@buildifier_prebuilt//:buildifier",
+        "@git",
     ],
     tags = ["local"],
 )

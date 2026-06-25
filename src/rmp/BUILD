@@ -138,6 +138,7 @@ cc_binary(
         ":rmp",
         "//:ord",
         "//src/cut",
+        "//src/dbSta",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -213,5 +214,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rmp/test:__pkg__",
+    ],
 )

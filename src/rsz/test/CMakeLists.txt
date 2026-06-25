@@ -91,6 +91,7 @@ or_integration_tests(
     repair_setup_clone_high_fanout
     repair_setup_crit_vt_asap7
     repair_setup_default_nangate45
+    repair_setup_dont_touch_sizeup
     repair_setup_endpoint_fanin_only
     repair_setup_gcd
     repair_setup_invalid_phase
@@ -234,6 +235,9 @@ or_integration_tests(
     repair_setup_vt_swap2
     measured_vt_swap
     repair_fanout7_skip_pin_swap
+    global_sizing
+    global_sizing_threads
+    global_sizing_presize
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1

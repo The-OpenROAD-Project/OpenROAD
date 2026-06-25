@@ -142,7 +142,7 @@ class Grid
 
   std::map<Shape*, std::vector<odb::dbBox*>> writeToDb(
       const odb::PtrMap<odb::dbNet, odb::dbSWire*>& net_map,
-      bool do_pins,
+      const odb::PtrMap<odb::dbNet, odb::dbBTerm*>& bterm_map,
       const Shape::ObstructionTreeMap& obstructions) const;
   void makeRoutingObstructions(odb::dbBlock* block) const;
 

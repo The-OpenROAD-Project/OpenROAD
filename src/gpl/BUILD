@@ -38,6 +38,8 @@ cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
@@ -208,5 +210,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/gpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gpl/test:__pkg__",
+    ],
 )

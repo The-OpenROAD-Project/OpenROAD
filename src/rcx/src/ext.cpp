@@ -230,14 +230,8 @@ void Ext::extract(ExtractOptions options)
   if (_ext->_v2) {
     _ext->makeBlockRCsegs_v2(options.net, options.ext_model_file);
   } else {
-    _ext->makeBlockRCsegs(options.net,
-                          options.cc_up,
-                          options.cc_model,
-                          options.max_res,
-                          !options.no_merge_via_res,
-                          options.coupling_threshold,
-                          options.context_depth,
-                          options.ext_model_file);
+    _ext->setExtractionOptions(options);
+    _ext->makeBlockRCsegs();
   }
 }
 

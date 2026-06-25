@@ -124,8 +124,13 @@ $(CAT2_DIR)/%.2: $(CAT2_DIR)/%.md
 $(CAT3_DIR)/%.3: $(CAT3_DIR)/%.md
 	mv $< $@
 
+# Single-invocation target used by //docs:man_pages (Bazel). Chains the
+# preprocessing step (README symlinks + roff-compat conversion) with the
+# cat and web outputs that the Bazel rule copies into its declared outputs.
+bazel-manpages: preprocess cat web
+
 # Phony targets
-.PHONY: all 
+.PHONY: all bazel-manpages preprocess
 
 #   _____ _____  _    _ _____ _   ___   __
 #  / ____|  __ \| |  | |_   _| \ | \ \ / /
