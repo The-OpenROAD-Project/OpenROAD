@@ -430,6 +430,15 @@ CostT GridGraph::getWireCost(const int layer_index,
                  ? 1.0
                  : logistic(edge.capacity - edge.demand,
                             constants_.cost_logistic_slope * cost_multiplier_));
+  // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
+  // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
+  // so a full layer range still falls back to min-via.
+  if (constants_.congestion_gate_penalty > 0.0 && demand >= 1.0
+      && edge.capacity >= 1.0
+      && edge.capacity - edge.demand < demand * net_factor) {
+    cost += demand_length * unit_length_wire_cost_
+            * constants_.congestion_gate_penalty;
+  }
   return cost;
 }
 
