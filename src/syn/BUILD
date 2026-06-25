@@ -23,7 +23,6 @@ cc_library(
         "src/flow/export.cc",
         "src/flow/export.h",
         "src/flow/import.cc",
-        "src/flow/import.h",
         "src/flow/liveness.cc",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
@@ -33,6 +32,7 @@ cc_library(
     hdrs = [
         "include/syn/synthesis.h",
         "src/flow/constant_fold.h",
+        "src/flow/import.h",
     ],
     includes = [
         "include",

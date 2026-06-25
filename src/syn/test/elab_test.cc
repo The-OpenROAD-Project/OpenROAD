@@ -11,11 +11,14 @@
 #include "driver.h"
 #include "elab_testcases.h"
 #include "equivalence_check.h"
+#include "flow/import.h"
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 #include "syn/ir/Instance.h"
 #include "syn/ir/TritModel.h"
+#include "syn/synthesis.h"
+#include "tst/fixture.h"
 
 int main(int argc, char** argv)
 {
@@ -288,5 +291,83 @@ TEST_P(ElabSlangTest, MatchesGolden)
 INSTANTIATE_TEST_SUITE_P(Elab,
                          ElabSlangTest,
                          ::testing::ValuesIn(elabTestcases));
+
+class ElabWithMacrosTest : public tst::Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    Fixture::SetUp();
+    readLiberty(getFilePath("_main/src/syn/test/macro_test_cells.lib"));
+  }
+};
+
+TEST_F(ElabWithMacrosTest, BlackboxImport)
+{
+  // Check macro connections are correct even when Verilog blackbox
+  // module does not match Liberty port order
+  auto result = syn::elaborateText(R"(
+    module top(
+      input logic clk,
+      input logic ce,
+      input logic we,
+      input logic [8:0] addr,
+      input logic [7:0] wd,
+      output logic [7:0] rd
+    );
+      fakeram_512x8 u_ram (
+        .rd_out(rd),
+        .addr_in(addr),
+        .we_in(we),
+        .wd_in(wd),
+        .clk(clk),
+        .ce_in(ce)
+      );
+    endmodule
+
+    (* blackbox *)
+    module fakeram_512x8 (
+       output logic [7:0]    rd_out,
+       input  logic [8:0]    addr_in,
+       input  logic          we_in,
+       input  logic [7:0]    wd_in,
+       input  logic          clk,
+       input  logic          ce_in
+    );
+    endmodule
+  )",
+                                   {"--top", "top"},
+                                   getSta());
+  ASSERT_TRUE(result) << "Elaboration failed";
+
+  syn::Graph& g = *result;
+  g.normalize();
+  importTargets(g, getSta()->network(), getLogger());
+  std::ostringstream os;
+  g.dump(os);
+  EXPECT_EQ(os.str(),
+            R"(%3:0 = name "clk" 0 1 %9
+%4:0 = name "ce" 0 1 %10
+%5:0 = name "we" 0 1 %11
+%6:0 = name "addr" 0 9 vector %12:9
+%7:0 = name "wd" 0 8 vector %21:8
+%8:0 = name "rd" 0 8 vector %30:8
+%9:1 = input "clk"
+%10:1 = input "ce"
+%11:1 = input "we"
+%12:9 = input "addr"
+%21:8 = input "wd"
+%29:0 = output "rd" %30:8
+%30:8 = buf %38:8
+%38:8 = target "fakeram_512x8" {
+  input "clk" = %9
+  %38:8 = output "rd_out"
+  input "we_in" = %11
+  input "ce_in" = %10
+  input "addr_in" = %12:9
+  input "wd_in" = %21:8
+}
+)");
+}
 
 }  // namespace syn
