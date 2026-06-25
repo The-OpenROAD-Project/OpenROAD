@@ -1130,6 +1130,44 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   return true;
 }
 
+std::vector<int> NegotiationLegalizer::collectNearestValidRows(
+    const NegCell& cell,
+    int seed_y,
+    int probe_x,
+    int count_per_side,
+    int max_scan) const
+{
+  std::vector<int> rows;
+  rows.reserve(2 * count_per_side + 1);
+
+  if (isValidRow(seed_y, cell, probe_x)) {
+    rows.push_back(seed_y);
+  }
+
+  int found_below = 0;
+  int found_above = 0;
+  for (int step = 1; step <= max_scan; ++step) {
+    if (found_below < count_per_side) {
+      const int below_y = seed_y + step;
+      if (isValidRow(below_y, cell, probe_x)) {
+        rows.push_back(below_y);
+        ++found_below;
+      }
+    }
+    if (found_above < count_per_side) {
+      const int above_y = seed_y - step;
+      if (isValidRow(above_y, cell, probe_x)) {
+        rows.push_back(above_y);
+        ++found_above;
+      }
+    }
+    if (found_below >= count_per_side && found_above >= count_per_side) {
+      break;
+    }
+  }
+  return rows;
+}
+
 bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
 {
   const NegCell& cell = cells_[cell_idx];
