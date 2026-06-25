@@ -640,7 +640,7 @@ bool NegotiationLegalizer::initFromDb()
           for (auto* box : odb_region->getBoundaries()) {
             RegionRectInline r;
             r.xlo = (box->xMin() - die_xlo_) / site_width_;
-            r.ylo = dpl_grid->gridSnapDownY(DbuY{box->yMin() - die_ylo_}).v;
+            r.ylo = dpl_grid->gridEndY(DbuY{box->yMin() - die_ylo_}).v;
             r.xhi = (box->xMax() - die_xlo_) / site_width_;
             r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
             rects.push_back(r);
@@ -826,7 +826,7 @@ void NegotiationLegalizer::initFenceRegions()
     for (auto* box : region->getBoundaries()) {
       FenceRect r;
       r.xlo = (box->xMin() - die_xlo_) / site_width_;
-      r.ylo = dpl_grid->gridSnapDownY(DbuY{box->yMin() - die_ylo_}).v;
+      r.ylo = dpl_grid->gridEndY(DbuY{box->yMin() - die_ylo_}).v;
       r.xhi = (box->xMax() - die_xlo_) / site_width_;
       r.yhi = dpl_grid->gridSnapDownY(DbuY{box->yMax() - die_ylo_}).v;
       fr.rects.push_back(r);
