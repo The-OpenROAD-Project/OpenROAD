@@ -361,6 +361,7 @@ class GlobalRouter
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
   // main functions
   void initCoreGrid(int max_routing_layer);
+  void mirrorGridToFastRoute(int max_routing_layer);
   void initRoutingLayers(int min_routing_layer, int max_routing_layer);
   void checkAdjacentLayersDirection(int min_routing_layer,
                                     int max_routing_layer);

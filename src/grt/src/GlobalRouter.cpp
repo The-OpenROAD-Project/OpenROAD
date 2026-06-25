@@ -180,7 +180,6 @@ std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
   if (check_pin_placement) {
     checkPinPlacement();
   }
-  initNetlist(nets);
   return nets;
 }
 
@@ -190,14 +189,15 @@ void GlobalRouter::initRoutingGrid(int min_routing_layer, int max_routing_layer)
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
-  computeObstructionsAdjustments();
-  computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
 }
 
 std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
                                          int max_routing_layer)
 {
   initRoutingGrid(min_routing_layer, max_routing_layer);
+  // Propagate the global adjustment to per-layer values that CUGR reads from
+  // the tech layers; this is engine-agnostic, unlike the FastRoute edge passes.
+  computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   std::vector<Net*> nets = initNets(true);
   initialized_ = true;
   odb::PtrSet<odb::dbNet> clock_nets;
@@ -222,6 +222,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
+  mirrorGridToFastRoute(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
   applyAdjustments(min_routing_layer, max_routing_layer);
@@ -231,6 +232,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = initNets(check_pin_placement);
+  initNetlist(nets);
 
   initialized_ = true;
   return nets;
@@ -291,12 +293,25 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   NetRouteMap net_routes;
   // TODO: still need to fix this during incremental grt
   if (is_incremental_) {
+    // Source partial routes from the active engine; CUGR has no FastRoute
+    // trees.
+    NetRouteMap cugr_routes;
+    if (use_cugr_) {
+      cugr_routes = cugr_->getRoutes();
+    }
     for (const auto& [db_net, net] : db_net_map_) {
       // Do not add local nets, as they are not routed in incremental grt.
       if (routes_[db_net].empty() && !net->isLocal()) {
-        GRoute route;
-        net_routes.insert({db_net, route});
-        fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+        if (use_cugr_) {
+          auto it = cugr_routes.find(db_net);
+          if (it != cugr_routes.end() && !it->second.empty()) {
+            net_routes[db_net] = it->second;
+          }
+        } else {
+          GRoute route;
+          net_routes.insert({db_net, route});
+          fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+        }
       }
     }
   } else {
@@ -409,7 +424,6 @@ void GlobalRouter::startIncremental()
 void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
-  fastroute_->setResistanceAware(resistance_aware_);
   updateDirtyRoutes(save_guides);
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
@@ -499,8 +513,10 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   }
 
   if (is_congested_) {
-    // Suggest adjustment value
-    suggestAdjustment();
+    // suggestAdjustment relies on FastRoute congestion data.
+    if (!use_cugr_) {
+      suggestAdjustment();
+    }
     // CUGR overflow is downgraded to a warning even without -allow_congestion,
     // since it produces good results on detailed routing.
     if (allow_congestion_ || use_cugr_) {
@@ -769,7 +785,14 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
 {
   initGrid(max_routing_layer);
   findTrackPitches(max_routing_layer);
+}
 
+// Mirror the engine-agnostic grid into FastRoute's structures. Only the
+// FastRoute path needs this; CUGR maintains its own grid.
+void GlobalRouter::mirrorGridToFastRoute(int max_routing_layer)
+{
+  fastroute_->setRegularX(grid_->isPerfectRegularX());
+  fastroute_->setRegularY(grid_->isPerfectRegularY());
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileSize());
   fastroute_->setGridsAndLayers(
@@ -2522,6 +2545,7 @@ void GlobalRouter::initGridAndNets()
     initRoutingLayers(min_layer, max_layer);
     initRoutingTracks(max_layer);
     initCoreGrid(max_layer);
+    mirrorGridToFastRoute(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
@@ -4349,9 +4373,6 @@ void GlobalRouter::initGrid(int max_layer)
 
   bool perfect_regular_x = (x_grids * tile_size) == dx;
   bool perfect_regular_y = (y_grids * tile_size) == dy;
-
-  fastroute_->setRegularX(perfect_regular_x);
-  fastroute_->setRegularY(perfect_regular_y);
 
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
@@ -6262,6 +6283,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   std::vector<Net*> dirty_nets;
+
+  fastroute_->setResistanceAware(resistance_aware_);
 
   if (!initialized_) {
     int min_layer, max_layer;
