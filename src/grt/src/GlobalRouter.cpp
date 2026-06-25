@@ -1441,8 +1441,9 @@ std::vector<RoutePt> GlobalRouter::findOnGridPositions(
         pos_on_grid = grid_->getPositionOnGrid(rect_middle);
         // if a macro/pad pin is unreachable due to not having enough resources
         // at its on grid position, get the position closest to the macro/pad
-        // boundary to ensure routability
-        if (pin.isConnectedToPadOrMacro()
+        // boundary to ensure routability. CUGR has no FastRoute edge capacities
+        // to query, so it skips this heuristic and routes from the center.
+        if (!use_cugr_ && pin.isConnectedToPadOrMacro()
             && !isPinReachable(pin, pos_on_grid)) {
           pos_on_grid = grid_->getPositionOnGrid(
               pin.getPositionNearInstEdge(pin_box, rect_middle));
