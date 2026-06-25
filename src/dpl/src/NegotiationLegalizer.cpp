@@ -1033,22 +1033,13 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
     auto* dbMaster = cell.db_inst->getMaster();
     odb::dbSite* site = dbMaster->getSite();
     if (site != nullptr) {
-      // Check site availability for every row the cell spans — hybrid-row
-      // designs interleave row types and an N-row cell must land on a
-      // compatible stack throughout its full height.
-      std::optional<odb::dbOrientType> bottom_orient;
-      for (int dy = 0; dy < cell.height; ++dy) {
-        const auto orient = opendp_->grid_->getSiteOrientation(
-            GridX{gridX}, GridY{rowIdx + dy}, site);
-        if (!orient) {
-          return false;
-        }
-        if (dy == 0) {
-          bottom_orient = orient;
-        }
+      const auto orient = opendp_->grid_->getSiteOrientation(
+          GridX{gridX}, GridY{rowIdx}, site);
+      if (!orient) {
+        return false;
       }
       const unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
-      if (!opendp_->checkMasterSym(masterSym, bottom_orient.value())) {
+      if (!opendp_->checkMasterSym(masterSym, orient.value())) {
         return false;
       }
     }
