@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//bazel:man_pages.bzl", "man_pages")
 
 man_pages(
@@ -65,4 +66,9 @@ man_pages(
         "//docs/src/scripts:extract_utils.py",
     ],
     visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "man_pages_build_test",
+    targets = [":man_pages"],
 )
