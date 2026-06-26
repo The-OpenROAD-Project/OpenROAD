@@ -632,6 +632,134 @@ proc rsz::eco_report_summary { delta wns_b tns_b wns_a tns_a } {
 }
 
 ################################################################
+#
+# repair_hold_eco -- dedicated HOLD-violation repair pass (additive/opt-in).
+#
+# Hold violations occur when a signal arrives at an endpoint too EARLY
+# (min-path / hold slack < 0).  The fix is to slow the fast path down by
+# inserting delay buffers, which is the opposite of setup repair (which speeds
+# slow paths up by resizing/buffering).  The classic hazard is that adding
+# delay to fix hold can PUSH a path into a NEW setup violation, so this command
+# explicitly audits setup WNS before/after and refuses to report success if
+# setup degraded.
+#
+# This is a thin ECO-style orchestration on top of the existing engine; it does
+# NOT reimplement buffering, journaling or timing:
+#
+#   1. Snapshot baseline hold WNS (min), setup WNS (max) and the netlist.
+#   2. begin_eco, then run the *real* repair_timing -hold engine.  By default
+#      allow_setup_violations is OFF, so rsz's own hold repair already backs
+#      off any delay-buffer insert that would break setup -- we reuse that
+#      guard rather than rolling our own.  set_dont_touch is honored because
+#      the underlying resizer skips dont_touch instances/nets.
+#   3. Snapshot post-fix hold/setup WNS + netlist delta (buffers inserted) and
+#      print a concise audit summary.
+#   4. Assert setup WNS did not regress (the hold-fix hazard); error out if it
+#      did so a closure script can detect the bad ECO.
+#   5. Optionally write_eco <file> so the exact change set can be replayed.
+#
+# The default flow is byte-for-byte unchanged: nothing here runs unless the
+# user explicitly invokes repair_hold_eco.
+
+sta::define_cmd_args "repair_hold_eco" {[-eco_file filename]\
+                                        [-hold_margin hold_margin]\
+                                        [-setup_margin setup_margin]\
+                                        [-allow_setup_violations]\
+                                        [-max_buffer_percent percent]\
+                                        [-max_passes passes]\
+                                        [-verbose]}
+
+proc repair_hold_eco { args } {
+  # Pull out our own -eco_file key; everything else is forwarded to the real
+  # repair_timing engine (with -hold forced on) so we never duplicate or alter
+  # its option surface.
+  set eco_file ""
+  set passthrough {}
+  set n [llength $args]
+  for { set i 0 } { $i < $n } { incr i } {
+    set a [lindex $args $i]
+    if { $a eq "-eco_file" } {
+      incr i
+      if { $i >= $n } {
+        utl::error RSZ 244 "-eco_file requires a filename argument."
+      }
+      set eco_file [lindex $args $i]
+    } else {
+      lappend passthrough $a
+    }
+  }
+
+  set block [rsz::eco_block "repair_hold_eco"]
+
+  # --- Phase 1: baseline snapshot (hold = min path, setup = max path) ---
+  set hold_wns_before [rsz::eco_hold_wns]
+  set setup_wns_before [rsz::eco_wns]
+  set snap_before [rsz::eco_netlist_snapshot $block]
+
+  # --- Phase 2: capture the hold fix as an ECO ---
+  # begin_eco opens an outer journal; repair_timing's internal nested journals
+  # commit into it, so the open journal holds the full delta.  -hold is forced
+  # on; any other repair_timing option the caller passed flows through verbatim.
+  begin_eco
+  repair_timing -hold {*}$passthrough
+
+  # --- Phase 3: post-fix snapshot + delta (journal still open) ---
+  set hold_wns_after [rsz::eco_hold_wns]
+  set setup_wns_after [rsz::eco_wns]
+  set snap_after [rsz::eco_netlist_snapshot $block]
+
+  set delta [rsz::eco_compute_delta $snap_before $snap_after]
+  rsz::eco_report_hold_summary $delta \
+    $hold_wns_before $hold_wns_after $setup_wns_before $setup_wns_after
+
+  # --- Phase 4: assert no setup regression (the classic hold-fix hazard) ---
+  # Compare with a tiny tolerance to absorb floating-point noise in the STA
+  # slack re-evaluation; a real regression is far larger than this epsilon.
+  set setup_eps 1e-12
+  if { $setup_wns_after < [expr { $setup_wns_before - $setup_eps }] } {
+    utl::error RSZ 245 \
+      [format "hold repair degraded setup WNS from %.4g to %.4g; aborting." \
+        $setup_wns_before $setup_wns_after]
+  }
+
+  # --- Phase 5: optionally persist the exact change set ---
+  if { $eco_file ne "" } {
+    write_eco $eco_file
+    utl::report "ECO change set written ([file tail $eco_file])"
+  }
+
+  return $delta
+}
+
+# Worst hold (min-path) slack, clamped at 0 so a hold-clean design reports 0.
+# Uses the same STA primitive as the resizer's PPA reporting; min == hold.
+proc rsz::eco_hold_wns { } {
+  set wns [sta::worst_slack_cmd min]
+  if { $wns > 0.0 } {
+    set wns 0.0
+  }
+  return $wns
+}
+
+# Print a concise, human-auditable hold-repair summary.  Shows hold WNS
+# before/after (the thing we are fixing) and setup WNS before/after (the thing
+# we must not break), plus the buffers actually inserted.
+proc rsz::eco_report_hold_summary { delta hold_b hold_a setup_b setup_a } {
+  utl::report ""
+  utl::report "================= hold-repair ECO summary =================="
+  utl::report [format "  Buffers inserted   : %d" [dict get $delta bufs_inserted]]
+  utl::report [format "  Buffers removed    : %d" [dict get $delta bufs_removed]]
+  utl::report [format "  Gates resized      : %d" [llength [dict get $delta resized]]]
+  utl::report [format "  Nets modified      : %d" [dict get $delta nets_modified]]
+  utl::report "  ----------------------------------------------------------"
+  utl::report [format "  Hold  WNS (ns)  %12.4f -> %12.4f" \
+    [expr { $hold_b * 1e9 }] [expr { $hold_a * 1e9 }]]
+  utl::report [format "  Setup WNS (ns)  %12.4f -> %12.4f" \
+    [expr { $setup_b * 1e9 }] [expr { $setup_a * 1e9 }]]
+  utl::report "============================================================"
+}
+
+################################################################
 
 sta::define_cmd_args "report_design_area" {}
 
