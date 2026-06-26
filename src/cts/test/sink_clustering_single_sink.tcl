@@ -22,7 +22,7 @@
 
 source "helpers.tcl"
 
-proc create_orphan_test {} {
+proc create_orphan_test { } {
   set db [ord::get_db]
   set tech [$db getTech]
   set chip [odb::dbChip_create $db $tech]
@@ -47,10 +47,10 @@ proc create_orphan_test {} {
   # Dense block of 16x16 = 256 sinks (above the 200-sink clustering threshold).
   set base 100000
   set step 2400
-  for {set gx 0} {$gx < 16} {incr gx} {
-    for {set gy 0} {$gy < 16} {incr gy} {
-      set x [expr {$base + $gx * $step}]
-      set y [expr {$base + $gy * $step}]
+  for { set gx 0 } { $gx < 16 } { incr gx } {
+    for { set gy 0 } { $gy < 16 } { incr gy } {
+      set x [expr { $base + $gx * $step }]
+      set y [expr { $base + $gy * $step }]
       set inst [odb::dbInst_create $block $master "ff$ff_idx"]
       $inst setOrigin $x $y
       $inst setPlacementStatus PLACED
@@ -63,7 +63,7 @@ proc create_orphan_test {} {
   # diameter) so each forms its own single-sink (orphan) cluster.
   set far 2000000
   foreach off {0 300000 650000 1000000 1400000 1850000} {
-    set xy [expr {$far + $off}]
+    set xy [expr { $far + $off }]
     set inst [odb::dbInst_create $block $master "orphan$ff_idx"]
     $inst setOrigin $xy $xy
     $inst setPlacementStatus PLACED
