@@ -115,8 +115,17 @@ void CUGR::init(const int min_routing_layer,
 
 float CUGR::calculatePartialSlack()
 {
-  std::vector<float> slacks;
-  slacks.reserve(gr_nets_.size());
+  updateNetSlacks();
+  // Re-mark res-aware nets on the real slack: demoteNonCriticalNets() below
+  // clobbers non-critical slacks, so the real slack is only available now.
+  markResAwareNets();
+  const float slack_th = criticalSlackThreshold();
+  demoteNonCriticalNets(slack_th);
+  return slack_th;
+}
+
+void CUGR::updateNetSlacks()
+{
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
     estimator->estimateAllGlobalRouteParasitics();
   }
@@ -124,28 +133,31 @@ float CUGR::calculatePartialSlack()
     if (net == nullptr) {
       continue;
     }
-    float slack = getNetSlack(net->getDbNet());
-    slacks.push_back(slack);
-    net->setSlack(slack);
+    net->setSlack(getNetSlack(net->getDbNet()));
   }
+}
 
-  // Re-mark res-aware nets on this routing slack; the loop below clobbers
-  // non-critical slacks, so the real slack is only available now.
-  markResAwareNets();
-
+float CUGR::criticalSlackThreshold() const
+{
+  std::vector<float> slacks;
+  slacks.reserve(gr_nets_.size());
+  for (const auto& net : gr_nets_) {
+    if (net != nullptr) {
+      slacks.push_back(net->getSlack());
+    }
+  }
+  if (slacks.empty()) {
+    return 0.0f;
+  }
   std::ranges::stable_sort(slacks);
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
   const int threshold_index
       = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  const float slack_th
-      = slacks.empty() ? 0.0f
-                       : slacks[std::min(static_cast<size_t>(threshold_index),
-                                         slacks.size() - 1)];
+  return slacks[std::min(static_cast<size_t>(threshold_index),
+                         slacks.size() - 1)];
+}
 
-  // Push non-critical nets to the back by maxing their slack; res-aware nets
-  // are exempt so getResAwareScore() keeps their real slack.
+void CUGR::demoteNonCriticalNets(const float slack_th)
+{
   for (const int& net_index : net_indices_) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -156,8 +168,6 @@ float CUGR::calculatePartialSlack()
           std::ceil(std::numeric_limits<float>::max()));
     }
   }
-
-  return slack_th;
 }
 
 float CUGR::getNetSlack(odb::dbNet* net)

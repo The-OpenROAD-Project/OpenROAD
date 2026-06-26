@@ -135,6 +135,13 @@ class CUGR
 
  private:
   float calculatePartialSlack();
+  // Re-extract parasitics and refresh every net's slack from the routing.
+  void updateNetSlacks();
+  // Slack value at the critical_nets_percentage_ percentile of the nets.
+  float criticalSlackThreshold() const;
+  // Push nets with slack above the threshold to the back of the default
+  // ordering by maxing their slack; res-aware nets are exempt.
+  void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks();
 
