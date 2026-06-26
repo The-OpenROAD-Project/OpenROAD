@@ -389,7 +389,8 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     setInitialNetSlacks();
   }
 
-  sortNetIndices(net_indices);
+  // Stage 1 is neutral: order by the default slack/bbox key, no res-aware.
+  sortNetIndices(net_indices, /*res_aware_order=*/false);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -432,7 +433,8 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   // (2d) direction -> x -> y -> has overflow?
   GridGraphView<bool> congestion_view;
   grid_graph_->extractCongestionView(congestion_view);
-  sortNetIndices(net_indices);
+  sortNetIndices(net_indices,
+                 resistance_aware_ && critical_nets_percentage_ != 0);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -474,7 +476,8 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
   GridGraphView<CostT> wire_cost_view;
   grid_graph_->extractWireCostView(wire_cost_view);
-  sortNetIndices(net_indices);
+  sortNetIndices(net_indices,
+                 resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
@@ -843,8 +846,41 @@ NetRouteMap CUGR::getRoutes()
   return routes;
 }
 
-void CUGR::sortNetIndices(std::vector<int>& net_indices) const
+void CUGR::sortNetIndices(std::vector<int>& net_indices,
+                          const bool res_aware_order) const
 {
+  if (res_aware_order) {
+    // Multi-factor res-aware ordering (slack+resistance+fanout+length) so
+    // critical nets route first (FR's full tuple regressed asap7).
+    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+      return getResAwareScore(gr_nets_[lhs].get())
+             < getResAwareScore(gr_nets_[rhs].get());
+    });
+    return;
+  }
+  if (constants_.defer_long_nets) {
+    // FastRoute's ordinary-net order: shortest length-per-pin, then
+    // left-to-right, then index, deferring long low-fanout nets to upper metal.
+    auto length_per_pin = [&](const GRNet* n) {
+      const auto& tree = n->getRoutingTree();
+      const float len
+          = tree ? static_cast<float>(grid_graph_->getTreeLength(tree))
+                 : static_cast<float>(n->getBoundingBox().hp());
+      return len / static_cast<float>(std::max(1, n->getNumPins()));
+    };
+    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+      if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
+        return false;
+      }
+      const GRNet* a = gr_nets_[lhs].get();
+      const GRNet* b = gr_nets_[rhs].get();
+      return std::make_tuple(
+                 length_per_pin(a), a->getBoundingBox().lx(), a->getIndex())
+             < std::make_tuple(
+                 length_per_pin(b), b->getBoundingBox().lx(), b->getIndex());
+    });
+    return;
+  }
   std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
     if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
       return false;

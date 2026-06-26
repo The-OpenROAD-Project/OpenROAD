@@ -195,14 +195,14 @@ class CUGR
    * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
    * remains when the loop ends.
    *
-   * See `src/grt/doc/01-iterative-rrr.md` for the cost-model audit
-   * and the rationale for the chosen defaults.
-   *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
   void iterativeRRR(std::vector<int>& net_indices);
-  void sortNetIndices(std::vector<int>& net_indices) const;
+  // res_aware_order selects the multi-factor res-aware ordering; false uses
+  // the default slack/bbox order.
+  void sortNetIndices(std::vector<int>& net_indices,
+                      bool res_aware_order) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
