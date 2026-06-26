@@ -19,6 +19,4 @@ tns max -10.567
 [INFO RSZ-0045] Inserted 8 buffers, 2 to split loads.
 [INFO RSZ-0051] Resized 22 instances: 22 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Differences found at line 42.
- wire net19;
- wire net5;
+No differences found.
