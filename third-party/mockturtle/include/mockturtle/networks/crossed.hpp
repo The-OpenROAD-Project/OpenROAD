@@ -62,6 +62,7 @@ using crossed_klut_storage = storage<crossed_klut_storage_node, klut_storage_dat
 class crossed_klut_network
 {
 public:
+#pragma region Types and constructors
   static constexpr auto min_fanin_size = 1;
   static constexpr auto max_fanin_size = 32;
 
@@ -85,6 +86,7 @@ public:
   {
     _init();
   }
+#pragma endregion
 
 protected:
   static constexpr uint32_t literal_crossing = 0xffffffff;
@@ -149,6 +151,7 @@ protected:
   }
 
 public:
+#pragma region Primary I / O and constants
   signal get_constant( bool value = false ) const
   {
     return value ? signal( 1, 0 ) : signal( 0, 0 );
@@ -196,7 +199,9 @@ public:
   {
     return n == 1;
   }
+#pragma endregion
 
+#pragma region Create unary functions
   signal create_buf( signal const& a )
   {
     return a;
@@ -206,7 +211,9 @@ public:
   {
     return _create_node( { a }, 3 );
   }
+#pragma endregion
 
+#pragma region Create binary functions
   signal create_and( signal a, signal b )
   {
     return _create_node( { a, b }, 4 );
@@ -256,7 +263,9 @@ public:
   {
     return _create_node( { a, b }, 13 );
   }
+#pragma endregion
 
+#pragma region Create ternary functions
   signal create_maj( signal a, signal b, signal c )
   {
     return _create_node( { a, b, c }, 14 );
@@ -271,7 +280,9 @@ public:
   {
     return _create_node( { a, b, c }, 18 );
   }
+#pragma endregion
 
+#pragma region Create nary functions
   signal create_nary_and( std::vector<signal> const& fs )
   {
     return tree_reduce( fs.begin(), fs.end(), get_constant( true ), [this]( auto const& a, auto const& b ) { return create_and( a, b ); } );
@@ -286,7 +297,9 @@ public:
   {
     return tree_reduce( fs.begin(), fs.end(), get_constant( false ), [this]( auto const& a, auto const& b ) { return create_xor( a, b ); } );
   }
+#pragma endregion
 
+#pragma region Create arbitrary functions
   signal _create_node( std::vector<signal> const& children, uint32_t literal )
   {
     storage::element_type::node_type node;
@@ -341,7 +354,9 @@ public:
     const auto tt = other._storage->data.cache[other._storage->nodes[source].data[1].h1];
     return create_node( children, tt );
   }
+#pragma endregion
 
+#pragma region Crossings
   /*! \brief Create a crossing cell
    *
    * \return A pair `(out1, out2)` of two signals to be used as fanouts of the crossing,
@@ -469,7 +484,9 @@ public:
     detail::foreach_element_transform<IteratorType, signal>(
         _storage->nodes[n].children.begin(), _storage->nodes[n].children.end(), [this]( auto f ) { return ignore_crossings( f ); }, fn );
   }
+#pragma endregion
 
+#pragma region Structural properties
   auto size() const
   {
     return static_cast<uint32_t>( _storage->nodes.size() );
@@ -514,7 +531,9 @@ public:
   {
     return n > 1 && !is_ci( n ) && !is_crossing( n );
   }
+#pragma endregion
 
+#pragma region Functional properties
   kitty::dynamic_truth_table node_function( const node& n ) const
   {
     assert( !is_crossing( n ) );
@@ -624,7 +643,9 @@ public:
     }
     return {};
   }
+#pragma endregion
 
+#pragma region Nodes and signals
   node get_node( signal const& f ) const
   {
     return f.index;
@@ -674,7 +695,9 @@ public:
     assert( index < _storage->outputs.size() );
     return ( _storage->outputs.begin() + index )->index;
   }
+#pragma endregion
 
+#pragma region Node and signal iterators
   template<typename Fn>
   void foreach_node( Fn&& fn ) const
   {
@@ -725,7 +748,9 @@ public:
 
     detail::foreach_element( _storage->nodes[n].children.begin(), _storage->nodes[n].children.end(), fn );
   }
+#pragma endregion
 
+#pragma region Simulate values
   template<typename Iterator>
   iterates_over_t<Iterator, bool>
   compute( node const& n, Iterator begin, Iterator end ) const
@@ -771,7 +796,9 @@ public:
 
     return result;
   }
+#pragma endregion
 
+#pragma region Custom node values
   void clear_values() const
   {
     std::for_each( _storage->nodes.begin(), _storage->nodes.end(), []( auto& n ) { n.data[0].h2 = 0; } );
@@ -796,7 +823,9 @@ public:
   {
     return static_cast<uint32_t>( --_storage->nodes[n].data[0].h2 );
   }
+#pragma endregion
 
+#pragma region Visited flags
   void clear_visited() const
   {
     std::for_each( _storage->nodes.begin(), _storage->nodes.end(), []( auto& n ) { n.data[1].h2 = 0; } );
@@ -821,11 +850,14 @@ public:
   {
     ++_storage->trav_id;
   }
+#pragma endregion
 
+#pragma region General methods
   auto& events() const
   {
     return *_events;
   }
+#pragma endregion
 
 public:
   std::shared_ptr<crossed_klut_storage> _storage;

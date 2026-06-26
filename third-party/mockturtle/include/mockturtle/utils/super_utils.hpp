@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <fmt/format.h>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 
@@ -384,6 +385,7 @@ private:
   inline uint32_t compute_support( composed_gate<NInputs>& s )
   {
     std::array<uint8_t, NInputs> used_pins{};
+    uint32_t support = 0;
 
     return compute_support_rec( s, used_pins );
   }

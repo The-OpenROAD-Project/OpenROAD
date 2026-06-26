@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cctype>

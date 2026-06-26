@@ -37,6 +37,8 @@
 #include <iostream>
 #include <type_traits>
 
+#include <fmt/format.h>
+
 namespace mockturtle
 {
 

@@ -35,6 +35,7 @@
 
 #include "../traits.hpp"
 
+#include <fmt/format.h>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 #include <lorina/genlib.hpp>

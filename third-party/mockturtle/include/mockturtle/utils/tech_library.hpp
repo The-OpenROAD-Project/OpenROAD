@@ -131,39 +131,15 @@ struct tech_library_params
 namespace detail
 {
 
-template<uint32_t NumVars, uint32_t NumOutputs, bool = ( NumVars <= 6 )>
-struct tuple_tt_hash;
-
 template<uint32_t NumVars, uint32_t NumOutputs>
-struct tuple_tt_hash<NumVars, NumOutputs, true>
+struct tuple_tt_hash
 {
   inline std::size_t operator()( std::array<kitty::static_truth_table<NumVars, true>, NumOutputs> const& tts ) const
   {
     std::size_t seed = kitty::hash_block( tts[0]._bits );
 
-    for ( auto i = 1; i < NumOutputs; ++i ) {
+    for ( auto i = 1; i < NumOutputs; ++i )
       kitty::hash_combine( seed, kitty::hash_block( tts[i]._bits ) );
-    }
-
-    return seed;
-  }
-};
-
-template<uint32_t NumVars, uint32_t NumOutputs>
-struct tuple_tt_hash<NumVars, NumOutputs, false>
-{
-  inline std::size_t operator()( std::array<kitty::static_truth_table<NumVars, false>, NumOutputs> const& tts ) const
-  {
-    std::size_t seed = kitty::hash_block( tts[0]._bits[0] );
-
-    for ( auto i = 0; i < NumOutputs; ++i ) {
-      for (auto j = 0; j < tts[i]._bits.size(); ++j) {
-        if (i == 0 && j == 0) {
-          continue;
-        }
-        kitty::hash_combine( seed, kitty::hash_block( tts[i]._bits[j] ) );
-      }
-    }
 
     return seed;
   }
@@ -208,10 +184,11 @@ class tech_library
 private:
   static constexpr float epsilon = 0.0005;
   static constexpr uint32_t max_multi_outputs = 2;
+  static constexpr uint32_t truth_table_size = 6;
   using supergates_list_t = std::vector<supergate<NInputs>>;
-  using TT = kitty::static_truth_table<NInputs>;
+  using TT = kitty::static_truth_table<truth_table_size>;
   using tt_hash = kitty::hash<TT>;
-  using multi_tt_hash = detail::tuple_tt_hash<NInputs, max_multi_outputs>;
+  using multi_tt_hash = detail::tuple_tt_hash<truth_table_size, max_multi_outputs>;
   using index_t = absl::flat_hash_map<TT, uint32_t, tt_hash>;
   using lib_t = absl::flat_hash_map<TT, supergates_list_t, tt_hash>;
   using multi_relation_t = std::array<TT, max_multi_outputs>;
@@ -222,12 +199,12 @@ private:
 
 public:
   explicit tech_library( std::vector<gate> const& gates, tech_library_params const ps = {}, super_lib const& supergates_spec = {} )
-      : _use_supergates( false ),
-        _gates( gates ),
+      : _gates( gates ),
         _supergates_spec( supergates_spec ),
         _ps( ps ),
         _cells( get_standard_cells( _gates ) ),
         _super( _gates, _supergates_spec, super_utils_params{ ps.load_multioutput_gates_single, ps.verbose } ),
+        _use_supergates( false ),
         _struct( _gates, struct_library_params{ ps.load_minimum_size_only, ps.very_verbose } ),
         _super_lib(),
         _multi_lib(),
@@ -247,12 +224,12 @@ public:
   }
 
   explicit tech_library( std::vector<gate> const& gates, super_lib const& supergates_spec, tech_library_params const ps = {} )
-      : _use_supergates( true ),
-        _gates( gates ),
+      : _gates( gates ),
         _supergates_spec( supergates_spec ),
         _ps( ps ),
         _cells( get_standard_cells( _gates ) ),
         _super( _gates, _supergates_spec, super_utils_params{ ps.load_multioutput_gates_single, ps.verbose } ),
+        _use_supergates( true ),
         _struct( _gates, struct_library_params{ ps.load_minimum_size_only, ps.very_verbose } ),
         _super_lib(),
         _multi_lib(),
@@ -478,7 +455,7 @@ private:
             sg.polarity |= ( ( neg >> perm[i] ) & 1 ) << i; /* permutate input negation to match the right pin */
           }
 
-          const auto static_tt = kitty::extend_to<NInputs>( tt );
+          const auto static_tt = kitty::extend_to<truth_table_size>( tt );
 
           auto& v = _super_lib[static_tt];
 
@@ -539,7 +516,7 @@ private:
               sg.tdelay[i] = gate.tdelay[perm[i]];
             }
 
-            const auto static_tt = kitty::extend_to<NInputs>( tt_canon );
+            const auto static_tt = kitty::extend_to<truth_table_size>( tt_canon );
 
             auto& v = _super_lib[static_tt];
 
@@ -629,7 +606,7 @@ private:
             sg.tdelay[i] = gate.tdelay[perm[i]];
           }
 
-          const auto static_tt = kitty::extend_to<NInputs>( tt );
+          const auto static_tt = kitty::extend_to<truth_table_size>( tt );
 
           auto& v = _super_lib[static_tt];
 
@@ -691,7 +668,7 @@ private:
               sg.tdelay[i] = gate.tdelay[perm[i]];
             }
 
-            const auto static_tt = kitty::extend_to<NInputs>( tt_canon );
+            const auto static_tt = kitty::extend_to<truth_table_size>( tt_canon );
 
             auto& v = _super_lib[static_tt];
 
@@ -832,19 +809,11 @@ private:
         /* canonize output */
         for ( auto i = 0; i < tts.size(); ++i )
         {
-          static_tts[i] = kitty::extend_to<NInputs>( tts[i] );
-          if constexpr (NInputs <= 6) {
-            if ( ( tts[i]._bits & 1 ) == 1 )
-            {
-              static_tts[i] = ~static_tts[i];
-              multi_sg[i].polarity |= 1 << NInputs; /* set flipped output polarity*/
-            }
-          } else {
-            if ( ( tts[i]._bits[0] & 1 ) == 1 )
-            {
-              static_tts[i] = ~static_tts[i];
-              multi_sg[i].polarity |= 1 << NInputs; /* set flipped output polarity*/
-            }
+          static_tts[i] = kitty::extend_to<truth_table_size>( tts[i] );
+          if ( ( static_tts[i]._bits & 1 ) == 1 )
+          {
+            static_tts[i] = ~static_tts[i];
+            multi_sg[i].polarity |= 1 << NInputs; /* set flipped output polarity*/
           }
         }
 
@@ -972,7 +941,7 @@ private:
         for ( auto j = 0; j < max_multi_outputs; ++j )
         {
           auto& gate = multi_gates[j][i];
-          const TT tt = kitty::extend_to<NInputs>( gate.root->function );
+          const TT tt = kitty::extend_to<truth_table_size>( gate.root->function );
 
           /* get the area of the smallest match with a simple gate */
           const auto match = get_supergates( tt );
@@ -1024,7 +993,7 @@ private:
 
   bool check_delay_consistency( composed_gate<NInputs> const& g, uint32_t pin )
   {
-    TT tt = kitty::extend_to<NInputs>( g.function );
+    TT tt = kitty::extend_to<truth_table_size>( g.function );
     uint16_t polarity = 0;
 
     /* canonicalize in case of P-configurations */
@@ -1069,7 +1038,7 @@ private:
       }
     }
 
-    std::cerr << fmt::format( "[i] WARNING: library does not contain cells that could match the delay of output pin {} of multi-output cell {}\n", pin, g.root->name );
+    std::cerr << fmt::format( "[i] WARNING: library does not contain cells that could match the delay of output pin {} of multi-output cell {}\n", pin + 1, g.root->name );
     return false;
   }
 

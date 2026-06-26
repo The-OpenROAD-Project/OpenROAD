@@ -39,8 +39,6 @@
 #include <iostream>
 #include <map>
 
-#include <spdlog/fmt/fmt.h>
-
 namespace mockturtle
 {
 
