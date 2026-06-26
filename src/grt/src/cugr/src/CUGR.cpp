@@ -731,6 +731,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     return;
   }
 
+  logger_->report("Stage 5: Iterative rip-up and re-route.");
+
   // Multiplier ramps up to saturate around slope=6 — beyond that the
   // logistic cost surface degenerates into a step function with no
   // gradient information, and the maze starts thrashing.
