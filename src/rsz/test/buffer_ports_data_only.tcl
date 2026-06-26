@@ -13,14 +13,16 @@ buffer_ports -inputs -outputs
 set bad 0
 foreach inst [[ord::get_db_block] getInsts] {
   set master [[$inst getMaster] getName]
-  if {[string match "*clkdlybuf*" $master]
-      || [string match "*dlygate*" $master]
-      || [string match "*dlymetal*" $master]} {
+  if {
+    [string match "*clkdlybuf*" $master]
+    || [string match "*dlygate*" $master]
+    || [string match "*dlymetal*" $master]
+  } {
     puts "ERROR: delay/clock-delay cell used for data buffering: [$inst getName] $master"
     incr bad
   }
 }
-if {$bad == 0} {
+if { $bad == 0 } {
   puts "pass"
 } else {
   puts "FAIL: $bad delay/clock-delay cells used for data buffering"
