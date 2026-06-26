@@ -134,6 +134,8 @@ class CUGR
    *          at all).
    */
   std::vector<double> computeNdrCosts(odb::dbNet* db_net) const;
+
+  std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
    * @brief Builds the rip-up set of nets touching a congested edge.
    *
