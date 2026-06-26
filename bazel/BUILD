@@ -49,10 +49,10 @@ config_setting(
 filegroup(
     name = "pandoc",
     srcs = select({
-        ":_linux_x86_64": ["@pandoc_linux_amd64//:pandoc"],
         ":_linux_aarch64": ["@pandoc_linux_arm64//:pandoc"],
-        ":_macos_x86_64": ["@pandoc_macos_x86_64//:pandoc"],
+        ":_linux_x86_64": ["@pandoc_linux_amd64//:pandoc"],
         ":_macos_aarch64": ["@pandoc_macos_arm64//:pandoc"],
+        ":_macos_x86_64": ["@pandoc_macos_x86_64//:pandoc"],
     }),
     visibility = ["//visibility:public"],
 )

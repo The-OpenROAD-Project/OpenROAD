@@ -87,14 +87,14 @@ man_pages = rule(
             doc = "Python scripts for man page generation.",
             allow_files = True,
         ),
-        "_pandoc": attr.label(
-            default = "//bazel:pandoc",
-            allow_single_file = True,
-            cfg = "exec",
-        ),
         "_manpages_impl": attr.label(
             default = "//bazel:manpages_impl",
             executable = True,
+            cfg = "exec",
+        ),
+        "_pandoc": attr.label(
+            default = "//bazel:pandoc",
+            allow_single_file = True,
             cfg = "exec",
         ),
     },
