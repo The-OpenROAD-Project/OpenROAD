@@ -76,6 +76,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/ObjectId.hh"
+#include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
@@ -803,6 +804,43 @@ std::string dbNetwork::stripParentPrefix(const std::string& name)
   return name;
 }
 
+std::string dbNetwork::escapeBracketsIfScalar(const std::string& name,
+                                              odb::dbModule* scope) const
+{
+  if (scope == nullptr) {
+    return name;
+  }
+  bool is_bus = false;
+  std::string bus_name;
+  int index = 0;
+  parseBusName(name, '[', ']', pathEscape(), is_bus, bus_name, index);
+  // Not a clean bus member (no brackets, or the brackets are already
+  // escaped) -- nothing to do.
+  if (!is_bus) {
+    return name;
+  }
+  // Only a per-bit scalar *terminal* can be misrendered: it is declared as a
+  // module port (so portVerilogName escapes its brackets) yet referenced as a
+  // net (so netVerilogName would emit a bus select on an undeclared bus).  A
+  // genuine bus select has no module boundary terminal of the bracketed name,
+  // so leave it alone.
+  if (scope->findModBTerm(name.c_str()) == nullptr) {
+    return name;
+  }
+  // A real bus member carries a sibling bus aggregate dbModBTerm named after
+  // the bus prefix (see Verilog2db::makeModBTerms); the brackets then denote a
+  // genuine bus select and must stay unescaped.
+  dbModBTerm* aggregate = scope->findModBTerm(bus_name.c_str());
+  if (aggregate && aggregate->isBusPort()) {
+    return name;
+  }
+  // Per-bit escaped-scalar signal (e.g. produced by partition synthesis or
+  // repair_design buffer insertion) whose name merely happens to contain
+  // brackets.  Escape them so write_verilog emits "\prefix[idx] " instead of
+  // a bus select on an undeclared bus.
+  return escapeChars(name, '[', ']', '\0', pathEscape());
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -826,6 +864,9 @@ std::string dbNetwork::name(const Port* port) const
 
   if (hasHierarchy()) {
     name = stripParentPrefix(name);
+  }
+  if (modbterm) {
+    name = escapeBracketsIfScalar(name, modbterm->getParent());
   }
   return name;
 }
@@ -1879,7 +1920,7 @@ std::string dbNetwork::name(const Net* net) const
   // Note the fall through: if we have a dnet which has a
   // little modnet friend, we use the modnet name.
   if (modnet) {
-    name = modnet->getName();
+    name = escapeBracketsIfScalar(modnet->getName(), modnet->getParent());
   }
   if (dnet || modnet) {
     return name;

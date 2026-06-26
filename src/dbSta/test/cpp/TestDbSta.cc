@@ -331,4 +331,65 @@ TEST_F(TestDbSta, StalePrevPath)
       << pre_pin_name << " after=" << post_pin_name;
 }
 
+// Regression test for dbNetwork name escaping of scalar signals whose
+// name merely contains brackets.
+//
+// Background (parallaxsw/OpenSTA#453): partition synthesis and
+// repair_design buffer insertion can produce single-bit "escaped-scalar"
+// signals like "\foo[7] " -- the brackets are literal name characters, not
+// a bus subscript, and no bus "foo" is declared.  If dbNetwork hands STA
+// the bare name "foo[7]", write_verilog emits a bus select on an
+// undeclared bus and Verilator rejects it ("Illegal bit or array select").
+//
+// jjcherry56 (STA maintainer): "The problem is in the upstream name.
+// foo[7] should be foo\[7\] if it is not doing a bus select."  So
+// dbNetwork::name() must return the ESCAPED form for such scalars, while
+// leaving genuine bus members (which always carry a sibling bus-aggregate
+// modBTerm) unescaped.
+TEST_F(TestDbSta, EscapeScalarBracketName)
+{
+  readVerilogAndSetup("TestDbSta_0.v");
+
+  odb::dbModule* top = block_->getTopModule();
+  ASSERT_NE(top, nullptr);
+
+  // (1) Standalone scalar port whose name contains literal brackets.
+  // No bus aggregate "foo" exists, so the brackets must be escaped.
+  odb::dbModBTerm* scalar_bterm = odb::dbModBTerm::create(top, "foo[7]");
+  ASSERT_NE(scalar_bterm, nullptr);
+  Port* scalar_port = db_network_->dbToSta(scalar_bterm);
+  ASSERT_NE(scalar_port, nullptr);
+  EXPECT_EQ(db_network_->name(scalar_port), "foo\\[7\\]");
+
+  // (2) Scalar net sharing its name with a scalar boundary port: the port
+  // declaration escapes the brackets, so the net reference must too.
+  odb::dbModBTerm::create(top, "bar[3]");
+  odb::dbModNet* scalar_net = odb::dbModNet::create(top, "bar[3]");
+  ASSERT_NE(scalar_net, nullptr);
+  Net* sta_net = db_network_->dbToSta(scalar_net);
+  ASSERT_NE(sta_net, nullptr);
+  EXPECT_EQ(db_network_->name(sta_net), "bar\\[3\\]");
+
+  // (3) Genuine bus member must NOT be escaped: a sibling bus-aggregate
+  // modBTerm "vec" (isBusPort) marks "vec[2]" as a real bus select.
+  odb::dbModBTerm* bus_agg = odb::dbModBTerm::create(top, "vec");
+  ASSERT_NE(bus_agg, nullptr);
+  odb::dbBusPort* busport = odb::dbBusPort::create(top, bus_agg, 3, 0);
+  bus_agg->setBusPort(busport);
+  odb::dbModBTerm* bus_member = odb::dbModBTerm::create(top, "vec[2]");
+  ASSERT_NE(bus_member, nullptr);
+  Port* member_port = db_network_->dbToSta(bus_member);
+  ASSERT_NE(member_port, nullptr);
+  EXPECT_EQ(db_network_->name(member_port), "vec[2]");
+
+  // A genuine bus-member net must likewise stay unescaped so the bus select
+  // is preserved (regression guard: top-level bus bits have no per-bit
+  // modBTerm, so they are never escaped either).
+  odb::dbModNet* member_net = odb::dbModNet::create(top, "vec[2]");
+  ASSERT_NE(member_net, nullptr);
+  Net* sta_member_net = db_network_->dbToSta(member_net);
+  ASSERT_NE(sta_member_net, nullptr);
+  EXPECT_EQ(db_network_->name(sta_member_net), "vec[2]");
+}
+
 }  // namespace sta

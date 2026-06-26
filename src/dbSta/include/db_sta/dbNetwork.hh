@@ -532,6 +532,13 @@ class dbNetwork : public ConcreteNetwork
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
 
+  // If name parses as a clean (unescaped) bus member "prefix[idx]" but
+  // scope declares no actual bus named "prefix", return the name with the
+  // brackets escaped ("prefix\[idx\]") so STA treats it as a scalar escaped
+  // identifier rather than a bus select.  Otherwise return name unchanged.
+  std::string escapeBracketsIfScalar(const std::string& name,
+                                     odb::dbModule* scope) const;
+
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;
   std::unique_ptr<dbEditHierarchy> hierarchy_editor_;
