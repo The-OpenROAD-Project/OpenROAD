@@ -19,15 +19,15 @@ TEST_F(SimpleDbFixture, test_add_find_remove)
   createSimpleDB();
   dbBlock* block = db_->getChip()->getBlock();
 
-  block->addCorner("corner1");
-  block->addCorner("corner2");
+  dbCorner::create(block, "corner1");
+  dbCorner::create(block, "corner2");
 
   EXPECT_EQ(block->findCorner("corner1")->getName(), "corner1");
   EXPECT_EQ(block->findCorner("corner2")->getName(), "corner2");
   EXPECT_EQ(block->findCorner("missing"), nullptr);
 
   // Removing one corner leaves the others in place.
-  block->removeCorner("corner1");
+  dbCorner::destroy(block->findCorner("corner1"));
   EXPECT_EQ(block->findCorner("corner1"), nullptr);
   EXPECT_NE(block->findCorner("corner2"), nullptr);
 
@@ -41,9 +41,9 @@ TEST_F(SimpleDbFixture, test_add_duplicate_errors)
   createSimpleDB();
   dbBlock* block = db_->getChip()->getBlock();
 
-  block->addCorner("corner1");
+  dbCorner::create(block, "corner1");
   // Adding a second corner with the same name is a fatal error.
-  EXPECT_THROW(block->addCorner("corner1"), std::runtime_error);
+  EXPECT_THROW(dbCorner::create(block, "corner1"), std::runtime_error);
 }
 
 TEST_F(SimpleDbFixture, test_add_empty_name_errors)
@@ -52,15 +52,15 @@ TEST_F(SimpleDbFixture, test_add_empty_name_errors)
   dbBlock* block = db_->getChip()->getBlock();
 
   // Empty name is not allowed.
-  EXPECT_THROW(block->addCorner(""), std::runtime_error);
+  EXPECT_THROW(dbCorner::create(block, ""), std::runtime_error);
 }
 
 TEST_F(SimpleDbFixture, test_write_read_roundtrip)
 {
   createSimpleDB();
   dbBlock* block = db_->getChip()->getBlock();
-  block->addCorner("corner1");
-  block->addCorner("corner2");
+  dbCorner::create(block, "corner1");
+  dbCorner::create(block, "corner2");
 
   std::filesystem::create_directory("results");
   const std::string tmp_path = "results/TestCorner.odb";

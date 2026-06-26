@@ -1027,11 +1027,7 @@ class dbBlock : public dbObject
   ///
   int getCornerCount();
 
-  void addCorner(const std::string& corner_name);
-
   dbCorner* findCorner(const std::string& corner_name) const;
-
-  void removeCorner(const std::string& corner_name);
 
   void removeCorners();
 

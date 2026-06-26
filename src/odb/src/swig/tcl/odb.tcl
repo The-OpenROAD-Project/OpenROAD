@@ -13,7 +13,7 @@ proc add_corner { args } {
     utl::error ODB 1 "Could not add corner $corner_name. No block found."
   }
 
-  $block addCorner $corner_name
+  odb::dbCorner_create $block $corner_name
 }
 
 sta::define_cmd_args "remove_corner" {corner_name}
@@ -28,7 +28,14 @@ proc remove_corner { args } {
     utl::error ODB 7 "Could not remove corner $corner_name. No block found."
   }
 
-  $block removeCorner $corner_name
+  set corner [$block findCorner $corner_name]
+
+  if { $corner == "NULL" } {
+    utl::error ODB 6 \
+      "Could not remove corner $corner_name. No corner with that name exists."
+  }
+
+  odb::dbCorner_destroy $corner
 }
 
 sta::define_cmd_args "remove_corners" {}

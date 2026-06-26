@@ -2910,56 +2910,15 @@ dbCorner* dbBlock::findCorner(const std::string& corner_name) const
   return nullptr;
 }
 
-void dbBlock::addCorner(const std::string& corner_name)
-{
-  utl::Logger* logger = getImpl()->getLogger();
-
-  if (corner_name.empty()) {
-    logger->error(
-        utl::ODB, 9, "Could not add corner. Empty name is not allowed.");
-  }
-
-  if (findCorner(corner_name)) {
-    logger->error(
-        utl::ODB,
-        5,
-        "Could not add corner {}. A corner with that name already exists.",
-        corner_name);
-  }
-
-  dbCorner* corner_ = dbCorner::create(this, corner_name);
-
-  _dbBlock* block = (_dbBlock*) this;
-  block->corners_.push_back(corner_->getId());
-}
-
-void dbBlock::removeCorner(const std::string& corner_name)
-{
-  dbCorner* corner_ = findCorner(corner_name);
-
-  if (!corner_) {
-    utl::Logger* logger = getImpl()->getLogger();
-    logger->error(utl::ODB,
-                  6,
-                  "Could not remove corner {}. No corner with that name "
-                  "exists.",
-                  corner_name);
-  }
-
-  _dbBlock* block = (_dbBlock*) this;
-
-  // Note that std::ranges::find requires the search value
-  // to be the same type as the range's elements.
-  const auto corner_id = (dbId<_dbCorner>) corner_->getId();
-  auto corner_position = std::ranges::find(block->corners_, corner_id);
-  block->corners_.erase(corner_position);
-
-  dbCorner::destroy(corner_);
-}
-
 void dbBlock::removeCorners()
 {
   _dbBlock* block = (_dbBlock*) this;
+
+  for (const dbId<_dbCorner> corner_id : block->corners_) {
+    _dbCorner* corner = block->corner_tbl_->getPtr(corner_id);
+    dbProperty::destroyProperties((dbCorner*) corner);
+  }
+
   block->corners_.clear();
   block->corner_tbl_->clear();
 }
