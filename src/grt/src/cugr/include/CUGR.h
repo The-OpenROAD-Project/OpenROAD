@@ -179,7 +179,7 @@ class CUGR
   void mazeRoute(std::vector<int>& net_indices);
 
   /**
-   * @brief Stage 4 — iterative rip-up and re-route.
+   * @brief Stage 5 — iterative rip-up and re-route.
    *
    * Wraps the maze stage in a loop that sharpens the logistic cost
    * slope each pass (so `PatternRoute` and the maze cost surface
@@ -190,7 +190,7 @@ class CUGR
    * stay idle.
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
-   * is already zero, so designs that finished stage 3 clean pay no
+   * is already zero, so designs that finished stage 4 clean pay no
    * cost. Emits `GRT-0117` per iteration and `GRT-0118` if overflow
    * remains when the loop ends.
    *

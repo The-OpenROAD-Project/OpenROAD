@@ -426,7 +426,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
   if (!resistance_aware_ || critical_nets_percentage_ == 0) {
     return;
   }
-  logger_->report("Stage 1.5: Resistance-aware re-route of critical nets.");
+  logger_->report("Stage 2: Resistance-aware re-route of critical nets.");
 
   // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
   // set from their actual per-net resistance.
@@ -488,7 +488,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("Stage 2: Pattern routing with detours.");
+  logger_->report("Stage 3: Pattern routing with detours.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -609,14 +609,14 @@ void CUGR::route()
 
   patternRoute(net_indices);
 
-  // Stage 1.5: resistance-aware re-route of the critical nets (always runs,
+  // Stage 2: resistance-aware re-route of the critical nets (always runs,
   // not congestion-gated).
   patternRouteResAware(net_indices);
 
   patternRouteWithDetours(net_indices);
 
   if (!net_indices.empty()) {
-    logger_->report("Stage 3: Maze routing on sparsified graph.");
+    logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
   mazeRoute(net_indices);
 
