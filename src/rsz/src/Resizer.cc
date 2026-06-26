@@ -6311,14 +6311,10 @@ bool Resizer::isDelayCell(sta::LibertyCell* buffer) const
   // Match by dedicated delay-cell footprint when the library provides one.
   //   common: DEL (leading 3nm), DLY (7nm/12nm), sky130: "delay"
   const std::string& footprint = buffer->footprint();
-  if (!footprint.empty()
-      && (containsIgnoreCase(footprint, "delay")
-          || containsIgnoreCase(footprint, "DEL")
-          || containsIgnoreCase(footprint, "DLY"))) {
-    return true;
-  }
-
-  return false;
+  return !footprint.empty()
+         && (containsIgnoreCase(footprint, "delay")
+             || containsIgnoreCase(footprint, "DEL")
+             || containsIgnoreCase(footprint, "DLY"));
 }
 
 ////////////////////////////////////////////////////////////////
