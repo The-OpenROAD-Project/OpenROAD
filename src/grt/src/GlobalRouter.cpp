@@ -4386,11 +4386,9 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
     return;
   }
 
-  std::sort(entries.begin(),
-            entries.end(),
-            [](const DetourEntry& a, const DetourEntry& b) {
-              return a.ratio > b.ratio;
-            });
+  std::ranges::sort(entries, [](const DetourEntry& a, const DetourEntry& b) {
+    return a.ratio > b.ratio;
+  });
 
   const double total_ratio
       = (total_initial > 0) ? static_cast<double>(total_final) / total_initial
