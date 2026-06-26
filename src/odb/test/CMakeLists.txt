@@ -73,6 +73,8 @@ or_integration_tests(
     write_macro_placement
   PASSFAIL_TESTS
     cpp_tests
+    read_3dbv_fail
+    read_3dbx_fail
     read_def_virtual_invalid
     test_block
     test_bterm

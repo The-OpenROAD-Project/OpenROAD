@@ -2425,6 +2425,20 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
               if (lport) {
                 cport->setLibertyPort(lport);
                 lport->setExtPort(cport->extPort());
+                dbMTerm* mterm = staToDb(lport);
+                if (mterm && lport->isClock()
+                    && mterm->getSigType() != dbSigType::CLOCK) {
+                  debugPrint(
+                      logger_,
+                      utl::ORD,
+                      "dbNetwork",
+                      1,
+                      "Updating LEF pin {}/{} from {} to CLOCK from Liberty",
+                      mterm->getMaster()->getName(),
+                      mterm->getName(),
+                      mterm->getSigType().getString());
+                  mterm->setSigType(dbSigType::CLOCK);
+                }
               } else if (!cport->direction()->isPowerGround()
                          && !lcell->findPort(port_name)) {
                 logger_->warn(ORD,
@@ -3482,7 +3496,7 @@ LibertyCell* dbNetwork::libertyCell(dbInst* inst)
   return libertyCell(dbToSta(inst));
 }
 
-const LibertyCell* dbNetwork::getLibertyCell(const Cell* cell) const
+const LibertyCell* dbNetwork::testCell(const Cell* cell) const
 {
   const LibertyCell* lib_cell = libertyCell(cell);
   if (!lib_cell) {
@@ -5266,7 +5280,7 @@ bool dbNetwork::isClockPin(odb::dbITerm* iterm) const
 bool dbNetwork::clockOn(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (!lib_cell) {
     return false;
   }
@@ -5345,7 +5359,7 @@ int dbNetwork::getNumD(odb::dbInst* inst) const
 {
   int cnt_d = 0;
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell == nullptr) {
     return 0;
   }
@@ -5409,7 +5423,7 @@ bool dbNetwork::isInvertingQPin(odb::dbITerm* iterm) const
 {
   odb::dbInst* inst = iterm->getInst();
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (!lib_cell) {
     return false;
   }
@@ -5459,7 +5473,7 @@ int dbNetwork::getNumQ(odb::dbInst* inst) const
 bool dbNetwork::hasClear(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (!lib_cell) {
     return false;
   }
@@ -5493,7 +5507,7 @@ bool dbNetwork::isClearPin(odb::dbITerm* iterm) const
 bool dbNetwork::hasPreset(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (!lib_cell) {
     return false;
   }
@@ -5528,7 +5542,7 @@ bool dbNetwork::isPresetPin(odb::dbITerm* iterm) const
 bool dbNetwork::isScanCell(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   return lib_cell && getLibertyScanIn(lib_cell)
          && getLibertyScanEnable(lib_cell);
 }
@@ -5536,7 +5550,7 @@ bool dbNetwork::isScanCell(odb::dbInst* inst) const
 bool dbNetwork::isScanIn(odb::dbITerm* iterm) const
 {
   const Cell* cell = dbToSta(iterm->getInst()->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell && getLibertyScanIn(lib_cell)) {
     odb::dbMTerm* mterm = staToDb(getLibertyScanIn(lib_cell));
     return iterm->getInst()->getITerm(mterm) == iterm;
@@ -5547,7 +5561,7 @@ bool dbNetwork::isScanIn(odb::dbITerm* iterm) const
 odb::dbITerm* dbNetwork::getScanIn(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell && getLibertyScanIn(lib_cell)) {
     odb::dbMTerm* mterm = staToDb(getLibertyScanIn(lib_cell));
     return inst->getITerm(mterm);
@@ -5558,7 +5572,7 @@ odb::dbITerm* dbNetwork::getScanIn(odb::dbInst* inst) const
 bool dbNetwork::isScanEnable(odb::dbITerm* iterm) const
 {
   const Cell* cell = dbToSta(iterm->getInst()->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell && getLibertyScanEnable(lib_cell)) {
     odb::dbMTerm* mterm = staToDb(getLibertyScanEnable(lib_cell));
     return (iterm->getInst()->getITerm(mterm) == iterm);
@@ -5569,7 +5583,7 @@ bool dbNetwork::isScanEnable(odb::dbITerm* iterm) const
 odb::dbITerm* dbNetwork::getScanEnable(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell && getLibertyScanEnable(lib_cell)) {
     odb::dbMTerm* mterm = staToDb(getLibertyScanEnable(lib_cell));
     return inst->getITerm(mterm);
@@ -5588,7 +5602,7 @@ bool dbNetwork::isValidFlop(odb::dbInst* FF) const
   if (cell == nullptr) {
     return false;
   }
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }
@@ -5628,7 +5642,7 @@ bool dbNetwork::isValidTray(odb::dbInst* tray) const
   if (cell == nullptr) {
     return false;
   }
-  const LibertyCell* lib_cell = getLibertyCell(cell);
+  const LibertyCell* lib_cell = testCell(cell);
   if (lib_cell == nullptr || !lib_cell->hasSequentials()) {
     return false;
   }

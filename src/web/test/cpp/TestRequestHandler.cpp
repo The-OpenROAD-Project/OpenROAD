@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <any>
+#include <cstdint>
 #include <exception>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
@@ -681,6 +686,42 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
     EXPECT_EQ(state_.current_inspected, initial_selected);
     EXPECT_TRUE(state_.navigation_history.empty());
   }
+}
+
+TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
+{
+  fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
+  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  // 1. inspect with use_dbu: true
+  WebSocketRequest inspect_req_dbu;
+  inspect_req_dbu.id = 21;
+  inspect_req_dbu.type = WebSocketRequest::kInspect;
+  inspect_req_dbu.json = parseObj(R"({"select_id":0,"use_dbu":true})");
+
+  auto resp_dbu = handler_->handleInspect(inspect_req_dbu, state_);
+  EXPECT_EQ(resp_dbu.type, WebSocketResponse::kJson);
+  std::string json_dbu = payloadStr(resp_dbu);
+  EXPECT_NE(json_dbu.find("\"value\":\"(2000, 4000), (6000, 8000)\""),
+            std::string::npos)
+      << json_dbu;
+
+  // 2. inspect with use_dbu: false, using select_id: -1 to re-inspect current
+  WebSocketRequest inspect_req_um;
+  inspect_req_um.id = 22;
+  inspect_req_um.type = WebSocketRequest::kInspect;
+  inspect_req_um.json = parseObj(R"({"select_id":-1,"use_dbu":false})");
+
+  auto resp_um = handler_->handleInspect(inspect_req_um, state_);
+  EXPECT_EQ(resp_um.type, WebSocketResponse::kJson);
+  std::string json_um = payloadStr(resp_um);
+  EXPECT_NE(json_um.find("\"value\":\"(1, 2), (3, 4)\""), std::string::npos)
+      << json_um;
 }
 
 //------------------------------------------------------------------------------
@@ -1517,6 +1558,281 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
     std::lock_guard<std::mutex> lock(state_.drc_mutex);
     EXPECT_TRUE(state_.drc_rects.empty());
   }
+}
+
+//------------------------------------------------------------------------------
+// Schematic handler tests — verify leaf cells are classified into standard
+// logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
+// instead of anonymous boxes.
+//------------------------------------------------------------------------------
+
+class SchematicHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+
+    gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  // Instantiate a gate, wiring its named pins to fresh nets so the cell shows
+  // up with connections in the schematic JSON.
+  void makeGate(const char* master_name,
+                const char* inst_name,
+                const std::vector<tst::InstOptions::ITermInfo>& iterms)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    ASSERT_NE(master, nullptr) << master_name;
+    tst::InstOptions opts;
+    opts.iterms = iterms;
+    makeInst(block_, master, inst_name, opts);
+  }
+
+  // Returns modules.top.cells from a schematic_full response.
+  boost::json::object fullCells()
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kSchematicFull;
+    req.json = parseObj("{}");
+    auto resp = handler_->handleSchematicFull(req);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    return boost::json::parse(payloadStr(resp))
+        .as_object()
+        .at("modules")
+        .as_object()
+        .at("top")
+        .as_object()
+        .at("cells")
+        .as_object();
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+};
+
+TEST_F(SchematicHandlerTest, LeafGatesGetKindHint)
+{
+  makeGate("BUF_X1", "g_buf", {{"i", "A"}, {"o", "Z"}});
+  makeGate("INV_X1", "g_inv", {{"i", "A"}, {"o", "ZN"}});
+  makeGate("AND2_X1", "g_and", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("OR2_X1", "g_or", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("NAND2_X1", "g_nand", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("NOR2_X1", "g_nor", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+  makeGate("XOR2_X1", "g_xor", {{"a", "A"}, {"b", "B"}, {"o", "Z"}});
+  makeGate("XNOR2_X1", "g_xnor", {{"a", "A"}, {"b", "B"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+
+  auto kind = [&](const char* inst) {
+    return std::string(cells.at(inst).as_object().at("gate_kind").as_string());
+  };
+  EXPECT_EQ(kind("g_buf"), "buf");
+  EXPECT_EQ(kind("g_inv"), "not");
+  EXPECT_EQ(kind("g_and"), "and");
+  EXPECT_EQ(kind("g_or"), "or");
+  EXPECT_EQ(kind("g_nand"), "nand");
+  EXPECT_EQ(kind("g_nor"), "nor");
+  EXPECT_EQ(kind("g_xor"), "xor");
+  EXPECT_EQ(kind("g_xnor"), "xnor");
+}
+
+TEST_F(SchematicHandlerTest, MultiInputGatesGetKindHint)
+{
+  // Gates with more than two inputs (a flat AND/OR of ports) classify as the
+  // basic kind; the viewer derives the input count from the ports, so no
+  // gate_terms are emitted (those are only for compound AOI/OAI).
+  makeGate("NAND3_X1",
+           "g_nand3",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"o", "ZN"}});
+  makeGate("NAND4_X1",
+           "g_nand4",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"d", "A4"}, {"o", "ZN"}});
+  makeGate("AND3_X1",
+           "g_and3",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"o", "ZN"}});
+  makeGate("NOR4_X1",
+           "g_nor4",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "A3"}, {"d", "A4"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+  auto& nand3 = cells.at("g_nand3").as_object();
+  EXPECT_EQ(std::string(nand3.at("gate_kind").as_string()), "nand");
+  EXPECT_FALSE(nand3.contains("gate_terms"));
+  EXPECT_EQ(
+      std::string(cells.at("g_nand4").as_object().at("gate_kind").as_string()),
+      "nand");
+  EXPECT_EQ(
+      std::string(cells.at("g_and3").as_object().at("gate_kind").as_string()),
+      "and");
+  EXPECT_EQ(
+      std::string(cells.at("g_nor4").as_object().at("gate_kind").as_string()),
+      "nor");
+}
+
+TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
+{
+  makeGate("AND2_X1", "g_and", {{"a", "A1"}, {"b", "A2"}, {"o", "ZN"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_and").as_object();
+
+  // The hint must not replace the real type or pin names — netlistsvg still
+  // needs them to draw the instance and port labels.
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "AND2_X1");
+
+  auto& conns = cell.at("connections").as_object();
+  EXPECT_TRUE(conns.contains("A1"));
+  EXPECT_TRUE(conns.contains("A2"));
+  EXPECT_TRUE(conns.contains("ZN"));
+
+  auto& dirs = cell.at("port_directions").as_object();
+  EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+}
+
+TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)
+{
+  // AOI/OAI cells classify as compound gates with first-level term sizes.
+  makeGate("AOI21_X1", "g_aoi21", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+  makeGate("AOI22_X1",
+           "g_aoi22",
+           {{"a", "A1"}, {"b", "A2"}, {"c", "B1"}, {"d", "B2"}});
+  makeGate("OAI21_X1", "g_oai21", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+  makeGate("AOI211_X1",
+           "g_aoi211",
+           {{"a", "A"}, {"b", "B"}, {"c", "C1"}, {"d", "C2"}});
+
+  boost::json::object cells = fullCells();
+
+  // gate_terms groups the input pin names by first-level term; check the kind
+  // and the per-term sizes.
+  auto check =
+      [&](const char* inst, const char* kind, std::vector<int> want_sizes) {
+        auto& cell = cells.at(inst).as_object();
+        EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), kind) << inst;
+        auto& terms = cell.at("gate_terms").as_array();
+        std::vector<int> got;
+        for (auto& t : terms) {
+          got.push_back(static_cast<int>(t.as_array().size()));
+        }
+        std::sort(got.begin(), got.end());
+        std::sort(want_sizes.begin(), want_sizes.end());
+        EXPECT_EQ(got, want_sizes) << inst;
+      };
+
+  check("g_aoi21", "aoi", {2, 1});
+  check("g_aoi22", "aoi", {2, 2});
+  check("g_oai21", "oai", {2, 1});
+  check("g_aoi211", "aoi", {2, 1, 1});
+
+  // The groups carry the real input pin names, which the viewer uses to align
+  // each input to its port.  AOI21 = !(A | (B1 & B2)).
+  std::set<std::string> pins;
+  for (auto& t : cells.at("g_aoi21").as_object().at("gate_terms").as_array()) {
+    for (auto& p : t.as_array()) {
+      pins.insert(std::string(p.as_string()));
+    }
+  }
+  EXPECT_EQ(pins, (std::set<std::string>{"A", "B1", "B2"}));
+}
+
+TEST_F(SchematicHandlerTest, AoiGateKeepsMasterNameAndRealPins)
+{
+  makeGate("AOI21_X1", "g_aoi", {{"a", "A"}, {"b", "B1"}, {"c", "B2"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_aoi").as_object();
+  // The hint must not replace the real type or pin names.
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "AOI21_X1");
+  auto& conns = cell.at("connections").as_object();
+  EXPECT_TRUE(conns.contains("A"));
+  EXPECT_TRUE(conns.contains("B1"));
+  EXPECT_TRUE(conns.contains("B2"));
+}
+
+TEST_F(SchematicHandlerTest, NestedInversionStillClassifies)
+{
+  // Higher drive-strength variants can model the output with stacked inverters,
+  // so the Liberty function is nested NOTs, e.g. AOI211_X4 is
+  // !(!(!(((C1 & C2) | B) | A))).  Classification must peel all the inversions
+  // (odd count -> inverting) and still recognise the AOI211, not fall back to a
+  // box like a single-peel would.
+  makeGate("AOI211_X4",
+           "g_aoi211x4",
+           {{"a", "C1"}, {"b", "C2"}, {"c", "B"}, {"d", "A"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_aoi211x4").as_object();
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "aoi");
+
+  std::vector<int> got;
+  for (auto& t : cell.at("gate_terms").as_array()) {
+    got.push_back(static_cast<int>(t.as_array().size()));
+  }
+  std::sort(got.begin(), got.end());
+  EXPECT_EQ(got, (std::vector<int>{1, 1, 2}));
+}
+
+TEST_F(SchematicHandlerTest, DanglingPortsStillEmitted)
+{
+  // An instance whose pins are all unconnected must still emit every port with
+  // a connection bit, so netlistsvg draws the full symbol (with dangling stubs)
+  // instead of collapsing the cell to a bare name label with no shape.  The
+  // synthetic bits stand in for the missing nets and must be distinct.
+  makeGate("AND2_X1", "g_dangling", {});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_dangling").as_object();
+
+  // The gate is still classified from its Liberty function regardless of
+  // connectivity.
+  EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), "and");
+
+  auto& dirs = cell.at("port_directions").as_object();
+  EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("A2").as_string()), "input");
+  EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+
+  auto& conns = cell.at("connections").as_object();
+  ASSERT_TRUE(conns.contains("A1"));
+  ASSERT_TRUE(conns.contains("A2"));
+  ASSERT_TRUE(conns.contains("ZN"));
+
+  // Power/ground pins must not leak into the schematic as dangling stubs; only
+  // the three signal pins are emitted.
+  EXPECT_FALSE(dirs.contains("VDD"));
+  EXPECT_FALSE(dirs.contains("VSS"));
+  EXPECT_EQ(dirs.size(), 3u);
+  EXPECT_EQ(conns.size(), 3u);
+
+  // Each dangling pin gets its own synthetic bit id (no two pins share a net).
+  std::set<int64_t> bits;
+  for (const char* pin : {"A1", "A2", "ZN"}) {
+    auto& arr = conns.at(pin).as_array();
+    ASSERT_EQ(arr.size(), 1u) << pin;
+    bits.insert(arr.at(0).as_int64());
+  }
+  EXPECT_EQ(bits.size(), 3u);
+}
+
+TEST_F(SchematicHandlerTest, MuxAndUnknownCellsHaveNoKindHint)
+{
+  // A MUX is not an AOI/OAI (its terms contain an inverted select), so it stays
+  // a plain box.
+  makeGate("MUX2_X1", "g_mux", {{"a", "A"}, {"b", "B"}, {"s", "S"}});
+
+  boost::json::object cells = fullCells();
+  auto& cell = cells.at("g_mux").as_object();
+  EXPECT_EQ(std::string(cell.at("type").as_string()), "MUX2_X1");
+  EXPECT_FALSE(cell.contains("gate_kind"));
 }
 
 }  // namespace

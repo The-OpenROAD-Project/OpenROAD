@@ -199,7 +199,7 @@ export class SchematicWidget {
         const wm = this.appState.websocketManager;
         if (!wm) return;
         console.log('[Schematic] inspect:', instName);
-        wm.request({ type: 'schematic_inspect', inst_name: instName })
+        wm.request({ type: 'schematic_inspect', inst_name: instName, use_dbu: this.appState.showDbu })
             .then(data => {
                 if (this.appState.updateInspector) {
                     this.appState.updateInspector(data);
@@ -279,17 +279,16 @@ export class SchematicWidget {
             }
             this.netlistsvg = window.netlistsvg;
 
-            // The bundle passes skinData to onml.p() which expects a raw XML
-            // string — not a DOMParser Document.  Fetch the skin as plain text.
-            let skin = this.netlistsvg.digitalSkin || this.netlistsvg.defaultSkin;
-            if (!skin || typeof skin !== 'string') {
-                const resp = await fetch('https://unpkg.com/netlistsvg/lib/default.svg');
-                if (!resp.ok) {
-                    throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
-                }
-                skin = await resp.text();
+            // Load OpenROAD's custom skin (served as a local asset).  It defines
+            // proper gate symbols with correctly-placed ports and instance-name
+            // labels; renderNetlist() rewrites cell types to match it (see
+            // canonicalizeForSkin).  render() passes the skin to onml.p(), which
+            // expects a raw XML string, so fetch it as text.
+            const resp = await fetch('openroad_skin.svg');
+            if (!resp.ok) {
+                throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
             }
-            this.skin = skin;
+            this.skin = await resp.text();
             this._netlistsvgReady = true;
             console.log('NetlistSVG ready.');
         } catch (err) {
@@ -352,18 +351,29 @@ export class SchematicWidget {
         try {
             this.setStatus('Rendering…');
 
+            // Debug aid: the last netlist rendered is exposed so it can be
+            // captured for the offline render preview tool
+            // (src/web/test/visual). In DevTools:
+            //   copy(JSON.stringify(window.__lastSchematic))
+            if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
+
+            // Rewrite recognised logic gates to the canonical types our custom
+            // skin draws (proper gate symbols with correctly-placed ports), so
+            // netlistsvg renders and routes them natively.
+            const renderJson = canonicalizeForSkin(yosysJson);
+
             // netlistsvg.render() is Promise-based in v1.x (async ELK layout),
             // but older versions used a callback: render(skin, json, done).
             // Support both so the widget works with either bundle.
             let svgString;
-            const result = this.netlistsvg.render(this.skin, yosysJson);
+            const result = this.netlistsvg.render(this.skin, renderJson);
             if (result && typeof result.then === 'function') {
                 // Promise-based (v1.x)
                 svgString = await result;
             } else {
                 // Callback-based (older); wrap in a Promise
                 svgString = await new Promise((resolve, reject) => {
-                    this.netlistsvg.render(this.skin, yosysJson, (err, svg) => {
+                    this.netlistsvg.render(this.skin, renderJson, (err, svg) => {
                         if (err) reject(err); else resolve(svg);
                     });
                 });
@@ -379,6 +389,7 @@ export class SchematicWidget {
             this._svgIdToInstName.clear();
             this.svgContainer.innerHTML = svgString;
             this._svgEl = this.svgContainer.querySelector('svg');
+            this._scopeSkinStyles();
 
             // Build SVG-id → ODB instance-name map.
             // netlistsvg renders each cell with id="cell_<instName>", so we
@@ -402,6 +413,9 @@ export class SchematicWidget {
                 this._svgEl.style.display = 'block';
             }
 
+            // Label the matched gate symbols with the design's real pin names.
+            this._applyPinLabels(renderJson);
+
             // Reset to identity, then fit once the browser has fully painted
             // the SVG. Two rAFs are used: the first lets the DOM update, the
             // second lets the layout engine commit real dimensions.
@@ -417,4 +431,231 @@ export class SchematicWidget {
             this.setStatus(`Render error: ${err.message || err}`);
         }
     }
+
+    // Label the matched gate symbols with the design's real pin names.
+    // netlistsvg labels generic-box ports itself, but matched symbols use the
+    // skin's (label-less) ports, so we add the names here.  `renderJson` is the
+    // canonicalized netlist; cells rewritten to a gate symbol carry a
+    // `port_labels` map (symbol port id -> real pin name).  The rendered ports
+    // keep their `s:pid`/`s:x`/`s:y` attributes, so we place each label by
+    // attribute (no getBBox; works before layout).
+    _applyPinLabels(renderJson) {
+        if (!this._svgEl) return;
+        const NS = 'http://www.w3.org/2000/svg';
+        const NLNS = 'https://github.com/nturley/netlistsvg';
+        const cells = (renderJson.modules && renderJson.modules.top
+                       && renderJson.modules.top.cells) || {};
+        const attr = (el, name) =>
+            el.getAttribute('s:' + name) ?? el.getAttributeNS(NLNS, name);
+
+        for (const [name, cell] of Object.entries(cells)) {
+            const labels = cell.port_labels;
+            if (!labels) continue;
+            const group =
+                this._svgEl.querySelector('#' + CSS.escape('cell_' + name)) ||
+                this._svgEl.querySelector('#' + CSS.escape(name));
+            if (!group) continue;
+            const dirs = cell.port_directions || {};
+
+            // Snapshot children: appending labels below mutates the live
+            // HTMLCollection, which would otherwise re-enter the loop.
+            for (const el of Array.from(group.children)) {
+                if (el.tagName !== 'g') continue;
+                const pid = attr(el, 'pid');
+                if (!pid || !(pid in labels)) continue;
+                const sx = parseFloat(attr(el, 'x'));
+                const sy = parseFloat(attr(el, 'y'));
+                if (!isFinite(sx) || !isFinite(sy)) continue;
+
+                const text = document.createElementNS(NS, 'text');
+                const isInput = dirs[pid] === 'input';
+                if (isInput) {
+                    text.setAttribute('class', 'inputPortLabel');
+                    text.setAttribute('x', sx - 3);
+                } else {
+                    text.setAttribute('x', sx + 4);
+                }
+                text.setAttribute('y', sy - 4);
+                // Half the default 10px text size so the pin names stay
+                // proportionate to the small gate symbols.  Use inline style:
+                // the skin's `text { font-size:10px }` rule beats a presentation
+                // attribute, but not an inline style.
+                text.setAttribute('style', 'font-size:5px');
+                text.setAttribute('pointer-events', 'none');
+                text.textContent = labels[pid];
+                group.appendChild(text);
+            }
+        }
+    }
+
+    // netlistsvg's skin embeds a <style> with unscoped element selectors
+    // (e.g. `svg { fill:none; stroke:#000 }`, `text { fill:#000 }`). A <style>
+    // inside an inline SVG is NOT scoped to that SVG -- once injected into the
+    // page its rules apply document-wide, clobbering the fill/stroke of every
+    // other inline-SVG icon in the app (the inspector/ruler buttons rendered as
+    // black, unfilled outlines). Prefix each rule with the widget's container
+    // class so the skin only styles this schematic.
+    _scopeSkinStyles() {
+        if (!this._svgEl) return;
+        const scope = '.schematic-widget';
+        // Recurse so selectors nested inside @media/@supports blocks (which
+        // expose .cssRules but no .selectorText) are scoped too.
+        const scopeRules = (rules) => {
+            for (const rule of rules) {
+                if (rule.selectorText) {
+                    rule.selectorText = scopeCssSelector(rule.selectorText, scope);
+                } else if (rule.cssRules) {
+                    scopeRules(rule.cssRules);
+                }
+            }
+        };
+        for (const styleEl of this._svgEl.querySelectorAll('style')) {
+            const sheet = styleEl.sheet;
+            if (!sheet) continue;
+            try {
+                scopeRules(sheet.cssRules);
+            } catch (e) {
+                continue;  // Should not happen for same-origin inline styles.
+            }
+        }
+    }
 }
+
+// Prefix every comma-separated selector in `selectorText` with `scope` so the
+// rule only matches descendants of the scope container. Idempotent: a selector
+// already carrying the scope is left untouched, so a re-render never nests the
+// prefix. "Already scoped" means it begins with `scope` and the next character
+// is not part of an identifier -- so `.scope`, `.scope svg`, `.scope>svg` and
+// `.scope.active` are kept, while a different class like `.scope-foo` is still
+// scoped.
+export function scopeCssSelector(selectorText, scope) {
+    return selectorText
+        .split(',')
+        .map((sel) => {
+            const trimmed = sel.trim();
+            if (!trimmed) return '';
+            const after = trimmed.charAt(scope.length);
+            const alreadyScoped = trimmed.startsWith(scope)
+                && (after === '' || !/[\w-]/.test(after));
+            return alreadyScoped ? trimmed : `${scope} ${trimmed}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+}
+
+// ── Skin canonicalization ──────────────────────────────────────────────────
+//
+// The server tags recognised combinational cells with `gate_kind`
+// (and/nand/or/nor/xor/xnor/not/buf, or aoi/oai with `gate_terms`).  Before
+// rendering we rewrite those cells to the canonical gate types drawn by the
+// custom skin (openroad_skin.svg) and remap their pins to the symbol's port ids
+// (A, B, …, Y).  netlistsvg then renders proper gate symbols and routes the
+// wires to the symbol-defined port positions — no overlay or alignment needed.
+
+// gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
+const SKIN_SIMPLE_TYPE = {
+    and: '$_AND_', nand: '$_NAND_', or: '$_OR_', nor: '$_NOR_',
+    xor: '$_XOR_', xnor: '$_XNOR_', not: '$_NOT_', buf: '$_BUF_',
+};
+
+// Compound gate types the skin actually draws.  Unsupported arities are left as
+// labelled generic boxes (which keep the design's real pin names).
+const SKIN_COMPOUND_TYPES = new Set([
+    'aoi21', 'aoi22', 'aoi211', 'aoi221', 'aoi222', 'aoi33',
+    'oai21', 'oai22', 'oai211', 'oai221', 'oai222', 'oai33',
+]);
+
+// Wider (>2-input) basic gates the skin draws, named kind+arity.  2-input gates
+// use the Yosys primitive aliases in SKIN_SIMPLE_TYPE instead.
+const SKIN_MULTI_TYPES = new Set([
+    'and3', 'and4', 'or3', 'or4', 'nand3', 'nand4', 'nor3', 'nor4',
+]);
+
+const PID_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+// Rewrite one cell to a custom-skin gate symbol when it carries a recognised
+// `gate_kind`: set its `type` to the canonical symbol name and remap its
+// `connections`/`port_directions` keys to the symbol's port ids.  Pins not part
+// of the gate (power/ground) are dropped.  Cells that aren't recognised — or
+// whose computed type has no symbol — are returned unchanged so they render as
+// a labelled generic box with their real pin names.
+export function canonicalizeCell(cell) {
+    const kind = cell && cell.gate_kind;
+    if (!kind) return cell;
+
+    const dirs = cell.port_directions || {};
+    let outPin = null;
+    const inPins = [];
+    for (const [pin, dir] of Object.entries(dirs)) {
+        if (dir === 'output' && outPin === null) outPin = pin;
+        else if (dir === 'input') inPins.push(pin);
+    }
+
+    let type;
+    const pidOf = {};  // real pin name -> symbol port id
+
+    if (kind === 'aoi' || kind === 'oai') {
+        const terms = Array.isArray(cell.gate_terms) ? cell.gate_terms : [];
+        if (!terms.length) return cell;
+        const sizes = terms.map((t) => t.length);
+        type = kind + sizes.slice().sort((a, b) => b - a).join('');
+        if (!SKIN_COMPOUND_TYPES.has(type)) return cell;
+        // Assign input pids term-by-term, smallest term first (so a 1-pin
+        // literal term gets 'A'); matches the symbol's port layout.
+        const ordered = terms.map((t) => t.slice())
+            .sort((a, b) => a.length - b.length);
+        let i = 0;
+        for (const term of ordered) {
+            for (const pin of term) {
+                pidOf[pin] = PID_LETTERS[i] || ('I' + i);
+                i++;
+            }
+        }
+    } else {
+        const n = inPins.length;
+        if (kind === 'not' || kind === 'buf') {
+            type = SKIN_SIMPLE_TYPE[kind];          // 1-input
+        } else if (n <= 2) {
+            type = SKIN_SIMPLE_TYPE[kind];          // 2-input Yosys primitive
+        } else {
+            type = kind + n;                        // wider gate, e.g. nand3
+            if (!SKIN_MULTI_TYPES.has(type)) return cell;
+        }
+        if (!type) return cell;
+        inPins.forEach((pin, idx) => { pidOf[pin] = PID_LETTERS[idx] || ('I' + idx); });
+    }
+    if (outPin !== null) pidOf[outPin] = 'Y';
+
+    const conns = cell.connections || {};
+    const newConns = {};
+    const newDirs = {};
+    for (const [pin, bits] of Object.entries(conns)) {
+        if (pidOf[pin]) newConns[pidOf[pin]] = bits;
+    }
+    for (const [pin, dir] of Object.entries(dirs)) {
+        if (pidOf[pin]) newDirs[pidOf[pin]] = dir;
+    }
+    // Keep the real pin name for each symbol port id so the viewer can label
+    // the symbol with the design's pin names (netlistsvg ignores this field).
+    const portLabels = {};
+    for (const [pin, pid] of Object.entries(pidOf)) portLabels[pid] = pin;
+    return {
+        ...cell, type,
+        connections: newConns, port_directions: newDirs,
+        port_labels: portLabels,
+    };
+}
+
+// Return a copy of the netlist with recognised logic gates rewritten to the
+// custom skin's gate symbols.  Cell keys (instance names) are preserved so
+// selection/inspect keep working.
+export function canonicalizeForSkin(json) {
+    const top = json && json.modules && json.modules.top;
+    if (!top || !top.cells) return json;
+    const cells = {};
+    for (const [name, cell] of Object.entries(top.cells)) {
+        cells[name] = canonicalizeCell(cell);
+    }
+    return { ...json, modules: { ...json.modules, top: { ...top, cells } } };
+}
+

@@ -141,6 +141,7 @@ cc_binary(
         ":rmp",
         "//:ord",
         "//src/cut",
+        "//src/dbSta",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",

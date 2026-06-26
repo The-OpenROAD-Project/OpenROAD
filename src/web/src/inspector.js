@@ -236,7 +236,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             pendingInspectId = null;
         }
         showLoading();
-        const promise = app.websocketManager.request({ type: reqType });
+        const promise = app.websocketManager.request({ type: reqType, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
         promise
             .then(data => {
@@ -290,7 +290,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         showLoading();
 
         const promise = app.websocketManager.request(
-            { type: 'inspect', select_id: selectId });
+            { type: 'inspect', select_id: selectId, use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
@@ -334,7 +334,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
         showLoading();
 
-        const promise = app.websocketManager.request({ type: 'inspect_back' });
+        const promise = app.websocketManager.request({ type: 'inspect_back', use_dbu: app.showDbu });
         pendingInspectId = promise.requestId;
 
         promise
@@ -627,5 +627,20 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         updateInspector(null);
     }
 
-    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector };
+    // Re-request the currently inspected object from the server
+    // (e.g. after toggling show-DBU so property formatting changes).
+    // Rulers are client-side so we re-select instead of re-requesting.
+    function refreshInspector() {
+        if (!lastInspectData) return;
+        if (lastInspectData.type === 'Ruler') {
+            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
+                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            }
+            return;
+        }
+        if (!app.websocketManager) return;
+        navigateInspector(-1);
+    }
+
+    return { createInspector, updateInspector, highlightBBox, pulseHighlight, navigateInspector, refreshInspector };
 }

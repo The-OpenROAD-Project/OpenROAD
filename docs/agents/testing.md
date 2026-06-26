@@ -2,6 +2,10 @@
 
 OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** (C++).
 
+> For **where** new tests should live (the C++-first test pyramid) and **how** to
+> handle DB/STA dependencies, see `testing-strategy.md`. This guide covers the
+> mechanics of writing and registering a test.
+
 ## CAUTION -- Dual Registration Required
 
 **Every new test MUST be registered in BOTH build systems. Missing either one is a build break.**

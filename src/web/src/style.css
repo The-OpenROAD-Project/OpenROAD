@@ -199,9 +199,14 @@ html, body {
 #menu-bar .menu-item {
     display: flex;
     justify-content: space-between;
+    position: relative;
     padding: 4px 20px;
     cursor: default;
     white-space: nowrap;
+}
+#menu-bar .menu-check {
+    position: absolute;
+    left: 4px;
 }
 #menu-bar .menu-item:hover {
     background: var(--bg-selected);
@@ -1105,6 +1110,29 @@ html, body {
     border-bottom: 1px solid var(--border);
     font-weight: 600;
     white-space: nowrap;
+}
+
+.timing-header-tooltip {
+    position: fixed;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--fg-primary);
+    pointer-events: none;
+    white-space: pre;
+    z-index: 100;
+    display: none;
+}
+
+.timing-table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.timing-table thead th.sortable:hover {
+    color: var(--fg-primary);
 }
 
 .timing-table tbody td {

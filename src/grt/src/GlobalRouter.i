@@ -111,6 +111,12 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_res_aware_nets_percentage(float percentage)
+{
+  getGlobalRouter()->setResAwareNetsPercentage(percentage);
+}
+
+void
 set_snapshot_batched_width(int snapshot_batched_width)
 {
   getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);
@@ -175,12 +181,8 @@ set_infinite_cap(bool infinite_capacity)
 {
   getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
 }
-// NOTE: Debug-only. Not part of the public incremental API.
-void
-update_cugr_net(odb::dbNet* net)
-{
-  getGlobalRouter()->updateCUGRNet(net);
-}
+
+
 
 void start_incremental()
 {

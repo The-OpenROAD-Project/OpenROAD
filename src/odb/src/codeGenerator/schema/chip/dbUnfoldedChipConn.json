@@ -1,0 +1,31 @@
+{
+  "name": "dbUnfoldedChipConn",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "chip_conn_",
+      "type": "dbId<_dbChipConn>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "top_region_",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "bottom_region_",
+      "type": "dbId<_dbUnfoldedChipRegionInst>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    }
+  ],
+  "h_includes": [
+    "odb/dbId.h"
+  ],
+  "cpp_includes": [
+    "dbChipConn.h",
+    "dbUnfoldedChipRegionInst.h"
+  ]
+}
