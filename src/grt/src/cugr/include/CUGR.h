@@ -134,7 +134,9 @@ class CUGR
   void saveCongestion();
 
  private:
-  float calculatePartialSlack();
+  // Refresh net slacks, re-mark the res-aware/critical set, and demote
+  // non-critical nets so the next stage routes critical nets first.
+  void updateCriticalNets();
   // Re-extract parasitics and refresh every net's slack from the routing.
   void updateNetSlacks();
   // Slack value at the critical_nets_percentage_ percentile of the nets.

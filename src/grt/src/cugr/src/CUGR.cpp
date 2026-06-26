@@ -113,15 +113,12 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-float CUGR::calculatePartialSlack()
+void CUGR::updateCriticalNets()
 {
   updateNetSlacks();
-  // Re-mark res-aware nets on the real slack: demoteNonCriticalNets() below
-  // clobbers non-critical slacks, so the real slack is only available now.
+  // Mark res-aware nets on the real slack, before demotion clobbers it.
   markResAwareNets();
-  const float slack_th = criticalSlackThreshold();
-  demoteNonCriticalNets(slack_th);
-  return slack_th;
+  demoteNonCriticalNets(criticalSlackThreshold());
 }
 
 void CUGR::updateNetSlacks()
@@ -441,7 +438,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
 
   // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
   // set from their actual per-net resistance.
-  calculatePartialSlack();
+  updateCriticalNets();
 
   std::vector<int> res_aware_nets;
   for (const auto& net : gr_nets_) {
@@ -502,7 +499,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   logger_->report("Stage 3: Pattern routing with detours.");
 
   if (critical_nets_percentage_ != 0) {
-    calculatePartialSlack();
+    updateCriticalNets();
   }
 
   // (2d) direction -> x -> y -> has overflow?
@@ -539,7 +536,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    calculatePartialSlack();
+    updateCriticalNets();
   }
 
   for (const int net_index : net_indices) {
