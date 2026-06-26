@@ -46,6 +46,15 @@ TEST_F(SimpleDbFixture, test_add_duplicate_errors)
   EXPECT_THROW(block->addCorner("corner1"), std::runtime_error);
 }
 
+TEST_F(SimpleDbFixture, test_add_empty_name_errors)
+{
+  createSimpleDB();
+  dbBlock* block = db_->getChip()->getBlock();
+
+  // Empty name is not allowed.
+  EXPECT_THROW(block->addCorner(""), std::runtime_error);
+}
+
 TEST_F(SimpleDbFixture, test_write_read_roundtrip)
 {
   createSimpleDB();

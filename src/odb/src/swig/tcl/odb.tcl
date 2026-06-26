@@ -5,6 +5,7 @@ sta::define_cmd_args "add_corner" {corner_name}
 
 proc add_corner { args } {
   sta::parse_key_args "add_corner" args keys {} flags {}
+  sta::check_argc_eq1 "add_corner" $args
 
   set corner_name $args
   set block [odb::get_block]
@@ -19,6 +20,7 @@ sta::define_cmd_args "remove_corner" {corner_name}
 
 proc remove_corner { args } {
   sta::parse_key_args "remove_corner" args keys {} flags {}
+  sta::check_argc_eq1 "remove_corner" $args
 
   set corner_name $args
   set block [odb::get_block]
@@ -33,6 +35,7 @@ sta::define_cmd_args "remove_corners" {}
 
 proc remove_corners { args } {
   sta::parse_key_args "remove_corners" args keys {} flags {}
+  sta::check_argc_eq0 "remove_corners" $args
 
   set block [odb::get_block]
   if { $block == "NULL" } {

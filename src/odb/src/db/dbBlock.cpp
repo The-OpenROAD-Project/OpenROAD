@@ -2912,8 +2912,14 @@ dbCorner* dbBlock::findCorner(const std::string& corner_name) const
 
 void dbBlock::addCorner(const std::string& corner_name)
 {
+  utl::Logger* logger = getImpl()->getLogger();
+
+  if (corner_name.empty()) {
+    logger->error(
+        utl::ODB, 9, "Could not add corner. Empty name is not allowed.");
+  }
+
   if (findCorner(corner_name)) {
-    utl::Logger* logger = getImpl()->getLogger();
     logger->error(
         utl::ODB,
         5,

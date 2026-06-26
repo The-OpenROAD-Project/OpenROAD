@@ -9,16 +9,12 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbBlock.h"
-#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbCorner>;
-// User Code Begin Static
-// User Code End Static
 
 bool _dbCorner::operator==(const _dbCorner& rhs) const
 {
@@ -27,8 +23,6 @@ bool _dbCorner::operator==(const _dbCorner& rhs) const
     return false;
   }
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
 }
@@ -39,30 +33,22 @@ bool _dbCorner::operator<(const _dbCorner& rhs) const
     return false;
   }
 
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
 _dbCorner::_dbCorner(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbCorner& obj)
 {
   stream >> obj.name_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbCorner& obj)
 {
   stream << obj.name_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -72,13 +58,7 @@ void _dbCorner::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   info.children["name"].add(name_);
-
-  // User Code Begin collectMemInfo
-  // User Code End collectMemInfo
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
