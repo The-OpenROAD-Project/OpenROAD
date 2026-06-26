@@ -227,7 +227,8 @@ void CUGR::markResAwareNets()
     worst_net_length_ = std::max(worst_net_length_, net->getNetLength());
     worst_slack_ = std::min(worst_slack_, net->getSlack());
 
-    // Clock and NDR nets are always res-aware (match FastRoute).
+    // Clock and NDR nets are always res-aware among the eligible set (short and
+    // positive-slack nets are already skipped above, matching FastRoute).
     if (is_clock || net->hasNdr()) {
       net->setResAware(true);
     } else if (!net->isResAware()) {
@@ -923,6 +924,9 @@ void CUGR::sortNetIndices(std::vector<int>& net_indices,
     // Multi-factor res-aware ordering (slack+resistance+fanout+length) so
     // critical nets route first (FR's full tuple regressed asap7).
     std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+      if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
+        return false;
+      }
       return getResAwareScore(gr_nets_[lhs].get())
              < getResAwareScore(gr_nets_[rhs].get());
     });
