@@ -1,6 +1,47 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+sta::define_cmd_args "add_corner" {corner_name}
+
+proc add_corner { args } {
+  sta::parse_key_args "add_corner" args keys {} flags {}
+
+  set corner_name $args
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 1 "Could not add corner $corner_name. No block found."
+  }
+
+  $block addCorner $corner_name
+}
+
+sta::define_cmd_args "remove_corner" {corner_name}
+
+proc remove_corner { args } {
+  sta::parse_key_args "remove_corner" args keys {} flags {}
+
+  set corner_name $args
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 7 "Could not remove corner $corner_name. No block found."
+  }
+
+  $block removeCorner $corner_name
+}
+
+sta::define_cmd_args "remove_corners" {}
+
+proc remove_corners { args } {
+  sta::parse_key_args "remove_corners" args keys {} flags {}
+
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 8 "Could not remove corners. No block found."
+  }
+
+  $block removeCorners
+}
+
 sta::define_cmd_args "create_physical_cluster" {cluster_name}
 
 proc create_physical_cluster { args } {

@@ -1,0 +1,11 @@
+{
+  "name": "dbCorner",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "name_",
+      "type": "std::string",
+      "flags":["cmpgt", "no-set"]
+    }
+  ]
+}

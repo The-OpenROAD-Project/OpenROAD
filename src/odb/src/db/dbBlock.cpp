@@ -47,6 +47,7 @@
 #include "dbChip.h"
 #include "dbCommon.h"
 #include "dbCore.h"
+#include "dbCorner.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbFill.h"
@@ -116,6 +117,7 @@
 #include "dbTechLayerRule.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbTrackGrid.h"
+#include "dbVector.h"
 #include "dbVia.h"
 #include "dbWire.h"
 #include "odb/PtrSetMap.h"
@@ -244,6 +246,9 @@ _dbBlock::_dbBlock(_dbDatabase* db)
 
   net_tracks_tbl_ = new dbTable<_dbNetTrack>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbNetTrackObj);
+
+  corner_tbl_ = new dbTable<_dbCorner>(
+      db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbCornerObj);
 
   box_tbl_ = new dbTable<_dbBox, 1024>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBoxObj);
@@ -437,6 +442,7 @@ _dbBlock::~_dbBlock()
   delete global_connect_tbl_;
   delete guide_tbl_;
   delete net_tracks_tbl_;
+  delete corner_tbl_;
   delete box_tbl_;
   delete via_tbl_;
   delete gcell_grid_tbl_;
@@ -616,6 +622,9 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbNetTrackObj:
       return net_tracks_tbl_;
 
+    case dbCornerObj:
+      return corner_tbl_;
+
     case dbNetObj:
       return net_tbl_;
 
@@ -780,6 +789,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block.max_cc_seg_id_;
   stream << block.children_;
   stream << block.component_mask_shift_;
+  stream << block.corners_;
   stream << block.currentCcAdjOrder_;
 
   stream << *block.bterm_tbl_;
@@ -804,6 +814,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << *block.global_connect_tbl_;
   stream << *block.guide_tbl_;
   stream << *block.net_tracks_tbl_;
+  stream << *block.corner_tbl_;
   stream << *block.box_tbl_;
   stream << *block.via_tbl_;
   stream << *block.gcell_grid_tbl_;
@@ -975,6 +986,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   if (db->isSchema(kSchemaBlockComponentMaskShift)) {
     stream >> block.component_mask_shift_;
   }
+  if (db->isSchema(kSchemaCorner)) {
+    stream >> block.corners_;
+  }
   stream >> block.currentCcAdjOrder_;
   stream >> *block.bterm_tbl_;
   stream >> *block.iterm_tbl_;
@@ -1040,6 +1054,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.guide_tbl_;
   if (db->isSchema(kSchemaNetTracks)) {
     stream >> *block.net_tracks_tbl_;
+  }
+  if (db->isSchema(kSchemaCorner)) {
+    stream >> *block.corner_tbl_;
   }
   stream >> *block.box_tbl_;
   stream >> *block.via_tbl_;
@@ -1336,6 +1353,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (children_ != rhs.children_) {
     return false;
   }
+  if (corners_ != rhs.corners_) {
+    return false;
+  }
 
   if (component_mask_shift_ != rhs.component_mask_shift_) {
     return false;
@@ -1408,6 +1428,10 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   }
 
   if (*net_tracks_tbl_ != *rhs.net_tracks_tbl_) {
+    return false;
+  }
+
+  if (*corner_tbl_ != *rhs.corner_tbl_) {
     return false;
   }
 
@@ -2871,6 +2895,69 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
   }
 }
 
+dbCorner* dbBlock::findCorner(const std::string& corner_name) const
+{
+  _dbBlock* block = (_dbBlock*) this;
+
+  for (const dbId<_dbCorner> corner_id : block->corners_) {
+    _dbCorner* corner = block->corner_tbl_->getPtr(corner_id);
+
+    if (corner->name_ == corner_name) {
+      return (dbCorner*) corner;
+    }
+  }
+
+  return nullptr;
+}
+
+void dbBlock::addCorner(const std::string& corner_name)
+{
+  if (findCorner(corner_name)) {
+    utl::Logger* logger = getImpl()->getLogger();
+    logger->error(
+        utl::ODB,
+        5,
+        "Could not add corner {}. A corner with that name already exists.",
+        corner_name);
+  }
+
+  dbCorner* corner_ = dbCorner::create(this, corner_name);
+
+  _dbBlock* block = (_dbBlock*) this;
+  block->corners_.push_back(corner_->getId());
+}
+
+void dbBlock::removeCorner(const std::string& corner_name)
+{
+  dbCorner* corner_ = findCorner(corner_name);
+
+  if (!corner_) {
+    utl::Logger* logger = getImpl()->getLogger();
+    logger->error(utl::ODB,
+                  6,
+                  "Could not remove corner {}. No corner with that name "
+                  "exists.",
+                  corner_name);
+  }
+
+  _dbBlock* block = (_dbBlock*) this;
+
+  // Note that std::ranges::find requires the search value
+  // to be the same type as the range's elements.
+  const auto corner_id = (dbId<_dbCorner>) corner_->getId();
+  auto corner_position = std::ranges::find(block->corners_, corner_id);
+  block->corners_.erase(corner_position);
+
+  dbCorner::destroy(corner_);
+}
+
+void dbBlock::removeCorners()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  block->corners_.clear();
+  block->corner_tbl_->clear();
+}
+
 char* dbBlock::getCornerNameList()
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -3722,6 +3809,7 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   info.children["bterm_hash"].add(bterm_hash_);
 
   info.children["children"].add(children_);
+  info.children["corners"].add(corners_);
   info.children["component_mask_shift"].add(component_mask_shift_);
 
   bterm_tbl_->collectMemInfo(info.children["bterm"]);
@@ -3758,6 +3846,7 @@ void _dbBlock::collectMemInfo(MemInfo& info)
   global_connect_tbl_->collectMemInfo(info.children["global_connect"]);
   guide_tbl_->collectMemInfo(info.children["guide"]);
   net_tracks_tbl_->collectMemInfo(info.children["net_tracks"]);
+  corner_tbl_->collectMemInfo(info.children["corner"]);
   dft_tbl_->collectMemInfo(info.children["dft"]);
   modbterm_tbl_->collectMemInfo(info.children["modbterm"]);
   moditerm_tbl_->collectMemInfo(info.children["moditerm"]);

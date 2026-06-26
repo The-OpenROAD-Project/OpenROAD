@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 134;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 135;  // Current revision number
+
+// Revision where dbCorner object was added
+inline constexpr uint32_t kSchemaCorner = 135;
 
 // Revision where the per-corner child-block feature for parasitics was removed
 inline constexpr uint32_t kSchemaRemovePerCornerBlock = 134;

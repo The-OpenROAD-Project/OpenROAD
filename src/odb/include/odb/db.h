@@ -121,6 +121,7 @@ class dbChipNet;
 class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
+class dbCorner;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -1025,6 +1026,14 @@ class dbBlock : public dbObject
   /// Get the number of process corners.
   ///
   int getCornerCount();
+
+  void addCorner(const std::string& corner_name);
+
+  dbCorner* findCorner(const std::string& corner_name) const;
+
+  void removeCorner(const std::string& corner_name);
+
+  void removeCorners();
 
   ///
   /// Get the number of corners kept n this block
@@ -7573,6 +7582,18 @@ class dbChipRegionInst : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   // User Code End dbChipRegionInst
+};
+
+class dbCorner : public dbObject
+{
+ public:
+  const std::string& getName() const;
+
+  // User Code Begin dbCorner
+  static dbCorner* create(dbBlock* block_, const std::string& corner_name);
+
+  static void destroy(dbCorner* corner_);
+  // User Code End dbCorner
 };
 
 class dbDatabase : public dbObject

@@ -103,6 +103,7 @@ add_library(db
     dbChipPath.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
+    dbCorner.cpp
     dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
