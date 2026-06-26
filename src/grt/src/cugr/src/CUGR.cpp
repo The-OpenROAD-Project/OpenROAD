@@ -167,6 +167,8 @@ float CUGR::getNetSlack(odb::dbNet* net)
 
 void CUGR::setInitialNetSlacks()
 {
+  // Stage 1 routes neutrally; this only computes placement slacks. Res-aware
+  // marking happens in patternRouteResAware() once real 3D trees exist.
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -419,6 +421,68 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   updateCongestedNets(net_indices);
 }
 
+void CUGR::patternRouteResAware(std::vector<int>& net_indices)
+{
+  if (!resistance_aware_ || critical_nets_percentage_ == 0) {
+    return;
+  }
+  logger_->report("Stage 1.5: Resistance-aware re-route of critical nets.");
+
+  // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
+  // set from their actual per-net resistance.
+  calculatePartialSlack();
+
+  std::vector<int> res_aware_nets;
+  for (const auto& net : gr_nets_) {
+    if (net != nullptr && net->isResAware()) {
+      res_aware_nets.push_back(net->getIndex());
+    }
+  }
+  if (res_aware_nets.empty()) {
+    return;
+  }
+
+  // Most critical first, so they get first pick of upper-metal capacity.
+  sortNetIndices(res_aware_nets, /*res_aware_order=*/true);
+
+  // Dump the res-aware nets in the order they are re-routed (their
+  // layer-assignment priority). Enable with -debug_level GRT resAware 1.
+  if (logger_->debugCheck(GRT, "resAware", 1)) {
+    logger_->report("CUGR res-aware nets in layer-assignment priority order:");
+    int rank = 0;
+    for (const int net_index : res_aware_nets) {
+      const GRNet* net = gr_nets_[net_index].get();
+      logger_->report("  {}: {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                      rank++,
+                      net->getName(),
+                      net->getSlack() * 1e12,
+                      net->getResistance(),
+                      net->getNumPins(),
+                      net->getNetLength());
+    }
+  }
+
+  // Re-route each critical net on real resistance, no detours; later
+  // congestion stages resolve any overflow it introduces.
+  for (const int net_index : res_aware_nets) {
+    GRNet* net = gr_nets_[net_index].get();
+    if (net == nullptr || net->getNumPins() < 2) {
+      continue;
+    }
+    grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+    PatternRoute pattern_route(
+        net, grid_graph_.get(), stt_builder_, constants_, logger_);
+    pattern_route.constructSteinerTree();
+    pattern_route.constructRoutingDAG();
+    pattern_route.run();
+    grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+  }
+
+  // Refresh the congested set for the downstream stages, like every other
+  // routing stage. (The early returns above leave patternRoute's set as-is.)
+  updateCongestedNets(net_indices);
+}
+
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
 {
   if (net_indices.empty()) {
@@ -544,6 +608,10 @@ void CUGR::route()
   }
 
   patternRoute(net_indices);
+
+  // Stage 1.5: resistance-aware re-route of the critical nets (always runs,
+  // not congestion-gated).
+  patternRouteResAware(net_indices);
 
   patternRouteWithDetours(net_indices);
 

@@ -176,6 +176,9 @@ class CUGR
                            double threshold = 1.0);
 
   void patternRoute(std::vector<int>& net_indices);
+  // Re-route the critical nets on real 3D-tree resistance, right after the
+  // neutral first PatternRoute.
+  void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   void mazeRoute(std::vector<int>& net_indices);
 
