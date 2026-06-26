@@ -59,10 +59,25 @@ struct Constants
 
   double maze_logistic_slope = 0.5;
 
+  // Min net length (routed-tree length, gcells) for res-aware; shorter nets
+  // are skipped.
+  int resistance_min_net_length = 3;
+
+  // Scales the res-aware resistance cost to CUGR's wire-cost magnitude.
+  double resistance_weight = 50.0;
+
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;
   double wire_patch_threshold = 2.0;
   double wire_patch_inflation_rate = 1.2;
+
+  // Route shortest-net-per-pin first in the neutral pass; false keeps the
+  // worst-slack/bbox order.
+  bool defer_long_nets = false;
+
+  // Cost multiplier for wires that don't fit an edge, biasing vias to climb to
+  // a free layer; 0 disables the gate.
+  double congestion_gate_penalty = 4.0;
 
   bool write_heatmap = false;
 };
@@ -92,6 +107,11 @@ class CUGR
   void setCriticalNetsPercentage(float percentage)
   {
     critical_nets_percentage_ = percentage;
+  }
+  float getCriticalNetsPercentage() const { return critical_nets_percentage_; }
+  void setResistanceAware(bool resistance_aware)
+  {
+    resistance_aware_ = resistance_aware;
   }
   void setCongestionIterations(int iterations)
   {
@@ -226,8 +246,26 @@ class CUGR
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
 
-  float critical_nets_percentage_ = 0;
+  float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
+
+  bool resistance_aware_ = false;
+  // Per-run normalisers for getResAwareScore (default 1 => well-defined).
+  float worst_slack_ = 1.0f;
+  float worst_resistance_ = 1.0f;
+  int worst_fanout_ = 1;
+  int worst_net_length_ = 1;
+
+  // Percent of eligible candidate nets marked res-aware (FastRoute default).
+  static constexpr float kResAwarePercentage = 15.0f;
+
+  // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
+  // worst_* normalisers; no-op unless resistance_aware_.
+  void markResAwareNets();
+
+  // FR-style ordering score (lower routes first): slack/resistance/fanout/
+  // length blend, each normalised by the per-run worst.
+  float getResAwareScore(const GRNet* net) const;
 
   std::vector<int> nets_to_route_;
 };
