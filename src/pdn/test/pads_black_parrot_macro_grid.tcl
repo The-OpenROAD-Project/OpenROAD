@@ -87,7 +87,7 @@ foreach net {VDD VSS} {
       if { [[$wire getTechLayer] getName] != "metal8" } { continue }
       set xmin [$wire xMin]; set ymin [$wire yMin]
       set xmax [$wire xMax]; set ymax [$wire yMax]
-      set dx [expr {$xmax - $xmin}]; set dy [expr {$ymax - $ymin}]
+      set dx [expr { $xmax - $xmin }]; set dy [expr { $ymax - $ymin }]
       if { $dx < 5000 && $dy > $dx && $ymin <= $pad_top && $ymax > $core_ymin } {
         incr bad
       }
