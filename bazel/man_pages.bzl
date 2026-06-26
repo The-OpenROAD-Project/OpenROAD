@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Hermetic Bazel rule that generates cat/ and html/ man pages.
+"""Hermetic Bazel rule that generates cat/ and HTML/ man pages.
 
 All tools (pandoc, Python interpreter) and all inputs (README files,
 messages.txt files, man1 source markdown, Python scripts) are declared
