@@ -162,7 +162,6 @@ OpenRoad::~OpenRoad()
   delete service_registry_;
 }
 
-
 ////////////////////////////////////////////////////////////////
 
 static void finalizeLoggerMetrics(ClientData clientData)
