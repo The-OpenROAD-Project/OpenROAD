@@ -926,29 +926,6 @@ void CUGR::sortNetIndices(std::vector<int>& net_indices,
     });
     return;
   }
-  if (constants_.defer_long_nets) {
-    // FastRoute's ordinary-net order: shortest length-per-pin, then
-    // left-to-right, then index, deferring long low-fanout nets to upper metal.
-    auto length_per_pin = [&](const GRNet* n) {
-      const auto& tree = n->getRoutingTree();
-      const float len
-          = tree ? static_cast<float>(grid_graph_->getTreeLength(tree))
-                 : static_cast<float>(n->getBoundingBox().hp());
-      return len / static_cast<float>(std::max(1, n->getNumPins()));
-    };
-    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-      if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-        return false;
-      }
-      const GRNet* a = gr_nets_[lhs].get();
-      const GRNet* b = gr_nets_[rhs].get();
-      return std::make_tuple(
-                 length_per_pin(a), a->getBoundingBox().lx(), a->getIndex())
-             < std::make_tuple(
-                 length_per_pin(b), b->getBoundingBox().lx(), b->getIndex());
-    });
-    return;
-  }
   std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
     if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
       return false;

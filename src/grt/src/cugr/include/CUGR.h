@@ -71,10 +71,6 @@ struct Constants
   double wire_patch_threshold = 2.0;
   double wire_patch_inflation_rate = 1.2;
 
-  // Route shortest-net-per-pin first in the neutral pass; false keeps the
-  // worst-slack/bbox order.
-  bool defer_long_nets = false;
-
   // Cost multiplier for wires that don't fit an edge, biasing vias to climb to
   // a free layer; 0 disables the gate.
   double congestion_gate_penalty = 4.0;
