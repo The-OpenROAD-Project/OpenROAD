@@ -85,6 +85,95 @@ proc detailed_placement { args } {
   }
 }
 
+# OpenROAD-fork: eco-legalize
+# Incrementally legalize only the cells touched by an ECO (resized, inserted,
+# moved) plus any cells that physically overlap them, leaving every other
+# placed cell pinned at its exact coordinates.  This is the placement companion
+# to repair_timing_eco: a normal detailed_placement run is unaffected.
+#
+#   improve_eco_legalization -cells {u1 u2 ...} [-max_displacement disp|{dx dy}] \
+#                            [-verbose]
+#
+# -cells accepts instance names and/or sta/odb instance objects.  Returns the
+# number of cells that were (re-)legalized.
+sta::define_cmd_args "improve_eco_legalization" { -cells cells \
+                            [-max_displacement disp|{disp_x disp_y}] \
+                            [-verbose] }
+
+proc improve_eco_legalization { args } {
+  sta::parse_key_args "improve_eco_legalization" args \
+    keys {-cells -max_displacement} \
+    flags {-verbose}
+
+  sta::check_argc_eq0 "improve_eco_legalization" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error DPL 1117 "No design block found."
+  }
+  if { ![ord::db_has_core_rows] } {
+    utl::error DPL 1118 \
+      "no rows defined in design. Use initialize_floorplan to add rows."
+  }
+  if { ![info exists keys(-cells)] } {
+    utl::error DPL 1119 "improve_eco_legalization requires -cells."
+  }
+
+  set block [ord::get_db_block]
+  set insts {}
+  foreach cell $keys(-cells) {
+    set db_inst "NULL"
+    # Accept odb dbInst objects, sta instances, or plain names.
+    if { [string match "_*_p_odb__dbInst" $cell] || [string match "*dbInst*" $cell] } {
+      set db_inst $cell
+    } else {
+      set db_inst [$block findInst $cell]
+      if { $db_inst == "NULL" } {
+        # Maybe it is an sta instance handle.
+        catch { set db_inst [sta::sta_to_db_inst $cell] }
+      }
+    }
+    if { $db_inst == "NULL" || $db_inst eq "" } {
+      utl::warn DPL 1120 "improve_eco_legalization: cannot find instance $cell."
+      continue
+    }
+    lappend insts $db_inst
+  }
+
+  if { [llength $insts] == 0 } {
+    utl::warn DPL 1121 \
+      "improve_eco_legalization: no valid ECO cells supplied; nothing to do."
+    return 0
+  }
+
+  set max_displacement_x 0
+  set max_displacement_y 0
+  if { [info exists keys(-max_displacement)] } {
+    set max_displacement $keys(-max_displacement)
+    if { [llength $max_displacement] == 1 } {
+      sta::check_positive_integer "-max_displacement" $max_displacement
+      set max_displacement_x $max_displacement
+      set max_displacement_y $max_displacement
+    } elseif { [llength $max_displacement] == 2 } {
+      lassign $max_displacement max_displacement_x max_displacement_y
+      sta::check_positive_integer "-max_displacement" $max_displacement_x
+      sta::check_positive_integer "-max_displacement" $max_displacement_y
+    } else {
+      utl::error DPL 1122 "-max_displacement disp|{disp_x disp_y}"
+    }
+    set site [dpl::get_row_site]
+    set max_displacement_x [expr {
+      [ord::microns_to_dbu $max_displacement_x] / [$site getWidth]
+    }]
+    set max_displacement_y [expr {
+      [ord::microns_to_dbu $max_displacement_y] / [$site getHeight]
+    }]
+  }
+
+  return [dpl::eco_legalize_cmd $insts \
+    $max_displacement_x $max_displacement_y \
+    [info exists flags(-verbose)]]
+}
+
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\
                                                  [-right site_count]\
                                                  [-left site_count] \

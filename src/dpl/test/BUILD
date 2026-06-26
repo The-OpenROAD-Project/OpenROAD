@@ -85,6 +85,7 @@ COMPULSORY_TESTS = [
     "simple09",
     "simple10",
     "edge_spacing",
+    "eco_legalize",
     "aes-opt",
     "blockage1-opt",
     "gcd-opt",
@@ -158,6 +159,9 @@ filegroup(
                 "edge_spacing.lef",
                 "multi_height_rows.def",
                 "Nangate45/fake_macros.lef",
+            ],
+            "eco_legalize": [
+                "gcd_replace.def",
             ],
             "fillers1": [
                 "simple01.def",

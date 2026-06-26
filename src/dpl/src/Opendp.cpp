@@ -9,7 +9,9 @@
 #include <cstdint>
 #include <iterator>
 #include <memory>
+#include <set>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -276,6 +278,213 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
+// OpenROAD-fork: eco-legalize
+int Opendp::ecoLegalizePlacement(const std::vector<odb::dbInst*>& eco_insts,
+                                 const int max_displacement_x,
+                                 const int max_displacement_y,
+                                 const bool verbose)
+{
+  utl::Timer timer;
+
+  // ECO legalization uses a tight default window: the whole point is a local
+  // repair, not a global re-place.  Callers may override.
+  if (max_displacement_x == 0 || max_displacement_y == 0) {
+    max_displacement_x_ = 20;
+    max_displacement_y_ = 4;
+  } else {
+    max_displacement_x_ = max_displacement_x;
+    max_displacement_y_ = max_displacement_y;
+  }
+
+  incremental_ = true;
+  // ECO legalization is a local diamond-search repair; the negotiation
+  // legalizer is a global engine and is intentionally not used here.
+  use_negotiation_ = false;
+
+  importDb();
+  adjustNodesOrient();
+
+  // Record every cell's pre-legalization location in db coordinates so we can
+  // (1) report displacement and (2) assert the minimal-perturbation invariant
+  // for non-ECO cells.
+  std::unordered_map<odb::dbInst*, odb::Point> pre_loc;
+  pre_loc.reserve(network_->getNumCells());
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL) {
+      odb::dbInst* inst = node->getDbInst();
+      int x, y;
+      inst->getLocation(x, y);
+      pre_loc[inst] = odb::Point(x, y);
+    }
+  }
+
+  // Resolve the ECO dbInsts to Nodes.  All non-ECO, non-fixed cells are assumed
+  // already placed by a prior detailed_placement and are kept pinned.
+  std::unordered_set<Node*> eco_cells;
+  eco_cells.reserve(eco_insts.size());
+  for (odb::dbInst* inst : eco_insts) {
+    if (inst == nullptr) {
+      continue;
+    }
+    Node* node = network_->getNode(inst);
+    if (node == nullptr || node->getType() != Node::CELL || node->isFixed()) {
+      continue;
+    }
+    eco_cells.insert(node);
+  }
+
+  if (eco_cells.empty()) {
+    logger_->info(
+        DPL, 1110, "ECO legalization: no movable ECO cells; nothing to do.");
+    return 0;
+  }
+
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
+
+  logger_->info(DPL,
+                1111,
+                "ECO legalization: {} ECO cell(s), window +/- {} sites "
+                "horizontally, +/- {} rows vertically.",
+                eco_cells.size(),
+                max_displacement_x_,
+                max_displacement_y_);
+
+  if (debug_observer_) {
+    debug_observer_->startPlacement(block_);
+  }
+
+  placement_failures_.clear();
+  initGrid();
+  setFixedGridCells();
+  const std::unordered_set<Node*> legalized = setEcoGridCells(eco_cells);
+
+  // Attach a journal so we get an exact record of every cell whose position
+  // changed during legalization (placeCell/unplaceCell funnel through it).
+  // This lets us prove the minimal-perturbation invariant precisely: any cell
+  // not in the journal's affected set did not move.
+  Journal eco_journal(grid_.get(), nullptr);
+  Journal* prev_journal = journal_;
+  journal_ = &eco_journal;
+
+  // Re-legalize only the unplaced (ECO + overlapping) cells.  place() walks all
+  // cells but only acts on those with !isPlaced(); every cell we kept placed in
+  // setEcoGridCells stays put unless the local overlap resolution
+  // (ripUpAndReplace) needs to shuffle an immediate, already-overlapping
+  // neighbor to make room.  Cells outside that local neighborhood are never
+  // touched.
+  place();
+
+  journal_ = prev_journal;
+  const std::set<Node*>& affected = eco_journal.getAffectedNodes();
+
+  if (!placement_failures_.empty()) {
+    logger_->error(DPL,
+                   1112,
+                   "ECO legalization failed on {} instance(s); the ECO window "
+                   "may be too small.",
+                   placement_failures_.size());
+  }
+
+  findDisplacementStats();
+  updateDbInstLocations();
+
+  // Verify the minimal-perturbation invariant precisely.  A cell is allowed to
+  // move only if it is in the legalize set (ECO cell or overlapper) OR the
+  // journal recorded a position action for it (an immediate neighbor the local
+  // overlap resolution had to shuffle).  Every other cell MUST keep its exact
+  // pre-legalization coordinates; if any such cell moved, the contract is
+  // broken and we fail loudly.
+  const DbuX site_width = grid_->getSiteWidth();
+  int64_t eco_disp_max = 0;
+  int displaced_neighbors = 0;
+  int moved_unexpectedly = 0;
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() != Node::CELL) {
+      continue;
+    }
+    odb::dbInst* inst = node->getDbInst();
+    int x, y;
+    inst->getLocation(x, y);
+    const odb::Point& before = pre_loc[inst];
+    const bool moved = (x != before.x() || y != before.y());
+    const bool in_legalize_set = legalized.contains(node.get());
+    const bool touched = in_legalize_set || affected.contains(node.get());
+    if (in_legalize_set) {
+      const int64_t d = std::abs(x - before.x()) + std::abs(y - before.y());
+      eco_disp_max = std::max(eco_disp_max, d);
+    } else if (moved && touched) {
+      // An immediate neighbor displaced to resolve the local overlap.
+      ++displaced_neighbors;
+      if (verbose) {
+        logger_->report("  neighbor {} displaced ({}, {}) -> ({}, {})",
+                        inst->getName(),
+                        before.x(),
+                        before.y(),
+                        x,
+                        y);
+      }
+    } else if (moved) {
+      // A cell the legalizer never recorded touching nonetheless moved: this
+      // must never happen.
+      ++moved_unexpectedly;
+      if (verbose) {
+        logger_->warn(DPL,
+                      1113,
+                      "ECO legalization moved untouched cell {} ({}, {}) -> "
+                      "({}, {}).",
+                      inst->getName(),
+                      before.x(),
+                      before.y(),
+                      x,
+                      y);
+      }
+    }
+  }
+
+  if (moved_unexpectedly != 0) {
+    // This must never happen; it would violate the minimal-perturbation
+    // contract.  Fail loudly rather than silently corrupting the placement.
+    logger_->error(DPL,
+                   1114,
+                   "ECO legalization perturbed {} untouched cell(s); "
+                   "minimal-perturbation invariant violated.",
+                   moved_unexpectedly);
+  }
+
+  const double max_disp_um
+      = block_->dbuToMicrons(static_cast<int>(eco_disp_max));
+  const double max_disp_sites
+      = site_width.v > 0 ? static_cast<double>(eco_disp_max) / site_width.v
+                         : 0.0;
+  const int total_cells = network_->getNumCells();
+  // Cells the legalizer is allowed to touch: the legalize set (ECO cells plus
+  // the neighbors they overlapped) and any further immediate neighbor the local
+  // overlap resolution had to displace.  Everything else is provably unmoved.
+  const int touched = static_cast<int>(legalized.size()) + displaced_neighbors;
+  logger_->info(DPL,
+                1115,
+                "ECO legalization: {} cell(s) in legalize set ({} ECO + {} "
+                "overlapping), {} extra neighbor(s) displaced, max ECO "
+                "displacement {:.3f} um ({:.1f} sites); {} of {} cells "
+                "provably unmoved.",
+                legalized.size(),
+                eco_cells.size(),
+                legalized.size() - eco_cells.size(),
+                displaced_neighbors,
+                max_disp_um,
+                max_disp_sites,
+                total_cells - touched,
+                total_cells);
+  logger_->metric("dpl__eco__cells_legalized",
+                  static_cast<int>(legalized.size()));
+  logger_->metric("dpl__eco__displacement__max", max_disp_um);
+  logger_->info(
+      DPL, 1116, "ECO legalization runtime: {:.2f}s", timer.elapsed());
+
+  return static_cast<int>(legalized.size());
+}
+
 void Opendp::updateDbInstLocations()
 {
   for (auto& cell : network_->getNodes()) {
@@ -536,6 +745,92 @@ void Opendp::setInitialGridCells()
       }
     }
   }
+}
+
+// OpenROAD-fork: eco-legalize
+// ECO-scoped variant of setInitialGridCells().  Instead of unplacing every
+// conflicted cell anywhere in the design, we only unplace:
+//   (a) the ECO-touched cells themselves, and
+//   (b) any non-fixed cell that currently overlaps an ECO cell's footprint.
+// Every other placed cell keeps its exact pixels and stays pinned, which is
+// what guarantees the minimal-perturbation invariant.  The returned set is the
+// collection of cells that were unplaced and therefore must be re-legalized by
+// place().
+std::unordered_set<Node*> Opendp::setEcoGridCells(
+    const std::unordered_set<Node*>& eco_cells)
+{
+  // The set of cells we will unplace and re-legalize.  Seed with the ECO set.
+  std::unordered_set<Node*> to_legalize = eco_cells;
+
+  // Paint every placed, non-fixed, non-ECO cell.  While painting, detect cells
+  // that overlap an ECO cell (pixel already claimed by an ECO cell, or claims a
+  // pixel an ECO cell wants).  Those overlappers are added to to_legalize so
+  // the local overlap can be resolved.  We paint ECO cells first so their
+  // pixels are claimed and overlappers are detected deterministically.
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()
+        && eco_cells.contains(node.get())) {
+      grid_->visitCellPixels(
+          *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+            pixel->cell = node.get();
+          });
+    }
+  }
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()
+        && !eco_cells.contains(node.get())) {
+      bool overlaps_eco = false;
+      grid_->visitCellPixels(
+          *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+            if (pixel->cell != nullptr && pixel->cell != node.get()
+                && eco_cells.contains(pixel->cell)) {
+              overlaps_eco = true;
+            } else if (pixel->cell == nullptr) {
+              pixel->cell = node.get();
+            }
+          });
+      if (overlaps_eco) {
+        to_legalize.insert(node.get());
+      }
+    }
+  }
+
+  // Clear all non-fixed pixels; we will repaint only the cells we keep pinned.
+  for (GridY y{0}; y < grid_->getRowCount(); y++) {
+    for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+      Pixel& pixel = grid_->pixel(y, x);
+      if (pixel.cell != nullptr && !pixel.cell->isFixed()) {
+        pixel.cell = nullptr;
+      }
+    }
+  }
+
+  // Pin every placed cell that is not being legalized; unplace the rest.
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() != Node::CELL || node->isFixed()) {
+      continue;
+    }
+    if (!node->isPlaced()) {
+      // Newly inserted ECO cells arrive unplaced; make sure they are scheduled
+      // for legalization.
+      if (eco_cells.contains(node.get())) {
+        to_legalize.insert(node.get());
+      }
+      continue;
+    }
+    if (to_legalize.contains(node.get())) {
+      unplaceCell(node.get());
+    } else {
+      grid_->visitCellPixels(
+          *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+            pixel->cell = node.get();
+            pixel->util = 1.0;
+          });
+      grid_->paintCellPadding(node.get());
+    }
+  }
+
+  return to_legalize;
 }
 
 void Opendp::setFixedGridCells()
