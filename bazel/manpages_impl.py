@@ -34,6 +34,7 @@ import tempfile
 
 
 def _run_pandoc(pandoc, src, dst, to_format):
+    """Run pandoc to convert *src* to *dst* using *to_format* writer."""
     subprocess.run(
         [pandoc, "-s", "-t", to_format, src, "-o", dst, "--quiet"],
         check=True,
@@ -42,7 +43,12 @@ def _run_pandoc(pandoc, src, dst, to_format):
 
 def _process_section(pandoc, md_dir, roff_scratch, html_dir, cat_dir,
                      section_num, skip_stems=None):
-    """Convert every .md in md_dir → roff → HTML + cat pages."""
+    """Convert every .md in *md_dir* to roff, HTML, and cat pages.
+
+    Files whose stem (filename without .md) is in *skip_stems* are
+    left alone — used to avoid re-converting module READMEs as if
+    they were per-function man pages.
+    """
     skip_stems = skip_stems or set()
     for fname in sorted(os.listdir(md_dir)):
         if not fname.endswith(".md"):
@@ -61,6 +67,12 @@ def _process_section(pandoc, md_dir, roff_scratch, html_dir, cat_dir,
 
 
 def main():
+    """Orchestrate man page generation from the Bazel sandbox.
+
+    Mirrors the source tree layout that md_roff_compat.py expects,
+    runs generation scripts, then converts all resulting markdown
+    to roff / HTML / cat pages via pandoc.
+    """
     p = argparse.ArgumentParser()
     p.add_argument("--pandoc", required=True,
                    help="Path to pandoc binary")
@@ -111,7 +123,8 @@ def main():
             module, path = spec.split(":", 1)
             shutil.copy(path, os.path.join(man2_md, f"{module}.md"))
 
-        # Copy messages.txt files next to each other as ../src/{module}/.
+        # Copy each module's messages.txt to ../src/{module}/messages.txt
+        # so md_roff_compat.py finds them relative to the docs/ directory.
         for spec in args.messages:
             module, path = spec.split(":", 1)
             mod_dir = os.path.join(workdir, "src", module)
