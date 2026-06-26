@@ -247,8 +247,8 @@ void CUGR::markResAwareNets()
   std::ranges::stable_sort(scored, [](const auto& lhs, const auto& rhs) {
     return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
   });
-  const int count
-      = static_cast<int>(std::ceil(scored.size() * kResAwarePercentage / 100));
+  const int count = static_cast<int>(
+      std::ceil(scored.size() * res_aware_percentage_ / 100));
   for (int i = 0; i < count && std::cmp_less(i, scored.size()); i++) {
     gr_nets_[scored[i].first]->setResAware(true);
   }

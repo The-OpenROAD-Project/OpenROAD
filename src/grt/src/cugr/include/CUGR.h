@@ -109,6 +109,10 @@ class CUGR
   {
     resistance_aware_ = resistance_aware;
   }
+  void setResAwareNetsPercentage(float percentage)
+  {
+    res_aware_percentage_ = percentage;
+  }
   void setCongestionIterations(int iterations)
   {
     congestion_iterations_ = iterations;
@@ -255,8 +259,9 @@ class CUGR
   int worst_fanout_ = 1;
   int worst_net_length_ = 1;
 
-  // Percent of eligible candidate nets marked res-aware (FastRoute default).
-  static constexpr float kResAwarePercentage = 15.0f;
+  // Percent of eligible candidate nets marked res-aware; set via
+  // -res_aware_nets_percentage (FastRoute default).
+  float res_aware_percentage_ = 15.0f;
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.

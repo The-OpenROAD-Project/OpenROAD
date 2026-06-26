@@ -2541,8 +2541,7 @@ void GlobalRouter::setResAwareNetsPercentage(float percentage)
                   "nets percentage to 0.");
   }
   if (use_cugr_) {
-    // TODO
-    // cugr_->setResAwareNetsPercentage(percentage);
+    cugr_->setResAwareNetsPercentage(percentage);
   } else {
     fastroute_->setResAwareNetsPercentage(percentage);
   }
