@@ -248,7 +248,7 @@ void CUGR::markResAwareNets()
   });
   const int count
       = static_cast<int>(std::ceil(scored.size() * kResAwarePercentage / 100));
-  for (int i = 0; i < count && i < static_cast<int>(scored.size()); i++) {
+  for (int i = 0; i < count && std::cmp_less(i, scored.size()); i++) {
     gr_nets_[scored[i].first]->setResAware(true);
   }
 
