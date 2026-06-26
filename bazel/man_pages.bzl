@@ -1,38 +1,66 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-"""Bazel rule that invokes docs/Makefile to produce cat/ and html/ man pages.
+"""Hermetic Bazel rule that generates cat/ and html/ man pages.
 
-The output filenames aren't known at analysis time (they depend on which
-modules exist under src/*/), so outputs are declared as TreeArtifacts and
-the real work is delegated to the `bazel-manpages` Makefile target.
+All tools (pandoc, Python interpreter) and all inputs (README files,
+messages.txt files, man1 source markdown, Python scripts) are declared
+as explicit Bazel dependencies.  No host PATH look-ups, no make, no
+nroff — pandoc --to=plain replaces nroff+col for cat pages.
 
-Host requirements: pandoc, nroff (groff), col (bsdextrautils), python3>=3.10.
+Output filenames are not known at analysis time (they depend on how
+many Tcl commands each module exposes), so outputs are declared as
+TreeArtifacts.
 """
 
 def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
 
-    command = """
-set -euo pipefail
-CAT_OUT="$PWD/{cat_out}"
-HTML_OUT="$PWD/{html_out}"
-make --no-print-directory -C docs -f Makefile bazel-manpages \\
-    CAT_ROOT_DIR="$CAT_OUT" HTML_ROOT_DIR="$HTML_OUT"
-""".format(
-        cat_out = cat_dir.path,
-        html_out = html_dir.path,
+    pandoc = ctx.file._pandoc
+    impl = ctx.executable._manpages_impl
+
+    args = ctx.actions.args()
+    args.add("--pandoc", pandoc)
+    args.add("--cat-out", cat_dir.path)
+    args.add("--html-out", html_dir.path)
+
+    for f in ctx.files.scripts:
+        if f.basename.endswith(".py"):
+            args.add("--script", f)
+
+    for readme in ctx.files.readmes:
+        # Derive module name: src/ant/README.md  →  ant
+        parts = readme.short_path.split("/")
+        module = parts[-2] if len(parts) >= 2 else readme.basename
+        args.add("--readme", "{}:{}".format(module, readme.path))
+
+    for msg in ctx.files.messages:
+        # Derive module name: src/ant/messages.txt  →  ant
+        parts = msg.short_path.split("/")
+        module = parts[-2] if len(parts) >= 2 else msg.basename
+        args.add("--messages", "{}:{}".format(module, msg.path))
+
+    for f in ctx.files.docs_srcs:
+        if "/man1/" in f.path and f.basename.endswith(".md"):
+            args.add("--man1-src", f)
+
+    all_inputs = depset(
+        ctx.files.docs_srcs +
+        ctx.files.scripts +
+        ctx.files.readmes +
+        ctx.files.messages +
+        [pandoc],
+        transitive = [ctx.attr._manpages_impl[DefaultInfo].default_runfiles.files],
     )
 
-    ctx.actions.run_shell(
+    ctx.actions.run(
         outputs = [cat_dir, html_dir],
-        inputs = ctx.files.docs_srcs + ctx.files.scripts + ctx.files.readmes + ctx.files.messages,
-        command = command,
+        inputs = all_inputs,
+        executable = impl,
+        arguments = [args],
         mnemonic = "ManPages",
         progress_message = "Generating man pages (cat + html)",
-        use_default_shell_env = True,
-        execution_requirements = {"no-sandbox": "1"},
     )
 
     return [DefaultInfo(
@@ -44,11 +72,11 @@ man_pages = rule(
     implementation = _man_pages_impl,
     attrs = {
         "docs_srcs": attr.label_list(
-            doc = "All source files under docs/ needed by the Makefile.",
+            doc = "Source .md files under docs/md/ needed for man page generation.",
             allow_files = True,
         ),
         "messages": attr.label_list(
-            doc = "Module messages.txt files needed for man3 page generation.",
+            doc = "Module messages.txt files for man3 page generation.",
             allow_files = [".txt"],
         ),
         "readmes": attr.label_list(
@@ -56,8 +84,18 @@ man_pages = rule(
             allow_files = [".md"],
         ),
         "scripts": attr.label_list(
-            doc = "Python/shell scripts for man page generation.",
+            doc = "Python scripts for man page generation.",
             allow_files = True,
+        ),
+        "_pandoc": attr.label(
+            default = "//bazel:pandoc",
+            allow_single_file = True,
+            cfg = "exec",
+        ),
+        "_manpages_impl": attr.label(
+            default = "//bazel:manpages_impl",
+            executable = True,
+            cfg = "exec",
         ),
     },
 )
