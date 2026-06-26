@@ -85,7 +85,7 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
-        "//third-party:mockturtle",
+        "//third-party/mockturtle",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         # TODO Workaround for a bug where `main` is taken from abc leading to false positives
@@ -132,7 +132,7 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
-        "//third-party:mockturtle",
+        "//third-party/mockturtle",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         # TODO Workaround for a bug where `main` is taken from abc leading to false positives

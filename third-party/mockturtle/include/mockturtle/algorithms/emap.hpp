@@ -139,6 +139,10 @@ struct emap_params
   /*! \brief Remove overlapping multi-output cuts */
   bool remove_overlapping_multicuts{ false };
 
+  bool create_po_buffers { false };
+
+  bool insert_buffers { false };
+
   /*! \brief Be verbose. */
   bool verbose{ false };
 };
@@ -212,7 +216,7 @@ struct cut_enumeration_emap_cut
   uint32_t pattern_index;
 
   /* function */
-  kitty::static_truth_table<6> function;
+  kitty::static_truth_table<NInputs> function;
 
   /* list of supergates matching the cut for positive and negative output phases */
   std::array<std::vector<supergate<NInputs>> const*, 2> supergates;
@@ -436,6 +440,12 @@ public:
     }
   }
 
+  static bool same_cut( CutType const& cut1, CutType const& cut2 )
+  {
+    return cut1.size() == cut2.size() && cut1.signature() == cut2.signature()
+           && std::equal( cut1.begin(), cut1.end(), cut2.begin() );
+  }
+
   /*! \brief Inserts a cut into a set without checking dominance.
    *
    * This method will insert a cut into a set and maintain an order.  This
@@ -486,13 +496,13 @@ public:
         --jpos;
         if ( ( *jpos )->size() < cut.size() )
           break;
-        if ( ( *jpos )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *jpos )->begin() ) )
+        if ( same_cut( cut, **jpos ) )
           return;
       }
     }
     else if ( ipos != _pcuts.begin() )
     {
-      if ( ( *( ipos - 1 ) )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *( ipos - 1 ) )->begin() ) )
+      if ( same_cut( cut, **( ipos - 1 ) ) )
       {
         return;
       }
@@ -659,7 +669,7 @@ public:
 
     while ( ipos != _pend )
     {
-      if ( ( *ipos )->signature() == cut.signature() && std::equal( cut.begin(), cut.end(), ( *ipos )->begin() ) )
+      if ( same_cut( cut, **ipos ) )
         return true;
       ++ipos;
     }
@@ -764,14 +774,14 @@ private:
   };
 
 public:
-  static constexpr float epsilon = 0.0005;
+  static constexpr float epsilon = 0.005;
   static constexpr uint32_t max_cut_num = 20;
   using cut_t = cut<CutSize, cut_enumeration_emap_cut<NInputs>>;
   using cut_set_t = emap_cut_set<cut_t, max_cut_num>;
   using cut_merge_t = typename std::array<cut_set_t*, Ntk::max_fanin_size + 1>;
   using fanin_cut_t = typename std::array<cut_t const*, Ntk::max_fanin_size>;
   using support_t = typename std::array<uint8_t, CutSize>;
-  using TT = kitty::static_truth_table<6>;
+  using TT = kitty::static_truth_table<NInputs>;
   using truth_compute_t = typename std::array<TT, CutSize>;
   using node_match_t = std::vector<node_match_emap<NInputs>>;
   using klut_map = std::unordered_map<uint32_t, std::array<signal<klut_network>, 2>>;
@@ -874,7 +884,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover_block( res, old2new );
@@ -932,7 +943,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover( res, old2new );
@@ -977,7 +989,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover( res, old2new );
@@ -1170,7 +1183,6 @@ private:
     static constexpr uint32_t max_cut_size = CutSize > 6 ? 6 : CutSize;
 
     auto index = ntk.node_to_index( n );
-    auto& node_data = node_match[index];
     emap_cut_sort_type sort = emap_cut_sort_type::AREA;
 
     /* compute cuts */
@@ -1390,7 +1402,6 @@ private:
     for ( auto const& n : topo_order )
     {
       auto const index = ntk.node_to_index( n );
-      auto& node_data = node_match[index];
 
       if ( ntk.is_constant( n ) )
       {
@@ -1398,7 +1409,7 @@ private:
         match_constants( index );
         continue;
       }
-      else if ( ntk.is_pi( n ) )
+      if ( ntk.is_pi( n ) )
       {
         add_unit_cut( index );
         continue;
@@ -1435,12 +1446,11 @@ private:
   void merge_cuts_structural( node<Ntk> const& n )
   {
     auto index = ntk.node_to_index( n );
-    auto& node_data = node_match[index];
     emap_cut_sort_type sort = emap_cut_sort_type::AREA;
 
     /* compute cuts */
     const auto fanin = 2;
-    std::array<uint32_t, 2> children_phase;
+    std::array<uint32_t, 2> children_phase{};
     ntk.foreach_fanin( ntk.index_to_node( index ), [&]( auto child, auto i ) {
       lcuts[i] = &cuts[ntk.node_to_index( ntk.get_node( child ) )];
       children_phase[i] = ntk.is_complemented( child ) ? 1 : 0;
@@ -1519,7 +1529,7 @@ private:
       node_data.best_gate[0] = node_data.best_gate[1] = nullptr;
       node_data.same_match = 0;
       node_data.multioutput_match[0] = node_data.multioutput_match[1] = false;
-      node_data.required[0] = node_data.required[1] = std::numeric_limits<float>::max();
+      node_data.required[0] = node_data.required[1] = std::numeric_limits<double>::max();
       node_data.map_refs[0] = node_data.map_refs[1] = 0;
       node_data.est_refs[0] = node_data.est_refs[1] = static_cast<float>( ntk.fanout_size( n ) );
 
@@ -1600,7 +1610,7 @@ private:
     assert( fanin_indexes.size() <= CutSize );
 
     cut_t new_cut = rcuts.add_cut( fanin_indexes.begin(), fanin_indexes.end() );
-    new_cut->function = kitty::extend_to<6>( ntk.node_function( n ) );
+    new_cut->function = kitty::extend_to<NInputs>( ntk.node_function( n ) );
 
     /* match cut and compute data */
     compute_cut_data( new_cut, n );
@@ -1617,6 +1627,8 @@ private:
 
       /* reset mapping */
       node_match[index].map_refs[0] = node_match[index].map_refs[1] = 0u;
+      node_match[index].arrival[0] = node_match[index].arrival[1] = 0.0;
+      node_match[index].required[0] = node_match[index].required[1] = std::numeric_limits<double>::max();
 
       if ( ntk.is_constant( n ) )
         continue;
@@ -2342,6 +2354,13 @@ private:
         }
       }
 
+        // guard against unmapped nodes: if neither phase has a best gate, skip
+      if ( node_data.best_gate[0] == nullptr && node_data.best_gate[1] == nullptr )
+      {
+        // no valid mapping stored for this node (e.g., not in cover); skip arrival/area.
+        continue;
+      }
+
       uint8_t use_phase = node_data.best_gate[0] != nullptr ? 0 : 1;
 
       /* compute arrival of use_phase */
@@ -2952,7 +2971,6 @@ private:
       if ( node_data.same_match )
       {
         /* pick best implementation between the two alternatives */
-        unsigned best_match_phase = node_data.best_gate[0] == nullptr ? 1 : 0;
         unsigned use_phase = g0.gate == nullptr ? 1 : 0;
         if ( g0.gate != nullptr && g1.gate != nullptr )
         {
@@ -3123,7 +3141,7 @@ private:
   {
     auto& node_data = node_match[index];
 
-    kitty::static_truth_table<6> zero_tt;
+    kitty::static_truth_table<NInputs> zero_tt;
     auto const supergates_zero = library.get_supergates( zero_tt );
     auto const supergates_one = library.get_supergates( ~zero_tt );
 
@@ -3418,7 +3436,6 @@ private:
     {
       /* store local validity and comparison info */
       bool valid = true;
-      bool is_best = true;
       bool respects_required = true;
       uint32_t it_counter = 0;
 
@@ -3552,7 +3569,6 @@ private:
   template<bool DO_AREA>
   void multi_node_update( node<Ntk> const& n )
   {
-    uint32_t check_index = ntk.node_to_index( n );
     multi_match_t const& tuple_data = multi_node_match[node_tuple_match[ntk.node_to_index( n )].index][0];
     uint64_t signature = 0;
 
@@ -3768,8 +3784,7 @@ private:
     cut->ignore = true;
     rcuts.append_cut( cut );
 
-    uint32_t num_cuts_after = rcuts.size();
-    assert( num_cuts_after == num_cuts_pre + 1 );
+    assert( rcuts.size() == num_cuts_pre + 1 );
 
     rcuts.limit( num_cuts_pre );
 
@@ -4203,7 +4218,7 @@ private:
       {
         if ( node_data.map_refs[1] > 0 )
         {
-          old2new[index][1] = res.create_not( old2new[n][0] );
+          old2new[index][1] = res.create_not( old2new[index][0] );
           res.add_binding( res.get_node( old2new[index][1] ), lib_inv_id );
         }
         continue;
@@ -4266,7 +4281,7 @@ private:
       {
         res.create_po( old2new[ntk.node_to_index( ntk.get_node( f ) )][1] );
       }
-      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX )
+      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX && ps.create_po_buffers)
       {
         /* create buffers for POs */
         static uint64_t _buf = 0x2;
@@ -4321,7 +4336,7 @@ private:
       {
         if ( node_data.map_refs[1] > 0 )
         {
-          old2new[index][1] = res.create_not( old2new[n][0] );
+          old2new[index][1] = res.create_not( old2new[index][0] );
           res.add_cell( res.get_node( old2new[index][1] ), genlib_to_cell[lib_inv_id] );
         }
         continue;
@@ -4384,7 +4399,7 @@ private:
       {
         res.create_po( old2new[ntk.node_to_index( ntk.get_node( f ) )][1] );
       }
-      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX )
+      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX && ps.create_po_buffers)
       {
         /* create buffers for POs */
         static uint64_t _buf = 0x2;
@@ -4718,7 +4733,7 @@ private:
     }
 
     const auto tt = cut->function;
-    const kitty::static_truth_table<6> fe = kitty::extend_to<6>( tt );
+    const kitty::static_truth_table<NInputs> fe = kitty::extend_to<NInputs>( tt );
     auto fe_canon = fe;
 
     uint16_t negations_pos = 0;
@@ -5066,6 +5081,7 @@ private:
 
   void multi_init_topo_order()
   {
+    bool topo_ok = true;
     /* create and initialize a choice view to store the tuples */
     choice_view<Ntk> choice_ntk{ ntk };
     multi_add_choices( choice_ntk );
@@ -5094,10 +5110,27 @@ private:
 
     /* sort topologically */
     ntk.foreach_co( [&]( auto const& f ) {
+      if (!topo_ok)
+        return;
       if ( ntk.visited( ntk.get_node( f ) ) == ntk.trav_id() )
         return;
-      multi_topo_sort_rec( choice_ntk, ntk.get_node( f ) );
+      topo_ok = multi_topo_sort_rec( choice_ntk, ntk.get_node( f ) );
     } );
+
+    if (!topo_ok) {
+      std::cerr << "[i] WARNING: failed to compute topological order for multi-output matching, falling back to non-topological order\n";
+      topo_order.clear();
+      multi_node_match.clear();
+      std::memset( node_tuple_match.data(), 0, sizeof( multioutput_info ) * ntk.size() );
+      for ( auto& data : node_match )
+      {
+        data.multioutput_match[0] = false;
+        data.multioutput_match[1] = false;
+      }
+      topo_view<Ntk>( ntk ).foreach_node( [this]( auto n ) {
+        topo_order.push_back( n );
+      } );
+    }
   }
 
   /* Experimental code resticted to only half adders and full adders */
@@ -5105,7 +5138,6 @@ private:
   {
     static_assert( max_multioutput_cut_size > 1 && max_multioutput_cut_size < 7 );
 
-    uint32_t counter = 0;
     multi_leaves_set_t leaves = { 0 };
 
     ntk.foreach_gate( [&]( auto const& n ) {
@@ -5157,7 +5189,13 @@ private:
     }
 
     std::stable_sort( class_list.begin(), class_list.end(), [&]( auto const& a, auto const& b ) {
-      return a.first[2] > b.first[2];
+        if (a.first == b.first) {
+          for (std::size_t i = 0; i < std::min(a.second.size(), b.second.size()); ++i) {
+            if (a.second[i].data > b.second[i].data) return true;
+          }
+          return a.second.size() > b.second.size();
+        }
+      return a.first > b.first;
     } );
 
     /* combine and match: specific code for 2-output cells */
@@ -5182,7 +5220,7 @@ private:
             continue;
 
           /* check compatibility */
-          if ( !multi_check_partally_dangling( index_i, index_j, cut_i ) )
+          if ( !multi_check_partially_dangling( index_i, index_j, cut_i ) )
             continue;
 
           multi_node_match_local.push_back( { data_i, data_j } );
@@ -5191,29 +5229,72 @@ private:
     }
   }
 
+  bool node_in_tfi( uint32_t dst_idx, uint32_t src_idx )
+  {
+    if ( dst_idx == src_idx )
+      return true;
+
+    ntk.incr_trav_id();
+    const auto mark = ntk.trav_id();
+
+    bool found = false;
+
+    std::function<void(node<Ntk> const&)> rec = [&]( node<Ntk> const& n ) {
+      if ( found )
+        return;
+
+      if ( ntk.visited( n ) == mark )
+        return;
+      ntk.set_visited( n, mark );
+
+      if ( ntk.node_to_index( n ) == dst_idx )
+      {
+        found = true;
+        return;
+      }
+
+      ntk.foreach_fanin( n, [&]( auto const& f ) {
+        rec( ntk.get_node( f ) );
+      } );
+    };
+
+    rec( ntk.index_to_node( src_idx ) );
+    return found;
+  }
+
   /* Experimental code */
   template<bool OverlapFilter>
   void multi_filter_and_match( multi_cuts_t const& multi_cuts, multi_single_matches_t const& multi_node_match_local )
   {
+    multi_cut_set.clear();
+    multi_node_match.clear();
     multi_cut_set.reserve( multi_node_match_local.size() );
     multi_node_match.reserve( multi_node_match_local.size() );
 
-    ntk.incr_trav_id();
-
-    for ( auto& pair : multi_node_match_local )
+    for ( auto const& pair : multi_node_match_local )
     {
       uint32_t index1 = pair[0].node_index;
       uint32_t index2 = pair[1].node_index;
       uint32_t cut_index1 = pair[0].cut_index;
       uint32_t cut_index2 = pair[1].cut_index;
+
+      assert( index1 < index2 );
+
       multi_cut_t const& cut1 = multi_cuts.cuts( index1 )[cut_index1];
       multi_cut_t const& cut2 = multi_cuts.cuts( index2 )[cut_index2];
 
-      assert( index1 < index2 );
+      /* Reject structurally dependent pairs. */
+      const bool index1_in_tfi_of_index2 = node_in_tfi( index1, index2 );
+      const bool index2_in_tfi_of_index1 = node_in_tfi( index2, index1 );
+      if ( index1_in_tfi_of_index2 || index2_in_tfi_of_index1 )
+      {
+        continue;
+      }
 
       /* remove incompatible multi-output cuts */
       bool is_new = true;
       uint32_t insertion_index = multi_node_match.size();
+
       if constexpr ( OverlapFilter )
       {
         if ( multi_gate_check_overlapping( index1, index2, cut1 ) )
@@ -5223,16 +5304,14 @@ private:
       {
         if ( multi_gate_check_incompatible( index1, index2, is_new, insertion_index ) )
           continue;
-        // if ( is_new && multi_gate_check_overlapping( index1, index2, cut1 ) )
-        //   continue;
       }
 
       /* copy cuts */
       cut_t new_cut1, new_cut2;
       new_cut1.set_leaves( cut1.begin(), cut1.end() );
       new_cut2.set_leaves( cut2.begin(), cut2.end() );
-      new_cut1->function = kitty::extend_to<6>( multi_cuts.truth_table( cut1 ) );
-      new_cut2->function = kitty::extend_to<6>( multi_cuts.truth_table( cut2 ) );
+      new_cut1->function = kitty::extend_to<NInputs>( multi_cuts.truth_table( cut1 ) );
+      new_cut2->function = kitty::extend_to<NInputs>( multi_cuts.truth_table( cut2 ) );
 
       /* Multi-output Boolean matching, continue if no match */
       std::array<cut_t, max_multioutput_output_size> cut_pair = { new_cut1, new_cut2 };
@@ -5252,7 +5331,6 @@ private:
       }
       else
       {
-        // multi_gate_mark_visited( index1, index2, cut1 );
         multi_gate_mark_compatibility( index1, index2, insertion_index );
       }
 
@@ -5260,11 +5338,17 @@ private:
       multi_cut_set.push_back( cut_pair );
 
       /* re-index data */
-      multi_match_data new_data1, new_data2;
+      multi_match_data new_data1{};
+      multi_match_data new_data2{};
+
       new_data1.node_index = index1;
-      new_data1.cut_index = multi_cut_set.size() - 1;
+      new_data1.cut_index = static_cast<uint32_t>( multi_cut_set.size() - 1 );
+      new_data1.in_tfi = index1_in_tfi_of_index2 ? 1 : 0;
+
       new_data2.node_index = index2;
-      new_data2.cut_index = multi_cut_set.size() - 1;
+      new_data2.cut_index = static_cast<uint32_t>( multi_cut_set.size() - 1 );
+      new_data2.in_tfi = index2_in_tfi_of_index1 ? 1 : 0;
+
       multi_match_t p = { new_data1, new_data2 };
 
       /* add cuts to the correct bucket */
@@ -5281,8 +5365,8 @@ private:
 
   bool multi_compute_cut_data( std::array<cut_t, max_multioutput_output_size>& cut_tuple )
   {
-    std::array<kitty::static_truth_table<6>, max_multioutput_output_size> tts;
-    std::array<kitty::static_truth_table<6>, max_multioutput_output_size> tts_order;
+    std::array<kitty::static_truth_table<NInputs>, max_multioutput_output_size> tts;
+    std::array<kitty::static_truth_table<NInputs>, max_multioutput_output_size> tts_order;
     std::array<size_t, max_multioutput_output_size> order = {};
     std::array<uint16_t, max_multioutput_output_size> phase = { 0 };
     std::array<uint8_t, max_multioutput_output_size> phase_order;
@@ -5291,11 +5375,19 @@ private:
 
     for ( auto i = 0; i < max_multioutput_output_size; ++i )
     {
-      tts[i] = kitty::extend_to<6>( cut_tuple[i]->function );
-      if ( ( tts[i]._bits & 1 ) == 1 )
-      {
-        tts[i] = ~tts[i];
-        phase[i] = 1;
+      tts[i] = kitty::extend_to<NInputs>( cut_tuple[i]->function );
+      if constexpr (NInputs <= 6) {
+        if ( ( tts[i]._bits & 1 ) == 1 )
+        {
+          tts[i] = ~tts[i];
+          phase[i] = 1;
+        }
+      } else {
+        if ( ( tts[i]._bits[0] & 1 ) == 1 )
+        {
+          tts[i] = ~tts[i];
+          phase[i] = 1;
+        }
       }
     }
 
@@ -5330,7 +5422,7 @@ private:
     return true;
   }
 
-  inline bool multi_check_partally_dangling( uint32_t index1, uint32_t index2, multi_cut_t const& cut1 )
+  inline bool multi_check_partially_dangling( uint32_t index1, uint32_t index2, multi_cut_t const& cut1 )
   {
     bool valid = true;
 
@@ -5585,7 +5677,10 @@ private:
         {
           /* fix cycle: remove multi-output match */
           choice_ntk.foreach_choice( repr, [&]( auto const& p ) {
-            node_tuple_match[ntk.node_to_index( p )].data = 0;
+            auto idx = ntk.node_to_index( p );
+            node_tuple_match[idx].data = 0;
+            node_match[idx].multioutput_match[0] = false;
+            node_match[idx].multioutput_match[1] = false;
             return true;
           } );
           choice_ntk.remove_choice( g );
