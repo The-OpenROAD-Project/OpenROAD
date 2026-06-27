@@ -490,15 +490,16 @@ ClassMatch* Mapping::allocMatches(const int n)
 
 void Mapping::collectPrimaryOutputs()
 {
-  std::set<ControlNet> primaryOutputNets;
-  std::set<std::pair<ControlNet, Net>> fixupSet;
+  std::set<ControlNet> primary_output_nets;
+  std::set<std::pair<ControlNet, Net>> fixup_set;
 
   auto registerPrimaryOutput = [&](Net net) {
     auto cnet = subject_.stripInverter(net);
-    if (isMappable(cnet.net())) {
-      primaryOutputNets.insert(cnet);
+    auto driver = subject_.graph.resolve(cnet.net()).first;
+    if (isMappable(cnet.net()) || driver->isMapped()) {
+      primary_output_nets.insert(cnet);
       if (cnet.net() != net) {
-        fixupSet.insert({cnet, net});
+        fixup_set.insert({cnet, net});
       }
     }
   };
@@ -529,8 +530,9 @@ void Mapping::collectPrimaryOutputs()
     }
   });
 
-  primary_outputs_.assign(primaryOutputNets.begin(), primaryOutputNets.end());
-  primary_output_fixups_.assign(fixupSet.begin(), fixupSet.end());
+  primary_outputs_.assign(primary_output_nets.begin(),
+                          primary_output_nets.end());
+  primary_output_fixups_.assign(fixup_set.begin(), fixup_set.end());
 }
 
 void Mapping::computeFanouts()
