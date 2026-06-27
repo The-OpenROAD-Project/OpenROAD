@@ -26,6 +26,7 @@ or_integration_tests(
     eco_round_trip
     repair_timing_eco
     repair_hold_eco
+    repair_timing_closure
     eqy_repair_setup2
     eqy_repair_setup5
     fanin_fanout1

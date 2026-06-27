@@ -197,6 +197,7 @@ TESTS = [
     "repair_tie13_hier",
     "repair_timing_eco",
     "repair_hold_eco",
+    "repair_timing_closure",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",

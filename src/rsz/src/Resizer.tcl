@@ -760,6 +760,301 @@ proc rsz::eco_report_hold_summary { delta hold_b hold_a setup_b setup_a } {
 }
 
 ################################################################
+#
+# repair_timing_closure -- unified setup+hold ECO convergence loop.
+#
+# This is the *composition* layer: it does NOT reimplement setup repair, hold
+# repair, legalization or STA.  It iterates the existing pieces to convergence:
+#
+#   loop until converged or -max_iters:
+#     1. repair_timing (setup)   -- the real setup engine; honors dont_touch.
+#     2. eco-legalize ONLY the moved/resized/inserted cells (improve_eco_-
+#        legalization), leaving the rest of the placement pinned.
+#     3. incremental STA: OpenSTA re-times only the affected fanout cone lazily
+#        on the next slack query, so reading WNS below *is* the incremental STA.
+#     4. repair_timing -hold     -- the real hold engine; with allow_setup_-
+#        violations OFF it already backs off any delay insert that breaks setup.
+#     5. eco-legalize the hold-touched cells; incremental STA again.
+#     6. check setup+hold WNS: STOP when both >= 0, or when neither improved
+#        (no-improvement), or when -max_iters is reached.
+#
+# Hard invariants (non-negotiable):
+#   * TERMINATION: bounded by -max_iters AND a no-improvement detector, so the
+#     loop cannot spin forever even if timing never fully closes.
+#   * NO SETUP REGRESSION: each iteration snapshots setup WNS at entry; if the
+#     iteration (setup+hold+legalize) leaves setup worse than it started by
+#     more than a float epsilon, the iteration is rolled back via undo_eco and
+#     the loop stops.  This is the explicit guard against setup/hold ping-pong
+#     (a hold fix that re-breaks setup).
+#   * dont_touch is honored throughout because every underlying engine skips
+#     dont_touch instances/nets; the loop never touches a cell directly.
+#
+# Everything is additive/opt-in: nothing here runs unless the user invokes
+# repair_timing_closure.  The default repair_timing / repair_timing_eco /
+# repair_hold_eco / report_checks paths are byte-for-byte unchanged.
+
+sta::define_cmd_args "repair_timing_closure" {[-max_iters iters]\
+                                              [-eco_file filename]\
+                                              [-setup_args setup_arg_list]\
+                                              [-hold_args hold_arg_list]\
+                                              [-max_displacement disp]\
+                                              [-verbose]}
+
+proc repair_timing_closure { args } {
+  sta::parse_key_args "repair_timing_closure" args \
+    keys {-max_iters -eco_file -setup_args -hold_args -max_displacement} \
+    flags {-verbose}
+  sta::check_argc_eq0 "repair_timing_closure" $args
+
+  set max_iters 10
+  if { [info exists keys(-max_iters)] } {
+    set max_iters $keys(-max_iters)
+    sta::check_positive_integer "-max_iters" $max_iters
+  }
+  set eco_file ""
+  if { [info exists keys(-eco_file)] } {
+    set eco_file $keys(-eco_file)
+  }
+  set setup_args {}
+  if { [info exists keys(-setup_args)] } {
+    set setup_args $keys(-setup_args)
+  }
+  set hold_args {}
+  if { [info exists keys(-hold_args)] } {
+    set hold_args $keys(-hold_args)
+  }
+  set disp_args {}
+  if { [info exists keys(-max_displacement)] } {
+    set disp_args [list -max_displacement $keys(-max_displacement)]
+  }
+  set verbose [info exists flags(-verbose)]
+
+  set block [rsz::eco_block "repair_timing_closure"]
+
+  # Open one outer ECO journal that spans the whole loop so the entire change
+  # set can be replayed/persisted, and so a regressing iteration can be undone.
+  begin_eco
+
+  # Baseline (entry) timing.
+  set setup_wns0 [rsz::eco_wns]
+  set setup_tns0 [rsz::eco_tns]
+  set hold_wns0 [rsz::eco_hold_wns]
+  set hold_tns0 [rsz::eco_hold_tns]
+
+  # Per-iteration trajectory for the convergence report.  Row 0 is the
+  # baseline so the trajectory is self-describing.
+  set traj {}
+  lappend traj [list 0 $setup_wns0 $setup_tns0 $hold_wns0 $hold_tns0 0 0]
+
+  set prev_setup_wns $setup_wns0
+  set prev_hold_wns $hold_wns0
+  set stop_reason "max_iters"
+  set iters_run 0
+  set eps 1e-12
+
+  for { set iter 1 } { $iter <= $max_iters } { incr iter } {
+    set iters_run $iter
+
+    # --- Step 1: setup repair (real engine, honors dont_touch) ---
+    set snap_pre [rsz::eco_netlist_snapshot $block]
+    repair_timing -setup {*}$setup_args
+    set snap_post_setup [rsz::eco_netlist_snapshot $block]
+
+    # --- Step 2: eco-legalize only the setup-touched cells ---
+    set setup_cells [rsz::eco_changed_cells $snap_pre $snap_post_setup]
+    if { [llength $setup_cells] > 0 } {
+      improve_eco_legalization -cells $setup_cells {*}$disp_args
+    }
+
+    # --- Step 3: incremental STA happens lazily on the next slack query ---
+
+    # --- Step 4: hold repair (real engine; backs off setup-breaking inserts) ---
+    set snap_pre_hold [rsz::eco_netlist_snapshot $block]
+    repair_timing -hold {*}$hold_args
+    set snap_post_hold [rsz::eco_netlist_snapshot $block]
+
+    # --- Step 5: eco-legalize the hold-touched cells ---
+    set hold_cells [rsz::eco_changed_cells $snap_pre_hold $snap_post_hold]
+    if { [llength $hold_cells] > 0 } {
+      improve_eco_legalization -cells $hold_cells {*}$disp_args
+    }
+
+    # --- Step 6: incremental STA + convergence check ---
+    set setup_wns [rsz::eco_wns]
+    set setup_tns [rsz::eco_tns]
+    set hold_wns [rsz::eco_hold_wns]
+    set hold_tns [rsz::eco_hold_tns]
+
+    # Cell/buffer accounting for this iteration (whole-iteration delta).
+    set iter_delta [rsz::eco_compute_delta $snap_pre $snap_post_hold]
+    set cells_changed [expr {
+      [llength [dict get $iter_delta resized]]
+      + [dict get $iter_delta insts_added]
+    }]
+    set bufs_inserted [dict get $iter_delta bufs_inserted]
+
+    lappend traj [list $iter $setup_wns $setup_tns $hold_wns $hold_tns \
+      $cells_changed $bufs_inserted]
+
+    if { $verbose } {
+      utl::report [format \
+        "  iter %2d: setup WNS %10.4f  hold WNS %10.4f  cells %d  bufs %d" \
+        $iter [expr { $setup_wns * 1e9 }] [expr { $hold_wns * 1e9 }] \
+        $cells_changed $bufs_inserted]
+    }
+
+    # INVARIANT (no-setup-regression / ping-pong guard): the loop must never
+    # leave setup worse than the loop BASELINE.  The ECO journal opened at
+    # begin_eco spans the whole loop, and odb's undoEco reverts the *entire*
+    # open journal back to that baseline (it has no per-iteration checkpoint).
+    # So if the cumulative setup WNS has dropped below baseline -- e.g. a hold
+    # fix re-broke setup and setup repair could not recover it -- we roll the
+    # whole loop back to the pristine baseline and stop.  This guarantees the
+    # caller is never handed a design with worse setup than it started with.
+    if { $setup_wns < [expr { $setup_wns0 - $eps }] } {
+      utl::warn RSZ 246 [format \
+        "iteration %d left cumulative setup WNS %.4g below baseline %.4g;\
+ reverting the entire closure ECO to baseline and stopping (anti-ping-pong\
+ guard)." \
+        $iter $setup_wns $setup_wns0]
+      # Revert the full journal to the loop entry state, then refresh
+      # parasitics so the subsequent slack queries reflect the restored netlist
+      # (mirrors the eco_round_trip undo flow).
+      odb::dbDatabase_undoEco $block
+      catch { estimate_parasitics -placement }
+      set setup_wns $setup_wns0
+      set setup_tns $setup_tns0
+      set hold_wns $hold_wns0
+      set hold_tns $hold_tns0
+      # Drop the regressing trajectory row we just added.
+      set traj [lrange $traj 0 end-1]
+      set stop_reason "setup_regression_reverted"
+      break
+    }
+
+    # Converged: both setup and hold are clean.
+    if { $setup_wns >= [expr { -$eps }] && $hold_wns >= [expr { -$eps }] } {
+      set stop_reason "converged"
+      break
+    }
+
+    # No-improvement detector: if neither setup nor hold WNS improved by more
+    # than epsilon this iteration, further iterations will not help -- stop.
+    set setup_gain [expr { $setup_wns - $prev_setup_wns }]
+    set hold_gain [expr { $hold_wns - $prev_hold_wns }]
+    if { $setup_gain <= $eps && $hold_gain <= $eps } {
+      set stop_reason "no_improvement"
+      break
+    }
+
+    set prev_setup_wns $setup_wns
+    set prev_hold_wns $hold_wns
+  }
+
+  # Final timing (post-loop).
+  set setup_wns_final [rsz::eco_wns]
+  set setup_tns_final [rsz::eco_tns]
+  set hold_wns_final [rsz::eco_hold_wns]
+  set hold_tns_final [rsz::eco_hold_tns]
+
+  rsz::eco_report_closure $traj \
+    $setup_wns0 $setup_tns0 $hold_wns0 $hold_tns0 \
+    $setup_wns_final $setup_tns_final $hold_wns_final $hold_tns_final \
+    $iters_run $max_iters $stop_reason
+
+  # Optionally persist the exact change set captured over the whole loop.
+  if { $eco_file ne "" } {
+    write_eco $eco_file
+    utl::report "ECO change set written ([file tail $eco_file])"
+  }
+
+  # POST-CONDITION assertion: setup must not be worse than the loop baseline.
+  if { $setup_wns_final < [expr { $setup_wns0 - $eps }] } {
+    utl::error RSZ 247 [format \
+      "closure loop left setup WNS worse than baseline (%.4g -> %.4g);\
+ this violates the no-setup-regression invariant." \
+      $setup_wns0 $setup_wns_final]
+  }
+
+  return [dict create \
+    iters_run $iters_run \
+    max_iters $max_iters \
+    stop_reason $stop_reason \
+    setup_wns_before $setup_wns0 \
+    setup_wns_after $setup_wns_final \
+    setup_tns_before $setup_tns0 \
+    setup_tns_after $setup_tns_final \
+    hold_wns_before $hold_wns0 \
+    hold_wns_after $hold_wns_final \
+    hold_tns_before $hold_tns0 \
+    hold_tns_after $hold_tns_final \
+    trajectory $traj]
+}
+
+# Worst hold (min-path) total negative slack, companion to eco_tns (setup).
+proc rsz::eco_hold_tns { } {
+  return [sta::total_negative_slack_cmd min]
+}
+
+# Names of instances that changed (resized OR newly inserted) between two
+# netlist snapshots.  This is what the loop feeds to improve_eco_legalization
+# so only ECO-touched cells are re-legalized.  Removed instances are not
+# returned (they are gone -- nothing to legalize).
+proc rsz::eco_changed_cells { before after } {
+  lassign $before insts_b nets_b
+  lassign $after insts_a nets_a
+  set changed {}
+  dict for { name master_a } $insts_a {
+    if { ![dict exists $insts_b $name] } {
+      # Added instance.
+      lappend changed $name
+    } elseif { [dict get $insts_b $name] ne $master_a } {
+      # Resized (master swapped) in place.
+      lappend changed $name
+    }
+  }
+  return $changed
+}
+
+# Print the per-iteration convergence trajectory and the headline closure
+# summary.  The trajectory makes termination and anti-ping-pong auditable: each
+# row shows setup/hold WNS+TNS, cells changed and buffers inserted that iter.
+proc rsz::eco_report_closure {
+  traj
+  su_wns0 su_tns0 ho_wns0 ho_tns0
+  su_wnsf su_tnsf ho_wnsf ho_tnsf
+  iters_run max_iters stop_reason
+} {
+  utl::report ""
+  utl::report "================ timing-closure convergence loop ==============="
+  utl::report "  iter   setupWNS   setupTNS    holdWNS    holdTNS  cells  bufs"
+  utl::report "  ----------------------------------------------------------------"
+  foreach row $traj {
+    lassign $row it sw st hw ht cc bi
+    utl::report [format "  %4d %10.4f %10.4f %10.4f %10.4f %6d %5d" \
+      $it [expr { $sw * 1e9 }] [expr { $st * 1e9 }] \
+      [expr { $hw * 1e9 }] [expr { $ht * 1e9 }] $cc $bi]
+  }
+  utl::report "  ----------------------------------------------------------------"
+  utl::report [format "  setup WNS (ns)  %12.4f -> %12.4f" \
+    [expr { $su_wns0 * 1e9 }] [expr { $su_wnsf * 1e9 }]]
+  utl::report [format "  setup TNS (ns)  %12.4f -> %12.4f" \
+    [expr { $su_tns0 * 1e9 }] [expr { $su_tnsf * 1e9 }]]
+  utl::report [format "  hold  WNS (ns)  %12.4f -> %12.4f" \
+    [expr { $ho_wns0 * 1e9 }] [expr { $ho_wnsf * 1e9 }]]
+  utl::report [format "  hold  TNS (ns)  %12.4f -> %12.4f" \
+    [expr { $ho_tns0 * 1e9 }] [expr { $ho_tnsf * 1e9 }]]
+  utl::report "  ----------------------------------------------------------------"
+  utl::report [format "  iterations run  : %d / %d (cap)" $iters_run $max_iters]
+  utl::report [format "  stop reason     : %s" $stop_reason]
+  set setup_clean [expr { $su_wnsf >= -1e-12 ? "yes" : "no" }]
+  set hold_clean [expr { $ho_wnsf >= -1e-12 ? "yes" : "no" }]
+  utl::report [format "  setup closed    : %s" $setup_clean]
+  utl::report [format "  hold  closed    : %s" $hold_clean]
+  utl::report "================================================================"
+}
+
+################################################################
 
 sta::define_cmd_args "report_design_area" {}
 
