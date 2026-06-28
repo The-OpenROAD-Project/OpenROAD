@@ -268,6 +268,7 @@ class RepairDesign : sta::dbStaState
   const sta::Scene* corner_ = nullptr;
 
   bool reroute_ = false;
+  int rerouted_nets_ = 0;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

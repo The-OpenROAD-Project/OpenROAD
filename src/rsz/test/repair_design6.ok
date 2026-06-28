@@ -28,6 +28,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0034] Found 132 slew violations.
 [INFO RSZ-0036] Found 59 capacitance violations.
 [INFO RSZ-0039] Resized 6 instances.
+[INFO RSZ-0044] Rerouted 4 nets.
 [INFO RSZ-0038] Inserted 301 buffers in 132 nets.
 max slew
 

@@ -1108,6 +1108,7 @@ void RepairDesign::repairNet(sta::Net* net,
         // reduces wire resistance enough, it may fix the slew violation
         // without requiring driver resizing or buffer insertion.
         if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
+          rerouted_nets_++;
           estimate_parasitics_->updateParasitics();
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
@@ -2447,6 +2448,9 @@ void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
   }
   if (resize_count_ > 0) {
     logger_->info(utl::RSZ, 39, "Resized {} instances.", resize_count_);
+  }
+  if (rerouted_nets_ > 0) {
+    logger_->info(utl::RSZ, 44, "Rerouted {} nets.", rerouted_nets_);
   }
   if (inserted_buffer_count_ > 0) {
     logger_->info(utl::RSZ,
