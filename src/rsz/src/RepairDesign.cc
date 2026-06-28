@@ -135,12 +135,14 @@ void RepairDesign::computeSlewRCFactor()
   slew_rc_factor_ = factor * (1 + pessimism);
 }
 
-// Repair long wires, max slew, max capacitance, max fanout violations
 bool RepairDesign::rerouteEnabled() const
 {
   return reroute_;
 }
 
+// Repair long wires, max slew, max capacitance, max fanout violations
+// The whole enchilada.
+// max_wire_length zero for none (meters)
 void RepairDesign::repairDesign(double max_wire_length,
                                 double slew_margin,
                                 double cap_margin,
