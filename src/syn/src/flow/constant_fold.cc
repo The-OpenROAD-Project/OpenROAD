@@ -448,10 +448,10 @@ static void foldCombinationals(Graph& g)
   });
 }
 
-static Bundle sliceDff(Graph& g,
-                       const Dff* original,
-                       uint32_t base,
-                       uint32_t width)
+static BundleView sliceDff(Graph& g,
+                           const Dff* original,
+                           uint32_t base,
+                           uint32_t width)
 {
   assert(width > 0);
 
@@ -575,7 +575,7 @@ static bool foldSequentials(Graph& g)
               break;
             }
           }
-          Bundle new_out_slice = sliceDff(g, dff, i, slice_width);
+          BundleView new_out_slice = sliceDff(g, dff, i, slice_width);
           for (uint32_t k = 0; k < slice_width; k++) {
             new_out[i + k] = new_out_slice[k];
           }
