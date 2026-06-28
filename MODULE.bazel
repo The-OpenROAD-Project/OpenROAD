@@ -241,6 +241,49 @@ orfs.default(
 
 # --- External archives ---
 
+# --- Pandoc pre-built binaries (used by //docs:man_pages) ---
+# Pandoc is not on BCR; download platform-specific release archives.
+# SHA-256 values come from the GitHub Releases API digest field.
+_PANDOC_VERSION = "3.10"
+
+_PANDOC_BUILD_FILE = """\
+filegroup(
+    name = "pandoc",
+    srcs = glob(["**/bin/pandoc"]),
+    visibility = ["//visibility:public"],
+)
+"""
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "pandoc_linux_amd64",
+    build_file_content = _PANDOC_BUILD_FILE,
+    sha256 = "e0f8af62d0f267d22baa5bcefe6d5dda3a097ccc60de794b759fe03159923244",
+    url = "https://github.com/jgm/pandoc/releases/download/{v}/pandoc-{v}-linux-amd64.tar.gz".format(v = _PANDOC_VERSION),
+)
+
+http_archive(
+    name = "pandoc_linux_arm64",
+    build_file_content = _PANDOC_BUILD_FILE,
+    sha256 = "55413dfb0c1aec861641fe858f1f73e84848f3db497b1c0c02e62887ea76f4a4",
+    url = "https://github.com/jgm/pandoc/releases/download/{v}/pandoc-{v}-linux-arm64.tar.gz".format(v = _PANDOC_VERSION),
+)
+
+http_archive(
+    name = "pandoc_macos_x86_64",
+    build_file_content = _PANDOC_BUILD_FILE,
+    sha256 = "6334f4d9af7c9e37e761dfad56fa5507685f6d29724ebf31c4be6d5c654a3161",
+    url = "https://github.com/jgm/pandoc/releases/download/{v}/pandoc-{v}-x86_64-macOS.zip".format(v = _PANDOC_VERSION),
+)
+
+http_archive(
+    name = "pandoc_macos_arm64",
+    build_file_content = _PANDOC_BUILD_FILE,
+    sha256 = "d9cad01d96ae774a0dc8c8c45bb1ad3e4c5ff2cc2e24f45958f5f9b7974aee34",
+    url = "https://github.com/jgm/pandoc/releases/download/{v}/pandoc-{v}-arm64-macOS.zip".format(v = _PANDOC_VERSION),
+)
+
 # Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
 # reference @slang resolve without modification. OpenROAD source uses
 # @sv-lang directly; this alias only exists for the slang-elab submodule.
