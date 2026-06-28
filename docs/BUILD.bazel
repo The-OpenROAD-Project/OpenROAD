@@ -5,10 +5,9 @@ load("//bazel:man_pages.bzl", "man_pages")
 
 man_pages(
     name = "man_pages",
-    docs_srcs = [
-        "Makefile",
-    ] + glob(["md/**/*.md"]),
+    docs_srcs = glob(["md/**/*.md"]),
     messages = [
+        "//:messages_txt",
         "//src/ant:messages_txt",
         "//src/cts:messages_txt",
         "//src/dbSta:messages_txt",
@@ -62,10 +61,13 @@ man_pages(
         "//src/utl:README.md",
     ],
     scripts = [
-        "//docs/src/scripts:link_readmes.sh",
         "//docs/src/scripts:md_roff_compat.py",
         "//docs/src/scripts:manpage.py",
         "//docs/src/scripts:extract_utils.py",
+    ],
+    tags = [
+        "local",
+        "manual",
     ],
     visibility = ["//visibility:public"],
 )
