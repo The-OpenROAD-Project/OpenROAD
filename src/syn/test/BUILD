@@ -115,9 +115,12 @@ cc_test(
         "elab_testcases.h",
         "equivalence_check.h",
     ],
+    data = ["macro_test_cells.lib"],
     deps = [
+        "//src/syn",
         "//src/syn/src/elab",
         "//src/syn/src/ir",
+        "//src/tst",
         "@googletest//:gtest",
     ],
 )

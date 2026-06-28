@@ -63,7 +63,11 @@ where algorithmic correctness, edge cases, and regression-bug pins belong.
 Their *only* job is to prove the Tcl/Python binding marshals arguments and
 returns without crashing -- not to validate the algorithm. Call the command once
 on a trivial design and assert it ran. Prefer `PASSFAIL_TESTS` (exit-code only)
-over golden diffs so there is no `.ok` file to maintain.
+over golden diffs so there is no `.ok` file to maintain. For commands whose
+execution is expensive (e.g. `detailed_route`), running them even once is the
+wrong cost trade-off -- see [Binding tests for expensive
+commands](#binding-tests-for-expensive-commands) for how to prove translation
+without executing the work.
 
 ### Tier 3 -- Full-flow integration tests (keep deliberately few)
 
@@ -135,6 +139,90 @@ The existing fixture stack already supports this:
   `.tcl`/`.i` files and flag any without a smoke test, guaranteeing binding
   coverage without hand-curation.
 
+### Binding tests for expensive commands
+
+The Tier-2 recipe -- "call the command once on a trivial design" -- assumes the
+command is cheap to run. For commands that do heavy work (`global_route`,
+`global_placement`, `clock_tree_synthesis`, `detailed_route`, ...), executing the
+algorithm contributes *nothing* to the binding guarantee and costs
+seconds-to-minutes per test. The translation contract you actually want to pin is
+narrow: every flag/key reaches the right C++ parameter and defaults are applied.
+None of that requires the algorithm to run.
+
+**Preferred policy: validate arguments in C++, not in the binding.** A value
+check written in a `.tcl` proc (`sta::check_positive_integer`, range/cardinality
+guards) only protects the Tcl entry point -- the Python binding and direct C++
+callers bypass it, so the check has to be duplicated or is simply missing. Put
+the check behind the C++ entry point instead and one implementation covers all
+three usages. `utl::Validator` (`src/utl/include/utl/validation.h`) exists to make
+this easy: construct it with a `Logger*` and `ToolId`, then call
+`check_positive` / `check_non_negative` / `check_range` / `check_percentage` /
+`check_non_null`, each of which emits a tool-scoped logged error on violation. Use
+it in the engine's argument-ingestion path (e.g. where parameters are set) rather
+than re-deriving the same guard per language. This also keeps the `.tcl`/`.py`
+proc to near-pure marshaling, which shrinks what the binding test must cover --
+and the validation itself becomes a cheap Tier-1 C++ test that exercises the error
+paths directly, with no process launch.
+
+The key observation is that a command's .tcl proc or .py function does two separable
+things: it **configures** the engine from the parsed arguments, then calls a
+distinct **execute** entry point that does the expensive work. The execute step
+is almost always a single thin SWIG free function -- `grt::global_route`,
+`cts::run_triton_cts`, the `gpl::replace_*_cmd` calls. Because it is a plain proc
+in the tool's namespace, a binding test can rename it (in Tcl) or reassign/mock it (in Python) to a no-op spy, then
+invoke the *real* public command. All the argument handling runs; the engine does
+not, so the test is sub-millisecond.
+
+Mind the proc's preconditions, though. Invoking the real command also runs any
+guards that sit *before* the execute call, and many commands require a loaded
+design: `global_route` errors `GRT-0051`/`GRT-0052` on a missing tech/block
+(`src/grt/src/GlobalRouter.tcl`) and `clock_tree_synthesis` errors `CTS-0103` on
+a missing block (`src/cts/src/TritonCTS.tcl`) before their execute calls are ever
+reached. So a no-design spy test for those fails on the guard, not on the spy.
+Give the test the *minimal* DB the proc's preconditions demand -- a tiny LEF/DEF
+or a `SimpleDbFixture`-style block is enough, since the expensive *algorithm*
+still never runs. (A command with no such precondition can be spied with no
+design loaded at all.) If you instead want to assert
+that a precondition guard itself fires, that is a separate, cheaper test: invoke
+the command with the precondition unmet and check the error code -- no spy needed,
+because the guard errors out before the execute call regardless.
+
+What you assert depends on where the configure logic lives, which varies by
+command:
+
+- **Setters, then a separate execute (e.g. `global_route`, `clock_tree_synthesis`).**
+  The proc translates each flag/key into its own cheap `set_*` SWIG call
+  (`grt::set_infinite_cap`, `cts::set_insertion_delay`, ...) before the execute
+  call. Spy *only* the execute; let the setters run for real and assert the
+  resulting configured state via getters (or spy the individual setters and check
+  they were called with the right values). This is the most common shape.
+- **Arguments forwarded to C++ (e.g. `global_placement`).** The proc passes the
+  raw key/flag arrays to a C++ command function that parses them itself. This is
+  the shape the validate-in-C++ policy points toward: parsing *and* `utl::Validator`
+  checks live in one place that all bindings share, so a C++ unit test on that
+  parsing/validation is the natural binding check; spying the execute still lets
+  the proc reach it without running the placer.
+- **Configure and execute fused (e.g. `detailed_route`).** A single
+  `detailed_route_cmd` both marshals its arguments and calls `main()`. Spying it
+  skips the run, so capture the arguments the spy received and assert them. Better,
+split the marshaling (setParams) from execution (main) so the cheap part is
+  independently reachable -- this is the refactor that makes the command match the
+  others, and lets a C++ test assert a `getParams()` round-trip directly.
+
+In every case the heavy `main()`/run is off the translation path, so the test
+costs nothing at runtime. As with cheap commands, the C++ unit test remains the
+source of truth for algorithmic correctness -- do not assert behavior here.
+
+The reusable design principle: **validate arguments in C++, and keep the
+expensive execute step as its own thin free function distinct from argument
+handling.** Validation in C++ covers Tcl, Python, and C++ callers from one place;
+a separate execute step keeps the heavy work off the translation path. Most
+commands already separate execute; a fused entry point like `detailed_route_cmd`
+is the outlier worth refactoring. Commands built this way are cheap to
+binding-test regardless of how expensive their execution is. (Free-function entry
+points also matter because a method on a SWIG object is much harder to intercept
+than a namespaced proc.)
+
 ## Decision tree for a new test
 
 ```
@@ -142,6 +230,7 @@ Is it pure logic with no DB?            -> Tier 1, no fixture
 Does it need an odb DB only?            -> Tier 1, tst::Fixture / SimpleDbFixture
 Does it need STA/resizer/router state?  -> Tier 1, tst::IntegratedFixture
 Is it only proving a binding marshals?  -> Tier 2, smoke test (PASSFAIL)
+  ...and the command is expensive to run? -> Tier 2, intercept the C++ entry (no execution)
 Does it genuinely span multiple tools?  -> Tier 3, flow test (golden, used sparingly)
 ```
 

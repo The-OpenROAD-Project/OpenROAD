@@ -40,6 +40,6 @@ foreach(_t abc_test sm_test cm_test)
 endforeach()
 
 add_executable(elab_test elab_test.cc)
-target_link_libraries(elab_test ${_syn_test_libs} syn_elab syn_ir)
+target_link_libraries(elab_test ${_syn_test_libs} syn_elab syn_flow syn_lib syn_ir tst)
 gtest_discover_tests(elab_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(build_and_test elab_test)
