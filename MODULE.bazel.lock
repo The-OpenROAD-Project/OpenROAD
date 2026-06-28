@@ -402,7 +402,8 @@
     "https://bcr.bazel.build/modules/fmt/11.1.3/MODULE.bazel": "3f422eb59fec5a54faf6d6c5b4cfbd173ad989e2ee5a2da944e19a39a8a90e00",
     "https://bcr.bazel.build/modules/fmt/11.2.0.bcr.1/MODULE.bazel": "3a90c5cfcb4650166bebc6dac8c4ebcfcbf629f5cfa36267e208dd65be886eec",
     "https://bcr.bazel.build/modules/fmt/12.0.0/MODULE.bazel": "5308b44200f97df17217c053367537c6d469fe46a61ab0dfc1038c04ceb1d735",
-    "https://bcr.bazel.build/modules/fmt/12.0.0/source.json": "20a9d47908eaa8fd46ee7b2fbb0fd9ff02175addfdc1658817798c52604882c1",
+    "https://bcr.bazel.build/modules/fmt/12.1.0/MODULE.bazel": "c6b460c936f408b371bf12ccee5ecbd5aed8f6abfb6e8b63fad0c622715fd458",
+    "https://bcr.bazel.build/modules/fmt/12.1.0/source.json": "d7b35221043d8d7c69e2a64d6a0783c97aa49c5ce198ee0a5ccd18c99f070b1a",
     "https://bcr.bazel.build/modules/freetype/2.13.3/MODULE.bazel": "9931a69ef01caba64cc7516c03c2c6c8ad0707526185d31eb81d2987163880e0",
     "https://bcr.bazel.build/modules/freetype/2.13.3/source.json": "a051388a7fa6b0e2ccf8e70bc30ecb00d9708fa98e5c2adac1d67514d8332cc3",
     "https://bcr.bazel.build/modules/gawk/5.3.2.bcr.1/MODULE.bazel": "cdf8cbe5ee750db04b78878c9633cc76e80dcf4416cbe982ac3a9222f80713c8",
@@ -616,6 +617,7 @@
     "https://bcr.bazel.build/modules/rules_cc/0.1.5/MODULE.bazel": "88dfc9361e8b5ae1008ac38f7cdfd45ad738e4fa676a3ad67d19204f045a1fd8",
     "https://bcr.bazel.build/modules/rules_cc/0.2.0/MODULE.bazel": "b5c17f90458caae90d2ccd114c81970062946f49f355610ed89bebf954f5783c",
     "https://bcr.bazel.build/modules/rules_cc/0.2.11/MODULE.bazel": "e94f24f065bf2191dba2dace951814378b66a94bb3bcc48077492fe0508059b5",
+    "https://bcr.bazel.build/modules/rules_cc/0.2.13/MODULE.bazel": "eecdd666eda6be16a8d9dc15e44b5c75133405e820f620a234acc4b1fdc5aa37",
     "https://bcr.bazel.build/modules/rules_cc/0.2.14/MODULE.bazel": "353c99ed148887ee89c54a17d4100ae7e7e436593d104b668476019023b58df8",
     "https://bcr.bazel.build/modules/rules_cc/0.2.15/MODULE.bazel": "6a0a4a75a57aa6dc888300d848053a58c6b12a29f89d4304e1c41448514ec6e8",
     "https://bcr.bazel.build/modules/rules_cc/0.2.16/MODULE.bazel": "9242fa89f950c6ef7702801ab53922e99c69b02310c39fb6e62b2bd30df2a1d4",
@@ -818,6 +820,8 @@
     "https://bcr.bazel.build/modules/xorgproto/2024.1.bcr.1/source.json": "2da7b346f94c7d5bb890d8a964110b38b439bd254ad14ec3d37022a7ac9356d8",
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/MODULE.bazel": "d0841e12e92973d7e4c97557198335788890dafa9487d6dc0f9b852053a6c5c0",
     "https://bcr.bazel.build/modules/yaml-cpp/0.9.0/source.json": "07a9973d6cee81c8bdb1902e8f90064a0ef9aa2262bffc4df2ed577956c08e1b",
+    "https://bcr.bazel.build/modules/yosys-slang/0.0.0/MODULE.bazel": "a0c2d49792cb5e49db7871aef6b1c022188fbda6023450da1d7a040ce6e02b9e",
+    "https://bcr.bazel.build/modules/yosys-slang/0.0.0/source.json": "9de60d310212a28c1fdc5a2b4260466a0fa697b79ecf2505aa1389a8cd06c30d",
     "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/MODULE.bazel": "2297c50983665b308449febf965616d11c28ce70ef04829f7a4de97d5d537726",
     "https://bcr.bazel.build/modules/yosys/0.62.bcr.2/source.json": "72bf96ef1d9c881889e8e31e9a2af5f3bbbe5c18d83712e5ece7899f1d87655f",
     "https://bcr.bazel.build/modules/yq.bzl/0.1.1/MODULE.bazel": "9039681f9bcb8958ee2c87ffc74bdafba9f4369096a2b5634b88abc0eaefa072",
@@ -2509,6 +2513,32 @@
             "toolchains_llvm+",
             "toolchains_llvm",
             "toolchains_llvm+"
+          ]
+        ]
+      }
+    },
+    "@@yosys-slang+//:dependency_support/slang_ext.bzl%vendored_slang_extension": {
+      "general": {
+        "bzlTransitiveDigest": "5QIB1e5+v5Cj2rslpyAj2M5L+l6B1BFByldLM+ewKMA=",
+        "usagesDigest": "bNfWY5+YI9i3FTlUQx6/VFcWZJN2hVi9BG7IvG4OGf4=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "vendored-slang": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:git.bzl%git_repository",
+            "attributes": {
+              "remote": "https://github.com/MikePopoloski/slang.git",
+              "commit": "f04e81565793c768b747a8fd058f3e7aeceee1b5",
+              "build_file": "@@yosys-slang+//:dependency_support/slang.BUILD"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "yosys-slang+",
+            "bazel_tools",
+            "bazel_tools"
           ]
         ]
       }
