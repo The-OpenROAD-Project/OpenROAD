@@ -32,11 +32,13 @@ bool _dbCorner::operator==(const _dbCorner& rhs) const
 
 bool _dbCorner::operator<(const _dbCorner& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ >= rhs.name_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 _dbCorner::_dbCorner(_dbDatabase* db)
