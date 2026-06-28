@@ -3,7 +3,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 50%
@@ -32,7 +31,7 @@ Routing layers:      10
           Routing      Original      Derated      Resource
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
-metal1     Horizontal      24480          4896          80.00%
+metal1     Horizontal          0             0          0.00%
 metal2     Vertical        17918          5375          70.00%
 metal3     Horizontal      24480         12240          50.00%
 metal4     Vertical        12172          6086          50.00%
@@ -55,7 +54,7 @@ Bottleneck:            (8, 0, 0)
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
-metal1            4896             0            0.00%             0 /  0 /  0
+metal1               0             0            0.00%             0 /  0 /  0
 metal2            5375           538           10.01%             0 /  0 /  0
 metal3           12240          1260           10.29%             0 /  0 /  0
 metal4            6086           389            6.39%             0 /  0 /  0
@@ -66,7 +65,7 @@ metal8            2142             0            0.00%             0 /  0 /  0
 metal9            1190             0            0.00%             0 /  0 /  0
 metal10           1190             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            47467          2445            5.15%             0 /  0 /  0
+Total            42571          2445            5.74%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563

@@ -730,9 +730,12 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
-    arc_delay_calc_->reduceParasitic(
-        parasitic, net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(net);
+
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(net);
+    }
   }
 }
 
@@ -856,9 +859,12 @@ void EstimateParasitics::estimateWireParasiticSteiner(
         if (spef_writer) {
           spef_writer->writeNet(corner, net, parasitic, parasitics);
         }
-        arc_delay_calc_->reduceParasitic(
-            parasitic, net, corner, sta::MinMaxAll::all());
-        parasitics->deleteParasiticNetwork(net);
+
+        if (arc_delay_calc_->reduceSupported()) {
+          arc_delay_calc_->reduceParasitic(
+              parasitic, net, corner, sta::MinMaxAll::all());
+          parasitics->deleteParasiticNetwork(net);
+        }
       }
       delete tree;
     }
@@ -908,7 +914,22 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
   int max_layer = block_->getMaxRoutingLayer();
 
   if (max_layer < 0) {
-    max_layer = db_->getTech()->getRoutingLayerCount() / 2;
+    // Fall back to roughly the middle of the frontside routing stack.
+    // Halving the total routing-layer count picks the wrong stack when
+    // backside layers (BPR, BM*, BRDL) push the midpoint below the
+    // frontside boundary; counting only frontside levels keeps the
+    // heuristic on the side that hosts the signal routes whose cut
+    // resistance this function averages.
+    odb::dbTech* tech = db_->getTech();
+    const int total_levels = tech->getRoutingLayerCount();
+    odb::dbTechLayer* first_front = tech->firstFrontsideRoutingLayer();
+    if (first_front != nullptr) {
+      const int first_level = first_front->getRoutingLevel();
+      const int frontside_count = total_levels - first_level + 1;
+      max_layer = first_level - 1 + frontside_count / 2;
+    } else {
+      max_layer = total_levels / 2;
+    }
   }
 
   odb::dbTechLayer* min_tech_layer
@@ -958,7 +979,6 @@ void EstimateParasitics::parasiticNodeConnectPins(
       if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
-
           insertViaResistances(pin_layer,
                                tree_layer,
                                parasitics,
@@ -1023,10 +1043,9 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
 
       // Resolve from/to endpoints first, so we only allocate a new mid_node
       // when this iteration actually needs one. On the terminal iteration the
-      // resistor connects directly to the pin or tree anchor; if we had
-      // pre-allocated a mid_node here it would never be wired up and would
-      // become a floating ParasiticNode (singular row in the conductance
-      // matrix for Prima/CCS).
+      // resistor connects directly to the pin or tree anchor; pre-allocating
+      // a mid_node here would create a floating ParasiticNode (singular row
+      // in the conductance matrix for Prima/CCS).
       sta::ParasiticNode* from_node = prev_node;
       sta::ParasiticNode* to_node = nullptr;
       bool need_new_mid = true;

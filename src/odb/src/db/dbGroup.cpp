@@ -149,10 +149,11 @@ void _dbGroup::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
-  info.children["name"].add(name_);
   info.children["power_nets"].add(power_nets_);
   info.children["ground_nets"].add(ground_nets_);
+
+  // User Code Begin collectMemInfo
+  info.children["name"].add(name_);
   // User Code End collectMemInfo
 }
 

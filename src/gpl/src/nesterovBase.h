@@ -19,6 +19,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/random/mersenne_twister.hpp"
 #include "boost/unordered/unordered_flat_map.hpp"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
@@ -786,6 +787,8 @@ struct NesterovBaseVars
 
   const float minPhiCoef;
   float maxPhiCoef;  // may be updated after initialization
+  const int initialPlacePerturbationSeed;
+  const float initialPlacePerturbationDist;
 
   static constexpr float minWireLengthForceBar = -300;
 };
@@ -1256,11 +1259,15 @@ class NesterovBase
 
   odb::dbGroup* getGroup() const { return pb_->getGroup(); }
 
+  std::pair<int, int> calculatePlacementPerturbationOffset(
+      int dbu_per_micron) const;
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_ = nullptr;
+  mutable boost::random::mt19937 generator_;
 
   // Build (or rebuild) the GPU Nesterov device context against the current
   // nb_gcells_ size and sync host coords/grads into it. Called from

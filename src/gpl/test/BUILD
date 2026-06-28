@@ -30,6 +30,10 @@ TESTS = [
     "simple01-td-tune",
     "simple01-td-repair",
     "simple01-uniform",
+    "simple01-vcts",
+    "simple01-vcts-clamp",
+    "simple01-vcts-noclk",
+    "simple01-vcts-userlat",
     "simple02",
     "simple02-rd",
     "simple03",
@@ -159,6 +163,7 @@ cc_test(
     ],
     deps = [
         "//src/ant",
+        "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",
         "//src/dpl",
         "//src/est",

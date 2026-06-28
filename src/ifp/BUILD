@@ -35,7 +35,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/ifp/InitFloorplan.hh",
         "src/MakeInitFloorplan.cc",
         ":swig",
         ":tcl",
@@ -48,6 +47,7 @@ cc_library(
         "src",
     ],
     deps = [
+        ":ifp",
         "//:ord",
         "//src/dbSta",
         "//src/odb/src/db",
@@ -111,5 +111,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/ifp/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/ifp/test:__pkg__",
+    ],
 )

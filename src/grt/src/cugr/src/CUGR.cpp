@@ -98,6 +98,12 @@ void CUGR::init(const int min_routing_layer,
   gr_nets_.reserve(base_nets.size());
   int index = 0;
   for (const CUGRNet& base_net : base_nets) {
+    if (!base_net.isValid()) {
+      gr_nets_.push_back(nullptr);
+      net_indices_.push_back(index);
+      index++;
+      continue;
+    }
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
     gr_nets_.back()->setNdrCosts(computeNdrCosts(base_net.getDbNet()));
     net_indices_.push_back(index);
@@ -114,6 +120,9 @@ float CUGR::calculatePartialSlack()
     estimator->estimateAllGlobalRouteParasitics();
   }
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     float slack = getNetSlack(net->getDbNet());
     slacks.push_back(slack);
     net->setSlack(slack);
@@ -133,6 +142,9 @@ float CUGR::calculatePartialSlack()
   // Set the non critical nets slack as the maximum float value, so they can be
   // ordered by the default sorting method.
   for (const int& net_index : net_indices_) {
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     if (gr_nets_[net_index]->getSlack() > slack_th) {
       gr_nets_[net_index]->setSlack(
           std::ceil(std::numeric_limits<float>::max()));
@@ -150,6 +162,9 @@ float CUGR::getNetSlack(odb::dbNet* net)
 void CUGR::setInitialNetSlacks()
 {
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     float slack = getNetSlack(net->getDbNet());
     net->setSlack(slack);
   }
@@ -194,6 +209,9 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
 {
   net_indices.clear();
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     if (!net->getRoutingTree()) {
       continue;
     }
@@ -215,7 +233,13 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
 
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     if (gr_nets_[net_index]->getNumPins() < 2) {
+      continue;
+    }
+    if (gr_nets_[net_index] == nullptr) {
       continue;
     }
     PatternRoute pattern_route(gr_nets_[net_index].get(),
@@ -226,6 +250,9 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     pattern_route.constructSteinerTree();
     pattern_route.constructRoutingDAG();
     pattern_route.run();
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                               gr_nets_[net_index]->getNdrCosts());
   }
@@ -249,6 +276,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   grid_graph_->extractCongestionView(congestion_view);
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
@@ -278,6 +308,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   for (const int net_index : net_indices) {
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree(),
                                  gr_nets_[net_index]->getNdrCosts());
   }
@@ -288,6 +321,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
+    if (gr_nets_[net_index] == nullptr) {
+      continue;
+    }
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
       continue;
@@ -332,6 +368,9 @@ void CUGR::route()
   } else {
     net_indices.reserve(gr_nets_.size());
     for (const auto& net : gr_nets_) {
+      if (net == nullptr) {
+        continue;
+      }
       net_indices.push_back(net->getIndex());
     }
   }
@@ -480,6 +519,9 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
     for (const int net_index : net_indices) {
+      if (gr_nets_[net_index] == nullptr) {
+        continue;
+      }
       GRNet* net = gr_nets_[net_index].get();
       if (!net->hasNdr()) {
         continue;
@@ -548,6 +590,9 @@ void CUGR::write(const std::string& guide_file)
   area_of_wire_patches_ = 0;
   std::stringstream ss;
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     std::vector<std::pair<int, BoxT>> guides;
     getGuides(net.get(), guides);
 
@@ -575,6 +620,9 @@ NetRouteMap CUGR::getRoutes()
 {
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
@@ -633,6 +681,9 @@ NetRouteMap CUGR::getRoutes()
 void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
   std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
+      return false;
+    }
     return std::make_tuple(gr_nets_[lhs]->getSlack(),
                            gr_nets_[lhs]->getBoundingBox().hp())
            < std::make_tuple(gr_nets_[rhs]->getSlack(),
@@ -773,6 +824,9 @@ void CUGR::printStatistics() const
   uint64_t wire_length = 0;
   int via_count = 0;
   for (const auto& net : gr_nets_) {
+    if (net == nullptr) {
+      continue;
+    }
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
@@ -844,7 +898,11 @@ void CUGR::updateDbCongestion()
   db_gcell->addGridPatternY(y_corner, y_size, gridline_size);
 
   odb::dbTech* db_tech = db_->getTech();
-  for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
+  // Skip sub-min layers: they hold no routing wire and their 0-capacity edges
+  // would otherwise export as fully-blocked cells.
+  for (int layer = constants_.min_routing_layer;
+       layer < grid_graph_->getNumLayers();
+       layer++) {
     odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
     if (db_layer == nullptr) {
       continue;
@@ -913,6 +971,9 @@ void CUGR::getBTermsAccessPoints(
 
 void CUGR::addDirtyNet(odb::dbNet* net)
 {
+  if (!design_) {
+    return;
+  }
   auto it = db_net_map_.find(net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
@@ -929,6 +990,9 @@ void CUGR::addDirtyNet(odb::dbNet* net)
 
 void CUGR::updateNet(odb::dbNet* db_net)
 {
+  if (!design_) {
+    return;
+  }
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
@@ -956,9 +1020,29 @@ void CUGR::updateNet(odb::dbNet* db_net)
   }
 }
 
-// The accessors below are only called after init() has constructed
-// grid_graph_, so we rely on the GridGraph's cached vectors directly
-// without extra null-checks (matching the rest of the file).
+void CUGR::removeNet(odb::dbNet* db_net)
+{
+  if (!design_) {
+    return;
+  }
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end()) {
+    design_->removeNet(db_net);
+    return;
+  }
+
+  GRNet* gr_net = it->second;
+  if (gr_net->getRoutingTree()) {
+    grid_graph_->removeTreeUsage(gr_net->getRoutingTree(),
+                                 gr_net->getNdrCosts());
+  }
+
+  int index = gr_net->getIndex();
+  gr_nets_[index] = nullptr;
+  db_net_map_.erase(it);
+
+  design_->removeNet(db_net);
+}
 const std::vector<int>& CUGR::getOriginalResources() const
 {
   return grid_graph_->getOriginalResources();
@@ -1065,6 +1149,9 @@ void CUGR::saveCongestion()
   };
 
   for (const auto& gr_net : gr_nets_) {
+    if (gr_net == nullptr) {
+      continue;
+    }
     if (!gr_net->getRoutingTree()) {
       continue;
     }
@@ -1116,8 +1203,10 @@ void CUGR::saveCongestion()
 
   // Emit one marker per congested 3D edge, tagged with its routing
   // layer. Comment carries capacity/usage/congestion and the source of
-  // the congestion (wire segments, via stubs, or both).
-  for (int l = 0; l < num_layers; l++) {
+  // the congestion (wire segments, via stubs, or both). Skip sub-min
+  // layers: their 0-capacity edges carry only pin-access via demand and
+  // would otherwise emit false congestion markers.
+  for (int l = constants_.min_routing_layer; l < num_layers; l++) {
     const int direction = grid_graph_->getLayerDirection(l);
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(l + 1);
     const int x_max = (direction == MetalLayer::H) ? x_size - 1 : x_size;
@@ -1213,8 +1302,6 @@ void CUGR::routeIncremental()
     }
     route();
   }
-
-  printStatistics();
 }
 
 }  // namespace grt

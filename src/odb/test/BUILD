@@ -178,6 +178,7 @@ COMPULSORY_TESTS = [
     "gcd_def_access",
     "gcd_pdn_def_access",
     "import_package",
+    "lef58_backside_bridge",
     "lef_data_access",
     "lef_mask",
     "multi_tech",
@@ -218,6 +219,8 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "read_3dbv_fail",
+    "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
@@ -282,6 +285,8 @@ filegroup(
         "data/example2.bmap",
         "data/example3.bmap",
         "data/example4.bmap",
+        "data/example_no_coords.3dbv",
+        "data/example_polygon.3dbv",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -297,6 +302,7 @@ filegroup(
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
+        "data/lef58_celledgespacing_numeric.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",

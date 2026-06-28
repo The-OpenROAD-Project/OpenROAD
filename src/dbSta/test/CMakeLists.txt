@@ -21,6 +21,7 @@ or_integration_tests(
     hier_weird_port
     levelize_drvr_vertices1
     make_port
+    modnet_port_alias
     network_edit1
     power1
     read_def_bus_port

@@ -118,10 +118,10 @@ cc_library(
         "src/dr/FlexDR.h",
         "src/dr/FlexGridGraph.h",
         "src/dr/FlexWavefront.h",
+        "src/drt-global.h",
         "src/frDesign.h",
         "src/frRegionQuery.h",
         "src/gc/FlexGC.h",
-        "src/global.h",
         "src/pa/AbstractPAGraphics.h",
         "src/pa/FlexPA.h",
         "src/pa/FlexPA_unique.h",
@@ -343,5 +343,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/drt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/drt/test:__pkg__",
+    ],
 )

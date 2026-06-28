@@ -31,6 +31,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -215,6 +216,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     return estimate_parasitics_;
   }
   bool& matchCellFootprint() { return match_cell_footprint_; }
+  const GlobalSizingConfig& globalSizingConfig() const
+  {
+    return global_sizing_config_;
+  }
   Rebuffer& rebuffer() const { return *rebuffer_; }
   bool isRegister(sta::Vertex* vertex);
 
@@ -699,6 +704,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
                   sta::Slew slews[sta::RiseFall::index_count]);
+  // Worker-safe overload: uses the caller-provided ArcDelayCalc instead of the
+  // shared member, so the table-model lookup can run concurrently.
+  void gateDelays(const sta::LibertyPort* drvr_port,
+                  float load_cap,
+                  const sta::Scene* scene,
+                  const sta::MinMax* min_max,
+                  sta::ArcDelayCalc* arc_delay_calc,
+                  // Return values.
+                  sta::ArcDelay delays[sta::RiseFall::index_count],
+                  sta::Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Slew in_slews[sta::RiseFall::index_count],
@@ -711,6 +726,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                           float load_cap,
                           const sta::Scene* scene,
                           const sta::MinMax* min_max);
+  // Worker-safe overload (see gateDelays above).
+  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
+                          float load_cap,
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max,
+                          sta::ArcDelayCalc* arc_delay_calc);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const sta::RiseFall* rf,
                           float load_cap,
@@ -1005,6 +1026,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool sizing_keep_vt_ = false;
   bool disable_buffer_pruning_ = false;
 
+  // Global sizing config consumed by GlobalSizingPolicy. Populated by
+  // initBlock() from `set_global_sizing_config` dbProperties; in-struct
+  // defaults apply when no property is present.
+  GlobalSizingConfig global_sizing_config_;
+
   // Clock buffer pattern configuration
   std::string clock_buffer_string_;
   std::string clock_buffer_footprint_;
@@ -1037,6 +1063,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class OdbCallBack;
   friend class SetupLegacyBase;
   friend class RepairTargetCollector;
+  friend class LRSubproblem;
   friend class DelayEstimatorReporter;
 };
 
