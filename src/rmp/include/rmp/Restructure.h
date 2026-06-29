@@ -69,7 +69,6 @@ class Restructure
   void resynthAnnealing(sta::Scene* corner);
   void resynthEmap(sta::Scene* corner);
   void resynthGenetic(sta::Scene* corner);
-
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,
@@ -173,7 +172,6 @@ class Restructure
   unsigned annealing_init_ops_ = 10;
 
   // Emap
-
   bool emap_create_po_buffers_ = false;
   bool emap_insert_buffers_ = false;
   bool emap_map_multioutput_ = false;

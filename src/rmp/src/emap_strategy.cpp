@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
 #include "emap_strategy.h"
 
@@ -143,7 +143,7 @@ EmapStrategy::FindLibertyCellByMasterName(sta::Sta* sta,
   auto* libs = sta->network()->libertyLibraryIterator();
   while (libs->hasNext()) {
     auto lib = libs->next();
-    if (auto* cell = lib->findCell(cell_name.c_str())) {
+    if (auto* cell = lib->findCell(cell_name)) {
       return cell->libertyCell();
     }
   }
@@ -179,7 +179,7 @@ std::optional<EmapStrategy::TieMaster> EmapStrategy::FindTieMaster(
 
         if ((value && func->op() == sta::FuncExpr::Op::one)
             || (!value && func->op() == sta::FuncExpr::Op::zero)) {
-          return TieMaster{master, port->name()};
+          return TieMaster{.master = master, .out_pin = port->name()};
         }
       }
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
 #pragma once
 
@@ -98,10 +98,10 @@ class LogicExtractorFactory
       std::vector<sta::Vertex*>& cut_vertices,
       T& library);
   template <std::predicate<sta::Pin*> T>
-  std::vector<sta::Pin*> AddMisingTopIO(std::vector<sta::Pin*>& pins, T pred);
-  std::vector<sta::Pin*> AddMisingPrimaryInputs(
+  std::vector<sta::Pin*> AddMissingTopIO(std::vector<sta::Pin*>& pins, T pred);
+  std::vector<sta::Pin*> AddMissingPrimaryInputs(
       std::vector<sta::Pin*>& primary_inputs);
-  std::vector<sta::Pin*> AddMisingPrimaryOutputs(
+  std::vector<sta::Pin*> AddMissingPrimaryOutputs(
       std::vector<sta::Pin*>& primary_outputs);
   bool IsCombinationalVtx(sta::Vertex* vertex);
 
@@ -199,8 +199,8 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   if constexpr (is_mockturtle_library_v<T>) {
     // sometimes part of top I/O is missing, causing errors when mockturtle is
     // used
-    primary_inputs = AddMisingPrimaryInputs(primary_inputs);
-    primary_outputs = AddMisingPrimaryOutputs(primary_outputs);
+    primary_inputs = AddMissingPrimaryInputs(primary_inputs);
+    primary_outputs = AddMissingPrimaryOutputs(primary_outputs);
   }
 
   // Remove primary outputs who are undriven. This can happen when a flop
@@ -304,7 +304,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
 }
 
 template <std::predicate<sta::Pin*> T>
-std::vector<sta::Pin*> LogicExtractorFactory::AddMisingTopIO(
+std::vector<sta::Pin*> LogicExtractorFactory::AddMissingTopIO(
     std::vector<sta::Pin*>& pins,
     T pred)
 {

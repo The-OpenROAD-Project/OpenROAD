@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
 #pragma once
 
-#include <cassert>
 #include <utility>
 #include <vector>
 
@@ -23,7 +22,6 @@
 #include "utl/unique_name.h"
 
 namespace cut {
-
 class LogicCut
 {
  public:

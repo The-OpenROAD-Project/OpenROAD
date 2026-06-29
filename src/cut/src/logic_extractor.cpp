@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2024-2025, The OpenROAD Authors
+// Copyright (c) 2024-2026, The OpenROAD Authors
 
 #include "cut/logic_extractor.h"
 
@@ -8,8 +8,6 @@
 #include <utility>
 #include <vector>
 
-#include "cut/abc_library_factory.h"
-#include "cut/logic_cut.h"
 #include "cut/utils.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -281,7 +279,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
         continue;
       }
       // Output pin is driven by something in the cutset. Keep it.
-      if (cut_instances.find(connected_instance) != cut_instances.end()) {
+      if (cut_instances.contains(connected_instance)) {
         filtered_pin_set.insert(pin);
       }
     }
@@ -333,18 +331,18 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   return result;
 }
 
-std::vector<sta::Pin*> LogicExtractorFactory::AddMisingPrimaryInputs(
+std::vector<sta::Pin*> LogicExtractorFactory::AddMissingPrimaryInputs(
     std::vector<sta::Pin*>& primary_inputs)
 {
-  return AddMisingTopIO(primary_inputs, [&](sta::Pin* pin) {
+  return AddMissingTopIO(primary_inputs, [&](sta::Pin* pin) {
     return open_sta_->network()->direction(pin)->isInput();
   });
 }
 
-std::vector<sta::Pin*> LogicExtractorFactory::AddMisingPrimaryOutputs(
+std::vector<sta::Pin*> LogicExtractorFactory::AddMissingPrimaryOutputs(
     std::vector<sta::Pin*>& primary_outputs)
 {
-  return AddMisingTopIO(primary_outputs, [&](sta::Pin* pin) {
+  return AddMissingTopIO(primary_outputs, [&](sta::Pin* pin) {
     return open_sta_->network()->direction(pin)->isOutput();
   });
 }

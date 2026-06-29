@@ -1,56 +1,29 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2023-2025, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
-#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
-#include <array>
-#include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <map>
-#include <mutex>
-#include <set>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "base/abc/abc.h"
-#include "base/main/abcapis.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
-#include "db_sta/dbReadVerilog.hh"
-#include "db_sta/dbSta.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "lorina/common.hpp"
-#include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
-#include "misc/vec/vecPtr.h"
-#include "mockturtle/algorithms/emap.hpp"
 #include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/networks/aig.hpp"
-#include "mockturtle/networks/block.hpp"
-#include "mockturtle/utils/name_utils.hpp"
 #include "mockturtle/utils/tech_library.hpp"
-#include "mockturtle/views/names_view.hpp"
-#include "mockturtle/views/topo_view.hpp"
-#include "odb/db.h"
-#include "odb/dbSet.h"
-#include "odb/lefin.h"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/SdcClass.hh"
-#include "sta/Sta.hh"
-#include "sta/Units.hh"
-#include "sta/VerilogReader.hh"
-#include "tst/fixture.h"
 #include "utl/deleter.h"
-#include "utl/unique_name.h"
 
 namespace abc {
 Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
