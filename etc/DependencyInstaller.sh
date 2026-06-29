@@ -357,7 +357,8 @@ _install_bison() {
                     fi
                 done
                 if [[ ${success} -ne 1 ]]; then
-                    (error "Could not download bison-${BISON_VERSION}.tar.gz from any mirror.")
+                    warn "Could not download bison-${BISON_VERSION}.tar.gz from any mirror."
+                    return 1
                 fi
             }
             _execute "Downloading Bison" _download_bison
