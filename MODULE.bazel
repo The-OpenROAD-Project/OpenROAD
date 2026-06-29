@@ -23,7 +23,7 @@ single_version_override(
 
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "coin-or-lemon", version = "1.3.1")
+bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.18")
@@ -158,18 +158,7 @@ archive_override(
 )
 
 bazel_dep(name = "yosys", version = "0.62.bcr.2", dev_dependency = True)
-
-# yosys-slang is not on BCR. Pin to a commit on povik/yosys-slang master
-# that has the upstream Bazel build (povik/yosys-slang#310) and the
-# slang.so visibility fix (povik/yosys-slang#311). Submodules pull in
-# vendored slang and fmt sources.
-bazel_dep(name = "yosys-slang", dev_dependency = True)
-git_override(
-    module_name = "yosys-slang",
-    commit = "7753ea70431d85929292b90c33b32f6dbdb3b048",
-    init_submodules = True,
-    remote = "https://github.com/povik/yosys-slang.git",
-)
+bazel_dep(name = "yosys-slang", version = "0.0.0", dev_dependency = True)
 
 # --- Extensions ---
 
