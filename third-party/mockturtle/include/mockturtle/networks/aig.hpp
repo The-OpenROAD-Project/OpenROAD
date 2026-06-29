@@ -92,7 +92,7 @@ using aig_storage = storage<regular_node<2, 2, 1>,
 class aig_network
 {
 public:
-#pragma region Types and constructors
+
   static constexpr bool is_aig_network_type = true;
   static constexpr auto min_fanin_size = 2u;
   static constexpr auto max_fanin_size = 2u;
@@ -194,9 +194,9 @@ public:
   {
     return { std::make_shared<aig_storage>( *_storage ) };
   }
-#pragma endregion
 
-#pragma region Primary I / O and constants
+
+
   signal get_constant( bool value ) const
   {
     return { 0, static_cast<uint64_t>( value ? 1 : 0 ) };
@@ -246,9 +246,9 @@ public:
     (void)n;
     return false;
   }
-#pragma endregion
 
-#pragma region Create unary functions
+
+
   signal create_buf( signal const& a )
   {
     return a;
@@ -258,9 +258,9 @@ public:
   {
     return !a;
   }
-#pragma endregion
 
-#pragma region Create binary functions
+
+
   signal create_and( signal a, signal b )
   {
     /* order inputs */
@@ -384,9 +384,9 @@ public:
   {
     return create_xor( create_xor( a, b ), c );
   }
-#pragma endregion
 
-#pragma region Create nary functions
+
+
   signal create_nary_and( std::vector<signal> const& fs )
   {
     return tree_reduce( fs.begin(), fs.end(), get_constant( true ), [this]( auto const& a, auto const& b ) { return create_and( a, b ); } );
@@ -401,9 +401,9 @@ public:
   {
     return tree_reduce( fs.begin(), fs.end(), get_constant( false ), [this]( auto const& a, auto const& b ) { return create_xor( a, b ); } );
   }
-#pragma endregion
 
-#pragma region Create arbitrary functions
+
+
   signal clone_node( aig_network const& other, node const& source, std::vector<signal> const& children )
   {
     (void)other;
@@ -411,9 +411,9 @@ public:
     assert( children.size() == 2u );
     return create_and( children[0u], children[1u] );
   }
-#pragma endregion
 
-#pragma region Has node
+
+
   std::optional<signal> has_and( signal a, signal b )
   {
     /* order inputs */
@@ -446,9 +446,9 @@ public:
 
     return {};
   }
-#pragma endregion
 
-#pragma region Restructuring
+
+
   std::optional<std::pair<node, signal>> replace_in_node( node const& n, node const& old_node, signal new_signal )
   {
     auto& node = _storage->nodes[n];
@@ -825,9 +825,9 @@ public:
 
     _events->release_delete_event( clean_sub_event );
   }
-#pragma endregion
 
-#pragma region Structural properties
+
+
   auto size() const
   {
     return static_cast<uint32_t>( _storage->nodes.size() );
@@ -932,9 +932,9 @@ public:
     (void)n;
     return false;
   }
-#pragma endregion
 
-#pragma region Functional properties
+
+
   kitty::dynamic_truth_table node_function( const node& n ) const
   {
     (void)n;
@@ -942,9 +942,9 @@ public:
     _and._bits[0] = 0x8;
     return _and;
   }
-#pragma endregion
 
-#pragma region Nodes and signals
+
+
   node get_node( signal const& f ) const
   {
     return f.index;
@@ -1033,9 +1033,9 @@ public:
     } );
     return i;
   }
-#pragma endregion
 
-#pragma region Node and signal iterators
+
+
   template<typename Fn>
   void foreach_node( Fn&& fn ) const
   {
@@ -1115,9 +1115,9 @@ public:
       fn( signal{ _storage->nodes[n].children[1] }, 1 );
     }
   }
-#pragma endregion
 
-#pragma region Value simulation
+
+
   template<typename Iterator>
   iterates_over_t<Iterator, bool>
   compute( node const& n, Iterator begin, Iterator end ) const
@@ -1176,9 +1176,9 @@ public:
     result._bits.back() = ( c1.weight ? ~( tt1._bits.back() ) : tt1._bits.back() ) & ( c2.weight ? ~( tt2._bits.back() ) : tt2._bits.back() );
     result.mask_bits();
   }
-#pragma endregion
 
-#pragma region Custom node values
+
+
   void clear_values() const
   {
     std::for_each( _storage->nodes.begin(), _storage->nodes.end(), []( auto& n ) { n.data[0].h2 = 0; } );
@@ -1203,9 +1203,9 @@ public:
   {
     return --_storage->nodes[n].data[0].h2;
   }
-#pragma endregion
 
-#pragma region Visited flags
+
+
   void clear_visited() const
   {
     std::for_each( _storage->nodes.begin(), _storage->nodes.end(), []( auto& n ) { n.data[1].h1 = 0; } );
@@ -1230,14 +1230,14 @@ public:
   {
     ++_storage->trav_id;
   }
-#pragma endregion
 
-#pragma region General methods
+
+
   auto& events() const
   {
     return *_events;
   }
-#pragma endregion
+
 
 public:
   std::shared_ptr<aig_storage> _storage;

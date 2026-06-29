@@ -203,7 +203,7 @@ struct emap_stats
 namespace detail
 {
 
-#pragma region cut set
+
 template<unsigned NInputs>
 struct cut_enumeration_emap_cut
 {
@@ -684,9 +684,9 @@ private:
   typename std::array<CutType*, MaxCuts>::iterator _pend{ _pcuts.begin() };
   uint32_t _set_limit{ MaxCuts };
 };
-#pragma endregion
 
-#pragma region Hashing
+
+
 template<uint32_t max_multioutput_cut_size>
 struct emap_triple_hash
 {
@@ -702,7 +702,7 @@ struct emap_triple_hash
     return seed;
   }
 };
-#pragma endregion
+
 
 template<unsigned NInputs>
 struct best_gate_emap
@@ -1036,7 +1036,7 @@ private:
     return true;
   }
 
-#pragma region Core
+
   template<bool DO_AREA>
   bool compute_mapping_match()
   {
@@ -3810,9 +3810,9 @@ private:
 
     return false;
   }
-#pragma endregion
 
-#pragma region Mapping utils
+
+
   inline double cut_leaves_flow( cut_t const& cut, node<Ntk> const& n, uint8_t phase )
   {
     double flow{ 0.0f };
@@ -4087,9 +4087,9 @@ private:
     }
     return count;
   }
-#pragma endregion
 
-#pragma region Initialize and dump the mapped network
+
+
   void insert_buffers()
   {
     if ( lib_buf_id != UINT32_MAX )
@@ -4716,9 +4716,9 @@ private:
         res.add_cell( res.get_node( f ), genlib_to_cell.at( ntk.get_binding_index( n ) ) );
     }
   }
-#pragma endregion
 
-#pragma region Cuts and matching utils
+
+
   void compute_cut_data( cut_t& cut, node<Ntk> const& n )
   {
     cut->delay = std::numeric_limits<uint32_t>::max();
@@ -4955,7 +4955,7 @@ private:
 
     res->function = tt_res;
   }
-#pragma endregion
+
 
   template<bool DO_AREA>
   inline bool compare_map( double arrival, double best_arrival, float area_flow, float best_area_flow, uint32_t size, uint32_t best_size )
@@ -5047,7 +5047,7 @@ private:
     return power;
   }
 
-#pragma region multioutput
+
   /* Experimental code */
   void compute_multioutput_match()
   {
@@ -5789,7 +5789,7 @@ private:
       multi_set_tfi_dependency_rec( ntk.get_node( f ), dependency_info );
     } );
   }
-#pragma endregion
+
 
 private:
   Ntk const& ntk;
