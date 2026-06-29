@@ -93,6 +93,7 @@ class dbNetwork : public ConcreteNetwork
 
   LibertyCell* libertyCell(Cell* cell) const override;
   const LibertyCell* libertyCell(const Cell* cell) const override;
+  const LibertyCell* testCell(const Cell* cell) const;
   LibertyCell* libertyCell(odb::dbInst* inst);
   LibertyPort* libertyPort(const Pin*) const override;
   odb::dbInst* staToDb(const Instance* instance) const;
@@ -521,7 +522,6 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 
  private:
-  const LibertyCell* getLibertyCell(const Cell* cell) const;
   void addDriverToCacheIfPresent(const Net* net, const Pin* drvr);
   void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);

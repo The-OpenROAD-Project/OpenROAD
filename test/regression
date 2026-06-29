@@ -25,8 +25,19 @@ exec tclsh $0 ${1+"$@"}
 set test_dir [file dirname [file normalize [info script]]]
 set openroad_dir [file dirname $test_dir]
 
+# Parse -threads if present
+if { [set idx [lsearch $argv "-threads"]] != -1 } {
+  set threads [lindex $argv [expr $idx + 1]]
+  set argv [lreplace $argv $idx [expr $idx + 1]]
+}
+
 source [file join $test_dir "regression.tcl"]
 source [file join $test_dir "regression_tests.tcl"]
+
+if { [info exists threads] } {
+  lappend app_options "-threads" $threads
+}
+
 
 proc define_tool_script { tool script } {
   global tool_scripts
