@@ -56,6 +56,7 @@ class MBFF
 
   ~MBFF();
   void Run(int mx_sz, float alpha, float beta);
+  bool IsValidTray(odb::dbInst* tray);
 
  private:
   enum PortName
