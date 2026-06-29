@@ -153,7 +153,8 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for GUI updates)
+  void commitNegotiationPosToOdb();  // Write current cell positions to ODB (for
+                                     // GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);
 
@@ -211,6 +212,17 @@ class NegotiationLegalizer
                                                          int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
+  [[nodiscard]] int effectiveSiteWindow(const NegCell& cell) const;
+  [[nodiscard]] int effectiveRowCap(const NegCell& cell) const;
+  // Asymmetric X search bounds around base_x on row ty. When a macro or the
+  // core boundary cuts one side of the symmetric [-sw, +sw] window short, the
+  // lost reach is shifted to the opposite side so the same number of candidate
+  // sites is still explored. Returns the inclusive (lo_dx, hi_dx) offsets.
+  [[nodiscard]] std::pair<int, int> extendedSiteWindowBounds(
+      const NegCell& cell,
+      int base_x,
+      int target_y,
+      int site_window) const;
   [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
                                                 int x,
                                                 int y) const;
@@ -289,7 +301,8 @@ class NegotiationLegalizer
 
   // Cells that actually changed position during the current negotiation
   // iteration. Passed to the debug observer so cells from prior iterations
-  // are rendered in grey while current-iteration movers keep directional colors.
+  // are rendered in grey while current-iteration movers keep directional
+  // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
   double drc_penalty_{kDrcPenalty};
   int num_threads_{1};

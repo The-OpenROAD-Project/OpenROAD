@@ -101,10 +101,8 @@ void NegotiationLegalizer::legalize()
                 site_search_window_,
                 row_search_window_);
 
-  logger_->info(utl::DPL,
-                1104,
-                "NegotiationLegalizer DRC penalty: {}.",
-                drc_penalty_);
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
@@ -240,7 +238,9 @@ void NegotiationLegalizer::legalize()
     commitNegotiationPosToDpl();
     // this flush may imply functional changes. It hides initial movements for
     // clean debugging negotiation phase.
-    logger_->report("Committing post-init positions to odb; debug move line drawings will exclude gpl-to-init displacement.");
+    logger_->report(
+        "Committing post-init positions to odb; debug move line drawings will "
+        "exclude gpl-to-init displacement.");
     commitNegotiationPosToOdb();
     pushNegotiationPixels();
     logger_->report(run_abacus_
@@ -342,8 +342,12 @@ void NegotiationLegalizer::legalize()
   }
 
   {
-    utl::DebugScopedTimer t(
-        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "commitNegotiationPosToOdb: {}");
+    utl::DebugScopedTimer t(flush_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "commitNegotiationPosToOdb: {}");
     commitNegotiationPosToOdb();
   }
 
@@ -389,7 +393,8 @@ void NegotiationLegalizer::legalize()
 }
 
 // ===========================================================================
-// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI reflects them
+// commitNegotiationPosToOdb – write current cell positions to ODB so the GUI
+// reflects them
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToOdb()
@@ -478,7 +483,8 @@ void NegotiationLegalizer::debugPause(const std::string& msg)
 }
 
 // ===========================================================================
-// commitNegotiationPosToDpl – pass the positions to the DPL original structure (Node)
+// commitNegotiationPosToDpl – pass the positions to the DPL original structure
+// (Node)
 // ===========================================================================
 
 void NegotiationLegalizer::commitNegotiationPosToDpl()
@@ -1059,34 +1065,80 @@ std::vector<int> NegotiationLegalizer::collectNearestValidRows(
     int count_per_side,
     int max_scan) const
 {
-  std::vector<int> rows;
-  rows.reserve(2 * count_per_side + 1);
+  // A "wall" in the Y direction is off-core: the die edge, or a band of rows
+  // with no placement sites at all (e.g. a full-width macro/blockage row).
+  //
+  // Note we deliberately do NOT treat a macro that merely overlaps the probe
+  // column (capacity == 0 at probe_x) as a vertical wall.  probe_x is the
+  // cell's global-placement x, which may sit on top of a macro horizontally;
+  // that horizontal obstruction is resolved by the X-axis window extension, so
+  // it must not collapse the vertical row search.
+  auto hardWall = [&](int r) {
+    if (r < 0 || r + cell.height > grid_h_) {
+      return true;
+    }
+    for (int dy = 0; dy < cell.height; ++dy) {
+      if (!row_has_sites_[r + dy]) {
+        return true;
+      }
+    }
+    return false;
+  };
 
+  // Collect up to `target_valid` valid rows on one side, walking outward until
+  // it has enough, hits a macro/off-core wall, or exceeds `step_cap` steps.
+  // `step_cap` may exceed `max_scan` so the open side can reach further when
+  // the opposite side is walled.
+  auto scan
+      = [&](int dir, int target_valid, int step_cap, bool& hit_wall) {
+          std::vector<int> found;
+          hit_wall = false;
+          for (int step = 1;
+               step <= step_cap && std::cmp_less(found.size(), target_valid);
+               ++step) {
+            const int r = seed_y + dir * step;
+            if (hardWall(r)) {
+              hit_wall = true;
+              break;
+            }
+            if (isValidRow(r, cell, probe_x)) {
+              found.push_back(r);
+            }
+          }
+          return found;
+        };
+
+  // First pass: the nominal symmetric window — up to count_per_side valid rows
+  // on each side, within the max_scan step budget.
+  bool below_wall = false;
+  bool above_wall = false;
+  std::vector<int> below = scan(+1, count_per_side, max_scan, below_wall);
+  std::vector<int> above = scan(-1, count_per_side, max_scan, above_wall);
+
+  // When a macro/off-core wall cuts one side short of its quota, extend the
+  // opposite (open) side by the shortfall so the same number of candidate rows
+  // is still explored. The open side is allowed to walk past max_scan (capped
+  // at 2 * max_scan) to find the extra rows.
+  const int below_deficit
+      = below_wall ? count_per_side - static_cast<int>(below.size()) : 0;
+  const int above_deficit
+      = above_wall ? count_per_side - static_cast<int>(above.size()) : 0;
+  if (above_deficit > 0 && !below_wall) {
+    bool dummy = false;
+    below = scan(+1, count_per_side + above_deficit, 2 * max_scan, dummy);
+  }
+  if (below_deficit > 0 && !above_wall) {
+    bool dummy = false;
+    above = scan(-1, count_per_side + below_deficit, 2 * max_scan, dummy);
+  }
+
+  std::vector<int> rows;
+  rows.reserve(below.size() + above.size() + 1);
   if (isValidRow(seed_y, cell, probe_x)) {
     rows.push_back(seed_y);
   }
-
-  int found_below = 0;
-  int found_above = 0;
-  for (int step = 1; step <= max_scan; ++step) {
-    if (found_below < count_per_side) {
-      const int below_y = seed_y + step;
-      if (isValidRow(below_y, cell, probe_x)) {
-        rows.push_back(below_y);
-        ++found_below;
-      }
-    }
-    if (found_above < count_per_side) {
-      const int above_y = seed_y - step;
-      if (isValidRow(above_y, cell, probe_x)) {
-        rows.push_back(above_y);
-        ++found_above;
-      }
-    }
-    if (found_below >= count_per_side && found_above >= count_per_side) {
-      break;
-    }
-  }
+  rows.insert(rows.end(), below.begin(), below.end());
+  rows.insert(rows.end(), above.begin(), above.end());
   return rows;
 }
 
