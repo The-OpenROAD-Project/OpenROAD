@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
     "const_cell_removal",
     "emap_aes_asap7",
     "emap_gcd_asap7",
+    "emap_jpeg_sky130hd",
     "gcd_annealing1",
     "gcd_annealing2",
     "gcd_asap7",
@@ -101,8 +102,11 @@ filegroup(
         "gcd_asap7.v",
         "gcd_placed.def",
         "helpers.tcl",
+        "jpeg_sky130hd.sdc",
+        "jpeg_sky130hd.v",
         "rcon.def",
         "rcon.sdc",
+        "sky130/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130/sky130hd.rc",
         "sky130/sky130hd.tlef",
@@ -132,6 +136,7 @@ LONG_RUNNING_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "emap_jpeg_sky130hd",
 ]
 
 [
