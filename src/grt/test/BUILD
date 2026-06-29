@@ -97,6 +97,7 @@ TESTS = [
     "report_wire_length6",
     "report_wire_length7",
     "report_wire_length8",
+    "report_net_detours1",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",

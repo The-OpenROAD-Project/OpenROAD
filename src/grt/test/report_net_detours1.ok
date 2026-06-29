@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+Detour metric (final routed WL vs initial Steiner WL):
+  Nets analyzed: 495
+  Total initial Steiner WL: 7187.70um
+  Total final routed WL:    10767.30um
+  Total detour:             3579.60um (ratio 1.498)
+  Worst 5 nets by detour ratio:
+    initial_um    final_um    delta_um    ratio  net
+          8.55       22.80       14.25    2.667  _283_
+          5.70       11.40        5.70    2.000  _233_
+          2.85        5.70        2.85    2.000  _256_
+          2.85        5.70        2.85    2.000  _254_
+          2.85        5.70        2.85    2.000  _247_
