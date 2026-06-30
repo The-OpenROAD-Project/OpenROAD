@@ -1523,30 +1523,35 @@ void GlobalRouter::computePinPositionOnGrid(
   pin.setConnectionLayer(pin_position.layer());
 }
 
+void GlobalRouter::updatePinAccessPoints(Net* net, odb::dbNet* db_net)
+{
+  odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
+  odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
+  cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+  cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+  auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+    if (auto it = ap_map.find(term); it != ap_map.end()) {
+      const auto& ap = it->second;
+      pin.setConnectionLayer(ap.z());
+      pin.setOnGridPosition(
+          grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+    }
+  };
+
+  for (Pin& pin : net->getPins()) {
+    if (pin.isPort()) {
+      updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
+    } else {
+      updatePinPos(pin, pin.getITerm(), iterm_to_aps);
+    }
+  }
+}
+
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
-    odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
-    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
-    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
-
-    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
-      if (auto it = ap_map.find(term); it != ap_map.end()) {
-        const auto& ap = it->second;
-        pin.setConnectionLayer(ap.z());
-        pin.setOnGridPosition(
-            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
-      }
-    };
-
-    for (Pin& pin : net->getPins()) {
-      if (pin.isPort()) {
-        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
-      } else {
-        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
-      }
-    }
+    updatePinAccessPoints(net, db_net);
   }
 }
 
@@ -6351,9 +6356,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 
   if (use_cugr_) {
     cugr_->setVerbose(false);
-    for (odb::dbNet* db_net : dirty_nets_) {
+    const std::vector<odb::dbNet*> dirty_nets(dirty_nets_.begin(),
+                                              dirty_nets_.end());
+    for (odb::dbNet* db_net : dirty_nets) {
       // Rebuild the GlobalRouter pin set from the netlist (as updateDirtyNets
-      // does for FastRoute); updatePinAccessPoints below fixes the positions.
+      // does for FastRoute); the pin access point sync below fixes positions.
       Net* net = getNet(db_net);
       updateNetPins(net);
       net->setDirtyNet(false);
@@ -6363,8 +6370,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     dirty_nets_.clear();
     cugr_->routeIncremental();
     routes_ = cugr_->getRoutes();
-    // Sync pin access points with CUGR's routing, as the full route does.
-    updatePinAccessPoints();
+    // Sync pin access points only for the rerouted nets (full route syncs all).
+    for (odb::dbNet* db_net : dirty_nets) {
+      updatePinAccessPoints(getNet(db_net), db_net);
+    }
     return {};
   }
 
