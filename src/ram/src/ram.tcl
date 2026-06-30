@@ -298,3 +298,18 @@ proc generate_ram { args } {
 
   ram::ram_routing
 }
+
+proc report_ram_timing { } {
+  set slack [ram::get_ram_worst_slack]
+  utl::report "RAM worst setup slack: [format %.3f [expr { $slack * 1e9 }]] ns"
+}
+
+proc report_ram_power { } {
+  set power [ram::get_ram_total_power]
+  utl::report "RAM total power: [format %.3f [expr { $power * 1e6 }]] uW"
+}
+
+proc report_ram_summary { } {
+  report_ram_timing
+  report_ram_power
+}

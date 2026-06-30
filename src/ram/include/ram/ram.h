@@ -24,6 +24,7 @@ class dbMaster;
 namespace sta {
 class dbNetwork;
 class LibertyPort;
+class dbSta;
 }  // namespace sta
 
 namespace utl {
@@ -92,7 +93,8 @@ class RamGen
          ppl::IOPlacer* io_placer,
          dpl::Opendp* opendp,
          grt::GlobalRouter* global_router,
-         drt::TritonRoute* detailed_router);
+         drt::TritonRoute* detailed_router,
+         sta::dbSta* sta);
   ~RamGen() = default;
 
   void generate(int mask_size,
@@ -122,6 +124,9 @@ class RamGen
   void ramPinplacer(const char* ver_name, const char* hor_name);
   void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting(int thread_count);
+
+  float getWorstSlack();
+  float getTotalPower();
 
   void setBehavioralVerilogFilename(const std::string& filename);
   void writeBehavioralVerilog(const std::string& filename,
@@ -221,6 +226,7 @@ class RamGen
   dpl::Opendp* opendp_{nullptr};
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
+  sta::dbSta* sta_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};
