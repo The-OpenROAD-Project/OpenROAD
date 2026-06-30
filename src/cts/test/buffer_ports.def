@@ -1,7 +1,7 @@
 VERSION 5.8 ;
 DIVIDERCHAR "/" ;
 BUSBITCHARS "[]" ;
-DESIGN multi_sink ;
+DESIGN clk_passthrough_top ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 2000000 2000000 ) ;
 ROW ROW_0 FreePDK45_38x28_10R_NP_162NW_34O 0 0 N DO 5263 BY 1 STEP 380 0 ;
@@ -738,335 +738,276 @@ TRACKS X 3390 DO 624 STEP 3200 LAYER metal9 ;
 TRACKS Y 3340 DO 624 STEP 3200 LAYER metal9 ;
 TRACKS X 3390 DO 624 STEP 3200 LAYER metal10 ;
 TRACKS Y 3340 DO 624 STEP 3200 LAYER metal10 ;
-COMPONENTS 283 ;
-    - ff153 DFF_X1 + PLACED ( 1004720 1960000 ) N ;
-    - ff154 DFF_X1 + PLACED ( 1038540 1993600 ) N ;
-    - ff155 DFF_X1 + PLACED ( 1019160 1974000 ) FS ;
-    - ff156 DFF_X1 + PLACED ( 954560 1996400 ) FS ;
-    - ff157 DFF_X1 + PLACED ( 985340 1965600 ) N ;
-    - ff158 DFF_X1 + PLACED ( 1011180 1965600 ) N ;
-    - ff159 DFF_X1 + PLACED ( 973940 1976800 ) N ;
-    - ff160 DFF_X1 + PLACED ( 1025620 1979600 ) FS ;
-    - ff161 DFF_X1 + PLACED ( 978880 1971200 ) N ;
-    - ff171 DFF_X1 + PLACED ( 1017640 1971200 ) N ;
-    - ff172 DFF_X1 + PLACED ( 967480 1982400 ) N ;
-    - ff173 DFF_X1 + PLACED ( 998260 1951600 ) FS ;
-    - ff174 DFF_X1 + PLACED ( 1032080 1985200 ) FS ;
-    - ff175 DFF_X1 + PLACED ( 961020 1988000 ) N ;
-    - ff176 DFF_X1 + PLACED ( 991800 1957200 ) FS ;
-    - ff177 DFF_X1 + PLACED ( 1004720 1957200 ) FS ;
-    - ff178 DFF_X1 + PLACED ( 1038540 1990800 ) FS ;
-    - ff179 DFF_X1 + PLACED ( 954560 1993600 ) N ;
-    - ff189 DFF_X1 + PLACED ( 985340 1962800 ) FS ;
-    - ff190 DFF_X1 + PLACED ( 1011180 1962800 ) FS ;
-    - ff191 DFF_X1 + PLACED ( 973940 1974000 ) FS ;
-    - ff192 DFF_X1 + PLACED ( 1045000 1996400 ) FS ;
-    - ff193 DFF_X1 + PLACED ( 1025620 1976800 ) N ;
-    - ff194 DFF_X1 + PLACED ( 978880 1968400 ) FS ;
-    - ff195 DFF_X1 + PLACED ( 1017640 1968400 ) FS ;
-    - ff196 DFF_X1 + PLACED ( 967480 1979600 ) FS ;
-    - ff197 DFF_X1 + PLACED ( 998260 1948800 ) N ;
-    - ff207 DFF_X1 + PLACED ( 1032080 1982400 ) N ;
-    - ff208 DFF_X1 + PLACED ( 961020 1985200 ) FS ;
-    - ff209 DFF_X1 + PLACED ( 991800 1954400 ) N ;
-    - ff210 DFF_X1 + PLACED ( 1004720 1954400 ) N ;
-    - ff211 DFF_X1 + PLACED ( 1038540 1988000 ) N ;
-    - ff212 DFF_X1 + PLACED ( 954560 1990800 ) FS ;
-    - ff213 DFF_X1 + PLACED ( 985340 1960000 ) N ;
-    - ff214 DFF_X1 + PLACED ( 1011180 1960000 ) N ;
-    - ff215 DFF_X1 + PLACED ( 1045000 1993600 ) N ;
-    - ff216 DFF_X1 + PLACED ( 980400 1990800 ) FS ;
-    - ff217 DFF_X1 + PLACED ( 973940 1996400 ) FS ;
-    - ff218 DFF_X1 + PLACED ( 993320 1976800 ) N ;
-    - ff219 DFF_X1 + PLACED ( 998260 1971200 ) N ;
-    - ff220 DFF_X1 + PLACED ( 986860 1982400 ) N ;
-    - ff221 DFF_X1 + PLACED ( 1012700 1985200 ) FS ;
-    - ff222 DFF_X1 + PLACED ( 980400 1988000 ) N ;
-    - ff223 DFF_X1 + PLACED ( 1019160 1990800 ) FS ;
-    - ff224 DFF_X1 + PLACED ( 973940 1993600 ) N ;
-    - ff225 DFF_X1 + PLACED ( 999780 1996400 ) FS ;
-    - ff226 DFF_X1 + PLACED ( 999780 1993600 ) N ;
-    - ff227 DFF_X1 + PLACED ( 999780 1990800 ) FS ;
-    - ff228 DFF_X1 + PLACED ( 993320 1996400 ) FS ;
-    - ff229 DFF_X1 + PLACED ( 1006240 1996400 ) FS ;
-    - ff230 DFF_X1 + PLACED ( 999780 1988000 ) N ;
-    - ff231 DFF_X1 + PLACED ( 993320 1993600 ) N ;
-    - ff232 DFF_X1 + PLACED ( 1006240 1993600 ) N ;
-    - ff233 DFF_X1 + PLACED ( 999780 1985200 ) FS ;
-    - ff234 DFF_X1 + PLACED ( 993320 1974000 ) FS ;
-    - ff235 DFF_X1 + PLACED ( 1025620 1996400 ) FS ;
-    - ff236 DFF_X1 + PLACED ( 1006240 1976800 ) N ;
-    - ff237 DFF_X1 + PLACED ( 998260 1968400 ) FS ;
-    - ff238 DFF_X1 + PLACED ( 986860 1979600 ) FS ;
-    - ff239 DFF_X1 + PLACED ( 1012700 1982400 ) N ;
-    - ff240 DFF_X1 + PLACED ( 980400 1985200 ) FS ;
-    - ff241 DFF_X1 + PLACED ( 1019160 1988000 ) N ;
-    - ff242 DFF_X1 + PLACED ( 973940 1990800 ) FS ;
-    - ff243 DFF_X1 + PLACED ( 993320 1990800 ) FS ;
-    - ff244 DFF_X1 + PLACED ( 1006240 1990800 ) FS ;
-    - ff245 DFF_X1 + PLACED ( 986860 1996400 ) FS ;
-    - ff246 DFF_X1 + PLACED ( 1012700 1996400 ) FS ;
-    - ff247 DFF_X1 + PLACED ( 999780 1982400 ) N ;
-    - ff248 DFF_X1 + PLACED ( 993320 1988000 ) N ;
-    - ff249 DFF_X1 + PLACED ( 1006240 1988000 ) N ;
-    - ff250 DFF_X1 + PLACED ( 986860 1993600 ) N ;
-    - ff251 DFF_X1 + PLACED ( 1012700 1993600 ) N ;
-    - ff252 DFF_X1 + PLACED ( 1025620 1993600 ) N ;
-    - ff253 DFF_X1 + PLACED ( 1006240 1974000 ) FS ;
-    - ff254 DFF_X1 + PLACED ( 967480 1996400 ) FS ;
-    - ff255 DFF_X1 + PLACED ( 998260 1965600 ) N ;
-    - ff256 DFF_X1 + PLACED ( 986860 1976800 ) N ;
-    - ff257 DFF_X1 + PLACED ( 1012700 1979600 ) FS ;
-    - ff258 DFF_X1 + PLACED ( 991800 1971200 ) N ;
-    - ff259 DFF_X1 + PLACED ( 1004720 1971200 ) N ;
-    - ff260 DFF_X1 + PLACED ( 980400 1982400 ) N ;
-    - ff261 DFF_X1 + PLACED ( 999780 1979600 ) FS ;
-    - ff262 DFF_X1 + PLACED ( 993320 1985200 ) FS ;
-    - ff263 DFF_X1 + PLACED ( 1006240 1985200 ) FS ;
-    - ff264 DFF_X1 + PLACED ( 986860 1990800 ) FS ;
-    - ff265 DFF_X1 + PLACED ( 1012700 1990800 ) FS ;
-    - ff266 DFF_X1 + PLACED ( 980400 1996400 ) FS ;
-    - ff267 DFF_X1 + PLACED ( 1019160 1996400 ) FS ;
-    - ff268 DFF_X1 + PLACED ( 999780 1976800 ) N ;
-    - ff269 DFF_X1 + PLACED ( 993320 1982400 ) N ;
-    - ff270 DFF_X1 + PLACED ( 1019160 1985200 ) FS ;
-    - ff271 DFF_X1 + PLACED ( 973940 1988000 ) N ;
-    - ff272 DFF_X1 + PLACED ( 1025620 1990800 ) FS ;
-    - ff273 DFF_X1 + PLACED ( 967480 1993600 ) N ;
-    - ff274 DFF_X1 + PLACED ( 998260 1962800 ) FS ;
-    - ff275 DFF_X1 + PLACED ( 986860 1974000 ) FS ;
-    - ff276 DFF_X1 + PLACED ( 1032080 1996400 ) FS ;
-    - ff277 DFF_X1 + PLACED ( 1012700 1976800 ) N ;
-    - ff278 DFF_X1 + PLACED ( 991800 1968400 ) FS ;
-    - ff279 DFF_X1 + PLACED ( 1006240 1982400 ) N ;
-    - ff280 DFF_X1 + PLACED ( 986860 1988000 ) N ;
-    - ff281 DFF_X1 + PLACED ( 1012700 1988000 ) N ;
-    - ff282 DFF_X1 + PLACED ( 980400 1993600 ) N ;
-    - ff283 DFF_X1 + PLACED ( 1019160 1993600 ) N ;
-    - ff284 DFF_X1 + PLACED ( 999780 1974000 ) FS ;
-    - ff285 DFF_X1 + PLACED ( 993320 1979600 ) FS ;
-    - ff286 DFF_X1 + PLACED ( 1006240 1979600 ) FS ;
-    - ff287 DFF_X1 + PLACED ( 986860 1985200 ) FS ;
-    - gclk1 CLKGATE_X1 + PLACED ( 980400 1946000 ) FS ;
-    - gclk3 CLKGATE_X1 + PLACED ( 949620 1976800 ) N ;
-    - gclk4 CLKGATE_X1 + PLACED ( 943160 1982400 ) N ;
-    - h1/ff0 DFF_X1 + PLACED ( 1025620 1974000 ) FS ;
-    - h1/ff1 DFF_X1 + PLACED ( 948100 1996400 ) FS ;
-    - h1/ff10 DFF_X1 + PLACED ( 978880 1965600 ) N ;
-    - h1/ff100 DFF_X1 + PLACED ( 1017640 1965600 ) N ;
-    - h1/ff101 DFF_X1 + PLACED ( 967480 1976800 ) N ;
-    - h1/ff102 DFF_X1 + PLACED ( 998260 1946000 ) FS ;
-    - h1/ff103 DFF_X1 + PLACED ( 1032080 1979600 ) FS ;
-    - h1/ff104 DFF_X1 + PLACED ( 972420 1971200 ) N ;
-    - h1/ff105 DFF_X1 + PLACED ( 1024100 1971200 ) N ;
-    - h1/ff106 DFF_X1 + PLACED ( 961020 1982400 ) N ;
-    - h1/ff107 DFF_X1 + PLACED ( 991800 1951600 ) FS ;
-    - h1/ff11 DFF_X1 + PLACED ( 1004720 1951600 ) FS ;
-    - h1/ff111 DFF_X1 + PLACED ( 1038540 1985200 ) FS ;
-    - h1/ff112 DFF_X1 + PLACED ( 954560 1988000 ) N ;
-    - h1/ff113 DFF_X1 + PLACED ( 985340 1957200 ) FS ;
-    - h1/ff114 DFF_X1 + PLACED ( 1011180 1957200 ) FS ;
-    - h1/ff115 DFF_X1 + PLACED ( 1045000 1990800 ) FS ;
-    - h1/ff116 DFF_X1 + PLACED ( 948100 1993600 ) N ;
-    - h1/ff117 DFF_X1 + PLACED ( 978880 1962800 ) FS ;
-    - h1/ff118 DFF_X1 + PLACED ( 1017640 1962800 ) FS ;
-    - h1/ff119 DFF_X1 + PLACED ( 967480 1974000 ) FS ;
-    - h1/ff12 DFF_X1 + PLACED ( 998260 1943200 ) N ;
-    - h1/ff120 DFF_X1 + PLACED ( 1051460 1996400 ) FS ;
-    - h1/ff121 DFF_X1 + PLACED ( 1032080 1976800 ) N ;
-    - h1/ff122 DFF_X1 + PLACED ( 972420 1968400 ) FS ;
-    - h1/ff123 DFF_X1 + PLACED ( 1024100 1968400 ) FS ;
-    - h1/ff124 DFF_X1 + PLACED ( 961020 1979600 ) FS ;
-    - h1/ff125 DFF_X1 + PLACED ( 991800 1948800 ) N ;
-    - h1/ff129 DFF_X1 + PLACED ( 1004720 1948800 ) N ;
-    - h1/ff13 DFF_X1 + PLACED ( 1038540 1982400 ) N ;
-    - h1/ff130 DFF_X1 + PLACED ( 954560 1985200 ) FS ;
-    - h1/ff131 DFF_X1 + PLACED ( 985340 1954400 ) N ;
-    - h1/ff132 DFF_X1 + PLACED ( 1011180 1954400 ) N ;
-    - h1/ff133 DFF_X1 + PLACED ( 1045000 1988000 ) N ;
-    - h1/ff134 DFF_X1 + PLACED ( 948100 1990800 ) FS ;
-    - h1/ff135 DFF_X1 + PLACED ( 978880 1960000 ) N ;
-    - h1/ff136 DFF_X1 + PLACED ( 1017640 1960000 ) N ;
-    - h1/ff137 DFF_X1 + PLACED ( 998260 1940400 ) FS ;
-    - h1/ff138 DFF_X1 + PLACED ( 1051460 1993600 ) N ;
-    - h1/ff139 DFF_X1 + PLACED ( 1032080 1974000 ) FS ;
-    - h1/ff14 DFF_X1 + PLACED ( 941640 1996400 ) FS ;
-    - h1/ff140 DFF_X1 + PLACED ( 972420 1965600 ) N ;
-    - h1/ff141 DFF_X1 + PLACED ( 1024100 1965600 ) N ;
-    - h1/ff142 DFF_X1 + PLACED ( 961020 1976800 ) N ;
-    - h1/ff143 DFF_X1 + PLACED ( 991800 1946000 ) FS ;
-    - h1/ff144 DFF_X1 + PLACED ( 1004720 1968400 ) FS ;
-    - h1/ff145 DFF_X1 + PLACED ( 980400 1979600 ) FS ;
-    - h1/ff146 DFF_X1 + PLACED ( 1019160 1982400 ) N ;
-    - h1/ff147 DFF_X1 + PLACED ( 973940 1985200 ) FS ;
-    - h1/ff148 DFF_X1 + PLACED ( 1025620 1988000 ) N ;
-    - h1/ff149 DFF_X1 + PLACED ( 967480 1990800 ) FS ;
-    - h1/ff15 DFF_X1 + PLACED ( 1004720 1946000 ) FS ;
-    - h1/ff150 DFF_X1 + PLACED ( 998260 1960000 ) N ;
-    - h1/ff151 DFF_X1 + PLACED ( 1032080 1993600 ) N ;
-    - h1/ff152 DFF_X1 + PLACED ( 1012700 1974000 ) FS ;
-    - h1/ff16 DFF_X1 + PLACED ( 1038540 1979600 ) FS ;
-    - h1/ff162 DFF_X1 + PLACED ( 961020 1996400 ) FS ;
-    - h1/ff163 DFF_X1 + PLACED ( 991800 1965600 ) N ;
-    - h1/ff164 DFF_X1 + PLACED ( 1004720 1965600 ) N ;
-    - h1/ff165 DFF_X1 + PLACED ( 980400 1976800 ) N ;
-    - h1/ff166 DFF_X1 + PLACED ( 1019160 1979600 ) FS ;
-    - h1/ff167 DFF_X1 + PLACED ( 985340 1971200 ) N ;
-    - h1/ff168 DFF_X1 + PLACED ( 1011180 1971200 ) N ;
-    - h1/ff169 DFF_X1 + PLACED ( 973940 1982400 ) N ;
-    - h1/ff17 DFF_X1 + PLACED ( 965960 1971200 ) N ;
-    - h1/ff170 DFF_X1 + PLACED ( 1025620 1985200 ) FS ;
-    - h1/ff18 DFF_X1 + PLACED ( 1030560 1971200 ) N ;
-    - h1/ff180 DFF_X1 + PLACED ( 967480 1988000 ) N ;
-    - h1/ff181 DFF_X1 + PLACED ( 998260 1957200 ) FS ;
-    - h1/ff182 DFF_X1 + PLACED ( 1032080 1990800 ) FS ;
-    - h1/ff183 DFF_X1 + PLACED ( 961020 1993600 ) N ;
-    - h1/ff184 DFF_X1 + PLACED ( 991800 1962800 ) FS ;
-    - h1/ff185 DFF_X1 + PLACED ( 1004720 1962800 ) FS ;
-    - h1/ff186 DFF_X1 + PLACED ( 980400 1974000 ) FS ;
-    - h1/ff187 DFF_X1 + PLACED ( 1038540 1996400 ) FS ;
-    - h1/ff188 DFF_X1 + PLACED ( 1019160 1976800 ) N ;
-    - h1/ff19 DFF_X1 + PLACED ( 954560 1982400 ) N ;
-    - h1/ff198 DFF_X1 + PLACED ( 985340 1968400 ) FS ;
-    - h1/ff199 DFF_X1 + PLACED ( 1011180 1968400 ) FS ;
-    - h1/ff2 DFF_X1 + PLACED ( 985340 1951600 ) FS ;
-    - h1/ff20 DFF_X1 + PLACED ( 1011180 1951600 ) FS ;
-    - h1/ff200 DFF_X1 + PLACED ( 973940 1979600 ) FS ;
-    - h1/ff201 DFF_X1 + PLACED ( 1025620 1982400 ) N ;
-    - h1/ff202 DFF_X1 + PLACED ( 967480 1985200 ) FS ;
-    - h1/ff203 DFF_X1 + PLACED ( 998260 1954400 ) N ;
-    - h1/ff204 DFF_X1 + PLACED ( 1032080 1988000 ) N ;
-    - h1/ff205 DFF_X1 + PLACED ( 961020 1990800 ) FS ;
-    - h1/ff206 DFF_X1 + PLACED ( 991800 1960000 ) N ;
-    - h1/ff21 DFF_X1 + PLACED ( 1045000 1985200 ) FS ;
-    - h1/ff22 DFF_X1 + PLACED ( 948100 1988000 ) N ;
-    - h1/ff23 DFF_X1 + PLACED ( 978880 1957200 ) FS ;
-    - h1/ff24 DFF_X1 + PLACED ( 1017640 1957200 ) FS ;
-    - h1/ff25 DFF_X1 + PLACED ( 998260 1937600 ) N ;
-    - h1/ff26 DFF_X1 + PLACED ( 1051460 1990800 ) FS ;
-    - h1/ff27 DFF_X1 + PLACED ( 941640 1993600 ) N ;
-    - h1/ff28 DFF_X1 + PLACED ( 972420 1962800 ) FS ;
-    - h1/ff29 DFF_X1 + PLACED ( 1024100 1962800 ) FS ;
-    - h1/ff3 DFF_X1 + PLACED ( 961020 1974000 ) FS ;
-    - h1/ff30 DFF_X1 + PLACED ( 991800 1943200 ) N ;
-    - h1/ff31 DFF_X1 + PLACED ( 1004720 1943200 ) N ;
-    - h1/ff32 DFF_X1 + PLACED ( 1057920 1996400 ) FS ;
-    - h1/ff33 DFF_X1 + PLACED ( 1038540 1976800 ) N ;
-    - h1/ff34 DFF_X1 + PLACED ( 965960 1968400 ) FS ;
-    - h1/ff35 DFF_X1 + PLACED ( 1030560 1968400 ) FS ;
-    - h1/ff36 DFF_X1 + PLACED ( 954560 1979600 ) FS ;
-    - h1/ff37 DFF_X1 + PLACED ( 985340 1948800 ) N ;
-    - h1/ff38 DFF_X1 + PLACED ( 1011180 1948800 ) N ;
-    - h1/ff39 DFF_X1 + PLACED ( 1045000 1982400 ) N ;
-    - h1/ff4 DFF_X1 + PLACED ( 948100 1985200 ) FS ;
-    - h1/ff40 DFF_X1 + PLACED ( 978880 1954400 ) N ;
-    - h1/ff41 DFF_X1 + PLACED ( 1017640 1954400 ) N ;
-    - h1/ff42 DFF_X1 + PLACED ( 998260 1934800 ) FS ;
-    - h1/ff43 DFF_X1 + PLACED ( 1051460 1988000 ) N ;
-    - h1/ff44 DFF_X1 + PLACED ( 941640 1990800 ) FS ;
-    - h1/ff45 DFF_X1 + PLACED ( 972420 1960000 ) N ;
-    - h1/ff46 DFF_X1 + PLACED ( 1024100 1960000 ) N ;
-    - h1/ff47 DFF_X1 + PLACED ( 991800 1940400 ) FS ;
-    - h1/ff48 DFF_X1 + PLACED ( 1004720 1940400 ) FS ;
-    - h1/ff49 DFF_X1 + PLACED ( 1057920 1993600 ) N ;
-    - h1/ff5 DFF_X1 + PLACED ( 1038540 1974000 ) FS ;
-    - h1/ff50 DFF_X1 + PLACED ( 935180 1996400 ) FS ;
-    - h1/ff51 DFF_X1 + PLACED ( 965960 1965600 ) N ;
-    - h1/ff52 DFF_X1 + PLACED ( 1030560 1965600 ) N ;
-    - h1/ff53 DFF_X1 + PLACED ( 954560 1976800 ) N ;
-    - h1/ff54 DFF_X1 + PLACED ( 985340 1946000 ) FS ;
-    - h1/ff55 DFF_X1 + PLACED ( 1011180 1946000 ) FS ;
-    - h1/ff56 DFF_X1 + PLACED ( 1045000 1979600 ) FS ;
-    - h1/ff57 DFF_X1 + PLACED ( 959500 1971200 ) N ;
-    - h1/ff58 DFF_X1 + PLACED ( 1037020 1971200 ) N ;
-    - h1/ff59 DFF_X1 + PLACED ( 948100 1982400 ) N ;
-    - h1/ff6 DFF_X1 + PLACED ( 978880 1951600 ) FS ;
-    - h1/ff60 DFF_X1 + PLACED ( 1017640 1951600 ) FS ;
-    - h1/ff61 DFF_X1 + PLACED ( 998260 1932000 ) N ;
-    - h1/ff62 DFF_X1 + PLACED ( 1051460 1985200 ) FS ;
-    - h1/ff63 DFF_X1 + PLACED ( 941640 1988000 ) N ;
-    - h1/ff64 DFF_X1 + PLACED ( 972420 1957200 ) FS ;
-    - h1/ff65 DFF_X1 + PLACED ( 1024100 1957200 ) FS ;
-    - h1/ff66 DFF_X1 + PLACED ( 991800 1937600 ) N ;
-    - h1/ff67 DFF_X1 + PLACED ( 1004720 1937600 ) N ;
-    - h1/ff68 DFF_X1 + PLACED ( 1057920 1990800 ) FS ;
-    - h1/ff69 DFF_X1 + PLACED ( 935180 1993600 ) N ;
-    - h1/ff7 DFF_X1 + PLACED ( 965960 1962800 ) FS ;
-    - h1/ff70 DFF_X1 + PLACED ( 1030560 1962800 ) FS ;
-    - h1/ff71 DFF_X1 + PLACED ( 954560 1974000 ) FS ;
-    - h1/ff74 DFF_X1 + PLACED ( 985340 1943200 ) N ;
-    - h1/ff75 DFF_X1 + PLACED ( 1011180 1943200 ) N ;
-    - h1/ff76 DFF_X1 + PLACED ( 1064380 1996400 ) FS ;
-    - h1/ff77 DFF_X1 + PLACED ( 1045000 1976800 ) N ;
-    - h1/ff78 DFF_X1 + PLACED ( 959500 1968400 ) FS ;
-    - h1/ff79 DFF_X1 + PLACED ( 1037020 1968400 ) FS ;
-    - h1/ff8 DFF_X1 + PLACED ( 948100 1979600 ) FS ;
-    - h1/ff80 DFF_X1 + PLACED ( 978880 1948800 ) N ;
-    - h1/ff81 DFF_X1 + PLACED ( 1017640 1948800 ) N ;
-    - h1/ff82 DFF_X1 + PLACED ( 998260 1929200 ) FS ;
-    - h1/ff83 DFF_X1 + PLACED ( 1051460 1982400 ) N ;
-    - h1/ff84 DFF_X1 + PLACED ( 941640 1985200 ) FS ;
-    - h1/ff85 DFF_X1 + PLACED ( 972420 1954400 ) N ;
-    - h1/ff86 DFF_X1 + PLACED ( 1024100 1954400 ) N ;
-    - h1/ff87 DFF_X1 + PLACED ( 991800 1934800 ) FS ;
-    - h1/ff88 DFF_X1 + PLACED ( 1004720 1934800 ) FS ;
-    - h1/ff89 DFF_X1 + PLACED ( 1057920 1988000 ) N ;
-    - h1/ff9 DFF_X1 + PLACED ( 935180 1990800 ) FS ;
-    - h1/ff92 DFF_X1 + PLACED ( 965960 1960000 ) N ;
-    - h1/ff93 DFF_X1 + PLACED ( 1030560 1960000 ) N ;
-    - h1/ff94 DFF_X1 + PLACED ( 985340 1940400 ) FS ;
-    - h1/ff95 DFF_X1 + PLACED ( 1011180 1940400 ) FS ;
-    - h1/ff96 DFF_X1 + PLACED ( 1064380 1993600 ) N ;
-    - h1/ff97 DFF_X1 + PLACED ( 1045000 1974000 ) FS ;
-    - h1/ff98 DFF_X1 + PLACED ( 928720 1996400 ) FS ;
-    - h1/ff99 DFF_X1 + PLACED ( 959500 1965600 ) N ;
-    - h1/gclk2 CLKGATE_X1 + PLACED ( 954560 1971200 ) N ;
-    - h1/gclk5 CLKGATE_X1 + PLACED ( 973940 1951600 ) FS ;
+COMPONENTS 81 ;
+    - _076_ INV_X1 + PLACED ( 15960 14000 ) FS ;
+    - _078_ INV_X1 + PLACED ( 2280 28000 ) N ;
+    - _080_ INV_X1 + PLACED ( 13680 16800 ) N ;
+    - _081_ INV_X1 + PLACED ( 5320 25200 ) FS ;
+    - _083_ AOI21_X1 + PLACED ( 15960 0 ) N ;
+    - _084_ NOR4_X1 + PLACED ( 15580 2800 ) FS ;
+    - _085_ INV_X1 + PLACED ( 12920 16800 ) N ;
+    - _086_ AOI21_X1 + PLACED ( 14440 11200 ) N ;
+    - _087_ OAI21_X1 + PLACED ( 2280 22400 ) N ;
+    - _088_ OAI21_X1 + PLACED ( 5700 19600 ) FS ;
+    - _089_ OR3_X1 + PLACED ( 12540 0 ) N ;
+    - _090_ AOI21_X1 + PLACED ( 7600 16800 ) N ;
+    - _091_ NOR3_X1 + PLACED ( 17480 2800 ) FS ;
+    - _092_ NOR3_X1 + PLACED ( 11780 14000 ) FS ;
+    - _093_ INV_X1 + PLACED ( 24320 5600 ) N ;
+    - _094_ AOI211_X2 + PLACED ( 12540 8400 ) FS ;
+    - _095_ OAI21_X1 + PLACED ( 15960 11200 ) N ;
+    - _096_ OAI21_X1 + PLACED ( 3800 22400 ) N ;
+    - _097_ MUX2_X1 + PLACED ( 12920 2800 ) FS ;
+    - _098_ NOR4_X1 + PLACED ( 12540 11200 ) N ;
+    - _099_ INV_X1 + PLACED ( 7600 22400 ) N ;
+    - _100_ NOR3_X1 + PLACED ( 14440 0 ) N ;
+    - _101_ OR3_X2 + PLACED ( 10260 11200 ) N ;
+    - _102_ OAI21_X1 + PLACED ( 20520 5600 ) N ;
+    - _103_ XNOR2_X1 + PLACED ( 16720 5600 ) N ;
+    - _104_ NOR2_X1 + PLACED ( 20140 8400 ) FS ;
+    - _105_ NOR2_X1 + PLACED ( 4180 25200 ) FS ;
+    - _106_ AOI21_X1 + PLACED ( 1520 25200 ) FS ;
+    - _107_ INV_X1 + PLACED ( 19380 11200 ) N ;
+    - _108_ OAI21_X1 + PLACED ( 13300 14000 ) FS ;
+    - _109_ OAI21_X1 + PLACED ( 7220 19600 ) FS ;
+    - _110_ NOR2_X1 + PLACED ( 11780 16800 ) N ;
+    - _111_ XNOR2_X1 + PLACED ( 0 22400 ) N ;
+    - _112_ NOR2_X1 + PLACED ( 6460 22400 ) N ;
+    - _113_ INV_X1 + PLACED ( 18620 11200 ) N ;
+    - _114_ NOR2_X1 + PLACED ( 23180 5600 ) N ;
+    - _115_ INV_X1 + PLACED ( 11020 19600 ) FS ;
+    - _116_ NOR2_X1 + PLACED ( 21280 2800 ) FS ;
+    - _117_ AOI21_X1 + PLACED ( 10260 14000 ) FS ;
+    - _118_ NAND2_X1 + PLACED ( 17480 0 ) N ;
+    - _119_ OAI21_X1 + PLACED ( 0 25200 ) FS ;
+    - _120_ NAND3_X1 + PLACED ( 9120 16800 ) N ;
+    - _121_ NOR3_X1 + PLACED ( 17480 8400 ) FS ;
+    - _122_ XNOR2_X1 + PLACED ( 10260 0 ) N ;
+    - _123_ OR3_X1 + PLACED ( 3800 19600 ) FS ;
+    - _124_ OAI21_X1 + PLACED ( 19000 5600 ) N ;
+    - _125_ AOI21_X1 + PLACED ( 15960 8400 ) FS ;
+    - _126_ FA_X1 + PLACED ( 6460 8400 ) FS ;
+    - _127_ HA_X1 + PLACED ( 0 16800 ) N ;
+    - _128_ HA_X1 + PLACED ( 6460 0 ) N ;
+    - _129_ HA_X1 + PLACED ( 3800 16800 ) N ;
+    - _130_ HA_X1 + PLACED ( 0 19600 ) FS ;
+    - _131_ HA_X1 + PLACED ( 6460 11200 ) N ;
+    - _132_ HA_X1 + PLACED ( 12920 5600 ) N ;
+    - _133_ HA_X1 + PLACED ( 6460 14000 ) FS ;
+    - input1 BUF_X1 + SOURCE TIMING + PLACED ( 23560 2800 ) FS ;
+    - input2 BUF_X1 + SOURCE TIMING + PLACED ( 19760 0 ) N ;
+    - input3 BUF_X1 + SOURCE TIMING + PLACED ( 22420 2800 ) FS ;
+    - input4 BUF_X1 + SOURCE TIMING + PLACED ( 18620 0 ) N ;
+    - input5 BUF_X1 + SOURCE TIMING + PLACED ( 21280 8400 ) FS ;
+    - input6 BUF_X1 + SOURCE TIMING + PLACED ( 9880 19600 ) FS ;
+    - input7 BUF_X1 + SOURCE TIMING + PLACED ( 14820 14000 ) FS ;
+    - input8 BUF_X1 + SOURCE TIMING + PLACED ( 17480 11200 ) N ;
+    - input9 BUF_X1 + SOURCE TIMING + PLACED ( 5320 22400 ) N ;
+    - output10 BUF_X1 + SOURCE TIMING + PLACED ( 10640 16800 ) N ;
+    - output11 BUF_X1 + SOURCE TIMING + PLACED ( 1140 28000 ) N ;
+    - output12 BUF_X1 + SOURCE TIMING + PLACED ( 22040 5600 ) N ;
+    - output13 BUF_X1 + SOURCE TIMING + PLACED ( 20140 2800 ) FS ;
+    - output14 BUF_X1 + SOURCE TIMING + PLACED ( 19000 2800 ) FS ;
+    - output15 BUF_X1 + SOURCE TIMING + PLACED ( 8740 19600 ) FS ;
+    - output16 BUF_X1 + SOURCE TIMING + PLACED ( 3040 25200 ) FS ;
+    - output17 BUF_X1 + SOURCE TIMING + PLACED ( 0 28000 ) N ;
+    - output18 BUF_X1 + SOURCE TIMING + PLACED ( 19000 8400 ) FS ;
+    - u_counter.q\[0\]$_SDFF_PP0_ DFF_X1 + PLACED ( 6460 2800 ) FS ;
+    - u_counter.q\[1\]$_SDFF_PP0_ DFF_X1 + PLACED ( 6460 5600 ) N ;
+    - u_counter.q\[2\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 14000 ) FS ;
+    - u_counter.q\[3\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 11200 ) N ;
+    - u_counter.q\[4\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 0 ) N ;
+    - u_counter.q\[5\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 2800 ) FS ;
+    - u_counter.q\[6\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 5600 ) N ;
+    - u_counter.q\[7\]$_SDFF_PP0_ DFF_X1 + PLACED ( 0 8400 ) FS ;
 END COMPONENTS
-PINS 1 ;
+PINS 19 ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
-        + LAYER metal2 ( -70 -70 ) ( 70 70 )
-        + PLACED ( 1000350 1999930 ) N ;
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 989660 ) N ;
+    - clk_out + NET clk_out + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 11900 ) N ;
+    - din[0] + NET din[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 2380 ) N ;
+    - din[1] + NET din[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 2940 ) N ;
+    - din[2] + NET din[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 3500 ) N ;
+    - din[3] + NET din[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 4060 ) N ;
+    - din[4] + NET din[4] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 4620 ) N ;
+    - din[5] + NET din[5] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 5180 ) N ;
+    - din[6] + NET din[6] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 5740 ) N ;
+    - din[7] + NET din[7] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 6300 ) N ;
+    - dout[0] + NET dout[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 6860 ) N ;
+    - dout[1] + NET dout[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 7420 ) N ;
+    - dout[2] + NET dout[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 7980 ) N ;
+    - dout[3] + NET dout[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 8540 ) N ;
+    - dout[4] + NET dout[4] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 9100 ) N ;
+    - dout[5] + NET dout[5] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 9660 ) N ;
+    - dout[6] + NET dout[6] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 10220 ) N ;
+    - dout[7] + NET dout[7] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 10780 ) N ;
+    - reset + NET reset + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 70 11340 ) N ;
 END PINS
-NETS 6 ;
-    - clk ( PIN clk ) ( h1/gclk5 CK ) ( h1/gclk2 CK ) ( gclk4 CK ) ( gclk1 CK ) + USE SIGNAL ;
-    - gclk1 ( gclk1 GCK ) ( ff278 CK ) ( ff277 CK ) ( ff276 CK ) ( ff275 CK ) ( ff274 CK ) ( ff273 CK )
-      ( ff272 CK ) ( ff271 CK ) ( ff270 CK ) ( ff260 CK ) ( ff259 CK ) ( ff258 CK ) ( ff257 CK ) ( ff256 CK )
-      ( ff255 CK ) ( ff254 CK ) ( ff253 CK ) ( ff252 CK ) ( ff242 CK ) ( ff241 CK ) ( ff240 CK ) ( ff239 CK )
-      ( ff238 CK ) ( ff237 CK ) ( ff236 CK ) ( ff235 CK ) ( ff234 CK ) ( ff224 CK ) ( ff223 CK ) ( ff222 CK )
-      ( ff221 CK ) ( ff220 CK ) ( ff219 CK ) ( ff218 CK ) ( ff217 CK ) ( ff216 CK ) + USE SIGNAL ;
-    - gclk3 ( gclk3 GCK ) ( ff287 CK ) ( ff286 CK ) ( ff285 CK ) ( ff284 CK ) ( ff283 CK ) ( ff282 CK )
-      ( ff281 CK ) ( ff280 CK ) ( ff279 CK ) ( ff269 CK ) ( ff268 CK ) ( ff267 CK ) ( ff266 CK ) ( ff265 CK )
-      ( ff264 CK ) ( ff263 CK ) ( ff262 CK ) ( ff261 CK ) ( ff251 CK ) ( ff250 CK ) ( ff249 CK ) ( ff248 CK )
-      ( ff247 CK ) ( ff246 CK ) ( ff245 CK ) ( ff244 CK ) ( ff243 CK ) ( ff233 CK ) ( ff232 CK ) ( ff231 CK )
-      ( ff230 CK ) ( ff229 CK ) ( ff228 CK ) ( ff227 CK ) ( ff226 CK ) ( ff225 CK ) + USE SIGNAL ;
-    - gclk4 ( gclk4 GCK ) ( gclk3 CK ) ( ff215 CK ) ( ff214 CK ) ( ff213 CK ) ( ff212 CK ) ( ff211 CK )
-      ( ff210 CK ) ( ff209 CK ) ( ff208 CK ) ( ff207 CK ) ( ff197 CK ) ( ff196 CK ) ( ff195 CK ) ( ff194 CK )
-      ( ff193 CK ) ( ff192 CK ) ( ff191 CK ) ( ff190 CK ) ( ff189 CK ) ( ff179 CK ) ( ff178 CK ) ( ff177 CK )
-      ( ff176 CK ) ( ff175 CK ) ( ff174 CK ) ( ff173 CK ) ( ff172 CK ) ( ff171 CK ) ( ff161 CK ) ( ff160 CK )
-      ( ff159 CK ) ( ff158 CK ) ( ff157 CK ) ( ff156 CK ) ( ff155 CK ) ( ff154 CK ) ( ff153 CK ) + USE SIGNAL ;
-    - h1/gclk2 ( h1/gclk2 GCK ) ( h1/ff206 CK ) ( h1/ff205 CK ) ( h1/ff204 CK ) ( h1/ff203 CK ) ( h1/ff202 CK ) ( h1/ff201 CK )
-      ( h1/ff200 CK ) ( h1/ff199 CK ) ( h1/ff198 CK ) ( h1/ff188 CK ) ( h1/ff187 CK ) ( h1/ff186 CK ) ( h1/ff185 CK ) ( h1/ff184 CK )
-      ( h1/ff183 CK ) ( h1/ff182 CK ) ( h1/ff181 CK ) ( h1/ff180 CK ) ( h1/ff170 CK ) ( h1/ff169 CK ) ( h1/ff168 CK ) ( h1/ff167 CK )
-      ( h1/ff166 CK ) ( h1/ff165 CK ) ( h1/ff164 CK ) ( h1/ff163 CK ) ( h1/ff162 CK ) ( h1/ff152 CK ) ( h1/ff151 CK ) ( h1/ff150 CK )
-      ( h1/ff149 CK ) ( h1/ff148 CK ) ( h1/ff147 CK ) ( h1/ff146 CK ) ( h1/ff145 CK ) ( h1/ff144 CK ) + USE SIGNAL ;
-    - h1/gclk5 ( h1/gclk5 GCK ) ( h1/ff99 CK ) ( h1/ff98 CK ) ( h1/ff97 CK ) ( h1/ff96 CK ) ( h1/ff95 CK ) ( h1/ff94 CK )
-      ( h1/ff93 CK ) ( h1/ff92 CK ) ( h1/ff9 CK ) ( h1/ff89 CK ) ( h1/ff88 CK ) ( h1/ff87 CK ) ( h1/ff86 CK ) ( h1/ff85 CK )
-      ( h1/ff84 CK ) ( h1/ff83 CK ) ( h1/ff82 CK ) ( h1/ff81 CK ) ( h1/ff80 CK ) ( h1/ff8 CK ) ( h1/ff79 CK ) ( h1/ff78 CK )
-      ( h1/ff77 CK ) ( h1/ff76 CK ) ( h1/ff75 CK ) ( h1/ff74 CK ) ( h1/ff71 CK ) ( h1/ff70 CK ) ( h1/ff7 CK ) ( h1/ff69 CK )
-      ( h1/ff68 CK ) ( h1/ff67 CK ) ( h1/ff66 CK ) ( h1/ff65 CK ) ( h1/ff64 CK ) ( h1/ff63 CK ) ( h1/ff62 CK ) ( h1/ff61 CK )
-      ( h1/ff60 CK ) ( h1/ff6 CK ) ( h1/ff59 CK ) ( h1/ff58 CK ) ( h1/ff57 CK ) ( h1/ff56 CK ) ( h1/ff55 CK ) ( h1/ff54 CK )
-      ( h1/ff53 CK ) ( h1/ff52 CK ) ( h1/ff51 CK ) ( h1/ff50 CK ) ( h1/ff5 CK ) ( h1/ff49 CK ) ( h1/ff48 CK ) ( h1/ff47 CK )
-      ( h1/ff46 CK ) ( h1/ff45 CK ) ( h1/ff44 CK ) ( h1/ff43 CK ) ( h1/ff42 CK ) ( h1/ff41 CK ) ( h1/ff40 CK ) ( h1/ff4 CK )
-      ( h1/ff39 CK ) ( h1/ff38 CK ) ( h1/ff37 CK ) ( h1/ff36 CK ) ( h1/ff35 CK ) ( h1/ff34 CK ) ( h1/ff33 CK ) ( h1/ff32 CK )
-      ( h1/ff31 CK ) ( h1/ff30 CK ) ( h1/ff3 CK ) ( h1/ff29 CK ) ( h1/ff28 CK ) ( h1/ff27 CK ) ( h1/ff26 CK ) ( h1/ff25 CK )
-      ( h1/ff24 CK ) ( h1/ff23 CK ) ( h1/ff22 CK ) ( h1/ff21 CK ) ( h1/ff20 CK ) ( h1/ff2 CK ) ( h1/ff19 CK ) ( h1/ff18 CK )
-      ( h1/ff17 CK ) ( h1/ff16 CK ) ( h1/ff15 CK ) ( h1/ff143 CK ) ( h1/ff142 CK ) ( h1/ff141 CK ) ( h1/ff140 CK ) ( h1/ff14 CK )
-      ( h1/ff139 CK ) ( h1/ff138 CK ) ( h1/ff137 CK ) ( h1/ff136 CK ) ( h1/ff135 CK ) ( h1/ff134 CK ) ( h1/ff133 CK ) ( h1/ff132 CK )
-      ( h1/ff131 CK ) ( h1/ff130 CK ) ( h1/ff13 CK ) ( h1/ff129 CK ) ( h1/ff125 CK ) ( h1/ff124 CK ) ( h1/ff123 CK ) ( h1/ff122 CK )
-      ( h1/ff121 CK ) ( h1/ff120 CK ) ( h1/ff12 CK ) ( h1/ff119 CK ) ( h1/ff118 CK ) ( h1/ff117 CK ) ( h1/ff116 CK ) ( h1/ff115 CK )
-      ( h1/ff114 CK ) ( h1/ff113 CK ) ( h1/ff112 CK ) ( h1/ff111 CK ) ( h1/ff11 CK ) ( h1/ff107 CK ) ( h1/ff106 CK ) ( h1/ff105 CK )
-      ( h1/ff104 CK ) ( h1/ff103 CK ) ( h1/ff102 CK ) ( h1/ff101 CK ) ( h1/ff100 CK ) ( h1/ff10 CK ) ( h1/ff1 CK ) ( h1/ff0 CK ) + USE SIGNAL ;
+NETS 107 ;
+    - _000_ ( _129_ CO ) ( _126_ CI ) ( _106_ B1 ) ( _094_ C1 ) + USE SIGNAL ;
+    - _001_ ( _126_ CO ) ( _111_ B ) ( _083_ B2 ) + USE SIGNAL ;
+    - _002_ ( _126_ S ) ( _113_ A ) + USE SIGNAL ;
+    - _003_ ( _127_ CO ) ( _117_ A ) + USE SIGNAL ;
+    - _004_ ( _127_ S ) ( _120_ A1 ) ( _118_ A1 ) ( _117_ B2 ) ( _076_ A ) + USE SIGNAL ;
+    - _005_ ( _128_ CO ) ( _117_ B1 ) ( _085_ A ) + USE SIGNAL ;
+    - _006_ ( _078_ A ) ( _092_ A1 ) ( _100_ A1 ) ( _118_ A2 ) ( _120_ A2 ) ( _128_ S ) + USE SIGNAL ;
+    - _007_ ( _131_ S ) ( _106_ B2 ) ( _094_ C2 ) + USE SIGNAL ;
+    - _008_ ( _129_ S ) ( _115_ A ) + USE SIGNAL ;
+    - _009_ ( _130_ CO ) ( _093_ A ) ( _086_ B1 ) + USE SIGNAL ;
+    - _010_ ( _130_ S ) ( _105_ A2 ) ( _095_ A ) ( _081_ A ) + USE SIGNAL ;
+    - _011_ ( _131_ CO ) ( _106_ A ) ( _094_ B ) + USE SIGNAL ;
+    - _012_ ( _132_ CO ) ( _099_ A ) ( _098_ A3 ) ( _091_ A2 ) ( _086_ A ) + USE SIGNAL ;
+    - _013_ ( _080_ A ) ( _086_ B2 ) ( _098_ A2 ) ( _103_ A ) ( _120_ A3 ) ( _132_ S ) + USE SIGNAL ;
+    - _014_ ( _133_ CO ) ( _105_ A1 ) ( _095_ B2 ) ( _094_ A ) ( _083_ A ) + USE SIGNAL ;
+    - _015_ ( _083_ B1 ) ( _095_ B1 ) ( _107_ A ) ( _111_ A ) ( _133_ S ) + USE SIGNAL ;
+    - _016_ ( u_counter.q\[6\]$_SDFF_PP0_ D ) ( _090_ ZN ) + USE SIGNAL ;
+    - _017_ ( u_counter.q\[5\]$_SDFF_PP0_ D ) ( _101_ ZN ) + USE SIGNAL ;
+    - _018_ ( u_counter.q\[4\]$_SDFF_PP0_ D ) ( _104_ ZN ) + USE SIGNAL ;
+    - _019_ ( u_counter.q\[3\]$_SDFF_PP0_ D ) ( _110_ ZN ) + USE SIGNAL ;
+    - _020_ ( u_counter.q\[2\]$_SDFF_PP0_ D ) ( _112_ ZN ) + USE SIGNAL ;
+    - _021_ ( u_counter.q\[1\]$_SDFF_PP0_ D ) ( _114_ ZN ) + USE SIGNAL ;
+    - _022_ ( u_counter.q\[0\]$_SDFF_PP0_ D ) ( _116_ ZN ) + USE SIGNAL ;
+    - _023_ ( u_counter.q\[7\]$_SDFF_PP0_ D ) ( _125_ ZN ) + USE SIGNAL ;
+    - _025_ ( _089_ A1 ) ( _088_ A ) ( _076_ ZN ) + USE SIGNAL ;
+    - _027_ ( _098_ A1 ) ( _091_ A1 ) ( _087_ B1 ) ( _084_ A1 ) ( _078_ ZN ) + USE SIGNAL ;
+    - _029_ ( _092_ A2 ) ( _084_ A2 ) ( _080_ ZN ) + USE SIGNAL ;
+    - _030_ ( _102_ B1 ) ( _084_ A3 ) ( _081_ ZN ) + USE SIGNAL ;
+    - _032_ ( _102_ B2 ) ( _084_ A4 ) ( _083_ ZN ) + USE SIGNAL ;
+    - _033_ ( _089_ A2 ) ( _088_ B1 ) ( _084_ ZN ) + USE SIGNAL ;
+    - _034_ ( _087_ A ) ( _085_ ZN ) + USE SIGNAL ;
+    - _035_ ( _119_ B2 ) ( _087_ B2 ) ( _086_ ZN ) + USE SIGNAL ;
+    - _036_ ( _089_ A3 ) ( _088_ B2 ) ( _087_ ZN ) + USE SIGNAL ;
+    - _037_ ( _090_ B1 ) ( _088_ ZN ) + USE SIGNAL ;
+    - _038_ ( _090_ B2 ) ( _089_ ZN ) + USE SIGNAL ;
+    - _039_ ( _097_ A ) ( _091_ ZN ) + USE SIGNAL ;
+    - _040_ ( _097_ B ) ( _092_ ZN ) + USE SIGNAL ;
+    - _041_ ( _102_ A ) ( _096_ A ) ( _093_ ZN ) + USE SIGNAL ;
+    - _042_ ( _121_ A1 ) ( _109_ B2 ) ( _096_ B1 ) ( _094_ ZN ) + USE SIGNAL ;
+    - _043_ ( _121_ A2 ) ( _109_ B1 ) ( _096_ B2 ) ( _095_ ZN ) + USE SIGNAL ;
+    - _044_ ( _097_ S ) ( _096_ ZN ) + USE SIGNAL ;
+    - _045_ ( _101_ A1 ) ( _097_ Z ) + USE SIGNAL ;
+    - _046_ ( _101_ A2 ) ( _098_ ZN ) + USE SIGNAL ;
+    - _047_ ( _100_ A2 ) ( _099_ ZN ) + USE SIGNAL ;
+    - _048_ ( _101_ A3 ) ( _100_ ZN ) + USE SIGNAL ;
+    - _049_ ( _103_ B ) ( _102_ ZN ) + USE SIGNAL ;
+    - _050_ ( _104_ A2 ) ( _103_ ZN ) + USE SIGNAL ;
+    - _051_ ( _108_ A ) ( _105_ ZN ) + USE SIGNAL ;
+    - _052_ ( _108_ B1 ) ( _106_ ZN ) + USE SIGNAL ;
+    - _053_ ( _108_ B2 ) ( _107_ ZN ) + USE SIGNAL ;
+    - _054_ ( _109_ A ) ( _108_ ZN ) + USE SIGNAL ;
+    - _055_ ( _110_ A2 ) ( _109_ ZN ) + USE SIGNAL ;
+    - _056_ ( _112_ A2 ) ( _111_ ZN ) + USE SIGNAL ;
+    - _057_ ( _114_ A2 ) ( _113_ ZN ) + USE SIGNAL ;
+    - _058_ ( _116_ A2 ) ( _115_ ZN ) + USE SIGNAL ;
+    - _059_ ( _119_ A ) ( _117_ ZN ) + USE SIGNAL ;
+    - _060_ ( _119_ B1 ) ( _118_ ZN ) + USE SIGNAL ;
+    - _061_ ( _124_ B2 ) ( _123_ A1 ) ( _119_ ZN ) + USE SIGNAL ;
+    - _062_ ( _121_ A3 ) ( _120_ ZN ) + USE SIGNAL ;
+    - _063_ ( _124_ B1 ) ( _123_ A2 ) ( _121_ ZN ) + USE SIGNAL ;
+    - _064_ ( _124_ A ) ( _123_ A3 ) ( _122_ ZN ) + USE SIGNAL ;
+    - _065_ ( _125_ B1 ) ( _123_ ZN ) + USE SIGNAL ;
+    - _066_ ( _125_ B2 ) ( _124_ ZN ) + USE SIGNAL ;
+    - _067_ ( u_counter.q\[7\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _068_ ( u_counter.q\[0\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _069_ ( u_counter.q\[1\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _070_ ( u_counter.q\[2\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _071_ ( u_counter.q\[3\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _072_ ( u_counter.q\[4\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _073_ ( u_counter.q\[5\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - _074_ ( u_counter.q\[6\]$_SDFF_PP0_ QN ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( output10 A ) ( u_counter.q\[7\]$_SDFF_PP0_ CK ) ( u_counter.q\[6\]$_SDFF_PP0_ CK ) ( u_counter.q\[5\]$_SDFF_PP0_ CK ) ( u_counter.q\[4\]$_SDFF_PP0_ CK ) ( u_counter.q\[3\]$_SDFF_PP0_ CK )
+      ( u_counter.q\[2\]$_SDFF_PP0_ CK ) ( u_counter.q\[1\]$_SDFF_PP0_ CK ) ( u_counter.q\[0\]$_SDFF_PP0_ CK ) + USE SIGNAL ;
+    - clk_out ( PIN clk_out ) ( output10 Z ) + USE SIGNAL ;
+    - din[0] ( PIN din[0] ) ( input1 A ) + USE SIGNAL ;
+    - din[1] ( PIN din[1] ) ( input2 A ) + USE SIGNAL ;
+    - din[2] ( PIN din[2] ) ( input3 A ) + USE SIGNAL ;
+    - din[3] ( PIN din[3] ) ( input4 A ) + USE SIGNAL ;
+    - din[4] ( PIN din[4] ) ( input5 A ) + USE SIGNAL ;
+    - din[5] ( PIN din[5] ) ( input6 A ) + USE SIGNAL ;
+    - din[6] ( PIN din[6] ) ( input7 A ) + USE SIGNAL ;
+    - din[7] ( PIN din[7] ) ( input8 A ) + USE SIGNAL ;
+    - dout[0] ( PIN dout[0] ) ( output11 Z ) + USE SIGNAL ;
+    - dout[1] ( PIN dout[1] ) ( output12 Z ) + USE SIGNAL ;
+    - dout[2] ( PIN dout[2] ) ( output13 Z ) + USE SIGNAL ;
+    - dout[3] ( PIN dout[3] ) ( output14 Z ) + USE SIGNAL ;
+    - dout[4] ( PIN dout[4] ) ( output15 Z ) + USE SIGNAL ;
+    - dout[5] ( PIN dout[5] ) ( output16 Z ) + USE SIGNAL ;
+    - dout[6] ( PIN dout[6] ) ( output17 Z ) + USE SIGNAL ;
+    - dout[7] ( PIN dout[7] ) ( output18 Z ) + USE SIGNAL ;
+    - net1 ( input1 Z ) ( _129_ A ) + USE SIGNAL ;
+    - net10 ( output11 A ) ( u_counter.q\[0\]$_SDFF_PP0_ Q ) ( _129_ B ) + USE SIGNAL ;
+    - net11 ( output12 A ) ( u_counter.q\[1\]$_SDFF_PP0_ Q ) ( _131_ B ) ( _126_ B ) + USE SIGNAL ;
+    - net12 ( output13 A ) ( u_counter.q\[2\]$_SDFF_PP0_ Q ) ( _133_ B ) + USE SIGNAL ;
+    - net13 ( output14 A ) ( u_counter.q\[3\]$_SDFF_PP0_ Q ) ( _130_ B ) + USE SIGNAL ;
+    - net14 ( output15 A ) ( u_counter.q\[4\]$_SDFF_PP0_ Q ) ( _132_ B ) + USE SIGNAL ;
+    - net15 ( output16 A ) ( u_counter.q\[5\]$_SDFF_PP0_ Q ) ( _128_ B ) + USE SIGNAL ;
+    - net16 ( output17 A ) ( u_counter.q\[6\]$_SDFF_PP0_ Q ) ( _127_ B ) + USE SIGNAL ;
+    - net17 ( output18 A ) ( u_counter.q\[7\]$_SDFF_PP0_ Q ) ( _122_ B ) + USE SIGNAL ;
+    - net2 ( input2 Z ) ( _131_ A ) ( _126_ A ) + USE SIGNAL ;
+    - net3 ( input3 Z ) ( _133_ A ) + USE SIGNAL ;
+    - net4 ( input4 Z ) ( _130_ A ) + USE SIGNAL ;
+    - net5 ( input5 Z ) ( _132_ A ) + USE SIGNAL ;
+    - net6 ( input6 Z ) ( _128_ A ) + USE SIGNAL ;
+    - net7 ( input7 Z ) ( _127_ A ) + USE SIGNAL ;
+    - net8 ( input8 Z ) ( _122_ A ) + USE SIGNAL ;
+    - net9 ( input9 Z ) ( _090_ A ) ( _092_ A3 ) ( _098_ A4 ) ( _100_ A3 ) ( _104_ A1 ) ( _110_ A1 )
+      ( _112_ A1 ) ( _114_ A1 ) ( _116_ A1 ) ( _125_ A ) ( _091_ A3 ) + USE SIGNAL ;
+    - reset ( PIN reset ) ( input9 A ) + USE SIGNAL ;
 END NETS
 END DESIGN
