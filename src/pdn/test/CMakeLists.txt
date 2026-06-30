@@ -137,6 +137,7 @@ or_integration_tests(
     reset
     ripup
     sky130_spm_floating_bpin
+    sky130_spm_halo_too_big
     sroute_test
     widthtable
 )

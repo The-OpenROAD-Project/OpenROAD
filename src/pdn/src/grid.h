@@ -286,6 +286,9 @@ class InstanceGrid : public Grid
                              bool rect_is_min,
                              bool apply_horizontal,
                              bool apply_vertical);
+  bool hasHalo() const;
+  void checkHalo() const;
+  Halo suggestHalo(const std::vector<odb::Rect>& rows) const;
 };
 
 class DummyInstanceGrid : public Grid
