@@ -6369,12 +6369,20 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 
   if (use_cugr_) {
     cugr_->setVerbose(false);
-    for (odb::dbNet* net : dirty_nets_) {
-      cugr_->updateNet(net);
+    for (odb::dbNet* db_net : dirty_nets_) {
+      // Rebuild the GlobalRouter pin set from the netlist (as updateDirtyNets
+      // does for FastRoute); updatePinAccessPoints below fixes the positions.
+      Net* net = getNet(db_net);
+      updateNetPins(net);
+      net->setDirtyNet(false);
+      net->clearLastPinPositions();
+      cugr_->updateNet(db_net);
     }
     dirty_nets_.clear();
     cugr_->routeIncremental();
     routes_ = cugr_->getRoutes();
+    // Sync pin access points with CUGR's routing, as the full route does.
+    updatePinAccessPoints();
     return {};
   }
 
