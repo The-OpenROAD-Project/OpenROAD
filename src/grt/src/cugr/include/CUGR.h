@@ -117,6 +117,7 @@ class CUGR
   {
     congestion_iterations_ = iterations;
   }
+  void setVerbose(bool verbose) { verbose_ = verbose; }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
@@ -260,6 +261,7 @@ class CUGR
 
   float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
+  bool verbose_ = true;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
