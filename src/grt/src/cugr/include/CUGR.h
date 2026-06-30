@@ -90,7 +90,7 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route();
+  void route(bool incremental = false);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   void updateDbCongestion();
@@ -262,6 +262,11 @@ class CUGR
   float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
   bool verbose_ = true;
+
+  // True while routeIncremental() is running. Like FastRoute's is_incremental_,
+  // it suppresses the global estimateAllGlobalRouteParasitics() in
+  // updateNetSlacks(), which would otherwise wipe the resizer's parasitics.
+  bool incremental_routing_ = false;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
