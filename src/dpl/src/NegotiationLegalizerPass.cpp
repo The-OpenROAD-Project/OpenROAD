@@ -110,12 +110,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   for (int idx : illegalCells) {
     const NegCell& seed = cells_[idx];
-    const int sw = effectiveSiteWindow(seed);
-    const int rc = effectiveRowCap(seed);
-    const int xlo = seed.x - sw;
-    const int xhi = seed.x + seed.width + sw;
-    const int ylo = std::max(0, seed.y - rc);
-    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + rc);
+    const int site_window = effectiveSiteWindow(seed);
+    const int row_cap = effectiveRowCap(seed);
+    const int xlo = seed.x - site_window;
+    const int xhi = seed.x + seed.width + site_window;
+    const int ylo = std::max(0, seed.y - row_cap);
+    const int yhi = std::min(grid_h_ - 1, seed.y + seed.height + row_cap);
 
     for (int yy = ylo; yy <= yhi; ++yy) {
       const auto& bucket = row_buckets[yy];
@@ -1128,40 +1128,42 @@ void NegotiationLegalizer::greedyImprove(int passes)
       int best_y = cell.y;
       int best_dist = curDisp;
 
-      auto tryLoc = [&](int tx, int ty) {
-        if (!inDie(tx, ty, cell.width, cell.height)) {
+      auto tryLoc = [&](int target_x, int target_y) {
+        if (!inDie(target_x, target_y, cell.width, cell.height)) {
           return;
         }
-        if (!isValidRow(ty, cell, tx)) {
+        if (!isValidRow(target_y, cell, target_x)) {
           return;
         }
-        if (!respectsFence(idx, tx, ty)) {
+        if (!respectsFence(idx, target_x, target_y)) {
           return;
         }
         // Only accept if no new overlap or padding violation is introduced.
-        const int txBegin = std::max(0, tx - cell.pad_left);
-        const int txEnd = std::min(grid_w_, tx + cell.width + cell.pad_right);
+        const int target_x_begin = std::max(0, target_x - cell.pad_left);
+        const int target_x_end
+            = std::min(grid_w_, target_x + cell.width + cell.pad_right);
         for (int dy = 0; dy < cell.height; ++dy) {
-          for (int gx = txBegin; gx < txEnd; ++gx) {
-            if (gridAt(gx, ty + dy).overuse() > 0) {
+          for (int gx = target_x_begin; gx < target_x_end; ++gx) {
+            if (gridAt(gx, target_y + dy).overuse() > 0) {
               return;
             }
           }
         }
-        const int d = std::abs(tx - cell.init_x) + std::abs(ty - cell.init_y);
+        const int d
+            = std::abs(target_x - cell.init_x) + std::abs(target_y - cell.init_y);
         if (d < best_dist) {
           best_dist = d;
-          best_x = tx;
-          best_y = ty;
+          best_x = target_x;
+          best_y = target_y;
         }
       };
 
-      const int sw = effectiveSiteWindow(cell);
+      const int site_window = effectiveSiteWindow(cell);
       const std::vector<int> rows = collectNearestValidRows(
           cell, cell.y, cell.init_x, row_search_window_, effectiveRowCap(cell));
-      for (int ty : rows) {
-        for (int dx = -sw; dx <= sw; ++dx) {
-          tryLoc(cell.init_x + dx, ty);
+      for (int target_y : rows) {
+        for (int dx = -site_window; dx <= site_window; ++dx) {
+          tryLoc(cell.init_x + dx, target_y);
         }
       }
 
