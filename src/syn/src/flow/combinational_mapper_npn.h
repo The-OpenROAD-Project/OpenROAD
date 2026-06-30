@@ -40,7 +40,7 @@ struct NPN
     return ret;
   }
 
-  bool is_identity() const
+  bool isIdentity() const
   {
     if (output_complement) {
       return false;
@@ -105,7 +105,7 @@ struct NPN
     return ret;
   }
 
-  int c_fingerprint() const
+  int cFingerprint() const
   {
     return output_complement | input_complement[0] << 1
            | input_complement[1] << 2 | input_complement[2] << 3
@@ -120,9 +120,9 @@ extern const Truth6 cofactor_masks[6];
 // 2^(2^size) - 1, packed into the low bits of a Truth6.
 Truth6 mask6(int size);
 
-Truth6 npn_semiclass(Truth6 m, int ninputs, NPN& npn);
-void npn_semiclass_allrepr(Truth6 m,
-                           int ninputs,
-                           const std::function<void(Truth6, NPN&)>& cb);
+Truth6 npnSemiclass(Truth6 m, int ninputs, NPN& npn);
+void npnSemiclassAllRepr(Truth6 m,
+                         int ninputs,
+                         const std::function<void(Truth6, NPN&)>& cb);
 
 }  // namespace syn
