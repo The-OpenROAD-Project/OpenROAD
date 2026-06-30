@@ -13,7 +13,6 @@
 #include <memory>
 #include <mutex>
 #include <numbers>
-#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -75,12 +74,28 @@ constexpr int kMinItermLabelBoxPx = 10;    // min pin-box pixel dim for labels
 constexpr int kMinInstNameFontPx = 10;     // minimum readable font size
 constexpr int kMaxInstNameFontPx = 40;     // cap font size for large macros
 constexpr int kMinInstNameBoxPx = 20;      // min instance pixel dim for names
-// Anti-moiré LOD threshold for bump arrays (CSS px).  Below this size a bump is
-// not rasterized in detail (the per-instance geometry walk is what made dense
-// arrays slow); instead its real per-layer footprint is drawn as a single
-// discrete coverage mark and the supersample + Lanczos low-pass band-limits the
-// result.  At or above it the bump is resolved and drawn normally.
-constexpr double kBumpLodHiPx = 8.0;
+// Minimum on-screen feature size (output CSS px) below which geometry is CULLED
+// at the search level instead of drawn.  A regular sub-pixel array (dense
+// bumps/vias) cannot be drawn both discretely (→ moiré) and band-limited (→ a
+// merged "sheet"); like the Qt GUI, we sidestep the dilemma by not returning
+// what is too small to read.  At/above this size each feature is rasterized
+// normally and the supersample + Lanczos downsample only anti-aliases it.
+//
+// The Qt GUI uses TWO limits (layoutViewer.cpp): shapeSizeLimit() =
+// nominalViewableResolution = 5 px for shapes, but instanceSizeLimit() =
+// fineViewableResolution = 1 px for instances (and 0 in module/detailed view).
+// We deliberately apply this single 5 px limit to ALL searches, INCLUDING
+// instances — i.e. more aggressively than Qt for instances — so dense bump
+// arrays (which are kPhysBump instances) vanish at zoom-out; a 1 px instance
+// limit would redraw them in the 1–5 px band and bring the moiré beat back.
+// The `_modules` overview is the exception (passes 0, mirroring Qt's module
+// view) so the module-colored map is not emptied at zoom-out.
+//
+// Note the cull is anisotropic, matching the Qt predicates: instances, rows and
+// blockages are culled by HEIGHT (MinHeightPredicate, box.dy()); shapes/vias by
+// the LARGER dimension (MinSizePredicate, box.maxDXDY()), so a long thin wire
+// survives on its length.
+constexpr double kMinViewablePx = 5.0;
 
 }  // namespace
 
@@ -328,58 +343,6 @@ bool TileVisibility::isNetSelectable(odb::dbNet* net) const
       return net_analog_selectable;
   }
   return true;
-}
-
-// The bounding box (master-local coordinates) of `master`'s obstruction (if
-// vis.blockages) and instance-pin (if vis.inst_pins) geometry on `tech_layer` —
-// or over all layers when `tech_layer` is null (the _instances overview).
-// Returns nullopt when the bump draws nothing on this layer.  Used to place a
-// sub-resolution bump's anti-moiré LOD mark at its real per-layer footprint, so
-// a secondary layer (e.g. an RDL stub) only tints in proportion to the area it
-// actually covers instead of the whole bump bbox — no opaque sheet.
-static std::optional<odb::Rect> bumpLayerGeomBox(odb::dbMaster* master,
-                                                 odb::dbTechLayer* tech_layer,
-                                                 const TileVisibility& vis)
-{
-  odb::Rect box;
-  box.mergeInit();
-  bool found = false;
-  if (vis.blockages) {
-    for (odb::dbPolygon* p : master->getPolygonObstructions()) {
-      if (!tech_layer || p->getTechLayer() == tech_layer) {
-        box.merge(p->getPolygon().getEnclosingRect());
-        found = true;
-      }
-    }
-    for (odb::dbBox* b : master->getObstructions(false)) {
-      if (!tech_layer || b->getTechLayer() == tech_layer) {
-        box.merge(b->getBox());
-        found = true;
-      }
-    }
-  }
-  if (vis.inst_pins) {
-    for (odb::dbMTerm* mterm : master->getMTerms()) {
-      for (odb::dbMPin* mpin : mterm->getMPins()) {
-        for (odb::dbPolygon* pg : mpin->getPolygonGeometry()) {
-          if (!tech_layer || pg->getTechLayer() == tech_layer) {
-            box.merge(pg->getPolygon().getEnclosingRect());
-            found = true;
-          }
-        }
-        for (odb::dbBox* g : mpin->getGeometry(false)) {
-          if (!tech_layer || g->getTechLayer() == tech_layer) {
-            box.merge(g->getBox());
-            found = true;
-          }
-        }
-      }
-    }
-  }
-  if (!found) {
-    return std::nullopt;
-  }
-  return box;
 }
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
@@ -1627,16 +1590,6 @@ static std::vector<unsigned char> lanczos2Downsample(
     int src_dim,
     int dst_dim);
 
-// Forward declaration; defined below near lanczos2Downsample.  In-place
-// separable [1,2,1]/4 binomial low-pass of a float plane over a sub-region
-// (used to band-limit the bump-coverage density before it is composited).
-static void binomialBlurRegion(std::vector<float>& plane,
-                               int stride,
-                               int x0,
-                               int y0,
-                               int x1,
-                               int y1);
-
 std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::string& layer,
     const int z,
@@ -1714,6 +1667,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const odb::Rect dbu_tile_world(
         dbu_x_min_world, dbu_y_min_world, dbu_x_max_world, dbu_y_max_world);
     const double scale = static_cast<double>(super) / tile_dbu_size;
+    // Sub-resolution cull limit (see kMinViewablePx), passed to every Search::*
+    // call below.  kMinViewablePx output CSS px in DBU = kMinViewablePx *
+    // (DBU per output CSS px), and DBU-per-output-CSS-px = tile_dbu_size /
+    // kTileSizeInPixel.  Zoomed in far enough this rounds to 0, which the
+    // Search predicates treat as "no cull" — intended: when features are
+    // already large there is nothing sub-resolution to drop.
+    const int size_limit_dbu = static_cast<int>(
+        std::lround(kMinViewablePx * tile_dbu_size / kTileSizeInPixel));
     // Supersampled render buffer (RGBA, super x super).  The per-chiplet loop
     // draws into this; it is Lanczos-2 decimated into world_image_buffer after
     // the loop, before the (crisp, output-resolution) overlays are drawn.
@@ -1859,8 +1820,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const bool modules_layer
           = (layer == "_modules" && module_colors && !module_colors->empty());
       if (modules_layer) {
-        for (odb::dbInst* inst : search_->searchInsts(
-                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+        // The module-colored overview shows every instance regardless of size
+        // (mirrors Qt's instanceSizeLimit() == 0 in module view), so pass 0 —
+        // no sub-resolution cull — instead of size_limit_dbu, which would empty
+        // the map at zoom-out.
+        for (odb::dbInst* inst : search_->searchInsts(block,
+                                                      dbu_x_min,
+                                                      dbu_y_min,
+                                                      dbu_x_max,
+                                                      dbu_y_max,
+                                                      /*min_height=*/0)) {
           odb::Rect inst_bbox = inst->getBBox()->getBox();
           if (!dbu_tile.overlaps(inst_bbox)) {
             continue;
@@ -2125,17 +2094,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             std::lround(kItermLabelFontHeight * super_per_css)));
         const int iterm_font_h = getTextHeight(iterm_font);
 
-        // Sub-resolution bumps collected for the anti-moiré LOD, drawn once
-        // after the loop with EXACT area coverage (no slab, no tile-edge snap,
-        // no integer floor/ceil, no center splat), so a dense array reads as a
-        // faithful band-limited texture instead of an opaque sheet AND does not
-        // alias into a beat.  Each entry is the bump's real per-layer footprint
-        // {fxl, fyl, fxh, fyh} in FRACTIONAL super-pixel coords (y still up).
-        std::vector<std::array<double, 4>> small_bumps;
-
-        // Draw instances
-        for (odb::dbInst* inst : search_->searchInsts(
-                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+        // Draw instances.  size_limit_dbu culls sub-resolution instances at the
+        // RTree level (Qt-parity), so dense bump arrays vanish at zoom-out.
+        for (odb::dbInst* inst : search_->searchInsts(block,
+                                                      dbu_x_min,
+                                                      dbu_y_min,
+                                                      dbu_x_max,
+                                                      dbu_y_max,
+                                                      size_limit_dbu)) {
           odb::Rect inst_bbox = inst->getBBox()->getBox();
           if (!dbu_tile.overlaps(inst_bbox)) {
             continue;
@@ -2169,39 +2135,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           const int draw_xh = std::clamp<int64_t>(pixel_xh, 0, super - 1);
           const int draw_yh = std::clamp<int64_t>(pixel_yh, 0, super - 1);
 
-          // Anti-moiré LOD: a bump small enough to alias into a moiré-prone
-          // grid is not rasterized in detail (the per-instance geometry walk is
-          // what made dense arrays slow); its real per-layer footprint is
-          // collected and drawn after the loop as a single discrete coverage
-          // mark.  The supersample + Lanczos low-pass then band-limits it, so
-          // the array reads as faithful texture with no merged sheet.  Only the
-          // layer where the bump actually draws contributes (any geometry on
-          // _instances; the matching tech-layer footprint otherwise), so a
-          // secondary layer tints in proportion to its own coverage.
-          if (inst_cat == InstCategory::kPhysBump) {
-            std::optional<odb::Rect> geom_box
-                = instances_only ? std::optional<odb::Rect>(inst_bbox)
-                                 : bumpLayerGeomBox(master, tech_layer, vis);
-            if (geom_box) {
-              const double size_px = static_cast<double>(
-                  std::max<int64_t>(pixel_xh - pixel_xl, pixel_yh - pixel_yl));
-              const double hi = kBumpLodHiPx * super_per_css;
-              if (size_px < hi) {
-                if (!instances_only) {
-                  inst->getTransform().apply(*geom_box);
-                }
-                // Footprint in FRACTIONAL super-pixel coords (y still up); kept
-                // un-quantized so the post-loop draw can compute exact area
-                // coverage (quantizing here would re-introduce the beat).
-                const double fxl = (geom_box->xMin() - dbu_x_min) * scale;
-                const double fyl = (geom_box->yMin() - dbu_y_min) * scale;
-                const double fxh = (geom_box->xMax() - dbu_x_min) * scale;
-                const double fyh = (geom_box->yMax() - dbu_y_min) * scale;
-                small_bumps.push_back({fxl, fyl, fxh, fyh});
-                continue;  // never rasterize detail below the LOD threshold
-              }
-            }
-          }
+          // Sub-resolution instances (incl. dense bump arrays) were already
+          // culled by searchInsts(size_limit_dbu) above — matching the Qt GUI —
+          // so everything reaching here is large enough to draw discretely; no
+          // coverage-tint LOD (which read as a merged "sheet").
 
           if (instances_only) {
             // Draw the rectangle border (instances-only layer)
@@ -2467,111 +2404,6 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
         }
 
-        // Anti-moiré LOD: render the collected sub-resolution bumps as a
-        // FAITHFUL, BEAT-FREE tint — never a merged opaque sheet.  Each bump
-        // adds its EXACT fractional area to a LINEAR density plane (the
-        // per-pixel area integral is the true local coverage, independent of
-        // the sub-pixel phase — no width/position jitter, the RODADA-17 beat
-        // cause).  A separable [1,2,1]/4 binomial low-pass (exact zero at
-        // Nyquist, unit DC gain) then NULLS the near-Nyquist tone the array
-        // would otherwise leak as a moiré beat through the soft Lanczos-2
-        // decimation, while leaving the local MEAN density untouched.  The
-        // plane is composited ONCE with alpha = base.a * coverage, so a
-        // 25 %-filled array stays ~25 % translucent: a faint tint, never an
-        // opaque block over the inter-bump gaps.  Accumulating linearly (vs.
-        // per-bump alpha-over) keeps the density proportional even where
-        // footprints share a pixel.
-        if (!small_bumps.empty()) {
-          const Color base = instances_only
-                                 ? Color{.r = 128, .g = 128, .b = 128, .a = 160}
-                                 : color;
-          // Linear coverage density, super-pixel resolution (y still up).
-          // thread_local + bounded clear/scan so it is reused cheaply and a
-          // sparse array touches only its own footprint.
-          static thread_local std::vector<float> density;
-          density.resize(static_cast<size_t>(super) * super);
-
-          // Union bbox of the bumps, grown by the kernel radius so the blur can
-          // feather the array's real edge into a zeroed margin; clamped to the
-          // tile so a continuing array stays flat at the boundary (no seam).
-          constexpr int kRadius = 1;
-          double min_x = small_bumps.front()[0];
-          double min_y = small_bumps.front()[1];
-          double max_x = small_bumps.front()[2];
-          double max_y = small_bumps.front()[3];
-          for (const auto& b : small_bumps) {
-            min_x = std::min(min_x, b[0]);
-            min_y = std::min(min_y, b[1]);
-            max_x = std::max(max_x, b[2]);
-            max_y = std::max(max_y, b[3]);
-          }
-          const int rx0 = std::clamp(
-              static_cast<int>(std::floor(min_x)) - kRadius, 0, super);
-          const int ry0 = std::clamp(
-              static_cast<int>(std::floor(min_y)) - kRadius, 0, super);
-          const int rx1 = std::clamp(
-              static_cast<int>(std::ceil(max_x)) + kRadius, 0, super);
-          const int ry1 = std::clamp(
-              static_cast<int>(std::ceil(max_y)) + kRadius, 0, super);
-
-          // Clear only the working region.  Index through data() so the
-          // one-past-the-row end pointer (rx1 == super) is well-formed instead
-          // of tripping operator[]'s bounds assertion.
-          float* const dptr = density.data();
-          for (int iy = ry0; iy < ry1; ++iy) {
-            const size_t base = static_cast<size_t>(iy) * super;
-            std::fill(dptr + base + rx0, dptr + base + rx1, 0.0f);
-          }
-
-          // Accumulate exact per-pixel area coverage.
-          for (const auto& b : small_bumps) {
-            const double fxl = b[0];
-            const double fyl = b[1];
-            const double fxh = b[2];
-            const double fyh = b[3];
-            const int ix0 = std::max(rx0, static_cast<int>(std::floor(fxl)));
-            const int iy0 = std::max(ry0, static_cast<int>(std::floor(fyl)));
-            const int ix1 = std::min(rx1, static_cast<int>(std::ceil(fxh)));
-            const int iy1 = std::min(ry1, static_cast<int>(std::ceil(fyh)));
-            for (int iy = iy0; iy < iy1; ++iy) {
-              const double cov_y
-                  = std::min(fyh, iy + 1.0) - std::max(fyl, double(iy));
-              if (cov_y <= 0.0) {
-                continue;
-              }
-              float* row = &density[static_cast<size_t>(iy) * super];
-              for (int ix = ix0; ix < ix1; ++ix) {
-                const double cov_x
-                    = std::min(fxh, ix + 1.0) - std::max(fxl, double(ix));
-                if (cov_x <= 0.0) {
-                  continue;
-                }
-                row[ix] += static_cast<float>(cov_x * cov_y);
-              }
-            }
-          }
-
-          // Band-limit the density (kills the beat, keeps the mean), then
-          // composite the faithful tint once.
-          binomialBlurRegion(density, super, rx0, ry0, rx1, ry1);
-          for (int iy = ry0; iy < ry1; ++iy) {
-            const int draw_y = super - 1 - iy;
-            const float* row = &density[static_cast<size_t>(iy) * super];
-            for (int ix = rx0; ix < rx1; ++ix) {
-              const float d = row[ix];
-              if (d <= 0.0f) {
-                continue;
-              }
-              Color c = base;
-              c.a = static_cast<unsigned char>(
-                  std::lround(base.a * std::clamp(d, 0.0f, 1.0f)));
-              if (c.a > 0) {
-                blendPixel(image_buffer, ix, draw_y, c, super);
-              }
-            }
-          }
-        }
-
         // Draw routing shapes (wires, vias) and BTerm shapes on top of
         // instances
         if (!instances_only && tech_layer && (vis.routing || vis.pins)) {
@@ -2580,7 +2412,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                                             dbu_x_min,
                                                             dbu_y_min,
                                                             dbu_x_max,
-                                                            dbu_y_max)) {
+                                                            dbu_y_max,
+                                                            size_limit_dbu)) {
             const auto type = std::get<1>(shape);
             if (type == Search::kBterm && !vis.pins) {
               continue;
@@ -2619,7 +2452,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                                              dbu_x_min,
                                                              dbu_y_min,
                                                              dbu_x_max,
-                                                             dbu_y_max)) {
+                                                             dbu_y_max,
+                                                             size_limit_dbu)) {
             odb::dbNet* snet = std::get<2>(shape);
             if (!vis.isNetVisible(snet)) {
               continue;
@@ -2640,12 +2474,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         // Draw special net vias — decompose into individual cut boxes
         if (!instances_only && tech_layer && vis.special_nets
             && vis.srouting_vias) {
-          for (const auto& shape : search_->searchSNetViaShapes(block,
-                                                                tech_layer,
-                                                                dbu_x_min,
-                                                                dbu_y_min,
-                                                                dbu_x_max,
-                                                                dbu_y_max)) {
+          for (const auto& shape :
+               search_->searchSNetViaShapes(block,
+                                            tech_layer,
+                                            dbu_x_min,
+                                            dbu_y_min,
+                                            dbu_x_max,
+                                            dbu_y_max,
+                                            size_limit_dbu)) {
             odb::dbNet* via_net = std::get<1>(shape);
             if (!vis.isNetVisible(via_net)) {
               continue;
@@ -2697,12 +2533,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 || cut_layer->getType() != odb::dbTechLayerType::CUT) {
               continue;
             }
-            for (const auto& shape : search_->searchSNetViaShapes(block,
-                                                                  cut_layer,
-                                                                  dbu_x_min,
-                                                                  dbu_y_min,
-                                                                  dbu_x_max,
-                                                                  dbu_y_max)) {
+            for (const auto& shape :
+                 search_->searchSNetViaShapes(block,
+                                              cut_layer,
+                                              dbu_x_min,
+                                              dbu_y_min,
+                                              dbu_x_max,
+                                              dbu_y_max,
+                                              size_limit_dbu)) {
               odb::dbNet* via_net = std::get<1>(shape);
               if (!vis.isNetVisible(via_net)) {
                 continue;
@@ -2747,8 +2585,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               = static_cast<int>(std::lround(20 * super_per_css));
           const int kLineWidth
               = static_cast<int>(std::lround(2 * super_per_css));
-          for (odb::dbBlockage* blk : search_->searchBlockages(
-                   block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          for (odb::dbBlockage* blk :
+               search_->searchBlockages(block,
+                                        dbu_x_min,
+                                        dbu_y_min,
+                                        dbu_x_max,
+                                        dbu_y_max,
+                                        size_limit_dbu)) {
             odb::Rect box = blk->getBBox()->getBox();
             if (!box.overlaps(dbu_tile)) {
               continue;
@@ -2782,7 +2625,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                            dbu_x_min,
                                            dbu_y_min,
                                            dbu_x_max,
-                                           dbu_y_max)) {
+                                           dbu_y_max,
+                                           size_limit_dbu)) {
             odb::Rect box = obs->getBBox()->getBox();
             if (!box.overlaps(dbu_tile)) {
               continue;
@@ -2819,8 +2663,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             }
           };
 
-          for (const auto& [row_rect, row] : search_->searchRows(
-                   block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          for (const auto& [row_rect, row] :
+               search_->searchRows(block,
+                                   dbu_x_min,
+                                   dbu_y_min,
+                                   dbu_x_max,
+                                   dbu_y_max,
+                                   size_limit_dbu)) {
             if (!row_rect.overlaps(dbu_tile)) {
               continue;
             }
@@ -3280,57 +3129,6 @@ static const std::vector<std::vector<std::pair<int, float>>>& getLanczos2Taps(
     it = cache.emplace(key, buildLanczos2Taps(src_dim, dst_dim)).first;
   }
   return it->second;
-}
-
-// In-place separable [1,2,1]/4 binomial low-pass of a float plane over the
-// half-open region [x0,x1) x [y0,y1) (row stride `stride`), clamp-to-edge at
-// the region boundary.  The binomial has an EXACT zero at Nyquist and unit DC
-// gain: it nulls the near-Nyquist tone a dense periodic array would otherwise
-// leak as a moiré beat, while leaving the local MEAN untouched.  Applied to the
-// linear bump-coverage density this keeps a faithful faint tint (mean coverage
-// preserved) — never a merged opaque sheet.  Clamp-to-edge at the tile boundary
-// keeps a continuing array flat there, so adjacent tiles abut with no seam.
-static void binomialBlurRegion(std::vector<float>& plane,
-                               const int stride,
-                               const int x0,
-                               const int y0,
-                               const int x1,
-                               const int y1)
-{
-  if (x1 <= x0 || y1 <= y0) {
-    return;
-  }
-  static thread_local std::vector<float> line;
-  // Horizontal pass.
-  line.resize(x1 - x0);
-  for (int y = y0; y < y1; ++y) {
-    float* row = &plane[static_cast<size_t>(y) * stride];
-    for (int x = x0; x < x1; ++x) {
-      const float l = row[x > x0 ? x - 1 : x0];
-      const float r = row[x < x1 - 1 ? x + 1 : x1 - 1];
-      line[x - x0] = 0.25f * l + 0.5f * row[x] + 0.25f * r;
-    }
-    for (int x = x0; x < x1; ++x) {
-      row[x] = line[x - x0];
-    }
-  }
-  // Vertical pass.
-  line.resize(y1 - y0);
-  for (int x = x0; x < x1; ++x) {
-    for (int y = y0; y < y1; ++y) {
-      const float u
-          = plane[static_cast<size_t>(y > y0 ? y - 1 : y0) * stride + x];
-      const float d
-          = plane[static_cast<size_t>(y < y1 - 1 ? y + 1 : y1 - 1) * stride
-                  + x];
-      line[y - y0] = 0.25f * u
-                     + 0.5f * plane[static_cast<size_t>(y) * stride + x]
-                     + 0.25f * d;
-    }
-    for (int y = y0; y < y1; ++y) {
-      plane[static_cast<size_t>(y) * stride + x] = line[y - y0];
-    }
-  }
 }
 
 // Separable Lanczos-2 downsample of a straight-alpha RGBA buffer from src_dim^2
