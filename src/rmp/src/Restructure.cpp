@@ -85,16 +85,16 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::resynth(sta::Scene* corner)
+void Restructure::resynth(sta::Scene* scene)
 {
-  ZeroSlackStrategy zero_slack_strategy(corner);
+  ZeroSlackStrategy zero_slack_strategy(scene);
   zero_slack_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthAnnealing(sta::Scene* corner)
+void Restructure::resynthAnnealing(sta::Scene* scene)
 {
-  AnnealingStrategy annealing_strategy(corner,
+  AnnealingStrategy annealing_strategy(scene,
                                        slack_threshold_,
                                        annealing_seed_,
                                        annealing_temp_,
@@ -105,9 +105,9 @@ void Restructure::resynthAnnealing(sta::Scene* corner)
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthGenetic(sta::Scene* corner)
+void Restructure::resynthGenetic(sta::Scene* scene)
 {
-  GeneticStrategy genetic_strategy(corner,
+  GeneticStrategy genetic_strategy(scene,
                                    slack_threshold_,
                                    genetic_seed_,
                                    genetic_population_size_,

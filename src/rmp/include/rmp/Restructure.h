@@ -65,10 +65,10 @@ class Restructure
   ~Restructure();
 
   void reset();
-  void resynth(sta::Scene* corner);
-  void resynthAnnealing(sta::Scene* corner);
-  void resynthEmap(sta::Scene* corner);
-  void resynthGenetic(sta::Scene* corner);
+  void resynth(sta::Scene* scene);
+  void resynthAnnealing(sta::Scene* scene);
+  void resynthEmap(sta::Scene* scene);
+  void resynthGenetic(sta::Scene* scene);
   void run(char* liberty_file_name,
            float slack_threshold,
            unsigned max_depth,

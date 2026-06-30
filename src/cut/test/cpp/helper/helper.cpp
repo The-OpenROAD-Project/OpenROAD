@@ -3,24 +3,25 @@
 
 #include "helper.h"
 
-#include <unistd.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
 #include <string>
 
-#include "base/abc/abc.h"
-#include "base/main/abcapis.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/lefin.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
+
+namespace abc {
+void Abc_Start();
+}
 
 namespace cut {
 
@@ -53,7 +54,7 @@ void CutFixture::LoadVerilog(const std::string& file_name,
   ord::dbVerilogNetwork verilog_network(sta_.get());
 
   sta::VerilogReader verilog_reader(&verilog_network);
-  verilog_reader.read(getFilePath(file_name).c_str());
+  verilog_reader.read(getFilePath(file_name));
 
   ord::dbLinkDesign(top.c_str(),
                     &verilog_network,

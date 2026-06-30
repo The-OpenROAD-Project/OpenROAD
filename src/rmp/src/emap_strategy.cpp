@@ -3,13 +3,19 @@
 
 #include "emap_strategy.h"
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "aig/aig/aig.h"
 #include "base/abc/abc.h"
@@ -19,6 +25,7 @@
 #include "db_sta/dbSta.hh"
 #include "lorina/common.hpp"
 #include "lorina/diagnostics.hpp"
+#include "lorina/genlib.hpp"
 #include "map/scl/sclLib.h"
 #include "misc/vec/vecStr.h"
 #include "mockturtle/algorithms/emap.hpp"
@@ -31,13 +38,17 @@
 #include "mockturtle/views/topo_view.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "rsz/Resizer.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Search.hh"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
+#include "utl/unique_name.h"
 
 namespace abc {
 Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
@@ -105,7 +116,7 @@ std::vector<odb::dbMTerm*> EmapStrategy::GetSignalOutputs(odb::dbMaster* master)
   auto by_name = [](odb::dbMTerm* a, odb::dbMTerm* b) {
     return std::strcmp(a->getName().c_str(), b->getName().c_str()) < 0;
   };
-  std::stable_sort(outs.begin(), outs.end(), by_name);
+  std::ranges::stable_sort(outs, by_name);
 
   return outs;
 }
