@@ -482,6 +482,9 @@ class GPin
   bool hasMinExpSumX() const { return hasMinExpSumX_; }
   bool hasMinExpSumY() const { return hasMinExpSumY_; }
 
+  void setGradient(FloatPoint grad) { gradient_ = grad; }
+  FloatPoint getGradient() const { return gradient_; }
+
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
@@ -498,6 +501,7 @@ class GPin
   int offsetCy_ = 0;
   int cx_ = 0;
   int cy_ = 0;
+  FloatPoint gradient_ = {0, 0};
 
   // weighted average WL vals stor for better indexing
   // Please check the equation (4) in the ePlace-MS paper.
@@ -646,6 +650,7 @@ inline void Bin::setFillerArea(int64_t area)
 
 inline void Bin::addNonPlaceArea(int64_t area)
 {
+#pragma omp atomic
   nonPlaceArea_ += area;
 }
 
@@ -656,16 +661,19 @@ inline void Bin::addInstPlacedArea(int64_t area)
 
 inline void Bin::addNonPlaceAreaUnscaled(int64_t area)
 {
+#pragma omp atomic
   nonPlaceAreaUnscaled_ += area;
 }
 
 inline void Bin::addInstPlacedAreaUnscaled(int64_t area)
 {
+#pragma omp atomic
   instPlacedAreaUnscaled_ += area;
 }
 
 inline void Bin::addFillerArea(int64_t area)
 {
+#pragma omp atomic
   fillerArea_ += area;
 }
 
