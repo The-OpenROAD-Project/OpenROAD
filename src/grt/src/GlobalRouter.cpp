@@ -473,6 +473,7 @@ void GlobalRouter::globalRoute(bool save_guides)
 
     if (use_cugr_) {
       std::vector<Net*> nets = initCUGR(min_layer, max_layer);
+      cugr_->setVerbose(verbose_);
       if (verbose_) {
         reportResources();
       }
@@ -6341,6 +6342,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
+    cugr_->setVerbose(false);
     for (odb::dbNet* net : dirty_nets_) {
       cugr_->updateNet(net);
     }

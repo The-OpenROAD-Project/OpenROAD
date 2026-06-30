@@ -393,7 +393,9 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
 {
-  logger_->report("Stage 1: Pattern routing.");
+  if (verbose_) {
+    logger_->report("Stage 1: Pattern routing.");
+  }
 
   if (critical_nets_percentage_ != 0) {
     setInitialNetSlacks();
@@ -496,7 +498,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("Stage 3: Pattern routing with detours.");
+  if (verbose_) {
+    logger_->report("Stage 3: Pattern routing with detours.");
+  }
 
   if (critical_nets_percentage_ != 0) {
     updateCriticalNets();
@@ -623,7 +627,7 @@ void CUGR::route()
 
   patternRouteWithDetours(net_indices);
 
-  if (!net_indices.empty()) {
+  if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
   mazeRoute(net_indices);
@@ -739,7 +743,9 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     return;
   }
 
-  logger_->report("Stage 5: Iterative rip-up and re-route.");
+  if (verbose_) {
+    logger_->report("Stage 5: Iterative rip-up and re-route.");
+  }
 
   // Multiplier ramps up to saturate around slope=6 — beyond that the
   // logistic cost surface degenerates into a step function with no
@@ -807,8 +813,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       multiplier += kMultiplierStep;
     }
     grid_graph_->setCostMultiplier(multiplier);
-    logger_->info(
-        GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
+    if (verbose_) {
+      logger_->info(
+          GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
+    }
     mazeRoute(net_indices);
   }
   grid_graph_->setCostMultiplier(1.0);
@@ -1077,6 +1085,10 @@ void CUGR::getGuides(const GRNet* net,
 
 void CUGR::printStatistics() const
 {
+  if (!verbose_) {
+    return;
+  }
+
   logger_->report("Routing statistics");
 
   // wire length and via count
