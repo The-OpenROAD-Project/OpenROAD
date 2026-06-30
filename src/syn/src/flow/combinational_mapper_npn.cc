@@ -32,8 +32,8 @@ Truth6 mask6(const int size)
 
 // Returns a canonical representative of m's NPN-equivalence class — the
 // set of functions reachable from m by input permutation, input inversion,
-// and output inversion — and fills `npn` with the transform mapping the
-// repr back to m (so npn(repr) == m, masked to ninputs).
+// and output inversion — and fills `npn` with the transform mapping m to
+// repr.
 //
 // Canonicalization rule:
 //   1. Complement the output if popcount(m) > nbits/2.
