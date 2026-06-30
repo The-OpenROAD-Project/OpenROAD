@@ -435,6 +435,9 @@ void EstimateParasitics::updateParasitics()
   switch (parasitics_src_) {
     case ParasiticsSrc::kPlacement:
       for (const sta::Net* net : parasitics_invalid_) {
+        if (isIdealClockNet(net)) {
+          continue;
+        }
         //
         // TODO: remove this check (we expect all to be flat net)
         //
@@ -461,6 +464,9 @@ void EstimateParasitics::updateParasitics()
       // TODO: update detailed route for modified nets
       incr_groute_->updateRoutes();
       for (const sta::Net* net : parasitics_invalid_) {
+        if (isIdealClockNet(net)) {
+          continue;
+        }
         debugPrint(logger_,
                    EST,
                    "estimate_parasitics",
@@ -482,6 +488,9 @@ void EstimateParasitics::updateParasitics()
   // groute call.
   if (parasitics_src_ != ParasiticsSrc::kNone) {
     for (const sta::Net* net : parasitics_invalid_) {
+      if (isIdealClockNet(net)) {
+        continue;
+      }
       debugPrint(logger_,
                  EST,
                  "estimate_parasitics",
@@ -721,9 +730,12 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
     if (spef_writer) {
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
-    arc_delay_calc_->reduceParasitic(
-        parasitic, net, corner, sta::MinMaxAll::all());
-    parasitics->deleteParasiticNetwork(net);
+
+    if (arc_delay_calc_->reduceSupported()) {
+      arc_delay_calc_->reduceParasitic(
+          parasitic, net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(net);
+    }
   }
 }
 
@@ -732,15 +744,7 @@ void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Net* net,
     sta::SpefWriter* spef_writer)
 {
-  bool all_modes_ideal_clock = true;
-  for (sta::Mode* mode : sta_->modes()) {
-    if (!sta_->isIdealClock(drvr_pin, mode)) {
-      all_modes_ideal_clock = false;
-      break;
-    }
-  }
-
-  if (!all_modes_ideal_clock) {
+  if (!isIdealClockPin(drvr_pin)) {
     SteinerTree* tree = makeSteinerTree(drvr_pin);
     if (tree) {
       debugPrint(logger_,
@@ -855,9 +859,12 @@ void EstimateParasitics::estimateWireParasiticSteiner(
         if (spef_writer) {
           spef_writer->writeNet(corner, net, parasitic, parasitics);
         }
-        arc_delay_calc_->reduceParasitic(
-            parasitic, net, corner, sta::MinMaxAll::all());
-        parasitics->deleteParasiticNetwork(net);
+
+        if (arc_delay_calc_->reduceSupported()) {
+          arc_delay_calc_->reduceParasitic(
+              parasitic, net, corner, sta::MinMaxAll::all());
+          parasitics->deleteParasiticNetwork(net);
+        }
       }
       delete tree;
     }
@@ -907,7 +914,22 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
   int max_layer = block_->getMaxRoutingLayer();
 
   if (max_layer < 0) {
-    max_layer = db_->getTech()->getRoutingLayerCount() / 2;
+    // Fall back to roughly the middle of the frontside routing stack.
+    // Halving the total routing-layer count picks the wrong stack when
+    // backside layers (BPR, BM*, BRDL) push the midpoint below the
+    // frontside boundary; counting only frontside levels keeps the
+    // heuristic on the side that hosts the signal routes whose cut
+    // resistance this function averages.
+    odb::dbTech* tech = db_->getTech();
+    const int total_levels = tech->getRoutingLayerCount();
+    odb::dbTechLayer* first_front = tech->firstFrontsideRoutingLayer();
+    if (first_front != nullptr) {
+      const int first_level = first_front->getRoutingLevel();
+      const int frontside_count = total_levels - first_level + 1;
+      max_layer = first_level - 1 + frontside_count / 2;
+    } else {
+      max_layer = total_levels / 2;
+    }
   }
 
   odb::dbTechLayer* min_tech_layer
@@ -957,7 +979,6 @@ void EstimateParasitics::parasiticNodeConnectPins(
       if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
-
           insertViaResistances(pin_layer,
                                tree_layer,
                                parasitics,
@@ -1017,31 +1038,48 @@ void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
       if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
         continue;
       }
-      sta::ParasiticNode* mid_node = parasitics->ensureParasiticNode(
-          parasitic, net, ++max_node_index, network_);
-
       const double cut_res
           = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
 
+      // Resolve from/to endpoints first, so we only allocate a new mid_node
+      // when this iteration actually needs one. On the terminal iteration the
+      // resistor connects directly to the pin or tree anchor; pre-allocating
+      // a mid_node here would create a floating ParasiticNode (singular row
+      // in the conductance matrix for Prima/CCS).
       sta::ParasiticNode* from_node = prev_node;
-      sta::ParasiticNode* to_node = mid_node;
+      sta::ParasiticNode* to_node = nullptr;
+      bool need_new_mid = true;
       if (pin_is_below) {
         if (layer_idx - 1 == pin_layer_idx) {
           from_node = pin_node;
-        } else if (layer_idx + 1 == tree_layer_idx) {
+        }
+        if (layer_idx + 1 == tree_layer_idx) {
           to_node = node;
+          need_new_mid = false;
         }
       } else {
         if (layer_idx - 1 == tree_layer_idx) {
           from_node = node;
-        } else if (layer_idx + 1 == pin_layer_idx) {
-          to_node = pin_node;
         }
+        if (layer_idx + 1 == pin_layer_idx) {
+          to_node = pin_node;
+          need_new_mid = false;
+        }
+      }
+
+      sta::ParasiticNode* mid_node = nullptr;
+      if (need_new_mid) {
+        mid_node = parasitics->ensureParasiticNode(
+            parasitic, net, ++max_node_index, network_);
+        to_node = mid_node;
       }
 
       parasitics->makeResistor(
           parasitic, resistor_id++, cut_res, from_node, to_node);
 
+      // On the terminal iteration mid_node is nullptr and prev_node is unused
+      // by the next iteration (there is none); on every other iteration we
+      // chain through the freshly allocated mid_node.
       prev_node = mid_node;
     }
   }
@@ -1125,6 +1163,42 @@ bool EstimateParasitics::isPad(const sta::Instance* inst) const
   }
   // gcc warniing
   return false;
+}
+
+bool EstimateParasitics::isIdealClockPin(const sta::Pin* pin) const
+{
+  // An ideal clock pin carries fixed arrivals that do not depend on
+  // parasitics, so its parasitics never need re-estimation.
+  bool is_clock = false;
+  for (sta::Mode* mode : sta_->modes()) {
+    // In multi-mode designs, a pin may be an ideal clock only in a subset of
+    // modes. Ignore modes where the pin is not a clock at all.
+    // e.g., scan clock pin may not be defined as clock in function mode.
+    if (!sta_->isClock(pin, mode)) {
+      continue;
+    }
+    is_clock = true;
+    if (!sta_->isIdealClock(pin, mode)) {
+      return false;
+    }
+  }
+  return is_clock;
+}
+
+bool EstimateParasitics::isIdealClockNet(const sta::Net* net) const
+{
+  odb::dbNet* db_net = db_network_->staToDb(net);
+  if (db_net == nullptr) {
+    return false;
+  }
+
+  PinSet* drivers = network_->drivers(net);
+  if (drivers == nullptr || drivers->empty()) {
+    return false;
+  }
+
+  const Pin* drvr_pin = *drivers->begin();
+  return isIdealClockPin(drvr_pin);
 }
 
 void EstimateParasitics::parasiticsInvalid(const sta::Net* net)

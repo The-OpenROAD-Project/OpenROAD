@@ -24,10 +24,10 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frGCellPattern.h"
 #include "db/tech/frLayer.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
-#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -685,22 +685,13 @@ void GuideProcessor::readGCellGrid()
       || gcellGrid->getNumGridPatternsY() != 1) {
     return;
   }
-  frGCellPattern xgp, ygp;
   frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
   frCoord COUNTX, COUNTY;
   gcellGrid->getGridPatternX(0, GCELLOFFSETX, COUNTX, GCELLGRIDX);
   gcellGrid->getGridPatternY(0, GCELLOFFSETY, COUNTY, GCELLGRIDY);
-  xgp.setStartCoord(GCELLOFFSETX);
-  xgp.setSpacing(GCELLGRIDX);
-  xgp.setCount(COUNTX);
-  xgp.setHorizontal(false);
-
-  ygp.setStartCoord(GCELLOFFSETY);
-  ygp.setSpacing(GCELLGRIDY);
-  ygp.setCount(COUNTY);
-  ygp.setHorizontal(true);
   getDesign()->getTopBlock()->setGCellPatterns(
-      {std::move(xgp), std::move(ygp)});
+      {frGCellPattern(/*horizontal=*/false, GCELLOFFSETX, GCELLGRIDX, COUNTX),
+       frGCellPattern(/*horizontal=*/true, GCELLOFFSETY, GCELLGRIDY, COUNTY)});
 }
 
 bool GuideProcessor::readGuides()
@@ -862,40 +853,33 @@ void GuideProcessor::buildGCellPatterns()
 {
   // horizontal = false is gcell lines along y direction (x-grid)
   if (getDesign()->getTopBlock()->getGCellPatterns().empty()) {
-    frGCellPattern xgp, ygp;
     frCoord GCELLOFFSETX, GCELLOFFSETY, GCELLGRIDX, GCELLGRIDY;
-    odb::Rect dieBox = getDesign()->getTopBlock()->getDieBox();
+    const odb::Rect dieBox = getDesign()->getTopBlock()->getDieBox();
     buildGCellPatterns_helper(
         GCELLGRIDX, GCELLGRIDY, GCELLOFFSETX, GCELLOFFSETY);
-    xgp.setHorizontal(false);
     // find first coord >= dieBox.xMin()
     frCoord startCoordX
         = dieBox.xMin() / GCELLGRIDX * GCELLGRIDX + GCELLOFFSETX;
     if (startCoordX > dieBox.xMin()) {
       startCoordX -= GCELLGRIDX;
     }
-    xgp.setStartCoord(startCoordX);
-    xgp.setSpacing(GCELLGRIDX);
     if ((dieBox.xMax() - GCELLOFFSETX) / GCELLGRIDX < 1) {
       logger_->error(DRT, 174, "GCell cnt x < 1.");
     }
-    xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
-
-    ygp.setHorizontal(true);
     // find first coord >= dieBox.yMin()
     frCoord startCoordY
         = dieBox.yMin() / GCELLGRIDY * GCELLGRIDY + GCELLOFFSETY;
     if (startCoordY > dieBox.yMin()) {
       startCoordY -= GCELLGRIDY;
     }
-    ygp.setStartCoord(startCoordY);
-    ygp.setSpacing(GCELLGRIDY);
     if ((dieBox.yMax() - GCELLOFFSETY) / GCELLGRIDY < 1) {
       logger_->error(DRT, 175, "GCell cnt y < 1.");
     }
-    ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
+    const frUInt4 countX = (dieBox.xMax() - startCoordX) / GCELLGRIDX;
+    const frUInt4 countY = (dieBox.yMax() - startCoordY) / GCELLGRIDY;
     getDesign()->getTopBlock()->setGCellPatterns(
-        {std::move(xgp), std::move(ygp)});
+        {frGCellPattern(/*horizontal=*/false, startCoordX, GCELLGRIDX, countX),
+         frGCellPattern(/*horizontal=*/true, startCoordY, GCELLGRIDY, countY)});
   }
   const auto& gcell_patterns = getDesign()->getTopBlock()->getGCellPatterns();
   const auto& xgp = gcell_patterns[0];
@@ -1734,13 +1718,10 @@ GuidePathFinder::commitPathToGuides(
   final_guides.erase(std::unique(final_guides.begin(), final_guides.end()),
                      final_guides.end());
   for (const auto& [layer_num, box] : final_guides) {
-    auto guide = std::make_unique<frGuide>();
-    odb::Point begin = getDesign()->getTopBlock()->getGCellCenter(box.ll());
-    odb::Point end = getDesign()->getTopBlock()->getGCellCenter(box.ur());
-    guide->setPoints(begin, end);
-    guide->setBeginLayerNum(layer_num);
-    guide->setEndLayerNum(layer_num);
-    guide->addToNet(net_);
+    const odb::Point begin
+        = getDesign()->getTopBlock()->getGCellCenter(box.ll());
+    const odb::Point end = getDesign()->getTopBlock()->getGCellCenter(box.ur());
+    auto guide = std::make_unique<frGuide>(begin, layer_num, end);
     net_->addGuide(std::move(guide));
   }
   return gr_pins;
@@ -1975,30 +1956,14 @@ void GuideProcessor::saveGuidesUpdates()
       odb::Point epIdx = getDesign()->getTopBlock()->getGCellIdx(ep);
       odb::Rect bbox = getDesign()->getTopBlock()->getGCellBox(bpIdx);
       odb::Rect ebox = getDesign()->getTopBlock()->getGCellBox(epIdx);
-      frLayerNum bNum = guide->getBeginLayerNum();
-      frLayerNum eNum = guide->getEndLayerNum();
-      if (bNum != eNum) {
-        for (auto lNum = std::min(bNum, eNum); lNum <= std::max(bNum, eNum);
-             lNum += 2) {
-          auto layer = getTech()->getLayer(lNum);
-          auto dbLayer = dbTech->findLayer(layer->getName().c_str());
-          odb::dbGuide::create(
-              dbNet,
-              dbLayer,
-              dbLayer,
-              {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
-              false);
-        }
-      } else {
-        auto layerName = getTech()->getLayer(bNum)->getName();
-        auto dbLayer = dbTech->findLayer(layerName.c_str());
-        odb::dbGuide::create(
-            dbNet,
-            dbLayer,
-            dbLayer,
-            {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
-            false);
-      }
+      const frLayerNum layer_num = guide->getLayerNum();
+      auto layerName = getTech()->getLayer(layer_num)->getName();
+      auto dbLayer = dbTech->findLayer(layerName.c_str());
+      odb::dbGuide::create(dbNet,
+                           dbLayer,
+                           dbLayer,
+                           {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+                           false);
     }
     auto dbGuides = dbNet->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible()) {

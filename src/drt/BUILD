@@ -118,10 +118,10 @@ cc_library(
         "src/dr/FlexDR.h",
         "src/dr/FlexGridGraph.h",
         "src/dr/FlexWavefront.h",
+        "src/drt-global.h",
         "src/frDesign.h",
         "src/frRegionQuery.h",
         "src/gc/FlexGC.h",
-        "src/global.h",
         "src/pa/AbstractPAGraphics.h",
         "src/pa/FlexPA.h",
         "src/pa/FlexPA_unique.h",
@@ -241,7 +241,6 @@ cc_library(
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
-        "@boost.container",
         "@boost.geometry",
         "@boost.graph",
         "@boost.icl",
@@ -282,18 +281,10 @@ cc_library(
         ":db_hdrs",
         ":drt",
         ":drt_private_hdrs",
-        ":pin_access_service",
         "//:ord",
-        "//src/dst",
         "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.asio",
-        "@boost.container",
-        "@boost.geometry",
-        "@boost.polygon",
-        "@boost.serialization",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -352,5 +343,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/drt/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/drt/test:__pkg__",
+    ],
 )

@@ -16,6 +16,12 @@ bazelisk test //test/install/...
 2. Launches the binary with a trivial Tcl script (`puts "install_test_ok"`).
 3. Asserts the expected output appears, proving Tcl initialised and the
    interpreter is functional.
+4. Runs the real `bazel/install.sh` inside a self-contained fake workspace
+   (fake `bazel info bazel-bin`, a minimal tarball, synthetic desktop/icon
+   sources) to verify its cleanup logic: stale binary runfiles are removed on
+   re-install, the GUI launcher + icon are installed and refreshed for a GUI
+   build, and the stale launcher + icon are removed when a later install is
+   not a GUI build.
 
 ## Background
 

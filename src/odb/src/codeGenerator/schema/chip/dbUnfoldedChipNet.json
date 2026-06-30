@@ -1,0 +1,25 @@
+{
+  "name": "dbUnfoldedChipNet",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "chip_net_",
+      "type": "dbId<_dbChipNet>",
+      "flags": ["no-set"],
+      "parent": "dbDatabase"
+    },
+    {
+      "name": "connected_bumps_",
+      "type": "dbVector<dbId<_dbUnfoldedChipBumpInst>>",
+      "flags": ["private"]
+    }
+  ],
+  "h_includes": [
+    "odb/dbId.h",
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbChipNet.h",
+    "dbUnfoldedChipBumpInst.h"
+  ]
+}

@@ -7,6 +7,7 @@ or_integration_tests(
     clust02
     clust03
     cluster_place01
+    mbff_hier
     mbff_orig_name
     convergence01
     core01
@@ -23,7 +24,12 @@ or_integration_tests(
     simple01-td
     simple01-td-net-percentage
     simple01-td-tune
+    simple01-td-repair
     simple01-uniform
+    simple01-vcts
+    simple01-vcts-clamp
+    simple01-vcts-noclk
+    simple01-vcts-userlat
     simple02
     simple02-rd
     simple03

@@ -12,10 +12,24 @@ package(
 )
 
 cc_library(
+    name = "exa_private_hdrs",
+    hdrs = [
+        "src/observer.h",
+    ],
+    includes = [
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+    ],
+)
+
+cc_library(
     name = "exa",
     srcs = [
         "src/example.cpp",
-        "src/observer.h",
     ],
     hdrs = [
         "include/exa/example.h",
@@ -24,9 +38,9 @@ cc_library(
         "include",
     ],
     deps = [
+        ":exa_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -36,7 +50,6 @@ cc_library(
         "src/MakeExample.cpp",
         "src/graphics.cpp",
         "src/graphics.h",
-        "src/observer.h",
         ":swig",
         ":tcl",
     ],
@@ -49,6 +62,7 @@ cc_library(
     ],
     deps = [
         ":exa",
+        ":exa_private_hdrs",
         "//:ord",
         "//src/gui",
         "//src/odb/src/db",

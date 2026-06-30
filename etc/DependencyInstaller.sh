@@ -63,8 +63,9 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20260107.0"
-ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
+# Match the Abseil version bundled in prebuilt or-tools ${OR_TOOLS_VERSION_BIG}.
+ABSL_VERSION="20250512.0"
+ABSL_CHECKSUM="ecd64c3c38b20335c48e1ede28a8db90"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -160,6 +161,11 @@ _verify_checksum() {
 # ------------------------------------------------------------------------------
 # Yosys
 # ------------------------------------------------------------------------------
+# Note: yosys's compile-time readline dependency (libreadline-dev /
+# readline-devel / readline brew formula) is installed in the per-platform
+# -base package functions below. It used to live in a separate helper invoked
+# from here, but that put a root-only apt-get inside the unprivileged -common
+# phase (see ORFS issue #4266).
 _install_yosys() {
     local yosys_prefix=${PREFIX:-"/usr/local"}
     local yosys_bin=${yosys_prefix}/bin/yosys
@@ -669,20 +675,28 @@ _install_abseil() {
     local absl_prefix_found=""
     local absl_version_file=""
 
-    # Check in default/user-specified prefix first
-    local absl_version_file_default="${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"
-    if [[ -f "${absl_version_file_default}" ]]; then
-        absl_prefix_found="${absl_prefix_install}"
-        absl_version_file="${absl_version_file_default}"
-    fi
+    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
+    for absl_version_file_default in \
+        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+        if [[ -f "${absl_version_file_default}" ]]; then
+            absl_prefix_found="${absl_prefix_install}"
+            absl_version_file="${absl_version_file_default}"
+            break
+        fi
+    done
 
     # If not found, check in or-tools path
     if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
-        local absl_version_file_or_tools="${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"
-        if [[ -f "${absl_version_file_or_tools}" ]]; then
-            absl_prefix_found="${OR_TOOLS_PATH}"
-            absl_version_file="${absl_version_file_or_tools}"
-        fi
+        for absl_version_file_or_tools in \
+            "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_or_tools}" ]]; then
+                absl_prefix_found="${OR_TOOLS_PATH}"
+                absl_version_file="${absl_version_file_or_tools}"
+                break
+            fi
+        done
     fi
 
     local absl_installed_version="none"
@@ -704,6 +718,14 @@ _install_abseil() {
             _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
         )
         absl_prefix_found="${absl_prefix_install}"
+        for absl_version_file_default in \
+            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_default}" ]]; then
+                absl_version_file="${absl_version_file_default}"
+                break
+            fi
+        done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")
@@ -860,6 +882,15 @@ _install_bazel() {
             chmod +x bazelisk
             _execute "Installing bazelisk..." mv bazelisk "${bazel_prefix}/bin/bazelisk"
         )
+        if _command_exists "apt-get"; then
+            _execute "Installing bazel required libraries..." \
+                apt-get -y install --no-install-recommends \
+                libc6-dev libxml2 libtinfo6 zlib1g libstdc++6
+        elif _command_exists "yum"; then
+            _execute "Installing bazel required libraries..." \
+                yum install -y \
+                glibc-devel libxml2 ncurses-libs zlib libstdc++
+        fi
         if [[ "${NO_GUI}" != "yes" ]]; then
             # Install xcb libraries needed for GUI support with Bazel builds
             if _command_exists "apt-get"; then
@@ -867,12 +898,19 @@ _install_bazel() {
                     apt-get -y install --no-install-recommends \
                     libxcb1-dev libxcb-util-dev libxcb-icccm4-dev libxcb-image0-dev \
                     libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev \
-                    libxcb-xinerama0-dev libxcb-xkb-dev
+                    libxcb-xinerama0-dev libxcb-xkb-dev \
+                    libx11-xcb1 libx11-6 libsm6 libice6 \
+                    libxcb-cursor0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
+                    libdbus-1-3 libfontconfig1 libxkbcommon0 libxkbcommon-x11-0
             elif _command_exists "yum"; then
                 _execute "Installing xcb libraries for GUI support..." \
                     yum install -y \
                     libxcb-devel xcb-util-devel xcb-util-image-devel \
-                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel
+                    xcb-util-keysyms-devel xcb-util-renderutil-devel xcb-util-wm-devel \
+                    libX11-xcb libX11 libSM libICE \
+                    xcb-util-cursor libxcb \
+                    dbus-libs fontconfig \
+                    libxkbcommon libxkbcommon-x11
             fi
         fi
     fi
@@ -981,7 +1019,7 @@ _install_ubuntu_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev pandoc \
+        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -1025,7 +1063,7 @@ _install_rhel_packages() {
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
-        qt5-qtimageformats tcl-devel \
+        qt5-qtimageformats readline-devel tcl-devel \
         tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
 
@@ -1062,7 +1100,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip tcl \
+        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -1088,7 +1126,7 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python readline spdlog tcl-tk@8 zlib swig yaml-cpp
     # _execute "Installing pipx..." brew install pipx
     _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
@@ -1110,7 +1148,7 @@ _install_debian_packages() {
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev "libtcl${tcl_ver}" \
+        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 

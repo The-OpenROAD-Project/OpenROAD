@@ -89,6 +89,7 @@
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 #include "utl/scope.h"
+#include "utl/timer.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -327,9 +328,11 @@ using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
+using odb::dbIntProperty;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
+using odb::dbStringProperty;
 
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
@@ -555,6 +558,60 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
+  }
+
+  // Global sizing knobs from `set_global_sizing_config`. Reset to struct
+  // defaults and apply each dbProperty as an override; an absent property
+  // leaves the default in place. GlobalSizingPolicy reads these via
+  // globalSizingConfig().
+  global_sizing_config_ = GlobalSizingConfig{};
+  if (dbStringProperty* p = dbStringProperty::find(block_, "gs_presize_mode")) {
+    const std::string v = p->getValue();
+    if (v == "disabled") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kDisabled;
+    } else if (v == "min_size_max_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMinSizeMaxVt;
+    } else if (v == "max_size_min_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMaxSizeMinVt;
+    } else {
+      logger_->warn(RSZ,
+                    413,
+                    "Ignoring invalid gs_presize_mode value '{}'; expected "
+                    "disabled, min_size_max_vt, or max_size_min_vt.",
+                    v);
+    }
+  }
+  if (dbBoolProperty* p
+      = dbBoolProperty::find(block_, "gs_include_clock_network")) {
+    global_sizing_config_.include_clock_network = p->getValue();
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_setup_slack_margin")) {
+    global_sizing_config_.setup_slack_margin
+        = static_cast<float>(p->getValue());
+  }
+  if (dbIntProperty* p = dbIntProperty::find(block_, "gs_max_iterations")) {
+    global_sizing_config_.max_iterations = p->getValue();
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_beta")) {
+    global_sizing_config_.beta = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_mu_exponent")) {
+    global_sizing_config_.mu_exponent = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_lambda_floor")) {
+    global_sizing_config_.lambda_floor = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_timing_bias")) {
+    global_sizing_config_.timing_bias = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_budget_safety_factor")) {
+    global_sizing_config_.budget_safety_factor
+        = static_cast<float>(p->getValue());
   }
 }
 
@@ -2533,7 +2590,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   return new_it->second;
 }
 
-int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
+int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
+                                std::optional<float> load_cap_hint)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
@@ -2550,10 +2608,19 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin)
                  revisiting_inst ? " - revisit" : "");
       resized_multi_output_insts_.insert(inst);
     }
-    estimate_parasitics_->ensureWireParasitic(drvr_pin);
-    // Includes net parasitic capacitance.
-    float load_cap
-        = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    // Hint skips ensureWireParasitic, which triggers an incremental
+    // FastRoute per buffer in the repair_design.
+    // Only applies under global-routing parasitics;
+    // placement-based estimation is already cheap.
+    float load_cap;
+    if (load_cap_hint.has_value()
+        && estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kGlobalRouting) {
+      load_cap = *load_cap_hint;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(drvr_pin);
+      load_cap = graph_delay_calc_->loadCap(drvr_pin, tgt_slew_corner_, max_);
+    }
     if (load_cap > 0.0) {
       sta::LibertyCell* target_cell
           = findTargetCell(cell, load_cap, revisiting_inst);
@@ -2980,7 +3047,9 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore)
+void Resizer::findResizeSlacks(bool run_journal_restore,
+                               bool run_repair_timing,
+                               float repair_tns_end_percent)
 {
   initBlock();
 
@@ -3027,6 +3096,32 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     // TODO: fix the function to understand the parasitics from the global
     // routing.
     fullyRebuffer(nullptr);
+  }
+
+  if (run_repair_timing) {
+    // Conservative repair_timing: only fix worst setup violations.
+    (void) repairSetup(
+        /*setup_margin=*/0.0,
+        repair_tns_end_percent,
+        /*max_passes=*/1,
+        /*max_iterations=*/0,
+        /*max_repairs_per_pass=*/1,
+        /*match_cell_footprint=*/false,
+        /*verbose=*/false,
+        /*sequence=*/parseMoveSequence(""),
+        /*phases=*/"",
+        /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
+        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
+                                     // density
+        /*skip_size_down=*/false,
+        /*skip_buffering=*/false,
+        /*skip_buffer_removal=*/false,
+        /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
+        /*skip_vt_swap=*/true,    // post-placement optimization
+        /*skip_crit_vt_swap=*/true);
+
+    // Re-estimate parasitics after repair_setup
+    estimate_parasitics_->estimateParasitics(parasitics_src);
   }
 
   findResizeSlacks1();
@@ -4305,6 +4400,19 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          sta::ArcDelay delays[sta::RiseFall::index_count],
                          sta::Slew slews[sta::RiseFall::index_count])
 {
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc_, delays, slews);
+}
+
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
+                         const float load_cap,
+                         const sta::Scene* scene,
+                         const sta::MinMax* min_max,
+                         sta::ArcDelayCalc* arc_delay_calc,
+                         // Return values.
+                         sta::ArcDelay delays[sta::RiseFall::index_count],
+                         sta::Slew slews[sta::RiseFall::index_count])
+{
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -sta::INF;
     slews[rf_index] = -sta::INF;
@@ -4327,14 +4435,14 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
         }
         sta::LoadPinIndexMap load_pin_index_map(network_);
         sta::ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         scene,
-                                         min_max);
+            = arc_delay_calc->gateDelay(nullptr,
+                                        arc,
+                                        in_slew,
+                                        load_cap,
+                                        nullptr,
+                                        load_pin_index_map,
+                                        scene,
+                                        min_max);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
@@ -4403,9 +4511,19 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::Scene* scene,
                                  const sta::MinMax* min_max)
 {
+  return gateDelay(drvr_port, load_cap, scene, min_max, arc_delay_calc_);
+}
+
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
+                                 const float load_cap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
+                                 sta::ArcDelayCalc* arc_delay_calc)
+{
   sta::ArcDelay delays[sta::RiseFall::index_count];
   sta::Slew slews[sta::RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, scene, min_max, delays, slews);
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc, delays, slews);
   return max(delays[sta::RiseFall::riseIndex()],
              delays[sta::RiseFall::fallIndex()]);
 }
@@ -4694,6 +4812,7 @@ void Resizer::repairDesign(double max_wire_length,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -4705,6 +4824,7 @@ void Resizer::repairDesign(double max_wire_length,
   }
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
+  logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 int Resizer::repairDesignBufferCount() const
@@ -4871,13 +4991,14 @@ bool Resizer::repairSetup(double setup_margin,
                           const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
-                          bool skip_size_down,
+                          bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
 {
+  utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
   config.setup_slack_margin = setup_margin;
@@ -4891,7 +5012,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.phases = phases != nullptr ? phases : "";
   config.skip_pin_swap = skip_pin_swap;
   config.skip_gate_cloning = skip_gate_cloning;
-  config.skip_size_down = skip_size_down;
+  config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
   config.skip_last_gasp = skip_last_gasp;
@@ -4900,7 +5021,9 @@ bool Resizer::repairSetup(double setup_margin,
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
-  return optimizer.run();
+  bool result = optimizer.run();
+  logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::reportSwappablePins()
@@ -4959,6 +5082,7 @@ bool Resizer::repairHold(
     bool match_cell_footprint,
     bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   // Some technologies such as nangate45 don't have delay cells. Hence,
@@ -4977,13 +5101,15 @@ bool Resizer::repairHold(
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return repair_hold_->repairHold(setup_margin,
-                                  hold_margin,
-                                  allow_setup_violations,
-                                  max_buffer_percent,
-                                  max_passes,
-                                  max_iterations,
-                                  verbose);
+  bool result = repair_hold_->repairHold(setup_margin,
+                                         hold_margin,
+                                         allow_setup_violations,
+                                         max_buffer_percent,
+                                         max_passes,
+                                         max_iterations,
+                                         verbose);
+  logger_->info(RSZ, 506, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Resizer::repairHold(const sta::Pin* end_pin,
@@ -5016,6 +5142,7 @@ bool Resizer::recoverPower(float recover_power_percent,
                            bool match_cell_footprint,
                            bool verbose)
 {
+  utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
@@ -5025,7 +5152,9 @@ bool Resizer::recoverPower(float recover_power_percent,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
-  return recover_power_->recoverPower(recover_power_percent, verbose);
+  bool result = recover_power_->recoverPower(recover_power_percent, verbose);
+  logger_->info(RSZ, 507, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 ////////////////////////////////////////////////////////////////
 void Resizer::swapArithModules(int path_count,
@@ -6055,8 +6184,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "sizedown") {
-    return MoveType::kSizeDown;
+  if (lower == "size_down_fanout" || lower == "size_down") {
+    return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
     return MoveType::kClone;
@@ -6089,7 +6218,7 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
     std::ranges::transform(lower, lower.begin(), ::tolower);
     if (lower == "size") {
       result.push_back(MoveType::kSizeUp);
-      result.push_back(MoveType::kSizeDown);
+      result.push_back(MoveType::kSizeDownFanout);
       continue;
     }
     result.push_back(moveTypeFromString(lower));

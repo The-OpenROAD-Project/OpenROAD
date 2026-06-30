@@ -77,6 +77,7 @@ class Progress;
   X(RSZ)                \
   X(STA)                \
   X(STT)                \
+  X(SYN)                \
   X(TAP)                \
   X(TST)                \
   X(UKN)                \

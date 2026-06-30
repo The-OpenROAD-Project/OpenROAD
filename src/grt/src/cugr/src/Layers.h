@@ -21,6 +21,11 @@ class MetalLayer
   int getDirection() const { return direction_; }
   int getWidth() const { return width_; }
   int getPitch() const { return pitch_; }
+  // Sheet resistance (ohms/square) of this routing layer.
+  double getResistance() const { return resistance_; }
+  // Per-cut resistance (ohms) of the via layer just above this routing
+  // layer, i.e. the via from this layer to the next routing layer up.
+  double getViaResistance() const { return via_resistance_; }
   int getTrackLocation(int track_index) const;
   IntervalT rangeSearchTracks(const IntervalT& loc_range,
                               bool include_bound = true) const;
@@ -39,6 +44,8 @@ class MetalLayer
   int direction_;
   int width_;
   int min_width_;
+  double resistance_ = 0.0;
+  double via_resistance_ = 0.0;
 
   // tracks
   int first_track_loc_;

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -41,15 +42,6 @@ constexpr double kAlpha = 0.7;      // adaptive-pf α
 constexpr double kBeta = 10.0;      // adaptive-pf β
 constexpr double kGamma = 0.005;    // adaptive-pf γ
 constexpr int kIth = 300;           // pf ramp-up threshold iteration
-
-// ---------------------------------------------------------------------------
-// NLPowerRailType
-// ---------------------------------------------------------------------------
-enum class NLPowerRailType
-{
-  kVss = 0,
-  kVdd = 1
-};
 
 // ---------------------------------------------------------------------------
 // FenceRect / FenceRegion
@@ -91,16 +83,8 @@ struct NegCell
   int pad_right{0};  // right padding (sites)
 
   bool fixed{false};
-  NLPowerRailType rail_type{NLPowerRailType::kVss};
-  // Bottom rail type of the cell when it is MX-flipped (= the top rail in
-  // the natural R0 orientation).  For most cells this is kVdd (VDD↔VSS swap
-  // at the bottom edge after flip).  For multi-height cells whose power is
-  // symmetric (VSS at both top and bottom, e.g. some double-height flops),
-  // this equals rail_type — flipping cannot fix a power-rail mismatch.
-  NLPowerRailType rail_type_flipped{NLPowerRailType::kVdd};
-  int fence_id{-1};      // -1 → default region
-  bool flippable{true};  // odd-height cells may require fliping for moving
-  bool legal{false};     // updated each negotiation iteration
+  int fence_id{-1};   // -1 → default region
+  bool legal{false};  // updated each negotiation iteration
 
   [[nodiscard]] int displacement() const
   {
@@ -141,7 +125,7 @@ class NegotiationLegalizer
 
   // Main entry point – call instead of (or after) the existing opendp path.
   // May be called multiple times on the same object; internal state is reset
-  // at the start of each call (cells_, grid_, fences_, row_rail_ are cleared).
+  // at the start of each call (cells_, grid_, fences_ are cleared).
   void legalize();
 
   // Pass positions back to the DPL original structure.
@@ -189,7 +173,7 @@ class NegotiationLegalizer
   [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
-  void updateHistoryCosts();
+  void updateHistoryCosts(const std::vector<int>& activeCells);
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
   void sortByNegotiationOrder(std::vector<int>& indices) const;
 
@@ -259,9 +243,12 @@ class NegotiationLegalizer
 
   std::vector<NegCell> cells_;
   std::vector<FenceRegion> fences_;
-  std::vector<NLPowerRailType> row_rail_;
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
+
+  // Reusable scratch set for updateHistoryCosts() pixel deduplication,
+  // kept as a member so the per-iteration allocation is amortized.
+  std::unordered_set<int> hist_seen_pixels_;
 
   double max_disp_multiplier_{kMfDefault};  // mf on the paper
   int max_disp_threshold_{kThDefault};      // th on the paper

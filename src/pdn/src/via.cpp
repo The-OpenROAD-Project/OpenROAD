@@ -1566,8 +1566,8 @@ bool ViaGenerator::checkMinEnclosure() const
                "Bottom rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) bottom_passed
-        |= pass;
+               pass);
+    bottom_passed |= pass;
   }
 
   const bool top_has_rules = !top_rules.empty();
@@ -1593,8 +1593,8 @@ bool ViaGenerator::checkMinEnclosure() const
                "Top rule enclosures {:4f} and {:4f} -> {}.",
                rule.getX() / dbu,
                rule.getY() / dbu,
-               pass) top_passed
-        |= pass;
+               pass);
+    top_passed |= pass;
   }
 
   return (!bottom_has_rules || bottom_passed) && (!top_has_rules || top_passed);
@@ -2702,21 +2702,25 @@ bool TechViaGenerator::fitsShapes() const
   odb::Rect top_rect = via.getViaRect(true, false, false, true);
 
   transform.apply(bottom_rect);
-  if (!mostlyContains(
-          getLowerRect(), intersection, bottom_rect, getLowerConstraint())) {
+  if (!mostlyContains(getLowerRect(),
+                      intersection,
+                      bottom_rect,
+                      getLowerConstraint(),
+                      bottom_)) {
     return false;
   }
 
   transform.apply(top_rect);
   return mostlyContains(
-      getUpperRect(), intersection, top_rect, getUpperConstraint());
+      getUpperRect(), intersection, top_rect, getUpperConstraint(), top_);
 }
 
 // check if shape is contains on three sides
 bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
                                       const odb::Rect& intersection,
                                       const odb::Rect& small_shape,
-                                      const Constraint& constraint) const
+                                      const Constraint& constraint,
+                                      odb::dbTechLayer* layer) const
 {
   const odb::Rect check_rect
       = constraint.intersection_only ? intersection : full_shape;
@@ -2757,7 +2761,32 @@ bool TechViaGenerator::mostlyContains(const odb::Rect& full_shape,
     contains++;
   }
 
-  return contains > 2;
+  if (contains > 2) {
+    return true;
+  }
+
+  // Internal routing layer of a stacked via (no fixed shape to land on, so
+  // neither must_fit_x nor must_fit_y is set): the via metal may have to bridge
+  // to an on-grid neighbor on the adjacent layer (e.g. M2 snapped to its track
+  // while M4 stays on its stripe).  Allow the metal to extend past the power
+  // stripe overlap along the layer's preferred routing direction -- a metal
+  // patch is generated at placement time to bridge the gap -- while still
+  // requiring containment in the orthogonal (width) direction so the via stays
+  // within the stripe footprint.  The must_fit checks above already returned
+  // for constrained layers; the guards here keep that invariant explicit so a
+  // layer is never allowed to extend along a direction it must fit.
+  if (layer != nullptr) {
+    if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+        && !constraint.must_fit_x) {
+      return inside_y;
+    }
+    if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+        && !constraint.must_fit_y) {
+      return inside_x;
+    }
+  }
+
+  return false;
 }
 
 void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,

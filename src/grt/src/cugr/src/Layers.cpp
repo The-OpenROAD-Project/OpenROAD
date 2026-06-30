@@ -21,14 +21,19 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   width_ = tech_layer->getWidth();
   min_width_ = tech_layer->getMinWidth();
 
+  // Sheet R and the via-cut R above (for the res-aware cost); 0 when the
+  // tech leaves them undefined.
+  resistance_ = tech_layer->getResistance();
+  odb::dbTechLayer* cut_above = tech_layer->getUpperLayer();
+  via_resistance_ = (cut_above != nullptr) ? cut_above->getResistance() : 0.0;
+
   track_grid->getAverageTrackSpacing(pitch_, first_track_loc_, num_tracks_);
   last_track_loc_ = first_track_loc_ + pitch_ * (num_tracks_ - 1);
 
   // Design rules not parsed thoroughly
   // Min area
-  const int database_unit = tech_layer->getTech()->getDbUnitsPerMicron();
-  const int min_area = tech_layer->getArea() * database_unit * database_unit;
-  min_length_ = std::max(min_area / width_ - width_, 0);
+  const int64_t min_area = tech_layer->getArea();
+  min_length_ = std::max(static_cast<int>(min_area / width_) - width_, 0);
 
   // Parallel run spacing
   std::vector<std::vector<uint32_t>> spacing_table;

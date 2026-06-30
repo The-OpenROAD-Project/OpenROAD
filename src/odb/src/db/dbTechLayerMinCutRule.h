@@ -49,7 +49,7 @@ class _dbTechLayerMinCutRule : public _dbObject
   int within_cut_dist;
   int length_;
   int length_within_dist_;
-  int area_;
+  int64_t area_;
   int area_within_dist_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj);

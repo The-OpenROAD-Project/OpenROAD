@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
+#include "clockBase.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -34,6 +35,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
+                             std::shared_ptr<ClockBase> cb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : npVars_(npVars)
@@ -44,6 +46,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   nbVec_ = nbVec;
   rb_ = std::move(rb);
   tb_ = std::move(tb);
+  cb_ = std::move(cb);
   log_ = log;
 
   db_cbk_ = std::make_unique<nesterovDbCbk>(this);
@@ -373,7 +376,8 @@ void NesterovPlace::runTimingDriven(int iter,
                                     int routability_driven_revert_count,
                                     int& timing_driven_count,
                                     int64_t& td_accumulated_delta_area,
-                                    bool is_routability_gpl_iter)
+                                    bool is_routability_gpl_iter,
+                                    int& virtual_cts_count)
 {
   // timing driven feature
   // if virtual, do reweight on timing-critical nets,
@@ -383,6 +387,14 @@ void NesterovPlace::runTimingDriven(int iter,
       && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)) {
     // update db's instance location from current density coordinates
     updateDb();
+
+    if (cb_ && cb_->executeVirtualCts()) {
+      log_->info(GPL,
+                 164,
+                 "Virtual CTS iteration {}, overflow: {:.3f}.",
+                 ++virtual_cts_count,
+                 average_overflow_unscaled_);
+    }
 
     if (graphics_ && graphics_->enabled()) {
       graphics_->addTimingDrivenIter(iter);
@@ -436,7 +448,11 @@ void NesterovPlace::runTimingDriven(int iter,
       nb_gcells_before_td += nb->getGCells().size();
     }
 
-    bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    bool enable_repair_timing = npVars_.timingDrivenIterCounter
+                                == tb_->getTimingNetWeightOverflowSize();
+
+    bool shouldTdProceed
+        = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());
@@ -1016,6 +1032,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   int routability_driven_revert_count = 0;
   int routability_gpl_iter_count_ = 0;
   int timing_driven_count = 0;
+  int virtual_cts_count = 0;
   bool final_routability_image_saved = false;
   int64_t original_area = 0;
   int64_t td_accumulated_delta_area = 0;
@@ -1102,7 +1119,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                     routability_driven_revert_count,
                     timing_driven_count,
                     td_accumulated_delta_area,
-                    is_routability_gpl_iter);
+                    is_routability_gpl_iter,
+                    virtual_cts_count);
 
     if (isDiverged(diverge_snapshot_WlCoefX,
                    diverge_snapshot_WlCoefY,
@@ -1132,6 +1150,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
       break;
     }
+  }
+
+  // Remove virtual clock tree insertions before final timing analysis.
+  if (cb_) {
+    cb_->removeVirtualCts();
   }
 
   reportResults(nesterov_iter, original_area, td_accumulated_delta_area);

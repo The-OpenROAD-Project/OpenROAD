@@ -4,12 +4,13 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
-import { createWebSocketTileLayer } from './websocket-tile-layer.js';
+import { createWebSocketTileLayer, createOverlayTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
+import { isStaticMode } from './ui-utils.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
@@ -28,7 +29,7 @@ const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnectio
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
-    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
+    const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
         // After an intentional shutdown the "Server stopped" banner is
@@ -92,6 +93,19 @@ const app = {
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
+    // Raw tech-layer names (dbTechLayer::getName()) for the layers
+    // currently visible.  Kept in sync with `visibleLayers` by
+    // display-controls.js.  This is the wire-format that the backend
+    // expects in `visible_layers`; `visibleLayers` itself holds the
+    // hierarchical UI node IDs and must not leak into requests.
+    visibleLayerNames: new Set(),
+    // Set of chiplet `path`s currently visible.  Populated by
+    // display-controls.js once techData.chiplets arrives; null means
+    // "render every chiplet" (single-chip designs).
+    visibleChiplets: null,
+    useTrueZ: getCookie('or_use_true_z') === '1',
+    showDbu: getCookie('or_show_dbu') === '1',
+    selectableLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
@@ -100,6 +114,24 @@ const app = {
     rulerManager: null,
     getDbuPerMicron() {
         return this.techData?.dbu_per_micron || 1000;
+    },
+    // Format a DBU value as a display string, respecting the showDbu setting.
+    // Mirrors Qt GUI's MainWindow::convertDBUToString.
+    formatDbu(value, addUnits = false) {
+        if (this.showDbu) return String(Math.round(value));
+        const dbuPerUm = this.getDbuPerMicron();
+        const precision = Math.ceil(Math.log10(dbuPerUm));
+        const um = (value / dbuPerUm).toFixed(precision);
+        return addUnits ? um + ' \u00b5m' : um;
+    },
+    // Format a distance (always positive) with auto-scaling units.
+    formatDistance(dbuLength) {
+        if (this.showDbu) return String(Math.round(dbuLength));
+        const dbuPerUm = this.getDbuPerMicron();
+        const um = dbuLength / dbuPerUm;
+        if (um >= 1000) return (um / 1000).toFixed(3) + ' mm';
+        if (um >= 1) return um.toFixed(3) + ' um';
+        return (um * 1000).toFixed(1) + ' nm';
     },
 };
 
@@ -165,6 +197,7 @@ const visibility = {
     // Module view
     module_view: false,
     // Misc
+    rulers: true,
     scale_bar: true,
     // Debug
     debug: false,
@@ -183,7 +216,67 @@ try {
     // Ignore malformed cookie.
 }
 
-const WebSocketTileLayer = createWebSocketTileLayer(visibility, app.visibleLayers);
+// Selectability mirrors the Qt GUI's display-controls "selectable" column.
+// Defaults to true (everything selectable), matching the Qt GUI.  Only
+// categories that the Qt GUI exposes a selectable checkbox for are listed
+// here; the server treats unspecified keys as selectable.
+const selectability = {
+    stdcells: true,
+    macros: true,
+    pad_input: true,
+    pad_output: true,
+    pad_inout: true,
+    pad_power: true,
+    pad_spacer: true,
+    pad_areaio: true,
+    pad_other: true,
+    phys_fill: true,
+    phys_endcap: true,
+    phys_welltap: true,
+    phys_tie: true,
+    phys_antenna: true,
+    phys_cover: true,
+    phys_bump: true,
+    phys_other: true,
+    std_bufinv: true,
+    std_bufinv_timing: true,
+    std_clock_bufinv: true,
+    std_clock_gate: true,
+    std_level_shift: true,
+    std_sequential: true,
+    std_combinational: true,
+    net_signal: true,
+    net_power: true,
+    net_ground: true,
+    net_clock: true,
+    net_reset: true,
+    net_tieoff: true,
+    net_scan: true,
+    net_analog: true,
+    pins: true,
+    inst_pins: true,
+    placement_blockages: true,
+    routing_obstructions: true,
+};
+
+try {
+    const saved = getCookie('or_selectability');
+    if (saved) {
+        const parsed = JSON.parse(decodeURIComponent(saved));
+        for (const [k, v] of Object.entries(parsed)) {
+            selectability[k] = !!v;
+        }
+    }
+} catch (_) {
+    // Ignore malformed cookie.
+}
+
+// `app` is forwarded so the tile layer can read app.visibleChiplets
+// lazily on every request — the field is populated by display-controls
+// once the server's tech metadata arrives.
+const WebSocketTileLayer = createWebSocketTileLayer(
+    visibility, app.visibleLayerNames, selectability, app.selectableLayers,
+    app);
 const BLANK_TILE
     = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -285,9 +378,31 @@ function updateHeatMaps(data) {
 }
 app.updateHeatMaps = updateHeatMaps;
 
+// Refresh only the highlight overlay layer (selection, hover, timing,
+// DRC, route guides).  Much cheaper than redrawAllLayers because base
+// geometry tiles are not re-rendered.
+function refreshOverlay() {
+    if (app.overlayLayer) {
+        app.overlayLayer.refreshTiles();
+    }
+}
+app.refreshOverlay = scheduleRefreshOverlay;
+
+let _overlayRAF = null;
+function scheduleRefreshOverlay() {
+    if (_overlayRAF !== null) return;
+    _overlayRAF = requestAnimationFrame(() => {
+        _overlayRAF = null;
+        refreshOverlay();
+    });
+}
+
 function redrawAllLayers() {
-    // Persist visibility state to cookie so it survives page reloads.
+    // Persist visibility and selectability state to cookies so they survive
+    // page reloads.
     setCookie('or_visibility', encodeURIComponent(JSON.stringify(visibility)));
+    setCookie('or_selectability',
+              encodeURIComponent(JSON.stringify(selectability)));
 
     // Show/hide modules layer based on module_view visibility
     if (app.modulesLayer) {
@@ -311,7 +426,13 @@ function redrawAllLayers() {
     if (app.heatMapLayer) {
         app.heatMapLayer.refreshTiles();
     }
-    // Update scale bar visibility.
+    // Overlay layer must also refresh on structural changes (e.g. design
+    // reload changes the coordinate space).
+    refreshOverlay();
+    // Update ruler and scale bar visibility.
+    if (app.rulerManager) {
+        app.rulerManager.updateVisibility();
+    }
     if (app.updateScaleBar) {
         app.updateScaleBar();
     }
@@ -367,11 +488,7 @@ function createLayoutViewer(container) {
         const { dbuX, dbuY } = latLngToDbu(
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
             app.designOriginX, app.designOriginY);
-        const dbuPerUm = app.getDbuPerMicron();
-        const precision = Math.ceil(Math.log10(dbuPerUm));
-        const xUm = (dbuX / dbuPerUm).toFixed(precision);
-        const yUm = (dbuY / dbuPerUm).toFixed(precision);
-        coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
+        coordBar.textContent = `X: ${app.formatDbu(dbuX)}  Y: ${app.formatDbu(dbuY)}`;
     });
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
@@ -386,6 +503,16 @@ function createLayoutViewer(container) {
     scaleBarLabel.className = 'scale-bar-label';
     scaleBar.appendChild(scaleBarLabel);
 
+    // Round to the nearest 1/2/5 × 10^n value (e.g. 1, 2, 5, 10, 20, …).
+    function niceRound(value) {
+        const mag = Math.pow(10, Math.floor(Math.log10(value)));
+        const residual = value / mag;
+        if (residual < 1.5) return 1 * mag;
+        if (residual < 3.5) return 2 * mag;
+        if (residual < 7.5) return 5 * mag;
+        return 10 * mag;
+    }
+
     function updateScaleBar() {
         if (!app.designScale || !visibility.scale_bar) {
             scaleBar.style.display = 'none';
@@ -393,34 +520,32 @@ function createLayoutViewer(container) {
         }
         scaleBar.style.display = '';
 
-        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
         // Pixels per DBU at current zoom: designScale * 2^zoom.
         const zoom = app.map.getZoom();
         const pxPerDbu = app.designScale * Math.pow(2, zoom);
-        const pxPerUm = pxPerDbu * dbuPerUm;
 
         // Target bar width: ~15% of the map container width.
         const containerWidth = app.map.getContainer().clientWidth || 400;
         const targetPx = containerWidth * 0.15;
-        const targetUm = targetPx / pxPerUm;
 
-        // Pick a nice round number: 1, 2, 5, 10, 20, 50, ...
-        const mag = Math.pow(10, Math.floor(Math.log10(targetUm)));
-        const residual = targetUm / mag;
-        let niceUm;
-        if (residual < 1.5) niceUm = 1 * mag;
-        else if (residual < 3.5) niceUm = 2 * mag;
-        else if (residual < 7.5) niceUm = 5 * mag;
-        else niceUm = 10 * mag;
+        let barPx, label;
+        if (app.showDbu) {
+            const niceDbu = Math.max(1, niceRound(targetPx / pxPerDbu));
+            barPx = Math.round(niceDbu * pxPerDbu);
+            label = String(Math.round(niceDbu));
+        } else {
+            const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+            const pxPerUm = pxPerDbu * dbuPerUm;
+            const niceUm = niceRound(targetPx / pxPerUm);
 
-        const barPx = Math.round(niceUm * pxPerUm);
+            barPx = Math.round(niceUm * pxPerUm);
 
-        // Format with appropriate units.
-        let label;
-        if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
-        else if (niceUm >= 1) label = niceUm + ' \u00b5m';
-        else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
-        else label = (niceUm * 1e6) + ' pm';
+            // Format with appropriate units.
+            if (niceUm >= 1000) label = (niceUm / 1000) + ' mm';
+            else if (niceUm >= 1) label = niceUm + ' \u00b5m';
+            else if (niceUm >= 0.001) label = (niceUm * 1000) + ' nm';
+            else label = (niceUm * 1e6) + ' pm';
+        }
 
         scaleBarLine.style.width = barPx + 'px';
         scaleBarLabel.textContent = label;
@@ -496,6 +621,18 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+
+    if (isStaticMode(app)) {
+        el.querySelector('.tcl-input-row').style.display = 'none';
+        const notice = document.createElement('span');
+        notice.className = 'tcl-static-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        notice.textContent = 'Tcl console is not available in saved reports.';
+        app.tclOutputEl.appendChild(notice);
+        return;
+    }
+
     const input = el.querySelector('.tcl-input');
     const completer = new TclCompleter(input, app.websocketManager);
 
@@ -533,28 +670,31 @@ function createTclConsole(container) {
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
 
-const inspector = createInspectorPanel(app, redrawAllLayers);
+const inspector = createInspectorPanel(app, redrawAllLayers, scheduleRefreshOverlay);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
+const pulseHighlight = inspector.pulseHighlight;
 app.updateInspector = updateInspector;
+app.navigateInspector = inspector.navigateInspector;
+app.refreshInspector = inspector.refreshInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers, scheduleRefreshOverlay);
     container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
-    app.drcWidget = new DrcWidget(app, redrawAllLayers);
+    app.drcWidget = new DrcWidget(app, redrawAllLayers, scheduleRefreshOverlay);
     container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
-    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers);
+    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers, scheduleRefreshOverlay);
 }
 
 function createChartsWidget(container) {
@@ -808,6 +948,19 @@ app.toggleTheme = function() {
     if (app.clockTreeWidget) app.clockTreeWidget.render();
 };
 
+app.toggleShowDbu = function() {
+    app.showDbu = !app.showDbu;
+    setCookie('or_show_dbu', app.showDbu ? '1' : '0');
+    // Re-render rulers so their labels update.
+    if (app.rulerManager) app.rulerManager._rerenderAll();
+    // Re-render hierarchy browser if present.
+    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Update scale bar.
+    if (app.updateScaleBar) app.updateScaleBar();
+    // Re-request inspector properties with new formatting.
+    if (app.refreshInspector) app.refreshInspector();
+};
+
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
 createMenuBar(app);
@@ -971,7 +1124,28 @@ app.websocketManager.readyPromise.then(async () => {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = !!v;
             }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: Math.round(app.map.getZoom()), visible_layers: [...app.visibleLayers], ...vf })
+            // Selectability is sent with `s_` prefix to mirror the flat
+            // visibility key scheme; the server parses both columns.
+            for (const [k, v] of Object.entries(selectability)) {
+                vf['s_' + k] = !!v;
+            }
+            const selectRequest = {
+                type: 'select',
+                dbu_x,
+                dbu_y,
+                zoom: Math.round(app.map.getZoom()),
+                visible_layers: [...app.visibleLayerNames],
+                selectable_layers: [...app.selectableLayers],
+                use_dbu: app.showDbu,
+                ...vf,
+            };
+            if (e.originalEvent && e.originalEvent.shiftKey) {
+                selectRequest.add_to_selection = true;
+            }
+            if (app.visibleChiplets instanceof Set) {
+                selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            app.websocketManager.request(selectRequest)
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
@@ -989,15 +1163,19 @@ app.websocketManager.readyPromise.then(async () => {
                         if (inst.bbox) {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
                                           inst.bbox[2], inst.bbox[3]);
+                            pulseHighlight(inst.bbox);
                         }
-                    } else {
+                    } else if (!selectRequest.add_to_selection) {
+                        // Shift+click on empty space preserves the existing
+                        // multi-selection on the server, so leave the
+                        // inspector/navigation controls and highlight intact.
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);
                             app.highlightRect = null;
                         }
                     }
-                    redrawAllLayers();
+                    refreshOverlay();
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
@@ -1065,8 +1243,25 @@ app.websocketManager.readyPromise.then(async () => {
             });
         }
 
-        populateDisplayControls(app, visibility, WebSocketTileLayer,
+        populateDisplayControls(app, visibility, selectability,
+                                WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
+
+        // Create the highlight overlay layer — sits above all base/metal
+        // layers but below the heatmap.  Only carries selection, hover,
+        // timing, DRC, and route-guide shapes on a transparent background,
+        // so base tiles stay cached when highlights change.
+        // Skip in static mode: there is no WebSocket server to serve
+        // overlay_tile requests.
+        if (!app.overlayLayer && !staticCache) {
+            const OverlayTileLayer = createOverlayTileLayer(visibility, app);
+            app.overlayLayer = new OverlayTileLayer(app.websocketManager, {
+                zIndex: app.allLayers.length + 5,
+                opacity: 1,
+            });
+            app.overlayLayer.addTo(app.map);
+        }
+
         updateHeatMaps(heatMapData);
 
         // Only show the loading overlay if a design is loaded but shapes

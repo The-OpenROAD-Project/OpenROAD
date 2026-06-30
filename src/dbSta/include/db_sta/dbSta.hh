@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
+#include "db_sta/dbNetwork.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -206,6 +207,10 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
                                  bool exclude_buffers,
                                  bool exclude_inverters) const;
 
+  // Get the levels of logic for all endpoints.
+  std::vector<int> levelsOfLogic(bool exclude_buffers,
+                                 bool exclude_inverters) const;
+
   utl::Logger* getLogger() { return logger_; }
 
   // Sanity checkers
@@ -253,11 +258,5 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   VertexSeq levelized_drvr_vertices_;
   bool drvr_vertices_level_valid_ = false;
 };
-
-// Utilities for TestCell
-
-sta::LibertyPort* getLibertyScanEnable(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanIn(const LibertyCell* lib_cell);
-sta::LibertyPort* getLibertyScanOut(const LibertyCell* lib_cell);
 
 }  // namespace sta

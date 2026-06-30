@@ -21,12 +21,6 @@ cmake_policy(SET CMP0074 NEW)
 # critical for builds in non-standard environments.
 cmake_policy(SET CMP0144 NEW)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
-  # Disallows <PACKAGENAME>_ROOT in find_package.
-  # TODO: resolve absl/or-tools issue and switch to NEW
-  cmake_policy(SET CMP0144 OLD)
-endif()
-
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
 
@@ -73,6 +67,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+set_property(DIRECTORY PROPERTY TEST_DISCOVERY_TIMEOUT 60)
 
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)

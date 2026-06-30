@@ -35,6 +35,7 @@ extensions = [
     "myst_parser",
     "sphinxcontrib.mermaid",
     "sphinx_tabs.tabs",
+    "sphinx_llm.txt",
 ]
 
 myst_enable_extensions = [

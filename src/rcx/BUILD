@@ -113,7 +113,6 @@ cc_library(
     deps = [
         ":rcx",
         "//:ord",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -175,5 +174,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/rcx/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/rcx/test:__pkg__",
+    ],
 )

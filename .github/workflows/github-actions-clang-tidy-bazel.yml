@@ -1,0 +1,137 @@
+name: clang-tidy-bazel
+
+on:
+  pull_request:
+    branches:
+      - master
+
+# Read-only by design: fork PRs get a read-only GITHUB_TOKEN regardless of
+# what this block requests, so this workflow only builds clang-tidy and
+# uploads the findings as an artifact. The companion workflow
+# `clang-tidy-bazel-post` runs on `workflow_run` in the base repo context
+# with a writable token and posts the reviewdog comments.
+permissions:
+  contents: read
+
+jobs:
+  Clang-Tidy-Bazel:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          submodules: 'recursive'
+          # Need full history so the post workflow's reviewdog can diff
+          # against the PR base via the API.
+          fetch-depth: 0
+
+      - name: Set up bazel
+        # GitHub-hosted ubuntu-latest preinstalls bazelisk, but self-hosted
+        # runners do not. Install it explicitly so the workflow works on
+        # both runner types. bazel-contrib/setup-bazel's default uses a
+        # pre-installed bazelisk; passing bazelisk-version forces install.
+        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # 0.19.0
+        with:
+          bazelisk-version: 1.x
+          bazelisk-cache: true
+
+      - name: Run bazel clang-tidy
+        env:
+          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
+        run: |
+          # Same auth pattern as github-actions-macos-bazel.yml: when the
+          # cache secret is present (push / dispatch / private repo PR),
+          # add authed gRPC + Remote Asset API on top of the .bazelrc anon
+          # HTTPS read-only cache. Fork PRs have no secret and just read
+          # the anon cache.
+          REMOTE_FLAGS=()
+          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
+            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+            echo "::add-mask::${TOKEN_B64}"
+            REMOTE_FLAGS=(
+              --remote_cache=grpcs://bazel.precisioninno.com:443
+              --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
+              --remote_upload_local_results=true
+              --remote_header="Authorization=Basic ${TOKEN_B64}"
+            )
+          fi
+          # Note: do NOT use --config=ci here. That config sets
+          # --remote_download_minimal and --config=opt (LTO), but we need
+          # the .AspectRulesLintClangTidy.out files materialized locally
+          # to feed reviewdog, and LTO is wasted work for lint.
+          set -x
+          bazel build \
+            "${REMOTE_FLAGS[@]}" \
+            --config=lint \
+            -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+
+      - name: Collect clang-tidy diagnostics
+        run: |
+          # Paths in .out files are sandbox-absolute; strip to workspace-
+          # relative so reviewdog can match against the PR diff. Keep only
+          # `path:line:col: warning|error:` lines — drops source-context
+          # carets, notes, and clang-tidy's header noise in one filter.
+          # `grep -v bazel-out/` drops findings against external virtual
+          # includes (not in any PR diff). `sort -u` dedupes the same
+          # finding emitted under multiple cc_library consumers of a
+          # shared source.
+          BAZEL_BIN=$(bazel info bazel-bin)
+          find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0 \
+            | xargs -0 cat \
+            | sed -E 's|^.*/execroot/_main/||' \
+            | grep -E '^[^:]+:[0-9]+:[0-9]+: (warning|error):' \
+            | grep -vE '^(bazel-out|external)/' \
+            | sort -u \
+            > clang-tidy.txt
+          echo "::group::clang-tidy.txt (head)"
+          head -50 clang-tidy.txt || true
+          echo "::endgroup::"
+          echo "Findings: $(wc -l < clang-tidy.txt)"
+
+      - name: Save PR metadata for post workflow
+        run: |
+          # workflow_run.event.pull_requests[] is empty for fork PRs, so the
+          # post workflow needs the PR number and head SHA delivered via the
+          # artifact itself.
+          {
+            echo "pr_number=${{ github.event.pull_request.number }}"
+            echo "head_sha=${{ github.event.pull_request.head.sha }}"
+            echo "base_sha=${{ github.event.pull_request.base.sha }}"
+            echo "head_repo=${{ github.event.pull_request.head.repo.full_name }}"
+            echo "base_repo=${{ github.event.pull_request.base.repo.full_name }}"
+          } > pr-meta.txt
+
+      - name: Upload clang-tidy artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: clang-tidy-bazel
+          path: |
+            clang-tidy.txt
+            pr-meta.txt
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Fail check on clang-tidy findings in PR diff
+        # Runs after the artifact upload so the post workflow always has the
+        # findings to comment on, even when this step exits non-zero.
+        # Uses -reporter=local because the fork-PR token is read-only here;
+        # local mode just prints to stdout and exits with -fail-level=any if
+        # findings exist. The post workflow does the actual review posting.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          reviewdog \
+            -efm="%E%f:%l:%c: error: %m" \
+            -efm="%W%f:%l:%c: warning: %m" \
+            -name="clang-tidy" \
+            -reporter=local \
+            -diff="git diff ${BASE_SHA}...${HEAD_SHA}" \
+            -filter-mode=added \
+            -fail-level=any \
+            < clang-tidy.txt

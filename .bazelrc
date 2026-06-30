@@ -1,4 +1,8 @@
 common --enable_bzlmod
+
+# abc is driven programmatically by OpenROAD, so skip the interactive
+# readline dependency exposed by abc@0.64-yosyshq.bcr.2.
+common --@abc//:use_readline=false
 build --workspace_status_command=tools/workspace_status.sh
 
 # Release builds embed real git version info; dev builds use cache-safe placeholders.
@@ -40,6 +44,16 @@ build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions
 build --copt "-Wall"               --host_copt "-Wall"
 build --copt "-Wextra"             --host_copt "-Wextra"
 
+# Treat specific warnings as errors
+build --copt "-Werror=array-bounds"               --host_copt "-Werror=array-bounds"
+build --copt "-Werror=dangling"                   --host_copt "-Werror=dangling"
+build --copt "-Werror=dangling-assignment"        --host_copt "-Werror=dangling-assignment"
+build --copt "-Werror=dangling-assignment-gsl"    --host_copt "-Werror=dangling-assignment-gsl"
+build --copt "-Werror=dangling-field"             --host_copt "-Werror=dangling-field"
+build --copt "-Werror=dangling-gsl"               --host_copt "-Werror=dangling-gsl"
+build --copt "-Werror=fortify-source"             --host_copt "-Werror=fortify-source"
+build --copt "-Werror=return-stack-address"       --host_copt "-Werror=return-stack-address"
+
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
 build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
@@ -63,7 +77,6 @@ build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
 build --cxxopt "-Wno-deprecated-copy"  --host_cxxopt "-Wno-deprecated-copy"
 build --cxxopt "-Wno-deprecated-copy-with-user-provided-copy"  --host_cxxopt "-Wno-deprecated-copy-with-user-provided-copy"
-build --cxxopt "-Wno-dangling"  --host_cxxopt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.

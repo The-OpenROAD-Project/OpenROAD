@@ -11,6 +11,7 @@
 
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbProperty.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -102,7 +103,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
   stream >> obj.within_cut_dist;
   stream >> obj.length_;
   stream >> obj.length_within_dist_;
-  stream >> obj.area_;
+  // User Code Begin >>area_
+  if (obj.getDatabase()->isSchema(kSchemaStoreAreaAsInt64)) {
+    stream >> obj.area_;
+  } else {
+    int area;
+    stream >> area;
+    obj.area_ = static_cast<int64_t>(area) * 20000;
+  }
+  // User Code End >>area_
   stream >> obj.area_within_dist_;
   return stream;
 }
@@ -129,9 +138,7 @@ void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  // User Code Begin collectMemInfo
   info.children["cut_class_cuts_map"].add(cut_class_cuts_map_);
-  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -153,7 +160,8 @@ int dbTechLayerMinCutRule::getNumCuts() const
   return obj->num_cuts_;
 }
 
-std::map<std::string, int> dbTechLayerMinCutRule::getCutClassCutsMap() const
+const std::map<std::string, int>& dbTechLayerMinCutRule::getCutClassCutsMap()
+    const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   return obj->cut_class_cuts_map_;
@@ -211,14 +219,14 @@ int dbTechLayerMinCutRule::getLengthWithinDist() const
   return obj->length_within_dist_;
 }
 
-void dbTechLayerMinCutRule::setArea(int area)
+void dbTechLayerMinCutRule::setArea(int64_t area)
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
 
   obj->area_ = area;
 }
 
-int dbTechLayerMinCutRule::getArea() const
+int64_t dbTechLayerMinCutRule::getArea() const
 {
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   return obj->area_;
@@ -363,6 +371,17 @@ bool dbTechLayerMinCutRule::isFullyEnclosed() const
   return obj->flags_.fully_enclosed;
 }
 
+dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* parent)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) parent;
+  return (dbTechLayerMinCutRule*) _parent->min_cuts_rules_tbl_->create();
+}
+void dbTechLayerMinCutRule::destroy(dbTechLayerMinCutRule* obj)
+{
+  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  dbProperty::destroyProperties(obj);
+  _parent->min_cuts_rules_tbl_->destroy((_dbTechLayerMinCutRule*) obj);
+}
 // User Code Begin dbTechLayerMinCutRulePublicMethods
 
 void dbTechLayerMinCutRule::setCutsPerCutClass(const std::string& cut_class,
@@ -371,14 +390,6 @@ void dbTechLayerMinCutRule::setCutsPerCutClass(const std::string& cut_class,
   _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
   obj->cut_class_cuts_map_[cut_class] = num_cuts;
 }
-
-dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* inly)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) inly;
-  _dbTechLayerMinCutRule* newrule = layer->min_cuts_rules_tbl_->create();
-  return ((dbTechLayerMinCutRule*) newrule);
-}
-
 dbTechLayerMinCutRule* dbTechLayerMinCutRule::getTechLayerMinCutRule(
     dbTechLayer* inly,
     uint32_t dbid)
@@ -386,14 +397,6 @@ dbTechLayerMinCutRule* dbTechLayerMinCutRule::getTechLayerMinCutRule(
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return ((dbTechLayerMinCutRule*) layer->min_cuts_rules_tbl_->getPtr(dbid));
 }
-
-void dbTechLayerMinCutRule::destroy(dbTechLayerMinCutRule* rule)
-{
-  _dbTechLayer* layer = (_dbTechLayer*) rule->getImpl()->getOwner();
-  dbProperty::destroyProperties(rule);
-  layer->min_cuts_rules_tbl_->destroy((_dbTechLayerMinCutRule*) rule);
-}
-
 // User Code End dbTechLayerMinCutRulePublicMethods
 }  // namespace odb
    // Generator Code End Cpp

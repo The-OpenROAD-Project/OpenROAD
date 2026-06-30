@@ -65,7 +65,7 @@ Routability-driven arguments
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
-- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`
+- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
 ```tcl
 global_placement
@@ -98,11 +98,17 @@ global_placement
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-timing_driven_repair_timing]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
-    [-enable_routing_congestion]
+    [-enable_routing_congestion]\
+    [-virtual_cts]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]
 ```
 
 #### Options
@@ -129,6 +135,10 @@ global_placement
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+| `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
+| `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
+| `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
 
 #### Initial-Placement Arguments
 
@@ -158,6 +168,8 @@ global_placement
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `5`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
+| `-timing_driven_repair_timing` | **Experimental.** Enable a conservative `repair_setup` pass during last timing-driven iteration. The intent is to apply minimal buffering and gate sizing so that the placement better correlates with global routing timing. Only the worst setup violators are targeted. Disruptive operations (pin swap, gate cloning, VT swap) are suppressed to avoid topology changes during placement. Not ready for production use. |
+| `-timing_driven_repair_tns_end_percent` | **Experimental.** When `-timing_driven_repair_timing` is enabled, controls the percentage of violating endpoints targeted by the `repair_setup` call. The default value is `1.0` and the allowed values are floats `[0, 100]`. |
 
 ### Cluster Flops
 

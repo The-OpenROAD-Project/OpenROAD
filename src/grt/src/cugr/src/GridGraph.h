@@ -138,11 +138,69 @@ class GridGraph
     return max_v_overflow_;
   }
 
-  // Costs
   int getEdgeLength(int direction, int edge_index) const;
-  CostT getWireCost(int layer_index, PointT u, PointT v) const;
-  CostT getViaCost(int layer_index, PointT loc) const;
+
+  /**
+   * @brief Returns the cost of placing a wire segment from u to v.
+   *
+   * `net_factor` scales the per-net demand seen by the logistic
+   * penalty so NDR nets pay proportionally to their wider footprint.
+   * The caller is responsible for looking up the layer-specific
+   * factor (`GRNet::getNdrCost(layer_index)`).
+   *
+   * @param layer_index 0-based routing layer.
+   * @param u           Segment start in gcell coordinates.
+   * @param v           Segment end in gcell coordinates.
+   * @param net_factor  Per-net, per-layer demand multiplier.
+   *                    Default 1.0 = no NDR.
+   *
+   * @returns Wire cost in the same units as the maze's cost view.
+   */
+  CostT getWireCost(int layer_index,
+                    PointT u,
+                    PointT v,
+                    double net_factor = 1.0) const;
+
+  /**
+   * @brief Returns the cost of a via between `layer_index` and
+   *        `layer_index + 1` at `loc`.
+   *
+   * The unit via cost is constant; only the wire-patch demand each
+   * via implies is scaled by the per-layer NDR factor. A via that
+   * lands on M3-M5 may therefore use a different factor on its M3
+   * patches than on its M4 patches.
+   *
+   * @param layer_index Lower-layer index of the via (0-based).
+   * @param loc         Via location in gcell coordinates.
+   * @param net_costs   Per-layer NDR cost vector. Empty (default) =
+   *                    no NDR; out-of-range layers fall back to 1.0.
+   *
+   * @returns Total via cost (unit + wire patches).
+   */
+  CostT getViaCost(int layer_index,
+                   PointT loc,
+                   const std::vector<double>& net_costs = {}) const;
+
   CostT getUnitViaCost() const { return unit_via_cost_; }
+
+  // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
+  // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
+  CostT getWireResistanceCost(int layer_index,
+                              PointT u,
+                              PointT v,
+                              int wire_width = 0) const;
+
+  // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
+  // the tech leaves cut-layer resistance unpopulated.
+  CostT getViaResistanceCost(int lower_layer) const;
+
+  // Total tree resistance (wire + via) for res-aware ordering; ndr_widths gives
+  // the per-layer NDR width (0 => layer default), matching
+  // getWireResistanceCost.
+  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                          const std::vector<int>& ndr_widths) const;
+
+  int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
   /**
    * @brief Sets the multiplier applied to the logistic-cost slopes.
@@ -182,9 +240,33 @@ class GridGraph
   // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
 
-  // Methods for updating demands - Public API
-  void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
-  void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
+  // Methods for updating demands - Public API.
+
+  /**
+   * @brief Adds the demand of a routing tree to every edge and via
+   *        it covers.
+   *
+   * Each segment's demand is scaled by the layer's NDR cost from
+   * `net_costs` (1.0 on layers without a rule, or when the vector
+   * is empty).
+   *
+   * @param tree      Routing tree to commit.
+   * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
+   */
+  void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
+                    const std::vector<double>& net_costs = {});
+
+  /**
+   * @brief Removes the demand previously added for a routing tree.
+   *
+   * The caller must supply the same `net_costs` that were used when
+   * the tree's demand was added so it is now subtracted exactly.
+   *
+   * @param tree      Routing tree to rip up.
+   * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
+   */
+  void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
+                       const std::vector<double>& net_costs = {});
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -199,6 +281,24 @@ class GridGraph
   void extractCongestionView(
       GridGraphView<bool>& view) const;  // 2D overflow look-up table
   void extractWireCostView(GridGraphView<CostT>& view) const;
+
+  /**
+   * @brief Builds a 2D wire-cost view tailored to one NDR net.
+   *
+   * For NDR nets, restricts each edge on the best single-layer headroom
+   * `max_l (capacity_l - demand_l)` and subtracts `(net_factor - 1)`.
+   * This prevents a 2D-vs-3D mismatch in which summed capacity hides
+   * per-layer granularity: an NDR wire with `net_factor` tracks
+   * worth of footprint can't span 3D layers, so an edge with
+   * `net_factor` free tracks spread across `net_factor` layers must
+   * not be reported as routable.`net_factor == 1` (empty `net_costs`)
+   * reproduces the default summed view exactly.
+   *
+   * @param view       Output cost map (2 * x_size * y_size).
+   * @param net_costs  Per-layer NDR factor; empty / all-1.0 = no NDR.
+   */
+  void extractWireCostView(GridGraphView<CostT>& view,
+                           const std::vector<double>& net_costs) const;
   void updateWireCostView(
       GridGraphView<CostT>& view,
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
@@ -231,13 +331,29 @@ class GridGraph
   double logistic(const CapacityT& input, double slope) const;
   CostT getWireCost(int layer_index,
                     PointT lower,
-                    CapacityT demand = 1.0) const;
+                    CapacityT demand = 1.0,
+                    double net_factor = 1.0) const;
 
-  // Methods for updating demands - Internal Implementation
-  void commit(int layer_index, PointT lower, CapacityT demand);
-  void commitWire(int layer_index, PointT lower, bool rip_up = false);
-  void commitVia(int layer_index, PointT loc, bool rip_up = false);
-  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
+  // Methods for updating demands - Internal Implementation.
+  // Single-layer commits take a per-layer `net_factor` (a scalar);
+  // multi-layer commits take a per-layer NDR cost vector so they
+  // can look up each layer's factor as they walk the tree / via
+  // stack. Empty vectors mean "no NDR" (1.0 everywhere).
+  void commit(int layer_index,
+              PointT lower,
+              CapacityT demand,
+              double net_factor = 1.0);
+  void commitWire(int layer_index,
+                  PointT lower,
+                  bool rip_up = false,
+                  double net_factor = 1.0);
+  void commitVia(int layer_index,
+                 PointT loc,
+                 bool rip_up = false,
+                 const std::vector<double>& net_costs = {});
+  void commitTree(const std::shared_ptr<GRTreeNode>& tree,
+                  bool rip_up = false,
+                  const std::vector<double>& net_costs = {});
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
@@ -287,6 +403,11 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
+  // First non-zero sheet/via resistance across layers: the res-aware cost
+  // reference (scanning vs. layer 0 survives techs with undefined bottom-layer
+  // R).
+  double ref_resistance_ = 0.0;
+  double ref_via_resistance_ = 0.0;
 };
 
 template <typename Type>

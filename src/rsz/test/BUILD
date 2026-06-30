@@ -135,6 +135,7 @@ TESTS = [
     "repair_setup_clone_high_fanout",
     "repair_setup_crit_vt_asap7",
     "repair_setup_default_nangate45",
+    "repair_setup_dont_touch_sizeup",
     "repair_setup_endpoint_fanin_only",
     "repair_setup_gcd",
     "repair_setup_invalid_phase",
@@ -142,7 +143,7 @@ TESTS = [
     "repair_setup_pin_command",
     "repair_setup_reroute1",
     "repair_setup_reroute2",
-    "repair_setup_sizedown_only",
+    "repair_setup_size_down_fanout_only",
     "repair_setup_sizeup_match_only",
     "repair_setup_split_load_hier_only",
     "repair_setup_startpoint_fanout_only",
@@ -150,8 +151,8 @@ TESTS = [
     "repair_setup_tns",
     "repair_setup_wns_guard",
     "repair_setup_wns_last_gasp_noop",
-    "repair_setup_sizedown",
-    "repair_setup_sizedown_legacy_basic",
+    "repair_setup_size_down_fanout",
+    "repair_setup_size_down_fanout_legacy_basic",
     "repair_setup_sizeup_match",
     "repair_setup_sizeup_legacy_basic",
     "repair_setup_sizeup_match_inverter",
@@ -171,6 +172,7 @@ TESTS = [
     "repair_slew15",
     "repair_slew16",
     "repair_slew17",
+    "repair_slew_no_progress",
     "repair_slew2",
     "repair_slew3",
     "repair_slew4",
@@ -245,6 +247,9 @@ TESTS = [
     "repair_setup_vtswap_legacy_asap7",
     "repair_setup_vt_swap2",
     "measured_vt_swap",
+    "global_sizing",
+    "global_sizing_threads",
+    "global_sizing_presize",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
@@ -278,6 +283,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
     "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],
@@ -473,17 +479,10 @@ cc_test(
     data = glob(["cpp/TestResizer*.v"]),
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/grt",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz",  # build_cleaner keep provides the private headers
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

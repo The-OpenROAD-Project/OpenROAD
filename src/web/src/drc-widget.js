@@ -7,9 +7,10 @@
 import { dbuRectToBounds } from './coordinates.js';
 
 export class DrcWidget {
-    constructor(app, redrawAllLayers) {
+    constructor(app, redrawAllLayers, refreshOverlay) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
+        this._refreshOverlay = refreshOverlay || redrawAllLayers;
         this._categories = [];
         this._activeCategory = '';
         this._markerTree = null;  // server response for current category
@@ -117,7 +118,7 @@ export class DrcWidget {
             this._markerTree = null;
             this._treeContainer.innerHTML = '';
             this._infoBar.textContent = '';
-            this._redrawAllLayers();
+            this._refreshOverlay();
             return;
         }
 
@@ -129,7 +130,7 @@ export class DrcWidget {
         }).then(data => {
             this._markerTree = data;
             this._renderTree();
-            this._redrawAllLayers();
+            this._refreshOverlay();
         }).catch(err => {
             this._treeContainer.innerHTML = '';
             const errDiv = document.createElement('div');
@@ -307,10 +308,35 @@ export class DrcWidget {
         return row;
     }
 
+    highlightMarkerById(markerId, openInspector = false) {
+        const marker = this._findMarkerById(markerId);
+        if (marker) this._highlightMarker(marker, openInspector);
+    }
+
+    _findMarkerById(markerId) {
+        const walk = (node) => {
+            if (!node) return null;
+            if (node.markers) {
+                for (const m of node.markers) {
+                    if (m.id === markerId) return m;
+                }
+            }
+            if (node.subcategories) {
+                for (const sub of node.subcategories) {
+                    const found = walk(sub);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        return walk(this._markerTree);
+    }
+
     _highlightMarker(marker, openInspector = false) {
         this._app.websocketManager.request({
             type: 'drc_highlight',
-            marker_id: marker.id
+            marker_id: marker.id,
+            open_inspector: openInspector,
         }).then(data => {
             if (data.ok && data.bbox) {
                 marker.visited = true;
@@ -319,10 +345,15 @@ export class DrcWidget {
                 if (row) row.classList.remove('drc-unvisited');
 
                 this._zoomToBBox(data.bbox);
-                this._redrawAllLayers();
+                this._refreshOverlay();
 
-                if (openInspector && this._app.focusComponent) {
-                    this._app.focusComponent('Inspector');
+                if (openInspector) {
+                    if (data.select_id != null && this._app.navigateInspector) {
+                        this._app.navigateInspector(data.select_id);
+                    }
+                    if (this._app.focusComponent) {
+                        this._app.focusComponent('Inspector');
+                    }
                 }
             }
         }).catch(err => {
@@ -361,7 +392,7 @@ export class DrcWidget {
             field: field,
             value: !!value
         }).then(() => {
-            this._redrawAllLayers();
+            this._refreshOverlay();
             if (field === 'visible') {
                 this._update3DHighlights();
                 if (value) {
@@ -484,7 +515,7 @@ export class DrcWidget {
             category: category.name,
             visible: !!visible
         }).then(() => {
-            this._redrawAllLayers();
+            this._refreshOverlay();
             this._update3DHighlights();
             if (visible) {
                 this._flashHighlight();

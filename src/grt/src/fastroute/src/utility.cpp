@@ -175,6 +175,29 @@ void FastRouteCore::netpinOrderInc()
         static_cast<float>(res_aware_nets) / net_ids_.size() * 100);
   }
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
+
+  // One-shot dump of the res-aware nets in routing order (their
+  // layer-assignment priority). Enable with -debug_level GRT resAware 1.
+  if (enable_resistance_aware_ && !is_incremental_grt_ && !res_aware_logged_
+      && logger_->debugCheck(GRT, "resAware", 1)) {
+    res_aware_logged_ = true;
+    logger_->report(
+        "FastRoute res-aware nets in layer-assignment priority order:");
+    int rank = 0;
+    for (const OrderNetPin& order : tree_order_pv_) {
+      FrNet* net = nets_[order.treeIndex];
+      if (!net->isResAware()) {
+        continue;
+      }
+      logger_->report("  {}: {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                      rank++,
+                      net->getName(),
+                      net->getSlack() * 1e12,
+                      net->getResistance(),
+                      net->getNumPins(),
+                      net->getNetLength());
+    }
+  }
 }
 
 void FastRouteCore::fillVIA()
@@ -671,7 +694,7 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
 
 // Update and sort the critical nets. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
-void FastRouteCore::updateSlacks(float percentage)
+void FastRouteCore::updateSlacks()
 {
   // Check if liberty file was loaded before calculating slack
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
@@ -737,6 +760,8 @@ void FastRouteCore::updateSlacks(float percentage)
 
   std::ranges::stable_sort(res_aware_list, compareSlack);
 
+  float percentage = res_aware_nets_percentage_ / 100.0;
+
   // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
     percentage = 1;
@@ -758,6 +783,40 @@ void FastRouteCore::updateSlacks(float percentage)
           res_aware_list[i].second);
     }
     nets_[res_aware_list[i].first]->setIsResAware(true);
+  }
+
+  // Res-aware set-growth instrumentation (-debug_level GRT resAware 1); reports
+  // per-call delta and running total, level 2 lists newly-marked nets.
+  if (logger_->debugCheck(GRT, "resAware", 1) && !is_incremental_grt_) {
+    int total = 0;
+    for (const int id : net_ids_) {
+      if (nets_[id]->isResAware()) {
+        total++;
+      }
+    }
+    const int newly = std::min<int>(
+        static_cast<int>(std::ceil(res_aware_list.size() * percentage)),
+        static_cast<int>(res_aware_list.size()));
+    logger_->report(
+        "Res-aware growth (updateSlacks): +{} marked of {} candidates -> {} "
+        "total ({:.2f}%)",
+        newly,
+        res_aware_list.size(),
+        total,
+        net_ids_.empty()
+            ? 0.0f
+            : 100.0f * total / static_cast<float>(net_ids_.size()));
+    if (logger_->debugCheck(GRT, "resAware", 2)) {
+      for (int i = 0; i < newly; i++) {
+        FrNet* net = nets_[res_aware_list[i].first];
+        logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                        net->getName(),
+                        net->getSlack() * 1e12,
+                        net->getResistance(),
+                        net->getNumPins(),
+                        net->getNetLength());
+      }
+    }
   }
 }
 

@@ -13,6 +13,7 @@ COMPULSORY_TESTS = [
     "blockage01",
     "cell_on_block1",
     "cell_on_block2",
+    "centered_floorplan",
     "check1",
     "check2",
     "check3",
@@ -47,12 +48,16 @@ COMPULSORY_TESTS = [
     "hybrid_cells",
     "hybrid_cells2",
     "ibex",
+    "macro_placed_not_fixed",
     "max_disp1",
     "mirror1",
     "mirror2",
     "mirror3",
     "multi_height_one_site_gap_disallow",
     "multi_height_rows",
+    "negotiation01",
+    "negotiation_one_site_gap",
+    "negotiation_regions",
     "obstruction1",
     "obstruction2",
     "one_site_gap_disallow",
@@ -220,6 +225,10 @@ filegroup(
             "low_util03": [
                 "ibex_core_replace.def",
             ],
+            "macro_placed_not_fixed": [
+                "block2.lef",
+                "cell_on_block1.def",
+            ],
             "max_disp1": [
                 "Nangate45/fakeram45_1024x32.lef",
             ],
@@ -242,6 +251,15 @@ filegroup(
             ],
             "multi_height_rows": [
                 "Nangate45/fake_macros.lef",
+            ],
+            "negotiation01": [
+                "gcd_replace.def",
+            ],
+            "negotiation_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "negotiation_regions": [
+                "regions1.def",
             ],
             "obstruction2": [
                 "Nangate45/fakeram45_64x7.lib",

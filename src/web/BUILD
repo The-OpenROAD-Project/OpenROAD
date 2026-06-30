@@ -97,6 +97,7 @@ _WEB_ASSET_FILES = [
     "src/title.js",
     "src/clock-tree-widget.js",
     "src/schematic-widget.js",
+    "src/openroad_skin.svg",
     "src/charts-widget.js",
     "src/timing-widget.js",
     "src/drc-widget.js",
@@ -209,7 +210,6 @@ cc_library(
     deps = [
         ":web",
         "//:ord",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",

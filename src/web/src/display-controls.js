@@ -17,6 +17,28 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
+// Build the CheckboxTreeModel input for the Chiplets group.  Each
+// `chipletData` entry comes from the backend serializeTechResponse and
+// has shape { path, name, parent, master, depth }.  `savedHidden` is the
+// set of chiplet paths the user has hidden (loaded from the cookie).
+//
+// Returns a flat array of nodes keyed by the chiplet path string.  The
+// root chiplet has parentId === null; hasCheckbox is false for the root
+// (its DOM toggle is rendered by the group header).
+export function buildChipletFlatNodes(chipletData, savedHidden) {
+    return chipletData.map((c) => {
+        const visible = !savedHidden.has(c.path);
+        return {
+            id: c.path,
+            parentId: c.parent != null ? c.parent : null,
+            hasCheckbox: c.parent != null,
+            checked: visible,
+            data: { path: c.path, name: c.name, master: c.master,
+                    depth: c.depth },
+        };
+    });
+}
+
 // Fallback color used when the server didn't supply a layer color.
 const fallbackLayerPalette = [
     [70, 130, 210],  // moderate blue
@@ -30,7 +52,8 @@ const fallbackLayerPalette = [
 ];
 
 // Populate display controls with layer checkboxes and visibility tree.
-export function populateDisplayControls(app, visibility, WebSocketTileLayer,
+export function populateDisplayControls(app, visibility, selectability,
+                                         WebSocketTileLayer,
                                          techData, redrawAllLayers,
                                          HeatMapTileLayer) {
     if (!app.displayControlsEl) return;
@@ -66,114 +89,280 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     const leafletLayers = [];  // index → WebSocketTileLayer
     const layerIds = [];       // index → model node id
 
-    // Restore saved hidden-layers set from previous session.
+    // Forward declaration so the layerModel callback can mirror chiplet
+    // toggles into the Chiplets panel (created later when chipletData
+    // has more than one entry).
+    let chipletModel = null;
+
+    // Restore saved hidden-layers and non-selectable-layers sets.
     let savedHiddenLayers = new Set();
+    let savedNonSelectableLayers = new Set();
     try {
         const raw = getCookie('or_hidden_layers');
         if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
     } catch (_) { /* ignore */ }
+    try {
+        const raw = getCookie('or_nonselectable_layers');
+        if (raw) {
+            savedNonSelectableLayers
+                = new Set(JSON.parse(decodeURIComponent(raw)));
+        }
+    } catch (_) { /* ignore */ }
 
-    const layerSpec = {
-        id: 'layers_parent',
-        children: techData.layers.map((name, index) => {
-            const layer = new WebSocketTileLayer(app.websocketManager, name, {
-                opacity: 0.7,
-                zIndex: index + 3,
+    // Global counter so each layer (across the whole hierarchy) gets a unique
+    // z-index and palette slot regardless of which chiplet it belongs to.
+    let nextLayerSlot = 0;
+
+    function buildLayerSpec(hierarchyNode, parentId = 'layers') {
+        const children = [];
+
+        if (hierarchyNode.instances && hierarchyNode.instances.length > 0) {
+            hierarchyNode.instances.forEach((inst, idx) => {
+                const instId = parentId + "/" + (inst.name || idx);
+                children.push(buildLayerSpec(inst, instId));
             });
-            const visible = !savedHiddenLayers.has(name);
-            if (visible) {
-                layer.addTo(app.map);
-                app.visibleLayers.add(name);
-            }
-            app.allLayers.push(layer);
-            leafletLayers.push(layer);
+        }
 
-            const id = `layer_${index}`;
-            layerIds.push(id);
-            return { id, data: { name, layer, colorIndex: index }, checked: visible };
-        }),
-    };
+        if (hierarchyNode.layers && hierarchyNode.layers.length > 0) {
+            hierarchyNode.layers.forEach((layerObj) => {
+                const name = layerObj.name || layerObj;
+                const slot = nextLayerSlot++;
+                const zIndex = slot + 3;
+                const layer = new WebSocketTileLayer(app.websocketManager, name, {
+                    opacity: 0.7,
+                    zIndex: zIndex,
+                });
+
+                const id = `${parentId}/${name}`;
+                layer._nodeId = id;
+
+                const visible = !savedHiddenLayers.has(id);
+                if (visible) {
+                    layer.addTo(app.map);
+                    app.visibleLayers.add(id);
+                    app.visibleLayerNames.add(name);
+                }
+                app.allLayers.push(layer);
+                leafletLayers.push(layer);
+
+                layerIds.push(id);
+                children.push({
+                    id,
+                    data: { name, layer, color: layerObj.color, colorIndex: slot, nodeId: id },
+                    checked: visible,
+                });
+            });
+        }
+
+        const nodeData = { name: hierarchyNode.name, isInstance: true };
+        // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
+        // backend emits in layer_hierarchy; it matches ChipletNode::path
+        // exactly so toggling this node can drive app.visibleChiplets.
+        // Category nodes (e.g. "Backside") are pure UI folders — they have
+        // no chiplet path and must not participate in chiplet sync.
+        if (hierarchyNode.type !== 'category') {
+            nodeData.chipletPath = hierarchyNode.path;
+        }
+        return {
+            id: parentId,
+            data: nodeData,
+            children: children,
+        };
+    }
+
+    let layerSpec;
+    if (techData.layer_hierarchy) {
+        layerSpec = buildLayerSpec(techData.layer_hierarchy, 'layers_parent');
+    } else {
+        // Fallback for old backends
+        layerSpec = {
+            id: 'layers_parent',
+            children: techData.layers.map((name, index) => {
+                const layer = new WebSocketTileLayer(app.websocketManager, name, {
+                    opacity: 0.7,
+                    zIndex: index + 3,
+                });
+
+                const id = `layers_parent/${name}`;
+                layer._nodeId = id;
+                
+                const visible = !savedHiddenLayers.has(id);
+                if (visible) {
+                    layer.addTo(app.map);
+                    app.visibleLayers.add(id);
+                    app.visibleLayerNames.add(name);
+                }
+                app.allLayers.push(layer);
+                leafletLayers.push(layer);
+
+                layerIds.push(id);
+                return { id, data: { name, layer, colorIndex: index, nodeId: id }, checked: visible };
+            }),
+        };
+    }
+
+    // Parallel selectability model with the same node ids as layerSpec so
+    // syncLayerSelDom() and buildLayerDOM() can pair each visibility node
+    // with its selectability peer.
+    function mirrorForSelectability(node) {
+        if (!node.children || node.children.length === 0) {
+            const name = node.data && node.data.name;
+            const selectable = name ? !savedNonSelectableLayers.has(name) : true;
+            if (selectable && name) {
+                app.selectableLayers.add(name);
+            }
+            return { id: node.id, data: { name }, checked: selectable };
+        }
+        return {
+            id: node.id,
+            data: { name: node.data && node.data.name },
+            children: node.children.map(mirrorForSelectability),
+        };
+    }
+    const layerSelSpec = mirrorForSelectability(layerSpec);
 
     const layerModel = new CheckboxTreeModel(() => {
-        // Sync DOM and Leaflet layer visibility from model.
+        // Single pass over the tree: rebuild visibleLayerNames in place
+        // (the WebSocketTileLayer closure captured this Set by reference
+        // at startup, so we mutate rather than reassign), sync DOM and
+        // Leaflet, collect the cookie payload and accumulate any chiplet
+        // toggles that need to mirror into the Chiplets panel.  The
+        // rebuild-from-scratch pattern avoids incrementally dropping a
+        // layer name still owned by a checked sibling in multi-tech
+        // designs.
+        app.visibleLayerNames.clear();
+        const allLayerIds = [];
+        // Two-tier chiplet propagation: stateUpdates carries every
+        // tri-state change for the UI checkboxes; visibilityChangedAny
+        // tracks whether any toggle also moved the chiplet in or out
+        // of visibleChiplets.  Splitting them lets us skip the
+        // chipletModel.onChange path (which redraws every Leaflet tile)
+        // when the visible set is unchanged.
+        const stateUpdates = {};
+        let stateChangedAny = false;
+        let visibilityChangedAny = false;
+        const trackChiplets
+            = chipletModel && app.visibleChiplets instanceof Set;
+
         layerModel.forEach(node => {
             if (node.cb) {
                 node.cb.checked = node.checked;
                 node.cb.indeterminate = node.indeterminate;
             }
             if (node.data && node.data.layer) {
+                const id = node.data.nodeId || node.data.name;
+                allLayerIds.push(id);
                 if (node.checked) {
                     node.data.layer.addTo(app.map);
-                    app.visibleLayers.add(node.data.name);
+                    app.visibleLayers.add(id);
+                    app.visibleLayerNames.add(node.data.name);
                 } else {
                     app.map.removeLayer(node.data.layer);
-                    app.visibleLayers.delete(node.data.name);
+                    app.visibleLayers.delete(id);
+                }
+            }
+            if (trackChiplets && node.data && node.data.chipletPath) {
+                const path = node.data.chipletPath;
+                const cn = chipletModel.get(path);
+                if (cn) {
+                    // Indeterminate parents (some descendant layers
+                    // still visible) must count as visible — otherwise
+                    // the backend filter would drop ALL their layers.
+                    const want = node.checked || node.indeterminate;
+                    const update = {
+                        checked: node.checked,
+                        indeterminate: node.indeterminate,
+                    };
+                    if (cn.checked !== node.checked
+                        || cn.indeterminate !== node.indeterminate) {
+                        stateUpdates[path] = update;
+                        stateChangedAny = true;
+                    }
+                    if (app.visibleChiplets.has(path) !== want) {
+                        visibilityChangedAny = true;
+                    }
                 }
             }
         });
+        // Visibility off ⇒ selectability disabled — refresh selectability DOM.
+        syncLayerSelDom();
         // Refresh pins layer so it filters by the updated visible_layers.
         if (app.pinsLayer && app.map.hasLayer(app.pinsLayer)) {
             app.pinsLayer.refreshTiles();
         }
-        // Persist hidden layers to cookie.
-        const hidden = techData.layers.filter(n => !app.visibleLayers.has(n));
-        setCookie('or_hidden_layers', encodeURIComponent(JSON.stringify(hidden)));
+
+        const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
+        setCookie('or_hidden_layers',
+                  encodeURIComponent(JSON.stringify(hiddenNodes)));
+
+        // Mirror chiplet toggles into the Chiplets panel.  Toggling
+        // wrapper_1 in the Layers tree must also remove its path from
+        // app.visibleChiplets, otherwise other chiplets' tile requests
+        // still pull wrapper_1's shapes from the backend (which iterates
+        // every chiplet whose path is in visible_chiplets).
+        // mirrorStates preserves indeterminate (unlike checkSet) so a
+        // partially-selected chiplet keeps its tri-state checkbox AND
+        // stays in visibleChiplets.  When only the tri-state changed
+        // (without entering/leaving the visible set) we take the quiet
+        // path so chipletModel.onChange — which redraws every Leaflet
+        // tile — is skipped; we sync the DOM checkboxes by hand instead.
+        if (visibilityChangedAny) {
+            // Every visibility flip is also a tri-state change, so
+            // stateUpdates already covers both — passing it through
+            // mirrorStates fires the chiplet callback exactly once and
+            // both the checkbox tri-state and visibleChiplets are kept
+            // consistent.
+            chipletModel.mirrorStates(stateUpdates);
+        } else if (stateChangedAny) {
+            // Tri-state changed without flipping the visible set — go
+            // through the quiet path to skip redrawAllLayers, and sync
+            // the DOM checkboxes ourselves since onChange is suppressed.
+            chipletModel.mirrorStatesQuiet(stateUpdates);
+            chipletModel.forEach(node => {
+                if (node.cb) {
+                    node.cb.checked = node.checked;
+                    node.cb.indeterminate = node.indeterminate;
+                }
+            });
+        }
     });
+    
+    app.layerModel = layerModel; // expose it so other rendering mechanism can use it
     layerModel.addFromSpec(layerSpec);
 
-    // Build layer DOM.
-    const layerGroup = document.createElement('div');
-    layerGroup.className = 'vis-group';
-
-    const layerHeader = document.createElement('label');
-    layerHeader.className = 'vis-group-header';
-    const layerArrow = document.createElement('span');
-    layerArrow.className = 'vis-arrow';
-    layerArrow.textContent = '▼';
-    layerHeader.appendChild(layerArrow);
-
-    const parentNode = layerModel.get('layers_parent');
-    const parentCb = document.createElement('input');
-    parentCb.type = 'checkbox';
-    parentCb.checked = parentNode.checked;
-    parentCb.indeterminate = parentNode.indeterminate;
-    parentNode.cb = parentCb;
-    parentCb.addEventListener('change', () => {
-        layerModel.check('layers_parent', parentCb.checked);
-    });
-    layerHeader.appendChild(parentCb);
-    layerHeader.appendChild(document.createTextNode('Layers'));
-    layerGroup.appendChild(layerHeader);
-
-    const layerChildren = document.createElement('div');
-    layerChildren.className = 'vis-group-children';
-
-    techData.layers.forEach((name, index) => {
-        const id = layerIds[index];
-        const modelNode = layerModel.get(id);
-
-        const label = document.createElement('label');
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = modelNode.checked;
-        modelNode.cb = checkbox;
-        checkbox.addEventListener('change', () => {
-            layerModel.check(id, checkbox.checked);
+    // Parallel selectability model — picks gate on this set on the server.
+    const layerSelModel = new CheckboxTreeModel(() => {
+        // Rebuild from scratch so multi-chiplet/multi-tech subtrees that
+        // share a layer name don't fall into last-writer-wins (an unchecked
+        // M1 leaf in one subtree would otherwise delete the name even when
+        // another M1 leaf is still checked).  Mutate in place — the
+        // WebSocketTileLayer closure captured this Set by reference.
+        app.selectableLayers.clear();
+        layerSelModel.forEach(node => {
+            if (node.checked && node.data && node.data.name) {
+                app.selectableLayers.add(node.data.name);
+            }
         });
-        label.appendChild(checkbox);
-
-        const colorSwatch = document.createElement('span');
-        colorSwatch.className = 'layer-color';
-        const c = (techData.layer_colors && techData.layer_colors[index])
-            || fallbackLayerPalette[index % fallbackLayerPalette.length];
-        colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
-        label.appendChild(colorSwatch);
-
-        label.appendChild(document.createTextNode(name));
-        layerChildren.appendChild(label);
+        syncLayerSelDom();
+        const nonSel
+            = techData.layers.filter(n => !app.selectableLayers.has(n));
+        setCookie('or_nonselectable_layers',
+                  encodeURIComponent(JSON.stringify(nonSel)));
     });
-    layerGroup.appendChild(layerChildren);
+    layerSelModel.addFromSpec(layerSelSpec);
+
+    // Sync layer selectability DOM: visibility off disables the sel checkbox.
+    function syncLayerSelDom() {
+        layerSelModel.forEach(node => {
+            if (!node.selCb) return;
+            node.selCb.checked = node.checked;
+            node.selCb.indeterminate = node.indeterminate;
+            const visNode = layerModel.get(node.id);
+            const visOff
+                = visNode && !visNode.checked && !visNode.indeterminate;
+            node.selCb.disabled = visOff;
+        });
+    }
 
     // --- Layer context menu (right-click) ---
     const contextMenu = document.createElement('div');
@@ -184,7 +373,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     function showOnlyLayers(indices) {
         const updates = {};
         layerIds.forEach((id, i) => {
-            updates[id] = indices.has(i);
+            if (id) updates[id] = indices.has(i);
         });
         layerModel.checkSet(updates);
     }
@@ -193,7 +382,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         contextMenu.style.display = 'none';
     }
 
-    const n = techData.layers.length;
+    const n = leafletLayers.length;
     const menuItems = [
         { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
         { label: 'Show layer range \u2195',   fn: (i) => layerRangeSet(i, 1, 1, n) },
@@ -202,27 +391,6 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { label: 'Show layer range \u2191',   fn: (i) => layerRangeSet(i, 0, 1, n) },
     ];
 
-    layerChildren.querySelectorAll('label').forEach((label, index) => {
-        label.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            contextMenu.innerHTML = '';
-            for (const item of menuItems) {
-                const div = document.createElement('div');
-                div.className = 'context-menu-item';
-                div.textContent = item.label;
-                div.addEventListener('click', () => {
-                    showOnlyLayers(item.fn(index));
-                    hideContextMenu();
-                });
-                contextMenu.appendChild(div);
-            }
-            contextMenu.style.left = e.clientX + 'px';
-            contextMenu.style.top = e.clientY + 'px';
-            contextMenu.style.display = 'block';
-        });
-    });
-
     document.addEventListener('click', (e) => {
         if (!contextMenu.contains(e.target)) hideContextMenu();
     });
@@ -230,19 +398,446 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         if (e.key === 'Escape') hideContextMenu();
     });
 
-    // Toggle collapse
-    layerArrow.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const collapsed = layerChildren.classList.toggle('collapsed');
-        layerArrow.textContent = collapsed ? '▶' : '▼';
-    });
+    function buildLayerDOM(node, isRoot = false) {
+        const selNode = layerSelModel.get(node.id);
+        if (!node.children || node.children.length === 0) {
+            // Leaf node (layer)
+            const label = document.createElement('label');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.title = 'Visible';
+            checkbox.checked = node.checked;
+            node.cb = checkbox;
+            checkbox.addEventListener('change', () => {
+                layerModel.check(node.id, checkbox.checked);
+            });
+            label.appendChild(checkbox);
+
+            if (selNode) {
+                const selCheckbox = document.createElement('input');
+                selCheckbox.type = 'checkbox';
+                selCheckbox.className = 'vis-sel-cb';
+                selCheckbox.title = 'Selectable';
+                selCheckbox.checked = selNode.checked;
+                selNode.selCb = selCheckbox;
+                selCheckbox.addEventListener('change', () => {
+                    layerSelModel.check(node.id, selCheckbox.checked);
+                });
+                label.appendChild(selCheckbox);
+            }
+
+            const index = node.data.colorIndex;
+            const name = node.data.name;
+
+            const colorSwatch = document.createElement('span');
+            colorSwatch.className = 'layer-color';
+            const c = node.data.color || (techData.layer_colors && techData.layer_colors[index]) || fallbackLayerPalette[index % fallbackLayerPalette.length];
+            colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+            label.appendChild(colorSwatch);
+
+            label.appendChild(document.createTextNode(name));
+
+            // Setup context menu for layer
+            label.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                contextMenu.innerHTML = '';
+                for (const item of menuItems) {
+                    const div = document.createElement('div');
+                    div.className = 'context-menu-item';
+                    div.textContent = item.label;
+                    div.addEventListener('click', () => {
+                        showOnlyLayers(item.fn(index));
+                        hideContextMenu();
+                    });
+                    contextMenu.appendChild(div);
+                }
+                contextMenu.style.left = e.clientX + 'px';
+                contextMenu.style.top = e.clientY + 'px';
+                contextMenu.style.display = 'block';
+            });
+
+            return label;
+        } else {
+            // Group node (top or sub-instance)
+            const group = document.createElement('div');
+            group.className = 'vis-group';
+
+            const header = document.createElement('label');
+            header.className = 'vis-group-header';
+            
+            const arrow = document.createElement('span');
+            arrow.className = 'vis-arrow';
+            arrow.textContent = '▼';
+            header.appendChild(arrow);
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.title = 'Visible';
+            cb.checked = node.checked;
+            cb.indeterminate = node.indeterminate;
+            node.cb = cb;
+            cb.addEventListener('change', () => {
+                layerModel.check(node.id, cb.checked);
+            });
+            header.appendChild(cb);
+
+            if (selNode) {
+                const selCb = document.createElement('input');
+                selCb.type = 'checkbox';
+                selCb.className = 'vis-sel-cb';
+                selCb.title = 'Selectable';
+                selCb.checked = selNode.checked;
+                selCb.indeterminate = selNode.indeterminate;
+                selNode.selCb = selCb;
+                selCb.addEventListener('change', () => {
+                    layerSelModel.check(node.id, selCb.checked);
+                });
+                header.appendChild(selCb);
+            }
+
+            const name = isRoot ? 'Layers' : (node.data.name || 'Group');
+            header.appendChild(document.createTextNode(name));
+            group.appendChild(header);
+
+            const kids = document.createElement('div');
+            kids.className = 'vis-group-children';
+            
+            // Build children recursively
+            for (const child of node.children) {
+                kids.appendChild(buildLayerDOM(child, false));
+            }
+            group.appendChild(kids);
+
+            // Toggle collapse
+            arrow.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const collapsed = kids.classList.toggle('collapsed');
+                arrow.textContent = collapsed ? '▶' : '▼';
+            });
+
+            return group;
+        }
+    }
+
+    // Build layer DOM.
+    const parentNode = layerModel.roots[0] || layerModel.get('layers_parent');
+    const layerGroup = buildLayerDOM(parentNode, true);
 
     app.displayControlsEl.appendChild(layerGroup);
 
+    // Initial selectability DOM sync (esp. disabled state for layers whose
+    // visibility was restored as false).
+    syncLayerSelDom();
+
+    // --- Chiplets group (multi-die / 3D-IC visibility) ---
+    //
+    // Web-only feature: the Qt GUI has no equivalent panel today —
+    // `gui::DisplayControls::setCurrentChip` only switches the active
+    // chip, it does not toggle per-chiplet visibility.  Backend sends
+    // one entry per dbChip / dbChipInst node with a unique `path`
+    // ("top", "top.soc_inst", "top.soc_inst.sub_ip", …).  Toggling a
+    // node refreshes every Leaflet tile so the server's chiplet
+    // filter (`visible_chiplets`) takes effect on the next render.
+    const chipletData = (techData && Array.isArray(techData.chiplets))
+        ? techData.chiplets : [];
+    if (chipletData.length > 1) {
+        // Cookie schema: { "<block_name>": ["hidden.path1", "hidden.path2"] }.
+        // Keying by top-block name keeps hidden state isolated per design —
+        // opening design B no longer inherits design A's hides just because
+        // both happen to expose a chiplet path like "top.soc_inst".
+        // When block_name is empty (anonymous design) we skip persistence
+        // entirely rather than collapse every nameless design into the
+        // shared "" bucket.
+        const blockKey = (techData && techData.block_name) || '';
+        const persistHides = blockKey !== '';
+        let cookieMap = {};
+        if (persistHides) {
+            try {
+                const raw = getCookie('or_hidden_chiplets');
+                if (raw) {
+                    const parsed = JSON.parse(decodeURIComponent(raw));
+                    if (parsed && typeof parsed === 'object'
+                        && !Array.isArray(parsed)) {
+                        cookieMap = parsed;
+                    }
+                }
+            } catch (_) { /* ignore */ }
+        }
+        const savedHiddenChiplets = new Set(
+            Array.isArray(cookieMap[blockKey]) ? cookieMap[blockKey] : []);
+
+        // Build a flat node list keyed by path; CheckboxTreeModel will
+        // wire parent/child relationships from `parent` strings.  Force
+        // hasCheckbox=true on the root so its tri-state drives the
+        // group-header checkbox below.  buildChipletFlatNodes itself
+        // returns hasCheckbox=false for the root (its DOM is rendered
+        // by the header, not by renderChipletNode).
+        const flatNodes = buildChipletFlatNodes(chipletData,
+                                                savedHiddenChiplets);
+        const rootIdx = flatNodes.findIndex(n => n.parentId === null);
+        const rootId = rootIdx >= 0 ? flatNodes[rootIdx].id : null;
+        if (rootIdx >= 0) {
+            flatNodes[rootIdx].hasCheckbox = true;
+        }
+
+        // Initialize visible set from the saved cookie state.
+        app.visibleChiplets = new Set(
+            chipletData
+                .filter(c => !savedHiddenChiplets.has(c.path))
+                .map(c => c.path));
+
+        chipletModel = new CheckboxTreeModel(() => {
+            // Sync DOM checkboxes and recompute the visibility set in
+            // a single pass (renaming `node.cb` mirrors the layer
+            // group's pattern).
+            const newVisible = new Set();
+            chipletModel.forEach(node => {
+                if (node.cb) {
+                    node.cb.checked = node.checked;
+                    node.cb.indeterminate = node.indeterminate;
+                }
+                // Tri-state nodes (partial selection) still have at
+                // least one descendant layer visible, so their path
+                // must remain in visibleChiplets — coercing only
+                // node.checked would let the backend filter hide the
+                // entire chiplet subtree.
+                if (node.data && node.data.path
+                    && (node.checked || node.indeterminate)) {
+                    newVisible.add(node.data.path);
+                }
+            });
+            app.visibleChiplets = newVisible;
+
+            // Persist hidden paths per design.  We re-read the cookie
+            // here (rather than mutating a captured copy) so any state
+            // saved by other tabs / designs in the meantime survives.
+            // Anonymous designs (empty block_name) opt out of persistence
+            // to avoid sharing a single "" bucket across distinct designs.
+            if (persistHides) {
+                // or_hidden_chiplets persists only FULLY-hidden chiplets.
+                // Indeterminate ones stay in newVisible (their path keeps
+                // the backend tile filter active) and are reconstructed
+                // on reload from or_hidden_layers via _computeParent.
+                const hidden = chipletData
+                    .filter(c => !newVisible.has(c.path))
+                    .map(c => c.path);
+                let writeMap = {};
+                try {
+                    const raw = getCookie('or_hidden_chiplets');
+                    if (raw) {
+                        const parsed = JSON.parse(decodeURIComponent(raw));
+                        if (parsed && typeof parsed === 'object'
+                            && !Array.isArray(parsed)) {
+                            writeMap = parsed;
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+                if (hidden.length === 0) {
+                    delete writeMap[blockKey];
+                } else {
+                    writeMap[blockKey] = hidden;
+                }
+                setCookie('or_hidden_chiplets',
+                          encodeURIComponent(JSON.stringify(writeMap)));
+            }
+
+            // Refresh every Leaflet tile so the server applies the
+            // updated `visible_chiplets` filter on the next request.
+            redrawAllLayers();
+        });
+        chipletModel.buildFromNodes(flatNodes);
+
+        // Sanity check (debug aid): the two trees are expected to
+        // describe the same set of chiplet paths because they share
+        // origin in tile_generator.cpp's serializeTechResponse.  If
+        // that invariant ever breaks, mirrorStates / mirrorChipletToLayers
+        // would silently drop the orphan paths — surfacing a warning
+        // here makes the drift visible without breaking anything.
+        if (typeof console !== 'undefined' && console.warn) {
+            const layerPaths = new Set();
+            layerModel.forEach(n => {
+                if (n.data && n.data.chipletPath) {
+                    layerPaths.add(n.data.chipletPath);
+                }
+            });
+            const chipletPaths = new Set();
+            chipletModel.forEach(n => {
+                if (n.data && n.data.path) {
+                    chipletPaths.add(n.data.path);
+                }
+            });
+            for (const p of chipletPaths) {
+                if (!layerPaths.has(p)) {
+                    console.warn(
+                        `[display-controls] chiplet "${p}" missing from `
+                        + 'layer_hierarchy — Layers/Chiplets sync may drift');
+                }
+            }
+            for (const p of layerPaths) {
+                if (!chipletPaths.has(p)) {
+                    console.warn(
+                        `[display-controls] layer hierarchy node "${p}" `
+                        + 'has no matching chiplet — Layers/Chiplets sync '
+                        + 'may drift');
+                }
+            }
+        }
+
+        // Pre-cache chipletPath → layerModel node for O(1) lookups in
+        // the chiplet-panel event handlers below.  layerModel is built
+        // once via addFromSpec above and is not mutated structurally
+        // afterwards (only checkbox states change), so the mapping
+        // stays valid for the lifetime of these controls.
+        const layerNodeByChipletPath = new Map();
+        layerModel.forEach(n => {
+            if (n.data && n.data.chipletPath) {
+                layerNodeByChipletPath.set(n.data.chipletPath, n);
+            }
+        });
+
+        // Cascade a chiplet toggle down into the layerModel so the
+        // Layers panel checkboxes (and the Leaflet tiles, and the
+        // or_hidden_layers cookie) follow.  cascadeQuiet skips the
+        // layerModel's onChange; we fire it ourselves so the standard
+        // sync path runs exactly once.  No loop with the chipletModel
+        // mirror logic — the layerModel callback observes that the
+        // chipletModel state already matches and emits nothing back.
+        function mirrorChipletToLayers(chipletPath, checked) {
+            const ln = layerNodeByChipletPath.get(chipletPath);
+            if (!ln) return;
+            layerModel.cascadeQuiet(ln.id, checked);
+            layerModel.onChange();
+        }
+
+        // Initial sync: derive chiplet tri-state from the layerModel
+        // (which already reflects or_hidden_layers via _computeParent).
+        // Without this, reloading a session with partially-hidden layers
+        // shows the Chiplets panel fully checked even though some of
+        // the chiplet's layers are hidden, AND visibleChiplets may
+        // contain paths whose every layer is hidden — feeding stale
+        // entries to the backend filter.  Use the quiet variant so we
+        // don't fire redrawAllLayers during boot; the checkboxes are
+        // rendered just below and pick up the mutated state then.
+        //
+        // Chiplets the user explicitly hid via the Chiplets panel
+        // (savedHiddenChiplets) are skipped: that cookie is the
+        // authority at the chiplet level, regardless of whether the
+        // layerModel still considers their layers visible.
+        {
+            const initial = {};
+            layerModel.forEach(node => {
+                if (!node.data || !node.data.chipletPath) return;
+                const path = node.data.chipletPath;
+                if (savedHiddenChiplets.has(path)) return;
+                if (!chipletModel.get(path)) return;
+                initial[path] = {
+                    checked: node.checked,
+                    indeterminate: node.indeterminate,
+                };
+            });
+            if (Object.keys(initial).length > 0) {
+                chipletModel.mirrorStatesQuiet(initial);
+                // Refresh visibleChiplets from the freshly mirrored
+                // tri-state so chiplets whose layers are all hidden
+                // drop out of the filter set.
+                const refreshed = new Set();
+                chipletModel.forEach(node => {
+                    if (node.data && node.data.path
+                        && (node.checked || node.indeterminate)) {
+                        refreshed.add(node.data.path);
+                    }
+                });
+                app.visibleChiplets = refreshed;
+            }
+        }
+
+        const chipletGroup = document.createElement('div');
+        chipletGroup.className = 'vis-group';
+
+        const chipletHeader = document.createElement('label');
+        chipletHeader.className = 'vis-group-header';
+        const chipletArrow = document.createElement('span');
+        chipletArrow.className = 'vis-arrow';
+        chipletArrow.textContent = '▼';
+        chipletHeader.appendChild(chipletArrow);
+
+        // Group-level checkbox: toggles every chiplet at once and
+        // shows tri-state when the children disagree, matching the
+        // Layers group's UX.
+        const rootNode = rootId != null ? chipletModel.get(rootId) : null;
+        if (rootNode) {
+            const parentCb = document.createElement('input');
+            parentCb.type = 'checkbox';
+            parentCb.checked = rootNode.checked;
+            parentCb.indeterminate = rootNode.indeterminate;
+            rootNode.cb = parentCb;
+            parentCb.addEventListener('change', (e) => {
+                e.stopPropagation();
+                chipletModel.check(rootId, parentCb.checked);
+                if (rootNode.data && rootNode.data.path) {
+                    mirrorChipletToLayers(rootNode.data.path,
+                                          parentCb.checked);
+                }
+            });
+            chipletHeader.appendChild(parentCb);
+        }
+        chipletHeader.appendChild(document.createTextNode('Chiplets'));
+        chipletGroup.appendChild(chipletHeader);
+
+        const chipletChildren = document.createElement('div');
+        chipletChildren.className = 'vis-group-children';
+
+        function renderChipletNode(node) {
+            const c = node.data;
+            // The root is rendered by the header above; skip it here.
+            if (node !== rootNode) {
+                const label = document.createElement('label');
+                label.style.paddingLeft = (8 * (c.depth - 1)) + 'px';
+                label.title = c.path
+                    + (c.master ? ` (${c.master})` : '');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = node.checked;
+                checkbox.indeterminate = node.indeterminate;
+                node.cb = checkbox;
+                checkbox.addEventListener('change', () => {
+                    chipletModel.check(node.id, checkbox.checked);
+                    mirrorChipletToLayers(c.path, checkbox.checked);
+                });
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(c.name));
+                chipletChildren.appendChild(label);
+            }
+            if (node.children) {
+                node.children.forEach(renderChipletNode);
+            }
+        }
+        chipletModel.roots.forEach(renderChipletNode);
+        chipletGroup.appendChild(chipletChildren);
+
+        chipletArrow.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const collapsed = chipletChildren.classList.toggle('collapsed');
+            chipletArrow.textContent = collapsed ? '▶' : '▼';
+        });
+
+        app.displayControlsEl.appendChild(chipletGroup);
+    } else {
+        // Single-chip designs render every chiplet (i.e. only the top).
+        // Clearing keeps WebSocketTileLayer's serializer from sending an
+        // empty array and accidentally enabling the filter.
+        app.visibleChiplets = null;
+    }
+
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
-    const visTree = new VisTree(visibility, redrawAllLayers);
-    visTree.add({ label: 'Nets', children: [
+    // Subtrees that opt into a second "selectable" checkbox column mirror
+    // the Qt GUI's selectability column (see displayControls.cpp).
+    const visTree = new VisTree(visibility, selectability, redrawAllLayers);
+    visTree.add({ label: 'Nets', addSelectable: true, children: [
         { key: 'net_signal', label: 'Signal' },
         { key: 'net_power', label: 'Power' },
         { key: 'net_ground', label: 'Ground' },
@@ -252,7 +847,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'net_scan', label: 'Scan' },
         { key: 'net_analog', label: 'Analog' },
     ]});
-    visTree.add({ label: 'Instances', children: [
+    visTree.add({ label: 'Instances', addSelectable: true, children: [
         { label: 'Std Cells', visKey: 'stdcells', disabled: !app.hasLiberty, children: [
             { label: 'Bufs/Invs', children: [
                 { key: 'std_bufinv_timing', label: 'Timing opt.' },
@@ -287,13 +882,13 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'phys_other', label: 'Other' },
         ]},
     ]});
-    visTree.add({ label: 'Blockages', children: [
+    visTree.add({ label: 'Blockages', addSelectable: true, children: [
         { key: 'placement_blockages', label: 'Placement' },
         { key: 'routing_obstructions', label: 'Routing' },
     ]});
     if (techData.sites && techData.sites.length > 0) {
-        visTree.add({ label: 'Rows', visKey: 'rows', children:
-            techData.sites.map(name => ({
+        visTree.add({ label: 'Rows', visKey: 'rows', addSelectable: true,
+            children: techData.sites.map(name => ({
                 key: 'site_' + name, label: name,
             })),
         });
@@ -311,16 +906,17 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             { key: 'srouting_segments', label: 'Segments' },
             { key: 'srouting_vias', label: 'Vias' },
         ]},
-        { key: 'pins', label: 'Pins' },
+        { key: 'pins', label: 'Pins', selectable: true },
         { key: 'pin_names', label: 'Pin Names', disabledBy: 'pins' },
     ]});
     visTree.add({ label: 'Misc', children: [
         { label: 'Instances', children: [
             { key: 'inst_names', label: 'Names' },
-            { key: 'inst_pins', label: 'Pins' },
+            { key: 'inst_pins', label: 'Pins', selectable: true },
             { key: 'inst_pin_names', label: 'Pin Names', disabledBy: 'inst_pins' },
             { key: 'blockages', label: 'Blockages' },
         ]},
+        { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
@@ -336,7 +932,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {
-            zIndex: techData.layers.length + 10,
+            zIndex: leafletLayers.length + 10,
             opacity: 1,
         });
     }

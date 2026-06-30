@@ -6,6 +6,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
+    "add_pdn_connect_backside_err",
     "asap7_failed_macro_covered",
     "asap7_failed_macro_grid",
     "asap7_macro_covered_partial",
@@ -41,6 +42,7 @@ COMPULSORY_TESTS = [
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
+    "core_grid_min_width_layers",
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
@@ -52,7 +54,9 @@ COMPULSORY_TESTS = [
     "core_grid_strap_count",
     "core_grid_strap_outside_core",
     "core_grid_via_snap",
+    "core_grid_with_multiple_bterms",
     "core_grid_with_M6_min_area",
+    "core_grid_with_M6_min_area_rule",
     "core_grid_with_M7_pins",
     "core_grid_with_bterms",
     "core_grid_with_dual_rings",
@@ -203,6 +207,7 @@ filegroup(
         "nangate_bsg_black_parrot/floorplan_flipchip.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_nogrid.def",
         "nangate_bsg_black_parrot/floorplan_flipchip_short.def",
+        "nangate_data/Nangate45.lef",
         "nangate_existing/floorplan.def",
         "nangate_gcd/floorplan.def",
         "nangate_gcd/floorplan_obstructions.def",
@@ -277,10 +282,15 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "add_pdn_connect_backside_err": [
+                "backside_data/backside.def",
+                "backside_data/backside.lef",
+            ],
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
+            "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
