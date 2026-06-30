@@ -133,6 +133,18 @@ void set_behavioral_verilog_filename(const char* filename)
   ram_gen->setBehavioralVerilogFilename(filename);
 }
 
+float get_ram_worst_slack()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  return ram_gen->getWorstSlack();
+}
+
+float get_ram_total_power()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  return ram_gen->getTotalPower();
+}
+
 } //namespace_ram
 
 %} // inline

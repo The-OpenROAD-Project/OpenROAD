@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
 #include "grt/GlobalRouter.h"
@@ -30,7 +31,9 @@
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
@@ -57,7 +60,8 @@ RamGen::RamGen(sta::dbNetwork* network,
                ppl::IOPlacer* io_placer,
                dpl::Opendp* opendp,
                grt::GlobalRouter* global_router,
-               drt::TritonRoute* detailed_router)
+               drt::TritonRoute* detailed_router,
+               sta::dbSta* sta)
 
     : network_(network),
       db_(db),
@@ -67,6 +71,7 @@ RamGen::RamGen(sta::dbNetwork* network,
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
+      sta_(sta),
       ram_grid_(odb::horizontal)
 {
 }
@@ -2054,6 +2059,23 @@ endmodule
   vf << verilog_code;
   vf.close();
   logger_->info(RAM, 24, "Behavioral Verilog written for {}", module_name);
+}
+
+float RamGen::getWorstSlack()
+{
+  network_->setBlock(block_);
+  sta_->updateTiming(false);
+  return sta_->worstSlack(sta::MinMax::max());
+}
+
+float RamGen::getTotalPower()
+{
+  network_->setBlock(block_);
+  sta_->updateTiming(false);
+  sta::PowerResult total, sequential, combinational, clock, macro, pad;
+  sta_->power(
+      sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
+  return total.total();
 }
 
 }  // namespace ram
