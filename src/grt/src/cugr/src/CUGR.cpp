@@ -124,8 +124,13 @@ void CUGR::updateCriticalNets()
 
 void CUGR::updateNetSlacks()
 {
-  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
+  // During incremental routing the resizer maintains the parasitics; a global
+  // re-estimate here would clear and rebuild all of them, corrupting timing.
+  // Mirror FastRoute's updateSlacks(), which skips this when incremental.
+  if (!incremental_routing_) {
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+      estimator->estimateAllGlobalRouteParasitics();
+    }
   }
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
@@ -599,7 +604,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   updateCongestedNets(net_indices);
 }
 
-void CUGR::route()
+void CUGR::route(bool incremental)
 {
   if (resistance_aware_ && critical_nets_percentage_ == 0) {
     logger_->warn(GRT,
@@ -620,6 +625,22 @@ void CUGR::route()
       }
       net_indices.push_back(net->getIndex());
     }
+  }
+
+  if (incremental) {
+    // Reroute only the requested nets. The global stages (res-aware re-route,
+    // iterative RRR) and the per-stage updateCongestedNets expansion would rip
+    // up nets the caller never marked dirty, desyncing the resizer's
+    // parasitics. Pin the set to the dirty nets across the pattern + maze
+    // stages instead.
+    incremental_routing_ = true;
+    const std::vector<int> dirty_nets = net_indices;
+    patternRoute(net_indices);
+    net_indices = dirty_nets;
+    mazeRoute(net_indices);
+    incremental_routing_ = false;
+    printStatistics();
+    return;
   }
 
   patternRoute(net_indices);
@@ -1568,24 +1589,7 @@ void CUGR::routeIncremental()
     return;
   }
 
-  std::vector<int> initial_nets = nets_to_route_;
-  std::ranges::sort(initial_nets);
-  auto [first, last] = std::ranges::unique(initial_nets);
-  initial_nets.erase(first, last);
-
-  route();
-
-  std::vector<int> overflow_nets;
-  updateCongestedNets(overflow_nets);
-  std::vector<int> secondary_nets;
-  std::ranges::set_difference(
-      overflow_nets, initial_nets, std::back_inserter(secondary_nets));
-  if (!secondary_nets.empty()) {
-    for (int idx : secondary_nets) {
-      addDirtyNet(gr_nets_[idx]->getDbNet());
-    }
-    route();
-  }
+  route(/*incremental=*/true);
 }
 
 }  // namespace grt
