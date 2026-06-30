@@ -91,7 +91,8 @@ void CUGR::init(const int min_routing_layer,
                                      constants_,
                                      min_routing_layer,
                                      max_routing_layer,
-                                     clock_nets);
+                                     clock_nets,
+                                     verbose_);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& base_nets = design_->getAllNets();
@@ -822,7 +823,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     mazeRoute(net_indices);
   }
   grid_graph_->setCostMultiplier(1.0);
-  if (soft_ndr_demotions > 0) {
+  if (verbose_ && soft_ndr_demotions > 0) {
     logger_->info(GRT,
                   306,
                   "Iterative RRR soft-demoted {} NDR net(s) total.",
