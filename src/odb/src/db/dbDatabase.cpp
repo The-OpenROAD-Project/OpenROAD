@@ -704,6 +704,17 @@ dbChip* dbDatabase::findChip(const char* name) const
   return (dbChip*) obj->chip_hash_.find(name);
 }
 
+bool dbDatabase::hasHierarchicalChip() const
+{
+  for (dbChip* chip : getChips()) {
+    if (chip->getChipType() == dbChip::ChipType::HIER) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 dbSet<dbProperty> dbDatabase::getProperties() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;

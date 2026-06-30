@@ -83,7 +83,9 @@ proc extract_parasitics { args } {
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
-    set ext_model_file $keys(-ext_model_file)
+    utl::warn RCX 514 "-ext_model_file is deprecated, use\
+                       set_extraction_rules_file instead."
+    set_extraction_rules_file $keys(-ext_model_file)
   }
 
   set corner_cnt 1
