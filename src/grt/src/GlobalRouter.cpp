@@ -208,6 +208,15 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportNetDegree(nets);
 
   cugr_->setCongestionIterations(congestion_iterations_);
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    if (cugr_->getCriticalNetsPercentage() != 0) {
+      logger_->warn(
+          GRT,
+          309,
+          "Timing is not available, setting critical nets percentage to 0.");
+    }
+    cugr_->setCriticalNetsPercentage(0);
+  }
   cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
   return nets;
 }
@@ -2519,6 +2528,7 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
   fastroute_->setResistanceAware(resistance_aware);
+  cugr_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
@@ -2531,8 +2541,7 @@ void GlobalRouter::setResAwareNetsPercentage(float percentage)
                   "nets percentage to 0.");
   }
   if (use_cugr_) {
-    // TODO
-    // cugr_->setResAwareNetsPercentage(percentage);
+    cugr_->setResAwareNetsPercentage(percentage);
   } else {
     fastroute_->setResAwareNetsPercentage(percentage);
   }
@@ -3137,7 +3146,9 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  bool guide_is_congested = is_congested_ && !allow_congestion_;
+  // CUGR can produce congested guides that DRT can handle, resulting in
+  // DRC-free final routing.
+  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;

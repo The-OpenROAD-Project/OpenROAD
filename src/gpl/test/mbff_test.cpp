@@ -29,7 +29,7 @@ class MBFFTestPeer
  public:
   static bool IsValidTray(MBFF* uut, odb::dbInst* tray)
   {
-    return uut->network_->isValidTray(tray);
+    return uut->IsValidTray(tray);
   }
   static void ReadLibs(MBFF* uut) { uut->ReadLibs(); }
 };
