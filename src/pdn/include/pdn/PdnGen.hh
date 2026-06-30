@@ -183,7 +183,7 @@ class PdnGen
                          const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
-  std::vector<Grid*> getGrids() const;
+  std::vector<Grid*> getGrids(bool exclude_dummy = false) const;
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }
 
  private:
@@ -193,7 +193,6 @@ class PdnGen
 
   void checkDesign(odb::dbBlock* block) const;
 
-  std::vector<Grid*> getGrids(bool exclude_dummy = false) const;
   Grid* instanceGrid(odb::dbInst* inst) const;
 
   VoltageDomain* getCoreDomain() const;
