@@ -236,6 +236,7 @@ or_integration_tests(
     measured_vt_swap
     repair_fanout7_skip_pin_swap
   PASSFAIL_TESTS
+    repair_design_escape_scalar_port_verilog_hier
     repair_setup_legacy_mt
     repair_setup_mt1
     cpp_tests
