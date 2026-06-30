@@ -50,6 +50,7 @@ cc_library(
         "src/fftsg2d.cpp",
         "src/gpu/deviceState.h",
         "src/gpu/nesterovDeviceContext.h",
+        "src/gpu/regionDensityField.h",
         "src/graphicsNone.cpp",
         "src/hpwl.cpp",
         "src/hpwlBackend.h",

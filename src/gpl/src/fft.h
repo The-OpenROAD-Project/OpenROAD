@@ -11,13 +11,11 @@
 
 namespace gpl {
 
-class DeviceState;
+class RegionDensityField;
 
-// FFT — the density-grid context for the Poisson solve. It owns the staging
-// grids and the backend-agnostic accessors; the solve itself is delegated to
-// an FftBackend (the CPU Ooura DCT or the GPU Kokkos solver) selected at
-// construction by makeFftBackend(). Callers see one concrete class regardless
-// of backend.
+// FFT — the density-grid context for the Poisson solve. Owns the staging grids
+// and backend-agnostic accessors; the solve is delegated to an FftBackend (CPU
+// Ooura DCT or GPU Kokkos) chosen by makeFftBackend() at construction.
 class FFT
 {
  public:
@@ -25,7 +23,7 @@ class FFT
       int bin_cnt_y,
       float bin_size_x,
       float bin_size_y,
-      DeviceState* device_state = nullptr);
+      RegionDensityField* region_field = nullptr);
   ~FFT();
 
   // input func
@@ -53,8 +51,7 @@ class FFT
   int bin_cnt_x_ = 0;
   int bin_cnt_y_ = 0;
 
-  // The Poisson solve backend (CPU Ooura or GPU Kokkos), selected at run time
-  // in the constructor. doFFT() delegates to it.
+  // Poisson solve backend (CPU Ooura or GPU Kokkos), chosen in the ctor.
   std::unique_ptr<FftBackend> backend_;
 };
 

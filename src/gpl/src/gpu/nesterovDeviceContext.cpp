@@ -18,6 +18,8 @@
 #include "nesterovDeviceState.h"
 #include "nesterovOp.h"
 #include "poissonSolver.h"
+#include "regionDensityField.h"
+#include "regionDensityField_kokkos.h"
 
 namespace gpl {
 
@@ -81,7 +83,6 @@ NesterovDeviceContext::NesterovDeviceContext(
   scratch_y_.resize(num_cells_);
   auto& s = *kokkos_;
 
-  // Allocate all Views.
   const size_t n = static_cast<size_t>(num_cells_);
 
   s.d_cur_slp_x = Kokkos::View<float*>("nb_cur_slp_x", n);
@@ -300,36 +301,44 @@ void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
 }
 
 NesterovDeviceContext::DensityIterResult
-NesterovDeviceContext::densitySolveIteration(DeviceState* device_state,
+NesterovDeviceContext::densitySolveIteration(RegionDensityField* region_field,
                                              SlpSlot slot,
                                              bool want_sum_phi)
 {
   auto& s = *kokkos_;
-  KokkosDeviceState& ds = device_state->kokkos();
-  assert(device_state->numBins() == s.bin_cnt_x * s.bin_cnt_y);
+  KokkosRegionDensityField& rdf = region_field->kokkos();
+  // Hard check (not a debug-only assert): the region field Views are sized to
+  // numBins(), and the scatter/gather/solve below iterate s.bin_cnt_x *
+  // s.bin_cnt_y bins. A mismatch would be an out-of-bounds device access that
+  // is silent in a release build, so abort with a clear message instead.
+  if (region_field->numBins() != s.bin_cnt_x * s.bin_cnt_y) {
+    Kokkos::abort(
+        "densitySolveIteration: region density field bin count does not match "
+        "the device context bin grid");
+  }
 
   DensityIterResult r;
   densop::launchNbDensityScatter(
-      s, ds, num_cells_, slot, r.overflow_area, r.overflow_area_unscaled);
+      s, rdf, num_cells_, slot, r.overflow_area, r.overflow_area_unscaled);
   if (want_sum_phi) {
     s.solver->solvePoisson(
-        ds.d_bin_density, ds.d_bin_phi, ds.d_bin_elec_x, ds.d_bin_elec_y);
-    r.sum_phi = densop::launchNbSumPhi(s, ds);
+        rdf.d_bin_density, rdf.d_bin_phi, rdf.d_bin_elec_x, rdf.d_bin_elec_y);
+    r.sum_phi = densop::launchNbSumPhi(s, rdf);
   } else {
     // sumPhi (and thus the potential) is a debug-only metric — skip the
     // potential IDCT, one of the solve's four transforms.
     s.solver->solvePoissonField(
-        ds.d_bin_density, ds.d_bin_elec_x, ds.d_bin_elec_y);
+        rdf.d_bin_density, rdf.d_bin_elec_x, rdf.d_bin_elec_y);
   }
   last_density_slot_ = slot;
   return r;
 }
 
-void NesterovDeviceContext::densityGatherToNB(DeviceState* device_state,
+void NesterovDeviceContext::densityGatherToNB(RegionDensityField* region_field,
                                               SlpSlot slot)
 {
   densop::launchNbDensityGather(
-      *kokkos_, device_state->kokkos(), num_cells_, slot);
+      *kokkos_, region_field->kokkos(), num_cells_, slot);
 }
 
 // ~NesterovDeviceContext() is inline-defaulted in nesterovDeviceContext.h

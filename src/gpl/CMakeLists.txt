@@ -63,6 +63,7 @@ if(ENABLE_GPU)
     src/gpu/poissonSolver.cpp
     src/gpu/dct.cpp
     src/gpu/deviceState.cpp
+    src/gpu/regionDensityField.cpp
     src/gpu/gpuWirelengthGradientBackend.cpp
     src/gpu/wirelengthOp.cpp
     src/gpu/gpuDensityGradientBackend.cpp
@@ -89,6 +90,7 @@ if(ENABLE_GPU)
     set_source_files_properties(
       src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
       src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
+      src/gpu/regionDensityField.cpp
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp
@@ -98,6 +100,7 @@ if(ENABLE_GPU)
     set_source_files_properties(
       src/gpu/gpuHpwlBackend.cpp src/gpu/gpuRuntime.cpp src/gpu/gpuFftBackend.cpp
       src/gpu/poissonSolver.cpp src/gpu/dct.cpp src/gpu/deviceState.cpp
+      src/gpu/regionDensityField.cpp
       src/gpu/gpuWirelengthGradientBackend.cpp src/gpu/wirelengthOp.cpp
       src/gpu/gpuDensityGradientBackend.cpp src/gpu/densityOp.cpp
       src/gpu/nesterovOp.cpp src/gpu/nesterovDeviceContext.cpp

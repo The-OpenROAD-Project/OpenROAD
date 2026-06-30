@@ -19,11 +19,14 @@ class DeviceState;
 class GCell;
 class GCellHandle;
 class NesterovBase;
+class RegionDensityField;
 
 class GpuDensityGradientBackend : public DensityGradientBackend
 {
  public:
-  GpuDensityGradientBackend(NesterovBase* nb, DeviceState* device_state);
+  GpuDensityGradientBackend(NesterovBase* nb,
+                            DeviceState* device_state,
+                            RegionDensityField* region_field);
   ~GpuDensityGradientBackend() override;
 
   void getCellGradients(const std::vector<GCellHandle>& gCells,

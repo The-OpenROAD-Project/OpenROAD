@@ -13,7 +13,9 @@
 //   - WA wirelength gradient: same device pool + per-pin A/B/C buffers
 //     (owned by the gradient backend).
 //   - Density scatter+gather: same instance coords drive the density bin
-//     update; FFT solve writes electric field Views back here.
+//     update, and the per-inst density params + gather output live here. The
+//     FFT field Views (density / phi / electric field) live per-region in
+//     RegionDensityField (gpu/regionDensityField.h), not here.
 //   - Nesterov coord update: inst coords mutate device-side via the NB
 //     device context; `syncInstCoordsFromHost` is a one-time init load.
 //
@@ -66,23 +68,16 @@ class DeviceState
   DeviceState& operator=(DeviceState&&) = delete;
 
   // Reload everything from the (mutated) host storage: sizes, CSRs, pin
-  // offsets, net weights, and — when initBinViews already ran — the per-inst
-  // density params. Called once per non-virtual timing-driven iteration,
-  // after fixPointers() has restored host-side consistency; the repair
-  // callbacks create, destroy (swap-remove, permuting indices), and resize
-  // instances, which invalidates every construction-time view and CSR here.
-  // The object identity is preserved so backends holding a DeviceState*
-  // stay valid. Leaves coords invalidated; the next ensureCoordsFresh()
-  // reloads coords and pin locations.
+  // offsets, net weights, and the per-inst density params. Called once per
+  // non-virtual timing-driven iteration, after fixPointers() has restored
+  // host-side consistency; the repair callbacks create, destroy (swap-remove,
+  // permuting indices), and resize instances, which invalidates every
+  // construction-time view and CSR here. The object identity is preserved so
+  // backends holding a DeviceState* stay valid. Leaves coords invalidated;
+  // the next ensureCoordsFresh() reloads coords and pin locations.
   void rebuild(const std::vector<GCell>& gCellStor,
                const std::vector<GPin>& gPinStor,
                const std::vector<GNet>& gNetStor);
-
-  // Allocate bin grid Views + push per-inst density params. Called once
-  // from NesterovBase after the BinGrid is initialized (initDensity1).
-  // Must precede any density gather kernel or GpuFftBackend solve.
-  void initBinViews(const BinGrid& binGrid,
-                    const std::vector<GCell>& gCellStor);
 
   // Re-push current instance centers (= GCell::cx()/cy()) to the device.
   // Now used only on the init path; once nb_device_ctx_ exists, that
@@ -107,24 +102,15 @@ class DeviceState
   // Re-push per-inst density params (half_dx, half_dy, density_scale) after
   // they change. Called from NesterovBase::updateDensitySize (routability
   // inflation, TD area changes); non-virtual TD iterations reload them
-  // through rebuild() instead. The call site skips this until initBinViews
-  // has allocated the views (numBins() guard). Static during the main
-  // Nesterov loop.
+  // through rebuild() instead. The inst-density views are allocated at
+  // construction, so this is safe to call any time after the ctor. Static
+  // during the main Nesterov loop.
   void refreshDensityParams(const std::vector<GCell>& gCellStor);
 
   // Counts (for backends to size their own per-net / per-pin buffers).
   int numInsts() const;
   int numPins() const;
   int numNets() const;
-  int numBins() const;
-
-  // Bin grid geometry (for kernels that compute bin indices on-the-fly).
-  int binCntX() const { return bin_cnt_x_; }
-  int binCntY() const { return bin_cnt_y_; }
-  float binSizeX() const { return bin_size_x_; }
-  float binSizeY() const { return bin_size_y_; }
-  int gridLx() const { return grid_lx_; }
-  int gridLy() const { return grid_ly_; }
 
   // Coord-sync manager. The NB device context scatters fresh inst coords
   // to the device before updateWireLengthForceWA, so a subsequent
@@ -167,8 +153,8 @@ class DeviceState
                      const std::vector<GNet>& gNetStor);
   // (Re)allocate + fill the per-inst density views (half size, scale,
   // gradient). Sized num_insts_, so a rebuild() that changed the instance
-  // count must re-run this; the per-bin views are untouched (the bin grid
-  // does not change across the TD boundary).
+  // count must re-run this. Called once from the constructor (which then sets
+  // inst_density_ready_) and again from rebuild().
   void rebuildInstDensityViews(const std::vector<GCell>& gCellStor);
 
   // Master-thread-only; see ensureCoordsFresh() for the thread-safety
@@ -190,15 +176,10 @@ class DeviceState
   int num_insts_ = 0;
   int num_pins_ = 0;
   int num_nets_ = 0;
-  int num_bins_ = 0;
 
-  // Bin grid geometry (plain scalars, no Kokkos dependency).
-  int bin_cnt_x_ = 0;
-  int bin_cnt_y_ = 0;
-  float bin_size_x_ = 0;
-  float bin_size_y_ = 0;
-  int grid_lx_ = 0;
-  int grid_ly_ = 0;
+  // True once rebuildInstDensityViews has allocated the per-inst density
+  // views (done in the ctor). rebuild() re-runs them only when set.
+  bool inst_density_ready_ = false;
 };
 
 // Lock the "must construct via the GPU ctor" invariant at compile time so a

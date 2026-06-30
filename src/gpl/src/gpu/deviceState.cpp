@@ -15,14 +15,10 @@ namespace gpl {
 
 namespace {
 
-// Resolve a GPin's owning GCell to its index in gCellStor_.
-// Linear scan over gCellStor_ once, indexed via a small map built on the
-// stack — adequate at init time (a few hundred us on large01). After init,
-// this map is discarded.
+// Resolve a GPin's owning GCell to its index in gCellStor by pointer
+// arithmetic; gCell must point into the contiguous storage vector.
 int indexOfGCell(const std::vector<GCell>& gCellStor, const GCell* gCell)
 {
-  // Pointer arithmetic into the contiguous storage vector. gCell must point
-  // into gCellStor.
   const GCell* base = gCellStor.data();
   return static_cast<int>(gCell - base);
 }
@@ -43,6 +39,13 @@ DeviceState::DeviceState(const std::vector<GCell>& gCellStor,
 {
   ensureKokkosInitialized();
   buildTopology(gCellStor, gPinStor, gNetStor);
+  // Per-inst density views are sized num_insts_ (known now) and are shared
+  // across regions (indexed by global gCellStor id). Allocate them here so
+  // they are independent of the per-region bin grids; NesterovBase's
+  // updateDensitySize() pushes the actual params once each region computes
+  // them.
+  rebuildInstDensityViews(gCellStor);
+  inst_density_ready_ = true;
 }
 
 void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
@@ -167,7 +170,6 @@ void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
 
   // Inst→pin CSR. Reverse of net→pin, but bucketed by inst_id. I/O pins
   // (inst_id == -1) are excluded — they carry no gradient back to any cell.
-  // Two-pass build: count per inst, then prefix-sum to offsets, then fill.
   std::vector<int> h_inst_pin_off(num_insts_ + 1, 0);
   for (int p = 0; p < num_pins_; ++p) {
     const int inst = h_pin_inst_id[p];
@@ -182,7 +184,6 @@ void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
   s.d_inst_pin_idx = Kokkos::View<int*>("ds_inst_pin_idx", total_inst_pins);
 
   std::vector<int> h_inst_pin_idx(total_inst_pins);
-  // Scratch cursor per inst — we'll increment in place during fill.
   std::vector<int> cursor(num_insts_, 0);
   for (int p = 0; p < num_pins_; ++p) {
     const int inst = h_pin_inst_id[p];
@@ -250,40 +251,16 @@ void DeviceState::rebuild(const std::vector<GCell>& gCellStor,
                           const std::vector<GNet>& gNetStor)
 {
   buildTopology(gCellStor, gPinStor, gNetStor);
-  // The per-inst density views are sized num_insts_, which may have changed;
-  // the per-bin views (sized to the fixed bin grid) are left as-is. Skip
-  // when initBinViews has not run yet — it uploads the params itself.
-  if (num_bins_ > 0) {
+  // The per-inst density views are sized num_insts_, which may have changed.
+  // The per-region FFT field Views live in RegionDensityField and are not
+  // touched here (the bin grid does not change across the TD boundary).
+  if (inst_density_ready_) {
     rebuildInstDensityViews(gCellStor);
   }
   // buildTopology seeded device coords from the host's int-truncated dCx/dCy
   // snapshot; force the next ensureCoordsFresh() to redo the full coord +
   // pin-location load so consumers never see the seed values as "fresh".
   invalidateCoords();
-}
-
-void DeviceState::initBinViews(const BinGrid& binGrid,
-                               const std::vector<GCell>& gCellStor)
-{
-  bin_cnt_x_ = binGrid.getBinCntX();
-  bin_cnt_y_ = binGrid.getBinCntY();
-  bin_size_x_ = static_cast<float>(binGrid.getBinSizeX());
-  bin_size_y_ = static_cast<float>(binGrid.getBinSizeY());
-  grid_lx_ = binGrid.lx();
-  grid_ly_ = binGrid.ly();
-  num_bins_ = bin_cnt_x_ * bin_cnt_y_;
-
-  auto& s = *kokkos_;
-  s.d_bin_density = Kokkos::View<float*>("ds_bin_density", num_bins_);
-  s.d_bin_phi = Kokkos::View<float*>("ds_bin_phi", num_bins_);
-  s.d_bin_elec_x = Kokkos::View<float*>("ds_bin_elec_x", num_bins_);
-  s.d_bin_elec_y = Kokkos::View<float*>("ds_bin_elec_y", num_bins_);
-  s.h_bin_density = Kokkos::create_mirror_view(s.d_bin_density);
-  s.h_bin_phi = Kokkos::create_mirror_view(s.d_bin_phi);
-  s.h_bin_elec_x = Kokkos::create_mirror_view(s.d_bin_elec_x);
-  s.h_bin_elec_y = Kokkos::create_mirror_view(s.d_bin_elec_y);
-
-  rebuildInstDensityViews(gCellStor);
 }
 
 void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
@@ -412,11 +389,6 @@ int DeviceState::numPins() const
 int DeviceState::numNets() const
 {
   return num_nets_;
-}
-
-int DeviceState::numBins() const
-{
-  return num_bins_;
 }
 
 void DeviceState::ensureCoordsFresh(const std::vector<GCell>& gCellStor)

@@ -78,9 +78,8 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
   Impl& s = *impl_;
   KokkosDeviceState& ds = s.device_state->kokkos();
 
-  // ---- 1. Lazy (re)allocate per-net bbox buffers ----
-  // n_nets is fixed across Nesterov iterations, so this is one-shot in
-  // practice.
+  // Lazy (re)allocate per-net bbox buffers. n_nets is fixed across Nesterov
+  // iterations, so this is one-shot in practice.
   if (s.d_lx.extent(0) != static_cast<size_t>(n_nets)) {
     s.d_lx = Kokkos::View<int*>("hpwl_net_lx", n_nets);
     s.d_ly = Kokkos::View<int*>("hpwl_net_ly", n_nets);
@@ -104,7 +103,7 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
 
   using ExecSpace = Kokkos::DefaultExecutionSpace;
 
-  // ---- 2. Compute per-net bbox in parallel; serial inner over pins ----
+  // Compute per-net bbox in parallel; serial inner over pins.
   // Pin coords are already on the device (DeviceState::updatePinLocations
   // ran beforehand). Indirection through d_net_pin_idx — the CSR stores
   // global pin indices into d_pin_cx/d_pin_cy. Nets above
@@ -198,7 +197,7 @@ int64_t GpuHpwlBackend::computeHpwl(std::vector<GNet>& gNetStor)
         });
   }
 
-  // ---- 3. Sum HPWL across nets (int64 reduction → backend-deterministic) ----
+  // Sum HPWL across nets (int64 reduction → backend-deterministic).
   int64_t total_hpwl = 0;
   Kokkos::parallel_reduce(
       "hpwl_sum",

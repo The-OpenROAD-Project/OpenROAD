@@ -64,13 +64,9 @@ void GpuWirelengthGradientBackend::updateForce(float wlCoefX, float wlCoefY)
   const int n_pins = s.device_state->numPins();
   const int n_nets = s.device_state->numNets();
 
-  // K1: net bbox.
   wlop::launchUpdateNetBBox(ds, n_nets);
-  // K2: per-pin A_pos/neg exponentials.
   wlop::launchComputeAPosNeg(ds, n_pins, wlCoefX, wlCoefY);
-  // K3: per-net B, C reductions over CSR.
   wlop::launchComputeBC(ds, n_nets);
-  // K4: per-pin gradient (already net-weight multiplied).
   wlop::launchComputePinWAGrad(ds, n_pins, wlCoefX, wlCoefY);
 
   s.host_grad_valid = false;

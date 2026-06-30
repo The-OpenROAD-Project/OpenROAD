@@ -14,10 +14,10 @@
 #include <cstddef>
 #include <memory>
 
-#include "deviceState.h"
-#include "deviceState_kokkos.h"
 #include "gpuRuntime.h"
 #include "poissonSolver.h"
+#include "regionDensityField.h"
+#include "regionDensityField_kokkos.h"
 
 namespace gpl {
 
@@ -32,7 +32,7 @@ struct GpuFftBackend::Impl
        int bin_cnt_y,
        float bin_size_x,
        float bin_size_y,
-       DeviceState* device_state)
+       RegionDensityField* region_field)
       : bin_cnt_x(bin_cnt_x),
         bin_cnt_y(bin_cnt_y),
         // The Poisson solver's binCntX axis is gpl's fast (y) axis, so the
@@ -40,7 +40,7 @@ struct GpuFftBackend::Impl
         // bin_cnt_y. The bin-size axes swap with the count axes (only the
         // ratio is used).
         solver(bin_cnt_y, bin_cnt_x, bin_size_y, bin_size_x),
-        device_state(device_state),
+        region_field(region_field),
         d_density("fft_gpu_density",
                   static_cast<size_t>(bin_cnt_x) * bin_cnt_y),
         d_phi("fft_gpu_phi", static_cast<size_t>(bin_cnt_x) * bin_cnt_y),
@@ -57,13 +57,14 @@ struct GpuFftBackend::Impl
   int bin_cnt_y;
 
   PoissonSolver solver;
-  DeviceState* device_state;  // borrowed; may be null when ENABLE_GPU=ON
-                              // but no device_state
+  RegionDensityField* region_field;  // borrowed per-region; may be null when
+                                     // there is no region field (e.g. the
+                                     // standalone FFT unit test)
 
-  // Self-owned staging Views — used when DeviceState's bin Views are not
-  // yet initialized (before initBinViews). Once they are, solve() routes
-  // to DeviceState's Views so the density gather kernel can read them
-  // directly on device.
+  // Self-owned staging Views — used when no region field is attached (the
+  // fft_gpu_test path constructs an FFT with no region field). When a region
+  // field is present, solve() routes to its Views so the density gather
+  // kernel can read them directly on device.
   Kokkos::View<float*> d_density;
   Kokkos::View<float*> d_phi;
   Kokkos::View<float*> d_elec_x;
@@ -78,12 +79,12 @@ GpuFftBackend::GpuFftBackend(int bin_cnt_x,
                              int bin_cnt_y,
                              float bin_size_x,
                              float bin_size_y,
-                             DeviceState* device_state)
+                             RegionDensityField* region_field)
     : impl_(std::make_unique<Impl>(bin_cnt_x,
                                    bin_cnt_y,
                                    bin_size_x,
                                    bin_size_y,
-                                   device_state))
+                                   region_field))
 {
 }
 
@@ -107,26 +108,26 @@ void GpuFftBackend::solve(BinGridSpan density,
     }
   }
 
-  // If DeviceState bin Views are initialized, solve into them so the
-  // density gather kernel can read them directly on device. The host
-  // unpack below reads from DeviceState's host mirrors.
-  const bool use_ds = impl.device_state && impl.device_state->numBins() > 0;
-  if (use_ds) {
-    KokkosDeviceState& ds = impl.device_state->kokkos();
-    Kokkos::deep_copy(ds.d_bin_density, impl.h_density);
+  // If a region field is attached, solve into its bin Views so the density
+  // gather kernel can read them directly on device. The host unpack below
+  // reads from the region field's host mirrors.
+  const bool use_field = impl.region_field && impl.region_field->numBins() > 0;
+  if (use_field) {
+    KokkosRegionDensityField& rdf = impl.region_field->kokkos();
+    Kokkos::deep_copy(rdf.d_bin_density, impl.h_density);
     impl.solver.solvePoisson(
-        ds.d_bin_density, ds.d_bin_phi, ds.d_bin_elec_x, ds.d_bin_elec_y);
+        rdf.d_bin_density, rdf.d_bin_phi, rdf.d_bin_elec_x, rdf.d_bin_elec_y);
     Kokkos::fence();
-    Kokkos::deep_copy(ds.h_bin_phi, ds.d_bin_phi);
-    Kokkos::deep_copy(ds.h_bin_elec_x, ds.d_bin_elec_x);
-    Kokkos::deep_copy(ds.h_bin_elec_y, ds.d_bin_elec_y);
+    Kokkos::deep_copy(rdf.h_bin_phi, rdf.d_bin_phi);
+    Kokkos::deep_copy(rdf.h_bin_elec_x, rdf.d_bin_elec_x);
+    Kokkos::deep_copy(rdf.h_bin_elec_y, rdf.d_bin_elec_y);
 
     for (int x = 0; x < impl.bin_cnt_x; x++) {
       for (int y = 0; y < impl.bin_cnt_y; y++) {
         const size_t k = static_cast<size_t>(x) * impl.bin_cnt_y + y;
-        phi(x, y) = ds.h_bin_phi(k);
+        phi(x, y) = rdf.h_bin_phi(k);
         const GplField f
-            = solverToGplField(ds.h_bin_elec_x(k), ds.h_bin_elec_y(k));
+            = solverToGplField(rdf.h_bin_elec_x(k), rdf.h_bin_elec_y(k));
         field_x(x, y) = f.x;
         field_y(x, y) = f.y;
       }

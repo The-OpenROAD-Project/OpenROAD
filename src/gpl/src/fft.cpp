@@ -2,12 +2,9 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 // FFT — the density-grid context — and CpuFftBackend, the Ooura DCT solver.
-//
-// FFT owns the staging grids and the backend-agnostic accessors; doFFT()
-// delegates to the FftBackend chosen at construction. CpuFftBackend (always
-// compiled) is the Ooura DCT. makeFftBackend() is the single place the runtime
-// backend choice is made: on an ENABLE_GPU build with the GPU path selected
-// (gpl::gpuEnabled()) it returns the Kokkos GpuFftBackend.
+// doFFT() delegates to the FftBackend chosen at construction. makeFftBackend()
+// makes that choice: GpuFftBackend on an ENABLE_GPU build with gpuEnabled(),
+// else the always-compiled CpuFftBackend (Ooura DCT).
 
 #include "fft.h"
 
@@ -205,7 +202,7 @@ std::unique_ptr<FftBackend> makeFftBackend(const BackendContext& ctx)
                                            ctx.bin_cnt_y,
                                            ctx.bin_size_x,
                                            ctx.bin_size_y,
-                                           ctx.device_state);
+                                           ctx.region_field);
   }
 #endif
   return std::make_unique<CpuFftBackend>(
@@ -217,14 +214,14 @@ BackendContext makeFftCtx(int bin_cnt_x,
                           int bin_cnt_y,
                           float bin_size_x,
                           float bin_size_y,
-                          DeviceState* device_state)
+                          RegionDensityField* region_field)
 {
   BackendContext ctx;
   ctx.bin_cnt_x = bin_cnt_x;
   ctx.bin_cnt_y = bin_cnt_y;
   ctx.bin_size_x = bin_size_x;
   ctx.bin_size_y = bin_size_y;
-  ctx.device_state = device_state;
+  ctx.region_field = region_field;
   return ctx;
 }
 }  // namespace
@@ -233,7 +230,7 @@ FFT::FFT(int bin_cnt_x,
          int bin_cnt_y,
          float bin_size_x,
          float bin_size_y,
-         DeviceState* device_state)
+         RegionDensityField* region_field)
     : bin_density_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
       electro_phi_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
       electro_field_x_(static_cast<std::size_t>(bin_cnt_x) * bin_cnt_y, 0.0f),
@@ -244,7 +241,7 @@ FFT::FFT(int bin_cnt_x,
                                          bin_cnt_y,
                                          bin_size_x,
                                          bin_size_y,
-                                         device_state)))
+                                         region_field)))
 {
 }
 

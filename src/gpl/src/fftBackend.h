@@ -63,9 +63,9 @@ struct BackendContext;
 
 // Factory: returns GpuFftBackend on an ENABLE_GPU build with the GPU path
 // selected at run time, otherwise CpuFftBackend. Consumes ctx.bin_cnt_x /
-// bin_cnt_y / bin_size_x / bin_size_y (grid geometry) and ctx.device_state
-// (GPU path; may be null for CPU path — GpuFftBackend borrows its bin Views
-// when available, falling back to self-owned Views).
+// bin_cnt_y / bin_size_x / bin_size_y (grid geometry) and ctx.region_field
+// (GPU path; may be null — GpuFftBackend borrows the region's bin Views when
+// available, falling back to self-owned Views).
 std::unique_ptr<FftBackend> makeFftBackend(const BackendContext& ctx);
 
 static_assert(!std::is_copy_constructible_v<FftBackend>);

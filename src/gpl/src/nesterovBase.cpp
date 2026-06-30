@@ -41,6 +41,7 @@
 // destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
 #include "gpu/deviceState.h"
 #include "gpu/nesterovDeviceContext.h"
+#include "gpu/regionDensityField.h"
 #ifdef ENABLE_GPU
 #include "gpu/gpuRuntime.h"
 #endif
@@ -1326,7 +1327,6 @@ NesterovBaseCommon::NesterovBaseCommon(
     }
   }
 
-  // ---- Device-resident state + HPWL backend ----
   // Construct the device-side coordinate pool (instance coords, per-pin
   // offsets, net→pin CSR) only when the GPU path is selected at run time.
   // The HPWL backend factory then takes a pointer to it; the GPU backend
@@ -2242,28 +2242,48 @@ NesterovBase::NesterovBase(
   // update binGrid info
   bg_.initBins();
 
+#ifdef ENABLE_GPU
+  // Per-region FFT field Views. One per placement region so concurrent
+  // regions in the Nesterov loop never clobber each other's bin buffers.
+  // Created only on the GPU path (device_state non-null iff gpuEnabled()).
+  if (nbc_->getDeviceState()) {
+    region_density_field_ = std::make_unique<RegionDensityField>(bg_);
+    // The GPU density-gradient / FFT factories select the GPU backend only
+    // when a region field with numBins() > 0 is present; otherwise they fall
+    // back to CPU. On the GPU path that fallback would be a silent
+    // half-on-CPU misconfiguration, so fail loudly if the region's bin grid
+    // came out empty.
+    if (region_density_field_->numBins() == 0) {
+      const std::string region_name
+          = pb_->getGroup() ? pb_->getGroup()->getName() : "top-level";
+      log_->error(GPL,
+                  331,
+                  "GPU placement is enabled but region '{}' has an empty bin "
+                  "grid; the density solve cannot run on the device.",
+                  region_name);
+    }
+  }
+#endif
+
   // initialize fft structrue based on bins
   std::unique_ptr<FFT> fft(new FFT(bg_.getBinCntX(),
                                    bg_.getBinCntY(),
                                    bg_.getBinSizeX(),
                                    bg_.getBinSizeY(),
-                                   nbc_->getDeviceState()));
+                                   region_density_field_.get()));
 
   fft_ = std::move(fft);
   debugPrint(log_, GPL, "init", 1, "FFT backend: {}", fft_->getBackendName());
 
-  // update densitySize and densityScale in each gCell
+  // update densitySize and densityScale in each gCell. With the GPU path on,
+  // this also pushes the per-inst density params to the (now construction-time
+  // allocated) DeviceState views.
   updateDensitySize();
-
-#ifdef ENABLE_GPU
-  if (nbc_->getDeviceState()) {
-    nbc_->getDeviceState()->initBinViews(bg_, nbc_->getGCellStor());
-  }
-#endif
 
   BackendContext nb_ctx;
   nb_ctx.nb = this;
   nb_ctx.device_state = nbc_->getDeviceState();
+  nb_ctx.region_field = region_density_field_.get();
   density_grad_backend_ = makeDensityGradientBackend(nb_ctx);
   debugPrint(log_,
              GPL,
@@ -2740,14 +2760,14 @@ void NesterovBase::updateDensitySize()
 #ifdef ENABLE_GPU
   // Keep the device-side per-cell density params (NB level and the
   // DeviceState inst mirror used by the legacy gather) in sync — routability
-  // inflation and TD area changes funnel through this method. The numBins()
-  // guard skips the very first call (NesterovBase::init runs this before
-  // initBinViews allocates the DeviceState density views; initBinViews then
-  // uploads the params itself).
+  // inflation and TD area changes funnel through this method. The DeviceState
+  // inst-density views are allocated at construction, so this also handles
+  // the first call during NesterovBase::init (which pushes the just-computed
+  // params for this region's cells).
   if (nb_device_ctx_) {
     nb_device_ctx_->refreshCellDensityParams(nb_gcells_);
   }
-  if (nbc_->getDeviceState() && nbc_->getDeviceState()->numBins() > 0) {
+  if (nbc_->getDeviceState()) {
     nbc_->getDeviceState()->refreshDensityParams(nbc_->getGCellStor());
   }
 #endif
@@ -2978,15 +2998,12 @@ void NesterovBase::rebuildNbDeviceCtx()
   if (!nbc_->getDeviceState()) {
     return;
   }
-  // TD / routability modes keep the Nesterov coordinate and gradient arrays
-  // host-resident (no device context at all): their boundary events (TD
-  // repair callbacks, filler cut/restore, single-cell updates) mutate the
-  // host arrays mid-run, and re-seeding a rebuilt context from them would
-  // have to round-trip every device-resident array (coords, sum grads,
-  // snapshots) through the host at each boundary to avoid replacing live
-  // momentum state with stale copies. The heavy kernels (HPWL, WA gradient,
-  // density gather) still run on the GPU through the DeviceState-backed
-  // backends; only the (cheap) coordinate bookkeeping stays on the host.
+  // TD / routability keep coords and grads host-resident (no device context):
+  // their boundary events (repair callbacks, filler cut/restore, single-cell
+  // updates) mutate the host arrays mid-run, and rebuilding a context from them
+  // would have to round-trip every device array at each boundary to avoid
+  // clobbering live momentum state. Heavy kernels (HPWL, WA gradient, density
+  // gather) still run on the GPU via the DeviceState-backed backends.
   if (npVars_->timingDrivenMode || npVars_->routability_driven_mode) {
     nb_device_ctx_.reset();
     use_device_density_ = false;
@@ -3171,7 +3188,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
       // TD/routability callbacks, and those modes disable this pipeline.
       nbc_->prepareDeviceWlGradients();
       nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
-      nb_device_ctx_->densityGatherToNB(nbc_->getDeviceState(), coord_slot);
+      nb_device_ctx_->densityGatherToNB(region_density_field_.get(),
+                                        coord_slot);
     } else {
       // Host-staged: bulk-fetch into the host vectors (also keeps the
       // TD/routability single-cell callbacks fed), then push back.
@@ -3601,7 +3619,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
       const bool want_sum_phi = log_->debugCheck(GPL, "updateNextIter", 1);
       const NesterovDeviceContext::DensityIterResult r
           = nb_device_ctx_->densitySolveIteration(
-              nbc_->getDeviceState(), SlpSlot::Next, want_sum_phi);
+              region_density_field_.get(), SlpSlot::Next, want_sum_phi);
       bg_.setOverflowAreas(static_cast<int64_t>(r.overflow_area),
                            static_cast<int64_t>(r.overflow_area_unscaled));
       sumPhi_ = r.sum_phi;

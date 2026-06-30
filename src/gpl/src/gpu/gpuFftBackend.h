@@ -16,7 +16,7 @@
 
 namespace gpl {
 
-class DeviceState;
+class RegionDensityField;
 
 class GpuFftBackend : public FftBackend
 {
@@ -25,7 +25,7 @@ class GpuFftBackend : public FftBackend
                 int bin_cnt_y,
                 float bin_size_x,
                 float bin_size_y,
-                DeviceState* device_state);
+                RegionDensityField* region_field);
   ~GpuFftBackend() override;
 
   // Packs the host density grid into the device View, runs the Poisson

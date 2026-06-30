@@ -20,7 +20,6 @@ namespace {
 using ExecSpace = Kokkos::DefaultExecutionSpace;
 
 // Helper: select x/y pair from NesterovState by vector ID.
-// Returns View references for the requested vector.
 struct VecPair
 {
   Kokkos::View<float*> x;
@@ -115,7 +114,6 @@ void launchGradCombine(KokkosNesterovState& ns,
         d_out_y(i) = sy / pre;
       });
 
-  // Reduction: wl grad sum.
   float wl_sum = 0;
   Kokkos::parallel_reduce(
       "nestop_wl_sum",
@@ -125,7 +123,6 @@ void launchGradCombine(KokkosNesterovState& ns,
       },
       wl_sum);
 
-  // Reduction: density grad sum.
   float dens_sum = 0;
   Kokkos::parallel_reduce(
       "nestop_dens_sum",

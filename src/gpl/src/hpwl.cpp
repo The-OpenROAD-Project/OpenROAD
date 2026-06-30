@@ -2,13 +2,9 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // HPWL (half-perimeter wirelength) backends and dispatch.
-//
-// CpuHpwlBackend — the OpenMP reduction over nets — is always compiled.
-// makeHpwlBackend() is the single place the runtime backend choice is made: on
-// an ENABLE_GPU build with the GPU path selected (gpl::gpuEnabled()) it returns
-// the Kokkos GpuHpwlBackend, otherwise CpuHpwlBackend. NesterovBaseCommon::
-// getHpwl() just delegates to the backend it was given at construction — no
-// preprocessor branch, no backend knowledge.
+// makeHpwlBackend() chooses the backend: GpuHpwlBackend (Kokkos) on an
+// ENABLE_GPU build with gpuEnabled(), else the always-compiled CpuHpwlBackend
+// (OpenMP reduction over nets). NesterovBaseCommon::getHpwl() just delegates.
 
 #include <cassert>
 #include <cstdint>

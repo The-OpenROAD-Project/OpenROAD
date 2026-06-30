@@ -20,8 +20,10 @@ class GCell;
 class GCellHandle;
 class BinGrid;
 class DeviceState;
+class RegionDensityField;
 struct KokkosNesterovState;
 struct KokkosDeviceState;
+struct KokkosRegionDensityField;
 
 // Per-cell vector slot identifiers — split by purpose so the launchers can
 // not be passed an unrelated slot. Used by NesterovDeviceContext callers
@@ -127,18 +129,19 @@ class NesterovDeviceContext
   };
 
   // Run the per-iteration density pipeline fully on device: scatter the
-  // `slot` coords into the bin grid (writes DeviceState's d_bin_density),
-  // solve Poisson into DeviceState's d_bin_phi/elec_x/elec_y, and reduce the
-  // overflow sums. Replaces the host updateGCellDensityCenterLocation +
-  // updateDensityFieldBin pair in the Nesterov hot loop.
-  DensityIterResult densitySolveIteration(DeviceState* device_state,
+  // `slot` coords into the region's bin grid (writes region_field's
+  // d_bin_density), solve Poisson into region_field's d_bin_phi/elec_x/elec_y,
+  // and reduce the overflow sums. Replaces the host
+  // updateGCellDensityCenterLocation + updateDensityFieldBin pair in the
+  // Nesterov hot loop.
+  DensityIterResult densitySolveIteration(RegionDensityField* region_field,
                                           SlpSlot slot,
                                           bool want_sum_phi);
 
   // Gather the density gradient for ALL nb cells (fillers included) from the
-  // device bin field at the `slot` coords, writing d_density_grad_x/y
+  // region bin field at the `slot` coords, writing d_density_grad_x/y
   // directly — no host round-trip.
-  void densityGatherToNB(DeviceState* device_state, SlpSlot slot);
+  void densityGatherToNB(RegionDensityField* region_field, SlpSlot slot);
 
   // Slot used by the most recent densitySolveIteration (the field on device
   // corresponds to these coords). updateGradients gathers from it.

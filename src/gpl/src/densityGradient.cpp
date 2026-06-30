@@ -16,6 +16,7 @@
 #include "gpu/deviceState.h"
 #include "gpu/gpuDensityGradientBackend.h"
 #include "gpu/gpuRuntime.h"
+#include "gpu/regionDensityField.h"
 #endif
 
 namespace gpl {
@@ -55,9 +56,10 @@ std::unique_ptr<DensityGradientBackend> makeDensityGradientBackend(
     const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
-  if (gpuEnabled() && ctx.device_state && ctx.device_state->numBins() > 0) {
-    return std::make_unique<GpuDensityGradientBackend>(ctx.nb,
-                                                       ctx.device_state);
+  if (gpuEnabled() && ctx.device_state && ctx.region_field
+      && ctx.region_field->numBins() > 0) {
+    return std::make_unique<GpuDensityGradientBackend>(
+        ctx.nb, ctx.device_state, ctx.region_field);
   }
 #endif
   return std::make_unique<CpuDensityGradientBackend>(ctx.nb);

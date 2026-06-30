@@ -17,6 +17,7 @@
 #include "deviceState_kokkos.h"
 #include "nesterovDeviceState.h"
 #include "poissonSolver.h"
+#include "regionDensityField_kokkos.h"
 
 namespace gpl {
 namespace densop {
@@ -49,6 +50,7 @@ CoordPair getSlpCoords(const KokkosNesterovState& ns, SlpSlot slot)
 }  // namespace
 
 void launchDensityGather(KokkosDeviceState& ds,
+                         const KokkosRegionDensityField& rdf,
                          int n_insts,
                          int bin_cnt_x,
                          int bin_cnt_y,
@@ -66,8 +68,8 @@ void launchDensityGather(KokkosDeviceState& ds,
   auto d_inst_density_half_dx = ds.d_inst_density_half_dx;
   auto d_inst_density_half_dy = ds.d_inst_density_half_dy;
   auto d_inst_density_scale = ds.d_inst_density_scale;
-  auto d_bin_elec_x = ds.d_bin_elec_x;
-  auto d_bin_elec_y = ds.d_bin_elec_y;
+  auto d_bin_elec_x = rdf.d_bin_elec_x;
+  auto d_bin_elec_y = rdf.d_bin_elec_y;
   auto d_inst_density_grad_x = ds.d_inst_density_grad_x;
   auto d_inst_density_grad_y = ds.d_inst_density_grad_y;
 
@@ -121,7 +123,6 @@ void launchDensityGather(KokkosDeviceState& ds,
 
         for (int bxi = min_bx; bxi < max_bx; ++bxi) {
           for (int byi = min_by; byi < max_by; ++byi) {
-            // Bin bounds.
             const int b_lx = glx + static_cast<int>(bxi * bsx);
             const int b_ly = gly + static_cast<int>(byi * bsy);
             const int b_ux = glx + static_cast<int>((bxi + 1) * bsx);
@@ -156,7 +157,7 @@ void launchDensityGather(KokkosDeviceState& ds,
 }
 
 void launchNbDensityScatter(KokkosNesterovState& ns,
-                            KokkosDeviceState& ds,
+                            KokkosRegionDensityField& rdf,
                             int n_cells,
                             SlpSlot src,
                             float& overflow_area,
@@ -258,7 +259,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
 
   // Pass 2 — per-bin density write + overflow reductions. Mirrors the
   // tail loop of BinGrid::updateBinsGCellDensityArea.
-  auto d_bin_density = ds.d_bin_density;
+  auto d_bin_density = rdf.d_bin_density;
   auto d_bin_scaled_area = ns.d_bin_scaled_area;
   auto d_bin_nonplace = ns.d_bin_nonplace;
   auto d_bin_nonplace_unscaled = ns.d_bin_nonplace_unscaled;
@@ -295,7 +296,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
 }
 
 void launchNbDensityGather(KokkosNesterovState& ns,
-                           const KokkosDeviceState& ds,
+                           const KokkosRegionDensityField& rdf,
                            int n_cells,
                            SlpSlot src)
 {
@@ -313,8 +314,8 @@ void launchNbDensityGather(KokkosNesterovState& ns,
   auto d_bin_ly = ns.d_bin_ly;
   auto d_bin_ux = ns.d_bin_ux;
   auto d_bin_uy = ns.d_bin_uy;
-  auto d_bin_elec_x = ds.d_bin_elec_x;
-  auto d_bin_elec_y = ds.d_bin_elec_y;
+  auto d_bin_elec_x = rdf.d_bin_elec_x;
+  auto d_bin_elec_y = rdf.d_bin_elec_y;
   auto d_grad_x = ns.d_density_grad_x;
   auto d_grad_y = ns.d_density_grad_y;
 
@@ -371,13 +372,14 @@ void launchNbDensityGather(KokkosNesterovState& ns,
       });
 }
 
-float launchNbSumPhi(const KokkosNesterovState& ns, const KokkosDeviceState& ds)
+float launchNbSumPhi(const KokkosNesterovState& ns,
+                     const KokkosRegionDensityField& rdf)
 {
   const int nbins = ns.bin_cnt_x * ns.bin_cnt_y;
   if (nbins == 0) {
     return 0.0f;
   }
-  auto d_bin_phi = ds.d_bin_phi;
+  auto d_bin_phi = rdf.d_bin_phi;
   auto d_bin_inst_area = ns.d_bin_inst_area;
   auto d_bin_filler_area = ns.d_bin_filler_area;
   auto d_bin_nonplace = ns.d_bin_nonplace;

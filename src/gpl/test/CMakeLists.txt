@@ -64,6 +64,31 @@ if(ENABLE_GPU)
     set_property(TEST ${test_name} APPEND PROPERTY
       ENVIRONMENT "ENABLE_GPU=0")
   endforeach()
+
+  # Multi-region GPU coverage on the GPU path. These must NOT get the
+  # ENABLE_GPU=0 injection above, so they are registered here, after the loop.
+  # PASSFAIL — each .tcl checks the GPU total HPWL against the CPU reference
+  # within tolerance.
+  #   region01_gpu      — two same-size domains (exercises cross-region field
+  #                       interleaving; pre-fix gave +119% HPWL).
+  #   region01_gpu_asym — two different-size domains, so the per-region bin
+  #                       grids differ in size (exercises the per-region
+  #                       geometry plumbing and the pre-fix out-of-bounds
+  #                       device access that same-size domains cannot).
+  or_integration_tests(
+    "gpl"
+    PASSFAIL_TESTS
+      region01_gpu
+      region01_gpu_asym
+  )
+  # Pin ENABLE_GPU=1 (overriding any ambient ENABLE_GPU=0 in the caller's env)
+  # so these cannot silently degrade to a trivial CPU pass — they must run the
+  # GPU path, and therefore require a GPU at ctest time (like the gtest GPU
+  # targets).
+  set_property(TEST gpl.region01_gpu.tcl APPEND PROPERTY
+    ENVIRONMENT "ENABLE_GPU=1")
+  set_property(TEST gpl.region01_gpu_asym.tcl APPEND PROPERTY
+    ENVIRONMENT "ENABLE_GPU=1")
 endif()
 
 # Tests that link gpl_lib pull in CUDA/Kokkos on an ENABLE_GPU build, so a

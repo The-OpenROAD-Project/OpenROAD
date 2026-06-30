@@ -54,7 +54,8 @@ class Net;
 class GPin;
 class FFT;
 class nesterovDbCbk;
-class DeviceState;  // gpu/deviceState.h (GPU-only, forward decl here)
+class DeviceState;         // gpu/deviceState.h (GPU-only, forward decl here)
+class RegionDensityField;  // gpu/regionDensityField.h (GPU-only)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h
 class DensityGradientBackend;     // densityGradientBackend.h
 class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
@@ -267,12 +268,9 @@ class GNet
   void addGPin(GPin* gPin);
   void clearGPins() { gPins_.clear(); }
   void updateBox();
-  // GPU path writes computed bbox back through this setter so subsequent
-  // gNet->lx() / ly() / ux() / uy() consumers stay consistent with the
-  // CPU updateBox() side effect, without re-iterating the pin list on the
-  // host. The caller is responsible for passing values that equal what
-  // updateBox() would have produced from the same pin set; this function
-  // performs no validation.
+  // GPU path writes the device-computed bbox back so lx()/ly()/ux()/uy() stay
+  // consistent with updateBox() without re-walking pins on the host. Caller
+  // must pass updateBox()-equivalent values; no validation is done.
   void setBox(int lx, int ly, int ux, int uy);
   int64_t getHpwl() const;
 
@@ -1284,6 +1282,13 @@ class NesterovBase
   void commitCoordsToDeviceState(SlpSlot source);
 
   BinGrid bg_;
+  // Per-region FFT field Views (GPU). Declared before fft_ /
+  // density_grad_backend_ / nb_device_ctx_ so it outlives the backends that
+  // borrow it. Null on CPU builds and when the GPU path is off. Used by both
+  // the device-resident density path (via nb_device_ctx_) and the host-staged
+  // FFT path (fft_ / density_grad_backend_), so it lives on NesterovBase
+  // rather than inside the device context (which is disabled in TD mode).
+  std::unique_ptr<RegionDensityField> region_density_field_;
   std::unique_ptr<FFT> fft_;
   std::unique_ptr<DensityGradientBackend> density_grad_backend_;
   std::unique_ptr<NesterovDeviceContext> nb_device_ctx_;

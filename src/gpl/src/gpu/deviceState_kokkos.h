@@ -102,23 +102,11 @@ struct KokkosDeviceState
   Kokkos::View<float*>::HostMirror h_inst_wl_grad_x;
   Kokkos::View<float*>::HostMirror h_inst_wl_grad_y;
 
-  // ---- Density gradient (FFT field Views + per-inst gather) ----
-  //
-  // Bin grid Views (size = binCntX × binCntY, row-major [x * binCntY + y]).
-  // Owned here; GpuFftBackend borrows them (same pattern as the pin coords
-  // above). The solver's axis convention differs from gpl's — the gather
-  // kernel applies the axis swap + 0.5× scale inline.
-  Kokkos::View<float*> d_bin_density;  // FFT input (scatter result)
-  Kokkos::View<float*> d_bin_phi;      // FFT output (electrostatic potential)
-  Kokkos::View<float*> d_bin_elec_x;   // FFT output (solver X = gpl Y)
-  Kokkos::View<float*> d_bin_elec_y;   // FFT output (solver Y = gpl X)
-  Kokkos::View<float*>::HostMirror h_bin_density;
-  Kokkos::View<float*>::HostMirror h_bin_phi;
-  Kokkos::View<float*>::HostMirror h_bin_elec_x;
-  Kokkos::View<float*>::HostMirror h_bin_elec_y;
+  // ---- Density gradient: per-inst params + gather output ----
+  // Shared (not per-region): indexed by the global gCellStor instance id, so
+  // identical across regions.
 
-  // Per-inst density params (static for main loop, set once from initDensity1).
-  // Half-sizes of the density bounding box: dLx = dCx - half_dx, etc.
+  // Per-inst density box half-sizes: dLx = dCx - half_dx, etc.
   Kokkos::View<int*> d_inst_density_half_dx;
   Kokkos::View<int*> d_inst_density_half_dy;
   Kokkos::View<float*> d_inst_density_scale;
