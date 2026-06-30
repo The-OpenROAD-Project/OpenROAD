@@ -1233,7 +1233,7 @@ proc set_extraction_rules_file { args } {
     utl::error ODB 477 "Could not set extraction rules file. Tech not found."
   }
 
-  $tech setExtractionRulesFile $args
+  $tech setExtractionRulesFile [lindex $args 0]
 }
 
 namespace eval odb {

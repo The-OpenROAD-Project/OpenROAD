@@ -7592,8 +7592,6 @@ class dbDatabase : public dbObject
 
   dbChip* findChip(const char* name) const;
 
-  bool hasHierarchicalChip() const;
-
   dbSet<dbProperty> getProperties() const;
 
   dbSet<dbChipInst> getChipInsts() const;
@@ -7620,6 +7618,8 @@ class dbDatabase : public dbObject
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
+
+  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///
