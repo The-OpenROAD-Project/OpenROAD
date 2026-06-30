@@ -190,7 +190,7 @@ static void buildIndex(sta::Network* network,
     sta::LibertyCellIterator cell_iter(lib);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
-      if (cell->hasSequentials()) {
+      if (cell->isSequential()) {
         debugPrint(logger,
                    utl::SYN,
                    "cm",
