@@ -755,6 +755,8 @@ class FastRouteCore
   bool en_estimate_parasitics_ = false;
   bool resistance_aware_ = false;
   bool enable_resistance_aware_ = false;
+  // Dump the res-aware priority list (debug GRT resAware) only once per run.
+  bool res_aware_logged_ = false;
   bool is_3d_step_ = false;
   bool is_incremental_grt_ = false;
   float worst_slack_ = std::numeric_limits<float>::max();

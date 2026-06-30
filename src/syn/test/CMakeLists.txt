@@ -32,6 +32,11 @@ target_link_libraries(liveness_test GTest::gtest syn_flow syn_lib syn_ir utl_lib
 gtest_discover_tests(liveness_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(build_and_test liveness_test)
 
+add_executable(npn_test npn_test.cc)
+target_link_libraries(npn_test GTest::gtest syn_flow)
+gtest_discover_tests(npn_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_dependencies(build_and_test npn_test)
+
 foreach(_t abc_test sm_test cm_test)
   add_executable(${_t} ${_t}.cc)
   target_link_libraries(${_t} ${_syn_test_libs} syn_flow syn_lib syn_ir tst)

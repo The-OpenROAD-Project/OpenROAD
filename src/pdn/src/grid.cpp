@@ -70,6 +70,8 @@ std::string Grid::typeToString(Type type)
       return "Instance";
     case kExisting:
       return "Existing";
+    case kDummy:
+      return "Dummy";
   }
 
   return "Unknown";
@@ -1949,6 +1951,19 @@ void InstanceGrid::checkSetup() const
       }
     }
   }
+}
+
+////////
+
+DummyInstanceGrid::DummyInstanceGrid(VoltageDomain* domain,
+                                     const std::string& name)
+    : Grid(domain, name, true, {})
+{
+}
+
+std::string DummyInstanceGrid::getLongName() const
+{
+  return getName() + " - Dummy";
 }
 
 ////////

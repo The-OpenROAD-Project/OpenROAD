@@ -61,6 +61,13 @@ GridGraph::GridGraph(const Design* design,
     layer_names_[layer_index] = layer.getName();
     layer_directions_[layer_index] = layer.getDirection();
     layer_min_lengths_[layer_index] = layer.getMinLength();
+    // First non-zero sheet/via resistance is the res-aware cost reference.
+    if (ref_resistance_ <= 0.0 && layer.getResistance() > 0.0) {
+      ref_resistance_ = layer.getResistance();
+    }
+    if (ref_via_resistance_ <= 0.0 && layer.getViaResistance() > 0.0) {
+      ref_via_resistance_ = layer.getViaResistance();
+    }
   }
 
   unit_length_wire_cost_ = design->getUnitLengthWireCost();
@@ -423,6 +430,15 @@ CostT GridGraph::getWireCost(const int layer_index,
                  ? 1.0
                  : logistic(edge.capacity - edge.demand,
                             constants_.cost_logistic_slope * cost_multiplier_));
+  // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
+  // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
+  // so a full layer range still falls back to min-via.
+  if (constants_.congestion_gate_penalty > 0.0 && demand >= 1.0
+      && edge.capacity >= 1.0
+      && edge.capacity - edge.demand < demand * net_factor) {
+    cost += demand_length * unit_length_wire_cost_
+            * constants_.congestion_gate_penalty;
+  }
   return cost;
 }
 
@@ -506,6 +522,112 @@ CostT GridGraph::getViaCost(const int layer_index,
     }
   }
   return cost;
+}
+
+CostT GridGraph::getWireResistanceCost(const int layer_index,
+                                       const PointT u,
+                                       const PointT v,
+                                       const int wire_width) const
+{
+  const MetalLayer& layer = design_->getLayer(layer_index);
+  // NDR nets carry wider, lower-resistance wires; fall back to the layer
+  // default when the net sets no NDR width on this layer (wire_width == 0).
+  const double width = wire_width > 0 ? wire_width : layer.getWidth();
+  // First non-zero routing-layer sheet resistance is the reference; 0 if none.
+  const double ref = ref_resistance_;
+  if (width <= 0.0 || ref <= 0.0 || layer.getResistance() <= 0.0) {
+    return 0;
+  }
+  const int direction = layer_directions_[layer_index];
+  int length = 0;  // total wire length in DBU
+  if (direction == MetalLayer::H) {
+    const auto [lo, hi] = std::minmax({u.x(), v.x()});
+    for (int x = lo; x < hi; x++) {
+      length += getEdgeLength(direction, x);
+    }
+  } else {
+    const auto [lo, hi] = std::minmax({u.y(), v.y()});
+    for (int y = lo; y < hi; y++) {
+      length += getEdgeLength(direction, y);
+    }
+  }
+  // R = sheet_resistance * length / width, normalised by layer 0;
+  // resistance_weight rescales the ~O(1) result to CUGR's cost magnitude.
+  const double resistance = layer.getResistance() * length / width;
+  return constants_.resistance_weight * resistance / ref;
+}
+
+CostT GridGraph::getViaResistanceCost(const int lower_layer) const
+{
+  // First non-zero via resistance is the reference (normally layer 0; robust
+  // if the bottom via leaves its resistance undefined).
+  const double ref = ref_via_resistance_;
+  const double via_r = design_->getLayer(lower_layer).getViaResistance();
+  // Techs that leave cut-layer resistance unpopulated make this 0
+  if (ref <= 0.0 || via_r <= 0.0) {
+    return 0;
+  }
+  return constants_.resistance_weight * via_r / ref;
+}
+
+double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                                   const std::vector<int>& ndr_widths) const
+{
+  if (!tree) {
+    return 0.0;
+  }
+  double total_resistance = 0.0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() == child->getLayerIdx()) {
+        // Wire segment on a single layer.
+        const int layer = node->getLayerIdx();
+        const MetalLayer& metal_layer = design_->getLayer(layer);
+        // NDR width if set on this layer, else the layer default; matches the
+        // width getWireResistanceCost uses.
+        const int ndr_width
+            = (layer >= 0 && std::cmp_less(layer, ndr_widths.size()))
+                  ? ndr_widths[layer]
+                  : 0;
+        const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
+        if (width <= 0.0) {
+          continue;
+        }
+        const int direction = layer_directions_[layer];
+        const auto [lo, hi]
+            = std::minmax({(*node)[direction], (*child)[direction]});
+        int length = 0;
+        for (int c = lo; c < hi; c++) {
+          length += getEdgeLength(direction, c);
+        }
+        total_resistance += metal_layer.getResistance() * length / width;
+      } else {
+        // Via stack between the two nodes' layers.
+        const auto [lo, hi]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        for (int l = lo; l < hi; l++) {
+          total_resistance += design_->getLayer(l).getViaResistance();
+        }
+      }
+    }
+  });
+  return total_resistance;
+}
+
+int GridGraph::getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const
+{
+  if (!tree) {
+    return 0;
+  }
+  int length = 0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      // Planar wirelength in gcells (vias contribute 0).
+      length += std::abs(node->x() - child->x())
+                + std::abs(node->y() - child->y());
+    }
+  });
+  return length;
 }
 
 std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
