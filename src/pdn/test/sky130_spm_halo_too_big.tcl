@@ -1,5 +1,4 @@
-# test the insertion of power switches into a design.
-# The power switch control is connected in a STAR configuration
+# test for macro error when halo is too big
 source "helpers.tcl"
 
 read_lef sky130hd/sky130hd.tlef
@@ -53,14 +52,11 @@ define_pdn_grid \
   -default \
   -name macro \
   -starts_with POWER \
-  -halo "5 5"
+  -halo "10 10"
 
 add_pdn_connect \
   -grid macro \
   -layers "met4 met5"
 
-pdngen
-
-set def_file [make_result_file sky130_spm_floating_bpin.def]
-write_def $def_file
-diff_files sky130_spm_floating_bpin.defok $def_file
+catch { pdngen } err
+puts $err
