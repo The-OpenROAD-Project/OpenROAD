@@ -33,7 +33,7 @@ gtest_discover_tests(liveness_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 add_dependencies(build_and_test liveness_test)
 
 add_executable(npn_test npn_test.cc)
-target_link_libraries(npn_test GTest::gtest syn_flow)
+target_link_libraries(npn_test GTest::gtest syn_flow syn_lib syn_ir)
 gtest_discover_tests(npn_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_dependencies(build_and_test npn_test)
 
