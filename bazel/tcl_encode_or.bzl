@@ -48,9 +48,9 @@ tcl_encode = rule(
             doc = "Files to be wrapped.",
         ),
         "_encode_script": attr.label(
-            default = "//etc:file_to_string",
+            default = "//etc:file_to_string.py",
             executable = True,
-            allow_files = True,
+            allow_single_file = [".py"],
             cfg = "exec",
         ),
     },

@@ -3,8 +3,13 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 #
 # Check that all TCL files are properly formatted.
+
 set -euo pipefail
-TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+TOOL="$(realpath "$1")"
+GIT="$(realpath "$2")"
+
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"
-git ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "$TOOL" --check
+
+"${GIT}" ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "${TOOL}" --check
