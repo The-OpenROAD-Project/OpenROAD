@@ -54,7 +54,7 @@ set guide_file [make_result_file resistance_aware_asap7_cong_cugr.guide]
 set_routing_layers -signal M2-M6 -clock M4-M6
 set_global_routing_layer_adjustment M2-M7 0.6
 
-global_route -use_cugr -critical_nets_percentage 30 -resistance_aware
+global_route -use_cugr -critical_nets_percentage 30 -resistance_aware -verbose
 
 write_guides $guide_file
 
