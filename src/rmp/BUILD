@@ -72,7 +72,6 @@ cc_library(
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
-        "@fmt",
     ],
 )
 

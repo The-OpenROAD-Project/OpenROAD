@@ -3,8 +3,6 @@
 
 #include "emap_strategy.h"
 
-#include <fmt/format.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -340,7 +338,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
       logger->error(utl::RMP, 73, "Cannot find master {}", mapping.master_name);
     }
 
-    const std::string inst_name = fmt::format("n_{}", idx);
+    const std::string inst_name = "n_" + std::to_string(idx);
     odb::dbInst* inst = odb::dbInst::create(block, master, inst_name.c_str());
     if (!inst) {
       logger->error(utl::RMP,
@@ -394,7 +392,8 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
         }
       }
       if (net_name.empty()) {
-        net_name = fmt::format("n_{}_o_{}", idx, out_pin_idx);
+        net_name
+            = "n_" + std::to_string(idx) + "_o_" + std::to_string(out_pin_idx);
       }
 
       odb::dbNet* net = block->findNet(net_name.c_str());
@@ -416,7 +415,7 @@ void EmapStrategy::ImportMockturtleMappedNetwork(sta::dbSta* sta,
 
     CellMapping mapping = MapCellFromStdCell(topo_ntk, n, logger);
 
-    const std::string inst_name = fmt::format("n_{}", idx);
+    const std::string inst_name = "n_" + std::to_string(idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
       logger->error(utl::RMP, 79, "Instance {} not found", inst_name);

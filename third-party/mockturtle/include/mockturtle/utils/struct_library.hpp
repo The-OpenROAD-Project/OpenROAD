@@ -1468,6 +1468,7 @@ private:
       return "none";
     if ( t == node_type::zero_ )
       return "zero";
+    return "";
   }
 
   void print_dsd_node( dsd_node& n )
