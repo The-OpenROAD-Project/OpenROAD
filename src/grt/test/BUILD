@@ -140,14 +140,9 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 [regression_test(
     name = test_name,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 regression_test(
