@@ -109,6 +109,7 @@ TESTS = [
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "soft_ndr_4w_6s_cugr",
+    "soft_ndr_reset_cap",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
