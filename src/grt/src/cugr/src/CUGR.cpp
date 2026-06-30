@@ -436,7 +436,9 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
   if (!resistance_aware_ || critical_nets_percentage_ == 0) {
     return;
   }
-  logger_->report("Stage 2: Resistance-aware re-route of critical nets.");
+  if (verbose_) {
+    logger_->report("Stage 2: Resistance-aware re-route of critical nets.");
+  }
 
   // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
   // set from their actual per-net resistance.
