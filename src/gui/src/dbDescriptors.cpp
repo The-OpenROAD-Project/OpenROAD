@@ -5532,8 +5532,11 @@ bool DbBoxDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   bbox = getObject(object)->getBox();
   const auto xform = getTransform(object);
+  if (bbox.isInverted()) {
+    return false;
+  }
   xform.apply(bbox);
-  return !bbox.isInverted();
+  return true;
 }
 
 Selected DbBoxDescriptor::makeSelected(const std::any& object) const
