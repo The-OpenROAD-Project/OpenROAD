@@ -42,6 +42,7 @@ COMPULSORY_TESTS = [
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
+    "core_grid_min_width_layers",
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",

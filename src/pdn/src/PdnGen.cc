@@ -700,6 +700,7 @@ void PdnGen::makeConnect(
     int max_rows,
     int max_columns,
     const std::vector<odb::dbTechLayer*>& ongrid,
+    const std::vector<odb::dbTechLayer*>& min_width_layers,
     const odb::PtrMap<odb::dbTechLayer, std::pair<int, bool>>& split_cuts,
     const std::string& dont_use_vias)
 {
@@ -717,6 +718,7 @@ void PdnGen::makeConnect(
   con->setMaxRows(max_rows);
   con->setMaxColumns(max_columns);
   con->setOnGrid(ongrid);
+  con->setMinWidthLayers(min_width_layers);
 
   odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> split_cuts_map;
   for (const auto& [layer, cut_def] : split_cuts) {

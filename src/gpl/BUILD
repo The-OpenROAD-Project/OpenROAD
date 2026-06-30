@@ -38,6 +38,8 @@ cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
@@ -79,6 +81,7 @@ cc_library(
         "//src/utl",
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
+        "@boost.random",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",

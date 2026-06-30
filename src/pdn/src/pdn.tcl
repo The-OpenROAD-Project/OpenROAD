@@ -61,10 +61,7 @@ proc pdngen { args } {
     set failed_via_report $keys(-failed_via_report)
   }
 
-  pdn::check_setup
-  pdn::build_grids $trim
-  pdn::write_to_db $add_pins $failed_via_report
-  pdn::reset_shapes
+  pdn::run_pdngen $trim $add_pins $failed_via_report
 }
 
 sta::define_cmd_args "set_voltage_domain" {-name domain_name \
@@ -549,13 +546,15 @@ sta::define_cmd_args "add_pdn_connect" {[-grid grid_name] \
                                         [-max_rows rows] \
                                         [-max_columns columns] \
                                         [-ongrid ongrid_layers] \
+                                        [-min_width_layers min_width_layers] \
                                         [-split_cuts split_cuts_mapping] \
                                         [-split_cuts_staggered]
 }
 
 proc add_pdn_connect { args } {
   sta::parse_key_args "add_pdn_connect" args \
-    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid -split_cuts \
+    keys {-grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -ongrid \
+      -min_width_layers -split_cuts \
       -dont_use_vias} \
     flags {-split_cuts_staggered}
 
@@ -619,6 +618,13 @@ proc add_pdn_connect { args } {
     }
   }
 
+  set min_width_layers {}
+  if { [info exists keys(-min_width_layers)] } {
+    foreach l $keys(-min_width_layers) {
+      lappend min_width_layers [pdn::get_layer $l]
+    }
+  }
+
   set split_cuts_layers {}
   set split_cuts_pitches {}
   set split_cuts_staggered false
@@ -645,6 +651,7 @@ proc add_pdn_connect { args } {
     $max_rows \
     $max_columns \
     $ongrid \
+    $min_width_layers \
     $split_cuts_layers \
     $split_cuts_pitches \
     $split_cuts_staggered \

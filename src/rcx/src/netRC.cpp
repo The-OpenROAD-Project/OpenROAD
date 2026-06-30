@@ -1149,127 +1149,25 @@ extCorner::extCorner()
 
 void extMain::getExtractedCorners()
 {
-  if (_prevControl == nullptr) {
-    return;
-  }
-  if (_prevControl->_extractedCornerList.empty()) {
-    return;
-  }
   if (_processCornerTable != nullptr) {
     return;
   }
 
-  Parser parser(logger_);
-  uint32_t pCornerCnt
-      = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
-  if (pCornerCnt <= 0) {
+  if (!_block) {
+    return;
+  }
+
+  const int corner_count = _block->getCornerCount();
+  if (corner_count <= 0) {
     return;
   }
 
   _processCornerTable = new Array1D<extCorner*>();
-
-  uint32_t cornerCnt = 0;
-  uint32_t ii, jj;
-  std::string cName;
-  for (ii = 0; ii < pCornerCnt; ii++) {
-    extCorner* t = new extCorner();
-    t->_model = parser.getInt(ii);
-
-    t->_dbIndex = cornerCnt++;
-    _processCornerTable->add(t);
-  }
-
-  if (_prevControl->_derivedCornerList.empty()) {
-    makeCornerMapFromExtControl();
-    return;
-  }
-
-  uint32_t sCornerCnt
-      = parser.mkWords(_prevControl->_derivedCornerList.c_str(), " ");
-  if (sCornerCnt <= 0) {
-    return;
-  }
-
-  if (_scaledCornerTable == nullptr) {
-    _scaledCornerTable = new Array1D<extCorner*>();
-  }
-
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = new extCorner();
-    t->_model = parser.getInt(ii);
-    for (jj = 0; jj < pCornerCnt; jj++) {
-      if (t->_model != _processCornerTable->get(jj)->_model) {
-        continue;
-      }
-      t->_extCornerPtr = _processCornerTable->get(jj);
-      break;
-    }
-    cName = _block->getExtCornerName(pCornerCnt + ii);
-    if (jj == pCornerCnt) {
-      logger_->warn(RCX,
-                    120,
-                    "No matching process corner for scaled corner {}, model {}",
-                    cName,
-                    t->_model);
-    }
-    t->_dbIndex = cornerCnt++;
-    _scaledCornerTable->add(t);
-  }
-  Array1D<double> A;
-
-  parser.mkWords(_prevControl->_resFactorList.c_str(), " ");
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_resFactor = A.get(ii);
-  }
-  parser.mkWords(_prevControl->_ccFactorList.c_str(), " ");
-  A.resetCnt();
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_ccFactor = A.get(ii);
-  }
-  parser.mkWords(_prevControl->_gndcFactorList.c_str(), " ");
-  A.resetCnt();
-  parser.getDoubleArray(&A, 0);
-  for (ii = 0; ii < sCornerCnt; ii++) {
-    extCorner* t = _scaledCornerTable->get(ii);
-    t->_gndFactor = A.get(ii);
-  }
-  makeCornerMapFromExtControl();
-}
-
-void extMain::makeCornerMapFromExtControl()
-{
-  if (_prevControl->_cornerIndexList.empty()) {
-    return;
-  }
-  if (_processCornerTable == nullptr) {
-    return;
-  }
-
-  Parser parser(logger_);
-  uint32_t wordCnt
-      = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
-  if (wordCnt <= 0) {
-    return;
-  }
-
-  std::string cName;
-  for (uint32_t ii = 0; ii < wordCnt; ii++) {
-    int index = parser.getInt(ii);
-    extCorner* t = nullptr;
-    if (index > 0) {  // extracted corner
-      t = _processCornerTable->get(index - 1);
-      t->_dbIndex = ii;
-    } else {
-      t = _scaledCornerTable->get((-index) - 1);
-    }
-    t->_dbIndex = ii;
-    cName = _block->getExtCornerName(ii);
-    free(t->_name);
-    t->_name = strdup(cName.c_str());
+  for (int corner = 0; corner < corner_count; corner++) {
+    extCorner* process_corner = new extCorner();
+    process_corner->_dbIndex = corner;
+    process_corner->_name = strdup(_block->getExtCornerName(corner).c_str());
+    _processCornerTable->add(process_corner);
   }
 }
 
@@ -1540,66 +1438,36 @@ int extMain::getDbCornerModel(const char* name)
 
 void extMain::makeCornerNameMap()
 {
-  // This function updates the dbExtControl object and
-  // creates the corner information to be stored at dbBlock object
+  // Stores the corner names and count on the dbBlock.
+  if (!_block) {
+    logger_->error(
+        utl::RCX, 12, "Could not make corner name map. No block found.");
+  }
 
-  int A[128];
+  if (_cornerCnt == 0) {
+    logger_->error(
+        utl::RCX,
+        13,
+        "Could not make corner name map. The number of corners is undefined.");
+  }
+
   extCorner** map = new extCorner*[_cornerCnt];
   for (uint32_t jj = 0; jj < _cornerCnt; jj++) {
     map[jj] = nullptr;
-    A[jj] = 0;
   }
-
-  char cornerList[128];
-  strcpy(cornerList, "");
 
   if (_scaledCornerTable != nullptr) {
-    char buf[128];
-    std::string extList;
-    std::string resList;
-    std::string ccList;
-    std::string gndcList;
     for (uint32_t ii = 0; ii < _scaledCornerTable->getCnt(); ii++) {
       extCorner* s = _scaledCornerTable->get(ii);
-
       map[s->_dbIndex] = s;
-      A[s->_dbIndex] = -(ii + 1);
-
-      sprintf(buf, " %d", s->_model);
-      extList += buf;
-      sprintf(buf, " %g", s->_resFactor);
-      resList += buf;
-      sprintf(buf, " %g", s->_ccFactor);
-      ccList += buf;
-      sprintf(buf, " %g", s->_gndFactor);
-      gndcList += buf;
     }
-    _prevControl->_derivedCornerList = extList;
-    _prevControl->_resFactorList = resList;
-    _prevControl->_ccFactorList = ccList;
-    _prevControl->_gndcFactorList = gndcList;
   }
   if (_processCornerTable != nullptr) {
-    std::string extList;
-    char buf[128];
-
     for (uint32_t ii = 0; ii < _processCornerTable->getCnt(); ii++) {
       extCorner* s = _processCornerTable->get(ii);
-
-      A[s->_dbIndex] = ii + 1;
       map[s->_dbIndex] = s;
-
-      sprintf(buf, " %d", s->_model);
-      extList += buf;
     }
-    _prevControl->_extractedCornerList = extList;
   }
-  std::string aList;
-
-  for (uint32_t k = 0; k < _cornerCnt; k++) {
-    aList += " " + std::to_string(A[k]);
-  }
-  _prevControl->_cornerIndexList = aList;
 
   std::string buff;
   if (map[0] == nullptr) {
@@ -1751,7 +1619,6 @@ void extMain::updatePrevControl()
   _prevControl->_foreign = _foreign;
   _prevControl->_rsegCoord = _rsegCoord;
   _prevControl->_extracted = _extracted;
-  _prevControl->_cornerCnt = _cornerCnt;
   _prevControl->_ccUp = _ccUp;
   _prevControl->_couplingFlag = _couplingFlag;
   _prevControl->_coupleThreshold = _coupleThreshold;
@@ -1772,10 +1639,18 @@ void extMain::getPrevControl()
   if (!_prevControl) {
     return;
   }
+
+  if (!_block) {
+    logger_->error(
+        utl::RCX,
+        6,
+        "Could not access previous extraction control. No block found.");
+  }
+
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
   _extracted = _prevControl->_extracted;
-  _cornerCnt = _prevControl->_cornerCnt;
+  _cornerCnt = _block->getCornerCount();
   _ccUp = _prevControl->_ccUp;
   _couplingFlag = _prevControl->_couplingFlag;
   _coupleThreshold = _prevControl->_coupleThreshold;
@@ -1800,38 +1675,25 @@ bool extMain::modelExists(const char* extRules)
   return true;
 }
 
-void extMain::makeBlockRCsegs(const char* netNames,
-                              uint32_t cc_up,
-                              uint32_t ccFlag,
-                              double resBound,
-                              bool mergeViaRes,
-                              double ccThres,
-                              int contextDepth,
-                              const char* extRules)
+void extMain::makeBlockRCsegs()
 {
-  if (!modelExists(extRules)) {
+  if (!modelExists(rules_file_path_)) {
     return;
   }
 
   uint32_t debugNetId = 0;
 
   _diagFlow = true;
-  _couplingFlag = ccFlag;
-  _coupleThreshold = ccThres;
   _usingMetalPlanes = true;
-  _ccUp = cc_up;
-  _couplingFlag = ccFlag;
-  _ccContextDepth = contextDepth;
-  _mergeViaRes = mergeViaRes;
-  _mergeResBound = resBound;
 
   if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && (extRules != nullptr))) {
-    const char* rulesfile
-        = extRules ? extRules : _prevControl->_ruleFileName.c_str();
+      || ((_processCornerTable == nullptr) && (rules_file_path_ != nullptr))) {
+    const char* rules_file_path = rules_file_path_
+                                      ? rules_file_path_
+                                      : _prevControl->_ruleFileName.c_str();
 
     // Reading model file
-    if (!setCorners(rulesfile)) {
+    if (!setCorners(rules_file_path)) {
       logger_->info(RCX, 128, "skipping Extraction ...");
       return;
     }
@@ -1843,7 +1705,7 @@ void extMain::makeBlockRCsegs(const char* netNames,
   _foreign = false;  // extract after read_spef
 
   std::vector<dbNet*> inets;
-  _allNet = !findSomeNet(_block, netNames, inets, logger_);
+  _allNet = !findSomeNet(_block, target_nets_names_, inets, logger_);
   for (auto net : inets) {
     net->setMark(true);
   }
