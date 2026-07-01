@@ -903,7 +903,8 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   CornerMap corners;
   // insert corners first
   for (const auto& corner : getBoundaryCorners(area, outer)) {
-    for (const auto& [row, insts] : placeEndcapCorner(corner, options)) {
+    for (const auto& [row, insts] :
+         placeEndcapCorner(corner, corners, options)) {
       corners[row].insert(insts.begin(), insts.end());
       corner_count += insts.size();
     }
@@ -920,6 +921,7 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
 }
 
 Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
+                                              const CornerMap& placed_corners,
                                               const EndcapCellOptions& options)
 {
   odb::dbSite* site = nullptr;
@@ -1073,6 +1075,21 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
 
   if (!checkSymmetry(master, orient)) {
     return {};
+  }
+
+  // Skip corners overlapping one already placed in this row, e.g. the inner
+  // top and bottom corners of a single-height row between macros.
+  auto placed = placed_corners.find(row);
+  if (placed != placed_corners.end()) {
+    const odb::Rect cell(
+        ll.getX(), ll.getY(), ll.getX() + width, ll.getY() + height);
+    for (auto* other : placed->second) {
+      const odb::Rect obb = other->getBBox()->getBox();
+      if (cell.xMax() > obb.xMin() && cell.xMin() < obb.xMax()
+          && cell.yMax() > obb.yMin() && cell.yMin() < obb.yMax()) {
+        return {};
+      }
+    }
   }
 
   auto inst = makeInstance(db_->getChip()->getBlock(),

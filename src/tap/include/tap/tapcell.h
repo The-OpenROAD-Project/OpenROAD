@@ -206,6 +206,7 @@ class Tapcell
                                    const EndcapCellOptions& options);
 
   CornerMap placeEndcapCorner(const Corner& corner,
+                              const CornerMap& placed_corners,
                               const EndcapCellOptions& options);
   int placeEndcapEdge(const Edge& edge,
                       const CornerMap& corners,
