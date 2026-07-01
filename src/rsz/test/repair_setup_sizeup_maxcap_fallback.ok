@@ -1,0 +1,80 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: maxcap_fallback
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 15 components and 64 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 30 connections.
+[INFO ODB-0133]     Created 5 nets and 30 connections.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X1)
+   0.096    0.096 ^ r1/Q (DFF_X1)
+   0.000    0.096 ^ u_upstream/A (BUF_X8)
+   0.062    0.158 ^ u_upstream/Z (BUF_X8)
+   0.000    0.158 ^ u_target/A (BUF_X1)
+   0.077    0.236 ^ u_target/Z (BUF_X1)
+   0.000    0.236 ^ r2/D (DFF_X1)
+            0.236   data arrival time
+
+   0.150    0.150   clock clk (rise edge)
+   0.000    0.150   clock network delay (ideal)
+   0.000    0.150   clock reconvergence pessimism
+            0.150 ^ r2/CK (DFF_X1)
+  -0.042    0.108   library setup time
+            0.108   data required time
+-----------------------------------------------------------
+            0.108   data required time
+           -0.236   data arrival time
+-----------------------------------------------------------
+           -0.127   slack (VIOLATED)
+
+
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.127 |       -0.1 |       -0.1 |      1 | r2/D
+       5* |       0 |       4 |        0 |      0 |     0 |    +6.8% |   -0.072 |       -0.1 |       -0.1 |      1 | r2/D
+    final |       0 |       4 |        0 |      0 |     0 |    +6.8% |   -0.072 |       -0.1 |       -0.1 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 4 instances: 4 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+   Delay     Time   Description
+-----------------------------------------------------------
+   0.000    0.000   clock clk (rise edge)
+   0.000    0.000   clock network delay (ideal)
+   0.000    0.000 ^ r1/CK (DFF_X1)
+   0.096    0.096 ^ r1/Q (DFF_X1)
+   0.000    0.096 ^ u_upstream/A (BUF_X8)
+   0.065    0.162 ^ u_upstream/Z (BUF_X8)
+   0.000    0.162 ^ u_target/A (BUF_X16)
+   0.028    0.191 ^ u_target/Z (BUF_X16)
+   0.000    0.191 ^ r2/D (DFF_X1)
+            0.191   data arrival time
+
+   0.150    0.150   clock clk (rise edge)
+   0.000    0.150   clock network delay (ideal)
+   0.000    0.150   clock reconvergence pessimism
+            0.150 ^ r2/CK (DFF_X1)
+  -0.031    0.119   library setup time
+            0.119   data required time
+-----------------------------------------------------------
+            0.119   data required time
+           -0.191   data arrival time
+-----------------------------------------------------------
+           -0.072   slack (VIOLATED)
+
+

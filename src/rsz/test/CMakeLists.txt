@@ -112,6 +112,7 @@ or_integration_tests(
     repair_setup_size_down_fanout_legacy_basic
     repair_setup_sizeup_match
     repair_setup_sizeup_legacy_basic
+    repair_setup_sizeup_maxcap_fallback
     repair_setup_sizeup_match_inverter
     repair_setup_sizeup_match_prev_fanout
     repair_setup_splitload_legacy_basic

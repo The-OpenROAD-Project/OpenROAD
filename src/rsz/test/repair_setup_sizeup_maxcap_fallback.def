@@ -1,0 +1,50 @@
+# Test for SizeUpGenerator max-cap fallback.
+# u_upstream (BUF_X8, low drive resistance) → u_target (BUF_X1) → r2
+# u_upstream also drives many side loads that push it near max_cap.
+# With a strong upstream driver, BUF_X4 passes the delay check but
+# should be blocked by max_cap; BUF_X2 should be tried as fallback.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN maxcap_fallback ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 40000 40000 ) ;
+
+COMPONENTS 15 ;
+- r1 DFF_X1 + PLACED ( 10000 10000 ) N ;
+- u_upstream BUF_X8 + PLACED ( 10000 12000 ) N ;
+- u_side1 BUF_X16 + PLACED ( 10000 14000 ) N ;
+- u_side2 BUF_X16 + PLACED ( 10000 16000 ) N ;
+- u_side3 BUF_X16 + PLACED ( 10000 18000 ) N ;
+- u_side4 BUF_X16 + PLACED ( 10000 20000 ) N ;
+- u_side5 BUF_X16 + PLACED ( 12000 14000 ) N ;
+- u_side6 BUF_X16 + PLACED ( 12000 16000 ) N ;
+- u_side7 BUF_X16 + PLACED ( 12000 18000 ) N ;
+- u_side8 BUF_X16 + PLACED ( 12000 20000 ) N ;
+- u_side9 BUF_X16 + PLACED ( 14000 14000 ) N ;
+- u_side10 BUF_X16 + PLACED ( 14000 16000 ) N ;
+- u_side11 BUF_X16 + PLACED ( 14000 18000 ) N ;
+- u_target BUF_X1 + PLACED ( 16000 12000 ) N ;
+- r2 DFF_X1 + PLACED ( 16000 14000 ) N ;
+END COMPONENTS
+
+PINS 1 ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL + FIXED ( 10000 3333 ) N + LAYER metal2 ( 0 0 ) ( 0 0 ) ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS  ( * VSS )
+  + USE GROUND ;
+- VDD  ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 5 ;
+- clk ( PIN clk ) ( r1 CK ) ( r2 CK ) + USE SIGNAL ;
+- r1q ( r1 Q ) ( u_upstream A ) + USE SIGNAL ;
+- n1 ( u_upstream Z ) ( u_side1 A ) ( u_side2 A ) ( u_side3 A ) ( u_side4 A ) ( u_side5 A ) ( u_side6 A ) ( u_side7 A ) ( u_side8 A ) ( u_side9 A ) ( u_side10 A ) ( u_side11 A ) ( u_target A ) + USE SIGNAL ;
+- n2 ( u_target Z ) ( r2 D ) + USE SIGNAL ;
+- dummy ( u_side1 Z ) ( u_side2 Z ) ( u_side3 Z ) ( u_side4 Z ) ( u_side5 Z ) ( u_side6 Z ) ( u_side7 Z ) ( u_side8 Z ) ( u_side9 Z ) ( u_side10 Z ) ( u_side11 Z ) + USE SIGNAL ;
+END NETS
+
+END DESIGN

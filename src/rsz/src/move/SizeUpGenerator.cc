@@ -53,9 +53,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
   }
 
   sta::LibertyCell* replacement = selectReplacement(
-      in_port, drvr_port, load_cap, prev_drive, scene, min_max);
-  if (replacement == nullptr
-      || !resizer_.replacementPreservesMaxCap(inst, replacement)) {
+      inst, in_port, drvr_port, load_cap, prev_drive, scene, min_max);
+  if (replacement == nullptr) {
     return candidates;
   }
 
@@ -126,6 +125,7 @@ bool SizeUpGenerator::loadStageContext(const Target& target,
 }
 
 sta::LibertyCell* SizeUpGenerator::selectReplacement(
+    sta::Instance* inst,
     sta::LibertyPort* in_port,
     sta::LibertyPort* drvr_port,
     const float load_cap,
@@ -133,10 +133,12 @@ sta::LibertyCell* SizeUpGenerator::selectReplacement(
     const sta::Scene* scene,
     const sta::MinMax* min_max) const
 {
-  return upsizeCell(in_port, drvr_port, load_cap, prev_drive, scene, min_max);
+  return upsizeCell(
+      inst, in_port, drvr_port, load_cap, prev_drive, scene, min_max);
 }
 
-sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
+sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::Instance* inst,
+                                              sta::LibertyPort* in_port,
                                               sta::LibertyPort* drvr_port,
                                               const float load_cap,
                                               const float prev_drive,
@@ -198,6 +200,9 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
         = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
           + prev_drive * swappable_input->capacitance();
     if (swappable_drive < drive && swappable_delay < delay) {
+      if (!resizer_.replacementPreservesMaxCap(inst, swappable)) {
+        continue;
+      }
       return swappable;
     }
   }

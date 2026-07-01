@@ -53,14 +53,16 @@ class SizeUpGenerator : public MoveGenerator
                         float& load_cap,
                         sta::LibertyPort*& in_port,
                         float& prev_drive) const;
-  sta::LibertyCell* selectReplacement(sta::LibertyPort* in_port,
+  sta::LibertyCell* selectReplacement(sta::Instance* inst,
+                                      sta::LibertyPort* in_port,
                                       sta::LibertyPort* drvr_port,
                                       float load_cap,
                                       float prev_drive,
                                       const sta::Scene* scene,
                                       const sta::MinMax* min_max) const;
 
-  sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
+  sta::LibertyCell* upsizeCell(sta::Instance* inst,
+                               sta::LibertyPort* in_port,
                                sta::LibertyPort* drvr_port,
                                float load_cap,
                                float prev_drive,
