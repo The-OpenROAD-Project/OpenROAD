@@ -110,7 +110,10 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool use_negotiation = false,
-                         bool run_abacus = false);
+                         bool run_abacus = false,
+                         int site_search_window = 0,
+                         int row_search_window = 0,
+                         double drc_penalty = 0.0);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -120,6 +123,8 @@ class Opendp
   void setJumpMoves(int jump_moves);
   void setIterativePlacement(bool iterative);
   void setDeepIterativePlacement(bool deep_iterative);
+  void setNegotiationDebugInterval(int iterative_jump);
+  void setNegotiationDebugStart(int iterative_start);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -398,6 +403,8 @@ class Opendp
   int move_count_ = 1;
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
+  int negotiation_debug_interval_ = 1;
+  int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_negotiation_ = false;
 
