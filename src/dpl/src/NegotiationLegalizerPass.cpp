@@ -561,7 +561,6 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
     if (!debug_inst || cells_[cell_idx].db_inst == debug_inst) {
       pushNegotiationPixels();
       const NegCell& c = cells_[cell_idx];
-      const Grid* dpl_grid = opendp_->grid_.get();
       const int orig_x_dbu = die_xlo_ + c.init_x * site_width_;
       const int orig_y_dbu
           = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.init_y}).v;
