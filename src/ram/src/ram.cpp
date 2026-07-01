@@ -32,8 +32,10 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
@@ -1915,6 +1917,8 @@ void RamGen::generate(const int mask_size,
                          rw_ports,
                          r_ports,
                          w_ports);
+
+  reportTimingAndPower();
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)
@@ -2061,21 +2065,88 @@ endmodule
   logger_->info(RAM, 24, "Behavioral Verilog written for {}", module_name);
 }
 
-float RamGen::getWorstSlack()
+void RamGen::reportTimingAndPower()
 {
   network_->setBlock(block_);
   sta_->updateTiming(false);
-  return sta_->worstSlack(sta::MinMax::max());
-}
 
-float RamGen::getTotalPower()
-{
-  network_->setBlock(block_);
-  sta_->updateTiming(false);
+  sta::SceneSeq scenes = sta_->makeSceneSeq(sta_->cmdScene());
+
+  if (scenes.empty()) {
+    logger_->warn(RAM,
+                  47,
+                  "No Liberty libraries loaded. Please run read_liberty before "
+                  "generate_ram to enable timing and power report.");
+    return;
+  }
+
+  sta::StringSeq group_names;
+
+  // Find worst unconstrained setup path delay/longest path
+  sta::PathEndSeq setup_ends = sta_->findPathEnds(nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  true,
+                                                  scenes,
+                                                  sta::MinMaxAll::max(),
+                                                  1,
+                                                  1,
+                                                  false,
+                                                  false,
+                                                  -sta::INF,
+                                                  sta::INF,
+                                                  true,
+                                                  group_names,
+                                                  true,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  false);
+
+  float setup_delay
+      = setup_ends.empty()
+            ? 0.0
+            : static_cast<float>(setup_ends[0]->dataArrivalTime(sta_));
+
+  // Find worst unconstrained hold path delay/shortest path
+  sta::PathEndSeq hold_ends = sta_->findPathEnds(nullptr,
+                                                 nullptr,
+                                                 nullptr,
+                                                 true,
+                                                 scenes,
+                                                 sta::MinMaxAll::min(),
+                                                 1,
+                                                 1,
+                                                 false,
+                                                 false,
+                                                 -sta::INF,
+                                                 sta::INF,
+                                                 true,
+                                                 group_names,
+                                                 false,
+                                                 true,
+                                                 false,
+                                                 false,
+                                                 false,
+                                                 false);
+
+  float hold_delay
+      = hold_ends.empty()
+            ? 0.0
+            : static_cast<float>(hold_ends[0]->dataArrivalTime(sta_));
+
+  logger_->info(
+      RAM, 44, "RAM worst setup path delay: {:.6f} ns", setup_delay * 1e9);
+  logger_->info(
+      RAM, 45, "RAM worst hold path delay: {:.6f} ns", hold_delay * 1e9);
+
+  // Power without activity factor/leakage power
   sta::PowerResult total, sequential, combinational, clock, macro, pad;
   sta_->power(
       sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
-  return total.total();
+  logger_->info(
+      RAM, 46, "RAM total power (no activity): {:.6f} W", total.total());
 }
 
 }  // namespace ram
