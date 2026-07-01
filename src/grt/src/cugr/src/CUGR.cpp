@@ -467,7 +467,10 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
                               gr_nets_[net_index]->getNdrCosts());
   }
 
-  updateCongestedNets(net_indices);
+  // The congested set feeds the next global stage; incremental discards it.
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::patternRouteResAware(std::vector<int>& net_indices)
@@ -634,7 +637,10 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid.step();
   }
 
-  updateCongestedNets(net_indices);
+  // The congested set feeds the next global stage; incremental discards it.
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::route(bool incremental)
