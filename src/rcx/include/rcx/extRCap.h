@@ -2269,7 +2269,7 @@ class extMain
   int getDbCornerModel(const char* name);
   void resetState();
   static std::unique_ptr<extRCModel> parseRules(
-      const char* rules_file_path,
+      const char* rules_file,
       odb::dbTech* tech,
       const Array1D<extCorner*>* process_corner_table,
       bool is_v2,
@@ -2720,7 +2720,7 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
-  const char* rules_file_path_{nullptr};
+  const char* rules_file_{nullptr};
   const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;

@@ -43,7 +43,7 @@ void extMain::setExtractionOptions(const ExtractOptions& options)
   _lef_res = options.lef_res;
   _lefRC = options.lef_rc;
   _dbgOption = options._dbg;
-  rules_file_path_ = options.ext_model_file;
+  rules_file_ = options.ext_model_file;
   target_nets_names_ = options.net;
 }
 
