@@ -9,5 +9,5 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130_spm/delayed_
 [INFO ODB-0131]     Created 309 components and 668 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 804 connections.
 [INFO ODB-0133]     Created 20 nets and 49 connections.
-[ERROR PDN-0008] macro - dsa\[0\] halo overlaps row ROW_1_2 (and 20 other row(s)); reduce the halo to at most "10.0000 10.0000 5.3750 6.3150".
+[ERROR PDN-0008] macro - dsa\[0\] halo overlaps row ROW_1_2 (and 20 other row(s)); reduce the halo to at most "10.0000 10.0000 5.3750 6.5550".
 PDN-0008
