@@ -6368,9 +6368,15 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     }
     dirty_nets_.clear();
     cugr_->routeIncremental();
-    routes_ = cugr_->getRoutes();
-    // Sync pin access points only for the rerouted nets (full route syncs all).
+    // Patch only the rerouted nets into routes_ instead of rebuilding the whole
+    // map, and sync pin access points for the same nets (full route does all).
     for (odb::dbNet* db_net : dirty_nets) {
+      GRoute route = cugr_->getNetRoute(db_net);
+      if (route.empty()) {
+        routes_.erase(db_net);
+      } else {
+        routes_[db_net] = std::move(route);
+      }
       updatePinAccessPoints(getNet(db_net), db_net);
     }
     return {};
