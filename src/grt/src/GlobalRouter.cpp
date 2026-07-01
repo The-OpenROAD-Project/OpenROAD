@@ -2789,6 +2789,7 @@ void GlobalRouter::loadGuidesFromDB()
   for (auto& net_route : routes_) {
     std::vector<Pin>& pins = db_net_map_[net_route.first]->getPins();
     GRoute& route = net_route.second;
+    dedupViaSegments(route);
     addImplicitVias(route);
     mergeSegments(pins, route);
   }
@@ -2905,6 +2906,39 @@ void GlobalRouter::updateVias()
       }
     }
   }
+}
+
+void GlobalRouter::dedupViaSegments(GRoute& route)
+{
+  if (route.empty()) {
+    return;
+  }
+
+  // Mirror FastRouteCore::getRoutes(): a physical via is represented by a
+  // single GSegment. saveGuides() emits two dbGuide objects (with swapped
+  // layer/via-layer) for vias covering a pin, so the reload path would create
+  // both a via GSegment and its layer-swapped inverse. Keep the first
+  // occurrence and drop any later duplicate (same coords, same unordered layer
+  // pair). Non-via (wire) segments are preserved in place.
+  std::set<std::tuple<int, int, int, int>> seen_vias;  // x, y, lo_layer, hi
+  size_t write = 0;
+  for (size_t read = 0; read < route.size(); read++) {
+    const GSegment& seg = route[read];
+    if (seg.isVia() && seg.init_layer != seg.final_layer) {
+      const int lo = std::min(seg.init_layer, seg.final_layer);
+      const int hi = std::max(seg.init_layer, seg.final_layer);
+      const std::tuple<int, int, int, int> key{seg.init_x, seg.init_y, lo, hi};
+      if (!seen_vias.insert(key).second) {
+        // Duplicate via (or its inverse) already kept; skip it.
+        continue;
+      }
+    }
+    if (write != read) {
+      route[write] = route[read];
+    }
+    write++;
+  }
+  route.resize(write);
 }
 
 void GlobalRouter::addImplicitVias(GRoute& route)
