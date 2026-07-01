@@ -135,10 +135,9 @@ proc cluster_flops { args } {
   }
 
   if { [info exists keys(-clock_power_weight)] } {
+    # Non-negativity is enforced in MBFF::Run so that non-Tcl callers
+    # (Python, direct C++) are validated too; see src/gpl/src/mbff.cpp.
     set clock_power_weight $keys(-clock_power_weight)
-    if { $clock_power_weight < 0 } {
-      utl::error GPL 115 "-clock_power_weight must be non-negative."
-    }
   }
 
   gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \

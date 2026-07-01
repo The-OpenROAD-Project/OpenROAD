@@ -2091,6 +2091,13 @@ void MBFF::Run(const int mx_sz,
                const float beta,
                const float clock_power_weight)
 {
+  // Validate here (the common entry for Tcl, Python and direct C++ callers) so
+  // no caller can feed a negative weight, which would make the SetRatios
+  // denominator (single_bit_power_ * (1 + clock_power_weight_)) zero or
+  // negative and corrupt the ILP cost model.
+  if (clock_power_weight < 0) {
+    log_->error(GPL, 115, "-clock_power_weight must be non-negative.");
+  }
   clock_power_weight_ = clock_power_weight;
   std::srand(1);
   omp_set_num_threads(num_threads_);
