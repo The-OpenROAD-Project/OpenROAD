@@ -198,8 +198,8 @@ class RamGen
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
-  
-  void reportTimingAndPower();                      
+
+  void reportTimingAndPower();
 
   std::unique_ptr<Layout> makeInverterColumn(
       int num_rows,
