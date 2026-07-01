@@ -114,23 +114,37 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-void CUGR::updateCriticalNets()
+void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
 {
-  updateNetSlacks();
+  updateNetSlacks(net_indices);
   // Mark res-aware nets on the real slack, before demotion clobbers it.
-  markResAwareNets();
-  demoteNonCriticalNets(criticalSlackThreshold());
+  markResAwareNets(net_indices);
+  // Demotion re-ranks the whole design against a global slack percentile.
+  // During incremental routing we only touch the dirty nets, so skip it and
+  // mark all incremental candidates res-aware instead (like FastRoute).
+  if (!incremental_routing_) {
+    demoteNonCriticalNets(criticalSlackThreshold());
+  }
 }
 
-void CUGR::updateNetSlacks()
+void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
 {
-  // During incremental routing the resizer maintains the parasitics; a global
-  // re-estimate here would clear and rebuild all of them, corrupting timing.
-  // Mirror FastRoute's updateSlacks(), which skips this when incremental.
-  if (!incremental_routing_) {
-    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      estimator->estimateAllGlobalRouteParasitics();
+  if (incremental_routing_) {
+    // The resizer maintains the parasitics/slacks for the rest of the design;
+    // only refresh the rerouted nets. Skipping the global
+    // estimateAllGlobalRouteParasitics() (which clears and rebuilds all
+    // parasitics) also avoids corrupting the resizer's timing. Mirrors
+    // FastRoute's updateSlacks(), which iterates only the nets being routed.
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (net != nullptr) {
+        net->setSlack(getNetSlack(net->getDbNet()));
+      }
     }
+    return;
+  }
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    estimator->estimateAllGlobalRouteParasitics();
   }
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
@@ -178,10 +192,20 @@ float CUGR::getNetSlack(odb::dbNet* net)
   return sta_->slack(net, sta::MinMax::max());
 }
 
-void CUGR::setInitialNetSlacks()
+void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
 {
   // Stage 1 routes neutrally; this only computes placement slacks. Res-aware
   // marking happens in patternRouteResAware() once real 3D trees exist.
+  // During incremental routing only the rerouted nets need refreshing.
+  if (incremental_routing_) {
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (net != nullptr) {
+        net->setSlack(getNetSlack(net->getDbNet()));
+      }
+    }
+    return;
+  }
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -191,7 +215,7 @@ void CUGR::setInitialNetSlacks()
   }
 }
 
-void CUGR::markResAwareNets()
+void CUGR::markResAwareNets(const std::vector<int>& net_indices)
 {
   if (!resistance_aware_) {
     return;
@@ -211,10 +235,7 @@ void CUGR::markResAwareNets()
   // eligible candidates (skip short/single-pin/positive-slack, like FastRoute).
   std::vector<int> candidates;
   candidates.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    if (net == nullptr) {
-      continue;
-    }
+  auto collect = [&](GRNet* net) {
     const auto& tree = net->getRoutingTree();
     net->setResistance(
         grid_graph_->getNetResistance(tree, net->getNdrWidths()));
@@ -232,7 +253,7 @@ void CUGR::markResAwareNets()
     const bool is_short
         = net->getNetLength() <= constants_.resistance_min_net_length;
     if (net->getNumPins() < 2 || is_short || is_positive_slack) {
-      continue;
+      return;
     }
 
     worst_resistance_ = std::max(worst_resistance_, net->getResistance());
@@ -248,10 +269,27 @@ void CUGR::markResAwareNets()
       // Skip already-marked nets so the res-aware set accumulates.
       candidates.push_back(net->getIndex());
     }
+  };
+
+  // During incremental routing consider only the rerouted nets; the full route
+  // considers the whole design.
+  if (incremental_routing_) {
+    for (const int net_index : net_indices) {
+      if (gr_nets_[net_index] != nullptr) {
+        collect(gr_nets_[net_index].get());
+      }
+    }
+  } else {
+    for (const auto& net : gr_nets_) {
+      if (net != nullptr) {
+        collect(net.get());
+      }
+    }
   }
 
   // Pass 2: rank eligible candidates by the multi-factor res-aware score
-  // (lower = more critical) and mark the most critical `percentage`.
+  // (lower = more critical) and mark the most critical `percentage`. During
+  // incremental all candidates are marked (like FastRoute's percentage == 1).
   std::vector<std::pair<int, float>> scored;
   scored.reserve(candidates.size());
   for (const int index : candidates) {
@@ -260,8 +298,10 @@ void CUGR::markResAwareNets()
   std::ranges::stable_sort(scored, [](const auto& lhs, const auto& rhs) {
     return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
   });
-  const int count = static_cast<int>(
-      std::ceil(scored.size() * res_aware_percentage_ / 100));
+  const int count = incremental_routing_
+                        ? static_cast<int>(scored.size())
+                        : static_cast<int>(std::ceil(
+                              scored.size() * res_aware_percentage_ / 100));
   for (int i = 0; i < count && std::cmp_less(i, scored.size()); i++) {
     gr_nets_[scored[i].first]->setResAware(true);
   }
@@ -404,7 +444,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    setInitialNetSlacks();
+    setInitialNetSlacks(net_indices);
   }
 
   // Stage 1 is neutral: order by the default slack/bbox key, no res-aware.
@@ -448,7 +488,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
 
   // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
   // set from their actual per-net resistance.
-  updateCriticalNets();
+  updateCriticalNets(net_indices);
 
   std::vector<int> res_aware_nets;
   for (const auto& net : gr_nets_) {
@@ -511,7 +551,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    updateCriticalNets();
+    updateCriticalNets(net_indices);
   }
 
   // (2d) direction -> x -> y -> has overflow?
@@ -548,7 +588,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    updateCriticalNets();
+    updateCriticalNets(net_indices);
   }
 
   for (const int net_index : net_indices) {
