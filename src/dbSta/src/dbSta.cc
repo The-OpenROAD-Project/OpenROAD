@@ -26,6 +26,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "boost/json.hpp"
@@ -383,7 +384,72 @@ void dbSta::postReadDef(odb::dbBlock* block)
 
 void dbSta::postRead3Dbx(odb::dbChip* chip)
 {
-  // TODO: we are not ready to do timing on chiplets yet
+  debugPrint(logger_,
+             utl::STA,
+             "3dic",
+             1,
+             "3Dbx callback received for chip {}.",
+             chip ? chip->getName() : "<null>");
+  if (chip == nullptr) {
+    return;
+  }
+  db_network_->setTopChip(chip);
+  // Per-chiplet edit callbacks fire on each chiplet's dbBlock; chip-level
+  // dbChipCallBackObj carries no chip-inst/bump/net signals today.
+  // dbBlockCallBackObj is single-owner (addOwner is effectively setOwner: it
+  // removes the previous owner before inserting into the new block's
+  // callback list). Reusing one db_cbk_ across N chiplets would unhook all
+  // but the last, leaving edits inside the other chiplets invisible to STA.
+  // Allocate one dbStaCbk per chiplet block instead.
+  chiplet_cbks_.clear();
+  bool hier_master_seen = false;
+  for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
+    odb::dbChip* master = chip_inst->getMasterChip();
+    if (master != nullptr
+        && master->getChipType() == odb::dbChip::ChipType::HIER) {
+      hier_master_seen = true;
+    }
+    odb::dbBlock* chiplet_block = db_network_->blockOf(chip_inst);
+    if (chiplet_block == nullptr) {
+      continue;
+    }
+    auto cbk = std::make_unique<dbStaCbk>(this);
+    cbk->setNetwork(db_network_);
+    cbk->addOwner(chiplet_block);
+    chiplet_cbks_.push_back(std::move(cbk));
+  }
+  if (hier_master_seen) {
+    // v1 only walks top-level chip-insts when wiring per-chiplet callbacks
+    // and only registers leaf-master blocks in dbNetwork::block_to_chip_inst_.
+    // Hierarchical chiplets (chip-of-chiplets) need an UnfoldedModel walk to
+    // hook callbacks on inner leaf blocks and to distinguish per-unfold-path
+    // identities. Until that lands, warn rather than silently producing
+    // wrong results.
+    logger_->warn(utl::STA,
+                  3001,
+                  "3DIC STA currently supports flat (single-level) chip "
+                  "hierarchies only. One or more chip instances reference a "
+                  "hierarchical chiplet master; callbacks on inner leaf "
+                  "blocks and per-unfold-path identities are not wired. "
+                  "Cross-chiplet paths through nested chiplets may be "
+                  "incomplete or incorrect.");
+  }
+
+  // Structural-integrity checks (orphan chip-nets, unbound bumps) live in
+  // odb::Checker alongside the other 3DBlox checks; this banner just confirms
+  // that the dbSta integration ran and surfaces aggregate counts.
+  size_t total_bump_insts = 0;
+  for (odb::dbChipNet* chip_net : chip->getChipNets()) {
+    total_bump_insts += chip_net->getNumBumpInsts();
+  }
+  logger_->info(utl::STA,
+                3000,
+                "3DIC STA active: {} chiplets, {} top-level nets, "
+                "{} 3D bond regions, {} bump pads.",
+                chip->getChipInsts().size(),
+                chip->getChipNets().size(),
+                chip->getChipConns().size(),
+                total_bump_insts);
 }
 
 void dbSta::postReadDb(odb::dbDatabase* db)

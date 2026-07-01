@@ -29,6 +29,7 @@ class _dbChipBumpInst : public _dbObject
   dbId<_dbChipBump> chip_bump_;
   dbId<_dbChipRegionInst> chip_region_inst_;
   dbId<_dbChipBumpInst> region_next_;
+  uint32_t pad_for_pointer_tag_alignment_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipBumpInst& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipBumpInst& obj);
