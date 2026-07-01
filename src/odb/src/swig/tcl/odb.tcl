@@ -1,6 +1,57 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
+sta::define_cmd_args "add_corner" {corner_name}
+
+proc add_corner { args } {
+  sta::parse_key_args "add_corner" args keys {} flags {}
+  sta::check_argc_eq1 "add_corner" $args
+
+  set corner_name $args
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 1 "Could not add corner $corner_name. No block found."
+  }
+
+  odb::dbCorner_create $block $corner_name
+}
+
+sta::define_cmd_args "remove_corner" {corner_name}
+
+proc remove_corner { args } {
+  sta::parse_key_args "remove_corner" args keys {} flags {}
+  sta::check_argc_eq1 "remove_corner" $args
+
+  set corner_name $args
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 7 "Could not remove corner $corner_name. No block found."
+  }
+
+  set corner [$block findCorner $corner_name]
+
+  if { $corner == "NULL" } {
+    utl::error ODB 6 \
+      "Could not remove corner $corner_name. No corner with that name exists."
+  }
+
+  odb::dbCorner_destroy $corner
+}
+
+sta::define_cmd_args "remove_corners" {}
+
+proc remove_corners { args } {
+  sta::parse_key_args "remove_corners" args keys {} flags {}
+  sta::check_argc_eq0 "remove_corners" $args
+
+  set block [odb::get_block]
+  if { $block == "NULL" } {
+    utl::error ODB 8 "Could not remove corners. No block found."
+  }
+
+  $block removeCorners
+}
+
 sta::define_cmd_args "create_physical_cluster" {cluster_name}
 
 proc create_physical_cluster { args } {

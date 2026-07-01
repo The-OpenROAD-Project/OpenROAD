@@ -78,6 +78,44 @@ database to have exactly the same layout across save/restores.
 
 The database distance units are **nanometers** and use the type `uint32_t`.
 
+### Add Corner
+
+Specifies a process corner for the current block. Corner names must be unique
+within a block, so the command fails if a corner with the same name already
+exists.
+
+```tcl
+add_corner corner_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `corner_name` | Name of the process corner to add. |
+
+### Remove Corner
+
+Removes a process corner from the current block.
+
+```tcl
+remove_corner corner_name
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `corner_name` | Name of the process corner to remove. |
+
+### Remove Corners
+
+Removes all process corners from the current block.
+
+```tcl
+remove_corners
+```
+
 ### Create Physical Cluster
 
 Description TBC.

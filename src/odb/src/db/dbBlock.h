@@ -76,6 +76,7 @@ class _dbAccessPoint;
 class _dbGlobalConnect;
 class _dbGuide;
 class _dbNetTrack;
+class _dbCorner;
 class _dbMarkerCategory;
 class dbJournal;
 
@@ -219,6 +220,7 @@ class _dbBlock : public _dbObject
   uint32_t max_cc_seg_id_;
   dbVector<dbId<_dbBlock>> children_;
   dbVector<dbId<_dbTechLayer>> component_mask_shift_;
+  dbVector<dbId<_dbCorner>> corners_;
   uint32_t currentCcAdjOrder_;
   dbId<_dbDft> dft_;
   int min_routing_layer_;
@@ -267,6 +269,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbGlobalConnect>* global_connect_tbl_;
   dbTable<_dbGuide>* guide_tbl_;
   dbTable<_dbNetTrack>* net_tracks_tbl_;
+  dbTable<_dbCorner>* corner_tbl_;
   _dbNameCache* name_cache_;
   dbTable<_dbDft, 4096>* dft_tbl_;
 

@@ -68,6 +68,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestCorner",
+    srcs = [
+        "TestCorner.cpp",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDbWire",
     srcs = ["TestDbWire.cc"],
     data = [
