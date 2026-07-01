@@ -6384,13 +6384,22 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
       net->clearLastPinPositions();
       cugr_->updateNet(db_net);
       dirty_nets.push_back(net);
-      // Sync pin access points only for the rerouted nets (full route syncs all).
-      updatePinAccessPoints(getNet(db_net), db_net);
     }
 
     dirty_nets_.clear();
     cugr_->routeIncremental();
-    routes_ = cugr_->getRoutes();
+    // Patch only the rerouted nets into routes_ instead of rebuilding the whole
+    // map, and sync pin access points for the same nets (full route does all).
+    for (Net* net : dirty_nets) {
+      GRoute route = cugr_->getNetRoute(net->getDbNet());
+      if (route.empty()) {
+        routes_.erase(net->getDbNet());
+      } else {
+        routes_[net] = std::move(route);
+      }
+      // Sync pin access points only for the rerouted nets (full route syncs all).
+      updatePinAccessPoints(net, net->getDbNet());
+    }
 
     return dirty_nets;
   }

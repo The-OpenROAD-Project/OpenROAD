@@ -923,6 +923,52 @@ void CUGR::write(const std::string& guide_file)
   fout.close();
 }
 
+void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
+{
+  const auto& routing_tree = net->getRoutingTree();
+  if (!routing_tree) {
+    return;
+  }
+
+  const int half_gcell = design_->getGridlineSize() / 2;
+  GRTreeNode::preorder(
+      routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+        for (const auto& child : node->getChildren()) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            auto [min_x, max_x] = std::minmax({node->x(), child->x()});
+            auto [min_y, max_y] = std::minmax({node->y(), child->y()});
+
+            // convert to dbu
+            min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
+            min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
+            max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
+            max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
+
+            route.emplace_back(min_x,
+                               min_y,
+                               node->getLayerIdx() + 1,
+                               max_x,
+                               max_y,
+                               child->getLayerIdx() + 1,
+                               false);
+            route.back().setIs3DRoute(true);
+          } else {
+            const auto [bottom_layer, top_layer]
+                = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+            for (int layer_idx = bottom_layer; layer_idx < top_layer;
+                 layer_idx++) {
+              const int x = grid_graph_->getGridline(0, node->x()) + half_gcell;
+              const int y = grid_graph_->getGridline(1, node->y()) + half_gcell;
+
+              route.emplace_back(
+                  x, y, layer_idx + 1, x, y, layer_idx + 2, true);
+              route.back().setIs3DRoute(true);
+            }
+          }
+        }
+      });
+}
+
 NetRouteMap CUGR::getRoutes()
 {
   NetRouteMap routes;
@@ -933,56 +979,23 @@ NetRouteMap CUGR::getRoutes()
     if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
-    odb::dbNet* db_net = net->getDbNet();
-    GRoute& route = routes[db_net];
-
-    const int half_gcell = design_->getGridlineSize() / 2;
-
-    auto& routing_tree = net->getRoutingTree();
-    if (!routing_tree) {
-      continue;
-    }
-    GRTreeNode::preorder(
-        routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-          for (const auto& child : node->getChildren()) {
-            if (node->getLayerIdx() == child->getLayerIdx()) {
-              auto [min_x, max_x] = std::minmax({node->x(), child->x()});
-              auto [min_y, max_y] = std::minmax({node->y(), child->y()});
-
-              // convert to dbu
-              min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
-              min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
-              max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
-              max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
-
-              route.emplace_back(min_x,
-                                 min_y,
-                                 node->getLayerIdx() + 1,
-                                 max_x,
-                                 max_y,
-                                 child->getLayerIdx() + 1,
-                                 false);
-              route.back().setIs3DRoute(true);
-            } else {
-              const auto [bottom_layer, top_layer]
-                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-              for (int layer_idx = bottom_layer; layer_idx < top_layer;
-                   layer_idx++) {
-                const int x
-                    = grid_graph_->getGridline(0, node->x()) + half_gcell;
-                const int y
-                    = grid_graph_->getGridline(1, node->y()) + half_gcell;
-
-                route.emplace_back(
-                    x, y, layer_idx + 1, x, y, layer_idx + 2, true);
-                route.back().setIs3DRoute(true);
-              }
-            }
-          }
-        });
+    buildNetRoute(net.get(), routes[net->getDbNet()]);
   }
 
   return routes;
+}
+
+GRoute CUGR::getNetRoute(odb::dbNet* db_net)
+{
+  GRoute route;
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    const GRNet* net = it->second;
+    if (net != nullptr && net->getNumPins() >= 2 && !net->isLocal()) {
+      buildNetRoute(net, route);
+    }
+  }
+  return route;
 }
 
 void CUGR::sortNetIndices(std::vector<int>& net_indices,
