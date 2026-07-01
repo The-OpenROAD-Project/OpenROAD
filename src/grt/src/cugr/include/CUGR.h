@@ -263,9 +263,7 @@ class CUGR
   int congestion_iterations_ = 5;
   bool verbose_ = true;
 
-  // True while routeIncremental() is running. Like FastRoute's is_incremental_,
-  // it suppresses the global estimateAllGlobalRouteParasitics() in
-  // updateNetSlacks(), which would otherwise wipe the resizer's parasitics.
+  // Suppresses the global parasitics re-estimate during incremental routing.
   bool incremental_routing_ = false;
 
   bool resistance_aware_ = false;

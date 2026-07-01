@@ -6377,8 +6377,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     std::vector<Net*> dirty_nets;
     dirty_nets.reserve(dirty_nets_.size());
     for (odb::dbNet* db_net : dirty_nets_) {
-      // Rebuild the GlobalRouter pin set from the netlist (as updateDirtyNets
-      // does for FastRoute); the pin access point sync below fixes positions.
+      // Rebuild the pin set from the netlist; positions are synced below.
       Net* net = getNet(db_net);
       updateNetPins(net);
       net->setDirtyNet(false);

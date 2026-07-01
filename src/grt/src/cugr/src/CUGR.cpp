@@ -119,9 +119,7 @@ void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
   updateNetSlacks(net_indices);
   // Mark res-aware nets on the real slack, before demotion clobbers it.
   markResAwareNets(net_indices);
-  // Demotion re-ranks the whole design against a global slack percentile.
-  // During incremental routing we only touch the dirty nets, so skip it and
-  // mark all incremental candidates res-aware instead (like FastRoute).
+  // Demotion uses a global slack percentile; skip it during incremental.
   if (!incremental_routing_) {
     demoteNonCriticalNets(criticalSlackThreshold());
   }
@@ -130,11 +128,7 @@ void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
 void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
 {
   if (incremental_routing_) {
-    // The resizer maintains the parasitics/slacks for the rest of the design;
-    // only refresh the rerouted nets. Skipping the global
-    // estimateAllGlobalRouteParasitics() (which clears and rebuilds all
-    // parasitics) also avoids corrupting the resizer's timing. Mirrors
-    // FastRoute's updateSlacks(), which iterates only the nets being routed.
+    // Only refresh the rerouted nets; skip the global parasitics re-estimate.
     for (const int net_index : net_indices) {
       GRNet* net = gr_nets_[net_index].get();
       if (net != nullptr) {
@@ -271,8 +265,7 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
     }
   };
 
-  // During incremental routing consider only the rerouted nets; the full route
-  // considers the whole design.
+  // Incremental routing considers only the rerouted nets.
   if (incremental_routing_) {
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] != nullptr) {
@@ -288,8 +281,7 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
   }
 
   // Pass 2: rank eligible candidates by the multi-factor res-aware score
-  // (lower = more critical) and mark the most critical `percentage`. During
-  // incremental all candidates are marked (like FastRoute's percentage == 1).
+  // (lower = more critical) and mark the most critical `percentage`.
   std::vector<std::pair<int, float>> scored;
   scored.reserve(candidates.size());
   for (const int index : candidates) {
@@ -298,6 +290,7 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
   std::ranges::stable_sort(scored, [](const auto& lhs, const auto& rhs) {
     return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
   });
+  // Incremental marks all candidates (like FastRoute's percentage == 1).
   const int count = incremental_routing_
                         ? static_cast<int>(scored.size())
                         : static_cast<int>(std::ceil(
@@ -668,11 +661,7 @@ void CUGR::route(bool incremental)
   }
 
   if (incremental) {
-    // Reroute only the requested nets. The global stages (res-aware re-route,
-    // iterative RRR) and the per-stage updateCongestedNets expansion would rip
-    // up nets the caller never marked dirty, desyncing the resizer's
-    // parasitics. Pin the set to the dirty nets across the pattern + maze
-    // stages instead.
+    // Reroute only the dirty nets: pattern + maze, skipping the global stages.
     incremental_routing_ = true;
     const std::vector<int> dirty_nets = net_indices;
     patternRoute(net_indices);
