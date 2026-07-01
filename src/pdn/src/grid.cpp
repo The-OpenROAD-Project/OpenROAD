@@ -1792,20 +1792,6 @@ void InstanceGrid::checkHalo() const
     return;
   }
 
-  // Followpin straps may extend half their width past the row boundary, so
-  // grow the rows by that amount before testing for an overlap.
-  int row_bloat = 0;
-  for (Grid* grid : getDomain()->getPDNGen()->getGrids()) {
-    if (this == grid) {
-      continue;
-    }
-    for (const auto& strap : grid->getStraps()) {
-      if (strap->type() == GridComponent::kFollowpin) {
-        row_bloat = std::max(strap->getWidth() / 2, row_bloat);
-      }
-    }
-  }
-
   const odb::Rect inst_box = inst_->getBBox()->getBox();
   const odb::Rect halo_box = applyHalo(inst_box, true, true, true);
 
@@ -1815,8 +1801,7 @@ void InstanceGrid::checkHalo() const
   std::vector<odb::Rect> overlapping_rows;
   std::string first_row;
   for (auto* row : getBlock()->getRows()) {
-    const odb::Rect row_box
-        = row->getBBox().bloat(row_bloat, odb::Orientation2D::Vertical);
+    const odb::Rect row_box = row->getBBox();
     if (!halo_box.overlaps(row_box) || inst_box.overlaps(row_box)) {
       continue;
     }
