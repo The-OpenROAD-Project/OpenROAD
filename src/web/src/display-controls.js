@@ -17,6 +17,19 @@ export function layerRangeSet(center, lower, upper, count) {
     return indices;
 }
 
+// Reduce a layer-name → FillPattern-int map to only the non-solid entries so
+// the cookie stays small and Solid (the default) never needs persisting.
+// Values mirror the server's FillPattern enum (1 = solid).
+export function nonSolidPatterns(patterns) {
+    const out = {};
+    for (const [name, value] of Object.entries(patterns || {})) {
+        if (value !== 1) {
+            out[name] = value;
+        }
+    }
+    return out;
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -108,6 +121,42 @@ export function populateDisplayControls(app, visibility, selectability,
                 = new Set(JSON.parse(decodeURIComponent(raw)));
         }
     } catch (_) { /* ignore */ }
+
+    // Restore saved per-layer fill patterns (raw layer name → FillPattern int).
+    try {
+        const raw = getCookie('or_layer_patterns');
+        if (raw) Object.assign(app.layerPatterns, JSON.parse(decodeURIComponent(raw)));
+    } catch (_) { /* ignore */ }
+
+    // Persist only non-solid patterns; setting a layer back to Solid drops it.
+    function persistLayerPatterns() {
+        setCookie('or_layer_patterns',
+            encodeURIComponent(JSON.stringify(
+                nonSolidPatterns(app.layerPatterns))));
+    }
+
+    // Apply a fill pattern to one layer and re-render just that layer's tiles.
+    function setLayerPattern(name, layer, value) {
+        if (value === 1) {
+            delete app.layerPatterns[name];
+        } else {
+            app.layerPatterns[name] = value;
+        }
+        persistLayerPatterns();
+        if (layer && typeof layer.refreshTiles === 'function') {
+            layer.refreshTiles();
+        }
+    }
+
+    // Fill-pattern choices for the layer context menu (values match the
+    // server's FillPattern enum: kNone=0, kSolid=1, kDiagonal=2, …).
+    const PATTERN_OPTIONS = [
+        { label: 'Solid', value: 1 },
+        { label: 'Diagonal', value: 2 },
+        { label: 'Cross', value: 3 },
+        { label: 'Dots', value: 4 },
+        { label: 'None (no fill)', value: 0 },
+    ];
 
     // Global counter so each layer (across the whole hierarchy) gets a unique
     // z-index and palette slot regardless of which chiplet it belongs to.
@@ -382,6 +431,20 @@ export function populateDisplayControls(app, visibility, selectability,
         contextMenu.style.display = 'none';
     }
 
+    // Append a clickable row to the layer context menu.  onClick runs, then the
+    // menu closes.  Shared by the visibility-range items and the fill-pattern
+    // items so both stay in sync.
+    function addContextMenuItem(label, onClick) {
+        const div = document.createElement('div');
+        div.className = 'context-menu-item';
+        div.textContent = label;
+        div.addEventListener('click', () => {
+            onClick();
+            hideContextMenu();
+        });
+        contextMenu.appendChild(div);
+    }
+
     const n = leafletLayers.length;
     const menuItems = [
         { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
@@ -444,15 +507,25 @@ export function populateDisplayControls(app, visibility, selectability,
                 e.stopPropagation();
                 contextMenu.innerHTML = '';
                 for (const item of menuItems) {
-                    const div = document.createElement('div');
-                    div.className = 'context-menu-item';
-                    div.textContent = item.label;
-                    div.addEventListener('click', () => {
-                        showOnlyLayers(item.fn(index));
-                        hideContextMenu();
-                    });
-                    contextMenu.appendChild(div);
+                    addContextMenuItem(item.label,
+                        () => showOnlyLayers(item.fn(index)));
                 }
+
+                // Fill-pattern submenu: choosing one re-renders only this
+                // layer's tiles and persists the choice.
+                const sep = document.createElement('div');
+                sep.className = 'context-menu-separator';
+                sep.style.borderTop = '1px solid #555';
+                sep.style.margin = '4px 0';
+                contextMenu.appendChild(sep);
+                const current = app.layerPatterns[name] ?? 1;
+                for (const opt of PATTERN_OPTIONS) {
+                    const marker = current === opt.value ? '● ' : '   ';
+                    addContextMenuItem(
+                        marker + 'Fill: ' + opt.label,
+                        () => setLayerPattern(name, node.data.layer, opt.value));
+                }
+
                 contextMenu.style.left = e.clientX + 'px';
                 contextMenu.style.top = e.clientY + 'px';
                 contextMenu.style.display = 'block';

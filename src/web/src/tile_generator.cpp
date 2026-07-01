@@ -164,6 +164,16 @@ void TileVisibility::parseFromJson(const boost::json::object& json)
     }
   }
 
+  // Per-layer fill pattern for the requested layer (int mirrors FillPattern /
+  // gui::Painter::Brush).  Defaults to solid; clamp unknown values so a bad
+  // payload can't index outside the enum.
+  const int64_t pattern
+      = jsonOr<int64_t>(json, "pattern", static_cast<int>(FillPattern::kSolid));
+  fill_pattern = (pattern >= static_cast<int>(FillPattern::kNone)
+                  && pattern <= static_cast<int>(FillPattern::kDots))
+                     ? static_cast<FillPattern>(pattern)
+                     : FillPattern::kSolid;
+
   // ── Selectability peers ──
   // clang-format off
   // NOLINTBEGIN(modernize-use-designated-initializers)
@@ -710,13 +720,106 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
   image[index + 3] = c.a;
 }
 
+namespace {
+
+// FillPattern (color.h) is a web-local mirror of gui::Painter::Brush so the
+// tile server, the JS frontend and the Qt GUI all agree on the integer
+// ordering the "pattern" request field carries.  Keep them locked together.
+static_assert(static_cast<int>(FillPattern::kNone)
+                      == static_cast<int>(gui::Painter::Brush::kNone)
+                  && static_cast<int>(FillPattern::kSolid)
+                         == static_cast<int>(gui::Painter::Brush::kSolid)
+                  && static_cast<int>(FillPattern::kDiagonal)
+                         == static_cast<int>(gui::Painter::Brush::kDiagonal)
+                  && static_cast<int>(FillPattern::kCross)
+                         == static_cast<int>(gui::Painter::Brush::kCross)
+                  && static_cast<int>(FillPattern::kDots)
+                         == static_cast<int>(gui::Painter::Brush::kDots),
+              "web::FillPattern must mirror gui::Painter::Brush values");
+
+// How the web layer tree groups a tech layer, mirroring the Qt GUI
+// (displayControls.cpp).  Single source of truth shared by getLayers() (which
+// includes everything except kSkip) and buildLayerHierarchy() (which routes
+// each group to its own tree folder).
+enum class LayerGroup
+{
+  kSkip,     // not shown in the web layer tree
+  kRouting,  // routing/cut → main "Layers" group (backside split out there)
+  kImplant,  // IMPLANT → "Implant" category
+  kOther,    // MASTERSLICE/OVERLAP/other → "Other" category
+};
+
+LayerGroup classifyLayer(odb::dbTechLayer* layer)
+{
+  if (layer->getRoutingLevel() > 0
+      || layer->getType() == odb::dbTechLayerType::CUT) {
+    return LayerGroup::kRouting;
+  }
+  switch (layer->getType()) {
+    case odb::dbTechLayerType::IMPLANT:
+      return LayerGroup::kImplant;
+    case odb::dbTechLayerType::MASTERSLICE:
+    case odb::dbTechLayerType::OVERLAP:
+    case odb::dbTechLayerType::NONE:
+      return LayerGroup::kOther;
+    default:
+      return LayerGroup::kSkip;
+  }
+}
+
+// Whether `pattern` paints the pixel at absolute coordinates (ax, ay).
+// Coordinates are absolute (tile-local + tile origin) so adjacent tiles share
+// one continuous lattice and the hatch never seams.  Same modulo-lattice trick
+// the placement-blockage hash uses; periods chosen so layer fills read as a
+// texture rather than solid.
+// Non-negative remainder of v modulo a positive period.  One modulo plus a
+// conditional (the remainder is only ever negative for negative v).
+int wrapMod(const int v, const int period)
+{
+  const int r = v % period;
+  return r < 0 ? r + period : r;
+}
+
+bool patternCovers(const FillPattern pattern, const int ax, const int ay)
+{
+  constexpr int kHatchPeriod = 8;  // pixels between hatch lines
+  constexpr int kHatchWidth = 2;   // line thickness in pixels
+  constexpr int kDotPeriod = 6;    // pixels between dots
+  constexpr int kDotSize = 2;      // dot footprint in pixels
+  switch (pattern) {
+    case FillPattern::kNone:
+      return false;
+    case FillPattern::kSolid:
+      return true;
+    case FillPattern::kDiagonal:
+      return wrapMod(ax + ay, kHatchPeriod) < kHatchWidth;
+    case FillPattern::kCross:
+      return wrapMod(ax, kHatchPeriod) < kHatchWidth
+             || wrapMod(ay, kHatchPeriod) < kHatchWidth;
+    case FillPattern::kDots:
+      return wrapMod(ax, kDotPeriod) < kDotSize
+             && wrapMod(ay, kDotPeriod) < kDotSize;
+  }
+  return true;
+}
+
+}  // namespace
+
 void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
                                 const odb::Polygon& poly,
                                 const odb::Rect& dbu_tile,
                                 const double scale,
                                 const Color& color,
-                                const bool blend) const
+                                const bool blend,
+                                const FillPattern pattern) const
 {
+  // kNone paints nothing: skip all scanline setup and the pixel loop.
+  if (pattern == FillPattern::kNone) {
+    return;
+  }
+  // Tile origin in absolute pixel space, anchoring non-solid patterns.
+  const int ox = static_cast<int>(dbu_tile.xMin() * scale);
+  const int oy = static_cast<int>(dbu_tile.yMin() * scale);
   const auto& points = poly.getPoints();
   const int n = static_cast<int>(points.size());
   if (n < 3) {
@@ -763,6 +866,10 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
           kTileSizeInPixel, static_cast<int>(std::ceil(x_intercepts[k + 1])));
       const int draw_y = 255 - iy;
       for (int ix = ix_min; ix < ix_max; ++ix) {
+        if (pattern != FillPattern::kSolid
+            && !patternCovers(pattern, ix + ox, iy + oy)) {
+          continue;
+        }
         if (blend) {
           blendPixel(image, ix, draw_y, color);
         } else {
@@ -860,12 +967,15 @@ std::vector<std::string> TileGenerator::getLayers() const
       return;
     }
     for (odb::dbTechLayer* layer : tech->getLayers()) {
-      if (layer->getRoutingLevel() > 0
-          || layer->getType() == odb::dbTechLayerType::CUT) {
-        const std::string name = layer->getName();
-        if (seen.insert(name).second) {
-          layers.push_back(name);
-        }
+      // Include every layer the web tree shows (classifyLayer != kSkip) so the
+      // flat list, layer_colors and the saveReport prerender cover the
+      // Implant/Other categories too.
+      if (classifyLayer(layer) == LayerGroup::kSkip) {
+        continue;
+      }
+      const std::string name = layer->getName();
+      if (seen.insert(name).second) {
+        layers.push_back(name);
       }
     }
   };
@@ -1606,6 +1716,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const int dbu_x_max = dbu_tile.xMax();
       const int dbu_y_max = dbu_tile.yMax();
 
+      // Per-layer fill pattern applied to this layer's own filled shapes:
+      // routing segments, special-net shapes/vias and instance pins.  Instance
+      // OBS stay solid (drawn with obs_color), matching the Qt GUI, which
+      // brushes pins with the layer pattern but fills obstructions solid.
+      // pat_ox/pat_oy anchor the pattern in absolute pixel space so the hatch
+      // tiles seamlessly.
+      const FillPattern layer_pattern = vis.fill_pattern;
+      const int pat_ox = static_cast<int>(dbu_x_min * scale);
+      const int pat_oy = static_cast<int>(dbu_y_min * scale);
+
       // Mirrors RenderThread::drawChip() in the Qt GUI: outline the die
       // boundary so the chiplet shape is visible regardless of which
       // tech layer is active. Drawn once per layer-pass on every tile,
@@ -2130,7 +2250,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Polygon poly = poly_geom->getPolygon();
                     inst->getTransform().apply(poly);
-                    fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+                    fillPolygon(image_buffer,
+                                poly,
+                                dbu_tile,
+                                scale,
+                                color,
+                                /*blend=*/false,
+                                layer_pattern);
                   }
                   for (odb::dbBox* geom : mpin->getGeometry(false)) {
                     if (tech_layer && geom->getTechLayer() != tech_layer) {
@@ -2138,7 +2264,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                     }
                     odb::Rect box = geom->getBox();
                     inst->getTransform().apply(box);
-                    draw_box_in_tile(box, color);
+                    if (!box.overlaps(dbu_tile)) {
+                      continue;
+                    }
+                    const odb::Rect overlap = box.intersect(dbu_tile);
+                    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+                    drawFilledRect(image_buffer,
+                                   draw,
+                                   color,
+                                   layer_pattern,
+                                   pat_ox,
+                                   pat_oy);
                   }
                 }
               }
@@ -2253,7 +2390,14 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Rect& box = std::get<0>(shape);
-            draw_box_in_tile(box, color);
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+            drawFilledRect(
+                image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
           }
         }
 
@@ -2279,7 +2423,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             const odb::Polygon& poly = std::get<1>(shape);
-            fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+            fillPolygon(image_buffer,
+                        poly,
+                        dbu_tile,
+                        scale,
+                        color,
+                        /*blend=*/false,
+                        layer_pattern);
           }
         }
 
@@ -2318,7 +2468,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               }
               odb::Rect box = vbox->getBox();
               box.moveDelta(origin.x(), origin.y());
-              draw_box_in_tile(box, color);
+              if (!box.overlaps(dbu_tile)) {
+                continue;
+              }
+              const odb::Rect overlap = box.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+              drawFilledRect(
+                  image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
             }
           }
         }
@@ -2367,7 +2523,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 }
                 odb::Rect box = vbox->getBox();
                 box.moveDelta(origin.x(), origin.y());
-                draw_box_in_tile(box, color);
+                if (!box.overlaps(dbu_tile)) {
+                  continue;
+                }
+                const odb::Rect overlap = box.intersect(dbu_tile);
+                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+                drawFilledRect(
+                    image_buffer, draw, color, layer_pattern, pat_ox, pat_oy);
               }
             }
           }
@@ -3518,10 +3680,21 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
 
 void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
                                    const odb::Rect& rect,
-                                   const Color& color) const
+                                   const Color& color,
+                                   const FillPattern pattern,
+                                   const int ox,
+                                   const int oy) const
 {
+  // kNone paints nothing: skip the pixel loop entirely.
+  if (pattern == FillPattern::kNone) {
+    return;
+  }
   for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
     for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+      if (pattern != FillPattern::kSolid
+          && !patternCovers(pattern, ix + ox, iy + oy)) {
+        continue;
+      }
       const int draw_y = (255 - iy);
       setPixel(buffer, ix, draw_y, color);
     }
@@ -3952,29 +4125,50 @@ boost::json::object buildLayerHierarchy(
   json_node["type"] = (node.inst == nullptr) ? "block" : "instance";
   json_node["path"] = node.path;
 
+  // Classify tech layers into the same groups the Qt GUI uses
+  // (displayControls.cpp): routing/cut layers stay in the main "Layers"
+  // group (with backside split into its own category), IMPLANT layers go
+  // under "Implant", and every other tech-layer type (MASTERSLICE, OVERLAP,
+  // …) goes under "Other".  Unlike the Qt GUI (where "Other" defaults
+  // unchecked), the web starts every category visible.
   boost::json::array layers_arr;
   boost::json::array backside_layers_arr;
+  boost::json::array implant_layers_arr;
+  boost::json::array other_layers_arr;
   if (node.chip) {
     if (odb::dbTech* tech = node.chip->getTech()) {
       const auto& layer_colors = gen.getLayerColorMap(tech);
       for (odb::dbTechLayer* layer : tech->getLayers()) {
-        if (layer->getRoutingLevel() > 0
-            || layer->getType() == odb::dbTechLayerType::CUT) {
-          boost::json::object layer_obj;
-          layer_obj["name"] = layer->getName();
-          Color c{.r = 200, .g = 200, .b = 200, .a = 180};
-          auto it = layer_colors.find(layer);
-          if (it != layer_colors.end()) {
-            c = it->second;
-          }
-          layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
-                                                  static_cast<int>(c.g),
-                                                  static_cast<int>(c.b)};
-          if (layer->isBackside()) {
-            backside_layers_arr.emplace_back(std::move(layer_obj));
-          } else {
-            layers_arr.emplace_back(std::move(layer_obj));
-          }
+        const LayerGroup group = classifyLayer(layer);
+        if (group == LayerGroup::kSkip) {
+          continue;
+        }
+        boost::json::object layer_obj;
+        layer_obj["name"] = layer->getName();
+        Color c{.r = 200, .g = 200, .b = 200, .a = 180};
+        auto it = layer_colors.find(layer);
+        if (it != layer_colors.end()) {
+          c = it->second;
+        }
+        layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
+                                                static_cast<int>(c.g),
+                                                static_cast<int>(c.b)};
+        switch (group) {
+          case LayerGroup::kRouting:
+            if (layer->isBackside()) {
+              backside_layers_arr.emplace_back(std::move(layer_obj));
+            } else {
+              layers_arr.emplace_back(std::move(layer_obj));
+            }
+            break;
+          case LayerGroup::kImplant:
+            implant_layers_arr.emplace_back(std::move(layer_obj));
+            break;
+          case LayerGroup::kOther:
+            other_layers_arr.emplace_back(std::move(layer_obj));
+            break;
+          case LayerGroup::kSkip:
+            break;  // guarded above; kept for -Wswitch exhaustiveness
         }
       }
     }
@@ -3989,14 +4183,23 @@ boost::json::object buildLayerHierarchy(
           buildLayerHierarchy(*child, children_by_parent, gen));
     }
   }
-  if (!backside_layers_arr.empty()) {
-    boost::json::object backside_node;
-    backside_node["name"] = "Backside";
-    backside_node["type"] = "category";
-    backside_node["layers"] = std::move(backside_layers_arr);
-    backside_node["instances"] = boost::json::array{};
-    instances_arr.emplace_back(std::move(backside_node));
-  }
+  // Emit category folders, mirroring the Backside node.  Each is a pure UI
+  // grouping (no chiplet path) and is only added when it has layers.
+  auto emit_category
+      = [&instances_arr](const char* name, boost::json::array&& cat_layers) {
+          if (cat_layers.empty()) {
+            return;
+          }
+          boost::json::object cat_node;
+          cat_node["name"] = name;
+          cat_node["type"] = "category";
+          cat_node["layers"] = std::move(cat_layers);
+          cat_node["instances"] = boost::json::array{};
+          instances_arr.emplace_back(std::move(cat_node));
+        };
+  emit_category("Backside", std::move(backside_layers_arr));
+  emit_category("Implant", std::move(implant_layers_arr));
+  emit_category("Other", std::move(other_layers_arr));
   json_node["instances"] = std::move(instances_arr);
 
   return json_node;
