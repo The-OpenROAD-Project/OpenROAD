@@ -17,12 +17,12 @@ tns max -133188.516
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3597.437 |  -104190.9 |  -133188.5 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-      53* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2268.006 |   -75454.9 |   -94047.3 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-    final |       0 |     172 |        0 |      0 |    19 |    +1.0% | -1971.653 |   -64118.5 |   -80164.2 |     53 | resp_msg[14]
+      46* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2782.100 |   -92513.4 |   -99156.4 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |     168 |        0 |      0 |    16 |    +1.3% | -1944.396 |   -65309.3 |   -81280.4 |     53 | resp_msg[14]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 172 instances: 26 up, 0 up match, 0 down, 146 VT
-[INFO RSZ-0043] Swapped pins on 19 instances.
-[INFO RSZ-0053] Rerouted 48 nets resistance-aware.
+[INFO RSZ-0051] Resized 168 instances: 27 up, 0 up match, 0 down, 141 VT
+[INFO RSZ-0043] Swapped pins on 16 instances.
+[INFO RSZ-0053] Rerouted 41 nets resistance-aware.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -1971.65
-tns max -80164.242
+worst slack max -1944.40
+tns max -81280.367
