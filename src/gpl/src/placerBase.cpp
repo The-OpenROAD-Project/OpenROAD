@@ -1100,6 +1100,8 @@ void PlacerBase::init(bool check_density)
       for (auto boundary : boundaries) {
         region_bbox_.merge(boundary->getBox());
       }
+      region_bbox_ = region_bbox_.intersect(odb::Rect(
+          die_.coreLx(), die_.coreLy(), die_.coreUx(), die_.coreUy()));
       region_area_ = region_bbox_.area();
     } else {
       region_bbox_ = odb::Rect(
