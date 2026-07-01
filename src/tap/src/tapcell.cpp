@@ -1224,7 +1224,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
   }
 
   for (const auto& [span_start, span_end] :
-       computeOpenSpans(e0.getX(), e1.getX(), blockers)) {
+       computeOpenSpans(e0.getX(), e1.getX(), std::move(blockers))) {
     insts += fillEndcapEdge(
         row, span_start, span_end, masters, edge.type, options.prefix);
     occupied.emplace_back(span_start, span_end);
