@@ -69,13 +69,9 @@ void Opendp::improvePlacement(const int seed,
   importDb();
 
   // importDb() rebuilds the network from scratch; fresh Node objects have
-  // orientation hard coded as R0 with un-rotated master width/height.  The
-  // dbInst already carries the true orientation, so sync every placed cell's
-  // node to it.  Fixed cells (rotated macros, endcaps, tapcells) must be
-  // included: setFixedGridCells() and the DetailedMgr DRC checks read the
-  // node's width/height, so leaving a rotated fixed macro at R0 paints a
-  // wrong-sized footprint and produces phantom overlaps / edge-spacing
-  // violations against it.
+  // orientation hard coded as R0. The legalizer writes row-correct orientations
+  // to dbInst in its post-flush orient loop, so use this orientation for
+  // DetailedMgr DRC checks
   for (const auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL) {
       odb::dbInst* inst = node->getDbInst();
