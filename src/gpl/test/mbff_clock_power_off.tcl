@@ -1,5 +1,7 @@
-# Baseline for the clock-tree power knob: with -clock_power_weight 0 the cost
-# model is unchanged, so a moderate -tray_weight banks only to 2-bit trays.
+# Baseline + validation for the clock-tree power knob.
+#   1. -clock_power_weight must be non-negative (GPL 0115).
+#   2. With -clock_power_weight 0 the cost model is unchanged, so a moderate
+#      -tray_weight banks only to 2-bit trays.
 # Pairs with mbff_clock_power_on.tcl (same design/weights, higher knob).
 source helpers.tcl
 
@@ -25,6 +27,11 @@ foreach inst [$block getInsts] {
 }
 
 create_clock -name clk -period 1000 [get_ports clk1]
+
+# Validation: a negative weight is rejected before any clustering happens, so
+# the baseline run below still sees the pristine single-bit netlist.
+catch { cluster_flops -clock_power_weight -1.0 } msg
+puts $msg
 
 cluster_flops -tray_weight 8.0 -timing_weight 0.0 \
   -max_split_size -1 -num_paths 0 -clock_power_weight 0.0

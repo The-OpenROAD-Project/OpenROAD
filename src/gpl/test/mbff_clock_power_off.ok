@@ -4,6 +4,8 @@
 [INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNV4X already seen in asap7sc7p5t_DFFHQNV2X
 [INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[ERROR GPL-0115] -clock_power_weight must be non-negative.
+GPL-0115
 Alpha = 8.0, Beta = 0.0, #paths = 0, max size = -1
 Total ILP Cost: 56.907
 Total Timing Critical Path Displacement: 0.0
