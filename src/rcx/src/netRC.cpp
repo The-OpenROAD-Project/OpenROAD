@@ -1509,6 +1509,12 @@ std::unique_ptr<extRCModel> extMain::parseRules(
   }
 
   const std::string rules_file = tech->getExtractionRulesFile();
+  if (rules_file.empty()) {
+    logger->error(RCX,
+                  17,
+                  "Could not parse extraction rules. No extraction rules file "
+                  "specified. Use set_extraction_rules_file to specify it.");
+  }
 
   logger->info(RCX, 435, "Reading extraction model file {} ...", rules_file);
 
@@ -1655,10 +1661,10 @@ void extMain::getPrevControl()
   _ccNoPowerTarget = _prevControl->_ccNoPowerTarget;
   _usingMetalPlanes = _prevControl->_usingMetalPlanes;
 }
-bool extMain::modelExists(const char* extRules)
+bool extMain::modelExists()
 {
   if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == nullptr)
-      && (extRules == nullptr)) {
+      && (_block->getTech()->getExtractionRulesFile().empty())) {
     logger_->warn(RCX,
                   127,
                   "No RC model was read with command <load_model>, "
@@ -1670,7 +1676,7 @@ bool extMain::modelExists(const char* extRules)
 
 void extMain::makeBlockRCsegs()
 {
-  if (!modelExists(rules_file_)) {
+  if (!modelExists()) {
     return;
   }
 
@@ -1679,8 +1685,10 @@ void extMain::makeBlockRCsegs()
   _diagFlow = true;
   _usingMetalPlanes = true;
 
+  const bool has_rules_file
+      = !_block->getTech()->getExtractionRulesFile().empty();
   if ((_processCornerTable != nullptr)
-      || ((_processCornerTable == nullptr) && (rules_file_ != nullptr))) {
+      || ((_processCornerTable == nullptr) && has_rules_file)) {
     resetState();
 
     std::unique_ptr<extRCModel> rules_model

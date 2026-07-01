@@ -1827,7 +1827,7 @@ class extMain
                                const char* prefix,
                                const char* postfix,
                                bool v = false);
-  bool modelExists(const char* extRules);
+  bool modelExists();
 
   void addInstsGeometries(const Array1D<uint32_t>* instTable,
                           Array1D<uint32_t>* tmpInstIdTable,
@@ -2719,7 +2719,6 @@ class extMain
   int _ccMaxY;
   double _mergeResBound = 0.0;
   bool _mergeViaRes = false;
-  const char* rules_file_{nullptr};
   const char* target_nets_names_{nullptr};
   bool _mergeParallelCC = false;
   bool _reportNetNoWire = false;
