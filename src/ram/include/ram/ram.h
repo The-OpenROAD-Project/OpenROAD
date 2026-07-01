@@ -125,9 +125,6 @@ class RamGen
   void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting(int thread_count);
 
-  float getWorstSlack();
-  float getTotalPower();
-
   void setBehavioralVerilogFilename(const std::string& filename);
   void writeBehavioralVerilog(const std::string& filename,
                               int slices_per_word,
@@ -201,6 +198,8 @@ class RamGen
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
+  
+  void reportTimingAndPower();                      
 
   std::unique_ptr<Layout> makeInverterColumn(
       int num_rows,
