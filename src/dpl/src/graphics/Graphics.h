@@ -91,7 +91,8 @@ class Graphics : public gui::Renderer, public DplObserver
       negotiation_search_windows_;
 
   // Cells that moved during the most recent negotiation iteration.
-  // Empty means "no iteration info available" — all movers use directional colors.
+  // Empty means "no iteration info available" — all movers use directional
+  // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
 
   gui::Chart* violations_chart_ = nullptr;
