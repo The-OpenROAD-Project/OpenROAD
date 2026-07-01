@@ -137,16 +137,16 @@ class CUGR
  private:
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets();
+  void updateCriticalNets(const std::vector<int>& net_indices);
   // Re-extract parasitics and refresh every net's slack from the routing.
-  void updateNetSlacks();
+  void updateNetSlacks(const std::vector<int>& net_indices);
   // Slack value at the critical_nets_percentage_ percentile of the nets.
   float criticalSlackThreshold() const;
   // Push nets with slack above the threshold to the back of the default
   // ordering by maxing their slack; res-aware nets are exempt.
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
-  void setInitialNetSlacks();
+  void setInitialNetSlacks(const std::vector<int>& net_indices);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -281,7 +281,7 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  void markResAwareNets();
+  void markResAwareNets(const std::vector<int>& net_indices);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.
