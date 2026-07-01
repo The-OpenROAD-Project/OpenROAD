@@ -1267,17 +1267,17 @@ void HTreeBuilder::run()
 
     computeLevelTopology(level, regionWidth, regionHeight);
 
-    if (type_ == TreeType::MacroTree && options_->getMaxWl()) {
-      const auto [branchIdx, maxDim]
-          = topologyForEachLevel_.back().getLargestSinkRegion(wireSegmentUnit_);
-      logger_->report("maxDim {}, thresh {}", maxDim, options_->getMaxWl());
-      if (maxDim < options_->getMaxWl()) {
+    if (options_->getMaxWl()) {
+      double maxHPWL
+          = topologyForEachLevel_.back().getLargestSinkRegionHPWL(wireSegmentUnit_);
+      if (maxHPWL < options_->getMaxWl() && isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
         logger_->info(CTS,
                       38,
-                      " Stop criterion found. Largest sink region dimension "
-                      "({}) is smaller than max wirelength ({}).",
-                      maxDim,
-                      options_->getMaxWl());
+                      " Stop criterion found. Sink region hpwl "
+                      "is smaller than max wirelength ({}) and max number of sinks is {}.",
+                      options_->getMaxWl() / options_->getWireSegmentUnit(),
+                      options_->getMaxFanout() ? options_->getMaxFanout()
+                                             : numMaxLeafSinks_);
         break;
       }
     } else if(isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
