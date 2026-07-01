@@ -46,6 +46,7 @@ COMPULSORY_TESTS = [
     "overlap_cover",
     "region1",
     "single_row_macros",
+    "single_row_macros_offset",
     "symmetry",
 ]
 
@@ -161,6 +162,7 @@ filegroup(
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
             "single_row_macros": [],
+            "single_row_macros_offset": [],
         }.get(
             test_name,
             ["boundary_macros.def"],

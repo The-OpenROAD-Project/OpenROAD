@@ -39,6 +39,7 @@ or_integration_tests(
     overlap_cover
     region1
     single_row_macros
+    single_row_macros_offset
     symmetry
 )
 
