@@ -6,6 +6,8 @@
 [INFO DPL-0006] Core area: 16.49 um^2, Instances area: 2.93 um^2, Utilization: 17.7%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
+[INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
+[INFO DPL-0393]   height 1 row(s): 5 cells
 Negotiation iteration 0: total overflow 0.
 Placement Analysis
 ---------------------------------

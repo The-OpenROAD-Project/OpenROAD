@@ -109,6 +109,7 @@ TESTS = [
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "soft_ndr_4w_6s_cugr",
+    "soft_ndr_reset_cap",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -139,14 +140,9 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 [regression_test(
     name = test_name,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 regression_test(
