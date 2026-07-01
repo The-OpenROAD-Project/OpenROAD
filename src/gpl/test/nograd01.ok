@@ -18,9 +18,8 @@
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                     12
 [INFO GPL-0011] Number of pins:                     12
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 120.000 120.000 ) um
-[INFO GPL-0013] Core BBox: ( 10.044 10.260 ) ( 109.998 109.890 ) um
-[INFO GPL-0016] Core area:                    9958.417 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 120.000 120.000 ) um
+[INFO GPL-0013] Placement BBox: ( 10.044 10.260 ) ( 109.998 109.890 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                  9958.417 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2

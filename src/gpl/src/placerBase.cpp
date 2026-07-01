@@ -1489,7 +1489,7 @@ void PlacerBase::printInfo(bool check_density) const
 
   log_->info(GPL,
              12,
-             "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "{:15} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
              "Die BBox:",
              block->dbuToMicrons(die_.dieLx()),
              block->dbuToMicrons(die_.dieLy()),
@@ -1497,8 +1497,8 @@ void PlacerBase::printInfo(bool check_density) const
              block->dbuToMicrons(die_.dieUy()));
   log_->info(GPL,
              13,
-             "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
-             "Core BBox:",
+             "{:15} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+             "Placement BBox:",
              block->dbuToMicrons(region_bbox_.xMin()),
              block->dbuToMicrons(region_bbox_.yMin()),
              block->dbuToMicrons(region_bbox_.xMax()),
@@ -1507,10 +1507,6 @@ void PlacerBase::printInfo(bool check_density) const
   float util = static_cast<float>(placeInstsArea_)
                / (region_area_ - nonPlaceInstsArea_) * 100;
 
-  log_->info(GPL,
-             16,
-             "Core area:                  {:10.3f} um^2",
-             block->dbuAreaToMicrons(die_.coreArea()));
   log_->info(GPL,
              14,
              "Region name: {}.",

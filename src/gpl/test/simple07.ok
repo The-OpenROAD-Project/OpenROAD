@@ -22,9 +22,8 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO GPL-0009] Dummy instances:                     0
 [INFO GPL-0010] Number of nets:                      2
 [INFO GPL-0011] Number of pins:                      4
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 34.165 54.885 ) um
-[INFO GPL-0013] Core BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
-[INFO GPL-0016] Core area:                     750.720 um^2
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 34.165 54.885 ) um
+[INFO GPL-0013] Placement BBox: (  5.520 10.880 ) ( 28.520 43.520 ) um
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                   750.720 um^2
 [INFO GPL-0017] Fixed instances area:           98.845 um^2
