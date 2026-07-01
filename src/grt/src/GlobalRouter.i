@@ -111,6 +111,12 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_res_aware_nets_percentage(float percentage)
+{
+  getGlobalRouter()->setResAwareNetsPercentage(percentage);
+}
+
+void
 set_snapshot_batched_width(int snapshot_batched_width)
 {
   getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);

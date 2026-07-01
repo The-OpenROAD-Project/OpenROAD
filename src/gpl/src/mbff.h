@@ -55,7 +55,8 @@ class MBFF
        std::unique_ptr<AbstractGraphics> graphics);
 
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta, float clock_power_weight = 0.0);
+  void Run(int mx_sz, float alpha, float beta);
+  bool IsValidTray(odb::dbInst* tray);
 
  private:
   enum PortName

@@ -84,6 +84,8 @@ struct PlaceOptions
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+  int initialPlacePerturbationSeed = 1;
+  float initialPlacePerturbationDist = -1.0f;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;

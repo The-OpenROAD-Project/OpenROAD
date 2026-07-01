@@ -104,9 +104,11 @@ global_placement
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
-    [-enable_routing_congestion]
-    [-virtual_cts]
-    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]
+    [-enable_routing_congestion]\
+    [-virtual_cts]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]
 ```
 
 #### Options
@@ -135,6 +137,8 @@ global_placement
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
 | `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
 | `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
+| `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
 
 #### Initial-Placement Arguments
 

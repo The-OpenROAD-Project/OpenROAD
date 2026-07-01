@@ -155,7 +155,9 @@ void GlobalRouter::clear()
   routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
-  fastroute_->clear();
+  if (!use_cugr_) {
+    fastroute_->clear();
+  }
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
@@ -180,7 +182,6 @@ std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
   if (check_pin_placement) {
     checkPinPlacement();
   }
-  initNetlist(nets);
   return nets;
 }
 
@@ -190,20 +191,34 @@ void GlobalRouter::initRoutingGrid(int min_routing_layer, int max_routing_layer)
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
-  computeObstructionsAdjustments();
-  computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
 }
 
 std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
                                          int max_routing_layer)
 {
   initRoutingGrid(min_routing_layer, max_routing_layer);
+  // Propagate the global adjustment to per-layer values that CUGR reads from
+  // the tech layers; this is engine-agnostic, unlike the FastRoute edge passes.
+  computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
+  reportMacrosAndBlockages();
   std::vector<Net*> nets = initNets(true);
   initialized_ = true;
   odb::PtrSet<odb::dbNet> clock_nets;
   findClockNets(nets, clock_nets);
+  reportNetDegree(nets);
 
   cugr_->setCongestionIterations(congestion_iterations_);
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    if (cugr_->getCriticalNetsPercentage() != 0) {
+      logger_->warn(
+          GRT,
+          309,
+          "Timing is not available, setting critical nets percentage to 0.");
+    }
+    cugr_->setCriticalNetsPercentage(0);
+  }
+  // Set before init so Design::read() gates its statistics on verbosity.
+  cugr_->setVerbose(verbose_);
   cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
   return nets;
 }
@@ -222,6 +237,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   reportLayerSettings(min_routing_layer, max_routing_layer);
   initRoutingTracks(max_routing_layer);
   initCoreGrid(max_routing_layer);
+  mirrorGridToFastRoute(max_routing_layer);
   setCapacities(min_routing_layer, max_routing_layer);
 
   applyAdjustments(min_routing_layer, max_routing_layer);
@@ -231,6 +247,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = initNets(check_pin_placement);
+  initNetlist(nets);
 
   initialized_ = true;
   return nets;
@@ -240,6 +257,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
                                     int max_routing_layer)
 {
   computeObstructionsAdjustments();
+  reportMacrosAndBlockages();
   std::vector<int> track_space = grid_->getTrackPitches();
   fastroute_->initBlockedIntervals(track_space);
   // Save global resources before add adjustment by layer
@@ -291,12 +309,25 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   NetRouteMap net_routes;
   // TODO: still need to fix this during incremental grt
   if (is_incremental_) {
+    // Source partial routes from the active engine; CUGR has no FastRoute
+    // trees.
+    NetRouteMap cugr_routes;
+    if (use_cugr_) {
+      cugr_routes = cugr_->getRoutes();
+    }
     for (const auto& [db_net, net] : db_net_map_) {
       // Do not add local nets, as they are not routed in incremental grt.
       if (routes_[db_net].empty() && !net->isLocal()) {
-        GRoute route;
-        net_routes.insert({db_net, route});
-        fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+        if (use_cugr_) {
+          auto it = cugr_routes.find(db_net);
+          if (it != cugr_routes.end() && !it->second.empty()) {
+            net_routes[db_net] = it->second;
+          }
+        } else {
+          GRoute route;
+          net_routes.insert({db_net, route});
+          fastroute_->getPlanarRoute(db_net, net_routes[db_net]);
+        }
       }
     }
   } else {
@@ -409,7 +440,6 @@ void GlobalRouter::startIncremental()
 void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
-  fastroute_->setResistanceAware(resistance_aware_);
   updateDirtyRoutes(save_guides);
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
@@ -499,8 +529,10 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   }
 
   if (is_congested_) {
-    // Suggest adjustment value
-    suggestAdjustment();
+    // suggestAdjustment relies on FastRoute congestion data.
+    if (!use_cugr_) {
+      suggestAdjustment();
+    }
     // CUGR overflow is downgraded to a warning even without -allow_congestion,
     // since it produces good results on detailed routing.
     if (allow_congestion_ || use_cugr_) {
@@ -769,7 +801,14 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
 {
   initGrid(max_routing_layer);
   findTrackPitches(max_routing_layer);
+}
 
+// Mirror the engine-agnostic grid into FastRoute's structures. Only the
+// FastRoute path needs this; CUGR maintains its own grid.
+void GlobalRouter::mirrorGridToFastRoute(int max_routing_layer)
+{
+  fastroute_->setRegularX(grid_->isPerfectRegularX());
+  fastroute_->setRegularY(grid_->isPerfectRegularY());
   fastroute_->setLowerLeft(grid_->getXMin(), grid_->getYMin());
   fastroute_->setTileSize(grid_->getTileSize());
   fastroute_->setGridsAndLayers(
@@ -1413,8 +1452,9 @@ std::vector<RoutePt> GlobalRouter::findOnGridPositions(
         pos_on_grid = grid_->getPositionOnGrid(rect_middle);
         // if a macro/pad pin is unreachable due to not having enough resources
         // at its on grid position, get the position closest to the macro/pad
-        // boundary to ensure routability
-        if (pin.isConnectedToPadOrMacro()
+        // boundary to ensure routability. CUGR has no FastRoute edge capacities
+        // to query, so it skips this heuristic and routes from the center.
+        if (!use_cugr_ && pin.isConnectedToPadOrMacro()
             && !isPinReachable(pin, pos_on_grid)) {
           pos_on_grid = grid_->getPositionOnGrid(
               pin.getPositionNearInstEdge(pin_box, rect_middle));
@@ -1560,16 +1600,84 @@ float GlobalRouter::getNetSlack(Net* net)
   return sta_->slack(net->getDbNet(), sta::MinMax::max());
 }
 
+// Net degree (pin count) statistics over the nets that get routed; engine
+// agnostic, so both FastRoute and CUGR report the same numbers.
+void GlobalRouter::computeNetDegree(const std::vector<Net*>& nets,
+                                    int& min_degree,
+                                    int& max_degree)
+{
+  min_degree = std::numeric_limits<int>::max();
+  // Do NOT use numeric_limits<int>::min() to init this because if there are
+  // no FR nets the max degree will be big negative and cannot be used to init
+  // the vectors in FR.
+  max_degree = 1;
+  for (Net* net : nets) {
+    int pin_count = net->getNumPins();
+    int min_layer, max_layer;
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
+    odb::dbTechLayer* max_routing_layer
+        = db_->getTech()->findRoutingLayer(max_layer);
+    if (pin_count > 1
+        && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
+      min_degree = std::min(pin_count, min_degree);
+      max_degree = std::max(pin_count, max_degree);
+    }
+  }
+}
+
+void GlobalRouter::reportNetDegree(const std::vector<Net*>& nets)
+{
+  if (!verbose_) {
+    return;
+  }
+  int min_degree, max_degree;
+  computeNetDegree(nets, min_degree, max_degree);
+  // No routable net passed the degree filter; report zeros instead of the
+  // sentinel min_degree.
+  if (nets.empty() || min_degree == std::numeric_limits<int>::max()) {
+    min_degree = 0;
+    max_degree = 0;
+  }
+  logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
+  logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
+}
+
+// Macro and blockage counts read straight from the db; engine agnostic.
+void GlobalRouter::reportMacrosAndBlockages()
+{
+  if (!verbose_) {
+    return;
+  }
+  const int min_layer = getMinRoutingLayer();
+  const int max_layer = getMaxRoutingLayer();
+  int macros_cnt = 0;
+  int blockages_cnt = 0;
+
+  for (odb::dbObstruction* obstruction : block_->getObstructions()) {
+    const int layer = obstruction->getBBox()->getTechLayer()->getRoutingLevel();
+    if (min_layer <= layer && layer <= max_layer) {
+      blockages_cnt++;
+    }
+  }
+  for (odb::dbInst* inst : block_->getInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    if (master->isBlock()) {
+      macros_cnt++;
+    }
+    for (odb::dbBox* box : master->getObstructions()) {
+      const int layer = box->getTechLayer()->getRoutingLevel();
+      if (min_layer <= layer && layer <= max_layer) {
+        blockages_cnt++;
+      }
+    }
+  }
+  logger_->info(GRT, 3, "Macros: {}", macros_cnt);
+  logger_->info(GRT, 4, "Blockages: {}", blockages_cnt);
+}
+
 void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
 {
   pad_pins_connections_.clear();
-
-  int min_degree = std::numeric_limits<int>::max();
-  // Do NOT use numeric_limits<int>::min() to init
-  // this because if there are no FR nets the max
-  // degree will be big negative and cannot be used
-  // to init the vectors in FR.
-  int max_degree = 1;
 
   if (nets.size() > 1 && seed_ != 0) {
     std::mt19937 g;
@@ -1585,20 +1693,13 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
         = db_->getTech()->findRoutingLayer(max_layer);
     if (pin_count > 1
         && (!net->hasWires() || net->hasStackedVias(max_routing_layer))) {
-      min_degree = std::min(pin_count, min_degree);
-
-      max_degree = std::max(pin_count, max_degree);
       makeFastrouteNet(net);
     }
   }
+  int min_degree, max_degree;
+  computeNetDegree(nets, min_degree, max_degree);
   fastroute_->setMaxNetDegree(max_degree);
-
-  if (verbose_) {
-    min_degree = nets.empty() ? 0 : min_degree;
-    max_degree = nets.empty() ? 0 : max_degree;
-    logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
-    logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
-  }
+  reportNetDegree(nets);
 
   // Add resources for pin access in macro/pad pins after defining their on grid
   // position. It must be done only in the initialization of the tool, not
@@ -2429,6 +2530,23 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
   fastroute_->setResistanceAware(resistance_aware);
+  cugr_->setResistanceAware(resistance_aware);
+}
+
+void GlobalRouter::setResAwareNetsPercentage(float percentage)
+{
+  if (!resistance_aware_) {
+    percentage = 0;
+    logger_->warn(GRT,
+                  308,
+                  "Resistance-aware routing is not enabled, setting res-aware "
+                  "nets percentage to 0.");
+  }
+  if (use_cugr_) {
+    cugr_->setResAwareNetsPercentage(percentage);
+  } else {
+    fastroute_->setResAwareNetsPercentage(percentage);
+  }
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -2505,6 +2623,7 @@ void GlobalRouter::initGridAndNets()
     initRoutingLayers(min_layer, max_layer);
     initRoutingTracks(max_layer);
     initCoreGrid(max_layer);
+    mirrorGridToFastRoute(max_layer);
     setCapacities(min_layer, max_layer);
     applyAdjustments(min_layer, max_layer);
   }
@@ -3029,7 +3148,9 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
   int offset_x = grid_origin_.x();
   int offset_y = grid_origin_.y();
 
-  bool guide_is_congested = is_congested_ && !allow_congestion_;
+  // CUGR can produce congested guides that DRT can handle, resulting in
+  // DRC-free final routing.
+  bool guide_is_congested = is_congested_ && !allow_congestion_ && !use_cugr_;
 
   int net_with_jumpers, total_jumpers;
   net_with_jumpers = 0;
@@ -4333,9 +4454,6 @@ void GlobalRouter::initGrid(int max_layer)
   bool perfect_regular_x = (x_grids * tile_size) == dx;
   bool perfect_regular_y = (y_grids * tile_size) == dy;
 
-  fastroute_->setRegularX(perfect_regular_x);
-  fastroute_->setRegularY(perfect_regular_y);
-
   int num_layers = routing_layers_.size();
   if (max_layer > -1) {
     num_layers = max_layer;
@@ -4973,17 +5091,12 @@ void GlobalRouter::computeObstructionsAdjustments()
   std::map<int, std::vector<odb::Rect>> layer_obs_map;
 
   findLayerExtensions(layer_extensions);
-  int obstructions_cnt = findObstructions(die_area);
-  obstructions_cnt
-      += findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
+  findObstructions(die_area);
+  findInstancesObstructions(die_area, layer_extensions, layer_obs_map);
   findNetsObstructions(die_area);
 
   std::vector<LayerId> transition_layers = findTransitionLayers();
   adjustTransitionLayers(transition_layers, layer_obs_map);
-
-  if (verbose_) {
-    logger_->info(GRT, 4, "Blockages: {}", obstructions_cnt);
-  }
 }
 
 void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
@@ -5134,7 +5247,6 @@ int GlobalRouter::findInstancesObstructions(
     const std::vector<int>& layer_extensions,
     std::map<int, std::vector<odb::Rect>>& layer_obs_map)
 {
-  int macros_cnt = 0;
   int obstructions_cnt = 0;
   int pin_out_of_die_count = 0;
   odb::dbTech* tech = db_->getTech();
@@ -5145,7 +5257,6 @@ int GlobalRouter::findInstancesObstructions(
 
     bool is_macro = false;
     if (master->isBlock()) {
-      macros_cnt++;
       is_macro = true;
       has_macros_or_pads_ = true;
     }
@@ -5266,9 +5377,6 @@ int GlobalRouter::findInstancesObstructions(
     }
   }
 
-  if (verbose_) {
-    logger_->info(GRT, 3, "Macros: {}", macros_cnt);
-  }
   return obstructions_cnt;
 }
 
@@ -6235,6 +6343,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   if (use_cugr_) {
+    cugr_->setVerbose(false);
     for (odb::dbNet* net : dirty_nets_) {
       cugr_->updateNet(net);
     }
@@ -6245,6 +6354,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
   }
 
   std::vector<Net*> dirty_nets;
+
+  fastroute_->setResistanceAware(resistance_aware_);
 
   if (!initialized_) {
     int min_layer, max_layer;
