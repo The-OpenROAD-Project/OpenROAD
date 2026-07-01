@@ -1,0 +1,210 @@
+# Requirements — what STA needs from Osama (3DBlox + unfolded model)
+
+Asks on the odb/3DBlox side (Osama owns `dbChip*` schema + the PR #10588
+dbObject unfolded model) that 3DIC STA depends on. Grouped by blocking vs
+nice-to-have. References: limitations analysis of PR #10588, `3DIC_TODO.md`,
+`mission.md`, `roadmap.md`.
+
+---
+
+## BLOCKING — STA cannot land the track without these
+
+### R1+R2 (MERGED). Path-qualified `dbInst` unfold identity + vertex-id home
+**Context shift (Osama, in-progress):** the bump objects (`dbChipBump` /
+`dbChipBumpInst` / `dbUnfoldedChipBumpInst`) are being **eliminated** — a bump
+is just a `dbInst`. So the two formerly-separate identity problems collapse
+into one:
+- (old R1) per-bump vertex identity, and
+- (old R2) interior leaf-cell unfold identity,
+
+are now **the same problem**: path-qualified `dbInst` identity under
+unfolding. Two placements of one chiplet master still alias the same inner
+`dbInst*` (the block is shared), so timing collapses for bumps AND interior
+cells alike.
+- **Need: a shared `dbUnfoldedInst`** (path-qualified instance) STA can tag as
+  `Instance*`, with its pins surfaced as `Pin*`, carrying a
+  `sta_vertex_id_`-class field (mirroring `_dbITerm`/`_dbBTerm`). One object
+  serves bumps and interior cells.
+- **Constraint:** if STA tags `dbUnfoldedInst*` (or its pin) as a low-3-bit
+  `Pin*`/`Instance*`, total `sizeof(_dbUnfoldedInst) % 8 == 0` (the
+  `_dbChipBumpInst` sizeof-20 alignment bug). Add padding if needed.
+- **Decisions for Osama:** (a) does `dbUnfoldedInst` land as part of the
+  elimination work, or separately? (b) owner — odb-side object (preferred, so
+  codegen/serialization is consistent) vs an STA-side `(dbUnfoldedChipInst,
+  dbInst)` → record map. (c) vertex-id field on it, odb- or dbSta-owned.
+- Without this, duplicated-master timing collapses — the headline goal.
+
+### R3. Stable identity / rebuild contract for unfolded objects — PARTIAL
+**Resolved (verified in code):** model is rebuilt on read (`operator>>` →
+`constructUnfoldedModel()`), NOT deserialized. `dbUnfoldedBuilder` clears all
+unfolded tables and rebuilds from scratch each call → OIDs/pointers are **NOT
+stable across rebuilds**. STA contract settled: **treat every rebuild as full
+invalidation; re-attach vertex ids after each `constructUnfoldedModel()`.**
+**Still open with Osama:**
+- (a) a **rebuild-notification hook** so STA knows a rebuild occurred (today no
+  signal; STA would have to re-run unconditionally).
+- (b) persist-vs-rebuild decision (lift no-serial?) — affects save/restore
+  after `make_graph`, which currently loses any id on these objects.
+- Decision needed: persist the unfolded tables to `.odb` (lift `no-serial`)
+  vs keep rebuild-only + STA rebuilds graph ids each time. Save/restore of a
+  design after `make_graph` currently loses any id stored on these objects.
+
+### R4. Hierarchical net enumeration semantics — RESOLVED (in code)
+Verified in `dbUnfoldedBuilder`: `buildUnfoldedChip` recurses into HIER masters
+(pushing `path`); `unfoldNets` runs at top AND per HIER master with its
+`parent_path`; each bump resolves path-qualified via
+`findUnfoldedChip(concatPath(parent_path, rel_path))` where `rel_path` comes
+from `net->getBumpInst(i, rel_path)`. So a chiplet placed twice unfolds its
+nets twice with the correct per-placement bumps; cross-level nets resolve via
+`concatPath`. maliberty's concern is implemented.
+- **Caveat:** built on `dbChipBumpInst`/`dbUnfoldedChipBumpInst` (being
+  eliminated) — object types shift, but the concatPath path-resolution
+  semantic is the model. Lock with a Track B regression.
+
+---
+
+## IMPORTANT — needed for top-level active-IO + RC (Tracks C/D)
+
+### R5. Driver/load (direction) at the bump boundary
+`dbUnfoldedChipNet::getConnectedBumps()` returns a flat bump vector with no
+driver/load semantics. With IO driver/receiver as **interior** chiplet cells
+(corrected), net2's real driver/load are the IO-cell iterms one bump-bridge
+hop inside each chiplet — direction comes from their Liberty, derived through
+the bound `dbBTerm` IoType.
+- API present (both directions): `dbChipBump::getBTerm()/setBTerm()` and
+  `dbBTerm::getChipBump()`. Remaining ask is runtime/flow, not API: confirm the
+  binding is reliably populated post-unfold so STA recovers real direction
+  across the boundary (and can potentially drop the v1 BIDIRECT-bump hack on
+  net2 — Track C2).
+
+### R6. Interchip parasitics as ODB objects, owned by the hierarchical `dbChip`
+For net2 / bond RC (Track D), STA needs the extracted RC network for a
+cross-chip net.
+- **Correction (Arthur):** parasitics in ODB are **objects, not fields**. A
+  net's RC is `dbRSeg` + `dbCapNode`, owned by `dbBlock`, reached via
+  `dbNet`. Do NOT add scalar `resistance_`/`capacitance_` to `dbChipConn` —
+  that mis-models it and forces a lossy lumped translator. `dbChipConn`
+  remains the physical/geometric bond descriptor (thickness, region pair); it
+  may inform the extracted value but does not store the RC network.
+- **Ownership problem:** the top hierarchical `dbChip` has **no `dbBlock`**,
+  so there is no block table to own RC objects for a `dbChipNet`. Interchip
+  parasitics should be **owned by the hierarchical `dbChip`, accessed through
+  `dbChipNet`** — mirroring `dbBlock → dbNet → dbRSeg/dbCapNode` one level up.
+- **RESOLVED (Arthur + Matt, impl started):** create **new** objects
+  `dbChipRSeg` / `dbChipCapNode` / `dbChipCCSeg`, owned by the hierarchical
+  `dbChip`, backpointing to `dbChipNet`, accessed via `dbChipNet` (mirroring
+  `dbBlock → dbNet → dbRSeg/dbCapNode/dbCCSeg`). NOT reuse — `dbCapNode` is
+  welded to `dbNet` (`dbId<_dbNet>` backpointer) and every accessor resolves
+  against the owning block (`dbNet::getCapNodes()` → `block->cap_node_itr_`);
+  reuse would force a generic/variant owner + rewriting all APIs.
+- **STA implication of the new objects:** STA needs a **new parasitic
+  translator** for the `dbChip*` family (`dbChipNet::getRSegs/getCapNodes/
+  getCCSegs` → OpenSTA `makeResistor`/`makeCapNode`/`makeCouplingCap`). Same
+  per-segment shape as the `dbNet` walk; different accessors → new but
+  familiar code. A cross-chip net's RC spans **two object families** —
+  `dbRSeg`/`dbCapNode` (leaf blocks) + `dbChip*` (hier chip) — so the walker
+  crosses object-type families at the boundary, stitched by SPEF node-name.
+- **Coupling caps (`dbChipCCSeg`) exist in the model.** STA may initially
+  ground/lump them (no SI/crosstalk), but the data carries coupling — don't
+  assume grounded-only.
+- **Stitched-ownership model (Arthur, `arthur_k_approach.png`).** A cross-chip
+  net is ONE electrical RC chain spanning multiple owners. For the passive
+  RDL-interposer case:
+  ```
+  Block A net1  → bump1 → RDL net2 → bump2 → Block B net3
+  (block-owned)  (hier   (RDL dbBlock,  (hier   (block-owned)
+                  dbChip) ChipType::RDL) dbChip)
+  ```
+  - Bump/bond parasitics owned by the **hierarchical `dbChip`** (block-less).
+  - RDL parasitics owned by the **RDL `dbBlock`** (`ChipType::RDL` — the RDL
+    chip HAS a block, unlike the top hier chip).
+  - Block-internal net RC owned by each chiplet's own block.
+  - **Continuity rule:** at each ownership boundary the junction `dbCapNode`
+    is the SAME node ("same node in the output SPEFs"). STA must treat it as a
+    single parasitic node so the net is not split at the boundary.
+- **What STA needs, regardless of object choice:**
+  1. Walk the full electrical net across all owners (block → hier-chip bump →
+     RDL block → …) as one parasitic network.
+  2. Shared-junction-node identity across owners — **RESOLVED (Arthur):**
+     `dbCapNode`s are restricted to their block/chip, so the boundary is NOT a
+     shared object. Stitch is by **node-name consistency** in SPEF (leaf
+     SPEF port name == inter-chip SPEF bump node name). This works for STA
+     because that boundary name resolves to a Pin (the chiplet `dbBTerm` /
+     bump) — the same point `dbNetwork` already bridges via `term()`/`pin()`.
+     - **Condition:** valid only if STA consumes inter-chip RC via **SPEF
+       read**. If STA ever reads in-memory `dbRSeg`/`dbCapNode` directly, the
+       name match is gone → would need the boundary name recoverable from the
+       db objects, or an explicit ODB junction-mapping. Keep SPEF-read as the
+       source of truth for inter-chip parasitics to avoid this.
+     - **Duplicated-master caveat:** identical leaf SPEFs reuse the same
+       internal port names across placements; inter-chip SPEF bump nodes must
+       be instance-qualified so each placement matches the right bump. Ties to
+       the per-unfold-path identity work (R1/R2, Track A).
+  3. **Cap-node → pin binding** at real endpoints. NB: two distinct
+     interconnect cases — (a) passive RDL/bump stack
+     (`arthur_k_approach.png`), endpoints are block iterms via bumps;
+     (b) active IO (`boundary.png`), endpoints are the IO driver output iterm
+     / receiver input iterm — which are **interior chiplet cells reached one
+     bump-bridge hop in**, so the net2 cap nodes bind to the bump/`dbBTerm`
+     boundary nodes and the IO-cell iterms sit inside the chiplet SPEF.
+  4. Per-corner support (one RC set per `ParasiticAnalysisPt*`).
+- **Pre-route (EST):** `estimate_parasitics` will model the cross-chip net
+  more simply pre-routing; detailed RC topology is post-route. STA handles
+  both detailed and reduced. (Arthur hasn't scoped the EST model yet.)
+
+### R7. IO-cell location — RESOLVED (mostly moot)
+**Corrected:** IO driver/receiver live **inside** the chiplets as ordinary
+interior leaf cells, NOT at top level. So there is **no top-level IO-cell
+representation to define** and **no `net1b`/`net3b` boundary-handoff problem** —
+the boundary is the existing bump ↔ `dbBTerm` bridge, and `net1b`/`net3b` are
+ordinary chiplet-interior nets. Remaining ask:
+- Confirmation that Arthur's OpenRCX extraction targets `net2` (the active
+  cross-chip net between the two chiplets' boundary bumps) and emits a SPEF
+  the STA parasitic path can consume, stitched per R6.
+
+---
+
+## NICE-TO-HAVE / hardening (later tracks)
+
+### R8. Mutation callbacks on chip-net / bump-inst
+For cache invalidation (`bump_to_chip_net_`), `dbBlockCallBackObj`-style hooks
+that fire on `dbChipNet` / bump mutation (create/destroy/addBumpInst/
+removeBumpInst) (`3DIC_TODO.md` TODO 4). NB: bump-inst object type shifts with
+the elimination (bump → `dbInst`); hook on whatever survives.
+
+### R9. Unbound-bump query — AVAILABLE (STA-side work remains)
+Query exists: `dbChipBump::getBTerm() == nullptr` (and `dbBTerm::getChipBump()`)
+tells whether a bump is bound. No Osama ask. Remaining is **STA-side** (Track
+E1): filter unbound bumps out of pin enumeration before they crash
+`make_graph` (TODO 5). Orphan-net case is diagnostic-only.
+
+### R10. `dbMarker` source-type support for chip objects — STILL MISSING
+Verified: `src/odb/src/db/dbMarker.cpp` has no `dbChipNetObj` / `dbChipObj`
+case (errors ODB-0290). Needed before GUI markers on orphan chip-nets /
+unbound bumps (TODO 5 out-of-scope note). Low priority.
+
+### R11. ETM hookup — RESOLVED (already loaded into STA)
+Verified: `read_3dbx` already **loads** each `ChipletDef: external.liberty_file`
+into STA — `src/odb/src/3dblox/3dblox.cpp:436` calls
+`sta_->readLiberty(liberty_file, cmdScene, MinMaxAll::all(), true)` (parsed in
+`dbvParser.cpp:172`). So the vendor ETM `.lib` is reachable AND loaded; no
+Osama ask. Remaining is **STA-side** (Track E3 / TODO 3): consult the loaded
+`LibertyCell` in `makeTopCellForChip` instead of synthesizing a stub, and
+suppress the BIDIRECT fallback when an ETM is present.
+
+---
+
+## Open decisions to confirm with Osama (summary)
+
+Only the genuinely-open items remain below; resolved/STA-side reqs are marked
+inline in their sections.
+
+| # | Status | Decision still needed | Owner |
+|---|--------|-----------------------|-------|
+| R1+R2 | **OPEN (blocker)** | Shared `dbUnfoldedInst` (path-qualified inst, bumps+interior) + its `sta_vertex_id_` — landed with bump-elimination? owner? | Osama |
+| R3 | **OPEN (partial)** | Rebuild-notification hook; persist-vs-rebuild (save/restore) | Osama |
+| R5 | open (flow) | bump→`dbBTerm` binding reliably populated post-unfold? | Osama/flow |
+| R6 | RESOLVED | new `dbChipRSeg`/`dbChipCapNode`/`dbChipCCSeg` (Arthur+Matt, impl started); STA writes a new translator | Arthur |
+| R7 | RESOLVED | IO cells interior; remaining: confirm RCX targets net2 → SPEF | Arthur |
+| R4 · R9 · R11 | RESOLVED | net enumeration done; unbound-bump query exists; ETM `.lib` already loaded — remaining work is STA-side | — |
+| R8 · R10 | nice-to-have | callbacks (TODO 4); `dbMarker` chip cases (TODO 5) | Osama |
