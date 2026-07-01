@@ -213,6 +213,12 @@ class Tapcell
   int placeEndcapEdgeHorizontal(const Edge& edge,
                                 const CornerMap& corners,
                                 const EndcapCellOptions& options);
+  int fillEndcapEdge(odb::dbRow* row,
+                     int x_start,
+                     int x_end,
+                     const std::vector<odb::dbMaster*>& masters,
+                     EdgeType edge_type,
+                     const std::string& prefix);
   int placeEndcapEdgeVertical(const Edge& edge,
                               const CornerMap& corners,
                               const EndcapCellOptions& options);
@@ -234,6 +240,9 @@ class Tapcell
   std::string tap_prefix_;
   std::string endcap_prefix_;
   std::vector<Edge> filled_edges_;
+  // x-ranges already filled by horizontal endcap edges, per row.
+  odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>>
+      filled_horizontal_edges_;
 };
 
 }  // namespace tap

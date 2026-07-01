@@ -238,6 +238,32 @@ static void findStartEnd(int x,
   }
 }
 
+// Subtract the blocker intervals from [start, end), returning the open gaps.
+static std::vector<std::pair<int, int>> computeOpenSpans(
+    const int start,
+    const int end,
+    std::vector<std::pair<int, int>> blockers)
+{
+  std::ranges::sort(blockers);
+
+  std::vector<std::pair<int, int>> open_spans;
+  int cursor = start;
+  for (const auto& [b_start, b_end] : blockers) {
+    if (b_end <= cursor || b_start >= end) {
+      continue;
+    }
+    if (b_start > cursor) {
+      open_spans.emplace_back(cursor, b_start);
+    }
+    cursor = std::max(cursor, b_end);
+  }
+  if (cursor < end) {
+    open_spans.emplace_back(cursor, end);
+  }
+
+  return open_spans;
+}
+
 std::optional<int> Tapcell::findValidLocation(
     int x,
     int width,
@@ -524,6 +550,7 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
   }
 
   filled_edges_.clear();
+  filled_horizontal_edges_.clear();
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
@@ -1166,12 +1193,38 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     }
   }
 
-  odb::Point ll = row->getBBox().ll();
-  ll.setX(e0.getX());
+  // Fill only x-ranges not already covered by another horizontal edge in this
+  // row, so a single-height row between macros gets one edge, not overlaps.
+  std::vector<std::pair<int, int>>& occupied = filled_horizontal_edges_[row];
 
-  auto pick_next_master
-      = [&e1, &masters](const odb::Point& ll) -> odb::dbMaster* {
-    int remaining = e1.getX() - ll.getX();
+  // Also skip the corner cells in this row that land within the span.
+  std::vector<std::pair<int, int>> blockers(occupied);
+  if (check_row != corners.end()) {
+    for (auto* inst : check_row->second) {
+      const auto bbox = inst->getBBox()->getBox();
+      blockers.emplace_back(bbox.xMin(), bbox.xMax());
+    }
+  }
+
+  for (const auto& [span_start, span_end] :
+       computeOpenSpans(e0.getX(), e1.getX(), blockers)) {
+    insts += fillEndcapEdge(
+        row, span_start, span_end, masters, edge.type, options.prefix);
+    occupied.emplace_back(span_start, span_end);
+  }
+
+  return insts;
+}
+
+int Tapcell::fillEndcapEdge(odb::dbRow* row,
+                            const int x_start,
+                            const int x_end,
+                            const std::vector<odb::dbMaster*>& masters,
+                            const EdgeType edge_type,
+                            const std::string& prefix)
+{
+  auto pick_next_master = [x_end, &masters](int x) -> odb::dbMaster* {
+    const int remaining = x_end - x;
     for (auto* master : masters) {
       if (remaining % master->getWidth() == 0) {
         return master;
@@ -1181,44 +1234,46 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
     return masters[masters.size() - 1];
   };
 
-  while (ll.getX() < e1.getX()) {
-    auto* master = pick_next_master(ll);
+  const int row_lly = row->getBBox().yMin();
+  int insts = 0;
+  int x = x_start;
+  while (x < x_end) {
+    auto* master = pick_next_master(x);
 
     debugPrint(logger_,
                utl::TAP,
                "Endcap",
                3,
                "From {} -> {}: picked {}",
-               ll.getX(),
-               e1.getX(),
+               x,
+               x_end,
                master->getName());
 
     if (!checkSymmetry(master, row->getOrient())) {
-      continue;
+      break;
     }
 
-    if (ll.getX() + master->getWidth() > e1.getX()) {
+    if (x + master->getWidth() > x_end) {
       const double dbus = row->getBlock()->getDbUnitsPerMicron();
       logger_->error(
           utl::TAP,
           20,
           "Unable to fill {} boundary in {} from {:.4f}um to {:.4f}um",
-          toString(edge.type),
+          toString(edge_type),
           row->getName(),
-          ll.getX() / dbus,
-          e1.getX() / dbus);
+          x / dbus,
+          x_end / dbus);
     }
 
-    makeInstance(db_->getChip()->getBlock(),
-                 master,
-                 row->getOrient(),
-                 ll.getX(),
-                 ll.getY(),
-                 fmt::format("{}EDGE_{}_{}_",
-                             options.prefix,
-                             row->getName(),
-                             toString(edge.type)));
-    ll.addX(master->getWidth());
+    makeInstance(
+        db_->getChip()->getBlock(),
+        master,
+        row->getOrient(),
+        x,
+        row_lly,
+        fmt::format(
+            "{}EDGE_{}_{}_", prefix, row->getName(), toString(edge_type)));
+    x += master->getWidth();
     insts++;
   }
 
