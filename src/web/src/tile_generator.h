@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -292,6 +293,9 @@ struct TileVisibility
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+  // Visibility for an already-classified instance.  Lets callers that already
+  // computed the category (e.g. the tile render loop) avoid reclassifying.
+  bool isCategoryVisible(InstCategory cat) const;
 
   bool isNetSelectable(odb::dbNet* net) const;
   bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
@@ -369,7 +373,8 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
-      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      double dpr = 1.0) const;
 
   // Render only highlight/overlay shapes (selection, hover, timing, DRC,
   // route guides, flight lines) on a fully transparent background.  Used
@@ -433,6 +438,18 @@ class TileGenerator
                               const odb::Rect& dbu_tile,
                               double scale) const;
 
+  // ─── Server-side tile cache ──────────────────────────────────────────
+  //
+  // PNG-encoded "clean" tiles (no per-session overlays) keyed by a string
+  // fingerprint of the full render determinant.  Re-rendering tiles at
+  // 256*dpr*S is expensive, so pan/zoom-back and visibility toggles reuse
+  // the cached bytes.  LRU eviction at kTileCacheCap; cleared on design
+  // reload via eagerInit().  Thread-safe (mirrors chiplets_mutex_).
+  bool tileCacheGet(const std::string& key,
+                    std::vector<unsigned char>& out) const;
+  void tileCachePut(std::string key, std::vector<unsigned char> png) const;
+  size_t tileCacheSize() const;  // for tests
+
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
@@ -448,11 +465,15 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
-      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
+      const std::set<uint32_t>* route_guide_net_ids = nullptr,
+      double dpr = 1.0) const;
+  // `dim` is the square tile side length (buffer stride); -1 derives it from
+  // the buffer.  Hot loops pass it explicitly to avoid the per-pixel sqrt.
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
-                const Color& c) const;
+                const Color& c,
+                int dim = -1) const;
 
   void drawDebugOverlay(std::vector<unsigned char>& image,
                         int z,
@@ -529,7 +550,8 @@ class TileGenerator
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
                          int y,
-                         const Color& c);
+                         const Color& c,
+                         int dim = -1);
 
   static void drawLine(std::vector<unsigned char>& image,
                        int x0,
@@ -564,6 +586,15 @@ class TileGenerator
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
   mutable size_t chiplets_cache_inst_count_ = 0;
+
+  // LRU cache of PNG-encoded clean tiles (see tileCacheGet/Put).  The list
+  // holds (key, png) most-recent-first; the index maps key → list iterator.
+  using TileCacheEntry = std::pair<std::string, std::vector<unsigned char>>;
+  mutable std::mutex tile_cache_mutex_;
+  mutable std::list<TileCacheEntry> tile_cache_lru_;
+  mutable std::unordered_map<std::string, std::list<TileCacheEntry>::iterator>
+      tile_cache_index_;
+  static constexpr size_t kTileCacheCap = 512;
 
   static constexpr int kTileSizeInPixel = 256;
 };

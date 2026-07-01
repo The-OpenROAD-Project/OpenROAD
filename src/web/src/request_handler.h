@@ -123,6 +123,7 @@ struct WebSocketRequest
     kDebugCharts,
     kGet3DData,
     kOverlayTile,
+    kCancel,
     kUnknown
   };
 
@@ -195,6 +196,13 @@ struct SessionState
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
+
+  // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
+  // the inline `cancel` handler and consumed at the top of handleTile so a
+  // still-queued render is skipped.  Best-effort (a render already running on
+  // a worker thread is not interrupted).
+  std::mutex cancelled_mutex;
+  std::set<uint32_t> cancelled_ids;
 };
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
@@ -331,6 +339,11 @@ class TileHandler
                                      SessionState& state);
   WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
                                       SessionState& state);
+  // Marks a tile-request id as cancelled so a still-queued render is skipped.
+  // Registered run_inline so it executes on the read thread, ahead of the
+  // posted render it cancels.
+  WebSocketResponse handleCancel(const WebSocketRequest& req,
+                                 SessionState& state);
 
  private:
   static WebSocketResponse serializeBounds(uint32_t id,
@@ -350,7 +363,8 @@ class TileHandler
       const std::vector<FlightLine>& flight_lines,
       const std::map<uint32_t, Color>* module_colors,
       const std::set<uint32_t>* focus_net_ids,
-      const std::set<uint32_t>* route_guide_net_ids);
+      const std::set<uint32_t>* route_guide_net_ids,
+      double dpr = 1.0);
 
   std::shared_ptr<TileGenerator> gen_;
 };
