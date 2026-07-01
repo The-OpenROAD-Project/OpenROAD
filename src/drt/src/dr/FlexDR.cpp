@@ -1964,6 +1964,22 @@ int FlexDR::main()
 
   init();
   frTime t;
+  // If the loaded design already carries DRC markers (read from the database in
+  // io::Parser::setMarkers), resume from the configured iteration, skipping the
+  // initial full rip-up passes that are not useful when re-routing an existing
+  // solution's violations.
+  const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
+  if (num_db_markers > 0) {
+    iter_ = router_cfg_->REROUTE_VIOLATIONS_START_ITER;
+    if (router_cfg_->VERBOSE > 0) {
+      logger_->info(DRT,
+                    627,
+                    "Found {} DRC marker(s) in the database; resuming detailed "
+                    "routing from iteration {}.",
+                    num_db_markers,
+                    iter_);
+    }
+  }
   bool incremental = false;
   bool hasFixed = false;
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
@@ -1973,11 +1989,15 @@ int FlexDR::main()
       break;
     }
   }
-  for (auto& args :
-       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
+  const auto search_repair_args
+      = strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST);
+  // iter_ may start > 0 when resuming from imported DRC markers; index the
+  // strategy table by iter_ so the per-iteration parameters stay aligned.
+  while (iter_ < static_cast<int>(search_repair_args.size())) {
     if (iter_ > router_cfg_->END_ITERATION) {
       break;
     }
+    auto args = search_repair_args[iter_];
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {

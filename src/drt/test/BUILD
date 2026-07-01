@@ -11,6 +11,7 @@ load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regress
 package(features = ["layering_check"])
 
 COMPULSORY_TESTS = [
+    "aes_nangate45_reroute",
     "down_access_term",
     "drc_test",
     "ispd18_sample",
@@ -34,6 +35,7 @@ PASSFAIL_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 BIG_TESTS = [
+    "aes_nangate45_reroute",
     "ndr_vias1",
     "ndr_vias2",
 ]
