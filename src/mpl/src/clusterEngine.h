@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -149,7 +150,7 @@ class ClusteringEngine
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
-  void reportDesignData();
+  void reportDesignData(size_t num_macros_to_place);
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();

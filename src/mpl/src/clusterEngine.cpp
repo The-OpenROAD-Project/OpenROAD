@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -132,7 +133,7 @@ void ClusteringEngine::init()
 
   tree_->io_pads = getIOPads();
 
-  reportDesignData();
+  reportDesignData(unfixed_macros.size());
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
@@ -282,7 +283,7 @@ std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
   return io_pads;
 }
 
-void ClusteringEngine::reportDesignData()
+void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
@@ -308,6 +309,7 @@ void ClusteringEngine::reportDesignData()
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
+      "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
       "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
@@ -319,6 +321,7 @@ void ClusteringEngine::reportDesignData()
       design_metrics_->getNumStdCell(),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
+      num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
       block_->dbuToMicrons(base_halo_.left),
       block_->dbuToMicrons(base_halo_.bottom),

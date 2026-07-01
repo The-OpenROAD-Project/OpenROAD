@@ -39,6 +39,8 @@ sta::define_cmd_args "global_placement" {\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]\
     [-enable_routing_congestion]
 }
 
@@ -61,6 +63,8 @@ proc global_placement { args } {
       -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
       -virtual_cts_max_skew_fraction \
+      -random_seed \
+      -perturb_dist \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -force_center_initial_place \
