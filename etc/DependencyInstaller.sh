@@ -63,8 +63,9 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20260107.0"
-ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
+# Match the Abseil version bundled in prebuilt or-tools ${OR_TOOLS_VERSION_BIG}.
+ABSL_VERSION="20250512.0"
+ABSL_CHECKSUM="ecd64c3c38b20335c48e1ede28a8db90"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -674,20 +675,28 @@ _install_abseil() {
     local absl_prefix_found=""
     local absl_version_file=""
 
-    # Check in default/user-specified prefix first
-    local absl_version_file_default="${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"
-    if [[ -f "${absl_version_file_default}" ]]; then
-        absl_prefix_found="${absl_prefix_install}"
-        absl_version_file="${absl_version_file_default}"
-    fi
+    # Check in default/user-specified prefix first (lib64 on RHEL, lib elsewhere).
+    for absl_version_file_default in \
+        "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+        "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+        if [[ -f "${absl_version_file_default}" ]]; then
+            absl_prefix_found="${absl_prefix_install}"
+            absl_version_file="${absl_version_file_default}"
+            break
+        fi
+    done
 
     # If not found, check in or-tools path
     if [[ -z "${absl_prefix_found}" && -n "${OR_TOOLS_PATH}" ]]; then
-        local absl_version_file_or_tools="${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"
-        if [[ -f "${absl_version_file_or_tools}" ]]; then
-            absl_prefix_found="${OR_TOOLS_PATH}"
-            absl_version_file="${absl_version_file_or_tools}"
-        fi
+        for absl_version_file_or_tools in \
+            "${OR_TOOLS_PATH}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${OR_TOOLS_PATH}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_or_tools}" ]]; then
+                absl_prefix_found="${OR_TOOLS_PATH}"
+                absl_version_file="${absl_version_file_or_tools}"
+                break
+            fi
+        done
     fi
 
     local absl_installed_version="none"
@@ -709,6 +718,14 @@ _install_abseil() {
             _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
         )
         absl_prefix_found="${absl_prefix_install}"
+        for absl_version_file_default in \
+            "${absl_prefix_install}/lib64/cmake/absl/abslConfigVersion.cmake" \
+            "${absl_prefix_install}/lib/cmake/absl/abslConfigVersion.cmake"; do
+            if [[ -f "${absl_version_file_default}" ]]; then
+                absl_version_file="${absl_version_file_default}"
+                break
+            fi
+        done
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=installed")
     else
         INSTALL_SUMMARY+=("Abseil: system=${absl_installed_version}, required=${required_version}, path=${absl_prefix_found}, status=skipped")

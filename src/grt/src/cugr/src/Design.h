@@ -40,7 +40,8 @@ class Design
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
-         const odb::PtrSet<odb::dbNet>& clock_nets);
+         const odb::PtrSet<odb::dbNet>& clock_nets,
+         bool verbose);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -113,6 +114,7 @@ class Design
   const int min_routing_layer_;
   const int max_routing_layer_;
   odb::PtrSet<odb::dbNet> clock_nets_;
+  const bool verbose_;
 };
 
 }  // namespace grt

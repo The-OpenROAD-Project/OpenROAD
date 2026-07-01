@@ -37,8 +37,9 @@ met5       Horizontal       3108          1413          54.54%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Pattern routing with detours.
-Stage 3: Maze routing on sparsified graph.
+Stage 3: Pattern routing with detours.
+Stage 4: Maze routing on sparsified graph.
+Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 1/5
 [WARNING GRT-0305] Demoted 2 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [INFO GRT-0117] Start extra iteration 2/5

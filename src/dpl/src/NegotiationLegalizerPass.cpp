@@ -563,9 +563,10 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
       const NegCell& c = cells_[cell_idx];
       const Grid* dpl_grid = opendp_->grid_.get();
       const int orig_x_dbu = die_xlo_ + c.init_x * site_width_;
-      const int orig_y_dbu = die_ylo_ + dpl_grid->gridYToDbu(GridY{c.init_y}).v;
+      const int orig_y_dbu
+          = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.init_y}).v;
       const int tgt_x_dbu = die_xlo_ + c.x * site_width_;
-      const int tgt_y_dbu = die_ylo_ + dpl_grid->gridYToDbu(GridY{c.y}).v;
+      const int tgt_y_dbu = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.y}).v;
       logger_->report(
           "Pause at placing of cell {}. orig=({},{}) target=({},{}) dbu. "
           "rowidx={}.",
