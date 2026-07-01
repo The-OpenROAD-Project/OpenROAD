@@ -18,13 +18,7 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130_spm/delayed_
 [INFO PDN-0001] Inserting grid: macro - dsa\[5\]
 [INFO PDN-0001] Inserting grid: macro - dsa\[6\]
 [INFO PDN-0001] Inserting grid: macro - dsa\[7\]
-[WARNING PDN-0110] No via inserted between met4 and met5 at (24.5200, 14.8800) - (26.5200, 15.6800) on VPWR
-[WARNING PDN-0110] No via inserted between met4 and met5 at (73.2200, 78.5800) - (75.2200, 78.9200) on VGND
-[WARNING PDN-0110] No via inserted between met4 and met5 at (163.2200, 78.5800) - (165.2200, 78.9200) on VGND
-[WARNING PDN-0110] No via inserted between met4 and met5 at (24.5200, 14.8800) - (26.5200, 15.6800) on VPWR
-[WARNING PDN-0110] No via inserted between met4 and met5 at (73.2200, 78.5800) - (75.2200, 78.9200) on VGND
 [WARNING PDN-0110] No via inserted between met4 and met5 at (112.9800, 168.5800) - (114.9800, 169.5600) on VGND
 [WARNING PDN-0110] No via inserted between met4 and met5 at (162.5800, 168.5800) - (164.5700, 169.5600) on VGND
 [WARNING PDN-0110] No via inserted between met4 and met5 at (158.8800, 44.8800) - (160.8700, 45.8000) on VPWR
-[WARNING PDN-0110] No via inserted between met4 and met5 at (163.2200, 78.5800) - (165.2200, 78.9200) on VGND
 No differences found.

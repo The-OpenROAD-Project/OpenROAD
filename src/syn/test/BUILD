@@ -50,6 +50,17 @@ cc_test(
 )
 
 cc_test(
+    name = "npn_test",
+    srcs = ["npn_test.cc"],
+    # No gtest_main: ABC ships its own main() that wins over gtest_main;
+    # the TU defines its own.
+    deps = [
+        "//src/syn",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "parse_test",
     srcs = ["parse_test.cc"],
     # No gtest_main: ABC (via //src/syn/src/ir → TritModel) ships its own

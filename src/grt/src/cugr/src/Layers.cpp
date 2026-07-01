@@ -21,6 +21,12 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   width_ = tech_layer->getWidth();
   min_width_ = tech_layer->getMinWidth();
 
+  // Sheet R and the via-cut R above (for the res-aware cost); 0 when the
+  // tech leaves them undefined.
+  resistance_ = tech_layer->getResistance();
+  odb::dbTechLayer* cut_above = tech_layer->getUpperLayer();
+  via_resistance_ = (cut_above != nullptr) ? cut_above->getResistance() : 0.0;
+
   track_grid->getAverageTrackSpacing(pitch_, first_track_loc_, num_tracks_);
   last_track_loc_ = first_track_loc_ + pitch_ * (num_tracks_ - 1);
 
