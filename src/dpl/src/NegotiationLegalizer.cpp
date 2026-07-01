@@ -1058,12 +1058,11 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   return true;
 }
 
-std::vector<int> NegotiationLegalizer::collectNearestValidRows(
-    const NegCell& cell,
-    int seed_y,
-    int probe_x,
-    int count_per_side,
-    int max_scan) const
+std::vector<int> NegotiationLegalizer::verticalWindowRows(const NegCell& cell,
+                                                          int seed_y,
+                                                          int probe_x,
+                                                          int count_per_side,
+                                                          int max_scan) const
 {
   // A "wall" in the Y direction is off-core: the die edge, or a band of rows
   // with no placement sites at all (e.g. a full-width macro/blockage row).
@@ -1089,24 +1088,23 @@ std::vector<int> NegotiationLegalizer::collectNearestValidRows(
   // it has enough, hits a macro/off-core wall, or exceeds `step_cap` steps.
   // `step_cap` may exceed `max_scan` so the open side can reach further when
   // the opposite side is walled.
-  auto scan
-      = [&](int dir, int target_valid, int step_cap, bool& hit_wall) {
-          std::vector<int> found;
-          hit_wall = false;
-          for (int step = 1;
-               step <= step_cap && std::cmp_less(found.size(), target_valid);
-               ++step) {
-            const int r = seed_y + dir * step;
-            if (hardWall(r)) {
-              hit_wall = true;
-              break;
-            }
-            if (isValidRow(r, cell, probe_x)) {
-              found.push_back(r);
-            }
-          }
-          return found;
-        };
+  auto scan = [&](int dir, int target_valid, int step_cap, bool& hit_wall) {
+    std::vector<int> found;
+    hit_wall = false;
+    for (int step = 1;
+         step <= step_cap && std::cmp_less(found.size(), target_valid);
+         ++step) {
+      const int r = seed_y + dir * step;
+      if (hardWall(r)) {
+        hit_wall = true;
+        break;
+      }
+      if (isValidRow(r, cell, probe_x)) {
+        found.push_back(r);
+      }
+    }
+    return found;
+  };
 
   // First pass: the nominal symmetric window — up to count_per_side valid rows
   // on each side, within the max_scan step budget.

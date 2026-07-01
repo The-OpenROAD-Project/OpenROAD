@@ -200,25 +200,43 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
-  // Collect up to `count_per_side` rail-/site-compatible rows on each
-  // side of `seed_y`, plus `seed_y` itself when valid. Walks outward
-  // one row at a time and stops after `max_scan` steps in each direction.
-  // Lets the Y search adapt to cell height: for tall cells, valid rows
-  // are sparser, so the effective Y reach grows automatically.
-  [[nodiscard]] std::vector<int> collectNearestValidRows(const NegCell& cell,
-                                                         int seed_y,
-                                                         int probe_x,
-                                                         int count_per_side,
-                                                         int max_scan) const;
+  // Collect up to `count_per_side` rail-/site-compatible rows on each side of
+  // `seed_y`, plus `seed_y` itself when valid. Walks outward one row at a time
+  // and stops a side after `max_scan` steps or at an off-core wall. When one
+  // side is walled short of its quota, the open side is extended (past
+  // `max_scan`) by the shortfall. Lets the Y search adapt to cell height: for
+  // tall cells, valid rows are sparser, so the effective Y reach grows.
+  [[nodiscard]] std::vector<int> verticalWindowRows(const NegCell& cell,
+                                                    int seed_y,
+                                                    int probe_x,
+                                                    int count_per_side,
+                                                    int max_scan) const;
   [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
   [[nodiscard]] int effectiveSiteWindow(const NegCell& cell) const;
   [[nodiscard]] int effectiveRowCap(const NegCell& cell) const;
-  // Asymmetric X search bounds around base_x on row ty. When a macro or the
-  // core boundary cuts one side of the symmetric [-sw, +sw] window short, the
-  // lost reach is shifted to the opposite side so the same number of candidate
-  // sites is still explored. Returns the inclusive (lo_dx, hi_dx) offsets.
-  [[nodiscard]] std::pair<int, int> extendedSiteWindowBounds(
+
+  // The rectangular candidate region findBestLocation scans around an anchor
+  // point. The horizontal reach (dx_lo..dx_hi, inclusive offsets from
+  // anchor_x) is already shifted away from any macro/off-core wall, and `rows`
+  // is the set of valid rows to visit, vertically extended past an off-core
+  // wall. Built once per anchor by buildSearchWindow().
+  struct SearchWindow
+  {
+    int dx_lo{0};
+    int dx_hi{0};
+    std::vector<int> rows;
+  };
+  [[nodiscard]] SearchWindow buildSearchWindow(const NegCell& cell,
+                                               int anchor_x,
+                                               int anchor_y) const;
+
+  // Asymmetric X search bounds around base_x on row target_y. When a macro or
+  // the core boundary cuts one side of the symmetric [-site_window,
+  // +site_window] window short, the lost reach is shifted to the opposite side
+  // so the same number of candidate sites is still explored. Returns the
+  // inclusive (dx_lo, dx_hi) offsets.
+  [[nodiscard]] std::pair<int, int> horizontalWindowBounds(
       const NegCell& cell,
       int base_x,
       int target_y,

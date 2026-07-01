@@ -600,7 +600,7 @@ int NegotiationLegalizer::effectiveRowCap(const NegCell& cell) const
                   opendp_->max_displacement_y_);
 }
 
-std::pair<int, int> NegotiationLegalizer::extendedSiteWindowBounds(
+std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
     const NegCell& cell,
     int base_x,
     int target_y,
@@ -642,6 +642,23 @@ std::pair<int, int> NegotiationLegalizer::extendedSiteWindowBounds(
   const int left_deficit = site_window - left_avail;
   const int right_deficit = site_window - right_avail;
   return {-(site_window + right_deficit), site_window + left_deficit};
+}
+
+NegotiationLegalizer::SearchWindow NegotiationLegalizer::buildSearchWindow(
+    const NegCell& cell,
+    int anchor_x,
+    int anchor_y) const
+{
+  SearchWindow window;
+  // Vertical reach: nearest valid rows around the anchor, extended past an
+  // off-core wall onto the open side.
+  window.rows = verticalWindowRows(
+      cell, anchor_y, anchor_x, row_search_window_, effectiveRowCap(cell));
+  // Horizontal reach: computed once at the anchor row, shifted away from any
+  // macro/off-core wall onto the open side.
+  std::tie(window.dx_lo, window.dx_hi) = horizontalWindowBounds(
+      cell, anchor_x, anchor_y, effectiveSiteWindow(cell));
+  return window;
 }
 
 // ===========================================================================
@@ -710,34 +727,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     }
   };
 
-  const int row_search_cap = effectiveRowCap(cell);
-  const int extended_site_window = effectiveSiteWindow(cell);
-
-  // Search around the initial (GP) position. Iterate over the nearest
-  // valid rows rather than raw row offsets, so the effective Y reach
-  // grows with cell height and naturally aligns to legal rows.
-  const std::vector<int> extended_search_rows = collectNearestValidRows(
-      cell, cell.init_y, cell.init_x, row_search_window_, row_search_cap);
-
-  // Track the actual (possibly asymmetric, per-row extended) dx span explored
-  // so the debug window rectangle reflects the real search region.
-  int init_lo_dx = -extended_site_window;
-  int init_hi_dx = extended_site_window;
+  // Search around the initial (GP) position. The window's rows and asymmetric
+  // dx reach are already shifted away from macros/off-core walls (built once,
+  // see buildSearchWindow).
+  const SearchWindow init_window
+      = buildSearchWindow(cell, cell.init_x, cell.init_y);
   {
     utl::DebugScopedTimer t(prof_init_search_s_);
-    bool first = true;
-    for (int ty : extended_search_rows) {
-      const auto [lo_dx, hi_dx] = extendedSiteWindowBounds(
-          cell, cell.init_x, ty, extended_site_window);
-      if (first) {
-        init_lo_dx = lo_dx;
-        init_hi_dx = hi_dx;
-        first = false;
-      } else {
-        init_lo_dx = std::min(init_lo_dx, lo_dx);
-        init_hi_dx = std::max(init_hi_dx, hi_dx);
-      }
-      for (int dx = lo_dx; dx <= hi_dx; ++dx) {
+    for (int ty : init_window.rows) {
+      for (int dx = init_window.dx_lo; dx <= init_window.dx_hi; ++dx) {
         tryLocation(cell.init_x + dx, ty);
       }
     }
@@ -751,12 +749,9 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // already been displaced far from init_x and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
   const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
-  std::vector<int> curr_rows;
-  int curr_lo_dx = -extended_site_window;
-  int curr_hi_dx = extended_site_window;
+  SearchWindow curr_window;
   if (displaced) {
-    curr_rows = collectNearestValidRows(
-        cell, cell.y, cell.x, row_search_window_, row_search_cap);
+    curr_window = buildSearchWindow(cell, cell.x, cell.y);
     utl::DebugScopedTimer t(prof_curr_search_s_);
     debugPrint(logger_,
                utl::DPL,
@@ -765,19 +760,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                "Searching at current position for {} (searching from inital "
                "position found no better solution).",
                cell.db_inst->getName());
-    bool first = true;
-    for (int ty : curr_rows) {
-      const auto [lo_dx, hi_dx]
-          = extendedSiteWindowBounds(cell, cell.x, ty, extended_site_window);
-      if (first) {
-        curr_lo_dx = lo_dx;
-        curr_hi_dx = hi_dx;
-        first = false;
-      } else {
-        curr_lo_dx = std::min(curr_lo_dx, lo_dx);
-        curr_hi_dx = std::max(curr_hi_dx, hi_dx);
-      }
-      for (int dx = lo_dx; dx <= hi_dx; ++dx) {
+    for (int ty : curr_window.rows) {
+      for (int dx = curr_window.dx_lo; dx <= curr_window.dx_hi; ++dx) {
         tryLocation(cell.x + dx, ty);
       }
     }
@@ -803,18 +787,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       const auto [lo, hi] = std::ranges::minmax_element(rows);
       return std::pair{*lo, *hi + 1};
     };
-    const auto [init_ylo, init_yhi]
-        = y_range(extended_search_rows, cell.init_y);
-    const odb::Rect init_win(toX(cell.init_x + init_lo_dx),
+    const auto [init_ylo, init_yhi] = y_range(init_window.rows, cell.init_y);
+    const odb::Rect init_win(toX(cell.init_x + init_window.dx_lo),
                              toY(init_ylo),
-                             toX(cell.init_x + init_hi_dx + 1),
+                             toX(cell.init_x + init_window.dx_hi + 1),
                              toY(init_yhi));
     odb::Rect curr_win;
     if (displaced) {
-      const auto [curr_ylo, curr_yhi] = y_range(curr_rows, cell.y);
-      curr_win = odb::Rect(toX(cell.x + curr_lo_dx),
+      const auto [curr_ylo, curr_yhi] = y_range(curr_window.rows, cell.y);
+      curr_win = odb::Rect(toX(cell.x + curr_window.dx_lo),
                            toY(curr_ylo),
-                           toX(cell.x + curr_hi_dx + 1),
+                           toX(cell.x + curr_window.dx_hi + 1),
                            toY(curr_yhi));
     }
     debug_observer_->setNegotiationSearchWindow(
@@ -1149,8 +1132,8 @@ void NegotiationLegalizer::greedyImprove(int passes)
             }
           }
         }
-        const int d
-            = std::abs(target_x - cell.init_x) + std::abs(target_y - cell.init_y);
+        const int d = std::abs(target_x - cell.init_x)
+                      + std::abs(target_y - cell.init_y);
         if (d < best_dist) {
           best_dist = d;
           best_x = target_x;
@@ -1159,7 +1142,7 @@ void NegotiationLegalizer::greedyImprove(int passes)
       };
 
       const int site_window = effectiveSiteWindow(cell);
-      const std::vector<int> rows = collectNearestValidRows(
+      const std::vector<int> rows = verticalWindowRows(
           cell, cell.y, cell.init_x, row_search_window_, effectiveRowCap(cell));
       for (int target_y : rows) {
         for (int dx = -site_window; dx <= site_window; ++dx) {
