@@ -192,7 +192,7 @@ cluster_flops
 | `-timing_weight` | Timing weight, default value is 0.1, type `float`. |
 | `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
-| `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Increase (e.g. 1.0-3.0) for designs where reduced clock-tree routing is the goal. |
+| `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Any non-negative value is accepted, including fractional weights (e.g. 0.5, 1.5); sweep it continuously (typically around 1-3) to reach the desired banking on designs where reduced clock-tree routing is the goal. |
 
 
 ### Placement Clusters
