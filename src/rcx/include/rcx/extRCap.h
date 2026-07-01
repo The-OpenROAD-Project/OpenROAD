@@ -2269,7 +2269,6 @@ class extMain
   int getDbCornerModel(const char* name);
   void resetState();
   static std::unique_ptr<extRCModel> parseRules(
-      const char* rules_file,
       odb::dbTech* tech,
       const Array1D<extCorner*>* process_corner_table,
       bool is_v2,

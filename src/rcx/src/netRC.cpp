@@ -1479,7 +1479,6 @@ void extMain::resetState()
 }
 
 std::unique_ptr<extRCModel> extMain::parseRules(
-    const char* rules_file,
     odb::dbTech* tech,
     const Array1D<extCorner*>* process_corner_table,
     bool is_v2,
@@ -1509,9 +1508,11 @@ std::unique_ptr<extRCModel> extMain::parseRules(
     }
   }
 
+  const std::string rules_file = tech->getExtractionRulesFile();
+
   logger->info(RCX, 435, "Reading extraction model file {} ...", rules_file);
 
-  FILE* file = fopen(rules_file, "r");
+  FILE* file = fopen(rules_file.c_str(), "r");
   if (file == nullptr) {
     logger->error(RCX, 468, "Can't open extraction model file {}", rules_file);
   }
@@ -1519,11 +1520,11 @@ std::unique_ptr<extRCModel> extMain::parseRules(
   fclose(file);
 
   const bool is_v2_rules_file
-      = model->isRulesFile_v2((char*) rules_file, false);
+      = model->isRulesFile_v2((char*) rules_file.c_str(), false);
 
   if (is_v2 || is_v2_rules_file) {
     model->_v2_flow = is_v2;
-    if (!model->readRules((char*) rules_file,
+    if (!model->readRules((char*) rules_file.c_str(),
                           false,
                           true,
                           true,
@@ -1536,7 +1537,7 @@ std::unique_ptr<extRCModel> extMain::parseRules(
           RCX, 14, "Failed to parse extraction model file {}", rules_file);
     }
   } else {
-    if (!model->readRules_v1((char*) rules_file,
+    if (!model->readRules_v1((char*) rules_file.c_str(),
                              false,
                              true,
                              true,
@@ -1680,13 +1681,10 @@ void extMain::makeBlockRCsegs()
 
   if ((_processCornerTable != nullptr)
       || ((_processCornerTable == nullptr) && (rules_file_ != nullptr))) {
-    const char* rules_file
-        = rules_file_ ? rules_file_ : _prevControl->_ruleFileName.c_str();
-
     resetState();
 
-    std::unique_ptr<extRCModel> rules_model = parseRules(
-        rules_file, _block->getTech(), _processCornerTable, _v2, logger_);
+    std::unique_ptr<extRCModel> rules_model
+        = parseRules(_block->getTech(), _processCornerTable, _v2, logger_);
     registerRulesModel(std::move(rules_model));
 
     uint32_t scaled_corner_count = 0;
