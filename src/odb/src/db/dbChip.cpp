@@ -144,11 +144,13 @@ bool _dbChip::operator==(const _dbChip& rhs) const
 
 bool _dbChip::operator<(const _dbChip& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (top_ >= rhs.top_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 _dbChip::_dbChip(_dbDatabase* db)

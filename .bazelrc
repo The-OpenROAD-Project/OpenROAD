@@ -108,6 +108,11 @@ build:asan --copt=-O1
 build:asan --copt=-g
 build:asan --copt=-fno-omit-frame-pointer
 build:asan --linkopt=-fsanitize=address
+# TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
+# dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
+# Override the per-target malloc attribute to use the system allocator, which
+# ASan intercepts cleanly.
+build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
