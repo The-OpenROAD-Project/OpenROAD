@@ -103,6 +103,10 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
+    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
+    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // display-controls.js and read lazily by websocket-tile-layer.js.
+    layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
     showDbu: getCookie('or_show_dbu') === '1',
     selectableLayers: new Set(),
