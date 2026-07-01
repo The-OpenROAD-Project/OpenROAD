@@ -38,6 +38,7 @@ or_integration_tests(
     no_endcap
     overlap_cover
     region1
+    single_row_macros
     symmetry
 )
 
