@@ -838,8 +838,18 @@ void HierRTLMP::computePinAccessDepthLimits()
   pin_access_depth_limits_.y.max = max_depth_proportion * die.dy();
 
   constexpr float min_depth_proportion = 0.04;
-  pin_access_depth_limits_.x.min = min_depth_proportion * die.dx();
-  pin_access_depth_limits_.y.min = min_depth_proportion * die.dy();
+  const int proportional_min_width = min_depth_proportion * die.dx();
+  const int proportional_min_height = min_depth_proportion * die.dy();
+
+  const Tiling tiling = tree_->root->getTilings().front();
+  // Required for designs that are too tight (i.e. MockArray)
+  const int tiling_min_width = (die.dx() - tiling.width()) / 2;
+  const int tiling_min_height = (die.dy() - tiling.height()) / 2;
+
+  pin_access_depth_limits_.x.min
+      = std::min(proportional_min_width, tiling_min_width);
+  pin_access_depth_limits_.y.min
+      = std::min(proportional_min_height, tiling_min_height);
 
   if (logger_->debugCheck(MPL, "coarse_shaping", 1)) {
     logger_->report("\n  Pin Access Depth (μm)  |  Min  |  Max");
