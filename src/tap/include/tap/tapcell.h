@@ -206,7 +206,6 @@ class Tapcell
                                    const EndcapCellOptions& options);
 
   CornerMap placeEndcapCorner(const Corner& corner,
-                              const CornerMap& placed_corners,
                               const EndcapCellOptions& options);
   int placeEndcapEdge(const Edge& edge,
                       const CornerMap& corners,
@@ -244,6 +243,8 @@ class Tapcell
   // x-ranges already filled by horizontal endcap edges, per row.
   odb::PtrMap<odb::dbRow, std::vector<std::pair<int, int>>>
       filled_horizontal_edges_;
+  // corner cells placed so far, per row, persisted across areas/holes.
+  CornerMap placed_corners_;
 };
 
 }  // namespace tap

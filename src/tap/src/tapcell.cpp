@@ -551,6 +551,7 @@ void Tapcell::placeEndcaps(const EndcapCellOptions& options)
 
   filled_edges_.clear();
   filled_horizontal_edges_.clear();
+  placed_corners_.clear();
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
@@ -900,19 +901,19 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
   int corner_count = 0;
   int endcaps = 0;
 
-  CornerMap corners;
-  // insert corners first
+  // insert corners first. placed_corners_ persists across areas/holes so that
+  // edges and corners of one macro's hole see the corners already placed by an
+  // adjacent macro's hole in the same row.
   for (const auto& corner : getBoundaryCorners(area, outer)) {
-    for (const auto& [row, insts] :
-         placeEndcapCorner(corner, corners, options)) {
-      corners[row].insert(insts.begin(), insts.end());
+    for (const auto& [row, insts] : placeEndcapCorner(corner, options)) {
+      placed_corners_[row].insert(insts.begin(), insts.end());
       corner_count += insts.size();
     }
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
     if (std::ranges::find(filled_edges_, edge) == filled_edges_.end()) {
-      endcaps += placeEndcapEdge(edge, corners, options);
+      endcaps += placeEndcapEdge(edge, placed_corners_, options);
       filled_edges_.push_back(edge);
     }
   }
@@ -921,7 +922,6 @@ std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
 }
 
 Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
-                                              const CornerMap& placed_corners,
                                               const EndcapCellOptions& options)
 {
   odb::dbSite* site = nullptr;
@@ -1079,14 +1079,27 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
 
   // Skip corners overlapping one already placed in this row, e.g. the inner
   // top and bottom corners of a single-height row between macros.
-  auto placed = placed_corners.find(row);
-  if (placed != placed_corners.end()) {
+  auto placed = placed_corners_.find(row);
+  if (placed != placed_corners_.end()) {
     const odb::Rect cell(
         ll.getX(), ll.getY(), ll.getX() + width, ll.getY() + height);
     for (auto* other : placed->second) {
       const odb::Rect obb = other->getBBox()->getBox();
       if (cell.xMax() > obb.xMin() && cell.xMin() < obb.xMax()
           && cell.yMax() > obb.yMin() && cell.yMin() < obb.yMax()) {
+        return {};
+      }
+    }
+  }
+
+  // Skip corners overlapping a horizontal edge already placed in this row: an
+  // adjacent macro's hole may have filled the row before this corner.
+  auto filled = filled_horizontal_edges_.find(row);
+  if (filled != filled_horizontal_edges_.end()) {
+    const int x_start = ll.getX();
+    const int x_end = ll.getX() + width;
+    for (const auto& [e_start, e_end] : filled->second) {
+      if (x_end > e_start && x_start < e_end) {
         return {};
       }
     }
