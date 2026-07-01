@@ -83,9 +83,13 @@ proc extract_parasitics { args } {
 
   set ext_model_file ""
   if { [info exists keys(-ext_model_file)] } {
-    utl::warn RCX 514 "-ext_model_file is deprecated, use\
-                       set_extraction_rules_file instead."
-    set_extraction_rules_file $keys(-ext_model_file)
+    utl::warn RCX 514 "The -ext_model_file option is deprecated. Use\
+                       set_extraction_rules_file command instead."
+
+    # We may have multiple technologies loaded, so use the current block's
+    # tech to prevent an error resolving an ambiguous default tech.
+    set tech [[ord::get_db_block] getTech]
+    set_extraction_rules_file -tech [$tech getName] $keys(-ext_model_file)
   }
 
   set corner_cnt 1
