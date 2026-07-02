@@ -17,6 +17,8 @@ class dbDatabase;
 class dbITerm;
 class dbNet;
 class dbTech;
+class dbTechLayer;
+class dbTechVia;
 }  // namespace odb
 
 namespace sta {
@@ -97,6 +99,12 @@ class Design
   void setUnitCosts();
   // Fill via_demand_length_{lower,upper}_ from the tech's default vias.
   void computeViaDemandLengths();
+  // Pick the via connecting two routing layers: the block default if set, else
+  // (mimicking drt) the tech via with fewest cuts and smallest enclosure.
+  odb::dbTechVia* chooseViaForPair(
+      const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*>& default_vias,
+      odb::dbTechLayer* lower_tl,
+      odb::dbTechLayer* upper_tl) const;
   // Effective demand length of a via pad on one layer: its enclosure extent
   // along the routing direction scaled by the number of tracks it blocks
   // across.

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -349,6 +350,44 @@ void Design::setUnitCosts()
   }
 }
 
+odb::dbTechVia* Design::chooseViaForPair(
+    const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*>& default_vias,
+    odb::dbTechLayer* lower_tl,
+    odb::dbTechLayer* upper_tl) const
+{
+  // Prefer the block's default via for this layer pair (as GlobalRouter does).
+  if (default_vias.contains(lower_tl)) {
+    return default_vias.at(lower_tl);
+  }
+  // No default set: mimic drt (io_parser_helper.cpp) — among the tech vias
+  // connecting the pair, prefer a LEF-default one, then fewest cuts, then the
+  // smallest metal enclosure.
+  odb::dbTechLayer* cut_tl = lower_tl->getUpperLayer();
+  odb::dbTechVia* best = nullptr;
+  std::tuple<bool, int, int64_t> best_key;
+  for (odb::dbTechVia* via : tech_->getVias()) {
+    if (via->getBottomLayer() != lower_tl || via->getTopLayer() != upper_tl) {
+      continue;
+    }
+    int cuts = 0;
+    int64_t enc_area = 0;
+    for (odb::dbBox* box : via->getBoxes()) {
+      odb::dbTechLayer* bl = box->getTechLayer();
+      if (bl == cut_tl) {
+        cuts++;
+      } else if (bl == lower_tl || bl == upper_tl) {
+        enc_area += box->getBox().area();
+      }
+    }
+    const std::tuple<bool, int, int64_t> key{!via->isDefault(), cuts, enc_area};
+    if (best == nullptr || key < best_key) {
+      best = via;
+      best_key = key;
+    }
+  }
+  return best;
+}
+
 void Design::computeViaDemandLengths()
 {
   const int num_layers = getNumLayers();
@@ -365,8 +404,7 @@ void Design::computeViaDemandLengths()
     const MetalLayer& upper = layers_[i + 1];
     odb::dbTechLayer* lower_tl = lower.getTechLayer();
     odb::dbTechLayer* upper_tl = upper.getTechLayer();
-    odb::dbTechVia* via
-        = default_vias.contains(lower_tl) ? default_vias.at(lower_tl) : nullptr;
+    odb::dbTechVia* via = chooseViaForPair(default_vias, lower_tl, upper_tl);
 
     double num_lower = lower.getMinLength() * constants_.via_multiplier;
     double num_upper = upper.getMinLength() * constants_.via_multiplier;
