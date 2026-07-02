@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "BufferGenerator.hh"
+#include "BufferToInvertersGenerator.hh"
 #include "CloneGenerator.hh"
 #include "DelayEstimator.hh"
 #include "MoveCommitter.hh"
@@ -200,6 +201,8 @@ bool OptimizationPolicy::reportRepairSummary() const
       = committer_.summaryCommittedMoves(MoveType::kSizeUpMatch);
   const int reroute_moves
       = committer_.summaryCommittedMoves(MoveType::kReroute);
+  const int buffer_to_inverters_moves
+      = committer_.summaryCommittedMoves(MoveType::kBufferToInverters);
 
   if (unbuffer_moves > 0) {
     repaired = true;
@@ -216,6 +219,13 @@ bool OptimizationPolicy::reportRepairSummary() const
                     buffer_moves + split_load_moves,
                     split_load_moves);
     }
+  }
+  if (buffer_to_inverters_moves > 0) {
+    repaired = true;
+    logger_->info(utl::RSZ,
+                  109,
+                  "Replaced {} buffers with inverters.",
+                  buffer_to_inverters_moves);
   }
   logger_->metric("design__instance__count__setup_buffer",
                   buffer_moves + split_load_moves);
@@ -323,6 +333,9 @@ void OptimizationPolicy::buildMoveGenerators(
         break;
       case MoveType::kUnbuffer:
         generator = std::make_unique<UnbufferGenerator>(context);
+        break;
+      case MoveType::kBufferToInverters:
+        generator = std::make_unique<BufferToInvertersGenerator>(context);
         break;
       case MoveType::kReroute:
         generator = std::make_unique<RerouteGenerator>(context);

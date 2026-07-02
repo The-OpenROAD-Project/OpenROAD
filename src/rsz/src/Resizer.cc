@@ -3116,6 +3116,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
+        /*skip_buffer_to_inverters=*/false,
         /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
         /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
@@ -4994,6 +4995,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
+                          bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap)
@@ -5015,6 +5017,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_buffer_to_inverters = skip_buffer_to_inverters;
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
@@ -6201,6 +6204,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "reroute") {
     return MoveType::kReroute;
+  }
+  if (lower == "buffer_to_inverters") {
+    return MoveType::kBufferToInverters;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }
