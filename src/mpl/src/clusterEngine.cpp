@@ -1123,9 +1123,47 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
 
   std::vector<odb::dbInst*> insts;
   odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
+  // 1. Calculate areas to detect discrete macro domination
+  float max_macro_area = 0.0f;
+  float total_std_cell_area = 0.0f;
+
+  for (auto& macro : parent->getLeafMacros()) {
+    float area = block_->dbuAreaToMicrons(computeArea(macro));
+    max_macro_area = std::max(max_macro_area, area);
+  }
+
+  for (auto& std_cell : parent->getLeafStdCells()) {
+    float area = block_->dbuAreaToMicrons(computeArea(std_cell));
+    total_std_cell_area += area;
+  }
+
+  // At this point in the code we should have some standard cells, but set
+  // to 1.0 if not.
+  const size_t num_std_cells = parent->getLeafStdCells().size();
+  const float avg_std_cell_area
+      = (num_std_cells > 0) ? (total_std_cell_area / num_std_cells) : 1.0f;
+
+  // 2. The Rocks vs Sand Check
+  // If a single macro dwarfs the entire standard cell cloud, area-balancing
+  // is structurally impossible against a min-cut objective.
+  const bool discrete_macro_domination = (max_macro_area > total_std_cell_area);
+
+  if (discrete_macro_domination) {
+    debugPrint(logger_,
+               MPL,
+               "multilevel_autoclustering",
+               1,
+               "Graph is macro-dominated. Normalizing macro weights to avoid "
+               "knapsack partition failure.");
+  }
+
+  // 3. Populate vertex weights dynamically
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
-    vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(macro)));
+    float weight = discrete_macro_domination
+                       ? avg_std_cell_area
+                       : block_->dbuAreaToMicrons(computeArea(macro));
+    vertex_weight.push_back(weight);
     insts.push_back(macro);
   }
   for (auto& std_cell : parent->getLeafStdCells()) {
