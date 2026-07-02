@@ -28,7 +28,7 @@ report_tns
 
 puts "-- After --\n"
 resynth_genetic \
-  -corner slow \
+  -scene slow \
   -initial_ops 5 \
   -iters 15 \
   -population_size 50 \

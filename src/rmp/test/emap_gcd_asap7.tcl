@@ -1,6 +1,6 @@
 source "helpers.tcl"
 
-set test_name gcd_annealing2
+set test_name emap_gcd_asap7
 
 define_corners fast slow
 set lib_files_slow {\
@@ -31,6 +31,7 @@ read_verilog ./gcd_asap7.v
 link_design gcd
 read_sdc ./gcd_asap7.sdc
 
+source asap7/setRC.tcl
 
 puts "-- Before --\n"
 report_cell_usage
@@ -38,13 +39,26 @@ report_timing_histogram
 report_checks
 report_wns
 report_tns
+
 write_verilog_for_eqy $test_name before "None"
 
-puts "-- After --\n"
+puts "-- After emap --\n"
 
-resynth_annealing -scene fast -temp 1e-10 -seed 66
-report_timing_histogram
+resynth_emap -scene fast \
+  -map_multioutput
+
 report_cell_usage
+report_timing_histogram
+report_checks
+report_wns
+report_tns
+
+puts "-- After repair --\n"
+
+repair_timing
+
+report_cell_usage
+report_timing_histogram
 report_checks
 report_wns
 report_tns
