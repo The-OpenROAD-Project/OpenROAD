@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInst.h"
@@ -80,6 +81,19 @@ void FlexPA::addToInstsSet(frInst* inst)
     return;
   }
   insts_set_.insert(inst);
+}
+
+frAccessPoint* FlexPA::DPNodeToAccessPoint(
+    FlexDPNode* node,
+    const std::vector<std::pair<frMPin*, frInstTerm*>>& pins)
+{
+  auto [pin_idx, acc_point_idx] = node->getIdx();
+  const auto& [pin, inst_term] = pins[pin_idx];
+  const auto target_obj = inst_term->getInst();
+  const int pin_access_idx = target_obj->getPinAccessIdx();
+  const auto pin_access = pin->getPinAccess(pin_access_idx);
+  frAccessPoint* access_point = pin_access->getAccessPoint(acc_point_idx);
+  return access_point;
 }
 
 void FlexPA::prepPatternInst(frInst* unique_inst)
@@ -247,7 +261,6 @@ int FlexPA::genPatternsHelper(
                           max_access_point_size)) {
       if (is_valid) {
         num_valid_pattern++;
-      } else {
       }
     } else {
       break;
@@ -299,6 +312,7 @@ void FlexPA::genPatternsInit(
       nodes[pin_idx][ap_idx] = std::make_unique<FlexDPNode>();
       nodes[pin_idx][ap_idx]->setIdx({pin_idx, ap_idx});
       nodes[pin_idx][ap_idx]->setNodeCost(ap->getCost());
+      ap->resetCompatibleNeighbours();
       ap_idx++;
     }
     pin_idx++;
@@ -404,10 +418,8 @@ void FlexPA::genPatternsPerform(
         continue;
       }
       int prev_pin_idx = curr_pin_idx > 0 ? curr_pin_idx - 1 : source_node_idx;
-      for (int prev_acc_point_idx = 0;
-           prev_acc_point_idx < nodes[prev_pin_idx].size();
-           prev_acc_point_idx++) {
-        FlexDPNode* prev_node = nodes[prev_pin_idx][prev_acc_point_idx].get();
+      for (const auto& prev_node_unique : nodes[prev_pin_idx]) {
+        FlexDPNode* prev_node = prev_node_unique.get();
         if (prev_node->getPathCost() == std::numeric_limits<int>::max()) {
           continue;
         }
@@ -420,6 +432,16 @@ void FlexPA::genPatternsPerform(
                                           used_access_points,
                                           viol_access_points,
                                           max_access_point_size);
+
+        if (!curr_node->isVirtual() && !prev_node->isVirtual()
+            && used_access_points.empty() && edge_cost < 1000) {
+          frAccessPoint* curr_ap = DPNodeToAccessPoint(curr_node, pins);
+          frAccessPoint* prev_ap = DPNodeToAccessPoint(prev_node, pins);
+
+          curr_ap->addCompatibleNeighbour();
+          prev_ap->addCompatibleNeighbour();
+        }
+
         if (curr_node->getPathCost() == std::numeric_limits<int>::max()
             || curr_node->getPathCost()
                    > prev_node->getPathCost() + edge_cost) {
@@ -459,13 +481,10 @@ int FlexPA::getEdgeCost(
     has_vio = (vio_edges[edge_idx] == 1);
   } else {
     odb::dbTransform xform = unique_inst->getNoRotationTransform();
-    // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
+    // check DRC
     const auto& [pin_1, inst_term_1] = pins[prev_pin_idx];
-    const auto target_obj = inst_term_1->getInst();
-    const int pin_access_idx = target_obj->getPinAccessIdx();
-    const auto pa_1 = pin_1->getPinAccess(pin_access_idx);
-    const frAccessPoint* ap_1 = pa_1->getAccessPoint(prev_acc_point_idx);
+    const frAccessPoint* ap_1 = DPNodeToAccessPoint(prev_node, pins);
     std::unique_ptr<frVia> via1;
     if (ap_1->hasAccess(frDirEnum::U)) {
       odb::Point pt1(ap_1->getPoint());
@@ -480,8 +499,7 @@ int FlexPA::getEdgeCost(
     }
 
     const auto& [pin_2, inst_term_2] = pins[curr_pin_idx];
-    const auto pa_2 = pin_2->getPinAccess(pin_access_idx);
-    const frAccessPoint* ap_2 = pa_2->getAccessPoint(curr_acc_point_idx);
+    const frAccessPoint* ap_2 = DPNodeToAccessPoint(curr_node, pins);
     std::unique_ptr<frVia> via2;
     if (ap_2->hasAccess(frDirEnum::U)) {
       odb::Point pt2(ap_2->getPoint());
@@ -494,6 +512,7 @@ int FlexPA::getEdgeCost(
       }
     }
 
+    const auto target_obj = inst_term_1->getInst();
     has_vio = !genPatternsGC({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
 
@@ -506,9 +525,7 @@ int FlexPA::getEdgeCost(
             = prev_prev_node->getIdx();
         if (!prev_prev_node->isSource()) {
           const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
-          const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
-          const frAccessPoint* ap_3
-              = pa_3->getAccessPoint(prev_prev_acc_point_idx);
+          const frAccessPoint* ap_3 = DPNodeToAccessPoint(prev_prev_node, pins);
           std::unique_ptr<frVia> via3;
           if (ap_3->hasAccess(frDirEnum::U)) {
             odb::Point pt3(ap_3->getPoint());
