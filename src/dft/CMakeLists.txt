@@ -43,6 +43,7 @@ target_link_libraries(dft
     dft_replace_lib
     dft_clock_domain_lib
     dft_utils_lib
+    dft_optimizer_lib
     dft_stitch_lib
 )
 
@@ -73,6 +74,7 @@ endif()
 
 # Keep sorted
 add_subdirectory(src/architect)
+add_subdirectory(src/optimizer)
 add_subdirectory(src/cells)
 add_subdirectory(src/clock_domain)
 add_subdirectory(src/config)

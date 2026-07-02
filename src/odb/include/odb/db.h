@@ -7813,6 +7813,8 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
+
+  void reset();
 };
 
 class dbGCellGrid : public dbObject
@@ -9155,6 +9157,10 @@ class dbScanList : public dbObject
   // User Code Begin dbScanList
   dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
+  // Detaches all dbScanInsts from this list without destroying them.
+  // After clear(), each detached dbScanInst may be re-attached to any list
+  // via insertAtFront().  Used by scan_opt cross-chain reassignment.
+  void clear();
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList
 };
