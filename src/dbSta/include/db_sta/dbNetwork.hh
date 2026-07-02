@@ -95,6 +95,7 @@ class dbNetwork : public ConcreteNetwork
 
   LibertyCell* libertyCell(Cell* cell) const override;
   const LibertyCell* libertyCell(const Cell* cell) const override;
+  const LibertyCell* testCell(const Cell* cell) const;
   LibertyCell* libertyCell(odb::dbInst* inst);
   LibertyPort* libertyPort(const Pin*) const override;
   odb::dbInst* staToDb(const Instance* instance) const;
@@ -479,7 +480,6 @@ class dbNetwork : public ConcreteNetwork
   // supply pin functions
   bool isSupplyPin(odb::dbITerm* iterm) const;
   bool isValidFlop(odb::dbInst* FF) const;
-  bool isValidTray(odb::dbInst* tray) const;
 
   ////////////////////////////////////////////////////////////////
 
@@ -575,7 +575,6 @@ class dbNetwork : public ConcreteNetwork
   ObjectId blockDiscBits(const odb::dbObject* obj, odb::dbObjectType typ) const;
 
  private:
-  const LibertyCell* getLibertyCell(const Cell* cell) const;
   void addDriverToCacheIfPresent(const Net* net, const Pin* drvr);
   void removeDriverFromCache(const Net* net);
   void removeDriverFromCache(const Net* net, const Pin* drvr);

@@ -1027,11 +1027,6 @@ class dbBlock : public dbObject
   int getCornerCount();
 
   ///
-  /// having independent extraction corners ?
-  ///
-  bool extCornersAreIndependent();
-
-  ///
   /// Get the number of corners kept n this block
   ///
   int getCornersPerBlock();
@@ -1070,27 +1065,9 @@ class dbBlock : public dbObject
   void setCornerCount(int cnt);
 
   ///
-  /// Set the number of corners kept in this block
-  ///
-  void setCornersPerBlock(int cornersPerBlock);
-
-  ///
   /// Initialize the parasitics value tables
   ///
   void initParasiticsValueTables();
-
-  ///
-  /// create child block for one extraction corner
-  ///
-  dbBlock* createExtCornerBlock(uint32_t corner);
-  ///
-  /// find child block for one extraction corner
-  ///
-  dbBlock* findExtCornerBlock(uint32_t corner);
-  ///
-  /// get extraction data block for one extraction corner
-  ///
-  dbBlock* getExtCornerBlock(uint32_t corner);
 
   ///
   /// Get the track-grids of this block.
@@ -5912,6 +5889,10 @@ class dbTech : public dbObject
   ///
   std::string getName();
 
+  void setExtractionRulesFile(const std::string& path);
+
+  std::string getExtractionRulesFile();
+
   ///
   /// Get the Database units per micron.
   ///
@@ -7637,6 +7618,8 @@ class dbDatabase : public dbObject
 
   void setHierarchy(bool value);
   bool hasHierarchy() const;
+
+  bool hasHierarchicalChip() const;
 
   void setTopChip(dbChip* chip);
   ///

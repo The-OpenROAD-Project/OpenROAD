@@ -220,6 +220,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     # pass-fail
     "read_3dbv_fail",
+    "read_3dbx_fail",
     "read_def_virtual_invalid",
     "test_block",
     "test_bterm",
@@ -301,6 +302,7 @@ filegroup(
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
+        "data/lef58_celledgespacing_numeric.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",

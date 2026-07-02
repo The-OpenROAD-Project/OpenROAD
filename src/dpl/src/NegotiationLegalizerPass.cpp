@@ -418,9 +418,10 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
       pushNegotiationPixels();
       const NegCell& c = cells_[cell_idx];
       const int orig_x_dbu = die_xlo_ + c.init_x * site_width_;
-      const int orig_y_dbu = die_ylo_ + c.init_y * row_height_;
+      const int orig_y_dbu
+          = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.init_y}).v;
       const int tgt_x_dbu = die_xlo_ + c.x * site_width_;
-      const int tgt_y_dbu = die_ylo_ + c.y * row_height_;
+      const int tgt_y_dbu = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.y}).v;
       logger_->report(
           "Pause at placing of cell {}. orig=({},{}) target=({},{}) dbu. "
           "rowidx={}.",
@@ -883,31 +884,30 @@ void NegotiationLegalizer::cellSwap()
 {
   const int maxDisp = maxDisplacement();
 
-  // Group movable cells by (height, width, rail_type).
+  // Group movable cells by (height, width).  Power-rail compatibility of any
+  // candidate swap is enforced below by isValidRow(), so it need not be part
+  // of the grouping key.
   struct GroupKey
   {
     int height;
     int width;
-    NLPowerRailType rail;
     bool operator==(const GroupKey& o) const
     {
-      return height == o.height && width == o.width && rail == o.rail;
+      return height == o.height && width == o.width;
     }
   };
   struct GroupKeyHash
   {
     size_t operator()(const GroupKey& k) const
     {
-      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8)
-             ^ (std::hash<int>()(static_cast<int>(k.rail)) << 16);
+      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8);
     }
   };
 
   std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed) {
-      groups[{cells_[i].height, cells_[i].width, cells_[i].rail_type}]
-          .push_back(i);
+      groups[{cells_[i].height, cells_[i].width}].push_back(i);
     }
   }
 

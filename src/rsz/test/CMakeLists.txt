@@ -235,6 +235,9 @@ or_integration_tests(
     repair_setup_vt_swap2
     measured_vt_swap
     repair_fanout7_skip_pin_swap
+    global_sizing
+    global_sizing_threads
+    global_sizing_presize
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1

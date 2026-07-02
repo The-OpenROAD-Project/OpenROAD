@@ -1,10 +1,4 @@
 common --enable_bzlmod
-# sv-lang 10.0.bcr.2 (slang at f04e8156 with the foreign_cc cmake -xc++
-# fix) is pending upstream as a PR against bazelbuild/bazel-central-
-# registry: https://github.com/bazelbuild/bazel-central-registry/pull/8987
-# Remove this registry line once the version lands on BCR.
-common --registry=https://raw.githubusercontent.com/oharboe/bazel-central-registry/1beaf797951046d93a2f656d4238c954a21833e5/
-common --registry=https://bcr.bazel.build/
 
 # abc is driven programmatically by OpenROAD, so skip the interactive
 # readline dependency exposed by abc@0.64-yosyshq.bcr.2.
@@ -114,6 +108,11 @@ build:asan --copt=-O1
 build:asan --copt=-g
 build:asan --copt=-fno-omit-frame-pointer
 build:asan --linkopt=-fsanitize=address
+# TCMalloc is incompatible with ASan: __asan_init's interceptor setup calls
+# dlsym -> malloc before TCMalloc is initialized, segfaulting at startup.
+# Override the per-target malloc attribute to use the system allocator, which
+# ASan intercepts cleanly.
+build:asan --custom_malloc=@bazel_tools//tools/cpp:malloc
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never

@@ -1210,6 +1210,32 @@ proc add_3dblox_alignment_marker_rule { args } {
   }
 }
 
+sta::define_cmd_args "set_extraction_rules_file" {
+    [-tech tech_name] rules_file
+}
+
+proc set_extraction_rules_file { args } {
+  sta::parse_key_args "set_extraction_rules_file" args \
+    keys {-tech} flags {}
+  sta::check_argc_eq1 "set_extraction_rules_file" $args
+
+  set db [ord::get_db]
+  if { [info exists keys(-tech)] } {
+    set tech [$db findTech $keys(-tech)]
+  } elseif { [$db hasHierarchicalChip] } {
+    utl::error ODB 478 "Could not set extraction rules file.\
+      Use -tech to specify a technology in a 3D design."
+  } else {
+    set tech [$db getTech]
+  }
+
+  if { $tech == "NULL" } {
+    utl::error ODB 477 "Could not set extraction rules file. Tech not found."
+  }
+
+  $tech setExtractionRulesFile [lindex $args 0]
+}
+
 # On-demand structural summary of a 3DIC (3DBlox) design: chiplet, chip-net,
 # bond-region and bump counts, plus per-chip-inst master references. Useful as
 # a post-read sanity check before cross-chiplet timing.

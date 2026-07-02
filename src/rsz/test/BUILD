@@ -247,6 +247,9 @@ TESTS = [
     "repair_setup_vtswap_legacy_asap7",
     "repair_setup_vt_swap2",
     "measured_vt_swap",
+    "global_sizing",
+    "global_sizing_threads",
+    "global_sizing_presize",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
@@ -280,6 +283,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
     "repair_fanout7_skip_pin_swap": ["repair_fanout7.tcl"],

@@ -10,14 +10,12 @@ namespace odb {
 
 dbExtControl::dbExtControl()
 {
-  _independentExtCorners = false;
   _wireStamped = false;
   _foreign = false;
   _rsegCoord = false;
   _overCell = false;
   _extracted = false;
   _lefRC = false;
-  _cornerCnt = 0;
   _ccPreseveGeom = 0;
   _ccUp = 0;
   _couplingFlag = 3;
@@ -40,12 +38,10 @@ dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)
   if (!extControl._extracted) {
     return stream;
   }
-  stream << extControl._independentExtCorners;
   stream << extControl._wireStamped;
   stream << extControl._foreign;
   stream << extControl._rsegCoord;
   stream << extControl._lefRC;
-  stream << extControl._cornerCnt;
   stream << extControl._ccPreseveGeom;
   stream << extControl._ccUp;
   stream << extControl._couplingFlag;
@@ -60,13 +56,6 @@ dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)
   stream << extControl._ccNoPowerTarget;
   stream << extControl._usingMetalPlanes;
   stream << extControl._ruleFileName;
-  // new fields
-  stream << extControl._extractedCornerList;
-  stream << extControl._derivedCornerList;
-  stream << extControl._cornerIndexList;
-  stream << extControl._resFactorList;
-  stream << extControl._gndcFactorList;
-  stream << extControl._ccFactorList;
 
   return stream;
 }
@@ -78,12 +67,21 @@ dbIStream& operator>>(dbIStream& stream, dbExtControl& extControl)
   if (!extControl._extracted) {
     return stream;
   }
-  stream >> extControl._independentExtCorners;
+
+  _dbDatabase* db = stream.getDatabase();
+
+  if (!db->isSchema(kSchemaRemovePerCornerBlock)) {
+    bool obsolete_independent_ext_corners;
+    stream >> obsolete_independent_ext_corners;
+  }
   stream >> extControl._wireStamped;
   stream >> extControl._foreign;
   stream >> extControl._rsegCoord;
   stream >> extControl._lefRC;
-  stream >> extControl._cornerCnt;
+  if (!db->isSchema(kSchemaRemoveExtControlCornerData)) {
+    uint32_t obsolete_corner_cnt;
+    stream >> obsolete_corner_cnt;
+  }
   stream >> extControl._ccPreseveGeom;
   stream >> extControl._ccUp;
   stream >> extControl._couplingFlag;
@@ -98,12 +96,15 @@ dbIStream& operator>>(dbIStream& stream, dbExtControl& extControl)
   stream >> extControl._ccNoPowerTarget;
   stream >> extControl._usingMetalPlanes;
   stream >> extControl._ruleFileName;
-  stream >> extControl._extractedCornerList;
-  stream >> extControl._derivedCornerList;
-  stream >> extControl._cornerIndexList;
-  stream >> extControl._resFactorList;
-  stream >> extControl._gndcFactorList;
-  stream >> extControl._ccFactorList;
+  if (!db->isSchema(kSchemaRemoveExtControlCornerData)) {
+    std::string obsolete_corner_list;
+    stream >> obsolete_corner_list;  // _extractedCornerList
+    stream >> obsolete_corner_list;  // _derivedCornerList
+    stream >> obsolete_corner_list;  // _cornerIndexList
+    stream >> obsolete_corner_list;  // _resFactorList
+    stream >> obsolete_corner_list;  // _gndcFactorList
+    stream >> obsolete_corner_list;  // _ccFactorList
+  }
 
   return stream;
 }
