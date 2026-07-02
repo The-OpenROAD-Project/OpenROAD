@@ -198,6 +198,7 @@ void Design::removeNet(odb::dbNet* db_net)
     db_net_to_id_.erase(it);
   }
 }
+
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {
