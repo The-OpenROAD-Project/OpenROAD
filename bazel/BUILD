@@ -15,6 +15,8 @@ exports_files(
         "bzl_tidy.sh",
         "fix_lint.sh",
         "install.sh",
+        "py_fmt_test.sh",
+        "py_tidy.sh",
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
@@ -32,6 +34,12 @@ py_console_script_binary(
 py_console_script_binary(
     name = "tclfmt",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "black",
+    pkg = "@openroad-pip//black",
     visibility = ["//visibility:public"],
 )
 
