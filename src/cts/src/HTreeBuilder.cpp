@@ -1268,19 +1268,21 @@ void HTreeBuilder::run()
     computeLevelTopology(level, regionWidth, regionHeight);
 
     if (options_->getMaxWl()) {
-      double maxHPWL
-          = topologyForEachLevel_.back().getLargestSinkRegionHPWL(wireSegmentUnit_);
-      if (maxHPWL < options_->getMaxWl() && isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
+      double maxHPWL = topologyForEachLevel_.back().getLargestSinkRegionHPWL(
+          wireSegmentUnit_);
+      if (maxHPWL < options_->getMaxWl()
+          && isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
         logger_->info(CTS,
                       38,
                       " Stop criterion found. Sink region hpwl "
-                      "is smaller than max wirelength ({}) and max number of sinks is {}.",
+                      "is smaller than max wirelength ({}) and max number of "
+                      "sinks is {}.",
                       options_->getMaxWl() / options_->getWireSegmentUnit(),
                       options_->getMaxFanout() ? options_->getMaxFanout()
-                                             : numMaxLeafSinks_);
+                                               : numMaxLeafSinks_);
         break;
       }
-    } else if(isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
+    } else if (isNumberOfSinksTooSmall(numSinksPerSubRegion)) {
       logger_->info(CTS,
                     32,
                     " Stop criterion found. Max number of sinks is {}.",

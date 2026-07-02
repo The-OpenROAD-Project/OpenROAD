@@ -129,8 +129,7 @@ class HTreeBuilder : public TreeBuilder
       return branchSinkLocs_[branchIdx];
     }
 
-    double getLargestSinkRegionHPWL(
-        unsigned wireSegmentUnit) const
+    double getLargestSinkRegionHPWL(unsigned wireSegmentUnit) const
     {
       double bestHpwl = 0.0;
       for (unsigned i = 0; i < branchSinkLocs_.size(); ++i) {
