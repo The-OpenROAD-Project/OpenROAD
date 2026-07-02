@@ -86,9 +86,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 
 void ClusteringEngine::setHalos(
     const HardMacro::Halo& base_halo,
+    const bool use_full_halo,
     const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
 {
   base_halo_ = base_halo;
+  use_full_halo_ = use_full_halo;
   macro_to_halo_ = macro_to_halo;
 }
 
@@ -2063,6 +2065,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
+  int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2082,18 +2085,7 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo;
-      if (macro_to_halo_.contains(inst)) {
-        halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
-        const HardMacro::Halo inst_halo(inst->getHalo());
-        halo = inst_halo;
-        if (!inst->getHalo()->isSoft()) {
-          halo = inst_halo.floorTo(base_halo_);
-        }
-      } else {
-        halo = base_halo_;
-      }
+      HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
@@ -2161,6 +2153,130 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
     }
   }
   return number_of_ios;
+}
+
+HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
+                                                 int minimum_spacing) const
+{
+  if (macro_to_halo_.contains(inst)) {
+    return macro_to_halo_.at(inst);
+  }
+
+  HardMacro::Halo full_halo;
+  if (inst->getHalo() != nullptr) {
+    odb::Rect inst_halo = inst->getHalo()->getBox();
+    if (inst->getHalo()->isSoft()) {
+      full_halo = HardMacro::Halo(inst->getHalo());
+    } else {
+      full_halo = {std::max(inst_halo.xMin(), base_halo_.left),
+                   std::max(inst_halo.yMin(), base_halo_.bottom),
+                   std::max(inst_halo.xMax(), base_halo_.right),
+                   std::max(inst_halo.yMax(), base_halo_.top)};
+    }
+  } else {
+    full_halo = base_halo_;
+  }
+
+  if (use_full_halo_) {
+    return full_halo;
+  }
+
+  HardMacro::Halo halo(minimum_spacing);
+
+  odb::dbMaster* master = inst->getMaster();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::Rect pin_rect = box->getBox();
+
+        std::vector<std::pair<int, Boundary>> dist_to_boundary{
+            {pin_rect.xMin(), Boundary::L},
+            {pin_rect.yMin(), Boundary::B},
+            {master->getWidth() - pin_rect.xMax(), Boundary::R},
+            {master->getHeight() - pin_rect.yMax(), Boundary::T}};
+
+        std::ranges::sort(dist_to_boundary);
+
+        Boundary closest = dist_to_boundary[0].second;
+
+        auto& candidate = dist_to_boundary[0];
+        auto& second_candidate = dist_to_boundary[1];
+        // The two closest boundaries are in different directions
+        if (isEquidistantDifferentDirections(candidate, second_candidate)) {
+          auto direction
+              = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+          if (direction == odb::dbTechLayerDir::VERTICAL) {
+            closest = isVertical(candidate.second) ? second_candidate.second
+                                                   : candidate.second;
+          } else {
+            closest = isVertical(candidate.second) ? candidate.second
+                                                   : second_candidate.second;
+          }
+        }
+
+        switch (closest) {
+          case Boundary::B:
+            halo.bottom = full_halo.bottom;
+            break;
+          case Boundary::L:
+            halo.left = full_halo.left;
+            break;
+          case Boundary::T:
+            halo.top = full_halo.top;
+            break;
+          case Boundary::R:
+            halo.right = full_halo.right;
+            break;
+        }
+      }
+    }
+  }
+
+  return halo;
+}
+
+int ClusteringEngine::getMinimumSpacing() const
+{
+  int spacing = 0;
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      odb::dbMaster* master = inst->getMaster();
+
+      for (odb::dbBox* obs : master->getObstructions()) {
+        if (auto layer = obs->getTechLayer()) {
+          spacing = std::max(spacing, layer->getSpacing());
+        }
+      }
+
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* geom : mpin->getGeometry()) {
+            if (auto layer = geom->getTechLayer()) {
+              spacing = std::max(spacing, layer->getSpacing());
+            }
+          }
+        }
+      }
+    }
+  }
+  return spacing;
+}
+
+bool ClusteringEngine::isEquidistantDifferentDirections(
+    std::pair<int, Boundary> candidate,
+    std::pair<int, Boundary> second_candidate) const
+{
+  return (candidate.first == second_candidate.first)
+         && ((isVertical(candidate.second)
+              && !isVertical(second_candidate.second))
+             || (!isVertical(candidate.second)
+                 && isVertical(second_candidate.second)));
 }
 
 ///////////////////////////////////////////////
