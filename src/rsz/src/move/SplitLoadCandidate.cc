@@ -46,7 +46,8 @@ int SplitLoadCandidate::resizeInsertedBuffer(sta::Instance* buffer) const
   sta::LibertyPort *input, *output;
   buffer_cell_->bufferPorts(input, output);
   sta::Pin* buffer_out_pin = resizer_.network()->findPin(buffer, output);
-  return resizer_.resizeToTargetSlew(buffer_out_pin);
+  // Retire resizeToTargetSlew (#8013); use the modern cap-ratio sizing.
+  return resizer_.resizeToCapRatio(buffer_out_pin, /*upsize_only=*/false);
 }
 
 void SplitLoadCandidate::invalidateAffectedParasitics(
