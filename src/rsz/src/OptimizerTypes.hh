@@ -401,6 +401,7 @@ struct OptimizerRunConfig
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  bool use_stage_delay_ranking{false};
   std::vector<MoveType> sequence;
   std::string phases;
 };

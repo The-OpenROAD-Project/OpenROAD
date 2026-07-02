@@ -10,6 +10,7 @@
 #include "OptimizerTypes.hh"
 #include "RerouteCandidate.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -35,7 +36,8 @@ bool RerouteGenerator::isApplicable(const Target& target) const
 {
   grt::GlobalRouter* global_router = resizer_.globalRouter();
   return MoveGenerator::isApplicable(target) && global_router != nullptr
-         && global_router->haveRoutes();
+         && resizer_.getEstimateParasitics()->getParasiticsSrc()
+                == est::ParasiticsSrc::kGlobalRouting;
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> RerouteGenerator::generate(
