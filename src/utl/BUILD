@@ -23,6 +23,7 @@ cc_library(
         "src/CFileUtils.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
+        "src/CsvParser.cpp",
         "src/Logger.cpp",
         "src/Metrics.cpp",
         "src/Progress.cpp",
@@ -39,6 +40,7 @@ cc_library(
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
+        "include/utl/CsvParser.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
         "include/utl/Progress.h",
