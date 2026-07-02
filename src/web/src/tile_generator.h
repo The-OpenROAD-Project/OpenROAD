@@ -183,6 +183,11 @@ struct TileVisibility
   bool pin_names = true;          // BTerm name labels on _pins layer
   bool blockages = true;
 
+  // Fill pattern applied to the requested layer's own shapes (routing,
+  // special-net, instance OBS/pins).  Per-request because each tile request
+  // targets a single layer.  Defaults to solid (the historical behavior).
+  FillPattern fill_pattern = FillPattern::kSolid;
+
   // Instance sub-shapes
   bool inst_names = true;      // Instance name labels on _instances layer
   bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
@@ -520,11 +525,19 @@ class TileGenerator
                    const odb::Rect& dbu_tile,
                    double scale,
                    const Color& color,
-                   bool blend = false) const;
+                   bool blend = false,
+                   FillPattern pattern = FillPattern::kSolid) const;
 
+  // ox/oy are the tile's origin in absolute pixel coordinates
+  // ((int)(dbu_tile.xMin()*scale), ...); they anchor non-solid patterns so the
+  // hatch stays seamless across tile boundaries.  Only meaningful when
+  // pattern != kSolid.
   void drawFilledRect(std::vector<unsigned char>& buffer,
                       const odb::Rect& rect,
-                      const Color& color) const;
+                      const Color& color,
+                      FillPattern pattern = FillPattern::kSolid,
+                      int ox = 0,
+                      int oy = 0) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
