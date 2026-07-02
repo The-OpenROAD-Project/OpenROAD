@@ -56,6 +56,16 @@ class Design
   {
     return layers_[layer_index];
   }
+  // Effective via demand length (enclosure_along * tracks_blocked) for the via
+  // between routing layers i and i+1, charged to the lower/upper layer.
+  double getViaDemandLengthLower(int i) const
+  {
+    return via_demand_length_lower_[i];
+  }
+  double getViaDemandLengthUpper(int i) const
+  {
+    return via_demand_length_upper_[i];
+  }
 
   // For global routing
   const std::vector<std::vector<int>>& getGridlines() const
@@ -85,6 +95,12 @@ class Design
   void readDesignObstructions();
   void computeGrid();
   void setUnitCosts();
+  // Fill via_demand_length_{lower,upper}_ from the tech's default vias.
+  void computeViaDemandLengths();
+  // Effective demand length of a via pad on one layer: its enclosure extent
+  // along the routing direction scaled by the number of tracks it blocks
+  // across.
+  double viaDemandLength(const MetalLayer& layer, int dx, int dy) const;
 
   // debug functions
   void printNets() const;
@@ -93,6 +109,11 @@ class Design
   int lib_dbu_;
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
+  // Indexed by the via's lower routing-layer; lower_ is charged to layer i,
+  // upper_ to layer i+1. Falls back to min_length * via_multiplier when the
+  // tech exposes no default via for the pair.
+  std::vector<double> via_demand_length_lower_;
+  std::vector<double> via_demand_length_upper_;
   std::vector<CUGRNet> nets_;
   std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;

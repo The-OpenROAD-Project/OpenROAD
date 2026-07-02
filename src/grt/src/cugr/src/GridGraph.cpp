@@ -295,6 +295,19 @@ GridGraph::GridGraph(const Design* design,
   }
 }
 
+CapacityT GridGraph::viaDemand(const int layer_index,
+                               const int l,
+                               const int edge_sum) const
+{
+  // Design digested the via geometry into an effective length per layer role;
+  // spread it over the two flanking edges (lower role for the via's lower
+  // layer, upper role for the upper layer).
+  const double via_num = (l == layer_index)
+                             ? design_->getViaDemandLengthLower(layer_index)
+                             : design_->getViaDemandLengthUpper(layer_index);
+  return edge_sum > 0 ? (CapacityT) via_num / edge_sum : (CapacityT) 0;
+}
+
 void GridGraph::computeCongestionInformation()
 {
   if (!congestion_info_dirty_) {
@@ -508,9 +521,8 @@ CostT GridGraph::getViaCost(const int layer_index,
 
     // Prevent division by zero
     if (lower_edge_length > 0 || higher_edge_length > 0) {
-      const CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                               / (lower_edge_length + higher_edge_length)
-                               * constants_.via_multiplier;
+      const CapacityT demand
+          = viaDemand(layer_index, l, lower_edge_length + higher_edge_length);
       const double layer_factor
           = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;
       if (lower_edge_length > 0) {
@@ -870,9 +882,8 @@ void GridGraph::commitVia(const int layer_index,
 
     // Prevent division by zero
     if (lower_edge_length > 0 || higher_edge_length > 0) {
-      const CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                               / (lower_edge_length + higher_edge_length)
-                               * constants_.via_multiplier;
+      const CapacityT demand
+          = viaDemand(layer_index, l, lower_edge_length + higher_edge_length);
       // Use the per-layer NDR factor for `l`, not a net-wide value.
       const double layer_factor
           = std::cmp_less(l, net_costs.size()) ? net_costs[l] : 1.0;

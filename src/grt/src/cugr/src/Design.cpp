@@ -57,6 +57,8 @@ void Design::read()
 
   computeGrid();
 
+  computeViaDemandLengths();
+
   if (verbose_) {
     logger_->report("Design statistics");
     logger_->report("Nets:                {}", nets_.size());
@@ -345,6 +347,91 @@ void Design::setUnitCosts()
     unit_length_short_costs_[layer_index]
         = unit_area_short_cost * layers_[layer_index].getWidth();
   }
+}
+
+void Design::computeViaDemandLengths()
+{
+  const int num_layers = getNumLayers();
+  // Legacy proxy: min-area stub length inflated by the flat via_multiplier.
+  // Used as the fallback when the tech has no default via for a layer pair.
+  via_demand_length_lower_.assign(num_layers, 0.0);
+  via_demand_length_upper_.assign(num_layers, 0.0);
+
+  const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
+      = block_->getDefaultVias();
+  const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
+  for (int i = 0; i + 1 < num_layers; i++) {
+    const MetalLayer& lower = layers_[i];
+    const MetalLayer& upper = layers_[i + 1];
+    odb::dbTechLayer* lower_tl = lower.getTechLayer();
+    odb::dbTechLayer* upper_tl = upper.getTechLayer();
+    odb::dbTechVia* via
+        = default_vias.contains(lower_tl) ? default_vias.at(lower_tl) : nullptr;
+
+    double num_lower = lower.getMinLength() * constants_.via_multiplier;
+    double num_upper = upper.getMinLength() * constants_.via_multiplier;
+    int lo_dx = 0, lo_dy = 0, up_dx = 0, up_dy = 0;
+    if (via != nullptr) {
+      for (odb::dbBox* box : via->getBoxes()) {
+        const odb::Rect r = box->getBox();
+        if (box->getTechLayer() == lower_tl) {
+          lo_dx = r.dx();
+          lo_dy = r.dy();
+        } else if (box->getTechLayer() == upper_tl) {
+          up_dx = r.dx();
+          up_dy = r.dy();
+        }
+      }
+      if (lo_dx > 0 && lo_dy > 0) {
+        num_lower = viaDemandLength(lower, lo_dx, lo_dy);
+      }
+      if (up_dx > 0 && up_dy > 0) {
+        num_upper = viaDemandLength(upper, up_dx, up_dy);
+      }
+    }
+    via_demand_length_lower_[i] = num_lower;
+    via_demand_length_upper_[i] = num_upper;
+
+    if (debug) {
+      // Enclosure sizes are the via pad extents (x*y DBU); demand is the
+      // per-via fraction of one track for a uniform gcell.
+      const int gcell = default_gridline_spacing_;
+      const std::string via_src
+          = via != nullptr ? via->getName() : std::string("min_area-fallback");
+      debugPrint(
+          logger_,
+          utl::GRT,
+          "via_geom",
+          1,
+          "via {}->{} [{}]: encl lower={}x{} upper={}x{} -> len "
+          "lower={:.1f} upper={:.1f} -> demand lower={:.4f} upper={:.4f}",
+          lower.getName(),
+          upper.getName(),
+          via_src,
+          lo_dx,
+          lo_dy,
+          up_dx,
+          up_dy,
+          num_lower,
+          num_upper,
+          gcell > 0 ? num_lower / gcell : 0.0,
+          gcell > 0 ? num_upper / gcell : 0.0);
+    }
+  }
+}
+
+double Design::viaDemandLength(const MetalLayer& layer,
+                               const int dx,
+                               const int dy) const
+{
+  const int pitch = layer.getPitch();
+  const int spacing = layer.getSpacing();
+  // Split the pad into extent along the routing direction and across tracks.
+  const int along = (layer.getDirection() == MetalLayer::H) ? dx : dy;
+  const int perp = (layer.getDirection() == MetalLayer::H) ? dy : dx;
+  const double tracks_blocked
+      = pitch > 0 ? static_cast<double>(perp + 2 * spacing) / pitch : 1.0;
+  return along * tracks_blocked;
 }
 
 void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
