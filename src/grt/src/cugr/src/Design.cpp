@@ -399,12 +399,16 @@ void Design::computeViaDemandLengths()
   const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
       = block_->getDefaultVias();
   const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
+  int fallback_pairs = 0;
   for (int i = 0; i + 1 < num_layers; i++) {
     const MetalLayer& lower = layers_[i];
     const MetalLayer& upper = layers_[i + 1];
     odb::dbTechLayer* lower_tl = lower.getTechLayer();
     odb::dbTechLayer* upper_tl = upper.getTechLayer();
     odb::dbTechVia* via = chooseViaForPair(default_vias, lower_tl, upper_tl);
+    if (via == nullptr) {
+      fallback_pairs++;
+    }
 
     double num_lower = lower.getMinLength() * constants_.via_multiplier;
     double num_upper = upper.getMinLength() * constants_.via_multiplier;
@@ -456,6 +460,13 @@ void Design::computeViaDemandLengths()
           gcell > 0 ? num_upper / gcell : 0.0);
     }
   }
+
+  if (fallback_pairs > 0) {
+    logger_->warn(utl::GRT,
+                  173,
+                  "{} layer pair(s) have no via; using min-area via demand.",
+                  fallback_pairs);
+  }
 }
 
 double Design::viaDemandLength(const MetalLayer& layer,
@@ -463,7 +474,10 @@ double Design::viaDemandLength(const MetalLayer& layer,
                                const int dy) const
 {
   const int pitch = layer.getPitch();
-  const int spacing = layer.getSpacing();
+  // getSpacing() is 0 on techs that give spacing only via a parallel table;
+  // fall back to the table-derived default so the spacing term is not lost.
+  const int spacing
+      = layer.getSpacing() > 0 ? layer.getSpacing() : layer.getDefaultSpacing();
   // Split the pad into extent along the routing direction and across tracks.
   const int along = (layer.getDirection() == MetalLayer::H) ? dx : dy;
   const int perp = (layer.getDirection() == MetalLayer::H) ? dy : dx;

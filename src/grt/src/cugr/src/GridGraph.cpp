@@ -55,12 +55,10 @@ GridGraph::GridGraph(const Design* design,
 
   layer_names_.resize(num_layers_);
   layer_directions_.resize(num_layers_);
-  layer_min_lengths_.resize(num_layers_);
   for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
     const auto& layer = design->getLayer(layer_index);
     layer_names_[layer_index] = layer.getName();
     layer_directions_[layer_index] = layer.getDirection();
-    layer_min_lengths_[layer_index] = layer.getMinLength();
     // First non-zero sheet/via resistance is the res-aware cost reference.
     if (ref_resistance_ <= 0.0 && layer.getResistance() > 0.0) {
       ref_resistance_ = layer.getResistance();

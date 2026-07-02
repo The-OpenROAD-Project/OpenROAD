@@ -363,7 +363,6 @@ class GridGraph
   std::vector<std::vector<int>> grid_centers_;
   std::vector<std::string> layer_names_;
   std::vector<int> layer_directions_;
-  std::vector<int> layer_min_lengths_;
 
   const int lib_dbu_;
   const int m2_pitch_;
