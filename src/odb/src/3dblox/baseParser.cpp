@@ -173,6 +173,35 @@ void BaseParser::resolvePaths(const std::string& path,
   }
 }
 
+std::string BaseParser::extractSinglePathFromList(const YAML::Node& parent,
+                                                  const std::string& key,
+                                                  const std::string& context)
+{
+  if (!parent[key]) {
+    return "";
+  }
+  // The 3DBlox spec requires every external argument to be a YAML list of
+  // strings; a scalar value triggers a yaml-cpp conversion error here.
+  std::vector<std::string> entries;
+  extractValue(parent, key, entries);
+
+  // Honor wildcard expansion before checking cardinality: a single entry may
+  // resolve to multiple files.
+  std::vector<std::string> resolved;
+  for (const std::string& entry : entries) {
+    resolvePaths(entry, resolved);
+  }
+
+  if (resolved.size() > 1) {
+    logError("Multiple " + key + " entries for " + context
+             + " are currently unsupported.");
+  }
+  if (resolved.empty()) {
+    return "";
+  }
+  return resolved[0];
+}
+
 void BaseParser::logError(const std::string& message)
 {
   logger_->error(

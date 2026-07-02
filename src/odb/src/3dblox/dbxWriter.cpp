@@ -50,7 +50,11 @@ void DbxWriter::writeDesign(YAML::Node& design_node, odb::dbChip* chiplet)
 {
   design_node["name"] = chiplet->getName();
   YAML::Node external_node = design_node["external"];
-  external_node["verilog_file"] = std::string(chiplet->getName()) + ".v";
+  // Per the 3DBlox spec, every external argument is a YAML list of strings.
+  YAML::Node verilog_node;
+  verilog_node.SetStyle(YAML::EmitterStyle::Flow);
+  verilog_node.push_back(std::string(chiplet->getName()) + ".v");
+  external_node["verilog_file"] = verilog_node;
 }
 
 void DbxWriter::writeChipletInsts(YAML::Node& instances_node,

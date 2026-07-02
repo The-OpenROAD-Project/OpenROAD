@@ -176,18 +176,14 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
         }
       }
     }
-    if (chiplet_node["external"]["DEF_file"]) {
-      extractValue(
-          chiplet_node["external"], "DEF_file", chiplet.external.def_file);
-      chiplet.external.def_file = resolvePath(chiplet.external.def_file);
-    }
-    if (chiplet_node["external"]["verilog_file"]) {
-      extractValue(chiplet_node["external"],
-                   "verilog_file",
-                   chiplet.external.verilog_file);
-      chiplet.external.verilog_file
-          = resolvePath(chiplet.external.verilog_file);
-    }
+    // DEF_file and verilog_file are single-cardinality: the spec still
+    // requires a YAML list of strings, so parse via the shared helper (which
+    // rejects more than one resolved file).
+    const std::string context = "ChipletDef '" + chiplet.name + "'";
+    chiplet.external.def_file = extractSinglePathFromList(
+        chiplet_node["external"], "DEF_file", context);
+    chiplet.external.verilog_file = extractSinglePathFromList(
+        chiplet_node["external"], "verilog_file", context);
   }
 }
 

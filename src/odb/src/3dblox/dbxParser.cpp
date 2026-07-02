@@ -86,10 +86,10 @@ void DbxParser::parseDesign(DesignDef& design, const YAML::Node& design_node)
 void DbxParser::parseDesignExternal(DesignExternal& external,
                                     const YAML::Node& external_node)
 {
-  if (external_node["verilog_file"]) {
-    extractValue(external_node, "verilog_file", external.verilog_file);
-    external.verilog_file = resolvePath(external.verilog_file);
-  }
+  // The 3DBlox spec requires every external argument to be a YAML list of
+  // strings (with wildcard expansion).
+  external.verilog_file
+      = extractSinglePathFromList(external_node, "verilog_file", "Design");
 }
 
 void DbxParser::parseChipletInsts(std::map<std::string, ChipletInst>& instances,
@@ -123,27 +123,24 @@ void DbxParser::parseChipletInst(ChipletInst& instance,
   extractValue(instance_node, "reference", instance.reference);
 
   if (instance_node["external"]) {
-    parseChipletInstExternal(instance.external, instance_node["external"]);
+    parseChipletInstExternal(
+        instance.external, instance_node["external"], instance.name);
   }
 }
 
 void DbxParser::parseChipletInstExternal(ChipletInstExternal& external,
-                                         const YAML::Node& external_node)
+                                         const YAML::Node& external_node,
+                                         const std::string& instance_name)
 {
-  if (external_node["verilog_file"]) {
-    extractValue(external_node, "verilog_file", external.verilog_file);
-    external.verilog_file = resolvePath(external.verilog_file);
-  }
-
-  if (external_node["sdc_file"]) {
-    extractValue(external_node, "sdc_file", external.sdc_file);
-    external.sdc_file = resolvePath(external.sdc_file);
-  }
-
-  if (external_node["def_file"]) {
-    extractValue(external_node, "def_file", external.def_file);
-    external.def_file = resolvePath(external.def_file);
-  }
+  // The 3DBlox spec requires every external argument to be a YAML list of
+  // strings (with wildcard expansion).
+  const std::string context = "ChipletInst '" + instance_name + "'";
+  external.verilog_file
+      = extractSinglePathFromList(external_node, "verilog_file", context);
+  external.sdc_file
+      = extractSinglePathFromList(external_node, "sdc_file", context);
+  external.def_file
+      = extractSinglePathFromList(external_node, "def_file", context);
 }
 
 void DbxParser::parseStack(std::map<std::string, ChipletInst>& instances,
