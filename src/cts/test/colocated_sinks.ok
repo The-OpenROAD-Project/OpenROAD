@@ -31,7 +31,7 @@
     Sinks per sub-region: 1
     Sub-region size: 0.0000 X 0.0000
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 2.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net clk_regs.
@@ -49,7 +49,7 @@
     Sinks per sub-region: 10
     Sub-region size: 11.4286 X 10.7143
 [INFO CTS-0034]     Segment length (rounded): 6.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 20.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk_a.
@@ -67,7 +67,7 @@
     Sinks per sub-region: 4
     Sub-region size: 7.1429 X 3.5714
 [INFO CTS-0034]     Segment length (rounded): 2.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 8.
 [INFO CTS-0201] 0 blockages from hard placement blockages and placed macros will be used.
 [INFO CTS-0027] Generating H-Tree topology for net gclk_b.
@@ -85,7 +85,7 @@
     Sinks per sub-region: 4
     Sub-region size: 5.7143 X 2.8571
 [INFO CTS-0034]     Segment length (rounded): 1.
-[INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (26) and max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 8.
 [INFO CTS-0018]     Created 3 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
