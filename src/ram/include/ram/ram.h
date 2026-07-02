@@ -24,6 +24,7 @@ class dbMaster;
 namespace sta {
 class dbNetwork;
 class LibertyPort;
+class dbSta;
 }  // namespace sta
 
 namespace utl {
@@ -92,7 +93,8 @@ class RamGen
          ppl::IOPlacer* io_placer,
          dpl::Opendp* opendp,
          grt::GlobalRouter* global_router,
-         drt::TritonRoute* detailed_router);
+         drt::TritonRoute* detailed_router,
+         sta::dbSta* sta);
   ~RamGen() = default;
 
   void generate(int mask_size,
@@ -197,6 +199,8 @@ class RamGen
                         const std::vector<odb::dbNet*>& decoder_output_nets,
                         const std::vector<odb::dbNet*>& select_nets);
 
+  void reportTimingAndPower();
+
   std::unique_ptr<Layout> makeInverterColumn(
       int num_rows,
       int num_row_bits,
@@ -221,6 +225,7 @@ class RamGen
   dpl::Opendp* opendp_{nullptr};
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
+  sta::dbSta* sta_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};

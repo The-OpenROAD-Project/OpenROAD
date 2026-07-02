@@ -28,6 +28,9 @@
 [INFO RAM-0016] Selected buffer cell BUF_X1
 [INFO RAM-0016] Selected aoi22 cell AOI22_X1
 [INFO RAM-0024] Behavioral Verilog written for RAM7x7
+[INFO RAM-0044] RAM worst setup path delay: 0.265428 ns
+[INFO RAM-0045] RAM worst hold path delay: 0.000000 ns
+[INFO RAM-0046] RAM total power (no activity): 0.000079 W
 [INFO PDN-0001] Inserting grid: ram_grid
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (4.5000 um, 4.0000 um) for VDD
 [WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (9.0000 um, 8.0000 um) for VSS
