@@ -1187,7 +1187,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   flow_state_machine_->setLastIterationEffective(changed);
 }
 
-namespace off_guide {
+namespace {
 
 // Snap a segment to the gcells it crosses and grow it by one gcell at each end
 // along its own routing axis (vertical -> up/down, horizontal -> left/right),
@@ -1300,7 +1300,7 @@ void addObjBoxes(frBlock* block,
   }
 }
 
-}  // namespace off_guide
+}  // namespace
 
 // Builds worker boxes for a marker whose routing diverged off-guide (no orig
 // guide covers it). The marker only records net owners and shape rects, so the
@@ -1320,19 +1320,12 @@ std::vector<odb::Rect> FlexDR::getOffGuideWorkerBoxes(frMarker* marker) const
     if (net->getOrigGuides().empty()) {
       continue;  // e.g. a power net whose rail can't be moved
     }
-    off_guide::netObjsOverlapping(
-        net, marker->getLayerNum(), marker->getBBox(), src_objs);
+    netObjsOverlapping(net, marker->getLayerNum(), marker->getBBox(), src_objs);
   }
-
-  std::sort(
-      src_objs.begin(), src_objs.end(), [](frBlockObject* a, frBlockObject* b) {
-        return a->getId() < b->getId();
-      });
-  src_objs.erase(std::unique(src_objs.begin(), src_objs.end()), src_objs.end());
 
   std::vector<odb::Rect> boxes;
   for (auto* obj : src_objs) {
-    off_guide::addObjBoxes(block, obj, boxes, 0);
+    addObjBoxes(block, obj, boxes, 0);
   }
   return boxes;
 }
