@@ -53,6 +53,7 @@ class ThreeDBlox
   void createRegion(const ChipletRegion& region, dbChip* chip);
   dbChip* createDesignTopChiplet(const DesignDef& design);
   void createChipInst(const ChipletInst& chip_inst);
+  void readDefForChip(dbChip* chip, const std::string& def_file);
   void createConnection(const Connection& connection);
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
   std::pair<dbInst*, dbBTerm*> createBump(const BumpMapEntry& entry,
@@ -69,5 +70,13 @@ class ThreeDBlox
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
   std::unordered_set<std::string> read_files_;
+  // Master chips for which a chiplet instance has already supplied a DEF file.
+  // Used to reject two instances of the same chiplet that each carry a DEF,
+  // since they would write design data onto the same shared master block.
+  std::unordered_set<odb::dbChip*> insts_with_def_;
+  // Master chips whose design DEF has already been read. The DEF may be given
+  // by the chiplet definition (3dbv) and/or a chiplet instance (3dbx); it is
+  // read only once per chip so shared DEF data is not duplicated.
+  std::unordered_set<odb::dbChip*> chips_with_def_;
 };
 }  // namespace odb
