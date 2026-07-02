@@ -177,6 +177,7 @@ class ClusteringEngine
   void updateSubTree(Cluster* parent);
   bool isLargeFlatCluster(const Cluster* cluster) const;
   void breakLargeFlatCluster(Cluster* parent);
+  void splitHugeMacroFromCluster(Cluster* cluster, odb::dbInst* huge_macro);
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
