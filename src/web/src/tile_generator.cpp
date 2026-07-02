@@ -2428,7 +2428,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             if (focus_net_ids && !focus_net_ids->empty()
-                && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
+                && !focus_net_ids->contains(net->getId())) {
               continue;
             }
             const odb::Rect& box = std::get<0>(shape);
@@ -2451,7 +2451,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             if (focus_net_ids && !focus_net_ids->empty()
-                && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
+                && !focus_net_ids->contains(snet->getId())) {
               continue;
             }
             const odb::Rect box = std::get<0>(shape)->getBox();
@@ -2479,8 +2479,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               continue;
             }
             if (focus_net_ids && !focus_net_ids->empty()
-                && focus_net_ids->find(via_net->getId())
-                       == focus_net_ids->end()) {
+                && !focus_net_ids->contains(via_net->getId())) {
               continue;
             }
             odb::dbSBox* sbox = std::get<0>(shape);
