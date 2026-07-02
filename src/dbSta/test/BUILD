@@ -81,6 +81,7 @@ ALL_TESTS = [
     "write_verilog8",
     "write_verilog9",
     "write_verilog9_hier",
+    "write_verilog10",
 ]
 
 filegroup(
@@ -268,6 +269,9 @@ filegroup(
             ],
             "write_verilog1": [
                 "reg1.def",
+            ],
+            "write_verilog10": [
+                "write_verilog10.def",
             ],
             "write_verilog2": [
                 "reg4.def",
