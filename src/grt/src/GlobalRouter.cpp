@@ -441,10 +441,27 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
+  reportIncrementalCongestion();
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
   finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::reportIncrementalCongestion()
+{
+  // CUGR incremental reroutes only dirty nets and does not recover congestion
+  // it induces on neighboring nets, so surface any residual overflow once.
+  if (!use_cugr_ || cugr_ == nullptr) {
+    return;
+  }
+  if (cugr_->totalOverflow() > 0) {
+    is_congested_ = true;
+    logger_->warn(GRT,
+                  128,
+                  "Incremental global routing finished with congestion. Check "
+                  "the congestion regions in the DRC Viewer.");
+  }
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -6341,6 +6358,7 @@ std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
 
 IncrementalGRoute::~IncrementalGRoute()
 {
+  groute_->reportIncrementalCongestion();
   db_cbk_.removeOwner();
 }
 

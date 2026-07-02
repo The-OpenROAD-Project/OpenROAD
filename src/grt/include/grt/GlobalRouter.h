@@ -201,6 +201,8 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void startIncremental();
   void endIncremental(bool save_guides = false);
+  // Warn once, at the end of an incremental session, if CUGR left congestion.
+  void reportIncrementalCongestion();
   void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
