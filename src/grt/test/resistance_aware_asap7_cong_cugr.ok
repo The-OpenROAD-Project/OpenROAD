@@ -75,26 +75,26 @@ Stage 2: Resistance-aware re-route of critical nets.
 Stage 3: Pattern routing with detours.
 Routing statistics
 Wire length:           34080
-Total via count:       2488
+Total via count:       2544
 Total congestion:      0
-Min resource:          0.07543831038893245
-Bottleneck:            (4, 88, 152)
+Min resource:          0.16315760863454631
+Bottleneck:            (4, 88, 153)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 M1                   0             0            0.00%             0 /  0 /  0
-M2              178347           538            0.30%             0 /  0 /  0
-M3              193349          1054            0.55%             0 /  0 /  0
-M4              144977           333            0.23%             0 /  0 /  0
-M5              144977           671            0.46%             0 /  0 /  0
-M6              108785           119            0.11%             0 /  0 /  0
+M2              178347           524            0.29%             0 /  0 /  0
+M3              193349          1123            0.58%             0 /  0 /  0
+M4              144977           299            0.21%             0 /  0 /  0
+M5              144977           598            0.41%             0 /  0 /  0
+M6              108785           118            0.11%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           770435          2715            0.35%             0 /  0 /  0
+Total           770435          2662            0.35%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1827 um
+[INFO GRT-0018] Total wirelength: 1829 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -121.4 ps  TNS: -2848.8 ps
+resistance-aware               WNS: -121.4 ps  TNS: -2845.0 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.
