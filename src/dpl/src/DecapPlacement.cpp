@@ -36,7 +36,7 @@ void Opendp::addDecapMaster(dbMaster* decap_master, double decap_cap)
   decap_masters_.emplace_back(new DecapCell(decap_master, decap_cap));
 }
 
-// Return list of decap indices to fill gap
+// Return list of decap indices used to fill a gap
 std::vector<int> Opendp::findDecapCellIndices(const DbuX& gap_width,
                                               const double& current,
                                               const double& target)
