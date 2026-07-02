@@ -117,6 +117,13 @@ OpenRoad* OpenRoad::app_ = nullptr;
 OpenRoad::OpenRoad()
 {
   db_ = dbDatabase::create();
+
+  // Default the thread count to the number of available CPUs (i.e. behave
+  // like "-threads max" by default) so users who do not pass "-threads N"
+  // are not silently running single-threaded. An explicit "-threads N" (or
+  // a set_thread_count call) still overrides this default. See issue #10350.
+  unsigned int hw_threads = std::thread::hardware_concurrency();
+  threads_ = (hw_threads == 0) ? 1 : static_cast<int>(hw_threads);
 }
 
 OpenRoad::~OpenRoad()
