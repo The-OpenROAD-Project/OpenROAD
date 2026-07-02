@@ -1,11 +1,11 @@
 or_integration_tests(
   "drt"
   TESTS
-    aes_nangate45_reroute
     down_access_term
     drc_test
     ispd18_sample
     ispd18_sample_incr
+    ispd18_sample_reroute
     ndr_vias1
     ndr_vias2
     ndr_vias3
@@ -21,7 +21,6 @@ or_integration_tests(
 )
 
 set_tests_properties(
-  drt.aes_nangate45_reroute.tcl
   drt.ndr_vias1.tcl
   drt.ndr_vias2.tcl
   PROPERTIES TIMEOUT 900
