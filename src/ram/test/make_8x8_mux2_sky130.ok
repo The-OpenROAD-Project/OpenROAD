@@ -60,7 +60,7 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 351.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 217.
+[INFO DRT-0036] met1 guide region query size = 218.
 [INFO DRT-0036] via guide region query size = 0.
 [INFO DRT-0036] met2 guide region query size = 21.
 [INFO DRT-0036] via2 guide region query size = 0.
@@ -70,10 +70,6 @@
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
-Differences found at line 180.
-  PIN VSS
-  PIN VDD
-Differences found at line 902.
-      + ROUTED met1 ( 7751 459 ) ( 8241 * )
-      + ROUTED met1 ( 8252 119 ) ( 8257 * )
+No differences found.
+No differences found.
 No differences found.
