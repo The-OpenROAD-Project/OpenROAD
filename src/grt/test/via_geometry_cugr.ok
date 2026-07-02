@@ -1,0 +1,17 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
+[DEBUG GRT-via_geom] via M1->M2 [VIA12]: encl lower=18x22 upper=28x18 -> len lower=33.0 upper=38.8 -> demand lower=0.0579 upper=0.0680
+[DEBUG GRT-via_geom] via M2->M3 [VIA23]: encl lower=28x18 upper=18x28 -> len lower=38.8 upper=42.0 -> demand lower=0.0680 upper=0.0737
+[DEBUG GRT-via_geom] via M3->M4 [VIA34]: encl lower=18x34 upper=40x24 -> len lower=51.0 upper=60.0 -> demand lower=0.0895 upper=0.1053
+[DEBUG GRT-via_geom] via M4->M5 [VIA45]: encl lower=46x24 upper=24x46 -> len lower=69.0 upper=69.0 -> demand lower=0.1211 upper=0.1211
+[DEBUG GRT-via_geom] via M5->M6 [VIA56]: encl lower=24x54 upper=46x32 -> len lower=81.0 upper=69.0 -> demand lower=0.1421 upper=0.1211
+[DEBUG GRT-via_geom] via M6->M7 [VIA67]: encl lower=54x32 upper=32x54 -> len lower=81.0 upper=81.0 -> demand lower=0.1421 upper=0.1421

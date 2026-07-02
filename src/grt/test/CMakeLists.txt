@@ -115,6 +115,7 @@ or_integration_tests(
     tracks3
     unplaced_inst
     upper_layer_net
+    via_geometry_cugr
     write_segments1
     write_segments2
   PASSFAIL_TESTS
