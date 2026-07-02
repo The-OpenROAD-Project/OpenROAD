@@ -67,7 +67,7 @@ void FlexPA::removeFromInstsSet(frInst* inst)
 
 void FlexPA::addToInstsSet(frInst* inst)
 {
-  if (insts_set_.find(inst) != insts_set_.end()) {
+  if (insts_set_.contains(inst)) {
     return;
   }
   if (!unique_insts_.hasUnique(inst)) {
@@ -455,9 +455,19 @@ int FlexPA::getEdgeCost(
                                 prev_acc_point_idx,
                                 curr_acc_point_idx,
                                 max_access_point_size);
-  if (vio_edges[edge_idx] != -1) {
-    has_vio = (vio_edges[edge_idx] == 1);
-  } else {
+
+  // vio_edges caches wether a pair of aps have violations betweem themselves.
+  // -1: No cache exists
+  // 0: Already cached as no violation
+  // 1: Already caches as having a violation
+
+  // Edge cached as having a violation
+  if (vio_edges[edge_idx] == 1) {
+    return violation_cost;
+  }
+
+  // Violation status of the edge is not cached, has to be calculated
+  if (vio_edges[edge_idx] == -1) {
     odb::dbTransform xform = unique_inst->getNoRotationTransform();
     // check DRC
     std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
@@ -496,64 +506,53 @@ int FlexPA::getEdgeCost(
 
     has_vio = !genPatternsGC({target_obj}, objs, Edge);
     vio_edges[edge_idx] = has_vio;
+    if (has_vio) {
+      return violation_cost;
+    }
 
-    // look back for GN14
-    if (!has_vio) {
-      // check one more back
-      if (prev_node->hasPrevNode()) {
-        auto prev_prev_node = prev_node->getPrevNode();
-        auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
-            = prev_prev_node->getIdx();
-        if (!prev_prev_node->isSource()) {
-          const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
-          const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
-          const frAccessPoint* ap_3
-              = pa_3->getAccessPoint(prev_prev_acc_point_idx);
-          std::unique_ptr<frVia> via3;
-          if (ap_3->hasAccess(frDirEnum::U)) {
-            odb::Point pt3(ap_3->getPoint());
-            xform.apply(pt3);
-            via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
-            if (inst_term_3->hasNet()) {
-              objs.emplace_back(via3.get(), inst_term_3->getNet());
-            } else {
-              objs.emplace_back(via3.get(), inst_term_3);
-            }
+    // check one more back
+    if (prev_node->hasPrevNode()) {
+      auto prev_prev_node = prev_node->getPrevNode();
+      auto [prev_prev_pin_idx, prev_prev_acc_point_idx]
+          = prev_prev_node->getIdx();
+      if (!prev_prev_node->isSource()) {
+        const auto& [pin_3, inst_term_3] = pins[prev_prev_pin_idx];
+        const auto pa_3 = pin_3->getPinAccess(pin_access_idx);
+        const frAccessPoint* ap_3
+            = pa_3->getAccessPoint(prev_prev_acc_point_idx);
+        std::unique_ptr<frVia> via3;
+        if (ap_3->hasAccess(frDirEnum::U)) {
+          odb::Point pt3(ap_3->getPoint());
+          xform.apply(pt3);
+          via3 = std::make_unique<frVia>(ap_3->getViaDef(), pt3);
+          if (inst_term_3->hasNet()) {
+            objs.emplace_back(via3.get(), inst_term_3->getNet());
+          } else {
+            objs.emplace_back(via3.get(), inst_term_3);
           }
+        }
 
-          has_vio = !genPatternsGC({target_obj}, objs, Edge);
+        if (!genPatternsGC({target_obj}, objs, Edge)) {
+          return violation_cost;
         }
       }
     }
   }
 
-  if (!has_vio) {
-    if ((prev_pin_idx == 0
-         && used_access_points.find(
-                std::make_pair(prev_pin_idx, prev_acc_point_idx))
-                != used_access_points.end())
-        || (curr_pin_idx == (int) pins.size() - 1
-            && used_access_points.find(
-                   std::make_pair(curr_pin_idx, curr_acc_point_idx))
-                   != used_access_points.end())) {
-      edge_cost = 100;
-    } else if (viol_access_points.find(
-                   std::make_pair(prev_pin_idx, prev_acc_point_idx))
-                   != viol_access_points.end()
-               || viol_access_points.find(
-                      std::make_pair(curr_pin_idx, curr_acc_point_idx))
-                      != viol_access_points.end()) {
-      edge_cost = 1000;
-    } else {
-      const int prev_node_cost = prev_node->getNodeCost();
-      const int curr_node_cost = curr_node->getNodeCost();
-      edge_cost = (prev_node_cost + curr_node_cost) / 2;
-    }
-  } else {
-    edge_cost = 1000 /*violation cost*/;
+  if ((prev_pin_idx == 0 && used_access_points.contains(prev_node->getIdx()))
+      || (curr_pin_idx == (int) pins.size() - 1
+          && used_access_points.contains(curr_node->getIdx()))) {
+    return repeated_ap_cost;
   }
 
-  return edge_cost;
+  if (viol_access_points.contains(prev_node->getIdx())
+      || viol_access_points.contains(curr_node->getIdx())) {
+    return violation_cost;
+  }
+
+  const int prev_node_cost = prev_node->getNodeCost();
+  const int curr_node_cost = curr_node->getNodeCost();
+  return prev_node_cost + curr_node_cost;
 }
 
 std::vector<int> FlexPA::extractAccessPatternFromNodes(
@@ -600,7 +599,7 @@ bool FlexPA::genPatternsCommit(
   std::vector<int> access_pattern = extractAccessPatternFromNodes(
       unique_inst, nodes, pins, used_access_points);
   // not a new access pattern
-  if (inst_access_patterns.find(access_pattern) != inst_access_patterns.end()) {
+  if (inst_access_patterns.contains(access_pattern)) {
     return false;
   }
 
@@ -651,7 +650,7 @@ bool FlexPA::genPatternsCommit(
     }
     uint64_t n_no_ap_pins = 0;
     for (auto& pin : inst_term->getTerm()->getPins()) {
-      if (pin_to_access_point.find(pin.get()) == pin_to_access_point.end()) {
+      if (!pin_to_access_point.contains(pin.get())) {
         n_no_ap_pins++;
         pin_access_pattern->addAccessPoint(nullptr);
       } else {
@@ -694,7 +693,7 @@ bool FlexPA::genPatternsCommit(
       if (inst_term->hasNet()) {
         owner = inst_term->getNet();
       }
-      if (owners.find(owner) != owners.end()) {
+      if (owners.contains(owner)) {
         viol_access_points.insert({pin_idx, acc_pattern_idx});  // idx ;
       }
     }

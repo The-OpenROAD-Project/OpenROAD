@@ -74,6 +74,9 @@ struct frInstLocationComp
 
 using frInstLocationSet = std::set<frInst*, frInstLocationComp>;
 
+inline constexpr int repeated_ap_cost = 1000;
+inline constexpr int violation_cost = 1000000;
+
 class FlexPinAccessPattern;
 class FlexDPNode;
 class AbstractPAGraphics;
