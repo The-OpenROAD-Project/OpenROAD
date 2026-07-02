@@ -90,9 +90,12 @@ class CUGR
   void init(int min_routing_layer,
             int max_routing_layer,
             const odb::PtrSet<odb::dbNet>& clock_nets);
-  void route();
+  void route(bool incremental = false);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
+  // Route for a single net, so incremental updates patch only the dirty nets
+  // instead of rebuilding the whole map.
+  GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
   void getITermsAccessPoints(
       odb::dbNet* net,
@@ -137,16 +140,16 @@ class CUGR
  private:
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets();
+  void updateCriticalNets(const std::vector<int>& net_indices);
   // Re-extract parasitics and refresh every net's slack from the routing.
-  void updateNetSlacks();
+  void updateNetSlacks(const std::vector<int>& net_indices);
   // Slack value at the critical_nets_percentage_ percentile of the nets.
   float criticalSlackThreshold() const;
   // Push nets with slack above the threshold to the back of the default
   // ordering by maxing their slack; res-aware nets are exempt.
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
-  void setInitialNetSlacks();
+  void setInitialNetSlacks(const std::vector<int>& net_indices);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -218,6 +221,8 @@ class CUGR
                       bool res_aware_order) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
+  // Append net's routing tree to route as GRoute segments.
+  void buildNetRoute(const GRNet* net, GRoute& route) const;
   void printStatistics() const;
 
   /**
@@ -263,6 +268,9 @@ class CUGR
   int congestion_iterations_ = 5;
   bool verbose_ = true;
 
+  // Suppresses the global parasitics re-estimate during incremental routing.
+  bool incremental_routing_ = false;
+
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
   float worst_slack_ = 1.0f;
@@ -276,7 +284,7 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  void markResAwareNets();
+  void markResAwareNets(const std::vector<int>& net_indices);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.

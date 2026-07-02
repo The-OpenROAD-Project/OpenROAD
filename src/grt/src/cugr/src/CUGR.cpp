@@ -114,16 +114,29 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-void CUGR::updateCriticalNets()
+void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
 {
-  updateNetSlacks();
+  updateNetSlacks(net_indices);
   // Mark res-aware nets on the real slack, before demotion clobbers it.
-  markResAwareNets();
-  demoteNonCriticalNets(criticalSlackThreshold());
+  markResAwareNets(net_indices);
+  // Demotion uses a global slack percentile; skip it during incremental.
+  if (!incremental_routing_) {
+    demoteNonCriticalNets(criticalSlackThreshold());
+  }
 }
 
-void CUGR::updateNetSlacks()
+void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
 {
+  if (incremental_routing_) {
+    // Only refresh the rerouted nets; skip the global parasitics re-estimate.
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (net != nullptr) {
+        net->setSlack(getNetSlack(net->getDbNet()));
+      }
+    }
+    return;
+  }
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
     estimator->estimateAllGlobalRouteParasitics();
   }
@@ -173,10 +186,20 @@ float CUGR::getNetSlack(odb::dbNet* net)
   return sta_->slack(net, sta::MinMax::max());
 }
 
-void CUGR::setInitialNetSlacks()
+void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
 {
   // Stage 1 routes neutrally; this only computes placement slacks. Res-aware
   // marking happens in patternRouteResAware() once real 3D trees exist.
+  // During incremental routing only the rerouted nets need refreshing.
+  if (incremental_routing_) {
+    for (const int net_index : net_indices) {
+      GRNet* net = gr_nets_[net_index].get();
+      if (net != nullptr) {
+        net->setSlack(getNetSlack(net->getDbNet()));
+      }
+    }
+    return;
+  }
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -186,7 +209,7 @@ void CUGR::setInitialNetSlacks()
   }
 }
 
-void CUGR::markResAwareNets()
+void CUGR::markResAwareNets(const std::vector<int>& net_indices)
 {
   if (!resistance_aware_) {
     return;
@@ -206,10 +229,7 @@ void CUGR::markResAwareNets()
   // eligible candidates (skip short/single-pin/positive-slack, like FastRoute).
   std::vector<int> candidates;
   candidates.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    if (net == nullptr) {
-      continue;
-    }
+  auto collect = [&](GRNet* net) {
     const auto& tree = net->getRoutingTree();
     net->setResistance(
         grid_graph_->getNetResistance(tree, net->getNdrWidths()));
@@ -227,7 +247,7 @@ void CUGR::markResAwareNets()
     const bool is_short
         = net->getNetLength() <= constants_.resistance_min_net_length;
     if (net->getNumPins() < 2 || is_short || is_positive_slack) {
-      continue;
+      return;
     }
 
     worst_resistance_ = std::max(worst_resistance_, net->getResistance());
@@ -243,6 +263,21 @@ void CUGR::markResAwareNets()
       // Skip already-marked nets so the res-aware set accumulates.
       candidates.push_back(net->getIndex());
     }
+  };
+
+  // Incremental routing considers only the rerouted nets.
+  if (incremental_routing_) {
+    for (const int net_index : net_indices) {
+      if (gr_nets_[net_index] != nullptr) {
+        collect(gr_nets_[net_index].get());
+      }
+    }
+  } else {
+    for (const auto& net : gr_nets_) {
+      if (net != nullptr) {
+        collect(net.get());
+      }
+    }
   }
 
   // Pass 2: rank eligible candidates by the multi-factor res-aware score
@@ -255,8 +290,11 @@ void CUGR::markResAwareNets()
   std::ranges::stable_sort(scored, [](const auto& lhs, const auto& rhs) {
     return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
   });
-  const int count = static_cast<int>(
-      std::ceil(scored.size() * res_aware_percentage_ / 100));
+  // Incremental marks all candidates (like FastRoute's percentage == 1).
+  const int count = incremental_routing_
+                        ? static_cast<int>(scored.size())
+                        : static_cast<int>(std::ceil(
+                              scored.size() * res_aware_percentage_ / 100));
   for (int i = 0; i < count && std::cmp_less(i, scored.size()); i++) {
     gr_nets_[scored[i].first]->setResAware(true);
   }
@@ -399,7 +437,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    setInitialNetSlacks();
+    setInitialNetSlacks(net_indices);
   }
 
   // Stage 1 is neutral: order by the default slack/bbox key, no res-aware.
@@ -429,7 +467,10 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
                               gr_nets_[net_index]->getNdrCosts());
   }
 
-  updateCongestedNets(net_indices);
+  // The congested set feeds the next global stage; incremental discards it.
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
 void CUGR::patternRouteResAware(std::vector<int>& net_indices)
@@ -443,7 +484,7 @@ void CUGR::patternRouteResAware(std::vector<int>& net_indices)
 
   // Stage 1 routed neutrally, so real 3D trees now exist; mark the res-aware
   // set from their actual per-net resistance.
-  updateCriticalNets();
+  updateCriticalNets(net_indices);
 
   std::vector<int> res_aware_nets;
   for (const auto& net : gr_nets_) {
@@ -506,7 +547,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    updateCriticalNets();
+    updateCriticalNets(net_indices);
   }
 
   // (2d) direction -> x -> y -> has overflow?
@@ -543,7 +584,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   if (critical_nets_percentage_ != 0) {
-    updateCriticalNets();
+    updateCriticalNets(net_indices);
   }
 
   for (const int net_index : net_indices) {
@@ -596,10 +637,13 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     grid.step();
   }
 
-  updateCongestedNets(net_indices);
+  // The congested set feeds the next global stage; incremental discards it.
+  if (!incremental_routing_) {
+    updateCongestedNets(net_indices);
+  }
 }
 
-void CUGR::route()
+void CUGR::route(bool incremental)
 {
   if (resistance_aware_ && critical_nets_percentage_ == 0) {
     logger_->warn(GRT,
@@ -620,6 +664,18 @@ void CUGR::route()
       }
       net_indices.push_back(net->getIndex());
     }
+  }
+
+  if (incremental) {
+    // Reroute only the dirty nets: pattern + maze, skipping the global stages.
+    incremental_routing_ = true;
+    const std::vector<int> dirty_nets = net_indices;
+    patternRoute(net_indices);
+    net_indices = dirty_nets;
+    mazeRoute(net_indices);
+    incremental_routing_ = false;
+    printStatistics();
+    return;
   }
 
   patternRoute(net_indices);
@@ -873,6 +929,52 @@ void CUGR::write(const std::string& guide_file)
   fout.close();
 }
 
+void CUGR::buildNetRoute(const GRNet* net, GRoute& route) const
+{
+  const auto& routing_tree = net->getRoutingTree();
+  if (!routing_tree) {
+    return;
+  }
+
+  const int half_gcell = design_->getGridlineSize() / 2;
+  GRTreeNode::preorder(
+      routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+        for (const auto& child : node->getChildren()) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            auto [min_x, max_x] = std::minmax({node->x(), child->x()});
+            auto [min_y, max_y] = std::minmax({node->y(), child->y()});
+
+            // convert to dbu
+            min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
+            min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
+            max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
+            max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
+
+            route.emplace_back(min_x,
+                               min_y,
+                               node->getLayerIdx() + 1,
+                               max_x,
+                               max_y,
+                               child->getLayerIdx() + 1,
+                               false);
+            route.back().setIs3DRoute(true);
+          } else {
+            const auto [bottom_layer, top_layer]
+                = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+            for (int layer_idx = bottom_layer; layer_idx < top_layer;
+                 layer_idx++) {
+              const int x = grid_graph_->getGridline(0, node->x()) + half_gcell;
+              const int y = grid_graph_->getGridline(1, node->y()) + half_gcell;
+
+              route.emplace_back(
+                  x, y, layer_idx + 1, x, y, layer_idx + 2, true);
+              route.back().setIs3DRoute(true);
+            }
+          }
+        }
+      });
+}
+
 NetRouteMap CUGR::getRoutes()
 {
   NetRouteMap routes;
@@ -883,56 +985,23 @@ NetRouteMap CUGR::getRoutes()
     if (net->getNumPins() < 2 || net->isLocal()) {
       continue;
     }
-    odb::dbNet* db_net = net->getDbNet();
-    GRoute& route = routes[db_net];
-
-    const int half_gcell = design_->getGridlineSize() / 2;
-
-    auto& routing_tree = net->getRoutingTree();
-    if (!routing_tree) {
-      continue;
-    }
-    GRTreeNode::preorder(
-        routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-          for (const auto& child : node->getChildren()) {
-            if (node->getLayerIdx() == child->getLayerIdx()) {
-              auto [min_x, max_x] = std::minmax({node->x(), child->x()});
-              auto [min_y, max_y] = std::minmax({node->y(), child->y()});
-
-              // convert to dbu
-              min_x = grid_graph_->getGridline(0, min_x) + half_gcell;
-              min_y = grid_graph_->getGridline(1, min_y) + half_gcell;
-              max_x = grid_graph_->getGridline(0, max_x) + half_gcell;
-              max_y = grid_graph_->getGridline(1, max_y) + half_gcell;
-
-              route.emplace_back(min_x,
-                                 min_y,
-                                 node->getLayerIdx() + 1,
-                                 max_x,
-                                 max_y,
-                                 child->getLayerIdx() + 1,
-                                 false);
-              route.back().setIs3DRoute(true);
-            } else {
-              const auto [bottom_layer, top_layer]
-                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
-              for (int layer_idx = bottom_layer; layer_idx < top_layer;
-                   layer_idx++) {
-                const int x
-                    = grid_graph_->getGridline(0, node->x()) + half_gcell;
-                const int y
-                    = grid_graph_->getGridline(1, node->y()) + half_gcell;
-
-                route.emplace_back(
-                    x, y, layer_idx + 1, x, y, layer_idx + 2, true);
-                route.back().setIs3DRoute(true);
-              }
-            }
-          }
-        });
+    buildNetRoute(net.get(), routes[net->getDbNet()]);
   }
 
   return routes;
+}
+
+GRoute CUGR::getNetRoute(odb::dbNet* db_net)
+{
+  GRoute route;
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    const GRNet* net = it->second;
+    if (net != nullptr && net->getNumPins() >= 2 && !net->isLocal()) {
+      buildNetRoute(net, route);
+    }
+  }
+  return route;
 }
 
 void CUGR::sortNetIndices(std::vector<int>& net_indices,
@@ -1558,24 +1627,7 @@ void CUGR::routeIncremental()
     return;
   }
 
-  std::vector<int> initial_nets = nets_to_route_;
-  std::ranges::sort(initial_nets);
-  auto [first, last] = std::ranges::unique(initial_nets);
-  initial_nets.erase(first, last);
-
-  route();
-
-  std::vector<int> overflow_nets;
-  updateCongestedNets(overflow_nets);
-  std::vector<int> secondary_nets;
-  std::ranges::set_difference(
-      overflow_nets, initial_nets, std::back_inserter(secondary_nets));
-  if (!secondary_nets.empty()) {
-    for (int idx : secondary_nets) {
-      addDirtyNet(gr_nets_[idx]->getDbNet());
-    }
-    route();
-  }
+  route(/*incremental=*/true);
 }
 
 }  // namespace grt

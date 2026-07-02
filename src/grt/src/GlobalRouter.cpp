@@ -441,10 +441,27 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
+  reportIncrementalCongestion();
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
   finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::reportIncrementalCongestion()
+{
+  // CUGR incremental reroutes only dirty nets and does not recover congestion
+  // it induces on neighboring nets, so surface any residual overflow once.
+  if (!use_cugr_ || cugr_ == nullptr) {
+    return;
+  }
+  if (cugr_->totalOverflow() > 0) {
+    is_congested_ = true;
+    logger_->warn(GRT,
+                  128,
+                  "Incremental global routing finished with congestion. Check "
+                  "the congestion regions in the DRC Viewer.");
+  }
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -1523,30 +1540,35 @@ void GlobalRouter::computePinPositionOnGrid(
   pin.setConnectionLayer(pin_position.layer());
 }
 
+void GlobalRouter::updatePinAccessPoints(Net* net, odb::dbNet* db_net)
+{
+  odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
+  odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
+  cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
+  cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
+
+  auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
+    if (auto it = ap_map.find(term); it != ap_map.end()) {
+      const auto& ap = it->second;
+      pin.setConnectionLayer(ap.z());
+      pin.setOnGridPosition(
+          grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
+    }
+  };
+
+  for (Pin& pin : net->getPins()) {
+    if (pin.isPort()) {
+      updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
+    } else {
+      updatePinPos(pin, pin.getITerm(), iterm_to_aps);
+    }
+  }
+}
+
 void GlobalRouter::updatePinAccessPoints()
 {
   for (const auto& [db_net, net] : db_net_map_) {
-    odb::PtrMap<odb::dbITerm, odb::Point3D> iterm_to_aps;
-    odb::PtrMap<odb::dbBTerm, odb::Point3D> bterm_to_aps;
-    cugr_->getITermsAccessPoints(db_net, iterm_to_aps);
-    cugr_->getBTermsAccessPoints(db_net, bterm_to_aps);
-
-    auto updatePinPos = [&](Pin& pin, auto* term, const auto& ap_map) {
-      if (auto it = ap_map.find(term); it != ap_map.end()) {
-        const auto& ap = it->second;
-        pin.setConnectionLayer(ap.z());
-        pin.setOnGridPosition(
-            grid_->getPositionOnGrid(odb::Point(ap.x(), ap.y())));
-      }
-    };
-
-    for (Pin& pin : net->getPins()) {
-      if (pin.isPort()) {
-        updatePinPos(pin, pin.getBTerm(), bterm_to_aps);
-      } else {
-        updatePinPos(pin, pin.getITerm(), iterm_to_aps);
-      }
-    }
+    updatePinAccessPoints(net, db_net);
   }
 }
 
@@ -4785,6 +4807,13 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
 
   if (use_cugr_) {
     cugr_->removeNet(db_net);
+    auto it = db_net_map_.find(db_net);
+    if (it != db_net_map_.end()) {
+      delete it->second;
+      db_net_map_.erase(it);
+    }
+    dirty_nets_.erase(db_net);
+    routes_.erase(db_net);
   } else {
     auto it = db_net_map_.find(db_net);
     if (it == db_net_map_.end() || it->second == nullptr) {
@@ -6311,6 +6340,7 @@ std::vector<Net*> IncrementalGRoute::updateRoutes(bool save_guides)
 
 IncrementalGRoute::~IncrementalGRoute()
 {
+  groute_->reportIncrementalCongestion();
   db_cbk_.removeOwner();
 }
 
@@ -6344,12 +6374,29 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 
   if (use_cugr_) {
     cugr_->setVerbose(false);
-    for (odb::dbNet* net : dirty_nets_) {
-      cugr_->updateNet(net);
+    const std::vector<odb::dbNet*> dirty_nets(dirty_nets_.begin(),
+                                              dirty_nets_.end());
+    for (odb::dbNet* db_net : dirty_nets) {
+      // Rebuild the pin set from the netlist; positions are synced below.
+      Net* net = getNet(db_net);
+      updateNetPins(net);
+      net->setDirtyNet(false);
+      net->clearLastPinPositions();
+      cugr_->updateNet(db_net);
     }
     dirty_nets_.clear();
     cugr_->routeIncremental();
-    routes_ = cugr_->getRoutes();
+    // Patch only the rerouted nets into routes_ instead of rebuilding the whole
+    // map, and sync pin access points for the same nets (full route does all).
+    for (odb::dbNet* db_net : dirty_nets) {
+      GRoute route = cugr_->getNetRoute(db_net);
+      if (route.empty()) {
+        routes_.erase(db_net);
+      } else {
+        routes_[db_net] = std::move(route);
+      }
+      updatePinAccessPoints(getNet(db_net), db_net);
+    }
     return {};
   }
 
