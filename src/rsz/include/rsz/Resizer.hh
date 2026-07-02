@@ -61,7 +61,12 @@ namespace rsz {
 enum class BufferUse
 {
   DATA,
-  CLOCK
+  CLOCK,
+  // Dedicated delay cells and clock-delay buffers (e.g.
+  // sky130_fd_sc_hd__clkdlybuf4s25_1, *dlygate*, *dlymetal*). These are not
+  // intended for general data buffering, but are legitimately used elsewhere
+  // (e.g. hold-violation delay insertion).
+  DELAY
 };
 
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
@@ -467,6 +472,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     return clock_buffer_footprint_;
   }
   BufferUse getBufferUse(sta::LibertyCell* buffer);
+
+  // Returns true for dedicated delay cells and clock-delay buffers that
+  // should not be used for general data buffering (issue #10622).
+  bool isDelayCell(sta::LibertyCell* buffer) const;
 
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
