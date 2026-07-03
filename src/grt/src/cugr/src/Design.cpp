@@ -1,5 +1,6 @@
 #include "Design.h"
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <set>
@@ -481,8 +482,11 @@ double Design::viaDemandLength(const MetalLayer& layer,
   // Split the pad into extent along the routing direction and across tracks.
   const int along = (layer.getDirection() == MetalLayer::H) ? dx : dy;
   const int perp = (layer.getDirection() == MetalLayer::H) ? dy : dx;
+  // A via blocks whole tracks perpendicular to the routing direction; round the
+  // keep-out (via metal + spacing on both sides) up to an integer track count.
   const double tracks_blocked
-      = pitch > 0 ? static_cast<double>(perp + 2 * spacing) / pitch : 1.0;
+      = pitch > 0 ? std::ceil(static_cast<double>(perp + 2 * spacing) / pitch)
+                  : 1.0;
   return along * tracks_blocked;
 }
 
