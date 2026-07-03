@@ -350,21 +350,18 @@ void Design::setUnitCosts()
   }
 }
 
-odb::dbTechVia* Design::chooseViaForPair(
-    const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*>& default_vias,
-    odb::dbTechLayer* lower_tl,
-    odb::dbTechLayer* upper_tl) const
+odb::dbTechVia* Design::chooseViaForPair(odb::dbTechLayer* lower_tl,
+                                         odb::dbTechLayer* upper_tl) const
 {
-  // Prefer the block's default via for this layer pair (as GlobalRouter does).
-  if (default_vias.contains(lower_tl)) {
-    return default_vias.at(lower_tl);
-  }
-  // No default set: mimic drt (io_parser_helper.cpp) — among the tech vias
-  // connecting the pair, prefer a LEF-default one, then fewest cuts, then the
-  // smallest metal enclosure.
+  // Select the via whose footprint best approximates what drt will place.
+  // odb::dbBlock::getDefaultVias fabricates a default from the first via in db
+  // order when no OR_DEFAULT is set, which is arbitrary; instead rank all vias
+  // connecting the pair: prefer an OR_DEFAULT via, then a LEF-default one, then
+  // fewest cuts, then the smallest metal enclosure (mimicking drt's priority in
+  // io_parser_helper.cpp).
   odb::dbTechLayer* cut_tl = lower_tl->getUpperLayer();
   odb::dbTechVia* best = nullptr;
-  std::tuple<bool, int, int64_t> best_key;
+  std::tuple<bool, bool, int, int64_t> best_key;
   for (odb::dbTechVia* via : tech_->getVias()) {
     if (via->getBottomLayer() != lower_tl || via->getTopLayer() != upper_tl) {
       continue;
@@ -379,7 +376,10 @@ odb::dbTechVia* Design::chooseViaForPair(
         enc_area += box->getBox().area();
       }
     }
-    const std::tuple<bool, int, int64_t> key{!via->isDefault(), cuts, enc_area};
+    const bool or_default
+        = odb::dbStringProperty::find(via, "OR_DEFAULT") != nullptr;
+    const std::tuple<bool, bool, int, int64_t> key{
+        !or_default, !via->isDefault(), cuts, enc_area};
     if (best == nullptr || key < best_key) {
       best = via;
       best_key = key;
@@ -396,8 +396,6 @@ void Design::computeViaDemandLengths()
   via_demand_length_lower_.assign(num_layers, 0.0);
   via_demand_length_upper_.assign(num_layers, 0.0);
 
-  const odb::PtrMap<odb::dbTechLayer, odb::dbTechVia*> default_vias
-      = block_->getDefaultVias();
   const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
   int fallback_pairs = 0;
   for (int i = 0; i + 1 < num_layers; i++) {
@@ -405,7 +403,7 @@ void Design::computeViaDemandLengths()
     const MetalLayer& upper = layers_[i + 1];
     odb::dbTechLayer* lower_tl = lower.getTechLayer();
     odb::dbTechLayer* upper_tl = upper.getTechLayer();
-    odb::dbTechVia* via = chooseViaForPair(default_vias, lower_tl, upper_tl);
+    odb::dbTechVia* via = chooseViaForPair(lower_tl, upper_tl);
     if (via == nullptr) {
       fallback_pairs++;
     }
