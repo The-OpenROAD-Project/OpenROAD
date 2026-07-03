@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="447" height="69"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#start_foreign"
+      xlink:title="start_foreign">
+      <rect x="31" y="3" width="102" height="32"/>
+      <rect x="29" y="1" width="102" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="21">start_foreign</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#pt"
+      xlink:title="pt">
+      <rect x="173" y="35" width="32" height="32"/>
+      <rect x="171" y="33" width="32" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="181" y="53">pt</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#orientation"
+      xlink:title="orientation">
+      <rect x="265" y="35" width="90" height="32"/>
+      <rect x="263" y="33" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="273" y="53">orientation</text>
+   </a>
+   <rect x="395" y="3" width="24" height="32" rx="10"/>
+   <rect x="393"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="403" y="21">;</text>
+   <path class="line"
+         d="m17 17 h2 m0 0 h10 m102 0 h10 m20 0 h10 m0 0 h42 m-72 0 h20 m52 0 h20 m-92 0 q10 0 10 10 m72 0 q0 -10 10 -10 m-82 10 v12 m72 0 v-12 m-72 12 q0 10 10 10 m52 0 q10 0 10 -10 m-62 10 h10 m32 0 h10 m40 -32 h10 m0 0 h100 m-130 0 h20 m110 0 h20 m-150 0 q10 0 10 10 m130 0 q0 -10 10 -10 m-140 10 v12 m130 0 v-12 m-130 12 q0 10 10 10 m110 0 q10 0 10 -10 m-120 10 h10 m90 0 h10 m20 -32 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="437 17 445 13 445 21"/>
+   <polygon points="437 17 429 13 429 21"/>
+</svg>

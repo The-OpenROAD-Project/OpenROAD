@@ -11,17 +11,12 @@
 
 #include "NetworkBuilder.h"
 #include "RandomBits.h"
+#include "base/abc/abc.h"
 #include "cgt/ClockGating.h"
 #include "db_sta/dbSta.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
-
-namespace abc {
-using Abc_Ntk_t = struct Abc_Ntk_t_;
-using Abc_Obj_t = struct Abc_Obj_t_;
-using Vec_Ptr_t = struct Vec_Ptr_t_;
-}  // namespace abc
 
 namespace odb {
 class dbDatabase;

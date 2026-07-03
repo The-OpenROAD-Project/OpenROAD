@@ -1,5 +1,7 @@
- exclude = [
+exclude = [
     "src/sta/",
+    "tmp/",
+    "third-party/",
 ]
 
 ignore = [

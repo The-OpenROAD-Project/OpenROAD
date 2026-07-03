@@ -3,7 +3,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
-[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
@@ -23,20 +22,52 @@
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
 Nets:                579
 Special nets:        0
 Routing layers:      10
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        17918          7167          60.00%
+metal3     Horizontal      24480          9792          60.00%
+metal4     Vertical        12172          4869          60.00%
+metal5     Horizontal      12240          4896          60.00%
+metal6     Vertical        12172          4869          60.00%
+metal7     Horizontal       4284          1714          59.99%
+metal8     Vertical         4284          1714          59.99%
+metal9     Horizontal       2142          1190          44.44%
+metal10    Vertical         2142          1190          44.44%
+---------------------------------------------------------------
+
 Stage 1: Pattern routing.
-Nets with overflow: 4.
-Stage 2: Pattern routing with detours.
-Nets with overflow: 0.
 Routing statistics
-Wire length:           36817
-Total via count:       4420
-Total wire overflow:   0
-Min resource:          0.3999999761581421
-Bottleneck:            (8, 0, 4)
-[INFO GRT-0018] Total wirelength: 10374 um
+Wire length:           36727
+Total via count:       2633
+Total congestion:      0
+Min resource:          0.9999995231628418
+Bottleneck:            (2, 16, 16)
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+metal1               0             0            0.00%             0 /  0 /  0
+metal2            7167          1099           15.33%             0 /  0 /  0
+metal3            9792          1251           12.78%             0 /  0 /  0
+metal4            4869            60            1.23%             0 /  0 /  0
+metal5            4896            12            0.25%             0 /  0 /  0
+metal6            4869            23            0.47%             0 /  0 /  0
+metal7            1714             0            0.00%             0 /  0 /  0
+metal8            1714             0            0.00%             0 /  0 /  0
+metal9            1190             0            0.00%             0 /  0 /  0
+metal10           1190             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            37401          2445            6.54%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

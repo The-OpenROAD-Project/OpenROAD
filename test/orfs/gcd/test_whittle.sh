@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Whittle integration smoke-test for bazel.
 # Adapted from flow/test/test_whittle.sh.

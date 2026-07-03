@@ -27,6 +27,7 @@
 #include "gui/gui.h"
 #include "label.h"
 #include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -871,17 +872,15 @@ void RenderThread::drawBlockages(QPainter* painter,
     if (restart_) {
       break;
     }
-    odb::dbBox* halo = inst->getHalo();
-    if (halo != nullptr) {
-      Rect instbox = inst->getBBox()->getBox();
-      Rect halobox = halo->getBox();
-      instbox.set_xlo(instbox.xMin() - halobox.xMin());
-      instbox.set_ylo(instbox.yMin() - halobox.yMin());
-      instbox.set_xhi(instbox.xMax() + halobox.xMax());
-      instbox.set_yhi(instbox.yMax() + halobox.yMax());
-      painter->drawRect(
-          instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
-    }
+    odb::Rect halobox = inst->getTransformedHalo();
+    Rect instbox = inst->getBBox()->getBox();
+
+    instbox.set_xlo(instbox.xMin() - halobox.xMin());
+    instbox.set_ylo(instbox.yMin() - halobox.yMin());
+    instbox.set_xhi(instbox.xMax() + halobox.xMax());
+    instbox.set_yhi(instbox.yMax() + halobox.yMax());
+    painter->drawRect(
+        instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
   }
 }
 
@@ -1177,7 +1176,6 @@ void RenderThread::drawChip(QPainter* painter,
 
   dbBlock* block = chip->getBlock();
   if (!block) {
-    painter->drawRect(0, 0, chip->getWidth(), chip->getHeight());
     return;
   }
 
@@ -1245,7 +1243,7 @@ void RenderThread::drawChip(QPainter* painter,
 
   dbTech* tech = block->getTech();
   if (tech != nullptr) {
-    std::set<dbTech*> child_techs;
+    odb::PtrSet<odb::dbTech> child_techs;
     for (auto child : block->getChildren()) {
       dbTech* child_tech = child->getTech();
       if (child_tech != tech) {
@@ -1437,7 +1435,7 @@ void RenderThread::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
 }
 
 void RenderThread::drawNetsRouteGuides(Painter& painter,
-                                       const std::set<odb::dbNet*>& nets,
+                                       const odb::PtrSet<odb::dbNet>& nets,
                                        odb::dbTechLayer* layer)
 {
   painter.setPen(layer);
@@ -1626,7 +1624,7 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
     const int minimum_font_size = drawing_font_size - 1;
 
     int largest_text_width = 0;
-    std::set<odb::dbBTerm*> checked;
+    odb::PtrSet<odb::dbBTerm> checked;
     odb::dbTech* tech = block->getTech();
     for (odb::dbTechLayer* layer : tech->getLayers()) {
       if (restart_) {

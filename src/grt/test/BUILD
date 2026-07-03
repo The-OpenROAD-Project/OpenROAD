@@ -1,4 +1,5 @@
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -10,6 +11,7 @@ TESTS = [
     "clock_route_alpha",
     "clock_route_error1",
     "clock_route_error2",
+    "colocated_pins",
     "congestion1",
     "congestion2",
     "congestion3",
@@ -32,6 +34,8 @@ TESTS = [
     "gcd_cugr",
     "gcd_flute",
     "increase_capacity1",
+    "incremental_deleted_net",
+    "incremental_repair_cugr",
     "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
@@ -41,7 +45,12 @@ TESTS = [
     "modeling_instance_obs",
     "multiple_calls",
     "ndr_1w_3s",
+    "ndr_1w_3s_cugr",
     "ndr_2w_3s",
+    "ndr_2w_3s_cugr",
+    "ndr_multi_cugr",
+    "ndr_rrr_cugr",
+    "ndr_upper_layers_cugr",
     "no_tracks",
     "obs_out_of_die",
     "obstruction",
@@ -73,11 +82,13 @@ TESTS = [
     "repair_antennas2",
     "repair_antennas3",
     "repair_antennas4",
+    "repair_antennas_adjacent_jumpers",
     "repair_antennas_error1",
     "repair_antennas_error2",
     "repair_antennas_only_diodes",
     "repair_antennas_only_jumpers",
     "repair_antennas_allow_congestion",
+    "repair_antennas_from_odb",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -86,11 +97,19 @@ TESTS = [
     "report_wire_length6",
     "report_wire_length7",
     "report_wire_length8",
+    "resistance_aware_asap7_cong_cugr",
+    "resistance_aware_asap7_cugr",
+    "resistance_aware_asap7_fr",
+    "resistance_aware_cugr",
+    "resistance_aware_highres_cugr",
+    "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
     "single_row",
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
+    "soft_ndr_4w_6s_cugr",
+    "soft_ndr_reset_cap",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -121,12 +140,76 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 [regression_test(
     name = test_name,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "snapshot_batched_bus_route",
+    check_log = False,
+    check_passfail = True,
+    data = [
+        "bus_route.tcl",
+        ":test_resources",
+    ],
+)
+
+regression_test(
+    name = "snapshot_batched_incremental_state",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_single_thread_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_markers_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_report_file_cugr",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+py_test(
+    name = "grt_man_tcl_check",
+    srcs = ["grt_man_tcl_check.py"],
+    data = ["//src/grt:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "grt_readme_msgs_check",
+    data = [
+        "//src/grt:doc_files",
+        "//src/grt:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

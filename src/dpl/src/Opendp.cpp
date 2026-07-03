@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
 #include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
@@ -29,6 +30,7 @@
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -59,6 +61,7 @@ Opendp::Opendp(odb::dbDatabase* db, utl::Logger* logger)
   grid_ = std::make_unique<Grid>();
   grid_->init(logger);
   network_ = std::make_unique<Network>();
+  network_->init(logger);
   arch_ = std::make_unique<Architecture>();
 }
 
@@ -115,9 +118,13 @@ Journal* Opendp::getJournal() const
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
-                               bool incremental)
+                               bool incremental,
+                               const bool use_negotiation,
+                               const bool run_abacus)
 {
+  utl::Timer timer;
   incremental_ = incremental;
+  use_negotiation_ |= use_negotiation;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -132,8 +139,39 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
   }
 
+  {
+    const int64_t core_area
+        = static_cast<int64_t>(core_.dx()) * static_cast<int64_t>(core_.dy());
+    int64_t inst_area = 0;
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL) {
+        inst_area += static_cast<int64_t>(node->getWidth().v)
+                     * static_cast<int64_t>(node->getHeight().v);
+      }
+    }
+    const double utilization = core_area > 0
+                                   ? (static_cast<double>(inst_area)
+                                      / static_cast<double>(core_area))
+                                         * 100.0
+                                   : 0.0;
+    logger_->info(DPL,
+                  6,
+                  "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
+                  "Utilization: {:.1f}%",
+                  block_->dbuAreaToMicrons(core_area),
+                  block_->dbuAreaToMicrons(inst_area),
+                  utilization);
+    logger_->metric("utilizatin__before__dpl", utilization);
+    if (utilization > 100.0) {
+      logger_->error(
+          DPL, 38, "Utilization greater than 100%, impossible to legalize");
+    }
+  }
+
+  odb::WireLengthEvaluator eval(block_);
+  hpwl_before_ = eval.hpwl();
+
   if (max_displacement_x == 0 || max_displacement_y == 0) {
-    // defaults
     max_displacement_x_ = 500;
     max_displacement_y_ = 100;
   } else {
@@ -141,34 +179,68 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
 
-  logger_->info(
-      DPL,
-      5,
-      "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
-      max_displacement_x_,
-      max_displacement_y_);
+  logger_->info(DPL,
+                5,
+                "Diamond search max displacement: +/- {} sites horizontally, "
+                "+/- {} rows vertically.",
+                max_displacement_x_,
+                max_displacement_y_);
 
-  odb::WireLengthEvaluator eval(block_);
-  hpwl_before_ = eval.hpwl();
-  detailedPlacement();
-  // Save displacement stats before updating instance DB locations.
-  findDisplacementStats();
-  updateDbInstLocations();
-  if (!placement_failures_.empty()) {
-    logger_->info(DPL,
-                  34,
-                  "Detailed placement failed on the following {} instances:",
-                  placement_failures_.size());
-    for (auto cell : placement_failures_) {
-      logger_->info(DPL, 35, " {}", cell->name());
+  if (!use_negotiation_) {
+    logger_->info(DPL, 1101, "Legalizing using diamond search.");
+    diamondDPL();
+    findDisplacementStats();
+    updateDbInstLocations();
+    if (!placement_failures_.empty()) {
+      logger_->info(DPL,
+                    34,
+                    "Detailed placement failed on the following {} instances:",
+                    placement_failures_.size());
+      for (auto cell : placement_failures_) {
+        logger_->info(DPL, 35, " {}", cell->name());
+      }
+
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
+      logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
+    }
+  } else {
+    initGrid();
+    setFixedGridCells();
+    // Populate pixel->group for each fence region so diamondRecovery's
+    // underlying diamondSearch correctly enforces region constraints.
+    if (!arch_->getRegions().empty()) {
+      groupInitPixels2();
+      groupInitPixels();
+    }
+    logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
+
+    NegotiationLegalizer negotiation(this,
+                                     db_,
+                                     logger_,
+                                     padding_.get(),
+                                     debug_observer_.get(),
+                                     network_.get());
+    negotiation.setRunAbacus(run_abacus);
+    negotiation.legalize();
+    negotiation.setDplPositions();
+
+    if (negotiation.numViolations() > 0) {
+      logger_->warn(DPL,
+                    701,
+                    "NegotiationLegalizer did not fully converge. "
+                    "Violations remain: {}",
+                    negotiation.numViolations());
+      logger_->metric("NL__no__converge__final_violations",
+                      negotiation.numViolations());
     }
 
-    saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
-    if (!report_file_name.empty()) {
-      writeJsonReport(report_file_name);
-    }
-    logger_->error(DPL, 36, "Detailed placement failed.");
+    findDisplacementStats();
+    updateDbInstLocations();
   }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Opendp::updateDbInstLocations()
@@ -221,6 +293,8 @@ void Opendp::reportLegalizationStats() const
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
+  logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
+  logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }
 
 ////////////////////////////////////////////////////////////////

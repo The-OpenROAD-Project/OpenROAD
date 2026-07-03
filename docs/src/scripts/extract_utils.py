@@ -31,12 +31,20 @@ def extract_description(text):
     return [custom_string[1].strip() for custom_string in custom_strings]
 
 
-def extract_tcl_code(text):
+def extract_tcl_code(text, skip_markers=True):
+    # Find all ```tcl blocks along with their position to check for skip markers.
     pattern = r"```tcl\s+(.*?)```"
-    tcl_code_matches = re.findall(pattern, text, flags=re.DOTALL)
-    # remove the last tcl match
-    tcl_code_matches = [x for x in tcl_code_matches if "./test/gcd.tcl" not in x]
-    return tcl_code_matches
+    results = []
+    for m in re.finditer(pattern, text, flags=re.DOTALL):
+        # Check the text immediately before this block for a skip marker.
+        if skip_markers:
+            preceding = text[: m.start()]
+            if "<!-- checker: skip -->" in preceding.split("\n")[-3:]:
+                continue
+        block = m.group(1)
+        if "./test/gcd.tcl" not in block:
+            results.append(block)
+    return results
 
 
 def extract_arguments(text):
@@ -99,20 +107,32 @@ def extract_tables(text):
 
 
 def extract_help(text):
-    # Logic now captures everything between { to earliest "proc"
-    help_pattern = re.compile(
-        r"""
-                sta::define_cmd_args\s+
-                "(.*?)"\s*
-                (.*?)proc\s
-                """,
-        re.VERBOSE | re.DOTALL,
-    )
-
-    matches = re.findall(help_pattern, text)
-
-    # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if ";#checkeroff" not in tup[1].replace(" ", "")]
+    # Match each sta::define_cmd_args block independently by tracking
+    # brace depth, instead of spanning to the next "proc" keyword which
+    # breaks when sta::proc_redirect is used between commands.
+    matches = []
+    for m in re.finditer(r'sta::define_cmd_args\s+"([^"]+)"\s*', text):
+        name = m.group(1)
+        after = text[m.end() :]
+        # Walk through the args block tracking brace depth.
+        depth = 0
+        end = 0
+        for j, ch in enumerate(after):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j
+                    break
+        rest_of_line = after[end + 1 :].split("\n")[0]
+        args_block = after[: end + 1] + rest_of_line
+        if ";#checkeroff" in args_block.replace(" ", ""):
+            continue
+        # Only count commands that have a matching proc or proc_redirect.
+        proc_pat = rf"(?:proc|sta::proc_redirect)\s+{re.escape(name)}\s"
+        if re.search(proc_pat, text):
+            matches.append((name, args_block))
     return matches
 
 

@@ -55,50 +55,60 @@ long during routability-driven execution, consider raising the target RC value
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
 
+Initial-placement arguments
+- They begin with `-initial_place`.
+- `-initial_place_max_iter`, `-initial_place_max_fanout`
+
 Routability-driven arguments
 - They begin with `-routability`.
 - `-routability_target_rc_metric`, `-routability_snapshot_overflow`, `-routability_check_overflow`, `-routability_max_density`, `-routability_inflation_ratio_coef`, `-routability_max_inflation_ratio`, `-routability_rc_coefficients`
 
 Timing-driven arguments
 - They begin with `-timing_driven`.
-- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`
+- `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
 ```tcl
 global_placement
-    [-timing_driven]
-    [-routability_driven]
-    [-skip_initial_place]
-    [-force_center_initial_place]
-    [-incremental]
-    [-bin_grid_count grid_count]
-    [-density target_density]
-    [-init_density_penalty init_density_penalty]
-    [-init_wirelength_coef init_wirelength_coef]
-    [-min_phi_coef min_phi_conef]
-    [-max_phi_coef max_phi_coef]
-    [-reference_hpwl reference_hpwl]
-    [-overflow overflow]
-    [-initial_place_max_iter initial_place_max_iter]
-    [-initial_place_max_fanout initial_place_max_fanout]
-    [-pad_left pad_left]
-    [-pad_right pad_right]
-    [-skip_io]
-    [-skip_nesterov_place]
-    [-routability_use_grt]
-    [-routability_target_rc_metric routability_target_rc_metric]
-    [-routability_snapshot_overflow routability_snapshot_overflow]
-    [-routability_check_overflow routability_check_overflow]
-    [-routability_max_density routability_max_density]   
-    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]
-    [-routability_max_inflation_ratio routability_max_inflation_ratio]
-    [-routability_rc_coefficients routability_rc_coefficients]
-    [-timing_driven_net_reweight_overflow]
-    [-timing_driven_net_weight_max]
-    [-timing_driven_nets_percentage]
-    [-keep_resize_below_overflow]
-    [-disable_revert_if_diverge]
-    [-disable_pin_density_adjust]
-    [-enable_routing_congestion]
+    [-skip_initial_place]\
+    [-force_center_initial_place]\
+    [-skip_nesterov_place]\
+    [-timing_driven]\
+    [-routability_driven]\
+    [-incremental]\
+    [-skip_io]\
+    [-bin_grid_count grid_count]\
+    [-density target_density]\
+    [-init_density_penalty init_density_penalty]\
+    [-init_wirelength_coef init_wirelength_coef]\
+    [-min_phi_coef min_phi_coef]\
+    [-max_phi_coef max_phi_coef]\
+    [-reference_hpwl reference_hpwl]\
+    [-overflow overflow]\
+    [-initial_place_max_iter initial_place_max_iter]\
+    [-initial_place_max_fanout initial_place_max_fanout]\
+    [-routability_use_grt]\
+    [-routability_target_rc_metric routability_target_rc_metric]\
+    [-routability_check_overflow routability_check_overflow]\
+    [-routability_snapshot_overflow routability_snapshot_overflow]\
+    [-routability_max_density routability_max_density]\
+    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
+    [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_rc_coefficients routability_rc_coefficients]\
+    [-keep_resize_below_overflow keep_resize_below_overflow]\
+    [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
+    [-timing_driven_net_weight_max timing_driven_net_weight_max]\
+    [-timing_driven_nets_percentage timing_driven_nets_percentage]\
+    [-timing_driven_repair_timing]\
+    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+    [-disable_revert_if_diverge]\
+    [-disable_pin_density_adjust]\
+    [-enable_routing_congestion]\
+    [-virtual_cts]\
+    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]
 ```
 
 #### Options
@@ -108,23 +118,34 @@ global_placement
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
+| `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |
 | `-init_wirelength_coef` | Set initial wirelength coefficient. The default value is `0.25`. Allowed values are floats. |
-| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Allowed values are floats `[0.95, 1.05]`. |
-| `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are `[1.00-1.20, float]`. |
+| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). The default value is `0.95`. Allowed values are positive floats. Recommended values are in the range `[0.95, 1.05]`. |
+| `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is `1.05`. Allowed values are positive floats. Recommended values are in the range `[1.00-1.20, float]`. |
+| `-reference_hpwl` | Set $\Delta HPWL_{ref}$. Default value is `466e6`. Allowed values are positive floats. See Eq. 36 in [ePlace](https://cseweb.ucsd.edu/~jlu/papers/eplace-todaes14/paper.pdf) |
 | `-overflow` | Set target overflow for termination condition. The default value is `0.1`. Allowed values are floats `[0, 1]`. |
-| `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is `20`. Allowed values are integers `[0, MAX_INT]`. |
-| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
-| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
-| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[1, MAX_INT]` |
+| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
+| `-virtual_cts` | Flag to build a lightweight virtual clock tree during global placement. Clock tree is used to compute clock network latency per clock sink to model clock skew during timing-driven placement. Virtual CTS runs before each timing-driven iteration. |
+| `-virtual_cts_max_skew_fraction` | Set max insertion delay as fraction of clock period. Valid range is [0, 1]; out-of-range values are clamped. Default is 0.10 (10%). |
+| `-random_seed` | Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement to explore layout variations. Default is `1`. |
+| `-perturb_dist` | Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller. |
+
+#### Initial-Placement Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-initial_place_max_iter` | Set maximum iterations in the initial place. The default value is `20`. Allowed values are integers `[0, MAX_INT]`. |
+| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. The default value is 200. Allowed values are integers `[1, MAX_INT]`. |
 
 #### Routability-Driven Arguments
 
@@ -147,6 +168,8 @@ global_placement
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing-critical nets. The default value is `5`, and the allowed values are floats. |
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
+| `-timing_driven_repair_timing` | **Experimental.** Enable a conservative `repair_setup` pass during last timing-driven iteration. The intent is to apply minimal buffering and gate sizing so that the placement better correlates with global routing timing. Only the worst setup violators are targeted. Disruptive operations (pin swap, gate cloning, VT swap) are suppressed to avoid topology changes during placement. Not ready for production use. |
+| `-timing_driven_repair_tns_end_percent` | **Experimental.** When `-timing_driven_repair_timing` is enabled, controls the percentage of violating endpoints targeted by the `repair_setup` call. The default value is `1.0` and the allowed values are floats `[0, 100]`. |
 
 ### Cluster Flops
 
@@ -185,12 +208,15 @@ The `global_placement_debug` command initiates a debug mode, enabling real-time 
 
 ```tcl
 global_placement_debug
-    [-pause] 
-    [-update]
-    [-inst]
+    [-pause pause]
+    [-update update]
+    [-inst inst]
+    [-start_iter start_iter]
+    [-start_rudy start_rudy]
+    [-rudy_stride rudy_stride]
+    [-images_path images_path]
     [-draw_bins]
     [-initial]
-    [-start_iter]
     [-generate_images]
 ```
 
@@ -198,12 +224,15 @@ global_placement_debug
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Useful for closely monitoring the progression of the placement algorithm. Allowed values are integers, default is 10. |
-| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is 10.  |
-| `-inst` | Targets a specific instance name for debugging focus. Allowed value is a string, the default behavior focuses on no specific instance. |
+| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Allowed values are integers, default is `10`. |
+| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is `10`. |
+| `-inst` | Targets a specific instance name for debugging focus. The default behavior focuses on no specific instance. |
+| `-start_iter` | Start debug mode from this iteration. |
+| `-start_rudy` | Start RUDY debug from this iteration. |
+| `-rudy_stride` | Stride for RUDY debug iterations. Allowed values are integers, default is `1`. |
+| `-images_path` | Path for saving generated images. |
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
-| `-start_iter` | Start debug mode from such iteration. |
 | `-generate_images` | Generates a GIF animation showing the placement progression and a GIF composed of images right before each routability revert. Also saves snapshot images at the end of each routability and timing-driven iteration, including heatmaps. |
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`

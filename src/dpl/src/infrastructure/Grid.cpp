@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
-#include "Grid.h"
+#include "infrastructure/Grid.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,15 +14,14 @@
 #include <utility>
 #include <vector>
 
-#include "Coordinates.h"
-#include "Objects.h"
-#include "Padding.h"
 #include "boost/polygon/polygon.hpp"  // NOLINT(misc-include-cleaner) Boost polygon headers require a specific include order.
 #include "boost/polygon/polygon_90_set_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
 #include "boost/polygon/rectangle_data.hpp"
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"

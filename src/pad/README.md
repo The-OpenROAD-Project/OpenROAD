@@ -148,7 +148,7 @@ make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOS
 ```
 
 ```tcl
-make_io_sites 
+make_io_sites
     -horizontal_site site
     -vertical_site site
     -corner_site site
@@ -167,7 +167,7 @@ make_io_sites
 | `-vertical_site` | Name of the site for the vertical pads (north and south). |
 | `-corner_site` | Name of the site for the corner cells. |
 | `-offset` | Offset from the die edge to place the rows. |
-| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0` for the western (left) row when different sites are specified for hortizontal and vertical rows, the default value is `MXR90` when the same site is specified. |
+| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly. The default value is `R0` for the western (left) row when different sites are specified for horizontal and vertical rows; the default value is `MXR90` when the same site is specified. |
 | `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly. The default value is `R0` for the southern (bottom) row. |
 | `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly. The default value is `R0` for the south west (lower left) corner. |
 | `-ring_index` | Used to specify the index of the ring in case of multiple rings. |
@@ -392,6 +392,7 @@ rdl_route
     [-spacing spacing]
     [-turn_penalty penalty]
     [-allow45]
+    [-fixed]
     [-max_iterations max_iterations]
     nets
 ```
@@ -408,12 +409,14 @@ rdl_route
 | `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes. The default value is `2.0`, and the allowed values are floats. |
 | `-max_iterations` | Maximum number of router iterations. The default value is `10`. |
 | `-allow45` | Specifies that 45 degree routing is permitted. |
+| `-fixed` | When specified, routes will be marked as fixed. |
 | `nets` | Nets to route. |
 
 ### Selectively routing terminals
 
 If some of of the terminals in the design do not need to be RDL routed, this can be done by assigning `RDL_ROUTE 0` to a terminal.
 
+<!-- checker: skip -->
 ```tcl
 # Assumes iterm is the pin to be not be routed
 set prop [odb::dbBoolProperty_create $iterm RDL_ROUTE 0]

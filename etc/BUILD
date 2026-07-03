@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 package(features = ["layering_check"])
 
@@ -7,16 +7,16 @@ exports_files(
         "whittle.py",
         "whittle_cleanup.tcl",
         "whittle_cut.tcl",
+        "file_to_string.py",
     ],
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "file_to_string",
-    srcs = [
-        "file_to_string.py",
+exports_files(
+    [
+        "find_dup_ids.sh",
+        "find_messages.py",
     ],
-    main = "file_to_string.py",
     visibility = ["//visibility:public"],
 )
 

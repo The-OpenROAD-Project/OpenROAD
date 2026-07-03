@@ -7,46 +7,69 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
 
+# Headers owned by :gpl but also consumed by :ui. Kept package-private so
+# nothing outside //src/gpl can depend on them.
+cc_library(
+    name = "gpl_private_hdrs",
+    hdrs = [
+        "src/nesterovBase.h",
+        "src/nesterovPlace.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
+    ],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.unordered",
+    ],
+)
+
 cc_library(
     name = "gpl",
     srcs = [
         "src/AbstractGraphics.cpp",
-        "src/MakeReplace.cpp",
+        "src/backendContext.h",
+        "src/clockBase.cpp",
+        "src/clockBase.h",
+        "src/densityGradient.cpp",
+        "src/densityGradientBackend.h",
         "src/fft.cpp",
         "src/fft.h",
+        "src/fftBackend.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
-        "src/graphicsImpl.cpp",
-        "src/graphicsImpl.h",
+        "src/gpu/deviceState.h",
+        "src/gpu/nesterovDeviceContext.h",
+        "src/gpu/regionDensityField.h",
         "src/graphicsNone.cpp",
+        "src/hpwl.cpp",
+        "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
         "src/nesterovBase.cpp",
-        "src/nesterovBase.h",
         "src/nesterovPlace.cpp",
-        "src/nesterovPlace.h",
         "src/placerBase.cpp",
-        "src/placerBase.h",
-        "src/point.h",
         "src/replace.cpp",
         "src/routeBase.cpp",
-        "src/routeBase.h",
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
         "src/timingBase.h",
-        ":swig",
-        ":tcl",
+        "src/wirelengthGradient.cpp",
+        "src/wirelengthGradientBackend.h",
     ],
     hdrs = [
-        "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
         "src/AbstractGraphics.h",
         "src/graphicsNone.h",
@@ -59,30 +82,55 @@ cc_library(
         "include",
     ],
     deps = [
-        "//:ord",
+        ":gpl_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",
-        "//src/gui",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.format",
-        "@boost.geometry",
+        "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
-        "@boost.property_tree",
         "@boost.random",
-        "@boost.stacktrace",
-        "@boost.tokenizer",
-        "@boost.unordered",
-        "@boost.utility",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
         "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
         "@or-tools//ortools/sat:cp_model",
         "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakeReplace.cpp",
+        "src/graphicsImpl.cpp",
+        "src/graphicsImpl.h",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = [
+        "include/gpl/MakeReplace.h",
+    ],
+    copts = [
+        "-Wno-missing-braces",  # from TCL swigging
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":gpl",
+        ":gpl_private_hdrs",
+        "//:ord",
+        "//src/gui",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
@@ -100,7 +148,7 @@ cc_binary(
     linkshared = True,
     deps = [
         "//src/gpl",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
@@ -162,4 +210,20 @@ python_wrap_cc(
         "src",
     ],
     visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/replace.tcl",
+    ],
+    visibility = ["//src/gpl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/gpl/test:__pkg__",
+    ],
 )

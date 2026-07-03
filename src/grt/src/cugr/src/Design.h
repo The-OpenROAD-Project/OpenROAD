@@ -9,6 +9,7 @@
 #include "Layers.h"
 #include "Netlist.h"
 #include "geo.h"
+#include "odb/PtrSetMap.h"
 
 namespace odb {
 class dbBlock;
@@ -39,7 +40,8 @@ class Design
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
-         const std::set<odb::dbNet*>& clock_nets);
+         const odb::PtrSet<odb::dbNet>& clock_nets,
+         bool verbose);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -71,6 +73,7 @@ class Design
   BoxT getDieRegion() const { return die_region_; }
 
   void updateNet(odb::dbNet* db_net);
+  void removeNet(odb::dbNet* db_net);
 
  private:
   void read();
@@ -110,7 +113,8 @@ class Design
   const Constants constants_;
   const int min_routing_layer_;
   const int max_routing_layer_;
-  std::set<odb::dbNet*> clock_nets_;
+  odb::PtrSet<odb::dbNet> clock_nets_;
+  const bool verbose_;
 };
 
 }  // namespace grt

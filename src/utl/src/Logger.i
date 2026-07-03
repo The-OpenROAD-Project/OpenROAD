@@ -16,10 +16,14 @@ using utl::ToolId;
 using utl::Logger;
 using ord::getLogger;
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 %}
 
 %typemap(in) utl::ToolId {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }

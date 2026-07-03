@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -17,6 +18,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "est/SteinerTree.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
@@ -33,7 +35,7 @@
 #include "utl/Logger.h"
 
 namespace utl {
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace est {
@@ -43,15 +45,20 @@ using SteinerPt = int;
 class NetHash
 {
  public:
-  size_t operator()(const sta::Net* net) const { return hashPtr(net); }
+  // Pointer hashing is nondeterministic across runs. Switch to
+  // Network::id(net) when a Network handle is available here.
+  size_t operator()(const sta::Net* net) const
+  {
+    return std::hash<const sta::Net*>()(net);
+  }
 };
 
 enum class ParasiticsSrc
 {
-  none,
-  placement,
-  global_routing,
-  detailed_routing
+  kNone,
+  kPlacement,
+  kGlobalRouting,
+  kDetailedRouting
 };
 
 struct ParasiticsResistance
@@ -68,18 +75,19 @@ struct ParasiticsCapacitance
 
 class AbstractSteinerRenderer;
 class OdbCallBack;
-class EstimateParasiticsCallBack;
 
-class EstimateParasitics : public sta::dbStaState
+class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 {
  public:
   EstimateParasitics(utl::Logger* logger,
-                     utl::CallBackHandler* callback_handler,
+                     utl::ServiceRegistry* service_registry,
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
                      stt::SteinerTreeBuilder* stt_builder,
                      grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
+
+  void estimateAllGlobalRouteParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(odb::dbTechLayer* layer,
@@ -132,7 +140,7 @@ class EstimateParasitics : public sta::dbStaState
   double wireClkVCapacitance(const sta::Scene* scene) const;
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
-                          std::map<sta::Scene*, std::ostream*>& spef_streams_);
+                          std::map<sta::Scene*, std::ostream*>& spef_streams);
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
@@ -202,6 +210,8 @@ class EstimateParasitics : public sta::dbStaState
 
  private:
   void ensureParasitics();
+  bool isIdealClockPin(const sta::Pin* pin) const;
+  bool isIdealClockNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
                                     sta::SpefWriter* spef_writer);
@@ -238,7 +248,7 @@ class EstimateParasitics : public sta::dbStaState
   double dbuToMeters(int dist) const;
 
   utl::Logger* logger_ = nullptr;
-  std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
+  utl::ServiceRegistry* service_registry_ = nullptr;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   grt::IncrementalGRoute* incr_groute_ = nullptr;
@@ -259,7 +269,7 @@ class EstimateParasitics : public sta::dbStaState
   std::vector<ParasiticsResistance> wire_clk_res_;   // ohms/metre
   std::vector<ParasiticsCapacitance> wire_clk_cap_;  // Farads/meter
 
-  ParasiticsSrc parasitics_src_ = ParasiticsSrc::none;
+  ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
 
   std::unordered_set<const sta::Net*, NetHash> parasitics_invalid_;
 

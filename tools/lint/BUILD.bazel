@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, Precision Innovations Inc.
+
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+native_binary(
+    name = "clang_tidy",
+    # @llvm_prebuilt* replace the auto-downloaded @llvm_toolchain_llvm,
+    # which toolchains_llvm does not generate when toolchain_root is set.
+    src = select({
+        "@platforms//os:macos": "@llvm_prebuilt_macos//:bin/clang-tidy",
+        "//conditions:default": "@llvm_prebuilt//:bin/clang-tidy",
+    }),
+    out = "clang_tidy",
+)

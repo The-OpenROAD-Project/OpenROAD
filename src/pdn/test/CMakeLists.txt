@@ -2,6 +2,7 @@ or_integration_tests(
   "pdn"
   TESTS
     add_double_global_connection
+    add_pdn_connect_backside_err
     asap7_failed_macro_covered
     asap7_failed_macro_grid
     asap7_macro_covered_partial
@@ -27,6 +28,7 @@ or_integration_tests(
     core_grid_auto_domain
     core_grid_auto_domain_multiple_nets
     core_grid_bad_metal_specs
+    core_grid_bad_metal_specs_no_grid
     core_grid_check_connect_layers
     core_grid_check_connect_layers_at_setup
     core_grid_cut_pitch
@@ -36,6 +38,7 @@ or_integration_tests(
     core_grid_extend_to_boundary
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
+    core_grid_min_width_layers
     core_grid_no_trim
     core_grid_obstruction
     core_grid_offset_strap
@@ -47,7 +50,10 @@ or_integration_tests(
     core_grid_strap_count
     core_grid_strap_outside_core
     core_grid_via_snap
+    core_grid_with_multiple_bterms
+    core_grid_with_no_grid
     core_grid_with_M6_min_area
+    core_grid_with_M6_min_area_rule
     core_grid_with_M7_pins
     core_grid_with_bterms
     core_grid_with_dual_rings
@@ -86,6 +92,7 @@ or_integration_tests(
     macros_cells_via_failure
     macros_different_nets
     macros_grid_check
+    macros_grid_not_used
     macros_grid_through
     macros_grid_through_without_middle
     macros_narrow_channel
@@ -130,6 +137,7 @@ or_integration_tests(
     reset
     ripup
     sky130_spm_floating_bpin
+    sky130_spm_halo_too_big
     sroute_test
     widthtable
 )

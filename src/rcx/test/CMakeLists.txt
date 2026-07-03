@@ -8,6 +8,8 @@ or_integration_tests(
     names
     net_name_consistency
     coordinates
+    no_merging
+    short_resover
   PASSFAIL_TESTS
     rcx_unit_test
 )

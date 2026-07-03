@@ -46,8 +46,7 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
         && scan_cell_port->function() == nullptr) {
       // input ports do not have a function
       port_equiv
-          = port_equiv
-            && strcmp(non_scan_cell_port->name(), scan_cell_port->name()) == 0;
+          = port_equiv && non_scan_cell_port->name() == scan_cell_port->name();
     } else {
       port_equiv = port_equiv
                    && sta::FuncExpr::equiv(non_scan_cell_port->function(),
@@ -293,7 +292,7 @@ void ScanReplace::collectScanCellAvailable()
         continue;
       }
 
-      if (utils::IsScanCell(liberty_cell)) {
+      if (utils::IsScanCell(db_network, liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);

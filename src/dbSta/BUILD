@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -16,6 +17,7 @@ cc_library(
         "src/dbSta.cc",
     ],
     hdrs = [
+        "include/db_sta/DelayFmt.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [
@@ -24,10 +26,9 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSdcNetwork",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
         "@boost.json",
         "@spdlog",
         "@tcl_lang//:tcl",
@@ -48,7 +49,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -68,7 +69,7 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -83,8 +84,9 @@ cc_library(
         "src/dbSdcNetwork.hh",
     ],
     includes = [
-        "include",
+        "src",
     ],
+    visibility = ["//visibility:private"],
     deps = [
         "//src/sta:opensta_lib",
         "@spdlog",
@@ -104,10 +106,8 @@ cc_library(
     ],
     deps = [
         ":dbSta",
-        "//src/odb",
-        "//src/sta:opensta_lib",
+        "//src/odb/src/db",
         "//src/utl",
-        "@spdlog",
     ],
 )
 
@@ -125,7 +125,7 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],
@@ -134,7 +134,6 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/db_sta/IpChecker.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
@@ -144,18 +143,18 @@ cc_library(
         "include/db_sta/MakeDbSta.hh",
     ],
     copts = [
-        "-Isrc/dbSta/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":IpChecker",
         ":dbNetwork",
         ":dbSta",
         "//:ord",
-        "//src/odb",
+        "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
@@ -193,4 +192,8 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+messages_txt(
+    visibility = ["//docs:__pkg__"],
 )

@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#pragma once
+
+#include <cstdint>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "boost/json/object.hpp"
+#include "color.h"
+
+namespace odb {
+class dbBlock;
+}  // namespace odb
+
+namespace sta {
+class dbSta;
+}  // namespace sta
+
+namespace web {
+
+// Node types in the hierarchy tree
+enum class HierarchyNodeKind
+{
+  kModule = 0,     // Module (default)
+  kLeafGroup = 1,  // "Leaf instances" folder
+  kTypeGroup = 2,  // Instance type sub-group (e.g. "Standard cell", "Macro")
+  kInstance = 3,   // Individual instance row (only for macros)
+};
+
+struct HierarchyNode
+{
+  int id = 0;
+  int parent_id = -1;  // -1 for root (top module)
+  std::string inst_name;
+  std::string module_name;  // master name for TYPE_GROUP/INSTANCE nodes
+  int insts = 0;            // hierarchical stdcell count
+  int macros = 0;           // hierarchical macro count
+  int modules = 0;          // hierarchical sub-module count
+  double area = 0.0;        // hierarchical area (μm²)
+  int local_insts = 0;      // direct stdcell count
+  int local_macros = 0;     // direct macro count
+  int local_modules = 0;    // direct child module count
+  HierarchyNodeKind node_kind = HierarchyNodeKind::kModule;
+  unsigned int odb_id = 0;  // dbModule::getId() for MODULE nodes
+  Color color;              // set by getReport() for MODULEs
+};
+
+struct HierarchyResult
+{
+  std::vector<HierarchyNode> nodes;
+};
+
+class HierarchyReport
+{
+ public:
+  HierarchyReport(odb::dbBlock* block, sta::dbSta* sta);
+
+  HierarchyResult getReport() const;
+
+ private:
+  odb::dbBlock* block_;
+  sta::dbSta* sta_;
+};
+
+// JSON serialization (shared by handleModuleHierarchy and saveReport).
+boost::json::object serializeHierarchyResult(const HierarchyResult& result);
+
+// Compute the module color map for the default UI state (depth-1+ modules
+// collapsed, all visible).  Returns odb module id → RGBA color, ready for
+// use in tile rendering.
+std::map<uint32_t, Color> computeDefaultModuleColors(
+    const HierarchyResult& result);
+
+}  // namespace web

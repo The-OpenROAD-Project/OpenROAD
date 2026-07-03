@@ -8,11 +8,16 @@
 #include <cstdio>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <typeinfo>
+#include <utility>
 #include <vector>
 
+#include "bufferTreeDescriptor.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"
@@ -24,25 +29,10 @@ struct GifWriter
 
 namespace gui {
 
-// Used by toString to convert dbu to microns
-DBUToString Descriptor::Property::convert_dbu
-    = [](int value, bool) { return std::to_string(value); };
-StringToDBU Descriptor::Property::convert_string
-    = [](const std::string& value, bool*) { return 0; };
-
-// empty heat map class
-class PinDensityDataSource
+Options* Painter::getOptions()
 {
-};
-
-// empty heat map class
-class PlacementDensityDataSource
-{
-};
-
-class PowerDensityDataSource
-{
-};
+  return options_;
+}
 
 ////
 
@@ -52,20 +42,39 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  return nullptr;
+  static Gui* singleton = new Gui();
+  return singleton;
 }
 
 bool gui::Gui::enabled()
 {
+  return Gui::get()->getHeadlessViewer() != nullptr;
+}
+
+bool gui::Gui::hasUI()
+{
   return false;
 }
 
-void gui::Gui::registerRenderer(gui::Renderer*)
+void gui::Gui::registerRenderer(gui::Renderer* renderer)
 {
+  renderers_.insert(renderer);
+  redraw();
 }
 
-void gui::Gui::unregisterRenderer(gui::Renderer*)
+void HeatMapDataSource::registerHeatMap()
 {
+  // gpl / other modules call this to expose their heatmap to the GUI.
+  // In headless mode the web viewer enumerates heatmaps via
+  // gui::getRegisteredHeatMapSources() (factory-backed sources) so this
+  // one-off pathway does nothing here for now.  Left intentionally as
+  // a no-op until heatmap plumbing for ad-hoc sources lands.
+}
+
+void gui::Gui::unregisterRenderer(gui::Renderer* renderer)
+{
+  renderers_.erase(renderer);
+  redraw();
 }
 
 void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -74,10 +83,26 @@ void gui::Gui::zoomTo(const odb::Rect& rect_dbu)
 
 void gui::Gui::redraw()
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->redraw();
+  }
 }
 
 void gui::Gui::pause(int timeout)
 {
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->pause(timeout);
+  }
+}
+
+void gui::Gui::setHeadlessViewer(HeadlessViewer* viewer)
+{
+  headless_viewer_ = viewer;
+}
+
+void gui::Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
 }
 
 void Gui::status(const std::string& /* message */)
@@ -90,12 +115,12 @@ void Gui::triggerAction(const std::string& /* action */)
 
 void Renderer::redraw()
 {
+  Gui::get()->redraw();
 }
 
-Renderer::~Renderer() = default;
-
-SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
+Renderer::~Renderer()
 {
+  Gui::get()->unregisterRenderer(this);
 }
 
 void DiscreteLegend::addLegendKey(const Painter::Color& color,
@@ -107,17 +132,27 @@ void DiscreteLegend::draw(Painter& painter) const
 {
 }
 
-bool Renderer::checkDisplayControl(const std::string& /* name */)
+bool Renderer::checkDisplayControl(const std::string& name)
 {
+  auto it = controls_.find(name);
+  if (it != controls_.end()) {
+    return it->second.visibility;
+  }
   return false;
 }
 
 void Renderer::addDisplayControl(
-    const std::string& /* name */,
-    bool /* initial_visible */,
-    const DisplayControlCallback& /* setup */,
-    const std::vector<std::string>& /* mutual_exclusivity */)
+    const std::string& name,
+    bool initial_visible,
+    const DisplayControlCallback& setup,
+    const std::vector<std::string>& mutual_exclusivity)
 {
+  DisplayControl control;
+  control.visibility = initial_visible;
+  control.interactive_setup = setup;
+  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
+                                    mutual_exclusivity.end());
+  controls_[name] = std::move(control);
 }
 
 Renderer::Settings Renderer::getSettings()
@@ -129,9 +164,9 @@ void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
-Selected Gui::makeSelected(const std::any& /* object */)
+Selected Gui::makeSelected(const std::any& object)
 {
-  return Selected();
+  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
@@ -147,24 +182,21 @@ const SelectionSet& Gui::selection()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
+  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
 }
 
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
+  DescriptorRegistry::instance()->unregisterDescriptor(type);
 }
 
-const Descriptor* Gui::getDescriptor(const std::type_info& /* type */) const
+const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 {
-  return nullptr;
+  return DescriptorRegistry::instance()->getDescriptor(type);
 }
 
 void Gui::removeSelectedByType(const std::string& /* type */)
 {
-}
-
-std::string Descriptor::Property::toString(const std::any& /* value */)
-{
-  return "";
 }
 
 // using namespace odb;
@@ -188,6 +220,13 @@ void initGui(Tcl_Interp* interp,
              sta::dbSta* sta,
              utl::Logger* logger)
 {
+  // Initialize the descriptor registry so that descriptors are available
+  // for the web viewer and other non-GUI consumers.
+  auto* registry = DescriptorRegistry::instance();
+  registry->setLogger(logger);
+  registry->initDescriptors(db, sta);
+  registerBuiltinHeatMapSources(sta, logger);
+
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
       "proc save_image { args } {"
@@ -247,6 +286,9 @@ Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
 {
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
   return nullptr;
 }
 
@@ -282,6 +324,51 @@ void Gui::clearHighlights(int highlight_group)
 
 void Gui::addNetToHighlightSet(const char* name, int highlight_group)
 {
+}
+
+void Gui::addFocusNet(odb::dbNet* net)
+{
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+}
+
+void Gui::addRouteGuides(odb::dbNet* net)
+{
+}
+
+void Gui::removeRouteGuides(odb::dbNet* net)
+{
+}
+
+void Gui::addNetTracks(odb::dbNet* net)
+{
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+}
+
+void Gui::timingCone(Term term, bool fanin, bool fanout)
+{
+}
+
+void Gui::timingPathsThrough(const std::set<Term>& terms)
+{
+}
+
+// BufferTree stubs — the real implementation is in bufferTreeDescriptor.cpp
+// which is only compiled in the Qt build.
+sta::dbSta* BufferTree::sta_ = nullptr;
+
+BufferTree::BufferTree(odb::dbNet* /* net */)
+{
+}
+
+bool BufferTree::isAggregate(odb::dbNet* /* net */)
+{
+  return false;
 }
 
 }  // namespace gui

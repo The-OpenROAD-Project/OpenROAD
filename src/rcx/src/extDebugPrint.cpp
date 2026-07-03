@@ -40,7 +40,7 @@ void extMeasure::printTraceNetInfo(const char* msg, uint32_t netId, int rsegId)
              shapeId,
              rsegId,
              msg,
-             rseg->getCapacitance(0, 1.0));
+             rseg->getTotalCapacitance(0));
 }
 
 double extMeasure::GetDBcoords(uint32_t coord)
@@ -176,7 +176,7 @@ void extMeasure::segInfo(const char* msg, uint32_t netId, int rsegId)
       netId,
       shapeId,
       rsegId,
-      rseg->getCapacitance(0, 1.0),
+      rseg->getTotalCapacitance(0),
       rseg->getResistance(0));
 }
 

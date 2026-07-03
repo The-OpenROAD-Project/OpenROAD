@@ -35,6 +35,7 @@
 #include "db/infra/KDTree.hpp"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "distributed/RoutingJobDescription.h"
@@ -42,6 +43,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR_conn.h"
+#include "drt/TritonRoute.h"
 #include "dst/BalancerJobDescription.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
@@ -693,8 +695,8 @@ void FlexDR::reportIterationViolations() const
       }
     }
   }
-  if ((router_cfg_->DRC_RPT_ITER_STEP && iter_ > 0
-       && iter_ % router_cfg_->DRC_RPT_ITER_STEP.value() == 0)
+  if ((router_cfg_->DRC_RPT_ITER_STEP > 0 && iter_ > 0
+       && iter_ % router_cfg_->DRC_RPT_ITER_STEP == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(
@@ -1185,6 +1187,149 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
   flow_state_machine_->setLastIterationEffective(changed);
 }
 
+namespace {
+
+// Snap a segment to the gcells it crosses and grow it by one gcell at each end
+// along its own routing axis (vertical -> up/down, horizontal -> left/right),
+// giving the worker room to relocate the vias at the segment ends.
+odb::Rect segmentBox(frBlock* block, frPathSeg* seg)
+{
+  const odb::Rect bbox = seg->getBBox();
+  odb::Point ll = block->getGCellIdx(bbox.ll());
+  odb::Point ur = block->getGCellIdx(bbox.ur());
+  if (seg->isVertical()) {
+    ll = {ll.x(), std::max(0, ll.y() - 1)};
+    ur = {ur.x(), ur.y() + 1};
+  } else {
+    ll = {std::max(0, ll.x() - 1), ll.y()};
+    ur = {ur.x() + 1, ur.y()};
+  }
+  return {block->getGCellBox(ll).ll(), block->getGCellBox(ur).ur()};
+}
+
+// Collect the net's routed objects (segments, patches, vias) overlapping a
+// rect on the given layer. A via carries metal on more than one layer, so it
+// is matched only when the enclosure (or cut) that actually sits on lnum
+// intersects the rect.
+void netObjsOverlapping(frNet* net,
+                        frLayerNum lnum,
+                        const odb::Rect& rect,
+                        std::vector<frBlockObject*>& out)
+{
+  for (const auto& via : net->getVias()) {
+    const frViaDef* via_def = via->getViaDef();
+    const bool hit = (via_def->getLayer1Num() == lnum
+                      && via->getLayer1BBox().intersects(rect))
+                     || (via_def->getLayer2Num() == lnum
+                         && via->getLayer2BBox().intersects(rect))
+                     || (via_def->getCutLayerNum() == lnum
+                         && via->getCutBBox().intersects(rect));
+    if (hit) {
+      out.push_back(via.get());
+    }
+  }
+  for (const auto& shape : net->getShapes()) {
+    if (shape->typeId() == frcPathSeg && shape->getLayerNum() == lnum
+        && shape->getBBox().intersects(rect)) {
+      out.push_back(shape.get());
+    }
+  }
+  for (const auto& pwire : net->getPatchWires()) {
+    if (pwire->getLayerNum() == lnum && pwire->getBBox().intersects(rect)) {
+      out.push_back(pwire.get());
+    }
+  }
+}
+
+// Net path segments whose endpoint coincides with the via origin (on either
+// the via's bottom or top routing layer).
+void connectedSegments(frNet* net,
+                       const odb::Point& origin,
+                       std::vector<frPathSeg*>& out)
+{
+  for (const auto& shape : net->getShapes()) {
+    if (shape->typeId() != frcPathSeg) {
+      continue;
+    }
+    auto* seg = static_cast<frPathSeg*>(shape.get());
+    if (seg->getBeginPoint() == origin || seg->getEndPoint() == origin) {
+      out.push_back(seg);
+    }
+  }
+}
+
+// Reduce a src object to segment-anchored worker boxes:
+//  - segment: its expanded gcell box
+//  - via:     the expanded gcell box of every segment connected to it
+//  - patch:   resolve the via/segment it patches and recurse once
+void addObjBoxes(frBlock* block,
+                 frBlockObject* obj,
+                 std::vector<odb::Rect>& boxes,
+                 int depth)
+{
+  switch (obj->typeId()) {
+    case frcPathSeg:
+      boxes.push_back(segmentBox(block, static_cast<frPathSeg*>(obj)));
+      break;
+    case frcVia: {
+      auto* via = static_cast<frVia*>(obj);
+      std::vector<frPathSeg*> segs;
+      connectedSegments(via->getNet(), via->getOrigin(), segs);
+      for (auto* seg : segs) {
+        boxes.push_back(segmentBox(block, seg));
+      }
+      break;
+    }
+    case frcPatchWire: {
+      if (depth > 0) {
+        break;  // guard against patch-on-patch recursion
+      }
+      auto* pw = static_cast<frPatchWire*>(obj);
+      std::vector<frBlockObject*> patched;
+      netObjsOverlapping(
+          pw->getNet(), pw->getLayerNum(), pw->getBBox(), patched);
+      for (auto* p : patched) {
+        if (p != obj) {
+          addObjBoxes(block, p, boxes, depth + 1);
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+}  // namespace
+
+// Builds worker boxes for a marker whose routing diverged off-guide (no orig
+// guide covers it). The marker only records net owners and shape rects, so the
+// actual src objects (segment/via/patch) are resolved by walking the shapes of
+// each guided src net near the marker, then each is reduced to a segment gcell
+// box that gives the worker room to reroute.
+std::vector<odb::Rect> FlexDR::getOffGuideWorkerBoxes(frMarker* marker) const
+{
+  auto* block = getDesign()->getTopBlock();
+
+  std::vector<frBlockObject*> src_objs;
+  for (auto& obj : marker->getSrcs()) {
+    if (obj->typeId() != frcNet) {
+      continue;
+    }
+    auto* net = static_cast<frNet*>(obj);
+    if (net->getOrigGuides().empty()) {
+      continue;  // e.g. a power net whose rail can't be moved
+    }
+    netObjsOverlapping(net, marker->getLayerNum(), marker->getBBox(), src_objs);
+  }
+
+  std::vector<odb::Rect> boxes;
+  for (auto* obj : src_objs) {
+    addObjBoxes(block, obj, boxes, 0);
+  }
+  return boxes;
+}
+
 void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
                             IterationProgress& iter_prog)
 {
@@ -1193,18 +1338,30 @@ void FlexDR::guideTilesFlow(const SearchRepairArgs& args,
   }
   std::vector<odb::Rect> workers;
   for (const auto& marker : getDesign()->getTopBlock()->getMarkers()) {
+    bool covered_by_guide = false;
+    bool has_guided_net = false;
     for (auto src : marker->getSrcs()) {
       if (src->typeId() == frcNet) {
         auto net = static_cast<frNet*>(src);
         if (net->getOrigGuides().empty()) {
           continue;
         }
+        has_guided_net = true;
         for (const auto& guide : net->getOrigGuides()) {
           if (!guide.getBBox().intersects(marker->getBBox())) {
             continue;
           }
           workers.push_back(guide.getBBox());
+          covered_by_guide = true;
         }
+      }
+    }
+    // The router can diverge from its guides, leaving a violation that no
+    // guide covers. Guide-anchored workers miss it entirely, so build worker
+    // boxes from the src objects behind the violation instead.
+    if (has_guided_net && !covered_by_guide) {
+      for (const auto& box : getOffGuideWorkerBoxes(marker.get())) {
+        workers.push_back(box);
       }
     }
   }

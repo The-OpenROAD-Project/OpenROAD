@@ -7,4 +7,4 @@ read_lef "./testcases/macro_only.lef"
 read_def "./testcases/unfixed_cells_dont_fit_in_core.def"
 
 set_thread_count 0
-rtl_macro_placer -report_directory [make_result_dir]
+catch { rtl_macro_placer -report_directory [make_result_dir] }

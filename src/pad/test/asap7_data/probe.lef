@@ -1,0 +1,56 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+
+MACRO Probe
+  CLASS COVER ;
+  ORIGIN 0 0 ;
+  FOREIGN Probe 0 0 ;
+  SIZE 175 BY 25 ;
+  SYMMETRY X Y R90 ;
+  
+  PIN PIN0
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Pad ;
+        RECT 0 0 25 25 ;
+    END
+  END PIN0
+
+  PIN PIN1
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Pad ;
+        RECT 50 0 75 25 ;
+    END
+  END PIN1
+
+  PIN PIN2
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Pad ;
+        RECT 100 0 125 25 ;
+    END
+  END PIN2
+
+  PIN PIN3
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Pad ;
+        RECT 150 0 175 25 ;
+    END
+  END PIN3
+
+  OBS
+    LAYER Pad ;
+      RECT 0 0 175 25 ;
+  END
+
+END Probe
+
+END LIBRARY

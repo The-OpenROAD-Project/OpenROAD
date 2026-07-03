@@ -10,6 +10,7 @@
 #include "GeoTypes.h"
 #include "Netlist.h"
 #include "db_sta/dbSta.hh"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
@@ -23,14 +24,16 @@ Design::Design(odb::dbDatabase* db,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
-               const std::set<odb::dbNet*>& clock_nets)
+               const odb::PtrSet<odb::dbNet>& clock_nets,
+               const bool verbose)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
       constants_(constants),
       min_routing_layer_(min_routing_layer),
       max_routing_layer_(max_routing_layer),
-      clock_nets_(clock_nets)
+      clock_nets_(clock_nets),
+      verbose_(verbose)
 {
   read();
   setUnitCosts();
@@ -54,10 +57,12 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("Design statistics");
-  logger_->report("Nets:                {}", nets_.size());
-  logger_->report("Special nets:        {}", num_special_nets);
-  logger_->report("Routing layers:      {}", getNumLayers());
+  if (verbose_) {
+    logger_->report("Design statistics");
+    logger_->report("Nets:                {}", nets_.size());
+    logger_->report("Special nets:        {}", num_special_nets);
+    logger_->report("Routing layers:      {}", getNumLayers());
+  }
 }
 
 void Design::readLayers()
@@ -85,11 +90,11 @@ void Design::readNetlist()
 
     auto pins = makeNetPins(db_net);
 
-    LayerRange layer_range
-        = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+    LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                              .max_layer = max_routing_layer_ - 1};
     const int min_clk_layer = block_->getMinLayerForClock();
     const int max_clk_layer = block_->getMaxLayerForClock();
-    if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
+    if (clock_nets_.contains(db_net) && min_clk_layer > 0
         && max_clk_layer > 0) {
       layer_range.min_layer = min_clk_layer - 1;
       layer_range.max_layer = max_clk_layer - 1;
@@ -159,11 +164,13 @@ void Design::updateNet(odb::dbNet* db_net)
 
   auto pins = makeNetPins(db_net);
 
-  LayerRange layer_range
-      = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
-  if (clock_nets_.find(db_net) != clock_nets_.end()) {
-    layer_range.min_layer = block_->getMinLayerForClock() - 1;
-    layer_range.max_layer = block_->getMaxLayerForClock() - 1;
+  LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
+                            .max_layer = max_routing_layer_ - 1};
+  const int min_clk_layer = block_->getMinLayerForClock();
+  const int max_clk_layer = block_->getMaxLayerForClock();
+  if (clock_nets_.contains(db_net) && min_clk_layer > 0 && max_clk_layer > 0) {
+    layer_range.min_layer = min_clk_layer - 1;
+    layer_range.max_layer = max_clk_layer - 1;
   }
 
   auto it = db_net_to_id_.find(db_net);
@@ -178,6 +185,14 @@ void Design::updateNet(odb::dbNet* db_net)
   }
 }
 
+void Design::removeNet(odb::dbNet* db_net)
+{
+  auto it = db_net_to_id_.find(db_net);
+  if (it != db_net_to_id_.end()) {
+    nets_[it->second].invalidate();
+    db_net_to_id_.erase(it);
+  }
+}
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {
@@ -347,6 +362,9 @@ void Design::getAllObstacles(std::vector<std::vector<BoxT>>& all_obstacles,
 void Design::printNets() const
 {
   for (const CUGRNet& net : nets_) {
+    if (!net.isValid()) {
+      continue;
+    }
     logger_->report("Net: {}", net.getName());
     for (const auto& pin : net.getPins()) {
       logger_->report("\tPin: {}", pin.getName());

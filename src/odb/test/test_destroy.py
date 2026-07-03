@@ -4,8 +4,8 @@ import odbUnitTest
 import unittest
 
 # destroying   dbInst,  dbNet,  dbBTerm,  dbBlock,  dbBPin,  dbWire,  dbCapNode,
-# dbCcSeg,  dbLib,  dbSWire,  dbObstruction,  dbRegion
-# TODO         dbRSeg,  dbRCSeg,  dbRow,  dbTarget,  dbTech
+# dbCcSeg,  dbLib,  dbSWire,  dbObstruction,  dbRegion,  dbRSeg,  dbRow,  dbTech
+# Note: dbRCSeg has no standalone Python API; dbTarget was removed from ODB
 
 
 class TestDestroy(odbUnitTest.TestCase):
@@ -169,6 +169,38 @@ class TestDestroy(odbUnitTest.TestCase):
         self.assertIsNone(odb.dbTrackGrid_create(self.block, L1))
         grid.destroy(grid)
         self.assertIsNotNone(odb.dbTrackGrid_create(self.block, L1))
+
+    def test_create_destroy_row(self):
+        lib = self.db.getLibs()[0]
+        site = odb.dbSite.create(lib, "site1")
+        self.assertIsNotNone(site)
+        self.assertEqual(len(self.block.getRows()), 0)
+        row = odb.dbRow.create(
+            self.block, "row1", site, 0, 0, "R0", "HORIZONTAL", 10, 100
+        )
+        self.assertIsNotNone(row)
+        self.assertEqual(row.getName(), "row1")
+        self.assertEqual(len(self.block.getRows()), 1)
+        row.destroy(row)
+        self.assertEqual(len(self.block.getRows()), 0)
+
+    def test_create_destroy_rseg(self):
+        # getRSegs() skips the list head (zero rseg); use getZeroRSeg() instead.
+        self.assertIsNone(self.n1.getZeroRSeg())
+        rseg = odb.dbRSeg.create(self.n1, 0, 0, 0, False)
+        self.assertIsNotNone(rseg)
+        self.assertIsNotNone(self.n1.getZeroRSeg())
+        # destroy() with explicit net: getNet() requires a target CapNode.
+        rseg.destroy(rseg, self.n1)
+        self.assertIsNone(self.n1.getZeroRSeg())
+
+    def test_create_destroy_tech(self):
+        tech2 = odb.dbTech.create(self.db, "tech2")
+        self.assertIsNotNone(tech2)
+        self.assertEqual(tech2.getName(), "tech2")
+        self.assertEqual(len(self.db.getTechs()), 2)
+        tech2.destroy(tech2)
+        self.assertEqual(len(self.db.getTechs()), 1)
 
 
 if __name__ == "__main__":

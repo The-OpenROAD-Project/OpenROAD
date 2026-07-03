@@ -5,7 +5,8 @@
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -34,13 +35,7 @@ COMPULSORY_TESTS = [
     "gcd_genetic",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "rmp_man_tcl_check",
-    "rmp_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -126,11 +121,25 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+# Genetic/annealing tests run significantly longer than the "small" 300s
+# default; bump their size under concurrent load.
+LONG_RUNNING_TESTS = [
+    "aes_genetic",
+    "gcd_genetic",
+    "aes_annealing",
+    "gcd_annealing1",
+    "gcd_annealing2",
+]
+
 [
     regression_test(
         name = test_name,
-        data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
+        data = [
+            ":" + test_name + "_resources",
+            "//src/rmp:rmp_py",
+        ],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -147,23 +156,19 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
 )
 
@@ -178,22 +183,35 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "aes_nangate45.v",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    includes = [
-        "../src",
-    ],
     deps = [
         "//src/cut",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",
-        "//src/odb",
-        "//src/rmp",
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/rmp:optimization_strategies",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tcl_lang//:tcl",
     ],
+)
+
+py_test(
+    name = "rmp_man_tcl_check",
+    srcs = ["rmp_man_tcl_check.py"],
+    data = ["//src/rmp:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "rmp_readme_msgs_check",
+    data = [
+        "//src/rmp:doc_files",
+        "//src/rmp:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

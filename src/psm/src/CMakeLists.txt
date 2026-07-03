@@ -45,6 +45,7 @@ target_link_libraries(psm
     est_lib
     Eigen3::Eigen
     gui
+    gui_heatmap_core
     Boost::boost
 )
 

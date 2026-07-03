@@ -745,8 +745,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const odb::Rect& box,
 
   // via prl should check min area patch metal if not fat via
   auto lNum = gridGraph_.getLayerNum(z);
-  bool isH
-      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isH = getTech()->getLayer(lNum)->isHorizontal();
   bool isFatVia = (isH) ? (viaBox.dy() > width) : (viaBox.dx() > width);
 
   frCoord length2_mar = length2;
@@ -1608,7 +1607,7 @@ bool FlexDRWorker::mazeIterInit_sortRerouteNets(
     if (router_cfg_->OR_SEED != -1 && rerouteNets.size() >= 2) {
       std::uniform_int_distribution<int> distribution(0,
                                                       rerouteNets.size() - 1);
-      std::default_random_engine generator(router_cfg_->OR_SEED);
+      std::mt19937 generator(router_cfg_->OR_SEED);
       int numSwap = (double) (rerouteNets.size()) * router_cfg_->OR_K;
       for (int i = 0; i < numSwap; i++) {
         int idx = distribution(generator);
@@ -3216,7 +3215,6 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 
   // Verify if net has jumpers
   const bool route_with_jumpers = net->getFrNet()->hasJumpers();
-
   if (net->getPins().size() <= 1) {
     return true;
   }
@@ -3492,7 +3490,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio_helper(
     end_point = points[point_idx - 1];
     FlexMazeIdx begin_point_successor = points[prev_point_idx + 1],
                 end_point_predecessor = points[point_idx - 2];
-    if (curr_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (curr_layer->isHorizontal()) {
       is_bp_patch_style_left
           = (begin_point.x() == begin_point_successor.x())
                 ? (begin_point.x() < end_point.x())
@@ -3684,8 +3682,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  isPatchHorz
-      = getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL;
+  isPatchHorz = getTech()->getLayer(layerNum)->isHorizontal();
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
       bpIdx, isPatchHorz, bpPatchLeft, patchLength);

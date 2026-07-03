@@ -17,6 +17,7 @@
 #include "GRTree.h"
 #include "GridGraph.h"
 #include "Layers.h"
+#include "Netlist.h"
 #include "geo.h"
 #include "robin_hood.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -562,11 +563,17 @@ void PatternRoute::calculateRoutingCosts(
         if (grid_graph_->getLayerDirection(layer_index) != direction) {
           continue;
         }
-        CostT cost
-            = net_->isInsideLayerRange(layer_index)
-                  ? path->getCosts()[layer_index]
-                        + grid_graph_->getWireCost(layer_index, *node, *path)
-                  : std::numeric_limits<CostT>::max();
+        CostT cost = std::numeric_limits<CostT>::max();
+        if (net_->isInsideLayerRange(layer_index)) {
+          cost = path->getCosts()[layer_index]
+                 + grid_graph_->getWireCost(
+                     layer_index, *node, *path, net_->getNdrCost(layer_index));
+
+          if (net_->isResAware()) {
+            cost += grid_graph_->getWireResistanceCost(
+                layer_index, *node, *path, net_->getNdrWidth(layer_index));
+          }
+        }
         if (cost < costs[layer_index].first) {
           costs[layer_index] = std::make_pair(cost, path_index);
         }
@@ -590,12 +597,27 @@ void PatternRoute::calculateRoutingCosts(
   for (int layer_index = 1; layer_index < grid_graph_->getNumLayers();
        layer_index++) {
     via_costs[layer_index] = via_costs[layer_index - 1]
-                             + grid_graph_->getViaCost(layer_index - 1, *node);
+                             + grid_graph_->getViaCost(
+                                 layer_index - 1, *node, net_->getNdrCosts());
+    // Res-aware: charge via resistance so climbing only pays off when
+    // the upper-layer wire-R savings beat it.
+    if (net_->isResAware()) {
+      via_costs[layer_index]
+          += grid_graph_->getViaResistanceCost(layer_index - 1);
+    }
   }
+
+  const LayerRange& net_range = net_->getLayerRange();
   IntervalT fixed_layers(node->getFixedLayers());
-  fixed_layers.set(
-      std::min(fixed_layers.low(), grid_graph_->getNumLayers() - 1),
-      std::max(fixed_layers.high(), constants_.min_routing_layer));
+  if (fixed_layers.isValid()) {
+    fixed_layers.set(
+        std::min(fixed_layers.low(), grid_graph_->getNumLayers() - 1),
+        std::max(fixed_layers.high(), net_range.min_layer));
+  } else {
+    // Steiner node with no pin attached: any layer the net is allowed
+    // on is acceptable.
+    fixed_layers.set(net_range.min_layer, net_range.max_layer);
+  }
 
   for (int low_layer_index = 0; low_layer_index <= fixed_layers.low();
        low_layer_index++) {

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -20,6 +21,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -83,14 +85,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 }
 
 void ClusteringEngine::setHalos(
-    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+    const HardMacro::Halo& base_halo,
+    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
 {
+  base_halo_ = base_halo;
   macro_to_halo_ = macro_to_halo;
-}
-
-void ClusteringEngine::setUseDefHalo(bool use_def_halo)
-{
-  use_def_halo_ = use_def_halo;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -121,17 +120,18 @@ void ClusteringEngine::init()
       = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
 
   if (inst_area_with_halos > tree_->floorplan_shape.area()) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area considering the macros' halos {} exceeds "
-                   "the floorplan area {}",
-                   inst_area_with_halos,
-                   tree_->floorplan_shape.area());
+    logger_->error(
+        MPL,
+        16,
+        "The instance area considering the macros' halos {:.2f}um^2 exceeds "
+        "the floorplan area {:.2f}um^2",
+        block_->dbuAreaToMicrons(static_cast<int64_t>(inst_area_with_halos)),
+        block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
   }
 
   tree_->io_pads = getIOPads();
 
-  reportDesignData();
+  reportDesignData(unfixed_macros.size());
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
@@ -281,7 +281,7 @@ std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
   return io_pads;
 }
 
-void ClusteringEngine::reportDesignData()
+void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
@@ -307,8 +307,9 @@ void ClusteringEngine::reportDesignData()
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
+      "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tDefault halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -318,11 +319,12 @@ void ClusteringEngine::reportDesignData()
       design_metrics_->getNumStdCell(),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
+      num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->default_halo.left),
-      block_->dbuToMicrons(tree_->default_halo.bottom),
-      block_->dbuToMicrons(tree_->default_halo.right),
-      block_->dbuToMicrons(tree_->default_halo.top),
+      block_->dbuToMicrons(base_halo_.left),
+      block_->dbuToMicrons(base_halo_.bottom),
+      block_->dbuToMicrons(base_halo_.right),
+      block_->dbuToMicrons(base_halo_.top),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -1120,7 +1122,7 @@ void ClusteringEngine::breakLargeFlatCluster(Cluster* parent)
   const int num_other_cluster_vertices = vertex_id;
 
   std::vector<odb::dbInst*> insts;
-  std::map<odb::dbInst*, int> inst_vertex_id_map;
+  odb::PtrMap<odb::dbInst, int> inst_vertex_id_map;
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
     vertex_weight.push_back(block_->dbuAreaToMicrons(computeArea(macro)));
@@ -2080,12 +2082,17 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = tree_->default_halo;
-
+      HardMacro::Halo halo;
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
-      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
-        halo = HardMacro::Halo(inst->getHalo());
+      } else if (inst->getHalo() != nullptr) {
+        const HardMacro::Halo inst_halo(inst->getHalo());
+        halo = inst_halo;
+        if (!inst->getHalo()->isSoft()) {
+          halo = inst_halo.floorTo(base_halo_);
+        }
+      } else {
+        halo = base_halo_;
       }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
@@ -2112,7 +2119,7 @@ void ClusteringEngine::createTempMacroClusters(
     std::vector<HardMacro>& sa_macros,
     UniqueClusterVector& macro_clusters,
     std::map<int, int>& cluster_to_macro,
-    std::set<odb::dbMaster*>& masters)
+    odb::PtrSet<odb::dbMaster>& masters)
 {
   int macro_id = 0;
   std::string cluster_name;

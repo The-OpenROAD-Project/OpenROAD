@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "db/obj/frMarker.h"
-#include "db/obj/frNode.h"
+#include "db/obj/frNet.h"
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
@@ -120,10 +120,6 @@ TEST_F(GCFixture, metal_short_obs)
   instTerm->addToNet(n1);
 
   n1->addInstTerm(instTerm);
-  auto instTermNode = std::make_unique<frNode>();
-  instTermNode->setPin(instTerm);
-  instTermNode->setType(frNodeTypeEnum::frcPin);
-  n1->addNode(instTermNode);
   runGC();
 
   // Test the results
@@ -603,6 +599,108 @@ TEST_F(GCFixture, min_enclosed_area)
              frConstraintTypeEnum::frcMinEnclosedAreaConstraint,
              odb::Rect(50, 50, 150, 150));
 }
+
+using Lef58AreaFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaFixture, lef58_area)
+{
+  const bool legal = GetParam();
+  // The wire below provides 200 x 100 = 20000 DBU^2.  Require just under that
+  // when legal and just over it when illegal.
+  makeLef58AreaConstraint(2, /* area */ legal ? 20000 : 30000);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (legal) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 150));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaSuite, Lef58AreaFixture, testing::Bool());
+
+// Check the LEF58 area EXCEPTRECTANGLE option: the rule is ignored for a
+// single-rectangle shape but still applies to a non-rectangular one.  The
+// required area is set high so both shapes are below it; only the shape
+// decides whether a marker is produced.
+using Lef58AreaExceptRectFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaExceptRectFixture, lef58_area_except_rectangle)
+{
+  const bool rectangular = GetParam();
+  makeLef58AreaConstraint(
+      2, /* area */ 100000, /* rect_width */ -1, /* except_rectangle */ true);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});
+  if (!rectangular) {
+    // Add a stem to turn the wire into a (non-rectangular) T-shape.
+    makePathseg(n1, 2, {100, 50}, {100, 300});
+  }
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (rectangular) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 300));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaExceptRectSuite,
+                         Lef58AreaExceptRectFixture,
+                         testing::Bool());
+
+// Same rectangle below the required area, varying only EXCEPTRECTANGLE: with
+// it set the rectangle is excepted (no marker); without it the rule applies.
+using Lef58AreaExceptRectRectFixture = FixtureWithParam<bool>;
+
+TEST_P(Lef58AreaExceptRectRectFixture, lef58_area_except_rectangle_rect)
+{
+  const bool except_rectangle = GetParam();
+  makeLef58AreaConstraint(
+      2, /* area */ 30000, /* rect_width */ -1, except_rectangle);
+
+  frNet* n1 = makeNet("n1");
+
+  makePathseg(n1, 2, {0, 100}, {200, 100});  // rectangle, area 20000
+
+  runGC();
+
+  // Test the results
+  auto& markers = worker.getMarkers();
+  if (except_rectangle) {
+    EXPECT_EQ(markers.size(), 0);
+  } else {
+    EXPECT_EQ(markers.size(), 1);
+    testMarker(markers[0].get(),
+               2,
+               frConstraintTypeEnum::frcLef58AreaConstraint,
+               odb::Rect(0, 50, 200, 150));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Lef58AreaExceptRectRectSuite,
+                         Lef58AreaExceptRectRectFixture,
+                         testing::Bool());
 
 // Check for a spacing table influence violation.
 TEST_F(GCFixture, spacing_table_infl_vertical)

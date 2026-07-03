@@ -8,6 +8,7 @@
 #include "rcx/array1.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
+#include "rcx/ext_options.h"
 #include "utl/Logger.h"
 
 using odb::dbBlock;
@@ -29,6 +30,21 @@ void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
   _block = nullptr;
   _blockId = 0;
   logger_ = logger;
+}
+
+void extMain::setExtractionOptions(const ExtractOptions& options)
+{
+  _couplingFlag = options.cc_model;
+  _coupleThreshold = options.coupling_threshold;
+  _ccUp = options.cc_up;
+  _ccContextDepth = options.context_depth;
+  _mergeViaRes = !options.no_merge_via_res;
+  _mergeResBound = options.max_res;
+  _lef_res = options.lef_res;
+  _lefRC = options.lef_rc;
+  _dbgOption = options._dbg;
+  rules_file_path_ = options.ext_model_file;
+  target_nets_names_ = options.net;
 }
 
 void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
@@ -446,7 +462,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
 {
   double cap = frCap + ccCap - deltaFr;
 
-  double tot = rseg->getCapacitance(modelIndex);
+  double tot = rseg->getGroundCapacitance(modelIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, modelIndex);
@@ -511,7 +527,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     }
 
     extDbIndex = getProcessCornerDbIndex(modelIndex);
-    tot = rseg->getCapacitance(extDbIndex);
+    tot = rseg->getGroundCapacitance(extDbIndex);
     tot += cap;
 
     rseg->setCapacitance(tot, extDbIndex);
@@ -520,7 +536,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
       continue;
     }
     getScaledGndC(sci, cap);
-    tot = rseg->getCapacitance(scDbIdx);
+    tot = rseg->getGroundCapacitance(scDbIdx);
     tot += cap;
     rseg->setCapacitance(tot, scDbIdx);
   }

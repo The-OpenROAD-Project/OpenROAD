@@ -16,10 +16,10 @@
 #include "db/tech/frConstraint.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
+#include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
-#include "global.h"
 #include "utl/Logger.h"
 
 namespace drt {
@@ -185,6 +185,8 @@ class FlexTAWorker
   int getNumAssigned() const { return numAssigned_; }
   // others
   int main_mt();
+  // end
+  void end();
 
  private:
   frDesign* design_;
@@ -315,8 +317,6 @@ class FlexTAWorker
                                  frOrderedIdSet<taPin*>* pinS);
   void assignIroute_updateOthers(frOrderedIdSet<taPin*>& pinS);
 
-  // end
-  void end();
   void saveToGuides();
 
   friend class FlexTA;

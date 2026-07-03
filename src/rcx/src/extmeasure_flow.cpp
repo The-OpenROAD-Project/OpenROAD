@@ -1036,13 +1036,13 @@ int extMeasureRC::computeAndStoreRC_new(dbRSeg* rseg1,
                            "FR",
                            rseg1->getId(),
                            fr,
-                           rseg1->getCapacitance());
+                           rseg1->getGroundCapacitance());
           DebugUpdateValue(_debugFP,
                            "OVER_SUB_INF",
                            "FR",
                            rseg1->getId(),
                            fr,
-                           rseg1->getCapacitance());
+                           rseg1->getGroundCapacitance());
 
           segInfo(_debugFP,
                   "\t\tOU_TOTAL_UPDATE ",

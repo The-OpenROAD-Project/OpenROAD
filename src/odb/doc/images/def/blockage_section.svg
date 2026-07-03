@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="465" height="71"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 51 1 47 1 55"/>
+   <polygon points="17 51 9 47 9 55"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#blockage_start"
+      xlink:title="blockage_start">
+      <rect x="31" y="37" width="114" height="32"/>
+      <rect x="29" y="35" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="55">blockage_start</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#blockage_def"
+      xlink:title="blockage_def">
+      <rect x="185" y="3" width="104" height="32"/>
+      <rect x="183" y="1" width="104" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="193" y="21">blockage_def</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#blockage_end"
+      xlink:title="blockage_end">
+      <rect x="329" y="37" width="108" height="32"/>
+      <rect x="327" y="35" width="108" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="337" y="55">blockage_end</text>
+   </a>
+   <path class="line"
+         d="m17 51 h2 m0 0 h10 m114 0 h10 m20 0 h10 m0 0 h114 m-144 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -14 q0 -10 10 -10 m124 34 l20 0 m-20 0 q10 0 10 -10 l0 -14 q0 -10 -10 -10 m-124 0 h10 m104 0 h10 m20 34 h10 m108 0 h10 m3 0 h-3"/>
+   <polygon points="455 51 463 47 463 55"/>
+   <polygon points="455 51 447 47 447 55"/>
+</svg>
