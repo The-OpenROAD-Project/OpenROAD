@@ -3,4 +3,4 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0133]     Created 1 nets and 0 connections.
 [WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
-[DEBUG GRT-via_geom] via metal1->metal2 [VIA_C]: encl lower=150x150 upper=150x100 -> len lower=262.5 upper=225.0 -> demand lower=0.0875 upper=0.0750
+[DEBUG GRT-via_geom] via metal1->metal2 [VIA_C]: encl lower=150x150 upper=150x100 -> len lower=300.0 upper=300.0 -> demand lower=0.1000 upper=0.1000

@@ -48,20 +48,20 @@ Routing statistics
 Wire length:           2918
 Total via count:       137
 Total congestion:      0
-Min resource:          0.938391635725806
+Min resource:          0.9013890080981781
 Bottleneck:            (3, 15, 21)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1             13777           180            1.31%             0 /  0 /  0
-met2             10786           124            1.15%             0 /  0 /  0
+met1             13777           187            1.36%             0 /  0 /  0
+met2             10786           128            1.19%             0 /  0 /  0
 met3              4207            24            0.57%             0 /  0 /  0
 met4              3241            12            0.37%             0 /  0 /  0
 met5              1413             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            33424           340            1.02%             0 /  0 /  0
+Total            33424           351            1.05%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15

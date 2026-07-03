@@ -47,26 +47,26 @@ metal10    Vertical         2142          1190          44.44%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36727
-Total via count:       2670
+Total via count:       2703
 Total congestion:      0
-Min resource:          0.47516123055311166
-Bottleneck:            (1, 12, 13)
+Min resource:          0.45964864596985855
+Bottleneck:            (2, 22, 14)
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            7167          1171           16.34%             0 /  0 /  0
-metal3            9792          1334           13.62%             0 /  0 /  0
-metal4            4869           100            2.05%             0 /  0 /  0
-metal5            4896            32            0.65%             0 /  0 /  0
-metal6            4869            42            0.86%             0 /  0 /  0
+metal2            7167          1195           16.67%             0 /  0 /  0
+metal3            9792          1361           13.90%             0 /  0 /  0
+metal4            4869           119            2.44%             0 /  0 /  0
+metal5            4896            42            0.86%             0 /  0 /  0
+metal6            4869            80            1.64%             0 /  0 /  0
 metal7            1714             0            0.00%             0 /  0 /  0
 metal8            1714             0            0.00%             0 /  0 /  0
 metal9            1190             0            0.00%             0 /  0 /  0
 metal10           1190             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            37401          2679            7.16%             0 /  0 /  0
+Total            37401          2797            7.48%             0 /  0 /  0
 
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
