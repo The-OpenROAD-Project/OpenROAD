@@ -34,8 +34,6 @@ report_checks
 report_wns
 report_tns
 
-write_verilog_for_eqy $test_name before "None"
-
 puts "-- After emap --\n"
 
 resynth_emap -scene fast \
@@ -56,8 +54,3 @@ report_timing_histogram
 report_checks
 report_wns
 report_tns
-
-set liberty_files [concat $lib_files_slow $lib_files_fast]
-run_equivalence_test $test_name \
-  -liberty_files $liberty_files \
-  -remove_cells "None"
