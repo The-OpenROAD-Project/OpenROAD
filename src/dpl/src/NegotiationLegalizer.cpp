@@ -342,16 +342,6 @@ void NegotiationLegalizer::legalize()
     }
   }
 
-  {
-    utl::DebugScopedTimer t(flush_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "commitNegotiationPosToOdb: {}");
-    commitNegotiationPosToOdb();
-  }
-
   const double total_s = total_timer.elapsed();
   auto pct
       = [total_s](double t) { return total_s > 0 ? 100.0 * t / total_s : 0.0; };
