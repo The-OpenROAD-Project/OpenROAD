@@ -241,6 +241,7 @@ or_integration_tests(
   PASSFAIL_TESTS
     repair_setup_legacy_mt
     repair_setup_mt1
+    repair_setup_stage_delay
     cpp_tests
 )
 

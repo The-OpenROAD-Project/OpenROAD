@@ -173,6 +173,37 @@ gtest_discover_tests(TestNestedJournal
 add_dependencies(build_and_test TestNestedJournal
 )
 
+add_executable(TestSetupLegacyBase TestSetupLegacyBase.cc)
+target_link_libraries(TestSetupLegacyBase
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestSetupLegacyBase
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/policy
+)
+
+gtest_discover_tests(TestSetupLegacyBase
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestSetupLegacyBase
+)
+
 add_executable(TestResizerMt TestResizerMt.cc)
 target_link_libraries(TestResizerMt
         OpenSTA
