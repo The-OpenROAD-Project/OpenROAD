@@ -258,6 +258,7 @@ PASSFAIL_TESTS = [
     # build directory structure not compatible with Bazel
     # "cpp_tests",
     "inferred_clock_gator_time_borrow",
+    "inferred_clock_gator_time_borrow_covered",
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
 ]
