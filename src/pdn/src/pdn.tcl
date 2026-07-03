@@ -1129,9 +1129,11 @@ proc define_pdn_grid_macro { args } {
 
   if { !$created } {
     utl::warn PDN 1051 "No instances found for grid (${keys(-name)})."
-    pdn::make_dummy_inst_grid \
-      $domains \
-      $keys(-name)
+    foreach domain $domains {
+      pdn::make_dummy_inst_grid \
+        $domain \
+        $keys(-name)
+    }
   }
 }
 
