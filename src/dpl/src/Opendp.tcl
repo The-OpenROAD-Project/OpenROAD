@@ -47,19 +47,21 @@ proc detailed_placement { args } {
     utl::warn DPL 3 "-disallow_one_site_gaps is deprecated"
   }
 
-  set site_search_window 0
+  # -1/-1.0 mean "unset" (use the negotiation legalizer's own default);
+  # 0 is a valid explicit value for all three.
+  set site_search_window -1
   if { [info exists keys(-site_search_window)] } {
     set site_search_window $keys(-site_search_window)
     sta::check_positive_integer "-site_search_window" $site_search_window
   }
 
-  set row_search_window 0
+  set row_search_window -1
   if { [info exists keys(-row_search_window)] } {
     set row_search_window $keys(-row_search_window)
     sta::check_positive_integer "-row_search_window" $row_search_window
   }
 
-  set drc_penalty 0.0
+  set drc_penalty -1.0
   if { [info exists keys(-drc_penalty)] } {
     set drc_penalty $keys(-drc_penalty)
     sta::check_positive_float "-drc_penalty" $drc_penalty

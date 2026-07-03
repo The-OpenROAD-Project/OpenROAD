@@ -105,15 +105,18 @@ class Opendp
 
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
+  // site_search_window/row_search_window/drc_penalty use a negative value to
+  // mean "unset" (use the negotiation legalizer's own default); 0 is a valid
+  // explicit value for all three.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool use_negotiation = false,
                          bool run_abacus = false,
-                         int site_search_window = 0,
-                         int row_search_window = 0,
-                         double drc_penalty = 0.0);
+                         int site_search_window = -1,
+                         int row_search_window = -1,
+                         double drc_penalty = -1.0);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
