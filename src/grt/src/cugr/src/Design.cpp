@@ -410,23 +410,24 @@ void Design::computeViaDemandLengths()
 
     double num_lower = lower.getMinLength() * constants_.via_multiplier;
     double num_upper = upper.getMinLength() * constants_.via_multiplier;
-    int lo_dx = 0, lo_dy = 0, up_dx = 0, up_dy = 0;
+    // Union all boxes on each routing layer: a via may have several rects on a
+    // layer, and the footprint is their combined extent, not the last one.
+    odb::Rect lo_box, up_box;
+    lo_box.mergeInit();
+    up_box.mergeInit();
     if (via != nullptr) {
       for (odb::dbBox* box : via->getBoxes()) {
-        const odb::Rect r = box->getBox();
         if (box->getTechLayer() == lower_tl) {
-          lo_dx = r.dx();
-          lo_dy = r.dy();
+          lo_box.merge(box->getBox());
         } else if (box->getTechLayer() == upper_tl) {
-          up_dx = r.dx();
-          up_dy = r.dy();
+          up_box.merge(box->getBox());
         }
       }
-      if (lo_dx > 0 && lo_dy > 0) {
-        num_lower = viaDemandLength(lower, lo_dx, lo_dy);
+      if (!lo_box.isInverted() && lo_box.dx() > 0 && lo_box.dy() > 0) {
+        num_lower = viaDemandLength(lower, lo_box.dx(), lo_box.dy());
       }
-      if (up_dx > 0 && up_dy > 0) {
-        num_upper = viaDemandLength(upper, up_dx, up_dy);
+      if (!up_box.isInverted() && up_box.dx() > 0 && up_box.dy() > 0) {
+        num_upper = viaDemandLength(upper, up_box.dx(), up_box.dy());
       }
     }
     via_demand_length_lower_[i] = num_lower;
@@ -448,10 +449,10 @@ void Design::computeViaDemandLengths()
           lower.getName(),
           upper.getName(),
           via_src,
-          lo_dx,
-          lo_dy,
-          up_dx,
-          up_dy,
+          lo_box.isInverted() ? 0 : lo_box.dx(),
+          lo_box.isInverted() ? 0 : lo_box.dy(),
+          up_box.isInverted() ? 0 : up_box.dx(),
+          up_box.isInverted() ? 0 : up_box.dy(),
           num_lower,
           num_upper,
           gcell > 0 ? num_lower / gcell : 0.0,
