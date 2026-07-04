@@ -96,3 +96,7 @@ foreach net {VDD VSS} {
 }
 
 puts "pad connections extending into core: $bad"
+
+set def_file [make_result_file pads_black_parrot_macro_grid.def]
+write_def $def_file
+diff_files pads_black_parrot_macro_grid.defok $def_file
