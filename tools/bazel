@@ -9,9 +9,7 @@
 #
 # bazelisk invokes this wrapper automatically for every command run in
 # this workspace (a bazelisk convention for tools/bazel; it provides the
-# real binary via $BAZEL_REAL). The Go bazelisk implements the
-# convention; the npm @bazel/bazelisk package does not, so there use
-# direct invocation:
+# real binary via $BAZEL_REAL). Direct invocation also works:
 #    tools/bazel [startup flags] <command> [args...]
 # To bypass the wrapper: BAZELISK_SKIP_WRAPPER=1 bazelisk <command> ...
 #
@@ -30,6 +28,7 @@ ALLOWED_TOOLS=(
   awk                # module extension configure steps
   diff cmp patch     # single_version_override / archive_override patches
   tar gzip bzip2 xz zstd unzip  # archive extraction fallbacks
+  tee file xargs     # base utilities used by module extension scripts
   uname id hostname date which getconf nproc
   git                # tools/workspace_status.sh embeds version info
   gh                 # optional; used by some developer workflows
@@ -60,7 +59,7 @@ fi
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
 # are symlinked directly.
 if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(readlink -f "${BAZEL}")") == '#!' ]]; then
-  version=$("${BAZEL}" --version | awk '{print $2}')
+  version=$(BAZELISK_SKIP_WRAPPER=1 "${BAZEL}" --version | awk '{print $2}')
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m | sed 's/aarch64/arm64/')
   # Same cache-directory precedence as bazelisk itself.
@@ -81,35 +80,29 @@ if [[ ${BAZEL} == *bazelisk* || $(head -c 2 "$(readlink -f "${BAZEL}")") == '#!'
 fi
 ln -s "${BAZEL}" "${TOOLBOX}/bazel"
 
-if [[ $# -eq 0 ]]; then
-  echo >&2 "usage: tools/bazel [startup flags] <command> [args...]"
-  exit 1
-fi
-
 # Leading --flags are bazel startup options (e.g. --output_base=...).
+# A flags-only invocation (e.g. `bazel --version`) is valid: no command.
 startup_flags=()
 while [[ $# -gt 0 && $1 == --* ]]; do
   startup_flags+=("$1")
   shift
 done
-if [[ $# -eq 0 ]]; then
-  echo >&2 "usage: tools/bazel [startup flags] <command> [args...]"
-  exit 1
-fi
-command=$1
-shift
+command=${1:-}
+[[ $# -gt 0 ]] && shift
 
 # Flags only exist on build-ish commands; startup flags go before the command.
 extra_flags=()
 case "${command}" in
   build|test|run|cquery|aquery|coverage|fetch|vendor|sync|mod)
     extra_flags=(
-      # Repository rules and actions (target and exec configuration) see
-      # only the allowlisted tools. BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN
-      # lives in .bazelrc so it applies to unwrapped invocations too.
+      # Repository rules see only the allowlisted tools. Actions keep
+      # bazel's strict default PATH (/bin:/usr/bin): the test harness
+      # still uses host python3/tee/file (see the PR cleanup list), and
+      # an --action_env PATH carrying this per-run directory would
+      # fragment action cache keys across runs and machines.
+      # BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN lives in .bazelrc so it
+      # applies to unwrapped invocations too.
       "--repo_env=PATH=${TOOLBOX}"
-      "--action_env=PATH=${TOOLBOX}"
-      "--host_action_env=PATH=${TOOLBOX}"
     )
     ;;
 esac
@@ -130,6 +123,16 @@ done
 # toolbox directory. set -e propagates bazel's exit status.
 # --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
 # specific configuration (e.g. remote caches) cannot mask missing hermeticity.
+bazel_argv=(--nosystem_rc --nohome_rc "${startup_flags[@]}")
+if [[ -n ${command} ]]; then
+  bazel_argv+=("${command}" "${extra_flags[@]}" "$@")
+fi
+# Flags-only invocations (e.g. `bazel --version`) go to the binary verbatim;
+# rc-file options would be rejected there.
+if [[ -z ${command} ]]; then
+  bazel_argv=("${startup_flags[@]}")
+fi
+
 env -i \
   HOME="${HOME}" \
   USER="${USER:-$(id -un)}" \
@@ -138,4 +141,4 @@ env -i \
   LANG=C.UTF-8 \
   PATH="${TOOLBOX}" \
   "${preserved_env[@]}" \
-  "${TOOLBOX}/bazel" --nosystem_rc --nohome_rc "${startup_flags[@]}" "${command}" "${extra_flags[@]}" "$@"
+  "${TOOLBOX}/bazel" "${bazel_argv[@]}"
