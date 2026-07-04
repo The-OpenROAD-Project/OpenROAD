@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Launch bazel in a pruned environment so that toolchains and tools the
+# build is supposed to provide hermetically cannot be picked up from the
+# host. This is a ratchet, not a proof: it removes host compilers,
+# linkers and interpreters from PATH and disables Bazel's local C++
+# toolchain autodetection, but the C++ toolchain still compiles against
+# the host glibc sysroot (/usr/include, /usr/lib), and Bazel itself,
+# a JVM-independent binary, comes from the host.
+#
+# Usage: etc/bazel-hermetic <command> [args...]
+#    e.g. etc/bazel-hermetic build //:openroad
+#
+# The allowlist below is the contract for what the build may use from the
+# host. Grow it only with a comment stating which repository rule or
+# action needs the entry and why bazel cannot provide it.
+set -euo pipefail
+
+# Base shell utilities: repository rules (patch_cmds, configure scripts of
+# module extensions) run through /bin/sh and expect a POSIX userland.
+ALLOWED_TOOLS=(
+  bash sh env
+  basename dirname readlink realpath pwd
+  cat cp ln ls mkdir mktemp mv rm rmdir touch chmod stat find
+  cut grep head sed sort tail tr uniq wc od printf true false test expr sleep
+  awk                # module extension configure steps
+  diff cmp patch     # single_version_override / archive_override patches
+  tar gzip bzip2 xz zstd unzip  # archive extraction fallbacks
+  uname id hostname date which getconf nproc
+  git                # tools/workspace_status.sh embeds version info
+  gh                 # optional; used by some developer workflows
+)
+
+TOOLBOX=$(mktemp -d "${TMPDIR:-/tmp}/bazel-hermetic.XXXXXX")
+trap 'rm -rf "${TOOLBOX}"' EXIT
+
+for tool in "${ALLOWED_TOOLS[@]}"; do
+  if path=$(command -v -- "${tool}" 2>/dev/null); then
+    ln -s "${path}" "${TOOLBOX}/${tool}" 2>/dev/null || true
+  fi
+done
+
+# The bazel binary itself. bazelisk is often a node or shell wrapper whose
+# interpreter must not leak into the pruned PATH, so resolve the real ELF
+# binary it manages (~/.cache/bazelisk) instead of symlinking the wrapper.
+BAZEL=$(command -v bazelisk || command -v bazel) ||
+  { echo >&2 "bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
+if [[ $(head -c 4 "$(readlink -f "${BAZEL}")") != $'\x7fELF' ]]; then
+  version=$("${BAZEL}" --version | awk '{print $2}')
+  arch=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x86_64/')
+  meta="${HOME}/.cache/bazelisk/downloads/metadata/bazelbuild/bazel-${version}-linux-${arch}"
+  real="${HOME}/.cache/bazelisk/downloads/sha256/$(cat "${meta}" 2>/dev/null)/bin/bazel"
+  [[ -x ${real} ]] ||
+    { echo >&2 "bazel-hermetic: ${BAZEL} is a wrapper and no real bazel-${version} found under ~/.cache/bazelisk"; exit 1; }
+  BAZEL=${real}
+fi
+ln -s "${BAZEL}" "${TOOLBOX}/bazel"
+
+if [[ $# -eq 0 ]]; then
+  echo >&2 "usage: etc/bazel-hermetic [startup flags] <command> [args...]"
+  exit 1
+fi
+
+# Leading --flags are bazel startup options (e.g. --output_base=...).
+startup_flags=()
+while [[ $# -gt 0 && $1 == --* ]]; do
+  startup_flags+=("$1")
+  shift
+done
+if [[ $# -eq 0 ]]; then
+  echo >&2 "usage: etc/bazel-hermetic [startup flags] <command> [args...]"
+  exit 1
+fi
+command=$1
+shift
+
+# Flags only exist on build-ish commands; startup flags go before the command.
+extra_flags=()
+case "${command}" in
+  build|test|run|cquery|aquery|coverage|fetch|vendor|sync|mod)
+    extra_flags=(
+      # Fail local C++ toolchain autodetection instead of silently using
+      # /usr/bin/gcc; the hermetic toolchain must win resolution anyway.
+      "--repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1"
+      # Repository rules and actions see only the allowlisted tools.
+      "--repo_env=PATH=${TOOLBOX}"
+      "--action_env=PATH=${TOOLBOX}"
+    )
+    ;;
+esac
+
+# --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
+# specific configuration (e.g. remote caches) cannot mask missing hermeticity.
+exec env -i \
+  HOME="${HOME}" \
+  USER="${USER:-$(id -un)}" \
+  LOGNAME="${LOGNAME:-$(id -un)}" \
+  TERM="${TERM:-dumb}" \
+  LANG=C.UTF-8 \
+  PATH="${TOOLBOX}" \
+  "${TOOLBOX}/bazel" --nosystem_rc --nohome_rc "${startup_flags[@]}" "${command}" "${extra_flags[@]}" "$@"

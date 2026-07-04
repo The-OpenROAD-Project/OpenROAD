@@ -20,18 +20,13 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-# toolchains_llvm is dev_dependency in OpenROAD, so the root module must
-# configure the C++ toolchain.
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
-
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(
-    llvm_version = "20.1.8",
-)
-use_repo(llvm, "llvm_toolchain")
+# The C++ toolchain is a dev_dependency in OpenROAD, so the root module
+# must configure its own. hermetic-llvm provides a statically linked,
+# zero-sysroot LLVM toolchain.
+bazel_dep(name = "llvm", version = "0.8.11")
 
 register_toolchains(
-    "@llvm_toolchain//:all",
+    "@llvm//toolchain:all",
 )
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
