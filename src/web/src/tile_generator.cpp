@@ -1768,14 +1768,12 @@ void TileGenerator::drawGcellGridLayer(std::vector<unsigned char>& image,
   // this tile instead of copying/scanning the full vectors.
   const std::vector<int>& x_grid = gcellGridX(block);
   const std::vector<int>& y_grid = gcellGridY(block);
-  for (auto itx
-       = std::lower_bound(x_grid.begin(), x_grid.end(), draw_bounds.xMin());
+  for (auto itx = std::ranges::lower_bound(x_grid, draw_bounds.xMin());
        itx != x_grid.end() && *itx <= draw_bounds.xMax();
        ++itx) {
     draw_v(*itx);
   }
-  for (auto ity
-       = std::lower_bound(y_grid.begin(), y_grid.end(), draw_bounds.yMin());
+  for (auto ity = std::ranges::lower_bound(y_grid, draw_bounds.yMin());
        ity != y_grid.end() && *ity <= draw_bounds.yMax();
        ++ity) {
     draw_h(*ity);
@@ -1797,16 +1795,18 @@ const std::array<TileGenerator::PseudoLayerDef, 4>&
 TileGenerator::pseudoLayerDefs()
 {
   static const std::array<PseudoLayerDef, 4> defs = {{
-      {"_access_points",
-       &TileVisibility::access_points,
-       &TileGenerator::drawAccessPointsLayer},
-      {"_regions", &TileVisibility::regions, &TileGenerator::drawRegionsLayer},
-      {"_mfg_grid",
-       &TileVisibility::mfg_grid,
-       &TileGenerator::drawMfgGridLayer},
-      {"_gcell_grid",
-       &TileVisibility::gcell_grid,
-       &TileGenerator::drawGcellGridLayer},
+      {.name = "_access_points",
+       .flag = &TileVisibility::access_points,
+       .painter = &TileGenerator::drawAccessPointsLayer},
+      {.name = "_regions",
+       .flag = &TileVisibility::regions,
+       .painter = &TileGenerator::drawRegionsLayer},
+      {.name = "_mfg_grid",
+       .flag = &TileVisibility::mfg_grid,
+       .painter = &TileGenerator::drawMfgGridLayer},
+      {.name = "_gcell_grid",
+       .flag = &TileVisibility::gcell_grid,
+       .painter = &TileGenerator::drawGcellGridLayer},
   }};
   return defs;
 }
@@ -4025,16 +4025,12 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
         if (t > t1) {
           return false;
         }
-        if (t > t0) {
-          t0 = t;
-        }
+        t0 = std::max(t0, t);
       } else {
         if (t < t0) {
           return false;
         }
-        if (t < t1) {
-          t1 = t;
-        }
+        t1 = std::min(t1, t);
       }
       return true;
     };

@@ -326,7 +326,8 @@ static void collectNetFlightLines(odb::dbNet* net,
       if (lines.size() >= kMaxFlywires) {
         return;
       }
-      lines.push_back(FlightLine{driver, sink, kSelectionYellow});
+      lines.push_back(
+          FlightLine{.p1 = driver, .p2 = sink, .color = kSelectionYellow});
     }
   }
 }
