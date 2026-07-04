@@ -295,25 +295,24 @@ proc assign_ndr { args } {
   }
 }
 
-sta::define_cmd_args "set_routing_disable_auto_taper" \
-  { (-net name | -all_clocks) [-disable] [-enable] }
+sta::define_cmd_args "set_routing_auto_taper" \
+  { (-net name | -all_clocks) (-enable | -disable) }
 
 # Per-net control of the detailed router's auto-taper behavior.  By default
 # the detailed router tapers NDR (wide) nets down to minimum width near pin
 # connections.  Some nets (e.g. wide analog/NDR traces) must keep their full
 # width all the way to the pin; use -disable to suppress auto-taper for those
 # nets without recompiling.  Use -enable to restore the default behavior.
-proc set_routing_disable_auto_taper { args } {
-  sta::parse_key_args "set_routing_disable_auto_taper" args \
-    keys {-net} flags {-all_clocks -disable -enable}
+proc set_routing_auto_taper { args } {
+  sta::parse_key_args "set_routing_auto_taper" args \
+    keys {-net} flags {-all_clocks -enable -disable}
   if { !([info exists keys(-net)] ^ [info exists flags(-all_clocks)]) } {
     utl::error ORD 1016 "Either -net or -all_clocks need to be defined."
   }
-  if { [info exists flags(-disable)] && [info exists flags(-enable)] } {
-    utl::error ORD 1017 "Only one of -disable or -enable may be specified."
+  if { [info exists flags(-enable)] == [info exists flags(-disable)] } {
+    utl::error ORD 1017 "Exactly one of -enable or -disable must be specified."
   }
-  # Default action is to disable auto-taper.
-  set disable [expr { ![info exists flags(-enable)] }]
+  set disable [info exists flags(-disable)]
   set block [ord::get_db_block]
   if { [info exists keys(-net)] } {
     set netName $keys(-net)

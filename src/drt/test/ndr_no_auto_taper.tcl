@@ -2,7 +2,7 @@
 #
 # Clock nets are given a wide NDR.  By default DRT auto-tapers NDR nets
 # down to minimum width near pin connections.  Here we disable auto-taper
-# on a subset of the NDR nets via set_routing_disable_auto_taper so those
+# on a subset of the NDR nets via set_routing_auto_taper so those
 # nets keep their full NDR width all the way to the pin, while the other
 # NDR nets continue to taper as before.  The DEF golden captures the
 # resulting routing.
@@ -28,8 +28,8 @@ assign_ndr -ndr NDR_3W_3S -net clknet_2_3__leaf_clk
 
 # Keep full NDR width to the pins on these nets (no auto-taper); the
 # remaining NDR nets still taper by default.
-set_routing_disable_auto_taper -net clknet_2_0__leaf_clk
-set_routing_disable_auto_taper -net clknet_2_1__leaf_clk
+set_routing_auto_taper -net clknet_2_0__leaf_clk -disable
+set_routing_auto_taper -net clknet_2_1__leaf_clk -disable
 
 set_routing_layers -signal met1-met5
 detailed_route -verbose 0

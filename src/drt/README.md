@@ -105,21 +105,20 @@ Some arguments that are helpful for developers are listed here.
 | `-or_seed` | Random seed for the order of nets to reroute. The default value is `-1`, and the allowed values are integers `[0, MAX_INT]`. | 
 | `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 
-### Disable Auto-Taper Per Net
+### Auto-Taper Per Net
 
 By default the detailed router tapers non-default-rule (NDR, i.e. wide)
 nets down to minimum width near pin connections so that they fit the pin
 access geometry. For some nets (for example wide analog/NDR traces) this
 tapering is undesirable and the net must keep its full NDR width all the
-way to the pin. The following command disables auto-taper on a per-net
+way to the pin. The following command controls auto-taper on a per-net
 basis, without recompiling. The global default behavior (auto-taper
 enabled) is unchanged for all other nets.
 
 ```tcl
-set_routing_disable_auto_taper
+set_routing_auto_taper
     (-net name | -all_clocks)
-    [-disable]
-    [-enable]
+    (-enable | -disable)
 ```
 
 #### Options
@@ -128,8 +127,8 @@ set_routing_disable_auto_taper
 | ----- | ----- |
 | `-net` | Name of the net to mark. Mutually exclusive with `-all_clocks`. |
 | `-all_clocks` | Apply to all clock nets. Mutually exclusive with `-net`. |
-| `-disable` | Disable auto-taper for the selected net(s). This is the default action if neither `-disable` nor `-enable` is given. |
-| `-enable` | Re-enable auto-taper for the selected net(s), restoring the default behavior. |
+| `-disable` | Disable auto-taper for the selected net(s), keeping the full NDR width all the way to the pin. |
+| `-enable` | Enable auto-taper for the selected net(s), restoring the default behavior. Exactly one of `-enable` or `-disable` must be given. |
 
 
 ### Detailed Route Debugging
