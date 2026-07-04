@@ -225,6 +225,12 @@ osx.frameworks(names = [
     # import <cups/ppd.h>).
     "PrintCore",
     "QuartzCore",
+    # AppKit reaches these on macOS: NSImageView.h includes Symbols
+    # unconditionally; NSText*.h take the non-UIKit branch into the
+    # UIFoundation private framework; NSSharingService pulls CloudKit.
+    "CloudKit",
+    "Symbols",
+    "UIFoundation",
     "UniformTypeIdentifiers",
 ])
 
