@@ -10,11 +10,11 @@ export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 
 # TCL: auto-format then lint
 "$1" "$2"
-"$3" "$4" || rc=$?
+"$3" "$4" "$9" || rc=$?
 
 # Bazel: auto-format then lint
 "$5" "$6"
-"$7" "$8" || rc=$?
+"$7" "$8" "$9" || rc=$?
 
 git -C "$BUILD_WORKSPACE_DIRECTORY" status
 
