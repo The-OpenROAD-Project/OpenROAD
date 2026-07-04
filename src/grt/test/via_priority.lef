@@ -30,9 +30,11 @@ LAYER metal2
   AREA 0.02 ;
 END metal2
 
-# Two vias for the metal1/metal2 pair, neither marked OR_DEFAULT. The larger
-# one is declared first, so a db-order pick would take it; the priority ranking
-# must instead choose VIA_SMALL (smaller enclosure).
+# Vias for the metal1/metal2 pair, none marked OR_DEFAULT. The ranking must
+# choose VIA_SMALL:
+#  - VIA_BIG is declared first, so a db-order pick would wrongly take it.
+#  - VIA_MULTI is a LEF DEFAULT via with an even smaller enclosure, so ranking
+#    the default flag before cut count would wrongly take it; single-cut must win.
 VIA VIA_BIG
   LAYER metal1 ;
     RECT -0.1 -0.15 0.1 0.15 ;
@@ -50,5 +52,15 @@ VIA VIA_SMALL
   LAYER metal2 ;
     RECT -0.075 -0.05 0.075 0.05 ;
 END VIA_SMALL
+
+VIA VIA_MULTI DEFAULT
+  LAYER metal1 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+  LAYER via12 ;
+    RECT -0.05 -0.05 -0.01 0.05 ;
+    RECT 0.01 -0.05 0.05 0.05 ;
+  LAYER metal2 ;
+    RECT -0.05 -0.05 0.05 0.05 ;
+END VIA_MULTI
 
 END LIBRARY
