@@ -142,6 +142,11 @@ build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
 
+# Launch py_binary via a shell stub instead of rules_python's legacy python
+# stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
+# the hermetic interpreter takes over (found by etc/bazel-hermetic).
+common --@rules_python//python/config_settings:bootstrap_impl=script
+
 # Setup remote cache
 # Anon: HTTPS read-only cache
 build --remote_cache=https://bazel.precisioninno.com

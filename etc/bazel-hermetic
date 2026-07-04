@@ -3,9 +3,10 @@
 # build is supposed to provide hermetically cannot be picked up from the
 # host. This is a ratchet, not a proof: it removes host compilers,
 # linkers and interpreters from PATH and disables Bazel's local C++
-# toolchain autodetection, but the C++ toolchain still compiles against
-# the host glibc sysroot (/usr/include, /usr/lib), and Bazel itself,
-# a JVM-independent binary, comes from the host.
+# toolchain autodetection. The C++ toolchain (hermetic-llvm) is
+# zero-sysroot, so no host headers or libraries are involved; the
+# remaining host surface is the bazel binary itself and the allowlisted
+# shell tools below.
 #
 # Usage: etc/bazel-hermetic <command> [args...]
 #    e.g. etc/bazel-hermetic build //:openroad
@@ -46,11 +47,22 @@ BAZEL=$(command -v bazelisk || command -v bazel) ||
   { echo >&2 "bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
 if [[ $(head -c 4 "$(readlink -f "${BAZEL}")") != $'\x7fELF' ]]; then
   version=$("${BAZEL}" --version | awk '{print $2}')
-  arch=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x86_64/')
-  meta="${HOME}/.cache/bazelisk/downloads/metadata/bazelbuild/bazel-${version}-linux-${arch}"
-  real="${HOME}/.cache/bazelisk/downloads/sha256/$(cat "${meta}" 2>/dev/null)/bin/bazel"
+  os=$(uname -s | tr '[:upper:]' '[:lower:]')
+  arch=$(uname -m | sed 's/aarch64/arm64/')
+  # Same cache-directory precedence as bazelisk itself.
+  if [[ -n ${BAZELISK_HOME:-} ]]; then
+    bazelisk_home=${BAZELISK_HOME}
+  elif [[ -n ${XDG_CACHE_HOME:-} ]]; then
+    bazelisk_home=${XDG_CACHE_HOME}/bazelisk
+  elif [[ ${os} == darwin ]]; then
+    bazelisk_home=${HOME}/Library/Caches/bazelisk
+  else
+    bazelisk_home=${HOME}/.cache/bazelisk
+  fi
+  meta="${bazelisk_home}/downloads/metadata/bazelbuild/bazel-${version}-${os}-${arch}"
+  real="${bazelisk_home}/downloads/sha256/$(cat "${meta}" 2>/dev/null)/bin/bazel"
   [[ -x ${real} ]] ||
-    { echo >&2 "bazel-hermetic: ${BAZEL} is a wrapper and no real bazel-${version} found under ~/.cache/bazelisk"; exit 1; }
+    { echo >&2 "bazel-hermetic: ${BAZEL} is a wrapper and no real bazel-${version} found under ${bazelisk_home}"; exit 1; }
   BAZEL=${real}
 fi
 ln -s "${BAZEL}" "${TOOLBOX}/bazel"
@@ -88,6 +100,16 @@ case "${command}" in
     ;;
 esac
 
+# Network and cache configuration is not toolchain leakage: keep proxy
+# settings (downloads must work behind corporate proxies) and cache
+# location preferences.
+preserved_env=()
+for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY XDG_CACHE_HOME; do
+  if [[ -n ${!var:-} ]]; then
+    preserved_env+=("${var}=${!var}")
+  fi
+done
+
 # --nosystem_rc/--nohome_rc: only the workspace .bazelrc applies, so host-
 # specific configuration (e.g. remote caches) cannot mask missing hermeticity.
 exec env -i \
@@ -97,4 +119,5 @@ exec env -i \
   TERM="${TERM:-dumb}" \
   LANG=C.UTF-8 \
   PATH="${TOOLBOX}" \
+  "${preserved_env[@]}" \
   "${TOOLBOX}/bazel" --nosystem_rc --nohome_rc "${startup_flags[@]}" "${command}" "${extra_flags[@]}" "$@"
