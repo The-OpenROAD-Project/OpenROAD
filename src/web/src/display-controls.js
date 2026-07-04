@@ -60,28 +60,47 @@ export function populateDisplayControls(app, visibility, selectability,
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
 
-    // Instance borders layer (always below routing layers)
-    const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
-        zIndex: 0,
-    });
-    instancesLayer.addTo(app.map);
-    app.allLayers.push(instancesLayer);
+    // Create a pseudo-layer tile layer and register it on the app.
+    // `appProp` names the app.<prop> slot (null = anonymous); `addToMap`
+    // attaches it immediately (layers whose toggle is default-ON).
+    function addPseudoLayer(name, appProp, zIndex, addToMap) {
+        const layer = new WebSocketTileLayer(app.websocketManager, name, {
+            zIndex,
+        });
+        if (addToMap) layer.addTo(app.map);
+        if (appProp) app[appProp] = layer;
+        app.allLayers.push(layer);
+        return layer;
+    }
 
+    // The initial attach state must follow `visibility`, which was already
+    // restored from the or_visibility cookie: a hardcoded attach leaves the
+    // checkbox (rendered from `visibility`) out of sync with the map until
+    // the first toggle runs redrawAllLayers.
+
+    // Instance borders layer (always below routing layers; no toggle)
+    addPseudoLayer('_instances', null, 0, true);
     // IO pin markers layer (between instances and routing layers)
-    const pinsLayer = new WebSocketTileLayer(app.websocketManager, '_pins', {
-        zIndex: 1,
-    });
-    pinsLayer.addTo(app.map);
-    app.pinsLayer = pinsLayer;
-    app.allLayers.push(pinsLayer);
+    addPseudoLayer('_pins', 'pinsLayer', 1, visibility.pins);
+    // Module coloring overlay (Module view)
+    addPseudoLayer('_modules', 'modulesLayer', 2, visibility.module_view);
+    // Access-point markers overlay (Misc > Access Points)
+    addPseudoLayer(
+        '_access_points', 'accessPointsLayer', 1000, visibility.access_points);
+    // Manufacturing-grid dots overlay (Misc > Manufacturing grid)
+    addPseudoLayer('_mfg_grid', 'mfgGridLayer', 2, visibility.mfg_grid);
+    // GCell-grid lines overlay (topmost, GUI paint order)
+    addPseudoLayer('_gcell_grid', 'gcellGridLayer', 1002, visibility.gcell_grid);
 
-    // Module coloring overlay layer (between instances and routing layers)
-    const modulesLayer = new WebSocketTileLayer(app.websocketManager, '_modules', {
-        zIndex: 2,
-    });
-    // Don't add to map until "Module view" is enabled
-    app.modulesLayer = modulesLayer;
-    app.allLayers.push(modulesLayer);
+    // Region boundaries overlay (above access points, GUI paint order).
+    // Only created when the design has dbRegions — the layer is default-ON
+    // (Qt parity) and would otherwise issue per-viewport tile requests that
+    // always come back transparent.  (Regions created via Tcl mid-session
+    // need a page reload to appear.)
+    app.regionsLayer = null;
+    if (techData && techData.has_regions) {
+        addPseudoLayer('_regions', 'regionsLayer', 1001, visibility.regions);
+    }
 
     // --- Layers group (using CheckboxTreeModel) ---
 
@@ -919,6 +938,11 @@ export function populateDisplayControls(app, visibility, selectability,
         ]},
         { key: 'rulers', label: 'Rulers' },
         { key: 'scale_bar', label: 'Scale bar' },
+        { key: 'access_points', label: 'Access Points' },
+        { key: 'regions', label: 'Regions' },
+        { key: 'mfg_grid', label: 'Manufacturing grid' },
+        { key: 'gcell_grid', label: 'GCell grid' },
+        { key: 'flywires_only', label: 'Flywires only' },
     ]});
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });

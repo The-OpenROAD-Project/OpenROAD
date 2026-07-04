@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -181,6 +182,12 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
+  bool access_points
+      = false;  // dbAccessPoint markers (X), off by default (Qt parity)
+  bool regions
+      = true;  // dbRegion boundaries overlay, on by default (Qt parity)
+  bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
+  bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -567,6 +574,71 @@ class TileGenerator
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
   mutable size_t chiplets_cache_inst_count_ = 0;
+
+  // Per-block caches for the grid/access-point overlay layers, so tiles
+  // don't rescan all BTerms / copy the full gcell vectors on every tile.
+  // Source data is stable during rendering; invalidated in eagerInit()
+  // (design reload), like the chiplet cache.
+  struct BpinAp
+  {
+    odb::Point point;
+    odb::dbTechLayer* layer;
+    odb::dbNet* net;  // may be null (unconnected bterm)
+    bool has_access;
+  };
+  const std::vector<BpinAp>& bpinAccessPoints(odb::dbBlock* block) const;
+  const std::vector<int>& gcellGridX(odb::dbBlock* block) const;
+  const std::vector<int>& gcellGridY(odb::dbBlock* block) const;
+
+  // Pseudo-layer painters used by renderTileBuffer (one per overlay).
+  // Callers gate on the visibility flag; painters handle the rest.  All
+  // share one signature so pseudoLayerDefs() can dispatch by table.
+  void drawAccessPointsLayer(std::vector<unsigned char>& image,
+                             odb::dbBlock* block,
+                             const odb::Rect& dbu_tile,
+                             double scale,
+                             const TileVisibility& vis) const;
+  void drawRegionsLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const odb::Rect& dbu_tile,
+                        double scale,
+                        const TileVisibility& vis) const;
+  void drawMfgGridLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const odb::Rect& dbu_tile,
+                        double scale,
+                        const TileVisibility& vis) const;
+  void drawGcellGridLayer(std::vector<unsigned char>& image,
+                          odb::dbBlock* block,
+                          const odb::Rect& dbu_tile,
+                          double scale,
+                          const TileVisibility& vis) const;
+
+  // Registry of the self-painting pseudo layers: layer name -> visibility
+  // flag -> painter.  Single source of truth for the renderTileBuffer
+  // dispatch, the pseudo-layer guard and saveImage's layers_to_render —
+  // adding an overlay means adding one entry (plus the client layer).
+  struct PseudoLayerDef
+  {
+    const char* name;
+    bool TileVisibility::*flag;
+    void (TileGenerator::*painter)(std::vector<unsigned char>&,
+                                   odb::dbBlock*,
+                                   const odb::Rect&,
+                                   double,
+                                   const TileVisibility&) const;
+  };
+  static const std::array<PseudoLayerDef, 4>& pseudoLayerDefs();
+  // Draw a rect's edges clamped to the tile (die/core/region outlines).
+  void outlineRectInTile(std::vector<unsigned char>& image,
+                         const odb::Rect& r,
+                         const Color& c,
+                         const odb::Rect& dbu_tile,
+                         double scale) const;
+  mutable std::mutex overlay_cache_mutex_;
+  mutable odb::PtrMap<odb::dbBlock, std::vector<BpinAp>> bpin_ap_cache_;
+  mutable odb::PtrMap<odb::dbBlock, std::vector<int>> gcell_x_cache_;
+  mutable odb::PtrMap<odb::dbBlock, std::vector<int>> gcell_y_cache_;
 
   static constexpr int kTileSizeInPixel = 256;
 };

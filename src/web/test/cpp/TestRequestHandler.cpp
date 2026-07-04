@@ -79,6 +79,54 @@ class FakeDescriptor : public gui::Descriptor
   }
 };
 
+// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// isNet() is true; highlight() stands in for the wire-shape drawing of
+// the real NetDescriptor (a big rect the flywire mode must suppress).
+class FakeNetDescriptor : public gui::Descriptor
+{
+ public:
+  static constexpr int kWireRectSize = 90000;
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbNet*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Net"; }
+
+  std::string getTypeName(const std::any&) const override { return "Net"; }
+
+  bool getBBox(const std::any&, odb::Rect& bbox) const override
+  {
+    bbox = odb::Rect(0, 0, kWireRectSize, kWireRectSize);
+    return true;
+  }
+
+  bool isNet(const std::any&) const override { return true; }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
+  }
+
+  void highlight(const std::any&, gui::Painter& painter) const override
+  {
+    painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
+  }
+};
+
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
 {
  public:
@@ -160,6 +208,28 @@ class TileHandlerTest : public tst::Nangate45Fixture
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     handler_ = std::make_unique<TileHandler>(gen_);
+  }
+
+  // Driver (buf1.Z) and sink (buf2.A) placed buffers on a new net.
+  odb::dbNet* makeConnectedNet(const char* net_name)
+  {
+    odb::dbMaster* master = lib_->findMaster("BUF_X16");
+    if (!master) {
+      return nullptr;
+    }
+    const std::string base = net_name;
+    odb::dbInst* buf1
+        = odb::dbInst::create(block_, master, (base + "_drv").c_str());
+    buf1->setLocation(10000, 10000);
+    buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbInst* buf2
+        = odb::dbInst::create(block_, master, (base + "_snk").c_str());
+    buf2->setLocation(60000, 60000);
+    buf2->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    odb::dbNet* net = odb::dbNet::create(block_, net_name);
+    buf1->findITerm("Z")->connect(net);
+    buf2->findITerm("A")->connect(net);
+    return net;
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -287,6 +357,153 @@ TEST_F(TileHandlerTest, OverlayTileUsesHighlightState)
   auto resp = handler_->handleOverlayTile(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kPng);
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// "Flywires only" (Misc toggle) — selection flywires on the overlay
+//------------------------------------------------------------------------------
+
+TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
+{
+  odb::dbNet* net = makeConnectedNet("sig");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+    state_.highlights_active = true;  // as if a select populated them
+  }
+
+  // Toggle ON via overlay request: highlight re-derived as flywires.
+  WebSocketRequest req;
+  req.id = 20;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "flywires_only should produce driver->sink lines";
+    for (const auto& r : state_.highlight_rects) {
+      EXPECT_LT(r.dx(), FakeNetDescriptor::kWireRectSize)
+          << "wire shapes must be suppressed in flywire mode";
+    }
+  }
+
+  // Toggle back OFF: unrouted net keeps its flywires (GUI fallback) and
+  // the descriptor's wire shapes are collected again.
+  req.id = 21;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":false})");
+  resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_FALSE(state_.highlight_lines.empty())
+        << "unrouted net keeps flywires with the toggle off (GUI parity)";
+    bool has_wire_rect = false;
+    for (const auto& r : state_.highlight_rects) {
+      has_wire_rect
+          = has_wire_rect || r.dx() == FakeNetDescriptor::kWireRectSize;
+    }
+    EXPECT_TRUE(has_wire_rect)
+        << "descriptor wire shapes should return when the toggle is off";
+  }
+}
+
+TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("sig2");
+  ASSERT_NE(net, nullptr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+    // Simulate an explicit "clear highlights" that kept the inspected
+    // object (e.g. DRC clear): vectors empty, highlights inactive.
+    state_.highlights_active = false;
+  }
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "toggle flip must not resurrect cleared highlights";
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
+{
+  // A descriptor may report isNet()==true while its payload is NOT a
+  // plain dbNet* (e.g. DbNetDescriptor::NetWithSink).  The collector
+  // must fall back to the generic highlight path instead of throwing
+  // std::bad_any_cast.
+  class FakeNetWithSinkDescriptor : public FakeNetDescriptor
+  {
+   public:
+    std::string getName(const std::any&) const override { return "nws"; }
+    void highlight(const std::any&, gui::Painter& painter) const override
+    {
+      painter.drawRect(odb::Rect(0, 0, 1000, 1000));
+    }
+  };
+  static FakeNetWithSinkDescriptor descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    // Payload is an int — any_cast<odb::dbNet*> by value would throw.
+    state_.current_inspected = descriptor.makeSelected(std::any(42));
+    state_.highlights_active = true;
+  }
+
+  WebSocketRequest req;
+  req.id = 24;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "non-dbNet payload should use the generic highlight path";
+}
+
+TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
+{
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  odb::dbInst* buf1 = odb::dbInst::create(block_, master, "buf1");
+  buf1->setLocation(10000, 10000);
+  buf1->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  buf1->findITerm("A")->connect(pwr);
+
+  static FakeNetDescriptor net_descriptor;
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(pwr));
+    state_.highlights_active = true;  // as if a select populated them
+  }
+
+  WebSocketRequest req;
+  req.id = 22;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto resp = handler_->handleOverlayTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty())
+      << "supply nets must not get flywires (GUI parity)";
 }
 
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)

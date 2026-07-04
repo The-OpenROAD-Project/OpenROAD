@@ -236,19 +236,149 @@ static boost::json::object serializeProperty(
   return o;
 }
 
-static void collectHighlightShapes(const gui::Selected& sel,
-                                   std::vector<odb::Rect>& rects,
-                                   std::vector<odb::Polygon>& polys)
+// The GUI draws the driver×sink product straight to the screen; here the
+// lines are materialized in SessionState and copied per overlay tile, so
+// cap the product to keep memory bounded on huge INOUT/fanout nets
+// (beyond this the fan is visual mush anyway).
+constexpr size_t kMaxFlywires = 4096;
+
+// Mirrors the flywire fallback of gui::NetDescriptor::highlight
+// (dbDescriptors.cpp:1766-1825): straight driver->sink lines between the
+// net's placed terminals.  When `term_boxes` is non-null, the terminal
+// pin boxes are collected in the same pass (used by the flywires-only
+// mode, which suppresses the descriptor's wire shapes).
+static void collectNetFlightLines(odb::dbNet* net,
+                                  std::vector<FlightLine>& lines,
+                                  std::vector<odb::Rect>* term_boxes = nullptr)
 {
-  rects.clear();
-  polys.clear();
+  if (!net || net->getSigType().isSupply()) {
+    return;  // GUI parity: no flywires (or term boxes) on supply nets
+  }
+  // GUI parity: routed special nets get no flywires; their terminal
+  // boxes are still highlighted.
+  const bool lines_enabled
+      = !net->isSpecial() || net->getFirstSWire() == nullptr;
+
+  std::set<odb::Point> driver_locs;
+  std::set<odb::Point> sink_locs;
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    if (!iterm->getInst()->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    if (term_boxes) {
+      term_boxes->push_back(iterm->getBBox());
+    }
+    if (!lines_enabled) {
+      continue;
+    }
+    odb::Point center;
+    int x = 0;
+    int y = 0;
+    if (iterm->getAvgXY(&x, &y)) {
+      center = odb::Point(x, y);
+    } else {
+      const odb::Rect rect = iterm->getInst()->getBBox()->getBox();
+      center = odb::Point((rect.xMax() + rect.xMin()) / 2,
+                          (rect.yMax() + rect.yMin()) / 2);
+    }
+    const auto iotype = iterm->getIoType();
+    if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
+      sink_locs.insert(center);
+    }
+    if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
+      driver_locs.insert(center);
+    }
+  }
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    const auto iotype = bterm->getIoType();
+    // IO direction is from the block's perspective: an INPUT bterm
+    // drives the net (GUI is_source_bterm / is_sink_bterm).
+    const bool driver_term = iotype == odb::dbIoType::INPUT
+                             || iotype == odb::dbIoType::INOUT
+                             || iotype == odb::dbIoType::FEEDTHRU;
+    const bool sink_term = iotype == odb::dbIoType::OUTPUT
+                           || iotype == odb::dbIoType::INOUT
+                           || iotype == odb::dbIoType::FEEDTHRU;
+    for (odb::dbBPin* pin : bterm->getBPins()) {
+      const odb::Rect rect = pin->getBBox();
+      if (term_boxes) {
+        term_boxes->push_back(rect);
+      }
+      if (!lines_enabled) {
+        continue;
+      }
+      const odb::Point center((rect.xMax() + rect.xMin()) / 2,
+                              (rect.yMax() + rect.yMin()) / 2);
+      if (sink_term) {
+        sink_locs.insert(center);
+      }
+      if (driver_term) {
+        driver_locs.insert(center);
+      }
+    }
+  }
+  if (!lines_enabled) {
+    return;
+  }
+
+  for (const odb::Point& driver : driver_locs) {
+    for (const odb::Point& sink : sink_locs) {
+      if (lines.size() >= kMaxFlywires) {
+        return;
+      }
+      lines.push_back(FlightLine{driver, sink, kSelectionYellow});
+    }
+  }
+}
+
+// Append one selection's highlight shapes.  For nets, honor the
+// "Flywires only" toggle (GUI isFlywireHighlightOnly()): replace the
+// routed wire/guide shapes with driver->sink flight lines.  With the
+// toggle off, unrouted nets still get flywires (GUI fallback — the
+// descriptor emits them via painter.drawLine, which ShapeCollector
+// drops, so they are recomputed here).
+static void appendHighlightShapes(const gui::Selected& sel,
+                                  std::vector<odb::Rect>& rects,
+                                  std::vector<odb::Polygon>& polys,
+                                  std::vector<FlightLine>& lines,
+                                  const bool flywires_only)
+{
   if (!sel) {
     return;
   }
+  // Pointer-form any_cast: DbNetDescriptor::isNet() is true for BOTH of
+  // its payload types (dbNet* and NetWithSink) — the value-form cast
+  // would throw std::bad_any_cast on the latter.  Non-dbNet* payloads
+  // fall through to the plain descriptor highlight below.
+  odb::dbNet* const* net_ptr = std::any_cast<odb::dbNet*>(&sel.getObject());
+  if (sel.isNet() && net_ptr) {
+    odb::dbNet* net = *net_ptr;
+    if (flywires_only) {
+      // Terminal pin boxes stay visible (GUI highlights the net's
+      // ITerm/BTerm shapes regardless of the flywire mode).
+      collectNetFlightLines(net, lines, &rects);
+      return;
+    }
+    if (net && !net->getWire() && net->getGuides().empty()) {
+      collectNetFlightLines(net, lines);
+    }
+  }
   ShapeCollector collector;
   sel.highlight(collector);
-  rects = std::move(collector.rects);
-  polys = std::move(collector.polys);
+  rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
+  polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
+}
+
+static void collectHighlightShapes(const gui::Selected& sel,
+                                   std::vector<odb::Rect>& rects,
+                                   std::vector<odb::Polygon>& polys,
+                                   std::vector<FlightLine>& lines,
+                                   const bool flywires_only)
+{
+  rects.clear();
+  polys.clear();
+  lines.clear();
+  appendHighlightShapes(sel, rects, polys, lines, flywires_only);
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -266,19 +396,47 @@ static int selectionIteratorPosition(const gui::SelectionSet& set,
 // Accumulate highlight shapes from all items in a selection set.
 static void collectMultiHighlightShapes(const gui::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
-                                        std::vector<odb::Polygon>& polys)
+                                        std::vector<odb::Polygon>& polys,
+                                        std::vector<FlightLine>& lines,
+                                        const bool flywires_only)
 {
   rects.clear();
   polys.clear();
+  lines.clear();
   for (const auto& sel : selections) {
-    if (!sel) {
-      continue;
-    }
-    ShapeCollector collector;
-    sel.highlight(collector);
-    rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
-    polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
+    appendHighlightShapes(sel, rects, polys, lines, flywires_only);
   }
+}
+
+// The three highlight vectors and the liveness flag form one invariant —
+// always mutate them through these helpers (callers hold selection_mutex).
+static void clearSelectionHighlights(SessionState& state)
+{
+  state.highlight_rects.clear();
+  state.highlight_polys.clear();
+  state.highlight_lines.clear();
+  state.highlights_active = false;
+}
+
+static void setSelectionHighlights(SessionState& state,
+                                   const gui::Selected& sel)
+{
+  collectHighlightShapes(sel,
+                         state.highlight_rects,
+                         state.highlight_polys,
+                         state.highlight_lines,
+                         state.flywires_only);
+  state.highlights_active = true;
+}
+
+static void setSelectionSetHighlights(SessionState& state)
+{
+  collectMultiHighlightShapes(state.selection_set,
+                              state.highlight_rects,
+                              state.highlight_polys,
+                              state.highlight_lines,
+                              state.flywires_only);
+  state.highlights_active = true;
 }
 
 static void writeInspectPayload(boost::json::object& o,
@@ -308,8 +466,10 @@ static void writeInspectPayload(boost::json::object& o,
   }
 
   if (sel.isNet()) {
-    auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
-    if (net && !net->getGuides().empty()) {
+    // Pointer-form cast: the payload may be NetWithSink (see
+    // appendHighlightShapes) — the value-form cast would throw.
+    if (odb::dbNet* const* net = std::any_cast<odb::dbNet*>(&sel.getObject());
+        net && *net && !(*net)->getGuides().empty()) {
       o["has_guides"] = 1;
     }
   }
@@ -655,8 +815,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       }
 
       // Highlight all items in the selection set.
-      collectMultiHighlightShapes(
-          state.selection_set, state.highlight_rects, state.highlight_polys);
+      setSelectionSetHighlights(state);
       state.current_inspected = inspected_sel;
 
       root["selection_count"]
@@ -711,7 +870,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      setSelectionHighlights(state, sel);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
           state.navigation_history.push_back(state.current_inspected);
@@ -777,7 +936,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
         sel = state.current_inspected;
       }
 
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      setSelectionHighlights(state, sel);
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
@@ -846,8 +1005,7 @@ static WebSocketResponse handleSelectionCycle(
         state.navigation_history.clear();
         // Restore selection-set highlights (handleInspect may have
         // replaced them with a single linked object's shapes).
-        collectMultiHighlightShapes(
-            state.selection_set, state.highlight_rects, state.highlight_polys);
+        setSelectionSetHighlights(state);
       }
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
@@ -1061,8 +1219,7 @@ WebSocketResponse SelectHandler::handleSelectFanoutBin(
           state.selection_itr = state.selection_set.begin();
         }
         // Highlight every selected net in the layout.
-        collectMultiHighlightShapes(
-            state.selection_set, state.highlight_rects, state.highlight_polys);
+        setSelectionSetHighlights(state);
         state.current_inspected = first;
 
         root["selection_count"]
@@ -1784,7 +1941,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      setSelectionHighlights(state, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
     }
@@ -2019,8 +2176,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.timing_rects = std::move(new_rects);
       state.timing_lines = std::move(new_lines);
-      state.highlight_rects.clear();
-      state.highlight_polys.clear();
+      clearSelectionHighlights(state);
     }
 
     const std::string json = "{\"ok\": true}";
@@ -2176,8 +2332,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
     std::lock_guard<std::mutex> lock(state.selection_mutex);
-    state.highlight_rects.clear();
-    state.highlight_polys.clear();
+    clearSelectionHighlights(state);
     state.timing_rects.clear();
     state.timing_lines.clear();
 
@@ -2343,16 +2498,25 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
                                                  SessionState& state)
 {
-  // When debug renderers are active, instance positions change between
-  // frames.  Re-derive highlight shapes from the current inspected
-  // object so the selection tracks the moving instance.
+  // Re-derive the selection highlights when either:
+  //  - the "Flywires only" toggle flipped (so the change takes effect
+  //    without re-selecting) — but only while the highlights are live: a
+  //    flip after an explicit "clear highlights" must not resurrect them;
+  //  - debug renderers are active — instance positions change between
+  //    frames, so the highlight must track the moving instance.
+  const bool flywires_only = jsonOr(req.json, "flywires_only", false);
   const bool debug_renderers = jsonOr(req.json, "debug_renderers", false);
-  if (debug_renderers) {
+  {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
-    if (state.current_inspected) {
-      collectHighlightShapes(state.current_inspected,
-                             state.highlight_rects,
-                             state.highlight_polys);
+    const bool flipped = (flywires_only != state.flywires_only);
+    state.flywires_only = flywires_only;
+    if ((flipped && state.highlights_active)
+        || (debug_renderers && state.current_inspected)) {
+      if (state.current_inspected) {
+        setSelectionHighlights(state, state.current_inspected);
+      } else if (!state.selection_set.empty()) {
+        setSelectionSetHighlights(state);
+      }
     }
   }
 
@@ -2368,7 +2532,9 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
         rects.end(), state.hover_rects.begin(), state.hover_rects.end());
     polys = state.highlight_polys;
     colored = state.timing_rects;
-    lines = state.timing_lines;
+    lines = state.highlight_lines;
+    lines.insert(
+        lines.end(), state.timing_lines.begin(), state.timing_lines.end());
   }
 
   // Merge DRC overlay shapes
@@ -3261,14 +3427,12 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
 
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
-        state.highlight_rects.clear();
-        state.highlight_polys.clear();
+        clearSelectionHighlights(state);
         if (sel) {
           state.hover_rects.clear();
           state.timing_rects.clear();
           state.timing_lines.clear();
-          collectHighlightShapes(
-              sel, state.highlight_rects, state.highlight_polys);
+          setSelectionHighlights(state, sel);
           state.current_inspected = sel;
           state.navigation_history.clear();
         } else {
@@ -3295,8 +3459,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
       // Clear highlight if marker_id is -1 (deselect)
       if (marker_id == -1) {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
-        state.highlight_rects.clear();
-        state.highlight_polys.clear();
+        clearSelectionHighlights(state);
       }
       root["ok"] = 0;
     }

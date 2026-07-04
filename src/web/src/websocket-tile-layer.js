@@ -158,6 +158,7 @@ export function createOverlayTileLayer(visibility, app) {
             x: coords.x,
             y: coords.y,
             debug_renderers: !!visibility.debug_renderers,
+            flywires_only: !!visibility.flywires_only,
         };
         // Pass visible layers so route guides respect layer visibility.
         if (app && app.visibleLayerNames) {
