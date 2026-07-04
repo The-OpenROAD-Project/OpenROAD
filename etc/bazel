@@ -7,11 +7,12 @@
 # remaining host surface is the bazel binary itself and the allowlisted
 # shell tools below.
 #
-# bazelisk invokes this wrapper automatically for every command run in
-# this workspace (a bazelisk convention for tools/bazel; it provides the
-# real binary via $BAZEL_REAL). Direct invocation also works:
-#    tools/bazel [startup flags] <command> [args...]
-# To bypass the wrapper: BAZELISK_SKIP_WRAPPER=1 bazelisk <command> ...
+# Opt-in developer tool; invoke directly:
+#    etc/bazel [startup flags] <command> [args...]
+# (Deliberately not named tools/bazel: bazelisk would auto-invoke that
+# for every command, and repository rules of some dependencies still
+# expect host tools this wrapper prunes, e.g. GNU Make's configure
+# probing for ld in bazel-orfs's gnumake rule.)
 #
 # The allowlist below is the contract for what the build may use from the
 # host. Grow it only with a comment stating which repository rule or
