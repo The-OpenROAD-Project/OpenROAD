@@ -104,6 +104,8 @@ void NegotiationLegalizer::legalize()
 
   logger_->info(
       utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
+  logger_->info(
+      utl::DPL, 1104, "NegotiationLegalizer DRC penalty: {}.", drc_penalty_);
 
   double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
   double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
@@ -340,16 +342,6 @@ void NegotiationLegalizer::legalize()
         }
       }
     }
-  }
-
-  {
-    utl::DebugScopedTimer t(flush_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "commitNegotiationPosToOdb: {}");
-    commitNegotiationPosToOdb();
   }
 
   const double total_s = total_timer.elapsed();

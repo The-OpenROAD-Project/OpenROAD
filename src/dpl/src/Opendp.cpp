@@ -185,13 +185,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                   block_->dbuAreaToMicrons(core_area),
                   block_->dbuAreaToMicrons(inst_area),
                   utilization);
-    logger_->info(DPL,
-                  7,
-                  "Total instances area (incl. excluded): {:.2f} um^2, "
-                  "Utilization: {:.1f}%",
-                  block_->dbuAreaToMicrons(total_inst_area),
-                  total_utilization);
-    logger_->metric("utilizatin__before__dpl", utilization);
+    logger_->metric("utilization__before__dpl", total_utilization);
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
@@ -254,13 +248,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                      debug_observer_.get(),
                                      network_.get());
     negotiation.setRunAbacus(run_abacus);
-    if (site_search_window > 0) {
+    if (site_search_window >= 0) {
       negotiation.setSiteSearchWindow(site_search_window);
     }
-    if (row_search_window > 0) {
+    if (row_search_window >= 0) {
       negotiation.setRowSearchWindow(row_search_window);
     }
-    if (drc_penalty > 0.0) {
+    if (drc_penalty >= 0.0) {
       negotiation.setDrcPenalty(drc_penalty);
     }
     negotiation.legalize();
