@@ -103,6 +103,23 @@ git_override(
 ## Downstream consumers must configure their own C++ toolchain.
 bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
+# Prebuilt LLVM ld.lld dynamically links libxml2.so.2; hosts whose libxml2
+# is 2.14+ (soname libxml2.so.16 — Ubuntu 25.10+, Arch, Fedora 41+) cannot
+# run it. This override adds `libxml2_stub` support to toolchains_llvm,
+# which writes a stub lib/libxml2.so.2 into the downloaded distribution
+# (see llvm.toolchain below). Feature PR with details and verification:
+# https://github.com/bazel-contrib/toolchains_llvm/pull/795
+#
+# LLVM release binaries link libxml2 statically starting with LLVM 23.1.0
+# (scheduled 2026-08-25). Once this project moves to LLVM >= 23.1.0, delete
+# this override and the libxml2_stub attribute.
+archive_override(
+    module_name = "toolchains_llvm",
+    sha256 = "a13800df1525a710f770a95cd083318063b2afa599e6cb5ecc910f80e0bc78a5",
+    strip_prefix = "toolchains_llvm-5ccf76e92b5404f21bdb825e5f3ef4bd44e28cd7",
+    urls = ["https://github.com/bazel-contrib/toolchains_llvm/archive/5ccf76e92b5404f21bdb825e5f3ef4bd44e28cd7.tar.gz"],
+)
+
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
@@ -168,6 +185,9 @@ llvm = use_extension(
     dev_dependency = True,
 )
 llvm.toolchain(
+    # Stub out ld.lld's libxml2.so.2 dependency; see the toolchains_llvm
+    # archive_override above.
+    libxml2_stub = True,
     llvm_version = "20.1.8",
 )
 use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
