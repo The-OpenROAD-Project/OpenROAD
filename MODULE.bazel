@@ -186,6 +186,39 @@ register_toolchains(
     dev_dependency = True,
 )
 
+# hermetic-llvm ships a minimal macOS SDK subset (frameworks are opt-in).
+# Qt (qt-bazel) needs the desktop frameworks; the first six entries are
+# hermetic-llvm's defaults, which listing any framework replaces.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx", dev_dependency = True)
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "AppKit",
+    "ApplicationServices",
+    "CFNetwork",
+    "Carbon",
+    "Cocoa",
+    "ColorSync",
+    "CoreData",
+    "CoreGraphics",
+    "CoreServices",
+    "CoreText",
+    "CoreVideo",
+    "DiskArbitration",
+    "GSS",
+    "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    "OpenGL",
+    "QuartzCore",
+    "UniformTypeIdentifiers",
+])
+
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
