@@ -1,0 +1,28 @@
+Linux kernel and glibc headers are injected as the first -isystem
+entries, which outranks -isystem/-I directories of libraries that
+deliberately shadow libc headers: gnulib's stdio.h replacement in BCR
+sed fails to take effect (SETLOCALE_NULL_MAX / _GL_ATTRIBUTE_* errors)
+and tcl's vendored minizip crypt.h loses to glibc's crypt.h. Host
+sysroots provide libc via the default search path, searched after all
+user includes; -idirafter restores that precedence.
+
+--- a/toolchain/args/linux/BUILD.bazel
++++ b/toolchain/args/linux/BUILD.bazel
+@@ -24,7 +24,7 @@
+         "@kernel_headers//:kernel_headers_directory",
+     ],
+     args = [
+-        "-isystem",
++        "-idirafter",
+         "{kernel_headers_include_search_path}",
+     ],
+     data = [
+@@ -46,7 +46,7 @@
+     ],
+     args = [
+         # "__GLIBC_MINOR__={d}", version.minor
+-        "-isystem",
++        "-idirafter",
+         "{libc_headers_include_search_path}",
+     ],
+     data = [

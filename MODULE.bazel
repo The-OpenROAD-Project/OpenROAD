@@ -134,6 +134,19 @@ git_override(
 ## without FHS paths (e.g. NixOS).
 bazel_dep(name = "llvm", version = "0.8.11", dev_dependency = True)
 
+# hermetic-llvm injects kernel/glibc headers as the first -isystem entries,
+# outranking libraries that deliberately shadow libc headers (gnulib's
+# stdio.h in BCR sed; tcl's vendored minizip crypt.h). Host sysroots are
+# searched last; -idirafter restores that precedence. Drop when fixed
+# upstream.
+single_version_override(
+    module_name = "llvm",
+    patch_strip = 1,
+    patches = [
+        "//bazel/hermetic-llvm-patches:0001-libc-headers-idirafter-precedence.patch",
+    ],
+)
+
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "aspect_rules_lint", version = "2.5.2", dev_dependency = True)
