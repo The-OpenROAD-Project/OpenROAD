@@ -2,14 +2,18 @@
 # Launch bazel in a pruned environment so that toolchains and tools the
 # build is supposed to provide hermetically cannot be picked up from the
 # host. This is a ratchet, not a proof: it removes host compilers,
-# linkers and interpreters from PATH and disables Bazel's local C++
-# toolchain autodetection. The C++ toolchain (hermetic-llvm) is
-# zero-sysroot, so no host headers or libraries are involved; the
+# linkers and interpreters from PATH. The C++ toolchain (hermetic-llvm)
+# is zero-sysroot, so no host headers or libraries are involved; the
 # remaining host surface is the bazel binary itself and the allowlisted
 # shell tools below.
 #
-# Usage: etc/bazel-hermetic <command> [args...]
-#    e.g. etc/bazel-hermetic build //:openroad
+# bazelisk invokes this wrapper automatically for every command run in
+# this workspace (a bazelisk convention for tools/bazel; it provides the
+# real binary via $BAZEL_REAL). The Go bazelisk implements the
+# convention; the npm @bazel/bazelisk package does not, so there use
+# direct invocation:
+#    tools/bazel [startup flags] <command> [args...]
+# To bypass the wrapper: BAZELISK_SKIP_WRAPPER=1 bazelisk <command> ...
 #
 # The allowlist below is the contract for what the build may use from the
 # host. Grow it only with a comment stating which repository rule or
@@ -42,11 +46,16 @@ for tool in "${ALLOWED_TOOLS[@]}"; do
   fi
 done
 
-# The bazel binary itself. bazelisk is often a node or shell wrapper whose
-# interpreter must not leak into the pruned PATH, so resolve the real ELF
-# binary it manages (~/.cache/bazelisk) instead of symlinking the wrapper.
-BAZEL=$(command -v bazelisk || command -v bazel) ||
-  { echo >&2 "bazel-hermetic: no bazel or bazelisk on PATH"; exit 1; }
+# The bazel binary itself. When bazelisk invokes this wrapper it hands us
+# the real binary in $BAZEL_REAL. Otherwise resolve it: bazelisk is often
+# a node or shell wrapper whose interpreter must not leak into the pruned
+# PATH, so find the real binary it manages (~/.cache/bazelisk) instead of
+# symlinking the wrapper.
+BAZEL=${BAZEL_REAL:-}
+if [[ -z ${BAZEL} ]]; then
+  BAZEL=$(command -v bazelisk || command -v bazel) ||
+    { echo >&2 "tools/bazel: no bazel or bazelisk on PATH"; exit 1; }
+fi
 # Wrapper detection: the bazelisk launcher by name, or any script shebang
 # (npm/shell wrappers). Native binaries (ELF on Linux, Mach-O on macOS)
 # are symlinked directly.
@@ -73,7 +82,7 @@ fi
 ln -s "${BAZEL}" "${TOOLBOX}/bazel"
 
 if [[ $# -eq 0 ]]; then
-  echo >&2 "usage: etc/bazel-hermetic [startup flags] <command> [args...]"
+  echo >&2 "usage: tools/bazel [startup flags] <command> [args...]"
   exit 1
 fi
 
@@ -84,7 +93,7 @@ while [[ $# -gt 0 && $1 == --* ]]; do
   shift
 done
 if [[ $# -eq 0 ]]; then
-  echo >&2 "usage: etc/bazel-hermetic [startup flags] <command> [args...]"
+  echo >&2 "usage: tools/bazel [startup flags] <command> [args...]"
   exit 1
 fi
 command=$1
@@ -95,12 +104,12 @@ extra_flags=()
 case "${command}" in
   build|test|run|cquery|aquery|coverage|fetch|vendor|sync|mod)
     extra_flags=(
-      # Fail local C++ toolchain autodetection instead of silently using
-      # /usr/bin/gcc; the hermetic toolchain must win resolution anyway.
-      "--repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1"
-      # Repository rules and actions see only the allowlisted tools.
+      # Repository rules and actions (target and exec configuration) see
+      # only the allowlisted tools. BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN
+      # lives in .bazelrc so it applies to unwrapped invocations too.
       "--repo_env=PATH=${TOOLBOX}"
       "--action_env=PATH=${TOOLBOX}"
+      "--host_action_env=PATH=${TOOLBOX}"
     )
     ;;
 esac
@@ -110,7 +119,8 @@ esac
 # overrides, and users may relocate caches and tmp.
 preserved_env=()
 for var in http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY \
-  SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR; do
+  SSH_AUTH_SOCK SSL_CERT_FILE SSL_CERT_DIR XDG_CACHE_HOME TMPDIR \
+  DISPLAY WAYLAND_DISPLAY XAUTHORITY; do
   if [[ -n ${!var:-} ]]; then
     preserved_env+=("${var}=${!var}")
   fi

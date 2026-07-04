@@ -126,6 +126,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
 build --nosandbox_default_allow_network
+# Refuse to autodetect a local C++ toolchain (/usr/bin/gcc); the hermetic
+# toolchain must win resolution, wrapped by tools/bazel or not.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 test --build_tests_only
 
@@ -147,7 +150,7 @@ build:ci --config=opt
 
 # Launch py_binary via a shell stub instead of rules_python's legacy python
 # stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
-# the hermetic interpreter takes over (found by etc/bazel-hermetic).
+# the hermetic interpreter takes over (found by tools/bazel).
 common --@rules_python//python/config_settings:bootstrap_impl=script
 
 # Setup remote cache
