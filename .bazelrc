@@ -96,12 +96,13 @@ common --enable_platform_specific_config
 # macOS: boost.stacktrace needs this since backtrace() doesn't require GNU source
 build:macos --copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 build:macos --host_copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-# std::filesystem (used e.g. in src/tcl_readline_setup.cc) is available
-# from macOS 10.15; abseil's aligned allocation needs 10.13. The previous
-# 10.13 floor was never enforced: toolchains_llvm ignored it and compiled
+# Floating-point std::to_chars (behind std::format, used by OpenSTA)
+# needs macOS 13.3; std::filesystem (src/tcl_readline_setup.cc) needs
+# 10.15; abseil's aligned allocation needs 10.13. The historical 10.13
+# floor was never enforced: toolchains_llvm ignored it and compiled
 # against the host SDK's default. hermetic-llvm honors it.
-build:macos --macos_minimum_os=10.15
-build:macos --host_macos_minimum_os=10.15
+build:macos --macos_minimum_os=13.3
+build:macos --host_macos_minimum_os=13.3
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
