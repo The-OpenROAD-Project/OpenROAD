@@ -276,10 +276,15 @@ static void collectNetFlightLines(odb::dbNet* net,
     int y = 0;
     if (iterm->getAvgXY(&x, &y)) {
       center = odb::Point(x, y);
-    } else {
-      const odb::Rect rect = iterm->getInst()->getBBox()->getBox();
+    } else if (odb::dbBox* bbox = iterm->getInst()->getBBox()) {
+      const odb::Rect rect = bbox->getBox();
       center = odb::Point((rect.xMax() + rect.xMin()) / 2,
                           (rect.yMax() + rect.yMin()) / 2);
+    } else {
+      int ix = 0;
+      int iy = 0;
+      iterm->getInst()->getLocation(ix, iy);
+      center = odb::Point(ix, iy);
     }
     const auto iotype = iterm->getIoType();
     if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT) {
