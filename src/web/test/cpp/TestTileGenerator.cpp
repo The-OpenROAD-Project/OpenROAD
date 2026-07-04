@@ -176,10 +176,13 @@ TEST_F(TileGeneratorTest, GetLayers)
 {
   makeTileGen();
   std::vector<std::string> layers = tile_gen_->getLayers();
-  // 10 routing + 9 cut layers
-  EXPECT_EQ(layers.size(), 19);
-  EXPECT_EQ(layers.front(), "metal1");
-  EXPECT_EQ(layers.back(), "metal10");
+  // getLayers() now returns every tech layer (all types) so the Implant/
+  // Other categories and the saveReport prerender can cover them: Nangate45
+  // has 10 routing + 9 cut plus poly/active (MASTERSLICE) and OVERLAP = 22,
+  // ordered bottom-up starting at "poly" and ending at "OVERLAP".
+  EXPECT_EQ(layers.size(), 22);
+  EXPECT_EQ(layers.front(), "poly");
+  EXPECT_EQ(layers.back(), "OVERLAP");
 }
 
 // Layer colors must mirror gui::DisplayControls::techInit so the GUI and the

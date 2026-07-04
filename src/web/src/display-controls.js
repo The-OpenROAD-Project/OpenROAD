@@ -108,17 +108,21 @@ export function populateDisplayControls(app, visibility, selectability,
     let chipletModel = null;
 
     // Restore saved hidden-layers and non-selectable-layers sets.
+    // Per-layer visibility/selectability intentionally live in
+    // sessionStorage, not cookies: they must survive the page reload that
+    // opening a database triggers, but start fresh in a new session — the
+    // Qt GUI does not persist layer options between sessions either
+    // (review feedback on #10795).
     let savedHiddenLayers = new Set();
     let savedNonSelectableLayers = new Set();
     try {
-        const raw = getCookie('or_hidden_layers');
-        if (raw) savedHiddenLayers = new Set(JSON.parse(decodeURIComponent(raw)));
+        const raw = window.sessionStorage.getItem('or_hidden_layers');
+        if (raw) savedHiddenLayers = new Set(JSON.parse(raw));
     } catch (_) { /* ignore */ }
     try {
-        const raw = getCookie('or_nonselectable_layers');
+        const raw = window.sessionStorage.getItem('or_nonselectable_layers');
         if (raw) {
-            savedNonSelectableLayers
-                = new Set(JSON.parse(decodeURIComponent(raw)));
+            savedNonSelectableLayers = new Set(JSON.parse(raw));
         }
     } catch (_) { /* ignore */ }
 
@@ -204,6 +208,13 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const nodeData = { name: hierarchyNode.name, isInstance: true };
+        // Review feedback on #10795: the Implant and Other categories
+        // start collapsed (they are rarely-used layer groups).
+        if (hierarchyNode.type === 'category'
+            && (hierarchyNode.name === 'Implant'
+                || hierarchyNode.name === 'Other')) {
+            nodeData.startCollapsed = true;
+        }
         // chipletPath is the canonical "top.wrapper_1.MEM_2" string the
         // backend emits in layer_hierarchy; it matches ChipletNode::path
         // exactly so toggling this node can drive app.visibleChiplets.
@@ -341,8 +352,10 @@ export function populateDisplayControls(app, visibility, selectability,
         }
 
         const hiddenNodes = allLayerIds.filter(n => !app.visibleLayers.has(n));
-        setCookie('or_hidden_layers',
-                  encodeURIComponent(JSON.stringify(hiddenNodes)));
+        try {
+            window.sessionStorage.setItem(
+                'or_hidden_layers', JSON.stringify(hiddenNodes));
+        } catch (_) { /* ignore */ }
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -395,8 +408,10 @@ export function populateDisplayControls(app, visibility, selectability,
         syncLayerSelDom();
         const nonSel
             = techData.layers.filter(n => !app.selectableLayers.has(n));
-        setCookie('or_nonselectable_layers',
-                  encodeURIComponent(JSON.stringify(nonSel)));
+        try {
+            window.sessionStorage.setItem(
+                'or_nonselectable_layers', JSON.stringify(nonSel));
+        } catch (_) { /* ignore */ }
     });
     layerSelModel.addFromSpec(layerSelSpec);
 
@@ -582,6 +597,12 @@ export function populateDisplayControls(app, visibility, selectability,
                 kids.appendChild(buildLayerDOM(child, false));
             }
             group.appendChild(kids);
+
+            // Categories flagged startCollapsed (Implant/Other) open folded.
+            if (node.data && node.data.startCollapsed) {
+                kids.classList.add('collapsed');
+                arrow.textContent = '▶';
+            }
 
             // Toggle collapse
             arrow.addEventListener('click', (e) => {
