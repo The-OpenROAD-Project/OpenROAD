@@ -36,6 +36,19 @@ bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
 BOOST_VERSION = "1.89.0.bcr.2"
 
+# boost::icl's exclusive_less_than comparator violates strict weak ordering
+# (boostorg/icl#51); libc++'s std::map exposes it, leaving phantom intervals
+# after interval_set subtraction (boostorg/icl#55) — pad IO fillers were
+# placed on top of pads. Upstream fix boostorg/icl@7de3f55655 (#54), merged
+# after boost 1.90. Drop when a boost.icl release containing it lands in BCR.
+single_version_override(
+    module_name = "boost.icl",
+    patch_strip = 1,
+    patches = [
+        "//bazel/boost-icl-patches:0001-refactor-interval-lookup-operations-icl-54.patch",
+    ],
+)
+
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
 bazel_dep(name = "boost.asio", version = BOOST_VERSION)
 bazel_dep(name = "boost.beast", version = BOOST_VERSION)
