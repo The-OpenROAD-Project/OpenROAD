@@ -209,6 +209,10 @@ osx.frameworks(names = [
     "CoreText",
     "CoreVideo",
     "DiskArbitration",
+    # ATS (inside the ApplicationServices umbrella) has .tbd symlinks into
+    # the FontServices private framework; without it they dangle and bazel
+    # rejects the sysroot ("file type is not supported").
+    "FontServices",
     "GSS",
     "IOKit",
     "IOSurface",
