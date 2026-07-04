@@ -1562,10 +1562,12 @@ void TileGenerator::outlineRectInTile(std::vector<unsigned char>& image,
   const int yl = r.yMin();
   const int xh = r.xMax();
   const int yh = r.yMax();
-  const int64_t pixel_xl = (int64_t) ((xl - dbu_tile.xMin()) * scale);
-  const int64_t pixel_yl = (int64_t) ((yl - dbu_tile.yMin()) * scale);
-  const int64_t pixel_xh = (int64_t) std::ceil((xh - dbu_tile.xMin()) * scale);
-  const int64_t pixel_yh = (int64_t) std::ceil((yh - dbu_tile.yMin()) * scale);
+  const int64_t pixel_xl = static_cast<int64_t>((xl - dbu_tile.xMin()) * scale);
+  const int64_t pixel_yl = static_cast<int64_t>((yl - dbu_tile.yMin()) * scale);
+  const int64_t pixel_xh
+      = static_cast<int64_t>(std::ceil((xh - dbu_tile.xMin()) * scale));
+  const int64_t pixel_yh
+      = static_cast<int64_t>(std::ceil((yh - dbu_tile.yMin()) * scale));
 
   const int loop_xl = std::clamp<int64_t>(pixel_xl, 0, 256);
   const int loop_yl = std::clamp<int64_t>(pixel_yl, 0, 256);
@@ -1715,11 +1717,26 @@ void TileGenerator::drawMfgGridLayer(std::vector<unsigned char>& image,
     return;
   }
   constexpr Color kGridDot{.r = 255, .g = 255, .b = 255, .a = 255};
-  // Anchor on absolute grid multiples (seamless across tiles).
-  const int first_x = ((dbu_tile.xMin() / grid) + 1) * grid;
-  const int last_x = (dbu_tile.xMax() / grid) * grid;
-  const int first_y = ((dbu_tile.yMin() / grid) + 1) * grid;
-  const int last_y = (dbu_tile.yMax() / grid) * grid;
+  // Anchor on absolute grid multiples (seamless across tiles).  Integer
+  // division truncates toward zero, so snap explicitly to handle negative
+  // coordinates (tile bounds include the label margin, which can go
+  // negative near the origin); the Qt version only handles positive ones.
+  int first_x = dbu_tile.xMin() / grid * grid;
+  if (first_x < dbu_tile.xMin()) {
+    first_x += grid;
+  }
+  int last_x = dbu_tile.xMax() / grid * grid;
+  if (last_x > dbu_tile.xMax()) {
+    last_x -= grid;
+  }
+  int first_y = dbu_tile.yMin() / grid * grid;
+  if (first_y < dbu_tile.yMin()) {
+    first_y += grid;
+  }
+  int last_y = dbu_tile.yMax() / grid * grid;
+  if (last_y > dbu_tile.yMax()) {
+    last_y -= grid;
+  }
   for (int gx = first_x; gx <= last_x; gx += grid) {
     const int px = toPxX(gx, dbu_tile, scale);
     for (int gy = first_y; gy <= last_y; gy += grid) {
