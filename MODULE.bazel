@@ -219,6 +219,10 @@ osx.frameworks(names = [
     "ImageIO",
     "Metal",
     "OpenGL",
+    # PrintCore is inside the ApplicationServices umbrella, but must be
+    # named for the SDK subset to keep usr/include/cups (its ObjC headers
+    # import <cups/ppd.h>).
+    "PrintCore",
     "QuartzCore",
     "UniformTypeIdentifiers",
 ])
